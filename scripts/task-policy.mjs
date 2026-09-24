@@ -47,3 +47,18 @@ export function evaluateCleanup(input) {
   if (input.squashCommitInMain !== true) reasons.push('[MAIN] squash commit not verified in remote main');
   return { allowed: reasons.length === 0, reasons };
 }
+
+// Acceptance is independent of whether an already-cleaned task still has a worktree.
+export function evaluateAcceptance(input) {
+  const reasons = [];
+  if (input.fetchedRemote !== true) reasons.push('[REMOTE] fresh remote main read required');
+  let task;
+  try {
+    if (validateTask(input.remoteDocument).length) throw new Error('invalid task');
+    task = parseTask(input.remoteDocument);
+    if (task.deliveryState !== 'ready' || task.id !== input.id) throw new Error('identity or completion mismatch');
+  } catch { reasons.push('[DOCUMENT] matching completed remote task required'); }
+  const pr = input.pr;
+  if (!pr || pr.merged !== true || pr.base !== 'main' || pr.repository !== input.repository || (task && (pr.number !== task.pr || pr.head !== task.branch))) reasons.push('[PR] matching merged PR required');
+  return { accepted: reasons.length === 0, reasons };
+}

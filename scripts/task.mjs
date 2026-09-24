@@ -2,7 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { parseTask, validateTask, evaluateCleanup } from './task-policy.mjs';
+import { parseTask, validateTask, evaluateCleanup, evaluateAcceptance } from './task-policy.mjs';
 const [command, id, ...options] = process.argv.slice(2);
 const apply = options.length === 1 && options[0] === '--apply';
 const repository = 'Hubujiu/WeaveOS';
@@ -44,31 +44,38 @@ try {
   } else {
     if (!task.pr) throw new Error('No associated PR; task is not accepted');
     const pr = JSON.parse(run('gh', ['api', `repos/${repository}/pulls/${task.pr}`], root));
-    if (!existsSync(worktree)) throw new Error('Worktree absent; verify cleanup history rather than deleting another directory');
-    const localTip = run('git', ['rev-parse', 'HEAD'], worktree);
-    const localBranch = run('git', ['branch', '--show-current'], worktree);
-    const remoteTip = git(['ls-remote', '--heads', 'origin', task.branch]).split(/\s+/)[0];
-    const clean = run('git', ['status', '--porcelain', '--untracked-files=all', '--ignored'], worktree) === '';
-    let inMain = false;
-    if (pr.merge_commit_sha) {
-      try {
-        git(['merge-base', '--is-ancestor', pr.merge_commit_sha, main]);
-        inMain = git(['show', '-s', '--format=%P', pr.merge_commit_sha]).split(' ').length === 1;
-      } catch { /* not a verified squash commit on remote main */ }
-    }
-    const result = evaluateCleanup({ id, remoteDocument: text, fetchedRemote: true, repository,
-      branch: localBranch, branchTip: localTip === remoteTip ? localTip : '',
-      worktreeClean: clean, squashCommitInMain: inMain,
-      pr: { number: pr.number, merged: pr.merged, base: pr.base.ref, repository: pr.base.repo.full_name, head: pr.head.ref, headSha: pr.head.sha } });
-    console.log(JSON.stringify({ id, remoteMain: main, pr: pr.html_url, worktree, ...result, apply: command === 'cleanup' && apply }, null, 2));
-    if (!result.allowed) process.exitCode = 1;
-    else if (command === 'cleanup' && apply) {
-      // Conditional remote deletion prevents losing commits added after inspection.
-      if (run('git', ['status', '--porcelain', '--untracked-files=all', '--ignored'], worktree)) throw new Error('Worktree changed during verification');
-      git(['push', `--force-with-lease=refs/heads/${task.branch}:${pr.head.sha}`, 'origin', `:refs/heads/${task.branch}`]);
-      git(['worktree', 'remove', worktree]);
-      git(['branch', '-D', task.branch]);
-      console.log('Accepted task branch and clean worktree removed; retained main task/evidence documents.');
+    if (command === 'status') {
+      const result = evaluateAcceptance({ id, remoteDocument: text, fetchedRemote: true, repository,
+        pr: { number: pr.number, merged: pr.merged, base: pr.base.ref, repository: pr.base.repo.full_name, head: pr.head.ref } });
+      console.log(JSON.stringify({ id, remoteMain: main, pr: pr.html_url, worktreeExists: existsSync(worktree), ...result }, null, 2));
+      if (!result.accepted) process.exitCode = 1;
+    } else {
+      if (!existsSync(worktree)) throw new Error('Worktree absent; verify cleanup history rather than deleting another directory');
+      const localTip = run('git', ['rev-parse', 'HEAD'], worktree);
+      const localBranch = run('git', ['branch', '--show-current'], worktree);
+      const remoteTip = git(['ls-remote', '--heads', 'origin', task.branch]).split(/\s+/)[0];
+      const clean = run('git', ['status', '--porcelain', '--untracked-files=all', '--ignored'], worktree) === '';
+      let inMain = false;
+      if (pr.merge_commit_sha) {
+        try {
+          git(['merge-base', '--is-ancestor', pr.merge_commit_sha, main]);
+          inMain = git(['show', '-s', '--format=%P', pr.merge_commit_sha]).split(' ').length === 1;
+        } catch { /* not a verified squash commit on remote main */ }
+      }
+      const result = evaluateCleanup({ id, remoteDocument: text, fetchedRemote: true, repository,
+        branch: localBranch, branchTip: localTip === remoteTip ? localTip : '',
+        worktreeClean: clean, squashCommitInMain: inMain,
+        pr: { number: pr.number, merged: pr.merged, base: pr.base.ref, repository: pr.base.repo.full_name, head: pr.head.ref, headSha: pr.head.sha } });
+      console.log(JSON.stringify({ id, remoteMain: main, pr: pr.html_url, worktree, ...result, apply: command === 'cleanup' && apply }, null, 2));
+      if (!result.allowed) process.exitCode = 1;
+      else if (command === 'cleanup' && apply) {
+        // Conditional remote deletion prevents losing commits added after inspection.
+        if (run('git', ['status', '--porcelain', '--untracked-files=all', '--ignored'], worktree)) throw new Error('Worktree changed during verification');
+        git(['push', `--force-with-lease=refs/heads/${task.branch}:${pr.head.sha}`, 'origin', `:refs/heads/${task.branch}`]);
+        git(['worktree', 'remove', worktree]);
+        git(['branch', '-D', task.branch]);
+        console.log('Accepted task branch and clean worktree removed; retained main task/evidence documents.');
+      }
     }
   }
 } catch (error) {

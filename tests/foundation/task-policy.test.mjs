@@ -65,3 +65,13 @@ for (const [label, change, reason] of [
     assert.ok(result.reasons.some(x => x.includes(reason)), result.reasons.join('; '));
   });
 }
+
+test('FND-02: acceptance remains true after the task branch/worktree were cleaned', async () => {
+  const { evaluateAcceptance } = await import('../../scripts/task-policy.mjs');
+  const input = state({ branchTip: undefined, worktreeClean: undefined, squashCommitInMain: undefined });
+  assert.deepEqual(evaluateAcceptance(input), { accepted: true, reasons: [] });
+});
+test('FND-02: local completion without a merged PR is not accepted', async () => {
+  const { evaluateAcceptance } = await import('../../scripts/task-policy.mjs');
+  assert.equal(evaluateAcceptance(state({ pr: { ...state().pr, merged: false } })).accepted, false);
+});

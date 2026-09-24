@@ -1,0 +1,60 @@
+name: Archive V010-001 RED source and replay
+on:
+  push:
+    branches: [task/V010-001-foundation]
+    paths: [.github/workflows/archive-V010-001-red.yml]
+permissions:
+  contents: write
+jobs:
+  archive:
+    if: github.repository == 'Hubujiu/WeaveOS' && github.ref == 'refs/heads/task/V010-001-foundation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: task/V010-001-foundation
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Preserve actual RED source and independently replay its failures
+        shell: bash
+        run: |
+          set -euo pipefail
+          red=4ba15c39c4828d481e386f4e7fa402f024cd5844
+          git merge-base --is-ancestor "$red" HEAD
+          out="$GITHUB_WORKSPACE/docs/evidence/V010-001"
+          mkdir -p "$out" "$RUNNER_TEMP/weaveos-red"
+          git archive "$red" | gzip -n > "$out/red-source.tar.gz"
+          git archive HEAD | gzip -n > "$out/green-source.tar.gz"
+          tar -xzf "$out/red-source.tar.gz" -C "$RUNNER_TEMP/weaveos-red"
+          set +e
+          (cd "$RUNNER_TEMP/weaveos-red" && node --test tests/foundation/*.test.mjs) > "$out/replay-node.txt" 2>&1
+          node_exit=$?
+          (cd "$RUNNER_TEMP/weaveos-red/services/bff" && go test -count=1 ./...) > "$out/replay-go.txt" 2>&1
+          go_exit=$?
+          set -e
+          test "$node_exit" -eq 1
+          test "$go_exit" -eq 1
+          grep -q '# fail 21' "$out/replay-node.txt"
+          grep -q -- '--- FAIL: TestLiveness' "$out/replay-go.txt"
+          grep -q -- '--- FAIL: TestUnknownAPINeverFallsBackToHTML' "$out/replay-go.txt"
+          RED_SHA="$red" GREEN_SHA="$(git rev-parse HEAD)" OUT="$out" python3 - <<'PY'
+          import datetime, hashlib, json, os, pathlib
+          out = pathlib.Path(os.environ['OUT'])
+          manifest = {'kind': 'replay-not-original-execution', 'redCommit': os.environ['RED_SHA'], 'greenSnapshotCommit': os.environ['GREEN_SHA'], 'replayedAt': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'nodeExit': 1, 'goExit': 1, 'nodeFailed': 21, 'archiveSha256': hashlib.sha256((out/'red-source.tar.gz').read_bytes()).hexdigest()}
+          (out/'replay.json').write_text(json.dumps(manifest, indent=2)+'\n')
+          PY
+          (cd "$out" && sha256sum red-source.tar.gz green-source.tar.gz replay-node.txt replay-go.txt replay.json > SHA256SUMS)
+      - name: Commit evidence only to the isolated task branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- docs/evidence/V010-001
+          git commit -m 'docs(V010-001): preserve RED source and labelled replay before squash'
+          git push origin HEAD:refs/heads/task/V010-001-foundation

@@ -1,41 +1,44 @@
 # WeaveOS
 
-面向中小企业的管理平台。产品需求、架构取舍和数据设计由 Notion 管理；可执行契约、测试、迁移及实现由 Git 管理。
+企业管理平台。Notion维护产品需求、架构决策和数据设计；Git维护可执行契约、测试、实现与任务验收记录。
 
-> 当前为仓库初始化，不是可运行的登录系统。首版目标为 v0.1.0：邀请码注册、账号密码登录与 Web 登录态。
+**当前交付是v0.1.0工程底座，不是已完成的登录系统。** 前端只有React挂载点，不包含临时或假登录UI；Go BFF提供平台宿主，业务readiness尚未装配，返回503。
 
-## 开始工作
+## 开始与接手
 
-先读 [AGENTS.md](AGENTS.md)，再按 [Notion 文档路由](docs/notion-router.md) 主动读取本任务的权威资料。开发必须先从需求设计测试、观察预期失败，再编写实现；不得依据已有实现倒推验收测试。
+[AGENTS.md](AGENTS.md) → [HANDOFF.md](HANDOFF.md) → [任务索引](docs/tasks/index.md)。每任务独立branch/worktree，实际读取Notion，先需求测试RED后实现GREEN，验收后squash到main并安全清理。详见[工作流](docs/workflow.md)。
 
-- [Notion 项目](https://app.notion.com/p/3e42f5a9e64880ae9cf5ebbd2088d773)
-- [贡献流程](CONTRIBUTING.md) · [测试规范](docs/testing.md) · [任务证据模板](docs/templates/task-record.md)
-- [当前基线与未决事项](docs/project-baseline.md) · [安全边界](SECURITY.md)
-
-## 目录
+## 结构与运行
 
 ```text
-apps/web/           React + Vite 前端边界，尚未创建业务应用
-services/bff/       Go Web BFF / 本地认证边界，尚未创建业务服务
-contracts/          OpenAPI / Proto / 错误码的版本控制入口
-db/migrations/     待评审通过后提交的数据库迁移
-infra/              待评审通过后落地的运行配置
-scripts/            无第三方依赖的仓库结构检查
-tests/governance/  仓库检查器自身的测试
-docs/              文档路由、工程规则、任务证据；不复制整套 Notion
+apps/web/          React + Vite + TypeScript，构建/挂载宿主
+services/bff/      Go BFF进程、HTTP平台，后续认证领域在内部按职责装配
+contracts/         逐接口OpenAPI/Proto由V010-002完成
+ db/migrations/    待评审后由V010-003实施的数据迁移
+infra/             按验收任务落实运行环境，不默认部署全套中间件
+tests/foundation/  工程、任务、发布规则测试
+tests/e2e/         三浏览器底座smoke
+tests/acceptance/  产品验收独立预期、测试绑定及待完成集成
+ docs/tasks/       任务、依赖、分工、进度和接手记录
 ```
 
-目录中目前只有边界说明与规范；没有伪造可运行的服务、接口、SQL 或依赖锁文件。
-
-## 已可执行的验证
+工具版本见.node-version、.go-version和packageManager/锁文件。本地安装pnpm后：
 
 ```sh
-node --test tests/governance/policy.test.mjs
-node scripts/verify-repo.mjs
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm typecheck
+pnpm build
+# 两个终端分别运行
+cd services/bff && go run ./cmd/bff
+pnpm --filter @weaveos/web dev
 ```
 
-检查器仅需要 Node.js 标准库。本次在 Node.js 22.16.0 执行；这不代表产品工具链已选为 Node 22。产品 Node / pnpm / Go 版本仍须依 ADR 评审并锁定。
+Go默认127.0.0.1:8080；可通过受控BFF_ADDR配置。`/health/live`用于宿主存活；`/health/ready`未接入真实依赖时不报成功。Vite preview只用于CI/development，不是生产服务器。
 
-检查器验证规范文件、硬规则标识、文档路由结构和覆盖指令文件，**不能证明 AI 真读过 Notion、测试先于实现编写，或业务已验收**。这些仍需任务证据、PR 审查和后续真实测试。
+## CI、验收与交付
 
-尚无前端构建、Go 测试、数据库集成或浏览器 E2E 命令；不得将它们报告为通过。尚未选择开源许可证。
+`.github/workflows/ci.yml`对PR/main执行仓库与任务检查、Go format/vet/race/build、冻结依赖/类型/构建以及Chromium/Firefox/WebKit smoke，保留测试报告和覆盖率。
+
+`acceptance.yml`是手动/可复用的完整产品验收：真实PG/Redis、隔离Seed、HTTP、浏览器与发布矩阵。当前业务和Seed未完成，不能PASS。[验收说明](docs/acceptance/README.md)区分已写用例、待补自动化与真正需要人工/目标环境的项目。
+
+`delivery.yml`经CI后构建带提交SHA和校验和的开发制品，仅main可产出；没有生产部署、没有v0.1.0发布声明。尚未配置main分支保护/必需审批，也未选择开源许可证。

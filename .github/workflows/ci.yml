@@ -25,6 +25,20 @@ jobs:
       - run: node --test tests/governance/*.test.mjs tests/foundation/*.test.mjs
       - run: node scripts/verify-repo.mjs
       - run: node scripts/check-tasks.mjs
+      - name: Preserve source Git objects, not local configuration or credentials
+        run: |
+          mkdir -p .work
+          git bundle create .work/source.bundle --all
+          sha256sum .work/source.bundle > .work/source.bundle.sha256
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: source-bundle-${{ github.run_id }}
+          path: |
+            .work/source.bundle
+            .work/source.bundle.sha256
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
   go:
     runs-on: ubuntu-24.04
     timeout-minutes: 10

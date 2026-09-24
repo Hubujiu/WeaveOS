@@ -21,3 +21,17 @@ test('FND-04: web entry is real React with no fabricated login UI', () => {
   assert.ok(pkg.devDependencies?.vite);
   assert.ok(read('apps/web/src/main.tsx').includes('createRoot'));
 });
+test('FND-05: CI retains a source bundle without bundling local credentials', () => {
+  const ci = read('.github/workflows/ci.yml');
+  assert.ok(ci.includes('git bundle create .work/source.bundle --all'));
+  assert.ok(ci.includes('source-bundle-${{ github.run_id }}'));
+  assert.ok(!ci.includes('tar -czf source .git'));
+});
+test('FND-05: RED replay metadata pins the real pre-implementation source', () => {
+  const manifest = JSON.parse(read('docs/evidence/V010-001/replay.json') || '{}');
+  assert.equal(manifest.redCommit, '4ba15c39c4828d481e386f4e7fa402f024cd5844');
+  assert.equal(manifest.kind, 'replay-not-original-execution');
+  assert.equal(manifest.nodeExit, 1);
+  assert.equal(manifest.goExit, 1);
+  assert.match(manifest.archiveSha256 ?? '', /^[0-9a-f]{64}$/);
+});
