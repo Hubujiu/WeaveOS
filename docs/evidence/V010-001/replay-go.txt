@@ -1,0 +1,23 @@
+--- FAIL: TestLiveness (0.00s)
+    --- FAIL: TestLiveness/GET (0.00s)
+        handler_test.go:21: expected 200; got 404
+    --- FAIL: TestLiveness/HEAD (0.00s)
+        handler_test.go:21: expected 200; got 404
+--- FAIL: TestReadiness (0.00s)
+    --- FAIL: TestReadiness/unwired (0.00s)
+        handler_test.go:55: want 503, got 404
+    --- FAIL: TestReadiness/healthy (0.00s)
+        handler_test.go:55: want 200, got 404
+    --- FAIL: TestReadiness/failed (0.00s)
+        handler_test.go:55: want 503, got 404
+--- FAIL: TestCancelledReadinessFailsClosed (0.00s)
+    handler_test.go:77: cancelled request must not be ready, got 404
+--- FAIL: TestHealthRejectsWriteMethods (0.00s)
+    handler_test.go:85: method guard failed: 404 map[Content-Type:[text/plain; charset=utf-8] X-Content-Type-Options:[nosniff]]
+--- FAIL: TestHeadersAndUntrustedRequestID (0.00s)
+    handler_test.go:99: unsafe request ID: ""
+--- FAIL: TestUnknownAPINeverFallsBackToHTML (0.00s)
+    handler_test.go:121: must return JSON, not HTML: invalid character 'p' after top-level value
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver	0.004s
+FAIL
