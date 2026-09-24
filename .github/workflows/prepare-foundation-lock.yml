@@ -1,0 +1,36 @@
+name: Prepare V010-001 dependency lock
+on:
+  push:
+    branches: [task/V010-001-foundation]
+    paths:
+      - package.json
+      - apps/web/package.json
+      - pnpm-workspace.yaml
+      - .github/workflows/prepare-foundation-lock.yml
+permissions:
+  contents: write
+jobs:
+  lock:
+    if: github.repository == 'Hubujiu/WeaveOS' && github.ref == 'refs/heads/task/V010-001-foundation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: task/V010-001-foundation
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.14.0'
+      - name: Resolve exact declared versions without lifecycle scripts
+        run: |
+          npm install --global pnpm@10.28.2 --ignore-scripts
+          pnpm install --lockfile-only --ignore-scripts
+      - name: Commit only generated lock to this task branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- pnpm-lock.yaml
+          if ! git diff --cached --quiet; then
+            git commit -m 'build(V010-001): lock declared frontend and test dependencies'
+            git push origin HEAD:refs/heads/task/V010-001-foundation
+          fi
