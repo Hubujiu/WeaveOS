@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseTask, validateTask, evaluateCleanup, evaluateAcceptance } from './task-policy.mjs';
+import { resolveCleanupTip } from './remote-cleanup-policy.mjs';
 const [command, id, ...options] = process.argv.slice(2);
 const apply = options.length === 1 && options[0] === '--apply';
 const repository = 'Hubujiu/WeaveOS';
@@ -63,7 +64,7 @@ try {
         } catch { /* not a verified squash commit on remote main */ }
       }
       const result = evaluateCleanup({ id, remoteDocument: text, fetchedRemote: true, repository,
-        branch: localBranch, branchTip: localTip === remoteTip ? localTip : '',
+        branch: localBranch, branchTip: resolveCleanupTip(localTip, remoteTip),
         worktreeClean: clean, squashCommitInMain: inMain,
         pr: { number: pr.number, merged: pr.merged, base: pr.base.ref, repository: pr.base.repo.full_name, head: pr.head.ref, headSha: pr.head.sha } });
       console.log(JSON.stringify({ id, remoteMain: main, pr: pr.html_url, worktree, ...result, apply: command === 'cleanup' && apply }, null, 2));
@@ -71,7 +72,7 @@ try {
       else if (command === 'cleanup' && apply) {
         // Conditional remote deletion prevents losing commits added after inspection.
         if (run('git', ['status', '--porcelain', '--untracked-files=all', '--ignored'], worktree)) throw new Error('Worktree changed during verification');
-        git(['push', `--force-with-lease=refs/heads/${task.branch}:${pr.head.sha}`, 'origin', `:refs/heads/${task.branch}`]);
+        if (remoteTip) git(['push', `--force-with-lease=refs/heads/${task.branch}:${pr.head.sha}`, 'origin', `:refs/heads/${task.branch}`]);
         git(['worktree', 'remove', worktree]);
         git(['branch', '-D', task.branch]);
         console.log('Accepted task branch and clean worktree removed; retained main task/evidence documents.');

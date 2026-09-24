@@ -58,9 +58,11 @@ v0.1.0只围绕邀请码注册、账号密码登录、Web Session、Bootstrap Ad
 
 **只有GitHub远程main同路径、同任务ID文档存在且所有事项完成，并且对应PR已经合入本仓库main，才代表已验收。** 本地main、同名不同目录文件、closed未merged的PR或分支清单全勾均不足。
 
-验收后按docs/workflow.md清理该任务的branch/worktree，保留main任务及证据。须再次读取远程状态，确认分支tip等于验收PR head、squash commit位于main，工作树无未提交/未跟踪/未审查忽略文件。合并后新提交、脏工作树或离线时停止清理。不能用task HEAD是否main祖先判断squash成功。
+验收后按docs/workflow.md分两阶段清理，保留main任务与证据。远端Actions重新读取main文档和PR，确认远程分支tip等于验收PR head且squash commit在main，仅条件删除该远程引用；它不能检查或删除开发者机器的工作树，不能宣称本地也已清理。
 
-清理默认dry-run，明确--apply且核对通过后才执行；不force-remove工作树，不删除main，不撤销他人工作。允许通过已核对SHA的条件删除来保护远程任务分支；不允许借此任意force-push。分支保护/必需审批须服务端单独配置，文档或CODEOWNERS本身不等于已经强制启用。
+本地清理必须另查：本地分支tip等于验收PR head，工作树无未提交/未跟踪/未审查忽略文件，远程分支未新增提交（已经由Actions删除则允许继续核验本地）。发现新提交、脏工作树或无法重新获取远程验收事实时停止。本地默认dry-run，明确--apply且核对通过才执行；不force-remove工作树，不删除main，不撤销他人工作。
+
+Squash改变提交身份，不能用task HEAD是否main祖先判断成功。允许按已核对SHA的条件删除远程任务分支；不允许借此任意force-push。分支保护/必需审批须服务端单独配置，文档或CODEOWNERS本身不等于已强制启用。
 
 ## 7. NO-FAKE-VERIFICATION：如实交付
 

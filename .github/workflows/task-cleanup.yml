@@ -1,0 +1,32 @@
+name: Accepted task remote branch cleanup
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Merged task PR number to verify
+        required: true
+        type: string
+permissions:
+  contents: write
+  pull-requests: read
+jobs:
+  remote-ref:
+    if: github.repository == 'Hubujiu/WeaveOS' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - name: Verify fresh remote main task and merged PR before conditional deletion
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.number || inputs.pr_number }}
+        run: node scripts/cleanup-remote-task.mjs
