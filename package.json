@@ -1,0 +1,21 @@
+{
+  "name": "weaveos",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.28.2",
+  "scripts": {
+    "test:foundation": "node --test tests/foundation/*.test.mjs",
+    "test:governance": "node --test tests/governance/*.test.mjs",
+    "check:tasks": "node scripts/check-tasks.mjs",
+    "typecheck": "pnpm --filter @weaveos/web typecheck && tsc -p tsconfig.tests.json",
+    "build": "pnpm --filter @weaveos/web build",
+    "test:e2e:smoke": "playwright test tests/e2e",
+    "test:acceptance": "playwright test tests/acceptance",
+    "check:release": "node scripts/check-release.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "typescript": "5.9.3",
+    "@types/node": "24.0.0"
+  }
+}
