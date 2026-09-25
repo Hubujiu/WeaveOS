@@ -1,0 +1,276 @@
+
+
+
+Running 9 tests using 1 worker
+
+
+
+[1/9] [chromium] › tests\acceptance\web.spec.ts:13:5 › FR-001/011: login is accessible and offers no self-service recovery
+  1) [chromium] › tests\acceptance\web.spec.ts:13:5 › FR-001/011: login is accessible and offers no self-service recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '登录', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '登录', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '登录', exact: true })
+
+
+      13 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+      14 |   await page.goto('/login');
+    > 15 |   await expect(page.getByRole('heading', { name: '登录', exact: true })).toBeVisible();
+         |                                                                        ^
+      16 |   await expect(page.getByLabel('账号', { exact: true })).toBeVisible();
+      17 |   await expect(page.getByLabel('密码', { exact: true })).toHaveAttribute('type', 'password');
+      18 |   await expect(page.getByRole('button', { name: '登录', exact: true })).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:15:72
+
+    Error Context: .work\browser-red\acceptance-web-FR-001-011--92053-rs-no-self-service-recovery-chromium\error-context.md
+
+
+
+
+[2/9] [chromium] › tests\acceptance\web.spec.ts:40:5 › FR-007: an anonymous browser cannot enter the protected app
+  2) [chromium] › tests\acceptance\web.spec.ts:40:5 › FR-007: an anonymous browser cannot enter the protected app 
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /\/login(?:\?|$)/
+    Received string:  "http://127.0.0.1:18750/app"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 5000ms
+        14 × locator resolved to <html lang="zh-CN">…</html>
+           - unexpected value "http://127.0.0.1:18750/app"
+
+
+      40 | test('FR-007: an anonymous browser cannot enter the protected app', async ({ page }) => {
+      41 |   await page.goto('/app');
+    > 42 |   await expect(page).toHaveURL(/\/login(?:\?|$)/);
+         |                      ^
+      43 | });
+      44 | test('FR-001: wrong credentials show an error and remain unauthenticated', async ({ page }) => {
+      45 |   await page.goto('/login');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:42:22
+
+    Error Context: .work\browser-red\acceptance-web-FR-007-an-a-29543-not-enter-the-protected-app-chromium\error-context.md
+
+
+
+
+[3/9] [chromium] › tests\acceptance\web.spec.ts:88:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs
+  3) [chromium] › tests\acceptance\web.spec.ts:88:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByLabel('账号', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByLabel('账号', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      88 | test('WEB-01 user confirmation 2026-09-25: registration has four labeled inputs', async ({ page }) => {
+      89 |   await page.goto('/register');
+    > 90 |   for (const label of ['账号', '密码', '确认密码', '邀请码']) await expect(page.getByLabel(label, { exact: true })).toBeVisible();
+         |                                                                                                          ^
+      91 |   for (const label of ['密码', '确认密码']) await expect(page.getByLabel(label, { exact: true })).toHaveAttribute('type', 'password');
+      92 | });
+      93 |
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:90:106
+
+    Error Context: .work\browser-red\acceptance-web-WEB-01-user-d16d9-ion-has-four-labeled-inputs-chromium\error-context.md
+
+
+
+
+[4/9] [firefox] › tests\acceptance\web.spec.ts:13:5 › FR-001/011: login is accessible and offers no self-service recovery
+  4) [firefox] › tests\acceptance\web.spec.ts:13:5 › FR-001/011: login is accessible and offers no self-service recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '登录', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '登录', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '登录', exact: true })
+
+
+      13 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+      14 |   await page.goto('/login');
+    > 15 |   await expect(page.getByRole('heading', { name: '登录', exact: true })).toBeVisible();
+         |                                                                        ^
+      16 |   await expect(page.getByLabel('账号', { exact: true })).toBeVisible();
+      17 |   await expect(page.getByLabel('密码', { exact: true })).toHaveAttribute('type', 'password');
+      18 |   await expect(page.getByRole('button', { name: '登录', exact: true })).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:15:72
+
+    Error Context: .work\browser-red\acceptance-web-FR-001-011--92053-rs-no-self-service-recovery-firefox\error-context.md
+
+
+
+
+[5/9] [firefox] › tests\acceptance\web.spec.ts:40:5 › FR-007: an anonymous browser cannot enter the protected app
+  5) [firefox] › tests\acceptance\web.spec.ts:40:5 › FR-007: an anonymous browser cannot enter the protected app 
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /\/login(?:\?|$)/
+    Received string:  "http://127.0.0.1:18750/app"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 5000ms
+        13 × locator resolved to <html lang="zh-CN">…</html>
+           - unexpected value "http://127.0.0.1:18750/app"
+
+
+      40 | test('FR-007: an anonymous browser cannot enter the protected app', async ({ page }) => {
+      41 |   await page.goto('/app');
+    > 42 |   await expect(page).toHaveURL(/\/login(?:\?|$)/);
+         |                      ^
+      43 | });
+      44 | test('FR-001: wrong credentials show an error and remain unauthenticated', async ({ page }) => {
+      45 |   await page.goto('/login');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:42:22
+
+    Error Context: .work\browser-red\acceptance-web-FR-007-an-a-29543-not-enter-the-protected-app-firefox\error-context.md
+
+
+
+
+[6/9] [firefox] › tests\acceptance\web.spec.ts:88:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs
+  6) [firefox] › tests\acceptance\web.spec.ts:88:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByLabel('账号', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByLabel('账号', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      88 | test('WEB-01 user confirmation 2026-09-25: registration has four labeled inputs', async ({ page }) => {
+      89 |   await page.goto('/register');
+    > 90 |   for (const label of ['账号', '密码', '确认密码', '邀请码']) await expect(page.getByLabel(label, { exact: true })).toBeVisible();
+         |                                                                                                          ^
+      91 |   for (const label of ['密码', '确认密码']) await expect(page.getByLabel(label, { exact: true })).toHaveAttribute('type', 'password');
+      92 | });
+      93 |
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:90:106
+
+    Error Context: .work\browser-red\acceptance-web-WEB-01-user-d16d9-ion-has-four-labeled-inputs-firefox\error-context.md
+
+
+
+
+[7/9] [webkit] › tests\acceptance\web.spec.ts:13:5 › FR-001/011: login is accessible and offers no self-service recovery
+  7) [webkit] › tests\acceptance\web.spec.ts:13:5 › FR-001/011: login is accessible and offers no self-service recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '登录', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '登录', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '登录', exact: true })
+
+
+      13 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+      14 |   await page.goto('/login');
+    > 15 |   await expect(page.getByRole('heading', { name: '登录', exact: true })).toBeVisible();
+         |                                                                        ^
+      16 |   await expect(page.getByLabel('账号', { exact: true })).toBeVisible();
+      17 |   await expect(page.getByLabel('密码', { exact: true })).toHaveAttribute('type', 'password');
+      18 |   await expect(page.getByRole('button', { name: '登录', exact: true })).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:15:72
+
+    Error Context: .work\browser-red\acceptance-web-FR-001-011--92053-rs-no-self-service-recovery-webkit\error-context.md
+
+
+
+
+[8/9] [webkit] › tests\acceptance\web.spec.ts:40:5 › FR-007: an anonymous browser cannot enter the protected app
+  8) [webkit] › tests\acceptance\web.spec.ts:40:5 › FR-007: an anonymous browser cannot enter the protected app 
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /\/login(?:\?|$)/
+    Received string:  "http://127.0.0.1:18750/app"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 5000ms
+        14 × locator resolved to <html lang="zh-CN">…</html>
+           - unexpected value "http://127.0.0.1:18750/app"
+
+
+      40 | test('FR-007: an anonymous browser cannot enter the protected app', async ({ page }) => {
+      41 |   await page.goto('/app');
+    > 42 |   await expect(page).toHaveURL(/\/login(?:\?|$)/);
+         |                      ^
+      43 | });
+      44 | test('FR-001: wrong credentials show an error and remain unauthenticated', async ({ page }) => {
+      45 |   await page.goto('/login');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:42:22
+
+    Error Context: .work\browser-red\acceptance-web-FR-007-an-a-29543-not-enter-the-protected-app-webkit\error-context.md
+
+
+
+
+[9/9] [webkit] › tests\acceptance\web.spec.ts:88:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs
+  9) [webkit] › tests\acceptance\web.spec.ts:88:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByLabel('账号', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByLabel('账号', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      88 | test('WEB-01 user confirmation 2026-09-25: registration has four labeled inputs', async ({ page }) => {
+      89 |   await page.goto('/register');
+    > 90 |   for (const label of ['账号', '密码', '确认密码', '邀请码']) await expect(page.getByLabel(label, { exact: true })).toBeVisible();
+         |                                                                                                          ^
+      91 |   for (const label of ['密码', '确认密码']) await expect(page.getByLabel(label, { exact: true })).toHaveAttribute('type', 'password');
+      92 | });
+      93 |
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:90:106
+
+    Error Context: .work\browser-red\acceptance-web-WEB-01-user-d16d9-ion-has-four-labeled-inputs-webkit\error-context.md
+
+
+  9 failed
+    [chromium] › tests\acceptance\web.spec.ts:13:5 › FR-001/011: login is accessible and offers no self-service recovery 
+    [chromium] › tests\acceptance\web.spec.ts:40:5 › FR-007: an anonymous browser cannot enter the protected app 
+    [chromium] › tests\acceptance\web.spec.ts:88:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs 
+    [firefox] › tests\acceptance\web.spec.ts:13:5 › FR-001/011: login is accessible and offers no self-service recovery 
+    [firefox] › tests\acceptance\web.spec.ts:40:5 › FR-007: an anonymous browser cannot enter the protected app 
+    [firefox] › tests\acceptance\web.spec.ts:88:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs 
+    [webkit] › tests\acceptance\web.spec.ts:13:5 › FR-001/011: login is accessible and offers no self-service recovery 
+    [webkit] › tests\acceptance\web.spec.ts:40:5 › FR-007: an anonymous browser cannot enter the protected app 
+    [webkit] › tests\acceptance\web.spec.ts:88:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs 
