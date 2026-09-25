@@ -1,0 +1,5 @@
+# CI preparation RED
+
+2026-09-25, PR #6 head `15061c76513cb2ceac8e7104669d7a1ab2477667` triggered [CI run 36117188351](https://github.com/Hubujiu/WeaveOS/actions/runs/36117188351). Its Go job failed with exit 1 in `Format, static checks, race tests and build`: all real-storage tests reported `WEAVEOS_TEST_DATABASE_URL must target an isolated PostgreSQL 18 database`. The workflow had no PostgreSQL service, migration step, or test URL. This is the target failure of CI environment preparation, distinct from a business-behavior RED; storage behavior's own RED evidence is in `schema-red.md`, `register-red.md`, and `seed-red.md`.
+
+The same run's governance job failed because this branch was created before remote main gained `AGENTS.md`, `docs/notion-router.md`, `docs/tasks/V010-010.md`, and `docs/tasks/index.md`. `git fetch origin main` and an ordinary merge of `origin/main` restored the exact main content; local `node scripts/check-tasks.mjs` then exited 0. No out-of-scope source edit was used to silence governance.
