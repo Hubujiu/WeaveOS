@@ -59,6 +59,21 @@ test('FR-007: an anonymous browser cannot enter the protected app', async ({ pag
   await page.goto('/app');
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
 });
+test('API-14: a current-session service failure is shown as a system error', async ({ page }) => {
+  await page.route('**/api/v1/sessions/current', route => route.fulfill({ status: 503, body: '{"code":"SYSTEM_UNAVAILABLE","message":"temporary","data":null,"meta":null}', contentType: 'application/json' }));
+  await page.goto('/app');
+  await expect(page).toHaveURL(/\/app(?:\?|$)/);
+  await expect(page.getByRole('alert')).toContainText('服务暂时不可用');
+});
+test('FR-001 UX: login reports a network failure in plain language', async ({ page }) => {
+  await page.route('**/api/v1/sessions', route => route.abort('failed'));
+  await page.goto('/login');
+  await page.getByLabel('账号', { exact: true }).fill('synthetic-user');
+  await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+  await page.getByRole('button', { name: '登录', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('网络连接失败');
+  await expect(page).toHaveURL(/\/login(?:\?|$)/);
+});
 test('FR-001: wrong credentials show an error and remain unauthenticated', async ({ page }) => {
   await page.goto('/login');
   await page.getByLabel('账号', { exact: true }).fill('synthetic-nonexistent-user');
