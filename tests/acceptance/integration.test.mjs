@@ -68,7 +68,7 @@ test('STORE-07 ADR-001: disabling user rejects an existing Session', async t => 
   const r = await send(routes.current, { session });
   assert.equal(r.status, 401);
   const body = await r.json();
-  assert.equal(body.data, null);
+  assert.ok(body.data === null, 'ordinary error data must be null; payload withheld');
   // Re-enable semantics remain a separate unapproved design decision.
 });
 for (const dependency of ['redis', 'postgresql']) {
@@ -83,7 +83,7 @@ for (const dependency of ['redis', 'postgresql']) {
     try {
       const r = await send(routes.login, { method: 'POST', data: { account: user.account, password: user.password } });
       await envelope(r, 503, 'COMMON_SERVICE_UNAVAILABLE');
-      assert.equal(r.headers.get('set-cookie'), null);
+      assert.ok(r.headers.get('set-cookie') === null, 'must not issue Cookie; contents withheld');
     } finally { await restore(); }
   });
 }

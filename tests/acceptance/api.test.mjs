@@ -18,7 +18,7 @@ for (const [label, headers] of [
 test('HTTP-03 FR-001: unknown credentials are rejected without Session or disclosure', async () => {
   const r = await send(routes.login, { method: 'POST', data: { account: unique(), password } });
   const body = await envelope(r, 401, 'AUTH_INVALID_CREDENTIALS');
-  assert.equal(r.headers.get('set-cookie'), null);
+  assert.ok(r.headers.get('set-cookie') === null, 'must not issue Cookie; contents withheld');
   noSecret(JSON.stringify(body), [password]);
 });
 for (const endpoint of ['login', 'register']) {
@@ -30,7 +30,7 @@ for (const endpoint of ['login', 'register']) {
       const r = await send(routes[endpoint], { method: 'POST', data });
       const body = await envelope(r, 400, 'COMMON_VALIDATION_FAILED');
       assert.ok(Array.isArray(body.data?.violations) && body.data.violations.some(v => v.field === field && v.location === 'body'), 'required field violation');
-      assert.equal(r.headers.get('set-cookie'), null);
+      assert.ok(r.headers.get('set-cookie') === null, 'must not issue Cookie; contents withheld');
       noSecret(JSON.stringify(body), [password]);
     });
   }
@@ -41,21 +41,21 @@ for (const endpoint of ['login', 'register']) {
     test(`HTTP-06 API-14: ${endpoint} rejects ${label} Origin without alternate CSRF proof`, async () => {
       const r = await send(routes[endpoint], { method: 'POST', data: { account: unique(), password, invitationCode: 'synthetic-invalid-code' }, headers: { Origin: origin } });
       assert.equal(r.status, 403);
-      assert.equal(r.headers.get('set-cookie'), null);
+      assert.ok(r.headers.get('set-cookie') === null, 'must not issue Cookie; contents withheld');
     });
   }
   for (const media of ['text/plain', 'application/x-www-form-urlencoded', 'multipart/form-data; boundary=test']) {
     test(`HTTP-07 API-14: ${endpoint} refuses simple-request media ${media}`, async () => {
       const r = await send(routes[endpoint], { method: 'POST', raw: JSON.stringify({ account: unique(), password }), headers: { 'Content-Type': media } });
       assert.equal(r.status, 415);
-      assert.equal(r.headers.get('set-cookie'), null);
+      assert.ok(r.headers.get('set-cookie') === null, 'must not issue Cookie; contents withheld');
     });
   }
 }
 test('HTTP-08 FR-003: invalid invitation is a registered 400 business error', async () => {
   const r = await register(unique(), 'synthetic-invalid-code');
   await envelope(r, 400, 'INVITATION_INVALID');
-  assert.equal(r.headers.get('set-cookie'), null);
+  assert.ok(r.headers.get('set-cookie') === null, 'must not issue Cookie; contents withheld');
 });
 for (const [label, invalid] of [['uppercase', 'lowercase@123'], ['lowercase', 'UPPERCASE@123'], ['digit', 'NoDigits@Here'], ['special', 'NoSpecial123']]) {
   test(`HTTP-09 FR-018/003: missing ${label} is rejected without consuming invitation`, async () => {
@@ -74,7 +74,7 @@ test('HTTP-10 FR-018: Aa1! satisfies the policy without an invented length minim
 test('HTTP-11 FR-003/017: registration creates an account but no Session', async () => {
   const account = unique(), code = await invitation(), r = await register(account, code);
   const body = await envelope(r, 201, 'OK');
-  assert.equal(r.headers.get('set-cookie'), null);
+  assert.ok(r.headers.get('set-cookie') === null, 'must not issue Cookie; contents withheld');
   assert.ok(r.headers.get('location'), 'API-05 Location');
   assert.equal(typeof body.data.id, 'string', 'API-11 opaque ID');
   noSecret(JSON.stringify(body), [password, code]);
@@ -116,7 +116,7 @@ test('HTTP-16 FR-001: unknown account and wrong password share public error', as
   for (const account of [fixtures().user.account, unique()]) {
     const r = await send(routes.login, { method: 'POST', data: { account, password: 'Wrong@Test123' } });
     bodies.push(await envelope(r, 401, 'AUTH_INVALID_CREDENTIALS'));
-    assert.equal(r.headers.get('set-cookie'), null);
+    assert.ok(r.headers.get('set-cookie') === null, 'must not issue Cookie; contents withheld');
   }
   assert.ok(bodies[0].message === bodies[1].message, 'do not reveal account existence');
 });
@@ -124,7 +124,7 @@ test('HTTP-17 FR-010: Disabled account cannot obtain a Session', async () => {
   const f = fixtures().disabled;
   const r = await send(routes.login, { method: 'POST', data: { account: f.account, password: f.password } });
   await envelope(r, 401, 'AUTH_INVALID_CREDENTIALS');
-  assert.equal(r.headers.get('set-cookie'), null);
+  assert.ok(r.headers.get('set-cookie') === null, 'must not issue Cookie; contents withheld');
 });
 test('HTTP-18 FR-013: repeated failures do not lock account or return 429', async () => {
   const user = fixtures().user;

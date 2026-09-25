@@ -40,7 +40,7 @@ export async function envelope(response, status, code) {
   assert.ok(body.meta === null || typeof body.meta === 'object' && !Array.isArray(body.meta));
   assert.ok(response.headers.get('x-request-id'), 'API-15 correlation header');
   if (status === 401) assert.ok(response.headers.get('www-authenticate') === 'Session realm="enterprise-management-system"', 'API-14 Session challenge');
-  if (status >= 400 && code !== 'COMMON_VALIDATION_FAILED') assert.equal(body.data, null);
+  if (status >= 400 && code !== 'COMMON_VALIDATION_FAILED') assert.ok(body.data === null, 'ordinary error data must be null; payload withheld');
   return body;
 }
 export function sessionFrom(response, body) {

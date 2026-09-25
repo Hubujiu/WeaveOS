@@ -61,7 +61,7 @@ test('FR-017: successful registration returns to login without a session', async
   await page.getByLabel('确认密码', { exact: true }).fill('Synthetic@123');
   await page.getByRole('button', { name: '注册', exact: true }).click();
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
-  expect((await context.cookies()).filter(cookie => cookie.httpOnly)).toHaveLength(0);
+  expect((await context.cookies()).filter(cookie => cookie.httpOnly).length).toBe(0);
 });
 test('FR-005/008/009: real login survives reload, then logout revokes it', async ({ page, context }) => {
   const f = fixtures();
