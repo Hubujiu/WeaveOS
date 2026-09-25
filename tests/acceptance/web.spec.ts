@@ -1,11 +1,13 @@
 import { readFileSync } from 'node:fs';
-import { test, expect } from '@playwright/test';
+import { pathToFileURL } from 'node:url';
+import { resolve } from 'node:path';
+import { test, expect, type Page, type TestInfo } from '@playwright/test';
 
 // Tests are credential-bearing: do not persist page screenshots, traces or videos.
 test.use({ trace: 'off', screenshot: 'off', video: 'off' });
 
 // PRD-defined visible behavior; proposed /login, /register, /app route bindings are reviewed in V010-002/006.
-function fixtures(): { user: { account: string; password: string }; uiInvitations: Record<string, string> } {
+function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
   return JSON.parse(readFileSync(file, 'utf8'));
@@ -238,4 +240,101 @@ test('WEB-12 PRD login: network failure differs from credential failure and perm
   await expect.poll(async () => (await page.getByRole('alert').textContent()) !== credentialsError).toBe(true);
   await expect(page.getByRole('button', { name: '登录', exact: true })).toBeEnabled();
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
+});
+
+async function fillRegistration(page: Page, account: string, code: string) {
+  await page.goto('/register');
+  await page.getByLabel('账号', { exact: true }).fill(account);
+  for (const label of ['密码', '确认密码']) await page.getByLabel(label, { exact: true }).fill('Synthetic@123');
+  await page.getByLabel('邀请码', { exact: true }).fill(code);
+}
+function caseInvitation(info: TestInfo, label: string) {
+  const code = fixtures().uiInvitations[`${info.project.name}-${label}`];
+  if (!code) throw new Error(`BLOCKED: independent browser invitation fixture ${label} missing`);
+  return code;
+}
+test('WEB-13 FR-010: Disabled user sees failure and cannot enter protected app', async ({ page }) => {
+  const user = fixtures().disabled;
+  if (!user) throw new Error('BLOCKED: disabled browser fixture missing');
+  await page.goto('/login');
+  await page.getByLabel('账号', { exact: true }).fill(user.account);
+  await page.getByLabel('密码', { exact: true }).fill(user.password);
+  const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/v1/sessions' && r.request().method() === 'POST');
+  await page.getByRole('button', { name: '登录', exact: true }).click();
+  expect((await response).status()).toBe(401);
+  await expect(page.getByRole('alert')).toBeVisible();
+  await page.goto('/app');
+  await expect(page).toHaveURL(/\/login(?:\?|$)/);
+});
+test('WEB-14 FR-002/003: duplicate-account feedback permits retry without losing invitation', async ({ page }, info) => {
+  await fillRegistration(page, fixtures().user.account, caseInvitation(info, 'duplicate'));
+  const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/v1/registrations' && r.request().method() === 'POST');
+  await page.getByRole('button', { name: '注册', exact: true }).click();
+  expect((await response).status()).toBe(409);
+  await expect(page.getByRole('alert')).toBeVisible();
+  await page.getByLabel('账号', { exact: true }).fill(`retry-${info.project.name}-${Date.now()}`);
+  // Re-enter secrets if UI cleared them; invitation remains independently re-usable.
+  for (const label of ['密码', '确认密码']) await page.getByLabel(label, { exact: true }).fill('Synthetic@123');
+  await page.getByLabel('邀请码', { exact: true }).fill(caseInvitation(info, 'duplicate'));
+  await page.getByRole('button', { name: '注册', exact: true }).click();
+  await expect(page).toHaveURL(/\/login(?:\?|$)/);
+});
+test('WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated', async ({ page, context }, info) => {
+  const code = caseInvitation(info, 'reuse');
+  await fillRegistration(page, `first-${info.project.name}-${Date.now()}`, code);
+  await page.getByRole('button', { name: '注册', exact: true }).click();
+  await expect(page).toHaveURL(/\/login(?:\?|$)/);
+  await fillRegistration(page, `second-${info.project.name}-${Date.now()}`, code);
+  const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/v1/registrations' && r.request().method() === 'POST');
+  await page.getByRole('button', { name: '注册', exact: true }).click();
+  expect((await response).status()).toBe(409);
+  await expect(page.getByRole('alert')).toBeVisible();
+  expect((await context.cookies()).filter(c => c.httpOnly).length).toBe(0);
+});
+test('WEB-16 PRD UX: pending real registration prevents duplicate submission', async ({ page }, info) => {
+  await fillRegistration(page, `pending-${info.project.name}-${Date.now()}`, caseInvitation(info, 'pending'));
+  let release!: () => void, entered!: () => void, count = 0;
+  const gate = new Promise<void>(r => { release = r; });
+  const intercepted = new Promise<void>(r => { entered = r; });
+  await page.route('**/api/v1/registrations', async route => { count++; entered(); await gate; await route.continue(); });
+  try {
+    await page.getByRole('button', { name: '注册', exact: true }).click();
+    await intercepted;
+    await expect(page.getByRole('button', { name: /注册|注册中/ })).toBeDisabled();
+    await page.getByLabel('确认密码', { exact: true }).press('Enter');
+    expect(count).toBe(1);
+  } finally { release(); }
+  await expect(page).toHaveURL(/\/login(?:\?|$)/);
+  expect(count).toBe(1);
+});
+test('WEB-17 FR-008: Redis-expired browser Session returns to login', async ({ page, context }, info) => {
+  const file = process.env.WEAVEOS_ACCEPTANCE_OBSERVER;
+  if (!file) throw new Error('BLOCKED: real Redis observer missing');
+  const module = await import(pathToFileURL(resolve(file)).href);
+  const o = await module.open({ baseURL: info.project.use.baseURL });
+  try {
+    if (o.storage !== 'isolated-postgresql-and-redis') throw new Error('BLOCKED: requires real isolated storage');
+    const f = fixtures();
+    await page.goto('/login');
+    await page.getByLabel('账号', { exact: true }).fill(f.user.account);
+    await page.getByLabel('密码', { exact: true }).fill(f.user.password);
+    await page.getByRole('button', { name: '登录', exact: true }).click();
+    await expect(page).toHaveURL(/\/app(?:\/|\?|$)/);
+    const auth = (await context.cookies()).find(c => c.httpOnly);
+    expect(Boolean(auth), 'Session cookie exists').toBe(true);
+    await o.expireSession(`${auth!.name}=${auth!.value}`);
+    await page.reload();
+    await expect(page).toHaveURL(/\/login(?:\?|$)/);
+  } finally { await o.close(); }
+});
+test('WEB-18 PRD security: frontend logs do not contain submitted password', async ({ page }) => {
+  const messages: string[] = [], secret = 'Synthetic@123';
+  page.on('console', message => messages.push(message.text()));
+  page.on('pageerror', error => messages.push(error.message));
+  await page.goto('/login');
+  await page.getByLabel('账号', { exact: true }).fill('synthetic-unknown-user');
+  await page.getByLabel('密码', { exact: true }).fill(secret);
+  await page.getByRole('button', { name: '登录', exact: true }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  expect(messages.every(message => !message.includes(secret)), 'logs are credential-free; content withheld').toBe(true);
 });

@@ -151,3 +151,26 @@ test('STORE-15 PRD rollback: restored storage never resurrects a confirmed logge
   await o.restoreThroughRecoveryProcedure(backup);
   await envelope(await send(routes.current, { session }), 401, 'AUTH_UNAUTHENTICATED');
 });
+test('STORE-16 FR-009: deterministic delete-before-renewal never restores logged-out key', async t => {
+  const o = await observe(t), session = await preparedLogin(fixtures().user);
+  const barrier = await o.holdNextRenewal(session.auth);
+  const inFlight = send(routes.current, { session });
+  try {
+    await barrier.waitUntilHeld(); // Real request passed authentication but has not committed touch.
+    assert.equal((await send(routes.current, { method: 'DELETE', session })).status, 204);
+    assert.equal(await o.sessionPTTL(session.auth), -2);
+  } finally { await barrier.release(); await inFlight; }
+  assert.equal(await o.sessionPTTL(session.auth), -2);
+  await envelope(await send(routes.current, { session }), 401, 'AUTH_UNAUTHENTICATED');
+});
+test('STORE-17 FR-012/014: reset storage and logs contain no plaintext old or fixed password', async t => {
+  const o = await observe(t), f = fixtures(), target = f.storageResetTarget;
+  if (!target) throw new Error('BLOCKED: independent storageResetTarget missing');
+  const session = await preparedLogin(f.admin), since = new Date();
+  const body = await envelope(await send(routes.reset.replace('{userId}', encodeURIComponent(target.id)), { method: 'POST', data: {}, session }), 200, 'OK');
+  const state = await o.dumpOwnedAuthenticationState([target.account]);
+  const logs = await o.readApplicationLogs({ since });
+  noSecret(JSON.stringify(body) + state + logs, [target.password, 'Abc@123456', session.sid]);
+  const hash = await o.readPasswordHash(target.account);
+  assert.ok(typeof hash === 'string' && hash.length > 0);
+});

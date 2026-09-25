@@ -15,6 +15,7 @@ V010-003/004 在评审数据字典、实际ADR及迁移之后，提供本地模�
 | setUserStatus(id, status) | 通过已评审存储/用例修改独立用户状态；不得改全局user fixture |
 | disconnectApplication(redis或postgresql) | 断开应用到测试依赖的真实连接，保留观察连接；返回async恢复函数；HTTP仍须可达 |
 | failNextRegistrationBeforeCommit(account) | 测试装配点在写入开始后、提交前注入一次真实事务失败；返回解除函数；禁止改HTTP响应掩盖已提交状态 |
+| holdNextRenewal(authCookie) | 返回waitUntilHeld/release异步屏障；只暂停当前case下一次真实读请求的touch提交，其他请求包括退出正常运行；超时失败不能伪装RED |
 | countUsersByExactAccount(account) | 独立只读SQL COUNT，不能调用被测查用户方法 |
 | countCredentialsByExactAccount(account) | 独立SQL计数，不借用被测注册逻辑 |
 | countInvitationUses(code) | 独立查询该码消费事实；物理摘要映射须按已评审字典实现 |
