@@ -3,7 +3,9 @@ package persistence_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/persistence"
@@ -109,5 +111,51 @@ func TestRegisterPreservesCaseAndRejectsInternalSpaces(t *testing.T) {
 	}
 	if _, err := store.Register(ctx, testRegistrationInput("Ali ce", secondCode, "registration-6")); !errors.Is(err, persistence.ErrInvalidAccount) {
 		t.Errorf("internal spaces must be rejected, got %v", err)
+	}
+}
+
+func TestRegisterConcurrentUseOfOneInvitation(t *testing.T) {
+	pool := registrationPool(t)
+	ctx := context.Background()
+	digest := make([]byte, 32)
+	digest[0] = 5
+	invitation(t, pool, digest)
+	store := persistence.New(pool)
+	const workers = 8
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	results := make(chan error, workers)
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func(n int) {
+			defer wg.Done()
+			<-start
+			_, err := store.Register(ctx, testRegistrationInput(fmt.Sprintf("Race%d", n), digest, fmt.Sprintf("race-%d", n)))
+			results <- err
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+	close(results)
+	successes := 0
+	for err := range results {
+		if err == nil {
+			successes++
+		} else if !errors.Is(err, persistence.ErrInvitationUnavailable) {
+			t.Errorf("concurrent registration returned unexpected error: %v", err)
+		}
+	}
+	if successes != 1 {
+		t.Errorf("concurrent invitation successes = %d, want exactly one", successes)
+	}
+	var users, events int
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM auth.users WHERE account LIKE 'Race%'").Scan(&users); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM auth.authentication_events WHERE event_type='register'").Scan(&events); err != nil {
+		t.Fatal(err)
+	}
+	if users != 1 || events != 1 {
+		t.Errorf("one invitation created users=%d registration events=%d, want 1 each", users, events)
 	}
 }
