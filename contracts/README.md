@@ -22,9 +22,9 @@
 
 ```sh
 node --test contracts/openapi.contract.test.mjs
-npx --yes @redocly/cli@2.54.2 lint contracts/openapi/openapi.json
-npx --yes @redocly/cli@2.54.2 bundle contracts/openapi/openapi.json --output .work/openapi-bundled.json
-npx --yes @redocly/cli@2.54.2 generate-client contracts/openapi/openapi.json --output .work/generated-client.ts
+pnpm exec redocly lint contracts/openapi/openapi.json
+pnpm exec redocly bundle contracts/openapi/openapi.json --output .work/openapi-bundled.json
+pnpm exec redocly generate-client contracts/openapi/openapi.json --output .work/generated-client.ts
 pnpm exec tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --lib 'ES2022,DOM' .work/generated-client.ts
 ```
 

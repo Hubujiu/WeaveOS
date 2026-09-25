@@ -81,6 +81,10 @@ jobs:
         run: |
           npm install --global pnpm@10.28.2 --ignore-scripts
           pnpm install --frozen-lockfile --ignore-scripts
+      - name: Authentication OpenAPI 3.2.1 contract
+        run: |
+          node --test contracts/*.test.mjs
+          pnpm exec redocly lint contracts/openapi/openapi.json
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium firefox webkit

@@ -11,10 +11,13 @@
 | 第三轮 RED | `red3/openapi.contract.test.mjs`，SHA256 `3DD9A7F50FE0123CFEA4072AE5A54C83777518F7CC97D3C5B41403E2393A967F`；`red3/openapi-before.json`，SHA256 `B12CF0E063E2426BCBD563858877D779240A6EC5ED07467146E33F19F5415B57` | 同命令 → 1 | 8/9 通过，大小写敏感唯一性/登录匹配断言失败。 |
 | 第三轮 GREEN | 当前待提交 | 同命令 → 0 | 9/9 通过；注册大小写敏感唯一性和登录精确大小写查找均有契约声明。 |
 | CI RED | `red-ci/ci.test.mjs`，SHA256 `059AE76E8DD32348521379ED29BFFE6EDE0D7900BC5DFEEDFE8ACA2A46F3095E`；同目录保存实施前 root package、lock 与 CI YAML | `node --test contracts/ci.test.mjs` → 1 | 2/2 目标断言失败：验证器未固定进入锁文件，PR CI 未运行契约断言/正式 lint。 |
+| CI GREEN | 当前待提交 | `node --test contracts/ci.test.mjs contracts/openapi.contract.test.mjs` → 0 | 11/11 通过；CI 已在冻结依赖安装后运行契约断言与 Redocly lint。 |
 
 第二轮可重放的实施前契约在 `red2/openapi-before.json`，SHA256 `CA5D8D5FF5E9520EF01FAAF1C23B90F6BD84DA5971A554B76BD5546ECFACD598`。这些快照在第三轮 RED 之后归档，不能冒充当时已存在的文件；原始测试运行与提交顺序见上表及任务分支历史。
 
 第三轮实现后，API-07 的旧断言因精确比较整个扩展对象而拒绝新增的 `caseSensitiveUniqueness` 属性；该属性来自用户本轮确认，测试错误是把未规定的属性集合锁死。将 API-07 改为分别断言原有三项属性，保持原预期；API-09 独立断言新增大小写语义。修正后 9/9 GREEN，没有删除任何需求断言。
+
+CI GREEN 前，锁文件断言曾因 pnpm 为范围键加引号而失败。实际 `pnpm-lock.yaml` 已固定 2.54.2，测试匹配同时接受带/不带引号的 YAML 键，版本与两项 CI 行为断言不变；再次运行 11/11 通过。此为测试格式假设错误，不把中间失败冒充产品 RED。
 
 来源：2026-09-25 通过授权 Notion 连接器直接获取项目、PRD、ADR-001/002 和相关设计正文。PRD 最新编辑 `2026-09-24T12:15:05.462Z`，ADR-001 `2026-09-24T09:52:34.410Z`、ADR-002 `2026-09-24T10:26:13.400Z`；两条 ADR 状态已接受，PRD 需求编写中。用户本轮批准数据设计并修订账号大小写/空格规则；Notion 草案状态未改。
 

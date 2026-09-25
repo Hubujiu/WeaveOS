@@ -11,7 +11,7 @@ const ci = readFileSync(new URL('.github/workflows/ci.yml', root), 'utf8');
 test('API-CI-01: validator version is pinned in the frozen workspace lock', () => {
   assert.equal(pkg.devDependencies?.['@redocly/cli'], '2.54.2');
   const lock = readFileSync(new URL('pnpm-lock.yaml', root), 'utf8');
-  assert.ok(/@redocly\/cli:\s*\n\s*specifier: 2\.54\.2\s*\n\s*version: 2\.54\.2/.test(lock), 'frozen lock pins the same validator');
+  assert.ok(/['"]?@redocly\/cli['"]?:\s*\n\s*specifier: 2\.54\.2\s*\n\s*version: 2\.54\.2/.test(lock), 'frozen lock pins the same validator');
 });
 
 test('API-CI-02: PR CI executes contract tests and 3.2.1 lint', () => {
