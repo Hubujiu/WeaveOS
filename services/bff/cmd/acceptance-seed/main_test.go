@@ -3,8 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"net/url"
 	"os"
+	"os/exec"
+	"os/user"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -18,6 +22,24 @@ func TestAcceptanceSeedProducesIsolatedUsableFixtures(t *testing.T) {
 	}
 	output := filepath.Join(t.TempDir(), "acceptance-fixtures.json")
 	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var databaseName string
+	if err := pool.QueryRow(ctx, "SELECT current_database()").Scan(&databaseName); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(databaseName, "weaveos_") {
+		t.Fatalf("refusing fixture cleanup outside a weaveos_ test database: %q", databaseName)
+	}
+	clearFixtures := func() {
+		if _, err := pool.Exec(ctx, "TRUNCATE auth.authentication_events, auth.invitations, auth.password_credentials, auth.users CASCADE"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	clearFixtures()
+	t.Cleanup(func() { clearFixtures(); pool.Close() })
 	if err := run(ctx, config{databaseURL: url, outputPath: output}); err != nil {
 		t.Fatalf("isolated acceptance seed must run: %v", err)
 	}
@@ -28,7 +50,20 @@ func TestAcceptanceSeedProducesIsolatedUsableFixtures(t *testing.T) {
 	if info.Size() == 0 {
 		t.Fatal("fixture file is empty")
 	}
-	if info.Mode().Perm()&0o077 != 0 {
+	if runtime.GOOS == "windows" {
+		current, err := user.Current()
+		if err != nil {
+			t.Fatal(err)
+		}
+		acl, err := exec.Command("icacls", output).Output()
+		if err != nil {
+			t.Fatal(err)
+		}
+		entries := strings.Split(strings.TrimSpace(string(acl)), "\n")
+		if len(entries) != 3 || !strings.Contains(strings.ToLower(entries[0]), strings.ToLower(current.Username+":(F)")) || strings.Contains(string(acl), ":(I)") || strings.Count(string(acl), ":(F)") != 1 {
+			t.Errorf("fixture ACL grants unexpected access: %s", acl)
+		}
+	} else if info.Mode().Perm()&0o077 != 0 {
 		t.Errorf("fixture file is readable by other users: %v", info.Mode().Perm())
 	}
 	data, err := os.ReadFile(output)
@@ -59,11 +94,6 @@ func TestAcceptanceSeedProducesIsolatedUsableFixtures(t *testing.T) {
 			t.Errorf("missing %s UI invitation", name)
 		}
 	}
-	pool, err := pgxpool.New(ctx, url)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer pool.Close()
 	var hash string
 	if err := pool.QueryRow(ctx, "SELECT c.password_hash FROM auth.users u JOIN auth.password_credentials c ON c.user_id=u.id WHERE u.account_key=$1", fixture.User.Account).Scan(&hash); err != nil {
 		t.Fatal(err)
@@ -77,5 +107,26 @@ func TestAcceptanceSeedProducesIsolatedUsableFixtures(t *testing.T) {
 	}
 	if disabledStatus != "disabled" {
 		t.Errorf("disabled fixture status = %q", disabledStatus)
+	}
+}
+
+func TestAcceptanceSeedRejectsNonTestDatabaseBeforeMutation(t *testing.T) {
+	testURL := os.Getenv("WEAVEOS_TEST_DATABASE_URL")
+	if testURL == "" {
+		t.Fatal("WEAVEOS_TEST_DATABASE_URL must target an isolated PostgreSQL 18 database")
+	}
+	parsed, err := url.Parse(testURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed.Path = "/postgres"
+	unsafeURL := parsed.String()
+	output := filepath.Join(t.TempDir(), "must-not-exist.json")
+	err = run(context.Background(), config{databaseURL: unsafeURL, outputPath: output})
+	if err == nil || !strings.Contains(err.Error(), "refusing non-test database") {
+		t.Fatalf("seed must reject non-test database before writes, got %v", err)
+	}
+	if _, err := os.Stat(output); !os.IsNotExist(err) {
+		t.Errorf("unsafe seed left a fixture file: %v", err)
 	}
 }
