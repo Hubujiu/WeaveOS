@@ -160,7 +160,8 @@ test('HTTP-21 FR-009: logout is empty 204, clears Cookie and rejects replay', as
   assert.equal(await r.text(), '');
   const cleared = r.headers.getSetCookie().find(c => c.startsWith(session.auth.split('=')[0] + '='));
   const expires = cleared?.match(/Expires=([^;]+)/i);
-  assert.ok(cleared && (/;\s*Max-Age=0(?:;|$)/i.test(cleared) || expires && Date.parse(expires[1]) < Date.now()), 'clear auth cookie');
+  const maxAge = cleared?.match(/;\s*Max-Age=(-?\d+)(?:;|$)/i);
+  assert.ok(cleared && (maxAge ? Number(maxAge[1]) <= 0 : expires && Date.parse(expires[1]) < Date.now()), 'clear auth cookie');
   await envelope(await send(routes.current, { session }), 401, 'AUTH_UNAUTHENTICATED');
 });
 test('HTTP-22 FR-009: concurrent logout and reads do not resurrect Session', async () => {
