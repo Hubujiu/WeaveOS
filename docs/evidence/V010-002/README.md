@@ -10,6 +10,7 @@
 | 第二轮 GREEN | 当前契约实现，提交待记录 | 同命令 → 0 | 8/8 通过；正式工具与工程检查见任务记录。 |
 | 第三轮 RED | `red3/openapi.contract.test.mjs`，SHA256 `3DD9A7F50FE0123CFEA4072AE5A54C83777518F7CC97D3C5B41403E2393A967F`；`red3/openapi-before.json`，SHA256 `B12CF0E063E2426BCBD563858877D779240A6EC5ED07467146E33F19F5415B57` | 同命令 → 1 | 8/9 通过，大小写敏感唯一性/登录匹配断言失败。 |
 | 第三轮 GREEN | 当前待提交 | 同命令 → 0 | 9/9 通过；注册大小写敏感唯一性和登录精确大小写查找均有契约声明。 |
+| CI RED | `red-ci/ci.test.mjs`，SHA256 `059AE76E8DD32348521379ED29BFFE6EDE0D7900BC5DFEEDFE8ACA2A46F3095E`；同目录保存实施前 root package、lock 与 CI YAML | `node --test contracts/ci.test.mjs` → 1 | 2/2 目标断言失败：验证器未固定进入锁文件，PR CI 未运行契约断言/正式 lint。 |
 
 第二轮可重放的实施前契约在 `red2/openapi-before.json`，SHA256 `CA5D8D5FF5E9520EF01FAAF1C23B90F6BD84DA5971A554B76BD5546ECFACD598`。这些快照在第三轮 RED 之后归档，不能冒充当时已存在的文件；原始测试运行与提交顺序见上表及任务分支历史。
 
