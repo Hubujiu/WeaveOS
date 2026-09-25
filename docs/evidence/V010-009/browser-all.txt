@@ -1,0 +1,2634 @@
+
+
+
+Running 105 tests using 3 workers
+
+
+
+
+
+
+
+[1/105] [chromium] › tests\acceptance\web.spec.ts:15:5 › FR-001/011: login is accessible and offers no self-service recovery
+[2/105] [firefox] › tests\acceptance\web.spec.ts:15:5 › FR-001/011: login is accessible and offers no self-service recovery
+[3/105] [webkit] › tests\acceptance\web.spec.ts:15:5 › FR-001/011: login is accessible and offers no self-service recovery
+  1) [chromium] › tests\acceptance\web.spec.ts:15:5 › FR-001/011: login is accessible and offers no self-service recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '登录', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '登录', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '登录', exact: true })
+
+
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+      16 |   await page.goto('/login');
+    > 17 |   await expect(page.getByRole('heading', { name: '登录', exact: true })).toBeVisible();
+         |                                                                        ^
+      18 |   await expect(page.getByLabel('账号', { exact: true })).toBeVisible();
+      19 |   await expect(page.getByLabel('密码', { exact: true })).toHaveAttribute('type', 'password');
+      20 |   await expect(page.getByRole('button', { name: '登录', exact: true })).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:17:72
+
+    Error Context: .work\browser-red\acceptance-web-FR-001-011--92053-rs-no-self-service-recovery-chromium\error-context.md
+
+
+  2) [webkit] › tests\acceptance\web.spec.ts:15:5 › FR-001/011: login is accessible and offers no self-service recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '登录', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '登录', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '登录', exact: true })
+
+
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+      16 |   await page.goto('/login');
+    > 17 |   await expect(page.getByRole('heading', { name: '登录', exact: true })).toBeVisible();
+         |                                                                        ^
+      18 |   await expect(page.getByLabel('账号', { exact: true })).toBeVisible();
+      19 |   await expect(page.getByLabel('密码', { exact: true })).toHaveAttribute('type', 'password');
+      20 |   await expect(page.getByRole('button', { name: '登录', exact: true })).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:17:72
+
+    Error Context: .work\browser-red\acceptance-web-FR-001-011--92053-rs-no-self-service-recovery-webkit\error-context.md
+
+
+
+
+
+
+[4/105] [chromium] › tests\acceptance\web.spec.ts:23:5 › PRD interaction: password visibility can be toggled
+[5/105] [webkit] › tests\acceptance\web.spec.ts:23:5 › PRD interaction: password visibility can be toggled
+  3) [firefox] › tests\acceptance\web.spec.ts:15:5 › FR-001/011: login is accessible and offers no self-service recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '登录', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '登录', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '登录', exact: true })
+
+
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+      16 |   await page.goto('/login');
+    > 17 |   await expect(page.getByRole('heading', { name: '登录', exact: true })).toBeVisible();
+         |                                                                        ^
+      18 |   await expect(page.getByLabel('账号', { exact: true })).toBeVisible();
+      19 |   await expect(page.getByLabel('密码', { exact: true })).toHaveAttribute('type', 'password');
+      20 |   await expect(page.getByRole('button', { name: '登录', exact: true })).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:17:72
+
+    Error Context: .work\browser-red\acceptance-web-FR-001-011--92053-rs-no-self-service-recovery-firefox\error-context.md
+
+
+
+
+[6/105] [firefox] › tests\acceptance\web.spec.ts:23:5 › PRD interaction: password visibility can be toggled
+  4) [chromium] › tests\acceptance\web.spec.ts:23:5 › PRD interaction: password visibility can be toggled 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('密码', { exact: true })
+
+
+      24 |   await page.goto('/login');
+      25 |   const input = page.getByLabel('密码', { exact: true });
+    > 26 |   await input.fill('Synthetic@123');
+         |               ^
+      27 |   await page.getByRole('button', { name: '显示密码', exact: true }).click();
+      28 |   await expect(input).toHaveAttribute('type', 'text');
+      29 |   await page.getByRole('button', { name: '隐藏密码', exact: true }).click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:26:15
+
+    Error Context: .work\browser-red\acceptance-web-PRD-interac-be1ea-d-visibility-can-be-toggled-chromium\error-context.md
+
+
+  5) [webkit] › tests\acceptance\web.spec.ts:23:5 › PRD interaction: password visibility can be toggled 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('密码', { exact: true })
+
+
+      24 |   await page.goto('/login');
+      25 |   const input = page.getByLabel('密码', { exact: true });
+    > 26 |   await input.fill('Synthetic@123');
+         |               ^
+      27 |   await page.getByRole('button', { name: '显示密码', exact: true }).click();
+      28 |   await expect(input).toHaveAttribute('type', 'text');
+      29 |   await page.getByRole('button', { name: '隐藏密码', exact: true }).click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:26:15
+
+    Error Context: .work\browser-red\acceptance-web-PRD-interac-be1ea-d-visibility-can-be-toggled-webkit\error-context.md
+
+
+
+
+
+
+[7/105] [chromium] › tests\acceptance\web.spec.ts:32:5 › FR-004: invitation URL fills the registration field
+[8/105] [webkit] › tests\acceptance\web.spec.ts:32:5 › FR-004: invitation URL fills the registration field
+  6) [firefox] › tests\acceptance\web.spec.ts:23:5 › PRD interaction: password visibility can be toggled 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('密码', { exact: true })
+
+
+      24 |   await page.goto('/login');
+      25 |   const input = page.getByLabel('密码', { exact: true });
+    > 26 |   await input.fill('Synthetic@123');
+         |               ^
+      27 |   await page.getByRole('button', { name: '显示密码', exact: true }).click();
+      28 |   await expect(input).toHaveAttribute('type', 'text');
+      29 |   await page.getByRole('button', { name: '隐藏密码', exact: true }).click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:26:15
+
+    Error Context: .work\browser-red\acceptance-web-PRD-interac-be1ea-d-visibility-can-be-toggled-firefox\error-context.md
+
+
+
+
+[9/105] [firefox] › tests\acceptance\web.spec.ts:32:5 › FR-004: invitation URL fills the registration field
+  7) [chromium] › tests\acceptance\web.spec.ts:32:5 › FR-004: invitation URL fills the registration field 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: getByLabel('邀请码', { exact: true })
+    Expected: "synthetic-prefill-value"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" getByLabel('邀请码', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('邀请码', { exact: true })
+
+
+      32 | test('FR-004: invitation URL fills the registration field', async ({ page }) => {
+      33 |   await page.goto('/register?invitationCode=synthetic-prefill-value');
+    > 34 |   await expect(page.getByLabel('邀请码', { exact: true })).toHaveValue('synthetic-prefill-value');
+         |                                                         ^
+      35 | });
+      36 | test('FR-018: registration exposes accessible password-strength feedback', async ({ page }) => {
+      37 |   await page.goto('/register');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:34:57
+
+    Error Context: .work\browser-red\acceptance-web-FR-004-invi-27bc0-ills-the-registration-field-chromium\error-context.md
+
+
+  8) [webkit] › tests\acceptance\web.spec.ts:32:5 › FR-004: invitation URL fills the registration field 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: getByLabel('邀请码', { exact: true })
+    Expected: "synthetic-prefill-value"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" getByLabel('邀请码', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('邀请码', { exact: true })
+
+
+      32 | test('FR-004: invitation URL fills the registration field', async ({ page }) => {
+      33 |   await page.goto('/register?invitationCode=synthetic-prefill-value');
+    > 34 |   await expect(page.getByLabel('邀请码', { exact: true })).toHaveValue('synthetic-prefill-value');
+         |                                                         ^
+      35 | });
+      36 | test('FR-018: registration exposes accessible password-strength feedback', async ({ page }) => {
+      37 |   await page.goto('/register');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:34:57
+
+    Error Context: .work\browser-red\acceptance-web-FR-004-invi-27bc0-ills-the-registration-field-webkit\error-context.md
+
+
+
+
+[10/105] [chromium] › tests\acceptance\web.spec.ts:36:5 › FR-018: registration exposes accessible password-strength feedback
+
+
+[11/105] [webkit] › tests\acceptance\web.spec.ts:36:5 › FR-018: registration exposes accessible password-strength feedback
+  9) [firefox] › tests\acceptance\web.spec.ts:32:5 › FR-004: invitation URL fills the registration field 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: getByLabel('邀请码', { exact: true })
+    Expected: "synthetic-prefill-value"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" getByLabel('邀请码', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('邀请码', { exact: true })
+
+
+      32 | test('FR-004: invitation URL fills the registration field', async ({ page }) => {
+      33 |   await page.goto('/register?invitationCode=synthetic-prefill-value');
+    > 34 |   await expect(page.getByLabel('邀请码', { exact: true })).toHaveValue('synthetic-prefill-value');
+         |                                                         ^
+      35 | });
+      36 | test('FR-018: registration exposes accessible password-strength feedback', async ({ page }) => {
+      37 |   await page.goto('/register');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:34:57
+
+    Error Context: .work\browser-red\acceptance-web-FR-004-invi-27bc0-ills-the-registration-field-firefox\error-context.md
+
+
+
+
+[12/105] [firefox] › tests\acceptance\web.spec.ts:36:5 › FR-018: registration exposes accessible password-strength feedback
+  10) [chromium] › tests\acceptance\web.spec.ts:36:5 › FR-018: registration exposes accessible password-strength feedback 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('密码', { exact: true })
+
+
+      36 | test('FR-018: registration exposes accessible password-strength feedback', async ({ page }) => {
+      37 |   await page.goto('/register');
+    > 38 |   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+         |                                                ^
+      39 |   // PRD requires feedback, but does not mandate a progressbar implementation.
+      40 |   await expect(page.getByLabel('密码强度', { exact: true })).toBeVisible();
+      41 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:38:48
+
+    Error Context: .work\browser-red\acceptance-web-FR-018-regi-3c227--password-strength-feedback-chromium\error-context.md
+
+
+  11) [webkit] › tests\acceptance\web.spec.ts:36:5 › FR-018: registration exposes accessible password-strength feedback 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('密码', { exact: true })
+
+
+      36 | test('FR-018: registration exposes accessible password-strength feedback', async ({ page }) => {
+      37 |   await page.goto('/register');
+    > 38 |   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+         |                                                ^
+      39 |   // PRD requires feedback, but does not mandate a progressbar implementation.
+      40 |   await expect(page.getByLabel('密码强度', { exact: true })).toBeVisible();
+      41 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:38:48
+
+    Error Context: .work\browser-red\acceptance-web-FR-018-regi-3c227--password-strength-feedback-webkit\error-context.md
+
+
+
+
+[13/105] [chromium] › tests\acceptance\web.spec.ts:42:5 › FR-007: an anonymous browser cannot enter the protected app
+
+
+[14/105] [webkit] › tests\acceptance\web.spec.ts:42:5 › FR-007: an anonymous browser cannot enter the protected app
+  12) [firefox] › tests\acceptance\web.spec.ts:36:5 › FR-018: registration exposes accessible password-strength feedback 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('密码', { exact: true })
+
+
+      36 | test('FR-018: registration exposes accessible password-strength feedback', async ({ page }) => {
+      37 |   await page.goto('/register');
+    > 38 |   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+         |                                                ^
+      39 |   // PRD requires feedback, but does not mandate a progressbar implementation.
+      40 |   await expect(page.getByLabel('密码强度', { exact: true })).toBeVisible();
+      41 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:38:48
+
+    Error Context: .work\browser-red\acceptance-web-FR-018-regi-3c227--password-strength-feedback-firefox\error-context.md
+
+
+
+
+[15/105] [firefox] › tests\acceptance\web.spec.ts:42:5 › FR-007: an anonymous browser cannot enter the protected app
+  13) [chromium] › tests\acceptance\web.spec.ts:42:5 › FR-007: an anonymous browser cannot enter the protected app 
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /\/login(?:\?|$)/
+    Received string:  "http://127.0.0.1:18750/app"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 5000ms
+        14 × locator resolved to <html lang="zh-CN">…</html>
+           - unexpected value "http://127.0.0.1:18750/app"
+
+
+      42 | test('FR-007: an anonymous browser cannot enter the protected app', async ({ page }) => {
+      43 |   await page.goto('/app');
+    > 44 |   await expect(page).toHaveURL(/\/login(?:\?|$)/);
+         |                      ^
+      45 | });
+      46 | test('FR-001: wrong credentials show an error and remain unauthenticated', async ({ page }) => {
+      47 |   await page.goto('/login');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:44:22
+
+    Error Context: .work\browser-red\acceptance-web-FR-007-an-a-29543-not-enter-the-protected-app-chromium\error-context.md
+
+
+  14) [webkit] › tests\acceptance\web.spec.ts:42:5 › FR-007: an anonymous browser cannot enter the protected app 
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /\/login(?:\?|$)/
+    Received string:  "http://127.0.0.1:18750/app"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 5000ms
+        14 × locator resolved to <html lang="zh-CN">…</html>
+           - unexpected value "http://127.0.0.1:18750/app"
+
+
+      42 | test('FR-007: an anonymous browser cannot enter the protected app', async ({ page }) => {
+      43 |   await page.goto('/app');
+    > 44 |   await expect(page).toHaveURL(/\/login(?:\?|$)/);
+         |                      ^
+      45 | });
+      46 | test('FR-001: wrong credentials show an error and remain unauthenticated', async ({ page }) => {
+      47 |   await page.goto('/login');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:44:22
+
+    Error Context: .work\browser-red\acceptance-web-FR-007-an-a-29543-not-enter-the-protected-app-webkit\error-context.md
+
+
+
+
+[16/105] [chromium] › tests\acceptance\web.spec.ts:46:5 › FR-001: wrong credentials show an error and remain unauthenticated
+
+
+[17/105] [webkit] › tests\acceptance\web.spec.ts:46:5 › FR-001: wrong credentials show an error and remain unauthenticated
+  15) [firefox] › tests\acceptance\web.spec.ts:42:5 › FR-007: an anonymous browser cannot enter the protected app 
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /\/login(?:\?|$)/
+    Received string:  "http://127.0.0.1:18750/app"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 5000ms
+        13 × locator resolved to <html lang="zh-CN">…</html>
+           - unexpected value "http://127.0.0.1:18750/app"
+
+
+      42 | test('FR-007: an anonymous browser cannot enter the protected app', async ({ page }) => {
+      43 |   await page.goto('/app');
+    > 44 |   await expect(page).toHaveURL(/\/login(?:\?|$)/);
+         |                      ^
+      45 | });
+      46 | test('FR-001: wrong credentials show an error and remain unauthenticated', async ({ page }) => {
+      47 |   await page.goto('/login');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:44:22
+
+    Error Context: .work\browser-red\acceptance-web-FR-007-an-a-29543-not-enter-the-protected-app-firefox\error-context.md
+
+
+
+
+[18/105] [firefox] › tests\acceptance\web.spec.ts:46:5 › FR-001: wrong credentials show an error and remain unauthenticated
+  16) [chromium] › tests\acceptance\web.spec.ts:46:5 › FR-001: wrong credentials show an error and remain unauthenticated 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      46 | test('FR-001: wrong credentials show an error and remain unauthenticated', async ({ page }) => {
+      47 |   await page.goto('/login');
+    > 48 |   await page.getByLabel('账号', { exact: true }).fill('synthetic-nonexistent-user');
+         |                                                ^
+      49 |   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+      50 |   await page.getByRole('button', { name: '登录', exact: true }).click();
+      51 |   await expect(page.getByRole('alert')).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:48:48
+
+    Error Context: .work\browser-red\acceptance-web-FR-001-wron-78423--and-remain-unauthenticated-chromium\error-context.md
+
+
+  17) [webkit] › tests\acceptance\web.spec.ts:46:5 › FR-001: wrong credentials show an error and remain unauthenticated 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      46 | test('FR-001: wrong credentials show an error and remain unauthenticated', async ({ page }) => {
+      47 |   await page.goto('/login');
+    > 48 |   await page.getByLabel('账号', { exact: true }).fill('synthetic-nonexistent-user');
+         |                                                ^
+      49 |   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+      50 |   await page.getByRole('button', { name: '登录', exact: true }).click();
+      51 |   await expect(page.getByRole('alert')).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:48:48
+
+    Error Context: .work\browser-red\acceptance-web-FR-001-wron-78423--and-remain-unauthenticated-webkit\error-context.md
+
+
+
+
+
+
+[19/105] [chromium] › tests\acceptance\web.spec.ts:54:5 › FR-017: successful registration returns to login without a session
+[20/105] [webkit] › tests\acceptance\web.spec.ts:54:5 › FR-017: successful registration returns to login without a session
+  18) [chromium] › tests\acceptance\web.spec.ts:54:5 › FR-017: successful registration returns to login without a session 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:55:13
+
+    Error Context: .work\browser-red\acceptance-web-FR-017-succ-7f335--to-login-without-a-session-chromium\error-context.md
+
+
+  19) [webkit] › tests\acceptance\web.spec.ts:54:5 › FR-017: successful registration returns to login without a session 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:55:13
+
+    Error Context: .work\browser-red\acceptance-web-FR-017-succ-7f335--to-login-without-a-session-webkit\error-context.md
+
+
+
+
+[21/105] [chromium] › tests\acceptance\web.spec.ts:66:5 › FR-005/008/009: real login survives reload, then logout revokes it
+
+
+[22/105] [webkit] › tests\acceptance\web.spec.ts:66:5 › FR-005/008/009: real login survives reload, then logout revokes it
+  20) [chromium] › tests\acceptance\web.spec.ts:66:5 › FR-005/008/009: real login survives reload, then logout revokes it 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:67:13
+
+    Error Context: .work\browser-red\acceptance-web-FR-005-008--a9f11-load-then-logout-revokes-it-chromium\error-context.md
+
+
+  21) [webkit] › tests\acceptance\web.spec.ts:66:5 › FR-005/008/009: real login survives reload, then logout revokes it 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:67:13
+
+    Error Context: .work\browser-red\acceptance-web-FR-005-008--a9f11-load-then-logout-revokes-it-webkit\error-context.md
+
+
+
+
+[23/105] [chromium] › tests\acceptance\web.spec.ts:90:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs
+
+
+[24/105] [webkit] › tests\acceptance\web.spec.ts:90:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs
+  22) [firefox] › tests\acceptance\web.spec.ts:46:5 › FR-001: wrong credentials show an error and remain unauthenticated 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      46 | test('FR-001: wrong credentials show an error and remain unauthenticated', async ({ page }) => {
+      47 |   await page.goto('/login');
+    > 48 |   await page.getByLabel('账号', { exact: true }).fill('synthetic-nonexistent-user');
+         |                                                ^
+      49 |   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+      50 |   await page.getByRole('button', { name: '登录', exact: true }).click();
+      51 |   await expect(page.getByRole('alert')).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:48:48
+
+    Error Context: .work\browser-red\acceptance-web-FR-001-wron-78423--and-remain-unauthenticated-firefox\error-context.md
+
+
+
+
+[25/105] [firefox] › tests\acceptance\web.spec.ts:54:5 › FR-017: successful registration returns to login without a session
+  23) [chromium] › tests\acceptance\web.spec.ts:90:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByLabel('账号', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByLabel('账号', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      90 | test('WEB-01 user confirmation 2026-09-25: registration has four labeled inputs', async ({ page }) => {
+      91 |   await page.goto('/register');
+    > 92 |   for (const label of ['账号', '密码', '确认密码', '邀请码']) await expect(page.getByLabel(label, { exact: true })).toBeVisible();
+         |                                                                                                          ^
+      93 |   for (const label of ['密码', '确认密码']) await expect(page.getByLabel(label, { exact: true })).toHaveAttribute('type', 'password');
+      94 | });
+      95 |
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:92:106
+
+    Error Context: .work\browser-red\acceptance-web-WEB-01-user-d16d9-ion-has-four-labeled-inputs-chromium\error-context.md
+
+
+  24) [webkit] › tests\acceptance\web.spec.ts:90:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByLabel('账号', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByLabel('账号', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      90 | test('WEB-01 user confirmation 2026-09-25: registration has four labeled inputs', async ({ page }) => {
+      91 |   await page.goto('/register');
+    > 92 |   for (const label of ['账号', '密码', '确认密码', '邀请码']) await expect(page.getByLabel(label, { exact: true })).toBeVisible();
+         |                                                                                                          ^
+      93 |   for (const label of ['密码', '确认密码']) await expect(page.getByLabel(label, { exact: true })).toHaveAttribute('type', 'password');
+      94 | });
+      95 |
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:92:106
+
+    Error Context: .work\browser-red\acceptance-web-WEB-01-user-d16d9-ion-has-four-labeled-inputs-webkit\error-context.md
+
+
+
+
+[26/105] [chromium] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /login has no self-service password recovery
+
+
+[27/105] [webkit] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /login has no self-service password recovery
+  25) [firefox] › tests\acceptance\web.spec.ts:54:5 › FR-017: successful registration returns to login without a session 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:55:13
+
+    Error Context: .work\browser-red\acceptance-web-FR-017-succ-7f335--to-login-without-a-session-firefox\error-context.md
+
+
+
+
+[28/105] [firefox] › tests\acceptance\web.spec.ts:66:5 › FR-005/008/009: real login survives reload, then logout revokes it
+  26) [firefox] › tests\acceptance\web.spec.ts:66:5 › FR-005/008/009: real login survives reload, then logout revokes it 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:67:13
+
+    Error Context: .work\browser-red\acceptance-web-FR-005-008--a9f11-load-then-logout-revokes-it-firefox\error-context.md
+
+
+
+
+[29/105] [firefox] › tests\acceptance\web.spec.ts:90:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs
+  27) [chromium] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /login has no self-service password recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '登录', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '登录', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '登录', exact: true })
+
+
+       97 |   test(`WEB-02 FR-011: ${path} has no self-service password recovery`, async ({ page }) => {
+       98 |     await page.goto(path);
+    >  99 |     await expect(page.getByRole('heading', { name: path === '/login' ? '登录' : '注册', exact: true })).toBeVisible();
+          |                                                                                                     ^
+      100 |     await expect(page.getByRole('link', { name: /忘记密码|找回密码/ })).toHaveCount(0);
+      101 |     await expect(page.getByRole('button', { name: /忘记密码|找回密码/ })).toHaveCount(0);
+      102 |   });
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:99:101
+
+    Error Context: .work\browser-red\acceptance-web-WEB-02-FR-0-de70f-f-service-password-recovery-chromium\error-context.md
+
+
+  28) [webkit] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /login has no self-service password recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '登录', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '登录', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '登录', exact: true })
+
+
+       97 |   test(`WEB-02 FR-011: ${path} has no self-service password recovery`, async ({ page }) => {
+       98 |     await page.goto(path);
+    >  99 |     await expect(page.getByRole('heading', { name: path === '/login' ? '登录' : '注册', exact: true })).toBeVisible();
+          |                                                                                                     ^
+      100 |     await expect(page.getByRole('link', { name: /忘记密码|找回密码/ })).toHaveCount(0);
+      101 |     await expect(page.getByRole('button', { name: /忘记密码|找回密码/ })).toHaveCount(0);
+      102 |   });
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:99:101
+
+    Error Context: .work\browser-red\acceptance-web-WEB-02-FR-0-de70f-f-service-password-recovery-webkit\error-context.md
+
+
+
+
+[30/105] [chromium] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /register has no self-service password recovery
+
+
+[31/105] [webkit] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /register has no self-service password recovery
+  29) [firefox] › tests\acceptance\web.spec.ts:90:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByLabel('账号', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByLabel('账号', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      90 | test('WEB-01 user confirmation 2026-09-25: registration has four labeled inputs', async ({ page }) => {
+      91 |   await page.goto('/register');
+    > 92 |   for (const label of ['账号', '密码', '确认密码', '邀请码']) await expect(page.getByLabel(label, { exact: true })).toBeVisible();
+         |                                                                                                          ^
+      93 |   for (const label of ['密码', '确认密码']) await expect(page.getByLabel(label, { exact: true })).toHaveAttribute('type', 'password');
+      94 | });
+      95 |
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:92:106
+
+    Error Context: .work\browser-red\acceptance-web-WEB-01-user-d16d9-ion-has-four-labeled-inputs-firefox\error-context.md
+
+
+
+
+[32/105] [firefox] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /login has no self-service password recovery
+  30) [chromium] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /register has no self-service password recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '注册', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '注册', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '注册', exact: true })
+
+
+       97 |   test(`WEB-02 FR-011: ${path} has no self-service password recovery`, async ({ page }) => {
+       98 |     await page.goto(path);
+    >  99 |     await expect(page.getByRole('heading', { name: path === '/login' ? '登录' : '注册', exact: true })).toBeVisible();
+          |                                                                                                     ^
+      100 |     await expect(page.getByRole('link', { name: /忘记密码|找回密码/ })).toHaveCount(0);
+      101 |     await expect(page.getByRole('button', { name: /忘记密码|找回密码/ })).toHaveCount(0);
+      102 |   });
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:99:101
+
+    Error Context: .work\browser-red\acceptance-web-WEB-02-FR-0-6b932-f-service-password-recovery-chromium\error-context.md
+
+
+  31) [webkit] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /register has no self-service password recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '注册', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '注册', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '注册', exact: true })
+
+
+       97 |   test(`WEB-02 FR-011: ${path} has no self-service password recovery`, async ({ page }) => {
+       98 |     await page.goto(path);
+    >  99 |     await expect(page.getByRole('heading', { name: path === '/login' ? '登录' : '注册', exact: true })).toBeVisible();
+          |                                                                                                     ^
+      100 |     await expect(page.getByRole('link', { name: /忘记密码|找回密码/ })).toHaveCount(0);
+      101 |     await expect(page.getByRole('button', { name: /忘记密码|找回密码/ })).toHaveCount(0);
+      102 |   });
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:99:101
+
+    Error Context: .work\browser-red\acceptance-web-WEB-02-FR-0-6b932-f-service-password-recovery-webkit\error-context.md
+
+
+
+
+[33/105] [chromium] › tests\acceptance\web.spec.ts:105:5 › WEB-03 FR-004: percent-encoded invitation is decoded once and remains editable
+
+
+[34/105] [webkit] › tests\acceptance\web.spec.ts:105:5 › WEB-03 FR-004: percent-encoded invitation is decoded once and remains editable
+  32) [chromium] › tests\acceptance\web.spec.ts:105:5 › WEB-03 FR-004: percent-encoded invitation is decoded once and remains editable 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: getByLabel('邀请码', { exact: true })
+    Expected: "synthetic+code/=%2B"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" getByLabel('邀请码', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('邀请码', { exact: true })
+
+
+      106 |   await page.goto('/register?invitationCode=synthetic%2Bcode%2F%3D%252B');
+      107 |   const input = page.getByLabel('邀请码', { exact: true });
+    > 108 |   await expect(input).toHaveValue('synthetic+code/=%2B');
+          |                       ^
+      109 |   await input.fill('synthetic-corrected-code');
+      110 |   await expect(input).toHaveValue('synthetic-corrected-code');
+      111 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:108:23
+
+    Error Context: .work\browser-red\acceptance-web-WEB-03-FR-0-8bf7b-d-once-and-remains-editable-chromium\error-context.md
+
+
+  33) [firefox] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /login has no self-service password recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '登录', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '登录', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '登录', exact: true })
+
+
+       97 |   test(`WEB-02 FR-011: ${path} has no self-service password recovery`, async ({ page }) => {
+       98 |     await page.goto(path);
+    >  99 |     await expect(page.getByRole('heading', { name: path === '/login' ? '登录' : '注册', exact: true })).toBeVisible();
+          |                                                                                                     ^
+      100 |     await expect(page.getByRole('link', { name: /忘记密码|找回密码/ })).toHaveCount(0);
+      101 |     await expect(page.getByRole('button', { name: /忘记密码|找回密码/ })).toHaveCount(0);
+      102 |   });
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:99:101
+
+    Error Context: .work\browser-red\acceptance-web-WEB-02-FR-0-de70f-f-service-password-recovery-firefox\error-context.md
+
+
+
+
+[35/105] [chromium] › tests\acceptance\web.spec.ts:113:5 › WEB-04 FR-004: URL invitation is treated as text, not executable markup
+  34) [webkit] › tests\acceptance\web.spec.ts:105:5 › WEB-03 FR-004: percent-encoded invitation is decoded once and remains editable 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: getByLabel('邀请码', { exact: true })
+    Expected: "synthetic+code/=%2B"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" getByLabel('邀请码', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('邀请码', { exact: true })
+
+
+      106 |   await page.goto('/register?invitationCode=synthetic%2Bcode%2F%3D%252B');
+      107 |   const input = page.getByLabel('邀请码', { exact: true });
+    > 108 |   await expect(input).toHaveValue('synthetic+code/=%2B');
+          |                       ^
+      109 |   await input.fill('synthetic-corrected-code');
+      110 |   await expect(input).toHaveValue('synthetic-corrected-code');
+      111 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:108:23
+
+    Error Context: .work\browser-red\acceptance-web-WEB-03-FR-0-8bf7b-d-once-and-remains-editable-webkit\error-context.md
+
+
+
+
+[36/105] [firefox] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /register has no self-service password recovery
+
+
+[37/105] [webkit] › tests\acceptance\web.spec.ts:113:5 › WEB-04 FR-004: URL invitation is treated as text, not executable markup
+  35) [chromium] › tests\acceptance\web.spec.ts:113:5 › WEB-04 FR-004: URL invitation is treated as text, not executable markup 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: getByLabel('邀请码', { exact: true })
+    Expected: "<img src=x onerror=\"window.__invitationExecuted=true\">"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" getByLabel('邀请码', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('邀请码', { exact: true })
+
+
+      114 |   const value = '<img src=x onerror="window.__invitationExecuted=true">';
+      115 |   await page.goto(`/register?invitationCode=${encodeURIComponent(value)}`);
+    > 116 |   await expect(page.getByLabel('邀请码', { exact: true })).toHaveValue(value);
+          |                                                         ^
+      117 |   expect(await page.evaluate(() => '__invitationExecuted' in window)).toBe(false);
+      118 | });
+      119 |
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:116:57
+
+    Error Context: .work\browser-red\acceptance-web-WEB-04-FR-0-9359c--text-not-executable-markup-chromium\error-context.md
+
+
+
+
+[38/105] [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 账号 is not submitted
+  36) [webkit] › tests\acceptance\web.spec.ts:113:5 › WEB-04 FR-004: URL invitation is treated as text, not executable markup 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: getByLabel('邀请码', { exact: true })
+    Expected: "<img src=x onerror=\"window.__invitationExecuted=true\">"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" getByLabel('邀请码', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('邀请码', { exact: true })
+
+
+      114 |   const value = '<img src=x onerror="window.__invitationExecuted=true">';
+      115 |   await page.goto(`/register?invitationCode=${encodeURIComponent(value)}`);
+    > 116 |   await expect(page.getByLabel('邀请码', { exact: true })).toHaveValue(value);
+          |                                                         ^
+      117 |   expect(await page.evaluate(() => '__invitationExecuted' in window)).toBe(false);
+      118 | });
+      119 |
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:116:57
+
+    Error Context: .work\browser-red\acceptance-web-WEB-04-FR-0-9359c--text-not-executable-markup-webkit\error-context.md
+
+
+
+
+[39/105] [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 账号 is not submitted
+  37) [firefox] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /register has no self-service password recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '注册', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '注册', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '注册', exact: true })
+
+
+       97 |   test(`WEB-02 FR-011: ${path} has no self-service password recovery`, async ({ page }) => {
+       98 |     await page.goto(path);
+    >  99 |     await expect(page.getByRole('heading', { name: path === '/login' ? '登录' : '注册', exact: true })).toBeVisible();
+          |                                                                                                     ^
+      100 |     await expect(page.getByRole('link', { name: /忘记密码|找回密码/ })).toHaveCount(0);
+      101 |     await expect(page.getByRole('button', { name: /忘记密码|找回密码/ })).toHaveCount(0);
+      102 |   });
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:99:101
+
+    Error Context: .work\browser-red\acceptance-web-WEB-02-FR-0-6b932-f-service-password-recovery-firefox\error-context.md
+
+
+
+
+[40/105] [firefox] › tests\acceptance\web.spec.ts:105:5 › WEB-03 FR-004: percent-encoded invitation is decoded once and remains editable
+  38) [firefox] › tests\acceptance\web.spec.ts:105:5 › WEB-03 FR-004: percent-encoded invitation is decoded once and remains editable 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: getByLabel('邀请码', { exact: true })
+    Expected: "synthetic+code/=%2B"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" getByLabel('邀请码', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('邀请码', { exact: true })
+
+
+      106 |   await page.goto('/register?invitationCode=synthetic%2Bcode%2F%3D%252B');
+      107 |   const input = page.getByLabel('邀请码', { exact: true });
+    > 108 |   await expect(input).toHaveValue('synthetic+code/=%2B');
+          |                       ^
+      109 |   await input.fill('synthetic-corrected-code');
+      110 |   await expect(input).toHaveValue('synthetic-corrected-code');
+      111 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:108:23
+
+    Error Context: .work\browser-red\acceptance-web-WEB-03-FR-0-8bf7b-d-once-and-remains-editable-firefox\error-context.md
+
+
+
+
+[41/105] [firefox] › tests\acceptance\web.spec.ts:113:5 › WEB-04 FR-004: URL invitation is treated as text, not executable markup
+  39) [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 账号 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('密码', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--5bddb-missing-账号-is-not-submitted-chromium\error-context.md
+
+
+
+
+[42/105] [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 密码 is not submitted
+  40) [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 账号 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('密码', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--5bddb-missing-账号-is-not-submitted-webkit\error-context.md
+
+
+
+
+[43/105] [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 密码 is not submitted
+  41) [firefox] › tests\acceptance\web.spec.ts:113:5 › WEB-04 FR-004: URL invitation is treated as text, not executable markup 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: getByLabel('邀请码', { exact: true })
+    Expected: "<img src=x onerror=\"window.__invitationExecuted=true\">"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" getByLabel('邀请码', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('邀请码', { exact: true })
+
+
+      114 |   const value = '<img src=x onerror="window.__invitationExecuted=true">';
+      115 |   await page.goto(`/register?invitationCode=${encodeURIComponent(value)}`);
+    > 116 |   await expect(page.getByLabel('邀请码', { exact: true })).toHaveValue(value);
+          |                                                         ^
+      117 |   expect(await page.evaluate(() => '__invitationExecuted' in window)).toBe(false);
+      118 | });
+      119 |
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:116:57
+
+    Error Context: .work\browser-red\acceptance-web-WEB-04-FR-0-9359c--text-not-executable-markup-firefox\error-context.md
+
+
+
+
+[44/105] [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 账号 is not submitted
+  42) [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 密码 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--a741b-missing-密码-is-not-submitted-chromium\error-context.md
+
+
+
+
+[45/105] [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 账号 is not submitted
+  43) [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 密码 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--a741b-missing-密码-is-not-submitted-webkit\error-context.md
+
+
+
+
+[46/105] [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 账号 is not submitted
+  44) [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 账号 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('密码', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--5bddb-missing-账号-is-not-submitted-firefox\error-context.md
+
+
+
+
+[47/105] [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 密码 is not submitted
+  45) [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 账号 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('密码', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--aafb2-missing-账号-is-not-submitted-chromium\error-context.md
+
+
+
+
+[48/105] [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 密码 is not submitted
+  46) [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 账号 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('密码', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--aafb2-missing-账号-is-not-submitted-webkit\error-context.md
+
+
+
+
+[49/105] [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 密码 is not submitted
+  47) [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 密码 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--a741b-missing-密码-is-not-submitted-firefox\error-context.md
+
+
+
+
+[50/105] [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 账号 is not submitted
+  48) [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 密码 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--1b813-missing-密码-is-not-submitted-chromium\error-context.md
+
+
+
+
+[51/105] [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 确认密码 is not submitted
+  49) [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 密码 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--1b813-missing-密码-is-not-submitted-webkit\error-context.md
+
+
+
+
+[52/105] [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 确认密码 is not submitted
+  50) [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 账号 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('密码', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--aafb2-missing-账号-is-not-submitted-firefox\error-context.md
+
+
+
+
+[53/105] [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 密码 is not submitted
+  51) [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 确认密码 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--4b53d-ssing-确认密码-is-not-submitted-chromium\error-context.md
+
+
+
+
+[54/105] [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 邀请码 is not submitted
+  52) [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 确认密码 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--4b53d-ssing-确认密码-is-not-submitted-webkit\error-context.md
+
+
+
+
+[55/105] [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 邀请码 is not submitted
+  53) [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 密码 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--1b813-missing-密码-is-not-submitted-firefox\error-context.md
+
+
+
+
+[56/105] [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 确认密码 is not submitted
+  54) [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 邀请码 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--ff5af-issing-邀请码-is-not-submitted-chromium\error-context.md
+
+
+
+
+  55) [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 邀请码 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--ff5af-issing-邀请码-is-not-submitted-webkit\error-context.md
+
+
+[57/105] [chromium] › tests\acceptance\web.spec.ts:138:5 › WEB-06 user confirmation: mismatched password confirmation prevents registration
+
+
+[58/105] [webkit] › tests\acceptance\web.spec.ts:138:5 › WEB-06 user confirmation: mismatched password confirmation prevents registration
+  56) [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 确认密码 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--4b53d-ssing-确认密码-is-not-submitted-firefox\error-context.md
+
+
+
+
+[59/105] [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 邀请码 is not submitted
+  57) [chromium] › tests\acceptance\web.spec.ts:138:5 › WEB-06 user confirmation: mismatched password confirmation prevents registration 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      140 |   let submissions = 0;
+      141 |   page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 142 |   for (const [label, value] of Object.entries({ '账号': 'synthetic-confirm-user', '密码': 'Synthetic@123', '确认密码': 'Different@123', '邀请码': 'synthetic-code' })) await page.getByLabel(label, { exact: true }).fill(value);
+          |                                                                                                                                                                                                           ^
+      143 |   const button = page.getByRole('button', { name: '注册', exact: true });
+      144 |   if (await button.isEnabled()) await button.click();
+      145 |   expect(submissions).toBe(0);
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:142:203
+
+    Error Context: .work\browser-red\acceptance-web-WEB-06-user-64be1-ation-prevents-registration-chromium\error-context.md
+
+
+
+
+[60/105] [chromium] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing uppercase gives feedback and prevents submission
+  58) [webkit] › tests\acceptance\web.spec.ts:138:5 › WEB-06 user confirmation: mismatched password confirmation prevents registration 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      140 |   let submissions = 0;
+      141 |   page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 142 |   for (const [label, value] of Object.entries({ '账号': 'synthetic-confirm-user', '密码': 'Synthetic@123', '确认密码': 'Different@123', '邀请码': 'synthetic-code' })) await page.getByLabel(label, { exact: true }).fill(value);
+          |                                                                                                                                                                                                           ^
+      143 |   const button = page.getByRole('button', { name: '注册', exact: true });
+      144 |   if (await button.isEnabled()) await button.click();
+      145 |   expect(submissions).toBe(0);
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:142:203
+
+    Error Context: .work\browser-red\acceptance-web-WEB-06-user-64be1-ation-prevents-registration-webkit\error-context.md
+
+
+
+
+[61/105] [webkit] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing uppercase gives feedback and prevents submission
+  59) [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 邀请码 is not submitted 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      127 |     page.on('request', request => { if (request.method() === 'POST' && /\/api\/v1\/(sessions|registrations)$/.test(new URL(request.url()).pathname)) submissions++; });
+      128 |     const values: Record<string, string> = { '账号': 'synthetic-form-user', '密码': 'Synthetic@123', '确认密码': 'Synthetic@123', '邀请码': 'synthetic-form-invitation' };
+    > 129 |     for (const label of labels) if (label !== omitted) await page.getByLabel(label, { exact: true }).fill(values[label]);
+          |                                                                                                      ^
+      130 |     const submit = page.getByRole('button', { name: button, exact: true });
+      131 |     // Both disabled-submit and HTML/inline validation satisfy the PRD.
+      132 |     if (await submit.isEnabled()) await submit.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:129:102
+
+    Error Context: .work\browser-red\acceptance-web-WEB-05-PRD--ff5af-issing-邀请码-is-not-submitted-firefox\error-context.md
+
+
+
+
+[62/105] [firefox] › tests\acceptance\web.spec.ts:138:5 › WEB-06 user confirmation: mismatched password confirmation prevents registration
+  60) [chromium] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing uppercase gives feedback and prevents submission 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      153 |     let submissions = 0;
+      154 |     page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 155 |     await page.getByLabel('账号', { exact: true }).fill('synthetic-policy-user');
+          |                                                  ^
+      156 |     await page.getByLabel('密码', { exact: true }).fill(value);
+      157 |     await page.getByLabel('确认密码', { exact: true }).fill(value);
+      158 |     await page.getByLabel('邀请码', { exact: true }).fill('synthetic-policy-code');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:155:50
+
+    Error Context: .work\browser-red\acceptance-web-WEB-07-FR-0-ae313-ack-and-prevents-submission-chromium\error-context.md
+
+
+  61) [webkit] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing uppercase gives feedback and prevents submission 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      153 |     let submissions = 0;
+      154 |     page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 155 |     await page.getByLabel('账号', { exact: true }).fill('synthetic-policy-user');
+          |                                                  ^
+      156 |     await page.getByLabel('密码', { exact: true }).fill(value);
+      157 |     await page.getByLabel('确认密码', { exact: true }).fill(value);
+      158 |     await page.getByLabel('邀请码', { exact: true }).fill('synthetic-policy-code');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:155:50
+
+    Error Context: .work\browser-red\acceptance-web-WEB-07-FR-0-ae313-ack-and-prevents-submission-webkit\error-context.md
+
+
+
+
+[63/105] [chromium] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing lowercase gives feedback and prevents submission
+
+
+[64/105] [webkit] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing lowercase gives feedback and prevents submission
+  62) [firefox] › tests\acceptance\web.spec.ts:138:5 › WEB-06 user confirmation: mismatched password confirmation prevents registration 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      140 |   let submissions = 0;
+      141 |   page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 142 |   for (const [label, value] of Object.entries({ '账号': 'synthetic-confirm-user', '密码': 'Synthetic@123', '确认密码': 'Different@123', '邀请码': 'synthetic-code' })) await page.getByLabel(label, { exact: true }).fill(value);
+          |                                                                                                                                                                                                           ^
+      143 |   const button = page.getByRole('button', { name: '注册', exact: true });
+      144 |   if (await button.isEnabled()) await button.click();
+      145 |   expect(submissions).toBe(0);
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:142:203
+
+    Error Context: .work\browser-red\acceptance-web-WEB-06-user-64be1-ation-prevents-registration-firefox\error-context.md
+
+
+
+
+[65/105] [firefox] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing uppercase gives feedback and prevents submission
+  63) [chromium] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing lowercase gives feedback and prevents submission 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      153 |     let submissions = 0;
+      154 |     page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 155 |     await page.getByLabel('账号', { exact: true }).fill('synthetic-policy-user');
+          |                                                  ^
+      156 |     await page.getByLabel('密码', { exact: true }).fill(value);
+      157 |     await page.getByLabel('确认密码', { exact: true }).fill(value);
+      158 |     await page.getByLabel('邀请码', { exact: true }).fill('synthetic-policy-code');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:155:50
+
+    Error Context: .work\browser-red\acceptance-web-WEB-07-FR-0-4b9fc-ack-and-prevents-submission-chromium\error-context.md
+
+
+  64) [webkit] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing lowercase gives feedback and prevents submission 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      153 |     let submissions = 0;
+      154 |     page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 155 |     await page.getByLabel('账号', { exact: true }).fill('synthetic-policy-user');
+          |                                                  ^
+      156 |     await page.getByLabel('密码', { exact: true }).fill(value);
+      157 |     await page.getByLabel('确认密码', { exact: true }).fill(value);
+      158 |     await page.getByLabel('邀请码', { exact: true }).fill('synthetic-policy-code');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:155:50
+
+    Error Context: .work\browser-red\acceptance-web-WEB-07-FR-0-4b9fc-ack-and-prevents-submission-webkit\error-context.md
+
+
+
+
+[66/105] [chromium] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing digit gives feedback and prevents submission
+
+
+[67/105] [webkit] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing digit gives feedback and prevents submission
+  65) [firefox] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing uppercase gives feedback and prevents submission 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      153 |     let submissions = 0;
+      154 |     page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 155 |     await page.getByLabel('账号', { exact: true }).fill('synthetic-policy-user');
+          |                                                  ^
+      156 |     await page.getByLabel('密码', { exact: true }).fill(value);
+      157 |     await page.getByLabel('确认密码', { exact: true }).fill(value);
+      158 |     await page.getByLabel('邀请码', { exact: true }).fill('synthetic-policy-code');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:155:50
+
+    Error Context: .work\browser-red\acceptance-web-WEB-07-FR-0-ae313-ack-and-prevents-submission-firefox\error-context.md
+
+
+
+
+[68/105] [firefox] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing lowercase gives feedback and prevents submission
+  66) [chromium] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing digit gives feedback and prevents submission 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      153 |     let submissions = 0;
+      154 |     page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 155 |     await page.getByLabel('账号', { exact: true }).fill('synthetic-policy-user');
+          |                                                  ^
+      156 |     await page.getByLabel('密码', { exact: true }).fill(value);
+      157 |     await page.getByLabel('确认密码', { exact: true }).fill(value);
+      158 |     await page.getByLabel('邀请码', { exact: true }).fill('synthetic-policy-code');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:155:50
+
+    Error Context: .work\browser-red\acceptance-web-WEB-07-FR-0-31599-ack-and-prevents-submission-chromium\error-context.md
+
+
+  67) [webkit] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing digit gives feedback and prevents submission 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      153 |     let submissions = 0;
+      154 |     page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 155 |     await page.getByLabel('账号', { exact: true }).fill('synthetic-policy-user');
+          |                                                  ^
+      156 |     await page.getByLabel('密码', { exact: true }).fill(value);
+      157 |     await page.getByLabel('确认密码', { exact: true }).fill(value);
+      158 |     await page.getByLabel('邀请码', { exact: true }).fill('synthetic-policy-code');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:155:50
+
+    Error Context: .work\browser-red\acceptance-web-WEB-07-FR-0-31599-ack-and-prevents-submission-webkit\error-context.md
+
+
+
+
+[69/105] [chromium] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing special gives feedback and prevents submission
+
+
+[70/105] [webkit] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing special gives feedback and prevents submission
+  68) [firefox] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing lowercase gives feedback and prevents submission 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      153 |     let submissions = 0;
+      154 |     page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 155 |     await page.getByLabel('账号', { exact: true }).fill('synthetic-policy-user');
+          |                                                  ^
+      156 |     await page.getByLabel('密码', { exact: true }).fill(value);
+      157 |     await page.getByLabel('确认密码', { exact: true }).fill(value);
+      158 |     await page.getByLabel('邀请码', { exact: true }).fill('synthetic-policy-code');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:155:50
+
+    Error Context: .work\browser-red\acceptance-web-WEB-07-FR-0-4b9fc-ack-and-prevents-submission-firefox\error-context.md
+
+
+
+
+[71/105] [firefox] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing digit gives feedback and prevents submission
+  69) [webkit] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing special gives feedback and prevents submission 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      153 |     let submissions = 0;
+      154 |     page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 155 |     await page.getByLabel('账号', { exact: true }).fill('synthetic-policy-user');
+          |                                                  ^
+      156 |     await page.getByLabel('密码', { exact: true }).fill(value);
+      157 |     await page.getByLabel('确认密码', { exact: true }).fill(value);
+      158 |     await page.getByLabel('邀请码', { exact: true }).fill('synthetic-policy-code');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:155:50
+
+    Error Context: .work\browser-red\acceptance-web-WEB-07-FR-0-fd530-ack-and-prevents-submission-webkit\error-context.md
+
+
+  70) [chromium] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing special gives feedback and prevents submission 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      153 |     let submissions = 0;
+      154 |     page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 155 |     await page.getByLabel('账号', { exact: true }).fill('synthetic-policy-user');
+          |                                                  ^
+      156 |     await page.getByLabel('密码', { exact: true }).fill(value);
+      157 |     await page.getByLabel('确认密码', { exact: true }).fill(value);
+      158 |     await page.getByLabel('邀请码', { exact: true }).fill('synthetic-policy-code');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:155:50
+
+    Error Context: .work\browser-red\acceptance-web-WEB-07-FR-0-fd530-ack-and-prevents-submission-chromium\error-context.md
+
+
+
+
+[72/105] [webkit] › tests\acceptance\web.spec.ts:167:5 › WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server
+
+
+[73/105] [chromium] › tests\acceptance\web.spec.ts:167:5 › WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server
+  71) [firefox] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing digit gives feedback and prevents submission 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      153 |     let submissions = 0;
+      154 |     page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 155 |     await page.getByLabel('账号', { exact: true }).fill('synthetic-policy-user');
+          |                                                  ^
+      156 |     await page.getByLabel('密码', { exact: true }).fill(value);
+      157 |     await page.getByLabel('确认密码', { exact: true }).fill(value);
+      158 |     await page.getByLabel('邀请码', { exact: true }).fill('synthetic-policy-code');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:155:50
+
+    Error Context: .work\browser-red\acceptance-web-WEB-07-FR-0-31599-ack-and-prevents-submission-firefox\error-context.md
+
+
+
+
+  72) [webkit] › tests\acceptance\web.spec.ts:167:5 › WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      167 | test('WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server', async ({ page }) => {
+      168 |   await page.goto('/register?invitationCode=synthetic-invalid-invitation');
+    > 169 |   await page.getByLabel('账号', { exact: true }).fill(`invalid-${Date.now()}`);
+          |                                                ^
+      170 |   for (const label of ['密码', '确认密码']) await page.getByLabel(label, { exact: true }).fill('Synthetic@123');
+      171 |   const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/v1/registrations' && r.request().method() === 'POST');
+      172 |   await page.getByRole('button', { name: '注册', exact: true }).click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:169:48
+
+    Error Context: .work\browser-red\acceptance-web-WEB-08-FR-0-dd850-alidated-by-the-real-server-webkit\error-context.md
+
+
+[74/105] [firefox] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing special gives feedback and prevents submission
+  73) [chromium] › tests\acceptance\web.spec.ts:167:5 › WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      167 | test('WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server', async ({ page }) => {
+      168 |   await page.goto('/register?invitationCode=synthetic-invalid-invitation');
+    > 169 |   await page.getByLabel('账号', { exact: true }).fill(`invalid-${Date.now()}`);
+          |                                                ^
+      170 |   for (const label of ['密码', '确认密码']) await page.getByLabel(label, { exact: true }).fill('Synthetic@123');
+      171 |   const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/v1/registrations' && r.request().method() === 'POST');
+      172 |   await page.getByRole('button', { name: '注册', exact: true }).click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:169:48
+
+    Error Context: .work\browser-red\acceptance-web-WEB-08-FR-0-dd850-alidated-by-the-real-server-chromium\error-context.md
+
+
+
+
+[75/105] [webkit] › tests\acceptance\web.spec.ts:178:5 › WEB-09 PRD keyboard: Enter submits login without mouse interaction
+
+
+  74) [webkit] › tests\acceptance\web.spec.ts:178:5 › WEB-09 PRD keyboard: Enter submits login without mouse interaction 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:179:13
+
+    Error Context: .work\browser-red\acceptance-web-WEB-09-PRD--5a20d-n-without-mouse-interaction-webkit\error-context.md
+
+
+[76/105] [chromium] › tests\acceptance\web.spec.ts:178:5 › WEB-09 PRD keyboard: Enter submits login without mouse interaction
+  75) [chromium] › tests\acceptance\web.spec.ts:178:5 › WEB-09 PRD keyboard: Enter submits login without mouse interaction 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:179:13
+
+    Error Context: .work\browser-red\acceptance-web-WEB-09-PRD--5a20d-n-without-mouse-interaction-chromium\error-context.md
+
+
+
+
+[77/105] [webkit] › tests\acceptance\web.spec.ts:187:5 › WEB-10 FR-017: registration returns to login and requires password re-entry
+
+
+[78/105] [chromium] › tests\acceptance\web.spec.ts:187:5 › WEB-10 FR-017: registration returns to login and requires password re-entry
+  76) [webkit] › tests\acceptance\web.spec.ts:187:5 › WEB-10 FR-017: registration returns to login and requires password re-entry 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:188:13
+
+    Error Context: .work\browser-red\acceptance-web-WEB-10-FR-0-70ea3--requires-password-re-entry-webkit\error-context.md
+
+
+  77) [chromium] › tests\acceptance\web.spec.ts:187:5 › WEB-10 FR-017: registration returns to login and requires password re-entry 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:188:13
+
+    Error Context: .work\browser-red\acceptance-web-WEB-10-FR-0-70ea3--requires-password-re-entry-chromium\error-context.md
+
+
+
+
+[79/105] [webkit] › tests\acceptance\web.spec.ts:199:5 › WEB-11 PRD UX: login shows pending state and blocks duplicate submit during a real request
+
+
+[80/105] [chromium] › tests\acceptance\web.spec.ts:199:5 › WEB-11 PRD UX: login shows pending state and blocks duplicate submit during a real request
+  78) [webkit] › tests\acceptance\web.spec.ts:199:5 › WEB-11 PRD UX: login shows pending state and blocks duplicate submit during a real request 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:200:13
+
+    Error Context: .work\browser-red\acceptance-web-WEB-11-PRD--6827b-ubmit-during-a-real-request-webkit\error-context.md
+
+
+  79) [chromium] › tests\acceptance\web.spec.ts:199:5 › WEB-11 PRD UX: login shows pending state and blocks duplicate submit during a real request 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:200:13
+
+    Error Context: .work\browser-red\acceptance-web-WEB-11-PRD--6827b-ubmit-during-a-real-request-chromium\error-context.md
+
+
+
+
+[81/105] [webkit] › tests\acceptance\web.spec.ts:229:5 › WEB-12 PRD login: network failure differs from credential failure and permits retry
+
+
+[82/105] [chromium] › tests\acceptance\web.spec.ts:229:5 › WEB-12 PRD login: network failure differs from credential failure and permits retry
+  80) [firefox] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing special gives feedback and prevents submission 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      153 |     let submissions = 0;
+      154 |     page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/registrations') submissions++; });
+    > 155 |     await page.getByLabel('账号', { exact: true }).fill('synthetic-policy-user');
+          |                                                  ^
+      156 |     await page.getByLabel('密码', { exact: true }).fill(value);
+      157 |     await page.getByLabel('确认密码', { exact: true }).fill(value);
+      158 |     await page.getByLabel('邀请码', { exact: true }).fill('synthetic-policy-code');
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:155:50
+
+    Error Context: .work\browser-red\acceptance-web-WEB-07-FR-0-fd530-ack-and-prevents-submission-firefox\error-context.md
+
+
+
+
+[83/105] [firefox] › tests\acceptance\web.spec.ts:167:5 › WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server
+  81) [webkit] › tests\acceptance\web.spec.ts:229:5 › WEB-12 PRD login: network failure differs from credential failure and permits retry 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      229 | test('WEB-12 PRD login: network failure differs from credential failure and permits retry', async ({ page }) => {
+      230 |   await page.goto('/login');
+    > 231 |   await page.getByLabel('账号', { exact: true }).fill('synthetic-unknown-user');
+          |                                                ^
+      232 |   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+      233 |   await page.getByRole('button', { name: '登录', exact: true }).click();
+      234 |   await expect(page.getByRole('alert')).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:231:48
+
+    Error Context: .work\browser-red\acceptance-web-WEB-12-PRD--224a2-l-failure-and-permits-retry-webkit\error-context.md
+
+
+  82) [chromium] › tests\acceptance\web.spec.ts:229:5 › WEB-12 PRD login: network failure differs from credential failure and permits retry 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      229 | test('WEB-12 PRD login: network failure differs from credential failure and permits retry', async ({ page }) => {
+      230 |   await page.goto('/login');
+    > 231 |   await page.getByLabel('账号', { exact: true }).fill('synthetic-unknown-user');
+          |                                                ^
+      232 |   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+      233 |   await page.getByRole('button', { name: '登录', exact: true }).click();
+      234 |   await expect(page.getByRole('alert')).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:231:48
+
+    Error Context: .work\browser-red\acceptance-web-WEB-12-PRD--224a2-l-failure-and-permits-retry-chromium\error-context.md
+
+
+
+
+[84/105] [webkit] › tests\acceptance\web.spec.ts:256:5 › WEB-13 FR-010: Disabled user sees failure and cannot enter protected app
+
+
+[85/105] [chromium] › tests\acceptance\web.spec.ts:256:5 › WEB-13 FR-010: Disabled user sees failure and cannot enter protected app
+  83) [webkit] › tests\acceptance\web.spec.ts:256:5 › WEB-13 FR-010: Disabled user sees failure and cannot enter protected app 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:257:16
+
+    Error Context: .work\browser-red\acceptance-web-WEB-13-FR-0-1a681--cannot-enter-protected-app-webkit\error-context.md
+
+
+  84) [chromium] › tests\acceptance\web.spec.ts:256:5 › WEB-13 FR-010: Disabled user sees failure and cannot enter protected app 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:257:16
+
+    Error Context: .work\browser-red\acceptance-web-WEB-13-FR-0-1a681--cannot-enter-protected-app-chromium\error-context.md
+
+
+
+
+
+
+[86/105] [webkit] › tests\acceptance\web.spec.ts:269:5 › WEB-14 FR-002/003: duplicate-account feedback permits retry without losing invitation
+[87/105] [chromium] › tests\acceptance\web.spec.ts:269:5 › WEB-14 FR-002/003: duplicate-account feedback permits retry without losing invitation
+  85) [chromium] › tests\acceptance\web.spec.ts:269:5 › WEB-14 FR-002/003: duplicate-account feedback permits retry without losing invitation 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:270:32
+
+    Error Context: .work\browser-red\acceptance-web-WEB-14-FR-0-f3e71-y-without-losing-invitation-chromium\error-context.md
+
+
+  86) [webkit] › tests\acceptance\web.spec.ts:269:5 › WEB-14 FR-002/003: duplicate-account feedback permits retry without losing invitation 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:270:32
+
+    Error Context: .work\browser-red\acceptance-web-WEB-14-FR-0-f3e71-y-without-losing-invitation-webkit\error-context.md
+
+
+
+
+
+
+[88/105] [chromium] › tests\acceptance\web.spec.ts:282:5 › WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated
+[89/105] [webkit] › tests\acceptance\web.spec.ts:282:5 › WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated
+  87) [chromium] › tests\acceptance\web.spec.ts:282:5 › WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at caseInvitation (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:252:16)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:283:16
+
+    Error Context: .work\browser-red\acceptance-web-WEB-15-FR-0-2a89f-eps-browser-unauthenticated-chromium\error-context.md
+
+
+  88) [webkit] › tests\acceptance\web.spec.ts:282:5 › WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at caseInvitation (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:252:16)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:283:16
+
+    Error Context: .work\browser-red\acceptance-web-WEB-15-FR-0-2a89f-eps-browser-unauthenticated-webkit\error-context.md
+
+
+
+
+[90/105] [chromium] › tests\acceptance\web.spec.ts:294:5 › WEB-16 PRD UX: pending real registration prevents duplicate submission
+
+
+[91/105] [webkit] › tests\acceptance\web.spec.ts:294:5 › WEB-16 PRD UX: pending real registration prevents duplicate submission
+  89) [chromium] › tests\acceptance\web.spec.ts:294:5 › WEB-16 PRD UX: pending real registration prevents duplicate submission 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at caseInvitation (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:252:16)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:295:78
+
+    Error Context: .work\browser-red\acceptance-web-WEB-16-PRD--5512e-events-duplicate-submission-chromium\error-context.md
+
+
+  90) [webkit] › tests\acceptance\web.spec.ts:294:5 › WEB-16 PRD UX: pending real registration prevents duplicate submission 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at caseInvitation (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:252:16)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:295:78
+
+    Error Context: .work\browser-red\acceptance-web-WEB-16-PRD--5512e-events-duplicate-submission-webkit\error-context.md
+
+
+
+
+[92/105] [chromium] › tests\acceptance\web.spec.ts:310:5 › WEB-17 FR-008: Redis-expired browser Session returns to login
+
+
+[93/105] [webkit] › tests\acceptance\web.spec.ts:310:5 › WEB-17 FR-008: Redis-expired browser Session returns to login
+  91) [chromium] › tests\acceptance\web.spec.ts:310:5 › WEB-17 FR-008: Redis-expired browser Session returns to login 
+
+    Error: BLOCKED: real Redis observer missing
+
+      310 | test('WEB-17 FR-008: Redis-expired browser Session returns to login', async ({ page, context }, info) => {
+      311 |   const file = process.env.WEAVEOS_ACCEPTANCE_OBSERVER;
+    > 312 |   if (!file) throw new Error('BLOCKED: real Redis observer missing');
+          |                    ^
+      313 |   const module = await import(pathToFileURL(resolve(file)).href);
+      314 |   const o = await module.open({ baseURL: info.project.use.baseURL });
+      315 |   try {
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:312:20
+
+    Error Context: .work\browser-red\acceptance-web-WEB-17-FR-0-06e76-er-Session-returns-to-login-chromium\error-context.md
+
+
+  92) [webkit] › tests\acceptance\web.spec.ts:310:5 › WEB-17 FR-008: Redis-expired browser Session returns to login 
+
+    Error: BLOCKED: real Redis observer missing
+
+      310 | test('WEB-17 FR-008: Redis-expired browser Session returns to login', async ({ page, context }, info) => {
+      311 |   const file = process.env.WEAVEOS_ACCEPTANCE_OBSERVER;
+    > 312 |   if (!file) throw new Error('BLOCKED: real Redis observer missing');
+          |                    ^
+      313 |   const module = await import(pathToFileURL(resolve(file)).href);
+      314 |   const o = await module.open({ baseURL: info.project.use.baseURL });
+      315 |   try {
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:312:20
+
+    Error Context: .work\browser-red\acceptance-web-WEB-17-FR-0-06e76-er-Session-returns-to-login-webkit\error-context.md
+
+
+
+
+[94/105] [chromium] › tests\acceptance\web.spec.ts:330:5 › WEB-18 PRD security: frontend logs do not contain submitted password
+
+
+[95/105] [webkit] › tests\acceptance\web.spec.ts:330:5 › WEB-18 PRD security: frontend logs do not contain submitted password
+  93) [firefox] › tests\acceptance\web.spec.ts:167:5 › WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      167 | test('WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server', async ({ page }) => {
+      168 |   await page.goto('/register?invitationCode=synthetic-invalid-invitation');
+    > 169 |   await page.getByLabel('账号', { exact: true }).fill(`invalid-${Date.now()}`);
+          |                                                ^
+      170 |   for (const label of ['密码', '确认密码']) await page.getByLabel(label, { exact: true }).fill('Synthetic@123');
+      171 |   const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/v1/registrations' && r.request().method() === 'POST');
+      172 |   await page.getByRole('button', { name: '注册', exact: true }).click();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:169:48
+
+    Error Context: .work\browser-red\acceptance-web-WEB-08-FR-0-dd850-alidated-by-the-real-server-firefox\error-context.md
+
+
+
+
+[96/105] [firefox] › tests\acceptance\web.spec.ts:178:5 › WEB-09 PRD keyboard: Enter submits login without mouse interaction
+  94) [firefox] › tests\acceptance\web.spec.ts:178:5 › WEB-09 PRD keyboard: Enter submits login without mouse interaction 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:179:13
+
+    Error Context: .work\browser-red\acceptance-web-WEB-09-PRD--5a20d-n-without-mouse-interaction-firefox\error-context.md
+
+
+
+
+[97/105] [firefox] › tests\acceptance\web.spec.ts:187:5 › WEB-10 FR-017: registration returns to login and requires password re-entry
+  95) [firefox] › tests\acceptance\web.spec.ts:187:5 › WEB-10 FR-017: registration returns to login and requires password re-entry 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:188:13
+
+    Error Context: .work\browser-red\acceptance-web-WEB-10-FR-0-70ea3--requires-password-re-entry-firefox\error-context.md
+
+
+
+
+[98/105] [firefox] › tests\acceptance\web.spec.ts:199:5 › WEB-11 PRD UX: login shows pending state and blocks duplicate submit during a real request
+  96) [chromium] › tests\acceptance\web.spec.ts:330:5 › WEB-18 PRD security: frontend logs do not contain submitted password 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      333 |   page.on('pageerror', error => messages.push(error.message));
+      334 |   await page.goto('/login');
+    > 335 |   await page.getByLabel('账号', { exact: true }).fill('synthetic-unknown-user');
+          |                                                ^
+      336 |   await page.getByLabel('密码', { exact: true }).fill(secret);
+      337 |   await page.getByRole('button', { name: '登录', exact: true }).click();
+      338 |   await expect(page.getByRole('alert')).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:335:48
+
+    Error Context: .work\browser-red\acceptance-web-WEB-18-PRD--e38b3--contain-submitted-password-chromium\error-context.md
+
+
+  97) [webkit] › tests\acceptance\web.spec.ts:330:5 › WEB-18 PRD security: frontend logs do not contain submitted password 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      333 |   page.on('pageerror', error => messages.push(error.message));
+      334 |   await page.goto('/login');
+    > 335 |   await page.getByLabel('账号', { exact: true }).fill('synthetic-unknown-user');
+          |                                                ^
+      336 |   await page.getByLabel('密码', { exact: true }).fill(secret);
+      337 |   await page.getByRole('button', { name: '登录', exact: true }).click();
+      338 |   await expect(page.getByRole('alert')).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:335:48
+
+    Error Context: .work\browser-red\acceptance-web-WEB-18-PRD--e38b3--contain-submitted-password-webkit\error-context.md
+
+
+  98) [firefox] › tests\acceptance\web.spec.ts:199:5 › WEB-11 PRD UX: login shows pending state and blocks duplicate submit during a real request 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:200:13
+
+    Error Context: .work\browser-red\acceptance-web-WEB-11-PRD--6827b-ubmit-during-a-real-request-firefox\error-context.md
+
+
+
+
+[99/105] [firefox] › tests\acceptance\web.spec.ts:229:5 › WEB-12 PRD login: network failure differs from credential failure and permits retry
+  99) [firefox] › tests\acceptance\web.spec.ts:229:5 › WEB-12 PRD login: network failure differs from credential failure and permits retry 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      229 | test('WEB-12 PRD login: network failure differs from credential failure and permits retry', async ({ page }) => {
+      230 |   await page.goto('/login');
+    > 231 |   await page.getByLabel('账号', { exact: true }).fill('synthetic-unknown-user');
+          |                                                ^
+      232 |   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+      233 |   await page.getByRole('button', { name: '登录', exact: true }).click();
+      234 |   await expect(page.getByRole('alert')).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:231:48
+
+    Error Context: .work\browser-red\acceptance-web-WEB-12-PRD--224a2-l-failure-and-permits-retry-firefox\error-context.md
+
+
+
+
+[100/105] [firefox] › tests\acceptance\web.spec.ts:256:5 › WEB-13 FR-010: Disabled user sees failure and cannot enter protected app
+  100) [firefox] › tests\acceptance\web.spec.ts:256:5 › WEB-13 FR-010: Disabled user sees failure and cannot enter protected app 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:257:16
+
+    Error Context: .work\browser-red\acceptance-web-WEB-13-FR-0-1a681--cannot-enter-protected-app-firefox\error-context.md
+
+
+
+
+[101/105] [firefox] › tests\acceptance\web.spec.ts:269:5 › WEB-14 FR-002/003: duplicate-account feedback permits retry without losing invitation
+  101) [firefox] › tests\acceptance\web.spec.ts:269:5 › WEB-14 FR-002/003: duplicate-account feedback permits retry without losing invitation 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:270:32
+
+    Error Context: .work\browser-red\acceptance-web-WEB-14-FR-0-f3e71-y-without-losing-invitation-firefox\error-context.md
+
+
+
+
+[102/105] [firefox] › tests\acceptance\web.spec.ts:282:5 › WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated
+  102) [firefox] › tests\acceptance\web.spec.ts:282:5 › WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at caseInvitation (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:252:16)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:283:16
+
+    Error Context: .work\browser-red\acceptance-web-WEB-15-FR-0-2a89f-eps-browser-unauthenticated-firefox\error-context.md
+
+
+
+
+[103/105] [firefox] › tests\acceptance\web.spec.ts:294:5 › WEB-16 PRD UX: pending real registration prevents duplicate submission
+  103) [firefox] › tests\acceptance\web.spec.ts:294:5 › WEB-16 PRD UX: pending real registration prevents duplicate submission 
+
+    Error: BLOCKED: generate isolated acceptance fixtures in V010-003
+
+      10 | function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+      11 |   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
+    > 12 |   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
+         |                    ^
+      13 |   return JSON.parse(readFileSync(file, 'utf8'));
+      14 | }
+      15 | test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
+        at fixtures (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:12:20)
+        at caseInvitation (D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:252:16)
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:295:78
+
+    Error Context: .work\browser-red\acceptance-web-WEB-16-PRD--5512e-events-duplicate-submission-firefox\error-context.md
+
+
+
+
+[104/105] [firefox] › tests\acceptance\web.spec.ts:310:5 › WEB-17 FR-008: Redis-expired browser Session returns to login
+  104) [firefox] › tests\acceptance\web.spec.ts:310:5 › WEB-17 FR-008: Redis-expired browser Session returns to login 
+
+    Error: BLOCKED: real Redis observer missing
+
+      310 | test('WEB-17 FR-008: Redis-expired browser Session returns to login', async ({ page, context }, info) => {
+      311 |   const file = process.env.WEAVEOS_ACCEPTANCE_OBSERVER;
+    > 312 |   if (!file) throw new Error('BLOCKED: real Redis observer missing');
+          |                    ^
+      313 |   const module = await import(pathToFileURL(resolve(file)).href);
+      314 |   const o = await module.open({ baseURL: info.project.use.baseURL });
+      315 |   try {
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:312:20
+
+    Error Context: .work\browser-red\acceptance-web-WEB-17-FR-0-06e76-er-Session-returns-to-login-firefox\error-context.md
+
+
+
+
+[105/105] [firefox] › tests\acceptance\web.spec.ts:330:5 › WEB-18 PRD security: frontend logs do not contain submitted password
+  105) [firefox] › tests\acceptance\web.spec.ts:330:5 › WEB-18 PRD security: frontend logs do not contain submitted password 
+
+    Test timeout of 10000ms exceeded.
+
+    Error: locator.fill: Test timeout of 10000ms exceeded.
+    Call log:
+      - waiting for getByLabel('账号', { exact: true })
+
+
+      333 |   page.on('pageerror', error => messages.push(error.message));
+      334 |   await page.goto('/login');
+    > 335 |   await page.getByLabel('账号', { exact: true }).fill('synthetic-unknown-user');
+          |                                                ^
+      336 |   await page.getByLabel('密码', { exact: true }).fill(secret);
+      337 |   await page.getByRole('button', { name: '登录', exact: true }).click();
+      338 |   await expect(page.getByRole('alert')).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-009\tests\acceptance\web.spec.ts:335:48
+
+    Error Context: .work\browser-red\acceptance-web-WEB-18-PRD--e38b3--contain-submitted-password-firefox\error-context.md
+
+
+  105 failed
+    [chromium] › tests\acceptance\web.spec.ts:15:5 › FR-001/011: login is accessible and offers no self-service recovery 
+    [chromium] › tests\acceptance\web.spec.ts:23:5 › PRD interaction: password visibility can be toggled 
+    [chromium] › tests\acceptance\web.spec.ts:32:5 › FR-004: invitation URL fills the registration field 
+    [chromium] › tests\acceptance\web.spec.ts:36:5 › FR-018: registration exposes accessible password-strength feedback 
+    [chromium] › tests\acceptance\web.spec.ts:42:5 › FR-007: an anonymous browser cannot enter the protected app 
+    [chromium] › tests\acceptance\web.spec.ts:46:5 › FR-001: wrong credentials show an error and remain unauthenticated 
+    [chromium] › tests\acceptance\web.spec.ts:54:5 › FR-017: successful registration returns to login without a session 
+    [chromium] › tests\acceptance\web.spec.ts:66:5 › FR-005/008/009: real login survives reload, then logout revokes it 
+    [chromium] › tests\acceptance\web.spec.ts:90:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs 
+    [chromium] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /login has no self-service password recovery 
+    [chromium] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /register has no self-service password recovery 
+    [chromium] › tests\acceptance\web.spec.ts:105:5 › WEB-03 FR-004: percent-encoded invitation is decoded once and remains editable 
+    [chromium] › tests\acceptance\web.spec.ts:113:5 › WEB-04 FR-004: URL invitation is treated as text, not executable markup 
+    [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 账号 is not submitted 
+    [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 密码 is not submitted 
+    [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 账号 is not submitted 
+    [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 密码 is not submitted 
+    [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 确认密码 is not submitted 
+    [chromium] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 邀请码 is not submitted 
+    [chromium] › tests\acceptance\web.spec.ts:138:5 › WEB-06 user confirmation: mismatched password confirmation prevents registration 
+    [chromium] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing uppercase gives feedback and prevents submission 
+    [chromium] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing lowercase gives feedback and prevents submission 
+    [chromium] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing digit gives feedback and prevents submission 
+    [chromium] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing special gives feedback and prevents submission 
+    [chromium] › tests\acceptance\web.spec.ts:167:5 › WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server 
+    [chromium] › tests\acceptance\web.spec.ts:178:5 › WEB-09 PRD keyboard: Enter submits login without mouse interaction 
+    [chromium] › tests\acceptance\web.spec.ts:187:5 › WEB-10 FR-017: registration returns to login and requires password re-entry 
+    [chromium] › tests\acceptance\web.spec.ts:199:5 › WEB-11 PRD UX: login shows pending state and blocks duplicate submit during a real request 
+    [chromium] › tests\acceptance\web.spec.ts:229:5 › WEB-12 PRD login: network failure differs from credential failure and permits retry 
+    [chromium] › tests\acceptance\web.spec.ts:256:5 › WEB-13 FR-010: Disabled user sees failure and cannot enter protected app 
+    [chromium] › tests\acceptance\web.spec.ts:269:5 › WEB-14 FR-002/003: duplicate-account feedback permits retry without losing invitation 
+    [chromium] › tests\acceptance\web.spec.ts:282:5 › WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated 
+    [chromium] › tests\acceptance\web.spec.ts:294:5 › WEB-16 PRD UX: pending real registration prevents duplicate submission 
+    [chromium] › tests\acceptance\web.spec.ts:310:5 › WEB-17 FR-008: Redis-expired browser Session returns to login 
+    [chromium] › tests\acceptance\web.spec.ts:330:5 › WEB-18 PRD security: frontend logs do not contain submitted password 
+    [firefox] › tests\acceptance\web.spec.ts:15:5 › FR-001/011: login is accessible and offers no self-service recovery 
+    [firefox] › tests\acceptance\web.spec.ts:23:5 › PRD interaction: password visibility can be toggled 
+    [firefox] › tests\acceptance\web.spec.ts:32:5 › FR-004: invitation URL fills the registration field 
+    [firefox] › tests\acceptance\web.spec.ts:36:5 › FR-018: registration exposes accessible password-strength feedback 
+    [firefox] › tests\acceptance\web.spec.ts:42:5 › FR-007: an anonymous browser cannot enter the protected app 
+    [firefox] › tests\acceptance\web.spec.ts:46:5 › FR-001: wrong credentials show an error and remain unauthenticated 
+    [firefox] › tests\acceptance\web.spec.ts:54:5 › FR-017: successful registration returns to login without a session 
+    [firefox] › tests\acceptance\web.spec.ts:66:5 › FR-005/008/009: real login survives reload, then logout revokes it 
+    [firefox] › tests\acceptance\web.spec.ts:90:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs 
+    [firefox] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /login has no self-service password recovery 
+    [firefox] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /register has no self-service password recovery 
+    [firefox] › tests\acceptance\web.spec.ts:105:5 › WEB-03 FR-004: percent-encoded invitation is decoded once and remains editable 
+    [firefox] › tests\acceptance\web.spec.ts:113:5 › WEB-04 FR-004: URL invitation is treated as text, not executable markup 
+    [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 账号 is not submitted 
+    [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 密码 is not submitted 
+    [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 账号 is not submitted 
+    [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 密码 is not submitted 
+    [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 确认密码 is not submitted 
+    [firefox] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 邀请码 is not submitted 
+    [firefox] › tests\acceptance\web.spec.ts:138:5 › WEB-06 user confirmation: mismatched password confirmation prevents registration 
+    [firefox] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing uppercase gives feedback and prevents submission 
+    [firefox] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing lowercase gives feedback and prevents submission 
+    [firefox] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing digit gives feedback and prevents submission 
+    [firefox] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing special gives feedback and prevents submission 
+    [firefox] › tests\acceptance\web.spec.ts:167:5 › WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server 
+    [firefox] › tests\acceptance\web.spec.ts:178:5 › WEB-09 PRD keyboard: Enter submits login without mouse interaction 
+    [firefox] › tests\acceptance\web.spec.ts:187:5 › WEB-10 FR-017: registration returns to login and requires password re-entry 
+    [firefox] › tests\acceptance\web.spec.ts:199:5 › WEB-11 PRD UX: login shows pending state and blocks duplicate submit during a real request 
+    [firefox] › tests\acceptance\web.spec.ts:229:5 › WEB-12 PRD login: network failure differs from credential failure and permits retry 
+    [firefox] › tests\acceptance\web.spec.ts:256:5 › WEB-13 FR-010: Disabled user sees failure and cannot enter protected app 
+    [firefox] › tests\acceptance\web.spec.ts:269:5 › WEB-14 FR-002/003: duplicate-account feedback permits retry without losing invitation 
+    [firefox] › tests\acceptance\web.spec.ts:282:5 › WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated 
+    [firefox] › tests\acceptance\web.spec.ts:294:5 › WEB-16 PRD UX: pending real registration prevents duplicate submission 
+    [firefox] › tests\acceptance\web.spec.ts:310:5 › WEB-17 FR-008: Redis-expired browser Session returns to login 
+    [firefox] › tests\acceptance\web.spec.ts:330:5 › WEB-18 PRD security: frontend logs do not contain submitted password 
+    [webkit] › tests\acceptance\web.spec.ts:15:5 › FR-001/011: login is accessible and offers no self-service recovery 
+    [webkit] › tests\acceptance\web.spec.ts:23:5 › PRD interaction: password visibility can be toggled 
+    [webkit] › tests\acceptance\web.spec.ts:32:5 › FR-004: invitation URL fills the registration field 
+    [webkit] › tests\acceptance\web.spec.ts:36:5 › FR-018: registration exposes accessible password-strength feedback 
+    [webkit] › tests\acceptance\web.spec.ts:42:5 › FR-007: an anonymous browser cannot enter the protected app 
+    [webkit] › tests\acceptance\web.spec.ts:46:5 › FR-001: wrong credentials show an error and remain unauthenticated 
+    [webkit] › tests\acceptance\web.spec.ts:54:5 › FR-017: successful registration returns to login without a session 
+    [webkit] › tests\acceptance\web.spec.ts:66:5 › FR-005/008/009: real login survives reload, then logout revokes it 
+    [webkit] › tests\acceptance\web.spec.ts:90:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs 
+    [webkit] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /login has no self-service password recovery 
+    [webkit] › tests\acceptance\web.spec.ts:97:7 › WEB-02 FR-011: /register has no self-service password recovery 
+    [webkit] › tests\acceptance\web.spec.ts:105:5 › WEB-03 FR-004: percent-encoded invitation is decoded once and remains editable 
+    [webkit] › tests\acceptance\web.spec.ts:113:5 › WEB-04 FR-004: URL invitation is treated as text, not executable markup 
+    [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 账号 is not submitted 
+    [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /login missing 密码 is not submitted 
+    [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 账号 is not submitted 
+    [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 密码 is not submitted 
+    [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 确认密码 is not submitted 
+    [webkit] › tests\acceptance\web.spec.ts:124:37 › WEB-05 PRD input validation: /register missing 邀请码 is not submitted 
+    [webkit] › tests\acceptance\web.spec.ts:138:5 › WEB-06 user confirmation: mismatched password confirmation prevents registration 
+    [webkit] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing uppercase gives feedback and prevents submission 
+    [webkit] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing lowercase gives feedback and prevents submission 
+    [webkit] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing digit gives feedback and prevents submission 
+    [webkit] › tests\acceptance\web.spec.ts:151:7 › WEB-07 FR-018: missing special gives feedback and prevents submission 
+    [webkit] › tests\acceptance\web.spec.ts:167:5 › WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server 
+    [webkit] › tests\acceptance\web.spec.ts:178:5 › WEB-09 PRD keyboard: Enter submits login without mouse interaction 
+    [webkit] › tests\acceptance\web.spec.ts:187:5 › WEB-10 FR-017: registration returns to login and requires password re-entry 
+    [webkit] › tests\acceptance\web.spec.ts:199:5 › WEB-11 PRD UX: login shows pending state and blocks duplicate submit during a real request 
+    [webkit] › tests\acceptance\web.spec.ts:229:5 › WEB-12 PRD login: network failure differs from credential failure and permits retry 
+    [webkit] › tests\acceptance\web.spec.ts:256:5 › WEB-13 FR-010: Disabled user sees failure and cannot enter protected app 
+    [webkit] › tests\acceptance\web.spec.ts:269:5 › WEB-14 FR-002/003: duplicate-account feedback permits retry without losing invitation 
+    [webkit] › tests\acceptance\web.spec.ts:282:5 › WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated 
+    [webkit] › tests\acceptance\web.spec.ts:294:5 › WEB-16 PRD UX: pending real registration prevents duplicate submission 
+    [webkit] › tests\acceptance\web.spec.ts:310:5 › WEB-17 FR-008: Redis-expired browser Session returns to login 
+    [webkit] › tests\acceptance\web.spec.ts:330:5 › WEB-18 PRD security: frontend logs do not contain submitted password 

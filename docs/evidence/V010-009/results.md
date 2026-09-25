@@ -38,3 +38,19 @@ node --test --test-concurrency=1 --test-reporter=tap tests/acceptance/api.test.m
 - 全产品GREEN、真实存储/迁移、HTTPS E2E、OpenAPI校验与人工签署：NOT RUN/BLOCKED，详见coverage.md。
 
 本机自动审批曾拒绝组合Start-Process/Stop-Process命令（仅给出blocked by policy，未提供更具体理由）；未强行重试该命令。改用工具管理的独立PTY运行BFF，并通过该session的Ctrl-C停止，执行成功。未向用户要求解除审批限制。
+
+## 全套浏览器最终执行
+
+`pnpm exec playwright test --config .work/red.config.ts tests/acceptance/web.spec.ts --workers=3 --timeout=10000`，2026-09-25 11:20–11:25 +08:00，实际退出1，三引擎共105失败/0通过/0skip。27项缺fixture、3项缺Redis observer，合计30个显式BLOCKED；其余75项因页面尚无产品UI而失败，其中深层交互常在fill前置步骤终止，不能说75个目标业务都已RED。前述选择性9项已确认到达目标断言；全量不是产品验收通过。
+
+本轮并行只作用于没有fixture、没有依赖故障注入的空UI RED采集；接入真实故障/恢复后必须按coverage.md串行或为每worker装配独立全栈。10秒是本次已知空UI采集的有界超时，默认产品配置30秒未修改。原始browser-all.txt在本目录，可核对每项失败位置。前置加载/编译/端口失败均未冒称目标RED。
+
+补充：本机Go test ./...和go vet ./...实际通过。Go race结果单独登记。GitHub草稿PR #3；21a33cc的Repository governance运行36090299985已success，CI运行36090299966当时pending；后续head必须重新查询，不拿该结果当最终PR已验收。
+
+## 失败诊断去敏修复（独立RED→GREEN）
+
+最终自查发现断言helper用assert.equal(data,null)会在错误data含密码时把整个实际对象打印出来。先添加DIAGNOSTICS-01复现：提交5bba8fe，实际1失败、退出1；diagnostics-red-source.zip及diagnostics-red.tap保留原始版本和断言原因。随后改为布尔断言，Cookie与浏览器Cookie数组断言也只输出布尔/数量，提交48427760278fb75e7040b7eb576c47c53e7a6d15；实际1通过、退出0，diagnostics-green.tap保留证据。此GREEN只属于测试诊断helper，未实现任何认证业务。
+
+最终可恢复测试源码verified-test-source.zip，SHA256见SHA256SUMS。2026-09-25 11:28 +08:00，对该源码执行`node --test --test-concurrency=1 --test-reporter=tap tests/acceptance/*.test.mjs`：117项中1个诊断helper测试通过，116个产品用例失败（65目标RED、51前置BLOCKED），0skip，退出1，见product-verified.tap。原有57项回归再次通过；TypeScript通过；Go race与vet实际退出0。浏览器全量结果对应aa5efd7源码；后来只修改Cookie失败输出以避免泄露，未重跑全浏览器，类型检查通过，不把旧浏览器执行称为最终源码的新运行。
+
+仍须007对Playwright错误上下文/报告做全量去敏装配，本PR没有声称关闭trace就保证所有报告无凭据。本轮没有真实fixture，归档仅包含人工合成测试值，不含会话或真实邀请码。源码/证据归档不包含.work依赖、浏览器下载或二进制BFF。

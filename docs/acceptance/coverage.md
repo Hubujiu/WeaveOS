@@ -104,3 +104,5 @@ pnpm exec playwright test tests/acceptance/web.spec.ts
 ```
 
 fixture放在忽略的.work目录，未授权远程目标不运行可变更数据的测试。当前acceptance.yml只调用api.test.mjs；007接手必须显式加integration.test.mjs和真实observer，不得声称本PR已经启用全部CI验收。
+
+测试诊断自身另有diagnostics.test.mjs（1项）：保证故意畸形的错误响应不会通过断言诊断泄露敏感data，已实际RED→GREEN。运行全部Node测试可用`node --test --test-concurrency=1 tests/acceptance/*.test.mjs`，这1项helper通过不计入产品验收。
