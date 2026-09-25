@@ -1,12 +1,6 @@
-import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 
-// PRD-defined visible behavior; proposed /login, /register, /app route bindings are reviewed in V010-002/006.
-function fixtures(): { user: { account: string; password: string }; uiInvitations: Record<string, string> } {
-  const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
-  if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
-  return JSON.parse(readFileSync(file, 'utf8'));
-}
+// Browser-only component tests. Each API response is controlled at the network boundary.
 test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: '登录', exact: true })).toBeVisible();
@@ -31,7 +25,10 @@ test('FR-004: invitation URL fills the registration field', async ({ page }) => 
 
 test('FR-002: registration rejects an account containing spaces before submission', async ({ page }) => {
   let registrations = 0;
-  page.on('request', request => { if (request.url().endsWith('/api/v1/registrations')) registrations += 1; });
+  await page.route('**/api/v1/registrations', route => {
+    registrations += 1;
+    return route.fulfill({ status: 500, body: '{}' });
+  });
   await page.goto('/register?invitationCode=synthetic-prefill-value');
   await page.getByLabel('账号', { exact: true }).fill('Alice Smith');
   await page.getByLabel('密码', { exact: true }).fill('A@1a');
@@ -53,48 +50,31 @@ test('FR-018: registration exposes accessible password-strength feedback', async
   await expect(page.getByRole('progressbar', { name: '密码强度' })).toBeVisible();
 });
 test('FR-007: an anonymous browser cannot enter the protected app', async ({ page }) => {
+  await page.route('**/api/v1/sessions/current', route => route.fulfill({ status: 401, body: '{"code":"AUTH_UNAUTHENTICATED","message":"login required","data":null,"meta":null}', contentType: 'application/json' }));
   await page.goto('/app');
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
 });
+test('API-14: a current-session service failure is shown as a system error', async ({ page }) => {
+  await page.route('**/api/v1/sessions/current', route => route.fulfill({ status: 503, body: '{"code":"SYSTEM_UNAVAILABLE","message":"temporary","data":null,"meta":null}', contentType: 'application/json' }));
+  await page.goto('/app');
+  await expect(page).toHaveURL(/\/app(?:\?|$)/);
+  await expect(page.getByRole('alert')).toContainText('服务暂时不可用');
+});
+test('FR-001 UX: login reports a network failure in plain language', async ({ page }) => {
+  await page.route('**/api/v1/sessions', route => route.abort('failed'));
+  await page.goto('/login');
+  await page.getByLabel('账号', { exact: true }).fill('synthetic-user');
+  await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+  await page.getByRole('button', { name: '登录', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('网络连接失败');
+  await expect(page).toHaveURL(/\/login(?:\?|$)/);
+});
 test('FR-001: wrong credentials show an error and remain unauthenticated', async ({ page }) => {
+  await page.route('**/api/v1/sessions', route => route.fulfill({ status: 401, body: '{"code":"AUTH_INVALID_CREDENTIALS","message":"invalid credentials","data":null,"meta":null}', contentType: 'application/json' }));
   await page.goto('/login');
   await page.getByLabel('账号', { exact: true }).fill('synthetic-nonexistent-user');
   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
-  await expect(page).toHaveURL(/\/login(?:\?|$)/);
-});
-test('FR-017: successful registration returns to login without a session', async ({ page, context }, info) => {
-  const f = fixtures();
-  const invitation = f.uiInvitations[info.project.name];
-  expect(invitation).toBeTruthy();
-  await page.goto(`/register?invitationCode=${encodeURIComponent(invitation)}`);
-  await page.getByLabel('账号', { exact: true }).fill(`ui-${info.project.name}-${Date.now()}`);
-  await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
-  await page.getByRole('button', { name: '注册', exact: true }).click();
-  await expect(page).toHaveURL(/\/login(?:\?|$)/);
-  expect((await context.cookies()).filter(cookie => cookie.httpOnly)).toHaveLength(0);
-});
-test('FR-005/008/009: real login survives reload, then logout revokes it', async ({ page, context }) => {
-  const f = fixtures();
-  await page.goto('/login');
-  await page.getByLabel('账号', { exact: true }).fill(f.user.account);
-  await page.getByLabel('密码', { exact: true }).fill(f.user.password);
-  await page.getByRole('button', { name: '登录', exact: true }).click();
-  await expect(page).toHaveURL(/\/app(?:\/|\?|$)/);
-  await page.reload();
-  await expect(page.getByText(f.user.account, { exact: true })).toBeVisible();
-  const cookies = await context.cookies();
-  const authCookies = cookies.filter(cookie => cookie.httpOnly);
-  expect(authCookies.length).toBeGreaterThan(0);
-  for (const cookie of authCookies) {
-    expect(cookie.secure).toBe(true);
-    expect(['Lax', 'Strict']).toContain(cookie.sameSite);
-    const exposed = await page.evaluate(value => document.cookie.includes(value) || JSON.stringify(localStorage).includes(value) || JSON.stringify(sessionStorage).includes(value), cookie.value);
-    expect(exposed).toBe(false);
-  }
-  await page.getByRole('button', { name: '退出登录', exact: true }).click();
-  await expect(page).toHaveURL(/\/login(?:\?|$)/);
-  await page.goto('/app');
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
 });

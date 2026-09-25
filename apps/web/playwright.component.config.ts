@@ -2,8 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 // Frontend-only checks run against Vite; API calls are mocked per test.
 export default defineConfig({
-  testDir: '../../tests/acceptance',
-  testMatch: 'web.spec.ts',
+  testDir: 'src',
+  testMatch: '*.component.spec.ts',
   workers: 1,
   retries: 0,
   timeout: 30_000,

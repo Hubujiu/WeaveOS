@@ -5,18 +5,27 @@ import brand from './assets/brand.svg';
 type User = { id: string; account: string };
 type Envelope<T> = { code: string; message: string; data: T; meta: { requestId: string } | null };
 
+class ApiError extends Error {
+  constructor(message: string, readonly status: number) { super(message); }
+}
+
 async function api<T>(path: string, method = 'GET', body?: object): Promise<T> {
-  const response = await fetch(`/api/v1/${path}`, {
-    method,
-    credentials: 'include',
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`/api/v1/${path}`, {
+      method,
+      credentials: 'include',
+      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new ApiError('网络连接失败，请检查网络后重试', 0);
+  }
   if (!response.ok) {
-    if (response.status === 401) throw new Error('账号或密码错误');
-    if (response.status === 409) throw new Error('账号已存在');
-    if (response.status === 400 || response.status === 403) throw new Error('输入信息或邀请码无效');
-    throw new Error('服务暂时不可用，请稍后重试');
+    if (response.status === 401) throw new ApiError('账号或密码错误', 401);
+    if (response.status === 409) throw new ApiError('账号已存在', 409);
+    if (response.status === 400 || response.status === 403) throw new ApiError('输入信息或邀请码无效', response.status);
+    throw new ApiError('服务暂时不可用，请稍后重试', response.status);
   }
   if (response.status === 204) return undefined as T;
   const envelope = await response.json() as Envelope<T>;
@@ -135,7 +144,15 @@ function ProtectedApp() {
 
   useEffect(() => {
     let active = true;
-    api<User>('sessions/current').then(value => { if (active) { setUser(value); setChecking(false); } }).catch(() => { if (active) navigate('/login', { replace: true }); });
+    api<User>('sessions/current').then(value => { if (active) { setUser(value); setChecking(false); } }).catch(cause => {
+      if (!active) return;
+      if (cause instanceof ApiError && cause.status === 401) {
+        navigate('/login', { replace: true });
+      } else {
+        setError(cause instanceof Error ? cause.message : '服务暂时不可用，请稍后重试');
+        setChecking(false);
+      }
+    });
     return () => { active = false; };
   }, [navigate]);
 
@@ -149,6 +166,7 @@ function ProtectedApp() {
   }
 
   if (checking) return <div className="site"><BrandHeader /><main className="app-main" aria-live="polite">正在验证登录态…</main></div>;
+  if (!user) return <div className="site"><BrandHeader /><main className="app-main"><h1>无法验证登录态</h1><p role="alert">{error}</p><button className="primary-button" type="button" onClick={() => window.location.reload()}>重试</button></main></div>;
   return <div className="site"><BrandHeader /><main className="app-main"><h1>欢迎</h1><p>{user?.account}</p>{error && <p role="alert">{error}</p>}<button className="primary-button" type="button" onClick={logout} disabled={pending}>退出登录</button></main></div>;
 }
 
