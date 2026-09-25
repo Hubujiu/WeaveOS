@@ -130,4 +130,3 @@ COMMENT ON COLUMN auth.authentication_events.session_ref IS '独立非认证 UUI
 
 -- Initial authentication tables contain user and audit data. Rollback is a reviewed
 -- forward repair or isolated database restore, not an automatic destructive Down.
-
