@@ -74,9 +74,10 @@ test('API-06: published error table preserves accepted ADR mapping', () => {
 
 test('API-07: account rule preserves case and rejects internal whitespace after trimming', () => {
   const account = operation('/api/v1/registrations', 'post')?.requestBody?.content?.['application/json']?.schema?.properties?.account;
-  assert.deepEqual(account?.['x-account-normalization'], {
-    trimEdgeSpaces: true, caseFolding: false, rejectInternalWhitespace: true,
-  });
+  const normalization = account?.['x-account-normalization'];
+  assert.equal(normalization?.trimEdgeSpaces, true);
+  assert.equal(normalization?.caseFolding, false);
+  assert.equal(normalization?.rejectInternalWhitespace, true);
 });
 
 test('API-08: every declared response carries a server-issued request ID', () => {

@@ -34,11 +34,12 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 254,
-                    "description": "Trim leading/trailing spaces, preserve case, reject any remaining spaces. Whether differently cased accounts conflict remains under review.",
+                    "description": "Trim leading/trailing spaces and reject any remaining spaces. Preserve case: Alice and alice are distinct accounts.",
                     "x-account-normalization": {
                       "caseFolding": false,
                       "trimEdgeSpaces": true,
-                      "rejectInternalWhitespace": true
+                      "rejectInternalWhitespace": true,
+                      "caseSensitiveUniqueness": true
                     }
                   },
                   "password": {
@@ -121,7 +122,12 @@
                   "account": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 254
+                    "maxLength": 254,
+                    "description": "Trim leading/trailing spaces; match the exact case of the registered account.",
+                    "x-account-lookup": {
+                      "trimEdgeSpaces": true,
+                      "caseSensitive": true
+                    }
                   },
                   "password": {
                     "type": "string",
