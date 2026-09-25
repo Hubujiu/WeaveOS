@@ -28,6 +28,28 @@ test('FR-004: invitation URL fills the registration field', async ({ page }) => 
   await page.goto('/register?invitationCode=synthetic-prefill-value');
   await expect(page.getByLabel('邀请码', { exact: true })).toHaveValue('synthetic-prefill-value');
 });
+
+test('FR-002: registration rejects an account containing spaces before submission', async ({ page }) => {
+  let registrations = 0;
+  await page.route('**/api/v1/registrations', route => {
+    registrations += 1;
+    return route.fulfill({ status: 500, body: '{}' });
+  });
+  await page.goto('/register?invitationCode=synthetic-prefill-value');
+  await page.getByLabel('账号', { exact: true }).fill('Alice Smith');
+  await page.getByLabel('密码', { exact: true }).fill('A@1a');
+  await page.getByLabel('确认密码', { exact: true }).fill('A@1a');
+  await page.getByRole('button', { name: '注册', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('空格');
+  expect(registrations).toBe(0);
+});
+
+test('FR-018: four required character classes suffice without a length hint', async ({ page }) => {
+  await page.goto('/register?invitationCode=synthetic-prefill-value');
+  await expect(page.getByText('至少 10 位')).toHaveCount(0);
+  await page.getByLabel('密码', { exact: true }).fill('A@1a');
+  await expect(page.getByRole('progressbar', { name: '密码强度' })).toBeVisible();
+});
 test('FR-018: registration exposes accessible password-strength feedback', async ({ page }) => {
   await page.goto('/register');
   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
