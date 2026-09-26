@@ -1,6 +1,15 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, Navigate, Route, Routes, useNavigate, useSearchParams } from 'react-router';
-import brand from './assets/brand.svg';
+import brandLogin from './assets/waveos-brand-login.svg';
+import brandRegister from './assets/waveos-brand-register.svg';
+import glowLogin from './assets/waveos-glow-login.svg';
+import glowRegister from './assets/waveos-glow-register.svg';
+import errorIcon from './assets/waveos-error.svg';
+import userLoginIcon from './assets/waveos-user-login.svg';
+import userRegisterIcon from './assets/waveos-user-register.svg';
+import lockIcon from './assets/waveos-lock-login.svg';
+import eyeIcon from './assets/waveos-eye-login.svg';
+import invitationIcon from './assets/waveos-invitation.svg';
 
 type User = { id: string; account: string };
 type Envelope<T> = { code: string; message: string; data: T; meta: { requestId: string } | null };
@@ -33,29 +42,28 @@ async function api<T>(path: string, method = 'GET', body?: object): Promise<T> {
   return envelope.data;
 }
 
-function BrandHeader() {
-  return <header className="brand-header"><img src={brand} width="20" height="24" alt="" /><span>DocWeave</span></header>;
+function BrandHeader({ register = false }: { register?: boolean }) {
+  return <header className="brand-header"><div className="brand-identity"><img src={register ? brandRegister : brandLogin} width="62" height="46" alt="" /><span>WaveOS</span></div><span className="brand-slogan">安全 · 高效 · 连接世界</span></header>;
 }
 
-function AuthLayout({ children }: { children: ReactNode }) {
-  return <div className="site"><BrandHeader /><main className="auth-main"><div className="auth-card">{children}</div></main></div>;
+function AuthLayout({ children, register = false }: { children: ReactNode; register?: boolean }) {
+  return <div className="site"><BrandHeader register={register} /><main className="auth-main"><img className="auth-glow" src={register ? glowRegister : glowLogin} width="1260" height="1260" alt="" /><div className="auth-card">{children}</div></main></div>;
 }
 
-function AccountField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  return <><label htmlFor="account">账号</label><input id="account" name="account" type="text" value={value} onChange={event => onChange(event.target.value)} placeholder="输入账号" autoComplete="username" maxLength={254} required /></>;
+function AccountField({ value, onChange, register = false }: { value: string; onChange: (value: string) => void; register?: boolean }) {
+  return <div className="auth-field"><label htmlFor="account">邮箱 / 用户名{register && <span className="required"> *</span>}</label><div className="field-input"><img src={register ? userRegisterIcon : userLoginIcon} width="24" height="24" alt="" /><input id="account" name="account" aria-label="账号" type="text" value={value} onChange={event => onChange(event.target.value)} placeholder={register ? '请输入邮箱或用户名' : 'user@example.com'} autoComplete="username" maxLength={254} required /></div></div>;
 }
 
-function PasswordField({ id = 'password', label = '密码', value, onChange, showStrength = false }: { id?: string; label?: string; value: string; onChange: (value: string) => void; showStrength?: boolean }) {
+function PasswordField({ id = 'password', label = '密码', value, onChange, showStrength = false, register = false }: { id?: string; label?: string; value: string; onChange: (value: string) => void; showStrength?: boolean; register?: boolean }) {
   const [visible, setVisible] = useState(false);
   const strength = [/[A-Z]/, /[a-z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(pattern => pattern.test(value)).length;
-  return <>
-    <label htmlFor={id}>{label}</label>
-    <div className="password-field">
-      <input id={id} name={id} type={visible ? 'text' : 'password'} value={value} onChange={event => onChange(event.target.value)} placeholder={id === 'confirmation' ? '再次输入密码' : '输入密码'} autoComplete={id === 'confirmation' ? 'new-password' : 'current-password'} required />
-      <button type="button" className="visibility" aria-label={visible ? '隐藏密码' : '显示密码'} onClick={() => setVisible(!visible)}>{visible ? '隐藏' : '显示'}</button>
-      {showStrength && <div className="strength" role="progressbar" aria-label="密码强度" aria-valuemin={0} aria-valuemax={4} aria-valuenow={strength}>{[1, 2, 3, 4].map(segment => <span key={segment} className={segment <= strength ? 'active' : ''} />)}</div>}
+  return <div className="auth-field"><label htmlFor={id}>{label}{register && <span className="required"> *</span>}</label>
+    <div className="field-input password-field"><img src={lockIcon} width="24" height="24" alt="" />
+      <input id={id} name={id} aria-label={label} type={visible ? 'text' : 'password'} value={value} onChange={event => onChange(event.target.value)} placeholder={id === 'confirmation' ? '请再次输入密码' : '请输入密码'} autoComplete={id === 'confirmation' || register ? 'new-password' : 'current-password'} required />
+      <button type="button" className="visibility" aria-label={visible ? '隐藏密码' : '显示密码'} onClick={() => setVisible(!visible)}><img src={eyeIcon} width="24" height="24" alt="" /></button>
     </div>
-  </>;
+    {showStrength && <div className="strength" role="progressbar" aria-label="密码强度" aria-valuemin={0} aria-valuemax={4} aria-valuenow={strength}>{[1, 2, 3, 4].map(segment => <span key={segment} className={segment <= strength ? 'active' : ''} />)}</div>}
+  </div>;
 }
 
 function accountError(account: string): string | null {
@@ -86,13 +94,13 @@ function Login() {
     finally { setPending(false); }
   }
 
-  return <AuthLayout><form onSubmit={submit} noValidate>
-    <h1>登录</h1><p className="subtitle">使用企业账号登录</p>
+  return <AuthLayout><form className="auth-form login-form" onSubmit={submit} noValidate>
+    <div className="form-heading"><h1>登录</h1><p className="subtitle">登录您的账号，开始高效沟通</p></div>
+    {error && <div role="alert" className="form-error"><img src={errorIcon} width="26" height="26" alt="" /><span><strong>{error}</strong><small>请检查输入后重试。</small></span></div>}
     <AccountField value={account} onChange={setAccount} />
     <PasswordField value={password} onChange={setPassword} />
-    {error && <p role="alert" className="form-error">{error}</p>}
     <button className="primary-button" type="submit" disabled={pending}>{pending ? '登录中…' : '登录'}</button>
-    <Link className="secondary-link" to="/register">没有账号？注册</Link>
+    <p className="form-prompt">还没有账号？ <Link className="secondary-link" to="/register">立即注册</Link></p>
   </form></AuthLayout>;
 }
 
@@ -123,15 +131,15 @@ function Register() {
     finally { setPending(false); }
   }
 
-  return <AuthLayout><form onSubmit={submit} noValidate>
-    <h1>注册</h1><p className="subtitle">创建新账号后即可登录。</p>
-    <AccountField value={account} onChange={setAccount} />
-    <PasswordField value={password} onChange={setPassword} showStrength />
-    <PasswordField id="confirmation" label="确认密码" value={confirmation} onChange={setConfirmation} />
-    <label htmlFor="invitationCode">邀请码</label><input id="invitationCode" name="invitationCode" type="text" value={invitationCode} onChange={event => setInvitationCode(event.target.value)} placeholder="输入邀请码" required />
+  return <AuthLayout register><form className="auth-form register-form" onSubmit={submit} noValidate>
+    <div className="form-heading"><h1>注册</h1><p className="subtitle">创建您的账号，开始使用 WaveOS</p></div>
+    <AccountField value={account} onChange={setAccount} register />
+    <PasswordField value={password} onChange={setPassword} showStrength register />
+    <PasswordField id="confirmation" label="确认密码" value={confirmation} onChange={setConfirmation} register />
+    <div className="auth-field"><label htmlFor="invitationCode">邀请码<span className="required"> *</span></label><div className="field-input"><img src={invitationIcon} width="24" height="24" alt="" /><input id="invitationCode" name="invitationCode" aria-label="邀请码" type="text" value={invitationCode} onChange={event => setInvitationCode(event.target.value)} placeholder="请输入邀请码" required /></div></div>
     {error && <p role="alert" className="form-error">{error}</p>}
     <button className="primary-button" type="submit" disabled={pending}>{pending ? '注册中…' : '注册'}</button>
-    <Link className="secondary-link" to="/login">已有账号？登录</Link>
+    <p className="form-prompt">已有账号？ <Link className="secondary-link" to="/login">立即登录</Link></p>
   </form></AuthLayout>;
 }
 

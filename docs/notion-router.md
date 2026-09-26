@@ -25,13 +25,13 @@
 
 ## 原型与组件入口
 
-登录： https://www.figma.com/design/9UE263yT1anH3KG9qBjXiT?node-id=26-423
+登录： https://www.figma.com/design/r0mSerkjrPdwJVME658W6a/WaveOS?node-id=13-2
 
-注册： https://www.figma.com/design/9UE263yT1anH3KG9qBjXiT?node-id=26-439
+注册： https://www.figma.com/design/r0mSerkjrPdwJVME658W6a/WaveOS?node-id=40-2
 
 组件库： https://github.com/Hubujiu/React- 。先实际读取其 `AGENTS.md`，再按其路由读取消费规则与批准登记。需要 Notion「组件库收藏」时用授权连接器定位对应数据库，不编造 ID。不能把收藏状态推定为允许采用/修改；没有批准的匹配组件时报告 `COMPONENT_GAP`。
 
-此处仅保存 PRD 中的原型链接；本次初始化未读取或验收 Figma 画布，未导入组件。
+2026-09-26 用户指定 WaveOS 文件替换旧原型；以上链接已先回写并复核正式 PRD。V010-006 已读取这两个节点的高保真上下文和截图，正在实现；登录页额外入口与 PRD 的冲突见 Notion 临时问题清单 Q12，不能把替换文件理解为自动批准需求扩张。此索引不代表页面验收完成。
 
 ## 状态与完整性门禁
 
