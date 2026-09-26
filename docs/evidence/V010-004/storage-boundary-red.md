@@ -1,6 +1,6 @@
 # Malformed Session storage: genuine RED → GREEN
 
-Recoverable pre-fix implementation: `session-pre-boundary.go`, exported from `b61fd5338f3cecb0aaa0e5d4c8a9d8535a4a3ff5`, SHA-256 `4ED7028844CAA5FC3A63139B0B04F036C4E6A0777ECD4D2E663980F07AE8005C`. Original no-behavior stub: `session-original-stub.go`, exported from `f0610632448360226cbfd325d2ede256a572d14d`, SHA-256 `A32C8D46C5AD3D4F922B1EE934583818FAD2BF9D6241A90CC39020AAB4FD20CE`. Copy these sources and the corresponding test snapshot back into the original package for a separately labeled replay; do not treat replay as the original run.
+Recoverable pre-fix implementation: `session-pre-boundary.go`, exported from `b61fd5338f3cecb0aaa0e5d4c8a9d8535a4a3ff5`, Git blob SHA-256 `00C2608009DD5D5A02DF76937524EE38B30ACD220365E2B05AC1B24DC99EA571`. Original no-behavior stub: `session-original-stub.go`, exported from `f0610632448360226cbfd325d2ede256a572d14d`, Git blob SHA-256 `8D2F0EA18E008F8F7585C7A4BA2FE1391FC24BFE70B62AA175731DA850D2EA20`. These hashes refer to committed LF bytes; Windows checkout may convert to CRLF. Copy these sources and the corresponding test snapshot back into the original package for a separately labeled replay; do not treat replay as the original run.
 
 Source: approved Redis Session data specification sections 2, 4 and 5 require one valid JSON record, valid timestamps and TTL within (0, 3600000] ms; invalid structure must not be renewed. These are independent storage requirements and do not choose the still-unanswered Cookie names in Q7.
 
