@@ -1,0 +1,11 @@
+{
+ "services": {
+  "postgres": {"image":"postgres:18.0","env_file":["${WEAVEOS_RUNTIME_DIR}/postgres.env"],"volumes":["pg:/var/lib/postgresql"],"healthcheck":{"test":["CMD-SHELL","pg_isready -U weaveos_owner -d weaveos_runtime"],"interval":"2s","timeout":"3s","retries":30},"mem_limit":"512m","cpus":2,"logging":{"driver":"json-file","options":{"max-size":"10m","max-file":"3"}}},
+  "redis": {"image":"redis:8.2.1","command":["redis-server","/run/secrets/redis.conf","--save","","--appendonly","no","--maxmemory","128mb","--maxmemory-policy","noeviction"],"env_file":["${WEAVEOS_RUNTIME_DIR}/redis.env"],"volumes":["${WEAVEOS_RUNTIME_DIR}/redis.conf:/run/secrets/redis.conf:ro"],"healthcheck":{"test":["CMD","redis-cli","ping"],"interval":"2s","timeout":"3s","retries":30},"mem_limit":"256m","cpus":1,"logging":{"driver":"json-file","options":{"max-size":"10m","max-file":"3"}}},
+  "bff": {"image":"${WEAVEOS_BFF_IMAGE}","user":"65532:65532","read_only":true,"cap_drop":["ALL"],"security_opt":["no-new-privileges:true"],"env_file":["${WEAVEOS_RUNTIME_DIR}/runtime.env"],"environment":{"BFF_ADDR":"0.0.0.0:8080","WEAVEOS_TRUSTED_PROXY_HOSTS":"nginx","WEAVEOS_PUBLIC_ORIGIN":"https://localhost:19443"},"depends_on":{"postgres":{"condition":"service_healthy"},"redis":{"condition":"service_healthy"}},"mem_limit":"256m","cpus":2,"logging":{"driver":"json-file","options":{"max-size":"10m","max-file":"3"}}},
+  "audit-maintenance": {"image":"${WEAVEOS_BFF_IMAGE}","user":"65532:65532","read_only":true,"cap_drop":["ALL"],"security_opt":["no-new-privileges:true"],"command":["/app/audit-maintenance"],"env_file":["${WEAVEOS_RUNTIME_DIR}/maintenance.env"],"depends_on":{"postgres":{"condition":"service_healthy"}},"mem_limit":"128m","cpus":1,"logging":{"driver":"json-file","options":{"max-size":"10m","max-file":"3"}}},
+  "nginx": {"image":"${WEAVEOS_WEB_IMAGE}","ports":["127.0.0.1:19443:19443"],"volumes":["${WEAVEOS_RUNTIME_DIR}/tls:/etc/nginx/tls:ro"],"depends_on":["bff"],"mem_limit":"128m","cpus":1,"logging":{"driver":"json-file","options":{"max-size":"10m","max-file":"3"}}}
+ },
+ "volumes":{"pg":{}},
+ "networks":{"default":{"internal":true}}
+}
