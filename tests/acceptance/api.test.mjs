@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 // Expected semantics are from PRD FR-001..018 and ADR-001/002, not BFF output.
-// V010-002 must ratify these draft bindings before publishing the HTTP contract.
+// V010-002 ratified these routes; reused invitation is the registered 409 conflict.
 const routes = JSON.parse(readFileSync(new URL('./bindings.json', import.meta.url), 'utf8'));
 const base = process.env.WEAVEOS_API_URL ?? 'http://127.0.0.1:8080';
 const password = 'Acceptance@Test123'; // Synthetic test value, never a real credential.
@@ -86,12 +86,12 @@ test('FR-003/017/001/005/009: registration, explicit login, restore and logout f
   assert.equal((await send(routes.current, 'DELETE', undefined, session)).status, 204);
   assert.equal((await send(routes.current, 'GET', undefined, session)).status, 401);
   const reuse = await send(routes.register, 'POST', { account: unique('reuse'), password, invitationCode: f.invitations.valid });
-  assert.equal(reuse.status, 400);
+  assert.equal(reuse.status, 409);
 });
 test('FR-003: concurrent use of one invitation permits exactly one success', async () => {
   const f = fixtures();
   const responses = await Promise.all([0, 1].map(n => send(routes.register, 'POST', { account: unique(`race${n}`), password, invitationCode: f.invitations.concurrent })));
-  assert.deepEqual(responses.map(r => r.status).sort(), [201, 400]);
+  assert.deepEqual(responses.map(r => r.status).sort(), [201, 409]);
 });
 test('FR-002/003: duplicate account failure does not consume an invitation', async () => {
   const f = fixtures();

@@ -12,6 +12,41 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const appendAuthEvent = `-- name: AppendAuthEvent :exec
+INSERT INTO auth.authentication_events
+(event_type,outcome,actor_user_id,subject_user_id,account_fingerprint,client_ip,user_agent,session_ref,reason_code,request_id)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+`
+
+type AppendAuthEventParams struct {
+	EventType          string
+	Outcome            string
+	ActorUserID        pgtype.UUID
+	SubjectUserID      pgtype.UUID
+	AccountFingerprint pgtype.Text
+	ClientIp           *netip.Addr
+	UserAgent          pgtype.Text
+	SessionRef         pgtype.UUID
+	ReasonCode         pgtype.Text
+	RequestID          string
+}
+
+func (q *Queries) AppendAuthEvent(ctx context.Context, arg AppendAuthEventParams) error {
+	_, err := q.db.Exec(ctx, appendAuthEvent,
+		arg.EventType,
+		arg.Outcome,
+		arg.ActorUserID,
+		arg.SubjectUserID,
+		arg.AccountFingerprint,
+		arg.ClientIp,
+		arg.UserAgent,
+		arg.SessionRef,
+		arg.ReasonCode,
+		arg.RequestID,
+	)
+	return err
+}
+
 const appendRegistrationEvent = `-- name: AppendRegistrationEvent :exec
 INSERT INTO auth.authentication_events
     (event_type, outcome, subject_user_id, client_ip, user_agent, request_id)
@@ -35,6 +70,18 @@ func (q *Queries) AppendRegistrationEvent(ctx context.Context, arg AppendRegistr
 	return err
 }
 
+const bumpAuthVersion = `-- name: BumpAuthVersion :execrows
+UPDATE auth.users SET auth_version=auth_version+1,updated_at=clock_timestamp() WHERE id=$1
+`
+
+func (q *Queries) BumpAuthVersion(ctx context.Context, id pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, bumpAuthVersion, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const consumeInvitation = `-- name: ConsumeInvitation :one
 UPDATE auth.invitations SET used_by = $2, used_at = clock_timestamp()
 WHERE id = $1 AND used_by IS NULL RETURNING id
@@ -47,6 +94,22 @@ type ConsumeInvitationParams struct {
 
 func (q *Queries) ConsumeInvitation(ctx context.Context, arg ConsumeInvitationParams) (pgtype.UUID, error) {
 	row := q.db.QueryRow(ctx, consumeInvitation, arg.ID, arg.UsedBy)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const createAdminInvitation = `-- name: CreateAdminInvitation :one
+INSERT INTO auth.invitations(code_hash,created_by) VALUES ($1,$2) RETURNING id
+`
+
+type CreateAdminInvitationParams struct {
+	CodeHash  []byte
+	CreatedBy pgtype.UUID
+}
+
+func (q *Queries) CreateAdminInvitation(ctx context.Context, arg CreateAdminInvitationParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, createAdminInvitation, arg.CodeHash, arg.CreatedBy)
 	var id pgtype.UUID
 	err := row.Scan(&id)
 	return id, err
@@ -138,6 +201,43 @@ func (q *Queries) GetLoginRecord(ctx context.Context, accountKey string) (GetLog
 	return i, err
 }
 
+const lockAdminUsers = `-- name: LockAdminUsers :many
+SELECT id,status,is_bootstrap_admin,auth_version FROM auth.users
+WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE
+`
+
+type LockAdminUsersRow struct {
+	ID               pgtype.UUID
+	Status           string
+	IsBootstrapAdmin bool
+	AuthVersion      int64
+}
+
+func (q *Queries) LockAdminUsers(ctx context.Context, userIds []pgtype.UUID) ([]LockAdminUsersRow, error) {
+	rows, err := q.db.Query(ctx, lockAdminUsers, userIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LockAdminUsersRow
+	for rows.Next() {
+		var i LockAdminUsersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Status,
+			&i.IsBootstrapAdmin,
+			&i.AuthVersion,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockInvitation = `-- name: LockInvitation :one
 SELECT id, used_by FROM auth.invitations WHERE code_hash = $1 FOR UPDATE
 `
@@ -152,4 +252,21 @@ func (q *Queries) LockInvitation(ctx context.Context, codeHash []byte) (LockInvi
 	var i LockInvitationRow
 	err := row.Scan(&i.ID, &i.UsedBy)
 	return i, err
+}
+
+const updateResetCredential = `-- name: UpdateResetCredential :execrows
+UPDATE auth.password_credentials SET password_hash=$2,password_changed_at=clock_timestamp(),updated_at=clock_timestamp() WHERE user_id=$1
+`
+
+type UpdateResetCredentialParams struct {
+	UserID       pgtype.UUID
+	PasswordHash string
+}
+
+func (q *Queries) UpdateResetCredential(ctx context.Context, arg UpdateResetCredentialParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateResetCredential, arg.UserID, arg.PasswordHash)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
