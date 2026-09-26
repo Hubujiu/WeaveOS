@@ -49,10 +49,16 @@ func TestColdArchiveSchema(t *testing.T) {
 	if cold == live {
 		t.Fatal("cold archive must be a different database")
 	}
-	if _, err := c.Exec(ctx, source(t, "db/archive-migrations/00001_archive.sql")); err != nil {
+	var exists bool
+	if err := c.QueryRow(ctx, "SELECT to_regclass('archive.authentication_events') IS NOT NULL").Scan(&exists); err != nil {
 		t.Fatal(err)
 	}
-	var exists bool
+	// A published migration is applied once; subsequent runs validate its catalog.
+	if !exists {
+		if _, err := c.Exec(ctx, source(t, "db/archive-migrations/00001_archive.sql")); err != nil {
+			t.Fatal(err)
+		}
+	}
 	if err := c.QueryRow(ctx, "SELECT to_regclass('archive.authentication_events') IS NOT NULL").Scan(&exists); err != nil {
 		t.Fatal(err)
 	}
