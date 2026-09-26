@@ -6,7 +6,7 @@ test('actual TLS private key is restricted to its local owner',()=>{
  else assert.equal(statSync(key).mode&0o077,0,'TLS key must not grant group/world access');
 });
 test('renewed local TLS certificate is loaded by Nginx and serves HTTPS with explicit trust',async()=>{
- const oldKey=readFileSync(key),oldCert=readFileSync(cert),nextKey=resolve(c.dir,'tls/renew-key.pem'),nextCert=resolve(c.dir,'tls/renew-cert.pem');
+ const stamp=Date.now(),oldKey=readFileSync(key),oldCert=readFileSync(cert),nextKey=resolve(c.dir,`tls/renew-key-${stamp}.pem`),nextCert=resolve(c.dir,`tls/renew-cert-${stamp}.pem`);
  privateFile(nextKey,Buffer.alloc(0));
  const openssl=process.platform==='win32'?'C:/Program Files/Git/usr/bin/openssl.exe':'openssl';
  execFileSync(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-days','7','-keyout',nextKey,'-out',nextCert,'-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost,IP:127.0.0.1'],{stdio:'pipe'});

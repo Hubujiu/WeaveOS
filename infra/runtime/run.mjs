@@ -32,6 +32,8 @@ file('maintenance.env',`WEAVEOS_AUDIT_LIVE_DATABASE_URL=${pg('weaveos_runtime_ma
 file('secrets/backup.key',randomBytes(32));
 file('migration.env',`WEAVEOS_TEST_DATABASE_URL=${pg('weaveos_owner',ownerPassword,'weaveos_runtime','127.0.0.1')}\nWEAVEOS_TEST_ARCHIVE_DATABASE_URL=${pg('weaveos_owner',ownerPassword,'weaveos_cold_archive','127.0.0.1')}\nWEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/runtime/fixtures.json\n`);
 const openssl=process.platform==='win32'?'C:/Program Files/Git/usr/bin/openssl.exe':'openssl';
+// Restrict ownership before OpenSSL writes private key bytes, including Windows ACLs.
+file('tls/key.pem',Buffer.alloc(0));
 call(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-days','2','-keyout',resolve(dir,'tls/key.pem'),'-out',resolve(dir,'tls/cert.pem'),'-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost,IP:127.0.0.1'],{stdio:'pipe'});
 writeFileSync(resolve(dir,'CURRENT.json'),JSON.stringify({project,generation,dir,artifacts,previous,classification:'local-development-only'}));
 const go=script=>call('docker',['run','--rm','--network',`container:${id('postgres')}`,'--mount',`type=bind,src=${root},dst=/repo`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build','--env-file',resolve(dir,'migration.env'),'-e','GOFLAGS=-buildvcs=false','-e','GOBIN=/repo/.work/runtime/tools','-w','/repo/services/bff','golang:1.27.1','sh','-ec',script]);
@@ -54,6 +56,7 @@ try{
  call(process.execPath,['--test','infra/runtime/operations.test.mjs'],{env:testEnv});
  call(process.execPath,['--test','infra/runtime/monitor.integration.test.mjs'],{env:testEnv});
  compose('up','-d','--wait','redis');
+ call(process.execPath,['--test','infra/runtime/tls.integration.test.mjs'],{env:testEnv});
  call(process.execPath,['--test','infra/runtime/backup.test.mjs'],{env:{...testEnv,WEAVEOS_BACKUP_TEST_CONTAINER:call('docker',['inspect',id('postgres'),'--format','{{.Name}}'],{encoding:'utf8',stdio:'pipe'}).trim().slice(1),WEAVEOS_BACKUP_TEST_USER:'weaveos_owner'}});
  call(process.execPath,['--test','infra/runtime/artifact-integrity.test.mjs','infra/runtime/artifact-transfer.test.mjs'],{env:{...testEnv,WEAVEOS_ARTIFACT_RECORD:artifacts.recordFile}});
  // Validate the exact promoted artifacts, using the already-frozen test runner.
