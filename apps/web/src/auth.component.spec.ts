@@ -1,5 +1,40 @@
 import { test, expect } from '@playwright/test';
 
+test('PRD UX: login loading prevents a second submission and restores after failure', async ({ page }) => {
+  let count = 0;
+  let finish: (() => void) | undefined;
+  const waiting = new Promise<void>(resolve => { finish = resolve; });
+  await page.route('**/api/v1/sessions', async route => {
+    count += 1;
+    await waiting;
+    await route.fulfill({ status: 401, body: '{}' });
+  });
+  await page.goto('/login');
+  await page.getByLabel('账号', { exact: true }).fill('synthetic-user');
+  await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+  await page.getByRole('button', { name: '登录', exact: true }).click();
+  await expect(page.getByRole('button', { name: '登录中…', exact: true })).toBeDisabled();
+  await page.getByLabel('密码', { exact: true }).press('Enter');
+  expect(count).toBe(1);
+  finish?.();
+  await expect(page.getByRole('alert')).toContainText('邮箱或密码不正确');
+  await expect(page.getByRole('button', { name: '登录', exact: true })).toBeEnabled();
+  await expect(page.getByLabel('账号', { exact: true })).toHaveValue('synthetic-user');
+});
+
+test('PRD FR-017: successful registration returns to login without restoring a Session', async ({ page }) => {
+  let sessionReads = 0;
+  await page.route('**/api/v1/sessions/current', route => { sessionReads += 1; return route.fulfill({ status: 401, body: '{}' }); });
+  await page.route('**/api/v1/registrations', route => route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ code: 'OK', message: 'ok', data: { id: 'synthetic-id', account: 'Alice' }, meta: null }) }));
+  await page.goto('/register?invitationCode=synthetic-invitation');
+  await page.getByLabel('账号', { exact: true }).fill('Alice');
+  await page.getByLabel('密码', { exact: true }).fill('A@1a');
+  await page.getByLabel('确认密码', { exact: true }).fill('A@1a');
+  await page.getByRole('button', { name: '注册', exact: true }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  expect(sessionReads).toBe(0);
+});
+
 test('Q7: logout sends the frontend-readable host CSRF cookie in the header', async ({ page, context }) => {
   const csrf = 'AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE'; // synthetic only
   await context.addCookies([{ name: '__Host-csrf', value: csrf, url: 'https://127.0.0.1:4173/', secure: true, sameSite: 'Lax' }]);
