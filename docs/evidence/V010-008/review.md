@@ -33,7 +33,16 @@
 
 存储已更新为官方 PostgreSQL18.6 / Redis8.2.10 并锁定 manifest digest。官方来源：[PG版本政策](https://www.postgresql.org/support/versioning/)、[PG18.6发行说明](https://www.postgresql.org/docs/release/18.6/)、[Redis镜像登记](https://raw.githubusercontent.com/docker-library/official-images/master/library/redis)。不对旧私有数据库卷原地升级。
 
-镜像扫描使用 Trivy0.74.0，对实际 OCI 文件扫描，不挂载 Docker socket，不把运行私有配置送入扫描容器。扫描完成和风险接受分别记录。当前镜像报告仍含 OS 漏洞，不能称为“零漏洞”。[完整摘要](scans/summary.json)记录源85c2ee1、四个镜像digest、配置哈希、时间和所有公告；原始报告：[BFF](scans/bff.json)、[Web](scans/web.json)、[PostgreSQL](scans/postgres.json)、[Redis](scans/redis.json)。
+镜像扫描使用 Trivy0.74.0，对实际 OCI 文件扫描，不挂载 Docker socket，不把运行私有配置送入扫描容器。扫描完成和风险接受分别记录。当前镜像报告仍含 OS 漏洞，不能称为“零漏洞”。[完整摘要](scans/summary.json)记录源6eaf363、四个镜像digest、配置哈希、时间和所有公告；原始报告：[BFF](scans/bff.json)、[Web](scans/web.json)、[PostgreSQL](scans/postgres.json)、[Redis](scans/redis.json)。
+
+| 镜像 | 全部报告 | Critical / High | 有修复版本的报告 |
+| --- | --- | --- | --- |
+| BFF | 227 | 4 / 52 | 1，tzdata |
+| Web/Nginx | 333 | 1 / 66 | 0 |
+| PostgreSQL18.6 | 330 | 2 / 82 | 46，gosu内嵌Go/sys |
+| Redis8.2.10 | 233 | 4 / 52 | 7，libssl3/tzdata |
+
+计数按报告条目，可能在不同包中重复同一CVE；不是已证实可利用的独立攻击数量。所有条目保持可见，没有忽略High/Critical或把风险pending改为通过。
 
 最新官方存储镜像的残余可修复公告：PG46项位于入口提权工具 gosu 的内嵌 Go/sys，Redis7项位于 libssl3/tzdata。官方补丁镜像没有消除这些报告；尚未进行逐路径可利用性证明，不将“内部网络”表述为不受影响。BFF/Web还存在基础 OS 未修复公告。用户需对完整清单作本地限定风险决定（Q14）；未答复前 MAN-RISK 保持 pending。
 
@@ -43,6 +52,8 @@
 
 [真实 RED/GREEN、测试和原实现快照](red-green.md) 保留失败及环境错误的区别。最终本机结果、镜像摘要和 CI 链接仍须齐备后才提交签署；不以旧提交绿灯替代最终 head。
 
-85c2ee1 的[本机完整运行](local-runtime.json)通过：6项操作、1项DNS、1项实际告警、2项TLS、4项备份、3项制品完整性/搬迁、2项四镜像扫描、25项真实API、30项三浏览器。总运行205.495秒。[恢复证据](local-recovery.json)实测9498ms，备份582ms；[告警接收](local-alerts.jsonl)、[可搬迁制品摘要](BUILD.json)均已保留。该轮回滚用2f93旧快照；随后独立回滚安全测试发现旧快照Go/Vite公告2RED，已把基线更新为完整验证过的85c2ee1，Go/pnpm两项GREEN；更新后的实际组合将由最终CI再次验证。
+6eaf363 的[本机完整运行](local-runtime.json)通过：6项操作、1项DNS、1项实际告警、2项TLS、4项备份、3项制品完整性/搬迁、2项四镜像扫描、25项真实API、30项三浏览器。[恢复证据](local-recovery.json)实测8203ms，备份592ms；[告警接收](local-alerts.jsonl)、[可搬迁制品摘要](BUILD.json)均已保留。回滚已实际切换至安全补丁后的85c2ee1并恢复当前组合；旧2f93已被Go/pnpm安全测试拒绝，不再是配置的回滚目标。最新远端CI仍在复验，不将本机结果冒充远端成功。
+
+RED测试与原实现快照的[snapshots.sha256](snapshots.sha256)按Git中的原始blob字节计算（文本为LF），可在squash后独立恢复；原始命令、失败原因和GREEN在red-green.md。源文档同步记录见[source-sync.json](source-sync.json)，Notion与Figma继续定义预期，本目录仅为派生证据。
 
 `node scripts/check-release.mjs` 在三项人工证据缺失时应拒绝发布。最终按用户实际答复回写 Notion，再更新派生验收记录，核对最终 CI 后才能 squash；不代签，不把 PR 草稿当发布。

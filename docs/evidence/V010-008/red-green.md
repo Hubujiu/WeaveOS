@@ -56,3 +56,5 @@ CLI：两个最小main无行为，真实编译执行后缺可信配置退出0；
 本机85c2ee1不可变制品整轮exit0，6/1/1/2/4/3/2/25/30各组通过，205.495秒；local-runtime.json、local-recovery.json、BUILD.json及scans完整报告保留。恢复9498ms、备份582ms，快照后写入确实丢失、旧管理员/普通Cookie拒绝。另独立artifacts构建1/1、配置/crypto/monitor/recovery12/12、CLI/security6/6、治理底座57/57、verify-repo与check-tasks exit0。没有用结构检查证明业务。
 
 远端d1c6946：完整产品、CLI/security阶段通过，真实runtime的操作/DNS/监控/TLS/备份/完整性通过；Trivy首次下载数据库因GitHub临时运行器磁盘满失败，属于环境NOT RUN，不能记镜像扫描通过。此后添加受限托管磁盘准备，未降低扫描或测试阈值。`check-release`实际exit1只报告三项人工pending及缺证据；未擅自填通过。
+
+最新完整本机源6eaf363：74项运行用例再次全部通过，195.193秒；恢复8203ms、备份592ms，新回滚基线85c2ee1实际切换并恢复当前组合。完整镜像报告、BUILD与本机结果已更新到这一源，应用二进制摘要与此前85c2ee1相同。85份永久快照按Git blob字节计算并逐项重算通过。治理/文档验证通过；人工门禁仍实际exit1。本文补充与验收描述修订为TDD:N/A（事实记录和Q5/Q6原有本地范围回写），未改变三项人工模式/状态。
