@@ -43,6 +43,12 @@ func rolePool(t *testing.T, key, role string) *pgxpool.Pool {
 
 func TestControlledMaintenanceAndReaderUseTheirActualRestrictedRoles(t *testing.T) {
 	l, _ := clean(t)
+	if _, err := l.Exec(context.Background(), source(t, "infra/runtime/roles.sql")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db(t, "WEAVEOS_TEST_ARCHIVE_DATABASE_URL").Exec(context.Background(), source(t, "infra/runtime/cold-roles.sql")); err != nil {
+		t.Fatal(err)
+	}
 	event(t, l, "auth.authentication_events", eventID, "2026-08-01T00:00:00Z", "controlled")
 	maintLive := rolePool(t, "WEAVEOS_TEST_DATABASE_URL", "auth_maintenance")
 	maintCold := rolePool(t, "WEAVEOS_TEST_ARCHIVE_DATABASE_URL", "auth_maintenance")

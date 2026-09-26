@@ -19,3 +19,6 @@ GRANT INSERT ON auth.authentication_events TO auth_app;
 GRANT SELECT (id) ON auth.authentication_events TO auth_app;
 GRANT SELECT ON auth.users, auth.authentication_events TO auth_reader;
 GRANT SELECT, DELETE ON auth.authentication_events TO auth_maintenance;
+-- PostgreSQL FOR UPDATE row locking requires UPDATE on at least one column.
+-- Only the controlled mover receives this; application history remains append-only.
+GRANT UPDATE (id) ON auth.authentication_events TO auth_maintenance;
