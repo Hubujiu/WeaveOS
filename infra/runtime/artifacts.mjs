@@ -6,7 +6,25 @@ const goImage='golang:1.27.1@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03
 const debian='debian:bookworm-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251';
 const nginx='nginx:1.30.5@sha256:b972f831f200b19ef0767938224f9711e74cd783718738cd7405d5cabf75c442';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
-export function verifyArtifacts(record){return false;}
+export function verifyArtifacts(record){
+ if(!/^[0-9a-f]{40}$/.test(record?.commit))throw new Error('Source identity invalid');
+ for(const name of ['bff','web']){
+  const a=record[name];if(!/^sha256:[0-9a-f]{64}$/.test(a?.manifestDigest)||!/^sha256:[0-9a-f]{64}$/.test(a?.imageID))throw new Error('Artifact identity invalid');
+  if(sha(readFileSync(a.archive))!==a.archiveSHA256)throw new Error('Artifact archive checksum mismatch');
+  const index=JSON.parse(execFileSync('tar',['-xOf',a.archive,'index.json'],{encoding:'utf8'}));
+  if(index.manifests.length!==1||index.manifests[0].digest!==a.manifestDigest)throw new Error('OCI manifest descriptor mismatch');
+  const manifestBytes=execFileSync('tar',['-xOf',a.archive,`blobs/sha256/${a.manifestDigest.slice(7)}`]);
+  if(`sha256:${sha(manifestBytes)}`!==a.manifestDigest)throw new Error('OCI manifest bytes changed');
+  const manifest=JSON.parse(manifestBytes),configBytes=execFileSync('tar',['-xOf',a.archive,`blobs/sha256/${manifest.config.digest.slice(7)}`]);
+  if(`sha256:${sha(configBytes)}`!==manifest.config.digest)throw new Error('OCI config bytes differ');
+  const image=JSON.parse(execFileSync('docker',['image','inspect',a.imageID],{encoding:'utf8'}))[0];
+  if(image.Id!==a.imageID||image.Config.Labels['org.opencontainers.image.revision']!==record.commit)throw new Error('Source/Docker image mismatch');
+  // containerd IDs reference manifests; classic store IDs reference configs.
+  if(a.imageID!==a.manifestDigest&&a.imageID!==manifest.config.digest)throw new Error('Selected image is not this OCI image');
+  if(JSON.stringify(image.RootFS.Layers)!==JSON.stringify(JSON.parse(configBytes).rootfs.diff_ids))throw new Error('OCI and Docker filesystem layers differ');
+ }
+ return true;
+}
 export function packageImages(o){
  if(!/^[0-9a-f]{40}$/.test(o.commit))throw new Error('Exact source commit required');
  if(existsSync(o.outputDir))throw new Error('Preserve existing artifacts; output cannot be overwritten');

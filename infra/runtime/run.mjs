@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { packageImages } from './artifacts.mjs';
+import { packageImages, verifyArtifacts } from './artifacts.mjs';
 import { privateFile } from './backup.mjs';
 const root=resolve('.'),dir=resolve('.work/runtime');
 if(existsSync(resolve(dir,'CURRENT.json')))throw new Error('Existing runtime: preserve and inspect before rerun');
@@ -13,6 +13,7 @@ const artifacts=process.env.WEAVEOS_ARTIFACT_RECORD?JSON.parse(readFileSync(proc
 // Prior local code snapshot already passed the full product pipeline. First
 // version has no earlier production release; record this rollback limitation.
 const previous=packageImages({root,commit:'2f93b5dc108d2f1b9773f3e04d7d7c235ccab27d',outputDir:resolve(dir,'previous-artifacts')});
+verifyArtifacts(artifacts);verifyArtifacts(previous);
 const project=`weaveos-v010-008-${Date.now()}`,generation=project;
 const env={...process.env,WEAVEOS_RUNTIME_DIR:dir,WEAVEOS_BFF_IMAGE:artifacts.bff.imageID,WEAVEOS_WEB_IMAGE:artifacts.web.imageID};
 const composeArgs=['compose','-p',project,'-f',resolve('infra/runtime/compose.json')];
@@ -20,7 +21,7 @@ const call=(cmd,args,options={})=>execFileSync(cmd,args,{cwd:root,env,stdio:'inh
 const compose=(...args)=>call('docker',[...composeArgs,...args]);
 const id=name=>call('docker',[...composeArgs,'ps','-aq',name],{encoding:'utf8',stdio:'pipe'}).trim();
 const secret=()=>randomBytes(32).toString('hex'),ownerPassword=secret(),appPassword=secret(),readerPassword=secret(),maintenancePassword=secret(),redisPassword=secret();
-const pg=(user,password,database,host='postgres')=>`postgres://${user}:${password}@${host}:5432/${database}?sslmode=disable&connect_timeout=2&pool_max_conns=8&timezone=UTC`;
+const pg=(user,password,database,host='postgres')=>`postgres://${user}:${password}@${host}:5432/${database}?sslmode=disable&connect_timeout=2&timezone=UTC${user==='weaveos_owner'?'':'&pool_max_conns=8'}`;
 const redis=`redis://:${redisPassword}@redis:6379/0`;
 const file=(name,bytes)=>privateFile(resolve(dir,name),bytes);
 file('postgres.env',`POSTGRES_USER=weaveos_owner\nPOSTGRES_PASSWORD=${ownerPassword}\nPOSTGRES_DB=weaveos_runtime\n`);
