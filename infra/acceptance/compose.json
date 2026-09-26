@@ -1,7 +1,8 @@
 {
  "services": {
   "postgres": {"image":"postgres:18.0", "env_file":["${WEAVEOS_ACCEPTANCE_DIR}/postgres.env"], "healthcheck":{"test":["CMD-SHELL","pg_isready -U weaveos_test -d weaveos_ci_test"],"interval":"2s","timeout":"3s","retries":30}, "volumes":["pg:/var/lib/postgresql"]},
-  "redis": {"image":"redis:8.2.1", "network_mode":"service:postgres", "healthcheck":{"test":["CMD","redis-cli","ping"],"interval":"2s","timeout":"3s","retries":30}},
+  "redis": {"image":"redis:8.2.1", "healthcheck":{"test":["CMD","redis-cli","ping"],"interval":"2s","timeout":"3s","retries":30}},
+  "test-redis": {"image":"redis:8.2.1", "network_mode":"service:postgres", "healthcheck":{"test":["CMD","redis-cli","ping"],"interval":"2s","timeout":"3s","retries":30}},
   "bff": {"image":"debian:bookworm-slim", "user":"65532:65532", "read_only":true,"cap_drop":["ALL"],"security_opt":["no-new-privileges:true"],"command":["/app/bff"],"env_file":["${WEAVEOS_ACCEPTANCE_DIR}/runtime.env"], "environment":{"BFF_ADDR":"0.0.0.0:8080","WEAVEOS_TRUSTED_PROXY_HOSTS":"nginx","WEAVEOS_PUBLIC_ORIGIN":"https://localhost:19443"},"volumes":["${WEAVEOS_ACCEPTANCE_DIR}/bff:/app/bff:ro"],"depends_on":{"postgres":{"condition":"service_healthy"},"redis":{"condition":"service_healthy"}}},
   "nginx": {"image":"nginx:1.30.5@sha256:b972f831f200b19ef0767938224f9711e74cd783718738cd7405d5cabf75c442", "ports":["127.0.0.1:19443:19443"],"volumes":["./nginx.conf:/etc/nginx/nginx.conf:ro","${WEAVEOS_ACCEPTANCE_DIR}/tls:/etc/nginx/tls:ro","../../apps/web/dist:/usr/share/nginx/html:ro"],"depends_on":["bff"]}
  },

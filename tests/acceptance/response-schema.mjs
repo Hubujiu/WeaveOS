@@ -28,9 +28,11 @@ export async function assertResponseSchema(response, path, method) {
   if (!schema && response.status === 404) schema = { content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } } };
   assert.ok(schema, `Undeclared HTTP status ${response.status} for ${method} ${template}`);
   if (schema.$ref) schema = dereference(schema.$ref);
+  if (response.status === 401) assert.equal(response.headers.get('www-authenticate'), 'Session realm="enterprise-management-system"');
   if (method === 'HEAD' || response.status === 204) { assert.equal(await response.clone().text(), ''); return; }
   assert.ok(response.headers.get('content-type')?.includes('application/json'));
   const body = await response.clone().json();
+  assert.ok(body.message && body.message !== body.code, 'Public message must be human-readable');
   assert.equal(matches(schema.content['application/json'].schema, body), true, `Response fails ${method} ${template} status ${response.status} schema`);
   assert.equal(body.meta?.requestId, response.headers.get('x-request-id'));
   assert.ok(response.headers.get('cache-control')?.includes('no-store'));

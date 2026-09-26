@@ -130,6 +130,9 @@ func (s *Service) Ready(ctx context.Context) error {
 }
 
 func reply(w http.ResponseWriter, r *http.Request, status int, code string, data any) {
+	if status == http.StatusUnauthorized {
+		w.Header().Set("WWW-Authenticate", `Session realm="enterprise-management-system"`)
+	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
@@ -141,7 +144,23 @@ func reply(w http.ResponseWriter, r *http.Request, status int, code string, data
 		Message string            `json:"message"`
 		Data    any               `json:"data"`
 		Meta    map[string]string `json:"meta"`
-	}{code, code, data, map[string]string{"requestId": w.Header().Get("X-Request-Id")}})
+	}{code, publicMessage(code), data, map[string]string{"requestId": w.Header().Get("X-Request-Id")}})
+}
+
+func publicMessage(code string) string {
+	if message, ok := map[string]string{
+		"OK": "success", "AUTH_INVALID_CREDENTIALS": "账号或密码错误",
+		"AUTH_UNAUTHENTICATED": "请先登录", "AUTH_SESSION_EXPIRED": "登录已过期，请重新登录",
+		"COMMON_INVALID_ARGUMENT": "请求参数不合法", "COMMON_VALIDATION_FAILED": "请求参数不合法",
+		"COMMON_PERMISSION_DENIED": "没有执行此操作的权限", "COMMON_CSRF_REJECTED": "请求来源或安全校验失败",
+		"USER_ACCOUNT_ALREADY_EXISTS": "账号已存在", "USER_NOT_FOUND": "用户不存在",
+		"INVITATION_INVALID": "邀请码无效", "INVITATION_ALREADY_USED": "邀请码已被使用",
+		"COMMON_UNSUPPORTED_MEDIA_TYPE": "仅接受 JSON 请求", "COMMON_SERVICE_UNAVAILABLE": "服务暂时不可用，请稍后重试",
+		"COMMON_DEADLINE_EXCEEDED": "请求超时，请稍后重试", "API_NOT_FOUND": "请求的接口不存在",
+	}[code]; ok {
+		return message
+	}
+	return "请求失败"
 }
 func (s *Service) fail(w http.ResponseWriter, r *http.Request, err error) {
 	status, code := 503, "COMMON_SERVICE_UNAVAILABLE"

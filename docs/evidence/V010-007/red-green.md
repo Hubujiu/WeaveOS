@@ -29,3 +29,9 @@ exit1：四个字段错误缺 COMMON_VALIDATION_FAILED/violations；可信 local
 自动产品测试与最终发布签署分阶段：PR必跑产品栈，008完成后必须执行包含全部人工证据的check-release。没有修改release-policy或将pending改成passed；本次产品流程成功不等于整版发布门禁通过。
 
 纯正文、错误登记和证据：TDD:N/A，文档一致性和Git路径检查；没有修改Notion审批/冻结/上线状态。
+
+## 完整协议审查补缺
+
+再次读取ADR002正文确认每个401必须有 `Session realm="enterprise-management-system"`，message是可公开的人类说明。`TestAcceptedUnauthorizedChallengeAndPublicMessages` 在真实PG/Redis下exit1：登录和匿名current均缺challenge，message均重复机器code。测试先提交 `67a21b4`，源码快照challenge-red-test.go/auth-before-challenge.go；最小统一reply修复后同命令race exit0，不根据message判定业务行为。HTTP验收也加强相同断言。
+
+第五次整栈：Go race/vet/build、14契约+57治理底座+3拓扑（74/74）、23组件、20真实HTTP与逐响应schema、30三浏览器均通过；真实Redis故障与恢复通过。PG故障拒绝访问通过，但恢复后就绪仍503，整栈exit1，不记PASS。原配置把测试Redis与运行Redis混为同一个PG网络命名空间，PG重启后Redis停留在旧命名空间；保留compose-before-fault.json与fault-recovery-red-test.mjs后，将运行Redis保持独立服务名网络，单独test-redis只用于已有本地地址单元隔离，单元结束停止它。第六次整栈用于验证该修复和最终协议断言。
