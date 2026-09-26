@@ -10,29 +10,19 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
 	"net/http"
-	"net/netip"
 	"net/url"
 	"regexp"
-	"strings"
 )
 
 type config struct {
 	DatabaseURL, RedisURL, Origin, Generation, AuditKeyID string
 	AuditKey                                              []byte
+	// Declaration only for compiling the configuration test-first snapshot.
 	TrustedProxyHosts                                     []string
 }
 
 func readConfig(get func(string) string) (config, error) {
 	cfg := config{DatabaseURL: get("WEAVEOS_DATABASE_URL"), RedisURL: get("WEAVEOS_REDIS_URL"), Origin: get("WEAVEOS_PUBLIC_ORIGIN"), Generation: get("WEAVEOS_SESSION_GENERATION"), AuditKeyID: get("WEAVEOS_AUDIT_KEY_ID")}
-	if raw := get("WEAVEOS_TRUSTED_PROXY_HOSTS"); raw != "" {
-		for _, value := range strings.Split(raw, ",") {
-			host := strings.TrimSpace(value)
-			if _, err := netip.ParseAddr(host); err != nil && !regexp.MustCompile(`^[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?$`).MatchString(host) {
-				return config{}, errors.New("invalid trusted proxy host")
-			}
-			cfg.TrustedProxyHosts = append(cfg.TrustedProxyHosts, host)
-		}
-	}
 	if raw := get("WEAVEOS_AUDIT_HMAC_KEY"); raw != "" {
 		key, err := base64.StdEncoding.Strict().DecodeString(raw)
 		if err != nil {
@@ -56,7 +46,7 @@ func buildHandler(ctx context.Context, cfg config) (http.Handler, func(), error)
 	}
 	sessions := session.NewStore(cfg.RedisURL, cfg.Generation)
 	close := func() { _ = sessions.Close(); pool.Close() }
-	s := &auth.Service{Pool: pool, Sessions: sessions, Origin: cfg.Origin, AuditKeyID: cfg.AuditKeyID, AuditKey: cfg.AuditKey, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
+	s := &auth.Service{Pool: pool, Sessions: sessions, Origin: cfg.Origin, AuditKeyID: cfg.AuditKeyID, AuditKey: cfg.AuditKey, Logger: slog.Default()}
 	if err := s.Ready(ctx); err != nil {
 		close()
 		return nil, nil, errors.New("authentication dependencies unavailable")

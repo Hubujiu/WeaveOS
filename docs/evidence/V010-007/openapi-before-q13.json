@@ -33,37 +33,20 @@
                   "account": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "Trim leading/trailing ordinary ASCII spaces (U+0020); normalized length is 1–254 Unicode code points, reject internal ordinary spaces/control characters and preserve case. Alice and alice are distinct accounts.",
+                    "maxLength": 254,
+                    "description": "Trim leading/trailing spaces and reject any remaining spaces. Preserve case: Alice and alice are distinct accounts.",
                     "x-account-normalization": {
                       "caseFolding": false,
                       "trimEdgeSpaces": true,
-                      "caseSensitiveUniqueness": true,
-                      "rejectInternalOrdinarySpaces": true
-                    },
-                    "x-max-length-after-trim": 254
+                      "rejectInternalWhitespace": true,
+                      "caseSensitiveUniqueness": true
+                    }
                   },
                   "password": {
                     "type": "string",
                     "minLength": 4,
                     "format": "password",
-                    "description": "Q13: only printable ASCII U+0020–U+007E; at least one uppercase A–Z, lowercase a–z, digit 0–9 and visible ASCII punctuation. Ordinary spaces are allowed but do not count as special; no trimming or extra length floor.",
-                    "not": {
-                      "pattern": "[^ -~]"
-                    },
-                    "allOf": [
-                      {
-                        "pattern": "[A-Z]"
-                      },
-                      {
-                        "pattern": "[a-z]"
-                      },
-                      {
-                        "pattern": "[0-9]"
-                      },
-                      {
-                        "pattern": "[!-/:-@\\[-`{-~]"
-                      }
-                    ]
+                    "description": "At least one uppercase ASCII letter, lowercase ASCII letter, digit, and special character; no additional length minimum in v0.1.0."
                   },
                   "invitationCode": {
                     "type": "string",
@@ -109,11 +92,11 @@
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
           },
-          "500": {
-            "$ref": "#/components/responses/InternalError"
-          },
           "503": {
             "$ref": "#/components/responses/Unavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -139,12 +122,12 @@
                   "account": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "Trim leading/trailing ordinary ASCII spaces (U+0020); normalized length is 1–254 Unicode code points, reject internal ordinary spaces/control characters and preserve case. Alice and alice are distinct accounts.",
+                    "maxLength": 254,
+                    "description": "Trim leading/trailing spaces; match the exact case of the registered account.",
                     "x-account-lookup": {
                       "trimEdgeSpaces": true,
                       "caseSensitive": true
-                    },
-                    "x-max-length-after-trim": 254
+                    }
                   },
                   "password": {
                     "type": "string",
@@ -190,11 +173,11 @@
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
           },
-          "500": {
-            "$ref": "#/components/responses/InternalError"
-          },
           "503": {
             "$ref": "#/components/responses/Unavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -228,11 +211,11 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
-          "500": {
-            "$ref": "#/components/responses/InternalError"
-          },
           "503": {
             "$ref": "#/components/responses/Unavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       },
@@ -304,11 +287,11 @@
           "403": {
             "$ref": "#/components/responses/Forbidden"
           },
-          "500": {
-            "$ref": "#/components/responses/InternalError"
-          },
           "503": {
             "$ref": "#/components/responses/Unavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "parameters": [
@@ -373,11 +356,11 @@
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
           },
-          "500": {
-            "$ref": "#/components/responses/InternalError"
-          },
           "503": {
             "$ref": "#/components/responses/Unavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "parameters": [
@@ -453,11 +436,11 @@
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
           },
-          "500": {
-            "$ref": "#/components/responses/InternalError"
-          },
           "503": {
             "$ref": "#/components/responses/Unavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
