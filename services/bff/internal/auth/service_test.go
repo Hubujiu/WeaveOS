@@ -313,4 +313,3 @@ func TestReadinessAndAuditPrivacyHTTP(t *testing.T) {
 		t.Fatal("closed PostgreSQL must not be ready")
 	}
 }
-
