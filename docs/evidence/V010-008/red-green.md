@@ -20,7 +20,8 @@
 
 真实备份：PostgreSQL18容器内pg_dump custom，独立空库pg_restore，synthetic状态/哈希/邀请消费字段作为领域样例。`WEAVEOS_BACKUP_TEST_CONTAINER=weaveos-v010-test-postgres node --test infra/runtime/backup.test.mjs` 初始3RED exit1（无备份文件、缺源未报错、错钥未拒绝）→3GREEN exit0；backup恢复密文仅在内存解密、完成认证后再连接目标，single-transaction/no-owner/no-privileges，拒绝有表目标。备份和key保留本机私有.work，不上传；这不是生产/异机恢复能力证明。参考[PostgreSQL18 pg_dump](https://www.postgresql.org/docs/18/app-pgdump.html)。
 
-CLI：两个最小main无行为，真实编译执行后缺可信配置退出0；`node --test infra/runtime/cli.test.mjs` 2RED exit1→最小配置拒绝/私有stdin/安全日志2GREEN。此前mount的dst=/repo:ro导致Docker125，初始测试未识别该环境失败，明确不计GREEN或RED；已修正readonly选项并要求程序实际exit0/1，再观察真正RED保存快照。正常Bootstrap/维护CLI运行仍待完整runtime演练。
+CLI：两个最小main无行为，真实编译执行后缺可信配置退出0；
+ode --test infra/runtime/cli.test.mjs` 2RED exit1→最小配置拒绝/私有stdin/安全日志2GREEN。此前mount的dst=/repo:ro导致Docker125，初始测试未识别该环境失败，明确不计GREEN或RED；已修正readonly选项并要求程序实际exit0/1，再观察真正RED保存快照。正常Bootstrap/维护CLI运行仍待完整runtime演练。
 
 全量Go：首次用DB14启动全suite，auth既有测试要求DB15，exit1是环境隔离校验，未改守卫；改用DB15后 `go test -race -p1 -count=1 ./... && go vet ./...` 全部exit0。2026-09-26完整本机acceptance已实际启动；尚未取得结果，不能记PASS。
 
@@ -29,4 +30,6 @@ CLI：两个最小main无行为，真实编译执行后缺可信配置退出0；
 完整运行恢复RED：实际6项运行操作5通过，备份恢复失败；私有诊断确认pg_restore序列setval(0)越界，owner原始账本序列值2。独立regression `WEAVEOS_BACKUP_TEST_CONTAINER=weaveos-v010-test-postgres node --test infra/runtime/backup.test.mjs` exit1，3 GREEN/1 RED（受控角色序列恢复失败）；初次fixture缺auth表属加载故障不计RED。永久sequence-backup-red-test.mjs、roles-before-sequence.sql、cold-roles-before-sequence.sql、full-restore-red-test.mjs保存于实现前。依据[PG18序列视图权限](https://www.postgresql.org/docs/18/view-pg-sequences.html)：缺SELECT/USAGE时last_value为NULL。最小修复待执行。
 2026-09-27 模块扫描预期审查：ADR003/004要求记录和处理已知漏洞，并未规定无关源码的零告警。最初模块级零告警预期错误地包含GO-2026-5932；官方 https://pkg.go.dev/vuln/GO-2026-5932 明确仅OpenPGP包不安全且无修复，不能通过替换Argon2来制造无关范围变更。保存最初测试后改为：所有可修复模块告警清零；唯一GO-2026-5932须以全应用go list -deps证明其所有包均未链接。修订后的测试仍实际RED，20个可修复公告未清除，exit1；之后才允许升级x/crypto。先前module模式带pattern、模块根无Go文件是扫描加载错误，不计RED。
 本机新制品8a37688运行：6操作、1真实monitor、2TLS、4备份、3制品完整性/搬迁通过；之后25 API全部因TLS trust失败，浏览器未执行。续期测试还原文件后异步reload未确认原证书已加载，属测试环境清理失败，不计产品RED/通过。修复清理必须真实用原CA握手确认后才能启动后续API，不能关闭证书验证。原测试tls-before-cleanup.mjs保留。
-`n2026-09-27：image-scan 两个测试在无行为声明下实际exit1（缺完整报告/实际扫描记录），42a42b0保存测试与占位；实现保留全部有/无修复漏洞，实际2/2 exit0。df15837镜像BFF227项（4 critical/52 high）、web333项（1 critical/66 high）；这不是零漏洞或用户接受。`n环境清理复核：dns-before-cleanup在故障后主入口ready503、live200，下一采样ready200，BFF重新建立数据依赖；原恢复固定IP还导致停止重启地址被维护容器占用。改回动态分配并等实际ready，DNS1/monitor1连续exit0。原测试已保留。CI36255794796模块/CLI加载失败，本机Linux Git所有权fixture复现VCS128；GOFLAGS=-buildvcs=false后CLI2+security4 exit0，不改Git safe.directory或业务预期。
+
+2026-09-27：image-scan 两个测试在无行为声明下实际exit1（缺完整报告/实际扫描记录），42a42b0保存测试与占位；实现保留全部有/无修复漏洞，实际2/2 exit0。df15837镜像BFF227项（4 critical/52 high）、web333项（1 critical/66 high）；这不是零漏洞或用户接受。
+环境清理复核：dns-before-cleanup在故障后主入口ready503、live200，下一采样ready200，BFF重新建立数据依赖；原恢复固定IP还导致停止重启地址被维护容器占用。改回动态分配并等实际ready，DNS1/monitor1连续exit0。原测试已保留。CI36255794796模块/CLI加载失败，本机Linux Git所有权fixture复现VCS128；GOFLAGS=-buildvcs=false后CLI2+security4 exit0，不改Git safe.directory或业务预期。

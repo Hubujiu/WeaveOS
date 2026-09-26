@@ -4,8 +4,8 @@ import { test } from 'node:test';
 
 const compose = JSON.parse(readFileSync(new URL('../../infra/acceptance/compose.json', import.meta.url)));
 test('ADR-003/004: isolated PG18/Redis8.2 and ingress preserve service boundaries', () => {
-  assert.equal(compose.services.postgres?.image, 'postgres:18.0');
-  assert.equal(compose.services.redis?.image, 'redis:8.2.1');
+  assert.equal(compose.services.postgres?.image, 'postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722');
+  assert.equal(compose.services.redis?.image, 'redis:8.2.10@sha256:164c759a0c342ee69d08fc99219382b0fd682181465c0df2e0e6911f4c85d73c');
   for (const name of ['postgres', 'redis', 'bff']) assert.equal(compose.services[name]?.ports, undefined);
   assert.deepEqual(compose.services.nginx?.ports, ['127.0.0.1:19443:19443']);
   assert.equal(compose.services.bff?.environment.WEAVEOS_TRUSTED_PROXY_HOSTS, 'nginx');

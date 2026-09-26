@@ -32,11 +32,11 @@ jobs:
         with:
           node-version-file: .node-version
       - name: Migrations, HTTPS and real product acceptance
-        # postgres:18.0 and redis:8.2.1 in compose.json.
+        # postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 and redis:8.2.10@sha256:164c759a0c342ee69d08fc99219382b0fd682181465c0df2e0e6911f4c85d73c in compose.json.
         # Runner executes playwright test tests/acceptance using its HTTPS config.
         run: node infra/acceptance/run.mjs
       - name: Runtime configuration, crypto, failure handling and dependency security
-        run: node --test infra/runtime/config.test.mjs infra/runtime/backup-crypto.test.mjs infra/runtime/recovery.test.mjs infra/runtime/monitor.test.mjs infra/runtime/cli.test.mjs infra/runtime/security.test.mjs
+        run: node --test infra/runtime/storage-version.test.mjs infra/runtime/config.test.mjs infra/runtime/backup-crypto.test.mjs infra/runtime/recovery.test.mjs infra/runtime/monitor.test.mjs infra/runtime/cli.test.mjs infra/runtime/security.test.mjs
       - name: Build once and verify immutable runtime, restore, rollback and browsers
         run: node infra/runtime/run.mjs
       - name: Complete check-release gate including user signoff
