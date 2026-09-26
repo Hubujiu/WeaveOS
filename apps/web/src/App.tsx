@@ -60,7 +60,7 @@ function AuthLayout({ children, register = false }: { children: ReactNode; regis
 }
 
 function AccountField({ value, onChange, register = false, credentialError = false }: { value: string; onChange: (value: string) => void; register?: boolean; credentialError?: boolean }) {
-  return <div className="auth-field"><label htmlFor="account">邮箱 / 用户名{register && <span className="required"> *</span>}</label><div className={`field-input${credentialError ? ' credential-error' : ''}`}><img src={register ? userRegisterIcon : userLoginIcon} width="24" height="24" alt="" /><input id="account" name="account" aria-label="账号" type="text" value={value} onChange={event => onChange(event.target.value)} placeholder={register ? '请输入邮箱或用户名' : 'user@example.com'} autoComplete="username" maxLength={254} required /></div></div>;
+  return <div className="auth-field"><label htmlFor="account">邮箱 / 用户名{register && <span className="required"> *</span>}</label><div className={`field-input${credentialError ? ' credential-error' : ''}`}><img src={register ? userRegisterIcon : userLoginIcon} width="24" height="24" alt="" /><input id="account" name="account" aria-label="账号" type="text" value={value} onChange={event => onChange(event.target.value)} placeholder={register ? '请输入邮箱或用户名' : 'user@example.com'} autoComplete="username" required /></div></div>;
 }
 
 function PasswordField({ id = 'password', label = '密码', value, onChange, showStrength = false, register = false }: { id?: string; label?: string; value: string; onChange: (value: string) => void; showStrength?: boolean; register?: boolean }) {
@@ -76,9 +76,9 @@ function PasswordField({ id = 'password', label = '密码', value, onChange, sho
 }
 
 function accountError(account: string): string | null {
-  if (!account.trim()) return '请输入账号';
+  if (!account) return '请输入账号';
   if (account.includes(' ')) return '账号不能包含空格';
-  if (account.trim().length > 254) return '账号过长';
+  if (Array.from(account).length > 254) return '账号过长';
   return null;
 }
 
@@ -98,7 +98,7 @@ function Login() {
     setPending(true);
     setError('');
     try {
-      await api<User>('sessions', 'POST', { account: account.trim(), password });
+      await api<User>('sessions', 'POST', { account: account, password });
       navigate('/app', { replace: true });
     } catch (cause) { setError(cause instanceof ApiError && cause.status === 401 ? '邮箱或密码不正确' : cause instanceof Error ? cause.message : '登录失败'); }
     finally { setPending(false); }
@@ -138,7 +138,7 @@ function Register() {
     setPending(true);
     setError('');
     try {
-      await api<User>('registrations', 'POST', { account: account.trim(), password, invitationCode: invitationCode.trim() });
+      await api<User>('registrations', 'POST', { account: account, password, invitationCode: invitationCode.trim() });
       navigate('/login', { replace: true });
     } catch (cause) { setError(cause instanceof Error ? cause.message : '注册失败'); }
     finally { setPending(false); }
