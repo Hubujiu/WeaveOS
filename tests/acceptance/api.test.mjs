@@ -163,3 +163,23 @@ test('Q2: distinct case-sensitive accounts both register and authenticate indepe
     await login({ account: name, password: 'Aa1!' });
   }
 });
+for (const [label, body, headers, status] of [
+  ['wrong media', { account: 'synthetic', password: 'Aa1!' }, { 'Content-Type': 'text/plain' }, 415],
+  ['foreign source', { account: 'synthetic', password: 'Aa1!' }, { Origin: 'https://untrusted.invalid' }, 403],
+  ['unknown write field', { account: 'synthetic', password: 'Aa1!', isBootstrapAdmin: true }, {}, 400],
+]) test(`ADR-002 protocol schema: ${label}`, async () => {
+  const response = await send(routes.login, 'POST', body, undefined, headers);
+  assert.equal(response.status, status);
+  assert.equal(response.headers.get('set-cookie'), null);
+});
+test('Administrator target-not-found has the declared404 schema', async () => {
+  const admin = await login(fixtures().admin);
+  assert.equal((await send(routes.reset.replace('{userId}', '550e8400-e29b-41d4-a716-446655440099'), 'POST', {}, admin)).status, 404);
+});
+test('Successful login replaces an incoming Session instead of fixing its identifier', async () => {
+  const incoming = await login(fixtures().user);
+  const response = await send(routes.login, 'POST', fixtures().user, incoming);
+  assert.equal(response.status, 201);
+  const issued = response.headers.getSetCookie().find(value => value.startsWith('__Host-session=')).split(';')[0];
+  assert.ok(!incoming.cookie.split('; ').includes(issued));
+});
