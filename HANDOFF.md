@@ -10,11 +10,11 @@
 
 已建立的工程职责：React/Vite挂载与构建；Go BFF进程和HTTP平台；健康检查；任务/发布门禁；CI的真实浏览器smoke；产品验收测试入口。没有将空登录页、待评审SQL或未连接的Redis伪装成业务完成。
 
-## 下一任务与分工
+## 当前任务
 
-V010-002先核对逐接口契约/技术与数据未决项，验证OpenAPI3.2.1工具。随后003数据、004Session、005认证业务；006前端可在契约确认后与后端并行；007整体验收；008发布/运维。各任务的来源、branch/worktree、允许路径、依赖、验收和接手动作均已记录。
+V010-001至007及010已合入；实际接受状态仍须读取远程main同ID任务与merged PR。当前V010-008在../WeaveOS-worktrees/V010-008、task/V010-008-release、PR #11实施。只有一个Agent，没有后台部署。
 
-没有替这些角色启动后台Agent。待办项不能因底座CI绿了就勾选。领取时用 `node scripts/task.mjs start V010-002` 检查，再明确--apply。
+008已实现受限审计、独立冷库自动维护、加密恢复、同制品回滚、真实告警与安全补丁。旧制品完整运行6/25/30通过；修复后制品正在重新执行本机及CI。视觉/运行/风险最终三项仍待用户按Q10签署；不能声称整版完成。读取docs/tasks/V010-008.md恢复真实head、命令及尚未完成项。
 
 ## 常用验证
 
@@ -29,4 +29,4 @@ pnpm exec playwright install --with-deps
 pnpm exec playwright test tests/e2e
 ```
 
-`tests/e2e`当前是底座smoke；`tests/acceptance`是产品验收，不能混称。`node scripts/check-release.mjs`当前预期失败，因为整版自动/人工验收尚未完成；不删除或降低门禁。生产部署目标与授权尚未提供。
+`tests/e2e`是底座smoke；`node infra/acceptance/run.mjs`执行真实产品全栈；`node infra/runtime/run.mjs`在空工作目录创建仅本机可访问的Linux镜像环境，验证恢复/回滚/告警/TLS和同制品API/浏览器，结束后停止容器并保留私有卷/资料。不能在已存在.work/runtime的情况下覆盖重跑，先核对并保留现场。`node scripts/check-release.mjs`当前预期失败，因为整版自动/人工验收尚未完成；不删除或降低门禁。生产部署目标与授权尚未提供。
