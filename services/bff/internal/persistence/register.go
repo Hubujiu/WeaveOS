@@ -3,6 +3,7 @@ package persistence
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/netip"
 	"strings"
 	"unicode"
@@ -17,6 +18,7 @@ import (
 
 var (
 	ErrInvitationUnavailable = errors.New("invitation unavailable")
+	ErrInvitationUsed        = fmt.Errorf("%w: already used", ErrInvitationUnavailable)
 	ErrAccountTaken          = errors.New("account taken")
 	ErrInvalidAccount        = errors.New("invalid account")
 )
@@ -79,7 +81,7 @@ func (s *Store) Register(ctx context.Context, in RegistrationInput) (User, error
 		return User{}, err
 	}
 	if inv.UsedBy.Valid {
-		return User{}, ErrInvitationUnavailable
+		return User{}, ErrInvitationUsed
 	}
 
 	created, err := queries.CreateUser(ctx, account)
