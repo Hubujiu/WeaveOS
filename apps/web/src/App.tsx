@@ -85,6 +85,7 @@ function Login() {
     if (pending) return;
     const invalid = accountError(account);
     if (invalid) { setError(invalid); return; }
+    if (!password) { setError('请输入密码'); return; }
     setPending(true);
     setError('');
     try {
