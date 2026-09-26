@@ -5,12 +5,12 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/identity"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/invitation"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/persistence"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/persistence/authsql"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/security"
@@ -54,6 +54,13 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		a := session.Authenticator{Sessions: s.Sessions, DB: s.Pool, Origin: s.Origin}
 		p, err := a.Authenticate(r, r.Method == "DELETE")
 		if err != nil {
+			if errors.Is(err, session.ErrUnauthorized) {
+				if _, cookieErr := r.Cookie(session.SessionCookieName); cookieErr == nil {
+					if s.event(r, "session_invalid", "failure", "", "", "", "AUTH_UNAUTHENTICATED", "") != nil {
+						s.alert()
+					}
+				}
+			}
 			s.fail(w, r, err)
 			return
 		}
@@ -110,7 +117,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	w.WriteHeader(http.StatusNotImplemented)
+	reply(w, r, 404, "API_NOT_FOUND", nil)
 }
 func (s *Service) Ready(ctx context.Context) error {
 	if s == nil || s.Pool == nil || s.Sessions == nil {
@@ -246,12 +253,11 @@ func (s *Service) register(w http.ResponseWriter, r *http.Request) {
 		reply(w, r, 400, "COMMON_INVALID_ARGUMENT", nil)
 		return
 	}
-	raw, err := base64.RawURLEncoding.Strict().DecodeString(in.Invitation)
-	if err != nil || len(raw) != 32 || base64.RawURLEncoding.EncodeToString(raw) != in.Invitation {
+	digest, err := invitation.Digest(in.Invitation)
+	if err != nil {
 		reply(w, r, 400, "INVITATION_INVALID", nil)
 		return
 	}
-	digest := sha256.Sum256(raw)
 	hash, err := hashPassword(in.Password)
 	if err != nil {
 		s.fail(w, r, err)
@@ -259,28 +265,43 @@ func (s *Service) register(w http.ResponseWriter, r *http.Request) {
 	}
 	host, _, _ := net.SplitHostPort(r.RemoteAddr)
 	user, err := persistence.New(s.Pool).Register(r.Context(), persistence.RegistrationInput{Account: in.Account, PasswordHash: hash, InvitationDigest: digest[:], ClientIP: host, UserAgent: r.UserAgent(), RequestID: w.Header().Get("X-Request-Id")})
-	switch {
-	case errors.Is(err, persistence.ErrAccountTaken):
-		reply(w, r, 409, "USER_ACCOUNT_ALREADY_EXISTS", nil)
-	case errors.Is(err, persistence.ErrInvitationUsed):
-		reply(w, r, 409, "INVITATION_ALREADY_USED", nil)
-	case errors.Is(err, persistence.ErrInvitationUnavailable):
-		reply(w, r, 400, "INVITATION_INVALID", nil)
-	case err != nil:
-		s.fail(w, r, err)
-	default:
-		w.Header().Set("Location", "/api/v1/users/"+user.ID)
-		reply(w, r, 201, "OK", map[string]string{"id": user.ID, "account": user.Account})
+	if err != nil {
+		status, code, outcome := 503, "COMMON_SERVICE_UNAVAILABLE", "error"
+		switch {
+		case errors.Is(err, persistence.ErrAccountTaken):
+			status, code, outcome = 409, "USER_ACCOUNT_ALREADY_EXISTS", "failure"
+		case errors.Is(err, persistence.ErrInvitationUsed):
+			status, code, outcome = 409, "INVITATION_ALREADY_USED", "failure"
+		case errors.Is(err, persistence.ErrInvitationUnavailable):
+			status, code, outcome = 400, "INVITATION_INVALID", "failure"
+		}
+		account := strings.Trim(in.Account, " ")
+		subject, fingerprint := "", ""
+		if existing, e := authsql.New(s.Pool).GetLoginRecord(r.Context(), account); e == nil {
+			subject = existing.ID.String()
+		} else {
+			mac := hmac.New(sha256.New, s.AuditKey)
+			_, _ = mac.Write([]byte(account))
+			fingerprint = s.AuditKeyID + ":" + hex.EncodeToString(mac.Sum(nil))
+		}
+		if s.event(r, "register", outcome, "", subject, "", code, fingerprint) != nil {
+			s.alert()
+			reply(w, r, 503, "COMMON_SERVICE_UNAVAILABLE", nil)
+			return
+		}
+		reply(w, r, status, code, nil)
+		return
 	}
+	w.Header().Set("Location", "/api/v1/users/"+user.ID)
+	reply(w, r, 201, "OK", map[string]string{"id": user.ID, "account": user.Account})
 }
 
 func (s *Service) createInvitation(w http.ResponseWriter, r *http.Request, p session.Principal) {
-	raw := make([]byte, 32)
-	if _, err := rand.Read(raw); err != nil {
+	code, err := invitation.Generate()
+	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	digest := sha256.Sum256(raw)
 	tx, err := s.Pool.BeginTx(r.Context(), pgx.TxOptions{})
 	if err != nil {
 		s.fail(w, r, err)
@@ -297,7 +318,7 @@ func (s *Service) createInvitation(w http.ResponseWriter, r *http.Request, p ses
 		reply(w, r, 403, "COMMON_PERMISSION_DENIED", nil)
 		return
 	}
-	id, err := q.CreateAdminInvitation(r.Context(), authsql.CreateAdminInvitationParams{CodeHash: digest[:], CreatedBy: uuidValue(p.UserID)})
+	id, err := q.CreateAdminInvitation(r.Context(), authsql.CreateAdminInvitationParams{CodeHash: code.Digest[:], CreatedBy: uuidValue(p.UserID)})
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -316,7 +337,7 @@ func (s *Service) createInvitation(w http.ResponseWriter, r *http.Request, p ses
 		s.fail(w, r, err)
 		return
 	}
-	reply(w, r, 201, "OK", map[string]string{"id": id.String(), "invitationCode": base64.RawURLEncoding.EncodeToString(raw)})
+	reply(w, r, 201, "OK", map[string]string{"id": id.String(), "invitationCode": code.Value})
 }
 func (s *Service) alert() {
 	if s.Logger != nil {

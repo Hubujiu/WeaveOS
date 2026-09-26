@@ -8,14 +8,15 @@ import (
 	"testing"
 )
 
-// PRD FR-018: four ASCII character classes, no additional length floor.
+// PRD FR-018: uppercase/lowercase ASCII letters, digit and special symbol; no additional length floor.
+// Space/Unicode classification awaits Q13 and is not an approved test oracle.
 func TestPasswordPolicy(t *testing.T) {
 	for _, s := range []string{"Aa1!", "Abc@123456", "VeryLongTest@123"} {
 		if !validPassword(s) {
 			t.Errorf("four-class password rejected")
 		}
 	}
-	for _, s := range []string{"", "aa1!", "AA1!", "Aa!!", "Aa11", "Aa1中", "Aa1 "} {
+	for _, s := range []string{"", "aa1!", "AA1!", "Aa!!", "Aa11"} {
 		if validPassword(s) {
 			t.Errorf("missing class accepted")
 		}

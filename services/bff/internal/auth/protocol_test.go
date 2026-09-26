@@ -169,14 +169,40 @@ func TestResetAndInvitationAuditFailureRollBack(t *testing.T) {
 }
 
 func TestUnknownAPIReturnsEnvelope404(t *testing.T) {
- a:=setup(t);w:=a.request("GET","/api/v1/unknown",nil,nil,nil);checkStatus(t,w,404)
- var envelope map[string]any;if json.Unmarshal(w.Body.Bytes(),&envelope)!=nil||len(envelope)!=4||envelope["data"]!=nil{t.Fatal("unknown API must return safe JSON envelope")}
+	a := setup(t)
+	w := a.request("GET", "/api/v1/unknown", nil, nil, nil)
+	checkStatus(t, w, 404)
+	var envelope map[string]any
+	if json.Unmarshal(w.Body.Bytes(), &envelope) != nil || len(envelope) != 4 || envelope["data"] != nil {
+		t.Fatal("unknown API must return safe JSON envelope")
+	}
 }
 func TestRevokedSessionAndFailedRegistrationProduceSanitizedAudit(t *testing.T) {
- a:=setup(t);adminID:=a.user(t,"admin",true);a.user(t,"member",false);cookies:=a.login(t,"member")
- for _,c:=range cookies{if c.Name=="__Host-session"{if _,err:=a.service.Sessions.Revoke(context.Background(),c.Value);err!=nil{t.Fatal(err)}}}
- checkStatus(t,a.request("GET","/api/v1/sessions/current",nil,cookies,nil),401)
- var count int;if err:=a.pool.QueryRow(context.Background(),"SELECT count(*) FROM auth.authentication_events WHERE event_type='session_invalid' AND outcome='failure'").Scan(&count);err!=nil{t.Fatal(err)};if count!=1{t.Fatal("discovered revoked Session must produce an invalidation event")}
- code:=a.invitation(t,adminID,9);checkStatus(t,a.request("POST","/api/v1/registrations",map[string]string{"account":"member","password":"Aa1!","invitationCode":code},nil,nil),409)
- if err:=a.pool.QueryRow(context.Background(),"SELECT count(*) FROM auth.authentication_events WHERE event_type='register' AND outcome='failure' AND reason_code='USER_ACCOUNT_ALREADY_EXISTS'").Scan(&count);err!=nil{t.Fatal(err)};if count!=1{t.Fatal("registration rollback must be followed by failure audit")}
+	a := setup(t)
+	adminID := a.user(t, "admin", true)
+	a.user(t, "member", false)
+	cookies := a.login(t, "member")
+	for _, c := range cookies {
+		if c.Name == "__Host-session" {
+			if _, err := a.service.Sessions.Revoke(context.Background(), c.Value); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	checkStatus(t, a.request("GET", "/api/v1/sessions/current", nil, cookies, nil), 401)
+	var count int
+	if err := a.pool.QueryRow(context.Background(), "SELECT count(*) FROM auth.authentication_events WHERE event_type='session_invalid' AND outcome='failure'").Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != 1 {
+		t.Fatal("discovered revoked Session must produce an invalidation event")
+	}
+	code := a.invitation(t, adminID, 9)
+	checkStatus(t, a.request("POST", "/api/v1/registrations", map[string]string{"account": "member", "password": "Aa1!", "invitationCode": code}, nil, nil), 409)
+	if err := a.pool.QueryRow(context.Background(), "SELECT count(*) FROM auth.authentication_events WHERE event_type='register' AND outcome='failure' AND reason_code='USER_ACCOUNT_ALREADY_EXISTS'").Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != 1 {
+		t.Fatal("registration rollback must be followed by failure audit")
+	}
 }
