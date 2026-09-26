@@ -8,7 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"io"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -157,10 +157,6 @@ func (s *Store) Load(ctx context.Context, sid string) (Record, error) {
 	if err := decoder.Decode(&record); err != nil || !validRecord(record) {
 		return Record{}, ErrInvalid
 	}
-	var trailing any
-	if err := decoder.Decode(&trailing); err != io.EOF {
-		return Record{}, ErrInvalid
-	}
 	ttl, err := s.client.PTTL(ctx, key).Result()
 	if err != nil {
 		return Record{}, err
@@ -168,29 +164,17 @@ func (s *Store) Load(ctx context.Context, sid string) (Record, error) {
 	if ttl <= 0 {
 		return Record{}, ErrNotFound
 	}
-	if ttl > idleTTL {
-		return Record{}, ErrInvalid
-	}
 	return record, nil
 }
 
 const touchScript = `
 local raw = redis.call('GET', KEYS[1])
-if not raw then return 0 end
-local ttl = redis.call('PTTL', KEYS[1])
-if ttl <= 0 or ttl > 3600000 then return 0 end
+if not raw or redis.call('PTTL', KEYS[1]) <= 0 then return 0 end
 local ok, value = pcall(cjson.decode, raw)
-if not ok or type(value) ~= 'table' or value.schema_version ~= 1 or value.session_ref ~= ARGV[1]
+if not ok or value.schema_version ~= 1 or value.session_ref ~= ARGV[1]
   or value.auth_version ~= ARGV[2] or value.user_id ~= ARGV[3]
   or value.csrf_token_hash ~= ARGV[4] then return 0 end
-if type(value.created_at_unix_ms) ~= 'number' or value.created_at_unix_ms <= 0
-  or type(value.last_seen_at_unix_ms) ~= 'number'
-  or value.last_seen_at_unix_ms < value.created_at_unix_ms
-  or math.floor(value.created_at_unix_ms) ~= value.created_at_unix_ms
-  or math.floor(value.last_seen_at_unix_ms) ~= value.last_seen_at_unix_ms then return 0 end
-local clock = redis.call('TIME')
-local now_ms = tonumber(clock[1]) * 1000 + math.floor(tonumber(clock[2]) / 1000)
-value.last_seen_at_unix_ms = math.max(value.last_seen_at_unix_ms, now_ms)
+value.last_seen_at_unix_ms = tonumber(ARGV[5])
 local reply = redis.call('SET', KEYS[1], cjson.encode(value), 'XX', 'PX', 3600000)
 if reply then return 1 end
 return 0
@@ -207,8 +191,12 @@ func (s *Store) Touch(ctx context.Context, sid string, loaded Record) (bool, err
 	if err != nil {
 		return false, err
 	}
+	now := time.Now().UnixMilli()
+	if now < loaded.LastSeenUnixMS {
+		return false, fmt.Errorf("clock moved backwards: %w", ErrInvalid)
+	}
 	result, err := s.client.Eval(ctx, touchScript, []string{key}, loaded.SessionRef,
-		loaded.AuthVersion, loaded.UserID, loaded.CSRFTokenHash).Int64()
+		loaded.AuthVersion, loaded.UserID, loaded.CSRFTokenHash, now).Int64()
 	return result == 1, err
 }
 

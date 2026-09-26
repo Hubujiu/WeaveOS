@@ -249,9 +249,13 @@ func TestLoadRejectsTrailingJSONDocument(t *testing.T) {
 	store := session.NewStore(rawURL, generation)
 	ctx := context.Background()
 	sid, _, err := store.Create(ctx, approvedRecord())
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	key, err := keyFor(generation, sid)
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Cleanup(func() { redisCommand(t, rawURL, "DEL", key) })
 	raw := redisCommand(t, rawURL, "GET", key).(string)
 	redisCommand(t, rawURL, "SET", key, raw+` {"schema_version":99}`, "PX", "5000")
@@ -265,23 +269,39 @@ func TestTouchRefusesCorruptedTimestampsWithoutRenewingTTL(t *testing.T) {
 	store := session.NewStore(rawURL, generation)
 	ctx := context.Background()
 	sid, _, err := store.Create(ctx, approvedRecord())
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	key, err := keyFor(generation, sid)
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Cleanup(func() { redisCommand(t, rawURL, "DEL", key) })
 	loaded, err := store.Load(ctx, sid)
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	var malformed map[string]any
-	if err := json.Unmarshal([]byte(redisCommand(t, rawURL, "GET", key).(string)), &malformed); err != nil { t.Fatal(err) }
+	if err := json.Unmarshal([]byte(redisCommand(t, rawURL, "GET", key).(string)), &malformed); err != nil {
+		t.Fatal(err)
+	}
 	malformed["created_at_unix_ms"] = -1
 	encoded, err := json.Marshal(malformed)
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	redisCommand(t, rawURL, "SET", key, string(encoded), "PX", "5000")
 	touched, err := store.Touch(ctx, sid, loaded)
-	if err != nil { t.Fatal(err) }
-	if touched { t.Fatal("corrupted timestamp record must not be extended by an earlier valid load") }
+	if err != nil {
+		t.Fatal(err)
+	}
+	if touched {
+		t.Fatal("corrupted timestamp record must not be extended by an earlier valid load")
+	}
 	ttl := redisCommand(t, rawURL, "PTTL", key).(int64)
-	if ttl > 5000 { t.Fatalf("invalid record TTL was renewed: %d ms", ttl) }
+	if ttl > 5000 {
+		t.Fatalf("invalid record TTL was renewed: %d ms", ttl)
+	}
 }
 
 func TestLoadAndTouchRejectOverlongTTL(t *testing.T) {
@@ -289,17 +309,27 @@ func TestLoadAndTouchRejectOverlongTTL(t *testing.T) {
 	store := session.NewStore(rawURL, generation)
 	ctx := context.Background()
 	sid, _, err := store.Create(ctx, approvedRecord())
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	key, err := keyFor(generation, sid)
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Cleanup(func() { redisCommand(t, rawURL, "DEL", key) })
 	loaded, err := store.Load(ctx, sid)
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	redisCommand(t, rawURL, "PEXPIRE", key, "7200000")
 	if _, err := store.Load(ctx, sid); err == nil {
 		t.Error("TTL exceeding the approved one-hour maximum must be rejected")
 	}
 	touched, err := store.Touch(ctx, sid, loaded)
-	if err != nil { t.Fatal(err) }
-	if touched { t.Error("overlong TTL must not be silently accepted by touch") }
+	if err != nil {
+		t.Fatal(err)
+	}
+	if touched {
+		t.Error("overlong TTL must not be silently accepted by touch")
+	}
 }
