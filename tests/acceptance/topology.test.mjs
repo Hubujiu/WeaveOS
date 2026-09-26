@@ -17,3 +17,7 @@ test('Product CI executes migration, HTTPS real API and three browsers; final re
   assert.ok(workflow.includes('pull_request:'), 'product acceptance must run on the final PR head');
   assert.ok(workflow.includes('check-release.mjs'), 'full release evidence gate must remain available');
 });
+test('ADR-004: ingress overwrites forwarded identity, disables shared auth cache and separates API from SPA', () => {
+  const config = readFileSync(new URL('../../infra/acceptance/nginx.conf', import.meta.url), 'utf8');
+  for (const line of ['proxy_set_header X-Forwarded-For $remote_addr;', 'proxy_set_header X-User-Id "";', 'proxy_set_header X-Role "";', 'proxy_cache off;', 'location /api/', 'proxy_pass http://bff:8080;', 'ssl_certificate ']) assert.ok(config.includes(line), `missing ${line}`);
+});
