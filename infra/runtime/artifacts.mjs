@@ -1,13 +1,28 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, existsSync, readFileSync, writeFileSync, copyFileSync, cpSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 const goImage='golang:1.27.1@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244';
 const debian='debian:bookworm-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251';
 const nginx='nginx:1.30.5@sha256:b972f831f200b19ef0767938224f9711e74cd783718738cd7405d5cabf75c442';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
-export function exportArtifacts(record,directory){return record;}
-export function importArtifacts(file){return JSON.parse(readFileSync(file,'utf8'));}
+export function exportArtifacts(record,directory){
+ verifyArtifacts(record);mkdirSync(directory);
+ const portable=structuredClone(record);delete portable.recordFile;
+ for(const name of ['bff','web']){copyFileSync(record[name].archive,resolve(directory,`${name}.oci.tar`));portable[name].archive=`${name}.oci.tar`;}
+ writeFileSync(resolve(directory,'BUILD.json'),JSON.stringify(portable,null,2),{flag:'wx'});return portable;
+}
+export function importArtifacts(file){
+ const record=JSON.parse(readFileSync(file,'utf8'));record.recordFile=resolve(file);
+ for(const name of ['bff','web']){
+  if(record[name]?.archive!==`${name}.oci.tar`)throw new Error('Portable artifact paths must be fixed local filenames');
+  record[name].archive=resolve(dirname(file),record[name].archive);
+  if(sha(readFileSync(record[name].archive))!==record[name].archiveSHA256)throw new Error('Artifact archive checksum mismatch');
+  execFileSync('docker',['load','--input',record[name].archive],{stdio:'pipe'});
+  record[name].imageID=execFileSync('docker',['image','inspect',record[name].tag,'--format','{{.Id}}'],{encoding:'utf8'}).trim();
+ }
+ verifyArtifacts(record);return record;
+}
 export function verifyArtifacts(record){
  if(!/^[0-9a-f]{40}$/.test(record?.commit))throw new Error('Source identity invalid');
  for(const name of ['bff','web']){

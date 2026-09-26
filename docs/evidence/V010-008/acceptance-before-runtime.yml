@@ -1,0 +1,42 @@
+name: v0.1.0 product acceptance
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      verify_release:
+        description: Verify complete evidence after V010-008 user signoff
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      verify_release:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  product:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - name: Migrations, HTTPS and real product acceptance
+        # postgres:18.0 and redis:8.2.1 in compose.json.
+        # Runner executes playwright test tests/acceptance using its HTTPS config.
+        run: node infra/acceptance/run.mjs
+      - name: Complete check-release gate including user signoff
+        if: inputs.verify_release == true
+        run: node scripts/check-release.mjs
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: product-acceptance-${{ github.run_id }}
+          path: .work/acceptance/public/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
