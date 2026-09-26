@@ -23,3 +23,7 @@
 CLI：两个最小main无行为，真实编译执行后缺可信配置退出0；`node --test infra/runtime/cli.test.mjs` 2RED exit1→最小配置拒绝/私有stdin/安全日志2GREEN。此前mount的dst=/repo:ro导致Docker125，初始测试未识别该环境失败，明确不计GREEN或RED；已修正readonly选项并要求程序实际exit0/1，再观察真正RED保存快照。正常Bootstrap/维护CLI运行仍待完整runtime演练。
 
 全量Go：首次用DB14启动全suite，auth既有测试要求DB15，exit1是环境隔离校验，未改守卫；改用DB15后 `go test -race -p1 -count=1 ./... && go vet ./...` 全部exit0。2026-09-26完整本机acceptance已实际启动；尚未取得结果，不能记PASS。
+
+完整acceptance随后实际exit0，76/23/25/30/3各阶段通过，Go race/vet/build及类型/构建通过；运行期间infra后续改动，因此不宣称此本机结果验证单一不可变最终HEAD。PR11远程7d04fa3全部CI/product成功。
+
+完整运行恢复RED：实际6项运行操作5通过，备份恢复失败；私有诊断确认pg_restore序列setval(0)越界，owner原始账本序列值2。独立regression `WEAVEOS_BACKUP_TEST_CONTAINER=weaveos-v010-test-postgres node --test infra/runtime/backup.test.mjs` exit1，3 GREEN/1 RED（受控角色序列恢复失败）；初次fixture缺auth表属加载故障不计RED。永久sequence-backup-red-test.mjs、roles-before-sequence.sql、cold-roles-before-sequence.sql、full-restore-red-test.mjs保存于实现前。依据[PG18序列视图权限](https://www.postgresql.org/docs/18/view-pg-sequences.html)：缺SELECT/USAGE时last_value为NULL。最小修复待执行。
