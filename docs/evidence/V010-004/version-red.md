@@ -1,0 +1,6 @@
+# Authentication version check RED → GREEN
+
+- Oracle: v0.1.0 PRD says password reset invalidates all old sessions; user-approved PostgreSQL `auth.users.auth_version` and Redis `auth_session.auth_version` field records require a positive bigint, a canonical decimal-string snapshot, and exact comparison with the current active user. Disabled/re-enabled accounts increment the version.
+- Pre-implementation snapshot: commit `106d1993d6239113a721b5b5b21736faa31483bf`; `services/bff/internal/security/version_test.go` SHA-256 `9320C1BB9192FD3FD24A963E6E1E3124B3DCEEA6157DB554DA1AE773202EE30C`; `version.go` was a no-behavior false return.
+- Windows / Go 1.27.1. Command from `services/bff`: `go test ./internal/security -run TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid -count=1 -v`; exit 1 at the target assertion that exact active version `"1"` must authenticate.
+- After minimal implementation, `go test -race ./internal/security -count=1 -v` and `go vet ./internal/security` exited 0. Wrong version, disabled state, re-enabled old snapshot, noncanonical strings and zero version are rejected. PostgreSQL read/transaction integration remains for V010-005; this pure function does not claim real Session validation end to end.

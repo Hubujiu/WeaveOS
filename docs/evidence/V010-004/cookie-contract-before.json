@@ -106,7 +106,7 @@
         "operationId": "createSession",
         "summary": "Log in with account and password",
         "security": [],
-        "description": "Requires the same Origin/CSRF and JSON media policy as registration. Unknown account, wrong password and Disabled account share the public invalid-credentials result. A successful login creates a fresh random server-side Redis Session with one-hour idle TTL and an HttpOnly Secure SameSite cookie. Login JSON does not return csrfToken; the independent token is delivered only in the frontend-readable __Host-csrf Cookie.",
+        "description": "Requires the same Origin/CSRF and JSON media policy as registration. Unknown account, wrong password and Disabled account share the public invalid-credentials result. A successful login creates a fresh random server-side Redis Session with one-hour idle TTL and an HttpOnly Secure SameSite cookie.",
         "requestBody": {
           "required": true,
           "content": {
@@ -144,7 +144,7 @@
             "description": "New Session created",
             "headers": {
               "Set-Cookie": {
-                "description": "Two separate Set-Cookie fields: __Host-session with Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=3600, and __Host-csrf with Secure; SameSite=Lax; Path=/; Max-Age=3600 (non-HttpOnly). Neither sets Domain.",
+                "description": "__Host-weaveos_session with Secure; HttpOnly; SameSite=Lax; Path=/; and one-hour browser lifetime",
                 "schema": {
                   "type": "string"
                 }
@@ -271,7 +271,7 @@
             "description": "Current Session revoked; no body",
             "headers": {
               "Set-Cookie": {
-                "description": "Expire both __Host-session and __Host-csrf using separate Set-Cookie fields and their original security attributes.",
+                "description": "Expire __Host-weaveos_session",
                 "schema": {
                   "type": "string"
                 }
@@ -293,12 +293,7 @@
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
-        },
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/CsrfToken"
-          }
-        ]
+        }
       }
     },
     "/api/v1/invitations": {
@@ -362,12 +357,7 @@
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
-        },
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/CsrfToken"
-          }
-        ]
+        }
       }
     },
     "/api/v1/users/{userId}/password-reset": {
@@ -389,9 +379,6 @@
               "type": "string",
               "minLength": 1
             }
-          },
-          {
-            "$ref": "#/components/parameters/CsrfToken"
           }
         ],
         "requestBody": {
@@ -451,7 +438,7 @@
       "WebSession": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "__Host-session"
+        "name": "__Host-weaveos_session"
       }
     },
     "headers": {
@@ -802,19 +789,6 @@
             "$ref": "#/components/headers/RequestId"
           }
         }
-      }
-    },
-    "parameters": {
-      "CsrfToken": {
-        "in": "header",
-        "required": true,
-        "description": "Must equal the canonical __Host-csrf Cookie value, match its server-side Session hash binding, and pass trusted Origin checks.",
-        "schema": {
-          "minLength": 43,
-          "type": "string",
-          "maxLength": 43
-        },
-        "name": "X-CSRF-Token"
       }
     }
   }
