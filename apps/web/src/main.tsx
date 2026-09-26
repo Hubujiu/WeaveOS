@@ -1,7 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router';
+import { App } from './App';
+import './style.css';
 
-// No login UI is fabricated here. V010-006 owns approved component composition.
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing application mount point');
-createRoot(root).render(<StrictMode>{null}</StrictMode>);
+createRoot(root).render(<StrictMode><BrowserRouter><App /></BrowserRouter></StrictMode>);
