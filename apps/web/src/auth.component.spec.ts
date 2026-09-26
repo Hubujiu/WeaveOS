@@ -1,5 +1,34 @@
 import { test, expect } from '@playwright/test';
 
+test('WaveOS Figma 13:2 login shell uses the new brand and card geometry', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/login');
+  await expect(page.getByRole('banner')).toContainText('WaveOS');
+  await expect(page.getByRole('banner')).toContainText('安全 · 高效 · 连接世界');
+  await expect(page.getByText('登录您的账号，开始高效沟通')).toBeVisible();
+  const header = await page.getByRole('banner').boundingBox();
+  const card = await page.locator('.auth-card').boundingBox();
+  expect(header?.height).toBeGreaterThanOrEqual(90);
+  expect(card?.width).toBeGreaterThanOrEqual(590);
+  expect(card?.width).toBeLessThanOrEqual(610);
+  expect(card?.height).toBeGreaterThanOrEqual(710);
+  expect(card?.height).toBeLessThanOrEqual(730);
+});
+
+test('WaveOS Figma 40:2 register has four large fields and the invitation', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/register');
+  await expect(page.getByText('创建您的账号，开始使用 WaveOS')).toBeVisible();
+  await expect(page.getByLabel('邀请码', { exact: true })).toBeVisible();
+  const fields = await page.locator('.auth-card input').all();
+  expect(fields).toHaveLength(4);
+  for (const field of fields) {
+    const box = await field.boundingBox();
+    expect(box?.height).toBeGreaterThanOrEqual(54);
+    expect(box?.height).toBeLessThanOrEqual(58);
+  }
+});
+
 // Browser-only component tests. Each API response is controlled at the network boundary.
 test('FR-001/011: login is accessible and offers no self-service recovery', async ({ page }) => {
   await page.goto('/login');
