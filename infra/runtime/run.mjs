@@ -12,7 +12,7 @@ const commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
 const artifacts=process.env.WEAVEOS_ARTIFACT_RECORD?JSON.parse(readFileSync(process.env.WEAVEOS_ARTIFACT_RECORD,'utf8')):packageImages({root,commit,outputDir:resolve(dir,'artifacts')});
 // Prior local code snapshot already passed the full product pipeline. First
 // version has no earlier production release; record this rollback limitation.
-const previous=packageImages({root,commit:'2f93b5dc108d2f1b9773f3e04d7d7c235ccab27d',outputDir:resolve(dir,'previous-artifacts')});
+const previous=packageImages({root,commit:'85c2ee12beb13cf95eb7cc16a0508df35773b250',outputDir:resolve(dir,'previous-artifacts')});
 verifyArtifacts(artifacts);verifyArtifacts(previous);
 const project=`weaveos-v010-008-${Date.now()}`,generation=project;
 const env={...process.env,WEAVEOS_RUNTIME_DIR:dir,WEAVEOS_BFF_IMAGE:artifacts.bff.imageID,WEAVEOS_WEB_IMAGE:artifacts.web.imageID};

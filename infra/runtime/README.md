@@ -9,6 +9,7 @@
 ```powershell
 node infra/acceptance/run.mjs
 node --test infra/runtime/config.test.mjs infra/runtime/backup-crypto.test.mjs infra/runtime/recovery.test.mjs infra/runtime/monitor.test.mjs infra/runtime/cli.test.mjs infra/runtime/security.test.mjs
+node --test infra/runtime/artifacts.test.mjs infra/runtime/storage-version.test.mjs infra/runtime/rollback-security.test.mjs
 node infra/runtime/run.mjs
 ```
 
@@ -17,6 +18,19 @@ node infra/runtime/run.mjs
 运行器构建一次 BFF/前端 OCI 镜像，记录源 commit、镜像 digest、归档 SHA256、二进制摘要，运行受限身份/归档/恢复/回滚、故障和同制品 API/浏览器测试。成功后 `.work/runtime/export/` 只含 `BUILD.json` 和两个 OCI 文件；`.work/runtime/public/` 只含去敏执行结果。结束时停止全部自有容器。
 
 CI 同样执行以上流程；交付工作流等待完整 `check-release`（含用户三项实际签署），下载并交付已经测试的 OCI 文件，不重新构建、不部署生产。
+
+CI仅在GitHub托管Linux临时运行器上清理预装Android SDK以容纳浏览器和扫描数据库；脚本先校验RUNNER_ENVIRONMENT/RUNNER_OS，不在本机执行，不清理Docker卷或测试证据。
+
+从另一目录搬入CI产生的 `BUILD.json` 与两个OCI文件时，先验证并加载原制品，再提供本地解析后的记录。以下命令中的 `BUNDLE/BUILD.json` 替换为实际搬入目录；本地记录保存为新文件，不能覆盖既有记录：
+
+```powershell
+node --input-type=module -e "import {importArtifacts} from './infra/runtime/artifacts.mjs'; import {writeFileSync} from 'node:fs'; const r=importArtifacts('BUNDLE/BUILD.json'); writeFileSync('.work/imported-BUILD.json',JSON.stringify(r),{flag:'wx'});"
+$env:WEAVEOS_ARTIFACT_RECORD=(Resolve-Path .work/imported-BUILD.json).Path
+node infra/runtime/run.mjs
+Remove-Item Env:WEAVEOS_ARTIFACT_RECORD
+```
+
+这复验同一候选OCI，不重建候选；回滚基线单独从明确已验证源构建。必须使用匹配版本的仓库运行配置，不能将此命令当生产推广。完整搬迁与字节/来源匹配由 `artifact-transfer.test.mjs` 实际验证。
 
 ## 查看本地界面
 

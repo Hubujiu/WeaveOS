@@ -1,5 +1,7 @@
 # V010-008 真实执行证据
 
+以下按执行先后保留历史状态。“尚未执行”只描述对应当时阶段；最新结果见本文末尾及[验收材料](review.md)。旧RED不是当前实现状态，环境错误不计业务RED。
+
 2026-09-26 13:18 +08:00：Go1.25.7 Docker，PostgreSQL18.0，隔离weaveos_ops_test/独立weaveos_ci_archive_test。命令：`go test -count=1 -v ./internal/audit`；退出1，TestColdArchiveSchema：Q9冷库表缺失；TestRuntimeRolesRestrictAuditAndBootstrap：受限应用角色缺失。两项到达目标断言。永久测试/无行为占位快照：schema-red-test.go、archive-before.sql、roles-before.sql。此前Goose需auto toolchain及测试源相对路径错误均环境/测试加载失败，不计产品RED。
 
 来源：Q9及审计对象/12字段、DDL角色权限；ADR004仅已授权本地模拟适用。正式页面状态未改。本轮GREEN与后续操作尚未执行；不能以本页文字代替实际结果。
@@ -20,8 +22,7 @@
 
 真实备份：PostgreSQL18容器内pg_dump custom，独立空库pg_restore，synthetic状态/哈希/邀请消费字段作为领域样例。`WEAVEOS_BACKUP_TEST_CONTAINER=weaveos-v010-test-postgres node --test infra/runtime/backup.test.mjs` 初始3RED exit1（无备份文件、缺源未报错、错钥未拒绝）→3GREEN exit0；backup恢复密文仅在内存解密、完成认证后再连接目标，single-transaction/no-owner/no-privileges，拒绝有表目标。备份和key保留本机私有.work，不上传；这不是生产/异机恢复能力证明。参考[PostgreSQL18 pg_dump](https://www.postgresql.org/docs/18/app-pgdump.html)。
 
-CLI：两个最小main无行为，真实编译执行后缺可信配置退出0；
-ode --test infra/runtime/cli.test.mjs` 2RED exit1→最小配置拒绝/私有stdin/安全日志2GREEN。此前mount的dst=/repo:ro导致Docker125，初始测试未识别该环境失败，明确不计GREEN或RED；已修正readonly选项并要求程序实际exit0/1，再观察真正RED保存快照。正常Bootstrap/维护CLI运行仍待完整runtime演练。
+CLI：两个最小main无行为，真实编译执行后缺可信配置退出0；`node --test infra/runtime/cli.test.mjs` 2RED exit1→最小配置拒绝/私有stdin/安全日志2GREEN。此前mount的dst=/repo:ro导致Docker125，初始测试未识别该环境失败，明确不计GREEN或RED；已修正readonly选项并要求程序实际exit0/1，再观察真正RED保存快照。正常Bootstrap/维护CLI运行仍待完整runtime演练。
 
 全量Go：首次用DB14启动全suite，auth既有测试要求DB15，exit1是环境隔离校验，未改守卫；改用DB15后 `go test -race -p1 -count=1 ./... && go vet ./...` 全部exit0。2026-09-26完整本机acceptance已实际启动；尚未取得结果，不能记PASS。
 
@@ -33,3 +34,25 @@ ode --test infra/runtime/cli.test.mjs` 2RED exit1→最小配置拒绝/私有std
 
 2026-09-27：image-scan 两个测试在无行为声明下实际exit1（缺完整报告/实际扫描记录），42a42b0保存测试与占位；实现保留全部有/无修复漏洞，实际2/2 exit0。df15837镜像BFF227项（4 critical/52 high）、web333项（1 critical/66 high）；这不是零漏洞或用户接受。
 环境清理复核：dns-before-cleanup在故障后主入口ready503、live200，下一采样ready200，BFF重新建立数据依赖；原恢复固定IP还导致停止重启地址被维护容器占用。改回动态分配并等实际ready，DNS1/monitor1连续exit0。原测试已保留。CI36255794796模块/CLI加载失败，本机Linux Git所有权fixture复现VCS128；GOFLAGS=-buildvcs=false后CLI2+security4 exit0，不改Git safe.directory或业务预期。
+
+## 补充阶段结果（2026-09-27）
+
+| 行为 / 独立预期 | 原始失败与永久快照 | 实际GREEN |
+| --- | --- | --- |
+| 受控备份保留迁移账本序列，且不能advance | sequence-backup-red-test.mjs / roles-before-sequence.sql；3G1R exit1 | 最小SELECT授权后4/4 exit0；完整新PG18.6恢复再次通过 |
+| 运行告警策略及真实本地接收 | monitor-red-test.mjs / monitor-before.mjs；2RED exit1 | 两项策略和1项真实Redis容量/断连/证书告警通过 |
+| 实时采样不伪造健康 | probe-red-test.mjs / probe-before.mjs；实际未给ready等采样RED | 完整运行1/1，真实故障码保留local-alerts.jsonl |
+| 备份真实失败通知接收者 | backup-alert-red-test.mjs / backup-before-alert.mjs；缺源无告警RED | 实际缺源无文件且BACKUP接收；四备份测试通过 |
+| 私钥写入前限制ACL | tls-permissions-red-test.mjs / runtime-before-private-tls.mjs；Windows继承ACL RED | TLS权限与真实替换2/2，原CA恢复后API25通过 |
+| OCI搬迁后仍能校验推广 | transfer-red-test.mjs / transfer-before.mjs；绝对构建路径RED | 真实目录更名、加载及来源/字节匹配通过 |
+| CI真实镜像验收与同制品交付 | release-ci-red-test.mjs / acceptance-before-runtime.yml / delivery-before-runtime.yml；缺pipeline RED | config5/5后6/6；真实远端运行仍需最终head结果 |
+| Go与前端已发布依赖漏洞 | security-red-test.mjs / security-before.mod、frontend-security-red-test.mjs及旧lock；实际govuln/pnpm RED | Go源/修订模块图/pnpm/Gitleaks四项及CLI两项exit0 |
+| 容器IP变化后重解析 | dns-red-test.mjs / nginx-before-dns.conf；实际86秒后不可用exit1 | 同一动态DNS行为通过，fixture清理另行真实验证 |
+| 全部运行镜像的扫描记录 | image-scan-red-test.mjs与storage-scan-red-test.mjs / 对应before；先2R，再1G1R | 2/2，四镜像原始报告和全部残余公告保留scans/ |
+| 存储镜像实际安全补丁版本 | storage-version-red-test.mjs / 两个before-storage配置；4RED exit1 | PG18.6/Redis8.2.10实际二进制4/4、topology5/5 |
+| 回滚源同样通过依赖检查 | rollback-security-red-test.mjs / runtime-before-rollback-patch.mjs；旧2f93 Go与Vite两项RED exit1 | 基线换为完整本机验证85c2ee1，2/2 exit0；最终组合回归进行中 |
+| 托管CI磁盘准备限制执行边界 | hosted-disk-red-test.mjs / acceptance-before-disk.yml；缺守卫1R5G exit1 | 配置6/6；仅托管Linux清理Android SDK，实际远端结果另记 |
+
+本机85c2ee1不可变制品整轮exit0，6/1/1/2/4/3/2/25/30各组通过，205.495秒；local-runtime.json、local-recovery.json、BUILD.json及scans完整报告保留。恢复9498ms、备份582ms，快照后写入确实丢失、旧管理员/普通Cookie拒绝。另独立artifacts构建1/1、配置/crypto/monitor/recovery12/12、CLI/security6/6、治理底座57/57、verify-repo与check-tasks exit0。没有用结构检查证明业务。
+
+远端d1c6946：完整产品、CLI/security阶段通过，真实runtime的操作/DNS/监控/TLS/备份/完整性通过；Trivy首次下载数据库因GitHub临时运行器磁盘满失败，属于环境NOT RUN，不能记镜像扫描通过。此后添加受限托管磁盘准备，未降低扫描或测试阈值。`check-release`实际exit1只报告三项人工pending及缺证据；未擅自填通过。
