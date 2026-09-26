@@ -8,14 +8,16 @@ import { backupDatabase, restoreDatabase, privateFile } from './backup.mjs';
 const container=process.env.WEAVEOS_BACKUP_TEST_CONTAINER;
 if(!container?.startsWith('weaveos-v010-'))throw new Error('Isolated PostgreSQL18 container required');
 const dir=resolve('.work/backup-tests',String(Date.now()));mkdirSync(dir,{recursive:true});
-const sql=(database,text)=>execFileSync('docker',['exec','-i',container,'psql','-X','-v','ON_ERROR_STOP=1','-U','weaveos_test','-d',database],{input:text,stdio:['pipe','pipe','pipe'],encoding:'utf8'});
+const user=process.env.WEAVEOS_BACKUP_TEST_USER??'weaveos_test';
+if(!/^weaveos_[a-zA-Z0-9_]+$/.test(user))throw new Error('Isolated backup test identity required');
+const sql=(database,text)=>execFileSync('docker',['exec','-i',container,'psql','-X','-v','ON_ERROR_STOP=1','-U',user,'-d',database],{input:text,stdio:['pipe','pipe','pipe'],encoding:'utf8'});
 const suffix=Date.now(),source=`weaveos_backup_source_${suffix}`,target=`weaveos_backup_target_${suffix}`;
 sql('postgres',`CREATE DATABASE ${source}; CREATE DATABASE ${target};`);
 // Synthetic source independent of backup implementation. Restore must preserve
 // status, credential representation and consumed invitation state, not just counts.
 sql(source,"CREATE SCHEMA auth; CREATE TABLE auth.recovery_fixture (id integer PRIMARY KEY,status text,password_hash text,invitation_consumed boolean); INSERT INTO auth.recovery_fixture VALUES (1,'disabled','synthetic-one-way-hash',true);");
 const keyFile=resolve(dir,'key'),backupFile=resolve(dir,'snapshot.enc');writeFileSync(keyFile,randomBytes(32),{mode:0o600,flag:'wx'});
-const options={container,user:'weaveos_test',database:source,keyFile,backupFile};
+const options={container,user,database:source,keyFile,backupFile};
 test('real encrypted logical backup restores into an isolated empty database',()=>{
  backupDatabase(options);
  assert.ok(existsSync(backupFile),'encrypted backup must actually be persisted');
