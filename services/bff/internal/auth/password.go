@@ -12,6 +12,9 @@ import (
 func validPassword(s string) bool {
 	var upper, lower, digit, special bool
 	for _, r := range s {
+		if r < 32 || r > 126 {
+			return false
+		}
 		switch {
 		case r >= 'A' && r <= 'Z':
 			upper = true

@@ -9,7 +9,7 @@ import (
 )
 
 // PRD FR-018: uppercase/lowercase ASCII letters, digit and special symbol; no additional length floor.
-// Space/Unicode classification awaits Q13 and is not an approved test oracle.
+// Printable ASCII boundaries approved in Q13 are covered in password_ascii_test.go.
 func TestPasswordPolicy(t *testing.T) {
 	for _, s := range []string{"Aa1!", "Abc@123456", "VeryLongTest@123"} {
 		if !validPassword(s) {
