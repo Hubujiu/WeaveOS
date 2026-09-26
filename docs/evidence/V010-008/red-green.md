@@ -9,3 +9,17 @@
 第二组 RED：无行为Maintain/Reader声明可加载，`go test -count=1 -v ./internal/audit` exit1，五项目标失败：历史月份未移出、冷库冲突未拒绝、已提交副本重试未删除热副本、闰年年度到期未删除、有效Bootstrap无法读取热事件；另 `go test -count=1 -v ./internal/audit -run TestAuditReadDenies` exit1，普通/禁用/旧版本/匿名四次均未拒绝。schema/roles同时仍GREEN。源码保存在maintenance-red-test.go/read-red-test.go/maintenance-before.go/read-before.go，工作分支786d4d7先于实现。
 
 第二组 GREEN：`go test -race -count=1 -v ./internal/audit` exit0，8/8；真实PG18 + Redis8.2.1 DB14，隔离数据库同上。维护使用UTC calendar interval、100行批次、受控advisory lock、先确认冷库commit并核对完整事件再删除热库；普通查询仅热库且复核当前用户。当前只证明模块真实用例，CLI/自动调度/受限身份实际执行/备份恢复/制品与用户签署仍未完成。
+
+自动维护/冷角色：`go test -count=1 -v ./internal/audit -run 'TestScheduled|TestColdMaintenance'` exit1：无调度执行，cold SELECT/INSERT/DELETE缺失；先e3c4c5d快照，再实现，每小时维护立即执行+周期执行，测试注入10ms与固定领域时钟，不等待年度/月份；race10/10 exit0。
+
+受限身份：真实SET ROLE auth_maintenance后Maintain SQLSTATE42501行锁权限缺失，`go test -count=1 -v ./internal/audit -run TestControlled` exit1，45cf50c保留测试与原roles。最小grant UPDATE(id)仅受控维护者满足PG FOR UPDATE列权限，不扩权auth_app；同用例race exit0，auth_reader真实受限读取同时通过。fresh测试显式装配角色，不依赖另一个测试先执行。
+
+加密：backup-crypto三用例分别从Node/OpenSSL独立加/解密、nonce独立性、错钥/篡改/截断拒绝确定预期；初始声明3RED exit1→AES256-GCM/32随机byte key/12byte nonce/16byte tag完整认证后输出3GREEN。主来源[Node Crypto](https://nodejs.org/api/crypto.html)，仅用标准库。
+
+配置：config.test.mjs独立运行exit1三项RED，缺独立archive测试环境、runtime Redis及自动维护进程；f60222f永久原配置。最小CI/runner装配独立cold、runtime配置后的config+crypto6/6 exit0。首次复合Shell末尾docker输出exit0不是RED退出码，随后明确独立Node exit1已观察。
+
+真实备份：PostgreSQL18容器内pg_dump custom，独立空库pg_restore，synthetic状态/哈希/邀请消费字段作为领域样例。`WEAVEOS_BACKUP_TEST_CONTAINER=weaveos-v010-test-postgres node --test infra/runtime/backup.test.mjs` 初始3RED exit1（无备份文件、缺源未报错、错钥未拒绝）→3GREEN exit0；backup恢复密文仅在内存解密、完成认证后再连接目标，single-transaction/no-owner/no-privileges，拒绝有表目标。备份和key保留本机私有.work，不上传；这不是生产/异机恢复能力证明。参考[PostgreSQL18 pg_dump](https://www.postgresql.org/docs/18/app-pgdump.html)。
+
+CLI：两个最小main无行为，真实编译执行后缺可信配置退出0；`node --test infra/runtime/cli.test.mjs` 2RED exit1→最小配置拒绝/私有stdin/安全日志2GREEN。此前mount的dst=/repo:ro导致Docker125，初始测试未识别该环境失败，明确不计GREEN或RED；已修正readonly选项并要求程序实际exit0/1，再观察真正RED保存快照。正常Bootstrap/维护CLI运行仍待完整runtime演练。
+
+全量Go：首次用DB14启动全suite，auth既有测试要求DB15，exit1是环境隔离校验，未改守卫；改用DB15后 `go test -race -p1 -count=1 ./... && go vet ./...` 全部exit0。2026-09-26完整本机acceptance已实际启动；尚未取得结果，不能记PASS。
