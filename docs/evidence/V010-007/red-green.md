@@ -39,3 +39,7 @@ exit1：四个字段错误缺 COMMON_VALIDATION_FAILED/violations；可信 local
 第六次整栈20 HTTP/23组件/Go全部通过，浏览器29/30：Firefox登录刷新后在page.evaluate超30秒，整栈exit1，未加retry/skip/延长超时，根因未证明。参照[Playwright官方Docker配置](https://playwright.dev/docs/docker)建议的init进程，并选择隔离1GiB共享内存（不与宿主共享IPC），测试先报告3pass/1fail（缺init；保存0e4babb快照），随后最小调整容器参数，结构4/4 exit0。此配置改善不等于已证明Firefox故障由共享内存造成；第七次完整Linux栈才证明最终行为，失败仍保留。
 
 GitHub首次产品run36218246344在Go全量通过后，容器内Go自动VCS stamping因宿主Git信息不可访问失败；不是业务RED。验收fixture构建显式buildvcs=false（不降低测试），发布制品来源SHA/签名与不可变映射仍由008负责。本仓库CI宿主Node固定24.14.0，本机22.23.1，Playwright镜像内Node24.20.0；不将工具版本混称一致。
+
+第七次完整本机：Go全量、75基础/契约/拓扑、23组件、25真实HTTP、30三浏览器全部通过；PG真实停止/重启恢复通过。但独立Redis停止后current没在现有10秒请求期限内返回503，故障suite2/3，整栈exit1。新增真实TCP黑洞 `TestRedisTransportHonorsCallerDeadline`，ctx150ms、1s安全余量，实际5.005s后才返回错误，exit1。测试先提交132e5dc，保存redis-deadline-red-test.go/session-before-deadline.go；这是传输故障注入，不伪装Redis生命周期存储。
+
+检查固定go-redis9.22.0源码确认ContextTimeoutEnabled默认false、5s读/连接与3次重试；最小开启context期限、连接/读/写/池等待各1s、关闭自动重试，避免含糊Session写重试与耗尽HTTP响应预算。原黑洞命令race exit0（150ms调用期限的1s断言通过；Go race包总1.165s含退出延迟）。不延长验收超时、不放宽503预期。第八次完整真实栈验证全部Session回归、HTTP与故障恢复。

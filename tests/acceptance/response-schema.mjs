@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 const document = JSON.parse(readFileSync(new URL('../../contracts/openapi/openapi.json', import.meta.url)));
+const codes = JSON.parse(readFileSync(new URL('../../contracts/errors/codes.json', import.meta.url)));
 const dereference = ref => ref.slice(2).split('/').reduce((value, key) => value[key], document);
 function matches(schema, value) {
   for (const key of Object.keys(schema)) assert.ok(['$ref','type','required','additionalProperties','properties','const','enum','minLength','minItems','items','allOf','oneOf','description','example'].includes(key), `Unsupported response constraint ${key}`);
@@ -33,6 +34,10 @@ export async function assertResponseSchema(response, path, method) {
   assert.ok(response.headers.get('content-type')?.includes('application/json'));
   const body = await response.clone().json();
   assert.ok(body.message && body.message !== body.code, 'Public message must be human-readable');
+  if (response.status >= 400) {
+    // API_NOT_FOUND is the foundation host's generic API404, not a user-resource404.
+    assert.equal(body.code === 'API_NOT_FOUND' ? 404 : codes[body.code]?.httpStatus, response.status, 'Actual business code must match its registered HTTP status');
+  } else assert.equal(body.code, 'OK');
   assert.equal(matches(schema.content['application/json'].schema, body), true, `Response fails ${method} ${template} status ${response.status} schema`);
   assert.equal(body.meta?.requestId, response.headers.get('x-request-id'));
   assert.ok(response.headers.get('cache-control')?.includes('no-store'));

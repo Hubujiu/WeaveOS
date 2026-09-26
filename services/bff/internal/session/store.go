@@ -52,6 +52,14 @@ func NewStore(redisURL, generation string) *Store {
 	if !validGeneration.MatchString(generation) {
 		return &Store{parseErr: ErrInvalid}
 	}
+	// Authentication dependencies must fail within the caller's deadline.
+	// Do not retry ambiguous session writes or spend the HTTP response budget dialing.
+	options.ContextTimeoutEnabled = true
+	options.DialTimeout = time.Second
+	options.ReadTimeout = time.Second
+	options.WriteTimeout = time.Second
+	options.PoolTimeout = time.Second
+	options.MaxRetries = -1
 	return &Store{client: redis.NewClient(options), generation: generation}
 }
 
