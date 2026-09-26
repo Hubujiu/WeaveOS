@@ -61,6 +61,7 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 12
     env:
       WEAVEOS_TEST_DATABASE_URL: postgres://weaveos_test:isolated-ci-only@127.0.0.1:5432/weaveos_ci_test?sslmode=disable
+      WEAVEOS_TEST_ARCHIVE_DATABASE_URL: postgres://weaveos_test:isolated-ci-only@127.0.0.1:5432/weaveos_ci_archive_test?sslmode=disable
       WEAVEOS_TEST_REDIS_URL: redis://127.0.0.1:6379/15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -74,6 +75,8 @@ jobs:
         run: |
           go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up
+          PGPASSWORD=isolated-ci-only createdb -h 127.0.0.1 -U weaveos_test weaveos_ci_archive_test
+          "$(go env GOPATH)/bin/goose" -dir db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up
       - name: Format, static checks, race tests and build
         working-directory: services/bff
         run: |

@@ -21,7 +21,7 @@ const database = name => `postgres://weaveos_test:${password}@127.0.0.1:5432/${n
 const privateFile = (name, text) => writeFileSync(resolve(dir, name), text, { mode: 0o600, flag: 'wx' });
 privateFile('postgres.env', `POSTGRES_USER=weaveos_test\nPOSTGRES_PASSWORD=${password}\nPOSTGRES_DB=weaveos_ci_test\n`);
 privateFile('runtime.env', `WEAVEOS_DATABASE_URL=${database('weaveos_acceptance').replace('@127.0.0.1:', '@postgres:')}\nWEAVEOS_REDIS_URL=redis://redis:6379/0\nWEAVEOS_SESSION_GENERATION=${project}\nWEAVEOS_AUDIT_KEY_ID=test\nWEAVEOS_AUDIT_HMAC_KEY=${randomBytes(32).toString('base64')}\n`);
-privateFile('test.env', `WEAVEOS_TEST_DATABASE_URL=${database('weaveos_ci_test')}\nWEAVEOS_TEST_REDIS_URL=redis://127.0.0.1:6379/15\n`);
+privateFile('test.env', `WEAVEOS_TEST_DATABASE_URL=${database('weaveos_ci_test')}\nWEAVEOS_TEST_ARCHIVE_DATABASE_URL=${database('weaveos_ci_archive_test')}\nWEAVEOS_TEST_REDIS_URL=redis://127.0.0.1:6379/15\n`);
 privateFile('seed.env', `WEAVEOS_TEST_DATABASE_URL=${database('weaveos_acceptance')}\nWEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/acceptance/fixtures.json\n`);
 const openssl = process.platform === 'win32' ? 'C:/Program Files/Git/usr/bin/openssl.exe' : 'openssl';
 call(openssl, ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '2', '-keyout', resolve(dir, 'tls/key.pem'), '-out', resolve(dir, 'tls/cert.pem'), '-subj', '/CN=localhost', '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1'], { stdio: 'pipe' });
@@ -34,8 +34,10 @@ const started = Date.now();
 writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'running', project, target: 'isolated Linux HTTPS' }));
 try {
   compose('up', '-d', '--wait', 'postgres', 'redis', 'test-redis');
+  compose('exec', '-T', 'postgres', 'createdb', '-U', 'weaveos_test', 'weaveos_ci_archive_test');
   // Published initial migration intentionally has no destructive Down. Recovery is V010-008.
   go('go install github.com/pressly/goose/v3/cmd/goose@v3.28.0; /repo/.work/acceptance/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up; /repo/.work/acceptance/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up');
+  go('/repo/.work/acceptance/tools/goose -dir /repo/db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up; /repo/.work/acceptance/tools/goose -dir /repo/db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up');
   go('go test -race -p 1 -count=1 ./... && go vet ./... && CGO_ENABLED=0 go build -o /repo/.work/acceptance/bff ./cmd/bff');
   compose('stop', 'test-redis');
   compose('exec', '-T', 'postgres', 'createdb', '-U', 'weaveos_test', 'weaveos_acceptance');
