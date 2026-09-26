@@ -54,8 +54,8 @@ function AuthLayout({ children, register = false }: { children: ReactNode; regis
   return <div className="site"><BrandHeader register={register} /><main className="auth-main"><img className="auth-glow" src={register ? glowRegister : glowLogin} width="1260" height="1260" alt="" /><div className="auth-card">{children}</div></main></div>;
 }
 
-function AccountField({ value, onChange, register = false }: { value: string; onChange: (value: string) => void; register?: boolean }) {
-  return <div className="auth-field"><label htmlFor="account">邮箱 / 用户名{register && <span className="required"> *</span>}</label><div className="field-input"><img src={register ? userRegisterIcon : userLoginIcon} width="24" height="24" alt="" /><input id="account" name="account" aria-label="账号" type="text" value={value} onChange={event => onChange(event.target.value)} placeholder={register ? '请输入邮箱或用户名' : 'user@example.com'} autoComplete="username" maxLength={254} required /></div></div>;
+function AccountField({ value, onChange, register = false, credentialError = false }: { value: string; onChange: (value: string) => void; register?: boolean; credentialError?: boolean }) {
+  return <div className="auth-field"><label htmlFor="account">邮箱 / 用户名{register && <span className="required"> *</span>}</label><div className={`field-input${credentialError ? ' credential-error' : ''}`}><img src={register ? userRegisterIcon : userLoginIcon} width="24" height="24" alt="" /><input id="account" name="account" aria-label="账号" type="text" value={value} onChange={event => onChange(event.target.value)} placeholder={register ? '请输入邮箱或用户名' : 'user@example.com'} autoComplete="username" maxLength={254} required /></div></div>;
 }
 
 function PasswordField({ id = 'password', label = '密码', value, onChange, showStrength = false, register = false }: { id?: string; label?: string; value: string; onChange: (value: string) => void; showStrength?: boolean; register?: boolean }) {
@@ -95,14 +95,14 @@ function Login() {
     try {
       await api<User>('sessions', 'POST', { account: account.trim(), password });
       navigate('/app', { replace: true });
-    } catch (cause) { setError(cause instanceof Error ? cause.message : '登录失败'); }
+    } catch (cause) { setError(cause instanceof ApiError && cause.status === 401 ? '邮箱或密码不正确' : cause instanceof Error ? cause.message : '登录失败'); }
     finally { setPending(false); }
   }
 
   return <AuthLayout><form className="auth-form login-form" onSubmit={submit} noValidate>
     <div className="form-heading"><h1>登录</h1><p className="subtitle">登录您的账号，开始高效沟通</p></div>
-    {error && <div role="alert" className="form-error"><img src={errorIcon} width="26" height="26" alt="" /><span><strong>{error}</strong><small>请检查输入后重试。</small></span></div>}
-    <AccountField value={account} onChange={setAccount} />
+    {error && <div role="alert" className="form-error"><img src={errorIcon} width="26" height="26" alt="" /><span><strong>{error}</strong><small>{error === '邮箱或密码不正确' ? '请检查您的密码后重新输入。为方便您，邮箱地址已保留。' : '请检查输入后重试。'}</small></span></div>}
+    <AccountField value={account} onChange={setAccount} credentialError={error === '邮箱或密码不正确'} />
     <PasswordField value={password} onChange={setPassword} />
     <div className="login-options"><label className="remember-disabled"><input type="checkbox" aria-label="记住账号" disabled defaultChecked /><img src={checkDisabled} width="22" height="22" alt="" /><span>记住账号</span></label><button className="forgot-disabled" type="button" disabled>忘记密码?</button></div>
     <button className="primary-button" type="submit" disabled={pending}>{pending ? '登录中…' : '登录'}</button>
