@@ -40,6 +40,10 @@ try {
   compose('stop', 'test-redis');
   compose('exec', '-T', 'postgres', 'createdb', '-U', 'weaveos_test', 'weaveos_acceptance');
   go('/repo/.work/acceptance/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up && go run ./cmd/acceptance-seed', 'seed.env');
+  if (typeof process.getuid === 'function') {
+    // Seed runs as container root; preserve0600 while assigning the sole authorized host reader.
+    call('docker', ['run', '--rm', ...mount, goImage, 'chown', `${process.getuid()}:${process.getgid()}`, '/repo/.work/acceptance/fixtures.json']);
+  }
   node('pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; node --test contracts/*.test.mjs tests/governance/*.test.mjs tests/foundation/*.test.mjs tests/acceptance/topology.test.mjs; pnpm exec redocly lint contracts/openapi/openapi.json; pnpm typecheck; pnpm build; cd apps/web; pnpm exec playwright test --config playwright.component.config.ts');
   compose('up', '-d', 'bff', 'nginx');
   node('node --test tests/acceptance/api.test.mjs; pnpm exec playwright test --config apps/web/playwright.integration.config.ts --reporter=line', id('nginx'));

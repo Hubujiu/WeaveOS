@@ -43,3 +43,5 @@ GitHub首次产品run36218246344在Go全量通过后，容器内Go自动VCS stam
 第七次完整本机：Go全量、75基础/契约/拓扑、23组件、25真实HTTP、30三浏览器全部通过；PG真实停止/重启恢复通过。但独立Redis停止后current没在现有10秒请求期限内返回503，故障suite2/3，整栈exit1。新增真实TCP黑洞 `TestRedisTransportHonorsCallerDeadline`，ctx150ms、1s安全余量，实际5.005s后才返回错误，exit1。测试先提交132e5dc，保存redis-deadline-red-test.go/session-before-deadline.go；这是传输故障注入，不伪装Redis生命周期存储。
 
 检查固定go-redis9.22.0源码确认ContextTimeoutEnabled默认false、5s读/连接与3次重试；最小开启context期限、连接/读/写/池等待各1s、关闭自动重试，避免含糊Session写重试与耗尽HTTP响应预算。原黑洞命令race exit0（150ms调用期限的1s断言通过；Go race包总1.165s含退出延迟）。不延长验收超时、不放宽503预期。第八次完整真实栈验证全部Session回归、HTTP与故障恢复。
+
+实际读取GitHub产品run36218854214失败日志：HTTP/三浏览器执行后，宿主故障测试因root容器生成的0600 fixture被runner UID拒绝读取（EACCES），不是产品RED。另按私有文件只供获授权消费人读取的独立配置预期新增测试，实际4pass/1fail、exit1（未给消费者UID），先保存ef9b735快照；赋文件owner为宿主getuid/getgid，保留0600、不改world-readable后5/5 exit0。POSIX权限真实核验由最终GitHub产品run负责；WindowsACL/映射不能冒充POSIX所有权验证。

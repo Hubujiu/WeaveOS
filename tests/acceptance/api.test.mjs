@@ -145,7 +145,7 @@ test('Q13: non-ASCII and space-only special class fail with approved field viola
     assert.ok(body.data.violations.some(v => v.field === 'password' && v.code === 'AUTH_PASSWORD_POLICY_VIOLATION'));
   }
 });
-test('Q1/Q2/Q13: length applies after ordinary-space trim; four-character password is sufficient', async () => {
+test('FR-002/Q13: length applies after ordinary-space trim; four-character password is sufficient', async () => {
   const f = fixtures(), account = '测'.repeat(254);
   const response = await send(routes.register, 'POST', { account: `  ${account}  `, password: 'Aa1!', invitationCode: f.invitations.passwordPolicy });
   assert.equal(response.status, 201);
@@ -153,7 +153,7 @@ test('Q1/Q2/Q13: length applies after ordinary-space trim; four-character passwo
   const session = await login({ account: ` ${account} `, password: 'Aa1!' });
   assert.equal((await send(routes.current, 'HEAD', undefined, session)).status, 200);
 });
-test('Q2: distinct case-sensitive accounts both register and authenticate independently', async () => {
+test('FR-002: distinct case-sensitive accounts both register and authenticate independently', async () => {
   const admin = await login(fixtures().admin), account = unique('Case');
   for (const name of [account, account.toLowerCase()]) {
     const invitation = await send(routes.invitations, 'POST', {}, admin);

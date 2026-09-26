@@ -10,7 +10,7 @@ node infra/acceptance/run.mjs
 
 要求 Docker Linux daemon、Node 和 OpenSSL（Windows 使用 Git 自带 OpenSSL），只运行本地隔离环境。流程创建独立 Compose 项目，真实 PostgreSQL18、Redis8.2、Go BFF、Nginx TLS 与正式前端构建；仅入口127.0.0.1:19443发布端口。另有临时 test-redis 为现有本地地址测试提供隔离，单元结束停止；运行 Redis 是独立服务。数据库和运行账号最小权限、冷归档与恢复由008落实，此验收栈的测试数据库管理账号不能当生产运行账号。
 
-顺序：空库 Goose Up/重复Up → Go race（-p1，避免共享测试库清理冲突）/vet/build → 新产品库迁移与私有随机 Seed → 14契约/57治理底座/3拓扑 → OpenAPI3.2.1 lint/类型/构建 → 23隔离组件 → 真实HTTPS HTTP及逐响应schema → Chromium/Firefox/WebKit → 实际Redis/PG停止/重启与503/readiness恢复。
+顺序：空库 Goose Up/重复Up → Go race（-p1，避免共享测试库清理冲突）/vet/build → 新产品库迁移与私有随机 Seed → 14契约/57治理底座/5拓扑 → OpenAPI3.2.1 lint/类型/构建 → 23隔离组件 → 真实HTTPS HTTP及逐响应schema → Chromium/Firefox/WebKit → 实际Redis/PG停止/重启与503/readiness恢复。
 
 已发布00001迁移含用户/审计数据，不提供破坏性Down；回退采用008的隔离备份恢复/已验证制品回滚。不能为了测试修改已发布迁移。
 
