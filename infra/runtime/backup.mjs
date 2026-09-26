@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, openSync, closeSync, writeFileSync } from 'node:fs';
 import { seal, open } from './backup-crypto.mjs';
+import { receiveCodes } from './monitor.mjs';
 function valid(o){
  if(!/^weaveos-v010-[a-zA-Z0-9_-]+$/.test(o.container)||!/^weaveos_[a-zA-Z0-9_]+$/.test(o.database)||!/^weaveos_[a-zA-Z0-9_]+$/.test(o.user))throw new Error('Refusing non-isolated database operation');
  if(!o.keyFile||!o.backupFile||o.keyFile===o.backupFile)throw new Error('Separate backup/key files required');
@@ -23,7 +24,7 @@ export function backupDatabase(o){
   const dump=docker(['exec',o.container,'pg_dump','-U',o.user,'-d',o.database,'--format=custom','--no-owner','--no-privileges']);
   try{privateFile(o.backupFile,seal(dump,key));}finally{dump.fill(0);}
   return {elapsedMs:Date.now()-start,format:'pg_dump18 custom + AES256-GCM',result:'passed'};
- }catch{throw new Error('Encrypted database backup failed');}
+ }catch{if(o.alertFile)receiveCodes(o.alertFile,['BACKUP']);throw new Error('Encrypted database backup failed');}
  finally{key.fill(0);}
 }
 export function restoreDatabase(o){

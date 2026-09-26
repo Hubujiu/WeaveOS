@@ -44,7 +44,7 @@ test('encrypted hot/cold backup restores true state, rotates generation, and rej
  const admin=await login(fixture.admin),old=await login(fixture.user);
  const reset=await api(`/users/${fixture.resetTarget.id}/password-reset`,{method:'POST',headers:admin.headers,body:'{}'});assert.equal(reset.status,200);
  const backupDir=resolve(c.dir,'backups'),keyFile=resolve(c.dir,'secrets/backup.key');
- const options={container:c.container('postgres'),user:'weaveos_backup',keyFile};
+ const options={container:c.container('postgres'),user:'weaveos_backup',keyFile,alertFile:resolve(c.dir,'public/alerts.jsonl')};
  c.compose('stop','audit-maintenance');
  const hot=backupDatabase({...options,database:'weaveos_runtime',backupFile:resolve(backupDir,'hot.enc')});const cold=backupDatabase({...options,database:'weaveos_cold_archive',backupFile:resolve(backupDir,'cold.enc')});
  const snapshotAt=new Date().toISOString();

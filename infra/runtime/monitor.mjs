@@ -12,6 +12,11 @@ export function alarms(s){
 }
 export function receiveAlarms(file,sample){
  const codes=alarms(sample);
+ return receiveCodes(file,codes);
+}
+export function receiveCodes(file,codes){
+ const allowed=new Set(['READINESS','LIVENESS','DATABASE','REDIS','REDIS_CAPACITY','MEMORY','DISK','CERTIFICATE','BACKUP']);
+ if(!Array.isArray(codes)||codes.some(c=>!allowed.has(c)))throw new Error('Only fixed operational codes may reach the receiver');
  if(codes.length)appendFileSync(file,JSON.stringify({at:new Date().toISOString(),receiver:'local operator review',codes})+'\n',{mode:0o600});
  return codes;
 }
