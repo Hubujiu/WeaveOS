@@ -56,7 +56,7 @@ func NewStore(redisURL, generation string) *Store {
 }
 
 func (s *Store) ready() error {
-	if s == nil {
+	if s == nil || (s.parseErr == nil && s.client == nil) {
 		return ErrInvalid
 	}
 	return s.parseErr
