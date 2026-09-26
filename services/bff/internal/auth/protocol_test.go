@@ -4,9 +4,25 @@ import (
 	"context"
 	"encoding/json"
 	"net/http/httptest"
+	"net/http"
+	"net/http/cookiejar"
+	"io"
 	"strings"
 	"testing"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
 )
+
+func TestRealHTTPSCookiesRestoreAndLogout(t *testing.T) {
+ a:=setup(t);a.user(t,"member",false)
+ server:=httptest.NewTLSServer(httpserver.NewHandler(a.service.Ready,a.service));defer server.Close();a.service.Origin=server.URL
+ client:=server.Client();jar,err:=cookiejar.New(nil);if err!=nil{t.Fatal(err)};client.Jar=jar
+ send:=func(method,path,body string)*http.Response {t.Helper();r,err:=http.NewRequest(method,server.URL+path,strings.NewReader(body));if err!=nil{t.Fatal(err)};r.Header.Set("Origin",server.URL);r.Header.Set("Content-Type","application/json");for _,c:=range jar.Cookies(r.URL){if c.Name=="__Host-csrf"{r.Header.Set("X-CSRF-Token",c.Value)}};res,err:=client.Do(r);if err!=nil{t.Fatal(err)};return res}
+ res:=send("POST","/api/v1/sessions",`{"account":"member","password":"Aa1!"}`);if res.StatusCode!=201{t.Fatal("real HTTPS login must create Session")};io.Copy(io.Discard,res.Body);res.Body.Close()
+ cookies:=res.Cookies();if len(cookies)!=2{t.Fatal("real transport must issue two cookies")};for _,c:=range cookies{if !c.Secure||c.Path!="/"||c.Domain!=""||c.MaxAge!=3600||c.SameSite!=http.SameSiteLaxMode{t.Fatal("Cookie security attributes incorrect")};if (c.Name=="__Host-session")!=c.HttpOnly{t.Fatal("only Session cookie must be HttpOnly")}}
+ res=send("GET","/api/v1/sessions/current","");if res.StatusCode!=200{t.Fatal("HTTPS cookie jar must restore authenticated user")};res.Body.Close()
+ res=send("DELETE","/api/v1/sessions/current","");if res.StatusCode!=204{t.Fatal("bound HTTPS CSRF must permit logout")};b,_:=io.ReadAll(res.Body);res.Body.Close();if len(b)!=0{t.Fatal("204 must be empty on wire")}
+ res=send("GET","/api/v1/sessions/current","");defer res.Body.Close();if res.StatusCode!=401{t.Fatal("logout cookies must be cleared and Session revoked")}
+}
 
 // ADR-002 API-02/14/17: strict write DTOs, real HTTP status, same-origin writes.
 func TestHTTPProtocolRejectsMalformedWriteDTOs(t *testing.T) {
