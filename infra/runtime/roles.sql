@@ -26,3 +26,5 @@ GRANT SELECT, DELETE ON auth.authentication_events TO auth_maintenance;
 GRANT UPDATE (id) ON auth.authentication_events TO auth_maintenance;
 GRANT USAGE ON SCHEMA auth, public TO auth_backup;
 GRANT SELECT ON ALL TABLES IN SCHEMA auth, public TO auth_backup;
+-- pg_dump must read original sequence positions; SELECT cannot advance/set them.
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA auth, public TO auth_backup;
