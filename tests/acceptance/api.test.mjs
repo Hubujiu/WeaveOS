@@ -24,13 +24,24 @@ async function login(account) {
   assert.equal(response.status, 201, 'valid credentials create a session');
   const body = await response.json();
   assert.equal(body.code, 'OK');
-  const cookie = response.headers.get('set-cookie');
-  assert.ok(cookie, 'server must issue a session cookie');
-  assert.match(cookie, /HttpOnly/i);
-  assert.match(cookie, /Secure/i);
-  assert.match(cookie, /SameSite=(?:Lax|Strict)/i);
-  assert.ok(body.data.csrfToken, 'test binding expects session-bound CSRF token');
-  return { cookie: cookie.split(';')[0], csrf: body.data.csrfToken };
+  const cookies = response.headers.getSetCookie();
+  const cookie = cookies.find(value => value.startsWith('__Host-session='));
+  const csrfCookie = cookies.find(value => value.startsWith('__Host-csrf='));
+  assert.ok(cookie, 'server must issue __Host-session');
+  assert.ok(csrfCookie, 'server must issue independent __Host-csrf');
+  assert.match(cookie, /;\s*HttpOnly(?:;|$)/i);
+  assert.doesNotMatch(csrfCookie, /HttpOnly/i);
+  for (const value of [cookie, csrfCookie]) {
+    assert.match(value, /;\s*Secure(?:;|$)/i);
+    assert.match(value, /SameSite=Lax/i);
+    assert.match(value, /Path=\/(?:;|$)/i);
+    assert.match(value, /Max-Age=3600/i);
+    assert.doesNotMatch(value, /;\s*Domain=/i);
+  }
+  assert.equal(body.data.csrfToken, undefined, 'login JSON must not return csrfToken');
+  const csrf = csrfCookie.split(';')[0].slice('__Host-csrf='.length);
+  assert.match(csrf, /^[A-Za-z0-9_-]{43}$/);
+  return { cookie: [cookie, csrfCookie].map(value => value.split(';')[0]).join('; '), csrf };
 }
 function unique(label) { return `acceptance-${label}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`; }
 

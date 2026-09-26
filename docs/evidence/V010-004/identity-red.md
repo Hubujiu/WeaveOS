@@ -1,0 +1,6 @@
+# Trusted IdentityContext RED → GREEN
+
+- Oracle: accepted ADR-001 section 3.5 defines only `subjectId` and a non-credential `sessionId` for business code; accepted ADR-002 says an external identity header cannot create trusted identity. The Redis Session specification identifies the internal session reference as a UUID distinct from Cookie SID.
+- Pre-implementation snapshot: commit `aecfa5ec49d7aad00259c716e0a8ae99003cad46`; `services/bff/internal/identity/context_test.go` SHA-256 `8F1521A69638B53F5C005A499713FA2871EAE03F4B4FB4388D4ABE6AF97CDAD8`; `context.go` contained only no-behavior functions.
+- Windows / Go 1.27.1, no external services required. Command in `services/bff`: `go test ./internal/identity -count=1 -v`. Exit 1 at the target assertion `validated authentication boundary must inject identity: identity context not implemented`. The malformed-ID test passed under the stub and was not itself RED evidence.
+- After implementation, `go test -race ./internal/identity -count=1 -v` and `go vet ./internal/identity` exited 0. An internal unexported context key prevents request header values from becoming identity by coincidence; only canonical subject/session-reference UUIDs are accepted. This does not yet wire the HTTP boundary, which belongs to V010-005.
