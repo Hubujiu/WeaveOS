@@ -138,7 +138,11 @@ func run(ctx context.Context, cfg config) (runErr error) {
 		if err != nil {
 			return "", err
 		}
-		digest := sha256.Sum256([]byte(code))
+		raw, err := base64.RawURLEncoding.DecodeString(code)
+		if err != nil {
+			return "", err
+		}
+		digest := sha256.Sum256(raw)
 		_, err = pool.Exec(ctx, "INSERT INTO auth.invitations (code_hash, created_by) VALUES ($1, $2)", digest[:], adminUser.ID)
 		return code, err
 	}
@@ -162,7 +166,11 @@ func run(ctx context.Context, cfg config) (runErr error) {
 		if err != nil {
 			return account, persistence.User{}, err
 		}
-		digest := sha256.Sum256([]byte(code))
+		raw, err := base64.RawURLEncoding.DecodeString(code)
+		if err != nil {
+			return account, persistence.User{}, err
+		}
+		digest := sha256.Sum256(raw)
 		user, err := store.Register(ctx, persistence.RegistrationInput{Account: account.Account, PasswordHash: hash, InvitationDigest: digest[:], RequestID: "acceptance-seed-" + label})
 		return account, user, err
 	}

@@ -91,11 +91,17 @@ func TestAcceptanceSeedProducesIsolatedUsableFixtures(t *testing.T) {
 			t.Errorf("missing %s invitation", name)
 		}
 		raw, err := base64.RawURLEncoding.Strict().DecodeString(fixture.Invitations[name])
-		if err != nil || len(raw) != 32 { t.Fatal("fixture invitation must encode exactly 32 random bytes") }
+		if err != nil || len(raw) != 32 {
+			t.Fatal("fixture invitation must encode exactly 32 random bytes")
+		}
 		digest := sha256.Sum256(raw)
 		var count int
-		if err := pool.QueryRow(ctx, "SELECT count(*) FROM auth.invitations WHERE code_hash=$1 AND used_by IS NULL", digest[:]).Scan(&count); err != nil { t.Fatal(err) }
-		if count != 1 { t.Errorf("%s fixture must hash decoded bytes: matching unused rows = %d, want 1", name, count) }
+		if err := pool.QueryRow(ctx, "SELECT count(*) FROM auth.invitations WHERE code_hash=$1 AND used_by IS NULL", digest[:]).Scan(&count); err != nil {
+			t.Fatal(err)
+		}
+		if count != 1 {
+			t.Errorf("%s fixture must hash decoded bytes: matching unused rows = %d, want 1", name, count)
+		}
 	}
 	for _, name := range []string{"chromium", "firefox", "webkit"} {
 		if fixture.UIInvitations[name] == "" {
