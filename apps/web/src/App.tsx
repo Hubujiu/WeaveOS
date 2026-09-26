@@ -24,11 +24,16 @@ class ApiError extends Error {
 
 async function api<T>(path: string, method = 'GET', body?: object): Promise<T> {
   let response: Response;
+  const headers: Record<string, string> = body ? { 'Content-Type': 'application/json' } : {};
+  if (!['GET', 'HEAD'].includes(method)) {
+    const csrf = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith('__Host-csrf='));
+    if (csrf) headers['X-CSRF-Token'] = csrf.slice('__Host-csrf='.length);
+  }
   try {
     response = await fetch(`/api/v1/${path}`, {
       method,
       credentials: 'include',
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      headers,
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch {
