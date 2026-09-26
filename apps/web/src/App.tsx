@@ -16,6 +16,7 @@ import microsoftDisabled from './assets/waveos-microsoft-disabled.svg';
 import githubDisabled from './assets/waveos-github-disabled.svg';
 
 type User = { id: string; account: string };
+const passwordClasses = [/[A-Z]/, /[a-z]/, /[0-9]/, /[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]/];
 type Envelope<T> = { code: string; message: string; data: T; meta: { requestId: string } | null };
 
 class ApiError extends Error {
@@ -65,7 +66,7 @@ function AccountField({ value, onChange, register = false, credentialError = fal
 
 function PasswordField({ id = 'password', label = '密码', value, onChange, showStrength = false, register = false }: { id?: string; label?: string; value: string; onChange: (value: string) => void; showStrength?: boolean; register?: boolean }) {
   const [visible, setVisible] = useState(false);
-  const strength = [/[A-Z]/, /[a-z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(pattern => pattern.test(value)).length;
+  const strength = passwordClasses.filter(pattern => pattern.test(value)).length;
   return <div className="auth-field"><label htmlFor={id}>{label}{register && <span className="required"> *</span>}</label>
     <div className="field-input password-field"><img src={lockIcon} width="24" height="24" alt="" />
       <input id={id} name={id} aria-label={label} type={visible ? 'text' : 'password'} value={value} onChange={event => onChange(event.target.value)} placeholder={id === 'confirmation' ? '请再次输入密码' : '请输入密码'} autoComplete={id === 'confirmation' || register ? 'new-password' : 'current-password'} required />
@@ -132,7 +133,8 @@ function Register() {
     if (pending) return;
     const invalid = accountError(account);
     if (invalid) { setError(invalid); return; }
-    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) { setError('密码需要大写字母、小写字母、数字和特殊符号'); return; }
+    if (/[^\x20-\x7e]/.test(password)) { setError('密码仅允许 ASCII 可打印字符'); return; }
+    if (!passwordClasses.every(pattern => pattern.test(password))) { setError('密码需要大写字母、小写字母、数字和特殊符号'); return; }
     if (password !== confirmation) { setError('两次输入的密码不一致'); return; }
     if (!invitationCode.trim()) { setError('请输入邀请码'); return; }
     setPending(true);
