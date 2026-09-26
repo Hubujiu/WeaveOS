@@ -1,0 +1,127 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  governance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - run: node --test tests/governance/*.test.mjs tests/foundation/*.test.mjs
+      - run: node scripts/verify-repo.mjs
+      - run: node scripts/check-tasks.mjs
+      - name: Preserve source Git objects, not local configuration or credentials
+        run: |
+          mkdir -p .work
+          git bundle create .work/source.bundle --all
+          sha256sum .work/source.bundle > .work/source.bundle.sha256
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: source-bundle-${{ github.run_id }}
+          path: |
+            .work/source.bundle
+            .work/source.bundle.sha256
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+  go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18.0
+        env:
+          POSTGRES_USER: weaveos_test
+          POSTGRES_PASSWORD: isolated-ci-only
+          POSTGRES_DB: weaveos_ci_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U weaveos_test -d weaveos_ci_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:8.2.1
+        ports: [6379:6379]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      WEAVEOS_TEST_DATABASE_URL: postgres://weaveos_test:isolated-ci-only@127.0.0.1:5432/weaveos_ci_test?sslmode=disable
+      WEAVEOS_TEST_ARCHIVE_DATABASE_URL: postgres://weaveos_test:isolated-ci-only@127.0.0.1:5432/weaveos_ci_archive_test?sslmode=disable
+      WEAVEOS_TEST_REDIS_URL: redis://127.0.0.1:6379/15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Migrate isolated PostgreSQL for real storage tests
+        run: |
+          go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
+          "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up
+          PGPASSWORD=isolated-ci-only createdb -h 127.0.0.1 -U weaveos_test weaveos_ci_archive_test
+          "$(go env GOPATH)/bin/goose" -dir db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up
+      - name: Format, static checks, race tests and build
+        working-directory: services/bff
+        run: |
+          test -z "$(gofmt -l .)"
+          go vet ./...
+          go test -race -p 1 -count=1 -coverprofile=coverage.out ./...
+          go build ./cmd/bff
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: go-coverage-${{ github.run_id }}
+          path: services/bff/coverage.out
+          retention-days: 14
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Frozen dependencies
+        run: |
+          npm install --global pnpm@10.28.2 --ignore-scripts
+          pnpm install --frozen-lockfile --ignore-scripts
+      - name: Authentication OpenAPI 3.2.1 contract
+        run: |
+          node --test contracts/*.test.mjs
+          pnpm exec redocly lint contracts/openapi/openapi.json
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - name: Real browser to Go BFF smoke
+        run: pnpm exec playwright test tests/e2e
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: browser-smoke-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
