@@ -21,7 +21,6 @@ import (
 	"io"
 	"log/slog"
 	"mime"
-	"net"
 	"net/http"
 	"net/netip"
 	"strconv"
@@ -36,7 +35,6 @@ type Service struct {
 	Origin, AuditKeyID string
 	AuditKey           []byte
 	Logger             *slog.Logger
-	// Declaration only for compiling the test-first trusted-proxy boundary.
 	TrustedProxyHosts  []string
 }
 
@@ -176,8 +174,7 @@ func (s *Service) login(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &in) {
 		return
 	}
-	if !accountValid(strings.Trim(in.Account, " ")) || in.Password == "" {
-		reply(w, r, 400, "COMMON_INVALID_ARGUMENT", nil)
+	if !validateCredentials(w, r, in.Account, in.Password, nil) {
 		return
 	}
 	q := authsql.New(s.Pool)
@@ -251,8 +248,7 @@ func (s *Service) register(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &in) {
 		return
 	}
-	if !accountValid(strings.Trim(in.Account, " ")) || !validPassword(in.Password) {
-		reply(w, r, 400, "COMMON_INVALID_ARGUMENT", nil)
+	if !validateCredentials(w, r, in.Account, in.Password, &in.Invitation) {
 		return
 	}
 	digest, err := invitation.Digest(in.Invitation)
@@ -265,7 +261,7 @@ func (s *Service) register(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	host, _, _ := net.SplitHostPort(r.RemoteAddr)
+	host := s.clientIP(r)
 	user, err := persistence.New(s.Pool).Register(r.Context(), persistence.RegistrationInput{Account: in.Account, PasswordHash: hash, InvitationDigest: digest[:], ClientIP: host, UserAgent: r.UserAgent(), RequestID: w.Header().Get("X-Request-Id")})
 	if err != nil {
 		status, code, outcome := 503, "COMMON_SERVICE_UNAVAILABLE", "error"
@@ -358,7 +354,7 @@ func (s *Service) event(r *http.Request, kind, outcome, actor, subject, ref, rea
 	return authsql.New(s.Pool).AppendAuthEvent(r.Context(), s.eventParams(r, kind, outcome, actor, subject, ref, reason, fingerprint))
 }
 func (s *Service) eventParams(r *http.Request, kind, outcome, actor, subject, ref, reason, fingerprint string) authsql.AppendAuthEventParams {
-	host, _, _ := net.SplitHostPort(r.RemoteAddr)
+	host := s.clientIP(r)
 	var ip *netip.Addr
 	if addr, err := netip.ParseAddr(host); err == nil {
 		ip = &addr
