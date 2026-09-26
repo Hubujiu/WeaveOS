@@ -54,6 +54,7 @@ try{
  compose('up','-d','bff','audit-maintenance','nginx');
  const testEnv={...env,WEAVEOS_RUNTIME_CONTEXT:resolve(dir,'CURRENT.json'),NODE_EXTRA_CA_CERTS:resolve(dir,'tls/cert.pem')};
  call(process.execPath,['--test','infra/runtime/operations.test.mjs'],{env:testEnv});
+ call(process.execPath,['--test','infra/runtime/dns.integration.test.mjs'],{env:testEnv});
  call(process.execPath,['--test','infra/runtime/monitor.integration.test.mjs'],{env:testEnv});
  compose('up','-d','--wait','redis');
  call(process.execPath,['--test','infra/runtime/tls.integration.test.mjs'],{env:testEnv});
@@ -62,6 +63,6 @@ try{
  // Validate the exact promoted artifacts, using the already-frozen test runner.
  call('docker',['run','--rm','--init','--shm-size=1g','--network',`container:${id('nginx')}`,'--mount',`type=bind,src=${root},dst=/repo`,'--mount','type=volume,src=weaveos-v010-linux-node,dst=/repo/node_modules','--mount','type=volume,src=weaveos-v010-linux-web-node,dst=/repo/apps/web/node_modules','-e','CI=true','-e','WEAVEOS_API_URL=https://localhost:19443','-e','WEAVEOS_WEB_URL=https://localhost:19443','-e','WEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/runtime/fixtures.json','-e','NODE_EXTRA_CA_CERTS=/repo/.work/runtime/tls/cert.pem','-w','/repo','mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27','bash','-euc','npm install --global pnpm@10.28.2 --ignore-scripts; pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; node --test tests/acceptance/api.test.mjs; pnpm exec playwright test --config apps/web/playwright.integration.config.ts --reporter=line']);
  exportArtifacts(artifacts,resolve(dir,'export'));
- writeFileSync(resolve(dir,'public/result.json'),JSON.stringify({result:'passed',source:artifacts.commit,artifacts:{bff:artifacts.bff.manifestDigest,web:artifacts.web.manifestDigest},imageIDs:{bff:artifacts.bff.imageID,web:artifacts.web.imageID},previousSource:previous.commit,operations:6,monitor:1,backup:4,artifactIntegrity:3,api:25,browser:30,elapsedSeconds:(Date.now()-start)/1000,target:'local WSL Linux only; same-machine restore simulation; not production'}));
+ writeFileSync(resolve(dir,'public/result.json'),JSON.stringify({result:'passed',source:artifacts.commit,artifacts:{bff:artifacts.bff.manifestDigest,web:artifacts.web.manifestDigest},imageIDs:{bff:artifacts.bff.imageID,web:artifacts.web.imageID},previousSource:previous.commit,operations:6,dns:1,monitor:1,tls:2,backup:4,artifactIntegrity:3,api:25,browser:30,elapsedSeconds:(Date.now()-start)/1000,target:'local WSL Linux only; same-machine restore simulation; not production'}));
 }catch{writeFileSync(resolve(dir,'public/result.json'),JSON.stringify({result:'failed',source:artifacts.commit,elapsedSeconds:(Date.now()-start)/1000}));throw new Error('Isolated runtime verification failed; preserve private environment and inspect safe results');}
 finally{compose('stop');}
