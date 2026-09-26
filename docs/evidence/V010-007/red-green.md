@@ -35,3 +35,7 @@ exit1：四个字段错误缺 COMMON_VALIDATION_FAILED/violations；可信 local
 再次读取ADR002正文确认每个401必须有 `Session realm="enterprise-management-system"`，message是可公开的人类说明。`TestAcceptedUnauthorizedChallengeAndPublicMessages` 在真实PG/Redis下exit1：登录和匿名current均缺challenge，message均重复机器code。测试先提交 `67a21b4`，源码快照challenge-red-test.go/auth-before-challenge.go；最小统一reply修复后同命令race exit0，不根据message判定业务行为。HTTP验收也加强相同断言。
 
 第五次整栈：Go race/vet/build、14契约+57治理底座+3拓扑（74/74）、23组件、20真实HTTP与逐响应schema、30三浏览器均通过；真实Redis故障与恢复通过。PG故障拒绝访问通过，但恢复后就绪仍503，整栈exit1，不记PASS。原配置把测试Redis与运行Redis混为同一个PG网络命名空间，PG重启后Redis停留在旧命名空间；保留compose-before-fault.json与fault-recovery-red-test.mjs后，将运行Redis保持独立服务名网络，单独test-redis只用于已有本地地址单元隔离，单元结束停止它。第六次整栈用于验证该修复和最终协议断言。
+
+第六次整栈20 HTTP/23组件/Go全部通过，浏览器29/30：Firefox登录刷新后在page.evaluate超30秒，整栈exit1，未加retry/skip/延长超时，根因未证明。参照[Playwright官方Docker配置](https://playwright.dev/docs/docker)建议的init进程，并选择隔离1GiB共享内存（不与宿主共享IPC），测试先报告3pass/1fail（缺init；保存0e4babb快照），随后最小调整容器参数，结构4/4 exit0。此配置改善不等于已证明Firefox故障由共享内存造成；第七次完整Linux栈才证明最终行为，失败仍保留。
+
+GitHub首次产品run36218246344在Go全量通过后，容器内Go自动VCS stamping因宿主Git信息不可访问失败；不是业务RED。验收fixture构建显式buildvcs=false（不降低测试），发布制品来源SHA/签名与不可变映射仍由008负责。本仓库CI宿主Node固定24.14.0，本机22.23.1，Playwright镜像内Node24.20.0；不将工具版本混称一致。

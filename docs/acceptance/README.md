@@ -1,44 +1,70 @@
 # v0.1.0 验收说明
 
-本版本仍未完成。**底座 CI 通过 ≠ 登录业务验收通过。**
+整版仍在验收。产品自动验收、运行恢复和用户人工签署分别记录；不能用底座 smoke、结构检查或单个任务合并代替整版完成。
 
-## 自动验证
+## 可重复产品验收
 
-| 层级 | 文件/命令 | 真实边界与当前状态 |
+```sh
+node infra/acceptance/run.mjs
+```
+
+要求 Docker Linux daemon、Node 和 OpenSSL（Windows 使用 Git 自带 OpenSSL），只运行本地隔离环境。流程创建独立 Compose 项目，真实 PostgreSQL18、Redis8.2、Go BFF、Nginx TLS 与正式前端构建；仅入口127.0.0.1:19443发布端口。另有临时 test-redis 为现有本地地址测试提供隔离，单元结束停止；运行 Redis 是独立服务。数据库和运行账号最小权限、冷归档与恢复由008落实，此验收栈的测试数据库管理账号不能当生产运行账号。
+
+顺序：空库 Goose Up/重复Up → Go race（-p1，避免共享测试库清理冲突）/vet/build → 新产品库迁移与私有随机 Seed → 14契约/57治理底座/3拓扑 → OpenAPI3.2.1 lint/类型/构建 → 23隔离组件 → 真实HTTPS HTTP及逐响应schema → Chromium/Firefox/WebKit → 实际Redis/PG停止/重启与503/readiness恢复。
+
+已发布00001迁移含用户/审计数据，不提供破坏性Down；回退采用008的隔离备份恢复/已验证制品回滚。不能为了测试修改已发布迁移。
+
+组件测试的API mock只证明独立页面行为；产品API与三浏览器连接真实BFF/PG/Redis，没有API mock。三浏览器的忽略证书错误仅用于短期自签名隔离证书，不修改Cookie Secure/HttpOnly/Lax、不扩展系统信任库。Windows WebKit在006出现SameSite None；严格Lax断言保留，已在批准的Linux目标通过，未声称Windows全部通过。
+
+私有 .work/acceptance 存放随机密码/邀请码、TLS私钥、HMAC、数据库URL和fixture，禁止入仓库或上传。现有环境拒绝覆盖，失败保留现场并停止自建容器，不删除卷。公开artifact仅允许 .work/acceptance/public/result.json；不得上传fixture、转储、完整Cookie、私钥、认证trace或带输入的截图。
+
+## 自动化层级与证据
+
+| 层级 | 路径 | 验证边界 |
 | --- | --- | --- |
-| 仓库/任务/发布规则 | tests/governance、tests/foundation | 可运行；结构规则不是阅读真实性或人工审批证明 |
-| Go 平台单元 | services/bff/internal/platform/httpserver | 已有 RED/GREEN；健康/就绪/错误边界，不是认证测试 |
-| 底座浏览器 smoke | tests/e2e/foundation.spec.ts | Chromium/Firefox/WebKit，真实构建+Go进程+同源代理，不 mock |
-| 产品 HTTP 验收 | tests/acceptance/api.test.mjs | 已写注册/登录/退出/并发/重置/CSRF等独立预期；实现与fixture尚缺，不能判PASS |
-| 产品浏览器验收 | tests/acceptance/web.spec.ts | 已写登录/注册/邀请码/密码反馈/刷新/退出；UI尚未实现，预期失败 |
-| 真实存储/故障 | V010-003/004/007 的本地与CI集成测试 | 自动化仍待实现，列入阻塞，不转成人工“平台不支持” |
-| 完整发布门禁 | scripts/check-release.mjs + v0.1.0.json | 当前必然失败；所有自动/人工项须真实证据 |
+| 契约 | contracts/*.test.mjs、OpenAPI3.2.1 lint | 来源约束、五路径/七操作、DTO/错误/Cookie；不能代替实际响应 |
+| 数据 | internal/persistence 与 cmd/acceptance-seed | 真实约束、事务/同码并发、失败不消费、Bootstrap幂等、不提升同名普通用户、私有随机fixture |
+| Session | internal/session 与 internal/security | 真实Redis一小时TTL、边界/续期、失败不续、退出竞态不复活、generation、当前用户/版本、CSRF |
+| 认证 | internal/auth | 注册/登录/管理、审计原子失败、重置读竞态、禁用、去敏、字段错误、可信代理、401 challenge/人类message |
+| 页面 | apps/web/src/*.component.spec.ts | 23独立表单/错误/Loading/键盘/强度/路由用例，API mock限本层 |
+| 产品HTTP | tests/acceptance/api.test.mjs、response-schema.mjs | 25用例；按真实状态核对OpenAPI的成功/错误/violations、请求ID、缓存、无正文、401头 |
+| 产品浏览器 | tests/acceptance/web.spec.ts | 30用例，三浏览器真实注册/登录/刷新/退出与Cookie/CSRF/前端存储 |
+| 依赖故障 | infra/acceptance/faults.test.mjs | 3用例；实际停止/重启Redis、PG，匿名身份伪造、API404不回SPA、故障503不发Cookie及恢复 |
+| 底座smoke | tests/e2e | 仅平台探针，不计产品用例 |
+| 发布门禁 | scripts/check-release.mjs、v0.1.0.json | 全部自动与用户人工证据；pending不能视为通过 |
 
-API 路径、DTO/CSRF token 位置和前端路由在 tests/acceptance/bindings.json 及测试注释中是**实现前提出的测试绑定**。V010-002 必须依据已接受 ADR 完成契约评审和 OpenAPI 后再实现；不能看到 Handler 写成另一种形式就自动修改测试迎合。UI 可访问名称/密码强度 progressbar 由006对照原型确认。
+永久RED/源代码快照与哈希：docs/evidence/V010-002..007；007完整运行证据和最终CI链接见 docs/evidence/V010-007/full-stack.md（形成后登记）。执行结果以实际运行和对应任务最终head为准，不以本表数量自动判PASS。
 
-## Fixture 与隔离
+## 需求 → 独立用例
 
-V010-003 在 CI 的专用 PostgreSQL/Redis 上用本地 Seed 命令产生 `.work/acceptance-fixtures.json`，通过 WEAVEOS_ACCEPTANCE_FIXTURES 传递文件路径。包含 admin、user、disabled、resetTarget 的虚构账号数据，各用途独立 invitation（valid/concurrent/rollback/passwordPolicy），以及按浏览器分开的 uiInvitations。每轮创建新数据，不使用生产账号，不把 fixture、密码、Cookie 或数据库转储上传为 artifact。接口返回只能用已确认契约，不能为测试给生产应用添加绕过认证的后门。
+| PRD | 用例 |
+| --- | --- |
+| FR-001/005 | API正确/错误登录、GoLoginCurrentLogout、Web恢复与Cookie |
+| FR-002 | PG大小写唯一/事务冲突、API重复不耗码/case与trim后长度、前端空格拦截 |
+| FR-003 | PG RegisterConcurrent/事务回滚，API缺失/无效/已用/并发邀请，邀请码哈希 |
+| FR-004 | 三浏览器URL预填；服务端仍验码 |
+| FR-006 | Session CreateLoad一小时PTTL、Touch滑动、失败不续、真实过期，无需等待一小时 |
+| FR-007/008 | API/Web匿名保护；Go真实expiry、禁用/版本/generation拒绝；页面401回登录 |
+| FR-009 | API/Web退出闭环；GoTouchRevoke并发不复活、审计失败不恢复退出 |
+| FR-010 | API disabled登录；Go已存在会话读取当前状态失效 |
+| FR-011/015 | Q12额外入口灰色disabled无交互/存储，无找回/SSO/设备/Native扩展 |
+| FR-012 | Admin reset、无明文响应、PHC独立样例/盐、全旧版本失效与reset/login读竞态 |
+| FR-013 | API连续失败后仍可登录；无失败锁定/限流规则 |
+| FR-014 | Go真实审计字段/HMAC/UA/可信IP、凭据去敏、事务审计失败；读取/年度冷归档权限归008 |
+| FR-016 | BootstrapSeed幂等/不提升普通人，Admin与member生成/重置权限，事务内复核当前Admin |
+| FR-017 | API注册无Cookie、Web返回登录且不能直接进app |
+| FR-018 | Go/OpenAPI/API/组件的ASCII四类/控制/非ASCII边界；Aa1!成功且无额外下限 |
 
-API测试默认连接127.0.0.1:8080，可用 WEAVEOS_API_URL指定隔离目标；产品浏览器最终需要同源 HTTPS 测试入口与受信任测试证书，由007装配，不能因Cookie不工作就删除Secure。底座preview仅用于CI/dev，不是生产静态服务器。
+实际HTTP schema核对覆盖201/200/204/400/401/403/404/409/415/503及HEAD；未知schema约束会让验收oracle失败，不静默忽略。trace/RPC仅在真正跨服务采用时验证，本期单进程不伪造RPC。
 
-## 需求映射与待完成测试
+## 用户最终验收（Q10）
 
-FR-001/005/007/008/009：API与Web登录、恢复、退出；Session过期/故障还须004真实Redis测试。FR-002/003：账号重复、失败不消费、并发同码、单次消费；003补数据库唯一性/事务审计。FR-004/017：URL自动填入和注册不登录。FR-010：禁用登录与已存在会话失效。FR-011/013/015：无自助找回、无隐藏失败锁定、仅Web。FR-012/016：Bootstrap独立入口及重置。FR-014：005/007必须检查日志和实际存储字段且不泄露凭据。FR-018：四类字符拒绝及强度交互。
-
-必须补齐而不能手工替代的自动用例：TTL精确边界/成功活动续期/失败活动不续期、退出和续期并发不复活、Redis/PG不可用不放行、Session固定攻击/CSRF、密码与邀请码存储/日志去敏、Seed幂等与迁移回滚路径、所有接口schema和错误映射。所有这些当前仍阻塞AUTO-DATA/SESSION/AUTH/SECURITY，不能称为已覆盖。
-
-## 需要人工/真实环境的验收
-
-| 项目 | 步骤与证据 | 原因 |
+| 项目 | 具体审核材料 | 当前责任 |
 | --- | --- | --- |
-| 原型与交互质量 | 产品负责人对照Figma登录/注册节点，验证布局、字级、状态、动效、键盘路径；记录签署与截图 | Actions能截图/无障碍检查，但不能代替用户对设计质量的确认 |
-| 实际部署环境 | 验证真实域名/TLS续期、网络暴露、Secret注入与权限；保留去敏命令和结果 | 未提供目标主机/域名/授权，不能在临时runner替代真实环境验收 |
-| 灾备与回滚 | 在授权环境模拟故障、从独立备份恢复，测量RPO/RTO和回滚结果 | runner可以做合成恢复测试，但不能证明真实备份和故障域可恢复 |
-| 安全债务 | 对固定重置密码及无登录限流作明确发布处置与签署 | 产品/安全决策不能由脚本代签 |
+| MAN-UI | Figma Login13:2/Register40:2与登录/注册desktop/mobile截图、键盘/状态路径 | 用户；006已提供截图，最终签署待008集中提交 |
+| MAN-OPERATIONS | 本机WSL Docker网络/TLS/权限、冷归档/到期删除、加密独立备份恢复、失效Session与制品回滚的去敏结果/实测耗时 | 用户；008实施与演练后确认 |
+| MAN-RISK | 固定重置密码、无登录限流/锁定；本期仅本地，公网发布仍未批准 | 用户；功能/证据完成后确认，不能代签 |
 
-这些不是“GitHub Actions 不支持 E2E”。E2E、数据库服务容器、三浏览器、网络故障注入、构建和测试报告均可自动运行。没有目标环境或功能未实现应写BLOCKED，不得改为PASS。
+生产域名、证书续期、真实异机故障域、RPO/RTO目标与部署未授权；本地模拟结果不能宣称生产恢复能力或公网安全。007产品CI不替008的完整release门禁；008必须检查全部记录证据并取得实际用户签署，再运行check-release。
 
-## PR 与版本验收
-
-每任务先完成自身验收再 squash PR 到 main，远程 main 同名任务全完成才可清理其分支/工作树。整版还必须完成V010-002..008及矩阵所有证据；单独合并V010-001不等于发布v0.1.0。矩阵结构检查无法核验证据内容，评审人须打开对应真实运行和签署。
+每任务最终head检查通过再squash；远程main同路径同任务ID全完成且对应PR已merged才接受。版本完成还须008与矩阵全部证据，Notion/Figma始终定义产品预期，测试或本文件不反向新增规则。
