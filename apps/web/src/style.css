@@ -39,10 +39,19 @@ button, input { font: inherit; }
 .form-error img { flex: none; width: 26px; height: 26px; }
 .form-error strong { display: block; font-weight: 500; }
 .form-error small { display: block; margin-top: 6px; color: #ce6a6a; font-size: 14px; }
-.login-form .form-heading { margin-bottom: 13.25px; }
-.login-form .form-error { margin-bottom: 13.25px; }
-.login-form .auth-field { margin-bottom: 13.25px; }
-.login-form .primary-button { margin-top: 18px; }
+.login-form { justify-content: space-between; gap: 13.25px; }
+.login-form .form-error, .login-form .auth-field, .login-form .form-prompt { margin: 0; }
+.login-options { display: flex; align-items: center; justify-content: space-between; height: 28px; flex: none; }
+.remember-disabled { display: flex; align-items: center; gap: 10px; position: relative; height: 28px; width: 120px; color: #3f3f3f; font-size: 14px; opacity: .5; }
+.remember-disabled input { appearance: none; margin: 0; height: 22px; width: 22px; flex: none; border: 0; border-radius: 5px; background: #717171; }
+.remember-disabled img { position: absolute; left: 0; top: 3px; width: 22px; height: 22px; pointer-events: none; }
+.forgot-disabled { padding: 0; border: 0; background: none; color: #6f6f6f; font-size: 14px; font-weight: 500; opacity: .5; }
+.social-divider { display: flex; align-items: center; gap: 14px; height: 28px; flex: none; color: #8a95a8; font-size: 14px; white-space: nowrap; }
+.social-divider > span { flex: 1; height: 1px; background: #e2e8f0; }
+.social-buttons { display: flex; gap: 16px; }
+.social-buttons button { display: flex; align-items: center; justify-content: center; gap: 12px; flex: 1; min-width: 0; height: 58px; padding: 0 20px; border: 1px solid #e4e4e4; border-radius: 12px; background: white; box-shadow: 0 4px 10px rgba(15,23,42,.04); opacity: .5; color: #313131; font-size: 14px; font-weight: 500; }
+.social-buttons img { display: block; width: 24px; height: 24px; flex: none; }
+@media (max-width: 480px) { .social-buttons { gap: 8px; } .social-buttons button { flex-direction: column; gap: 3px; padding: 8px 2px; height: 64px; font-size: 12px; } }
 .register-form .form-heading { margin-bottom: 20.333px; }
 .register-form .auth-field { margin-bottom: 20.333px; }
 .register-form .auth-field:has(.strength) { min-height: 100px; }

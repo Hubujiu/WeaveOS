@@ -10,6 +10,10 @@ import userRegisterIcon from './assets/waveos-user-register.svg';
 import lockIcon from './assets/waveos-lock-login.svg';
 import eyeIcon from './assets/waveos-eye-login.svg';
 import invitationIcon from './assets/waveos-invitation.svg';
+import checkDisabled from './assets/waveos-check-disabled.svg';
+import googleDisabled from './assets/waveos-google-disabled.svg';
+import microsoftDisabled from './assets/waveos-microsoft-disabled.svg';
+import githubDisabled from './assets/waveos-github-disabled.svg';
 
 type User = { id: string; account: string };
 type Envelope<T> = { code: string; message: string; data: T; meta: { requestId: string } | null };
@@ -100,7 +104,10 @@ function Login() {
     {error && <div role="alert" className="form-error"><img src={errorIcon} width="26" height="26" alt="" /><span><strong>{error}</strong><small>请检查输入后重试。</small></span></div>}
     <AccountField value={account} onChange={setAccount} />
     <PasswordField value={password} onChange={setPassword} />
+    <div className="login-options"><label className="remember-disabled"><input type="checkbox" aria-label="记住账号" disabled defaultChecked /><img src={checkDisabled} width="22" height="22" alt="" /><span>记住账号</span></label><button className="forgot-disabled" type="button" disabled>忘记密码?</button></div>
     <button className="primary-button" type="submit" disabled={pending}>{pending ? '登录中…' : '登录'}</button>
+    <div className="social-divider"><span />或使用第三方账号登录<span /></div>
+    <div className="social-buttons">{[['Google', googleDisabled], ['Microsoft', microsoftDisabled], ['GitHub', githubDisabled]].map(([name, icon]) => <button key={name} type="button" disabled><img src={icon} width="24" height="24" alt="" /><span>{name}</span></button>)}</div>
     <p className="form-prompt">还没有账号？ <Link className="secondary-link" to="/register">立即注册</Link></p>
   </form></AuthLayout>;
 }
