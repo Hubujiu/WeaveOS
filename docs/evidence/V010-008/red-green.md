@@ -27,3 +27,4 @@ CLI：两个最小main无行为，真实编译执行后缺可信配置退出0；
 完整acceptance随后实际exit0，76/23/25/30/3各阶段通过，Go race/vet/build及类型/构建通过；运行期间infra后续改动，因此不宣称此本机结果验证单一不可变最终HEAD。PR11远程7d04fa3全部CI/product成功。
 
 完整运行恢复RED：实际6项运行操作5通过，备份恢复失败；私有诊断确认pg_restore序列setval(0)越界，owner原始账本序列值2。独立regression `WEAVEOS_BACKUP_TEST_CONTAINER=weaveos-v010-test-postgres node --test infra/runtime/backup.test.mjs` exit1，3 GREEN/1 RED（受控角色序列恢复失败）；初次fixture缺auth表属加载故障不计RED。永久sequence-backup-red-test.mjs、roles-before-sequence.sql、cold-roles-before-sequence.sql、full-restore-red-test.mjs保存于实现前。依据[PG18序列视图权限](https://www.postgresql.org/docs/18/view-pg-sequences.html)：缺SELECT/USAGE时last_value为NULL。最小修复待执行。
+2026-09-27 模块扫描预期审查：ADR003/004要求记录和处理已知漏洞，并未规定无关源码的零告警。最初模块级零告警预期错误地包含GO-2026-5932；官方 https://pkg.go.dev/vuln/GO-2026-5932 明确仅OpenPGP包不安全且无修复，不能通过替换Argon2来制造无关范围变更。保存最初测试后改为：所有可修复模块告警清零；唯一GO-2026-5932须以全应用go list -deps证明其所有包均未链接。修订后的测试仍实际RED，20个可修复公告未清除，exit1；之后才允许升级x/crypto。先前module模式带pattern、模块根无Go文件是扫描加载错误，不计RED。
