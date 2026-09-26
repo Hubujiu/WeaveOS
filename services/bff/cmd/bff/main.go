@@ -21,13 +21,13 @@ func main() {
 		os.Exit(1)
 	}
 	startup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	handler, close, err := buildHandler(startup, cfg)
+	handler, closeResources, err := buildHandler(startup, cfg)
 	cancel()
 	if err != nil {
 		logger.Error("BFF authentication initialization failed")
 		os.Exit(1)
 	}
-	defer close()
+	defer closeResources()
 	addr := os.Getenv("BFF_ADDR")
 	if addr == "" {
 		addr = "127.0.0.1:8080"
