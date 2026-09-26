@@ -4,9 +4,11 @@ DO $$ BEGIN
  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='auth_app') THEN CREATE ROLE auth_app NOLOGIN; END IF;
  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='auth_reader') THEN CREATE ROLE auth_reader NOLOGIN; END IF;
  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='auth_maintenance') THEN CREATE ROLE auth_maintenance NOLOGIN; END IF;
+ IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='auth_backup') THEN CREATE ROLE auth_backup NOLOGIN; END IF;
 END $$;
 REVOKE ALL ON SCHEMA auth FROM PUBLIC;
 REVOKE ALL ON ALL TABLES IN SCHEMA auth FROM PUBLIC, auth_app, auth_reader, auth_maintenance;
+REVOKE ALL ON ALL TABLES IN SCHEMA auth FROM auth_backup;
 GRANT USAGE ON SCHEMA auth TO auth_app, auth_reader, auth_maintenance;
 GRANT SELECT ON auth.users, auth.password_credentials, auth.invitations TO auth_app;
 GRANT INSERT (id,account,status,auth_version,created_at,updated_at) ON auth.users TO auth_app;
@@ -22,3 +24,5 @@ GRANT SELECT, DELETE ON auth.authentication_events TO auth_maintenance;
 -- PostgreSQL FOR UPDATE row locking requires UPDATE on at least one column.
 -- Only the controlled mover receives this; application history remains append-only.
 GRANT UPDATE (id) ON auth.authentication_events TO auth_maintenance;
+GRANT USAGE ON SCHEMA auth, public TO auth_backup;
+GRANT SELECT ON ALL TABLES IN SCHEMA auth, public TO auth_backup;
