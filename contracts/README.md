@@ -14,7 +14,19 @@
 
 全部普通 JSON 响应使用 `code/message/data/meta` 四字段，HTTP 状态保持真实语义；HEAD/204 无正文。401 带 `Session realm="enterprise-management-system"` challenge。所有响应声明服务端生成的 `X-Request-Id`，外部同名头不能建立身份。Session 只通过 `__Host-session` Cookie 传送，须 Secure、HttpOnly、SameSite=Lax、Path=/、Max-Age=3600 且无 Domain；独立 `__Host-csrf` Cookie 使用相同属性但非 HttpOnly。前端读取后通过 `X-CSRF-Token` 提交；服务端验证 Cookie/header、Session 哈希绑定及可信 Origin，登录 JSON 不返回 csrfToken。注册与登录为公开操作，仍须来源校验。凭据写入仅收 `application/json`。该命名及交付由用户 Q7 于 2026-09-26 确认并已写回正式 Notion；属于发布前协议调整。
 
-账号规则依据本轮用户确认修订：去首尾普通空格、保留大小写，账号内不允许空格；前端同时拦截，后端仍须独立验证。`Alice` 与 `alice` 是两个不同账号，注册唯一性及登录查找均区分大小写，不能采用 Notion 草案的 lowercase 唯一键。密码规则来自 PRD：至少分别包含大写英文字母、小写英文字母、数字和特殊符号；不新增长度下限。邀请码一次成功消费，失败与并发路径遵守原子性。
+账号规则依据用户确认：后端去首尾普通 ASCII 空格，保留大小写，规范化后为 1–254 Unicode 码点，拒绝内部普通空格及控制字符；前端拒绝普通空格，NBSP 保留。`Alice` 与 `alice` 是两个不同账号。OpenAPI 的 `x-max-length-after-trim` 表达规范化后的限制，不对原始字符串设置 254 长度上限。密码仅允许 U+0020–U+007E，须有 A–Z、a–z、0–9 和可见 ASCII 标点各一个；空格不计作标点，不新增额外长度下限，不 trim 密码。邀请码一次成功消费，失败与并发路径遵守原子性。
+
+## 字段校验错误登记（ADR-002）
+
+字段错误 HTTP 400、`COMMON_VALIDATION_FAILED`，`data.violations` 使用公开字段名与 `location: body`，不回显输入。JSON 语法、未知字段、媒体类型等协议错误仍按对应协议错误返回。
+
+| 字段级 code | 字段 | 含义 |
+| --- | --- | --- |
+| VALIDATION_REQUIRED | account / password / invitationCode | 必填内容为空；账号先按已确认规则 trim |
+| COMMON_INVALID_ARGUMENT | account | 账号违反已确认格式或规范化后长度 |
+| AUTH_PASSWORD_POLICY_VIOLATION | password | 注册密码违反已确认 Q13 字符和四类规则 |
+
+登录密码只要求非空并精确验证现有凭据，不把注册策略附加为登录限制。
 
 ## 工具验证
 

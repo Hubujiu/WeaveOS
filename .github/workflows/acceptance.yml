@@ -1,34 +1,23 @@
 name: v0.1.0 product acceptance
 on:
+  pull_request:
   workflow_dispatch:
+    inputs:
+      verify_release:
+        description: Verify complete evidence after V010-008 user signoff
+        type: boolean
+        default: false
   workflow_call:
+    inputs:
+      verify_release:
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
   product:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:18.0
-        env:
-          POSTGRES_USER: weaveos_test
-          POSTGRES_PASSWORD: isolated-ci-only
-          POSTGRES_DB: weaveos_acceptance
-        ports: [5432:5432]
-        options: >-
-          --health-cmd "pg_isready -U weaveos_test -d weaveos_acceptance"
-          --health-interval 5s --health-timeout 5s --health-retries 12
-      redis:
-        image: redis:8.2.1
-        ports: [6379:6379]
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s --health-timeout 5s --health-retries 12
-    env:
-      DATABASE_URL: postgres://weaveos_test:isolated-ci-only@127.0.0.1:5432/weaveos_acceptance?sslmode=disable
-      REDIS_URL: redis://127.0.0.1:6379/0
-      WEAVEOS_ACCEPTANCE_FIXTURES: ${{ github.workspace }}/.work/acceptance-fixtures.json
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -36,49 +25,18 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .node-version
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
-        with:
-          go-version-file: .go-version
-          cache: false
-      - run: |
-          npm install --global pnpm@10.28.2 --ignore-scripts
-          pnpm install --frozen-lockfile --ignore-scripts
-          pnpm typecheck
-          pnpm build
-          pnpm exec playwright install --with-deps chromium firefox webkit
-      - name: Isolated migration and seed prerequisite
-        run: |
-          if [ ! -f services/bff/cmd/acceptance-seed/main.go ]; then
-            echo '::error::BLOCKED: V010-003 must implement reviewed migrations and isolated acceptance seed. No fake fixtures are substituted.'
-            exit 1
-          fi
-          mkdir -p .work
-          (cd services/bff && go run ./cmd/acceptance-seed --output "$WEAVEOS_ACCEPTANCE_FIXTURES")
-      - name: Go business and real-storage integration tests
-        working-directory: services/bff
-        run: go test -race -count=1 ./...
-      - name: Real HTTP acceptance
-        run: |
-          (cd services/bff && go build -o ../../.work/bff ./cmd/bff)
-          .work/bff > .work/bff.log 2>&1 &
-          bff_pid=$!
-          trap 'kill "$bff_pid" 2>/dev/null || true' EXIT
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:8080/health/live; then break; fi
-            sleep 1
-          done
-          curl --fail --silent http://127.0.0.1:8080/health/ready
-          node --test tests/acceptance/api.test.mjs
-      - name: Real browser product acceptance (not foundation smoke)
-        run: pnpm exec playwright test tests/acceptance
-      - name: check-release recorded evidence gate
-        if: always()
+      - name: Migrations, HTTPS and real product acceptance
+        # postgres:18.0 and redis:8.2.1 in compose.json.
+        # Runner executes playwright test tests/acceptance using its HTTPS config.
+        run: node infra/acceptance/run.mjs
+      - name: Complete check-release gate including user signoff
+        if: inputs.verify_release == true
         run: node scripts/check-release.mjs
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: always()
         with:
           name: product-acceptance-${{ github.run_id }}
-          path: |
-            playwright-report/
-            test-results/
+          path: .work/acceptance/public/
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 14
