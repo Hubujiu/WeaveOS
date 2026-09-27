@@ -47,3 +47,11 @@ ACME计划声明与独立用例于1ccf416实际6G1R→18e7582实际7G；cert/key
 acme.sh3.1.6源码在本机私有.work/acme-source固定；git verify-tag实际Good signature（维护者github@neilpang.com，ED25519 SHA256:M60qVafm/NUywQHXAkoQcj2v6KgkfrdSXv6mPejUUeE），精确commit807da6498377ee5e0cf43a78091f46f12dc59a89。未执行安装器、未推送或运行服务器，未自动更新上游。
 
 原e67e7a1产品CI36295508569 Gitleaks失败；本机私下复现仅SHA256.json四个bootstrap-credentials文件名+公开摘要命中generic-api-key。清单改为path/sha256数组，所有原非文档证据字节/摘要不变，没有allowlist、skip或扫描门槛变更。TDD:N/A，仅文档格式；修订提交另实跑相同扫描。最终本机治理/底座70/70、结构检查/任务/diff通过。新增RED日志/源码也加入摘要清单。
+
+## Q16 实际恢复与完成（覆盖旧阻塞/NOT RUN记录）
+
+凭据已由用户私有附件提供、明确授权长期存储，CSV与转换env保存在服务器root:0600文件；无秘密内容/ID/摘要入本证据。CSV/域名Origin/cron真实RED→GREEN见acme-wiring-red/green；8dc9e18/ec302fa→0c5e224，20GREEN。固定操作/环境传密钥/去敏失败、信任优先激活与域名默认trustprobe见acme-operational-red/green，dba96f3→d1cc4e9，3RED→23GREEN；IPv4查找见domain-ipv4-red/green，6a23451→f3dd76c，1RED→24GREEN。各测试源码与无行为占位/缺行为模块已保留。命令均本机`node --test tests/governance/server-deployment.test.mjs`，REDexit1/GREENexit0。命令边界spy不当作真实Nginx/ACME。
+
+首轮register/issue因WindowsGit归档CRLF导致Shell语法exit2，未操作DNS；用`git -c core.autocrlf=false archive`签名固定commit重新生成LF归档，双方摘要9aacfd809a6c55b75d26a7239b417ae9cdd3cb002eebfab890fb0fcc0117fa36匹配，客户端版本3.1.6。此为环境错误，不计行为RED。实际register/issue/install/renew均exit0；DNSPod自动TXT验证、Let’s Encrypt单域名签发、系统链验证、私钥匹配、Nginx-t及reload完成。首次续期检查成功且未到期，不声称已执行未来续签。私有日志保留在服务器，不公开复制。
+
+trusted-client-runtime.json记录默认系统信任的客户端运行确认，未使用-k/额外CA/忽略HTTPS。Chrome域名窗口正常打开/标题WeaveOS/安全上下文true；仅该窗口域名解析到SSH回环，未改hosts/Root/A记录。旧localhost入口不再匹配，其他应用不继承窗口规则。实际Origin、loopback端口、密钥权限、cron与保存目标见acme-runtime.json。源NotionQ16/ADR004/PRD已实际回写读回，GitHub最终验收另核对。

@@ -9,12 +9,12 @@
 已有SSH配置包含服务器身份；在客户端执行并保持运行：
 
 ```powershell
-ssh -o ExitOnForwardFailure=yes -N -L 127.0.0.1:19443:127.0.0.1:19443 43.133.34.48
+ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ExitOnForwardFailure=yes -N -L 127.0.0.1:19443:127.0.0.1:19443 43.133.34.48
 ```
 
-打开`https://localhost:19443/login`或`/register`。使用本机自签名证书；可从服务器取回`/opt/weaveos-v010/tls/cert.pem`并核对SHA256后信任，禁止取回或公开私钥。证书有效一年，监控提前3天告警，届时按原运行手册替换并reload。
+使用`https://weave.hubujiu.site:19443/login`或`/register`。客户端须将该域名解析到本机SSH隧道127.0.0.1；当前已打开的独立Chrome窗口通过仅此域名的host-resolver-rules实现，正常校验证书。未修改系统hosts、根证书信任或公开A记录。其他浏览器/应用不自动继承该窗口的解析规则，旧localhost地址与域名证书不匹配。
 
-2026-09-27 Q16更新：用户选择Let’s Encrypt + ACME自动续期，域名`weave.hubujiu.site`；不安装本地CA。DNSPod DNS-01所需API凭据尚未可用，签发/替换/续期仍BLOCKED，当前自签TLS和浏览器警告保持。用户授权可使用已有主账号API；服务器root SSH不能替代DNSPod API。凭据请保存在`/opt/weaveos-v010/secrets/acme.env`0600，两项`Tencent_SecretId`/`Tencent_SecretKey`，不发聊天。代码目前只有已测试计划与证书/文件回退函数，运维CLI显式拒绝，不能把计划当已启用的续期器。正式信任链、域名probe/Compose/cron与签发安装须凭据后完成验证和装配。
+2026-09-27 Q16已完成：用户提供并授权持久保存的主账号CSV在`/opt/weaveos-v010/secrets/tencentcloud.csv`，转换后`acme.env`由续期工具读取，两者root:0600/父目录0700，可供后续已授权操作复用。不要输出、提交、挂载进业务镜像。固定签名acme.sh3.1.6通过DNSPod DNS-01签发Let’s Encrypt证书（YE2，至2026-12-26 05:21:07 UTC），系统信任/域名/密钥/期限检查及Nginx校验reload成功。cron每天服务器时间02:33、14:33检查续期，flock防重叠，首次真实检查成功、尚无需重签；新证书安装到acme-stage后经tls.mjs验证和替换，失败保留/恢复旧文件及私有告警。未安装本地CA。API凭据和ACME私钥/缓存/日志始终受限。
 
 初始账号仅`bootstrap-admin`。随机密码保存在服务器`/opt/weaveos-v010/admin.json`和部署者本机`.work/deploy/admin.json`，Unix0600/Windows当前SID独占ACL。不要复制到仓库、Notion、日志或公共证据。用户可通过已有SSH在自己的终端读取该私有文件。未导入验收用户、禁用用户、测试邀请码或Session。
 
@@ -25,7 +25,7 @@ ssh -o ExitOnForwardFailure=yes -N -L 127.0.0.1:19443:127.0.0.1:19443 43.133.34.
 ```sh
 cd /opt/weaveos-v010
 docker compose --env-file .env -p weaveos-v010-011 -f compose.json ps
-curl --fail --cacert tls/cert.pem https://localhost:19443/health/ready
+curl --fail --resolve weave.hubujiu.site:19443:127.0.0.1 https://weave.hubujiu.site:19443/health/ready
 docker compose --env-file .env -p weaveos-v010-011 -f compose.json stop
 docker compose --env-file .env -p weaveos-v010-011 -f compose.json up -d
 ```
@@ -43,8 +43,9 @@ docker compose --env-file .env -p weaveos-v010-011 -f compose.json up -d
 服务器已有Node22用于轻量运行工具，复用main既有AES256-GCM备份与探针代码。`context.mjs`限定本任务目录/项目；不接受任意主机路径。
 
 ```sh
-NODE_EXTRA_CA_CERTS=/opt/weaveos-v010/tls/cert.pem /usr/local/bin/node /opt/weaveos-v010/infra/server/operations.mjs monitor
+/usr/local/bin/node /opt/weaveos-v010/infra/server/operations.mjs monitor
 /usr/local/bin/node /opt/weaveos-v010/infra/server/operations.mjs backup
+/usr/local/bin/node /opt/weaveos-v010/infra/server/acme-run.mjs renew
 ```
 
 计划任务`/etc/cron.d/weaveos-v010`每5分钟运行探针，每天服务器时间03:15备份冷热库。告警为服务器私有`alerts.jsonl`及`operations.log`，用户通过SSH查看；尚无外发通知。备份存于`backups/`，独立32字节密钥位于`secrets/backup.key`。不自动删除备份，运营者需监控磁盘并另行确认保留策略；它们仍在同机，不具备异机容灾。正式真实数据运行前需另行确定独立备份目的地、RPO/RTO、告警接收与风险范围。
