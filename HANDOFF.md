@@ -4,6 +4,8 @@
 
 ## 立即读取
 
+用户2026-09-27要求每次PR合并验收后必须清理GitHub与本地任务分支、任务工作树及无用测试/构建产物，不留未处理残余。已授权核验通过后显式cleanup --apply，无须重复询问；永久main任务/证据保留。开放PR或在用部署/凭据/浏览器现场先保留并具体说明，不能擅自合并或强删。详见AGENTS第6节和docs/workflow.md。
+
 根 AGENTS → docs/workflow.md → docs/tasks/index.md → 当前任务 docs/tasks/V010-NNN.md → 目标目录AGENTS → Notion适用正文。重新检查远程main、任务分支、PR、CI和本机worktree，不能只信本页静态状态。
 
 基础任务：V010-001，PR #2，分支task/V010-001-foundation。是否已验收，以远程main同名任务文档全部完成 + PR #2已合入main为准；清理结果在PR评论核对。已清理的分支/worktree不存在不代表任务丢失。

@@ -27,6 +27,12 @@ node scripts/task.mjs start V010-002 --apply
 
 ## 两阶段安全清理
 
+用户2026-09-27已明确授权并要求每次PR完成后清理本地和GitHub分支、测试文件与工作树。**合并验收后两阶段清理都是必须完成的收尾动作**：Agent在本轮主动执行，不能只说远程Actions已清理，或将本地清理长期留在下一任务。以下dry-run仍用于核验；条件满足后直接显式--apply，无须重复询问。清理授权不等于批准合并开放PR或删除未交付工作。
+
+先保全main中的任务/永久RED→GREEN证据，核对无活动进程或别的任务引用，再审查并清除本任务可丢弃的node_modules/dist、测试报告/临时截图/日志、一次性工具、测试缓存与.work测试目录。隔离测试容器/网络/卷仅按任务身份逐项核对，无活动依赖且确属可丢弃测试数据后清理，不用全局prune。Windows每个删除目标须解析到明确的仓库/任务目录内部；不跟随junction/symlink删除其目标，不对未知目录递归删除。
+
+开放PR、未交付代码、在用worktree/浏览器/隧道以及必要凭据/恢复资料须先保留并报告具体原因；不得为满足“无残留”删未合并分支、运行数据或永久证据。完成后重新查询GitHub分支、本地branch/worktree、目标目录和测试资源，记录实际已清理/仍保留/阻塞以及下一条命令；没有核验就不能说全部清理。
+
 ### 远程引用
 
 `.github/workflows/task-cleanup.yml`在任务PR合并后执行，只检出main，调用scripts/cleanup-remote-task.mjs。它重新读取GitHub PR和远程main同ID任务文档，确认全部事项完成、同仓库PR merged到main、squash-style提交在main、远程分支仍等于已验收PR head。用预期SHA的条件push删除该远程引用；已删除则幂等成功，新提交/未合并/未完成/不可联网则拒绝。
