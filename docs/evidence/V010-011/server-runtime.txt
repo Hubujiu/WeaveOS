@@ -1,0 +1,25 @@
+{"database":"weaveos_runtime","elapsedMs":151,"format":"pg_dump18 custom + AES256-GCM","result":"passed"}
+{"database":"weaveos_cold_archive","elapsedMs":153,"format":"pg_dump18 custom + AES256-GCM","result":"passed"}
+weaveos-v010-011-nginx-1 3.121MiB / 128MiB
+weaveos-v010-011-audit-maintenance-1 4.855MiB / 128MiB
+weaveos-v010-011-bff-1 25.03MiB / 256MiB
+weaveos-v010-011-postgres-1 56.15MiB / 512MiB
+weaveos-v010-011-redis-1 10.06MiB / 256MiB
+               total        used        free      shared  buff/cache   available
+Mem:            3665        1292         155          38        2537        2372
+Swap:              0           0           0
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda3        59G   46G   14G  78% /
+enabled
+active
+600 admin.json
+600 secrets/backup.key
+total 56K
+-rw------- 1 root root 5.3K Sep 27 12:42 weaveos_cold_archive-2026-09-27T04-42-45.903Z.enc
+-rw------- 1 root root 5.3K Sep 27 12:47 weaveos_cold_archive-2026-09-27T04-47-15.284Z.enc
+-rw------- 1 root root  18K Sep 27 12:42 weaveos_runtime-2026-09-27T04-42-45.903Z.enc
+-rw------- 1 root root  18K Sep 27 12:47 weaveos_runtime-2026-09-27T04-47-15.284Z.enc
+# Managed WeaveOS V010-011 runtime operations only
+PATH=/usr/local/bin:/usr/bin:/bin
+*/5 * * * * root NODE_EXTRA_CA_CERTS=/opt/weaveos-v010/tls/cert.pem /usr/bin/flock -n /opt/weaveos-v010/monitor.lock /usr/local/bin/node /opt/weaveos-v010/infra/server/operations.mjs monitor >> /opt/weaveos-v010/operations.log 2>&1
+15 3 * * * root /usr/bin/flock -n /opt/weaveos-v010/backup.lock /usr/local/bin/node /opt/weaveos-v010/infra/server/operations.mjs backup >> /opt/weaveos-v010/operations.log 2>&1

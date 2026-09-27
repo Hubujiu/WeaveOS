@@ -1,0 +1,133 @@
+TAP version 13
+# Subtest: provided CSV is data only and maps exactly one credential pair without executing fields
+    # Subtest: BOM, quoted headers and CRLF are supported
+    ok 1 - BOM, quoted headers and CRLF are supported
+      ---
+      duration_ms: 1.2476
+      type: 'test'
+      ...
+    # Subtest: missing, multiple and non-data values fail closed
+    ok 2 - missing, multiple and non-data values fail closed
+      ---
+      duration_ms: 1.0323
+      type: 'test'
+      ...
+    # Subtest: dotenv admits only the required names and never evaluates shell
+    ok 3 - dotenv admits only the required names and never evaluates shell
+      ---
+      duration_ms: 0.289
+      type: 'test'
+      ...
+    1..3
+ok 1 - provided CSV is data only and maps exactly one credential pair without executing fields
+  ---
+  duration_ms: 3.2163
+  type: 'test'
+  ...
+# Subtest: Q16 public-trust domain config keeps the SSH listener and schedules automatic renewal
+    # Subtest: domain origin with loopback only
+    ok 1 - domain origin with loopback only
+      ---
+      duration_ms: 0.2011
+      type: 'test'
+      ...
+    # Subtest: renew twice daily without self-signed trust
+    ok 2 - renew twice daily without self-signed trust
+      ---
+      duration_ms: 0.2075
+      type: 'test'
+      ...
+    1..2
+ok 2 - Q16 public-trust domain config keeps the SSH listener and schedules automatic renewal
+  ---
+  duration_ms: 0.8461
+  type: 'test'
+  ...
+# Subtest: Q16 validates the actual certificate host, private key and remaining lifetime before replacement
+    # Subtest: matching actual identity and key are accepted
+    ok 1 - matching actual identity and key are accepted
+      ---
+      duration_ms: 2.4155
+      type: 'test'
+      ...
+    # Subtest: unrelated certificate is rejected
+    ok 2 - unrelated certificate is rejected
+      ---
+      duration_ms: 2.8248
+      type: 'test'
+      ...
+    # Subtest: mismatched private key is rejected
+    ok 3 - mismatched private key is rejected
+      ---
+      duration_ms: 0.8883
+      type: 'test'
+      ...
+    # Subtest: expired certificate is rejected
+    ok 4 - expired certificate is rejected
+      ---
+      duration_ms: 0.2489
+      type: 'test'
+      ...
+    1..4
+ok 3 - Q16 validates the actual certificate host, private key and remaining lifetime before replacement
+  ---
+  duration_ms: 366.4657
+  type: 'test'
+  ...
+# Subtest: Q16 a failed Nginx validation restores both previous files and reloads the previous certificate
+ok 4 - Q16 a failed Nginx validation restores both previous files and reloads the previous certificate
+  ---
+  duration_ms: 78.1077
+  type: 'test'
+  ...
+# Subtest: Q16 explicitly uses Let's Encrypt DNSPod DNS-01 for the confirmed domain and no public listener
+ok 5 - Q16 explicitly uses Let's Encrypt DNSPod DNS-01 for the confirmed domain and no public listener
+  ---
+  duration_ms: 0.2328
+  type: 'test'
+  ...
+# Subtest: Q15 server exposes only loopback HTTPS and preserves internal data network
+ok 6 - Q15 server exposes only loopback HTTPS and preserves internal data network
+  ---
+  duration_ms: 0.2253
+  type: 'test'
+  ...
+# Subtest: private Bootstrap credentials preserve the accepted seed JSON password field and exclude test fixtures
+ok 7 - private Bootstrap credentials preserve the accepted seed JSON password field and exclude test fixtures
+  ---
+  duration_ms: 0.2233
+  type: 'test'
+  ...
+# Subtest: operational schedules retain TLS verification, prevent overlap, and invoke only runtime tools
+ok 8 - operational schedules retain TLS verification, prevent overlap, and invoke only runtime tools
+  ---
+  duration_ms: 0.1758
+  type: 'test'
+  ...
+# Subtest: server maintenance addresses only the authorized deployment and does not run test/build commands
+ok 9 - server maintenance addresses only the authorized deployment and does not run test/build commands
+  ---
+  duration_ms: 0.3406
+  type: 'test'
+  ...
+# Subtest: finished services restart automatically and have finite resource and log budgets
+ok 10 - finished services restart automatically and have finite resource and log budgets
+  ---
+  duration_ms: 0.2061
+  type: 'test'
+  ...
+# Subtest: deployment refuses every existing directory, including apparently empty ones
+ok 11 - deployment refuses every existing directory, including apparently empty ones
+  ---
+  duration_ms: 0.9985
+  type: 'test'
+  ...
+1..11
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 524.8596
