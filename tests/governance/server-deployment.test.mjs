@@ -9,16 +9,16 @@ import { serverContext } from '../../infra/server/context.mjs';
 import { acmePlan } from '../../infra/server/acme.mjs';
 import { validateCertificate, replaceCertificateFiles } from '../../infra/server/tls.mjs';
 const runtime=JSON.parse(readFileSync(new URL('../../infra/runtime/compose.json',import.meta.url)));
-test('Q16 validates the actual certificate host, private key and remaining lifetime before replacement',()=>{
+test('Q16 validates the actual certificate host, private key and remaining lifetime before replacement',async t=>{
  const dir=mkdtempSync(join(tmpdir(),'weaveos-certificate-'));
  const openssl=process.platform==='win32'?'C:/Program Files/Git/usr/bin/openssl.exe':'openssl';
  try{
   for(const [name,host] of [['valid','weave.hubujiu.site'],['other','unrelated.example']]) execFileSync(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-days','10','-keyout',join(dir,name+'.key'),'-out',join(dir,name+'.pem'),'-subj','/CN='+host,'-addext','basicConstraints=critical,CA:FALSE','-addext','extendedKeyUsage=serverAuth','-addext','subjectAltName=DNS:'+host],{stdio:'pipe'});
   const chain=readFileSync(join(dir,'valid.pem')),key=readFileSync(join(dir,'valid.key'));
-  assert.equal(validateCertificate(chain,key).domain,'weave.hubujiu.site');
-  assert.throws(()=>validateCertificate(readFileSync(join(dir,'other.pem')),readFileSync(join(dir,'other.key'))),/identity/i);
-  assert.throws(()=>validateCertificate(chain,readFileSync(join(dir,'other.key'))),/key/i);
-  assert.throws(()=>validateCertificate(chain,key,Date.now()+11*86400000),/lifetime/i);
+  await t.test('matching actual identity and key are accepted',()=>assert.equal(validateCertificate(chain,key).domain,'weave.hubujiu.site'));
+  await t.test('unrelated certificate is rejected',()=>assert.throws(()=>validateCertificate(readFileSync(join(dir,'other.pem')),readFileSync(join(dir,'other.key'))),/identity/i));
+  await t.test('mismatched private key is rejected',()=>assert.throws(()=>validateCertificate(chain,readFileSync(join(dir,'other.key'))),/key/i));
+  await t.test('expired certificate is rejected',()=>assert.throws(()=>validateCertificate(chain,key,Date.now()+11*86400000),/lifetime/i));
  }finally{rmSync(dir,{recursive:true});}
 });
 test('Q16 a failed Nginx validation restores both previous files and reloads the previous certificate',()=>{
