@@ -1,0 +1,10 @@
+2026-09-27; PR3 head a35f362; product run 36316952690
+Product first phase: 122 HTTP / 111 browser passed. Runtime security phase failed only Gitleaks.
+Local reproduction: git archive HEAD, extract, scan with pinned Gitleaks v8.30.1 image.
+Command: gitleaks dir /scan --redact --no-banner --log-level warn
+Exit: 1. Only finding: generic-api-key, docs/evidence/V010-009/conflict-resolution.json line 5.
+Finding is the source-preservation SHA-256 metadata, not an authentication credential.
+Changed its property name from originalExpandedApiSha256 to originalExpandedSourceSha256.
+Digest value unchanged. No scan exclusion or rule changes.
+Same extracted source with the corrected evidence metadata, same scanner: exit 0.
+This is evidence-metadata naming only, TDD:N/A. Full final-head CI remains required.
