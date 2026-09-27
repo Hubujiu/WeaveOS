@@ -1,6 +1,6 @@
 # v0.1.0 本地版本验收材料
 
-状态：自动化最终回归进行中；用户 MAN-UI / MAN-OPERATIONS / MAN-RISK 均未签署。[集中答复入口（Q10/Q14）](https://app.notion.com/p/3e62f5a9e648814497c8df6bf27c8724)。[PR11](https://github.com/Hubujiu/WeaveOS/pull/11) 尚未合并，不能据此称整版已完成。
+状态：c3dbfa5自动化回归全部通过；用户于2026-09-27实际确认 MAN-UI / MAN-OPERATIONS / MAN-RISK，详见[user-signoff.md](user-signoff.md)。签署文档提交仍须最终CI后合并。[集中答复入口（Q10/Q14）](https://app.notion.com/p/3e62f5a9e648814497c8df6bf27c8724)。[PR11](https://github.com/Hubujiu/WeaveOS/pull/11) 尚未合并，不能据此称整版已完成。
 
 ## 界面
 
@@ -42,17 +42,17 @@
 | PostgreSQL18.6 | 330 | 2 / 82 | 46，gosu内嵌Go/sys |
 | Redis8.2.10 | 233 | 4 / 52 | 7，libssl3/tzdata |
 
-计数按报告条目，可能在不同包中重复同一CVE；不是已证实可利用的独立攻击数量。所有条目保持可见，没有忽略High/Critical或把风险pending改为通过。
+计数按报告条目，可能在不同包中重复同一CVE；不是已证实可利用的独立攻击数量。所有条目保持可见，没有忽略High/Critical。原始报告保留扫描时pending，后续用户签署另见user-signoff.md。
 
-最新官方存储镜像的残余可修复公告：PG46项位于入口提权工具 gosu 的内嵌 Go/sys，Redis7项位于 libssl3/tzdata。官方补丁镜像没有消除这些报告；尚未进行逐路径可利用性证明，不将“内部网络”表述为不受影响。BFF/Web还存在基础 OS 未修复公告。用户需对完整清单作本地限定风险决定（Q14）；未答复前 MAN-RISK 保持 pending。
+最新官方存储镜像的残余可修复公告：PG46项位于入口提权工具 gosu 的内嵌 Go/sys，Redis7项位于 libssl3/tzdata。官方补丁镜像没有消除这些报告；尚未进行逐路径可利用性证明，不将“内部网络”表述为不受影响。BFF/Web还存在基础 OS 未修复公告。用户已在Q14明确接受基础镜像与工具漏洞，不要求代上游修复；仅限现有本地开发范围，完整报告继续保留。
 
 许可证记录：直接前端包见 [frontend-licenses.json](frontend-licenses.json)；镜像原始扫描保留 OS 包和许可证元数据。Go pgx为MIT、go-redis与x/crypto为BSD系列，依据实际模块缓存LICENSE读取。此为组件记录，未宣称完成全部间接依赖的法律合规审查。
 
 ## 证据与门禁
 
-[真实 RED/GREEN、测试和原实现快照](red-green.md) 保留失败及环境错误的区别。最终本机结果、镜像摘要和 CI 链接仍须齐备后才提交签署；不以旧提交绿灯替代最终 head。
+[真实 RED/GREEN、测试和原实现快照](red-green.md) 保留失败及环境错误的区别。本机结果、镜像摘要和 c3dbfa5 CI 已齐备并已取得实际签署；合并前仍核对最终 head。
 
-6eaf363 的[本机完整运行](local-runtime.json)通过：6项操作、1项DNS、1项实际告警、2项TLS、4项备份、3项制品完整性/搬迁、2项四镜像扫描、25项真实API、30项三浏览器。[恢复证据](local-recovery.json)实测8203ms，备份592ms；[告警接收](local-alerts.jsonl)、[可搬迁制品摘要](BUILD.json)均已保留。回滚已实际切换至安全补丁后的85c2ee1并恢复当前组合；旧2f93已被Go/pnpm安全测试拒绝，不再是配置的回滚目标。最新远端CI仍在复验，不将本机结果冒充远端成功。
+6eaf363 的[本机完整运行](local-runtime.json)通过：6项操作、1项DNS、1项实际告警、2项TLS、4项备份、3项制品完整性/搬迁、2项四镜像扫描、25项真实API、30项三浏览器。[恢复证据](local-recovery.json)实测8203ms，备份592ms；[告警接收](local-alerts.jsonl)、[可搬迁制品摘要](BUILD.json)均已保留。回滚已实际切换至安全补丁后的85c2ee1并恢复当前组合；旧2f93已被Go/pnpm安全测试拒绝，不再是配置的回滚目标。c3dbfa5远端CI已全部成功，见user-signoff.md和ci-*.json；远端Ubuntu与本机WSL证据分别记录。
 
 RED测试与原实现快照的[snapshots.sha256](snapshots.sha256)按Git中的原始blob字节计算（文本为LF），可在squash后独立恢复；原始命令、失败原因和GREEN在red-green.md。源文档同步记录见[source-sync.json](source-sync.json)，Notion与Figma继续定义预期，本目录仅为派生证据。
 
