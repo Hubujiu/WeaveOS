@@ -1,0 +1,43 @@
+name: Development artifact delivery
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+  package:
+    needs: verify
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Build immutable development artifacts (no deployment)
+        run: |
+          npm install --global pnpm@10.28.2 --ignore-scripts
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm build
+          mkdir -p artifacts/web
+          (cd services/bff && CGO_ENABLED=0 go build -trimpath -o ../../artifacts/weaveos-bff ./cmd/bff)
+          cp -R apps/web/dist/. artifacts/web/
+          printf 'commit=%s\nclassification=development-only-not-release\n' "$GITHUB_SHA" > artifacts/BUILD.txt
+          tar -czf weaveos-development.tar.gz artifacts
+          sha256sum weaveos-development.tar.gz > weaveos-development.sha256
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: weaveos-development-${{ github.sha }}
+          path: |
+            weaveos-development.tar.gz
+            weaveos-development.sha256
+          if-no-files-found: error
+          retention-days: 14
