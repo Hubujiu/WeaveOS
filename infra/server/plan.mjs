@@ -13,4 +13,7 @@ export function serverSchedules() {
  const program=`/usr/local/bin/node ${root}/infra/server/operations.mjs`;
  return `# Managed WeaveOS V010-011 runtime operations only\nPATH=/usr/local/bin:/usr/bin:/bin\n*/5 * * * * root NODE_EXTRA_CA_CERTS=${root}/tls/cert.pem /usr/bin/flock -n ${root}/monitor.lock ${program} monitor >> ${root}/operations.log 2>&1\n15 3 * * * root /usr/bin/flock -n ${root}/backup.lock ${program} backup >> ${root}/operations.log 2>&1\n`;
 }
-export function bootstrapCredentials() { return {account:'bootstrap-admin'}; }
+export function bootstrapCredentials(seed) {
+ if(typeof seed?.admin?.password!=='string'||seed.admin.password.length===0)throw new Error('Bootstrap password is missing');
+ return {account:'bootstrap-admin',password:seed.admin.password};
+}
