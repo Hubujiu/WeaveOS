@@ -6,7 +6,7 @@
 
 上方版本验收记录属于main基线。PR #3冲突已解决，97个扩展HTTP与25个契约HTTP均由api.test.mjs执行，37个浏览器场景在三引擎运行，共111项。本机真实隔离HTTPS运行122个HTTP和111个浏览器通过；随后重置用例隔离修正的3项回归通过，最终提交完整CI仍须实际核对。字段类型violations、邀请码Location、独立fixture和真实Redis过期观察已补齐；Q12断言依据正式PRD核对可见禁用。原始RED及本轮修复证据保留在docs/evidence/V010-009。
 
-独立integration.test.mjs的19项STORE历史测试仍未接入完整PG/故障/恢复observer，不计入上述产品CI。不能用已实现的单会话Redis过期观察器冒称这些场景已运行；该遗留工程工作继续在任务文档与Notion临时问题清单登记。
+用户追加授权后，integration.test.mjs的19项STORE已接入同一真实PG/Redis栈，本机19/19通过，7项原生控制与1项透明传输屏障资格测试通过，并由product runner串行执行。覆盖真实TTL/停用/依赖故障、提交失败回滚、并发消费、去敏、加密PG恢复与原生Redis快照、退出先于续期；未添加业务HTTP测试后门。事务内部错误按ADR-002修复为500，依赖不可用仍503。永久RED源码、日志和执行说明见[store-validation.md](../evidence/V010-009/store-validation.md)；最终head完整远端CI仍须核对。
 
 ## 可重复产品验收
 

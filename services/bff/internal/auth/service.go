@@ -16,6 +16,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/security"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"io"
@@ -284,6 +285,16 @@ func (s *Service) register(w http.ResponseWriter, r *http.Request) {
 	user, err := persistence.New(s.Pool).Register(r.Context(), persistence.RegistrationInput{Account: in.Account, PasswordHash: hash, InvitationDigest: digest[:], ClientIP: host, UserAgent: r.UserAgent(), RequestID: w.Header().Get("X-Request-Id")})
 	if err != nil {
 		status, code, outcome := 503, "COMMON_SERVICE_UNAVAILABLE", "error"
+		// An unexpected database statement/commit failure is an internal error,
+		// distinct from unavailable connections, capacity, or server shutdown.
+		var databaseError *pgconn.PgError
+		if errors.As(err, &databaseError) && len(databaseError.Code) >= 2 {
+			switch databaseError.Code[:2] {
+			case "08", "28", "53", "57", "58":
+			default:
+				status, code = 500, "COMMON_INTERNAL_ERROR"
+			}
+		}
 		switch {
 		case errors.Is(err, persistence.ErrAccountTaken):
 			status, code, outcome = 409, "USER_ACCOUNT_ALREADY_EXISTS", "failure"

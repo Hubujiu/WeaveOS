@@ -5,8 +5,7 @@ import { resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { routes, password, unique, fixtures, send, envelope, noSecret, preparedLogin, invitation, register } from './http.mjs';
 
-// Logical observations only, based on accepted PRD/ADR; no draft SQL or Redis layout.
-// V010-003/004 must supply the REAL storage observer described in observer-contract.md.
+// Expectations follow PRD/ADR; observer bindings follow the reviewed physical dictionary.
 // An absent observer is a prerequisite failure, never a RED or a skip/pass.
 async function observe(t) {
   const file = process.env.WEAVEOS_ACCEPTANCE_OBSERVER;
@@ -27,6 +26,7 @@ test('STORE-01 FR-006: newly created Redis Session has native one-hour TTL', asy
 test('STORE-02 FR-006: successful authentication renews a shortened native TTL', async t => {
   const o = await observe(t), session = await preparedLogin(fixtures().user);
   await o.setSessionPTTL(session.auth, 30000);
+  assert.ok(await o.sessionPTTL(session.auth) <= 30000, 'native TTL was actually shortened');
   const start = performance.now();
   await envelope(await send(routes.current, { session }), 200, 'OK');
   const ttl = await o.sessionPTTL(session.auth);
@@ -58,11 +58,11 @@ test('STORE-05 FR-008: Redis-expired Session is denied and not recreated by read
 test('STORE-06 FR-006: old creation time does not impose an absolute lifetime', async t => {
   const o = await observe(t), session = await preparedLogin(fixtures().user);
   await o.setSessionCreationAge(session.auth, 7 * 24 * 3600000);
+  assert.ok(Date.now() - await o.sessionCreatedAt(session.auth) >= 7 * 24 * 3600000);
   await envelope(await send(routes.current, { session }), 200, 'OK');
 });
 test('STORE-07 ADR-001: disabling user rejects an existing Session', async t => {
-  const o = await observe(t), user = fixtures().disableTarget;
-  if (!user) throw new Error('BLOCKED: dedicated disableTarget fixture missing');
+  const o = await observe(t), user = await independentUser();
   const session = await preparedLogin(user);
   await o.setUserStatus(user.id, 'disabled');
   const r = await send(routes.current, { session });
@@ -125,10 +125,10 @@ test('STORE-13 ADR-001: registration stores independent salted password hashes, 
   assert.ok(hashes[0] !== hashes[1], 'same password receives independent salt');
   const bytes = await o.dumpOwnedAuthenticationState(accounts);
   noSecret(bytes, [password]);
-  // Algorithm/cost verification remains BLOCKED until the implementation specification is accepted.
+  // Algorithm/cost is independently covered by the accepted credential module tests.
 });
 test('STORE-14 FR-014: success and failure login events contain required observations without secrets', async t => {
-  const o = await observe(t), user = fixtures().user, marker = `acceptance-${unique()}`, since = new Date();
+  const o = await observe(t), user = { ...fixtures().user, id: fixtures().userId }, marker = `acceptance-${unique()}`, since = new Date();
   const session = await preparedLogin(user);
   const response = await send(routes.login, { method: 'POST', data: { account: user.account, password: 'Wrong@Test123' }, headers: { 'User-Agent': marker } });
   await envelope(response, 401, 'AUTH_INVALID_CREDENTIALS');
@@ -145,10 +145,12 @@ test('STORE-14 FR-014: success and failure login events contain required observa
   noSecret(JSON.stringify(events) + await o.readApplicationLogs({ since }), [user.password, 'Wrong@Test123', session.sid, session.cookie]);
 });
 test('STORE-15 PRD rollback: restored storage never resurrects a confirmed logged-out Session', async t => {
-  const o = await observe(t), session = await preparedLogin(fixtures().user), backup = await o.snapshotIsolatedStorage();
+  const o = await observe(t), session = await preparedLogin(fixtures().user), backup = await o.snapshotIsolatedStorage(session.auth);
   assert.equal((await send(routes.current, { method: 'DELETE', session })).status, 204);
+  await independentUser(); // A post-backup database write must disappear on restore.
   // Runs the reviewed recovery procedure, not raw restore. Mechanism is not dictated here.
   await o.restoreThroughRecoveryProcedure(backup);
+  assert.deepEqual(await o.recoveryEvidence(backup), { generationChanged: true, oldSessionRestored: true, databaseRestored: true });
   await envelope(await send(routes.current, { session }), 401, 'AUTH_UNAUTHENTICATED');
 });
 test('STORE-16 FR-009: deterministic delete-before-renewal never restores logged-out key', async t => {
@@ -164,8 +166,7 @@ test('STORE-16 FR-009: deterministic delete-before-renewal never restores logged
   await envelope(await send(routes.current, { session }), 401, 'AUTH_UNAUTHENTICATED');
 });
 test('STORE-17 FR-012/014: reset storage and logs contain no plaintext old or fixed password', async t => {
-  const o = await observe(t), f = fixtures(), target = f.storageResetTarget;
-  if (!target) throw new Error('BLOCKED: independent storageResetTarget missing');
+  const o = await observe(t), f = fixtures(), target = await independentUser();
   const session = await preparedLogin(f.admin), since = new Date();
   const body = await envelope(await send(routes.reset.replace('{userId}', encodeURIComponent(target.id)), { method: 'POST', data: {}, session }), 200, 'OK');
   const state = await o.dumpOwnedAuthenticationState([target.account]);
@@ -174,3 +175,9 @@ test('STORE-17 FR-012/014: reset storage and logs contain no plaintext old or fi
   const hash = await o.readPasswordHash(target.account);
   assert.ok(typeof hash === 'string' && hash.length > 0);
 });
+
+async function independentUser() {
+  const account = unique();
+  const result = await envelope(await register(account, await invitation()), 201, 'OK');
+  return { account, password, id: result.data.id };
+}

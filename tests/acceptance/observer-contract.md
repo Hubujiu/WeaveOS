@@ -1,8 +1,8 @@
-# 真实存储观察器交接契约（测试侧提案）
+# 真实存储观察器契约（V010-009 已装配）
 
-`integration.test.mjs` 是测试代码，不是已运行的存储验收。当前没有观察器实现，所有场景运行应明确失败为 BLOCKED，不能skip、用内存fake替换、或声称已RED。
+`storage-observer.mjs` 已连接同一隔离 PostgreSQL18 / Redis8.2；`integration.test.mjs` 的19项本机实际通过，纳入 `infra/acceptance/run.mjs`。7项原生控制与1项透明传输屏障资格测试先运行，再串行运行19项产品断言。最终PR以最终head远端CI为准，不能以字符串声明替代真实结果。证据见 `docs/evidence/V010-009/store-validation.md`。
 
-V010-003/004 在评审数据字典、实际ADR及迁移之后，提供本地模块路径 `WEAVEOS_ACCEPTANCE_OBSERVER`，export async `open({baseURL})`。此模块仅在测试进程中装配；不能给生产HTTP新增改时钟、改状态或故障注入后门。
+V010-003/004 已评审字典、迁移和ADR为绑定来源；本轮重新读取相关对象/字段。模块路径 `WEAVEOS_ACCEPTANCE_OBSERVER`，export async `open({baseURL})`。模块仅在测试进程中装配，不给生产HTTP新增后门。必须提供 `WEAVEOS_ACCEPTANCE_PROJECT`、私有fixture路径；可选 `WEAVEOS_ACCEPTANCE_COMPOSE` 仅用于本机独立端口的同项目配置。校验Docker项目/服务标签、私有端口、BFF实际数据库/会话代次与HTTP Origin一致。
 
 返回对象必须使用当前BFF连接的同一隔离PostgreSQL/Redis，`storage = 'isolated-postgresql-and-redis'` 只是声明；评审必须读取驱动与真实运行记录，不能把字符串当证明。每个open拥有独立命名空间/可恢复故障，`close()`必须恢复网络/故障并只清理自己的数据。禁止全库FLUSH或连接生产环境。
 
@@ -23,9 +23,12 @@ V010-003/004 在评审数据字典、实际ADR及迁移之后，提供本地模�
 | dumpOwnedAuthenticationState(accounts) | 返回这些case拥有的数据的完整字段文本；仅内存去敏检查，不落盘/artifact |
 | readLoginEvents({userId,since}) | 原始审计查询，字段映射为userId/accountIdentifier/ip/userAgent/time/result；result映射规则独立核对字典，不由被测函数计算expected |
 | readApplicationLogs({since}) | 从隔离进程捕获原始日志，只供内存泄露断言，禁止上传 |
-| snapshotIsolatedStorage() | 仅当前隔离实例的可恢复快照，不上传；返回不透明handle |
-| restoreThroughRecoveryProcedure(handle) | 运行经评审的恢复/回滚流程（实现机制待确认），不能直接强行删旧Session伪造通过 |
+| snapshotIsolatedStorage(authCookie) | 全量隔离PG加密备份与本case Redis原生DUMP；私钥/密文留在受限.work、Redis二进制仅内存，不上传；返回本observer专属handle |
+| restoreThroughRecoveryProcedure(handle) | 复用recoverRuntime的停服→恢复空库和旧Redis DUMP→切换generation→恢复服务；原生旧key确实存在，不能删旧key伪造通过 |
+| recoveryEvidence(handle) | 独立核对新generation、旧key确已恢复、PG账号集合等于备份且备份后新增账号消失 |
 
 STORE-01/02使用原生PTTL和实测请求耗时校验3600秒，无长sleep。STORE-05证明真实Redis过期拒绝，不声称覆盖精确t=3599999/3600000逻辑分支；确定性时钟边界及退出/续期指定交错仍须004用真实存储+调度屏障测试。HTTP-22只有并发压力，不替代该证明。
 
-未接受的账号规范化、重置后全部会话撤销、物理DDL、哈希参数、Seed覆盖策略、审计保留期不在这里擅自决定。版本化schema全量约束和迁移测试须先完成002/003评审。没有任何这些项目被标为已覆盖。
+PG故障仅临时拒绝该BFF容器IP并终止旧连接，保留docker exec本地观察连接；Redis故障断开容器网络并终止旧连接，随后恢复原服务别名。提交故障用限定随机账号的延迟约束触发器在真实COMMIT失败，close解除。续期屏障只缓冲该key的一次EVAL，其他命令和Redis响应透明转发；业务镜像/Session算法无测试开关。
+
+历史“待确认”的账号/DDL/哈希/审计规则已由002–008确认并验收；本模块不重新定义它们。19项证明指定存储行为，不替代完整迁移/权限/保留期或生产部署验收。STORE-16现在通过真实HTTP与Redis传输屏障验证确定性交错；毫秒边界仍由004的独立真实存储测试覆盖。

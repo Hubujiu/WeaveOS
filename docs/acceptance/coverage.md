@@ -76,7 +76,7 @@
 
 挂起测试只延迟后继续真实请求，故障测试使用网络abort；没有route.fulfill伪造业务成功。trace/screenshot/video关闭，但未来有真实fixture时仍需007审查错误上下文与reporter去敏，不能把凭据场景报告直接上传。
 
-## 仍不能称为完整的项目
+## 2026-09-25 历史缺口（后续状态见文末；不作为当前阻塞清单）
 
 | 缺口 | 原因与下一步 | owner |
 | --- | --- | --- |
@@ -96,17 +96,19 @@ FR-015为范围约束：不凭空增加Native、SSO、设备中心、权限平�
 
 ## 执行与隔离
 
-每轮由003产生新fixture，user/admin/disabled/resetTarget/disableTarget/storageResetTarget必须互相隔离。resetTarget不能预先使用固定重置密码。uiInvitations每浏览器独立，并额外提供`${project}-reentry/-duplicate/-reuse/-pending`，不可跨用例共用一次性码。API新场景通过真实Bootstrap生成自己的邀请码，不复用其他测试消费过的数据。接入真实故障注入/恢复后必须串行执行文件与浏览器，或为每worker提供独立全栈实例，禁止一边全局断开依赖一边执行另一文件。
+每轮由003产生新fixture，user/admin/disabled/resetTarget互相隔离；STORE停用和重置用例通过正式API创建各自独立账号，不依赖缺失的disableTarget/storageResetTarget。resetTarget不能预先使用固定重置密码。uiInvitations每浏览器独立，并额外提供`${project}-reentry/-duplicate/-reuse/-pending`，不可跨用例共用一次性码。API新场景通过真实Bootstrap生成自己的邀请码，不复用其他测试消费过的数据。真实故障注入/恢复串行执行，禁止一边全局断开依赖一边执行另一文件。
 
 ```sh
 node --test --test-concurrency=1 tests/acceptance/api.test.mjs tests/acceptance/integration.test.mjs
 pnpm exec playwright test tests/acceptance/web.spec.ts
 ```
 
-fixture放在忽略的.work目录，未授权远程目标不运行可变更数据的测试。当前acceptance.yml只调用api.test.mjs；007接手必须显式加integration.test.mjs和真实observer，不得声称本PR已经启用全部CI验收。
+fixture放在忽略的.work目录，未授权远程目标不运行可变更数据的测试。acceptance.yml通过infra/acceptance/run.mjs执行122项HTTP、111项浏览器、8项观察器资格测试、19项STORE；旧STORE阻塞已补齐。运行整栈使用`node infra/acceptance/run.mjs`，该命令需要未占用的本机19443；本轮开发隔离栈另使用20443，不访问已有部署入口。
 
 测试诊断自身另有diagnostics.test.mjs（1项）：保证故意畸形的错误响应不会通过断言诊断泄露敏感data，已实际RED→GREEN。运行全部Node测试可用`node --test --test-concurrency=1 tests/acceptance/*.test.mjs`，这1项helper通过不计入产品验收。
 
 ## 2026-09-27 当前契约同步
 
-历史覆盖表保留原始RED语境。现有CI组合执行97扩展+25正式HTTP及37场景×3浏览器；HTTP19使用seed独立userId，HTTP34未知字段按正式协议错误COMMON_INVALID_ARGUMENT，字段null/类型错误仍要求violations。WEB02按Q12已确认的可见禁用规则，WEB17使用真实Redis原生过期。reset用例各自创建目标，不消费运行恢复用例的账号前置状态。19项STORE历史测试尚未装配完整observer；其状态不计入本轮产品CI通过数量。
+历史覆盖表保留原始RED语境，002–008已确认并验收的契约/字段/规则以正式来源和当前README映射为准。现有CI组合执行97扩展+25正式HTTP及37场景×3浏览器；HTTP19/STORE14使用seed独立userId，HTTP34未知字段按正式协议错误COMMON_INVALID_ARGUMENT，字段null/类型错误仍要求violations。WEB02按Q12已确认的可见禁用规则，WEB17使用真实Redis原生过期。reset用例各自创建目标，不消费运行恢复用例的账号前置状态。
+
+19项STORE现已全部装配并本机通过，单独计数，不混入HTTP122。STORE02/06先核对真实短TTL/旧创建时间；STORE11内部提交错误500且无残留；STORE15真实恢复加密数据库与本case旧Redis DUMP，核对备份后新增账号消失、旧key仍存在、新generation使旧Cookie无效；STORE16透明屏障暂停真实EVAL，退出DEL后释放，不重建旧key。7项原生控制、1项Redis传输资格测试也有独立RED→GREEN。最终head完整CI结果见PR与任务记录，未提前标accepted。

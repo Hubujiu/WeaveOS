@@ -41,3 +41,10 @@ test('Expanded acceptance evidence reports the executed 122 HTTP and 111 browser
     assert.match(runner, /browser:\s*111/);
   }
 });
+
+test('Product runner executes all 19 storage cases and real observer qualifications', () => {
+  const runner = readFileSync(new URL('../../infra/acceptance/run.mjs', import.meta.url), 'utf8');
+  for (const file of ['integration.test.mjs','storage-observer.test.mjs','redis-gate.test.mjs']) assert.ok(runner.includes(file), `${file} must execute in product CI`);
+  assert.match(runner, /storageCases:\s*19/);
+  assert.ok(runner.includes('WEAVEOS_ACCEPTANCE_OBSERVER'));
+});

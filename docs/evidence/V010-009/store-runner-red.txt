@@ -1,0 +1,68 @@
+TAP version 13
+# Subtest: ADR-003/004: isolated PG18/Redis8.2 and ingress preserve service boundaries
+ok 1 - ADR-003/004: isolated PG18/Redis8.2 and ingress preserve service boundaries
+  ---
+  duration_ms: 0.983
+  type: 'test'
+  ...
+# Subtest: Product CI executes migration, HTTPS real API and three browsers; final release remains gated
+ok 2 - Product CI executes migration, HTTPS real API and three browsers; final release remains gated
+  ---
+  duration_ms: 0.352
+  type: 'test'
+  ...
+# Subtest: ADR-004: ingress overwrites forwarded identity, disables shared auth cache and separates API from SPA
+ok 3 - ADR-004: ingress overwrites forwarded identity, disables shared auth cache and separates API from SPA
+  ---
+  duration_ms: 0.3088
+  type: 'test'
+  ...
+# Subtest: Browser container uses init to reap children and explicit isolated shared memory
+ok 4 - Browser container uses init to reap children and explicit isolated shared memory
+  ---
+  duration_ms: 0.2609
+  type: 'test'
+  ...
+# Subtest: Private container-produced fixture is assigned to the authorized host runner without world-readable permissions
+ok 5 - Private container-produced fixture is assigned to the authorized host runner without world-readable permissions
+  ---
+  duration_ms: 0.2543
+  type: 'test'
+  ...
+# Subtest: Expanded acceptance evidence reports the executed 122 HTTP and 111 browser cases
+ok 6 - Expanded acceptance evidence reports the executed 122 HTTP and 111 browser cases
+  ---
+  duration_ms: 0.5985
+  type: 'test'
+  ...
+# Subtest: Product runner executes all 19 storage cases and real observer qualifications
+not ok 7 - Product runner executes all 19 storage cases and real observer qualifications
+  ---
+  duration_ms: 0.5926
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-009\\tests\\acceptance\\topology.test.mjs:45:1'
+  failureType: 'testCodeFailure'
+  error: 'integration.test.mjs must execute in product CI'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-009/tests/acceptance/topology.test.mjs:47:105)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 6
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 67.6422
