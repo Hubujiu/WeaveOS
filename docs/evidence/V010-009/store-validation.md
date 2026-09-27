@@ -19,3 +19,6 @@
 上述存储命令设置WEAVEOS_ACCEPTANCE_PROJECT、WEAVEOS_ACCEPTANCE_FIXTURES、WEAVEOS_ACCEPTANCE_COMPOSE、WEAVEOS_ACCEPTANCE_OBSERVER、WEAVEOS_API_URL和NODE_EXTRA_CA_CERTS，值指向同一私有隔离栈。CI由runner自动设置，在Linux19443运行；此证据不授权对部署地址执行。初次恢复后短暂502通过跨Nginx一秒DNS TTL的真实/health/ready稳定检查解决，未重试产品用例或改变业务断言。
 
 业务修复仅区分PG内部语句/提交失败500与连接、资源、停服等依赖错误503；已登记业务错误仍保持400/409。测试工具使用Docker原生SQL/Redis，恢复复用backupDatabase/restoreDatabase/recoverRuntime；没有迁移改写、产品后门、mock成功或门禁放宽。原始RED源码zip可在squash后恢复，摘要见STORE-SHA256SUMS。远端最终head CI必须独立核对，本地19通过不替代完整产品/恢复/三浏览器验收。
+
+Go认证/seed在独立weaveos_store_go_test与Redis DB15执行go test -race -p 1 -count=1 ./internal/auth ./cmd/acceptance-seed及go vet ./...，exit0，见store-go-green.txt。STORE-SHA256SUMS只登记不可变zip源码归档；TAP文本保留原始断言/空白，由Git统一换行，不将其跨平台字节差异误当源码损坏。
+
