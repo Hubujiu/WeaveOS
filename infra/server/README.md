@@ -14,6 +14,8 @@ ssh -o ExitOnForwardFailure=yes -N -L 127.0.0.1:19443:127.0.0.1:19443 43.133.34.
 
 打开`https://localhost:19443/login`或`/register`。使用本机自签名证书；可从服务器取回`/opt/weaveos-v010/tls/cert.pem`并核对SHA256后信任，禁止取回或公开私钥。证书有效一年，监控提前3天告警，届时按原运行手册替换并reload。
 
+2026-09-27 Q16更新：用户选择Let’s Encrypt + ACME自动续期，域名`weave.hubujiu.site`；不安装本地CA。DNSPod DNS-01所需API凭据尚未可用，签发/替换/续期仍BLOCKED，当前自签TLS和浏览器警告保持。用户授权可使用已有主账号API；服务器root SSH不能替代DNSPod API。凭据请保存在`/opt/weaveos-v010/secrets/acme.env`0600，两项`Tencent_SecretId`/`Tencent_SecretKey`，不发聊天。代码目前只有已测试计划与证书/文件回退函数，运维CLI显式拒绝，不能把计划当已启用的续期器。正式信任链、域名probe/Compose/cron与签发安装须凭据后完成验证和装配。
+
 初始账号仅`bootstrap-admin`。随机密码保存在服务器`/opt/weaveos-v010/admin.json`和部署者本机`.work/deploy/admin.json`，Unix0600/Windows当前SID独占ACL。不要复制到仓库、Notion、日志或公共证据。用户可通过已有SSH在自己的终端读取该私有文件。未导入验收用户、禁用用户、测试邀请码或Session。
 
 ## 运行与停止

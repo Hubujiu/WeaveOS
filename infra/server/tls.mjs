@@ -1,6 +1,7 @@
 import {X509Certificate,createPublicKey} from 'node:crypto';
 import {readFileSync,renameSync,unlinkSync} from 'node:fs';
 import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {privateFile} from '../runtime/backup.mjs';
 import {acmePlan} from './acme.mjs';
 
@@ -37,3 +38,7 @@ export function replaceCertificateFiles(directory,chain,key,checkAndReload) {
   for(const file of [nextCert,nextKey])try{unlinkSync(file);}catch{}
  }
 }
+
+// Operational activation is still blocked on Q16 DNS credentials. Never let
+// a premature ACME reload hook silently report success without deploying TLS.
+if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href)throw Error('TLS activation pending DNS credentials and verified operational wiring');

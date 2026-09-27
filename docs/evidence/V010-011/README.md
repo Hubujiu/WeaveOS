@@ -37,3 +37,13 @@
 installed.json、client-runtime.json、server-runtime.txt、transfer.json记录真实事实。五容器最后空闲采样约99MiB，系统可用2372MiB、磁盘14GB；没有在2核4GB压测，不承诺并发能力。数据/备份/密钥仍同机，自签名TLS、文件告警；无这台服务器的恢复演练或旧服务器发布回滚。原同制品CI的恢复/回滚不是本服务器执行证据。
 
 私有资料在本机.work和服务器0700目录，不入Git。SHA清单只覆盖公开证据，不含真实凭据。审批/冻结/上线状态保持；发布仅为SSH受控访问。最终任务接受仍需匹配最终head CI及remote main同ID/merged PR。
+
+## Q16 TLS准备与阻塞
+
+用户已确认Let’s Encrypt/ACME、weave.hubujiu.site与DNS API（可用现有主账号），Notion Q16/PRD/ADR004已回写重读。Windows默认curl真实SEC_E_UNTRUSTED_ROOT；指定原证书健康200。拟议本地CA仅准备于私有.work，未信任/上传；用户未批准该方案。当前无DNS凭据，服务仍原TLS/localhost，同源和续期尚未替换。
+
+ACME计划声明与独立用例于1ccf416实际6G1R→18e7582实际7G；cert/key/expiry独立拒绝与Nginx失败回退声明于c820f3a实际7G6R→21118c9实际13G，见acme-plan-red/green与tls-red/green。回放时把red.mjs复制回infra/server对应模块、red.test.mjs复制回tests/governance/server-deployment.test.mjs，在独立临时checkout运行相同node --test命令；不得覆盖当前工作树。测试中的OpenSSL生成全新临时证书/密钥并清理，不将真实密钥提交；文件回退使用真实临时文件，Nginx回调为外部边界模拟，不冒充真实服务器替换。运维CLI未装配并显式拒绝，签发/安装/续期NOT RUN。
+
+acme.sh3.1.6源码在本机私有.work/acme-source固定；git verify-tag实际Good signature（维护者github@neilpang.com，ED25519 SHA256:M60qVafm/NUywQHXAkoQcj2v6KgkfrdSXv6mPejUUeE），精确commit807da6498377ee5e0cf43a78091f46f12dc59a89。未执行安装器、未推送或运行服务器，未自动更新上游。
+
+原e67e7a1产品CI36295508569 Gitleaks失败；本机私下复现仅SHA256.json四个bootstrap-credentials文件名+公开摘要命中generic-api-key。清单改为path/sha256数组，所有原非文档证据字节/摘要不变，没有allowlist、skip或扫描门槛变更。TDD:N/A，仅文档格式；修订提交另实跑相同扫描。最终本机治理/底座70/70、结构检查/任务/diff通过。新增RED日志/源码也加入摘要清单。
