@@ -37,3 +37,5 @@ GREEN：同配置全部组件测试，35/35通过，退出0，见green.txt。`pn
 最终跨浏览器：24/24通过，退出0。永久文本日志仅去除行尾空白，保留失败及执行内容；哈希按整理后的LF文本生成。PR15首轮pr=null身份检查失败在登记真实PR编号后修正，未改变门禁。最终head CI按 https://github.com/Hubujiu/WeaveOS/pull/15/checks 查询。
 
 最终head1602f2c的真实产品验收通过，后续安全单测25/26；唯一失败是Gitleaks将sha256-lf.json第2行的auth-red.spec.ts校验哈希识别成generic-api-key。同版本同digest扫描器在本机git archive上复现退出1，私有去敏报告仅这一命中；重新计算全部4个文件LF哈希逐个相等，确认是本轮生成的证据摘要，不是凭据。现将摘要对象改为明确path/sha256字段数组；不改扫描器/规则/白名单或业务代码。下一条命令：对修正后的HEAD归档运行原Gitleaks检查。
+
+安全修正GREEN：对27a2200实际执行 node --test --test-name-pattern 'tracked source archive' infra/runtime/security.test.mjs，1/1通过、退出0。最终补充本段记录后再次扫描HEAD，成功后推送。流水线失败保留在run36327790539；未跳过安全检查。
