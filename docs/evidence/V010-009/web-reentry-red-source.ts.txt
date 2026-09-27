@@ -227,7 +227,7 @@ test('WEB-10 FR-017: registration returns to login and requires password re-entr
   for (const label of ['密码', '确认密码']) await page.getByLabel(label, { exact: true }).fill('Synthetic@123');
   await page.getByRole('button', { name: '注册', exact: true }).click();
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
-  await expect(page.getByLabel('密码', { exact: true }), 'password is not carried into login').toHaveValue('');
+  expect(await page.getByLabel('密码', { exact: true }).inputValue() === '', 'password is not carried into login').toBe(true);
 });
 
 test('WEB-11 PRD UX: login shows pending state and blocks duplicate submit during a real request', async ({ page }) => {
