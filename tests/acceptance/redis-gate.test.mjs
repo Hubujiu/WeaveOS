@@ -21,6 +21,7 @@ test('transport barrier holds actual Redis EVAL while independent DEL proceeds',
     await fetch(url+'/arm',{method:'POST',body:JSON.stringify({key})});
     inFlight = promisify(execFile)('docker',['exec',redisName,'redis-cli','-h',name,'EVAL',"return redis.call('SET',KEYS[1],'after','XX','PX',60000)",'1',key],{encoding:'utf8'});
     for (let i=0;i<100;i++) { if ((await (await fetch(url+'/status')).json()).observed) break; await new Promise(resolve=>setTimeout(resolve,10)); }
+    assert.equal((await (await fetch(url+'/status')).json()).observed,true,'the actual EVAL must reach the barrier');
     assert.equal(native('GET',key),'before','armed EVAL must not execute before release');
     assert.equal(native('DEL',key),'1','DEL must proceed while EVAL is held');
     await fetch(url+'/release',{method:'POST'}); await inFlight;

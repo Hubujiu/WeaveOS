@@ -161,7 +161,12 @@ test('STORE-16 FR-009: deterministic delete-before-renewal never restores logged
     await barrier.waitUntilHeld(); // Real request passed authentication but has not committed touch.
     assert.equal((await send(routes.current, { method: 'DELETE', session })).status, 204);
     assert.equal(await o.sessionPTTL(session.auth), -2);
-  } finally { await barrier.release(); await inFlight; }
+  } finally {
+    await barrier.release();
+    // A transport timeout (503) must not masquerade as executing the delayed
+    // renewal against the deleted key. The real Redis result must deny identity.
+    await envelope(await inFlight, 401, 'AUTH_UNAUTHENTICATED');
+  }
   assert.equal(await o.sessionPTTL(session.auth), -2);
   await envelope(await send(routes.current, { session }), 401, 'AUTH_UNAUTHENTICATED');
 });
