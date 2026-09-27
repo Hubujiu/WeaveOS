@@ -1,10 +1,25 @@
 import {X509Certificate,createPublicKey} from 'node:crypto';
-import {readFileSync,renameSync,unlinkSync} from 'node:fs';
+import {readFileSync,renameSync,unlinkSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {privateFile} from '../runtime/backup.mjs';
 import {acmePlan} from './acme.mjs';
-export function deployCertificate() {}
+import {serverContext} from './context.mjs';
+import {receiveCodes} from '../runtime/monitor.mjs';
+export function deployCertificate(c=serverContext()) {
+ const certificate=resolve(c.dir,'acme-stage/cert.pem'),keyFile=resolve(c.dir,'acme-stage/key.pem');
+ const chain=readFileSync(certificate),key=readFileSync(keyFile);
+ try{
+  const identity=validateCertificate(chain,key);
+  try{c.command('openssl',['verify','-purpose','sslserver','-verify_hostname',identity.domain,'-untrusted',certificate,certificate]);}catch{throw Error('Certificate system trust rejected');}
+  replaceCertificateFiles(resolve(c.dir,'tls'),chain,key,()=>{
+   c.compose('exec','-T','nginx','nginx','-t');
+   c.compose('exec','-T','nginx','nginx','-s','reload');
+  });
+  writeFileSync(resolve(c.dir,'tls/public-trust-ready'),identity.domain+'\n',{mode:0o600});
+  return identity;
+ }finally{key.fill(0);}
+}
 
 export function validateCertificate(chain,key,now=Date.now()) {
  const leaf=new X509Certificate(chain),domain=acmePlan().domain;
@@ -40,6 +55,13 @@ export function replaceCertificateFiles(directory,chain,key,checkAndReload) {
  }
 }
 
-// Operational activation is still blocked on Q16 DNS credentials. Never let
-// a premature ACME reload hook silently report success without deploying TLS.
-if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href)throw Error('TLS activation pending DNS credentials and verified operational wiring');
+if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
+ process.umask(0o077);
+ try{
+  if(process.argv[2]!=='deploy')throw Error('TLS operation rejected');
+  console.log(JSON.stringify({status:'passed',...deployCertificate()}));
+ }catch{
+  receiveCodes('/opt/weaveos-v010/alerts.jsonl',['CERTIFICATE']);
+  console.error('TLS activation failed; previous active certificate retained or restored');process.exitCode=1;
+ }
+}
