@@ -32,7 +32,9 @@ for (const route of ['/login', '/register']) {
       expect.soft(card!.y + card!.height / 2).toBeCloseTo((112 + sample.height - 22) / 2, 0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       for (const input of await page.locator('.field-input').all()) {
-        expect((await input.boundingBox())!.height).toBe(56);
+        // Keep Figma's exact CSS height; Firefox DOMRect subtraction can differ by <0.0001px.
+        await expect(input).toHaveCSS('height', '56px');
+        expect((await input.boundingBox())!.height).toBeCloseTo(56, 3);
       }
     });
   }
