@@ -25,13 +25,13 @@
 
 ## 原型与组件入口
 
-登录： https://www.figma.com/design/9UE263yT1anH3KG9qBjXiT?node-id=26-423
+登录： https://www.figma.com/design/r0mSerkjrPdwJVME658W6a/WaveOS?node-id=13-2
 
-注册： https://www.figma.com/design/9UE263yT1anH3KG9qBjXiT?node-id=26-439
+注册： https://www.figma.com/design/r0mSerkjrPdwJVME658W6a/WaveOS?node-id=40-2
 
 组件库： https://github.com/Hubujiu/React- 。先实际读取其 `AGENTS.md`，再按其路由读取消费规则与批准登记。需要 Notion「组件库收藏」时用授权连接器定位对应数据库，不编造 ID。不能把收藏状态推定为允许采用/修改；没有批准的匹配组件时报告 `COMPONENT_GAP`。
 
-此处仅保存 PRD 中的原型链接；本次初始化未读取或验收 Figma 画布，未导入组件。
+2026-09-26 用户指定 WaveOS 文件替换旧原型；以上链接已先回写并复核正式 PRD。V010-006 已读取这两个节点的高保真上下文和截图，正在实现；Q12 已确认登录页额外入口保持可见、置灰、不可点击，已回写并复核 PRD/Figma；本期不实现找回、第三方登录或记住账号功能。此索引不代表页面验收完成。
 
 ## 状态与完整性门禁
 
@@ -41,4 +41,4 @@
 
 未授权、无工具、缺页、无法恢复截断或来源冲突：报告具体阻塞，停止依赖缺失信息的行为实现。可继续不依赖这些内容的本地维护，但必须明确范围，不得声称满足未读的产品规范。不得要求用户逐页复制来代替已可用的连接器读取。
 
-默认只读 Notion。代码任务不授予修改 PRD、将 ADR 改成已接受、宣布上线或更新功能底账为已实现的权限。确需同步应说明变更、取得授权并复核写入结果。
+默认只读 Notion。代码任务不授予修改 PRD、将 ADR 改成已接受、宣布上线或更新功能底账为已实现的权限。用户 2026-09-25 已明确授权：在[项目入口](https://app.notion.com/p/3e42f5a9e64880ae9cf5ebbd2088d773)下使用[临时阻塞问题清单](https://app.notion.com/p/3e62f5a9e648814497c8df6bf27c8724)集中提问；收到答复后，将已确认内容按范围回写到 PRD、适用 ADR/数据文档与 Figma 对应节点并复核。未答复或未回写的内容不能冒充正式来源已更新，审批状态与上线标记不自动改变。具体顺序与授权边界见根 AGENTS。

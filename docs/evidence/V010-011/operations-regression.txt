@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: encrypted dump is authenticated AES256-GCM readable independently
+ok 1 - encrypted dump is authenticated AES256-GCM readable independently
+  ---
+  duration_ms: 2.1359
+  type: 'test'
+  ...
+# Subtest: restore opens a separately created authenticated dump
+ok 2 - restore opens a separately created authenticated dump
+  ---
+  duration_ms: 0.3996
+  type: 'test'
+  ...
+# Subtest: wrong key, truncated bytes, modified tag/header/ciphertext never produce a restore
+ok 3 - wrong key, truncated bytes, modified tag/header/ciphertext never produce a restore
+  ---
+  duration_ms: 0.5995
+  type: 'test'
+  ...
+# Subtest: CI and full product pipeline provide separate real archive storage before audit tests
+ok 4 - CI and full product pipeline provide separate real archive storage before audit tests
+  ---
+  duration_ms: 2.855
+  type: 'test'
+  ...
+# Subtest: local runtime Redis cannot resurrect historical Session files or silently evict sessions
+ok 5 - local runtime Redis cannot resurrect historical Session files or silently evict sessions
+  ---
+  duration_ms: 0.5489
+  type: 'test'
+  ...
+# Subtest: runtime uses restricted immutable applications and automatic controlled audit maintenance
+ok 6 - runtime uses restricted immutable applications and automatic controlled audit maintenance
+  ---
+  duration_ms: 1.2734
+  type: 'test'
+  ...
+# Subtest: only ingress has a publishable network; authentication and data remain on closed networks
+ok 7 - only ingress has a publishable network; authentication and data remain on closed networks
+  ---
+  duration_ms: 0.4832
+  type: 'test'
+  ...
+# Subtest: CI validates actual release images and delivery requires complete user signoff before publishing a tested bundle
+ok 8 - CI validates actual release images and delivery requires complete user signoff before publishing a tested bundle
+  ---
+  duration_ms: 0.5328
+  type: 'test'
+  ...
+# Subtest: CI disk preparation is restricted to the hosted Linux runner and one unused SDK
+ok 9 - CI disk preparation is restricted to the hosted Linux runner and one unused SDK
+  ---
+  duration_ms: 0.2778
+  type: 'test'
+  ...
+# Subtest: operational faults produce fixed safe alarms from independently defined samples
+ok 10 - operational faults produce fixed safe alarms from independently defined samples
+  ---
+  duration_ms: 1.3405
+  type: 'test'
+  ...
+# Subtest: local receiver actually persists redacted alerts, including backup failure
+ok 11 - local receiver actually persists redacted alerts, including backup failure
+  ---
+  duration_ms: 7.5077
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 247.6421

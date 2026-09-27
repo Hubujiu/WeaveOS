@@ -1,0 +1,57 @@
+# V010-011 真实部署与配置证据
+
+独立来源：本轮用户指定服务器仅运行成品，并选择Q15选项1；PRD/ADR004已先同步并读回。无需更改认证/UI规则。所有产品行为沿用main6e94610的已验收OCI。
+
+## RED → GREEN
+
+所有配置测试在Windows本机Node22执行；失败都到达目标断言，不以网络、编译或缺依赖当RED。工作分支先提交测试/声明后实现，快照保留，不仅依赖分支。
+
+| 阶段 | RED事实 | GREEN事实 | 永久快照 |
+| --- | --- | --- | --- |
+| 配置 | cf23cc4，3/3失败，exit1：缺回环拓扑、持久重启与目录覆盖拒绝 | 493946e，3/3 exit0 | plan-red.mjs / plan-red.test.mjs / config-red.txt / config-green.txt |
+| 运维上下文 | 0061d31，3G1R，exit1：缺非法路径拒绝 | d4ab815，4/4 exit0 | context-red.mjs / context-red.test.mjs / context-red.txt / context-green.txt |
+| 定时运行 | bf0e6da，4G1R，exit1：缺周期、TLS信任与互斥 | b2ea09f包含GREEN，5/5 exit0 | schedules-red.mjs / schedules-red.test.mjs / schedules-red.txt / schedules-green.txt |
+| 私有凭据文件 | 初次Windows客户端登录400（缺password，未创建Session）；b2ea09f，5G1R，exit1：期望独立合成Seed的password字段而实际遗漏 | 修复包装函数与私有文件后6/6 exit0，客户端登录201 | bootstrap-credentials-red.mjs / bootstrap-credentials-red.test.mjs / bootstrap-credentials-red.txt / bootstrap-credentials-green.txt |
+
+预期：Q15回环HTTPS、不在服务器构建/测试；ADR004可恢复运行、日志/资源预算、备份/告警；既有初始化规则必须传合法密码且只初始化Bootstrap。运维ctx测试用命令spy确认实际适配器发送的目标及参数，不将spy当真实备份；真实备份另外记录。6项新配置测试自动纳入现有governance CI。
+
+复核命令：`node --test tests/governance/*.test.mjs tests/foundation/*.test.mjs`，63/63 exit0；`node --test infra/runtime/config.test.mjs infra/runtime/backup-crypto.test.mjs infra/runtime/monitor.test.mjs`，11/11 exit0；verify-repo/check-tasks/diff exit0。这些在本机执行，不在运行服务器执行。
+
+## 部署命令与事实
+
+1. 严格SSH known_hosts只读核查：Debian13.2、2核3665MiB、Docker26.1.5/Compose2.26.1，无容器/镜像/卷，原构建缓存19.35GB保留。
+2. 既有`importArtifacts`完整校验原GitHub成品；本机`docker save`为Docker26兼容转移，仅归档转换。TRANSFER记录原OCI摘要、兼容归档SHA/层/source。
+3. 本机Docker Go1.27.1编译既有Goose3.28/accepted seed；既有seed仅在本机无公开端口的独立PG生成。只导出唯一Bootstrap行、凭据哈希和初始化事件；其余账号/邀请码fixture不传服务器。本机准备容器停止保留，没有清其他worktree现场。
+4. 新目录`/opt/weaveos-v010`0700，scp允许清单私有包（不含fixtures/seed.env），以及原GitHub签名artifact直下；GitHub认证token没有发送服务器，签名URL不保存。
+5. 服务器运行`node install.cjs`，先核ZIP、OCI manifest/config，再加载兼容归档，逐项比较image config ID/RootFS.layers/source。全部成功后启动PG/Redis。原ZIP摘要4f8594b0…5019。
+6. 初次将dotenv作为Shell读取，URL里的&误解析，Goose未应用迁移；这是运行命令错误，不计业务行为RED。检查Goose可执行、auth schema缺失后，`node resume.cjs`直接按dotenv数据传docker exec环境值；冷热Goose均v1 applied。未重建、清卷或重复创建库。
+7. Bootstrap SQL只允许空用户表；真实结果users=1/admin=1、invitations=0。按既有roles/cold-roles授权，秘密随机生成；同源来源localhost19443、generation新值。
+8. 五服务`unless-stopped`，Docker开机enabled；curl受信当前CA确认ready200。首次私有密码文件因使用大写Password而遗漏实际小写password；修复前文件保留，新文件0600替换，不改数据库哈希。
+9. Windows隐藏SSH隧道进程68140已启动；`NODE_EXTRA_CA_CERTS=…/cert.pem node .work/client-check.mjs`确认页面/资产/health200、实际管理员登录201、身份200、退出204。只保留状态，无密码/Cookie；这属于客户端运行确认，不在服务器安装/执行产品测试。
+10. 复用原AES-GCM与probe/monitor：服务器首次冷热备份160/153ms、运行确认后再备份151/153ms；受限备份角色。测试过的cron配置每天03:15 + 每5分钟，flock避免重叠；cron active，首次计划采样operations.log为0字节（无告警），文件0600。无外发通知。
+
+`install-original.cjs`、`prepare-original.mjs`和`migration-continuation.cjs`保留当时真实操作源码，包含已披露的历史缺陷。它们是证据，不能盲目作为新环境安装器执行；没有秘密字面值。正确包装入口为最终bootstrapCredentials，最终运维配置为infra/server。
+
+## 运行边界
+
+installed.json、client-runtime.json、server-runtime.txt、transfer.json记录真实事实。五容器最后空闲采样约99MiB，系统可用2372MiB、磁盘14GB；没有在2核4GB压测，不承诺并发能力。数据/备份/密钥仍同机，自签名TLS、文件告警；无这台服务器的恢复演练或旧服务器发布回滚。原同制品CI的恢复/回滚不是本服务器执行证据。
+
+私有资料在本机.work和服务器0700目录，不入Git。SHA清单只覆盖公开证据，不含真实凭据。审批/冻结/上线状态保持；发布仅为SSH受控访问。最终任务接受仍需匹配最终head CI及remote main同ID/merged PR。
+
+## Q16 TLS准备与阻塞
+
+用户已确认Let’s Encrypt/ACME、weave.hubujiu.site与DNS API（可用现有主账号），Notion Q16/PRD/ADR004已回写重读。Windows默认curl真实SEC_E_UNTRUSTED_ROOT；指定原证书健康200。拟议本地CA仅准备于私有.work，未信任/上传；用户未批准该方案。当前无DNS凭据，服务仍原TLS/localhost，同源和续期尚未替换。
+
+ACME计划声明与独立用例于1ccf416实际6G1R→18e7582实际7G；cert/key/expiry独立拒绝与Nginx失败回退声明于c820f3a实际7G6R→21118c9实际13G，见acme-plan-red/green与tls-red/green。回放时把red.mjs复制回infra/server对应模块、red.test.mjs复制回tests/governance/server-deployment.test.mjs，在独立临时checkout运行相同node --test命令；不得覆盖当前工作树。测试中的OpenSSL生成全新临时证书/密钥并清理，不将真实密钥提交；文件回退使用真实临时文件，Nginx回调为外部边界模拟，不冒充真实服务器替换。运维CLI未装配并显式拒绝，签发/安装/续期NOT RUN。
+
+acme.sh3.1.6源码在本机私有.work/acme-source固定；git verify-tag实际Good signature（维护者github@neilpang.com，ED25519 SHA256:M60qVafm/NUywQHXAkoQcj2v6KgkfrdSXv6mPejUUeE），精确commit807da6498377ee5e0cf43a78091f46f12dc59a89。未执行安装器、未推送或运行服务器，未自动更新上游。
+
+原e67e7a1产品CI36295508569 Gitleaks失败；本机私下复现仅SHA256.json四个bootstrap-credentials文件名+公开摘要命中generic-api-key。清单改为path/sha256数组，所有原非文档证据字节/摘要不变，没有allowlist、skip或扫描门槛变更。TDD:N/A，仅文档格式；修订提交另实跑相同扫描。最终本机治理/底座70/70、结构检查/任务/diff通过。新增RED日志/源码也加入摘要清单。
+
+## Q16 实际恢复与完成（覆盖旧阻塞/NOT RUN记录）
+
+凭据已由用户私有附件提供、明确授权长期存储，CSV与转换env保存在服务器root:0600文件；无秘密内容/ID/摘要入本证据。CSV/域名Origin/cron真实RED→GREEN见acme-wiring-red/green；8dc9e18/ec302fa→0c5e224，20GREEN。固定操作/环境传密钥/去敏失败、信任优先激活与域名默认trustprobe见acme-operational-red/green，dba96f3→d1cc4e9，3RED→23GREEN；IPv4查找见domain-ipv4-red/green，6a23451→f3dd76c，1RED→24GREEN。各测试源码与无行为占位/缺行为模块已保留。命令均本机`node --test tests/governance/server-deployment.test.mjs`，REDexit1/GREENexit0。命令边界spy不当作真实Nginx/ACME。
+
+首轮register/issue因WindowsGit归档CRLF导致Shell语法exit2，未操作DNS；用`git -c core.autocrlf=false archive`签名固定commit重新生成LF归档，双方摘要9aacfd809a6c55b75d26a7239b417ae9cdd3cb002eebfab890fb0fcc0117fa36匹配，客户端版本3.1.6。此为环境错误，不计行为RED。实际register/issue/install/renew均exit0；DNSPod自动TXT验证、Let’s Encrypt单域名签发、系统链验证、私钥匹配、Nginx-t及reload完成。首次续期检查成功且未到期，不声称已执行未来续签。私有日志保留在服务器，不公开复制。
+
+trusted-client-runtime.json记录默认系统信任的客户端运行确认，未使用-k/额外CA/忽略HTTPS。Chrome域名窗口正常打开/标题WeaveOS/安全上下文true；仅该窗口域名解析到SSH回环，未改hosts/Root/A记录。旧localhost入口不再匹配，其他应用不继承窗口规则。实际Origin、loopback端口、密钥权限、cron与保存目标见acme-runtime.json。源NotionQ16/ADR004/PRD已实际回写读回，GitHub最终验收另核对。

@@ -12,6 +12,10 @@
 | [V010-006](V010-006.md) | 登录/注册UI | 002；可与后端并行 | task/V010-006-web / ../WeaveOS-worktrees/V010-006 |
 | [V010-007](V010-007.md) | 真实全栈集成和E2E | 003、004、005、006 | task/V010-007-acceptance / ../WeaveOS-worktrees/V010-007 |
 | [V010-008](V010-008.md) | 发布、恢复、安全债务验收 | 007 | task/V010-008-release / ../WeaveOS-worktrees/V010-008 |
+| [V010-011](V010-011.md) | 已验收成品服务器运行（SSH隧道） | 008 | task/V010-011-server / ../WeaveOS-worktrees/V010-011 |
+| [V010-010](V010-010.md) | Notion 阻塞问题集中答复与来源规则 | 002 | task/V010-010-source-truth / ../WeaveOS-worktrees/V010-010 |
+| [V010-012](V010-012.md) | Figma 自适应布局与手工浏览器视口修复 | 006 | task/V010-012-responsive / ../WeaveOS-worktrees/V010-012 |
+| [V010-013](V010-013.md) | PR 收尾规则与遗留工作树清理 | 001 | task/V010-013-cleanup / ../WeaveOS-worktrees/V010-013 |
 
 只领取依赖已经验收的任务。后续任务尚未启动，分支和工作树在领取时创建，不伪造Agent运行。共享契约由002维护；存储归003；Session归004；领域/HTTP装配归005；视觉/组件归006；跨层验证归007；运行配置归008。变更他人目录先登记协调，不跨任务覆盖。
 

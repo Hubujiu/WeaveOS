@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -13,7 +14,7 @@ import (
 // A nil check means composition is incomplete, never an implicit success.
 type ReadyCheck func(context.Context) error
 
-func NewHandler(check ReadyCheck) http.Handler {
+func NewHandler(check ReadyCheck, business ...http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -48,6 +49,10 @@ func NewHandler(check ReadyCheck) http.Handler {
 				return
 			}
 			write(http.StatusOK, map[string]string{"status": "ready"})
+			return
+		}
+		if len(business) == 1 && business[0] != nil && strings.HasPrefix(r.URL.Path, "/api/") {
+			business[0].ServeHTTP(w, r)
 			return
 		}
 		write(http.StatusNotFound, struct {
