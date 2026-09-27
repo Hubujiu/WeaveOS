@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { serverCompose, requireEmptyDirectory } from './plan.mjs';
-const runtime=JSON.parse(readFileSync(new URL('../runtime/compose.json',import.meta.url)));
+import { serverCompose, requireEmptyDirectory } from '../../infra/server/plan.mjs';
+const runtime=JSON.parse(readFileSync(new URL('../../infra/runtime/compose.json',import.meta.url)));
 test('Q15 server exposes only loopback HTTPS and preserves internal data network',()=>{
  const c=serverCompose(runtime);
  assert.deepEqual(c.services?.nginx?.ports,['127.0.0.1:19443:19443']);
