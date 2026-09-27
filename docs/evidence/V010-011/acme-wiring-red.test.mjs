@@ -20,13 +20,17 @@ test('provided CSV is data only and maps exactly one credential pair without exe
   assert.throws(()=>credentialsFromEnv('Tencent_SecretId=sample-id\nTencent_SecretKey=$(execute)\n'),/credential/i);
  });
 });
-test('Q16 public-trust domain config keeps the SSH listener and schedules automatic renewal',()=>{
+test('Q16 public-trust domain config keeps the SSH listener and schedules automatic renewal',async t=>{
  const c=serverCompose(runtime,{publicTLS:true});
- assert.equal(c.services.bff.environment.WEAVEOS_PUBLIC_ORIGIN,'https://weave.hubujiu.site:19443');
- assert.deepEqual(c.services.nginx.ports,['127.0.0.1:19443:19443']);
+ await t.test('domain origin with loopback only',()=>{
+  assert.equal(c.services.bff.environment.WEAVEOS_PUBLIC_ORIGIN,'https://weave.hubujiu.site:19443');
+  assert.deepEqual(c.services.nginx.ports,['127.0.0.1:19443:19443']);
+ });
  const cron=serverSchedules({publicTLS:true});
- assert.match(cron,/^33 2,14 \* \* \* root .*flock -n .*acme\.lock .*acme-run\.mjs renew/m);
- assert.doesNotMatch(cron,/NODE_EXTRA_CA_CERTS/);
+ await t.test('renew twice daily without self-signed trust',()=>{
+  assert.match(cron,/^33 2,14 \* \* \* root .*flock -n .*acme\.lock .*acme-run\.mjs renew/m);
+  assert.doesNotMatch(cron,/NODE_EXTRA_CA_CERTS/);
+ });
 });
 test('Q16 validates the actual certificate host, private key and remaining lifetime before replacement',async t=>{
  const dir=mkdtempSync(join(tmpdir(),'weaveos-certificate-'));
