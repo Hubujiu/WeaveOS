@@ -1,0 +1,2 @@
+import { preview } from '../apps/web/node_modules/vite/dist/node/index.js';
+await preview({ root: new URL('../apps/web/', import.meta.url).pathname.replace(/^\/(\w:)/, '$1'), configFile: false, preview: { host: '127.0.0.1', port: 18750, strictPort: true, proxy: { '/api': 'http://127.0.0.1:18749', '/health': 'http://127.0.0.1:18749' } } });

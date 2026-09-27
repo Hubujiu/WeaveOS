@@ -1,0 +1,9 @@
+import original from '../playwright.config';
+import { resolve } from 'node:path';
+const cwd = resolve(__dirname, '..');
+export default { ...original, testDir: '../tests', reporter: [['line']], outputDir: './browser-red', use: { ...original.use, baseURL: 'http://127.0.0.1:18750', trace: 'off', screenshot: 'off', video: 'off' }, webServer: [
+{ command: '"' + resolve(cwd, '.work/bff.exe') + '"', cwd, url: 'http://127.0.0.1:18749/health/live', env: { BFF_ADDR: '127.0.0.1:18749' }, timeout: 120000 },
+{ command: 'node .work/preview.mjs', cwd, url: 'http://127.0.0.1:18750', timeout: 120000 }
+] };
+
+

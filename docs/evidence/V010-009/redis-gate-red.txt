@@ -1,0 +1,33 @@
+TAP version 13
+# Subtest: transport barrier holds actual Redis EVAL while independent DEL proceeds
+not ok 1 - transport barrier holds actual Redis EVAL while independent DEL proceeds
+  ---
+  duration_ms: 1799.3039
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-009\\tests\\acceptance\\redis-gate.test.mjs:7:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    armed EVAL must not execute before release
+    
+    'after' !== 'before'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'before'
+  actual: 'after'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-009/tests/acceptance/redis-gate.test.mjs:24:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1863.3062

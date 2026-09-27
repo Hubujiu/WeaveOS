@@ -32,11 +32,14 @@ type credentials struct {
 }
 
 type fixtureUser struct {
-	ID      string `json:"id"`
-	Account string `json:"account"`
+	Password string `json:"password"`
+	ID       string `json:"id"`
+	Account  string `json:"account"`
 }
 
 type fixture struct {
+	UserID        string            `json:"userId"`
+	AdminID       string            `json:"adminId"`
 	Admin         credentials       `json:"admin"`
 	User          credentials       `json:"user"`
 	Disabled      credentials       `json:"disabled"`
@@ -132,7 +135,7 @@ func run(ctx context.Context, cfg config) (runErr error) {
 	if err != nil {
 		return err
 	}
-	result := fixture{Admin: admin, Invitations: make(map[string]string), UIInvitations: make(map[string]string)}
+	result := fixture{AdminID: adminUser.ID, Admin: admin, Invitations: make(map[string]string), UIInvitations: make(map[string]string)}
 	createInvite := func() (string, error) {
 		code, err := randomToken(32)
 		if err != nil {
@@ -174,7 +177,9 @@ func run(ctx context.Context, cfg config) (runErr error) {
 		user, err := store.Register(ctx, persistence.RegistrationInput{Account: account.Account, PasswordHash: hash, InvitationDigest: digest[:], RequestID: "acceptance-seed-" + label})
 		return account, user, err
 	}
-	result.User, _, err = createUser("user")
+	var user persistence.User
+	result.User, user, err = createUser("user")
+	result.UserID = user.ID
 	if err != nil {
 		return err
 	}
@@ -187,11 +192,12 @@ func run(ctx context.Context, cfg config) (runErr error) {
 		return err
 	}
 	var resetTarget persistence.User
-	_, resetTarget, err = createUser("reset")
+	var resetCredentials credentials
+	resetCredentials, resetTarget, err = createUser("reset")
 	if err != nil {
 		return err
 	}
-	result.ResetTarget = fixtureUser{ID: resetTarget.ID, Account: resetTarget.Account}
+	result.ResetTarget = fixtureUser{ID: resetTarget.ID, Account: resetTarget.Account, Password: resetCredentials.Password}
 	for _, name := range []string{"valid", "concurrent", "rollback", "passwordPolicy"} {
 		result.Invitations[name], err = createInvite()
 		if err != nil {
@@ -199,6 +205,12 @@ func run(ctx context.Context, cfg config) (runErr error) {
 		}
 	}
 	for _, browser := range []string{"chromium", "firefox", "webkit"} {
+		for _, label := range []string{"reentry", "duplicate", "reuse", "pending"} {
+			result.UIInvitations[browser+"-"+label], err = createInvite()
+			if err != nil {
+				return err
+			}
+		}
 		result.UIInvitations[browser], err = createInvite()
 		if err != nil {
 			return err

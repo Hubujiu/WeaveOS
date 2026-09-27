@@ -1,0 +1,33 @@
+✔ HTTP-26 FR-012/016: member cannot invitations with forged ALL headers (64.058787ms)
+✖ HTTP-26 FR-012/016: member cannot reset with forged ALL headers (56.82261ms)
+✔ HTTP-28 FR-012: Bootstrap resets password without disclosure; old password fails (100.453447ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 300.737722
+
+✖ failing tests:
+
+test at tests/acceptance/expanded-api.mjs:191:3
+✖ HTTP-26 FR-012/016: member cannot reset with forged ALL headers (56.82261ms)
+  AssertionError [ERR_ASSERTION]: HTTP status from independent requirement
+  
+  401 !== 201
+  
+      at envelope (file:///repo/tests/acceptance/http.mjs:32:10)
+      at login (file:///repo/tests/acceptance/http.mjs:62:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///repo/tests/acceptance/expanded-api.mjs:195:33)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

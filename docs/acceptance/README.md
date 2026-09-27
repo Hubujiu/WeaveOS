@@ -2,6 +2,12 @@
 
 自动产品验收、运行恢复已通过；2026-09-27用户Q10/Q14三项人工签署已确认，见docs/evidence/V010-008/user-signoff.md。最终验收仍以008最终head CI、远程main任务文档与merged PR事实为准。
 
+## V010-009 测试修复状态（2026-09-27）
+
+上方版本验收记录属于main基线。PR #3冲突已解决，97个扩展HTTP与25个契约HTTP均由api.test.mjs执行，37个浏览器场景在三引擎运行，共111项。本机真实隔离HTTPS运行122个HTTP和111个浏览器通过；随后重置用例隔离修正的3项回归通过，最终提交完整CI仍须实际核对。字段类型violations、邀请码Location、独立fixture和真实Redis过期观察已补齐；Q12断言依据正式PRD核对可见禁用。原始RED及本轮修复证据保留在docs/evidence/V010-009。
+
+用户追加授权后，integration.test.mjs的19项STORE已接入同一真实PG/Redis栈，本机19/19通过，7项原生控制与1项透明传输屏障资格测试通过，并由product runner串行执行。覆盖真实TTL/停用/依赖故障、提交失败回滚、并发消费、去敏、加密PG恢复与原生Redis快照、退出先于续期；未添加业务HTTP测试后门。事务内部错误按ADR-002修复为500，依赖不可用仍503。永久RED源码、日志和执行说明见[store-validation.md](../evidence/V010-009/store-validation.md)；最终head完整远端CI仍须核对。
+
 ## 可重复产品验收
 
 ```sh
@@ -27,8 +33,8 @@ node infra/acceptance/run.mjs
 | Session | internal/session 与 internal/security | 真实Redis一小时TTL、边界/续期、失败不续、退出竞态不复活、generation、当前用户/版本、CSRF |
 | 认证 | internal/auth | 注册/登录/管理、审计原子失败、重置读竞态、禁用、去敏、字段错误、可信代理、401 challenge/人类message |
 | 页面 | apps/web/src/*.component.spec.ts | 23独立表单/错误/Loading/键盘/强度/路由用例，API mock限本层 |
-| 产品HTTP | tests/acceptance/api.test.mjs、response-schema.mjs | 25用例；按真实状态核对OpenAPI的成功/错误/violations、请求ID、缓存、无正文、401头 |
-| 产品浏览器 | tests/acceptance/web.spec.ts | 30用例，三浏览器真实注册/登录/刷新/退出与Cookie/CSRF/前端存储 |
+| 产品HTTP | tests/acceptance/api.test.mjs、response-schema.mjs | 122用例；按真实状态核对OpenAPI的成功/错误/violations、请求ID、缓存、无正文、401头 |
+| 产品浏览器 | tests/acceptance/web.spec.ts | 111用例，三浏览器真实注册/登录/刷新/退出与Cookie/CSRF/前端存储 |
 | 依赖故障 | infra/acceptance/faults.test.mjs | 3用例；实际停止/重启Redis、PG，匿名身份伪造、API404不回SPA、故障503不发Cookie及恢复 |
 | 底座smoke | tests/e2e | 仅平台探针，不计产品用例 |
 | 发布门禁 | scripts/check-release.mjs、v0.1.0.json | 全部自动与用户人工证据；pending不能视为通过 |

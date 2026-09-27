@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: STORE-01 FR-006: newly created Redis Session has native one-hour TTL
+ok 1 - STORE-01 FR-006: newly created Redis Session has native one-hour TTL
+  ---
+  duration_ms: 713.9868
+  type: 'test'
+  ...
+# Subtest: STORE-02 FR-006: successful authentication renews a shortened native TTL
+ok 2 - STORE-02 FR-006: successful authentication renews a shortened native TTL
+  ---
+  duration_ms: 1066.3001
+  type: 'test'
+  ...
+# Subtest: STORE-03 FR-006: rejected CSRF activity does not renew Redis TTL
+ok 3 - STORE-03 FR-006: rejected CSRF activity does not renew Redis TTL
+  ---
+  duration_ms: 1047.9858
+  type: 'test'
+  ...
+# Subtest: STORE-04 FR-006: failed privileged activity does not renew ordinary member TTL
+ok 4 - STORE-04 FR-006: failed privileged activity does not renew ordinary member TTL
+  ---
+  duration_ms: 1016.3265
+  type: 'test'
+  ...
+# Subtest: STORE-05 FR-008: Redis-expired Session is denied and not recreated by reads
+ok 5 - STORE-05 FR-008: Redis-expired Session is denied and not recreated by reads
+  ---
+  duration_ms: 1051.3322
+  type: 'test'
+  ...
+# Subtest: STORE-06 FR-006: old creation time does not impose an absolute lifetime
+ok 6 - STORE-06 FR-006: old creation time does not impose an absolute lifetime
+  ---
+  duration_ms: 1020.4265
+  type: 'test'
+  ...
+# Subtest: STORE-07 ADR-001: disabling user rejects an existing Session
+ok 7 - STORE-07 ADR-001: disabling user rejects an existing Session
+  ---
+  duration_ms: 747.558
+  type: 'test'
+  ...
+# Subtest: STORE-08 PRD fail closed: redis outage denies authenticated access as service failure
+ok 8 - STORE-08 PRD fail closed: redis outage denies authenticated access as service failure
+  ---
+  duration_ms: 3577.8537
+  type: 'test'
+  ...
+# Subtest: STORE-09 PRD fail closed: redis outage cannot report a successful login
+ok 9 - STORE-09 PRD fail closed: redis outage cannot report a successful login
+  ---
+  duration_ms: 8017.2826
+  type: 'test'
+  ...
+# Subtest: STORE-08 PRD fail closed: postgresql outage denies authenticated access as service failure
+ok 10 - STORE-08 PRD fail closed: postgresql outage denies authenticated access as service failure
+  ---
+  duration_ms: 2241.6143
+  type: 'test'
+  ...
+# Subtest: STORE-09 PRD fail closed: postgresql outage cannot report a successful login
+ok 11 - STORE-09 PRD fail closed: postgresql outage cannot report a successful login
+  ---
+  duration_ms: 2197.4576
+  type: 'test'
+  ...
+# Subtest: STORE-10 FR-009: Redis failure cannot falsely confirm logout
+ok 12 - STORE-10 FR-009: Redis failure cannot falsely confirm logout
+  ---
+  duration_ms: 3598.3399
+  type: 'test'
+  ...
+# Subtest: STORE-11 FR-003: forced transaction failure creates no account and does not consume invitation
+not ok 13 - STORE-11 FR-003: forced transaction failure creates no account and does not consume invitation
+  ---
+  duration_ms: 941.4284
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-009\\tests\\acceptance\\integration.test.mjs:95:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    HTTP status from independent requirement
+    
+    503 !== 500
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 500
+  actual: 503
+  operator: 'strictEqual'
+  stack: |-
+    envelope (file:///D:/Workspace/WeaveOS-worktrees/V010-009/tests/acceptance/http.mjs:32:10)
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-009/tests/acceptance/integration.test.mjs:98:15)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: STORE-12 FR-003: concurrent registration commits one user, one credential, one consumption
+ok 14 - STORE-12 FR-003: concurrent registration commits one user, one credential, one consumption
+  ---
+  duration_ms: 4135.4255
+  type: 'test'
+  ...
+# Subtest: STORE-13 ADR-001: registration stores independent salted password hashes, never plaintext
+ok 15 - STORE-13 ADR-001: registration stores independent salted password hashes, never plaintext
+  ---
+  duration_ms: 1285.4122
+  type: 'test'
+  ...
+# Subtest: STORE-14 FR-014: success and failure login events contain required observations without secrets
+ok 16 - STORE-14 FR-014: success and failure login events contain required observations without secrets
+  ---
+  duration_ms: 838.9484
+  type: 'test'
+  ...
+# Subtest: STORE-17 FR-012/014: reset storage and logs contain no plaintext old or fixed password
+ok 17 - STORE-17 FR-012/014: reset storage and logs contain no plaintext old or fixed password
+  ---
+  duration_ms: 1097.4774
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 16
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 34660.5479

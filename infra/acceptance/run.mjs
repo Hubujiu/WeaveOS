@@ -50,7 +50,11 @@ try {
   compose('up', '-d', 'bff', 'nginx');
   node('node --test tests/acceptance/api.test.mjs; pnpm exec playwright test --config apps/web/playwright.integration.config.ts --reporter=line', id('nginx'));
   call(process.execPath, ['--test', 'infra/acceptance/faults.test.mjs'], { env: { ...env, WEAVEOS_ACCEPTANCE_PROJECT: project, WEAVEOS_ACCEPTANCE_FIXTURES: resolve(dir, 'fixtures.json'), NODE_EXTRA_CA_CERTS: resolve(dir, 'tls/cert.pem') } });
-  writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'passed', project, elapsedSeconds: (Date.now() - started) / 1000, api: 25, browser: 30, components: 23, faults: 3, storage: 'actual PostgreSQL18 + Redis8.2', target: 'isolated Linux HTTPS', secrets: 'not included' }, null, 2));
+  const storeEnv = { ...env, WEAVEOS_API_URL: 'https://localhost:19443', WEAVEOS_ACCEPTANCE_PROJECT: project, WEAVEOS_ACCEPTANCE_FIXTURES: resolve(dir, 'fixtures.json'), WEAVEOS_ACCEPTANCE_OBSERVER: resolve(root, 'tests/acceptance/storage-observer.mjs'), NODE_EXTRA_CA_CERTS: resolve(dir, 'tls/cert.pem') };
+  // Serial fault/control qualification precedes product assertions on the same real stack.
+  call(process.execPath, ['--test', '--test-concurrency=1', 'tests/acceptance/storage-observer.test.mjs', 'tests/acceptance/redis-gate.test.mjs'], { env: storeEnv });
+  call(process.execPath, ['--test', '--test-concurrency=1', 'tests/acceptance/integration.test.mjs'], { env: storeEnv });
+  writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'passed', project, elapsedSeconds: (Date.now() - started) / 1000, api:122, browser:111, components: 23, faults: 3, storageCases:19, storageControls:8, storage: 'actual PostgreSQL18 + Redis8.2', target: 'isolated Linux HTTPS', secrets: 'not included' }, null, 2));
 } catch (error) {
   writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'failed', project, exitCode: error.status ?? 1, elapsedSeconds: (Date.now() - started) / 1000 }));
   throw error;
