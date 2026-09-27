@@ -106,3 +106,7 @@ pnpm exec playwright test tests/acceptance/web.spec.ts
 fixture放在忽略的.work目录，未授权远程目标不运行可变更数据的测试。当前acceptance.yml只调用api.test.mjs；007接手必须显式加integration.test.mjs和真实observer，不得声称本PR已经启用全部CI验收。
 
 测试诊断自身另有diagnostics.test.mjs（1项）：保证故意畸形的错误响应不会通过断言诊断泄露敏感data，已实际RED→GREEN。运行全部Node测试可用`node --test --test-concurrency=1 tests/acceptance/*.test.mjs`，这1项helper通过不计入产品验收。
+
+## 2026-09-27 当前契约同步
+
+历史覆盖表保留原始RED语境。现有CI组合执行97扩展+25正式HTTP及37场景×3浏览器；HTTP19使用seed独立userId，HTTP34未知字段按正式协议错误COMMON_INVALID_ARGUMENT，字段null/类型错误仍要求violations。WEB02按Q12已确认的可见禁用规则，WEB17使用真实Redis原生过期。reset用例各自创建目标，不消费运行恢复用例的账号前置状态。19项STORE历史测试尚未装配完整observer；其状态不计入本轮产品CI通过数量。

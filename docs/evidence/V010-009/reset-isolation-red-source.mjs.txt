@@ -190,11 +190,9 @@ for (const capability of ['invitations', 'reset']) {
   });
   test(`HTTP-26 FR-012/016: member cannot ${capability} with forged ALL headers`, async () => {
     const f = fixtures(), session = await preparedLogin(f.user);
-    const target = capability === 'reset' ? { account: unique(), password } : undefined;
-    const created = target ? await envelope(await register(target.account, await invitation()), 201, 'OK') : undefined;
-    const path = capability === 'reset' ? routes.reset.replace('{userId}', encodeURIComponent(created.data.id)) : routes.invitations;
+    const path = capability === 'reset' ? routes.reset.replace('{userId}', encodeURIComponent(f.resetTarget.id)) : routes.invitations;
     await envelope(await send(path, { method: 'POST', data: {}, session, headers: { 'X-Role': 'ALL', 'X-User-Id': f.adminId } }), 403, 'COMMON_PERMISSION_DENIED');
-    if (capability === 'reset') await login(target);
+    if (capability === 'reset') await login(f.resetTarget);
   });
 }
 test('HTTP-27 FR-016: Bootstrap generates a usable single-use invitation', async () => {
@@ -207,15 +205,11 @@ test('HTTP-27 FR-016: Bootstrap generates a usable single-use invitation', async
 });
 test('HTTP-28 FR-012: Bootstrap resets password without disclosure; old password fails', async () => {
   const f = fixtures(), session = await preparedLogin(f.admin);
-  // Runtime recovery also resets its fixture: this case owns a fresh target.
-  const account = unique(), created = await envelope(await register(account, await invitation()), 201, 'OK');
-  const target = { account, password, id: created.data.id };
-  await login(target);
-  assert.ok(target.password !== 'Abc@123456', 'fixture starts with a different synthetic password');
-  const body = await envelope(await send(routes.reset.replace('{userId}', encodeURIComponent(target.id)), { method: 'POST', data: {}, session }), 200, 'OK');
-  noSecret(JSON.stringify(body), ['Abc@123456', target.password]);
-  await envelope(await send(routes.login, { method: 'POST', data: { account: target.account, password: target.password } }), 401, 'AUTH_INVALID_CREDENTIALS');
-  await login({ account: target.account, password: 'Abc@123456' });
+  assert.ok(f.resetTarget.password !== 'Abc@123456', 'fixture starts with a different synthetic password');
+  const body = await envelope(await send(routes.reset.replace('{userId}', encodeURIComponent(f.resetTarget.id)), { method: 'POST', data: {}, session }), 200, 'OK');
+  noSecret(JSON.stringify(body), ['Abc@123456', f.resetTarget.password]);
+  await envelope(await send(routes.login, { method: 'POST', data: { account: f.resetTarget.account, password: f.resetTarget.password } }), 401, 'AUTH_INVALID_CREDENTIALS');
+  await login({ account: f.resetTarget.account, password: 'Abc@123456' });
 });
 for (const [label, origin] of [['foreign', 'https://attacker.invalid'], ['opaque', 'null']]) test(`HTTP-29 API-14: ${label} Origin rejects writes even with valid token`, async () => {
   const session = await preparedLogin(fixtures().admin);

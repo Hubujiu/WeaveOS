@@ -190,7 +190,7 @@ func (s *Service) login(w http.ResponseWriter, r *http.Request) {
 		Account  string `json:"account"`
 		Password string `json:"password"`
 	}
-	if !decode(w, r, &in) {
+	if !decode(w, r, &in, "account", "password") {
 		return
 	}
 	if !validateCredentials(w, r, in.Account, in.Password, nil) {
@@ -264,7 +264,7 @@ func (s *Service) register(w http.ResponseWriter, r *http.Request) {
 		Password   string `json:"password"`
 		Invitation string `json:"invitationCode"`
 	}
-	if !decode(w, r, &in) {
+	if !decode(w, r, &in, "account", "password", "invitationCode") {
 		return
 	}
 	if !validateCredentials(w, r, in.Account, in.Password, &in.Invitation) {
@@ -354,6 +354,7 @@ func (s *Service) createInvitation(w http.ResponseWriter, r *http.Request, p ses
 		s.fail(w, r, err)
 		return
 	}
+	w.Header().Set("Location", "/api/v1/invitations/"+id.String())
 	reply(w, r, 201, "OK", map[string]string{"id": id.String(), "invitationCode": code.Value})
 }
 func (s *Service) alert() {
@@ -391,7 +392,7 @@ func (s *Service) eventParams(r *http.Request, kind, outcome, actor, subject, re
 	return authsql.AppendAuthEventParams{EventType: kind, Outcome: outcome, ActorUserID: uuidValue(actor), SubjectUserID: uuidValue(subject), AccountFingerprint: textValue(fingerprint), ClientIp: ip, UserAgent: textValue(ua), SessionRef: uuidValue(ref), ReasonCode: textValue(reason), RequestID: requestID}
 }
 
-func decode(w http.ResponseWriter, r *http.Request, out any) bool {
+func decode(w http.ResponseWriter, r *http.Request, out any, stringFields ...string) bool {
 	media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil || media != "application/json" {
 		reply(w, r, 415, "COMMON_UNSUPPORTED_MEDIA_TYPE", nil)
@@ -409,6 +410,7 @@ func decode(w http.ResponseWriter, r *http.Request, out any) bool {
 		return false
 	}
 	seen := map[string]bool{}
+	var violations []violation
 	for d.More() {
 		k, err := d.Token()
 		name, ok := k.(string)
@@ -418,9 +420,17 @@ func decode(w http.ResponseWriter, r *http.Request, out any) bool {
 		}
 		seen[name] = true
 		var value json.RawMessage
-		if d.Decode(&value) != nil || string(value) == "null" {
+		if d.Decode(&value) != nil {
 			reply(w, r, 400, "COMMON_INVALID_ARGUMENT", nil)
 			return false
+		}
+		for _, field := range stringFields {
+			if name == field {
+				var text string
+				if string(value) == "null" || json.Unmarshal(value, &text) != nil {
+					violations = append(violations, violation{"body", field, "COMMON_INVALID_ARGUMENT", "字段必须为字符串"})
+				}
+			}
 		}
 	}
 	if _, err := d.Token(); err != nil {
@@ -429,6 +439,12 @@ func decode(w http.ResponseWriter, r *http.Request, out any) bool {
 	}
 	if _, err := d.Token(); err != io.EOF {
 		reply(w, r, 400, "COMMON_INVALID_ARGUMENT", nil)
+		return false
+	}
+	if len(violations) > 0 {
+		reply(w, r, 400, "COMMON_VALIDATION_FAILED", struct {
+			Violations []violation `json:"violations"`
+		}{violations})
 		return false
 	}
 	decoder := json.NewDecoder(strings.NewReader(string(b)))

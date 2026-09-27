@@ -76,7 +76,9 @@ func TestAcceptanceSeedProducesIsolatedUsableFixtures(t *testing.T) {
 		Admin         struct{ Account, Password string }
 		User          struct{ Account, Password string }
 		Disabled      struct{ Account, Password string }
-		ResetTarget   struct{ ID, Account string }
+		ResetTarget   struct{ ID, Account, Password string }
+		UserID        string `json:"userId"`
+		AdminID       string `json:"adminId"`
 		Invitations   map[string]string
 		UIInvitations map[string]string `json:"uiInvitations"`
 	}
@@ -85,6 +87,16 @@ func TestAcceptanceSeedProducesIsolatedUsableFixtures(t *testing.T) {
 	}
 	if fixture.Admin.Account == "" || fixture.Admin.Password == "" || fixture.User.Account == "" || fixture.User.Password == "" || fixture.Disabled.Account == "" || fixture.ResetTarget.ID == "" {
 		t.Fatalf("fixture lacks required independent users: %+v", fixture)
+	}
+	if fixture.UserID == "" || fixture.AdminID == "" || fixture.ResetTarget.Password == "" {
+		t.Error("expanded acceptance needs independent user/admin IDs and reset precondition password")
+	}
+	for _, browser := range []string{"chromium", "firefox", "webkit"} {
+		for _, label := range []string{"reentry", "duplicate", "reuse", "pending"} {
+			if fixture.UIInvitations[browser+"-"+label] == "" {
+				t.Errorf("missing independent browser invitation: %s/%s", browser, label)
+			}
+		}
 	}
 	for _, name := range []string{"valid", "concurrent", "rollback", "passwordPolicy"} {
 		if fixture.Invitations[name] == "" {

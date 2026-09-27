@@ -94,7 +94,7 @@ test('FR-005/008/009: real login survives reload, then logout revokes it', async
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page).toHaveURL(/\/app(?:\/|\?|$)/);
   await page.reload();
-  expect(await page.getByText(f.user.account, { exact: true }).isVisible(), 'current account is visible').toBe(true);
+  await expect(page.getByText(f.user.account, { exact: true })).toBeVisible();
   const cookies = await context.cookies();
   const session = cookies.find(cookie => cookie.name === '__Host-session');
   const csrf = cookies.find(cookie => cookie.name === '__Host-csrf');
@@ -127,7 +127,12 @@ for (const path of ['/login', '/register']) {
     await page.goto(path);
     await expect(page.getByRole('heading', { name: path === '/login' ? '登录' : '注册', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: /忘记密码|找回密码/ })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /忘记密码|找回密码/ })).toHaveCount(0);
+    const recovery = page.getByRole('button', { name: /忘记密码|找回密码/ });
+    if (path === '/login') {
+      // Q12 supersedes the early absent-control draft: visible, disabled, no workflow.
+      await expect(recovery).toBeVisible();
+      await expect(recovery).toBeDisabled();
+    } else await expect(recovery).toHaveCount(0);
   });
 }
 
@@ -338,11 +343,10 @@ test('WEB-16 PRD UX: pending real registration prevents duplicate submission', a
 });
 test('WEB-17 FR-008: Redis-expired browser Session returns to login', async ({ page, context }, info) => {
   const file = process.env.WEAVEOS_ACCEPTANCE_OBSERVER;
-  if (!file) throw new Error('BLOCKED: real Redis observer missing');
-  const module = await import(pathToFileURL(resolve(file)).href);
+  const module = file ? await import(pathToFileURL(resolve(file)).href) : await import('./redis-observer.mjs');
   const o = await module.open({ baseURL: info.project.use.baseURL });
   try {
-    if (o.storage !== 'isolated-postgresql-and-redis') throw new Error('BLOCKED: requires real isolated storage');
+    if (o.storage !== 'isolated-redis') throw new Error('BLOCKED: requires real isolated storage');
     const f = fixtures();
     await page.goto('/login');
     await page.getByLabel('账号', { exact: true }).fill(f.user.account);
