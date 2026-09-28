@@ -1,0 +1,187 @@
+TAP version 13
+# Subtest: Q18 accepts declared compatible expansion but rejects history rewrite, missing approval and stale releases
+not ok 1 - Q18 accepts declared compatible expansion but rejects history rewrite, missing approval and stale releases
+  ---
+  duration_ms: 1.142
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-016\\tests\\governance\\auto-deploy.test.mjs:9:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-016/tests/governance/auto-deploy.test.mjs:10:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: Q18 deployment only changes approved runtime config and exact images, retaining private volumes and origin
+not ok 2 - Q18 deployment only changes approved runtime config and exact images, retaining private volumes and origin
+  ---
+  duration_ms: 6.5891
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-016\\tests\\governance\\auto-deploy.test.mjs:14:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'services')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-016/tests/governance/auto-deploy.test.mjs:18:25)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: public Nginx rendering preserves API boundary and creates fixed HTTPS redirect
+not ok 3 - public Nginx rendering preserves API boundary and creates fixed HTTPS redirect
+  ---
+  duration_ms: 5.2215
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-016\\tests\\governance\\auto-deploy.test.mjs:32:1'
+  failureType: 'testCodeFailure'
+  error: 'The "string" argument must be of type string. Received type undefined (undefined)'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-016/tests/governance/auto-deploy.test.mjs:34:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: promotion validates and backs up before migration and records only a healthy deployment
+not ok 4 - promotion validates and backs up before migration and records only a healthy deployment
+  ---
+  duration_ms: 0.2638
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-016\\tests\\governance\\auto-deploy.test.mjs:41:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'status')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-016/tests/governance/auto-deploy.test.mjs:42:67)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: backup failure never migrates; activation or health failure restores prior app/config without Down
+not ok 5 - backup failure never migrates; activation or health failure restores prior app/config without Down
+  ---
+  duration_ms: 0.2864
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-016\\tests\\governance\\auto-deploy.test.mjs:45:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'status')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-016/tests/governance/auto-deploy.test.mjs:48:23)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: main delivery runs verification and acceptance before a serialized secret-scoped deployment
+not ok 6 - main delivery runs verification and acceptance before a serialized secret-scoped deployment
+  ---
+  duration_ms: 0.6156
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-016\\tests\\governance\\auto-deploy.test.mjs:55:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /push:\s*\n\s*branches: \[main\]/. Input:
+    
+    'name: Verified local release artifact delivery\n' +
+      'on:\n' +
+      '  workflow_dispatch:\n' +
+      'permissions:\n' +
+      '  contents: read\n' +
+      'jobs:\n' +
+      '  verify:\n' +
+      '    uses: ./.github/workflows/ci.yml\n' +
+      '  acceptance:\n' +
+      '    needs: verify\n' +
+      '    uses: ./.github/workflows/acceptance.yml\n' +
+      '    with:\n' +
+      '      verify_release: true\n' +
+      '  package:\n' +
+      '    needs: acceptance\n' +
+      "    if: github.ref == 'refs/heads/main'\n" +
+      '    runs-on: ubuntu-24.04\n' +
+      '    steps:\n' +
+      '      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0\n' +
+      '        with:\n' +
+      '          name: tested-oci-${{ github.sha }}\n' +
+      '          path: artifacts\n' +
+      '      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4\n' +
+      '        with:\n' +
+      '          name: weaveos-v0.1.0-local-${{ github.sha }}\n' +
+      '          path: artifacts/\n' +
+      '          if-no-files-found: error\n' +
+      '          retention-days: 30\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    name: Verified local release artifact delivery
+    on:
+      workflow_dispatch:
+    permissions:
+      contents: read
+    jobs:
+      verify:
+        uses: ./.github/workflows/ci.yml
+      acceptance:
+        needs: verify
+        uses: ./.github/workflows/acceptance.yml
+        with:
+          verify_release: true
+      package:
+        needs: acceptance
+        if: github.ref == 'refs/heads/main'
+        runs-on: ubuntu-24.04
+        steps:
+          - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+            with:
+              name: tested-oci-${{ github.sha }}
+              path: artifacts
+          - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+            with:
+              name: weaveos-v0.1.0-local-${{ github.sha }}
+              path: artifacts/
+              if-no-files-found: error
+              retention-days: 30
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-016/tests/governance/auto-deploy.test.mjs:57:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 0
+# fail 6
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 80.8355

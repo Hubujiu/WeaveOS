@@ -1,0 +1,14 @@
+{
+  "date": "2026-09-28",
+  "environment": "Windows PowerShell; local Node v22.23.1; Docker Desktop 29.6.2 Linux/amd64. CI/server use locked Node24.",
+  "records": [
+    {"command":"node --test --test-name-pattern 'transport|framed' tests/governance/auto-deploy.test.mjs","exitCode":1,"immutableCommit":"bdb3f5b","result":"Two behavior failures; undefined validation/received release from interface-only placeholder","source":"bundle-red.test.mjs","before":"bundle-before.mjs","output":"bundle-red.txt"},
+    {"command":"node --test infra/server/deploy/migrate.test.mjs","exitCode":1,"immutableCommit":"78e566f","result":"Environment failure during temporary PostgreSQL socket startup. NOT behavioral RED despite original commit subject; retained and explicitly corrected next commit.","source":"migration-environment-failure.test.mjs","output":"migration-environment-failure.txt"},
+    {"command":"node --test infra/server/deploy/migrate.test.mjs","exitCode":1,"immutableCommit":"e11bd58","result":"Behavior RED after TCP readiness: expected expanded column count 1, actual 0","source":"migration-red.test.mjs","before":"migration-before.mjs","output":"migration-red.txt"},
+    {"command":"node --test infra/server/deploy/migrate.test.mjs","exitCode":0,"result":"Real Goose/PostgreSQL expansion, app rollback retains expansion and rows, failed SQL transaction preserves rows and version","output":"migration-green.txt"},
+    {"command":"node --test --test-name-pattern 'approved config cannot' tests/governance/auto-deploy.test.mjs","exitCode":1,"immutableCommit":"1db1e17","result":"Missing expected exception for configuration escape","source":"confinement-red.test.mjs","before":"confinement-before.mjs","output":"confinement-red.txt"},
+    {"command":"node --test tests/governance/auto-deploy.test.mjs","exitCode":0,"result":"9 deployment policy/transport cases pass","output":"confinement-green.txt"},
+    {"command":"node --test tests/governance/*.test.mjs tests/foundation/*.test.mjs","exitCode":0,"result":"90 cases pass, not product acceptance","output":"final-governance.txt"}
+  ],
+  "timingNote":"Execution order preserved in branch commits and permanent before/test snapshots. Exact wall-clock start timestamps were not separately captured for later groups; no timestamps reconstructed as actual execution time."
+}
