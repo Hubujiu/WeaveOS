@@ -9,7 +9,12 @@ export function validateCompatibility(current,release) {
 }
 export function candidateCompose(base,images) {
  const names=['postgres','redis','bff','audit-maintenance','nginx'];
- if(Object.keys(base.services).sort().join()!==[...names].sort().join()||JSON.stringify(base.volumes)!=='{"pg":{}}'||base.networks.default.internal!==true)throw Error('Runtime topology rejected');
+ if(Object.keys(base).sort().join()!=='networks,services,volumes'||Object.keys(base.services).sort().join()!==[...names].sort().join()||JSON.stringify(base.volumes)!=='{"pg":{}}'||JSON.stringify(base.networks)!=='{"default":{"internal":true},"edge":{}}')throw Error('Runtime topology rejected');
+ if(JSON.stringify(base.services.nginx.networks)!=='["default","edge"]'||base.services.bff.environment.WEAVEOS_TRUSTED_PROXY_HOSTS!=='nginx')throw Error('Proxy boundary rejected');
+ for(const name of ['bff','audit-maintenance']){
+  const s=base.services[name];
+  if(s.user!=='65532:65532'||s.read_only!==true||JSON.stringify(s.cap_drop)!=='["ALL"]'||JSON.stringify(s.security_opt)!=='["no-new-privileges:true"]')throw Error('Service confinement rejected');
+ }
  const mounts={postgres:['pg:/var/lib/postgresql'],redis:['${WEAVEOS_RUNTIME_DIR}/redis.conf:/run/secrets/redis.conf:ro'],bff:[], 'audit-maintenance':[],nginx:['${WEAVEOS_RUNTIME_DIR}/tls:/etc/nginx/tls:ro']};
  const env={postgres:'postgres',redis:'redis',bff:'runtime','audit-maintenance':'maintenance'};
  const keys=new Set(['image','env_file','volumes','healthcheck','mem_limit','cpus','logging','command','user','read_only','cap_drop','security_opt','environment','depends_on','networks','ports']);
