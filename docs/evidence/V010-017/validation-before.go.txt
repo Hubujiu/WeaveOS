@@ -1,9 +1,8 @@
 package auth
 
 import (
+	"net/http"
 	"strings"
-	"unicode"
-	"unicode/utf8"
 )
 
 type violation struct {
@@ -13,11 +12,7 @@ type violation struct {
 	Message  string `json:"message"`
 }
 
-func accountValid(account string) bool {
-	return account != "" && utf8.ValidString(account) && utf8.RuneCountInString(account) <= 254 && !strings.Contains(account, " ") && strings.IndexFunc(account, unicode.IsControl) < 0
-}
-
-func validateCredentials(account, password string, invitation *string) error {
+func validateCredentials(w http.ResponseWriter, r *http.Request, account, password string, invitation *string) bool {
 	var violations []violation
 	add := func(field, code, message string) {
 		violations = append(violations, violation{"body", field, code, message})
@@ -37,7 +32,10 @@ func validateCredentials(account, password string, invitation *string) error {
 		add("invitationCode", "VALIDATION_REQUIRED", "请填写邀请码")
 	}
 	if len(violations) == 0 {
-		return nil
+		return true
 	}
-	return &Failure{Code: "COMMON_VALIDATION_FAILED", Violations: violations}
+	reply(w, r, 400, "COMMON_VALIDATION_FAILED", struct {
+		Violations []violation `json:"violations"`
+	}{violations})
+	return false
 }
