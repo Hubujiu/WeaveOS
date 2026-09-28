@@ -13,12 +13,12 @@ import (
 // setup remains compatible with the host and integration fixtures. Business
 // operations live in Application, not in its HTTP methods.
 type Service struct {
-	Pool              *pgxpool.Pool
-	Sessions          *session.Store
+	Pool               *pgxpool.Pool
+	Sessions           *session.Store
 	Origin, AuditKeyID string
-	AuditKey          []byte
-	Logger            *slog.Logger
-	TrustedProxyHosts []string
+	AuditKey           []byte
+	Logger             *slog.Logger
+	TrustedProxyHosts  []string
 }
 
 func (s *Service) application() *Application {

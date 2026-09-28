@@ -2,6 +2,8 @@
 
 自动交付：[V010-016](V010-016.md)，依赖已验收008/011；task/V010-016-auto-deploy / ../WeaveOS-worktrees/V010-016。用户2026-09-28授权main通过检查后自动部署，包含已验收兼容迁移与配置。单Agent独立工作树。
 
+后端边界：[V010-017](V010-017.md)，依赖已验收005；task/V010-017-auth-boundary / ../WeaveOS-worktrees/V010-017。[PR18](https://github.com/Hubujiu/WeaveOS/pull/18)实现用户已确认的同进程Web适配与认证用例分离，不新增微服务或改变部署。
+
 状态以每个任务文件和GitHub PR/远程main为准，索引不复制第二份可能漂移的完成状态。
 
 | 任务 | 工作内容 | 依赖 | 分支 / 工作树 |
