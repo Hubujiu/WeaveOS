@@ -14,7 +14,7 @@ test('real Goose expansion, failed transactional migration and application rollb
  const goose=resolve(process.env.WEAVEOS_TEST_GOOSE??'.work/tools/goose');
  try{
   run('docker',['run','-d','--name',name,'-e','POSTGRES_HOST_AUTH_METHOD=trust','-e','POSTGRES_USER=weaveos_owner','-e','POSTGRES_DB=weaveos_016','postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722']);
-  for(let i=0;i<60;i++){try{run('docker',['exec',name,'pg_isready','-h','127.0.0.1','-U','weaveos_owner']);break;}catch{await new Promise(r=>setTimeout(r,250));}}
+  for(let i=0;i<60;i++){try{run('docker',['exec',name,'pg_isready','-U','weaveos_owner']);break;}catch{await new Promise(r=>setTimeout(r,250));}}
   const sql=s=>run('docker',['exec','-i',name,'psql','-X','-At','-v','ON_ERROR_STOP=1','-U','weaveos_owner','-d','weaveos_016'],{input:s,encoding:'utf8'}).trim();
   sql("CREATE TABLE existing_record(id integer primary key); INSERT INTO existing_record VALUES(42);");
   mkdirSync(join(dir,'migrations'));
