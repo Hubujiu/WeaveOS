@@ -1,5 +1,7 @@
-name: Verified local release artifact delivery
+name: Verified main deployment
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,6 +18,17 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4
+        with:
+          version: v29.6.2
+          daemon-config: |
+            {"features":{"containerd-snapshotter":true}}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
           name: tested-oci-${{ github.sha }}
@@ -26,3 +39,50 @@ jobs:
           path: artifacts/
           if-no-files-found: error
           retention-days: 30
+      - name: Convert verified OCI to portable deployment bundle
+        run: node infra/server/deploy/package.mjs artifacts/BUILD.json deployment
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: deploy-${{ github.sha }}
+          path: deployment/release.bin
+          if-no-files-found: error
+          retention-days: 7
+  deploy:
+    needs: package
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: weaveos-production
+    concurrency:
+      group: weaveos-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: deploy-${{ github.sha }}
+          path: deployment
+      - name: Deploy only current main with pinned SSH identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPLOY_KEY: ${{ secrets.WEAVEOS_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ secrets.WEAVEOS_DEPLOY_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          head=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
+          if [ "$head" != "$GITHUB_SHA" ]; then
+            echo 'Newer main exists; this release is superseded.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          umask 077
+          key="$RUNNER_TEMP/weaveos-deploy-key"
+          hosts="$RUNNER_TEMP/weaveos-known-hosts"
+          trap 'rm -f -- "$key" "$hosts"' EXIT
+          printf '%s\n' "$DEPLOY_KEY" > "$key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$hosts"
+          unset DEPLOY_KEY KNOWN_HOSTS
+          ssh -T -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$hosts" -o ConnectTimeout=15 \
+            -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
+            -i "$key" root@43.133.34.48 < deployment/release.bin
+          echo "Deployed verified commit $GITHUB_SHA to https://weave.hubujiu.site" >> "$GITHUB_STEP_SUMMARY"
