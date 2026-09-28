@@ -29,3 +29,7 @@
 本机只能对编辑快照执行gofmt及独立标准库AST边界测试，不能连接GitHub进行完整clone，也没有要求的Go工具链/PG/Redis/Docker。上述完整测试确实在Actions运行。未修改生产、未在服务器运行测试、未合并main。
 
 回滚本PR只需恢复上一应用代码/镜像组合；本PR没有schema、迁移、Session generation、Cookie、Nginx或Cron变化。D8提交后续期失败语义仍保留原状，不将本次模块分离宣传为该窗口已修复。
+
+## 2026-09-28 最终head复核
+
+PR18原head`16a1bf0c52a12a7a61ef032c793b799003fa95ed`的CI/Repository governance/产品验收共5项检查实际均SUCCESS。产品run36413324451的headSha与该值一致；job108898454276中“migrations, HTTPS and real product acceptance”、“runtime configuration, crypto, failure handling and dependency security”、“immutable runtime, restore, rollback and browsers”、“automatic deployment migrations with isolated real PostgreSQL”、“deployment packaging”步骤均SUCCESS。`check-release`步骤在PR条件下SKIPPED，不记作已执行。之后任务文档或合并main会产生新head，必须重验，不能用本检查点替代新head结果。
