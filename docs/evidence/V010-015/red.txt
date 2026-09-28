@@ -1,0 +1,126 @@
+TAP version 13
+# Subtest: public HTTPS exposes only edge ports and preserves private data, images and input
+not ok 1 - public HTTPS exposes only edge ports and preserves private data, images and input
+  ---
+  duration_ms: 1.8122
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-015\\tests\\governance\\public-entry.test.mjs:11:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+    -   '0.0.0.0:443:19443',
+    -   '0.0.0.0:80:80',
+        '127.0.0.1:19443:19443'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '0.0.0.0:443:19443'
+    1: '0.0.0.0:80:80'
+    2: '127.0.0.1:19443:19443'
+  actual:
+    0: '127.0.0.1:19443:19443'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-015/tests/governance/public-entry.test.mjs:14:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: public access rejects untrusted TLS while default deployment stays private
+not ok 2 - public access rejects untrusted TLS while default deployment stays private
+  ---
+  duration_ms: 0.3117
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-015\\tests\\governance\\public-entry.test.mjs:26:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'throws'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-015/tests/governance/public-entry.test.mjs:27:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: HTTP redirects all paths to the fixed HTTPS origin without trusting Host
+not ok 3 - HTTP redirects all paths to the fixed HTTPS origin without trusting Host
+  ---
+  duration_ms: 0.2918
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-015\\tests\\governance\\public-entry.test.mjs:31:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /listen 80;/. Input:
+    
+    '# Public entry placeholder: no serving behavior before observed RED.\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    # Public entry placeholder: no serving behavior before observed RED.
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-015/tests/governance/public-entry.test.mjs:32:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: public TLS preserves same-origin API, non-cacheable auth and trusted proxy boundary
+not ok 4 - public TLS preserves same-origin API, non-cacheable auth and trusted proxy boundary
+  ---
+  duration_ms: 0.2098
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-015\\tests\\governance\\public-entry.test.mjs:37:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /listen 19443 ssl;/. Input:
+    
+    '# Public entry placeholder: no serving behavior before observed RED.\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    # Public entry placeholder: no serving behavior before observed RED.
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-015/tests/governance/public-entry.test.mjs:38:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: existing loopback health and DNS-01 renewal still work independently of public DNS
+ok 5 - existing loopback health and DNS-01 renewal still work independently of public DNS
+  ---
+  duration_ms: 0.4031
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 1
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 78.963
