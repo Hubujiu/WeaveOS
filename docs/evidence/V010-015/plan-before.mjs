@@ -1,16 +1,10 @@
 import { existsSync } from 'node:fs';
 import {acmePlan} from './acme.mjs';
 // Consume the already verified runtime topology; server adds lifecycle only.
-export function serverCompose(runtime,{publicTLS=false,publicAccess=false}={}) {
- if(publicAccess&&!publicTLS)throw new Error('Public access requires public TLS');
+export function serverCompose(runtime,{publicTLS=false}={}) {
  const config=structuredClone(runtime);
  for(const service of Object.values(config.services)) service.restart='unless-stopped';
  if(publicTLS)config.services.bff.environment.WEAVEOS_PUBLIC_ORIGIN=acmePlan().origin;
- if(publicAccess){
-  config.services.bff.environment.WEAVEOS_PUBLIC_ORIGIN=`https://${acmePlan().domain}`;
-  config.services.nginx.ports=['0.0.0.0:443:19443','0.0.0.0:80:80','127.0.0.1:19443:19443'];
-  config.services.nginx.volumes=[...config.services.nginx.volumes,'${WEAVEOS_RUNTIME_DIR}/public-nginx.conf:/etc/nginx/nginx.conf:ro'];
- }
  return config;
 }
 export function requireEmptyDirectory(directory) {
