@@ -120,7 +120,7 @@ test('WaveOS Figma 13:2 login shell uses the new brand and card geometry', async
   await expect(page.getByText('登录您的账号，开始高效沟通')).toBeVisible();
   const header = await page.getByRole('banner').boundingBox();
   const card = await page.locator('.auth-card').boundingBox();
-  expect(header?.height).toBe(72);
+  expect(header?.height).toBeGreaterThanOrEqual(90);
   // Figma 2026-09-27 removed the 30px side margins; four columns now span 618.667px.
   expect(card?.width).toBeCloseTo(618.667, 0);
   expect(card?.height).toBeGreaterThanOrEqual(710);

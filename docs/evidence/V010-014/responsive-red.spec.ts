@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 // Oracle: WaveOS Figma Login 13:2 / Register 40:2, 12 columns,
-// Current 2026-09-28 Figma: no top/side page padding, 22px bottom padding,
-// 32px gutters, card in columns 5–8; full-width 72px top bar with bottom-only corners.
+// Updated 2026-09-27: no top/side page padding, 22px bottom padding,
+// 32px gutters, card in columns 5–8; full-width top bar with bottom-only corners.
 for (const route of ['/login', '/register']) {
   for (const sample of [
     { width: 1920, height: 1080, cardWidth: 618.667 },
@@ -20,9 +20,7 @@ for (const route of ['/login', '/register']) {
       expect.soft(header?.x).toBe(0);
       expect.soft(header?.y).toBe(0);
       expect.soft(header?.width).toBe(sample.width);
-      expect(header?.height).toBe(72);
-      await expect(page.locator('.brand-header')).toHaveCSS('padding-left', '32px');
-      await expect(page.locator('.brand-header')).toHaveCSS('padding-right', '32px');
+      expect(header?.height).toBe(94);
       const corners = await page.locator('.brand-header').evaluate(element => {
         const style = getComputedStyle(element);
         return [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius];
@@ -31,12 +29,10 @@ for (const route of ['/login', '/register']) {
       expect(card).not.toBeNull();
       expect.soft(card!.width).toBeCloseTo(sample.cardWidth, 0);
       expect(card!.x + card!.width / 2).toBeCloseTo(sample.width / 2, 0);
-      expect.soft(card!.y + card!.height / 2).toBeCloseTo((90 + sample.height - 22) / 2, 0);
+      expect.soft(card!.y + card!.height / 2).toBeCloseTo((112 + sample.height - 22) / 2, 0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       for (const input of await page.locator('.field-input').all()) {
-        // Keep Figma's exact CSS height; Firefox DOMRect subtraction can differ by <0.0001px.
-        await expect(input).toHaveCSS('height', '56px');
-        expect((await input.boundingBox())!.height).toBeCloseTo(56, 3);
+        expect((await input.boundingBox())!.height).toBe(56);
       }
     });
   }

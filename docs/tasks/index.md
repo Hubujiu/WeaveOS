@@ -1,5 +1,7 @@
 # v0.1.0 任务索引
 
+公网入口：[V010-015](V010-015.md)，依赖已验收011；task/V010-015-public-https / ../WeaveOS-worktrees/V010-015。用户2026-09-28明确部署授权，ADR004已接受；单Agent实施，不触碰014界面工作树。
+
 自动交付：[V010-016](V010-016.md)，依赖已验收008/011；task/V010-016-auto-deploy / ../WeaveOS-worktrees/V010-016。用户2026-09-28授权main通过检查后自动部署，包含已验收兼容迁移与配置。单Agent独立工作树。
 
 后端边界：[V010-017](V010-017.md)，依赖已验收005；task/V010-017-auth-boundary / ../WeaveOS-worktrees/V010-017。[PR18](https://github.com/Hubujiu/WeaveOS/pull/18)实现用户已确认的同进程Web适配与认证用例分离，不新增微服务或改变部署。
@@ -20,6 +22,7 @@
 | [V010-010](V010-010.md) | Notion 阻塞问题集中答复与来源规则 | 002 | task/V010-010-source-truth / ../WeaveOS-worktrees/V010-010 |
 | [V010-012](V010-012.md) | Figma 自适应布局与手工浏览器视口修复 | 006 | task/V010-012-responsive / ../WeaveOS-worktrees/V010-012 |
 | [V010-013](V010-013.md) | PR 收尾规则与遗留工作树清理 | 001 | task/V010-013-cleanup / ../WeaveOS-worktrees/V010-013 |
+| [V010-014](V010-014.md) | 同步更新后的 Figma 登录注册布局 | 012 | task/V010-014-figma-refresh / ../WeaveOS-worktrees/V010-014 |
 
 只领取依赖已经验收的任务。后续任务尚未启动，分支和工作树在领取时创建，不伪造Agent运行。共享契约由002维护；存储归003；Session归004；领域/HTTP装配归005；视觉/组件归006；跨层验证归007；运行配置归008。变更他人目录先登记协调，不跨任务覆盖。
 
