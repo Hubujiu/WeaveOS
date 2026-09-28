@@ -1,22 +1,22 @@
-# v0.1.0 SSH 隧道服务器运行
+# v0.1.0 服务器与公网 HTTPS 运行
 
-目标：43.133.34.48，Debian13 x86_64、2核/约3.6GiB。用户Q15选择SSH隧道；仅合成数据受控运行，不开放公网业务。固定密码重置、无限流及镜像残余漏洞沿用已确认范围，不称生产安全。
+目标：43.133.34.48，Debian13 x86_64、2核/约3.6GiB。2026-09-28按已接受ADR-004第15节及用户明确授权，开放当前单用户阶段公网入口。固定重置密码、无限流及镜像残余漏洞按该范围接受，不构成多用户生产安全或容量/SLA承诺。
 
-服务在`/opt/weaveos-v010`，Compose项目`weaveos-v010-011`。五个服务为PostgreSQL、Redis、BFF、审计维护、Nginx；仅Nginx发布`127.0.0.1:19443`。均`restart: unless-stopped`，沿用已验收内存/日志上限、闭合数据网络、受限应用和维护身份；Docker服务已开机启用。
+服务在`/opt/weaveos-v010`，Compose项目`weaveos-v010-011`。五个服务为PostgreSQL、Redis、BFF、审计维护、Nginx；仅Nginx发布公网80/443及回环127.0.0.1:19443，其他服务没有宿主机端口。均`restart: unless-stopped`，沿用既有内存/日志上限、闭合数据网络、受限应用和维护身份；Docker服务已开机启用。
 
 ## 访问
 
-已有SSH配置包含服务器身份；在客户端执行并保持运行：
+直接使用 https://weave.hubujiu.site/login 或 /register，无需SSH隧道或浏览器域名回环规则。HTTP80以308保留路径/查询跳转到固定HTTPS域名；BFF同源地址为https://weave.hubujiu.site。原19443仅用于服务器本机健康探针；旧带端口的浏览器登录Origin不再是当前应用Origin。
 
-```powershell
-ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ExitOnForwardFailure=yes -N -L 127.0.0.1:19443:127.0.0.1:19443 43.133.34.48
-```
-
-使用`https://weave.hubujiu.site:19443/login`或`/register`。客户端须将该域名解析到本机SSH隧道127.0.0.1；当前已打开的独立Chrome窗口通过仅此域名的host-resolver-rules实现，正常校验证书。未修改系统hosts、根证书信任或公开A记录。其他浏览器/应用不自动继承该窗口的解析规则，旧localhost地址与域名证书不匹配。
+配置生成使用`serverCompose(existing, { publicTLS: true, publicAccess: true })`；显式公网模式要求公开受信TLS。默认仍保留原SSH拓扑，避免开发/演练被意外公开。公网模式挂载`public-nginx.conf`为Nginx入口配置，不重建镜像；部署时将版本化配置复制到运行目录。
 
 2026-09-27 Q16已完成：用户提供并授权持久保存的主账号CSV在`/opt/weaveos-v010/secrets/tencentcloud.csv`，转换后`acme.env`由续期工具读取，两者root:0600/父目录0700，可供后续已授权操作复用。不要输出、提交、挂载进业务镜像。固定签名acme.sh3.1.6通过DNSPod DNS-01签发Let’s Encrypt证书（YE2，至2026-12-26 05:21:07 UTC），系统信任/域名/密钥/期限检查及Nginx校验reload成功。cron每天服务器时间02:33、14:33检查续期，flock防重叠，首次真实检查成功、尚无需重签；新证书安装到acme-stage后经tls.mjs验证和替换，失败保留/恢复旧文件及私有告警。未安装本地CA。API凭据和ACME私钥/缓存/日志始终受限。
 
-初始账号仅`bootstrap-admin`。随机密码保存在服务器`/opt/weaveos-v010/admin.json`和部署者本机`.work/deploy/admin.json`，Unix0600/Windows当前SID独占ACL。不要复制到仓库、Notion、日志或公共证据。用户可通过已有SSH在自己的终端读取该私有文件。未导入验收用户、禁用用户、测试邀请码或Session。
+初始账号仅`bootstrap-admin`。随机密码保存在服务器`/opt/weaveos-v010/admin.json`和部署者本机`D:/Workspace/WeaveOS-runtime/V010-011/secrets/admin.json`，Unix0600/Windows当前SID独占ACL。不要复制到仓库、Notion、日志或公共证据。用户可通过已有SSH在自己的终端读取该私有文件。未导入验收用户、禁用用户、测试邀请码或Session。
+
+## 公网配置回滚
+
+V010-015切换前的私有配置保存在服务器`releases/V010-015/compose.before.json`；前后应用镜像ID已比较一致，未改数据/迁移。需要恢复旧SSH访问时，在运行目录将该备份恢复为compose.json，再执行下方Compose命令的`up -d --no-deps --pull never bff nginx`。这会关闭公网业务映射并恢复旧带19443端口Origin，不删除数据库或卷。回滚资料/既有加密备份属于运行恢复资料，保留。
 
 ## 运行与停止
 
