@@ -16,3 +16,5 @@
 初次OCI下载连续停滞，已停止本任务传输；没有把失败网络当行为RED。上述运行确认使用管理员调用同一受限接收器并读取本机已验收制品，不等同GitHub自动触发成功，也没有在生产注入故障。私有current/ledger/previous恢复资料保留在服务器，凭据不进入本材料。
 
 最终PR head完整CI/OCI转换及main启用仍需现场核对，链接和结果按任务说明记录到PR。自动链路合入main前不生效；开放PR保留工作树。永久TDD资料与运行手册已提交。
+
+扫描修复：运行36374754875在源归档Gitleaks步骤失败，发现项仅compatibility.json的迁移SHA256（generic-api-key）；已独立核对该值等于既有SQL规范LF摘要，非凭据。使用显式path/sha256记录消除误识别，不改扫描器或加豁免。保留原失败与解析RED，修复后原扫描测试GREEN、10项部署检查及91项治理通过。registry-baseline.json固定原迁移摘要；把其中migrations记录转为Object.fromEntries(records.map(({path,sha256})=>[path,sha256]))即可恢复误报前的JSON格式，其他字段不变。此为可恢复原输入，不依赖删除的分支。
