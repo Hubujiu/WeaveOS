@@ -1,0 +1,33 @@
+TAP version 13
+# Subtest: real Goose expansion, failed transactional migration and application rollback retain existing rows
+not ok 1 - real Goose expansion, failed transactional migration and application rollback retain existing rows
+  ---
+  duration_ms: 5155.9481
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-016\\infra\\server\\deploy\\migrate.test.mjs:12:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: docker exec -i weaveos-v010-016-migration-29580 psql -X -At -v ON_ERROR_STOP=1 -U weaveos_owner -d weaveos_016
+    psql: error: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: FATAL:  the database system is shutting down
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    genericNodeError (node:internal/errors:983:15)
+    wrappedFn (node:internal/errors:537:14)
+    checkExecSyncError (node:child_process:916:11)
+    execFileSync (node:child_process:952:15)
+    run (file:///D:/Workspace/WeaveOS-worktrees/V010-016/infra/server/deploy/migrate.test.mjs:11:34)
+    sql (file:///D:/Workspace/WeaveOS-worktrees/V010-016/infra/server/deploy/migrate.test.mjs:18:16)
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-016/infra/server/deploy/migrate.test.mjs:19:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5232.2482

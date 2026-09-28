@@ -1,0 +1,28 @@
+name: Verified local release artifact delivery
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+  acceptance:
+    needs: verify
+    uses: ./.github/workflows/acceptance.yml
+    with:
+      verify_release: true
+  package:
+    needs: acceptance
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: tested-oci-${{ github.sha }}
+          path: artifacts
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: weaveos-v0.1.0-local-${{ github.sha }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 30
