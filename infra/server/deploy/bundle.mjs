@@ -4,7 +4,15 @@ import {join} from 'node:path';
 import {validateCompatibility,candidateCompose,publicNginx} from './policy.mjs';
 export const hash=value=>createHash('sha256').update(value).digest('hex');
 export const canonical=value=>value.replaceAll('\r\n','\n');
-export function approvalMap() {}
+export function approvalMap(records) {
+ if(!Array.isArray(records))throw Error('Explicit migration digest records required');
+ const result={};
+ for(const record of records){
+  if(!/^(migrations|archive-migrations)\/[0-9]{5}_[a-z0-9_]+\.sql$/.test(record.path)||! /^[a-f0-9]{64}$/.test(record.sha256)||Object.hasOwn(result,record.path))throw Error('Invalid or duplicate migration approval');
+  result[record.path]=record.sha256;
+ }
+ return result;
+}
 export function validateEnvelope(e) {
  if(e.protocol!==1)throw Error('Unknown protocol');
  validateCompatibility({runId:0,migrations:{}},e);

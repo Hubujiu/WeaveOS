@@ -3,14 +3,14 @@ import {readFileSync,writeFileSync,readdirSync,mkdirSync,statSync,openSync,write
 import {resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {importArtifacts} from '../../runtime/artifacts.mjs';
-import {hash,canonical,validateEnvelope} from './bundle.mjs';
+import {hash,canonical,validateEnvelope,approvalMap} from './bundle.mjs';
 const [input,output]=process.argv.slice(2);
 if(!input||!output)throw Error('Usage: package.mjs BUILD.json output-directory');
 const record=importArtifacts(resolve(input));
 if(record.commit!==process.env.GITHUB_SHA)throw Error('Artifact is not this workflow commit');
 const out=resolve(output);mkdirSync(out,{recursive:true});
 const compatibility=JSON.parse(readFileSync('infra/server/deploy/compatibility.json'));
-const e={protocol:1,commit:record.commit,runId:Number(process.env.GITHUB_RUN_ID)*1000+Number(process.env.GITHUB_RUN_ATTEMPT??1),backwardCompatible:compatibility.backwardCompatible,approved:compatibility.migrations,config:compatibility.config,migrations:{},files:{},images:{}};
+const e={protocol:1,commit:record.commit,runId:Number(process.env.GITHUB_RUN_ID)*1000+Number(process.env.GITHUB_RUN_ATTEMPT??1),backwardCompatible:compatibility.backwardCompatible,approved:approvalMap(compatibility.migrations),config:compatibility.config,migrations:{},files:{},images:{}};
 for(const [name,path] of [['compose.json','infra/runtime/compose.json'],['nginx.conf','infra/acceptance/nginx.conf']])e.files[name]=canonical(readFileSync(path,'utf8'));
 for(const dir of ['migrations','archive-migrations'])for(const file of readdirSync('db/'+dir).filter(f=>f.endsWith('.sql'))){const name=dir+'/'+file;e.files[name]=canonical(readFileSync('db/'+name,'utf8'));e.migrations[name]=hash(e.files[name]);}
 for(const name of ['bff','web']){
