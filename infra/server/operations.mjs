@@ -3,6 +3,7 @@ import {serverContext} from './context.mjs';
 import {sampleServer} from './probe.mjs';
 import {receiveAlarms} from '../runtime/monitor.mjs';
 import {backupDatabase} from '../runtime/backup.mjs';
+import {runAuditTask} from '../runtime/audit-task.mjs';
 const c=serverContext();
 const operation=process.argv[2];
 if(operation==='monitor'){
@@ -14,4 +15,8 @@ if(operation==='monitor'){
   const result=backupDatabase({container:c.container('postgres'),database,user:'weaveos_backup',keyFile:c.dir+'/secrets/backup.key',backupFile:c.dir+`/backups/${database}-${stamp}.enc`,alertFile:c.dir+'/alerts.jsonl'});
   console.log(JSON.stringify({database,...result}));
  }
-}else throw new Error('Usage: operations.mjs monitor|backup');
+}else if(operation==='audit'){
+ const result=runAuditTask(c);
+ console.log(JSON.stringify(result));
+ if(result.status!=='complete')process.exitCode=1;
+}else throw new Error('Usage: operations.mjs monitor|backup|audit');

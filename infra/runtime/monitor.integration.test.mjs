@@ -4,7 +4,7 @@ const c=runtimeContext(),receipt=resolve(c.dir,'public/alerts.jsonl');
 test('live operational probe observes healthy service, capacity failure and local certificate expiry alarm',async()=>{
  const normal=await sampleRuntime(c);
  assert.equal(normal.ready,true);assert.equal(normal.live,true);assert.equal(normal.database,true);assert.equal(normal.redis,true);
- assert.ok(normal.redisLimitBytes>0&&normal.diskFreeRatio>0&&normal.containerMemoryRatios.length===5);
+ assert.ok(normal.redisLimitBytes>0&&normal.diskFreeRatio>0&&normal.containerMemoryRatios.length===4);
  assert.ok(receiveAlarms(receipt,normal).includes('CERTIFICATE'),'two-day simulation certificate must warn before expiry');
  c.compose('exec','-T','redis','redis-cli','CONFIG','SET','maxmemory','1');
  try{assert.ok(receiveAlarms(receipt,await sampleRuntime(c)).includes('REDIS_CAPACITY'));}

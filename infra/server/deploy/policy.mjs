@@ -1,5 +1,10 @@
 const digest=/^[a-f0-9]{64}$/;
 const migration=/^(migrations|archive-migrations)\/[0-9]{5}_[a-z0-9_]+\.sql$/;
+export function validateInstalledMaintenance(existing) {
+ const task=existing.services?.['audit-maintenance'];
+ if(JSON.stringify(task?.profiles)!=='["maintenance"]'||JSON.stringify(task?.command)!=='["/app/audit-maintenance","--once"]'||task?.restart!=='no')throw Error('Maintenance topology requires separate reviewed upgrade');
+ return true;
+}
 export function validateCompatibility(current,release) {
  if(!/^[a-f0-9]{40}$/.test(release.commit)||!Number.isSafeInteger(release.runId)||release.runId<=current.runId||release.backwardCompatible!==true)throw Error('Release identity/compatibility rejected');
  if(!release.migrations||!release.approved)throw Error('Migration declaration missing');

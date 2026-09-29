@@ -4,7 +4,7 @@ import {readFileSync,writeFileSync,mkdirSync,mkdtempSync,existsSync,renameSync,u
 import {execFileSync} from 'node:child_process';
 import {request} from 'node:https';
 import {receiveBundle} from './bundle.mjs';
-import {validateCompatibility,promote} from './policy.mjs';
+import {validateCompatibility,validateInstalledMaintenance,promote} from './policy.mjs';
 import {candidateCompose,publicNginx} from './configuration.mjs';
 import {applyMigrations} from './migrate.mjs';
 import {serverContext} from '../context.mjs';
@@ -24,7 +24,7 @@ async function health(){
  }
  throw Error('Public TLS readiness failed');
 }
-const up=()=>c.compose('up','-d','--no-deps','--pull','never','--force-recreate','bff','audit-maintenance','nginx');
+const up=()=>c.compose('up','-d','--no-deps','--pull','never','--force-recreate','bff','nginx');
 let phase='receive',stage;
 const timeout=setTimeout(()=>{console.error('Deployment receiver timed out; journal retained');process.exit(1);},15*60*1000);
 try{
@@ -40,6 +40,7 @@ try{
    phase='validate';validateCompatibility(ledger,e);
    const compose=candidateCompose(JSON.parse(e.files['compose.json']),{bff:e.images.bff.imageID,web:e.images.web.imageID});
    const existing=json(root+'/compose.json');
+   validateInstalledMaintenance(existing);
    // Storage engines/volumes have a separate upgrade procedure, never replace them
    // implicitly while promoting application/config changes.
    for(const name of ['postgres','redis'])if(JSON.stringify(compose.services[name])!==JSON.stringify(existing.services[name]))throw Error('Storage configuration requires separate reviewed upgrade');
