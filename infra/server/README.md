@@ -55,3 +55,7 @@ docker compose --env-file .env -p weaveos-v010-011 -f compose.json up -d
 ## 验证边界
 
 配置/目录和维护上下文在本机先RED后GREEN，测试位于tests/governance/server-deployment.test.mjs并由现有CI运行。应用产品验收引用原同制品CI；服务器仅执行成品完整性、迁移和运行健康/页面/资源检查。没有在服务器压测，2核4GB并发容量未知。当前服务器旧构建缓存保持，未修改SSH配置、云防火墙或其他应用。
+
+## V010-018 待执行升级
+
+当前在线仍以本文五常驻记录为准。新代码改为四常驻及小时单次任务，服务器接收器/调度尚未升级；执行范围、前置条件、日志参数阻塞和回滚步骤见[升级审阅单](deploy/V010-018-upgrade.md)。

@@ -1,7 +1,8 @@
 import {createHash} from 'node:crypto';
 import {openSync,writeSync,closeSync} from 'node:fs';
 import {join} from 'node:path';
-import {validateCompatibility,candidateCompose,publicNginx} from './policy.mjs';
+import {validateCompatibility} from './policy.mjs';
+import {candidateCompose,publicNginx} from './configuration.mjs';
 export const hash=value=>createHash('sha256').update(value).digest('hex');
 export const canonical=value=>value.replaceAll('\r\n','\n');
 export function approvalMap(records) {

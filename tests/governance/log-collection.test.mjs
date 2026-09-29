@@ -1,0 +1,69 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtempSync,readFileSync,rmSync,existsSync,writeFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {collectLogs} from '../../infra/runtime/log-collection.mjs';
+import {configuredLog} from '../../infra/runtime/log-policy.mjs';
+import {serverSchedules} from '../../infra/server/plan.mjs';
+import {runAcme} from '../../infra/server/acme-run.mjs';
+const policy={timeZone:'UTC',keepDays:3,deleteEnabled:false};
+test('certificate task logs fixed outcomes without persisting raw command secrets',()=>{
+ for(const fail of [false,true]){
+  const chunks=[];
+  const result=runAcme({operation:'renew',credentials:{},command:()=>{if(fail)throw Object.assign(Error('private-password'),{status:1,stderr:Buffer.from('private-password')});return Buffer.from('private-password');},log:bytes=>chunks.push(bytes.toString())});
+  assert.equal(result.status,fail?'failed':'passed');
+  assert.doesNotMatch(chunks.join(''),/private-password/);
+  assert.equal(JSON.parse(chunks.join('')).status,result.status);
+ }
+});
+test('collector records access stdout and application stderr, advances window, and excludes raw text',()=>{
+ const dir=mkdtempSync(join(tmpdir(),'weaveos-collector-')),calls=[];
+ try{
+  const context={dir,container:name=>name};
+  const readLogs=(bin,args)=>{
+   calls.push({bin,args});
+   return {status:0,stdout:args.at(-1)==='nginx'?`2026-09-29T00:00:01.000000000Z {"at":"2026-09-29T00:00:01Z","request_id":"${'a'.repeat(32)}","method":"GET","path":"/login?password=hidden","status":200,"bytes":12}\n`:'',stderr:args.at(-1)==='bff'?'2026-09-29T00:00:02.000000000Z {"time":"2026-09-29T00:00:02Z","level":"ERROR","msg":"BFF host failed","error":"hidden-password"}\n':'nginx raw startup hidden-cookie\n'};
+  };
+  assert.equal(collectLogs(context,policy,{now:new Date('2026-09-29T00:00:10Z'),readLogs}).status,'complete');
+  assert.equal(calls.length,2);assert.ok(calls.every(c=>c.bin==='docker'&&c.args.includes('--timestamps')));
+  for(const kind of ['access','application'])assert.doesNotMatch(readFileSync(join(dir,'logs',kind,'2026-09-29.jsonl'),'utf8'),/hidden|password|cookie/);
+  assert.equal(JSON.parse(readFileSync(join(dir,'log-cursor.json'))).until,'2026-09-29T00:00:10.000Z');
+  calls.length=0;
+  collectLogs(context,policy,{now:new Date('2026-09-29T00:00:20Z'),readLogs});
+  assert.equal(calls[0].args[calls[0].args.indexOf('--since')+1],'2026-09-29T00:00:10.000Z');
+  assert.equal(readFileSync(join(dir,'logs','access','2026-09-29.jsonl'),'utf8').trim().split('\n').length,1,'previous time window must not be copied again');
+ }finally{rmSync(dir,{recursive:true});}
+});
+test('approved explicit config connects operation records and collector is scheduled without deletion',()=>{
+ const dir=mkdtempSync(join(tmpdir(),'weaveos-collector-'));
+ try{
+  const event={at:'2026-09-29T00:00:00Z',operation:'audit',status:'complete',elapsedMs:1};
+  assert.equal(configuredLog({dir},'operations',event),false,'absent policy must not invent a timezone');
+  writeFileSync(join(dir,'log-policy.json'),JSON.stringify(policy));
+  assert.equal(configuredLog({dir},'operations',event),true);
+  assert.ok(existsSync(join(dir,'logs','operations','2026-09-29.jsonl')));
+ }finally{rmSync(dir,{recursive:true});}
+});
+test('collector and Q20 cleanup are scheduled with the same overlap protection',()=>{
+ const cron=serverSchedules({publicTLS:true});
+ assert.match(cron,/^\* \* \* \* \* root .*flock.*operations\.mjs logs/m);
+ assert.match(cron,/flock -n .*\/logs\.lock .*operations\.mjs retention --apply/);
+});
+test('failed docker collection does not advance cursor or publish raw diagnostics',()=>{
+ const dir=mkdtempSync(join(tmpdir(),'weaveos-collector-'));
+ try{
+  assert.throws(()=>collectLogs({dir,container:name=>name},policy,{now:new Date('2026-09-29T00:00:10Z'),readLogs:()=>({status:1,stderr:'private-password'})}),/collection failed/);
+  assert.equal(existsSync(join(dir,'log-cursor.json')),false);
+ }finally{rmSync(dir,{recursive:true});}
+});
+test('unexpected HTTP method cannot stall collection or persist arbitrary method text',()=>{
+ const dir=mkdtempSync(join(tmpdir(),'weaveos-collector-'));
+ try{
+  const event={request_id:'c'.repeat(32),method:'TRACE',path:'/arbitrary-secret-path',status:405,bytes:1};
+  const result=collectLogs({dir,container:name=>name},policy,{now:new Date('2026-09-29T00:00:10Z'),readLogs:(_bin,args)=>({status:0,stderr:'',stdout:args.at(-1)==='nginx'?`2026-09-29T00:00:01Z ${JSON.stringify(event)}\n`:''})});
+  assert.equal(result.status,'complete');
+  const record=JSON.parse(readFileSync(join(dir,'logs/access/2026-09-29.jsonl'),'utf8'));
+  assert.equal(record.method,'OTHER');assert.equal(record.path,'[unmatched]');
+ }finally{rmSync(dir,{recursive:true});}
+});

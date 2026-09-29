@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { runtimeContext } from './context.mjs';
 import { backupDatabase, restoreDatabase, privateFile } from './backup.mjs';
 import { recoverRuntime } from './recovery.mjs';
+import {runAuditTask} from './audit-task.mjs';
 const c=runtimeContext(),fixture=JSON.parse(readFileSync(resolve(c.dir,'fixtures.json'),'utf8'));
 const api=async(path,options={})=>fetch(`https://localhost:19443/api/v1${path}`,{...options,signal:AbortSignal.timeout(10000),headers:{Origin:'https://localhost:19443','Content-Type':'application/json',...options.headers}});
 async function login(who){const r=await api('/sessions',{method:'POST',body:JSON.stringify(who)});assert.equal(r.status,201);const values=r.headers.getSetCookie();const sid=values.find(v=>v.startsWith('__Host-session='))?.split(';')[0].slice(15),csrf=values.find(v=>v.startsWith('__Host-csrf='))?.split(';')[0].slice(12);assert.ok(Boolean(sid&&csrf),'two bound cookies required');return {sid,headers:{Cookie:`__Host-session=${sid}; __Host-csrf=${csrf}`,'X-CSRF-Token':csrf}};}
@@ -29,7 +30,7 @@ test('automatic monthly mover and controlled expiry run with actual maintenance 
  assert.equal(c.sql('weaveos_runtime',"SELECT count(*) FROM auth.authentication_events WHERE request_id='runtime-monthly-fixture';"),'0');
  assert.equal(c.sql('weaveos_cold_archive',"SELECT count(*) FROM archive.authentication_events WHERE request_id='runtime-monthly-fixture';"),'1');
  c.sql('weaveos_cold_archive',"INSERT INTO archive.authentication_events (id,event_type,outcome,request_id,occurred_at) VALUES (gen_random_uuid(),'login','failure','runtime-expiry-fixture',clock_timestamp()-interval '2 years');");
- c.cli('audit-maintenance','',['--once']);
+ assert.equal(runAuditTask(c).status,'complete');
  assert.equal(c.sql('weaveos_cold_archive',"SELECT count(*) FROM archive.authentication_events WHERE request_id='runtime-expiry-fixture';"),'0');
 });
 test('real Redis memory exhaustion and restart fail closed and never restore historical sessions',async()=>{
@@ -45,14 +46,14 @@ test('encrypted hot/cold backup restores true state, rotates generation, and rej
  const reset=await api(`/users/${fixture.resetTarget.id}/password-reset`,{method:'POST',headers:admin.headers,body:'{}'});assert.equal(reset.status,200);
  const backupDir=resolve(c.dir,'backups'),keyFile=resolve(c.dir,'secrets/backup.key');
  const options={container:c.container('postgres'),user:'weaveos_backup',keyFile,alertFile:resolve(c.dir,'public/alerts.jsonl')};
- c.compose('stop','audit-maintenance');
+ assert.equal(c.compose('ps','--status','running','-q','audit-maintenance').toString().trim(),'','one-shot maintenance must not remain resident');
  const hot=backupDatabase({...options,database:'weaveos_runtime',backupFile:resolve(backupDir,'hot.enc')});const cold=backupDatabase({...options,database:'weaveos_cold_archive',backupFile:resolve(backupDir,'cold.enc')});
  const snapshotAt=new Date().toISOString();
  c.sql('postgres',"CREATE DATABASE weaveos_recovered; CREATE DATABASE weaveos_recovered_cold;");
  c.sql('weaveos_runtime',"INSERT INTO auth.authentication_events(event_type,outcome,request_id) VALUES('login','failure','runtime-after-snapshot');");
  const ownerOptions={...options,user:'weaveos_owner'};
  const started=Date.now();
- const transition=recoverRuntime({generation:c.generation,pause(){c.compose('stop','bff','audit-maintenance');},restore(){restoreDatabase({...ownerOptions,database:'weaveos_recovered',backupFile:resolve(backupDir,'hot.enc')});restoreDatabase({...ownerOptions,database:'weaveos_recovered_cold',backupFile:resolve(backupDir,'cold.enc')});
+ const transition=recoverRuntime({generation:c.generation,pause(){c.compose('stop','bff');},restore(){restoreDatabase({...ownerOptions,database:'weaveos_recovered',backupFile:resolve(backupDir,'hot.enc')});restoreDatabase({...ownerOptions,database:'weaveos_recovered_cold',backupFile:resolve(backupDir,'cold.enc')});
   c.sql('weaveos_recovered',readFileSync('infra/runtime/roles.sql','utf8'));c.sql('weaveos_recovered_cold',readFileSync('infra/runtime/cold-roles.sql','utf8'));
   assert.equal(c.sql('weaveos_recovered',"SELECT count(*) FROM auth.users WHERE status='disabled';"),'1');
   assert.ok(Number(c.sql('weaveos_recovered',"SELECT count(*) FROM auth.invitations WHERE used_by IS NOT NULL;"))>0);
@@ -61,7 +62,7 @@ test('encrypted hot/cold backup restores true state, rotates generation, and rej
   c.sql('postgres',"REVOKE CONNECT ON DATABASE weaveos_recovered_cold FROM PUBLIC; GRANT CONNECT ON DATABASE weaveos_recovered_cold TO weaveos_owner,auth_maintenance,auth_backup;");
  },switchGeneration(generation){
   for(const file of ['runtime.env','reader.env','maintenance.env']){const path=resolve(c.dir,file),text=readFileSync(path,'utf8').replaceAll('/weaveos_runtime?','/weaveos_recovered?').replaceAll('/weaveos_cold_archive?','/weaveos_recovered_cold?').replace(`WEAVEOS_SESSION_GENERATION=${c.generation}`,`WEAVEOS_SESSION_GENERATION=${generation}`);writeFileSync(path,text,{mode:0o600});}
- },resume(){c.compose('up','-d','bff','audit-maintenance');}});
+ },resume(){c.compose('up','-d','bff');}});
  await ready();assert.notEqual(transition.generation,c.generation);
  assert.equal((await api('/sessions/current',{headers:old.headers})).status,401);assert.equal((await api('/sessions/current',{headers:admin.headers})).status,401);
  await login(fixture.user);assert.equal((await api('/sessions',{method:'POST',body:JSON.stringify(fixture.disabled)})).status,401);

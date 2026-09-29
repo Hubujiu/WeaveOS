@@ -14,7 +14,7 @@ import (
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	fail := func() { logger.Error("audit maintenance failed"); os.Exit(1) }
-	if len(os.Args) > 2 || (len(os.Args) == 2 && os.Args[1] != "--once") {
+	if len(os.Args) != 2 || os.Args[1] != "--once" {
 		fail()
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -46,17 +46,11 @@ func main() {
 			logger.Info("audit maintenance complete", "archived", r.Archived, "expired", r.Expired)
 		}
 	}
-	if len(os.Args) == 2 {
-		operation, cancel := context.WithTimeout(ctx, 5*time.Minute)
-		defer cancel()
-		r, err := audit.Maintain(operation, pools[0], pools[1], time.Now().UTC())
-		report(r, err)
-		if err != nil {
-			os.Exit(1)
-		}
-		return
-	}
-	if err := audit.Scheduled(ctx, pools[0], pools[1], time.Hour, func() time.Time { return time.Now().UTC() }, report); err != nil {
-		fail()
+	operation, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
+	r, err := audit.Maintain(operation, pools[0], pools[1], time.Now().UTC())
+	report(r, err)
+	if err != nil {
+		os.Exit(1)
 	}
 }

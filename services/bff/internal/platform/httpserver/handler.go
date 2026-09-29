@@ -2,8 +2,6 @@ package httpserver
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -15,16 +13,20 @@ import (
 type ReadyCheck func(context.Context) error
 
 func NewHandler(check ReadyCheck, business ...http.Handler) http.Handler {
+	var proxies []string
+	if len(business) == 1 {
+		if source, ok := business[0].(interface{ TrustedProxies() []string }); ok {
+			proxies = source.TrustedProxies()
+		}
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "no-store")
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		var bytes [16]byte
-		if _, err := rand.Read(bytes[:]); err != nil {
+		var err error
+		r, err = Prepare(w, r, proxies)
+		if err != nil {
 			http.Error(w, "request initialization failed", http.StatusServiceUnavailable)
 			return
 		}
-		requestID := hex.EncodeToString(bytes[:])
-		w.Header().Set("X-Request-Id", requestID)
+		requestID := Metadata(r.Context()).RequestID
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		write := func(status int, body any) {
 			w.WriteHeader(status)

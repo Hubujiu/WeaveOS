@@ -1,5 +1,7 @@
 # v0.1.0 任务索引
 
+后端精简剩余需求：[V010-018](V010-018.md)，依赖已验收016/017；task/V010-018-backend-simplification / ../WeaveOS-worktrees/V010-018，[PR19](https://github.com/Hubujiu/WeaveOS/pull/19)。用户2026-09-29确认采用剩余全部方案，单Agent实施；日志留存参数见任务文档及Notion Q20。
+
 公网入口：[V010-015](V010-015.md)，依赖已验收011；task/V010-015-public-https / ../WeaveOS-worktrees/V010-015。用户2026-09-28明确部署授权，ADR004已接受；单Agent实施，不触碰014界面工作树。
 
 自动交付：[V010-016](V010-016.md)，依赖已验收008/011；task/V010-016-auto-deploy / ../WeaveOS-worktrees/V010-016。用户2026-09-28授权main通过检查后自动部署，包含已验收兼容迁移与配置。单Agent独立工作树。

@@ -1,0 +1,34 @@
+events {}
+http {
+  include /etc/nginx/mime.types;
+  access_log off;
+  server_tokens off;
+  resolver 127.0.0.11 valid=1s ipv6=off;
+  resolver_timeout 2s;
+  upstream authentication {
+    zone authentication 64k;
+    server bff:8080 resolve;
+  }
+  server {
+    listen 19443 ssl;
+    server_name localhost;
+    ssl_certificate /etc/nginx/tls/cert.pem;
+    ssl_certificate_key /etc/nginx/tls/key.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    root /usr/share/nginx/html;
+    location /api/ {
+      proxy_pass http://authentication;
+      proxy_set_header Host $http_host;
+      proxy_set_header X-Forwarded-For $remote_addr;
+      proxy_set_header X-Forwarded-Proto https;
+      proxy_set_header X-User-Id "";
+      proxy_set_header X-Role "";
+      proxy_set_header X-Tenant-Id "";
+      proxy_cache off;
+      proxy_hide_header Cache-Control;
+      add_header Cache-Control "no-store" always;
+    }
+    location /health/ { proxy_pass http://authentication; }
+    location / { try_files $uri $uri/ /index.html; }
+  }
+}

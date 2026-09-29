@@ -5,16 +5,17 @@ import {pathToFileURL} from 'node:url';
 import {acmePlan} from './acme.mjs';
 import {credentialsFromEnv} from './credentials.mjs';
 import {receiveCodes} from '../runtime/monitor.mjs';
+import {configuredLog} from '../runtime/log-policy.mjs';
 export function runAcme({operation,credentials,command=execFileSync,log}={}) {
  const p=acmePlan();
  if(!['register','issue','install','renew'].includes(operation))throw Error('ACME operation rejected');
  const env={...process.env,...credentials};
  try{
-  const output=command('/bin/sh',['/opt/weaveos-v010/acme-client/acme.sh',...p[operation]],{env,stdio:'pipe',timeout:900000,maxBuffer:4*1024*1024});
-  if(log)log(output);
+  command('/bin/sh',['/opt/weaveos-v010/acme-client/acme.sh',...p[operation]],{env,stdio:'pipe',timeout:900000,maxBuffer:4*1024*1024});
+  if(log)log(Buffer.from(JSON.stringify({operation,status:'passed'})+'\n'));
   return {operation,status:'passed',exitCode:0};
  }catch(error){
-  if(log)log(Buffer.concat([error.stdout??Buffer.alloc(0),error.stderr??Buffer.alloc(0)]));
+  if(log)log(Buffer.from(JSON.stringify({operation,status:'failed'})+'\n'));
   return {operation,status:'failed',exitCode:Number.isInteger(error.status)&&error.status>0?error.status:1};
  }
 }
@@ -27,9 +28,11 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
   const credentials=credentialsFromEnv(readFileSync(file,'utf8'));
   const log=bytes=>appendFileSync(root+'/acme-private.log',bytes,{mode:0o600});
   const result=runAcme({operation:process.argv[2],credentials,log});
+  configuredLog({dir:root},'operations',{at:new Date().toISOString(),operation:'acme',status:result.status});
   if(result.exitCode)receiveCodes(root+'/alerts.jsonl',['CERTIFICATE']);
   console.log(JSON.stringify(result));process.exitCode=result.exitCode;
  }catch{
+  try{configuredLog({dir:root},'operations',{at:new Date().toISOString(),operation:'acme',status:'failed'});}catch{}
   receiveCodes(root+'/alerts.jsonl',['CERTIFICATE']);
   console.error('ACME operation failed; inspect private operational log');process.exitCode=1;
  }

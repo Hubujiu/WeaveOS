@@ -1,0 +1,81 @@
+TAP version 13
+# Subtest: four kinds are stored by explicit natural day and only safe fields survive
+not ok 1 - four kinds are stored by explicit natural day and only safe fields survive
+  ---
+  duration_ms: 2.4452
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-018\\tests\\governance\\daily-logs.test.mjs:11:1'
+  failureType: 'testCodeFailure'
+  error: "ENOENT: no such file or directory, open 'C:\\Users\\Hubujiu\\AppData\\Local\\Temp\\weaveos-daily-zYiLTR\\logs\\access\\2026-09-30.jsonl'"
+  code: 'ENOENT'
+  stack: |-
+    readFileSync (node:fs:440:20)
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-018/tests/governance/daily-logs.test.mjs:22:14)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: retention dry-run selects only approved kinds and inclusive natural-day cutoff
+not ok 2 - retention dry-run selects only approved kinds and inclusive natural-day cutoff
+  ---
+  duration_ms: 5.3443
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-018\\tests\\governance\\daily-logs.test.mjs:30:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + []
+    - [
+    -   'access/2026-09-27.jsonl',
+    -   'access/2026-09-28.jsonl'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'access/2026-09-27.jsonl'
+    1: 'access/2026-09-28.jsonl'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-018/tests/governance/daily-logs.test.mjs:36:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: symlinked category and destination file cannot escape the log root
+not ok 3 - symlinked category and destination file cannot escape the log root
+  ---
+  duration_ms: 1.8397
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-018\\tests\\governance\\daily-logs.test.mjs:43:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'throws'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-018/tests/governance/daily-logs.test.mjs:46:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 0
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 79.1086

@@ -6,5 +6,5 @@ export function serverContext(directory='/opt/weaveos-v010',execute) {
  const compose=(...a)=>command('docker',[...args,...a]);
  const container=name=>command('docker',['inspect',compose('ps','-aq',name).toString().trim(),'--format','{{.Name}}']).toString().trim().replace(/^\//,'');
  const sql=(database,input,user='weaveos_owner')=>command('docker',['exec','-i',container('postgres'),'psql','-X','-At','-v','ON_ERROR_STOP=1','-U',user,'-d',database],{input}).toString().trim();
- return {dir:directory,command,compose,container,sql};
+ return {dir:directory,args,command,compose,container,sql};
 }

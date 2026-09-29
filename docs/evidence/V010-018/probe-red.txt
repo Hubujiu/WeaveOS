@@ -1,0 +1,49 @@
+TAP version 13
+# Subtest: memory probe samples the four resident containers, not the exited task
+not ok 1 - memory probe samples the four resident containers, not the exited task
+  ---
+  duration_ms: 36.7469
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-018\\tests\\governance\\audit-task.test.mjs:26:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+    +   'audit-maintenance',
+        'bff',
+        'nginx',
+        'postgres',
+        'redis'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'bff'
+    1: 'nginx'
+    2: 'postgres'
+    3: 'redis'
+  actual:
+    0: 'audit-maintenance'
+    1: 'bff'
+    2: 'nginx'
+    3: 'postgres'
+    4: 'redis'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-018/tests/governance/audit-task.test.mjs:29:9)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 102.2205

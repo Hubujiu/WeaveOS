@@ -5,16 +5,23 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/identity"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/security"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 )
 
-type requestIDKey struct{}
+func (s *Service) TrustedProxies() []string { return append([]string(nil), s.TrustedProxyHosts...) }
 
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r = r.WithContext(context.WithValue(r.Context(), requestIDKey{}, w.Header().Get("X-Request-Id")))
+	var err error
+	r, err = httpserver.Prepare(w, r, s.TrustedProxyHosts)
+	if err != nil {
+		http.Error(w, "request initialization failed", http.StatusServiceUnavailable)
+		return
+	}
 	if r.URL.Path == "/api/v1/registrations" && r.Method == "POST" {
 		s.register(w, r)
 		return
@@ -141,13 +148,7 @@ func (s *Service) createInvitation(w http.ResponseWriter, r *http.Request, p ses
 		s.fail(w, r, err)
 		return
 	}
-	// Keep the existing post-commit renewal behavior. Changing its failure
-	// response is the separate ADR-005 D8 decision, not this boundary refactor.
-	a := s.authenticator()
-	if err := a.Renew(r.Context(), w, r, p); err != nil {
-		s.fail(w, r, err)
-		return
-	}
+	s.renewCommitted(w, r, p)
 	w.Header().Set("Location", "/api/v1/invitations/"+result.ID)
 	reply(w, r, 201, "OK", map[string]string{"id": result.ID, "invitationCode": result.Code})
 }
@@ -162,18 +163,28 @@ func (s *Service) reset(w http.ResponseWriter, r *http.Request, p session.Princi
 		session.ClearCookies(w)
 		_, _ = s.Sessions.Revoke(r.Context(), p.SID)
 	} else {
-		a := s.authenticator()
-		if err := a.Renew(r.Context(), w, r, p); err != nil {
-			s.fail(w, r, err)
-			return
-		}
+		s.renewCommitted(w, r, p)
 	}
 	reply(w, r, 200, "OK", nil)
 }
 
+// Only called after an authorized write has acknowledged its database commit.
+// Clearing browser cookies does not claim that Redis has revoked the session.
+func (s *Service) renewCommitted(w http.ResponseWriter, r *http.Request, p session.Principal) {
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+	a := s.authenticator()
+	if err := a.Renew(ctx, w, r, p); err != nil {
+		session.ClearCookies(w)
+		if s.Logger != nil {
+			s.Logger.Warn("session renewal failed after committed write", "request_id", httpserver.Metadata(r.Context()).RequestID)
+		}
+	}
+}
+
 func (s *Service) requestMetadata(r *http.Request) RequestMetadata {
-	requestID, _ := r.Context().Value(requestIDKey{}).(string)
-	return RequestMetadata{ClientIP: s.clientIP(r), UserAgent: r.UserAgent(), RequestID: requestID}
+	m := httpserver.Metadata(r.Context())
+	return RequestMetadata{ClientIP: m.ClientIP, UserAgent: m.UserAgent, RequestID: m.RequestID}
 }
 
 // These audit events cannot undo an already completed logout or turn an invalid

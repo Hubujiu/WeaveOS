@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 )
 
@@ -16,7 +17,6 @@ func reply(w http.ResponseWriter, r *http.Request, status int, code string, data
 		w.Header().Set("WWW-Authenticate", `Session realm="enterprise-management-system"`)
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
 	if r.Method == "HEAD" || status == 204 {
 		return
@@ -26,7 +26,7 @@ func reply(w http.ResponseWriter, r *http.Request, status int, code string, data
 		Message string            `json:"message"`
 		Data    any               `json:"data"`
 		Meta    map[string]string `json:"meta"`
-	}{code, publicMessage(code), data, map[string]string{"requestId": w.Header().Get("X-Request-Id")}})
+	}{code, publicMessage(code), data, map[string]string{"requestId": httpserver.Metadata(r.Context()).RequestID}})
 }
 
 func publicMessage(code string) string {

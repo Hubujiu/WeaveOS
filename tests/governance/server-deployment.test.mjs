@@ -122,7 +122,7 @@ test('operational schedules retain TLS verification, prevent overlap, and invoke
  assert.match(cron,/^\*\/5 \* \* \* \* root /m);
  assert.match(cron,/^15 3 \* \* \* root /m);
  assert.match(cron,/NODE_EXTRA_CA_CERTS=\/opt\/weaveos-v010\/tls\/cert.pem/);
- assert.equal((cron.match(/flock -n/g)??[]).length,2);
+ assert.equal((cron.match(/flock -n/g)??[]).length,4); // monitor, backup, minute collection and Q20 cleanup
  assert.match(cron,/operations\.mjs monitor/);
  assert.match(cron,/operations\.mjs backup/);
  assert.doesNotMatch(cron,/playwright|pnpm|go test|build/);
@@ -141,7 +141,7 @@ test('server maintenance addresses only the authorized deployment and does not r
 test('finished services restart automatically and have finite resource and log budgets',()=>{
  const c=serverCompose(runtime);
  assert.deepEqual(Object.keys(c.services??{}).sort(),['audit-maintenance','bff','nginx','postgres','redis']);
- for(const s of Object.values(c.services)){assert.equal(s.restart,'unless-stopped');assert.ok(s.mem_limit);assert.ok(s.logging.options['max-size']);}
+ for(const [name,s] of Object.entries(c.services)){assert.equal(s.restart,name==='audit-maintenance'?'no':'unless-stopped');assert.ok(s.mem_limit);assert.ok(s.logging.options['max-size']);}
  assert.equal(c.services.bff.environment.WEAVEOS_PUBLIC_ORIGIN,'https://localhost:19443');
 });
 test('deployment refuses every existing directory, including apparently empty ones',()=>{

@@ -1,5 +1,10 @@
 const digest=/^[a-f0-9]{64}$/;
 const migration=/^(migrations|archive-migrations)\/[0-9]{5}_[a-z0-9_]+\.sql$/;
+export function validateInstalledMaintenance(existing) {
+ const task=existing.services?.['audit-maintenance'];
+ if(JSON.stringify(task?.profiles)!=='["maintenance"]'||JSON.stringify(task?.command)!=='["/app/audit-maintenance","--once"]'||task?.restart!=='no')throw Error('Maintenance topology requires separate reviewed upgrade');
+ return true;
+}
 export function validateCompatibility(current,release) {
  if(!/^[a-f0-9]{40}$/.test(release.commit)||!Number.isSafeInteger(release.runId)||release.runId<=current.runId||release.backwardCompatible!==true)throw Error('Release identity/compatibility rejected');
  if(!release.migrations||!release.approved)throw Error('Migration declaration missing');
@@ -7,7 +12,7 @@ export function validateCompatibility(current,release) {
  for(const [path,hash] of Object.entries(release.migrations))if(!migration.test(path)||!digest.test(hash)||release.approved[path]!==hash)throw Error('Migration not approved');
  return true;
 }
-export function candidateCompose(base,images) {
+export function validateRuntimeConfig(base,images) {
  const names=['postgres','redis','bff','audit-maintenance','nginx'];
  if(Object.keys(base).sort().join()!=='networks,services,volumes'||Object.keys(base.services).sort().join()!==[...names].sort().join()||JSON.stringify(base.volumes)!=='{"pg":{}}'||JSON.stringify(base.networks)!=='{"default":{"internal":true},"edge":{}}')throw Error('Runtime topology rejected');
  if(JSON.stringify(base.services.nginx.networks)!=='["default","edge"]'||base.services.bff.environment.WEAVEOS_TRUSTED_PROXY_HOSTS!=='nginx')throw Error('Proxy boundary rejected');
@@ -20,22 +25,12 @@ export function candidateCompose(base,images) {
  const keys=new Set(['image','env_file','volumes','healthcheck','mem_limit','cpus','logging','command','user','read_only','cap_drop','security_opt','environment','depends_on','networks','ports']);
  for(const name of names){
   const s=base.services[name];
-  if(Object.keys(s).some(k=>!keys.has(k))||JSON.stringify(s.volumes??[])!==JSON.stringify(mounts[name])||JSON.stringify(s.env_file??[])!==JSON.stringify(env[name]?['${WEAVEOS_RUNTIME_DIR}/'+env[name]+'.env']:[]))throw Error('Host access rejected');
+  if(name==='audit-maintenance'&&(JSON.stringify(s.profiles)!=='["maintenance"]'||JSON.stringify(s.command)!=='["/app/audit-maintenance","--once"]'||s.restart!=='no'))throw Error('Maintenance task rejected');
+  if(Object.keys(s).some(k=>!keys.has(k)&&!(name==='audit-maintenance'&&['profiles','restart'].includes(k)))||JSON.stringify(s.volumes??[])!==JSON.stringify(mounts[name])||JSON.stringify(s.env_file??[])!==JSON.stringify(env[name]?['${WEAVEOS_RUNTIME_DIR}/'+env[name]+'.env']:[]))throw Error('Host access rejected');
   if(name!=='nginx'&&(s.ports||s.networks))throw Error('Private service exposure rejected');
  }
  for(const id of Object.values(images))if(!/^sha256:[a-f0-9]{64}$/.test(id))throw Error('Immutable image required');
- const result=structuredClone(base);
- for(const s of Object.values(result.services))s.restart='unless-stopped';
- result.services.bff.image=result.services['audit-maintenance'].image=images.bff;
- result.services.nginx.image=images.web;
- result.services.bff.environment.WEAVEOS_PUBLIC_ORIGIN='https://weave.hubujiu.site';
- result.services.nginx.ports=['0.0.0.0:443:19443','0.0.0.0:80:80','127.0.0.1:19443:19443'];
- result.services.nginx.volumes.push('${WEAVEOS_RUNTIME_DIR}/public-nginx.conf:/etc/nginx/nginx.conf:ro');
- return result;
-}
-export function publicNginx(source) {
- if(!source.includes('server_name localhost;')||!source.includes('proxy_set_header X-Forwarded-For $remote_addr;')||!source.includes('add_header Cache-Control "no-store" always;'))throw Error('HTTPS boundary missing');
- return source.replace('server_name localhost;','server_name weave.hubujiu.site;').replace('http {','http {\n server { listen 80; server_name weave.hubujiu.site; return 308 https://weave.hubujiu.site$request_uri; }');
+ return true;
 }
 export async function promote(ops) {
  let phase='validate';
