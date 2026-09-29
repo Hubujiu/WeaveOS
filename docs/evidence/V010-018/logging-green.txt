@@ -2,51 +2,63 @@ TAP version 13
 # Subtest: four kinds are stored by explicit natural day and only safe fields survive
 ok 1 - four kinds are stored by explicit natural day and only safe fields survive
   ---
-  duration_ms: 26.186
+  duration_ms: 31.509
   type: 'test'
   ...
 # Subtest: retention dry-run selects only approved kinds and inclusive natural-day cutoff
 ok 2 - retention dry-run selects only approved kinds and inclusive natural-day cutoff
   ---
-  duration_ms: 9.3199
+  duration_ms: 12.3495
   type: 'test'
   ...
 # Subtest: symlinked category and destination file cannot escape the log root
 ok 3 - symlinked category and destination file cannot escape the log root
   ---
-  duration_ms: 4.0852
+  duration_ms: 5.7368
+  type: 'test'
+  ...
+# Subtest: certificate task logs fixed outcomes without persisting raw command secrets
+ok 4 - certificate task logs fixed outcomes without persisting raw command secrets
+  ---
+  duration_ms: 1.712
   type: 'test'
   ...
 # Subtest: collector records access stdout and application stderr, advances window, and excludes raw text
-ok 4 - collector records access stdout and application stderr, advances window, and excludes raw text
+ok 5 - collector records access stdout and application stderr, advances window, and excludes raw text
   ---
-  duration_ms: 21.6009
+  duration_ms: 25.8651
   type: 'test'
   ...
 # Subtest: approved explicit config connects operation records and collector is scheduled without deletion
-ok 5 - approved explicit config connects operation records and collector is scheduled without deletion
+ok 6 - approved explicit config connects operation records and collector is scheduled without deletion
   ---
-  duration_ms: 4.2429
+  duration_ms: 5.9875
   type: 'test'
   ...
 # Subtest: collector is scheduled with overlap protection and no destructive retention
-ok 6 - collector is scheduled with overlap protection and no destructive retention
+ok 7 - collector is scheduled with overlap protection and no destructive retention
   ---
-  duration_ms: 0.2778
+  duration_ms: 0.3417
   type: 'test'
   ...
 # Subtest: failed docker collection does not advance cursor or publish raw diagnostics
-ok 7 - failed docker collection does not advance cursor or publish raw diagnostics
+ok 8 - failed docker collection does not advance cursor or publish raw diagnostics
   ---
-  duration_ms: 0.9676
+  duration_ms: 1.0677
   type: 'test'
   ...
-1..7
-# tests 7
+# Subtest: unexpected HTTP method cannot stall collection or persist arbitrary method text
+ok 9 - unexpected HTTP method cannot stall collection or persist arbitrary method text
+  ---
+  duration_ms: 9.7514
+  type: 'test'
+  ...
+1..9
+# tests 9
 # suites 0
-# pass 7
+# pass 9
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 101.583
+# duration_ms 134.461

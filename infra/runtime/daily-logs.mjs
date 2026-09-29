@@ -31,12 +31,13 @@ export function appendDaily(root,kind,record,policy){
  if(!kinds.includes(kind))throw Error('Unapproved log kind');
  const stamp=day(record.at,policy.timeZone),safe={at:record.at};
  if(kind==='access'){
-  if(!/^[a-f0-9]{32}$/.test(record.request_id)||!['GET','HEAD','POST','PUT','PATCH','DELETE','OPTIONS'].includes(record.method)||!Number.isInteger(record.status)||record.status<100||record.status>599)throw Error('Invalid access event');
+  if(!/^[a-f0-9]{32}$/.test(record.request_id)||!Number.isInteger(record.status)||record.status<100||record.status>599)throw Error('Invalid access event');
+  const method=['GET','HEAD','POST','PUT','PATCH','DELETE','OPTIONS'].includes(record.method)?record.method:'OTHER';
   const path=String(record.path??'').split('?')[0];
   // Unknown paths may themselves contain credential material. Keep route shapes.
   const route=/^\/(?:login|register|health\/(?:ready|live)|api\/v1\/(?:sessions(?:\/current)?|registrations|invitations))$/.test(path)?path:
    /^\/api\/v1\/users\/[a-f0-9-]{36}\/password-reset$/.test(path)?'/api/v1/users/:id/password-reset':path.startsWith('/assets/')?'/assets/*':'[unmatched]';
-  Object.assign(safe,{request_id:record.request_id,method:record.method,path:route,status:record.status,bytes:number(record.bytes)});
+  Object.assign(safe,{request_id:record.request_id,method,path:route,status:record.status,bytes:number(record.bytes)});
  }else if(kind==='application'){
   safe.message=messages.has(record.msg)?record.msg:'unrecognized application event';
   safe.level=['INFO','WARN','ERROR'].includes(record.level)?record.level:'INFO';

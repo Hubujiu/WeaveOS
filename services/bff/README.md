@@ -23,3 +23,11 @@
 ## 验证
 
 真实隔离 PostgreSQL / Redis 下运行 `go test -race -p 1 -count=1 ./...`、`go vet ./...` 与 `go build ./cmd/bff`。新增 `application_test.go` 验证无需 HTTP 也能执行四个认证用例；`boundary_test.go` 只检查代码职责，不替代事务、Cookie、CSRF 和并发集成测试。已有测试预期继续保留。
+
+## V010-018 后续改造
+
+Q19已确认剩余方案。`platform/httpserver`在入口统一提取可信元数据并保存在请求context，业务不再从ResponseWriter读取Request-ID；Nginx覆盖外部标识，Go仅接受可信最后一跳且格式有效的值。直接访问Go仍自行生成标识。
+
+管理员写操作的PG提交明确成功后，Session续期失败仍交付原业务结果，清除两种浏览器Cookie并写固定诊断；清Cookie不等于Redis撤销。提交失败或结果不确定仍503，不自动重试或保存明文邀请码。真实TCP断连、COMMIT确认丢失和数据库副作用测试位于`committed_test.go`、`ambiguous_commit_test.go`。
+
+审计CLI必须显式`--once`，无内部调度循环；五分钟超时、PG advisory lock与冷热规则保留。运行层调用和待审批服务器切换见`infra/server/deploy/V010-018-upgrade.md`。

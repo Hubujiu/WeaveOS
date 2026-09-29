@@ -38,7 +38,7 @@ Remove-Item Env:WEAVEOS_ARTIFACT_RECORD
 
 ```powershell
 $env:WEAVEOS_RUNTIME_CONTEXT=(Resolve-Path .work/runtime/CURRENT.json).Path
-node --input-type=module -e "import {runtimeContext} from './infra/runtime/context.mjs'; const c=runtimeContext(); c.compose('up','-d','--wait','postgres','redis'); c.compose('up','-d','bff','audit-maintenance','nginx');"
+node --input-type=module -e "import {runtimeContext} from './infra/runtime/context.mjs'; const c=runtimeContext(); c.compose('up','-d','--wait','postgres','redis'); c.compose('up','-d','bff','nginx');"
 ```
 
 访问 `/login`、`/register`。自签名证书仅用于本机演练；自动测试显式信任当前证书，没有关闭 TLS 验证或安装系统根证书。合成测试账号保存在本机私有 `.work/runtime/fixtures.json`，不复制到工单、截图或公开资料。该环境只包含合成数据。

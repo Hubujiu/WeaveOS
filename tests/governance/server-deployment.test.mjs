@@ -122,7 +122,7 @@ test('operational schedules retain TLS verification, prevent overlap, and invoke
  assert.match(cron,/^\*\/5 \* \* \* \* root /m);
  assert.match(cron,/^15 3 \* \* \* root /m);
  assert.match(cron,/NODE_EXTRA_CA_CERTS=\/opt\/weaveos-v010\/tls\/cert.pem/);
- assert.equal((cron.match(/flock -n/g)??[]).length,2);
+ assert.equal((cron.match(/flock -n/g)??[]).length,3); // monitor, backup and the approved minute log collector
  assert.match(cron,/operations\.mjs monitor/);
  assert.match(cron,/operations\.mjs backup/);
  assert.doesNotMatch(cron,/playwright|pnpm|go test|build/);

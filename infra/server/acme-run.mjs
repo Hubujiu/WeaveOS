@@ -11,11 +11,11 @@ export function runAcme({operation,credentials,command=execFileSync,log}={}) {
  if(!['register','issue','install','renew'].includes(operation))throw Error('ACME operation rejected');
  const env={...process.env,...credentials};
  try{
-  const output=command('/bin/sh',['/opt/weaveos-v010/acme-client/acme.sh',...p[operation]],{env,stdio:'pipe',timeout:900000,maxBuffer:4*1024*1024});
-  if(log)log(output);
+  command('/bin/sh',['/opt/weaveos-v010/acme-client/acme.sh',...p[operation]],{env,stdio:'pipe',timeout:900000,maxBuffer:4*1024*1024});
+  if(log)log(Buffer.from(JSON.stringify({operation,status:'passed'})+'\n'));
   return {operation,status:'passed',exitCode:0};
  }catch(error){
-  if(log)log(Buffer.concat([error.stdout??Buffer.alloc(0),error.stderr??Buffer.alloc(0)]));
+  if(log)log(Buffer.from(JSON.stringify({operation,status:'failed'})+'\n'));
   return {operation,status:'failed',exitCode:Number.isInteger(error.status)&&error.status>0?error.status:1};
  }
 }
