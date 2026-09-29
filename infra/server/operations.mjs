@@ -4,10 +4,17 @@ import {sampleServer} from './probe.mjs';
 import {receiveAlarms} from '../runtime/monitor.mjs';
 import {backupDatabase} from '../runtime/backup.mjs';
 import {runAuditTask} from '../runtime/audit-task.mjs';
+import {readLogPolicy,configuredLog} from '../runtime/log-policy.mjs';
+import {collectLogs} from '../runtime/log-collection.mjs';
+import {cleanDaily} from '../runtime/daily-logs.mjs';
 const c=serverContext();
 const operation=process.argv[2];
+const started=Date.now();
+try{
 if(operation==='monitor'){
- const codes=receiveAlarms(c.dir+'/alerts.jsonl',await sampleServer(c));
+ const sample=await sampleServer(c);
+ configuredLog(c,'metrics',{at:new Date().toISOString(),...sample});
+ const codes=receiveAlarms(c.dir+'/alerts.jsonl',sample);
  if(codes.length)console.log(JSON.stringify({codes}));
 }else if(operation==='backup'){
  const stamp=new Date().toISOString().replaceAll(':','-');
@@ -19,4 +26,16 @@ if(operation==='monitor'){
  const result=runAuditTask(c);
  console.log(JSON.stringify(result));
  if(result.status!=='complete')process.exitCode=1;
-}else throw new Error('Usage: operations.mjs monitor|backup|audit');
+}else if(operation==='logs'){
+ const policy=readLogPolicy(c);if(!policy)throw Error('Log policy must be installed explicitly');
+ console.log(JSON.stringify(collectLogs(c,policy)));
+}else if(operation==='retention'){
+ const policy=readLogPolicy(c);if(!policy)throw Error('Log policy must be installed explicitly');
+ console.log(JSON.stringify({operation:'retention',dryRun:true,files:cleanDaily(c.dir+'/logs',policy,{apply:process.argv.includes('--apply')})}));
+}else throw new Error('Unknown operation');
+if(operation!=='audit')configuredLog(c,'operations',{at:new Date().toISOString(),operation,status:'complete',elapsedMs:Date.now()-started});
+}catch{
+ try{configuredLog(c,'operations',{at:new Date().toISOString(),operation,status:'failed',elapsedMs:Date.now()-started});}catch{}
+ console.error(JSON.stringify({status:'failed',operation:['monitor','backup','audit','logs','retention'].includes(operation)?operation:'unknown'}));
+ process.exitCode=1;
+}

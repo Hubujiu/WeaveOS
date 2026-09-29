@@ -3,9 +3,13 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
@@ -14,6 +18,59 @@ import (
 )
 
 type commitFaultKey struct{}
+
+func redisTransportFault(t *testing.T, rawURL string) (string, func()) {
+	t.Helper()
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := u.Host
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	u.Host = listener.Addr().String()
+	var mu sync.Mutex
+	var connections []net.Conn
+	var stopped bool
+	stop := func() {
+		mu.Lock()
+		defer mu.Unlock()
+		stopped = true
+		_ = listener.Close()
+		for _, c := range connections {
+			_ = c.Close()
+		}
+	}
+	t.Cleanup(stop)
+	go func() {
+		for {
+			client, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			server, err := net.Dial("tcp", target)
+			if err != nil {
+				_ = client.Close()
+				continue
+			}
+			mu.Lock()
+			if stopped {
+				_ = client.Close()
+				_ = server.Close()
+				mu.Unlock()
+				return
+			}
+			connections = append(connections, client, server)
+			mu.Unlock()
+			go func() { _, _ = io.Copy(server, client); _ = server.Close() }()
+			go func() { _, _ = io.Copy(client, server); _ = client.Close() }()
+		}
+	}()
+	return u.String(), stop
+}
+
 type commitFault struct {
 	after    func()
 	observed bool
@@ -37,6 +94,14 @@ func TestCommittedWriteSurvivesRenewalFailure(t *testing.T) {
 		for _, fault := range []string{"revoked", "disconnected"} {
 			t.Run(operation+"/"+fault, func(t *testing.T) {
 				a := setup(t)
+				var disconnect func()
+				if fault == "disconnected" {
+					proxied, stop := redisTransportFault(t, os.Getenv("WEAVEOS_TEST_REDIS_URL"))
+					_ = a.service.Sessions.Close()
+					a.service.Sessions = session.NewStore(proxied, "auth-http-tests")
+					t.Cleanup(func() { _ = a.service.Sessions.Close() })
+					disconnect = stop
+				}
 				a.user(t, "admin", true)
 				target := a.user(t, "member", false)
 				member := a.login(t, "member")
@@ -53,8 +118,8 @@ func TestCommittedWriteSurvivesRenewalFailure(t *testing.T) {
 						if err != nil || !ok {
 							t.Fatal("failed to revoke real session at commit barrier")
 						}
-					} else if err := a.service.Sessions.Close(); err != nil {
-						t.Fatal(err)
+					} else {
+						disconnect()
 					}
 				}}
 				cfg, err := pgxpool.ParseConfig(os.Getenv("WEAVEOS_TEST_DATABASE_URL"))

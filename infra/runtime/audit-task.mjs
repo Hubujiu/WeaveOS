@@ -1,6 +1,7 @@
 import {writeFileSync,renameSync} from 'node:fs';
 import {join} from 'node:path';
 import {receiveCodes} from './monitor.mjs';
+import {configuredLog} from './log-policy.mjs';
 
 // Same entry for the hourly host schedule, manual operations and isolated drills.
 // PostgreSQL advisory locking remains authoritative across all callers.
@@ -14,5 +15,6 @@ export function runAuditTask(c) {
  const temporary=join(c.dir,`audit-status.${process.pid}.next`);
  writeFileSync(temporary,JSON.stringify(result)+'\n',{mode:0o600});
  renameSync(temporary,join(c.dir,'audit-status.json'));
+ configuredLog(c,'operations',result);
  return result;
 }

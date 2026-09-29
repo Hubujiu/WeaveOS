@@ -56,6 +56,7 @@ try{
  if(runAuditTask({dir,args:composeArgs,command:(bin,args,options)=>call(bin,args,{...options,stdio:'pipe'})}).status!=='complete')throw Error('Initial one-shot maintenance failed');
  const testEnv={...env,WEAVEOS_RUNTIME_CONTEXT:resolve(dir,'CURRENT.json'),NODE_EXTRA_CA_CERTS:resolve(dir,'tls/cert.pem')};
  call(process.execPath,['--test','infra/runtime/audit-task.integration.test.mjs'],{env:testEnv});
+ call(process.execPath,['--test','infra/runtime/logs.integration.test.mjs'],{env:testEnv});
  call(process.execPath,['--test','infra/runtime/operations.test.mjs'],{env:testEnv});
  call(process.execPath,['--test','infra/runtime/dns.integration.test.mjs'],{env:testEnv});
  call(process.execPath,['--test','infra/runtime/monitor.integration.test.mjs'],{env:testEnv});

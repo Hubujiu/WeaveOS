@@ -5,6 +5,7 @@ import {pathToFileURL} from 'node:url';
 import {acmePlan} from './acme.mjs';
 import {credentialsFromEnv} from './credentials.mjs';
 import {receiveCodes} from '../runtime/monitor.mjs';
+import {configuredLog} from '../runtime/log-policy.mjs';
 export function runAcme({operation,credentials,command=execFileSync,log}={}) {
  const p=acmePlan();
  if(!['register','issue','install','renew'].includes(operation))throw Error('ACME operation rejected');
@@ -27,9 +28,11 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
   const credentials=credentialsFromEnv(readFileSync(file,'utf8'));
   const log=bytes=>appendFileSync(root+'/acme-private.log',bytes,{mode:0o600});
   const result=runAcme({operation:process.argv[2],credentials,log});
+  configuredLog({dir:root},'operations',{at:new Date().toISOString(),operation:'acme',status:result.status});
   if(result.exitCode)receiveCodes(root+'/alerts.jsonl',['CERTIFICATE']);
   console.log(JSON.stringify(result));process.exitCode=result.exitCode;
  }catch{
+  try{configuredLog({dir:root},'operations',{at:new Date().toISOString(),operation:'acme',status:'failed'});}catch{}
   receiveCodes(root+'/alerts.jsonl',['CERTIFICATE']);
   console.error('ACME operation failed; inspect private operational log');process.exitCode=1;
  }
