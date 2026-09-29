@@ -6,6 +6,8 @@
 
 以下测试先运行且因目标行为缺失失败(exit1)，再写对应实现。文件名`*.red.txt`是当时测试/旧实现文本快照；`.patch`是差异快照，供squash后重放，不依赖即将删除的分支。源码和输出均不包含真实凭据。表中Git提交用于审查真实时间顺序，重放材料同时在本目录保留。
 
+`SHA256SUMS`记录本目录测试源码快照、补丁及原始执行输出在Git中规范LF字节的SHA-256，可在LF检出后用`sha256sum -c SHA256SUMS`核对。Windows工具生成的CRLF由仓库既有.gitattributes规范化；其他输出空白与补丁上下文保留。摘要仅验证材料完整性，不单独证明TDD时序或测试正确性。
+
 | 需求 | RED提交/证据 | 缺失断言 | GREEN入口 |
 | --- | --- | --- | --- |
 | FR04已提交写结果 | 6904476 / committed-red.txt、committed-test.red.txt、service-before-committed.red.txt | 邀请码401/503而非201；重置401/503而非200 | go test ./internal/auth -count=1 |
@@ -38,3 +40,11 @@
 - Q20：retention-green.txt记录37项相关回归；retention-cli-green.txt记录隔离Linux容器实际`operations.mjs retention`→`retention --apply`。确认四类旧日志被删，窗口内/未来文件和备份保留、幂等、链接/非批准参数拒绝。Cron每日04:10与分钟收集共享logs.lock。旧“不允许--apply”测试按Q20变更为明确授权窗口测试，未改认证审计规则。
 
 最终head的适用CI和完整产品验收必须重新核对并记入任务文档。纯说明文档、说明性契约段落、交接和证据索引TDD:N/A，以来源/命令/链接复核，不声称测试证明Notion读取或用户批准。
+
+## 完整远端验收成功（2026-09-29）
+
+实现head `c07ae8e07025105805e3208661470e4c402574fa`的[CI 36571667604](https://github.com/Hubujiu/WeaveOS/actions/runs/36571667604)、[product 36571667597](https://github.com/Hubujiu/WeaveOS/actions/runs/36571667597)及仓库治理36571667510全部成功。Actions检出PR合并预览`3486dec2784ff4ac501a018a0a5588a42819f0a8`；已实际核对其父提交为main 3d7fa24及实现head，Git树`ee38934759d3a182f5e1d0d970ca7baa53c22212`与实现head相同。不是把另一个代码版本的制品冒充本轮。
+
+`ci-product-result.json`、`ci-runtime-result.json`、`ci-recovery-result.json`为上述公开artifact原样留存，避免依赖到期artifact；`ci-product-green.txt`摘录原始成功日志。真实环境为GitHub hosted Ubuntu24.04 / Docker29.6.2，原runner结果中的Windows/WSL target文案是沿用的静态描述，以本段执行环境为准。API122、浏览器111在全栈与固定制品两轮均通过；新增入口、维护互斥/冷库失败、5→4→5→4切换、四类日志、Q20实际CLI、入口重建均有真实通过输出。恢复观测3325ms仅为本次同机测试值，不构成SLA。
+
+安全源码/依赖检查及四镜像扫描完成且既有测试门禁通过，不表示基础镜像零漏洞或新增生产风险批准。PR工作流按既有条件跳过check-release人工签署门禁；本机仅执行其结构检查并通过，历史签署不代替本任务最终head验证或实际服务器升级授权。文档提交后仍须重新核对最终head，生产未升级。
