@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: Q18 accepts declared compatible expansion but rejects history rewrite, missing approval and stale releases
+ok 1 - Q18 accepts declared compatible expansion but rejects history rewrite, missing approval and stale releases
+  ---
+  duration_ms: 1.0698
+  type: 'test'
+  ...
+# Subtest: Q18 deployment only changes approved runtime config and exact images, retaining private volumes and origin
+ok 2 - Q18 deployment only changes approved runtime config and exact images, retaining private volumes and origin
+  ---
+  duration_ms: 2.6763
+  type: 'test'
+  ...
+# Subtest: approved config cannot include other host compose files, weaken service confinement or join external networks
+ok 3 - approved config cannot include other host compose files, weaken service confinement or join external networks
+  ---
+  duration_ms: 0.9274
+  type: 'test'
+  ...
+# Subtest: public Nginx rendering preserves API boundary and creates fixed HTTPS redirect
+ok 4 - public Nginx rendering preserves API boundary and creates fixed HTTPS redirect
+  ---
+  duration_ms: 0.563
+  type: 'test'
+  ...
+# Subtest: promotion validates and backs up before migration and records only a healthy deployment
+ok 5 - promotion validates and backs up before migration and records only a healthy deployment
+  ---
+  duration_ms: 0.3
+  type: 'test'
+  ...
+# Subtest: backup failure never migrates; activation or health failure restores prior app/config without Down
+ok 6 - backup failure never migrates; activation or health failure restores prior app/config without Down
+  ---
+  duration_ms: 0.4102
+  type: 'test'
+  ...
+# Subtest: main delivery runs verification and acceptance before a serialized secret-scoped deployment
+ok 7 - main delivery runs verification and acceptance before a serialized secret-scoped deployment
+  ---
+  duration_ms: 7.3658
+  type: 'test'
+  ...
+# Subtest: compatibility registry uses explicit digest records, rejects ambiguous duplicate approvals
+ok 8 - compatibility registry uses explicit digest records, rejects ambiguous duplicate approvals
+  ---
+  duration_ms: 0.2744
+  type: 'test'
+  ...
+# Subtest: transport rejects undeclared content, checksum tampering, secret paths, invalid image identities and oversized payloads
+ok 9 - transport rejects undeclared content, checksum tampering, secret paths, invalid image identities and oversized payloads
+  ---
+  duration_ms: 3.7925
+  type: 'test'
+  ...
+# Subtest: framed receiver verifies every byte and rejects truncated, appended and corrupt images
+ok 10 - framed receiver verifies every byte and rejects truncated, appended and corrupt images
+  ---
+  duration_ms: 10.3734
+  type: 'test'
+  ...
+# Subtest: FR06 common rules render local and public explicit environments
+ok 11 - FR06 common rules render local and public explicit environments
+  ---
+  duration_ms: 1.4534
+  type: 'test'
+  ...
+# Subtest: FR06 explicit parameters reject config injection and invalid HSTS scope
+ok 12 - FR06 explicit parameters reject config injection and invalid HSTS scope
+  ---
+  duration_ms: 0.3151
+  type: 'test'
+  ...
+# Subtest: public HTTPS exposes only edge ports and preserves private data, images and input
+ok 13 - public HTTPS exposes only edge ports and preserves private data, images and input
+  ---
+  duration_ms: 1.5854
+  type: 'test'
+  ...
+# Subtest: public access rejects untrusted TLS while default deployment stays private
+ok 14 - public access rejects untrusted TLS while default deployment stays private
+  ---
+  duration_ms: 1.0229
+  type: 'test'
+  ...
+# Subtest: HTTP redirects all paths to the fixed HTTPS origin without trusting Host
+ok 15 - HTTP redirects all paths to the fixed HTTPS origin without trusting Host
+  ---
+  duration_ms: 0.2365
+  type: 'test'
+  ...
+# Subtest: public TLS preserves same-origin API, non-cacheable auth and trusted proxy boundary
+ok 16 - public TLS preserves same-origin API, non-cacheable auth and trusted proxy boundary
+  ---
+  duration_ms: 0.2486
+  type: 'test'
+  ...
+# Subtest: existing loopback health and DNS-01 renewal still work independently of public DNS
+ok 17 - existing loopback health and DNS-01 renewal still work independently of public DNS
+  ---
+  duration_ms: 0.4748
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 103.1228

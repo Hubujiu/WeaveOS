@@ -7,7 +7,7 @@ export function validateCompatibility(current,release) {
  for(const [path,hash] of Object.entries(release.migrations))if(!migration.test(path)||!digest.test(hash)||release.approved[path]!==hash)throw Error('Migration not approved');
  return true;
 }
-export function candidateCompose(base,images) {
+export function validateRuntimeConfig(base,images) {
  const names=['postgres','redis','bff','audit-maintenance','nginx'];
  if(Object.keys(base).sort().join()!=='networks,services,volumes'||Object.keys(base.services).sort().join()!==[...names].sort().join()||JSON.stringify(base.volumes)!=='{"pg":{}}'||JSON.stringify(base.networks)!=='{"default":{"internal":true},"edge":{}}')throw Error('Runtime topology rejected');
  if(JSON.stringify(base.services.nginx.networks)!=='["default","edge"]'||base.services.bff.environment.WEAVEOS_TRUSTED_PROXY_HOSTS!=='nginx')throw Error('Proxy boundary rejected');
@@ -24,18 +24,7 @@ export function candidateCompose(base,images) {
   if(name!=='nginx'&&(s.ports||s.networks))throw Error('Private service exposure rejected');
  }
  for(const id of Object.values(images))if(!/^sha256:[a-f0-9]{64}$/.test(id))throw Error('Immutable image required');
- const result=structuredClone(base);
- for(const s of Object.values(result.services))s.restart='unless-stopped';
- result.services.bff.image=result.services['audit-maintenance'].image=images.bff;
- result.services.nginx.image=images.web;
- result.services.bff.environment.WEAVEOS_PUBLIC_ORIGIN='https://weave.hubujiu.site';
- result.services.nginx.ports=['0.0.0.0:443:19443','0.0.0.0:80:80','127.0.0.1:19443:19443'];
- result.services.nginx.volumes.push('${WEAVEOS_RUNTIME_DIR}/public-nginx.conf:/etc/nginx/nginx.conf:ro');
- return result;
-}
-export function publicNginx(source) {
- if(!source.includes('server_name localhost;')||!source.includes('proxy_set_header X-Forwarded-For $remote_addr;')||!source.includes('add_header Cache-Control "no-store" always;'))throw Error('HTTPS boundary missing');
- return source.replace('server_name localhost;','server_name weave.hubujiu.site;').replace('http {','http {\n server { listen 80; server_name weave.hubujiu.site; return 308 https://weave.hubujiu.site$request_uri; }');
+ return true;
 }
 export async function promote(ops) {
  let phase='validate';

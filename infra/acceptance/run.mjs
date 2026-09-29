@@ -48,6 +48,10 @@ try {
   }
   node('pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; node --test contracts/*.test.mjs tests/governance/*.test.mjs tests/foundation/*.test.mjs tests/acceptance/topology.test.mjs; pnpm exec redocly lint contracts/openapi/openapi.json; pnpm typecheck; pnpm build; cd apps/web; pnpm exec playwright test --config playwright.component.config.ts');
   compose('up', '-d', 'bff', 'nginx');
+  call(process.execPath, ['--test', 'infra/acceptance/ingress.test.mjs'], { env: { ...env,
+    WEAVEOS_API_URL: 'https://localhost:19443',
+    WEAVEOS_INGRESS_CONTAINERS: JSON.stringify({ nginx: id('nginx'), bff: id('bff'), postgres: id('postgres') }),
+    WEAVEOS_INGRESS_DATABASE: 'weaveos_acceptance', NODE_EXTRA_CA_CERTS: resolve(dir, 'tls/cert.pem') } });
   node('node --test tests/acceptance/api.test.mjs; pnpm exec playwright test --config apps/web/playwright.integration.config.ts --reporter=line', id('nginx'));
   call(process.execPath, ['--test', 'infra/acceptance/faults.test.mjs'], { env: { ...env, WEAVEOS_ACCEPTANCE_PROJECT: project, WEAVEOS_ACCEPTANCE_FIXTURES: resolve(dir, 'fixtures.json'), NODE_EXTRA_CA_CERTS: resolve(dir, 'tls/cert.pem') } });
   const storeEnv = { ...env, WEAVEOS_API_URL: 'https://localhost:19443', WEAVEOS_ACCEPTANCE_PROJECT: project, WEAVEOS_ACCEPTANCE_FIXTURES: resolve(dir, 'fixtures.json'), WEAVEOS_ACCEPTANCE_OBSERVER: resolve(root, 'tests/acceptance/storage-observer.mjs'), NODE_EXTRA_CA_CERTS: resolve(dir, 'tls/cert.pem') };

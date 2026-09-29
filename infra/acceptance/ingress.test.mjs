@@ -21,7 +21,12 @@ function policy(res,{api=false}={}){
  assert.equal(res.raw.filter(x=>x.toLowerCase()==='x-content-type-options').length,1);
  if(api)assert.equal(res.headers['cache-control'],'no-store');
 }
-test('actual ingress config parses',()=>assert.match(docker('exec',names.nginx,'nginx','-t'),/^/));
+test('actual ingress config parses and becomes ready',async()=>{
+ docker('exec',names.nginx,'nginx','-t');
+ const deadline=Date.now()+20000;let ready=false;
+ while(Date.now()<deadline){try{ready=(await call('/health/ready')).status===200;}catch{}if(ready)break;await new Promise(r=>setTimeout(r,200));}
+ assert.ok(ready,'real ingress did not become ready');
+});
 test('API ingress/header/JSON/audit/access log correlate and external IDs cannot be forged',async()=>{
  const forged='f'.repeat(32);
  const res=await call('/api/v1/sessions?invitationCode=DO_NOT_LOG_INVITATION',{method:'POST',body:JSON.stringify({account:'unknown-ingress-probe',password:'Aa1!'}),headers:{'Content-Type':'application/json','Origin':base.origin,'X-Request-Id':forged,'X-Forwarded-For':'203.0.113.99','Cookie':'unrelated=DO_NOT_LOG_COOKIE','X-CSRF-Token':'DO_NOT_LOG_CSRF'}});
@@ -46,6 +51,11 @@ test('paused and stopped upstream produce identifiable non-cacheable 504/502',as
  try {const res=await call('/api/v1/sessions/current');assert.equal(res.status,504);policy(res,{api:true});}
  finally{docker('unpause',names.bff);}
  docker('stop','--time','2',names.bff);
- try {const res=await call('/api/v1/sessions/current');assert.equal(res.status,502);policy(res,{api:true});}
+ try {
+  // Docker removes the endpoint before the Nginx DNS cache necessarily expires.
+  // Require 502 after bounded DNS convergence; retain 504 coverage above.
+  let res;for(let attempt=0;attempt<4;attempt++){res=await call('/api/v1/sessions/current');if(res.status===502)break;}
+  assert.equal(res.status,502);policy(res,{api:true});
+ }
  finally{docker('start',names.bff);}
 });

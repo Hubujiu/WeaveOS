@@ -4,7 +4,8 @@ import {readFileSync,writeFileSync,mkdirSync,mkdtempSync,existsSync,renameSync,u
 import {execFileSync} from 'node:child_process';
 import {request} from 'node:https';
 import {receiveBundle} from './bundle.mjs';
-import {validateCompatibility,candidateCompose,publicNginx,promote} from './policy.mjs';
+import {validateCompatibility,promote} from './policy.mjs';
+import {candidateCompose,publicNginx} from './configuration.mjs';
 import {applyMigrations} from './migrate.mjs';
 import {serverContext} from '../context.mjs';
 const root='/opt/weaveos-v010',deploy=root+'/deploy-state';
