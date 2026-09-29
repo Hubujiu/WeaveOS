@@ -20,7 +20,8 @@ export function validateRuntimeConfig(base,images) {
  const keys=new Set(['image','env_file','volumes','healthcheck','mem_limit','cpus','logging','command','user','read_only','cap_drop','security_opt','environment','depends_on','networks','ports']);
  for(const name of names){
   const s=base.services[name];
-  if(Object.keys(s).some(k=>!keys.has(k))||JSON.stringify(s.volumes??[])!==JSON.stringify(mounts[name])||JSON.stringify(s.env_file??[])!==JSON.stringify(env[name]?['${WEAVEOS_RUNTIME_DIR}/'+env[name]+'.env']:[]))throw Error('Host access rejected');
+  if(name==='audit-maintenance'&&(JSON.stringify(s.profiles)!=='["maintenance"]'||JSON.stringify(s.command)!=='["/app/audit-maintenance","--once"]'||s.restart!=='no'))throw Error('Maintenance task rejected');
+  if(Object.keys(s).some(k=>!keys.has(k)&&!(name==='audit-maintenance'&&['profiles','restart'].includes(k)))||JSON.stringify(s.volumes??[])!==JSON.stringify(mounts[name])||JSON.stringify(s.env_file??[])!==JSON.stringify(env[name]?['${WEAVEOS_RUNTIME_DIR}/'+env[name]+'.env']:[]))throw Error('Host access rejected');
   if(name!=='nginx'&&(s.ports||s.networks))throw Error('Private service exposure rejected');
  }
  for(const id of Object.values(images))if(!/^sha256:[a-f0-9]{64}$/.test(id))throw Error('Immutable image required');

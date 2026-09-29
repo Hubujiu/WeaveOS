@@ -4,7 +4,7 @@ import {acmePlan} from './acme.mjs';
 export function serverCompose(runtime,{publicTLS=false,publicAccess=false}={}) {
  if(publicAccess&&!publicTLS)throw new Error('Public access requires public TLS');
  const config=structuredClone(runtime);
- for(const service of Object.values(config.services)) service.restart='unless-stopped';
+ for(const [name,service] of Object.entries(config.services)) service.restart=name==='audit-maintenance'?'no':'unless-stopped';
  if(publicTLS)config.services.bff.environment.WEAVEOS_PUBLIC_ORIGIN=acmePlan().origin;
  if(publicAccess){
   config.services.bff.environment.WEAVEOS_PUBLIC_ORIGIN=`https://${acmePlan().domain}`;
@@ -20,7 +20,7 @@ export function serverSchedules({publicTLS=false}={}) {
  const root='/opt/weaveos-v010';
  const program=`/usr/local/bin/node ${root}/infra/server/operations.mjs`;
  const trust=publicTLS?'':`NODE_EXTRA_CA_CERTS=${root}/tls/cert.pem `;
- return `# Managed WeaveOS V010-011 runtime operations only\nPATH=/usr/local/bin:/usr/bin:/bin\n*/5 * * * * root ${trust}/usr/bin/flock -n ${root}/monitor.lock ${program} monitor >> ${root}/operations.log 2>&1\n15 3 * * * root /usr/bin/flock -n ${root}/backup.lock ${program} backup >> ${root}/operations.log 2>&1\n`+(publicTLS?`33 2,14 * * * root /usr/bin/flock -n ${root}/acme.lock /usr/local/bin/node ${root}/infra/server/acme-run.mjs renew >> ${root}/operations.log 2>&1\n`:'');
+ return `# Managed WeaveOS V010-011 runtime operations only\nPATH=/usr/local/bin:/usr/bin:/bin\n0 * * * * root ${program} audit >> ${root}/operations.log 2>&1\n*/5 * * * * root ${trust}/usr/bin/flock -n ${root}/monitor.lock ${program} monitor >> ${root}/operations.log 2>&1\n15 3 * * * root /usr/bin/flock -n ${root}/backup.lock ${program} backup >> ${root}/operations.log 2>&1\n`+(publicTLS?`33 2,14 * * * root /usr/bin/flock -n ${root}/acme.lock /usr/local/bin/node ${root}/infra/server/acme-run.mjs renew >> ${root}/operations.log 2>&1\n`:'');
 }
 export function bootstrapCredentials(seed) {
  if(typeof seed?.admin?.password!=='string'||seed.admin.password.length===0)throw new Error('Bootstrap password is missing');
