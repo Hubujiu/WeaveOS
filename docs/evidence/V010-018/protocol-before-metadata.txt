@@ -113,12 +113,7 @@ func TestHTTPProtocolRejectsMalformedWriteDTOs(t *testing.T) {
 }
 func TestAuditRequestIDMatchesResponseAndUnknownAccountHMAC(t *testing.T) {
 	a := setup(t)
-	// FR-02/D4 supersedes the old response-header fixture as a trusted source.
-	a.service.TrustedProxyHosts = []string{"127.0.0.1"}
-	const ingressID = "0123456789abcdef0123456789abcdef"
 	r := httptest.NewRequest("POST", origin+"/api/v1/sessions", strings.NewReader(`{"account":"unique-unknown","password":"Aa1!"}`))
-	r.RemoteAddr = "127.0.0.1:4321"
-	r.Header.Set("X-Request-Id", ingressID)
 	r.Header.Set("Origin", origin)
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -137,7 +132,7 @@ func TestAuditRequestIDMatchesResponseAndUnknownAccountHMAC(t *testing.T) {
 	if err := a.pool.QueryRow(context.Background(), "SELECT request_id FROM auth.authentication_events ORDER BY occurred_at DESC LIMIT 1").Scan(&stored); err != nil {
 		t.Fatal(err)
 	}
-	if stored != body.Meta.RequestID || stored != ingressID || stored != w.Header().Get("X-Request-Id") {
+	if stored != body.Meta.RequestID || stored != "unique-server-request-id" {
 		t.Fatal("audit and response must share trusted request ID")
 	}
 }

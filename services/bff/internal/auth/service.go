@@ -8,14 +8,20 @@ import (
 	"time"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/identity"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/security"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 )
 
-type requestIDKey struct{}
+func (s *Service) TrustedProxies() []string { return append([]string(nil), s.TrustedProxyHosts...) }
 
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r = r.WithContext(context.WithValue(r.Context(), requestIDKey{}, w.Header().Get("X-Request-Id")))
+	var err error
+	r, err = httpserver.Prepare(w, r, s.TrustedProxyHosts)
+	if err != nil {
+		http.Error(w, "request initialization failed", http.StatusServiceUnavailable)
+		return
+	}
 	if r.URL.Path == "/api/v1/registrations" && r.Method == "POST" {
 		s.register(w, r)
 		return
@@ -171,15 +177,14 @@ func (s *Service) renewCommitted(w http.ResponseWriter, r *http.Request, p sessi
 	if err := a.Renew(ctx, w, r, p); err != nil {
 		session.ClearCookies(w)
 		if s.Logger != nil {
-			requestID, _ := r.Context().Value(requestIDKey{}).(string)
-			s.Logger.Warn("session renewal failed after committed write", "request_id", requestID)
+			s.Logger.Warn("session renewal failed after committed write", "request_id", httpserver.Metadata(r.Context()).RequestID)
 		}
 	}
 }
 
 func (s *Service) requestMetadata(r *http.Request) RequestMetadata {
-	requestID, _ := r.Context().Value(requestIDKey{}).(string)
-	return RequestMetadata{ClientIP: s.clientIP(r), UserAgent: r.UserAgent(), RequestID: requestID}
+	m := httpserver.Metadata(r.Context())
+	return RequestMetadata{ClientIP: m.ClientIP, UserAgent: m.UserAgent, RequestID: m.RequestID}
 }
 
 // These audit events cannot undo an already completed logout or turn an invalid
