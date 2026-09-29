@@ -1,0 +1,46 @@
+diff --git a/services/bff/internal/auth/proxy_acceptance_test.go b/services/bff/internal/auth/proxy_acceptance_test.go
+index 3850157..9e17624 100644
+--- a/services/bff/internal/auth/proxy_acceptance_test.go
++++ b/services/bff/internal/auth/proxy_acceptance_test.go
+@@ -2,6 +2,7 @@ package auth
+ 
+ import (
+ 	"context"
++	"encoding/json"
+ 	"net/http/httptest"
+ 	"strings"
+ 	"testing"
+@@ -37,3 +38,33 @@ func TestAuditClientIPOnlyTrustsConfiguredProxy(t *testing.T) {
+ 		}
+ 	}
+ }
++
++func TestIngressRequestIDMatchesResponseAndAudit(t *testing.T) {
++	a := setup(t)
++	a.service.TrustedProxyHosts = []string{"127.0.0.1"}
++	const id = "0123456789abcdef0123456789abcdef"
++	r := httptest.NewRequest("POST", origin+"/api/v1/sessions", strings.NewReader(`{"account":"unknown-ingress","password":"Aa1!"}`))
++	r.RemoteAddr = "127.0.0.1:4321"
++	r.Header.Set("Origin", origin)
++	r.Header.Set("Content-Type", "application/json")
++	r.Header.Set("X-Forwarded-For", "198.51.100.9")
++	r.Header.Set("X-Request-Id", id)
++	w := httptest.NewRecorder()
++	httpserver.NewHandler(a.service.Ready, a.service).ServeHTTP(w, r)
++	checkStatus(t, w, 401)
++	var body struct {
++		Meta struct {
++			RequestID string `json:"requestId"`
++		}
++	}
++	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
++		t.Fatal(err)
++	}
++	if body.Meta.RequestID != id || w.Header().Get("X-Request-Id") != id {
++		t.Fatal("ingress/header/JSON correlation mismatch")
++	}
++	var count int
++	if err := a.pool.QueryRow(context.Background(), "SELECT count(*) FROM auth.authentication_events WHERE request_id=$1 AND client_ip='198.51.100.9'", id).Scan(&count); err != nil || count != 1 {
++		t.Fatal("ingress/audit correlation mismatch")
++	}
++}
