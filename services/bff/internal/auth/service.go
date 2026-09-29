@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/identity"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/security"
@@ -141,13 +142,7 @@ func (s *Service) createInvitation(w http.ResponseWriter, r *http.Request, p ses
 		s.fail(w, r, err)
 		return
 	}
-	// Keep the existing post-commit renewal behavior. Changing its failure
-	// response is the separate ADR-005 D8 decision, not this boundary refactor.
-	a := s.authenticator()
-	if err := a.Renew(r.Context(), w, r, p); err != nil {
-		s.fail(w, r, err)
-		return
-	}
+	s.renewCommitted(w, r, p)
 	w.Header().Set("Location", "/api/v1/invitations/"+result.ID)
 	reply(w, r, 201, "OK", map[string]string{"id": result.ID, "invitationCode": result.Code})
 }
@@ -162,13 +157,24 @@ func (s *Service) reset(w http.ResponseWriter, r *http.Request, p session.Princi
 		session.ClearCookies(w)
 		_, _ = s.Sessions.Revoke(r.Context(), p.SID)
 	} else {
-		a := s.authenticator()
-		if err := a.Renew(r.Context(), w, r, p); err != nil {
-			s.fail(w, r, err)
-			return
-		}
+		s.renewCommitted(w, r, p)
 	}
 	reply(w, r, 200, "OK", nil)
+}
+
+// Only called after an authorized write has acknowledged its database commit.
+// Clearing browser cookies does not claim that Redis has revoked the session.
+func (s *Service) renewCommitted(w http.ResponseWriter, r *http.Request, p session.Principal) {
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+	a := s.authenticator()
+	if err := a.Renew(ctx, w, r, p); err != nil {
+		session.ClearCookies(w)
+		if s.Logger != nil {
+			requestID, _ := r.Context().Value(requestIDKey{}).(string)
+			s.Logger.Warn("session renewal failed after committed write", "request_id", requestID)
+		}
+	}
 }
 
 func (s *Service) requestMetadata(r *http.Request) RequestMetadata {
