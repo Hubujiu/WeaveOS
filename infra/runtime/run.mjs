@@ -58,6 +58,7 @@ try{
  call(process.execPath,['--test','infra/runtime/audit-task.integration.test.mjs'],{env:testEnv});
  call(process.execPath,['--test','infra/runtime/scheduler-transition.integration.test.mjs'],{env:testEnv});
  call(process.execPath,['--test','infra/runtime/logs.integration.test.mjs'],{env:testEnv});
+ call(process.execPath,['--test','infra/runtime/retention.integration.test.mjs'],{env:testEnv});
  call(process.execPath,['--test','infra/runtime/ingress-recreation.integration.test.mjs'],{env:testEnv});
  call(process.execPath,['--test','infra/runtime/operations.test.mjs'],{env:testEnv});
  call(process.execPath,['--test','infra/runtime/dns.integration.test.mjs'],{env:testEnv});

@@ -1,6 +1,6 @@
 # V010-018 永久证据与恢复
 
-来源与需求→验收映射见任务018和Notion PRD FR02–07 / AC04–11。用户Q19在2026-09-29确认ADR005 D2–D10；Q20仍待参数答复。生产未升级，本目录不代表已经验收或上线。
+来源与需求→验收映射见任务018和Notion PRD FR02–07 / AC04–11。用户Q19在2026-09-29确认ADR005 D2–D10；随后Q20确认统一30个自然日、Asia/Shanghai，已同步正式来源。生产未升级，本目录不代表已经验收或上线。
 
 ## 真实RED顺序
 
@@ -18,6 +18,7 @@
 | FR07按日/dry-run | 420f32f / daily-logs-red.txt、daily-logs-test.red.txt、daily-logs-stub.red.txt | 无四类文件、无候选清单、未拒绝目录链接 | tests/governance/daily-logs.test.mjs |
 | FR07收集与调度 | 20c6ed1、7a98db8 / log-collection-red.txt、log-wiring-red.txt及对应测试快照 | 无stdout/stderr窗口、无配置关联/分钟Cron | tests/governance/log-collection.test.mjs |
 | FR07诊断脱敏 | 115411f、ed92d81 / acme-logging-red.txt、log-method-red.txt及对应源码 | ACME原始输出可泄密；未知HTTP方法阻塞收集 | 同上 |
+| FR07 Q20实际清理 | 631b736 / retention-red.txt、retention-test.red.txt、retention-before.red.txt、retention-policy-before.red.txt | 已批准参数仍被旧硬禁用挡住；缺每日清理Cron | daily-logs.test.mjs、retention.integration.test.mjs |
 
 新增函数的初始无行为声明：`runAuditTask`/`collectLogs`返回`{status:'not-run'}`；`configuredLog`返回false；`validateInstalledMaintenance`返回true。快照中的新测试可搭配这些声明与对应旧源码重放。不要将加载失败、依赖连接失败或缺声明误算为产品RED。
 
@@ -27,12 +28,13 @@
 
 ## 环境与执行
 
-本机Windows工作树、Node22.23.1、Go1.27.1（本机及固定Linux镜像）、Docker29.6.2；真实PostgreSQL18.6、Redis8.2.10，独立weaveos测试数据库、单独冷库、Redis DB15。日志单测仅用临时合成文件和显式样例时区/天数，不构成生产参数批准；从未执行日志保留删除。
+本机Windows工作树、Node22.23.1、Go1.27.1（本机及固定Linux镜像）、Docker29.6.2；真实PostgreSQL18.6、Redis8.2.10，独立weaveos测试数据库、单独冷库、Redis DB15。早期日志测试仅dry-run；Q20答复并回写后才执行合成文件实际清理。30天含当日，Asia/Shanghai跨日后删除窗口前日期；未删除任何生产日志或业务审计。
 
 - `go vet ./...; go test -race -p 1 -count=1 ./...; go build -o /tmp/bff ./cmd/bff`在Linux Go容器运行；PG及Redis都用同一隔离网络命名空间的127.0.0.1。首次使用redis服务别名被既有测试环境门禁拒绝，属环境失败，修正为专用loopback Redis后重跑；不弱化该门禁。
 - `node --test tests/governance/*.test.mjs tests/foundation/*.test.mjs`；输出governance-green.txt。合同OpenAPI验证由既有CI执行，3.2.1及数据结构不变。
 - `node infra/runtime/run.mjs`在d93e682实际运行：单次/互斥/冷库故障、恢复/回滚/备份/扫描和122项API通过，浏览器110/111通过，WebKit“missing digit”page.goto 30秒超时，整次结果failed。原断言和期限不改；同制品单例复查通过，见webkit-navigation-recheck.txt。不能把复查当成整次全绿。
 - `node --test --test-concurrency=1 infra/runtime/scheduler-transition.integration.test.mjs infra/runtime/ingress-recreation.integration.test.mjs infra/runtime/logs.integration.test.mjs`使用上述真实制品和隔离存储，4项全通过，见runtime-additional-green.txt。维护二进制/NGINX/存储均真实；调度文件用隔离路径代替宿主/etc/cron.d，不宣称生产Cron已经运行。
 - 提交后故障回归commit-faults-green.txt：真实Redis TCP切断；PG线上协议COMMIT已成功但确认报文被丢弃，客户端503、库内一次提交、不重放、不交付虚假成功。此不确定结果原实现已正确，新增回归直接GREEN，没有伪造RED或改行为。
+- Q20：retention-green.txt记录37项相关回归；retention-cli-green.txt记录隔离Linux容器实际`operations.mjs retention`→`retention --apply`。确认四类旧日志被删，窗口内/未来文件和备份保留、幂等、链接/非批准参数拒绝。Cron每日04:10与分钟收集共享logs.lock。旧“不允许--apply”测试按Q20变更为明确授权窗口测试，未改认证审计规则。
 
 最终head的适用CI和完整产品验收必须重新核对并记入任务文档。纯说明文档、说明性契约段落、交接和证据索引TDD:N/A，以来源/命令/链接复核，不声称测试证明Notion读取或用户批准。

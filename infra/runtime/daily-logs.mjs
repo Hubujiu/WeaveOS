@@ -1,8 +1,9 @@
-import {appendFileSync,existsSync,lstatSync,mkdirSync,readdirSync} from 'node:fs';
+import {appendFileSync,existsSync,lstatSync,mkdirSync,readdirSync,unlinkSync} from 'node:fs';
 import {resolve,parse,join} from 'node:path';
 
 const kinds=['access','application','operations','metrics'];
 const messages=new Set(['starting BFF host','BFF host failed','BFF authentication configuration invalid','BFF authentication initialization failed','authentication audit persistence failed','session renewal failed after committed write']);
+export const approvedRetention=policy=>policy.timeZone==='Asia/Shanghai'&&policy.keepDays===30&&policy.deleteEnabled===true;
 function day(at,timeZone){
  if(typeof timeZone!=='string'||!timeZone||!Number.isFinite(new Date(at).getTime()))throw Error('Explicit log timezone and valid timestamp required');
  return new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(at));
@@ -56,8 +57,8 @@ export function appendDaily(root,kind,record,policy){
  return `${kind}/${stamp}.jsonl`;
 }
 export function cleanDaily(root,policy,{now=new Date(),apply=false}={}){
- // Q20 is still pending. No deletion path is enabled by this development task.
- if(apply)throw Error('Retention deletion is disabled until parameters are approved');
+ // Q20 (2026-09-29) authorizes exactly this window for the four runtime kinds.
+ if(apply&&!approvedRetention(policy))throw Error('Retention deletion disabled for nonapproved parameters');
  if(!Number.isSafeInteger(policy.keepDays)||policy.keepDays<1||policy.keepDays>3650)throw Error('Explicit approved retention days required');
  const today=day(now,policy.timeZone);
  const cutoff=new Date(Date.parse(today+'T00:00:00Z')-(policy.keepDays-1)*86400000).toISOString().slice(0,10);
@@ -73,5 +74,9 @@ export function cleanDaily(root,policy,{now=new Date(),apply=false}={}){
    if(date<cutoff)selected.push(kind+'/'+name);
   }
  }
- return selected.sort();
+ selected.sort();
+ // Preflight every candidate before the first unlink; never recurse or remove
+ // directories, backups, credentials, unknown files or business audit data.
+ if(apply)for(const relative of selected){const file=join(resolve(root),relative);regular(file);unlinkSync(file);}
+ return selected;
 }

@@ -45,10 +45,10 @@ test('approved explicit config connects operation records and collector is sched
   assert.ok(existsSync(join(dir,'logs','operations','2026-09-29.jsonl')));
  }finally{rmSync(dir,{recursive:true});}
 });
-test('collector is scheduled with overlap protection and no destructive retention',()=>{
+test('collector and Q20 cleanup are scheduled with the same overlap protection',()=>{
  const cron=serverSchedules({publicTLS:true});
  assert.match(cron,/^\* \* \* \* \* root .*flock.*operations\.mjs logs/m);
- assert.doesNotMatch(cron,/retention.*--apply/);
+ assert.match(cron,/flock -n .*\/logs\.lock .*operations\.mjs retention --apply/);
 });
 test('failed docker collection does not advance cursor or publish raw diagnostics',()=>{
  const dir=mkdtempSync(join(tmpdir(),'weaveos-collector-'));

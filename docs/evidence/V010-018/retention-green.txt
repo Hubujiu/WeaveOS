@@ -1,0 +1,235 @@
+TAP version 13
+# Subtest: four kinds are stored by explicit natural day and only safe fields survive
+ok 1 - four kinds are stored by explicit natural day and only safe fields survive
+  ---
+  duration_ms: 28.138
+  type: 'test'
+  ...
+# Subtest: retention dry-run selects only approved kinds and inclusive natural-day cutoff
+ok 2 - retention dry-run selects only approved kinds and inclusive natural-day cutoff
+  ---
+  duration_ms: 10.26
+  type: 'test'
+  ...
+# Subtest: symlinked category and destination file cannot escape the log root
+ok 3 - symlinked category and destination file cannot escape the log root
+  ---
+  duration_ms: 4.2339
+  type: 'test'
+  ...
+# Subtest: Q20 actual cleanup removes only days older than the approved inclusive 30-day window
+ok 4 - Q20 actual cleanup removes only days older than the approved inclusive 30-day window
+  ---
+  duration_ms: 24.0078
+  type: 'test'
+  ...
+# Subtest: Q20 rejects nonapproved destructive parameters and preflights all paths before deleting
+ok 5 - Q20 rejects nonapproved destructive parameters and preflights all paths before deleting
+  ---
+  duration_ms: 4.183
+  type: 'test'
+  ...
+# Subtest: Q20 installed policy accepts exactly confirmed deletion parameters and schedules bounded daily cleanup
+ok 6 - Q20 installed policy accepts exactly confirmed deletion parameters and schedules bounded daily cleanup
+  ---
+  duration_ms: 7.156
+  type: 'test'
+  ...
+# Subtest: Q20 cleanup is daily and shares the collection lock
+ok 7 - Q20 cleanup is daily and shares the collection lock
+  ---
+  duration_ms: 0.2448
+  type: 'test'
+  ...
+# Subtest: certificate task logs fixed outcomes without persisting raw command secrets
+ok 8 - certificate task logs fixed outcomes without persisting raw command secrets
+  ---
+  duration_ms: 1.5892
+  type: 'test'
+  ...
+# Subtest: collector records access stdout and application stderr, advances window, and excludes raw text
+ok 9 - collector records access stdout and application stderr, advances window, and excludes raw text
+  ---
+  duration_ms: 26.3545
+  type: 'test'
+  ...
+# Subtest: approved explicit config connects operation records and collector is scheduled without deletion
+ok 10 - approved explicit config connects operation records and collector is scheduled without deletion
+  ---
+  duration_ms: 4.528
+  type: 'test'
+  ...
+# Subtest: collector and Q20 cleanup are scheduled with the same overlap protection
+ok 11 - collector and Q20 cleanup are scheduled with the same overlap protection
+  ---
+  duration_ms: 0.2652
+  type: 'test'
+  ...
+# Subtest: failed docker collection does not advance cursor or publish raw diagnostics
+ok 12 - failed docker collection does not advance cursor or publish raw diagnostics
+  ---
+  duration_ms: 0.9755
+  type: 'test'
+  ...
+# Subtest: unexpected HTTP method cannot stall collection or persist arbitrary method text
+ok 13 - unexpected HTTP method cannot stall collection or persist arbitrary method text
+  ---
+  duration_ms: 3.9016
+  type: 'test'
+  ...
+# Subtest: ACME runner fixes operations, passes credentials only in environment and reports sanitized failure
+ok 14 - ACME runner fixes operations, passes credentials only in environment and reports sanitized failure
+  ---
+  duration_ms: 2.3124
+  type: 'test'
+  ...
+# Subtest: certificate activation verifies system trust before file replacement and validates Nginx before reload
+ok 15 - certificate activation verifies system trust before file replacement and validates Nginx before reload
+  ---
+  duration_ms: 172.1136
+  type: 'test'
+  ...
+# Subtest: domain health verifies hostname with default trust while reaching only the SSH loopback endpoint
+ok 16 - domain health verifies hostname with default trust while reaching only the SSH loopback endpoint
+  ---
+  duration_ms: 0.3242
+  type: 'test'
+  ...
+# Subtest: domain health fixes IPv4 so Node never requests an all-address lookup result
+ok 17 - domain health fixes IPv4 so Node never requests an all-address lookup result
+  ---
+  duration_ms: 0.1497
+  type: 'test'
+  ...
+# Subtest: provided CSV is data only and maps exactly one credential pair without executing fields
+    # Subtest: BOM, quoted headers and CRLF are supported
+    ok 1 - BOM, quoted headers and CRLF are supported
+      ---
+      duration_ms: 0.6791
+      type: 'test'
+      ...
+    # Subtest: missing, multiple and non-data values fail closed
+    ok 2 - missing, multiple and non-data values fail closed
+      ---
+      duration_ms: 0.2632
+      type: 'test'
+      ...
+    # Subtest: dotenv admits only the required names and never evaluates shell
+    ok 3 - dotenv admits only the required names and never evaluates shell
+      ---
+      duration_ms: 0.2421
+      type: 'test'
+      ...
+    1..3
+ok 18 - provided CSV is data only and maps exactly one credential pair without executing fields
+  ---
+  duration_ms: 1.5995
+  type: 'test'
+  ...
+# Subtest: Q16 public-trust domain config keeps the SSH listener and schedules automatic renewal
+    # Subtest: domain origin with loopback only
+    ok 1 - domain origin with loopback only
+      ---
+      duration_ms: 0.3387
+      type: 'test'
+      ...
+    # Subtest: renew twice daily without self-signed trust
+    ok 2 - renew twice daily without self-signed trust
+      ---
+      duration_ms: 0.2838
+      type: 'test'
+      ...
+    1..2
+ok 19 - Q16 public-trust domain config keeps the SSH listener and schedules automatic renewal
+  ---
+  duration_ms: 1.7174
+  type: 'test'
+  ...
+# Subtest: Q16 validates the actual certificate host, private key and remaining lifetime before replacement
+    # Subtest: matching actual identity and key are accepted
+    ok 1 - matching actual identity and key are accepted
+      ---
+      duration_ms: 0.5749
+      type: 'test'
+      ...
+    # Subtest: unrelated certificate is rejected
+    ok 2 - unrelated certificate is rejected
+      ---
+      duration_ms: 0.4563
+      type: 'test'
+      ...
+    # Subtest: mismatched private key is rejected
+    ok 3 - mismatched private key is rejected
+      ---
+      duration_ms: 0.558
+      type: 'test'
+      ...
+    # Subtest: expired certificate is rejected
+    ok 4 - expired certificate is rejected
+      ---
+      duration_ms: 0.3049
+      type: 'test'
+      ...
+    1..4
+ok 20 - Q16 validates the actual certificate host, private key and remaining lifetime before replacement
+  ---
+  duration_ms: 436.2853
+  type: 'test'
+  ...
+# Subtest: Q16 a failed Nginx validation restores both previous files and reloads the previous certificate
+ok 21 - Q16 a failed Nginx validation restores both previous files and reloads the previous certificate
+  ---
+  duration_ms: 78.6216
+  type: 'test'
+  ...
+# Subtest: Q16 explicitly uses Let's Encrypt DNSPod DNS-01 for the confirmed domain and no public listener
+ok 22 - Q16 explicitly uses Let's Encrypt DNSPod DNS-01 for the confirmed domain and no public listener
+  ---
+  duration_ms: 0.1823
+  type: 'test'
+  ...
+# Subtest: Q15 server exposes only loopback HTTPS and preserves internal data network
+ok 23 - Q15 server exposes only loopback HTTPS and preserves internal data network
+  ---
+  duration_ms: 0.2439
+  type: 'test'
+  ...
+# Subtest: private Bootstrap credentials preserve the accepted seed JSON password field and exclude test fixtures
+ok 24 - private Bootstrap credentials preserve the accepted seed JSON password field and exclude test fixtures
+  ---
+  duration_ms: 0.1906
+  type: 'test'
+  ...
+# Subtest: operational schedules retain TLS verification, prevent overlap, and invoke only runtime tools
+ok 25 - operational schedules retain TLS verification, prevent overlap, and invoke only runtime tools
+  ---
+  duration_ms: 0.1872
+  type: 'test'
+  ...
+# Subtest: server maintenance addresses only the authorized deployment and does not run test/build commands
+ok 26 - server maintenance addresses only the authorized deployment and does not run test/build commands
+  ---
+  duration_ms: 0.3361
+  type: 'test'
+  ...
+# Subtest: finished services restart automatically and have finite resource and log budgets
+ok 27 - finished services restart automatically and have finite resource and log budgets
+  ---
+  duration_ms: 0.2281
+  type: 'test'
+  ...
+# Subtest: deployment refuses every existing directory, including apparently empty ones
+ok 28 - deployment refuses every existing directory, including apparently empty ones
+  ---
+  duration_ms: 1.0539
+  type: 'test'
+  ...
+1..28
+# tests 37
+# suites 0
+# pass 37
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 792.3878

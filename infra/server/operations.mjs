@@ -31,7 +31,8 @@ if(operation==='monitor'){
  console.log(JSON.stringify(collectLogs(c,policy)));
 }else if(operation==='retention'){
  const policy=readLogPolicy(c);if(!policy)throw Error('Log policy must be installed explicitly');
- console.log(JSON.stringify({operation:'retention',dryRun:true,files:cleanDaily(c.dir+'/logs',policy,{apply:process.argv.includes('--apply')})}));
+ const apply=process.argv.includes('--apply');
+ console.log(JSON.stringify({operation:'retention',dryRun:!apply,files:cleanDaily(c.dir+'/logs',policy,{apply})}));
 }else throw new Error('Unknown operation');
 if(operation!=='audit')configuredLog(c,'operations',{at:new Date().toISOString(),operation,status:'complete',elapsedMs:Date.now()-started});
 }catch{
