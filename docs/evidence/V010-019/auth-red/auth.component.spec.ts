@@ -236,4 +236,3 @@ test('PRD login rule: an empty password is rejected before submission', async ({
   await expect(page.getByRole('alert')).toContainText('请输入密码');
   expect(requests).toBe(0);
 });
-

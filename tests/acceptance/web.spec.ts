@@ -393,4 +393,3 @@ test('R3 real Root UI creates shared template/identity and assigns a new non-Roo
  await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByLabel('搜索权限模板',{exact:true}).fill(label+'-模板');await page.getByRole('button',{name:label+'-模板',exact:true}).click();await page.getByLabel('中央权限：人员管理',{exact:true}).uncheck();await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('1 位成员');await page.getByRole('button',{name:'确认保存',exact:true}).click();
  await page.getByRole('button',{name:'退出',exact:true}).click();await expect(page.getByRole('button',{name:'设置',exact:true})).toBeHidden();await page.goto('/app/admin');await expect(page.getByRole('alert')).toContainText('没有人员管理权限');
 });
-

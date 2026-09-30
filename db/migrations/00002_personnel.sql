@@ -140,4 +140,3 @@ $$;
 -- +goose StatementEnd
 REVOKE ALL ON FUNCTION personnel.lock_permission_catalog(uuid) FROM PUBLIC;
 -- No destructive Down: old authentication remains compatible; personnel data is durable.
-

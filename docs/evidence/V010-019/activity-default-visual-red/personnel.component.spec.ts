@@ -236,5 +236,3 @@ test('R3 activity presents readable action, target and safe changes rather than 
  const row=page.getByRole('row').filter({hasText:'synthetic-operator'});await expect(row).toContainText('重命名部门');await expect(row).toContainText('研发中心');await expect(row).toContainText('研发部 → 研发中心');await expect(row).not.toContainText('DEPARTMENT_UPDATED');await expect(row).not.toContainText('parentId');
  await expect(page.getByRole('option',{name:'分配身份',exact:true})).toHaveAttribute('value','MEMBER_IDENTITIES_UPDATED');
 });
-
-

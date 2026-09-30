@@ -121,4 +121,3 @@ test('R3 deleting unreferenced template confirms and sends version; 409 keeps se
  let query='';await page.route('**/api/v1/personnel/templates/'+template.id+'?**',async route=>{query=new URL(route.request().url()).search;await route.fulfill({status:409,json:{code:'PERSONNEL_CONFLICT',message:'conflict',data:null,meta:null}});});
  await page.getByRole('button',{name:'确认删除',exact:true}).click();expect(new URLSearchParams(query).get('version')).toBe('1');await expect(page.getByRole('alert')).toContainText('配置已变更');await expect(page.getByLabel('模板名称',{exact:true})).toHaveValue('企业管理');
 });
-

@@ -201,5 +201,3 @@ for(const mode of ['department','member','groups'] as const)test('R3 unsaved '+m
  if(mode==='department')await expect(page.getByLabel('部门名称',{exact:true})).toHaveValue('保留部门');else if(mode==='member')await expect(page.getByLabel('身份：企业管理员',{exact:true})).toBeChecked();else await expect(page.getByLabel('目标部门',{exact:true})).toHaveValue(department.id);
  await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toContainText('未保存');await page.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('dialog')).toBeHidden();
 });
-
-

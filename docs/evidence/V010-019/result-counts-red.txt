@@ -56,7 +56,7 @@ not ok 5 - real API/browser reports drive the published counts: infra/acceptance
   failureType: 'testCodeFailure'
   error: |-
     The input did not match the regular expression /countAPIReport\(readFileSync/. Input:
-    
+
     '// Reproducible isolated Linux product acceptance. No production account or data.\n' +
       "import { execFileSync } from 'node:child_process';\n" +
       "import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';\n" +
@@ -126,7 +126,7 @@ not ok 5 - real API/browser reports drive the published counts: infra/acceptance
       '  // Preserve private fixtures and isolated DB volume; no --volumes or file deletion.\n' +
       "  compose('stop');\n" +
       '}\n'
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected:
@@ -137,7 +137,7 @@ not ok 5 - real API/browser reports drive the published counts: infra/acceptance
     import { randomBytes } from 'node:crypto';
     import { resolve } from 'node:path';
     import { fileURLToPath } from 'node:url';
-    
+
     const root = fileURLToPath(new URL('../../', import.meta.url));
     const dir = resolve(root, '.work/acceptance');
     if (existsSync(resolve(dir, 'runtime.env'))) throw new Error('Existing private environment: inspect it before rerunning; no overwrite');
@@ -200,7 +200,7 @@ not ok 5 - real API/browser reports drive the published counts: infra/acceptance
       // Preserve private fixtures and isolated DB volume; no --volumes or file deletion.
       compose('stop');
     }
-    
+
   operator: 'match'
   stack: |-
     TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-019/tests/governance/result-counts.test.mjs:15:48)
@@ -220,7 +220,7 @@ not ok 6 - real API/browser reports drive the published counts: infra/runtime/ru
   failureType: 'testCodeFailure'
   error: |-
     The input did not match the regular expression /countAPIReport\(readFileSync/. Input:
-    
+
     '// Q5/Q6: isolated local Linux simulation only. Never a production deploy command.\n' +
       "import { execFileSync } from 'node:child_process';\n" +
       "import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';\n" +
@@ -292,7 +292,7 @@ not ok 6 - real API/browser reports drive the published counts: infra/runtime/ru
       " call(process.execPath,['--test','infra/runtime/artifact-integrity.test.mjs','infra/runtime/artifact-transfer.test.mjs','infra/runtime/image-scan.test.mjs'],{env:{...testEnv,WEAVEOS_ARTIFACT_RECORD:artifacts.recordFile,WEAVEOS_IMAGE_SCAN_DIR:resolve(dir,'public/image-scan')}});\n" +
       ' // Validate the exact promoted artifacts, using the already-frozen test runner.\n' +
       " call('docker',['run','--rm','--init','--shm-size=1g','--network',`container:${id('nginx')}`,'--mount',`type=bind,src=${root},dst=/repo`,'--mount','type=volume,src=weaveos-v010-linux-node,dst=/repo/node_modules','--mount','type=volume,src=weaveos-v010-linux-web-node,dst=/repo/apps/web/node_modules','-e','CI=true','-e','WEAVEOS_API_URL=https://localhost:19443','-e','WEAVEOS_WEB_URL=https://localhost:19443','-e','WEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/runtime/fixtures.json','-e','NODE_EXTRA_CA_CERTS=/repo/.work/runtime/tls/cert.pem','-w','/repo','mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27','bash','-euc','npm install --global pnpm@10.28.2 --ignore-scripts; pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; node --test tests/acceptance/api.test.mjs; pnpm exec playwright test --conf"... 891 more characters
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected:
@@ -372,7 +372,7 @@ not ok 6 - real API/browser reports drive the published counts: infra/runtime/ru
      writeFileSync(resolve(dir,'public/result.json'),JSON.stringify({result:'passed',source:artifacts.commit,artifacts:{bff:artifacts.bff.manifestDigest,web:artifacts.web.manifestDigest},imageIDs:{bff:artifacts.bff.imageID,web:artifacts.web.imageID},previousSource:previous.commit,operations:6,dns:1,monitor:1,tls:2,backup:4,artifactIntegrity:3,api:122,browser:111,elapsedSeconds:(Date.now()-start)/1000,target:'local WSL Linux only; same-machine restore simulation; not production'}));
     }catch{writeFileSync(resolve(dir,'public/result.json'),JSON.stringify({result:'failed',source:artifacts.commit,elapsedSeconds:(Date.now()-start)/1000}));throw new Error('Isolated runtime verification failed; preserve private environment and inspect safe results');}
     finally{compose('stop');}
-    
+
   operator: 'match'
   stack: |-
     TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-019/tests/governance/result-counts.test.mjs:15:48)

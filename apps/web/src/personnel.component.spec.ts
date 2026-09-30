@@ -256,5 +256,3 @@ test('Figma collapsed menu independently has a 48px target at the original sideb
 test('Figma top-collapsed side-expanded material independently uses the original minus30 top',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('top','-30px');
 });
-
-

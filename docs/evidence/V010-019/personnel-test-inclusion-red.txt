@@ -38,7 +38,7 @@ not ok 6 - Q25 personnel API regression is included in the real HTTPS entrypoint
   failureType: 'testCodeFailure'
   error: |-
     The input did not match the regular expression /import ['"]\.\/personnel-api\.mjs['"]/. Input:
-    
+
     "// Preserve V010-009's independent HTTP cases before the current contract suite.\n" +
       "import './expanded-api.mjs';\n" +
       "import assert from 'node:assert/strict';\n" +
@@ -207,7 +207,7 @@ not ok 6 - Q25 personnel API regression is included in the real HTTPS entrypoint
       '  }\n' +
       '});\n' +
       'for (const [label, body, h'... 1293 more characters
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected:
@@ -218,7 +218,7 @@ not ok 6 - Q25 personnel API regression is included in the real HTTPS entrypoint
     import { readFileSync } from 'node:fs';
     import { test } from 'node:test';
     import { assertResponseSchema } from './response-schema.mjs';
-    
+
     // Expected semantics are from PRD FR-001..018 and ADR-001/002, not BFF output.
     // V010-002 ratified these routes; reused invitation is the registered 409 conflict.
     const routes = JSON.parse(readFileSync(new URL('./bindings.json', import.meta.url), 'utf8'));
@@ -263,7 +263,7 @@ not ok 6 - Q25 personnel API regression is included in the real HTTPS entrypoint
       return { cookie: [cookie, csrfCookie].map(value => value.split(';')[0]).join('; '), csrf };
     }
     function unique(label) { return `acceptance-${label}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`; }
-    
+
     test('FR-007: anonymous current-session request is unauthorized', async () => {
       assert.equal((await send(routes.current)).status, 401);
     });
@@ -350,7 +350,7 @@ not ok 6 - Q25 personnel API regression is included in the real HTTPS entrypoint
       assert.ok(!(await response.text()).includes('Abc@123456'));
       await login({ account: f.resetTarget.account, password: 'Abc@123456' });
     });
-    
+
     test('Q13: non-ASCII and space-only special class fail with approved field violations', async () => {
       const f = fixtures();
       for (const invalid of ['Aa1!中', 'Aa1 ', 'Aa1!\n']) {
@@ -399,7 +399,7 @@ not ok 6 - Q25 personnel API regression is included in the real HTTPS entrypoint
       const issued = response.headers.getSetCookie().find(value => value.startsWith('__Host-session=')).split(';')[0];
       assert.ok(!incoming.cookie.split('; ').includes(issued));
     });
-    
+
   operator: 'match'
   stack: |-
     TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-019/tests/governance/personnel-release.test.mjs:18:9)
@@ -419,7 +419,7 @@ not ok 7 - Q25 pinned role upgrade is executed with real PostgreSQL by the produ
   failureType: 'testCodeFailure'
   error: |-
     The input did not match the regular expression /node --test infra\/server\/deploy\/migrate\.test\.mjs infra\/server\/deploy\/personnel-upgrade\.test\.mjs/. Input:
-    
+
     'name: v0.1.0 product acceptance\n' +
       'on:\n' +
       '  pull_request:\n' +
@@ -500,7 +500,7 @@ not ok 7 - Q25 pinned role upgrade is executed with real PostgreSQL by the produ
       '          include-hidden-files: true\n' +
       '          if-no-files-found: error\n' +
       '          retention-days: 14\n'
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected:
@@ -585,7 +585,7 @@ not ok 7 - Q25 pinned role upgrade is executed with real PostgreSQL by the produ
               include-hidden-files: true
               if-no-files-found: error
               retention-days: 14
-    
+
   operator: 'match'
   stack: |-
     TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-019/tests/governance/personnel-release.test.mjs:21:9)

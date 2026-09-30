@@ -211,5 +211,3 @@ test('Figma shell retains each original L material asset and original SVG dimens
   if(state==='ee')await page.getByRole('button',{name:'收起侧栏',exact:true}).click();else if(state==='ec')await page.getByRole('button',{name:'收起顶栏',exact:true}).click();else if(state==='cc')await page.getByRole('button',{name:'展开侧栏',exact:true}).click();
  }
 });
-
-

@@ -12,4 +12,3 @@ ALTER TABLE archive.authentication_events ADD CONSTRAINT ck_archive_events_summa
   OR (event_type <> 'personnel_changed' AND object_type IS NULL AND object_id IS NULL AND change_summary IS NULL)
 );
 -- No destructive Down: rollback the application, preserving new audit records.
-
