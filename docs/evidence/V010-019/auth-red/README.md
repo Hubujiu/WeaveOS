@@ -1,0 +1,1 @@
+原执行源码使用Windows CRLF；Git按仓库属性规范化为LF。checksums.json保留原执行文件哈希，canonical-checksums.json为当前永久归档文件哈希；行尾规范化不修改测试/行为。
