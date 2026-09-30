@@ -152,21 +152,12 @@
 .personnel-select-trigger>span { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 .personnel-select-arrow { flex:none;color:#737373;transition:transform 400ms linear(0,0.02075,0.07482,0.15144,0.24173,0.33859,0.43648,0.53127,0.62002,0.70078,0.77244,0.83451,0.88704,0.93042,0.96530,0.99252,1.01297,1.02761,1.03737,1.04312,1.04568,1.04576,1.04402,1.04099,1.03713,1.03279,1.02829,1.02384,1.01959,1.01568,1.01215,1.00907,1.00642,1.00420,1.00240,1.00097,0.99987,0.99906,0.99849,0.99814,1); }
 .personnel-select-trigger[aria-expanded=true] .personnel-select-arrow { transform:rotate(180deg); }
-.personnel-select-trigger[aria-expanded=true] { animation:q32-trigger-below 600ms cubic-bezier(.16,1,.3,1); }
-.personnel-select-trigger[aria-expanded=true][data-side=above] { animation-name:q32-trigger-above; }
-@keyframes q32-trigger-below { 0%,40% { border-bottom-left-radius:0;border-bottom-right-radius:0; } to { border-bottom-left-radius:12px;border-bottom-right-radius:12px; } }
-@keyframes q32-trigger-above { 0%,40% { border-top-left-radius:0;border-top-right-radius:0; } to { border-top-left-radius:12px;border-top-right-radius:12px; } }
 .personnel-select-menu { --detach:-8px;box-sizing:border-box;position:fixed;margin:0;padding:4px;border:1px solid #e5e5e5;border-radius:12px;background:white;color:#737373;box-shadow:0 10px 15px -3px #0000001a,0 4px 6px -4px #0000001a;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;z-index:30;transform-origin:top; }
 .personnel-select-menu[data-side=above] { --detach:8px;transform-origin:bottom; }
-.personnel-select-menu[data-state=open] { animation:q32-menu-height 420ms linear(0,0.01376,0.04981,0.10143,0.16323,0.23095,0.30127,0.37169,0.44033,0.50585,0.56734,0.62424,0.67625,0.72326,0.76534,0.80267,0.83549,0.86412,0.88890,0.91016,0.92827,0.94356,0.95638,0.96701,0.97575,0.98287,0.98858,0.99312,0.99666,0.99937,1.00139,1.00286,1.00387,1.00451,1.00487,1.00501,1.00498,1.00483,1.00459,1.00430,1) both,q32-menu-fade 180ms cubic-bezier(.16,1,.3,1) both,q32-menu-gap 600ms linear(0,0.04052,0.14458,0.28769,0.44868,0.61049,0.76043,0.88999,0.99446,1.07228,1.12435,1.15334,1.16297,1.15753,1.14135,1.11845,1.09234,1.06588,1.04119,1.01972,1.00229,0.98920,0.98034,0.97529,0.97346,0.97415,0.97666,0.98032,0.98455,0.98887,0.99293,0.99649,0.99939,1.00159,1.00310,1.00398,1.00432,1.00424,1.00385,1.00327,1) 120ms both,q32-menu-round 300ms cubic-bezier(.16,1,.3,1) 140ms both; }
-@keyframes q32-menu-height { from { height:0; } to { height:var(--menu-height); } }
-@keyframes q32-menu-fade { from { opacity:0; } to { opacity:1; } }
-@keyframes q32-menu-gap { from { transform:translateY(var(--detach)); } to { transform:none; } }
-@keyframes q32-menu-round { from { border-start-start-radius:0;border-start-end-radius:0; } to { border-start-start-radius:12px;border-start-end-radius:12px; } }
-.personnel-select-menu[data-state=closed] { pointer-events:none;animation:q32-menu-height 260ms cubic-bezier(.16,1,.3,1) 140ms reverse both,q32-menu-fade 160ms cubic-bezier(.16,1,.3,1) 120ms reverse both,q32-menu-gap 300ms linear(0,0.01376,0.04981,0.10143,0.16323,0.23095,0.30127,0.37169,0.44033,0.50585,0.56734,0.62424,0.67625,0.72326,0.76534,0.80267,0.83549,0.86412,0.88890,0.91016,0.92827,0.94356,0.95638,0.96701,0.97575,0.98287,0.98858,0.99312,0.99666,0.99937,1.00139,1.00286,1.00387,1.00451,1.00487,1.00501,1.00498,1.00483,1.00459,1.00430,1) reverse both,q32-menu-round 160ms cubic-bezier(.16,1,.3,1) reverse both; }
+.personnel-select-menu[data-state=closed] { pointer-events:none; }
 .personnel-select-option { box-sizing:border-box;height:32px;min-height:32px;border-radius:8px;padding:6px 10px;font-family:inherit;font-size:14px;line-height:20px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;cursor:pointer; }
 .personnel-select-option[data-active=true] { background:#f5f5f5;color:#0a0a0a; }
-.personnel-select-menu[data-state=open] .personnel-select-option { animation:q32-option 180ms cubic-bezier(.16,1,.3,1) var(--option-delay) both; }
+.personnel-select-menu[data-state=open] .personnel-select-option[data-entering=true] { animation:q32-option 180ms cubic-bezier(.16,1,.3,1) var(--option-delay) both; }
 @keyframes q32-option { from { opacity:0;transform:translateY(-6px);filter:blur(3px); } to { opacity:1;transform:none;filter:blur(0); } }
 .personnel-dialog .personnel-select { width:100%; }
 .table-toolbar .personnel-select { max-width:200px; }
@@ -174,7 +165,5 @@
 @media(prefers-reduced-motion:reduce) {
  .personnel-tab-indicator { transition:none; }.personnel-panel { animation:none; }
  .personnel-select-arrow { transition:none; }.personnel-select-trigger[aria-expanded=true] { animation:none; }
- .personnel-select-menu[data-state=open] { animation:q32-menu-height 120ms ease-out both,q32-menu-fade 120ms ease-out both;transform:none; }
- .personnel-select-menu[data-state=closed] { animation:q32-menu-height 120ms ease-out reverse both,q32-menu-fade 120ms ease-out reverse both;transform:none; }
- .personnel-select-menu[data-state=open] .personnel-select-option { animation:none;filter:none;transform:none; }
+ .personnel-select-menu[data-state=open] .personnel-select-option[data-entering] { animation:none;filter:none;transform:none; }
 }
