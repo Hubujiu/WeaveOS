@@ -17,7 +17,7 @@ export function PersonnelSelect({label,value,options,onChange,className='',disab
   if(!open)return;const button=trigger.current!;const b=button.getBoundingClientRect();const desired=Math.min(options.length*32+10,330);
   const below=innerHeight-b.bottom-16,over=b.top-16;const up=below<desired&&over>below;const height=Math.max(1,Math.min(desired,up?over:below));
   const width=Math.min(b.width,innerWidth-16),left=Math.max(8,Math.min(b.left,innerWidth-width-8));
-  setAbove(up);setPosition({left,top:up?b.top-8-height:b.bottom+8,width,height,'--menu-height':height+'px'} as CSSProperties);
+  setAbove(up);setPosition({left,top:up?'auto':b.bottom+8,bottom:up?innerHeight-b.top+8:'auto',width,height,'--menu-height':height+'px'} as CSSProperties);
   panel.current?.showPopover();
  },[open,options.length]);
  useLayoutEffect(()=>{

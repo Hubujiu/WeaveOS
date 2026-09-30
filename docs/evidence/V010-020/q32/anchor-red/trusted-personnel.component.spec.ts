@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
@@ -198,7 +199,7 @@ for(const viewport of [{width:2504,height:1355},{width:1440,height:900},{width:3
  for(let i=0;i<2;i++){
   // 0.76 fill plus the original translucent shadow; require real coverage.
   await expect.poll(async()=> (await materialAlpha(page)).every(a=>a>=190&&a<=200)).toBe(true);
-  if(viewport.width===2504)await page.screenshot({path:test.info().outputPath('large-'+i+'-'+test.info().project.name+'.png')});
+  if(viewport.width===2504)await page.screenshot({path:fileURLToPath(new URL('../../../docs/evidence/V010-020/q31/large-'+i+'-'+test.info().project.name+'.png',import.meta.url))});
   await page.getByRole('button',{name:await page.locator('.admin-shell').evaluate(n=>n.classList.contains('side-collapsed'))?'展开侧栏':'收起侧栏',exact:true}).click();
  }
  await page.setViewportSize({width:viewport.width+173,height:viewport.height+129});await expect.poll(async()=> (await materialAlpha(page)).every(a=>a>=190&&a<=200)).toBe(true);
@@ -416,7 +417,7 @@ test('Q31 shell retains responsive L material geometry in both sidebar states',a
   await expect(material).toHaveCSS('top','0px');await expect(material).toHaveCSS('left','0px');
   await expect(page.locator('.admin-sidebar')).toHaveCSS('width',state==='expanded'?'176px':'72px');await expect(page.locator('.admin-header')).toHaveCSS('height','56px');
   const dimensions=await material.boundingBox();expect({width:dimensions!.width,height:dimensions!.height}).toEqual({width:1920,height:1080});
-  await page.screenshot({path:test.info().outputPath('visual-admin-'+state+'-'+test.info().project.name+'.png')});
+  await page.screenshot({path:fileURLToPath(new URL('../../../docs/evidence/V010-020/q31/visual-admin-'+state+'-'+test.info().project.name+'.png',import.meta.url))});
   if(state==='expanded')await page.getByRole('button',{name:'收起侧栏',exact:true}).click();
  }
 });
