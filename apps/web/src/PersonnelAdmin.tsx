@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import { workspaceApi, WorkspaceError } from './workspace-api';
 import type { Access, Definition, Department, Member, PageData, Permission, Activity } from './workspace-types';
 import { Modal } from './Modal';
+import { AdminMaterial } from './AdminMaterial';
 import usersIcon from './assets/admin-users.svg';
 import settingsIcon from './assets/admin-settings.svg';
 import grip from './assets/nav-grip.svg';
@@ -11,10 +12,6 @@ import exitIcon from './assets/admin-exit.svg';
 import searchIcon from './assets/admin-search.svg';
 import plusIcon from './assets/admin-plus.svg';
 import plusWhite from './assets/admin-plus-white.svg';
-import materialEE from './assets/admin-background-ee.svg';
-import materialEC from './assets/admin-background-ec.svg';
-import materialCE from './assets/admin-background-ce.svg';
-import materialCC from './assets/admin-background-cc.svg';
 
 type Tab='成员与部门'|'身份'|'权限模板'|'操作记录';
 type Dialog='impact'|'dirty'|'department'|'renameDepartment'|'deleteDepartment'|'invitation'|'member'|'groups'|'delete'|null;
@@ -113,12 +110,12 @@ export function PersonnelAdmin({access,onDirty,onExit,onUnauthorized}:{access:Ac
  const usingTemplates=allTemplates.filter(t=>draft?.templateIds?.includes(t.id));
  const direct=new Set(draft?.permissionCodes||[]);const effective=permissions.filter(p=>direct.has(p.code)||usingTemplates.some(t=>t.permissionCodes.includes(p.code)));
  return <div className={'admin-shell'+(side?'':' side-collapsed')+(top?'':' top-collapsed')}>
-  <img className="admin-material" src={top?(side?materialEE:materialEC):(side?materialCE:materialCC)} width="1980" height="1140" alt="" aria-hidden="true"/>
+  <AdminMaterial/>
   <header className="admin-header"><div className="admin-corner"><img className="admin-settings-icon" src={settingsIcon} width="20" height="20" alt=""/>{top&&<strong>管理后台</strong>}</div>
    {top&&<div className="admin-actions"><button className="admin-action save" disabled={!definitionDirty||pending} onClick={()=>setDialog('impact')}><img src={saveIcon} width="16" height="16" alt=""/>保存</button><button className="admin-action" onClick={onExit} disabled={pending}><img src={exitIcon} width="16" height="16" alt=""/>退出</button></div>}
    <button className="top-trigger" aria-label={top?'收起顶栏':'展开顶栏'} onClick={()=>setTop(!top)}><img src={grip} width="16" height="16" alt=""/></button>
   </header>
-  <aside className="admin-sidebar">{side&&<span className="sidebar-caption">管理功能</span>}<button className="personnel-nav" aria-label="人员管理" onClick={()=>guarded(()=>{setTab('成员与部门');setDraft(null);setSelected(null);})}><img className="personnel-nav-icon" src={usersIcon} width="20" height="20" alt=""/>{side&&<span>人员管理</span>}</button>{side&&<p className="sidebar-caption">成员 · 部门 · 身份 · 权限</p>}
+  <aside className="admin-sidebar"><span className="sidebar-caption" aria-hidden={!side}>管理功能</span><button className="personnel-nav" aria-label="人员管理" onClick={()=>guarded(()=>{setTab('成员与部门');setDraft(null);setSelected(null);})}><img className="personnel-nav-icon" src={usersIcon} width="20" height="20" alt=""/><span className="personnel-nav-label" aria-hidden={!side}>人员管理</span></button><p className="sidebar-caption" aria-hidden={!side}>成员 · 部门 · 身份 · 权限</p>
    <button className="side-trigger" aria-label={side?'收起侧栏':'展开侧栏'} onClick={()=>setSide(!side)}><img src={chevron} width="16" height="16" alt=""/></button>
   </aside>
   <main className="personnel-content">
