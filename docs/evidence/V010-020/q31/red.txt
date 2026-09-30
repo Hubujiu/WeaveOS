@@ -1,0 +1,275 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:48420) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:40920) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:49128) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\personnel.component.spec.ts:26:1 › Q31 Home navigation stays 56px with no collapse control and retains account actions (4.5s)
+(node:45556) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [chromium] › apps\web\src\personnel.component.spec.ts:34:1 › Q31 admin uses a fixed 56px top and compact stable-y sidebar navigation (7.8s)
+(node:52508) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [chromium] › apps\web\src\personnel.component.spec.ts:49:1 › Q31 tabs have no vertical overflow and compact layouts retain keyboard access to the last tab (4.4s)
+(node:53144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 4 [chromium] › apps\web\src\personnel.component.spec.ts:61:1 › Q31 real member overflow remains scrollable while the tab strip has no vertical scrollbar (3.3s)
+
+
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:26:1 › Q31 Home navigation stays 56px with no collapse control and retains account actions 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('button', { name: /收起顶栏|展开顶栏/ })
+    Expected: 0
+    Received: 1
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCount" getByRole('button', { name: /收起顶栏|展开顶栏/ }) with timeout 1500ms
+      - waiting for getByRole('button', { name: /收起顶栏|展开顶栏/ })
+        16 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      29 |  for(const selector of ['.home-icon-button','.account-button']){const box=(await page.locator(selector).boundingBox())!;expect.soft(box.y).toBeGreaterThanOrEqual(0);expect.soft(box.y+box.height).toBeLessThanOrEqual(56);}
+      30 |  await page.getByRole('button',{name:'账号',exact:true}).click();expect.soft((await page.locator('.account-menu').boundingBox())!.y).toBe(66);
+    > 31 |  await expect.soft(page.getByRole('button',{name:/收起顶栏|展开顶栏/})).toHaveCount(0);await expect(page.locator('.account-menu')).toBeVisible();await expect(page.locator('.home-header')).toHaveCSS('height','56px');
+         |                                                                 ^
+      32 | });
+      33 |
+      34 | test('Q31 admin uses a fixed 56px top and compact stable-y sidebar navigation',async({page})=>{
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:31:65
+
+    Error Context: .work\q31-test-results\personnel.component-Q31-Ho-65119-and-retains-account-actions-chromium\error-context.md
+
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:34:1 › Q31 admin uses a fixed 56px top and compact stable-y sidebar navigation 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('button', { name: /收起顶栏|展开顶栏/ })
+    Expected: 0
+    Received: 1
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCount" getByRole('button', { name: /收起顶栏|展开顶栏/ }) with timeout 1500ms
+      - waiting for getByRole('button', { name: /收起顶栏|展开顶栏/ })
+        16 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      37 |   const shell=page.locator('.admin-shell');
+      38 |   if((await shell.evaluate(n=>n.classList.contains('side-collapsed')))!==(side===72))await page.locator('.side-trigger').click();
+    > 39 |   await expect.soft(page.getByRole('button',{name:/收起顶栏|展开顶栏/})).toHaveCount(0);await expect.soft(page.getByText('管理后台',{exact:true})).toBeVisible();await expect.soft(page.getByRole('button',{name:'退出',exact:true})).toBeVisible();
+         |                                                                  ^
+      40 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+      41 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+      42 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:116,width:side===72?48:144,height:48});
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:39:66
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "height": 48,
+        "width": 144,
+        "x": 16,
+    -   "y": 116,
+    +   "y": 180,
+      }
+
+      40 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+      41 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+    > 42 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:116,width:side===72?48:144,height:48});
+         |                                                                                                                                         ^
+      43 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+      44 |  }
+      45 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:42:137
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('button', { name: /收起顶栏|展开顶栏/ })
+    Expected: 0
+    Received: 1
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCount" getByRole('button', { name: /收起顶栏|展开顶栏/ }) with timeout 1500ms
+      - waiting for getByRole('button', { name: /收起顶栏|展开顶栏/ })
+        16 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      37 |   const shell=page.locator('.admin-shell');
+      38 |   if((await shell.evaluate(n=>n.classList.contains('side-collapsed')))!==(side===72))await page.locator('.side-trigger').click();
+    > 39 |   await expect.soft(page.getByRole('button',{name:/收起顶栏|展开顶栏/})).toHaveCount(0);await expect.soft(page.getByText('管理后台',{exact:true})).toBeVisible();await expect.soft(page.getByRole('button',{name:'退出',exact:true})).toBeVisible();
+         |                                                                  ^
+      40 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+      41 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+      42 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:116,width:side===72?48:144,height:48});
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:39:66
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "height": 48,
+        "width": 48,
+        "x": 12,
+    -   "y": 116,
+    +   "y": 180,
+      }
+
+      40 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+      41 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+    > 42 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:116,width:side===72?48:144,height:48});
+         |                                                                                                                                         ^
+      43 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+      44 |  }
+      45 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:42:137
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('button', { name: /收起顶栏|展开顶栏/ })
+    Expected: 0
+    Received: 1
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCount" getByRole('button', { name: /收起顶栏|展开顶栏/ }) with timeout 1500ms
+      - waiting for getByRole('button', { name: /收起顶栏|展开顶栏/ })
+        16 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      37 |   const shell=page.locator('.admin-shell');
+      38 |   if((await shell.evaluate(n=>n.classList.contains('side-collapsed')))!==(side===72))await page.locator('.side-trigger').click();
+    > 39 |   await expect.soft(page.getByRole('button',{name:/收起顶栏|展开顶栏/})).toHaveCount(0);await expect.soft(page.getByText('管理后台',{exact:true})).toBeVisible();await expect.soft(page.getByRole('button',{name:'退出',exact:true})).toBeVisible();
+         |                                                                  ^
+      40 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+      41 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+      42 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:116,width:side===72?48:144,height:48});
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:39:66
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "height": 48,
+        "width": 144,
+        "x": 16,
+    -   "y": 116,
+    +   "y": 180,
+      }
+
+      40 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+      41 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+    > 42 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:116,width:side===72?48:144,height:48});
+         |                                                                                                                                         ^
+      43 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+      44 |  }
+      45 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:42:137
+
+    Error Context: .work\q31-test-results\personnel.component-Q31-ad-02dcd-stable-y-sidebar-navigation-chromium\error-context.md
+
+  3) [chromium] › apps\web\src\personnel.component.spec.ts:49:1 › Q31 tabs have no vertical overflow and compact layouts retain keyboard access to the last tab 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  getByRole('tablist')
+    Expected: "hidden"
+    Received: "auto"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" getByRole('tablist') with timeout 1500ms
+      - waiting for getByRole('tablist')
+        16 × locator resolved to <nav role="tablist" aria-label="人员管理视图" class="personnel-tabs">…</nav>
+           - unexpected value "auto"
+
+
+      49 | test('Q31 tabs have no vertical overflow and compact layouts retain keyboard access to the last tab',async({page})=>{
+      50 |  await page.setViewportSize({width:1920,height:1080});await admin(page);
+    > 51 |  const tabs=page.getByRole('tablist');await expect.soft(tabs).toHaveCSS('height','48px');await expect.soft(tabs).toHaveCSS('overflow-y','hidden');
+         |                                                                                                                  ^
+      52 |  const desktop=await tabs.evaluate(n=>({height:n.clientHeight,scrollHeight:n.scrollHeight,buttons:[...n.querySelectorAll('button')].map(b=>b.getBoundingClientRect().height)}));
+      53 |  expect.soft(desktop.scrollHeight).toBe(desktop.height);expect.soft(desktop.buttons).toEqual([47,47,47,47]);
+      54 |  expect.soft(await tabs.evaluate(n=>{n.scrollTop=10;return n.scrollTop;})).toBe(0);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:51:114
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 47
+    Received: 48
+
+      51 |  const tabs=page.getByRole('tablist');await expect.soft(tabs).toHaveCSS('height','48px');await expect.soft(tabs).toHaveCSS('overflow-y','hidden');
+      52 |  const desktop=await tabs.evaluate(n=>({height:n.clientHeight,scrollHeight:n.scrollHeight,buttons:[...n.querySelectorAll('button')].map(b=>b.getBoundingClientRect().height)}));
+    > 53 |  expect.soft(desktop.scrollHeight).toBe(desktop.height);expect.soft(desktop.buttons).toEqual([47,47,47,47]);
+         |                                    ^
+      54 |  expect.soft(await tabs.evaluate(n=>{n.scrollTop=10;return n.scrollTop;})).toBe(0);
+      55 |  await page.setViewportSize({width:390,height:844});await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();
+      56 |  const last=page.getByRole('tab',{name:'操作记录',exact:true});await last.focus();await last.press('Enter');await expect(last).toHaveAttribute('aria-selected','true');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:53:36
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 4
+    + Received  + 4
+
+      Array [
+    -   47,
+    -   47,
+    -   47,
+    -   47,
+    +   48,
+    +   48,
+    +   48,
+    +   48,
+      ]
+
+      51 |  const tabs=page.getByRole('tablist');await expect.soft(tabs).toHaveCSS('height','48px');await expect.soft(tabs).toHaveCSS('overflow-y','hidden');
+      52 |  const desktop=await tabs.evaluate(n=>({height:n.clientHeight,scrollHeight:n.scrollHeight,buttons:[...n.querySelectorAll('button')].map(b=>b.getBoundingClientRect().height)}));
+    > 53 |  expect.soft(desktop.scrollHeight).toBe(desktop.height);expect.soft(desktop.buttons).toEqual([47,47,47,47]);
+         |                                                                                      ^
+      54 |  expect.soft(await tabs.evaluate(n=>{n.scrollTop=10;return n.scrollTop;})).toBe(0);
+      55 |  await page.setViewportSize({width:390,height:844});await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();
+      56 |  const last=page.getByRole('tab',{name:'操作记录',exact:true});await last.focus();await last.press('Enter');await expect(last).toHaveAttribute('aria-selected','true');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:53:86
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: 1
+
+      52 |  const desktop=await tabs.evaluate(n=>({height:n.clientHeight,scrollHeight:n.scrollHeight,buttons:[...n.querySelectorAll('button')].map(b=>b.getBoundingClientRect().height)}));
+      53 |  expect.soft(desktop.scrollHeight).toBe(desktop.height);expect.soft(desktop.buttons).toEqual([47,47,47,47]);
+    > 54 |  expect.soft(await tabs.evaluate(n=>{n.scrollTop=10;return n.scrollTop;})).toBe(0);
+         |                                                                            ^
+      55 |  await page.setViewportSize({width:390,height:844});await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();
+      56 |  const last=page.getByRole('tab',{name:'操作记录',exact:true});await last.focus();await last.press('Enter');await expect(last).toHaveAttribute('aria-selected','true');
+      57 |  const bounds=(await tabs.boundingBox())!,button=(await last.boundingBox())!;expect(button.x).toBeGreaterThanOrEqual(bounds.x);expect(button.x+button.width).toBeLessThanOrEqual(bounds.x+bounds.width+1);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:54:76
+
+    Error Context: .work\q31-test-results\personnel.component-Q31-ta-e33de-oard-access-to-the-last-tab-chromium\error-context.md
+
+  3 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:26:1 › Q31 Home navigation stays 56px with no collapse control and retains account actions 
+    [chromium] › apps\web\src\personnel.component.spec.ts:34:1 › Q31 admin uses a fixed 56px top and compact stable-y sidebar navigation 
+    [chromium] › apps\web\src\personnel.component.spec.ts:49:1 › Q31 tabs have no vertical overflow and compact layouts retain keyboard access to the last tab 
+  1 passed (23.9s)

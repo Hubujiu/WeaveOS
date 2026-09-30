@@ -1,0 +1,9 @@
+# Q31 用户审核修改的独立来源与 RED
+
+用户2026-09-30明确移除顶栏收缩、截图中页签多余滚动条并缩短侧栏标题/菜单间距；要求同步Figma作为视觉与交互唯一事实源。继续任务020开放PR21和唯一工作树，主Agent唯一写者，实际子Agent只读成因定位，无并发写入。remote main6ffba4d、旧head5541466五项CI实际SUCCESS；新阶段不能引用旧绿灯。
+
+先读取项目/PRD/v010历史/Architecture/ADR003、人员R3相关正文和登录功能，以及组件库consumer/contract/批准登记；Q24项目原版页面控件授权继续适用。Figma先同步：Navigation / Web只剩Mode=Auth/App，固定56px；Admin Shell只剩Side176/72和Interaction普通/悬停，旧Top属性、40px状态和收缩原型控件移除。108:247/279实例改为固定顶栏，113:425链接保留为Side=Collapsed/Sidebar Hover。人员导航槽位移除原64px留白，实际四变体菜单y116、展开x16/144×48、收起x12/48×48；人员图标x26/y130。页签总高48含边框，按钮47，横滚可达，无纵向溢出。R3§5.3–5.5与登录功能同步并重读，审批/冻结/上线属性不改，旧截图保留为明确历史。R3更新时间2026-09-30T15:41:57.634Z，登录15:42:44.826Z；Figma工具未提供更新时间。高保真75:2/108:151/113:425及截图实际重读，几何通过Plugin API核对。
+
+Windows/Node22.23.1/pnpm10.28.2/Playwright1.63 Chromium，测试独立4174，4173用户预览保留。实现前运行`pnpm exec playwright test --config .work/q31.config.ts --grep 'Q31 Home|Q31 admin uses|Q31 tabs|Q31 real member'`：退出1、3失败1通过、23.9s。目标断言实际观察顶栏收缩控件仍1个，菜单旧y180≠116；页签overflowY=auto≠hidden、scrollHeight48≠clientHeight47、按钮48≠47、scrollTop=1≠0。真实成员纵/横滚动保护用例通过；不是语法/依赖故障。red.txt为实际日志；red/归档新测试和全部旧实现/配置，规范化UTF8/LF SHA256不可变。
+
+旧四态测试按正式Q31改为固定56×两侧态；保留编辑、材质覆盖/resize、20px原图标/48热区/36中轴、逐帧稳定y、快速反向/减少动效、业务权限/错误/保存与Session断言。新测试独立验证无控件、y116、页签真实溢出和末页签键盘可达；20条合成成员验证必要滚动未被隐藏。先提交推送本RED，再做最小实现。
