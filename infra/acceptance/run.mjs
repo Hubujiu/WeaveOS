@@ -4,6 +4,7 @@ import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {countAPIReport,countBrowserReport} from './result-counts.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const dir = resolve(root, '.work/acceptance');
@@ -53,13 +54,13 @@ try {
     WEAVEOS_API_URL: 'https://localhost:19443',
     WEAVEOS_INGRESS_CONTAINERS: JSON.stringify({ nginx: id('nginx'), bff: id('bff'), postgres: id('postgres') }),
     WEAVEOS_INGRESS_DATABASE: 'weaveos_acceptance', NODE_EXTRA_CA_CERTS: resolve(dir, 'tls/cert.pem') } });
-  node('node --test tests/acceptance/api.test.mjs; pnpm exec playwright test --config apps/web/playwright.integration.config.ts --reporter=line', id('nginx'));
+  node('node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=/repo/.work/acceptance/api.tap tests/acceptance/api.test.mjs; PLAYWRIGHT_JSON_OUTPUT_NAME=/repo/.work/acceptance/browser.json pnpm exec playwright test --config apps/web/playwright.integration.config.ts --reporter=line,json', id('nginx'));
   call(process.execPath, ['--test', 'infra/acceptance/faults.test.mjs'], { env: { ...env, WEAVEOS_ACCEPTANCE_PROJECT: project, WEAVEOS_ACCEPTANCE_FIXTURES: resolve(dir, 'fixtures.json'), NODE_EXTRA_CA_CERTS: resolve(dir, 'tls/cert.pem') } });
   const storeEnv = { ...env, WEAVEOS_API_URL: 'https://localhost:19443', WEAVEOS_ACCEPTANCE_PROJECT: project, WEAVEOS_ACCEPTANCE_FIXTURES: resolve(dir, 'fixtures.json'), WEAVEOS_ACCEPTANCE_OBSERVER: resolve(root, 'tests/acceptance/storage-observer.mjs'), NODE_EXTRA_CA_CERTS: resolve(dir, 'tls/cert.pem') };
   // Serial fault/control qualification precedes product assertions on the same real stack.
   call(process.execPath, ['--test', '--test-concurrency=1', 'tests/acceptance/storage-observer.test.mjs', 'tests/acceptance/redis-gate.test.mjs'], { env: storeEnv });
   call(process.execPath, ['--test', '--test-concurrency=1', 'tests/acceptance/integration.test.mjs'], { env: storeEnv });
-  writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'passed', project, elapsedSeconds: (Date.now() - started) / 1000, api:122, browser:111, components: JSON.parse(readFileSync(resolve(dir, 'components.json'), 'utf8')).stats.expected, faults: 3, storageCases:19, storageControls:8, storage: 'actual PostgreSQL18 + Redis8.2', target: 'isolated Linux HTTPS', secrets: 'not included' }, null, 2));
+  writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'passed', project, elapsedSeconds: (Date.now() - started) / 1000, api:countAPIReport(readFileSync(resolve(dir,'api.tap'),'utf8')), browser:countBrowserReport(JSON.parse(readFileSync(resolve(dir,'browser.json'),'utf8'))), components: JSON.parse(readFileSync(resolve(dir, 'components.json'), 'utf8')).stats.expected, faults: 3, storageCases:19, storageControls:8, storage: 'actual PostgreSQL18 + Redis8.2', target: 'isolated Linux HTTPS', secrets: 'not included' }, null, 2));
 } catch (error) {
   writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'failed', project, exitCode: error.status ?? 1, elapsedSeconds: (Date.now() - started) / 1000 }));
   throw error;

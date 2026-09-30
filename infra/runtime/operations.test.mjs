@@ -10,6 +10,8 @@ const c=runtimeContext(),fixture=JSON.parse(readFileSync(resolve(c.dir,'fixtures
 const api=async(path,options={})=>fetch(`https://localhost:19443/api/v1${path}`,{...options,signal:AbortSignal.timeout(10000),headers:{Origin:'https://localhost:19443','Content-Type':'application/json',...options.headers}});
 async function login(who){const r=await api('/sessions',{method:'POST',body:JSON.stringify(who)});assert.equal(r.status,201);const values=r.headers.getSetCookie();const sid=values.find(v=>v.startsWith('__Host-session='))?.split(';')[0].slice(15),csrf=values.find(v=>v.startsWith('__Host-csrf='))?.split(';')[0].slice(12);assert.ok(Boolean(sid&&csrf),'two bound cookies required');return {sid,headers:{Cookie:`__Host-session=${sid}; __Host-csrf=${csrf}`,'X-CSRF-Token':csrf}};}
 async function ready(){for(let i=0;i<50;i++){try{const r=await fetch('https://localhost:19443/health/ready',{signal:AbortSignal.timeout(2000)});if(r.status===200)return;}catch{}await new Promise(r=>setTimeout(r,200));}throw new Error('runtime did not become ready');}
+let personnelSnapshot;
+async function personnelData(path,method,body,session,status=200){const r=await api(path,{method,headers:session?.headers,body:body===undefined?undefined:JSON.stringify(body)});assert.equal(r.status,status);return (await r.json()).data;}
 await ready();
 
 test('runtime identity is separate from owner; application cannot mutate audit or read cold database',()=>{
@@ -44,6 +46,15 @@ test('real Redis memory exhaustion and restart fail closed and never restore his
 test('encrypted hot/cold backup restores true state, rotates generation, and rejects every old Cookie',async()=>{
  const admin=await login(fixture.admin),old=await login(fixture.user);
  const reset=await api(`/users/${fixture.resetTarget.id}/password-reset`,{method:'POST',headers:admin.headers,body:'{}'});assert.equal(reset.status,200);
+ const invite=await personnelData('/invitations','POST',{},admin,201);
+ const member=await personnelData('/registrations','POST',{account:'runtime-personnel-restore',password:'Synthetic@123',invitationCode:invite.invitationCode},undefined,201);
+ const template=await personnelData('/personnel/templates','POST',{name:'restore template',description:'preserve configuration',permissionCodes:['personnel.manage']},admin,201);
+ const identity=await personnelData('/personnel/identities','POST',{name:'restore identity',description:'',templateIds:[template.id],permissionCodes:[]},admin,201);
+ await personnelData('/personnel/members/'+member.id+'/identities','PUT',{identityIds:[identity.id],version:0},admin);
+ const departments=await personnelData('/personnel/departments','GET',undefined,admin);
+ const department=await personnelData('/personnel/departments','POST',{name:'restore department',parentId:departments.items.find(d=>d.isRoot).id},admin,201);
+ await personnelData('/personnel/members/'+member.id+'/groups','PUT',{operation:'add',departmentId:department.id,version:1},admin);
+ personnelSnapshot={member,template,identity,department};
  const backupDir=resolve(c.dir,'backups'),keyFile=resolve(c.dir,'secrets/backup.key');
  const options={container:c.container('postgres'),user:'weaveos_backup',keyFile,alertFile:resolve(c.dir,'public/alerts.jsonl')};
  assert.equal(c.compose('ps','--status','running','-q','audit-maintenance').toString().trim(),'','one-shot maintenance must not remain resident');
@@ -59,6 +70,10 @@ test('encrypted hot/cold backup restores true state, rotates generation, and rej
   assert.ok(Number(c.sql('weaveos_recovered',"SELECT count(*) FROM auth.invitations WHERE used_by IS NOT NULL;"))>0);
   assert.equal(c.sql('weaveos_recovered',`SELECT auth_version FROM auth.users WHERE id='${fixture.resetTarget.id}';`),'2');
   assert.equal(c.sql('weaveos_recovered',"SELECT count(*) FROM auth.authentication_events WHERE request_id='runtime-after-snapshot';"),'0','a write after snapshot is actually lost in this recovery exercise');
+  assert.equal(c.sql('weaveos_recovered',`SELECT count(*) FROM personnel.member_identities WHERE user_id='${member.id}' AND identity_id='${identity.id}';`),'1');
+  assert.equal(c.sql('weaveos_recovered',`SELECT count(*) FROM personnel.identity_templates WHERE identity_id='${identity.id}' AND template_id='${template.id}';`),'1');
+  assert.equal(c.sql('weaveos_recovered',`SELECT count(*) FROM personnel.department_members WHERE user_id='${member.id}' AND department_id='${department.id}';`),'1');
+  assert.equal(c.sql('weaveos_recovered',`SELECT count(*) FROM auth.authentication_events WHERE event_type='personnel_changed' AND object_id='${template.id}' AND change_summary->'after'->>'name'='restore template';`),'1');
   c.sql('postgres',"REVOKE CONNECT ON DATABASE weaveos_recovered_cold FROM PUBLIC; GRANT CONNECT ON DATABASE weaveos_recovered_cold TO weaveos_owner,auth_maintenance,auth_backup;");
  },switchGeneration(generation){
   for(const file of ['runtime.env','reader.env','maintenance.env']){const path=resolve(c.dir,file),text=readFileSync(path,'utf8').replaceAll('/weaveos_runtime?','/weaveos_recovered?').replaceAll('/weaveos_cold_archive?','/weaveos_recovered_cold?').replace(`WEAVEOS_SESSION_GENERATION=${c.generation}`,`WEAVEOS_SESSION_GENERATION=${generation}`);writeFileSync(path,text,{mode:0o600});}
@@ -72,6 +87,10 @@ test('actual rollback switches to previously verified artifact combination witho
  const previous=c.previous;assert.ok(previous&&previous.bff.imageID!==c.artifacts.bff.imageID);
  const originalBFF=c.env.WEAVEOS_BFF_IMAGE,originalWeb=c.env.WEAVEOS_WEB_IMAGE;
  c.env.WEAVEOS_BFF_IMAGE=previous.bff.imageID;c.env.WEAVEOS_WEB_IMAGE=previous.web.imageID;
- try{c.compose('up','-d','bff','nginx');await ready();const session=await login(fixture.user);assert.equal((await api('/sessions/current',{headers:session.headers})).status,200);}
+ try{c.compose('up','-d','bff','nginx');await ready();const session=await login(fixture.user),root=await login(fixture.admin);assert.equal((await api('/sessions/current',{headers:session.headers})).status,200);
+  for(const headers of [session.headers,root.headers]){assert.equal((await api('/personnel/templates',{headers})).status,404,'old artifact closes new management API, even for Root');assert.equal((await api('/me/access',{headers})).status,404);}
+  assert.ok(personnelSnapshot);assert.equal(c.sql('weaveos_recovered',`SELECT count(*) FROM personnel.member_identities WHERE user_id='${personnelSnapshot.member.id}' AND identity_id='${personnelSnapshot.identity.id}';`),'1','artifact rollback must retain personnel data without Down');
+ }
  finally{c.env.WEAVEOS_BFF_IMAGE=originalBFF;c.env.WEAVEOS_WEB_IMAGE=originalWeb;c.compose('up','-d','bff','nginx');await ready();}
+ const restoredManager=await login({account:'runtime-personnel-restore',password:'Synthetic@123'});const access=await personnelData('/me/access','GET',undefined,restoredManager);assert.equal(access.personnelManage,true);assert.equal(access.bootstrapAdmin,false);assert.equal(access.identities[0].id,personnelSnapshot.identity.id);
 });

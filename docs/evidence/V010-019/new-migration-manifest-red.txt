@@ -1,0 +1,79 @@
+TAP version 13
+# Subtest: Q25 cold audit migration precedes hot migration: infra/acceptance/run.mjs
+ok 1 - Q25 cold audit migration precedes hot migration: infra/acceptance/run.mjs
+  ---
+  duration_ms: 0.9019
+  type: 'test'
+  ...
+# Subtest: Q25 cold audit migration precedes hot migration: infra/runtime/run.mjs
+ok 2 - Q25 cold audit migration precedes hot migration: infra/runtime/run.mjs
+  ---
+  duration_ms: 0.2469
+  type: 'test'
+  ...
+# Subtest: Q25 cold audit migration precedes hot migration: .github/workflows/ci.yml
+ok 3 - Q25 cold audit migration precedes hot migration: .github/workflows/ci.yml
+  ---
+  duration_ms: 0.2658
+  type: 'test'
+  ...
+# Subtest: Q25 cold audit migration precedes hot migration: infra/server/deploy/receive.mjs
+ok 4 - Q25 cold audit migration precedes hot migration: infra/server/deploy/receive.mjs
+  ---
+  duration_ms: 0.2136
+  type: 'test'
+  ...
+# Subtest: acceptance component count derives from the actual Playwright report
+ok 5 - acceptance component count derives from the actual Playwright report
+  ---
+  duration_ms: 0.4024
+  type: 'test'
+  ...
+# Subtest: Q25 personnel API regression is included in the real HTTPS entrypoint
+ok 6 - Q25 personnel API regression is included in the real HTTPS entrypoint
+  ---
+  duration_ms: 0.2532
+  type: 'test'
+  ...
+# Subtest: Q25 pinned role upgrade is executed with real PostgreSQL by the product workflow
+ok 7 - Q25 pinned role upgrade is executed with real PostgreSQL by the product workflow
+  ---
+  duration_ms: 0.2728
+  type: 'test'
+  ...
+# Subtest: Q25 compatibility manifest records each new reviewed immutable migration
+not ok 8 - Q25 compatibility manifest records each new reviewed immutable migration
+  ---
+  duration_ms: 1.3363
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-019\\tests\\governance\\personnel-release.test.mjs:24:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - '2450cdfa75616d2253b1025542e6c792b6cd283a05504be1f78c22a29d608ae7'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '2450cdfa75616d2253b1025542e6c792b6cd283a05504be1f78c22a29d608ae7'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-019/tests/governance/personnel-release.test.mjs:26:109)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 7
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 71.3571

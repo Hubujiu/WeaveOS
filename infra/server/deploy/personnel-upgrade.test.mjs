@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {readFileSync} from 'node:fs';
+import {readFileSync,mkdtempSync,mkdirSync,copyFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {applyMigrations} from './migrate.mjs';
 import {applyPersonnelRoles,validateInstalledPersonnelRoles} from './personnel-upgrade.mjs';
@@ -28,10 +28,16 @@ test('Q25 real cold-first expansion and pinned runtime role upgrade preserve dat
   run(['exec',name,'createdb','-U','weaveos_owner','weaveos_019_cold']);
   const env=db=>'GOOSE_DRIVER=postgres\nGOOSE_DBSTRING=postgres://weaveos_owner@127.0.0.1:5432/'+db+'?sslmode=disable\n';
   const goose=resolve(process.env.WEAVEOS_TEST_GOOSE??'.work/personnel/goose');
+  mkdirSync('.work/personnel-upgrade',{recursive:true});const old=mkdtempSync(resolve('.work/personnel-upgrade/initial-'));
+  for(const directory of ['migrations','archive-migrations']){mkdirSync(old+'/'+directory);const file=directory==='migrations'?'00001_auth.sql':'00001_archive.sql';copyFileSync('db/'+directory+'/'+file,old+'/'+directory+'/'+file);}
+  const sql=(db,text)=>run(['exec','-i',name,'psql','-X','-At','-v','ON_ERROR_STOP=1','-U','weaveos_owner','-d',db],{input:text,encoding:'utf8'}).trim();
+  applyMigrations({container:name,goose,directory:old+'/archive-migrations',env:env('weaveos_019_cold')});
+  applyMigrations({container:name,goose,directory:old+'/migrations',env:env('weaveos_019_hot')});
+  const oldRoles=execFileSync('git',['show','4f6ee765ffec195b26808bdee72a39166c068aa9:infra/runtime/roles.sql'],{encoding:'utf8'});
+  sql('weaveos_019_hot',oldRoles);sql('weaveos_019_hot',"INSERT INTO auth.users(account) VALUES('old-app-compatible'); SET ROLE auth_app; INSERT INTO auth.authentication_events(event_type,outcome,reason_code,request_id) VALUES('login','failure','AUTH_INVALID_CREDENTIALS','before-personnel-upgrade');");
   applyMigrations({container:name,goose,directory:resolve('db/archive-migrations'),env:env('weaveos_019_cold')});
   applyMigrations({container:name,goose,directory:resolve('db/migrations'),env:env('weaveos_019_hot')});
-  const sql=(db,text)=>run(['exec','-i',name,'psql','-X','-At','-v','ON_ERROR_STOP=1','-U','weaveos_owner','-d',db],{input:text,encoding:'utf8'}).trim();
-  sql('weaveos_019_hot',"INSERT INTO personnel.identities(name) VALUES('preserved'); INSERT INTO auth.users(account) VALUES('old-app-compatible');");
+  sql('weaveos_019_hot',"INSERT INTO personnel.identities(name) VALUES('preserved');");
   applyPersonnelRoles({container:name,env:env('weaveos_019_hot'),roleSQL});
   assert.equal(sql('weaveos_019_hot',"SELECT has_table_privilege('auth_app','personnel.identities','INSERT'),has_table_privilege('auth_app','personnel.permission_catalog','UPDATE'),has_column_privilege('auth_app','auth.users','is_bootstrap_admin','UPDATE'),has_function_privilege('auth_app','personnel.lock_permission_catalog(uuid)','EXECUTE')"),'t|f|f|t');
   assert.equal(sql('weaveos_019_hot',"SET ROLE auth_app; SELECT name FROM personnel.identities WHERE name='preserved'"),'SET\npreserved');
@@ -39,5 +45,6 @@ test('Q25 real cold-first expansion and pinned runtime role upgrade preserve dat
   // An old authentication-only insert remains compatible; no destructive Down.
   sql('weaveos_019_hot',"SET ROLE auth_app; INSERT INTO auth.authentication_events(event_type,outcome,reason_code,request_id) VALUES('login','failure','AUTH_INVALID_CREDENTIALS','old-application-after-upgrade');");
   assert.equal(sql('weaveos_019_hot',"SELECT count(*) FROM auth.users WHERE account='old-app-compatible'"),'1');
+  assert.equal(sql('weaveos_019_hot',"SELECT count(*) FROM auth.authentication_events WHERE request_id IN ('before-personnel-upgrade','old-application-after-upgrade')"),'2');
  }finally{run(['rm','-fv',name]);}
 });
