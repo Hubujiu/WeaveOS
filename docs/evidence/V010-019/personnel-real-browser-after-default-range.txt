@@ -1,0 +1,67 @@
+
+Running 6 tests using 1 worker
+
+[1/6] [chromium] › tests/acceptance/web.spec.ts:380:5 › R2/Q25 real ordinary Home, own account and direct admin denial
+[2/6] [chromium] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+  1) [chromium] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('status')
+    Expected substring: "身份已分配"
+    Error: strict mode violation: getByRole('status') resolved to 2 elements:
+        1) <p role="status" class="workspace-status">身份已分配</p> aka getByText('身份已分配')
+        2) <p role="status">正在加载…</p> aka getByText('正在加载…')
+
+    Call log:
+      - Expect "toContainText" getByRole('status') with timeout 5000ms
+      - waiting for getByRole('status')
+
+
+      388 |  await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'新建权限模板',exact:true}).click();await page.getByLabel('模板名称',{exact:true}).fill(label+'-模板');await page.getByLabel('中央权限：人员管理',{exact:true}).check();await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status')).toContainText('已保存');
+      389 |  await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'新建身份',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill(label+'-身份');await page.getByLabel('模板：'+label+'-模板',{exact:true}).check();await expect(page.getByLabel('直接权限：人员管理',{exact:true})).not.toBeChecked();await expect(page.getByText('来自模板：'+label+'-模板',{exact:true})).toBeVisible();await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status')).toContainText('已保存');
+    > 390 |  await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await page.getByLabel('搜索成员',{exact:true}).fill(label);const row=page.getByRole('row').filter({hasText:label});await expect(row).toHaveCount(1);await row.getByRole('button',{name:'配置身份',exact:true}).click();await page.getByLabel('身份：'+label+'-身份',{exact:true}).check();await page.getByRole('button',{name:'确认分配',exact:true}).click();await expect(page.getByRole('status')).toContainText('身份已分配');await expect(row).toContainText('已开启');
+          |                                                                                                                                                                                                                                                                                                                                                                                                                                                    ^
+      391 |  await page.getByRole('button',{name:'退出',exact:true}).click();await page.getByRole('button',{name:'账号',exact:true}).click();await page.getByRole('button',{name:'退出登录',exact:true}).click();await personnelLogin(page,{account:label,password:'Synthetic@123'});await expect(page.getByRole('button',{name:'设置',exact:true})).toBeVisible();await page.getByRole('button',{name:'账号',exact:true}).click();await expect(page.getByText(label+'-身份',{exact:true})).toBeVisible();await expect(page.getByText(label+'-身份 · '+label+'-模板',{exact:true})).toBeVisible();
+      392 |  await page.getByRole('button',{name:'设置',exact:true}).click();await page.getByRole('button',{name:'邀请成员',exact:true}).click();await page.getByRole('button',{name:'生成邀请码',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).not.toHaveValue('');await page.getByRole('button',{name:'关闭',exact:true}).click();
+      393 |  await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByLabel('搜索权限模板',{exact:true}).fill(label+'-模板');await page.getByRole('button',{name:label+'-模板',exact:true}).click();await page.getByLabel('中央权限：人员管理',{exact:true}).uncheck();await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('1 位成员');await page.getByRole('button',{name:'确认保存',exact:true}).click();
+        at /repo/tests/acceptance/web.spec.ts:390:436
+
+    Error Context: apps/web/test-results/web-R3-real-Root-UI-create-2cfcc-igns-a-new-non-Root-manager-chromium/error-context.md
+
+
+[3/6] [firefox] › tests/acceptance/web.spec.ts:380:5 › R2/Q25 real ordinary Home, own account and direct admin denial
+[4/6] [firefox] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+[5/6] [webkit] › tests/acceptance/web.spec.ts:380:5 › R2/Q25 real ordinary Home, own account and direct admin denial
+[6/6] [webkit] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+  2) [webkit] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('status')
+    Expected substring: "身份已分配"
+    Error: strict mode violation: getByRole('status') resolved to 2 elements:
+        1) <p role="status" class="workspace-status">身份已分配</p> aka getByText('身份已分配')
+        2) <p role="status">正在加载…</p> aka getByText('正在加载…')
+
+    Call log:
+      - Expect "toContainText" getByRole('status') with timeout 5000ms
+      - waiting for getByRole('status')
+
+
+      388 |  await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'新建权限模板',exact:true}).click();await page.getByLabel('模板名称',{exact:true}).fill(label+'-模板');await page.getByLabel('中央权限：人员管理',{exact:true}).check();await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status')).toContainText('已保存');
+      389 |  await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'新建身份',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill(label+'-身份');await page.getByLabel('模板：'+label+'-模板',{exact:true}).check();await expect(page.getByLabel('直接权限：人员管理',{exact:true})).not.toBeChecked();await expect(page.getByText('来自模板：'+label+'-模板',{exact:true})).toBeVisible();await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status')).toContainText('已保存');
+    > 390 |  await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await page.getByLabel('搜索成员',{exact:true}).fill(label);const row=page.getByRole('row').filter({hasText:label});await expect(row).toHaveCount(1);await row.getByRole('button',{name:'配置身份',exact:true}).click();await page.getByLabel('身份：'+label+'-身份',{exact:true}).check();await page.getByRole('button',{name:'确认分配',exact:true}).click();await expect(page.getByRole('status')).toContainText('身份已分配');await expect(row).toContainText('已开启');
+          |                                                                                                                                                                                                                                                                                                                                                                                                                                                    ^
+      391 |  await page.getByRole('button',{name:'退出',exact:true}).click();await page.getByRole('button',{name:'账号',exact:true}).click();await page.getByRole('button',{name:'退出登录',exact:true}).click();await personnelLogin(page,{account:label,password:'Synthetic@123'});await expect(page.getByRole('button',{name:'设置',exact:true})).toBeVisible();await page.getByRole('button',{name:'账号',exact:true}).click();await expect(page.getByText(label+'-身份',{exact:true})).toBeVisible();await expect(page.getByText(label+'-身份 · '+label+'-模板',{exact:true})).toBeVisible();
+      392 |  await page.getByRole('button',{name:'设置',exact:true}).click();await page.getByRole('button',{name:'邀请成员',exact:true}).click();await page.getByRole('button',{name:'生成邀请码',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).not.toHaveValue('');await page.getByRole('button',{name:'关闭',exact:true}).click();
+      393 |  await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByLabel('搜索权限模板',{exact:true}).fill(label+'-模板');await page.getByRole('button',{name:label+'-模板',exact:true}).click();await page.getByLabel('中央权限：人员管理',{exact:true}).uncheck();await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('1 位成员');await page.getByRole('button',{name:'确认保存',exact:true}).click();
+        at /repo/tests/acceptance/web.spec.ts:390:436
+
+    Error Context: apps/web/test-results/web-R3-real-Root-UI-create-2cfcc-igns-a-new-non-Root-manager-webkit/error-context.md
+
+
+  2 failed
+    [chromium] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager 
+    [webkit] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager 
+  4 passed (23.6s)

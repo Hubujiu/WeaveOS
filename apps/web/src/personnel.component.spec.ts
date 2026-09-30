@@ -224,7 +224,8 @@ test('Q25 default activity range omits optional empty timestamps in every initia
 test('Figma original checkbox uses the original check SVG, 20px surface and 6px corners',async({page})=>{
  await admin(page);await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'企业管理',exact:true}).click();
  const box=page.getByLabel('中央权限：人员管理',{exact:true});await expect(box).toHaveCSS('appearance','none');await expect(box).toHaveCSS('border-radius','6px');await expect(box).toHaveCSS('width','20px');await expect(box).toHaveCSS('background-size','14px 14px');
- expect(await box.evaluate(node=>getComputedStyle(node).backgroundImage)).toContain('data:image/svg+xml;base64,'+readFileSync(new URL('./assets/admin-check.svg',import.meta.url)).toString('base64'));
+ const original=readFileSync(new URL('./assets/admin-check.svg',import.meta.url),'utf8');
+ expect(await box.evaluate((node,source)=>{const url=getComputedStyle(node).backgroundImage.slice(5,-2);const raw=url.startsWith('data:image/svg+xml;base64,')?atob(url.split(',')[1]):decodeURIComponent(url.slice(url.indexOf(',')+1));const canonical=(svg:string)=>new XMLSerializer().serializeToString(new DOMParser().parseFromString(svg.replace(/>\s+</g,'><').trim(),'image/svg+xml'));return canonical(raw)===canonical(source);},original)).toBe(true);
  await box.uncheck();await expect(box).toHaveCSS('background-image','none');
 });
 test('Figma shell original translucent material has no extra white foreground layers',async({page})=>{
