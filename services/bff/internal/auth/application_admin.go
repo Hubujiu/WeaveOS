@@ -25,12 +25,19 @@ func (a *Application) CreateInvitation(ctx context.Context, actor session.Princi
 	}
 	defer func() { _ = tx.Rollback(context.Background()) }()
 	q := authsql.New(tx)
-	users, err := q.LockAdminUsers(ctx, []pgtype.UUID{uuidValue(actor.UserID)})
-	if err != nil {
-		return InvitationResult{}, err
-	}
-	if len(users) != 1 || users[0].Status != "active" || !users[0].IsBootstrapAdmin || strconv.FormatInt(users[0].AuthVersion, 10) != actor.Record.AuthVersion {
-		return InvitationResult{}, &Failure{Code: "COMMON_PERMISSION_DENIED"}
+	if a.InvitationAuthorizer != nil {
+		if err := a.InvitationAuthorizer(ctx, tx, actor); err != nil {
+			return InvitationResult{}, err
+		}
+	} else {
+		// A legacy isolated auth composition has only its trusted Bootstrap capability.
+		users, err := q.LockAdminUsers(ctx, []pgtype.UUID{uuidValue(actor.UserID)})
+		if err != nil {
+			return InvitationResult{}, err
+		}
+		if len(users) != 1 || users[0].Status != "active" || !users[0].IsBootstrapAdmin || strconv.FormatInt(users[0].AuthVersion, 10) != actor.Record.AuthVersion {
+			return InvitationResult{}, &Failure{Code: "COMMON_PERMISSION_DENIED"}
+		}
 	}
 	id, err := q.CreateAdminInvitation(ctx, authsql.CreateAdminInvitationParams{CodeHash: code.Digest[:], CreatedBy: uuidValue(actor.UserID)})
 	if err != nil {

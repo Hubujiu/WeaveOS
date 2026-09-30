@@ -5,8 +5,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/auth"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/personnel"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
 	"net/http"
@@ -57,6 +59,18 @@ func buildHandler(ctx context.Context, cfg config) (http.Handler, func(), error)
 	sessions := session.NewStore(cfg.RedisURL, cfg.Generation)
 	close := func() { _ = sessions.Close(); pool.Close() }
 	s := &auth.Service{Pool: pool, Sessions: sessions, Origin: cfg.Origin, AuditKeyID: cfg.AuditKeyID, AuditKey: cfg.AuditKey, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
+	people := &personnel.Application{Pool: pool}
+	s.Personnel = &personnel.Service{Application: people, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
+	s.InvitationAuthorizer = func(ctx context.Context, tx pgx.Tx, p session.Principal) error {
+		err := people.AuthorizeWrite(ctx, tx, p)
+		if errors.Is(err, personnel.ErrDenied) {
+			return &auth.Failure{Code: "COMMON_PERMISSION_DENIED"}
+		}
+		if errors.Is(err, personnel.ErrConflict) {
+			return &auth.Failure{Code: "PERSONNEL_CONFLICT"}
+		}
+		return err
+	}
 	if err := s.Ready(ctx); err != nil {
 		close()
 		return nil, nil, errors.New("authentication dependencies unavailable")
