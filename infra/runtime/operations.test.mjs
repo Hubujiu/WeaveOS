@@ -53,7 +53,7 @@ test('encrypted hot/cold backup restores true state, rotates generation, and rej
  await personnelData('/personnel/members/'+member.id+'/identities','PUT',{identityIds:[identity.id],version:0},admin);
  const departments=await personnelData('/personnel/departments','GET',undefined,admin);
  const department=await personnelData('/personnel/departments','POST',{name:'restore department',parentId:departments.items.find(d=>d.isRoot).id},admin,201);
- await personnelData('/personnel/members/'+member.id+'/groups','PUT',{operation:'add',departmentId:department.id,version:1},admin);
+ await personnelData('/personnel/members/'+member.id+'/groups','POST',{operation:'add',departmentId:department.id,version:1},admin);
  personnelSnapshot={member,template,identity,department};
  const backupDir=resolve(c.dir,'backups'),keyFile=resolve(c.dir,'secrets/backup.key');
  const options={container:c.container('postgres'),user:'weaveos_backup',keyFile,alertFile:resolve(c.dir,'public/alerts.jsonl')};

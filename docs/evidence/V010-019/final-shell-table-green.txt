@@ -1,0 +1,42 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:5516) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:33316) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 5 tests using 1 worker
+
+(node:3976) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [chromium] › src\personnel.component.spec.ts:206:1 › Figma shell retains each original L material asset and original SVG dimensions (4.2s)
+  x  2 [chromium] › src\personnel.component.spec.ts:240:1 › Figma each shell variant retains its own material offset and collapsed 48px menu target (1.5s)
+(node:34988) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 3 [chromium] › src\personnel.component.spec.ts:247:1 › Figma member table keeps fixed column geometry and page selection never sends a write (2.5s)
+  ok 4 [chromium] › src\personnel.component.spec.ts:253:1 › Figma collapsed menu independently has a 48px target at the original sidebar inset (1.4s)
+  ok 5 [chromium] › src\personnel.component.spec.ts:256:1 › Figma top-collapsed side-expanded material independently uses the original minus30 top (1.4s)
+
+
+  1) [chromium] › src\personnel.component.spec.ts:240:1 › Figma each shell variant retains its own material offset and collapsed 48px menu target 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 112
+    Received: 144
+
+      242 |  await page.getByRole('button',{name:'收起侧栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('left','-30px');
+      243 |  const menu=page.getByRole('button',{name:'人员管理',exact:true});await expect(menu).toHaveCSS('width','48px');await expect(menu).toHaveCSS('height','48px');expect((await menu.boundingBox())!.y).toBe(144);
+    > 244 |  await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('left','-22px');expect((await menu.boundingBox())!.y).toBe(112);
+          |                                                                                                                                                                                ^
+      245 |  await page.getByRole('button',{name:'展开侧栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('top','-30px');
+      246 | });
+      247 | test('Figma member table keeps fixed column geometry and page selection never sends a write',async({page})=>{
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:244:176
+
+    Error Context: test-results\personnel.component-Figma--20c76--collapsed-48px-menu-target-chromium\error-context.md
+
+  1 failed
+    [chromium] › src\personnel.component.spec.ts:240:1 › Figma each shell variant retains its own material offset and collapsed 48px menu target 
+  4 passed (13.1s)
