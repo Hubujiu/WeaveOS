@@ -33,3 +33,5 @@
 新增用户授权的测试先行任务：[V010-009](V010-009.md)，依赖已验收001；task/V010-009-test-first / ../WeaveOS-worktrees/V010-009。用户2026-09-27追加授权完成PR #3：扩展HTTP/浏览器已通过，剩余19项真实STORE已本机通过并纳入CI；等待最终head完整远端复验，不提前accepted。正式来源和002–008验收不被本任务替代。
 
 本轮完整接入：[V010-019](V010-019.md)，依赖已验收018；task/V010-019-complete-app / ../WeaveOS-worktrees/V010-019。用户要求补齐最新登录注册、Home导航与已批准人员管理R3；Q24确认按Figma原版复刻，组件优化后置。单Agent。
+
+最新尺寸与后台折叠：[V010-020](V010-020.md)，依赖已验收019；task/V010-020-admin-shell / ../WeaveOS-worktrees/V010-020，[PR21](https://github.com/Hubujiu/WeaveOS/pull/21)。Q29同步最新56/40顶栏、176/72侧栏及登录卡片几何；Q30确认保持图标纵坐标并同步Figma收起态。实际状态与验证以任务正文及PR最终head为准，单Agent。
