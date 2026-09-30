@@ -1,0 +1,153 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:37492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:33524) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 5 tests using 1 worker
+
+(node:37860) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\personnel.component.spec.ts:34:97 › Q28 material fills viewport 2504x1355 in four states and after resize (7.5s)
+(node:38392) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [chromium] › apps\web\src\personnel.component.spec.ts:34:97 › Q28 material fills viewport 1440x900 in four states and after resize (5.8s)
+(node:38360) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [chromium] › apps\web\src\personnel.component.spec.ts:34:97 › Q28 material fills viewport 390x844 in four states and after resize (5.5s)
+(node:36216) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  4 [chromium] › apps\web\src\personnel.component.spec.ts:43:1 › Q28 side toggle moves icon horizontally at a stable height on every animation frame (2.5s)
+(node:38404) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  5 [chromium] › apps\web\src\personnel.component.spec.ts:56:1 › Q28 reduced motion and rapid reversal keep navigation geometry and unsaved edit (1.7s)
+
+
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:34:97 › Q28 material fills viewport 2504x1355 in four states and after resize 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 2
+    + Received  + 2
+
+      Array [
+    -   194,
+    -   194,
+    +   0,
+    +   0,
+      ]
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      35 |  await page.setViewportSize(viewport);await admin(page);await page.emulateMedia({reducedMotion:'reduce'});
+      36 |  for(let i=0;i<4;i++){
+    > 37 |   await expect.poll(()=>materialAlpha(page)).toEqual([194,194]);
+         |                                              ^
+      38 |   await page.getByRole('button',{name:i%2===0?'收起顶栏':'展开顶栏',exact:true}).click();
+      39 |   await page.getByRole('button',{name:await page.locator('.admin-shell').evaluate(n=>n.classList.contains('side-collapsed'))?'展开侧栏':'收起侧栏',exact:true}).click();
+      40 |  }
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:37:46
+
+    Error Context: apps\web\test-results\personnel.component-Q28-ma-67035-our-states-and-after-resize-chromium\error-context.md
+
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:34:97 › Q28 material fills viewport 1440x900 in four states and after resize 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 2
+    + Received  + 2
+
+      Array [
+    -   194,
+    -   194,
+    +   196,
+    +   196,
+      ]
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      35 |  await page.setViewportSize(viewport);await admin(page);await page.emulateMedia({reducedMotion:'reduce'});
+      36 |  for(let i=0;i<4;i++){
+    > 37 |   await expect.poll(()=>materialAlpha(page)).toEqual([194,194]);
+         |                                              ^
+      38 |   await page.getByRole('button',{name:i%2===0?'收起顶栏':'展开顶栏',exact:true}).click();
+      39 |   await page.getByRole('button',{name:await page.locator('.admin-shell').evaluate(n=>n.classList.contains('side-collapsed'))?'展开侧栏':'收起侧栏',exact:true}).click();
+      40 |  }
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:37:46
+
+    Error Context: apps\web\test-results\personnel.component-Q28-ma-e58bf-our-states-and-after-resize-chromium\error-context.md
+
+  3) [chromium] › apps\web\src\personnel.component.spec.ts:34:97 › Q28 material fills viewport 390x844 in four states and after resize 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 2
+    + Received  + 2
+
+      Array [
+    -   194,
+    -   194,
+    +   196,
+    +   196,
+      ]
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      35 |  await page.setViewportSize(viewport);await admin(page);await page.emulateMedia({reducedMotion:'reduce'});
+      36 |  for(let i=0;i<4;i++){
+    > 37 |   await expect.poll(()=>materialAlpha(page)).toEqual([194,194]);
+         |                                              ^
+      38 |   await page.getByRole('button',{name:i%2===0?'收起顶栏':'展开顶栏',exact:true}).click();
+      39 |   await page.getByRole('button',{name:await page.locator('.admin-shell').evaluate(n=>n.classList.contains('side-collapsed'))?'展开侧栏':'收起侧栏',exact:true}).click();
+      40 |  }
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:37:46
+
+    Error Context: apps\web\test-results\personnel.component-Q28-ma-c1817-our-states-and-after-resize-chromium\error-context.md
+
+  4) [chromium] › apps\web\src\personnel.component.spec.ts:43:1 › Q28 side toggle moves icon horizontally at a stable height on every animation frame 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      49 |   return {before:{x:before.x,y:before.y},samples};
+      50 |  });
+    > 51 |  expect(frames.samples.every(s=>Math.abs(s.y-frames.before.y)<0.5)).toBe(true);
+         |                                                                     ^
+      52 |  expect(frames.samples.some(s=>s.x>26.5&&s.x<frames.before.x-0.5)).toBe(true);
+      53 |  expect(frames.samples.at(-1)!.x).toBeCloseTo(26,0);
+      54 |  await page.getByRole('button',{name:'展开侧栏',exact:true}).click();await expect.poll(async()=> (await page.locator('.personnel-nav-icon').boundingBox())!.x).toBeCloseTo(44,0);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:51:69
+
+    Error Context: apps\web\test-results\personnel.component-Q28-si-6b19c-ht-on-every-animation-frame-chromium\error-context.md
+
+  5) [chromium] › apps\web\src\personnel.component.spec.ts:56:1 › Q28 reduced motion and rapid reversal keep navigation geometry and unsaved edit 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 210
+    Received: 158
+
+      57 |  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill('保留输入');
+      58 |  await page.emulateMedia({reducedMotion:'reduce'});const y=(await page.locator('.personnel-nav-icon').boundingBox())!.y;
+    > 59 |  await page.getByRole('button',{name:'收起侧栏',exact:true}).click();await expect(page.locator('.personnel-nav')).toHaveCSS('width','48px');expect((await page.locator('.personnel-nav-icon').boundingBox())!.y).toBe(y);
+         |                                                                                                                                                                                                              ^
+      60 |  await page.emulateMedia({reducedMotion:'no-preference'});
+      61 |  for(let i=0;i<6;i++)await page.locator('.side-trigger').click();
+      62 |  await expect(page.locator('.admin-sidebar')).toHaveCSS('width','72px');await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('保留输入');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:59:206
+
+    Error Context: apps\web\test-results\personnel.component-Q28-re-0f576-n-geometry-and-unsaved-edit-chromium\error-context.md
+
+  5 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:34:97 › Q28 material fills viewport 2504x1355 in four states and after resize 
+    [chromium] › apps\web\src\personnel.component.spec.ts:34:97 › Q28 material fills viewport 1440x900 in four states and after resize 
+    [chromium] › apps\web\src\personnel.component.spec.ts:34:97 › Q28 material fills viewport 390x844 in four states and after resize 
+    [chromium] › apps\web\src\personnel.component.spec.ts:43:1 › Q28 side toggle moves icon horizontally at a stable height on every animation frame 
+    [chromium] › apps\web\src\personnel.component.spec.ts:56:1 › Q28 reduced motion and rapid reversal keep navigation geometry and unsaved edit 

@@ -1,5 +1,7 @@
 # v0.1.0 任务索引
 
+后台外壳修复：[V010-020](V010-020.md)，依赖已验收019；task/V010-020-admin-shell / ../WeaveOS-worktrees/V010-020。用户2026-09-30要求全视口背景、图标水平折叠及arca-ui动效参考，单Agent。
+
 后端精简剩余需求：[V010-018](V010-018.md)，依赖已验收016/017；task/V010-018-backend-simplification / ../WeaveOS-worktrees/V010-018，[PR19](https://github.com/Hubujiu/WeaveOS/pull/19)。用户2026-09-29确认采用剩余全部方案，单Agent实施；日志留存参数见任务文档及Notion Q20。
 
 公网入口：[V010-015](V010-015.md)，依赖已验收011；task/V010-015-public-https / ../WeaveOS-worktrees/V010-015。用户2026-09-28明确部署授权，ADR004已接受；单Agent实施，不触碰014界面工作树。

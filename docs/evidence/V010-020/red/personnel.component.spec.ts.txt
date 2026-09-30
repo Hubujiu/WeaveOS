@@ -34,12 +34,11 @@ async function materialAlpha(page:Page) {
 for(const viewport of [{width:2504,height:1355},{width:1440,height:900},{width:390,height:844}])test('Q28 material fills viewport '+viewport.width+'x'+viewport.height+' in four states and after resize',async({page})=>{
  await page.setViewportSize(viewport);await admin(page);await page.emulateMedia({reducedMotion:'reduce'});
  for(let i=0;i<4;i++){
-  // 0.76 fill plus the original translucent shadow; require real coverage.
-  await expect.poll(async()=> (await materialAlpha(page)).every(a=>a>=190&&a<=200)).toBe(true);
-  if(i%2===0)await page.getByRole('button',{name:await page.locator('.admin-shell').evaluate(n=>n.classList.contains('side-collapsed'))?'展开侧栏':'收起侧栏',exact:true}).click();
-  else await page.getByRole('button',{name:await page.locator('.admin-shell').evaluate(n=>n.classList.contains('top-collapsed'))?'展开顶栏':'收起顶栏',exact:true}).click();
+  await expect.poll(()=>materialAlpha(page)).toEqual([194,194]);
+  await page.getByRole('button',{name:i%2===0?'收起顶栏':'展开顶栏',exact:true}).click();
+  await page.getByRole('button',{name:await page.locator('.admin-shell').evaluate(n=>n.classList.contains('side-collapsed'))?'展开侧栏':'收起侧栏',exact:true}).click();
  }
- await page.setViewportSize({width:viewport.width+173,height:viewport.height+129});await expect.poll(async()=> (await materialAlpha(page)).every(a=>a>=190&&a<=200)).toBe(true);
+ await page.setViewportSize({width:viewport.width+173,height:viewport.height+129});await expect.poll(()=>materialAlpha(page)).toEqual([194,194]);
 });
 test('Q28 side toggle moves icon horizontally at a stable height on every animation frame',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);
