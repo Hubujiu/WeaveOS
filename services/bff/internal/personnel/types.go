@@ -1,10 +1,7 @@
 package personnel
 
 import (
-	"context"
 	"errors"
-	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -52,13 +49,3 @@ var ErrInvalid = errors.New("invalid personnel argument")
 var ErrNotImplemented = errors.New("personnel behavior not implemented")
 
 type Application struct{ Pool *pgxpool.Pool }
-
-func (a *Application) Me(context.Context, session.Principal) (Access, error) {
-	return Access{}, ErrNotImplemented
-}
-func (a *Application) AuthorizeWrite(context.Context, pgx.Tx, session.Principal) error {
-	return ErrNotImplemented
-}
-func (a *Application) AllowApplication(context.Context, session.Principal, string) error {
-	return ErrNotImplemented
-}

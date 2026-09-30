@@ -22,6 +22,11 @@ type fixture struct {
 func TestAuthorizationLocksActualDependenciesQ25(t *testing.T) {
 	f := setup(t)
 	ctx := context.Background()
+	// A current configuration row exists; a first-write insertion is protected
+	// separately by its unique key and the revoker's matching insert-before-lock.
+	if _, err := f.owner.Exec(ctx, "INSERT INTO personnel.member_configuration(user_id) VALUES($1)", f.actor.UserID); err != nil {
+		t.Fatal(err)
+	}
 	tx, err := f.app.Pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -134,7 +139,7 @@ func setup(t *testing.T) *fixture {
 			t.Fatal(err)
 		}
 	}
-	_, err = tx.Exec(ctx, "INSERT INTO personnel.permission_catalog(code,name,category,app_id) VALUES('app.test.A','A','application','test-A'),('app.test.B','B','application','test-B') ON CONFLICT (code) DO NOTHING")
+	_, err = tx.Exec(ctx, "INSERT INTO personnel.permission_catalog(code,name,category,app_id) VALUES('app.test.A','A','application','test-A'),('app.test.B','B','application','test-B') ON CONFLICT (code) DO UPDATE SET enabled=true")
 	if err != nil {
 		t.Fatal(err)
 	}
