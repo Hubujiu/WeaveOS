@@ -1,0 +1,401 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:22480) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:15312) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 13 tests using 1 worker
+
+(node:2916) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   1 [chromium] › apps\web\src\personnel.component.spec.ts:21:1 › R3 login enters Home with settings and account navigation; admin exit retains Session (6.8s)
+(node:32164) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   2 [chromium] › apps\web\src\personnel.component.spec.ts:32:1 › R2 AC02 ordinary member Home has own identity/empty app state; direct admin denies (6.4s)
+(node:22844) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   3 [chromium] › apps\web\src\personnel.component.spec.ts:36:1 › R3 four independent shell layouts retain selected tab and unsaved input; icons aligned (6.5s)
+(node:9956) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   4 [chromium] › apps\web\src\personnel.component.spec.ts:48:1 › R3 identity separates direct/template sources and confirms impact before versioned save (7.8s)
+(node:31960) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   5 [chromium] › apps\web\src\personnel.component.spec.ts:57:2 › R3 save failure 409 preserves input and exposes specific outcome (6.4s)
+(node:31408) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   6 [chromium] › apps\web\src\personnel.component.spec.ts:57:2 › R3 save failure 403 preserves input and exposes specific outcome (6.3s)
+(node:32528) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   7 [chromium] › apps\web\src\personnel.component.spec.ts:57:2 › R3 save failure 503 preserves input and exposes specific outcome (6.4s)
+(node:32128) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   8 [chromium] › apps\web\src\personnel.component.spec.ts:62:1 › R3 dirty tab/object/admin leave requires explicit choice and never saves (6.9s)
+(node:22296) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   9 [chromium] › apps\web\src\personnel.component.spec.ts:67:1 › R3 template UI has genuine no-application empty state and referenced delete protection (7.8s)
+(node:30948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  10 [chromium] › apps\web\src\personnel.component.spec.ts:70:1 › R3 members expose multi-identity editor and group operation without changing permissions (6.4s)
+(node:32480) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  11 [chromium] › apps\web\src\personnel.component.spec.ts:75:1 › R3 departments create uses selected parent; enterprise root is protected (6.4s)
+(node:31440) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  12 [chromium] › apps\web\src\personnel.component.spec.ts:80:1 › R3 invitation is deliberate one-time result; activity has true empty state (7.8s)
+(node:31988) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  13 [chromium] › apps\web\src\personnel.component.spec.ts:84:1 › R3 reduced motion and compact layouts retain keyboard-reachable navigation (6.4s)
+
+
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:21:1 › R3 login enters Home with settings and account navigation; admin exit retains Session
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: '设置', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('button', { name: '设置', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '设置', exact: true })
+
+
+      23 |  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
+      24 |  await page.goto('/login');await page.getByLabel('账号',{exact:true}).fill(user.account);await page.getByLabel('密码',{exact:true}).fill('Synthetic@123');await page.getByRole('button',{name:'登录',exact:true}).click();
+    > 25 |  await expect(page).toHaveURL(/\/app$/);await expect(page.getByRole('button',{name:'设置',exact:true})).toBeVisible();
+         |                                                                                                       ^
+      26 |  await expect(page.locator('.home-header')).toHaveCSS('height','72px');
+      27 |  await page.getByRole('button',{name:'设置',exact:true}).click();await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();
+      28 |  await page.getByRole('button',{name:'退出',exact:true}).click();await expect(page).toHaveURL(/\/app$/);expect(logouts).toBe(0);
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:25:103
+
+    Error Context: apps\web\test-results\personnel.component-R3-log-668f8--admin-exit-retains-Session-chromium\error-context.md
+
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:32:1 › R2 AC02 ordinary member Home has own identity/empty app state; direct admin denies
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('暂无可用应用', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('暂无可用应用', { exact: true }) with timeout 5000ms
+      - waiting for getByText('暂无可用应用', { exact: true })
+
+
+      31 | });
+      32 | test('R2 AC02 ordinary member Home has own identity/empty app state; direct admin denies',async({page})=>{
+    > 33 |  await fixture(page,false);await page.goto('/app');await expect(page.getByText('暂无可用应用',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'设置',exact:true})).toBeHidden();
+         |                                                                                                        ^
+      34 |  await page.goto('/app/admin');await expect(page.getByRole('alert')).toContainText('没有人员管理权限');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeHidden();
+      35 | });
+      36 | test('R3 four independent shell layouts retain selected tab and unsaved input; icons aligned',async({page})=>{
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:33:104
+
+    Error Context: apps\web\test-results\personnel.component-R2-AC0-bbb51-p-state-direct-admin-denies-chromium\error-context.md
+
+  3) [chromium] › apps\web\src\personnel.component.spec.ts:36:1 › R3 four independent shell layouts retain selected tab and unsaved input; icons aligned
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('tab', { name: '成员与部门', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('tab', { name: '成员与部门', exact: true }) with timeout 5000ms
+      - waiting for getByRole('tab', { name: '成员与部门', exact: true })
+
+
+      18 |  });
+      19 | }
+    > 20 | async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
+         |                                                                                                                                                 ^
+      21 | test('R3 login enters Home with settings and account navigation; admin exit retains Session',async({page})=>{
+      22 |  await fixture(page);let logouts=0;
+      23 |  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
+        at admin (D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:20:145)
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:37:55
+
+    Error Context: apps\web\test-results\personnel.component-R3-fou-bb6f7-unsaved-input-icons-aligned-chromium\error-context.md
+
+  4) [chromium] › apps\web\src\personnel.component.spec.ts:48:1 › R3 identity separates direct/template sources and confirms impact before versioned save
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('tab', { name: '成员与部门', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('tab', { name: '成员与部门', exact: true }) with timeout 5000ms
+      - waiting for getByRole('tab', { name: '成员与部门', exact: true })
+
+
+      18 |  });
+      19 | }
+    > 20 | async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
+         |                                                                                                                                                 ^
+      21 | test('R3 login enters Home with settings and account navigation; admin exit retains Session',async({page})=>{
+      22 |  await fixture(page);let logouts=0;
+      23 |  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
+        at admin (D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:20:145)
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:49:2
+
+    Error Context: apps\web\test-results\personnel.component-R3-ide-9e57f-mpact-before-versioned-save-chromium\error-context.md
+
+  5) [chromium] › apps\web\src\personnel.component.spec.ts:57:2 › R3 save failure 409 preserves input and exposes specific outcome
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('tab', { name: '成员与部门', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('tab', { name: '成员与部门', exact: true }) with timeout 5000ms
+      - waiting for getByRole('tab', { name: '成员与部门', exact: true })
+
+
+      18 |  });
+      19 | }
+    > 20 | async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
+         |                                                                                                                                                 ^
+      21 | test('R3 login enters Home with settings and account navigation; admin exit retains Session',async({page})=>{
+      22 |  await fixture(page);let logouts=0;
+      23 |  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
+        at admin (D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:20:145)
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:58:3
+
+    Error Context: apps\web\test-results\personnel.component-R3-sav-c7bbc-nd-exposes-specific-outcome-chromium\error-context.md
+
+  6) [chromium] › apps\web\src\personnel.component.spec.ts:57:2 › R3 save failure 403 preserves input and exposes specific outcome
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('tab', { name: '成员与部门', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('tab', { name: '成员与部门', exact: true }) with timeout 5000ms
+      - waiting for getByRole('tab', { name: '成员与部门', exact: true })
+
+
+      18 |  });
+      19 | }
+    > 20 | async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
+         |                                                                                                                                                 ^
+      21 | test('R3 login enters Home with settings and account navigation; admin exit retains Session',async({page})=>{
+      22 |  await fixture(page);let logouts=0;
+      23 |  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
+        at admin (D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:20:145)
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:58:3
+
+    Error Context: apps\web\test-results\personnel.component-R3-sav-d33b7-nd-exposes-specific-outcome-chromium\error-context.md
+
+  7) [chromium] › apps\web\src\personnel.component.spec.ts:57:2 › R3 save failure 503 preserves input and exposes specific outcome
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('tab', { name: '成员与部门', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('tab', { name: '成员与部门', exact: true }) with timeout 5000ms
+      - waiting for getByRole('tab', { name: '成员与部门', exact: true })
+
+
+      18 |  });
+      19 | }
+    > 20 | async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
+         |                                                                                                                                                 ^
+      21 | test('R3 login enters Home with settings and account navigation; admin exit retains Session',async({page})=>{
+      22 |  await fixture(page);let logouts=0;
+      23 |  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
+        at admin (D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:20:145)
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:58:3
+
+    Error Context: apps\web\test-results\personnel.component-R3-sav-ab767-nd-exposes-specific-outcome-chromium\error-context.md
+
+  8) [chromium] › apps\web\src\personnel.component.spec.ts:62:1 › R3 dirty tab/object/admin leave requires explicit choice and never saves
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('tab', { name: '成员与部门', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('tab', { name: '成员与部门', exact: true }) with timeout 5000ms
+      - waiting for getByRole('tab', { name: '成员与部门', exact: true })
+
+
+      18 |  });
+      19 | }
+    > 20 | async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
+         |                                                                                                                                                 ^
+      21 | test('R3 login enters Home with settings and account navigation; admin exit retains Session',async({page})=>{
+      22 |  await fixture(page);let logouts=0;
+      23 |  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
+        at admin (D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:20:145)
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:63:2
+
+    Error Context: apps\web\test-results\personnel.component-R3-dir-e0e84-icit-choice-and-never-saves-chromium\error-context.md
+
+  9) [chromium] › apps\web\src\personnel.component.spec.ts:67:1 › R3 template UI has genuine no-application empty state and referenced delete protection
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('tab', { name: '成员与部门', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('tab', { name: '成员与部门', exact: true }) with timeout 5000ms
+      - waiting for getByRole('tab', { name: '成员与部门', exact: true })
+
+
+      18 |  });
+      19 | }
+    > 20 | async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
+         |                                                                                                                                                 ^
+      21 | test('R3 login enters Home with settings and account navigation; admin exit retains Session',async({page})=>{
+      22 |  await fixture(page);let logouts=0;
+      23 |  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
+        at admin (D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:20:145)
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:68:2
+
+    Error Context: apps\web\test-results\personnel.component-R3-tem-433ff-eferenced-delete-protection-chromium\error-context.md
+
+  10) [chromium] › apps\web\src\personnel.component.spec.ts:70:1 › R3 members expose multi-identity editor and group operation without changing permissions
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('tab', { name: '成员与部门', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('tab', { name: '成员与部门', exact: true }) with timeout 5000ms
+      - waiting for getByRole('tab', { name: '成员与部门', exact: true })
+
+
+      18 |  });
+      19 | }
+    > 20 | async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
+         |                                                                                                                                                 ^
+      21 | test('R3 login enters Home with settings and account navigation; admin exit retains Session',async({page})=>{
+      22 |  await fixture(page);let logouts=0;
+      23 |  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
+        at admin (D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:20:145)
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:71:2
+
+    Error Context: apps\web\test-results\personnel.component-R3-mem-edc4d-ithout-changing-permissions-chromium\error-context.md
+
+  11) [chromium] › apps\web\src\personnel.component.spec.ts:75:1 › R3 departments create uses selected parent; enterprise root is protected
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('tab', { name: '成员与部门', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('tab', { name: '成员与部门', exact: true }) with timeout 5000ms
+      - waiting for getByRole('tab', { name: '成员与部门', exact: true })
+
+
+      18 |  });
+      19 | }
+    > 20 | async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
+         |                                                                                                                                                 ^
+      21 | test('R3 login enters Home with settings and account navigation; admin exit retains Session',async({page})=>{
+      22 |  await fixture(page);let logouts=0;
+      23 |  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
+        at admin (D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:20:145)
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:76:2
+
+    Error Context: apps\web\test-results\personnel.component-R3-dep-d125e-nterprise-root-is-protected-chromium\error-context.md
+
+  12) [chromium] › apps\web\src\personnel.component.spec.ts:80:1 › R3 invitation is deliberate one-time result; activity has true empty state
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('tab', { name: '成员与部门', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('tab', { name: '成员与部门', exact: true }) with timeout 5000ms
+      - waiting for getByRole('tab', { name: '成员与部门', exact: true })
+
+
+      18 |  });
+      19 | }
+    > 20 | async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
+         |                                                                                                                                                 ^
+      21 | test('R3 login enters Home with settings and account navigation; admin exit retains Session',async({page})=>{
+      22 |  await fixture(page);let logouts=0;
+      23 |  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
+        at admin (D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:20:145)
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:81:2
+
+    Error Context: apps\web\test-results\personnel.component-R3-inv-bcd21-tivity-has-true-empty-state-chromium\error-context.md
+
+  13) [chromium] › apps\web\src\personnel.component.spec.ts:84:1 › R3 reduced motion and compact layouts retain keyboard-reachable navigation
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('tab', { name: '成员与部门', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('tab', { name: '成员与部门', exact: true }) with timeout 5000ms
+      - waiting for getByRole('tab', { name: '成员与部门', exact: true })
+
+
+      18 |  });
+      19 | }
+    > 20 | async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
+         |                                                                                                                                                 ^
+      21 | test('R3 login enters Home with settings and account navigation; admin exit retains Session',async({page})=>{
+      22 |  await fixture(page);let logouts=0;
+      23 |  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
+        at admin (D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:20:145)
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:85:103
+
+    Error Context: apps\web\test-results\personnel.component-R3-red-73885-yboard-reachable-navigation-chromium\error-context.md
+
+  13 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:21:1 › R3 login enters Home with settings and account navigation; admin exit retains Session
+    [chromium] › apps\web\src\personnel.component.spec.ts:32:1 › R2 AC02 ordinary member Home has own identity/empty app state; direct admin denies
+    [chromium] › apps\web\src\personnel.component.spec.ts:36:1 › R3 four independent shell layouts retain selected tab and unsaved input; icons aligned
+    [chromium] › apps\web\src\personnel.component.spec.ts:48:1 › R3 identity separates direct/template sources and confirms impact before versioned save
+    [chromium] › apps\web\src\personnel.component.spec.ts:57:2 › R3 save failure 409 preserves input and exposes specific outcome
+    [chromium] › apps\web\src\personnel.component.spec.ts:57:2 › R3 save failure 403 preserves input and exposes specific outcome
+    [chromium] › apps\web\src\personnel.component.spec.ts:57:2 › R3 save failure 503 preserves input and exposes specific outcome
+    [chromium] › apps\web\src\personnel.component.spec.ts:62:1 › R3 dirty tab/object/admin leave requires explicit choice and never saves
+    [chromium] › apps\web\src\personnel.component.spec.ts:67:1 › R3 template UI has genuine no-application empty state and referenced delete protection
+    [chromium] › apps\web\src\personnel.component.spec.ts:70:1 › R3 members expose multi-identity editor and group operation without changing permissions
+    [chromium] › apps\web\src\personnel.component.spec.ts:75:1 › R3 departments create uses selected parent; enterprise root is protected
+    [chromium] › apps\web\src\personnel.component.spec.ts:80:1 › R3 invitation is deliberate one-time result; activity has true empty state
+    [chromium] › apps\web\src\personnel.component.spec.ts:84:1 › R3 reduced motion and compact layouts retain keyboard-reachable navigation

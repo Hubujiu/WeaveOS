@@ -33,12 +33,12 @@ test('Private container-produced fixture is assigned to the authorized host runn
   assert.ok(!runner.includes('chmod 644'), 'Do not expose private fixtures to solve ownership');
 });
 
-test('Expanded acceptance evidence reports the executed 122 HTTP and 111 browser cases', () => {
-  // Counts come from the independent suite inventory: 97+25 HTTP, (35+2)*3 browsers.
+test('Expanded acceptance evidence reports the actual complete HTTP and browser results', () => {
+  // R3 adds personnel API and browser cases. Actual TAP/JSON reports replace the old fixed inventory.
   for (const path of ['../../infra/acceptance/run.mjs', '../../infra/runtime/run.mjs']) {
     const runner = readFileSync(new URL(path, import.meta.url), 'utf8');
-    assert.match(runner, /api:\s*122/);
-    assert.match(runner, /browser:\s*111/);
+    assert.match(runner, /api:\s*countAPIReport\(readFileSync/);
+    assert.match(runner, /browser:\s*countBrowserReport\(JSON\.parse\(readFileSync/);
   }
 });
 

@@ -1,0 +1,353 @@
+ Network weaveos-v010-007-1790754947366_default Creating
+ Network weaveos-v010-007-1790754947366_default Created
+ Volume weaveos-v010-007-1790754947366_pg Creating
+ Volume weaveos-v010-007-1790754947366_pg Created
+ Container weaveos-v010-007-1790754947366-postgres-1 Creating
+ Container weaveos-v010-007-1790754947366-redis-1 Creating
+ Container weaveos-v010-007-1790754947366-redis-1 Created
+ Container weaveos-v010-007-1790754947366-postgres-1 Created
+ Container weaveos-v010-007-1790754947366-test-redis-1 Creating
+ Container weaveos-v010-007-1790754947366-test-redis-1 Created
+ Container weaveos-v010-007-1790754947366-postgres-1 Starting
+ Container weaveos-v010-007-1790754947366-redis-1 Starting
+ Container weaveos-v010-007-1790754947366-redis-1 Started
+ Container weaveos-v010-007-1790754947366-postgres-1 Started
+ Container weaveos-v010-007-1790754947366-test-redis-1 Starting
+ Container weaveos-v010-007-1790754947366-test-redis-1 Started
+ Container weaveos-v010-007-1790754947366-postgres-1 Waiting
+ Container weaveos-v010-007-1790754947366-redis-1 Waiting
+ Container weaveos-v010-007-1790754947366-test-redis-1 Waiting
+ Container weaveos-v010-007-1790754947366-redis-1 Healthy
+ Container weaveos-v010-007-1790754947366-postgres-1 Healthy
+ Container weaveos-v010-007-1790754947366-test-redis-1 Healthy
+2026/09/30 07:55:57 OK   00001_archive.sql (5.45ms)
+2026/09/30 07:55:57 OK   00002_personnel_audit.sql (6.04ms)
+2026/09/30 07:55:57 goose: successfully migrated database to version: 2
+2026/09/30 07:55:57 goose: no migrations to run. current version: 2
+2026/09/30 07:55:58 OK   00001_auth.sql (13.21ms)
+2026/09/30 07:55:58 OK   00002_personnel.sql (17.54ms)
+2026/09/30 07:55:58 goose: successfully migrated database to version: 2
+2026/09/30 07:55:59 goose: no migrations to run. current version: 2
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/acceptance-seed	1.369s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-maintenance	1.472s
+?   	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-read	[no test files]
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/bff	1.084s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/audit	1.365s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/auth	7.729s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/identity	1.010s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/invitation	1.009s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence	1.197s
+?   	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence/authsql	[no test files]
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/personnel	3.355s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver	1.012s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/security	1.011s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/session	1.223s
+ Container weaveos-v010-007-1790754947366-test-redis-1 Stopping
+ Container weaveos-v010-007-1790754947366-test-redis-1 Stopped
+2026/09/30 07:56:30 OK   00001_auth.sql (11.44ms)
+2026/09/30 07:56:30 OK   00002_personnel.sql (17.51ms)
+2026/09/30 07:56:30 goose: successfully migrated database to version: 2
+
+added 1 package in 2s
+
+1 package is looking for funding
+  run `npm fund` for details
+Scope: all 2 workspace projects
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+Done in 404ms using pnpm v10.28.2
+✔ API-CI-01: validator version is pinned in the frozen workspace lock (9.539973ms)
+✔ API-CI-02: PR CI executes contract tests and 3.2.1 lint (0.149572ms)
+✔ API-01: contract is OpenAPI 3.2.1 with the five authentication routes (1.823448ms)
+✔ API-02: public writes and protected Cookie security match ADR-001/002 (2.406682ms)
+✔ API-10: login delivers separate host cookies and protected writes require CSRF header (1.032049ms)
+✔ API-03: creation, current session, logout and reset have precise statuses (0.577179ms)
+✔ API-04: JSON envelope has exact required keys and no arbitrary top-level data (0.348424ms)
+✔ API-05: registration and login require account/password; registration requires invitation (0.416213ms)
+✔ API-06: published error table preserves accepted ADR mapping (11.602725ms)
+✔ API-07: account rule preserves case and rejects internal ordinary spaces after trimming (0.266397ms)
+✔ API-08: every declared response carries a server-issued request ID (2.785245ms)
+✔ API-09: Alice and alice are distinct registrations and login lookups (0.276806ms)
+✔ Q13: registration schema accepts only printable ASCII with four classes (0.817959ms)
+✔ approved account length applies after ordinary-space trimming, not to raw input (0.248666ms)
+✔ Q25 definition response accepts optional explicit empty templateIds and integer version (27.742508ms)
+✔ Q25 response validator resolves pagination query without ignoring declared constraints (0.786667ms)
+✔ Q25 invalid definition response integer, UUID and length fail independently (3.514093ms)
+✔ Q25 template DTO optional relation array is registered in the executable contract (12.610203ms)
+✔ Q25 all personnel operations are typed, Cookie protected and fail closed (1.739596ms)
+✔ Q25 page pagination exception is explicit, bounded, and filtered server-side (0.727516ms)
+✔ Q25 versions and explicit sets cannot mutate Root or directory ownership (1.253848ms)
+✔ Q25 stable conflict/missing errors and invitation qualification are registered (0.702354ms)
+✔ ADR-003/004: isolated PG18/Redis8.2 and ingress preserve service boundaries (1.241651ms)
+✔ Product CI executes migration, HTTPS real API and three browsers; final release remains gated (6.010166ms)
+✔ ADR-004: ingress overwrites forwarded identity, disables shared auth cache and separates API from SPA (7.071821ms)
+✔ Browser container uses init to reap children and explicit isolated shared memory (6.165145ms)
+✔ Private container-produced fixture is assigned to the authorized host runner without world-readable permissions (6.735958ms)
+✖ Expanded acceptance evidence reports the executed 122 HTTP and 111 browser cases (6.373197ms)
+✔ Product runner executes all 19 storage cases and real observer qualifications (6.022478ms)
+✔ FND-03: CI runs real Go validation and browser tests (14.722941ms)
+✔ FND-03: product acceptance and artifacts are explicit, not fake deploys (12.60033ms)
+✔ FND-04: web entry is real React with no fabricated login UI (10.132184ms)
+✔ FND-05: CI retains a source bundle without bundling local credentials (9.029742ms)
+✔ FND-05: RED replay metadata pins the real pre-implementation source (7.841861ms)
+✔ release: all mandatory evidence present is structurally ready (2.169381ms)
+✔ release: a missing or empty matrix is not a pass (0.4025ms)
+✔ release: pending, skipped, failed and blocked are never passed (0.451217ms)
+✔ release: missing evidence, owner or duplicate IDs are rejected (0.454108ms)
+✔ remote cleanup: matching accepted remote branch can be removed (1.428324ms)
+✔ remote cleanup: no remote branch remains a successful idempotent state (1.023657ms)
+✔ remote cleanup: refuse unmerged (0.271541ms)
+✔ remote cleanup: refuse unfinished document (0.189804ms)
+✔ remote cleanup: refuse new remote commit (0.175136ms)
+✔ remote cleanup: refuse unverified squash (0.196853ms)
+✔ remote cleanup: refuse offline snapshot (0.125909ms)
+✔ local cleanup: removed remote does not erase valid local identity (0.142974ms)
+✔ local cleanup: matching refs retain identity (0.178915ms)
+✔ local cleanup: divergent refs cannot hide new work (0.217851ms)
+✔ FND-02: parse a valid task and retain identity (3.373084ms)
+✔ FND-02: malformed or duplicate metadata is rejected (0.485209ms)
+✔ FND-02: a ready task with incomplete acceptance is invalid (0.431972ms)
+✔ FND-02: no checkboxes is not proof of completion (0.227531ms)
+✔ FND-02: mismatched branch, worktree and unsafe paths are rejected (0.577284ms)
+✔ FND-02: accepted cannot be asserted before remote verification (0.426035ms)
+✔ FND-02: complete remote main document + merged PR permits cleanup despite squash ancestry (1.269085ms)
+✔ FND-02: refuse cleanup for offline snapshot (0.293382ms)
+✔ FND-02: refuse cleanup for missing remote document (0.197568ms)
+✔ FND-02: refuse cleanup for unfinished document (3.632472ms)
+✔ FND-02: refuse cleanup for wrong task identity (0.342234ms)
+✔ FND-02: refuse cleanup for unmerged PR (0.197538ms)
+✔ FND-02: refuse cleanup for wrong merge base (0.185736ms)
+✔ FND-02: refuse cleanup for different repository (0.117384ms)
+✔ FND-02: refuse cleanup for other task branch (0.224725ms)
+✔ FND-02: refuse cleanup for post-merge commit (1.117825ms)
+✔ FND-02: refuse cleanup for dirty worktree (0.146843ms)
+✔ FND-02: refuse cleanup for squash not in remote main (0.119059ms)
+✔ FND-02: acceptance remains true after the task branch/worktree were cleaned (0.449941ms)
+✔ FND-02: local completion without a merged PR is not accepted (0.242ms)
+✔ maintenance is a nondefault one-shot profile in runtime and installed config (4.963063ms)
+✔ hourly cron invokes the same single-run operation as manual maintenance (0.48132ms)
+✔ receiver rejects unreviewed profile/command/restart and topology mutations (1.576915ms)
+✔ ordinary release cannot silently upgrade the installed resident maintenance topology (0.839879ms)
+✔ one-shot orchestration records success without raw output (2.237267ms)
+✔ one-shot orchestration records failure without raw output (1.01791ms)
+✔ memory probe samples the four resident containers, not the exited task (35.550939ms)
+✔ Q18 accepts declared compatible expansion but rejects history rewrite, missing approval and stale releases (2.298927ms)
+✔ Q18 deployment only changes approved runtime config and exact images, retaining private volumes and origin (5.015015ms)
+✔ approved config cannot include other host compose files, weaken service confinement or join external networks (3.669857ms)
+✔ public Nginx rendering preserves API boundary and creates fixed HTTPS redirect (2.247504ms)
+✔ promotion validates and backs up before migration and records only a healthy deployment (0.284543ms)
+✔ backup failure never migrates; activation or health failure restores prior app/config without Down (0.566817ms)
+✔ main delivery runs verification and acceptance before a serialized secret-scoped deployment (2.751868ms)
+✔ compatibility registry uses explicit digest records, rejects ambiguous duplicate approvals (0.256884ms)
+✔ transport rejects undeclared content, checksum tampering, secret paths, invalid image identities and oversized payloads (32.301929ms)
+✔ framed receiver verifies every byte and rejects truncated, appended and corrupt images (8.918586ms)
+✔ four kinds are stored by explicit natural day and only safe fields survive (18.410586ms)
+✔ retention dry-run selects only approved kinds and inclusive natural-day cutoff (2.372025ms)
+✔ symlinked category and destination file cannot escape the log root (1.596718ms)
+✔ Q20 actual cleanup removes only days older than the approved inclusive 30-day window (3.910726ms)
+✔ Q20 rejects nonapproved destructive parameters and preflights all paths before deleting (1.510569ms)
+✔ Q20 installed policy accepts exactly confirmed deletion parameters and schedules bounded daily cleanup (1.210476ms)
+✔ Q20 cleanup is daily and shares the collection lock (0.202374ms)
+✔ FR06 common rules render local and public explicit environments (10.619603ms)
+✔ FR06 explicit parameters reject config injection and invalid HSTS scope (0.857742ms)
+✔ certificate task logs fixed outcomes without persisting raw command secrets (0.90725ms)
+✔ collector records access stdout and application stderr, advances window, and excludes raw text (14.369826ms)
+✔ approved explicit config connects operation records and collector is scheduled without deletion (1.072899ms)
+✔ collector and Q20 cleanup are scheduled with the same overlap protection (0.248825ms)
+✔ failed docker collection does not advance cursor or publish raw diagnostics (0.612232ms)
+✔ unexpected HTTP method cannot stall collection or persist arbitrary method text (1.088788ms)
+✔ Q25 cold audit migration precedes hot migration: infra/acceptance/run.mjs (4.610692ms)
+✔ Q25 cold audit migration precedes hot migration: infra/runtime/run.mjs (3.685684ms)
+✔ Q25 cold audit migration precedes hot migration: .github/workflows/ci.yml (2.878047ms)
+✔ Q25 cold audit migration precedes hot migration: infra/server/deploy/receive.mjs (2.680968ms)
+✔ acceptance component count derives from the actual Playwright report (3.731453ms)
+✔ Q25 personnel API regression is included in the real HTTPS entrypoint (3.266429ms)
+✔ Q25 pinned role upgrade is executed with real PostgreSQL by the product workflow (6.9931ms)
+✔ Q25 compatibility manifest records each new reviewed immutable migration (8.659626ms)
+✔ GOV-01..04: valid repository passes without mutation (9.937114ms)
+✔ GOV-01: missing file fails with its path (5.678595ms)
+✔ GOV-01: whitespace-only required file is not valid (4.973314ms)
+✔ GOV-02: deleting each hard-rule marker fails (8.923722ms)
+✔ GOV-03: malformed JSON is reported, not thrown (4.263721ms)
+✔ GOV-03: incorrect version and project fail (3.217336ms)
+✔ GOV-03: impossible calendar date fails (2.503777ms)
+✔ GOV-03: empty sources and non-object registry fail (2.881272ms)
+✔ GOV-03: duplicate keys and page IDs fail (3.131987ms)
+✔ GOV-03: external or mismatched source URLs fail (2.949316ms)
+✔ GOV-03: missing metadata and malformed page ID fail (3.027693ms)
+✔ GOV-03: unknown, duplicate and empty route references fail (4.732663ms)
+✔ GOV-03: mandatory routes and always/product anchors cannot disappear (3.047768ms)
+✔ GOV-04: nested instruction override fails (2.265792ms)
+✔ GOV-04: generated/dependency directories are ignored (2.548355ms)
+✔ GOV-01: nonexistent root reports errors (0.304105ms)
+✔ CLI: valid repository exits zero (32.725588ms)
+✔ CLI: invalid repository exits one and explains failure (32.503451ms)
+✔ public HTTPS exposes only edge ports and preserves private data, images and input (3.42565ms)
+✔ public access rejects untrusted TLS while default deployment stays private (0.437357ms)
+✔ HTTP redirects all paths to the fixed HTTPS origin without trusting Host (0.353613ms)
+✔ public TLS preserves same-origin API, non-cacheable auth and trusted proxy boundary (0.422689ms)
+✔ existing loopback health and DNS-01 renewal still work independently of public DNS (0.416069ms)
+✔ API actual TAP report counts every passed case (0.984148ms)
+✔ API failed, skipped, truncated and contradictory reports cannot publish success (0.303142ms)
+✔ browser counts come from the successful complete JSON report (0.947233ms)
+✔ browser failure, flakiness, skips and empty reports cannot publish success (0.284153ms)
+✔ real API/browser reports drive the published counts: infra/acceptance/run.mjs (4.971698ms)
+✔ real API/browser reports drive the published counts: infra/runtime/run.mjs (3.768482ms)
+✔ ACME runner fixes operations, passes credentials only in environment and reports sanitized failure (1.621079ms)
+✔ certificate activation verifies system trust before file replacement and validates Nginx before reload (71.559031ms)
+✔ domain health verifies hostname with default trust while reaching only the SSH loopback endpoint (0.355834ms)
+✔ domain health fixes IPv4 so Node never requests an all-address lookup result (0.145464ms)
+▶ provided CSV is data only and maps exactly one credential pair without executing fields
+  ✔ BOM, quoted headers and CRLF are supported (0.354749ms)
+  ✔ missing, multiple and non-data values fail closed (0.299882ms)
+  ✔ dotenv admits only the required names and never evaluates shell (0.291758ms)
+✔ provided CSV is data only and maps exactly one credential pair without executing fields (1.369163ms)
+▶ Q16 public-trust domain config keeps the SSH listener and schedules automatic renewal
+  ✔ domain origin with loopback only (0.184056ms)
+  ✔ renew twice daily without self-signed trust (0.272933ms)
+✔ Q16 public-trust domain config keeps the SSH listener and schedules automatic renewal (1.105711ms)
+▶ Q16 validates the actual certificate host, private key and remaining lifetime before replacement
+  ✔ matching actual identity and key are accepted (0.60432ms)
+  ✔ unrelated certificate is rejected (0.320324ms)
+  ✔ mismatched private key is rejected (0.43673ms)
+  ✔ expired certificate is rejected (0.243147ms)
+✔ Q16 validates the actual certificate host, private key and remaining lifetime before replacement (165.146866ms)
+✔ Q16 a failed Nginx validation restores both previous files and reloads the previous certificate (2.256923ms)
+✔ Q16 explicitly uses Let's Encrypt DNSPod DNS-01 for the confirmed domain and no public listener (0.190734ms)
+✔ Q15 server exposes only loopback HTTPS and preserves internal data network (0.232492ms)
+✔ private Bootstrap credentials preserve the accepted seed JSON password field and exclude test fixtures (0.169887ms)
+✔ operational schedules retain TLS verification, prevent overlap, and invoke only runtime tools (0.211531ms)
+✔ server maintenance addresses only the authorized deployment and does not run test/build commands (0.311088ms)
+✔ finished services restart automatically and have finite resource and log budgets (0.202332ms)
+✔ deployment refuses every existing directory, including apparently empty ones (0.548096ms)
+ℹ tests 161
+ℹ suites 0
+ℹ pass 160
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 484.627693
+
+✖ failing tests:
+
+test at tests/acceptance/topology.test.mjs:36:1
+✖ Expanded acceptance evidence reports the executed 122 HTTP and 111 browser cases (6.373197ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /api:\s*122/. Input:
+
+  '// Reproducible isolated Linux product acceptance. No production account or data.\n' +
+    "import { execFileSync } from 'node:child_process';\n" +
+    "import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';\n" +
+    "import { randomBytes } from 'node:crypto';\n" +
+    "import { resolve } from 'node:path';\n" +
+    "import { fileURLToPath } from 'node:url';\n" +
+    "import {countAPIReport,countBrowserReport} from './result-counts.mjs';\n" +
+    '\n' +
+    "const root = fileURLToPath(new URL('../../', import.meta.url));\n" +
+    "const dir = resolve(root, '.work/acceptance');\n" +
+    "if (existsSync(resolve(dir, 'runtime.env'))) throw new Error('Existing private environment: inspect it before rerunning; no overwrite');\n" +
+    "mkdirSync(resolve(dir, 'tls'), { recursive: true });\n" +
+    "mkdirSync(resolve(dir, 'public'), { recursive: true });\n" +
+    'const project = `weaveos-v010-007-${Date.now()}`;\n' +
+    'const env = { ...process.env, WEAVEOS_ACCEPTANCE_DIR: dir };\n' +
+    "const composeArgs = ['compose', '-p', project, '-f', resolve(root, 'infra/acceptance/compose.json')];\n" +
+    "const call = (command, args, options = {}) => execFileSync(command, args, { cwd: root, env, stdio: 'inherit', ...options });\n" +
+    "const compose = (...args) => call('docker', [...composeArgs, ...args]);\n" +
+    "const id = name => call('docker', [...composeArgs, 'ps', '-q', name], { encoding: 'utf8', stdio: 'pipe' }).trim();\n" +
+    "const password = randomBytes(32).toString('hex');\n" +
+    'const database = name => `postgres://weaveos_test:${password}@127.0.0.1:5432/${name}?sslmode=disable&connect_timeout=2`;\n' +
+    "const privateFile = (name, text) => writeFileSync(resolve(dir, name), text, { mode: 0o600, flag: 'wx' });\n" +
+    "privateFile('postgres.env', `POSTGRES_USER=weaveos_test\\nPOSTGRES_PASSWORD=${password}\\nPOSTGRES_DB=weaveos_ci_test\\n`);\n" +
+    "privateFile('runtime.env', `WEAVEOS_DATABASE_URL=${database('weaveos_acceptance').replace('@127.0.0.1:', '@postgres:')}\\nWEAVEOS_REDIS_URL=redis://redis:6379/0\\nWEAVEOS_SESSION_GENERATION=${project}\\nWEAVEOS_AUDIT_KEY_ID=test\\nWEAVEOS_AUDIT_HMAC_KEY=${randomBytes(32).toString('base64')}\\n`);\n" +
+    "privateFile('test.env', `WEAVEOS_TEST_DATABASE_URL=${database('weaveos_ci_test')}\\nWEAVEOS_TEST_ARCHIVE_DATABASE_URL=${database('weaveos_ci_archive_test')}\\nWEAVEOS_TEST_REDIS_URL=redis://127.0.0.1:6379/15\\n`);\n" +
+    "privateFile('seed.env', `WEAVEOS_TEST_DATABASE_URL=${database('weaveos_acceptance')}\\nWEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/acceptance/fixtures.json\\n`);\n" +
+    "const openssl = process.platform === 'win32' ? 'C:/Program Files/Git/usr/bin/openssl.exe' : 'openssl';\n" +
+    "call(openssl, ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '2', '-keyout', resolve(dir, 'tls/key.pem'), '-out', resolve(dir, 'tls/cert.pem'), '-subj', '/CN=localhost', '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1'], { stdio: 'pipe' });\n" +
+    "const goImage = 'golang:1.25.7';\n" +
+    "const playwrightImage = 'mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27';\n" +
+    "const mount = ['--mount', `type=bind,src=${root},dst=/repo`];\n" +
+    "const go = (script, envFile = 'test.env') => call('docker', ['run', '--rm', '--network', `container:${id('postgres')}`, ...mount, '--mount', 'type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod', '--mount', 'type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build', '--env-file', resolve(dir, envFile), '-e', 'GOTOOLCHAIN=auto', '-e', 'GOFLAGS=-buildvcs=false', '-e', 'GOBIN=/repo/.work/acceptance/tools', '-w', '/repo/services/bff', goImage, 'sh', '-ec', script]);\n" +
+    "const node = (script, network) => call('docker', ['run', '--rm', '--init', '--shm-size=1g', ...(network ? ['--network', `container:${network}`] : []), ...mount, '--mount', 'type=volume,src=weaveos-v010-linux-node,dst=/repo/node_modules', '--mount', 'type=volume,src=weaveos-v010-linux-web-node,dst=/repo/apps/web/node_modules', '-e', 'CI=true', '-e', 'WEAVEOS_API_URL=https://localhost:19443', '-e', 'WEAVEOS_WEB_URL=https://localhost:19443', '-e', 'WEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/acceptance/fixtures.json', '-e', 'NODE_EXTRA_CA_CERTS=/repo/.work/acceptance/tls/cert.pem', '-w', '/repo', playwrightImage, 'bash', '-euc', `npm install --global pnpm@10.28.2 --ignore-scripts; ${script}`]);\n" +
+    'const started = Date.now();\n' +
+    "writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'running', project, target: 'isolated Linux HTTPS' }));\n" +
+    'try {\n' +
+    "  compose('up', '-d', '--wait', 'postgres', 'redis', 'test-redis');\n" +
+    "  compose('exec', '-T', 'postgres', 'createdb', '-U', 'weaveos_test', 'weaveos_ci_archive_test');\n" +
+    '  // Published initial migration intentionally has no destructive Down. Recovery is V010-008.\n' +
+    "  go('go install github.com/pressly/goose/v3/cmd/goose@v3.28.0');\n" +
+    `  go('/repo/.work/acceptance/tools/goose -dir /repo/db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up; /repo/.work/acceptance/tools/goose -dir /repo/db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up');\n` +
+    `  go('/repo/.work/acceptance/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up; /repo/.work/acceptance/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up');\n` +
+    "  go('go test -race -p 1 -count=1 ./... && go vet ./... && CGO_ENABLED=0 go build -o /repo/.work/acceptance/bff ./cmd/bff');\n" +
+    "  compose('stop', 'test-redis');\n" +
+    "  compose('exec', '-T', 'postgres', 'createdb', '-U', 'weaveos_test', 'weaveos_acceptance');\n" +
+    `  go('/repo/.work/acceptance/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up && go run ./cmd/acceptance-seed', 'seed.env');\n` +
+    "  if (typeof process.getuid === 'function') {\n" +
+    '    // Seed runs as container root; preserve0600 while assigning the sole authorized host reader.\n' +
+    "    call('docker', ['run', '--rm', ...mount, goImage, 'chown', `${process.getuid()}:${process.getgid()}`, '/repo/.work/acceptance/fixtures.json']);\n" +
+    '  }\n' +
+    "  node('pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; node --test contracts/*.test.mjs tests/governance/*.test.mjs tests/foundation/*.test.mjs tests/acceptance/topology.test.mjs; pnpm exec redocly lint contracts/openapi/openapi.json; pnpm typecheck; pnpm build; cd apps/web; PLAYWRIGHT_JSON_OUTPUT_NAME=/repo/.work/acceptance/components.json pnpm exec playwright test --config playwright.component.config.ts --reporter=line,json');\n" +
+    "  compose('up', '-d', 'bff', 'nginx');\n" +
+    "  call(process.execPath, ['--test', 'infra/acceptance/ingress.test.mjs'], { env: { ...env,\n" +
+    "    WEAVEOS_API_URL: 'https://localhost:19443',\n" +
+    "    WEAVEOS_INGRESS_CONTAINERS: JSON.stringify({ nginx: id('nginx'), bff: id('bff'), postgres: id('postgres') }),\n" +
+    "    WEAVEOS_INGRESS_DATABASE: 'weaveos_acceptance', NODE_EXTRA_CA_CERTS: resolve(dir, 'tls/cert.pem') } });\n" +
+    "  node('node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=/repo/.work/acceptance/api.tap tests/acceptance/api.test.mjs; PLAYWRIGHT_JSON_OUTPUT_NAME=/repo/.work/acceptance/browser.json pnpm exec playwright test --config apps/web/playwright.integration.config.ts --reporter=line,json', id('nginx'));\n" +
+    "  call(process.execPath, ['--test', 'infra/acceptance/faults.test.mjs'], { env: { ...env, WEAVEOS_ACCEPTANCE_PROJECT: project, WEAVEOS_ACCEPTANCE_FIXTURES: resolve(dir, 'fixtures.json'), NODE_EXTRA_CA_CERTS: resolve(dir, 'tls/cert.pem') } });\n" +
+    "  const storeEnv = { ...env, WEAVEOS_API_URL: 'https://localhost:19443', WEAVEOS_ACCEPTANCE_PROJECT: project, WEAVEOS_ACCEPTANCE_FIXTURES: resolve(dir, 'fixtures.json'), WEAVEOS_ACCEPTANCE_OBSERVER: resolve(root, 'tests/acceptance/storage-observer.mjs'), NODE_EXTRA_CA_CERTS: resolve(dir, 'tls/cert.pem') };\n" +
+    '  // Serial fault/control qualification precedes product assertions on the same real stack.\n' +
+    "  call(process.execPath, ['--test', '--test-concurrency=1', 'tests/acceptance/storage-observer.test.mjs', 'tests/acceptance/redis-gate.test.mjs'], { env: storeEnv });\n" +
+    "  call(process.execPath, ['--test', '--test-concurrency=1', 'tests/acceptance/integration.test.mjs'], { env: storeEnv });\n" +
+    "  writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'passed', project, elapsedSeconds: (Date.now() - started) / 1000, api:countAPIReport(readFileSync(resolve(dir,'api.tap'),'utf8')), browser:countBrowserReport(JSON.parse(readFileSync(resolve(dir,'browser.json'),'utf8'))), components: JSON.parse(readFileSync(resolve(dir, 'components.json'), 'utf8')).stats.expected, faults: 3, storageCases:19, storageControls:8, storage: 'actual PostgreSQL18 + Redis8.2', target: 'isolated Linux HTTPS', secrets: 'not included' }, null, 2));\n" +
+    '} catch (error) {\n' +
+    "  writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'failed', project, exitCode: error.status ?? 1, elapsedSeconds: (Date.now() - started) / 1000 }));\n" +
+    '  throw error;\n' +
+    '} finally {\n' +
+    '  // Preserve private fixtures and isolated DB volume; no --volumes or file deletion.\n' +
+    "  compose('stop');\n" +
+    '}\n'
+
+      at TestContext.<anonymous> (file:///repo/tests/acceptance/topology.test.mjs:40:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '// Reproducible isolated Linux product acceptance. No production account or data.\nimport { execFileSync } from \'node:child_process\';\nimport { mkdirSync, writeFileSync, existsSync, readFileSync } from \'node:fs\';\nimport { randomBytes } from \'node:crypto\';\nimport { resolve } from \'node:path\';\nimport { fileURLToPath } from \'node:url\';\nimport {countAPIReport,countBrowserReport} from \'./result-counts.mjs\';\n\nconst root = fileURLToPath(new URL(\'../../\', import.meta.url));\nconst dir = resolve(root, \'.work/acceptance\');\nif (existsSync(resolve(dir, \'runtime.env\'))) throw new Error(\'Existing private environment: inspect it before rerunning; no overwrite\');\nmkdirSync(resolve(dir, \'tls\'), { recursive: true });\nmkdirSync(resolve(dir, \'public\'), { recursive: true });\nconst project = `weaveos-v010-007-${Date.now()}`;\nconst env = { ...process.env, WEAVEOS_ACCEPTANCE_DIR: dir };\nconst composeArgs = [\'compose\', \'-p\', project, \'-f\', resolve(root, \'infra/acceptance/compose.json\')];\nconst call = (command, args, options = {}) => execFileSync(command, args, { cwd: root, env, stdio: \'inherit\', ...options });\nconst compose = (...args) => call(\'docker\', [...composeArgs, ...args]);\nconst id = name => call(\'docker\', [...composeArgs, \'ps\', \'-q\', name], { encoding: \'utf8\', stdio: \'pipe\' }).trim();\nconst password = randomBytes(32).toString(\'hex\');\nconst database = name => `postgres://weaveos_test:${password}@127.0.0.1:5432/${name}?sslmode=disable&connect_timeout=2`;\nconst privateFile = (name, text) => writeFileSync(resolve(dir, name), text, { mode: 0o600, flag: \'wx\' });\nprivateFile(\'postgres.env\', `POSTGRES_USER=weaveos_test\\nPOSTGRES_PASSWORD=${password}\\nPOSTGRES_DB=weaveos_ci_test\\n`);\nprivateFile(\'runtime.env\', `WEAVEOS_DATABASE_URL=${database(\'weaveos_acceptance\').replace(\'@127.0.0.1:\', \'@postgres:\')}\\nWEAVEOS_REDIS_URL=redis://redis:6379/0\\nWEAVEOS_SESSION_GENERATION=${project}\\nWEAVEOS_AUDIT_KEY_ID=test\\nWEAVEOS_AUDIT_HMAC_KEY=${randomBytes(32).toString(\'base64\')}\\n`);\nprivateFile(\'test.env\', `WEAVEOS_TEST_DATABASE_URL=${database(\'weaveos_ci_test\')}\\nWEAVEOS_TEST_ARCHIVE_DATABASE_URL=${database(\'weaveos_ci_archive_test\')}\\nWEAVEOS_TEST_REDIS_URL=redis://127.0.0.1:6379/15\\n`);\nprivateFile(\'seed.env\', `WEAVEOS_TEST_DATABASE_URL=${database(\'weaveos_acceptance\')}\\nWEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/acceptance/fixtures.json\\n`);\nconst openssl = process.platform === \'win32\' ? \'C:/Program Files/Git/usr/bin/openssl.exe\' : \'openssl\';\ncall(openssl, [\'req\', \'-x509\', \'-newkey\', \'rsa:2048\', \'-nodes\', \'-days\', \'2\', \'-keyout\', resolve(dir, \'tls/key.pem\'), \'-out\', resolve(dir, \'tls/cert.pem\'), \'-subj\', \'/CN=localhost\', \'-addext\', \'subjectAltName=DNS:localhost,IP:127.0.0.1\'], { stdio: \'pipe\' });\nconst goImage = \'golang:1.25.7\';\nconst playwrightImage = \'mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27\';\nconst mount = [\'--mount\', `type=bind,src=${root},dst=/repo`];\nconst go = (script, envFile = \'test.env\') => call(\'docker\', [\'run\', \'--rm\', \'--network\', `container:${id(\'postgres\')}`, ...mount, \'--mount\', \'type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod\', \'--mount\', \'type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build\', \'--env-file\', resolve(dir, envFile), \'-e\', \'GOTOOLCHAIN=auto\', \'-e\', \'GOFLAGS=-buildvcs=false\', \'-e\', \'GOBIN=/repo/.work/acceptance/tools\', \'-w\', \'/repo/services/bff\', goImage, \'sh\', \'-ec\', script]);\nconst node = (script, network) => call(\'docker\', [\'run\', \'--rm\', \'--init\', \'--shm-size=1g\', ...(network ? [\'--network\', `container:${network}`] : []), ...mount, \'--mount\', \'type=volume,src=weaveos-v010-linux-node,dst=/repo/node_modules\', \'--mount\', \'type=volume,src=weaveos-v010-linux-web-node,dst=/repo/apps/web/node_modules\', \'-e\', \'CI=true\', \'-e\', \'WEAVEOS_API_URL=https://localhost:19443\', \'-e\', \'WEAVEOS_WEB_URL=https://localhost:19443\', \'-e\', \'WEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/acceptance/fixtures.json\', \'-e\', \'NODE_EXTRA_CA_CERTS=/repo/.work/acceptance/tls/cert.pem\', \'-w\', \'/repo\', playwrightImage, \'bash\', \'-euc\', `npm install --global pnpm@10.28.2 --ignore-scripts; ${script}`]);\nconst started = Date.now();\nwriteFileSync(resolve(dir, \'public/result.json\'), JSON.stringify({ result: \'running\', project, target: \'isolated Linux HTTPS\' }));\ntry {\n  compose(\'up\', \'-d\', \'--wait\', \'postgres\', \'redis\', \'test-redis\');\n  compose(\'exec\', \'-T\', \'postgres\', \'createdb\', \'-U\', \'weaveos_test\', \'weaveos_ci_archive_test\');\n  // Published initial migration intentionally has no destructive Down. Recovery is V010-008.\n  go(\'go install github.com/pressly/goose/v3/cmd/goose@v3.28.0\');\n  go(\'/repo/.work/acceptance/tools/goose -dir /repo/db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up; /repo/.work/acceptance/tools/goose -dir /repo/db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up\');\n  go(\'/repo/.work/acceptance/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up; /repo/.work/acceptance/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up\');\n  go(\'go test -race -p 1 -count=1 ./... && go vet ./... && CGO_ENABLED=0 go build -o /repo/.work/acceptance/bff ./cmd/bff\');\n  compose(\'stop\', \'test-redis\');\n  compose(\'exec\', \'-T\', \'postgres\', \'createdb\', \'-U\', \'weaveos_test\', \'weaveos_acceptance\');\n  go(\'/repo/.work/acceptance/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up && go run ./cmd/acceptance-seed\', \'seed.env\');\n  if (typeof process.getuid === \'function\') {\n    // Seed runs as container root; preserve0600 while assigning the sole authorized host reader.\n    call(\'docker\', [\'run\', \'--rm\', ...mount, goImage, \'chown\', `${process.getuid()}:${process.getgid()}`, \'/repo/.work/acceptance/fixtures.json\']);\n  }\n  node(\'pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; node --test contracts/*.test.mjs tests/governance/*.test.mjs tests/foundation/*.test.mjs tests/acceptance/topology.test.mjs; pnpm exec redocly lint contracts/openapi/openapi.json; pnpm typecheck; pnpm build; cd apps/web; PLAYWRIGHT_JSON_OUTPUT_NAME=/repo/.work/acceptance/components.json pnpm exec playwright test --config playwright.component.config.ts --reporter=line,json\');\n  compose(\'up\', \'-d\', \'bff\', \'nginx\');\n  call(process.execPath, [\'--test\', \'infra/acceptance/ingress.test.mjs\'], { env: { ...env,\n    WEAVEOS_API_URL: \'https://localhost:19443\',\n    WEAVEOS_INGRESS_CONTAINERS: JSON.stringify({ nginx: id(\'nginx\'), bff: id(\'bff\'), postgres: id(\'postgres\') }),\n    WEAVEOS_INGRESS_DATABASE: \'weaveos_acceptance\', NODE_EXTRA_CA_CERTS: resolve(dir, \'tls/cert.pem\') } });\n  node(\'node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=/repo/.work/acceptance/api.tap tests/acceptance/api.test.mjs; PLAYWRIGHT_JSON_OUTPUT_NAME=/repo/.work/acceptance/browser.json pnpm exec playwright test --config apps/web/playwright.integration.config.ts --reporter=line,json\', id(\'nginx\'));\n  call(process.execPath, [\'--test\', \'infra/acceptance/faults.test.mjs\'], { env: { ...env, WEAVEOS_ACCEPTANCE_PROJECT: project, WEAVEOS_ACCEPTANCE_FIXTURES: resolve(dir, \'fixtures.json\'), NODE_EXTRA_CA_CERTS: resolve(dir, \'tls/cert.pem\') } });\n  const storeEnv = { ...env, WEAVEOS_API_URL: \'https://localhost:19443\', WEAVEOS_ACCEPTANCE_PROJECT: project, WEAVEOS_ACCEPTANCE_FIXTURES: resolve(dir, \'fixtures.json\'), WEAVEOS_ACCEPTANCE_OBSERVER: resolve(root, \'tests/acceptance/storage-observer.mjs\'), NODE_EXTRA_CA_CERTS: resolve(dir, \'tls/cert.pem\') };\n  // Serial fault/control qualification precedes product assertions on the same real stack.\n  call(process.execPath, [\'--test\', \'--test-concurrency=1\', \'tests/acceptance/storage-observer.test.mjs\', \'tests/acceptance/redis-gate.test.mjs\'], { env: storeEnv });\n  call(process.execPath, [\'--test\', \'--test-concurrency=1\', \'tests/acceptance/integration.test.mjs\'], { env: storeEnv });\n  writeFileSync(resolve(dir, \'public/result.json\'), JSON.stringify({ result: \'passed\', project, elapsedSeconds: (Date.now() - started) / 1000, api:countAPIReport(readFileSync(resolve(dir,\'api.tap\'),\'utf8\')), browser:countBrowserReport(JSON.parse(readFileSync(resolve(dir,\'browser.json\'),\'utf8\'))), components: JSON.parse(readFileSync(resolve(dir, \'components.json\'), \'utf8\')).stats.expected, faults: 3, storageCases:19, storageControls:8, storage: \'actual PostgreSQL18 + Redis8.2\', target: \'isolated Linux HTTPS\', secrets: \'not included\' }, null, 2));\n} catch (error) {\n  writeFileSync(resolve(dir, \'public/result.json\'), JSON.stringify({ result: \'failed\', project, exitCode: error.status ?? 1, elapsedSeconds: (Date.now() - started) / 1000 }));\n  throw error;\n} finally {\n  // Preserve private fixtures and isolated DB volume; no --volumes or file deletion.\n  compose(\'stop\');\n}\n',
+    expected: /api:\s*122/,
+    operator: 'match',
+    diff: 'simple'
+  }
+ Container weaveos-v010-007-1790754947366-test-redis-1 Stopping
+ Container weaveos-v010-007-1790754947366-redis-1 Stopping
+ Container weaveos-v010-007-1790754947366-test-redis-1 Stopped
+ Container weaveos-v010-007-1790754947366-postgres-1 Stopping
+ Container weaveos-v010-007-1790754947366-redis-1 Stopped
+ Container weaveos-v010-007-1790754947366-postgres-1 Stopped
+node:internal/errors:983
+  const err = new Error(message);
+              ^
+
+Error: Command failed: docker run --rm --init --shm-size=1g --mount type=bind,src=D:\Workspace\WeaveOS-worktrees\V010-019\,dst=/repo --mount type=volume,src=weaveos-v010-linux-node,dst=/repo/node_modules --mount type=volume,src=weaveos-v010-linux-web-node,dst=/repo/apps/web/node_modules -e CI=true -e WEAVEOS_API_URL=https://localhost:19443 -e WEAVEOS_WEB_URL=https://localhost:19443 -e WEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/acceptance/fixtures.json -e NODE_EXTRA_CA_CERTS=/repo/.work/acceptance/tls/cert.pem -w /repo mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27 bash -euc npm install --global pnpm@10.28.2 --ignore-scripts; pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; node --test contracts/*.test.mjs tests/governance/*.test.mjs tests/foundation/*.test.mjs tests/acceptance/topology.test.mjs; pnpm exec redocly lint contracts/openapi/openapi.json; pnpm typecheck; pnpm build; cd apps/web; PLAYWRIGHT_JSON_OUTPUT_NAME=/repo/.work/acceptance/components.json pnpm exec playwright test --config playwright.component.config.ts --reporter=line,json
+    at genericNodeError (node:internal/errors:983:15)
+    at wrappedFn (node:internal/errors:537:14)
+    at checkExecSyncError (node:child_process:916:11)
+    at execFileSync (node:child_process:952:15)
+    at call (file:///D:/Workspace/WeaveOS-worktrees/V010-019/infra/acceptance/run.mjs:17:47)
+    at node (file:///D:/Workspace/WeaveOS-worktrees/V010-019/infra/acceptance/run.mjs:33:35)
+    at file:///D:/Workspace/WeaveOS-worktrees/V010-019/infra/acceptance/run.mjs:51:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 17040,
+  stdout: null,
+  stderr: null
+}
+
+Node.js v22.23.1

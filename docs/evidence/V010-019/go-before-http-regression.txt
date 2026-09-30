@@ -1,0 +1,31 @@
+go: downloading golang.org/x/crypto v0.56.0
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/acceptance-seed	1.365s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-maintenance	1.555s
+?   	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-read	[no test files]
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/bff	1.025s
+--- FAIL: TestControlledMaintenanceAndReaderUseTheirActualRestrictedRoles (0.01s)
+    maintenance_test.go:45: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestMonthlyArchiveAndAnnualExpiry (0.00s)
+    maintenance_test.go:105: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestArchiveConflictAndUnavailableColdPreserveHotHistory (0.00s)
+    maintenance_test.go:135: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestCommittedCopyThenRetryIsSafe (0.00s)
+    maintenance_test.go:154: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestLeapYearRetentionUsesCalendarYear (0.00s)
+    maintenance_test.go:165: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestAuditReadRequiresCurrentBootstrapAndDoesNotReadCold (0.01s)
+    maintenance_test.go:176: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestAuditReadDeniesOrdinaryDisabledStaleAndAnonymous (0.00s)
+    read_test.go:33: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/audit	0.095s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/auth	9.283s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/identity	1.010s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/invitation	1.012s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence	1.197s
+?   	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence/authsql	[no test files]
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/personnel	1.970s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver	1.013s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/security	1.011s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/session	1.628s
+FAIL

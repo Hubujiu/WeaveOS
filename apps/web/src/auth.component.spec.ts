@@ -83,6 +83,8 @@ test('Q7: logout sends the frontend-readable host CSRF cookie in the header', as
   const csrf = 'AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE'; // synthetic only
   await context.addCookies([{ name: '__Host-csrf', value: csrf, url: 'https://127.0.0.1:4173/', secure: true, sameSite: 'Lax' }]);
   let received: string | undefined;
+  // Q24 Home account menu + Q25 own-access DTO; preserve Q7's CSRF/storage oracle.
+  await page.route('**/api/v1/me/access', route => route.fulfill({ status: 200, json: { code: 'OK', message: 'ok', data: { user: { id: 'synthetic-id', account: 'synthetic-user' }, bootstrapAdmin: false, personnelManage: false, identities: [], permissions: [], applications: [] }, meta: null } }));
   await page.route('**/api/v1/sessions/current', route => {
     if (route.request().method() === 'DELETE') {
       received = route.request().headers()['x-csrf-token'];
@@ -92,6 +94,7 @@ test('Q7: logout sends the frontend-readable host CSRF cookie in the header', as
   });
   await page.goto('/app');
   expect(await page.evaluate(() => document.cookie.includes('__Host-csrf='))).toBe(true);
+  await page.getByRole('button', { name: '账号', exact: true }).click();
   await page.getByRole('button', { name: '退出登录' }).click();
   await expect(page).toHaveURL(/\/login$/);
   expect(received).toBe(csrf);
@@ -120,11 +123,11 @@ test('WaveOS Figma 13:2 login shell uses the new brand and card geometry', async
   await expect(page.getByText('登录您的账号，开始高效沟通')).toBeVisible();
   const header = await page.getByRole('banner').boundingBox();
   const card = await page.locator('.auth-card').boundingBox();
-  expect(header?.height).toBe(72);
-  // Figma 2026-09-27 removed the 30px side margins; four columns now span 618.667px.
-  expect(card?.width).toBeCloseTo(618.667, 0);
-  expect(card?.height).toBeGreaterThanOrEqual(710);
-  expect(card?.height).toBeLessThanOrEqual(730);
+  expect(header?.height).toBe(56);
+  // Oracle: current Figma 13:2, 192px content inset, 12 columns / 32px gutters.
+  expect(card?.width).toBeCloseTo(490.667, 0);
+  expect(card?.height).toBeCloseTo(495, 0);
+
 });
 
 test('WaveOS Figma 40:2 register has four large fields and the invitation', async ({ page }) => {
@@ -132,12 +135,13 @@ test('WaveOS Figma 40:2 register has four large fields and the invitation', asyn
   await page.goto('/register');
   await expect(page.getByText('创建您的账号，开始使用 WaveOS')).toBeVisible();
   await expect(page.getByLabel('邀请码', { exact: true })).toBeVisible();
-  const fields = await page.locator('.auth-card input').all();
+  // Figma Input (40:28/36/83/95) is the bordered field wrapper, not its inner HTML input.
+  const fields = await page.locator('.auth-card .field-input').all();
   expect(fields).toHaveLength(4);
   for (const field of fields) {
     const box = await field.boundingBox();
-    expect(box?.height).toBeGreaterThanOrEqual(54);
-    expect(box?.height).toBeLessThanOrEqual(58);
+    expect(box?.height).toBeCloseTo(46, 3);
+
   }
 });
 

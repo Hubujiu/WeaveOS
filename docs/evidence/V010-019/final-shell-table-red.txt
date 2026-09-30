@@ -1,0 +1,68 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:27640) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:9880) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:10116) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › src\personnel.component.spec.ts:240:1 › Figma each shell variant retains its own material offset and collapsed 48px menu target (15.3s)
+(node:31236) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [chromium] › src\personnel.component.spec.ts:247:1 › Figma member table keeps fixed column geometry and page selection never sends a write (30.0s)
+
+
+  1) [chromium] › src\personnel.component.spec.ts:240:1 › Figma each shell variant retains its own material offset and collapsed 48px menu target
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.admin-material')
+    Expected: "-30px"
+    Received: "-22px"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" locator('.admin-material') with timeout 5000ms
+      - waiting for locator('.admin-material')
+        14 × locator resolved to <img alt="" width="1980" height="1140" aria-hidden="true" class="admin-material" src="data:image/svg+xml;base64,PHN2ZyBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiBvdmVyZmxvdz0idmlzaWJsZSIgc3R5bGU9ImRpc3BsYXk6IGJsb2NrOyIgd2lkdGg9IjE5ODAiIGhlaWdodD0iMTE0MCIgdmlld0JveD0iMCAwIDE5ODAgMTE0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgaWQ9IlN1cmZhY2UgLyBVbmlmaWVkIGNocm9tZSI+Cjxmb3JlaWduT2JqZWN0IHg9IjAiIHk9Ii0yIiB3aWR0aD0iMTk4MCIgaGVpZ2h0PSIxMTQyIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8…/>
+           - unexpected value "-22px"
+
+
+      240 | test('Figma each shell variant retains its own material offset and collapsed 48px menu target',async({page})=>{
+      241 |  await page.setViewportSize({width:1920,height:1080});await admin(page);
+    > 242 |  await page.getByRole('button',{name:'收起侧栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('left','-30px');
+          |                                                                                                                ^
+      243 |  const menu=page.getByRole('button',{name:'人员管理',exact:true});await expect(menu).toHaveCSS('width','48px');await expect(menu).toHaveCSS('height','48px');expect((await menu.boundingBox())!.y).toBe(144);
+      244 |  await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('left','-22px');expect((await menu.boundingBox())!.y).toBe(112);
+      245 |  await page.getByRole('button',{name:'展开侧栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('top','-30px');
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:242:112
+
+    Error Context: test-results\personnel.component-Figma--20c76--collapsed-48px-menu-target-chromium\error-context.md
+
+  2) [chromium] › src\personnel.component.spec.ts:247:1 › Figma member table keeps fixed column geometry and page selection never sends a write
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.check: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByLabel('选择成员：synthetic-admin', { exact: true })
+
+
+      249 |  for(const [index,width] of [[0,52],[2,176],[3,216],[4,136],[5,144]])expect((await th.nth(index).boundingBox())!.width).toBeCloseTo(width,0);
+      250 |  let writes=0;page.on('request',request=>{if(request.url().includes('/api/v1/')&&!['GET','HEAD'].includes(request.method()))writes++;});
+    > 251 |  const select=page.getByLabel('选择成员：'+user.account,{exact:true});await select.check();await expect(page.getByLabel('选择当前页成员',{exact:true})).toBeChecked();await page.getByLabel('选择当前页成员',{exact:true}).uncheck();await expect(select).not.toBeChecked();expect(writes).toBe(0);
+          |                                                                               ^
+      252 | });
+      253 |
+      254 |
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:251:79
+
+    Error Context: test-results\personnel.component-Figma--0005c-lection-never-sends-a-write-chromium\error-context.md
+
+  2 failed
+    [chromium] › src\personnel.component.spec.ts:240:1 › Figma each shell variant retains its own material offset and collapsed 48px menu target
+    [chromium] › src\personnel.component.spec.ts:247:1 › Figma member table keeps fixed column geometry and page selection never sends a write

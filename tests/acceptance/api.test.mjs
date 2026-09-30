@@ -1,5 +1,6 @@
 // Preserve V010-009's independent HTTP cases before the current contract suite.
 import './expanded-api.mjs';
+import './personnel-api.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';

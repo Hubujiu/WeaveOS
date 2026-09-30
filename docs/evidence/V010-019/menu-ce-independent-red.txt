@@ -1,0 +1,75 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:31376) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:32284) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:27284) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › src\personnel.component.spec.ts:253:1 › Figma collapsed menu independently has a 48px target at the original sidebar inset (6.4s)
+(node:2008) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [chromium] › src\personnel.component.spec.ts:256:1 › Figma top-collapsed side-expanded material independently uses the original minus30 top (7.5s)
+
+
+  1) [chromium] › src\personnel.component.spec.ts:253:1 › Figma collapsed menu independently has a 48px target at the original sidebar inset
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  getByRole('button', { name: '人员管理', exact: true })
+    Expected: "48px"
+    Received: "40px"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" getByRole('button', { name: '人员管理', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '人员管理', exact: true })
+        14 × locator resolved to <button aria-label="人员管理" class="personnel-nav">…</button>
+           - unexpected value "40px"
+
+
+      252 | });
+      253 | test('Figma collapsed menu independently has a 48px target at the original sidebar inset',async({page})=>{
+    > 254 |  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('button',{name:'收起侧栏',exact:true}).click();const menu=page.getByRole('button',{name:'人员管理',exact:true});await expect(menu).toHaveCSS('width','48px');await expect(menu).toHaveCSS('height','48px');expect((await menu.boundingBox())!.y).toBe(144);
+          |                                                                                                                                                                                                                         ^
+      255 | });
+      256 | test('Figma top-collapsed side-expanded material independently uses the original minus30 top',async({page})=>{
+      257 |  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('top','-30px');
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:254:217
+
+    Error Context: test-results\personnel.component-Figma--549bc--the-original-sidebar-inset-chromium\error-context.md
+
+  2) [chromium] › src\personnel.component.spec.ts:256:1 › Figma top-collapsed side-expanded material independently uses the original minus30 top
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.admin-material')
+    Expected: "-30px"
+    Received: "-22px"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" locator('.admin-material') with timeout 5000ms
+      - waiting for locator('.admin-material')
+        14 × locator resolved to <img alt="" width="1980" height="1140" aria-hidden="true" class="admin-material" src="data:image/svg+xml;base64,PHN2ZyBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiBvdmVyZmxvdz0idmlzaWJsZSIgc3R5bGU9ImRpc3BsYXk6IGJsb2NrOyIgd2lkdGg9IjE5ODAiIGhlaWdodD0iMTE0MCIgdmlld0JveD0iMCAwIDE5ODAgMTE0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgaWQ9IlN1cmZhY2UgLyBVbmlmaWVkIGNocm9tZSI+Cjxmb3JlaWduT2JqZWN0IHg9Ii0yIiB5PSIwIiB3aWR0aD0iMTk4MiIgaGVpZ2h0PSIxMTQwIj48ZGl2IHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8…/>
+           - unexpected value "-22px"
+
+
+      255 | });
+      256 | test('Figma top-collapsed side-expanded material independently uses the original minus30 top',async({page})=>{
+    > 257 |  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('top','-30px');
+          |                                                                                                                                                                                       ^
+      258 | });
+      259 |
+      260 |
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:257:183
+
+    Error Context: test-results\personnel.component-Figma--8c32f-es-the-original-minus30-top-chromium\error-context.md
+
+  2 failed
+    [chromium] › src\personnel.component.spec.ts:253:1 › Figma collapsed menu independently has a 48px target at the original sidebar inset
+    [chromium] › src\personnel.component.spec.ts:256:1 › Figma top-collapsed side-expanded material independently uses the original minus30 top

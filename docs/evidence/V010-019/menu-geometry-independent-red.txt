@@ -1,0 +1,44 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:25976) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:30856) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:33084) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › src\personnel.component.spec.ts:253:1 › Figma collapsed menu independently has a 48px target at the original sidebar inset (2.5s)
+
+
+  1) [chromium] › src\personnel.component.spec.ts:253:1 › Figma collapsed menu independently has a 48px target at the original sidebar inset
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 3
+    + Received  + 3
+
+      Object {
+    -   "height": 48,
+    -   "width": 48,
+    -   "y": 144,
+    +   "height": 40,
+    +   "width": 40,
+    +   "y": 160,
+      }
+
+      252 | });
+      253 | test('Figma collapsed menu independently has a 48px target at the original sidebar inset',async({page})=>{
+    > 254 |  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('button',{name:'收起侧栏',exact:true}).click();const menu=page.getByRole('button',{name:'人员管理',exact:true});const box=(await menu.boundingBox())!;expect({width:box.width,height:box.height,y:box.y}).toEqual({width:48,height:48,y:144});
+          |                                                                                                                                                                                                                                                                                                ^
+      255 | });
+      256 | test('Figma top-collapsed side-expanded material independently uses the original minus30 top',async({page})=>{
+      257 |  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('top','-30px');
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:254:288
+
+    Error Context: test-results\personnel.component-Figma--549bc--the-original-sidebar-inset-chromium\error-context.md
+
+  1 failed
+    [chromium] › src\personnel.component.spec.ts:253:1 › Figma collapsed menu independently has a 48px target at the original sidebar inset

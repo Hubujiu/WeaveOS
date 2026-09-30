@@ -1,0 +1,86 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:5384) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:16448) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 13 tests using 1 worker
+
+(node:32800) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [chromium] › apps\web\src\personnel.component.spec.ts:21:1 › R3 login enters Home with settings and account navigation; admin exit retains Session (1.9s)
+  ok  2 [chromium] › apps\web\src\personnel.component.spec.ts:32:1 › R2 AC02 ordinary member Home has own identity/empty app state; direct admin denies (2.8s)
+  ok  3 [chromium] › apps\web\src\personnel.component.spec.ts:36:1 › R3 four independent shell layouts retain selected tab and unsaved input; icons aligned (2.8s)
+  x   4 [chromium] › apps\web\src\personnel.component.spec.ts:48:1 › R3 identity separates direct/template sources and confirms impact before versioned save (1.6s)
+(node:31576) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  5 [chromium] › apps\web\src\personnel.component.spec.ts:57:2 › R3 save failure 409 preserves input and exposes specific outcome (1.7s)
+  ok  6 [chromium] › apps\web\src\personnel.component.spec.ts:57:2 › R3 save failure 403 preserves input and exposes specific outcome (1.6s)
+  ok  7 [chromium] › apps\web\src\personnel.component.spec.ts:57:2 › R3 save failure 503 preserves input and exposes specific outcome (1.6s)
+  x   8 [chromium] › apps\web\src\personnel.component.spec.ts:62:1 › R3 dirty tab/object/admin leave requires explicit choice and never saves (6.7s)
+(node:13060) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  9 [chromium] › apps\web\src\personnel.component.spec.ts:67:1 › R3 template UI has genuine no-application empty state and referenced delete protection (1.5s)
+  ok 10 [chromium] › apps\web\src\personnel.component.spec.ts:70:1 › R3 members expose multi-identity editor and group operation without changing permissions (1.5s)
+  ok 11 [chromium] › apps\web\src\personnel.component.spec.ts:75:1 › R3 departments create uses selected parent; enterprise root is protected (1.5s)
+  ok 12 [chromium] › apps\web\src\personnel.component.spec.ts:80:1 › R3 invitation is deliberate one-time result; activity has true empty state (1.8s)
+  ok 13 [chromium] › apps\web\src\personnel.component.spec.ts:84:1 › R3 reduced motion and compact layouts retain keyboard-reachable navigation (1.4s)
+
+
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:48:1 › R3 identity separates direct/template sources and confirms impact before versioned save
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('status')
+    Expected substring: "已保存"
+    Error: strict mode violation: getByRole('status') resolved to 2 elements:
+        1) <p role="status" class="workspace-status">已保存</p> aka getByText('已保存')
+        2) <p role="status">正在加载…</p> aka getByText('正在加载…')
+
+    Call log:
+      - Expect "toContainText" getByRole('status') with timeout 5000ms
+      - waiting for getByRole('status')
+
+
+      52 |  await expect(page.getByLabel('直接权限：人员管理',{exact:true})).not.toBeChecked();await expect(page.getByLabel('模板：企业管理',{exact:true})).toBeChecked();await expect(page.getByText('来自模板：企业管理',{exact:true})).toBeVisible();
+      53 |  await page.getByLabel('身份名称',{exact:true}).fill('新名称');await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('2 位成员');expect(sent).toHaveLength(0);
+    > 54 |  await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect.poll(()=>sent).toEqual([{name:'新名称',description:'共享身份',version:1,templateIds:[template.id],permissionCodes:[]}]);await expect(page.getByRole('status')).toContainText('已保存');
+         |                                                                                                                                                                                                                                       ^
+      55 | });
+      56 | for(const [status,message] of [[409,'配置已变更'],[403,'没有人员管理权限'],[503,'服务暂时不可用']] as const){
+      57 |  test('R3 save failure '+status+' preserves input and exposes specific outcome',async({page})=>{
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:54:231
+
+    Error Context: apps\web\test-results\personnel.component-R3-ide-9e57f-mpact-before-versioned-save-chromium\error-context.md
+
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:62:1 › R3 dirty tab/object/admin leave requires explicit choice and never saves
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /\/app$/
+    Received string:  "http://127.0.0.1:4173/app/admin"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 5000ms
+        14 × locator resolved to <html lang="zh-CN">…</html>
+           - unexpected value "http://127.0.0.1:4173/app/admin"
+
+
+      63 |  await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill('保留');
+      64 |  await page.getByRole('tab',{name:'权限模板',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('未保存');await page.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('保留');
+    > 65 |  await page.getByRole('button',{name:'退出',exact:true}).click();await page.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page).toHaveURL(/\/app$/);
+         |                                                                                                                                                   ^
+      66 | });
+      67 | test('R3 template UI has genuine no-application empty state and referenced delete protection',async({page})=>{
+      68 |  await admin(page);await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'企业管理',exact:true}).click();await expect(page.getByText('尚未接入业务应用',{exact:true})).toBeVisible();await expect(page.getByLabel('中央权限：人员管理',{exact:true})).toBeChecked();await expect(page.getByRole('button',{name:'删除模板',exact:true})).toBeDisabled();await expect(page.getByText('1 个身份正在引用',{exact:true})).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:65:147
+
+    Error Context: apps\web\test-results\personnel.component-R3-dir-e0e84-icit-choice-and-never-saves-chromium\error-context.md
+
+  2 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:48:1 › R3 identity separates direct/template sources and confirms impact before versioned save
+    [chromium] › apps\web\src\personnel.component.spec.ts:62:1 › R3 dirty tab/object/admin leave requires explicit choice and never saves
+  11 passed (32.6s)

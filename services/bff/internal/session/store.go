@@ -56,6 +56,7 @@ func NewStore(redisURL, generation string) *Store {
 	// Do not retry ambiguous session writes or spend the HTTP response budget dialing.
 	options.ContextTimeoutEnabled = true
 	options.DialTimeout = time.Second
+	options.DialerRetries = 1
 	options.ReadTimeout = time.Second
 	options.WriteTimeout = time.Second
 	options.PoolTimeout = time.Second

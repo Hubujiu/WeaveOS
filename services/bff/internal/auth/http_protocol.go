@@ -59,7 +59,7 @@ func (s *Service) fail(w http.ResponseWriter, r *http.Request, err error) {
 			status, code = 403, failure.Code
 		case "USER_NOT_FOUND":
 			status, code = 404, failure.Code
-		case "USER_ACCOUNT_ALREADY_EXISTS", "INVITATION_ALREADY_USED":
+		case "USER_ACCOUNT_ALREADY_EXISTS", "INVITATION_ALREADY_USED", "PERSONNEL_CONFLICT":
 			status, code = 409, failure.Code
 		case "COMMON_INTERNAL_ERROR":
 			status, code = 500, failure.Code

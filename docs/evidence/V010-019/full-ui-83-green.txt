@@ -1,0 +1,35 @@
+
+> weaveos@0.1.0 typecheck /repo
+> pnpm --filter @weaveos/web typecheck && tsc -p tsconfig.tests.json
+
+
+> @weaveos/web@0.1.0 typecheck /repo/apps/web
+> tsc --noEmit
+
+
+> weaveos@0.1.0 build /repo
+> pnpm --filter @weaveos/web build
+
+
+> @weaveos/web@0.1.0 build /repo/apps/web
+> vite build
+
+[36mvite v8.0.16 [32mbuilding client environment for production...[36m[39m
+[2K
+transforming...✓ 57 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.35 kB │ gzip:   0.26 kB
+dist/assets/index-BpeEYam4.css   21.53 kB │ gzip:   4.94 kB
+dist/assets/index-CMx1JelO.js   406.16 kB │ gzip: 123.38 kB
+
+[32m✓ built in 258ms[39m
+
+Running 83 tests using 1 worker
+················································································
+···
+  83 passed (2.5m)
+
+Running 1 test using 1 worker
+·
+  1 passed (10.4s)

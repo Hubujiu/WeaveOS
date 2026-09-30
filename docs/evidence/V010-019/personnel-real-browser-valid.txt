@@ -1,0 +1,77 @@
+
+Running 6 tests using 1 worker
+
+[1/6] [chromium] › tests/acceptance/web.spec.ts:380:5 › R2/Q25 real ordinary Home, own account and direct admin denial
+[2/6] [chromium] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+  1) [chromium] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.check: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByLabel('中央权限：人员管理', { exact: true })
+
+
+      386 |  const inviteResponse=await context.request.post('/api/v1/invitations',{headers:{Origin:origin,'X-CSRF-Token':csrf!},data:{}});expect(inviteResponse.status()).toBe(201);const invitation=(await inviteResponse.json()).data;
+      387 |  const registerResponse=await context.request.post('/api/v1/registrations',{headers:{Origin:origin},data:{account:label,password:'Synthetic@123',invitationCode:invitation.invitationCode}});expect(registerResponse.status()).toBe(201);
+    > 388 |  await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'新建权限模板',exact:true}).click();await page.getByLabel('模板名称',{exact:true}).fill(label+'-模板');await page.getByLabel('中央权限：人员管理',{exact:true}).check();await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status')).toContainText('已保存');
+          |                                                                                                                                                                                                                                              ^
+      389 |  await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'新建身份',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill(label+'-身份');await page.getByLabel('模板：'+label+'-模板',{exact:true}).check();await expect(page.getByLabel('直接权限：人员管理',{exact:true})).not.toBeChecked();await expect(page.getByText('来自模板：'+label+'-模板',{exact:true})).toBeVisible();await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status')).toContainText('已保存');
+      390 |  await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await page.getByLabel('搜索成员',{exact:true}).fill(label);const row=page.getByRole('row').filter({hasText:label});await expect(row).toHaveCount(1);await row.getByRole('button',{name:'配置身份',exact:true}).click();await page.getByLabel('身份：'+label+'-身份',{exact:true}).check();await page.getByRole('button',{name:'确认分配',exact:true}).click();await expect(page.getByRole('status')).toContainText('身份已分配');await expect(row).toContainText('已开启');
+      391 |  await page.getByRole('button',{name:'退出',exact:true}).click();await page.getByRole('button',{name:'账号',exact:true}).click();await page.getByRole('button',{name:'退出登录',exact:true}).click();await personnelLogin(page,{account:label,password:'Synthetic@123'});await expect(page.getByRole('button',{name:'设置',exact:true})).toBeVisible();await page.getByRole('button',{name:'账号',exact:true}).click();await expect(page.getByText(label+'-身份',{exact:true})).toBeVisible();await expect(page.getByText(label+'-身份 · '+label+'-模板',{exact:true})).toBeVisible();
+        at /repo/tests/acceptance/web.spec.ts:388:238
+
+    Error Context: apps/web/test-results/web-R3-real-Root-UI-create-2cfcc-igns-a-new-non-Root-manager-chromium/error-context.md
+
+
+[3/6] [firefox] › tests/acceptance/web.spec.ts:380:5 › R2/Q25 real ordinary Home, own account and direct admin denial
+[4/6] [firefox] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+  2) [firefox] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.check: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByLabel('中央权限：人员管理', { exact: true })
+
+
+      386 |  const inviteResponse=await context.request.post('/api/v1/invitations',{headers:{Origin:origin,'X-CSRF-Token':csrf!},data:{}});expect(inviteResponse.status()).toBe(201);const invitation=(await inviteResponse.json()).data;
+      387 |  const registerResponse=await context.request.post('/api/v1/registrations',{headers:{Origin:origin},data:{account:label,password:'Synthetic@123',invitationCode:invitation.invitationCode}});expect(registerResponse.status()).toBe(201);
+    > 388 |  await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'新建权限模板',exact:true}).click();await page.getByLabel('模板名称',{exact:true}).fill(label+'-模板');await page.getByLabel('中央权限：人员管理',{exact:true}).check();await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status')).toContainText('已保存');
+          |                                                                                                                                                                                                                                              ^
+      389 |  await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'新建身份',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill(label+'-身份');await page.getByLabel('模板：'+label+'-模板',{exact:true}).check();await expect(page.getByLabel('直接权限：人员管理',{exact:true})).not.toBeChecked();await expect(page.getByText('来自模板：'+label+'-模板',{exact:true})).toBeVisible();await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status')).toContainText('已保存');
+      390 |  await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await page.getByLabel('搜索成员',{exact:true}).fill(label);const row=page.getByRole('row').filter({hasText:label});await expect(row).toHaveCount(1);await row.getByRole('button',{name:'配置身份',exact:true}).click();await page.getByLabel('身份：'+label+'-身份',{exact:true}).check();await page.getByRole('button',{name:'确认分配',exact:true}).click();await expect(page.getByRole('status')).toContainText('身份已分配');await expect(row).toContainText('已开启');
+      391 |  await page.getByRole('button',{name:'退出',exact:true}).click();await page.getByRole('button',{name:'账号',exact:true}).click();await page.getByRole('button',{name:'退出登录',exact:true}).click();await personnelLogin(page,{account:label,password:'Synthetic@123'});await expect(page.getByRole('button',{name:'设置',exact:true})).toBeVisible();await page.getByRole('button',{name:'账号',exact:true}).click();await expect(page.getByText(label+'-身份',{exact:true})).toBeVisible();await expect(page.getByText(label+'-身份 · '+label+'-模板',{exact:true})).toBeVisible();
+        at /repo/tests/acceptance/web.spec.ts:388:238
+
+    Error Context: apps/web/test-results/web-R3-real-Root-UI-create-2cfcc-igns-a-new-non-Root-manager-firefox/error-context.md
+
+
+[5/6] [webkit] › tests/acceptance/web.spec.ts:380:5 › R2/Q25 real ordinary Home, own account and direct admin denial
+[6/6] [webkit] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+  3) [webkit] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.check: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByLabel('中央权限：人员管理', { exact: true })
+
+
+      386 |  const inviteResponse=await context.request.post('/api/v1/invitations',{headers:{Origin:origin,'X-CSRF-Token':csrf!},data:{}});expect(inviteResponse.status()).toBe(201);const invitation=(await inviteResponse.json()).data;
+      387 |  const registerResponse=await context.request.post('/api/v1/registrations',{headers:{Origin:origin},data:{account:label,password:'Synthetic@123',invitationCode:invitation.invitationCode}});expect(registerResponse.status()).toBe(201);
+    > 388 |  await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'新建权限模板',exact:true}).click();await page.getByLabel('模板名称',{exact:true}).fill(label+'-模板');await page.getByLabel('中央权限：人员管理',{exact:true}).check();await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status')).toContainText('已保存');
+          |                                                                                                                                                                                                                                              ^
+      389 |  await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'新建身份',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill(label+'-身份');await page.getByLabel('模板：'+label+'-模板',{exact:true}).check();await expect(page.getByLabel('直接权限：人员管理',{exact:true})).not.toBeChecked();await expect(page.getByText('来自模板：'+label+'-模板',{exact:true})).toBeVisible();await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status')).toContainText('已保存');
+      390 |  await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await page.getByLabel('搜索成员',{exact:true}).fill(label);const row=page.getByRole('row').filter({hasText:label});await expect(row).toHaveCount(1);await row.getByRole('button',{name:'配置身份',exact:true}).click();await page.getByLabel('身份：'+label+'-身份',{exact:true}).check();await page.getByRole('button',{name:'确认分配',exact:true}).click();await expect(page.getByRole('status')).toContainText('身份已分配');await expect(row).toContainText('已开启');
+      391 |  await page.getByRole('button',{name:'退出',exact:true}).click();await page.getByRole('button',{name:'账号',exact:true}).click();await page.getByRole('button',{name:'退出登录',exact:true}).click();await personnelLogin(page,{account:label,password:'Synthetic@123'});await expect(page.getByRole('button',{name:'设置',exact:true})).toBeVisible();await page.getByRole('button',{name:'账号',exact:true}).click();await expect(page.getByText(label+'-身份',{exact:true})).toBeVisible();await expect(page.getByText(label+'-身份 · '+label+'-模板',{exact:true})).toBeVisible();
+        at /repo/tests/acceptance/web.spec.ts:388:238
+
+    Error Context: apps/web/test-results/web-R3-real-Root-UI-create-2cfcc-igns-a-new-non-Root-manager-webkit/error-context.md
+
+
+  3 failed
+    [chromium] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+    [firefox] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+    [webkit] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+  3 passed (1.7m)

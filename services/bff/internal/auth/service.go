@@ -22,6 +22,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "request initialization failed", http.StatusServiceUnavailable)
 		return
 	}
+	if s.Personnel != nil && (r.URL.Path == "/api/v1/me/access" || strings.HasPrefix(r.URL.Path, "/api/v1/personnel/")) {
+		s.Personnel.ServeHTTP(w, r)
+		return
+	}
 	if r.URL.Path == "/api/v1/registrations" && r.Method == "POST" {
 		s.register(w, r)
 		return
@@ -74,7 +78,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.fail(w, r, err)
 			return
 		}
-		if !p.BootstrapAdmin {
+		if r.URL.Path != "/api/v1/invitations" && !p.BootstrapAdmin {
 			reply(w, r, 403, "COMMON_PERMISSION_DENIED", nil)
 			return
 		}

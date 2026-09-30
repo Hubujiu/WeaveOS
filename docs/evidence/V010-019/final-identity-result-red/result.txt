@@ -1,0 +1,60 @@
+
+Running 2 tests using 1 worker
+FF
+
+  1) [chromium] › src/personnel.component.spec.ts:282:1 › Figma final identity without applications keeps its footer in the original view
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.definition-details .no-applications')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" locator('.definition-details .no-applications') with timeout 5000ms
+      - waiting for locator('.definition-details .no-applications')
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      281 |
+      282 | test('Figma final identity without applications keeps its footer in the original view',async({page})=>{
+    > 283 |  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();await expect(page.locator('.definition-details .no-applications')).toHaveCount(0);await expect(page.locator('.definition-footer')).toBeInViewport();
+          |                                                                                                                                                                                                                                                                        ^
+      284 | });
+      285 | test('Figma final successful activity keeps the original result color and typography',async({page})=>{
+      286 |  await admin(page);await page.route('**/api/v1/personnel/events?*',route=>route.fulfill({json:{code:'OK',message:'success',data:list([{id:user.id,occurredAt:'2026-09-30T05:00:00Z',actorAccount:user.account,action:'TEMPLATE_UPDATED',objectType:'template',objectId:template.id,summary:{before:{name:'旧名称'},after:{name:template.name}},outcome:'success'}]),meta:null}}));await page.getByRole('tab',{name:'操作记录',exact:true}).click();await page.getByLabel('搜索操作记录').fill('模板');const result=page.locator('.activity-table tbody td').last();await expect(result).toHaveText('已完成');await expect(result).toHaveCSS('color','rgb(46, 115, 95)');await expect(result).toHaveCSS('font-size','12px');await expect(result).toHaveCSS('line-height','20px');
+        at /repo/apps/web/src/personnel.component.spec.ts:283:264
+
+    Error Context: test-results/personnel.component-Figma--f7a84-footer-in-the-original-view-chromium/error-context.md
+
+  2) [chromium] › src/personnel.component.spec.ts:285:1 › Figma final successful activity keeps the original result color and typography
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.activity-table tbody td').last()
+    Expected: "rgb(46, 115, 95)"
+    Received: "rgb(94, 109, 131)"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" locator('.activity-table tbody td').last() with timeout 5000ms
+      - waiting for locator('.activity-table tbody td').last()
+        14 × locator resolved to <td>已完成</td>
+           - unexpected value "rgb(94, 109, 131)"
+
+
+      284 | });
+      285 | test('Figma final successful activity keeps the original result color and typography',async({page})=>{
+    > 286 |  await admin(page);await page.route('**/api/v1/personnel/events?*',route=>route.fulfill({json:{code:'OK',message:'success',data:list([{id:user.id,occurredAt:'2026-09-30T05:00:00Z',actorAccount:user.account,action:'TEMPLATE_UPDATED',objectType:'template',objectId:template.id,summary:{before:{name:'旧名称'},after:{name:template.name}},outcome:'success'}]),meta:null}}));await page.getByRole('tab',{name:'操作记录',exact:true}).click();await page.getByLabel('搜索操作记录').fill('模板');const result=page.locator('.activity-table tbody td').last();await expect(result).toHaveText('已完成');await expect(result).toHaveCSS('color','rgb(46, 115, 95)');await expect(result).toHaveCSS('font-size','12px');await expect(result).toHaveCSS('line-height','20px');
+          |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ^
+      287 | });
+      288 |
+        at /repo/apps/web/src/personnel.component.spec.ts:286:593
+
+    Error Context: test-results/personnel.component-Figma--50a0e-result-color-and-typography-chromium/error-context.md
+
+  2 failed
+    [chromium] › src/personnel.component.spec.ts:282:1 › Figma final identity without applications keeps its footer in the original view
+    [chromium] › src/personnel.component.spec.ts:285:1 › Figma final successful activity keeps the original result color and typography

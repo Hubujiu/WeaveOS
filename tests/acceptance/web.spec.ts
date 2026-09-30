@@ -7,7 +7,7 @@ import { test, expect, type Page, type TestInfo } from '@playwright/test';
 test.use({ trace: 'off', screenshot: 'off', video: 'off' });
 
 // PRD-defined visible behavior; proposed /login, /register, /app route bindings are reviewed in V010-002/006.
-function fixtures(): { user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
+function fixtures(): { admin: { account: string; password: string }; user: { account: string; password: string }; disabled: { account: string; password: string }; uiInvitations: Record<string, string> } {
   const file = process.env.WEAVEOS_ACCEPTANCE_FIXTURES;
   if (!file) throw new Error('BLOCKED: generate isolated acceptance fixtures in V010-003');
   return JSON.parse(readFileSync(file, 'utf8'));
@@ -94,6 +94,8 @@ test('FR-005/008/009: real login survives reload, then logout revokes it', async
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page).toHaveURL(/\/app(?:\/|\?|$)/);
   await page.reload();
+  // Q24 Figma Home: account information/logout now live inside the account menu.
+  await page.getByRole('button', { name: '账号', exact: true }).click();
   await expect(page.getByText(f.user.account, { exact: true })).toBeVisible();
   const cookies = await context.cookies();
   const session = cookies.find(cookie => cookie.name === '__Host-session');
@@ -370,4 +372,24 @@ test('WEB-18 PRD security: frontend logs do not contain submitted password', asy
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   expect(messages.every(message => !message.includes(secret)), 'logs are credential-free; content withheld').toBe(true);
+});
+
+async function personnelLogin(page:Page,credentials:{account:string;password:string}){
+ await page.goto('/login');await page.getByLabel('账号',{exact:true}).fill(credentials.account);await page.getByLabel('密码',{exact:true}).fill(credentials.password);await page.getByRole('button',{name:'登录',exact:true}).click();await expect(page).toHaveURL(/\/app$/);
+}
+test('R2/Q25 real ordinary Home, own account and direct admin denial',async({page})=>{
+ const f=fixtures();await personnelLogin(page,f.user);await expect(page.getByRole('button',{name:'设置',exact:true})).toBeHidden();await expect(page.getByText('暂无可用应用',{exact:true})).toBeVisible();await page.getByRole('button',{name:'账号',exact:true}).click();await expect(page.getByText('尚未分配身份',{exact:true})).toBeVisible();await page.goto('/app/admin');await expect(page.getByRole('alert')).toContainText('没有人员管理权限');await expect(page.getByRole('tab',{name:'身份',exact:true})).toBeHidden();
+});
+test('R3 real Root UI creates shared template/identity and assigns a new non-Root manager',async({page,context},info)=>{
+ const f=fixtures(),label='browser-'+info.project.name+'-'+Date.now();await personnelLogin(page,f.admin);await page.getByRole('button',{name:'设置',exact:true}).click();
+ const csrf=(await context.cookies()).find(c=>c.name==='__Host-csrf')?.value;expect(Boolean(csrf)).toBe(true);const origin=new URL(process.env.WEAVEOS_WEB_URL!).origin;
+ const inviteResponse=await context.request.post('/api/v1/invitations',{headers:{Origin:origin,'X-CSRF-Token':csrf!},data:{}});expect(inviteResponse.status()).toBe(201);const invitation=(await inviteResponse.json()).data;
+ const registerResponse=await context.request.post('/api/v1/registrations',{headers:{Origin:origin},data:{account:label,password:'Synthetic@123',invitationCode:invitation.invitationCode}});expect(registerResponse.status()).toBe(201);
+ await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'新建权限模板',exact:true}).click();await page.getByLabel('模板名称',{exact:true}).fill(label+'-模板');await page.getByLabel('中央权限：人员管理',{exact:true}).check();await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status')).toContainText('已保存');
+ await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'新建身份',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill(label+'-身份');await page.getByLabel('模板：'+label+'-模板',{exact:true}).check();await expect(page.getByLabel('直接权限：人员管理',{exact:true})).not.toBeChecked();await expect(page.getByText('来自模板：'+label+'-模板',{exact:true})).toBeVisible();await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status')).toContainText('已保存');
+ await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await page.getByLabel('搜索成员',{exact:true}).fill(label);const row=page.getByRole('row').filter({hasText:label});await expect(row).toHaveCount(1);await row.getByRole('button',{name:'配置身份',exact:true}).click();await page.getByLabel('身份：'+label+'-身份',{exact:true}).check();await page.getByRole('button',{name:'确认分配',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'身份已分配'})).toContainText('身份已分配');await expect(row).toContainText('已开启');
+ await page.getByRole('button',{name:'退出',exact:true}).click();await page.getByRole('button',{name:'账号',exact:true}).click();await page.getByRole('button',{name:'退出登录',exact:true}).click();await personnelLogin(page,{account:label,password:'Synthetic@123'});await expect(page.getByRole('button',{name:'设置',exact:true})).toBeVisible();await page.getByRole('button',{name:'账号',exact:true}).click();await expect(page.getByText(label+'-身份',{exact:true})).toBeVisible();await expect(page.getByText(label+'-身份 · '+label+'-模板',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'设置',exact:true}).click();await page.getByRole('button',{name:'邀请成员',exact:true}).click();await page.getByRole('button',{name:'生成邀请码',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).not.toHaveValue('');await page.getByRole('button',{name:'关闭',exact:true}).click();
+ await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByLabel('搜索权限模板',{exact:true}).fill(label+'-模板');await page.getByRole('button',{name:label+'-模板',exact:true}).click();await page.getByLabel('中央权限：人员管理',{exact:true}).uncheck();await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('1 位成员');await page.getByRole('button',{name:'确认保存',exact:true}).click();
+ await page.getByRole('button',{name:'退出',exact:true}).click();await expect(page.getByRole('button',{name:'设置',exact:true})).toBeHidden();await page.goto('/app/admin');await expect(page.getByRole('alert')).toContainText('没有人员管理权限');
 });

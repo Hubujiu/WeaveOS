@@ -1,0 +1,212 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:11744) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:3044) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 7 tests using 1 worker
+
+(node:29972) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\personnel.component.spec.ts:126:1 › R3 creates a permission template with explicit empty configuration (6.5s)
+(node:4804) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [chromium] › apps\web\src\personnel.component.spec.ts:134:1 › R3 identity deletion protects references and explicitly confirms an unreferenced object (6.5s)
+(node:10328) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [chromium] › apps\web\src\personnel.component.spec.ts:141:1 › R3 department selected node filters members; rename and delete use actual version; root protected (6.6s)
+(node:11720) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  4 [chromium] › apps\web\src\personnel.component.spec.ts:151:1 › R3 complete assignment choices load beyond the first 100 templates (6.6s)
+(node:8632) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  5 [chromium] › apps\web\src\personnel.component.spec.ts:158:1 › R3 identity search and next page query the backend while keeping explicit selection (6.3s)
+(node:34936) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  6 [chromium] › apps\web\src\personnel.component.spec.ts:164:1 › R3 member identity filter and activity pagination are server controls (6.5s)
+(node:8984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  7 [chromium] › apps\web\src\personnel.component.spec.ts:170:1 › R3 invitation uses the existing invitationCode response and clears it on close (6.6s)
+
+
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:126:1 › R3 creates a permission template with explicit empty configuration
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: '新建权限模板', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('button', { name: '新建权限模板', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '新建权限模板', exact: true })
+
+
+      126 | test('R3 creates a permission template with explicit empty configuration',async({page})=>{
+      127 |  await admin(page);await page.getByRole('tab',{name:'权限模板',exact:true}).click();
+    > 128 |  await expect(page.getByRole('button',{name:'新建权限模板',exact:true})).toBeVisible();
+          |                                                                    ^
+      129 |  await page.getByRole('button',{name:'新建权限模板',exact:true}).click();await page.getByLabel('模板名称',{exact:true}).fill('空模板');
+      130 |  let body:unknown;await page.route('**/api/v1/personnel/templates',async route=>{body=route.request().postDataJSON();await route.fulfill({status:201,json:{code:'OK',message:'success',data:{...template,id:'00000000-0000-4000-8000-000000000012',name:'空模板',permissionCodes:[],affectedIdentities:0,affectedMembers:0},meta:null}});});
+      131 |  await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:128:68
+
+    Error Context: apps\web\test-results\personnel.component-R3-cre-5a2a7-xplicit-empty-configuration-chromium\error-context.md
+
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:134:1 › R3 identity deletion protects references and explicitly confirms an unreferenced object
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator: getByRole('button', { name: '删除身份', exact: true })
+    Expected: disabled
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('button', { name: '删除身份', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '删除身份', exact: true })
+
+
+      134 | test('R3 identity deletion protects references and explicitly confirms an unreferenced object',async({page})=>{
+      135 |  await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:identity.name,exact:true}).click();
+    > 136 |  await expect(page.getByRole('button',{name:'删除身份',exact:true})).toBeDisabled();
+          |                                                                  ^
+      137 |  await page.route('**/api/v1/personnel/identities?**',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:list([{...identity,affectedMembers:0}]),meta:null}}));await page.reload();await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:identity.name,exact:true}).click();
+      138 |  let version='';await page.route('**/api/v1/personnel/identities/'+identity.id+'?**',async route=>{version=new URL(route.request().url()).searchParams.get('version')||'';await route.fulfill({status:204});});
+      139 |  await page.getByRole('button',{name:'删除身份',exact:true}).click();await page.getByRole('button',{name:'确认删除',exact:true}).click();await expect.poll(()=>version).toBe('1');await expect(page.getByText('请选择身份查看配置',{exact:true})).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:136:66
+
+    Error Context: apps\web\test-results\personnel.component-R3-ide-b6596-irms-an-unreferenced-object-chromium\error-context.md
+
+  3) [chromium] › apps\web\src\personnel.component.spec.ts:141:1 › R3 department selected node filters members; rename and delete use actual version; root protected
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator: getByRole('button', { name: '删除部门', exact: true })
+    Expected: disabled
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('button', { name: '删除部门', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '删除部门', exact: true })
+
+
+      142 |  await fixture(page);const d={...department,id:'00000000-0000-4000-8000-000000000010',name:'研发部',parentId:department.id,isRoot:false,memberCount:0,childrenCount:0};
+      143 |  await page.route('**/api/v1/personnel/departments',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[department,d]},meta:null}}));await page.goto('/app/admin');
+    > 144 |  await page.getByRole('button',{name:/^企业/}).click();await expect(page.getByRole('button',{name:'删除部门',exact:true})).toBeDisabled();
+          |                                                                                                                      ^
+      145 |  const queries:string[]=[];await page.route('**/api/v1/personnel/members?**',async route=>{queries.push(new URL(route.request().url()).search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:list([member]),meta:null}});});
+      146 |  await page.getByRole('button',{name:/^研发部/}).click();await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('departmentId')===d.id)).toBe(true);
+      147 |  await page.getByRole('button',{name:'重命名部门',exact:true}).click();await page.getByLabel('部门名称',{exact:true}).fill('研发新名');
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:144:118
+
+    Error Context: apps\web\test-results\personnel.component-R3-dep-5e4a4-tual-version-root-protected-chromium\error-context.md
+
+  4) [chromium] › apps\web\src\personnel.component.spec.ts:151:1 › R3 complete assignment choices load beyond the first 100 templates
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('checkbox', { name: '模板：第101个模板', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('checkbox', { name: '模板：第101个模板', exact: true }) with timeout 5000ms
+      - waiting for getByRole('checkbox', { name: '模板：第101个模板', exact: true })
+
+
+      154 |  await page.route('**/api/v1/personnel/templates?**',async route=>{const pageNo=Number(new URL(route.request().url()).searchParams.get('page')||1);await route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:pageNo===2?[last]:choices,total:101,page:pageNo,pageSize:100},meta:null}});});
+      155 |  await page.goto('/app/admin');await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:identity.name,exact:true}).click();
+    > 156 |  await expect(page.getByRole('checkbox',{name:'模板：第101个模板',exact:true})).toBeVisible();
+          |                                                                          ^
+      157 | });
+      158 | test('R3 identity search and next page query the backend while keeping explicit selection',async({page})=>{
+      159 |  await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();const queries:string[]=[];
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:156:74
+
+    Error Context: apps\web\test-results\personnel.component-R3-com-f1bc0-ond-the-first-100-templates-chromium\error-context.md
+
+  5) [chromium] › apps\web\src\personnel.component.spec.ts:158:1 › R3 identity search and next page query the backend while keeping explicit selection
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      159 |  await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();const queries:string[]=[];
+      160 |  await page.route('**/api/v1/personnel/identities?**',async route=>{const url=new URL(route.request().url());queries.push(url.search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[identity],total:21,page:Number(url.searchParams.get('page')||1),pageSize:20},meta:null}});});
+    > 161 |  await page.getByLabel('搜索身份',{exact:true}).fill('共享');await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('search')==='共享')).toBe(true);
+          |                                                                                                                                            ^
+      162 |  await page.getByRole('button',{name:'下一页',exact:true}).click();await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('page')==='2')).toBe(true);
+      163 | });
+      164 | test('R3 member identity filter and activity pagination are server controls',async({page})=>{
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:161:140
+
+    Error Context: apps\web\test-results\personnel.component-R3-ide-0453d--keeping-explicit-selection-chromium\error-context.md
+
+  6) [chromium] › apps\web\src\personnel.component.spec.ts:164:1 › R3 member identity filter and activity pagination are server controls
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByLabel('筛选身份', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByLabel('筛选身份', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('筛选身份', { exact: true })
+
+
+      164 | test('R3 member identity filter and activity pagination are server controls',async({page})=>{
+      165 |  await admin(page);const memberQueries:string[]=[];await page.route('**/api/v1/personnel/members?**',async route=>{memberQueries.push(new URL(route.request().url()).search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:list([member]),meta:null}});});
+    > 166 |  await expect(page.getByLabel('筛选身份',{exact:true})).toBeVisible();await page.getByLabel('筛选身份',{exact:true}).selectOption(identity.id);await expect.poll(()=>memberQueries.some(q=>new URLSearchParams(q).get('identityId')===identity.id)).toBe(true);
+          |                                                     ^
+      167 |  await page.getByRole('tab',{name:'操作记录',exact:true}).click();const eventQueries:string[]=[];await page.route('**/api/v1/personnel/events?**',async route=>{const url=new URL(route.request().url());eventQueries.push(url.search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[],total:21,page:Number(url.searchParams.get('page')||1),pageSize:20},meta:null}});});
+      168 |  await page.getByLabel('搜索操作记录',{exact:true}).fill('活动');await expect(page.getByRole('button',{name:'下一页',exact:true})).toBeEnabled();await page.getByRole('button',{name:'下一页',exact:true}).click();await expect.poll(()=>eventQueries.some(q=>new URLSearchParams(q).get('page')==='2')).toBe(true);
+      169 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:166:53
+
+    Error Context: apps\web\test-results\personnel.component-R3-mem-16734-ination-are-server-controls-chromium\error-context.md
+
+  7) [chromium] › apps\web\src\personnel.component.spec.ts:170:1 › R3 invitation uses the existing invitationCode response and clears it on close
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: getByLabel('邀请码', { exact: true })
+    Expected: "synthetic-existing-contract"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" getByLabel('邀请码', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('邀请码', { exact: true })
+
+
+      170 | test('R3 invitation uses the existing invitationCode response and clears it on close',async({page})=>{
+      171 |  await admin(page);await page.route('**/api/v1/invitations',route=>route.fulfill({status:201,json:{code:'OK',message:'success',data:{id:'00000000-0000-4000-8000-000000000006',invitationCode:'synthetic-existing-contract'},meta:null}}));
+    > 172 |  await page.getByRole('button',{name:'邀请成员',exact:true}).click();await page.getByRole('button',{name:'生成邀请码',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).toHaveValue('synthetic-existing-contract');
+          |                                                                                                                                                                                     ^
+      173 |  await page.getByRole('button',{name:'关闭',exact:true}).click();await page.getByRole('button',{name:'邀请成员',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).toBeHidden();await expect(page.getByRole('button',{name:'生成邀请码',exact:true})).toBeVisible();
+      174 | });
+      175 |
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:172:181
+
+    Error Context: apps\web\test-results\personnel.component-R3-inv-6aa4f-onse-and-clears-it-on-close-chromium\error-context.md
+
+  7 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:126:1 › R3 creates a permission template with explicit empty configuration
+    [chromium] › apps\web\src\personnel.component.spec.ts:134:1 › R3 identity deletion protects references and explicitly confirms an unreferenced object
+    [chromium] › apps\web\src\personnel.component.spec.ts:141:1 › R3 department selected node filters members; rename and delete use actual version; root protected
+    [chromium] › apps\web\src\personnel.component.spec.ts:151:1 › R3 complete assignment choices load beyond the first 100 templates
+    [chromium] › apps\web\src\personnel.component.spec.ts:158:1 › R3 identity search and next page query the backend while keeping explicit selection
+    [chromium] › apps\web\src\personnel.component.spec.ts:164:1 › R3 member identity filter and activity pagination are server controls
+    [chromium] › apps\web\src\personnel.component.spec.ts:170:1 › R3 invitation uses the existing invitationCode response and clears it on close

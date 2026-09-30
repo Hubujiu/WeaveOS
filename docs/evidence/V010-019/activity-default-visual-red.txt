@@ -1,0 +1,128 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:17744) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:33544) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:33956) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › src\personnel.component.spec.ts:218:1 › Q25 default activity range omits optional empty timestamps in every initial request (1.5s)
+(node:3372) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [chromium] › src\personnel.component.spec.ts:224:1 › Figma original checkbox uses the original check SVG, 20px surface and 6px corners (7.3s)
+(node:31584) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [chromium] › src\personnel.component.spec.ts:230:1 › Figma shell original translucent material has no extra white foreground layers (7.5s)
+(node:8168) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  4 [chromium] › src\personnel.component.spec.ts:233:1 › R3 activity presents readable action, target and safe changes rather than raw protocol JSON (6.5s)
+
+
+  1) [chromium] › src\personnel.component.spec.ts:218:1 › Q25 default activity range omits optional empty timestamps in every initial request
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      220 |  await page.route('**/api/v1/personnel/events?**',async route=>{queries.push(new URL(route.request().url()).searchParams);await route.fulfill({status:200,json:{code:'OK',message:'success',data:list([]),meta:null}});});
+      221 |  await page.goto('/app/admin');await expect(page.getByLabel('搜索成员',{exact:true})).toBeVisible();
+    > 222 |  expect(queries.length).toBeGreaterThan(0);for(const query of queries){expect(query.has('from')).toBe(false);expect(query.has('to')).toBe(false);}
+          |                                                                                                  ^
+      223 | });
+      224 | test('Figma original checkbox uses the original check SVG, 20px surface and 6px corners',async({page})=>{
+      225 |  await admin(page);await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'企业管理',exact:true}).click();
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:222:98
+
+    Error Context: test-results\personnel.component-Q25-de-e62c6-ps-in-every-initial-request-chromium\error-context.md
+
+  2) [chromium] › src\personnel.component.spec.ts:224:1 › Figma original checkbox uses the original check SVG, 20px surface and 6px corners
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  getByLabel('中央权限：人员管理', { exact: true })
+    Expected: "none"
+    Received: "auto"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" getByLabel('中央权限：人员管理', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('中央权限：人员管理', { exact: true })
+        14 × locator resolved to <input checked type="checkbox" aria-label="中央权限：人员管理"/>
+           - unexpected value "auto"
+
+
+      224 | test('Figma original checkbox uses the original check SVG, 20px surface and 6px corners',async({page})=>{
+      225 |  await admin(page);await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'企业管理',exact:true}).click();
+    > 226 |  const box=page.getByLabel('中央权限：人员管理',{exact:true});await expect(box).toHaveCSS('appearance','none');await expect(box).toHaveCSS('border-radius','6px');await expect(box).toHaveCSS('width','20px');await expect(box).toHaveCSS('background-size','14px 14px');
+          |                                                                        ^
+      227 |  expect(await box.evaluate(node=>getComputedStyle(node).backgroundImage)).toContain('data:image/svg+xml;base64,'+readFileSync(new URL('./assets/admin-check.svg',import.meta.url)).toString('base64'));
+      228 |  await box.uncheck();await expect(box).toHaveCSS('background-image','none');
+      229 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:226:72
+
+    Error Context: test-results\personnel.component-Figma--0641f-0px-surface-and-6px-corners-chromium\error-context.md
+
+  3) [chromium] › src\personnel.component.spec.ts:230:1 › Figma shell original translucent material has no extra white foreground layers
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.admin-header')
+    Expected: "rgba(0, 0, 0, 0)"
+    Received: "rgba(255, 255, 255, 0.92)"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" locator('.admin-header') with timeout 5000ms
+      - waiting for locator('.admin-header')
+        14 × locator resolved to <header class="admin-header">…</header>
+           - unexpected value "rgba(255, 255, 255, 0.92)"
+
+
+      229 | });
+      230 | test('Figma shell original translucent material has no extra white foreground layers',async({page})=>{
+    > 231 |  await admin(page);await expect(page.locator('.admin-header')).toHaveCSS('background-color','rgba(0, 0, 0, 0)');await expect(page.locator('.admin-sidebar')).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
+          |                                                                ^
+      232 | });
+      233 | test('R3 activity presents readable action, target and safe changes rather than raw protocol JSON',async({page})=>{
+      234 |  await fixture(page);const event={id:'00000000-0000-4000-8000-000000000020',occurredAt:'2026-09-30T00:00:00Z',actorAccount:'synthetic-operator',action:'DEPARTMENT_UPDATED',objectType:'department',objectId:department.id,summary:{before:{name:'研发部',parentId:department.id},after:{name:'研发中心',parentId:department.id}},outcome:'success'};
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:231:64
+
+    Error Context: test-results\personnel.component-Figma--ce6ba-tra-white-foreground-layers-chromium\error-context.md
+
+  4) [chromium] › src\personnel.component.spec.ts:233:1 › R3 activity presents readable action, target and safe changes rather than raw protocol JSON
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('row').filter({ hasText: 'synthetic-operator' })
+    Expected substring: "重命名部门"
+    Received string:    "2026/9/30 08:00:00synthetic-operatorDEPARTMENT_UPDATEDdepartment{\"before\":{\"name\":\"研发部\",\"parentId\":\"00000000-0000-4000-8000-000000000004\"},\"after\":{\"name\":\"研发中心\",\"parentId\":\"00000000-0000-4000-8000-000000000004\"}}已完成"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('row').filter({ hasText: 'synthetic-operator' }) with timeout 5000ms
+      - waiting for getByRole('row').filter({ hasText: 'synthetic-operator' })
+        14 × locator resolved to <tr>…</tr>
+           - unexpected value "2026/9/30 08:00:00synthetic-operatorDEPARTMENT_UPDATEDdepartment{"before":{"name":"研发部","parentId":"00000000-0000-4000-8000-000000000004"},"after":{"name":"研发中心","parentId":"00000000-0000-4000-8000-000000000004"}}已完成"
+
+
+      234 |  await fixture(page);const event={id:'00000000-0000-4000-8000-000000000020',occurredAt:'2026-09-30T00:00:00Z',actorAccount:'synthetic-operator',action:'DEPARTMENT_UPDATED',objectType:'department',objectId:department.id,summary:{before:{name:'研发部',parentId:department.id},after:{name:'研发中心',parentId:department.id}},outcome:'success'};
+      235 |  await page.route('**/api/v1/personnel/events?**',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:list([event]),meta:null}}));await page.goto('/app/admin');await page.getByRole('tab',{name:'操作记录',exact:true}).click();
+    > 236 |  const row=page.getByRole('row').filter({hasText:'synthetic-operator'});await expect(row).toContainText('重命名部门');await expect(row).toContainText('研发中心');await expect(row).toContainText('研发部 → 研发中心');await expect(row).not.toContainText('DEPARTMENT_UPDATED');await expect(row).not.toContainText('parentId');
+          |                                                                                           ^
+      237 |  await expect(page.getByRole('option',{name:'分配身份',exact:true})).toHaveAttribute('value','MEMBER_IDENTITIES_UPDATED');
+      238 | });
+      239 |
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:236:91
+
+    Error Context: test-results\personnel.component-R3-act-cbd1c-ther-than-raw-protocol-JSON-chromium\error-context.md
+
+  4 failed
+    [chromium] › src\personnel.component.spec.ts:218:1 › Q25 default activity range omits optional empty timestamps in every initial request
+    [chromium] › src\personnel.component.spec.ts:224:1 › Figma original checkbox uses the original check SVG, 20px surface and 6px corners
+    [chromium] › src\personnel.component.spec.ts:230:1 › Figma shell original translucent material has no extra white foreground layers
+    [chromium] › src\personnel.component.spec.ts:233:1 › R3 activity presents readable action, target and safe changes rather than raw protocol JSON
