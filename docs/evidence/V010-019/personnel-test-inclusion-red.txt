@@ -1,0 +1,607 @@
+TAP version 13
+# Subtest: Q25 cold audit migration precedes hot migration: infra/acceptance/run.mjs
+ok 1 - Q25 cold audit migration precedes hot migration: infra/acceptance/run.mjs
+  ---
+  duration_ms: 0.8232
+  type: 'test'
+  ...
+# Subtest: Q25 cold audit migration precedes hot migration: infra/runtime/run.mjs
+ok 2 - Q25 cold audit migration precedes hot migration: infra/runtime/run.mjs
+  ---
+  duration_ms: 0.2416
+  type: 'test'
+  ...
+# Subtest: Q25 cold audit migration precedes hot migration: .github/workflows/ci.yml
+ok 3 - Q25 cold audit migration precedes hot migration: .github/workflows/ci.yml
+  ---
+  duration_ms: 0.6503
+  type: 'test'
+  ...
+# Subtest: Q25 cold audit migration precedes hot migration: infra/server/deploy/receive.mjs
+ok 4 - Q25 cold audit migration precedes hot migration: infra/server/deploy/receive.mjs
+  ---
+  duration_ms: 0.1906
+  type: 'test'
+  ...
+# Subtest: acceptance component count derives from the actual Playwright report
+ok 5 - acceptance component count derives from the actual Playwright report
+  ---
+  duration_ms: 0.4305
+  type: 'test'
+  ...
+# Subtest: Q25 personnel API regression is included in the real HTTPS entrypoint
+not ok 6 - Q25 personnel API regression is included in the real HTTPS entrypoint
+  ---
+  duration_ms: 1.4074
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-019\\tests\\governance\\personnel-release.test.mjs:17:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /import ['"]\.\/personnel-api\.mjs['"]/. Input:
+    
+    "// Preserve V010-009's independent HTTP cases before the current contract suite.\n" +
+      "import './expanded-api.mjs';\n" +
+      "import assert from 'node:assert/strict';\n" +
+      "import { readFileSync } from 'node:fs';\n" +
+      "import { test } from 'node:test';\n" +
+      "import { assertResponseSchema } from './response-schema.mjs';\n" +
+      '\n' +
+      '// Expected semantics are from PRD FR-001..018 and ADR-001/002, not BFF output.\n' +
+      '// V010-002 ratified these routes; reused invitation is the registered 409 conflict.\n' +
+      "const routes = JSON.parse(readFileSync(new URL('./bindings.json', import.meta.url), 'utf8'));\n" +
+      "const base = process.env.WEAVEOS_API_URL ?? 'http://127.0.0.1:8080';\n" +
+      "const password = 'Acceptance@Test123'; // Synthetic test value, never a real credential.\n" +
+      'function fixtures() {\n' +
+      "  assert.ok(process.env.WEAVEOS_ACCEPTANCE_FIXTURES, 'BLOCKED: V010-003 must generate isolated acceptance fixtures');\n" +
+      "  return JSON.parse(readFileSync(process.env.WEAVEOS_ACCEPTANCE_FIXTURES, 'utf8'));\n" +
+      '}\n' +
+      "async function send(path, method = 'GET', data, session, extra = {}) {\n" +
+      '  const response = await fetch(new URL(path, base), {\n' +
+      "    method, redirect: 'manual', signal: AbortSignal.timeout(10000),\n" +
+      "    headers: { Origin: base, ...(data === undefined ? {} : { 'Content-Type': 'application/json' }),\n" +
+      "      ...(session ? { Cookie: session.cookie, 'X-CSRF-Token': session.csrf } : {}), ...extra },\n" +
+      '    ...(data === undefined ? {} : { body: JSON.stringify(data) }),\n' +
+      '  });\n' +
+      '  await assertResponseSchema(response, path, method);\n' +
+      '  return response;\n' +
+      '}\n' +
+      'async function login(account) {\n' +
+      "  const response = await send(routes.login, 'POST', account);\n" +
+      "  assert.equal(response.status, 201, 'valid credentials create a session');\n" +
+      '  const body = await response.json();\n' +
+      "  assert.equal(body.code, 'OK');\n" +
+      '  const cookies = response.headers.getSetCookie();\n' +
+      "  const cookie = cookies.find(value => value.startsWith('__Host-session='));\n" +
+      "  const csrfCookie = cookies.find(value => value.startsWith('__Host-csrf='));\n" +
+      "  assert.ok(cookie, 'server must issue __Host-session');\n" +
+      "  assert.ok(csrfCookie, 'server must issue independent __Host-csrf');\n" +
+      '  assert.ok(/;\\s*HttpOnly(?:;|$)/i.test(cookie));\n' +
+      '  assert.ok(!/HttpOnly/i.test(csrfCookie));\n' +
+      '  for (const value of [cookie, csrfCookie]) {\n' +
+      '    assert.ok(/;\\s*Secure(?:;|$)/i.test(value));\n' +
+      '    assert.ok(/SameSite=Lax/i.test(value));\n' +
+      '    assert.ok(/Path=\\/(?:;|$)/i.test(value));\n' +
+      '    assert.ok(/Max-Age=3600/i.test(value));\n' +
+      '    assert.ok(!/;\\s*Domain=/i.test(value));\n' +
+      '  }\n' +
+      "  assert.equal(body.data.csrfToken, undefined, 'login JSON must not return csrfToken');\n" +
+      "  const csrf = csrfCookie.split(';')[0].slice('__Host-csrf='.length);\n" +
+      '  assert.ok(/^[A-Za-z0-9_-]{43}$/.test(csrf));\n' +
+      "  return { cookie: [cookie, csrfCookie].map(value => value.split(';')[0]).join('; '), csrf };\n" +
+      '}\n' +
+      'function unique(label) { return `acceptance-${label}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`; }\n' +
+      '\n' +
+      "test('FR-007: anonymous current-session request is unauthorized', async () => {\n" +
+      '  assert.equal((await send(routes.current)).status, 401);\n' +
+      '});\n' +
+      "test('API-14: forged identity headers cannot authenticate a caller', async () => {\n" +
+      "  const response = await send(routes.current, 'GET', undefined, undefined, { 'X-User-Id': 'bootstrap-admin', 'X-Role': 'ALL' });\n" +
+      '  assert.equal(response.status, 401);\n' +
+      '});\n' +
+      "test('FR-001: wrong credentials never create a session or leak passwords', async () => {\n" +
+      "  const response = await send(routes.login, 'POST', { account: 'definitely-unknown-acceptance', password });\n" +
+      '  assert.equal(response.status, 401);\n' +
+      "  assert.equal(response.headers.get('set-cookie'), null);\n" +
+      '  const body = await response.json();\n' +
+      "  assert.deepEqual(Object.keys(body).sort(), ['code', 'data', 'message', 'meta']);\n" +
+      '  assert.equal(body.data, null);\n' +
+      '  assert.ok(!JSON.stringify(body).includes(password));\n' +
+      '});\n' +
+      "for (const [label, invitationCode] of [['missing', undefined], ['invalid', 'synthetic-invalid-code']]) {\n" +
+      '  test(`FR-003: ${label} invitation cannot create an account`, async () => {\n' +
+      "    const response = await send(routes.register, 'POST', { account: unique(label), password, invitationCode });\n" +
+      '    assert.equal(response.status, 400);\n' +
+      "    assert.equal(response.headers.get('set-cookie'), null);\n" +
+      '  });\n' +
+      '}\n' +
+      "for (const [label, invalid] of [['uppercase', 'lowercase@123'], ['lowercase', 'UPPERCASE@123'], ['digit', 'NoDigits@Here'], ['special', 'NoSpecial123']]) {\n" +
+      '  test(`FR-018: password missing ${label} is rejected`, async () => {\n' +
+      '    const f = fixtures();\n' +
+      "    const response = await send(routes.register, 'POST', { account: unique(label), password: invalid, invitationCode: f.invitations.passwordPolicy });\n" +
+      '    assert.equal(response.status, 400);\n' +
+      '  });\n' +
+      '}\n' +
+      "test('FR-003/017/001/005/009: registration, explicit login, restore and logout form a real HTTP lifecycle', async () => {\n" +
+      "  const f = fixtures(), account = unique('lifecycle');\n" +
+      "  const registration = await send(routes.register, 'POST', { account, password, invitationCode: f.invitations.valid });\n" +
+      '  assert.equal(registration.status, 201);\n' +
+      "  assert.equal(registration.headers.get('set-cookie'), null, 'registration must not log in');\n" +
+      '  assert.equal((await send(routes.current)).status, 401);\n' +
+      '  const session = await login({ account, password });\n' +
+      "  assert.equal((await send(routes.current, 'GET', undefined, session)).status, 200);\n" +
+      "  assert.equal((await send(routes.current, 'DELETE', undefined, session)).status, 204);\n" +
+      "  assert.equal((await send(routes.current, 'GET', undefined, session)).status, 401);\n" +
+      "  const reuse = await send(routes.register, 'POST', { account: unique('reuse'), password, invitationCode: f.invitations.valid });\n" +
+      '  assert.equal(reuse.status, 409);\n' +
+      '});\n' +
+      "test('FR-003: concurrent use of one invitation permits exactly one success', async () => {\n" +
+      '  const f = fixtures();\n' +
+      "  const responses = await Promise.all([0, 1].map(n => send(routes.register, 'POST', { account: unique(`race${n}`), password, invitationCode: f.invitations.concurrent })));\n" +
+      '  assert.deepEqual(responses.map(r => r.status).sort(), [201, 409]);\n' +
+      '});\n' +
+      "test('FR-002/003: duplicate account failure does not consume an invitation', async () => {\n" +
+      '  const f = fixtures();\n' +
+      "  const duplicate = await send(routes.register, 'POST', { account: f.user.account, password, invitationCode: f.invitations.rollback });\n" +
+      '  assert.equal(duplicate.status, 409);\n' +
+      "  const retry = await send(routes.register, 'POST', { account: unique('rollback'), password, invitationCode: f.invitations.rollback });\n" +
+      '  assert.equal(retry.status, 201);\n' +
+      '});\n' +
+      "test('FR-010: a disabled account cannot log in', async () => {\n" +
+      '  const f = fixtures();\n' +
+      "  assert.equal((await send(routes.login, 'POST', f.disabled)).status, 401);\n" +
+      '});\n' +
+      "test('FR-013: consecutive failures do not add a hidden account-lock feature', async () => {\n" +
+      '  const f = fixtures();\n' +
+      "  for (let i = 0; i < 6; i++) assert.equal((await send(routes.login, 'POST', { account: f.user.account, password: 'Wrong@Test123' })).status, 401);\n" +
+      '  await login({ account: f.user.account, password: f.user.password });\n' +
+      '});\n' +
+      "test('FR-016: only Bootstrap Admin can generate invitations', async () => {\n" +
+      '  const f = fixtures();\n' +
+      '  const member = await login({ account: f.user.account, password: f.user.password });\n' +
+      "  assert.equal((await send(routes.invitations, 'POST', {}, member)).status, 403);\n" +
+      '  const admin = await login(f.admin);\n' +
+      "  assert.equal((await send(routes.invitations, 'POST', {}, admin)).status, 201);\n" +
+      '});\n' +
+      "test('API-14: authenticated write without CSRF token is forbidden', async () => {\n" +
+      '  const f = fixtures(), admin = await login(f.admin);\n' +
+      "  assert.equal((await send(routes.invitations, 'POST', {}, admin, { 'X-CSRF-Token': '' })).status, 403);\n" +
+      '});\n' +
+      "test('FR-012/016: admin resets password, ordinary user cannot; response never contains the reset password', async () => {\n" +
+      '  const f = fixtures();\n' +
+      "  const path = routes.reset.replace('{userId}', encodeURIComponent(f.resetTarget.id));\n" +
+      '  const user = await login({ account: f.user.account, password: f.user.password });\n' +
+      "  assert.equal((await send(path, 'POST', {}, user)).status, 403);\n" +
+      '  const admin = await login(f.admin);\n' +
+      "  const response = await send(path, 'POST', {}, admin);\n" +
+      '  assert.equal(response.status, 200);\n' +
+      "  assert.ok(!(await response.text()).includes('Abc@123456'));\n" +
+      "  await login({ account: f.resetTarget.account, password: 'Abc@123456' });\n" +
+      '});\n' +
+      '\n' +
+      "test('Q13: non-ASCII and space-only special class fail with approved field violations', async () => {\n" +
+      '  const f = fixtures();\n' +
+      "  for (const invalid of ['Aa1!中', 'Aa1 ', 'Aa1!\\n']) {\n" +
+      "    const response = await send(routes.register, 'POST', { account: unique('ascii'), password: invalid, invitationCode: f.invitations.passwordPolicy });\n" +
+      '    assert.equal(response.status, 400);\n' +
+      '    const body = await response.json();\n' +
+      "    assert.equal(body.code, 'COMMON_VALIDATION_FAILED');\n" +
+      "    assert.ok(body.data.violations.some(v => v.field === 'password' && v.code === 'AUTH_PASSWORD_POLICY_VIOLATION'));\n" +
+      '  }\n' +
+      '});\n' +
+      "test('FR-002/Q13: length applies after ordinary-space trim; four-character password is sufficient', async () => {\n" +
+      "  const f = fixtures(), account = '测'.repeat(254);\n" +
+      "  const response = await send(routes.register, 'POST', { account: `  ${account}  `, password: 'Aa1!', invitationCode: f.invitations.passwordPolicy });\n" +
+      '  assert.equal(response.status, 201);\n' +
+      '  assert.equal((await response.json()).data.account, account);\n' +
+      "  const session = await login({ account: ` ${account} `, password: 'Aa1!' });\n" +
+      "  assert.equal((await send(routes.current, 'HEAD', undefined, session)).status, 200);\n" +
+      '});\n' +
+      "test('FR-002: distinct case-sensitive accounts both register and authenticate independently', async () => {\n" +
+      "  const admin = await login(fixtures().admin), account = unique('Case');\n" +
+      '  for (const name of [account, account.toLowerCase()]) {\n' +
+      "    const invitation = await send(routes.invitations, 'POST', {}, admin);\n" +
+      '    assert.equal(invitation.status, 201);\n' +
+      '    const invitationCode = (await invitation.json()).data.invitationCode;\n' +
+      "    assert.equal((await send(routes.register, 'POST', { account: name, password: 'Aa1!', invitationCode })).status, 201);\n" +
+      "    await login({ account: name, password: 'Aa1!' });\n" +
+      '  }\n' +
+      '});\n' +
+      'for (const [label, body, h'... 1293 more characters
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    // Preserve V010-009's independent HTTP cases before the current contract suite.
+    import './expanded-api.mjs';
+    import assert from 'node:assert/strict';
+    import { readFileSync } from 'node:fs';
+    import { test } from 'node:test';
+    import { assertResponseSchema } from './response-schema.mjs';
+    
+    // Expected semantics are from PRD FR-001..018 and ADR-001/002, not BFF output.
+    // V010-002 ratified these routes; reused invitation is the registered 409 conflict.
+    const routes = JSON.parse(readFileSync(new URL('./bindings.json', import.meta.url), 'utf8'));
+    const base = process.env.WEAVEOS_API_URL ?? 'http://127.0.0.1:8080';
+    const password = 'Acceptance@Test123'; // Synthetic test value, never a real credential.
+    function fixtures() {
+      assert.ok(process.env.WEAVEOS_ACCEPTANCE_FIXTURES, 'BLOCKED: V010-003 must generate isolated acceptance fixtures');
+      return JSON.parse(readFileSync(process.env.WEAVEOS_ACCEPTANCE_FIXTURES, 'utf8'));
+    }
+    async function send(path, method = 'GET', data, session, extra = {}) {
+      const response = await fetch(new URL(path, base), {
+        method, redirect: 'manual', signal: AbortSignal.timeout(10000),
+        headers: { Origin: base, ...(data === undefined ? {} : { 'Content-Type': 'application/json' }),
+          ...(session ? { Cookie: session.cookie, 'X-CSRF-Token': session.csrf } : {}), ...extra },
+        ...(data === undefined ? {} : { body: JSON.stringify(data) }),
+      });
+      await assertResponseSchema(response, path, method);
+      return response;
+    }
+    async function login(account) {
+      const response = await send(routes.login, 'POST', account);
+      assert.equal(response.status, 201, 'valid credentials create a session');
+      const body = await response.json();
+      assert.equal(body.code, 'OK');
+      const cookies = response.headers.getSetCookie();
+      const cookie = cookies.find(value => value.startsWith('__Host-session='));
+      const csrfCookie = cookies.find(value => value.startsWith('__Host-csrf='));
+      assert.ok(cookie, 'server must issue __Host-session');
+      assert.ok(csrfCookie, 'server must issue independent __Host-csrf');
+      assert.ok(/;\s*HttpOnly(?:;|$)/i.test(cookie));
+      assert.ok(!/HttpOnly/i.test(csrfCookie));
+      for (const value of [cookie, csrfCookie]) {
+        assert.ok(/;\s*Secure(?:;|$)/i.test(value));
+        assert.ok(/SameSite=Lax/i.test(value));
+        assert.ok(/Path=\/(?:;|$)/i.test(value));
+        assert.ok(/Max-Age=3600/i.test(value));
+        assert.ok(!/;\s*Domain=/i.test(value));
+      }
+      assert.equal(body.data.csrfToken, undefined, 'login JSON must not return csrfToken');
+      const csrf = csrfCookie.split(';')[0].slice('__Host-csrf='.length);
+      assert.ok(/^[A-Za-z0-9_-]{43}$/.test(csrf));
+      return { cookie: [cookie, csrfCookie].map(value => value.split(';')[0]).join('; '), csrf };
+    }
+    function unique(label) { return `acceptance-${label}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`; }
+    
+    test('FR-007: anonymous current-session request is unauthorized', async () => {
+      assert.equal((await send(routes.current)).status, 401);
+    });
+    test('API-14: forged identity headers cannot authenticate a caller', async () => {
+      const response = await send(routes.current, 'GET', undefined, undefined, { 'X-User-Id': 'bootstrap-admin', 'X-Role': 'ALL' });
+      assert.equal(response.status, 401);
+    });
+    test('FR-001: wrong credentials never create a session or leak passwords', async () => {
+      const response = await send(routes.login, 'POST', { account: 'definitely-unknown-acceptance', password });
+      assert.equal(response.status, 401);
+      assert.equal(response.headers.get('set-cookie'), null);
+      const body = await response.json();
+      assert.deepEqual(Object.keys(body).sort(), ['code', 'data', 'message', 'meta']);
+      assert.equal(body.data, null);
+      assert.ok(!JSON.stringify(body).includes(password));
+    });
+    for (const [label, invitationCode] of [['missing', undefined], ['invalid', 'synthetic-invalid-code']]) {
+      test(`FR-003: ${label} invitation cannot create an account`, async () => {
+        const response = await send(routes.register, 'POST', { account: unique(label), password, invitationCode });
+        assert.equal(response.status, 400);
+        assert.equal(response.headers.get('set-cookie'), null);
+      });
+    }
+    for (const [label, invalid] of [['uppercase', 'lowercase@123'], ['lowercase', 'UPPERCASE@123'], ['digit', 'NoDigits@Here'], ['special', 'NoSpecial123']]) {
+      test(`FR-018: password missing ${label} is rejected`, async () => {
+        const f = fixtures();
+        const response = await send(routes.register, 'POST', { account: unique(label), password: invalid, invitationCode: f.invitations.passwordPolicy });
+        assert.equal(response.status, 400);
+      });
+    }
+    test('FR-003/017/001/005/009: registration, explicit login, restore and logout form a real HTTP lifecycle', async () => {
+      const f = fixtures(), account = unique('lifecycle');
+      const registration = await send(routes.register, 'POST', { account, password, invitationCode: f.invitations.valid });
+      assert.equal(registration.status, 201);
+      assert.equal(registration.headers.get('set-cookie'), null, 'registration must not log in');
+      assert.equal((await send(routes.current)).status, 401);
+      const session = await login({ account, password });
+      assert.equal((await send(routes.current, 'GET', undefined, session)).status, 200);
+      assert.equal((await send(routes.current, 'DELETE', undefined, session)).status, 204);
+      assert.equal((await send(routes.current, 'GET', undefined, session)).status, 401);
+      const reuse = await send(routes.register, 'POST', { account: unique('reuse'), password, invitationCode: f.invitations.valid });
+      assert.equal(reuse.status, 409);
+    });
+    test('FR-003: concurrent use of one invitation permits exactly one success', async () => {
+      const f = fixtures();
+      const responses = await Promise.all([0, 1].map(n => send(routes.register, 'POST', { account: unique(`race${n}`), password, invitationCode: f.invitations.concurrent })));
+      assert.deepEqual(responses.map(r => r.status).sort(), [201, 409]);
+    });
+    test('FR-002/003: duplicate account failure does not consume an invitation', async () => {
+      const f = fixtures();
+      const duplicate = await send(routes.register, 'POST', { account: f.user.account, password, invitationCode: f.invitations.rollback });
+      assert.equal(duplicate.status, 409);
+      const retry = await send(routes.register, 'POST', { account: unique('rollback'), password, invitationCode: f.invitations.rollback });
+      assert.equal(retry.status, 201);
+    });
+    test('FR-010: a disabled account cannot log in', async () => {
+      const f = fixtures();
+      assert.equal((await send(routes.login, 'POST', f.disabled)).status, 401);
+    });
+    test('FR-013: consecutive failures do not add a hidden account-lock feature', async () => {
+      const f = fixtures();
+      for (let i = 0; i < 6; i++) assert.equal((await send(routes.login, 'POST', { account: f.user.account, password: 'Wrong@Test123' })).status, 401);
+      await login({ account: f.user.account, password: f.user.password });
+    });
+    test('FR-016: only Bootstrap Admin can generate invitations', async () => {
+      const f = fixtures();
+      const member = await login({ account: f.user.account, password: f.user.password });
+      assert.equal((await send(routes.invitations, 'POST', {}, member)).status, 403);
+      const admin = await login(f.admin);
+      assert.equal((await send(routes.invitations, 'POST', {}, admin)).status, 201);
+    });
+    test('API-14: authenticated write without CSRF token is forbidden', async () => {
+      const f = fixtures(), admin = await login(f.admin);
+      assert.equal((await send(routes.invitations, 'POST', {}, admin, { 'X-CSRF-Token': '' })).status, 403);
+    });
+    test('FR-012/016: admin resets password, ordinary user cannot; response never contains the reset password', async () => {
+      const f = fixtures();
+      const path = routes.reset.replace('{userId}', encodeURIComponent(f.resetTarget.id));
+      const user = await login({ account: f.user.account, password: f.user.password });
+      assert.equal((await send(path, 'POST', {}, user)).status, 403);
+      const admin = await login(f.admin);
+      const response = await send(path, 'POST', {}, admin);
+      assert.equal(response.status, 200);
+      assert.ok(!(await response.text()).includes('Abc@123456'));
+      await login({ account: f.resetTarget.account, password: 'Abc@123456' });
+    });
+    
+    test('Q13: non-ASCII and space-only special class fail with approved field violations', async () => {
+      const f = fixtures();
+      for (const invalid of ['Aa1!中', 'Aa1 ', 'Aa1!\n']) {
+        const response = await send(routes.register, 'POST', { account: unique('ascii'), password: invalid, invitationCode: f.invitations.passwordPolicy });
+        assert.equal(response.status, 400);
+        const body = await response.json();
+        assert.equal(body.code, 'COMMON_VALIDATION_FAILED');
+        assert.ok(body.data.violations.some(v => v.field === 'password' && v.code === 'AUTH_PASSWORD_POLICY_VIOLATION'));
+      }
+    });
+    test('FR-002/Q13: length applies after ordinary-space trim; four-character password is sufficient', async () => {
+      const f = fixtures(), account = '测'.repeat(254);
+      const response = await send(routes.register, 'POST', { account: `  ${account}  `, password: 'Aa1!', invitationCode: f.invitations.passwordPolicy });
+      assert.equal(response.status, 201);
+      assert.equal((await response.json()).data.account, account);
+      const session = await login({ account: ` ${account} `, password: 'Aa1!' });
+      assert.equal((await send(routes.current, 'HEAD', undefined, session)).status, 200);
+    });
+    test('FR-002: distinct case-sensitive accounts both register and authenticate independently', async () => {
+      const admin = await login(fixtures().admin), account = unique('Case');
+      for (const name of [account, account.toLowerCase()]) {
+        const invitation = await send(routes.invitations, 'POST', {}, admin);
+        assert.equal(invitation.status, 201);
+        const invitationCode = (await invitation.json()).data.invitationCode;
+        assert.equal((await send(routes.register, 'POST', { account: name, password: 'Aa1!', invitationCode })).status, 201);
+        await login({ account: name, password: 'Aa1!' });
+      }
+    });
+    for (const [label, body, headers, status] of [
+      ['wrong media', { account: 'synthetic', password: 'Aa1!' }, { 'Content-Type': 'text/plain' }, 415],
+      ['foreign source', { account: 'synthetic', password: 'Aa1!' }, { Origin: 'https://untrusted.invalid' }, 403],
+      ['unknown write field', { account: 'synthetic', password: 'Aa1!', isBootstrapAdmin: true }, {}, 400],
+    ]) test(`ADR-002 protocol schema: ${label}`, async () => {
+      const response = await send(routes.login, 'POST', body, undefined, headers);
+      assert.equal(response.status, status);
+      assert.equal(response.headers.get('set-cookie'), null);
+    });
+    test('Administrator target-not-found has the declared404 schema', async () => {
+      const admin = await login(fixtures().admin);
+      assert.equal((await send(routes.reset.replace('{userId}', '550e8400-e29b-41d4-a716-446655440099'), 'POST', {}, admin)).status, 404);
+    });
+    test('Successful login replaces an incoming Session instead of fixing its identifier', async () => {
+      const incoming = await login(fixtures().user);
+      const response = await send(routes.login, 'POST', fixtures().user, incoming);
+      assert.equal(response.status, 201);
+      const issued = response.headers.getSetCookie().find(value => value.startsWith('__Host-session=')).split(';')[0];
+      assert.ok(!incoming.cookie.split('; ').includes(issued));
+    });
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-019/tests/governance/personnel-release.test.mjs:18:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Q25 pinned role upgrade is executed with real PostgreSQL by the product workflow
+not ok 7 - Q25 pinned role upgrade is executed with real PostgreSQL by the product workflow
+  ---
+  duration_ms: 0.4735
+  type: 'test'
+  location: 'D:\\Workspace\\WeaveOS-worktrees\\V010-019\\tests\\governance\\personnel-release.test.mjs:20:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /node --test infra\/server\/deploy\/migrate\.test\.mjs infra\/server\/deploy\/personnel-upgrade\.test\.mjs/. Input:
+    
+    'name: v0.1.0 product acceptance\n' +
+      'on:\n' +
+      '  pull_request:\n' +
+      '  workflow_dispatch:\n' +
+      '    inputs:\n' +
+      '      verify_release:\n' +
+      '        description: Verify complete evidence after V010-008 user signoff\n' +
+      '        type: boolean\n' +
+      '        default: false\n' +
+      '  workflow_call:\n' +
+      '    inputs:\n' +
+      '      verify_release:\n' +
+      '        type: boolean\n' +
+      '        default: false\n' +
+      'permissions:\n' +
+      '  contents: read\n' +
+      'jobs:\n' +
+      '  product:\n' +
+      '    runs-on: ubuntu-24.04\n' +
+      '    timeout-minutes: 60\n' +
+      '    steps:\n' +
+      '      - name: Prepare hosted Linux disk for browser images and vulnerability database\n' +
+      '        shell: bash\n' +
+      '        run: |\n' +
+      '          test "$RUNNER_ENVIRONMENT" = "github-hosted"\n' +
+      '          test "$RUNNER_OS" = "Linux"\n' +
+      '          sudo rm -rf -- /usr/local/lib/android\n' +
+      '          df -h /\n' +
+      '      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262\n' +
+      '        with:\n' +
+      '          persist-credentials: false\n' +
+      '          fetch-depth: 0\n' +
+      '      - uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4\n' +
+      '        with:\n' +
+      '          version: v29.6.2\n' +
+      '          daemon-config: |\n' +
+      '            {"features":{"containerd-snapshotter":true}}\n' +
+      '      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020\n' +
+      '        with:\n' +
+      '          node-version-file: .node-version\n' +
+      '      - name: Migrations, HTTPS and real product acceptance\n' +
+      '        # postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 and redis:8.2.10@sha256:164c759a0c342ee69d08fc99219382b0fd682181465c0df2e0e6911f4c85d73c in compose.json.\n' +
+      '        # Runner executes playwright test tests/acceptance using its HTTPS config.\n' +
+      '        run: node infra/acceptance/run.mjs\n' +
+      '      - name: Runtime configuration, crypto, failure handling and dependency security\n' +
+      '        run: node --test infra/runtime/rollback-security.test.mjs infra/runtime/artifacts.test.mjs infra/runtime/storage-version.test.mjs infra/runtime/config.test.mjs infra/runtime/backup-crypto.test.mjs infra/runtime/recovery.test.mjs infra/runtime/monitor.test.mjs infra/runtime/cli.test.mjs infra/runtime/security.test.mjs\n' +
+      '      - name: Build once and verify immutable runtime, restore, rollback and browsers\n' +
+      '        run: node infra/runtime/run.mjs\n' +
+      '      - name: Automatic deployment migrations with isolated real PostgreSQL\n' +
+      '        env:\n' +
+      '          WEAVEOS_TEST_GOOSE: .work/runtime/tools/goose\n' +
+      '        run: node --test infra/server/deploy/migrate.test.mjs\n' +
+      '      - name: Verify deployment packaging from the same accepted OCI artifacts\n' +
+      '        run: node infra/server/deploy/package.mjs .work/runtime/export/BUILD.json .work/deployment\n' +
+      '      - name: Complete check-release gate including user signoff\n' +
+      '        if: inputs.verify_release == true\n' +
+      '        run: node scripts/check-release.mjs\n' +
+      '      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4\n' +
+      '        if: always()\n' +
+      '        with:\n' +
+      '          name: product-acceptance-${{ github.run_id }}\n' +
+      '          path: .work/acceptance/public/\n' +
+      '          include-hidden-files: true\n' +
+      '          if-no-files-found: error\n' +
+      '          retention-days: 14\n' +
+      '      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4\n' +
+      '        if: always()\n' +
+      '        with:\n' +
+      '          name: runtime-evidence-${{ github.run_id }}\n' +
+      '          path: .work/runtime/public/\n' +
+      '          include-hidden-files: true\n' +
+      '          if-no-files-found: warn\n' +
+      '          retention-days: 14\n' +
+      '      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4\n' +
+      '        with:\n' +
+      '          name: tested-oci-${{ github.sha }}\n' +
+      '          path: .work/runtime/export/\n' +
+      '          include-hidden-files: true\n' +
+      '          if-no-files-found: error\n' +
+      '          retention-days: 14\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    name: v0.1.0 product acceptance
+    on:
+      pull_request:
+      workflow_dispatch:
+        inputs:
+          verify_release:
+            description: Verify complete evidence after V010-008 user signoff
+            type: boolean
+            default: false
+      workflow_call:
+        inputs:
+          verify_release:
+            type: boolean
+            default: false
+    permissions:
+      contents: read
+    jobs:
+      product:
+        runs-on: ubuntu-24.04
+        timeout-minutes: 60
+        steps:
+          - name: Prepare hosted Linux disk for browser images and vulnerability database
+            shell: bash
+            run: |
+              test "$RUNNER_ENVIRONMENT" = "github-hosted"
+              test "$RUNNER_OS" = "Linux"
+              sudo rm -rf -- /usr/local/lib/android
+              df -h /
+          - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+            with:
+              persist-credentials: false
+              fetch-depth: 0
+          - uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4
+            with:
+              version: v29.6.2
+              daemon-config: |
+                {"features":{"containerd-snapshotter":true}}
+          - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+            with:
+              node-version-file: .node-version
+          - name: Migrations, HTTPS and real product acceptance
+            # postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 and redis:8.2.10@sha256:164c759a0c342ee69d08fc99219382b0fd682181465c0df2e0e6911f4c85d73c in compose.json.
+            # Runner executes playwright test tests/acceptance using its HTTPS config.
+            run: node infra/acceptance/run.mjs
+          - name: Runtime configuration, crypto, failure handling and dependency security
+            run: node --test infra/runtime/rollback-security.test.mjs infra/runtime/artifacts.test.mjs infra/runtime/storage-version.test.mjs infra/runtime/config.test.mjs infra/runtime/backup-crypto.test.mjs infra/runtime/recovery.test.mjs infra/runtime/monitor.test.mjs infra/runtime/cli.test.mjs infra/runtime/security.test.mjs
+          - name: Build once and verify immutable runtime, restore, rollback and browsers
+            run: node infra/runtime/run.mjs
+          - name: Automatic deployment migrations with isolated real PostgreSQL
+            env:
+              WEAVEOS_TEST_GOOSE: .work/runtime/tools/goose
+            run: node --test infra/server/deploy/migrate.test.mjs
+          - name: Verify deployment packaging from the same accepted OCI artifacts
+            run: node infra/server/deploy/package.mjs .work/runtime/export/BUILD.json .work/deployment
+          - name: Complete check-release gate including user signoff
+            if: inputs.verify_release == true
+            run: node scripts/check-release.mjs
+          - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+            if: always()
+            with:
+              name: product-acceptance-${{ github.run_id }}
+              path: .work/acceptance/public/
+              include-hidden-files: true
+              if-no-files-found: error
+              retention-days: 14
+          - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+            if: always()
+            with:
+              name: runtime-evidence-${{ github.run_id }}
+              path: .work/runtime/public/
+              include-hidden-files: true
+              if-no-files-found: warn
+              retention-days: 14
+          - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+            with:
+              name: tested-oci-${{ github.sha }}
+              path: .work/runtime/export/
+              include-hidden-files: true
+              if-no-files-found: error
+              retention-days: 14
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Workspace/WeaveOS-worktrees/V010-019/tests/governance/personnel-release.test.mjs:21:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 5
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 68.6563

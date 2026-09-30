@@ -7,6 +7,7 @@ import {receiveBundle} from './bundle.mjs';
 import {validateCompatibility,validateInstalledMaintenance,promote} from './policy.mjs';
 import {candidateCompose,publicNginx} from './configuration.mjs';
 import {applyMigrations} from './migrate.mjs';
+import {applyPersonnelRoles,validateInstalledPersonnelRoles} from './personnel-upgrade.mjs';
 import {serverContext} from '../context.mjs';
 const root='/opt/weaveos-v010',deploy=root+'/deploy-state';
 process.umask(0o077);
@@ -38,6 +39,7 @@ try{
  const result=await promote({
   validate:async()=>{
    phase='validate';validateCompatibility(ledger,e);
+   if(e.migrations['migrations/00002_personnel.sql'])validateInstalledPersonnelRoles(readFileSync(root+'/infra/runtime/roles.sql','utf8'));
    const compose=candidateCompose(JSON.parse(e.files['compose.json']),{bff:e.images.bff.imageID,web:e.images.web.imageID});
    const existing=json(root+'/compose.json');
    validateInstalledMaintenance(existing);
@@ -63,6 +65,7 @@ try{
    // Conservatively freeze every attempted migration, including a partial failure.
    atomic(deploy+'/ledger.json',{runId:e.runId,commit:e.commit,migrations:e.migrations});
    for(const [directory,env] of [['archive-migrations','cold-migration.env'],['migrations','migration.env']])applyMigrations({container:c.container('postgres'),goose:root+'/tools/goose',directory:stage+'/'+directory,env:readFileSync(root+'/'+env,'utf8')});
+   if(e.migrations['migrations/00002_personnel.sql'])applyPersonnelRoles({container:c.container('postgres'),env:readFileSync(root+'/migration.env','utf8'),roleSQL:readFileSync(root+'/infra/runtime/roles.sql','utf8')});
   },
   activate:async()=>{
    phase='activate';atomic(deploy+'/journal.json',{stage,previous});
