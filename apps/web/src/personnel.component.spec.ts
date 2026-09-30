@@ -61,24 +61,25 @@ for(const viewport of [{width:2504,height:1355},{width:1440,height:900},{width:3
  for(let i=0;i<4;i++){
   // 0.76 fill plus the original translucent shadow; require real coverage.
   await expect.poll(async()=> (await materialAlpha(page)).every(a=>a>=190&&a<=200)).toBe(true);
-  if(viewport.width===2504)await page.screenshot({path:fileURLToPath(new URL('../../../docs/evidence/V010-020/large-'+i+'-'+test.info().project.name+'.png',import.meta.url))});
+  if(viewport.width===2504)await page.screenshot({path:fileURLToPath(new URL('../../../docs/evidence/V010-020/q29/large-'+i+'-'+test.info().project.name+'.png',import.meta.url))});
   if(i%2===0)await page.getByRole('button',{name:await page.locator('.admin-shell').evaluate(n=>n.classList.contains('side-collapsed'))?'展开侧栏':'收起侧栏',exact:true}).click();
   else await page.getByRole('button',{name:await page.locator('.admin-shell').evaluate(n=>n.classList.contains('top-collapsed'))?'展开顶栏':'收起顶栏',exact:true}).click();
  }
  await page.setViewportSize({width:viewport.width+173,height:viewport.height+129});await expect.poll(async()=> (await materialAlpha(page)).every(a=>a>=190&&a<=200)).toBe(true);
 });
-test('Q28 side toggle moves icon horizontally at a stable height on every animation frame',async({page})=>{
+test('Q29 side width animates while the icon retains the current 36px centerline on every frame',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);
  const frames=await page.evaluate(async()=>{
-  const icon=document.querySelector('.personnel-nav-icon')!;const before=icon.getBoundingClientRect();const samples:{x:number;y:number}[]=[];
+  const icon=document.querySelector('.personnel-nav-icon')!;const before=icon.getBoundingClientRect();const samples:{x:number;y:number;width:number}[]=[];const menu=document.querySelector('.personnel-nav')!;
   (document.querySelector('.side-trigger') as HTMLButtonElement).click();const start=performance.now();
-  await new Promise<void>(resolve=>{function sample(){const b=icon.getBoundingClientRect();samples.push({x:b.x,y:b.y});if(performance.now()-start<1050)requestAnimationFrame(sample);else resolve();}requestAnimationFrame(sample);});
+  await new Promise<void>(resolve=>{function sample(){const b=icon.getBoundingClientRect();samples.push({x:b.x,y:b.y,width:menu.getBoundingClientRect().width});if(performance.now()-start<1050)requestAnimationFrame(sample);else resolve();}requestAnimationFrame(sample);});
   return {before:{x:before.x,y:before.y},samples};
  });
  expect(frames.samples.every(s=>Math.abs(s.y-frames.before.y)<0.5)).toBe(true);
- expect(frames.samples.some(s=>s.x>26.5&&s.x<frames.before.x-0.5),JSON.stringify(frames)).toBe(true);
+ expect(frames.samples.every(s=>Math.abs(s.x-26)<0.5),JSON.stringify(frames)).toBe(true);
+ expect(frames.samples.some(s=>s.width>48.5&&s.width<143.5),JSON.stringify(frames)).toBe(true);
  expect(frames.samples.at(-1)!.x).toBeCloseTo(26,0);
- await page.getByRole('button',{name:'展开侧栏',exact:true}).click();await expect.poll(async()=> (await page.locator('.personnel-nav-icon').boundingBox())!.x).toBeCloseTo(44,0);
+ await page.getByRole('button',{name:'展开侧栏',exact:true}).click();await expect.poll(async()=> (await page.locator('.personnel-nav-icon').boundingBox())!.x).toBeCloseTo(26,0);
 });
 test('Q28 reduced motion and rapid reversal keep navigation geometry and unsaved edit',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill('保留输入');
@@ -94,7 +95,7 @@ test('R3 login enters Home with settings and account navigation; admin exit reta
  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
  await page.goto('/login');await page.getByLabel('账号',{exact:true}).fill(user.account);await page.getByLabel('密码',{exact:true}).fill('Synthetic@123');await page.getByRole('button',{name:'登录',exact:true}).click();
  await expect(page).toHaveURL(/\/app$/);await expect(page.getByRole('button',{name:'设置',exact:true})).toBeVisible();
- await expect(page.locator('.home-header')).toHaveCSS('height','72px');
+ await expect(page.locator('.home-header')).toHaveCSS('height','56px');
  await page.getByRole('button',{name:'设置',exact:true}).click();await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'退出',exact:true}).click();await expect(page).toHaveURL(/\/app$/);expect(logouts).toBe(0);
  await page.getByRole('button',{name:'账号',exact:true}).click();await expect(page.getByText(user.account,{exact:true})).toBeVisible();
@@ -106,11 +107,11 @@ test('R2 AC02 ordinary member Home has own identity/empty app state; direct admi
 });
 test('R3 four independent shell layouts retain selected tab and unsaved input; icons aligned',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill('尚未保存');
- for(const [side,top] of [[320,72],[72,72],[72,40],[320,40],[320,72]]){
-  if(side===72 && (await page.locator('.admin-sidebar').boundingBox())!.width===320)await page.getByRole('button',{name:'收起侧栏'}).click();
-  if(side===320 && (await page.locator('.admin-sidebar').boundingBox())!.width===72)await page.getByRole('button',{name:'展开侧栏'}).click();
-  if(top===40 && (await page.locator('.admin-header').boundingBox())!.height===72)await page.getByRole('button',{name:'收起顶栏'}).click();
-  if(top===72 && (await page.locator('.admin-header').boundingBox())!.height===40)await page.getByRole('button',{name:'展开顶栏'}).click();
+ for(const [side,top] of [[176,56],[72,56],[72,40],[176,40],[176,56]]){
+  if(side===72 && (await page.locator('.admin-sidebar').boundingBox())!.width===176)await page.getByRole('button',{name:'收起侧栏'}).click();
+  if(side===176 && (await page.locator('.admin-sidebar').boundingBox())!.width===72)await page.getByRole('button',{name:'展开侧栏'}).click();
+  if(top===40 && (await page.locator('.admin-header').boundingBox())!.height===56)await page.getByRole('button',{name:'收起顶栏'}).click();
+  if(top===56 && (await page.locator('.admin-header').boundingBox())!.height===40)await page.getByRole('button',{name:'展开顶栏'}).click();
   await expect(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect(page.locator('.admin-header')).toHaveCSS('height',top+'px');
   await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('尚未保存');await expect(page.getByRole('tab',{name:'身份',exact:true})).toHaveAttribute('aria-selected','true');
   if(side===72){for(const sel of ['.admin-settings-icon','.personnel-nav-icon']){const b=await page.locator(sel).boundingBox();expect(b!.x+b!.width/2).toBeCloseTo(36,0);}}
@@ -278,9 +279,9 @@ test('Q28 shell retains responsive L material geometry in all four states',async
  for(const state of ['ee','ec','cc','ce'] as const){
   const material=page.locator('.admin-material');await expect.poll(async()=> (await materialAlpha(page)).every(a=>a>=190&&a<=200)).toBe(true);
   await expect(material).toHaveCSS('top','0px');await expect(material).toHaveCSS('left','0px');
-  await expect(page.locator('.admin-sidebar')).toHaveCSS('width',state[1]==='e'?'320px':'72px');await expect(page.locator('.admin-header')).toHaveCSS('height',state[0]==='e'?'72px':'40px');
+  await expect(page.locator('.admin-sidebar')).toHaveCSS('width',state[1]==='e'?'176px':'72px');await expect(page.locator('.admin-header')).toHaveCSS('height',state[0]==='e'?'56px':'40px');
   const dimensions=await material.boundingBox();expect({width:dimensions!.width,height:dimensions!.height}).toEqual({width:1920,height:1080});
-  await page.screenshot({path:fileURLToPath(new URL('../../../docs/evidence/V010-020/visual-admin-'+state+'-'+test.info().project.name+'.png',import.meta.url))});
+  await page.screenshot({path:fileURLToPath(new URL('../../../docs/evidence/V010-020/q29/visual-admin-'+state+'-'+test.info().project.name+'.png',import.meta.url))});
   if(state==='ee')await page.getByRole('button',{name:'收起侧栏',exact:true}).click();else if(state==='ec')await page.getByRole('button',{name:'收起顶栏',exact:true}).click();else if(state==='cc')await page.getByRole('button',{name:'展开侧栏',exact:true}).click();
  }
 });
@@ -310,7 +311,7 @@ test('R3 activity presents readable action, target and safe changes rather than 
 test('Q28 each shell variant retains viewport origin and collapsed 48px menu target',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);
  await page.getByRole('button',{name:'收起侧栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('left','0px');
- const menu=page.getByRole('button',{name:'人员管理',exact:true});await expect(menu).toHaveCSS('width','48px');await expect(menu).toHaveCSS('height','48px');expect((await menu.boundingBox())!.y).toBe(196);
+ const menu=page.getByRole('button',{name:'人员管理',exact:true});await expect(menu).toHaveCSS('width','48px');await expect(menu).toHaveCSS('height','48px');expect((await menu.boundingBox())!.y).toBe(180);
  await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('left','0px');await expect(page.locator('.admin-header')).toHaveCSS('height','40px');expect((await menu.boundingBox())!.y).toBe(164);
  await page.getByRole('button',{name:'展开侧栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('top','0px');
 });
@@ -321,7 +322,7 @@ test('Figma member table keeps fixed column geometry and page selection never se
  const select=page.getByLabel('选择成员：'+user.account,{exact:true});await select.check();await expect(page.getByLabel('选择当前页成员',{exact:true})).toBeChecked();await page.getByLabel('选择当前页成员',{exact:true}).uncheck();await expect(select).not.toBeChecked();expect(writes).toBe(0);
 });
 test('Q28 collapsed menu has a 48px target at the preserved expanded height',async({page})=>{
- await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('button',{name:'收起侧栏',exact:true}).click();const menu=page.getByRole('button',{name:'人员管理',exact:true});await expect(menu).toHaveCSS('width','48px');const box=(await menu.boundingBox())!;expect({width:box.width,height:box.height,y:box.y}).toEqual({width:48,height:48,y:196});
+ await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('button',{name:'收起侧栏',exact:true}).click();const menu=page.getByRole('button',{name:'人员管理',exact:true});await expect(menu).toHaveCSS('width','48px');const box=(await menu.boundingBox())!;expect({width:box.width,height:box.height,y:box.y}).toEqual({width:48,height:48,y:180});
 });
 test('Q28 top-collapsed side-expanded material retains the viewport origin',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.admin-material')).toHaveCSS('top','0px');
