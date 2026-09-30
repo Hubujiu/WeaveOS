@@ -80,6 +80,10 @@ func decodeBody(w http.ResponseWriter, r *http.Request, out any, required ...str
 			return false
 		}
 		values[name] = raw
+		if string(raw) == "null" {
+			fail(w, r, ErrInvalid)
+			return false
+		}
 	}
 	if _, err := d.Token(); err != nil {
 		fail(w, r, ErrInvalid)

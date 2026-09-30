@@ -345,35 +345,41 @@ func (s *Service) definitionHTTP(w http.ResponseWriter, r *http.Request, p sessi
 			required = append(required, "version")
 		}
 		var in DefinitionInput
+		var suppliedVersion *int64
 		if kind == Identity {
 			required = append(required, "templateIds")
 			var body struct {
 				Name            string   `json:"name"`
 				Description     string   `json:"description"`
-				Version         int64    `json:"version"`
+				Version         *int64   `json:"version"`
 				PermissionCodes []string `json:"permissionCodes"`
 				TemplateIDs     []string `json:"templateIds"`
 			}
 			if !decodeBody(w, r, &body, required...) {
 				return
 			}
-			in = DefinitionInput{body.Name, body.Description, body.Version, body.PermissionCodes, body.TemplateIDs}
+			suppliedVersion = body.Version
+			in = DefinitionInput{Name: body.Name, Description: body.Description, PermissionCodes: body.PermissionCodes, TemplateIDs: body.TemplateIDs}
 		} else {
 			var body struct {
 				Name            string   `json:"name"`
 				Description     string   `json:"description"`
-				Version         int64    `json:"version"`
+				Version         *int64   `json:"version"`
 				PermissionCodes []string `json:"permissionCodes"`
 			}
 			if !decodeBody(w, r, &body, required...) {
 				return
 			}
-			in = DefinitionInput{Name: body.Name, Description: body.Description, Version: body.Version, PermissionCodes: body.PermissionCodes}
+			suppliedVersion = body.Version
+			in = DefinitionInput{Name: body.Name, Description: body.Description, PermissionCodes: body.PermissionCodes}
 		}
 		// Creation accepts exactly the create contract; an edit version is not a create field.
-		if id == "" && in.Version != 0 {
+		if id == "" && suppliedVersion != nil {
 			fail(w, r, ErrInvalid)
 			return
+		}
+		if suppliedVersion != nil {
+			in.Version = *suppliedVersion
 		}
 		value, err := s.Application.SaveDefinition(r.Context(), p, kind, id, in, meta)
 		if err != nil {
