@@ -1,3 +1,4 @@
+import { Workspace } from './Workspace';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, Navigate, Route, Routes, useNavigate, useSearchParams } from 'react-router';
 import brandLogin from './assets/waveos-brand-login.svg';
@@ -190,14 +191,14 @@ function ProtectedApp() {
 
   if (checking) return <div className="site"><BrandHeader /><main className="app-main" aria-live="polite">正在验证登录态…</main></div>;
   if (!user) return <div className="site"><BrandHeader /><main className="app-main"><h1>无法验证登录态</h1><p role="alert">{error}</p><button className="primary-button" type="button" onClick={() => window.location.reload()}>重试</button></main></div>;
-  return <div className="site"><BrandHeader /><main className="app-main"><h1>欢迎</h1><p>{user?.account}</p>{error && <p role="alert">{error}</p>}<button className="primary-button" type="button" onClick={logout} disabled={pending}>退出登录</button></main></div>;
+  return <Workspace user={user} logout={() => void logout()} pending={pending} error={error} />;
 }
 
 export function App() {
   return <Routes>
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
-    <Route path="/app" element={<ProtectedApp />} />
+    <Route path="/app/*" element={<ProtectedApp />} />
     <Route path="*" element={<Navigate to="/app" replace />} />
   </Routes>;
 }
