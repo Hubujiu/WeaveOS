@@ -11,6 +11,10 @@ import exitIcon from './assets/admin-exit.svg';
 import searchIcon from './assets/admin-search.svg';
 import plusIcon from './assets/admin-plus.svg';
 import plusWhite from './assets/admin-plus-white.svg';
+import materialEE from './assets/admin-background-ee.svg';
+import materialEC from './assets/admin-background-ec.svg';
+import materialCE from './assets/admin-background-ce.svg';
+import materialCC from './assets/admin-background-cc.svg';
 
 type Tab='成员与部门'|'身份'|'权限模板'|'操作记录';
 type Dialog='impact'|'dirty'|'department'|'renameDepartment'|'deleteDepartment'|'invitation'|'member'|'groups'|'delete'|null;
@@ -97,6 +101,7 @@ export function PersonnelAdmin({access,onDirty,onExit,onUnauthorized}:{access:Ac
  const usingTemplates=allTemplates.filter(t=>draft?.templateIds?.includes(t.id));
  const direct=new Set(draft?.permissionCodes||[]);const effective=permissions.filter(p=>direct.has(p.code)||usingTemplates.some(t=>t.permissionCodes.includes(p.code)));
  return <div className={'admin-shell'+(side?'':' side-collapsed')+(top?'':' top-collapsed')}>
+  <img className="admin-material" src={top?(side?materialEE:materialEC):(side?materialCE:materialCC)} width="1980" height="1140" alt="" aria-hidden="true"/>
   <header className="admin-header"><div className="admin-corner"><img className="admin-settings-icon" src={settingsIcon} width="20" height="20" alt=""/>{top&&<strong>管理后台</strong>}</div>
    {top&&<div className="admin-actions"><button className="admin-action save" disabled={!definitionDirty||pending} onClick={()=>setDialog('impact')}><img src={saveIcon} width="16" height="16" alt=""/>保存</button><button className="admin-action" onClick={onExit} disabled={pending}><img src={exitIcon} width="16" height="16" alt=""/>退出</button></div>}
    <button className="top-trigger" aria-label={top?'收起顶栏':'展开顶栏'} onClick={()=>setTop(!top)}><img src={grip} width="16" height="16" alt=""/></button>

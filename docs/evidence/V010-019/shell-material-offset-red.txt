@@ -1,0 +1,35 @@
+
+Running 1 test using 1 worker
+
+  x  1 [chromium] › src\personnel.component.spec.ts:206:1 › Figma shell retains each original L material asset and original SVG dimensions (6.5s)
+
+
+  1) [chromium] › src\personnel.component.spec.ts:206:1 › Figma shell retains each original L material asset and original SVG dimensions 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.admin-material')
+    Expected: "-22px"
+    Received: "-38px"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" locator('.admin-material') with timeout 5000ms
+      - waiting for locator('.admin-material')
+        14 × locator resolved to <img alt="" width="1980" height="1140" aria-hidden="true" class="admin-material" src="data:image/svg+xml;base64,PHN2ZyBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiBvdmVyZmxvdz0idmlzaWJsZSIgc3R5bGU9ImRpc3BsYXk6IGJsb2NrOyIgd2lkdGg9IjE5ODAiIGhlaWdodD0iMTE0MCIgdmlld0JveD0iMCAwIDE5ODAgMTE0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgaWQ9IlN1cmZhY2UgLyBVbmlmaWVkIGNocm9tZSI+Cjxmb3JlaWduT2JqZWN0IHg9Ii0yIiB5PSItMiIgd2lkdGg9IjE5ODIiIGhlaWdodD0iMTE0MiI+PGRpdiB4bWxucz0iaHR0cDovL3d3dy53My5vcmc…/>
+           - unexpected value "-38px"
+
+
+      208 |  for(const state of ['ee','ec','cc','ce'] as const){
+      209 |   const material=page.locator('.admin-material');await expect(material).toHaveAttribute('src','data:image/svg+xml;base64,'+readFileSync(new URL('./assets/admin-background-'+state+'.svg',import.meta.url)).toString('base64'));
+    > 210 |   await expect(material).toHaveCSS('top','-22px');await expect(material).toHaveCSS('left','-22px');
+          |                          ^
+      211 |   await expect(page.locator('.admin-sidebar')).toHaveCSS('width',state[1]==='e'?'320px':'72px');await expect(page.locator('.admin-header')).toHaveCSS('height',state[0]==='e'?'72px':'40px');
+      212 |   const dimensions=await material.evaluate((node:HTMLImageElement)=>({width:node.naturalWidth,height:node.naturalHeight}));expect(dimensions).toEqual({width:1980,height:1140});
+      213 |   await page.screenshot({path:'../../docs/evidence/V010-019/visual-admin-'+state+'.png'});
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:210:26
+
+    Error Context: test-results\personnel.component-Figma--05109-and-original-SVG-dimensions-chromium\error-context.md
+
+  1 failed
+    [chromium] › src\personnel.component.spec.ts:206:1 › Figma shell retains each original L material asset and original SVG dimensions 

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 // Independent oracle: personnel PRD R3 UI AC01–07, Q25 DTOs, Figma Home/Admin.
 const user = {id:'00000000-0000-4000-8000-000000000001',account:'synthetic-admin'};
@@ -205,7 +206,9 @@ for(const mode of ['department','member','groups'] as const)test('R3 unsaved '+m
 test('Figma shell retains each original L material asset and original SVG dimensions',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);
  for(const state of ['ee','ec','cc','ce'] as const){
-  const material=page.locator('.admin-material');await expect(material).toHaveAttribute('src',new RegExp('admin-background-'+state));
+  const material=page.locator('.admin-material');await expect(material).toHaveAttribute('src','data:image/svg+xml;base64,'+readFileSync(new URL('./assets/admin-background-'+state+'.svg',import.meta.url)).toString('base64'));
+  await expect(material).toHaveCSS('top','-22px');await expect(material).toHaveCSS('left','-22px');
+  await expect(page.locator('.admin-sidebar')).toHaveCSS('width',state[1]==='e'?'320px':'72px');await expect(page.locator('.admin-header')).toHaveCSS('height',state[0]==='e'?'72px':'40px');
   const dimensions=await material.evaluate((node:HTMLImageElement)=>({width:node.naturalWidth,height:node.naturalHeight}));expect(dimensions).toEqual({width:1980,height:1140});
   await page.screenshot({path:'../../docs/evidence/V010-019/visual-admin-'+state+'.png'});
   if(state==='ee')await page.getByRole('button',{name:'收起侧栏',exact:true}).click();else if(state==='ec')await page.getByRole('button',{name:'收起顶栏',exact:true}).click();else if(state==='cc')await page.getByRole('button',{name:'展开侧栏',exact:true}).click();
