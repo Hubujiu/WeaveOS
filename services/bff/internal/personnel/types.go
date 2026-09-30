@@ -29,7 +29,7 @@ type Definition struct {
 	Description        string   `json:"description"`
 	Version            int64    `json:"version"`
 	PermissionCodes    []string `json:"permissionCodes"`
-	TemplateIDs        []string `json:"templateIds,omitempty"`
+	TemplateIDs        []string `json:"templateIds"`
 	AffectedMembers    int64    `json:"affectedMembers"`
 	AffectedIdentities int64    `json:"affectedIdentities"`
 }
