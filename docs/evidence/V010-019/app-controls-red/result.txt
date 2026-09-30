@@ -1,0 +1,163 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:27976) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:29344) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 6 tests using 1 worker
+
+(node:3948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\personnel.component.spec.ts:88:1 › R3 browser back with dirty configuration prompts, cancel preserves inputs (6.6s)
+(node:31080) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [chromium] › apps\web\src\personnel.component.spec.ts:94:1 › R3 definition creation has no fake seed; validates and sends explicit config (30.0s)
+(node:35480) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [chromium] › apps\web\src\personnel.component.spec.ts:100:1 › R3 member explicit move preserves other groups and identity configuration (30.0s)
+(node:34924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  4 [chromium] › apps\web\src\personnel.component.spec.ts:108:1 › R3 member search and pagination send approved filters, no local page-only filtering (6.5s)
+(node:34952) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  5 [chromium] › apps\web\src\personnel.component.spec.ts:113:1 › R3 activity search and action filter are server-side, not cosmetic controls (30.0s)
+(node:35596) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  6 [chromium] › apps\web\src\personnel.component.spec.ts:118:1 › R3 deleting unreferenced template confirms and sends version; 409 keeps selection (30.0s)
+
+
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:88:1 › R3 browser back with dirty configuration prompts, cancel preserves inputs 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog')
+    Expected substring: "未保存"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog') with timeout 5000ms
+      - waiting for getByRole('dialog')
+
+
+      89 |  await fixture(page);await page.goto('/app');await page.getByRole('button',{name:'设置',exact:true}).click();
+      90 |  await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill('浏览器返回保护');
+    > 91 |  await page.goBack();await expect(page.getByRole('dialog')).toContainText('未保存');await page.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('浏览器返回保护');
+         |                                                             ^
+      92 |  await page.goBack();await page.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page).toHaveURL(/\/app$/);
+      93 | });
+      94 | test('R3 definition creation has no fake seed; validates and sends explicit config',async({page})=>{
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:91:61
+
+    Error Context: apps\web\test-results\personnel.component-R3-bro-840a0-pts-cancel-preserves-inputs-chromium\error-context.md
+
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:94:1 › R3 definition creation has no fake seed; validates and sends explicit config 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '新建身份', exact: true })
+
+
+      94 | test('R3 definition creation has no fake seed; validates and sends explicit config',async({page})=>{
+      95 |  await admin(page);let created:unknown;await page.route('**/api/v1/personnel/identities?**',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:list([]),meta:null}}));
+    > 96 |  await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'新建身份',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill('普通员工');
+         |                                                                                                                     ^
+      97 |  await page.route('**/api/v1/personnel/identities',async route=>{created=route.request().postDataJSON();await route.fulfill({status:201,json:{code:'OK',message:'success',data:{...identity,name:'普通员工',description:'',templateIds:[],permissionCodes:[]},meta:null}});});
+      98 |  await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect.poll(()=>created).toEqual({name:'普通员工',description:'',templateIds:[],permissionCodes:[]});
+      99 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:96:117
+
+    Error Context: apps\web\test-results\personnel.component-R3-def-c5d57-s-and-sends-explicit-config-chromium\error-context.md
+
+  3) [chromium] › apps\web\src\personnel.component.spec.ts:100:1 › R3 member explicit move preserves other groups and identity configuration 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '调整分组', exact: true })
+
+
+      102 |  await page.route('**/api/v1/personnel/departments',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[department,other]},meta:null}}));
+      103 |  await page.route('**/api/v1/personnel/members**',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:list([{...member,departmentIds:[department.id],departments:[department]}]),meta:null}}));
+    > 104 |  await page.reload();await page.getByRole('button',{name:'调整分组',exact:true}).click();await page.getByLabel('分组操作',{exact:true}).selectOption('move');await page.getByLabel('来源部门',{exact:true}).selectOption(department.id);await page.getByLabel('目标部门',{exact:true}).selectOption(other.id);
+          |                                                                              ^
+      105 |  const sent:unknown[]=[];await page.route('**/api/v1/personnel/members/'+user.id+'/groups',async route=>{sent.push(route.request().postDataJSON());await route.fulfill({status:200,json:{code:'OK',message:'success',data:{...member,version:1},meta:null}});});
+      106 |  await page.getByRole('button',{name:'确认调整',exact:true}).click();await expect.poll(()=>sent).toEqual([{operation:'move',departmentId:other.id,sourceDepartmentId:department.id,version:0}]);
+      107 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:104:78
+
+    Error Context: apps\web\test-results\personnel.component-R3-mem-64fdf--and-identity-configuration-chromium\error-context.md
+
+  4) [chromium] › apps\web\src\personnel.component.spec.ts:108:1 › R3 member search and pagination send approved filters, no local page-only filtering 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      108 | test('R3 member search and pagination send approved filters, no local page-only filtering',async({page})=>{
+      109 |  await admin(page);const queries:string[]=[];await page.route('**/api/v1/personnel/members?**',async route=>{queries.push(new URL(route.request().url()).search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:{...list([member]),total:21},meta:null}});});
+    > 110 |  await page.getByLabel('搜索成员',{exact:true}).fill('目标');await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('search')==='目标')).toBe(true);
+          |                                                                                                                                            ^
+      111 |  await page.getByRole('button',{name:'下一页',exact:true}).click();await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('page')==='2')).toBe(true);
+      112 | });
+      113 | test('R3 activity search and action filter are server-side, not cosmetic controls',async({page})=>{
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:110:140
+
+    Error Context: apps\web\test-results\personnel.component-R3-mem-c5f27-o-local-page-only-filtering-chromium\error-context.md
+
+  5) [chromium] › apps\web\src\personnel.component.spec.ts:113:1 › R3 activity search and action filter are server-side, not cosmetic controls 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.selectOption: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByLabel('操作类型', { exact: true })
+
+
+      114 |  await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();const queries:string[]=[];
+      115 |  await page.route('**/api/v1/personnel/events?**',async route=>{queries.push(new URL(route.request().url()).search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:list([]),meta:null}});});
+    > 116 |  await page.getByLabel('搜索操作记录',{exact:true}).fill('研发');await page.getByLabel('操作类型',{exact:true}).selectOption('DEPARTMENT_CREATED');await expect.poll(()=>queries.some(q=>{const p=new URLSearchParams(q);return p.get('search')==='研发'&&p.get('action')==='DEPARTMENT_CREATED';})).toBe(true);
+          |                                                                                                     ^
+      117 | });
+      118 | test('R3 deleting unreferenced template confirms and sends version; 409 keeps selection',async({page})=>{
+      119 |  await admin(page);await page.route('**/api/v1/personnel/templates?**',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:list([{...template,affectedIdentities:0,affectedMembers:0}]),meta:null}}));
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:116:101
+
+    Error Context: apps\web\test-results\personnel.component-R3-act-7c926--side-not-cosmetic-controls-chromium\error-context.md
+
+  6) [chromium] › apps\web\src\personnel.component.spec.ts:118:1 › R3 deleting unreferenced template confirms and sends version; 409 keeps selection 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '确认删除', exact: true })
+
+
+      120 |  await page.reload();await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'企业管理',exact:true}).click();await page.getByRole('button',{name:'删除模板',exact:true}).click();
+      121 |  let query='';await page.route('**/api/v1/personnel/templates/'+template.id+'?**',async route=>{query=new URL(route.request().url()).search;await route.fulfill({status:409,json:{code:'PERSONNEL_CONFLICT',message:'conflict',data:null,meta:null}});});
+    > 122 |  await page.getByRole('button',{name:'确认删除',exact:true}).click();expect(new URLSearchParams(query).get('version')).toBe('1');await expect(page.getByRole('alert')).toContainText('配置已变更');await expect(page.getByLabel('模板名称',{exact:true})).toHaveValue('企业管理');
+          |                                                          ^
+      123 | });
+      124 |
+      125 |
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:122:58
+
+    Error Context: apps\web\test-results\personnel.component-R3-del-bea5e-version-409-keeps-selection-chromium\error-context.md
+
+  6 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:88:1 › R3 browser back with dirty configuration prompts, cancel preserves inputs 
+    [chromium] › apps\web\src\personnel.component.spec.ts:94:1 › R3 definition creation has no fake seed; validates and sends explicit config 
+    [chromium] › apps\web\src\personnel.component.spec.ts:100:1 › R3 member explicit move preserves other groups and identity configuration 
+    [chromium] › apps\web\src\personnel.component.spec.ts:108:1 › R3 member search and pagination send approved filters, no local page-only filtering 
+    [chromium] › apps\web\src\personnel.component.spec.ts:113:1 › R3 activity search and action filter are server-side, not cosmetic controls 
+    [chromium] › apps\web\src\personnel.component.spec.ts:118:1 › R3 deleting unreferenced template confirms and sends version; 409 keeps selection 
