@@ -165,6 +165,7 @@ func setup(t *testing.T) *fixture {
 	t.Cleanup(func() {
 		// Delete owned relations explicitly; durable enterprise root and unrelated records remain.
 		_, _ = owner.Exec(ctx, "DELETE FROM auth.authentication_events WHERE actor_user_id=$1", user)
+		_, _ = owner.Exec(ctx, "DELETE FROM personnel.department_members WHERE user_id=$1", user)
 		_, _ = owner.Exec(ctx, "DELETE FROM personnel.identity_permissions WHERE identity_id=ANY($1::uuid[])", []string{i1, i2})
 		_, _ = owner.Exec(ctx, "DELETE FROM personnel.template_permissions WHERE template_id=$1", template)
 		_, _ = owner.Exec(ctx, "DELETE FROM personnel.identity_templates WHERE identity_id=ANY($1::uuid[])", []string{i1, i2})
