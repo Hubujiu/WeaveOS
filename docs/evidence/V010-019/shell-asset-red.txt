@@ -1,0 +1,33 @@
+
+Running 1 test using 1 worker
+
+  x  1 [chromium] › src\personnel.component.spec.ts:205:1 › Figma shell retains each original L material asset and original SVG dimensions (6.9s)
+
+
+  1) [chromium] › src\personnel.component.spec.ts:205:1 › Figma shell retains each original L material asset and original SVG dimensions 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: locator('.admin-material')
+    Expected pattern: /admin-background-ee/
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAttribute" locator('.admin-material') with timeout 5000ms
+      - waiting for locator('.admin-material')
+
+
+      206 |  await page.setViewportSize({width:1920,height:1080});await admin(page);
+      207 |  for(const state of ['ee','ec','cc','ce'] as const){
+    > 208 |   const material=page.locator('.admin-material');await expect(material).toHaveAttribute('src',new RegExp('admin-background-'+state));
+          |                                                                         ^
+      209 |   const dimensions=await material.evaluate((node:HTMLImageElement)=>({width:node.naturalWidth,height:node.naturalHeight}));expect(dimensions).toEqual({width:1980,height:1140});
+      210 |   await page.screenshot({path:'../../docs/evidence/V010-019/visual-admin-'+state+'.png'});
+      211 |   if(state==='ee')await page.getByRole('button',{name:'收起侧栏',exact:true}).click();else if(state==='ec')await page.getByRole('button',{name:'收起顶栏',exact:true}).click();else if(state==='cc')await page.getByRole('button',{name:'展开侧栏',exact:true}).click();
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:208:73
+
+    Error Context: test-results\personnel.component-Figma--05109-and-original-SVG-dimensions-chromium\error-context.md
+
+  1 failed
+    [chromium] › src\personnel.component.spec.ts:205:1 › Figma shell retains each original L material asset and original SVG dimensions 
