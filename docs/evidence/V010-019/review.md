@@ -2,7 +2,7 @@
 
 登录成功后进入 Home，导航按真实本人身份展示设置入口；刷新、退出和无权访问均使用服务端 Session。登录注册、Home、后台四视图及四种外壳状态按 Q24 批准的 Figma 原版实现。人员管理按批准 R3、ADR006 和 Q25 正式设计接入真实成员、部门、身份、权限模板及安全操作记录；部门不赋权，共享模板实时生效，Root 不绕过应用内部权限。
 
-本页是待合并审阅记录。任务仅 ready，PR20 尚未合并，生产尚未升级。合并必须实际确认最终 head 的所有适用检查成功；历史版本的通过结果不替代最终 head。
+本页是待合并审阅记录。任务仅 ready，PR20 尚未合并，生产应用尚未更新；Q26三个接收器文件已授权并安装验证。合并必须实际确认最终 head 的所有适用检查成功；历史版本的通过结果不替代最终 head。
 
 ## 实际验证及版本
 
@@ -39,6 +39,8 @@
 
 生产只读记录见[现场](production-readonly-preflight-valid.json)：仍运行 main4f6ee76，冷热仅00001、新角色模块未安装。自动应用发布不能升级安装在服务器上的接收器自身。
 
-按 ADR004 Q18，须单独确认并安装 receive.mjs、personnel-upgrade.mjs、roles.sql 三个固定源码文件；[精确摘要](receiver-review-hashes.json)及[安装、备份、失败恢复审阅单](../../../infra/server/deploy/V010-019-upgrade.md)已准备。安装阶段不执行 SQL 或迁移；安装验证后才合并，既有 main 自动流程备份、冷→热兼容迁移、最小角色事务和成对制品推广。许可集中登记 Q26，尚未批准或执行；既有合并发布授权不重复请求。
+按 ADR004 Q18，receive.mjs、personnel-upgrade.mjs、roles.sql 三个固定源码文件的[精确摘要](receiver-review-hashes.json)及[安装、备份、失败恢复方案](../../../infra/server/deploy/V010-019-upgrade.md)已审阅。许可集中登记 Q26，用户已明确“同意”并同步正式来源；[实际安装回执](q26-installed.json)证明三个文件已核验，安装阶段无SQL/迁移、旧应用配置不变。安装验证后才合并，既有 main 自动流程备份、冷→热兼容迁移、最小角色事务和成对制品推广；既有合并发布授权不重复请求。
+
+最终功能head828fd39的[完整CI身份](final-ci-828fd39.json)、[85组件/124API/117浏览器全栈报告](final-ci-828fd39-product.json)、[同制品运行报告](final-ci-828fd39-runtime.json)、[恢复回执](final-ci-828fd39-recovery.json)及[四镜像原始扫描](image-scan-final-ci-828fd39.zip)已永久保存。实际GitHub宿主为Ubuntu24.04，报告通用local WSL/Windows标签不适用于远端宿主；此轮备份259ms、恢复3576ms。仅更新这些执行记录后的最终head仍须再次全部CI成功再合并。
 
 永久 RED→GREEN 顺序、独立预期、源码快照、命令与实际失败在[任务019](../../tasks/V010-019.md)和本目录；旧证据原字节的恢复方法见[README](README.md)。合并后仍须核对远程 main/PR 与真实部署，再完成分支、工作树及可丢弃测试产物清理。
