@@ -84,7 +84,7 @@ function accountError(account: string): string | null {
   return null;
 }
 
-function Login() {
+export function Login() {
   const navigate = useNavigate();
   const [account, setAccount] = useState('');
   const [password, setPassword] = useState('');
@@ -119,7 +119,7 @@ function Login() {
   </form></AuthLayout>;
 }
 
-function Register() {
+export function Register() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [account, setAccount] = useState('');
@@ -159,7 +159,7 @@ function Register() {
   </form></AuthLayout>;
 }
 
-function ProtectedApp() {
+export function ProtectedApp() {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState('');
