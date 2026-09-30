@@ -52,7 +52,7 @@ test('Q28 side toggle moves icon horizontally at a stable height on every animat
   return {before:{x:before.x,y:before.y},samples};
  });
  expect(frames.samples.every(s=>Math.abs(s.y-frames.before.y)<0.5)).toBe(true);
- expect(frames.samples.some(s=>s.x>26.5&&s.x<frames.before.x-0.5)).toBe(true);
+ expect(frames.samples.some(s=>s.x>26.5&&s.x<frames.before.x-0.5),JSON.stringify(frames)).toBe(true);
  expect(frames.samples.at(-1)!.x).toBeCloseTo(26,0);
  await page.getByRole('button',{name:'展开侧栏',exact:true}).click();await expect.poll(async()=> (await page.locator('.personnel-nav-icon').boundingBox())!.x).toBeCloseTo(44,0);
 });
