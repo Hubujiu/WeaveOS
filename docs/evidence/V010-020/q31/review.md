@@ -7,3 +7,5 @@
 Windows/Node22.23.1/pnpm10.28.2/Playwright1.63 Chromium，测试独立4174，4173用户预览保留。实现前运行`pnpm exec playwright test --config .work/q31.config.ts --grep 'Q31 Home|Q31 admin uses|Q31 tabs|Q31 real member'`：退出1、3失败1通过、23.9s。目标断言实际观察顶栏收缩控件仍1个，菜单旧y180≠116；页签overflowY=auto≠hidden、scrollHeight48≠clientHeight47、按钮48≠47、scrollTop=1≠0。真实成员纵/横滚动保护用例通过；不是语法/依赖故障。red.txt为实际日志；red/归档新测试和全部旧实现/配置，规范化UTF8/LF SHA256不可变。
 
 旧四态测试按正式Q31改为固定56×两侧态；保留编辑、材质覆盖/resize、20px原图标/48热区/36中轴、逐帧稳定y、快速反向/减少动效、业务权限/错误/保存与Session断言。新测试独立验证无控件、y116、页签真实溢出和末页签键盘可达；20条合成成员验证必要滚动未被隐藏。先提交推送本RED，再做最小实现。
+
+最小实现后目标4/4 GREEN（11.6s）、完整95/95 Chromium（3.5m）、类型/构建、132治理/基础和结构门禁均通过；此前真实RED已实际推送，时序可恢复。侧栏两态padding88→24、顶栏state/控件/40px移除、页签适配47内高；所有原素材文件未变。当前4173浏览器实测几何及静态SVG加载成功见local-preview-geometry.json，图标20px与箭头/保存/退出16px槽位对照源节点；1920及2504截图保留。只读子Agent审查无问题，不将审查称执行。三引擎和最终head CI待独立核对。

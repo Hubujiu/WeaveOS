@@ -5,7 +5,6 @@ import { Modal } from './Modal';
 import { AdminMaterial } from './AdminMaterial';
 import usersIcon from './assets/admin-users.svg';
 import settingsIcon from './assets/admin-settings.svg';
-import grip from './assets/nav-grip.svg';
 import chevron from './assets/admin-chevron.svg';
 import saveIcon from './assets/admin-save.svg';
 import exitIcon from './assets/admin-exit.svg';
@@ -22,7 +21,7 @@ const activityNames:Record<string,string>={DEPARTMENT_CREATED:'新建部门',DEP
 const objectNames:Record<string,string>={department:'部门',identity:'身份',template:'权限模板',member:'成员',invitation:'邀请码'};
 function record(value:unknown):Record<string,unknown>{return value&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:{};}
 export function PersonnelAdmin({access,onDirty,onExit,onUnauthorized}:{access:Access;onDirty:(v:boolean)=>void;onExit:()=>void;onUnauthorized:()=>void}){
- const [tab,setTab]=useState<Tab>('成员与部门');const [top,setTop]=useState(true);const [side,setSide]=useState(()=>innerWidth>=900);
+ const [tab,setTab]=useState<Tab>('成员与部门');const [side,setSide]=useState(()=>innerWidth>=900);
  const [departments,setDepartments]=useState<Department[]>([]);const [identities,setIdentities]=useState<PageData<Definition>>(blankPage);const [templates,setTemplates]=useState<PageData<Definition>>(blankPage);
  const [members,setMembers]=useState<PageData<Member>>(blankPage);const [events,setEvents]=useState<PageData<Activity>>(blankPage);const [permissions,setPermissions]=useState<Permission[]>([]);
  const [selected,setSelected]=useState<Definition|null>(null);const [draft,setDraft]=useState<Definition|null>(null);
@@ -109,11 +108,10 @@ export function PersonnelAdmin({access,onDirty,onExit,onUnauthorized}:{access:Ac
  const definition=tab==='身份'||tab==='权限模板';
  const usingTemplates=allTemplates.filter(t=>draft?.templateIds?.includes(t.id));
  const direct=new Set(draft?.permissionCodes||[]);const effective=permissions.filter(p=>direct.has(p.code)||usingTemplates.some(t=>t.permissionCodes.includes(p.code)));
- return <div className={'admin-shell'+(side?'':' side-collapsed')+(top?'':' top-collapsed')}>
+ return <div className={'admin-shell'+(side?'':' side-collapsed')}>
   <AdminMaterial/>
-  <header className="admin-header"><div className="admin-corner"><img className="admin-settings-icon" src={settingsIcon} width="20" height="20" alt=""/>{top&&<strong>管理后台</strong>}</div>
-   {top&&<div className="admin-actions"><button className="admin-action save" disabled={!definitionDirty||pending} onClick={()=>setDialog('impact')}><img src={saveIcon} width="16" height="16" alt=""/>保存</button><button className="admin-action" onClick={onExit} disabled={pending}><img src={exitIcon} width="16" height="16" alt=""/>退出</button></div>}
-   <button className="top-trigger" aria-label={top?'收起顶栏':'展开顶栏'} onClick={()=>setTop(!top)}><img src={grip} width="16" height="16" alt=""/></button>
+  <header className="admin-header"><div className="admin-corner"><img className="admin-settings-icon" src={settingsIcon} width="20" height="20" alt=""/><strong>管理后台</strong></div>
+   <div className="admin-actions"><button className="admin-action save" disabled={!definitionDirty||pending} onClick={()=>setDialog('impact')}><img src={saveIcon} width="16" height="16" alt=""/>保存</button><button className="admin-action" onClick={onExit} disabled={pending}><img src={exitIcon} width="16" height="16" alt=""/>退出</button></div>
   </header>
   <aside className="admin-sidebar"><span className="sidebar-caption" aria-hidden={!side}>管理功能</span><button className="personnel-nav" aria-label="人员管理" onClick={()=>guarded(()=>{setTab('成员与部门');setDraft(null);setSelected(null);})}><img className="personnel-nav-icon" src={usersIcon} width="20" height="20" alt=""/><span className="personnel-nav-label" aria-hidden={!side}>人员管理</span></button><p className="sidebar-caption" aria-hidden={!side}>成员 · 部门 · 身份 · 权限</p>
    <button className="side-trigger" aria-label={side?'收起侧栏':'展开侧栏'} onClick={()=>setSide(!side)}><img src={chevron} width="16" height="16" alt=""/></button>

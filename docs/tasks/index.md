@@ -34,4 +34,4 @@
 
 本轮完整接入：[V010-019](V010-019.md)，依赖已验收018；task/V010-019-complete-app / ../WeaveOS-worktrees/V010-019。用户要求补齐最新登录注册、Home导航与已批准人员管理R3；Q24确认按Figma原版复刻，组件优化后置。单Agent。
 
-最新尺寸与后台折叠：[V010-020](V010-020.md)，依赖已验收019；task/V010-020-admin-shell / ../WeaveOS-worktrees/V010-020，[PR21](https://github.com/Hubujiu/WeaveOS/pull/21)。Q29同步最新56/40顶栏、176/72侧栏及登录卡片几何；Q30确认保持图标纵坐标并同步Figma收起态。实际状态与验证以任务正文及PR最终head为准，单Agent。
+最新尺寸与后台折叠：[V010-020](V010-020.md)，依赖已验收019；task/V010-020-admin-shell / ../WeaveOS-worktrees/V010-020，[PR21](https://github.com/Hubujiu/WeaveOS/pull/21)。Q31按用户审核移除顶栏收缩、缩短侧栏菜单间距并消除页签多余纵滚条；先同步Figma唯一视觉/交互源，再RED→GREEN。固定56顶栏、176/72侧栏，保留图标纵坐标与正文必要滚动。实际状态与验证以任务正文及PR最终head为准，单Agent。
