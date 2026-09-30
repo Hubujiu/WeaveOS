@@ -1,6 +1,6 @@
-import { fileURLToPath } from 'node:url';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 // Independent oracle: personnel PRD R3 UI AC01–07, Q25 DTOs, Figma Home/Admin.
 const user = {id:'00000000-0000-4000-8000-000000000001',account:'synthetic-admin'};
