@@ -83,6 +83,8 @@ test('Q7: logout sends the frontend-readable host CSRF cookie in the header', as
   const csrf = 'AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE'; // synthetic only
   await context.addCookies([{ name: '__Host-csrf', value: csrf, url: 'https://127.0.0.1:4173/', secure: true, sameSite: 'Lax' }]);
   let received: string | undefined;
+  // Q24 Home account menu + Q25 own-access DTO; preserve Q7's CSRF/storage oracle.
+  await page.route('**/api/v1/me/access', route => route.fulfill({ status: 200, json: { code: 'OK', message: 'ok', data: { user: { id: 'synthetic-id', account: 'synthetic-user' }, bootstrapAdmin: false, personnelManage: false, identities: [], permissions: [], applications: [] }, meta: null } }));
   await page.route('**/api/v1/sessions/current', route => {
     if (route.request().method() === 'DELETE') {
       received = route.request().headers()['x-csrf-token'];
@@ -92,6 +94,7 @@ test('Q7: logout sends the frontend-readable host CSRF cookie in the header', as
   });
   await page.goto('/app');
   expect(await page.evaluate(() => document.cookie.includes('__Host-csrf='))).toBe(true);
+  await page.getByRole('button', { name: '账号', exact: true }).click();
   await page.getByRole('button', { name: '退出登录' }).click();
   await expect(page).toHaveURL(/\/login$/);
   expect(received).toBe(csrf);

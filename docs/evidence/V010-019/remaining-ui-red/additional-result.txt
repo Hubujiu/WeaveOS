@@ -1,0 +1,177 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:21948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:30988) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 6 tests using 1 worker
+
+(node:4148) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › src\personnel.component.spec.ts:176:1 › R3 activity pagination and explicit time range reach the server independently (6.6s)
+(node:28628) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [chromium] › src\personnel.component.spec.ts:183:1 › R3 explicit activity time filter sends RFC3339 and resets the page (30.0s)
+(node:8064) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [chromium] › src\personnel.component.spec.ts:189:1 › R3 empty department deletion confirms version and preserves conflict feedback (30.0s)
+(node:13616) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  4 [chromium] › src\personnel.component.spec.ts:195:61 › R3 unsaved department form survives close and Escape until explicit discard (6.5s)
+(node:3328) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  5 [chromium] › src\personnel.component.spec.ts:195:61 › R3 unsaved member form survives close and Escape until explicit discard (7.2s)
+(node:34604) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  6 [chromium] › src\personnel.component.spec.ts:195:61 › R3 unsaved groups form survives close and Escape until explicit discard (6.5s)
+
+
+  1) [chromium] › src\personnel.component.spec.ts:176:1 › R3 activity pagination and explicit time range reach the server independently 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator: getByRole('button', { name: '下一页', exact: true })
+    Expected: enabled
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeEnabled" getByRole('button', { name: '下一页', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '下一页', exact: true })
+
+
+      177 |  await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();const queries:string[]=[];
+      178 |  await page.route('**/api/v1/personnel/events?**',async route=>{const url=new URL(route.request().url());queries.push(url.search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[],total:21,page:Number(url.searchParams.get('page')||1),pageSize:20},meta:null}});});
+    > 179 |  await page.getByLabel('搜索操作记录',{exact:true}).fill('分页');await expect(page.getByRole('button',{name:'下一页',exact:true})).toBeEnabled();await page.getByRole('button',{name:'下一页',exact:true}).click();await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('page')==='2')).toBe(true);
+          |                                                                                                                         ^
+      180 |  await page.getByLabel('开始时间',{exact:true}).fill('2026-09-01T00:00');await page.getByLabel('结束时间',{exact:true}).fill('2026-09-02T00:00');await page.getByRole('button',{name:'应用时间范围',exact:true}).click();
+      181 |  await expect.poll(()=>queries.some(q=>{const p=new URLSearchParams(q);return p.get('from')===new Date('2026-09-01T00:00').toISOString()&&p.get('to')===new Date('2026-09-02T00:00').toISOString()&&p.get('page')==='1';})).toBe(true);
+      182 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:179:121
+
+    Error Context: test-results\personnel.component-R3-act-ba610-ch-the-server-independently-chromium\error-context.md
+
+  2) [chromium] › src\personnel.component.spec.ts:183:1 › R3 explicit activity time filter sends RFC3339 and resets the page 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByLabel('开始时间', { exact: true })
+
+
+      184 |  await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();const queries:string[]=[];
+      185 |  await page.route('**/api/v1/personnel/events?**',async route=>{queries.push(new URL(route.request().url()).search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:list([]),meta:null}});});
+    > 186 |  await page.getByLabel('开始时间',{exact:true}).fill('2026-09-01T00:00');await page.getByLabel('结束时间',{exact:true}).fill('2026-09-02T00:00');await page.getByRole('button',{name:'应用时间范围',exact:true}).click();
+          |                                             ^
+      187 |  await expect.poll(()=>queries.some(q=>{const p=new URLSearchParams(q);return p.get('from')===new Date('2026-09-01T00:00').toISOString()&&p.get('to')===new Date('2026-09-02T00:00').toISOString();})).toBe(true);
+      188 | });
+      189 | test('R3 empty department deletion confirms version and preserves conflict feedback',async({page})=>{
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:186:45
+
+    Error Context: test-results\personnel.component-R3-exp-ac455-RFC3339-and-resets-the-page-chromium\error-context.md
+
+  3) [chromium] › src\personnel.component.spec.ts:189:1 › R3 empty department deletion confirms version and preserves conflict feedback 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '删除部门', exact: true })
+
+
+      191 |  await page.route('**/api/v1/personnel/departments',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[department,d]},meta:null}}));await page.goto('/app/admin');await page.getByRole('button',{name:/^空部门/}).click();
+      192 |  let version='';await page.route('**/api/v1/personnel/departments/'+d.id+'?**',async route=>{version=new URL(route.request().url()).searchParams.get('version')||'';await route.fulfill({status:409,json:{code:'PERSONNEL_CONFLICT',message:'conflict',data:null,meta:null}});});
+    > 193 |  await page.getByRole('button',{name:'删除部门',exact:true}).click();await page.getByRole('button',{name:'确认删除',exact:true}).click();await expect.poll(()=>version).toBe('1');await expect(page.getByRole('alert')).toContainText('配置已变更');
+          |                                                          ^
+      194 | });
+      195 | for(const mode of ['department','member','groups'] as const)test('R3 unsaved '+mode+' form survives close and Escape until explicit discard',async({page})=>{
+      196 |  await admin(page);
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:193:58
+
+    Error Context: test-results\personnel.component-R3-emp-5109e-preserves-conflict-feedback-chromium\error-context.md
+
+  4) [chromium] › src\personnel.component.spec.ts:195:61 › R3 unsaved department form survives close and Escape until explicit discard 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog')
+    Expected substring: "未保存"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog') with timeout 5000ms
+      - waiting for getByRole('dialog')
+
+
+      198 |  else if(mode==='member'){await page.getByRole('button',{name:'配置身份',exact:true}).click();await page.getByLabel('身份：企业管理员',{exact:true}).check();}
+      199 |  else{await page.getByRole('button',{name:'调整分组',exact:true}).click();await page.getByLabel('目标部门',{exact:true}).selectOption(department.id);}
+    > 200 |  await page.getByRole('button',{name:'关闭',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('未保存');await page.getByRole('button',{name:'继续编辑',exact:true}).click();
+          |                                                                                                       ^
+      201 |  if(mode==='department')await expect(page.getByLabel('部门名称',{exact:true})).toHaveValue('保留部门');else if(mode==='member')await expect(page.getByLabel('身份：企业管理员',{exact:true})).toBeChecked();else await expect(page.getByLabel('目标部门',{exact:true})).toHaveValue(department.id);
+      202 |  await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toContainText('未保存');await page.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('dialog')).toBeHidden();
+      203 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:200:103
+
+    Error Context: test-results\personnel.component-R3-uns-00fe0-cape-until-explicit-discard-chromium\error-context.md
+
+  5) [chromium] › src\personnel.component.spec.ts:195:61 › R3 unsaved member form survives close and Escape until explicit discard 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog')
+    Expected substring: "未保存"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog') with timeout 5000ms
+      - waiting for getByRole('dialog')
+
+
+      198 |  else if(mode==='member'){await page.getByRole('button',{name:'配置身份',exact:true}).click();await page.getByLabel('身份：企业管理员',{exact:true}).check();}
+      199 |  else{await page.getByRole('button',{name:'调整分组',exact:true}).click();await page.getByLabel('目标部门',{exact:true}).selectOption(department.id);}
+    > 200 |  await page.getByRole('button',{name:'关闭',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('未保存');await page.getByRole('button',{name:'继续编辑',exact:true}).click();
+          |                                                                                                       ^
+      201 |  if(mode==='department')await expect(page.getByLabel('部门名称',{exact:true})).toHaveValue('保留部门');else if(mode==='member')await expect(page.getByLabel('身份：企业管理员',{exact:true})).toBeChecked();else await expect(page.getByLabel('目标部门',{exact:true})).toHaveValue(department.id);
+      202 |  await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toContainText('未保存');await page.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('dialog')).toBeHidden();
+      203 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:200:103
+
+    Error Context: test-results\personnel.component-R3-uns-c9c7c-cape-until-explicit-discard-chromium\error-context.md
+
+  6) [chromium] › src\personnel.component.spec.ts:195:61 › R3 unsaved groups form survives close and Escape until explicit discard 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog')
+    Expected substring: "未保存"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog') with timeout 5000ms
+      - waiting for getByRole('dialog')
+
+
+      198 |  else if(mode==='member'){await page.getByRole('button',{name:'配置身份',exact:true}).click();await page.getByLabel('身份：企业管理员',{exact:true}).check();}
+      199 |  else{await page.getByRole('button',{name:'调整分组',exact:true}).click();await page.getByLabel('目标部门',{exact:true}).selectOption(department.id);}
+    > 200 |  await page.getByRole('button',{name:'关闭',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('未保存');await page.getByRole('button',{name:'继续编辑',exact:true}).click();
+          |                                                                                                       ^
+      201 |  if(mode==='department')await expect(page.getByLabel('部门名称',{exact:true})).toHaveValue('保留部门');else if(mode==='member')await expect(page.getByLabel('身份：企业管理员',{exact:true})).toBeChecked();else await expect(page.getByLabel('目标部门',{exact:true})).toHaveValue(department.id);
+      202 |  await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toContainText('未保存');await page.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('dialog')).toBeHidden();
+      203 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\personnel.component.spec.ts:200:103
+
+    Error Context: test-results\personnel.component-R3-uns-3ae4b-cape-until-explicit-discard-chromium\error-context.md
+
+  6 failed
+    [chromium] › src\personnel.component.spec.ts:176:1 › R3 activity pagination and explicit time range reach the server independently 
+    [chromium] › src\personnel.component.spec.ts:183:1 › R3 explicit activity time filter sends RFC3339 and resets the page 
+    [chromium] › src\personnel.component.spec.ts:189:1 › R3 empty department deletion confirms version and preserves conflict feedback 
+    [chromium] › src\personnel.component.spec.ts:195:61 › R3 unsaved department form survives close and Escape until explicit discard 
+    [chromium] › src\personnel.component.spec.ts:195:61 › R3 unsaved member form survives close and Escape until explicit discard 
+    [chromium] › src\personnel.component.spec.ts:195:61 › R3 unsaved groups form survives close and Escape until explicit discard 

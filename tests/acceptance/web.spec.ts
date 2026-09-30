@@ -94,6 +94,8 @@ test('FR-005/008/009: real login survives reload, then logout revokes it', async
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page).toHaveURL(/\/app(?:\/|\?|$)/);
   await page.reload();
+  // Q24 Figma Home: account information/logout now live inside the account menu.
+  await page.getByRole('button', { name: '账号', exact: true }).click();
   await expect(page.getByText(f.user.account, { exact: true })).toBeVisible();
   const cookies = await context.cookies();
   const session = cookies.find(cookie => cookie.name === '__Host-session');

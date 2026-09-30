@@ -1,0 +1,43 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:35264) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:32988) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:33456) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 14:01:32 [vite] http proxy error: /api/v1/me/access
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:8080
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)
+[WebServer] 14:01:32 [vite] http proxy error: /api/v1/me/access
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:8080
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)
+  x  1 [chromium] › apps\web\src\auth.component.spec.ts:82:1 › Q7: logout sends the frontend-readable host CSRF cookie in the header (30.0s)
+
+
+  1) [chromium] › apps\web\src\auth.component.spec.ts:82:1 › Q7: logout sends the frontend-readable host CSRF cookie in the header 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '退出登录' })
+
+
+      93 |   await page.goto('/app');
+      94 |   expect(await page.evaluate(() => document.cookie.includes('__Host-csrf='))).toBe(true);
+    > 95 |   await page.getByRole('button', { name: '退出登录' }).click();
+         |                                                    ^
+      96 |   await expect(page).toHaveURL(/\/login$/);
+      97 |   expect(received).toBe(csrf);
+      98 |   expect(await page.evaluate(() => localStorage.length + sessionStorage.length)).toBe(0);
+        at D:\Workspace\WeaveOS-worktrees\V010-019\apps\web\src\auth.component.spec.ts:95:52
+
+    Error Context: apps\web\test-results\auth.component-Q7-logout-s-c2210-t-CSRF-cookie-in-the-header-chromium\error-context.md
+
+  1 failed
+    [chromium] › apps\web\src\auth.component.spec.ts:82:1 › Q7: logout sends the frontend-readable host CSRF cookie in the header 

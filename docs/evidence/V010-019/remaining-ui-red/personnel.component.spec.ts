@@ -78,7 +78,7 @@ test('R3 departments create uses selected parent; enterprise root is protected',
  await page.getByRole('button',{name:'确认创建',exact:true}).click();await expect.poll(()=>input).toEqual({name:'研发',parentId:department.id});
 });
 test('R3 invitation is deliberate one-time result; activity has true empty state',async({page})=>{
- await admin(page);let created=0;await page.route('**/api/v1/invitations',async route=>{created++;await route.fulfill({status:201,json:{code:'OK',message:'success',data:{id:'00000000-0000-4000-8000-000000000006',invitationCode:'synthetic-component-fixture'},meta:null}});});
+ await admin(page);let created=0;await page.route('**/api/v1/invitations',async route=>{created++;await route.fulfill({status:201,json:{code:'OK',message:'success',data:{id:'00000000-0000-4000-8000-000000000006',code:'synthetic-component-fixture'},meta:null}});});
  await page.getByRole('button',{name:'邀请成员',exact:true}).click();expect(created).toBe(0);await page.getByRole('button',{name:'生成邀请码',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).toHaveValue('synthetic-component-fixture');expect(created).toBe(1);await page.getByRole('button',{name:'关闭',exact:true}).click();await page.getByRole('tab',{name:'操作记录',exact:true}).click();await expect(page.getByText('暂无操作记录',{exact:true})).toBeVisible();await expect(page.getByText('周涵',{exact:true})).toBeHidden();
 });
 test('R3 reduced motion and compact layouts retain keyboard-reachable navigation',async({page})=>{
@@ -171,35 +171,6 @@ test('R3 invitation uses the existing invitationCode response and clears it on c
  await admin(page);await page.route('**/api/v1/invitations',route=>route.fulfill({status:201,json:{code:'OK',message:'success',data:{id:'00000000-0000-4000-8000-000000000006',invitationCode:'synthetic-existing-contract'},meta:null}}));
  await page.getByRole('button',{name:'邀请成员',exact:true}).click();await page.getByRole('button',{name:'生成邀请码',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).toHaveValue('synthetic-existing-contract');
  await page.getByRole('button',{name:'关闭',exact:true}).click();await page.getByRole('button',{name:'邀请成员',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).toBeHidden();await expect(page.getByRole('button',{name:'生成邀请码',exact:true})).toBeVisible();
-});
-
-test('R3 activity pagination and explicit time range reach the server independently',async({page})=>{
- await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();const queries:string[]=[];
- await page.route('**/api/v1/personnel/events?**',async route=>{const url=new URL(route.request().url());queries.push(url.search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[],total:21,page:Number(url.searchParams.get('page')||1),pageSize:20},meta:null}});});
- await page.getByLabel('搜索操作记录',{exact:true}).fill('分页');await expect(page.getByRole('button',{name:'下一页',exact:true})).toBeEnabled();await page.getByRole('button',{name:'下一页',exact:true}).click();await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('page')==='2')).toBe(true);
- await page.getByLabel('开始时间',{exact:true}).fill('2026-09-01T00:00');await page.getByLabel('结束时间',{exact:true}).fill('2026-09-02T00:00');await page.getByRole('button',{name:'应用时间范围',exact:true}).click();
- await expect.poll(()=>queries.some(q=>{const p=new URLSearchParams(q);return p.get('from')===new Date('2026-09-01T00:00').toISOString()&&p.get('to')===new Date('2026-09-02T00:00').toISOString()&&p.get('page')==='1';})).toBe(true);
-});
-test('R3 explicit activity time filter sends RFC3339 and resets the page',async({page})=>{
- await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();const queries:string[]=[];
- await page.route('**/api/v1/personnel/events?**',async route=>{queries.push(new URL(route.request().url()).search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:list([]),meta:null}});});
- await page.getByLabel('开始时间',{exact:true}).fill('2026-09-01T00:00');await page.getByLabel('结束时间',{exact:true}).fill('2026-09-02T00:00');await page.getByRole('button',{name:'应用时间范围',exact:true}).click();
- await expect.poll(()=>queries.some(q=>{const p=new URLSearchParams(q);return p.get('from')===new Date('2026-09-01T00:00').toISOString()&&p.get('to')===new Date('2026-09-02T00:00').toISOString();})).toBe(true);
-});
-test('R3 empty department deletion confirms version and preserves conflict feedback',async({page})=>{
- await fixture(page);const d={...department,id:'00000000-0000-4000-8000-000000000010',name:'空部门',parentId:department.id,isRoot:false};
- await page.route('**/api/v1/personnel/departments',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[department,d]},meta:null}}));await page.goto('/app/admin');await page.getByRole('button',{name:/^空部门/}).click();
- let version='';await page.route('**/api/v1/personnel/departments/'+d.id+'?**',async route=>{version=new URL(route.request().url()).searchParams.get('version')||'';await route.fulfill({status:409,json:{code:'PERSONNEL_CONFLICT',message:'conflict',data:null,meta:null}});});
- await page.getByRole('button',{name:'删除部门',exact:true}).click();await page.getByRole('button',{name:'确认删除',exact:true}).click();await expect.poll(()=>version).toBe('1');await expect(page.getByRole('alert')).toContainText('配置已变更');
-});
-for(const mode of ['department','member','groups'] as const)test('R3 unsaved '+mode+' form survives close and Escape until explicit discard',async({page})=>{
- await admin(page);
- if(mode==='department'){await page.getByRole('button',{name:'新建部门',exact:true}).click();await page.getByLabel('部门名称',{exact:true}).fill('保留部门');}
- else if(mode==='member'){await page.getByRole('button',{name:'配置身份',exact:true}).click();await page.getByLabel('身份：企业管理员',{exact:true}).check();}
- else{await page.getByRole('button',{name:'调整分组',exact:true}).click();await page.getByLabel('目标部门',{exact:true}).selectOption(department.id);}
- await page.getByRole('button',{name:'关闭',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('未保存');await page.getByRole('button',{name:'继续编辑',exact:true}).click();
- if(mode==='department')await expect(page.getByLabel('部门名称',{exact:true})).toHaveValue('保留部门');else if(mode==='member')await expect(page.getByLabel('身份：企业管理员',{exact:true})).toBeChecked();else await expect(page.getByLabel('目标部门',{exact:true})).toHaveValue(department.id);
- await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toContainText('未保存');await page.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('dialog')).toBeHidden();
 });
 
 

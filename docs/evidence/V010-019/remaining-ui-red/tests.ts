@@ -78,7 +78,7 @@ test('R3 departments create uses selected parent; enterprise root is protected',
  await page.getByRole('button',{name:'确认创建',exact:true}).click();await expect.poll(()=>input).toEqual({name:'研发',parentId:department.id});
 });
 test('R3 invitation is deliberate one-time result; activity has true empty state',async({page})=>{
- await admin(page);let created=0;await page.route('**/api/v1/invitations',async route=>{created++;await route.fulfill({status:201,json:{code:'OK',message:'success',data:{id:'00000000-0000-4000-8000-000000000006',invitationCode:'synthetic-component-fixture'},meta:null}});});
+ await admin(page);let created=0;await page.route('**/api/v1/invitations',async route=>{created++;await route.fulfill({status:201,json:{code:'OK',message:'success',data:{id:'00000000-0000-4000-8000-000000000006',code:'synthetic-component-fixture'},meta:null}});});
  await page.getByRole('button',{name:'邀请成员',exact:true}).click();expect(created).toBe(0);await page.getByRole('button',{name:'生成邀请码',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).toHaveValue('synthetic-component-fixture');expect(created).toBe(1);await page.getByRole('button',{name:'关闭',exact:true}).click();await page.getByRole('tab',{name:'操作记录',exact:true}).click();await expect(page.getByText('暂无操作记录',{exact:true})).toBeVisible();await expect(page.getByText('周涵',{exact:true})).toBeHidden();
 });
 test('R3 reduced motion and compact layouts retain keyboard-reachable navigation',async({page})=>{
