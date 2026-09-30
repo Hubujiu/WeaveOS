@@ -190,7 +190,7 @@ func (a *Application) SaveDefinition(ctx context.Context, p session.Principal, k
 		return Definition{}, ErrInvalid
 	}
 	in.PermissionCodes = unique(in.PermissionCodes)
-	in.TemplateIDs = unique(in.TemplateIDs)
+	in.TemplateIDs = uniqueIDs(in.TemplateIDs)
 	tx, err := a.write(ctx, p)
 	if err != nil {
 		return Definition{}, err

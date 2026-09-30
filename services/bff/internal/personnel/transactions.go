@@ -17,7 +17,14 @@ const maxSafeVersion = int64(9007199254740991)
 
 func validID(value string) bool {
 	var id pgtype.UUID
-	return id.Scan(value) == nil && id.Valid && id.String() == value
+	return id.Scan(value) == nil && id.Valid && id.String() == strings.ToLower(value)
+}
+func uniqueIDs(values []string) []string {
+	ids := make([]string, len(values))
+	for i, value := range values {
+		ids[i] = strings.ToLower(value)
+	}
+	return unique(ids)
 }
 func validName(value string) bool {
 	return strings.TrimSpace(value) != "" && utf8.RuneCountInString(value) <= 100

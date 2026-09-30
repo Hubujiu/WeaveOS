@@ -7,6 +7,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
 	"reflect"
+	"strings"
 )
 
 func getMember(ctx context.Context, tx pgx.Tx, id string) (Member, error) {
@@ -137,7 +138,7 @@ func (a *Application) SetMemberIdentities(ctx context.Context, p session.Princip
 	if !validID(id) || version < 0 || version > maxSafeVersion {
 		return Member{}, ErrInvalid
 	}
-	ids = unique(ids)
+	ids = uniqueIDs(ids)
 	for _, identity := range ids {
 		if !validID(identity) {
 			return Member{}, ErrInvalid
@@ -176,6 +177,8 @@ func (a *Application) SetMemberIdentities(ctx context.Context, p session.Princip
 	return finishMember(ctx, tx, p, id, "MEMBER_IDENTITIES_UPDATED", meta, map[string]any{"identityIds": old.IdentityIDs}, map[string]any{"identityIds": ids})
 }
 func (a *Application) ChangeMemberGroups(ctx context.Context, p session.Principal, id string, in GroupInput, meta RequestMetadata) (Member, error) {
+	in.DepartmentID = strings.ToLower(in.DepartmentID)
+	in.SourceDepartmentID = strings.ToLower(in.SourceDepartmentID)
 	if !validID(id) || !validID(in.DepartmentID) || in.Version < 0 || in.Version > maxSafeVersion {
 		return Member{}, ErrInvalid
 	}
