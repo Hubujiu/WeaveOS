@@ -123,5 +123,21 @@ SELECT e.id, e.occurred_at, COALESCE(u.account, '系统') AS actor_account,
 FROM auth.authentication_events e LEFT JOIN auth.users u ON u.id = e.actor_user_id
 WHERE e.event_type IN ('personnel_changed', 'invitation_created');
 REVOKE ALL ON personnel.activity_events FROM PUBLIC;
+-- FOR SHARE requires UPDATE privilege in PostgreSQL. Keep the application
+-- directory read-only and expose only this owner-defined, non-mutating lock.
+-- +goose StatementBegin
+CREATE FUNCTION personnel.lock_permission_catalog(member_id uuid)
+RETURNS SETOF varchar LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog AS $$
+ SELECT c.code FROM personnel.permission_catalog c WHERE EXISTS (
+   SELECT 1 FROM personnel.member_identities m JOIN personnel.identity_permissions ip ON ip.identity_id=m.identity_id
+   WHERE m.user_id=member_id AND ip.permission_code=c.code
+   UNION ALL
+   SELECT 1 FROM personnel.member_identities m JOIN personnel.identity_templates it ON it.identity_id=m.identity_id
+   JOIN personnel.template_permissions tp ON tp.template_id=it.template_id
+   WHERE m.user_id=member_id AND tp.permission_code=c.code
+ ) ORDER BY c.code FOR SHARE OF c
+$$;
+-- +goose StatementEnd
+REVOKE ALL ON FUNCTION personnel.lock_permission_catalog(uuid) FROM PUBLIC;
 -- No destructive Down: old authentication remains compatible; personnel data is durable.
 

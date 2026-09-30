@@ -107,11 +107,7 @@ func (a *Application) AuthorizeWrite(ctx context.Context, tx pgx.Tx, p session.P
 	for _, sql := range []string{
 		"SELECT i.id FROM personnel.identities i JOIN personnel.member_identities m ON m.identity_id=i.id WHERE m.user_id=$1 ORDER BY i.id FOR SHARE OF i",
 		"SELECT t.id FROM personnel.permission_templates t WHERE EXISTS(SELECT 1 FROM personnel.identity_templates it JOIN personnel.member_identities m ON m.identity_id=it.identity_id WHERE it.template_id=t.id AND m.user_id=$1) ORDER BY t.id FOR SHARE OF t",
-		`SELECT c.code FROM personnel.permission_catalog c WHERE EXISTS(
-   SELECT 1 FROM personnel.member_identities m JOIN personnel.identity_permissions ip ON ip.identity_id=m.identity_id WHERE m.user_id=$1 AND ip.permission_code=c.code
-   UNION ALL
-   SELECT 1 FROM personnel.member_identities m JOIN personnel.identity_templates it ON it.identity_id=m.identity_id JOIN personnel.template_permissions tp ON tp.template_id=it.template_id WHERE m.user_id=$1 AND tp.permission_code=c.code
-  ) ORDER BY c.code FOR SHARE OF c`,
+		"SELECT personnel.lock_permission_catalog($1)",
 	} {
 		if _, err := tx.Exec(ctx, sql, p.UserID); err != nil {
 			return err
