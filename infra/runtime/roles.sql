@@ -28,3 +28,16 @@ GRANT USAGE ON SCHEMA auth, public TO auth_backup;
 GRANT SELECT ON ALL TABLES IN SCHEMA auth, public TO auth_backup;
 -- pg_dump must read original sequence positions; SELECT cannot advance/set them.
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA auth, public TO auth_backup;
+-- Q25 personnel configuration belongs to the application; application registration
+-- remains owner-controlled. Audit activity is read only through the safe view.
+REVOKE ALL ON SCHEMA personnel FROM PUBLIC;
+REVOKE ALL ON ALL TABLES IN SCHEMA personnel FROM PUBLIC, auth_app, auth_reader, auth_maintenance, auth_backup;
+GRANT USAGE ON SCHEMA personnel TO auth_app, auth_backup;
+GRANT SELECT, INSERT, UPDATE, DELETE ON
+ personnel.departments, personnel.department_members, personnel.identities,
+ personnel.permission_templates, personnel.member_configuration,
+ personnel.member_identities, personnel.identity_templates,
+ personnel.identity_permissions, personnel.template_permissions TO auth_app;
+GRANT SELECT ON personnel.permission_catalog, personnel.activity_events TO auth_app;
+GRANT SELECT ON ALL TABLES IN SCHEMA personnel TO auth_backup;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA personnel TO auth_backup;
