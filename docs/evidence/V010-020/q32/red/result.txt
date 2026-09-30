@@ -1,0 +1,232 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:55196) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:56196) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 6 tests using 1 worker
+
+(node:55664) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\personnel.component.spec.ts:26:1 › Q32 identity select has the separated rounded menu and preserves server filtering (6.1s)
+(node:57912) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [chromium] › apps\web\src\personnel.component.spec.ts:41:1 › Q32 grouped selectors keep modal focus and Escape first dismisses the menu (1.5s)
+(node:57776) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [chromium] › apps\web\src\personnel.component.spec.ts:52:1 › Q32 parent department chooser uses options without closing the native modal (1.5s)
+(node:53372) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  4 [chromium] › apps\web\src\personnel.component.spec.ts:60:1 › Q32 long action menu stays in the viewport and keyboard chooses the final real action (1.6s)
+(node:58284) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  5 [chromium] › apps\web\src\personnel.component.spec.ts:71:1 › Q32 pill indicator slides between tabs only after unsaved changes are resolved (2.9s)
+(node:55724) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  6 [chromium] › apps\web\src\personnel.component.spec.ts:83:1 › Q32 reduced motion removes displacement and option stagger and keeps compact tabs reachable (2.9s)
+
+
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:26:1 › Q32 identity select has the separated rounded menu and preserves server filtering 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  getByRole('combobox', { name: '筛选身份', exact: true })
+    Expected: "38px"
+    Received: "44px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" getByRole('combobox', { name: '筛选身份', exact: true }) with timeout 1500ms
+      - waiting for getByRole('combobox', { name: '筛选身份', exact: true })
+        14 × locator resolved to <select aria-label="筛选身份">…</select>
+           - unexpected value "41px"
+        2 × locator resolved to <select aria-label="筛选身份">…</select>
+          - unexpected value "44px"
+
+
+      27 |  await page.setViewportSize({width:1920,height:1080});await admin(page);
+      28 |  const combo=page.getByRole('combobox',{name:'筛选身份',exact:true});
+    > 29 |  await expect.soft(combo).toHaveCSS('height','38px');await expect.soft(combo).toHaveCSS('border-radius','12px');
+         |                           ^
+      30 |  expect.soft(await combo.evaluate(n=>n.tagName)).toBe('BUTTON');await combo.click();
+      31 |  const menu=page.getByRole('listbox',{name:'筛选身份',exact:true});await expect(menu).toBeVisible();
+      32 |  await expect(menu).toHaveCSS('border-radius','12px');await expect(page.getByRole('option',{name:'全部身份',exact:true})).toHaveCSS('height','32px');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:29:27
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  getByRole('combobox', { name: '筛选身份', exact: true })
+    Expected: "12px"
+    Received: "8px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" getByRole('combobox', { name: '筛选身份', exact: true }) with timeout 1500ms
+      - waiting for getByRole('combobox', { name: '筛选身份', exact: true })
+        16 × locator resolved to <select aria-label="筛选身份">…</select>
+           - unexpected value "8px"
+
+
+      27 |  await page.setViewportSize({width:1920,height:1080});await admin(page);
+      28 |  const combo=page.getByRole('combobox',{name:'筛选身份',exact:true});
+    > 29 |  await expect.soft(combo).toHaveCSS('height','38px');await expect.soft(combo).toHaveCSS('border-radius','12px');
+         |                                                                               ^
+      30 |  expect.soft(await combo.evaluate(n=>n.tagName)).toBe('BUTTON');await combo.click();
+      31 |  const menu=page.getByRole('listbox',{name:'筛选身份',exact:true});await expect(menu).toBeVisible();
+      32 |  await expect(menu).toHaveCSS('border-radius','12px');await expect(page.getByRole('option',{name:'全部身份',exact:true})).toHaveCSS('height','32px');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:29:79
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "BUTTON"
+    Received: "SELECT"
+
+      28 |  const combo=page.getByRole('combobox',{name:'筛选身份',exact:true});
+      29 |  await expect.soft(combo).toHaveCSS('height','38px');await expect.soft(combo).toHaveCSS('border-radius','12px');
+    > 30 |  expect.soft(await combo.evaluate(n=>n.tagName)).toBe('BUTTON');await combo.click();
+         |                                                  ^
+      31 |  const menu=page.getByRole('listbox',{name:'筛选身份',exact:true});await expect(menu).toBeVisible();
+      32 |  await expect(menu).toHaveCSS('border-radius','12px');await expect(page.getByRole('option',{name:'全部身份',exact:true})).toHaveCSS('height','32px');
+      33 |  await expect.poll(async()=>{const a=(await combo.boundingBox())!,b=(await menu.boundingBox())!;return Math.round(b.y-a.y-a.height);}).toBe(8);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:30:50
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('listbox', { name: '筛选身份', exact: true })
+    Expected: visible
+    Timeout: 1500ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('listbox', { name: '筛选身份', exact: true }) with timeout 1500ms
+      - waiting for getByRole('listbox', { name: '筛选身份', exact: true })
+
+
+      29 |  await expect.soft(combo).toHaveCSS('height','38px');await expect.soft(combo).toHaveCSS('border-radius','12px');
+      30 |  expect.soft(await combo.evaluate(n=>n.tagName)).toBe('BUTTON');await combo.click();
+    > 31 |  const menu=page.getByRole('listbox',{name:'筛选身份',exact:true});await expect(menu).toBeVisible();
+         |                                                                                   ^
+      32 |  await expect(menu).toHaveCSS('border-radius','12px');await expect(page.getByRole('option',{name:'全部身份',exact:true})).toHaveCSS('height','32px');
+      33 |  await expect.poll(async()=>{const a=(await combo.boundingBox())!,b=(await menu.boundingBox())!;return Math.round(b.y-a.y-a.height);}).toBe(8);
+      34 |  const queries:string[]=[];await page.route('**/api/v1/personnel/members?**',r=>{queries.push(new URL(r.request().url()).search);return r.fulfill({status:200,json:{code:'OK',message:'success',data:list([member]),meta:null}});});
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:31:83
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-id-dd5f3--preserves-server-filtering-chromium\error-context.md
+
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:41:1 › Q32 grouped selectors keep modal focus and Escape first dismisses the menu 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "BUTTON"
+    Received: "SELECT"
+
+      41 | test('Q32 grouped selectors keep modal focus and Escape first dismisses the menu',async({page})=>{
+      42 |  await admin(page);await page.getByRole('button',{name:'调整分组',exact:true}).click();
+    > 43 |  const operation=page.getByRole('combobox',{name:'分组操作',exact:true});expect(await operation.evaluate(n=>n.tagName)).toBe('BUTTON');
+         |                                                                                                                     ^
+      44 |  await operation.press('ArrowDown');await operation.press('End');await operation.press('Enter');await expect(operation).toContainText('移动');
+      45 |  for(const label of ['来源部门','目标部门']){const combo=page.getByRole('combobox',{name:label,exact:true});expect(await combo.evaluate(n=>n.tagName)).toBe('BUTTON');await expect(combo).toHaveCSS('height','38px');}
+      46 |  const target=page.getByRole('combobox',{name:'目标部门',exact:true});await target.click();await expect(page.getByRole('listbox',{name:'目标部门',exact:true})).toBeVisible();
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:43:117
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-gr-fa57f-pe-first-dismisses-the-menu-chromium\error-context.md
+
+  3) [chromium] › apps\web\src\personnel.component.spec.ts:52:1 › Q32 parent department chooser uses options without closing the native modal 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "BUTTON"
+    Received: "SELECT"
+
+      52 | test('Q32 parent department chooser uses options without closing the native modal',async({page})=>{
+      53 |  await admin(page);await page.getByRole('button',{name:'新建部门',exact:true}).click();
+    > 54 |  const combo=page.getByRole('combobox',{name:'父部门',exact:true});expect(await combo.evaluate(n=>n.tagName)).toBe('BUTTON');
+         |                                                                                                            ^
+      55 |  await combo.click();await page.getByRole('option',{name:'企业',exact:true}).click();await expect(combo).toBeFocused();await expect(page.getByRole('dialog',{name:'新建部门',exact:true})).toBeVisible();
+      56 |  let sent:unknown;await page.route('**/api/v1/personnel/departments',r=>{sent=r.request().postDataJSON();return r.fulfill({status:201,json:{code:'OK',message:'success',data:department,meta:null}});});
+      57 |  await page.getByLabel('部门名称',{exact:true}).fill('设计组');await page.getByRole('button',{name:'确认创建',exact:true}).click();await expect.poll(()=>sent).toEqual({name:'设计组',parentId:department.id});
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:54:108
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-pa-0a1dd-ut-closing-the-native-modal-chromium\error-context.md
+
+  4) [chromium] › apps\web\src\personnel.component.spec.ts:60:1 › Q32 long action menu stays in the viewport and keyboard chooses the final real action 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "BUTTON"
+    Received: "SELECT"
+
+      60 | test('Q32 long action menu stays in the viewport and keyboard chooses the final real action',async({page})=>{
+      61 |  await page.setViewportSize({width:390,height:600});await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();
+    > 62 |  const combo=page.getByRole('combobox',{name:'操作类型',exact:true});expect(await combo.evaluate(n=>n.tagName)).toBe('BUTTON');await combo.press('ArrowDown');
+         |                                                                                                             ^
+      63 |  const menu=page.getByRole('listbox',{name:'操作类型',exact:true});await expect(menu).toBeVisible();
+      64 |  await expect.poll(async()=>{const b=(await menu.boundingBox())!;return b.y>=7&&b.y+b.height<=593;}).toBe(true);
+      65 |  expect(await menu.evaluate(n=>n.scrollHeight>n.clientHeight)).toBe(true);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:62:109
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-lo-7ef3e-ooses-the-final-real-action-chromium\error-context.md
+
+  5) [chromium] › apps\web\src\personnel.component.spec.ts:71:1 › Q32 pill indicator slides between tabs only after unsaved changes are resolved 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.personnel-tab-indicator')
+    Expected: 1
+    Received: 0
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toHaveCount" locator('.personnel-tab-indicator') with timeout 1500ms
+      - waiting for locator('.personnel-tab-indicator')
+        16 × locator resolved to 0 elements
+           - unexpected value "0"
+
+
+      71 | test('Q32 pill indicator slides between tabs only after unsaved changes are resolved',async({page})=>{
+      72 |  await page.setViewportSize({width:1920,height:1080});await admin(page);
+    > 73 |  const indicator=page.locator('.personnel-tab-indicator');await expect(indicator).toHaveCount(1);await expect(indicator).toHaveCSS('background-color','rgb(23, 23, 23)');await expect(indicator).toHaveCSS('height','32px');
+         |                                                                                   ^
+      74 |  await expect(page.getByRole('tablist')).toHaveCSS('height','48px');for(const tab of await page.getByRole('tab').all())await expect(tab).toHaveCSS('height','32px');
+      75 |  const initial=(await indicator.boundingBox())!.x;
+      76 |  const positions=await page.evaluate(async()=>{const el=document.querySelector('.personnel-tab-indicator')!;const samples:number[]=[];const done=new Promise<number[]>(resolve=>{const start=performance.now();function sample(){samples.push(el.getBoundingClientRect().x);if(performance.now()-start<900)requestAnimationFrame(sample);else resolve(samples);}requestAnimationFrame(sample);});(document.querySelectorAll('[role=tab]')[1] as HTMLElement).click();return done;});
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:73:83
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-pi-b3ecb-nsaved-changes-are-resolved-chromium\error-context.md
+
+  6) [chromium] › apps\web\src\personnel.component.spec.ts:83:1 › Q32 reduced motion removes displacement and option stagger and keeps compact tabs reachable 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  getByRole('tab', { name: '操作记录', exact: true })
+    Expected: "true"
+    Received: "false"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toHaveAttribute" getByRole('tab', { name: '操作记录', exact: true }) with timeout 1500ms
+      - waiting for getByRole('tab', { name: '操作记录', exact: true })
+        16 × locator resolved to <button role="tab" aria-selected="false" aria-controls="personnel-panel">操作记录</button>
+           - unexpected value "false"
+
+
+      83 | test('Q32 reduced motion removes displacement and option stagger and keeps compact tabs reachable',async({page})=>{
+      84 |  await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:390,height:844});await admin(page);
+    > 85 |  const first=page.getByRole('tab',{name:'成员与部门',exact:true});await first.focus();await first.press('End');await page.keyboard.press('Enter');await expect(page.getByRole('tab',{name:'操作记录',exact:true})).toHaveAttribute('aria-selected','true');
+         |                                                                                                                                                                                                           ^
+      86 |  const last=(await page.getByRole('tab',{name:'操作记录',exact:true}).boundingBox())!,bar=(await page.getByRole('tablist').boundingBox())!;expect(last.x).toBeGreaterThanOrEqual(bar.x);expect(last.x+last.width).toBeLessThanOrEqual(bar.x+bar.width+1);
+      87 |  expect(await page.getByRole('tablist').evaluate(n=>n.scrollHeight===n.clientHeight)).toBe(true);
+      88 |  const combo=page.getByRole('combobox',{name:'操作类型',exact:true});await combo.click();const menu=page.getByRole('listbox',{name:'操作类型',exact:true});await expect(menu).toBeVisible();await expect(menu).toHaveCSS('transform','none');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:85:203
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-re-196d2-eeps-compact-tabs-reachable-chromium\error-context.md
+
+  6 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:26:1 › Q32 identity select has the separated rounded menu and preserves server filtering 
+    [chromium] › apps\web\src\personnel.component.spec.ts:41:1 › Q32 grouped selectors keep modal focus and Escape first dismisses the menu 
+    [chromium] › apps\web\src\personnel.component.spec.ts:52:1 › Q32 parent department chooser uses options without closing the native modal 
+    [chromium] › apps\web\src\personnel.component.spec.ts:60:1 › Q32 long action menu stays in the viewport and keyboard chooses the final real action 
+    [chromium] › apps\web\src\personnel.component.spec.ts:71:1 › Q32 pill indicator slides between tabs only after unsaved changes are resolved 
+    [chromium] › apps\web\src\personnel.component.spec.ts:83:1 › Q32 reduced motion removes displacement and option stagger and keeps compact tabs reachable 

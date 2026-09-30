@@ -1,0 +1,45 @@
+{
+  "task": "V010-020",
+  "decision": "Q32",
+  "confirmedOn": "2026-10-01 +08:00",
+  "sourceCommit": "c0319d887e10775c8968a7d6a451f248858726ec",
+  "references": [
+    "https://hubujiu.github.io/arca-ui/#/components/select-menu",
+    "https://hubujiu.github.io/arca-ui/#/components/tabs-bar"
+  ],
+  "notion": {
+    "page": "https://app.notion.com/p/3e92f5a9e64881f4be86c10bc38fff61",
+    "lastEdited": "2026-09-30T16:26:46.713Z",
+    "section": "5.6",
+    "rules": "### 5.6 Q32 · 下拉选择框与 Pill 页签（2026-10-01）\n用户本会话明确要求所有下拉选择框使用 [Arca UI Select Menu](https://hubujiu.github.io/arca-ui/#/components/select-menu) 样式与动画，四个后台页签使用 [Arca UI Tabs Bar](https://hubujiu.github.io/arca-ui/#/components/tabs-bar) 默认 Pill 样式。实际读取公开示例和固定源版本 c0319d887e10775c8968a7d6a451f248858726ec；公开源码只作为视觉/动效依据，不复制原件、不新增外部UI依赖。Q24限定项目内原生页面控件授权延续，本条取代旧下划线样式和Q31按钮内高47px预期。\n范围：筛选身份、操作类型、分组操作、来源部门、目标部门、父部门六处单选控件；账号动作菜单和时间范围表单不转成单选。保留原选项、实际ID、空值、筛选重置页码与提交参数，以及现有权限和未保存离开保护。\n下拉视觉：触发器38px高、1px边框、12px圆角、水平内边距12px、14/20px字与16px箭头。白色背景/面板，字#0A0A0A、边框#E5E5E5、选项和箭头默认#737373；hover选项背景#F5F5F5。面板同触发器宽，最终间距8px，12px圆角、阴影和4px内边距；选项32px高、8px圆角、水平内边距10px。长度与有限视口可滚达，窗口下方不足时向上展开，业务触发器宽度由现有布局决定而非强制示例224px。\n下拉动效：箭头约400ms弹簧旋转180度；面板高度约420ms弹簧展开，opacity180ms，分离间距约600ms弹簧/120ms延迟；靠触发器的圆角展开300ms/140ms延迟，触发器相邻圆角0→0→12、600ms。选项由opacity0/向上6px/blur3px到完整可见，50ms初始延迟、35ms交错。关闭高度260ms/140ms延迟，opacity160ms/120ms延迟，间距约300ms；相关缓出为cubic-bezier(.16,1,.3,1)。减少动效时面板仅不超过120ms高度/透明度变化，无位移/模糊/交错，箭头即时到终态。\n页签视觉：外占位保持48px且无纵溢出；40px白色胶囊轨道、4px内边距和4px间距，32px按钮/指示器、水平内边距14px，14/20px字重500。选中背景#171717、字#FAFAFA；未选字#737373、hover字#0A0A0A，透明hover背景。选中胶囊按spring stiffness245/damping36/mass1.2滑动，内容180ms opacity0→1/y4→0；减少动效即时到终态。窄屏横向可达四页签，仍保留正文/表格真实滚动。\n可访问性：选择框有可读名称/combobox/listbox/option与选中状态，方向键、Home/End、Enter/Space、Escape和Tab可用；关闭后保留触发器焦点。模态表单里Escape先关闭选项菜单，再由既有弹窗保护处理下一次Escape。页签受实际业务tab控制，未保存确认前不得先移动指示器或切内容。审批/冻结/上线属性与后端业务不改变。\n"
+  },
+  "figma": {
+    "fileId": "r0mSerkjrPdwJVME658W6a",
+    "rulesNode": "253:2989",
+    "viewComponent": "164:3608",
+    "tabComponent": "159:416",
+    "viewTabs": [
+      "161:382",
+      "162:3411",
+      "162:3490",
+      "162:3569"
+    ],
+    "trackHeight": 40,
+    "buttonHeight": 32,
+    "outerHeight": 48
+  },
+  "components": "Project-local original implementation under Q24; reference source not copied and no dependencies added.",
+  "testMapping": {
+    "selectors": "Q32 first four cases: all six controls, styling, modal Escape/focus, server parameters and long-list scrolling",
+    "tabs": "Q32 pill and reduced cases: dimensions, physical spring movement, dirty guard and keyboard/compact access"
+  },
+  "red": {
+    "command": "pnpm exec playwright test --config .work/q31.config.ts --grep Q32",
+    "environment": "Windows / Node22.23.1 / pnpm10.28.2 / Playwright1.63 Chromium",
+    "exitCode": 1,
+    "failed": 6,
+    "reason": "Actual SELECT controls (40px/r8), absent Pill indicator, and End navigation missing; all tests reached target assertions.",
+    "immutableDirectory": "red",
+    "implementationWritten": false
+  }
+}
