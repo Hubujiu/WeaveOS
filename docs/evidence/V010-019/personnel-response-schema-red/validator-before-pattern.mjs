@@ -6,7 +6,7 @@ const document = JSON.parse(readFileSync(new URL('../../contracts/openapi/openap
 const codes = JSON.parse(readFileSync(new URL('../../contracts/errors/codes.json', import.meta.url)));
 const dereference = ref => ref.slice(2).split('/').reduce((value, key) => value[key], document);
 function matches(schema, value) {
-  for (const key of Object.keys(schema)) assert.ok(['$ref','type','required','additionalProperties','properties','const','enum','minLength','maxLength','minimum','maximum','pattern','format','minItems','uniqueItems','items','allOf','oneOf','description','example'].includes(key), `Unsupported response constraint ${key}`);
+  for (const key of Object.keys(schema)) assert.ok(['$ref','type','required','additionalProperties','properties','const','enum','minLength','maxLength','minimum','maximum','format','minItems','uniqueItems','items','allOf','oneOf','description','example'].includes(key), `Unsupported response constraint ${key}`);
   if (schema.$ref && !matches(dereference(schema.$ref), value)) return false;
   if (schema.allOf && !schema.allOf.every(child => matches(child, value))) return false;
   if (schema.oneOf && schema.oneOf.filter(child => matches(child, value)).length !== 1) return false;
@@ -16,7 +16,6 @@ function matches(schema, value) {
   if (schema.enum && !schema.enum.includes(value)) return false;
   if (type === 'number' && (value < (schema.minimum ?? -Infinity) || value > (schema.maximum ?? Infinity))) return false;
   if (type === 'string') {
-    if (schema.pattern && !new RegExp(schema.pattern,'u').test(value)) return false;
     if ([...value].length < (schema.minLength ?? 0) || [...value].length > (schema.maxLength ?? Infinity)) return false;
     if (schema.format) {
       assert.ok(['uuid','date-time'].includes(schema.format), `Unsupported response format ${schema.format}`);
