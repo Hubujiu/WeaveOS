@@ -1,0 +1,1059 @@
+ Network weaveos-v010-007-1790755994156_default Creating
+ Network weaveos-v010-007-1790755994156_default Created
+ Volume weaveos-v010-007-1790755994156_pg Creating
+ Volume weaveos-v010-007-1790755994156_pg Created
+ Container weaveos-v010-007-1790755994156-postgres-1 Creating
+ Container weaveos-v010-007-1790755994156-redis-1 Creating
+ Container weaveos-v010-007-1790755994156-postgres-1 Created
+ Container weaveos-v010-007-1790755994156-test-redis-1 Creating
+ Container weaveos-v010-007-1790755994156-redis-1 Created
+ Container weaveos-v010-007-1790755994156-test-redis-1 Created
+ Container weaveos-v010-007-1790755994156-postgres-1 Starting
+ Container weaveos-v010-007-1790755994156-redis-1 Starting
+ Container weaveos-v010-007-1790755994156-redis-1 Started
+ Container weaveos-v010-007-1790755994156-postgres-1 Started
+ Container weaveos-v010-007-1790755994156-test-redis-1 Starting
+ Container weaveos-v010-007-1790755994156-test-redis-1 Started
+ Container weaveos-v010-007-1790755994156-test-redis-1 Waiting
+ Container weaveos-v010-007-1790755994156-postgres-1 Waiting
+ Container weaveos-v010-007-1790755994156-redis-1 Waiting
+ Container weaveos-v010-007-1790755994156-redis-1 Healthy
+ Container weaveos-v010-007-1790755994156-postgres-1 Healthy
+ Container weaveos-v010-007-1790755994156-test-redis-1 Healthy
+2026/09/30 08:13:24 OK   00001_archive.sql (4.41ms)
+2026/09/30 08:13:24 OK   00002_personnel_audit.sql (4.3ms)
+2026/09/30 08:13:24 goose: successfully migrated database to version: 2
+2026/09/30 08:13:24 goose: no migrations to run. current version: 2
+2026/09/30 08:13:25 OK   00001_auth.sql (11.93ms)
+2026/09/30 08:13:25 OK   00002_personnel.sql (17.02ms)
+2026/09/30 08:13:25 goose: successfully migrated database to version: 2
+2026/09/30 08:13:26 goose: no migrations to run. current version: 2
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/acceptance-seed	1.402s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-maintenance	1.486s
+?   	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-read	[no test files]
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/bff	1.071s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/audit	1.342s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/auth	7.627s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/identity	1.010s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/invitation	1.010s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence	1.188s
+?   	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence/authsql	[no test files]
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/personnel	3.350s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver	1.015s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/security	1.012s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/session	1.210s
+ Container weaveos-v010-007-1790755994156-test-redis-1 Stopping
+ Container weaveos-v010-007-1790755994156-test-redis-1 Stopped
+2026/09/30 08:13:58 OK   00001_auth.sql (11.13ms)
+2026/09/30 08:13:58 OK   00002_personnel.sql (17.01ms)
+2026/09/30 08:13:58 goose: successfully migrated database to version: 2
+
+added 1 package in 2s
+
+1 package is looking for funding
+  run `npm fund` for details
+Scope: all 2 workspace projects
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+Done in 388ms using pnpm v10.28.2
+✔ API-CI-01: validator version is pinned in the frozen workspace lock (4.816723ms)
+✔ API-CI-02: PR CI executes contract tests and 3.2.1 lint (0.155028ms)
+✔ API-01: contract is OpenAPI 3.2.1 with the five authentication routes (0.736368ms)
+✔ API-02: public writes and protected Cookie security match ADR-001/002 (0.64306ms)
+✔ API-10: login delivers separate host cookies and protected writes require CSRF header (0.28245ms)
+✔ API-03: creation, current session, logout and reset have precise statuses (0.135099ms)
+✔ API-04: JSON envelope has exact required keys and no arbitrary top-level data (0.116299ms)
+✔ API-05: registration and login require account/password; registration requires invitation (0.13593ms)
+✔ API-06: published error table preserves accepted ADR mapping (8.559317ms)
+✔ API-07: account rule preserves case and rejects internal ordinary spaces after trimming (0.286923ms)
+✔ API-08: every declared response carries a server-issued request ID (6.197258ms)
+✔ API-09: Alice and alice are distinct registrations and login lookups (0.461542ms)
+✔ Q13: registration schema accepts only printable ASCII with four classes (0.889446ms)
+✔ approved account length applies after ordinary-space trimming, not to raw input (0.254618ms)
+✔ Q25 definition response accepts optional explicit empty templateIds and integer version (38.529366ms)
+✔ Q25 response validator resolves pagination query without ignoring declared constraints (0.86913ms)
+✔ Q25 invalid definition response integer, UUID and length fail independently (6.298713ms)
+✔ Q25 template DTO optional relation array is registered in the executable contract (13.201026ms)
+✔ Q25 all personnel operations are typed, Cookie protected and fail closed (0.769008ms)
+✔ Q25 page pagination exception is explicit, bounded, and filtered server-side (2.37625ms)
+✔ Q25 versions and explicit sets cannot mutate Root or directory ownership (4.975968ms)
+✔ Q25 stable conflict/missing errors and invitation qualification are registered (1.182982ms)
+✔ ADR-003/004: isolated PG18/Redis8.2 and ingress preserve service boundaries (1.769088ms)
+✔ Product CI executes migration, HTTPS real API and three browsers; final release remains gated (6.082521ms)
+✔ ADR-004: ingress overwrites forwarded identity, disables shared auth cache and separates API from SPA (7.456837ms)
+✔ Browser container uses init to reap children and explicit isolated shared memory (4.629211ms)
+✔ Private container-produced fixture is assigned to the authorized host runner without world-readable permissions (9.67948ms)
+✔ Expanded acceptance evidence reports the actual complete HTTP and browser results (9.944507ms)
+✔ Product runner executes all 19 storage cases and real observer qualifications (5.773514ms)
+✔ FND-03: CI runs real Go validation and browser tests (4.66134ms)
+✔ FND-03: product acceptance and artifacts are explicit, not fake deploys (13.811652ms)
+✔ FND-04: web entry is real React with no fabricated login UI (10.380684ms)
+✔ FND-05: CI retains a source bundle without bundling local credentials (11.485587ms)
+✔ FND-05: RED replay metadata pins the real pre-implementation source (7.701113ms)
+✔ release: all mandatory evidence present is structurally ready (3.880986ms)
+✔ release: a missing or empty matrix is not a pass (0.254752ms)
+✔ release: pending, skipped, failed and blocked are never passed (0.179825ms)
+✔ release: missing evidence, owner or duplicate IDs are rejected (0.143264ms)
+✔ remote cleanup: matching accepted remote branch can be removed (1.768393ms)
+✔ remote cleanup: no remote branch remains a successful idempotent state (1.117607ms)
+✔ remote cleanup: refuse unmerged (0.238798ms)
+✔ remote cleanup: refuse unfinished document (0.144085ms)
+✔ remote cleanup: refuse new remote commit (0.176872ms)
+✔ remote cleanup: refuse unverified squash (0.121734ms)
+✔ remote cleanup: refuse offline snapshot (0.107464ms)
+✔ local cleanup: removed remote does not erase valid local identity (0.10014ms)
+✔ local cleanup: matching refs retain identity (0.227304ms)
+✔ local cleanup: divergent refs cannot hide new work (0.280753ms)
+✔ FND-02: parse a valid task and retain identity (6.16558ms)
+✔ FND-02: malformed or duplicate metadata is rejected (0.29567ms)
+✔ FND-02: a ready task with incomplete acceptance is invalid (0.300132ms)
+✔ FND-02: no checkboxes is not proof of completion (0.169125ms)
+✔ FND-02: mismatched branch, worktree and unsafe paths are rejected (0.203719ms)
+✔ FND-02: accepted cannot be asserted before remote verification (0.155454ms)
+✔ FND-02: complete remote main document + merged PR permits cleanup despite squash ancestry (0.352675ms)
+✔ FND-02: refuse cleanup for offline snapshot (0.208434ms)
+✔ FND-02: refuse cleanup for missing remote document (0.133984ms)
+✔ FND-02: refuse cleanup for unfinished document (0.162792ms)
+✔ FND-02: refuse cleanup for wrong task identity (0.139448ms)
+✔ FND-02: refuse cleanup for unmerged PR (0.095946ms)
+✔ FND-02: refuse cleanup for wrong merge base (0.061802ms)
+✔ FND-02: refuse cleanup for different repository (0.050367ms)
+✔ FND-02: refuse cleanup for other task branch (0.084337ms)
+✔ FND-02: refuse cleanup for post-merge commit (0.964849ms)
+✔ FND-02: refuse cleanup for dirty worktree (0.080818ms)
+✔ FND-02: refuse cleanup for squash not in remote main (0.118705ms)
+✔ FND-02: acceptance remains true after the task branch/worktree were cleaned (0.301005ms)
+✔ FND-02: local completion without a merged PR is not accepted (0.148912ms)
+✔ maintenance is a nondefault one-shot profile in runtime and installed config (3.36932ms)
+✔ hourly cron invokes the same single-run operation as manual maintenance (0.974127ms)
+✔ receiver rejects unreviewed profile/command/restart and topology mutations (0.879085ms)
+✔ ordinary release cannot silently upgrade the installed resident maintenance topology (0.686939ms)
+✔ one-shot orchestration records success without raw output (3.209741ms)
+✔ one-shot orchestration records failure without raw output (0.865023ms)
+✔ memory probe samples the four resident containers, not the exited task (36.852997ms)
+✔ Q18 accepts declared compatible expansion but rejects history rewrite, missing approval and stale releases (1.9511ms)
+✔ Q18 deployment only changes approved runtime config and exact images, retaining private volumes and origin (4.158687ms)
+✔ approved config cannot include other host compose files, weaken service confinement or join external networks (2.655223ms)
+✔ public Nginx rendering preserves API boundary and creates fixed HTTPS redirect (2.896913ms)
+✔ promotion validates and backs up before migration and records only a healthy deployment (0.297421ms)
+✔ backup failure never migrates; activation or health failure restores prior app/config without Down (0.499967ms)
+✔ main delivery runs verification and acceptance before a serialized secret-scoped deployment (3.203129ms)
+✔ compatibility registry uses explicit digest records, rejects ambiguous duplicate approvals (0.26825ms)
+✔ transport rejects undeclared content, checksum tampering, secret paths, invalid image identities and oversized payloads (29.158964ms)
+✔ framed receiver verifies every byte and rejects truncated, appended and corrupt images (8.82993ms)
+✔ four kinds are stored by explicit natural day and only safe fields survive (21.049106ms)
+✔ retention dry-run selects only approved kinds and inclusive natural-day cutoff (2.598584ms)
+✔ symlinked category and destination file cannot escape the log root (1.833479ms)
+✔ Q20 actual cleanup removes only days older than the approved inclusive 30-day window (4.394388ms)
+✔ Q20 rejects nonapproved destructive parameters and preflights all paths before deleting (1.930217ms)
+✔ Q20 installed policy accepts exactly confirmed deletion parameters and schedules bounded daily cleanup (1.103634ms)
+✔ Q20 cleanup is daily and shares the collection lock (0.199091ms)
+✔ FR06 common rules render local and public explicit environments (9.351243ms)
+✔ FR06 explicit parameters reject config injection and invalid HSTS scope (0.922765ms)
+✔ certificate task logs fixed outcomes without persisting raw command secrets (1.112798ms)
+✔ collector records access stdout and application stderr, advances window, and excludes raw text (12.321941ms)
+✔ approved explicit config connects operation records and collector is scheduled without deletion (1.161842ms)
+✔ collector and Q20 cleanup are scheduled with the same overlap protection (0.243829ms)
+✔ failed docker collection does not advance cursor or publish raw diagnostics (0.646532ms)
+✔ unexpected HTTP method cannot stall collection or persist arbitrary method text (1.145901ms)
+✔ Q25 cold audit migration precedes hot migration: infra/acceptance/run.mjs (5.734413ms)
+✔ Q25 cold audit migration precedes hot migration: infra/runtime/run.mjs (4.133635ms)
+✔ Q25 cold audit migration precedes hot migration: .github/workflows/ci.yml (4.611188ms)
+✔ Q25 cold audit migration precedes hot migration: infra/server/deploy/receive.mjs (2.462261ms)
+✔ acceptance component count derives from the actual Playwright report (2.884009ms)
+✔ Q25 personnel API regression is included in the real HTTPS entrypoint (3.529523ms)
+✔ Q25 pinned role upgrade is executed with real PostgreSQL by the product workflow (4.585424ms)
+✔ Q25 compatibility manifest records each new reviewed immutable migration (9.858375ms)
+✔ GOV-01..04: valid repository passes without mutation (12.011682ms)
+✔ GOV-01: missing file fails with its path (8.127713ms)
+✔ GOV-01: whitespace-only required file is not valid (5.07023ms)
+✔ GOV-02: deleting each hard-rule marker fails (5.487831ms)
+✔ GOV-03: malformed JSON is reported, not thrown (3.315432ms)
+✔ GOV-03: incorrect version and project fail (4.559174ms)
+✔ GOV-03: impossible calendar date fails (4.234238ms)
+✔ GOV-03: empty sources and non-object registry fail (4.505682ms)
+✔ GOV-03: duplicate keys and page IDs fail (3.664198ms)
+✔ GOV-03: external or mismatched source URLs fail (4.132994ms)
+✔ GOV-03: missing metadata and malformed page ID fail (2.957573ms)
+✔ GOV-03: unknown, duplicate and empty route references fail (3.481462ms)
+✔ GOV-03: mandatory routes and always/product anchors cannot disappear (2.743925ms)
+✔ GOV-04: nested instruction override fails (2.203002ms)
+✔ GOV-04: generated/dependency directories are ignored (2.744412ms)
+✔ GOV-01: nonexistent root reports errors (0.309628ms)
+✔ CLI: valid repository exits zero (29.140691ms)
+✔ CLI: invalid repository exits one and explains failure (31.50418ms)
+✔ public HTTPS exposes only edge ports and preserves private data, images and input (1.361631ms)
+✔ public access rejects untrusted TLS while default deployment stays private (0.39884ms)
+✔ HTTP redirects all paths to the fixed HTTPS origin without trusting Host (0.196482ms)
+✔ public TLS preserves same-origin API, non-cacheable auth and trusted proxy boundary (0.23722ms)
+✔ existing loopback health and DNS-01 renewal still work independently of public DNS (0.409472ms)
+✔ API actual TAP report counts every passed case (1.27198ms)
+✔ API failed, skipped, truncated and contradictory reports cannot publish success (0.56614ms)
+✔ browser counts come from the successful complete JSON report (0.766505ms)
+✔ browser failure, flakiness, skips and empty reports cannot publish success (0.195017ms)
+✔ real API/browser reports drive the published counts: infra/acceptance/run.mjs (4.585062ms)
+✔ real API/browser reports drive the published counts: infra/runtime/run.mjs (3.147397ms)
+✔ ACME runner fixes operations, passes credentials only in environment and reports sanitized failure (1.780397ms)
+✔ certificate activation verifies system trust before file replacement and validates Nginx before reload (88.005827ms)
+✔ domain health verifies hostname with default trust while reaching only the SSH loopback endpoint (0.267549ms)
+✔ domain health fixes IPv4 so Node never requests an all-address lookup result (0.167884ms)
+▶ provided CSV is data only and maps exactly one credential pair without executing fields
+  ✔ BOM, quoted headers and CRLF are supported (0.318487ms)
+  ✔ missing, multiple and non-data values fail closed (0.282518ms)
+  ✔ dotenv admits only the required names and never evaluates shell (0.239114ms)
+✔ provided CSV is data only and maps exactly one credential pair without executing fields (1.258269ms)
+▶ Q16 public-trust domain config keeps the SSH listener and schedules automatic renewal
+  ✔ domain origin with loopback only (0.171662ms)
+  ✔ renew twice daily without self-signed trust (0.22966ms)
+✔ Q16 public-trust domain config keeps the SSH listener and schedules automatic renewal (0.919545ms)
+▶ Q16 validates the actual certificate host, private key and remaining lifetime before replacement
+  ✔ matching actual identity and key are accepted (0.589223ms)
+  ✔ unrelated certificate is rejected (0.316311ms)
+  ✔ mismatched private key is rejected (0.439142ms)
+  ✔ expired certificate is rejected (0.313901ms)
+✔ Q16 validates the actual certificate host, private key and remaining lifetime before replacement (189.878892ms)
+✔ Q16 a failed Nginx validation restores both previous files and reloads the previous certificate (2.282768ms)
+✔ Q16 explicitly uses Let's Encrypt DNSPod DNS-01 for the confirmed domain and no public listener (0.181146ms)
+✔ Q15 server exposes only loopback HTTPS and preserves internal data network (0.201198ms)
+✔ private Bootstrap credentials preserve the accepted seed JSON password field and exclude test fixtures (0.165627ms)
+✔ operational schedules retain TLS verification, prevent overlap, and invoke only runtime tools (0.165495ms)
+✔ server maintenance addresses only the authorized deployment and does not run test/build commands (0.280123ms)
+✔ finished services restart automatically and have finite resource and log budgets (0.172658ms)
+✔ deployment refuses every existing directory, including apparently empty ones (0.585088ms)
+ℹ tests 161
+ℹ suites 0
+ℹ pass 161
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 533.608881
+No configurations were provided -- using built in recommended configuration by default.
+
+validating contracts/openapi/openapi.json...
+[1] contracts/openapi/openapi.json:3:3 at #/info
+
+Info object should contain `license` field.
+
+1 | {
+2 |   "openapi": "3.2.1",
+3 |   "info": {
+  |   ^^^^^^
+4 |     "title": "WeaveOS Authentication and Personnel API",
+5 |     "version": "1.0.0",
+
+Warning was generated by the info-license rule.
+
+Reference: https://redocly.com/docs/cli/rules/oas/info-license
+
+
+[2] contracts/openapi/openapi.json:850:25 at #/paths/~1api~1v1~1personnel~1members~1{memberId}~1groups/post/requestBody/content/application~1json/schema/allOf/0/then/required/0
+
+Required property 'sourceDepartmentId' is not defined.
+
+848 | "then": {
+849 |   "required": [
+850 |     "sourceDepartmentId"
+    |     ^^^^^^^^^^^^^^^^^^^^
+851 |   ]
+852 | }
+
+Warning was generated by the no-required-schema-properties-undefined rule.
+
+Reference: https://redocly.com/docs/cli/rules/common/no-required-schema-properties-undefined
+
+
+[3] contracts/openapi/openapi.json:2915:17 at #/components/schemas/MemberGroupsInput/allOf/0/then/required/0
+
+Required property 'sourceDepartmentId' is not defined.
+
+2913 | "then": {
+2914 |   "required": [
+2915 |     "sourceDepartmentId"
+     |     ^^^^^^^^^^^^^^^^^^^^
+2916 |   ]
+2917 | }
+
+Warning was generated by the no-required-schema-properties-undefined rule.
+
+Reference: https://redocly.com/docs/cli/rules/common/no-required-schema-properties-undefined
+
+
+[4] contracts/openapi/openapi.json:2708:7 at #/components/schemas/PersonnelIdentityInput
+
+Component: "PersonnelIdentityInput" is never used.
+
+2706 |   ]
+2707 | },
+2708 | "PersonnelIdentityInput": {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+2709 |   "type": "object",
+2710 |   "additionalProperties": false,
+
+Warning was generated by the no-unused-components rule.
+
+Reference: https://redocly.com/docs/cli/rules/oas/no-unused-components
+
+
+[5] contracts/openapi/openapi.json:2751:7 at #/components/schemas/PersonnelIdentityCreateInput
+
+Component: "PersonnelIdentityCreateInput" is never used.
+
+2749 |   ]
+2750 | },
+2751 | "PersonnelIdentityCreateInput": {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2752 |   "type": "object",
+2753 |   "additionalProperties": false,
+
+Warning was generated by the no-unused-components rule.
+
+Reference: https://redocly.com/docs/cli/rules/oas/no-unused-components
+
+
+[6] contracts/openapi/openapi.json:2788:7 at #/components/schemas/PersonnelTemplateInput
+
+Component: "PersonnelTemplateInput" is never used.
+
+2786 |   ]
+2787 | },
+2788 | "PersonnelTemplateInput": {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+2789 |   "type": "object",
+2790 |   "additionalProperties": false,
+
+Warning was generated by the no-unused-components rule.
+
+Reference: https://redocly.com/docs/cli/rules/oas/no-unused-components
+
+
+[7] contracts/openapi/openapi.json:2822:7 at #/components/schemas/PersonnelTemplateCreateInput
+
+Component: "PersonnelTemplateCreateInput" is never used.
+
+2820 |   ]
+2821 | },
+2822 | "PersonnelTemplateCreateInput": {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2823 |   "type": "object",
+2824 |   "additionalProperties": false,
+
+Warning was generated by the no-unused-components rule.
+
+Reference: https://redocly.com/docs/cli/rules/oas/no-unused-components
+
+
+[8] contracts/openapi/openapi.json:2850:7 at #/components/schemas/MemberIdentitiesInput
+
+Component: "MemberIdentitiesInput" is never used.
+
+2848 |   ]
+2849 | },
+2850 | "MemberIdentitiesInput": {
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+2851 |   "type": "object",
+2852 |   "additionalProperties": false,
+
+Warning was generated by the no-unused-components rule.
+
+Reference: https://redocly.com/docs/cli/rules/oas/no-unused-components
+
+
+[9] contracts/openapi/openapi.json:2873:7 at #/components/schemas/MemberGroupsInput
+
+Component: "MemberGroupsInput" is never used.
+
+2871 |   ]
+2872 | },
+2873 | "MemberGroupsInput": {
+     | ^^^^^^^^^^^^^^^^^^^
+2874 |   "type": "object",
+2875 |   "additionalProperties": false,
+
+Warning was generated by the no-unused-components rule.
+
+Reference: https://redocly.com/docs/cli/rules/oas/no-unused-components
+
+
+[10] contracts/openapi/openapi.json:2921:7 at #/components/schemas/DepartmentCreateInput
+
+Component: "DepartmentCreateInput" is never used.
+
+2919 |   ]
+2920 | },
+2921 | "DepartmentCreateInput": {
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+2922 |   "type": "object",
+2923 |   "additionalProperties": false,
+
+Warning was generated by the no-unused-components rule.
+
+Reference: https://redocly.com/docs/cli/rules/oas/no-unused-components
+
+
+contracts/openapi/openapi.json: validated in 52ms
+
+[11] contracts/openapi/openapi.json:2941:7 at #/components/schemas/DepartmentUpdateInput
+
+Component: "DepartmentUpdateInput" is never used.
+
+2939 |   ]
+2940 | },
+2941 | "DepartmentUpdateInput": {
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+2942 |   "type": "object",
+2943 |   "additionalProperties": false,
+
+Warning was generated by the no-unused-components rule.
+
+Reference: https://redocly.com/docs/cli/rules/oas/no-unused-components
+
+
+Woohoo! Your API description is valid. 🎉
+You have 11 warnings.
+
+
+> weaveos@0.1.0 typecheck /repo
+> pnpm --filter @weaveos/web typecheck && tsc -p tsconfig.tests.json
+
+
+> @weaveos/web@0.1.0 typecheck /repo/apps/web
+> tsc --noEmit
+
+
+> weaveos@0.1.0 build /repo
+> pnpm --filter @weaveos/web build
+
+
+> @weaveos/web@0.1.0 build /repo/apps/web
+> vite build
+
+[36mvite v8.0.16 [32mbuilding client environment for production...[36m[39m
+[2K
+transforming...✓ 57 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.35 kB │ gzip:   0.26 kB
+dist/assets/index-BbxRwoWP.css   21.13 kB │ gzip:   4.87 kB
+dist/assets/index-zpB9wTte.js   405.27 kB │ gzip: 123.24 kB
+
+[32m✓ built in 262ms[39m
+
+Running 76 tests using 1 worker
+
+[1/76] [chromium] › src/auth.component.spec.ts:3:1 › approved account dictionary: 254 Unicode characters can be entered and submitted
+[2/76] [chromium] › src/auth.component.spec.ts:15:1 › approved account dictionary: non-breaking edge spaces are preserved
+[3/76] [chromium] › src/auth.component.spec.ts:24:1 › Figma brand text keeps its #102044 color above the glow on mobile
+[4/76] [chromium] › src/auth.component.spec.ts:47:1 › PRD UX: login loading prevents a second submission and restores after failure
+[5/76] [chromium] › src/auth.component.spec.ts:69:1 › PRD FR-017: successful registration returns to login without restoring a Session
+[6/76] [chromium] › src/auth.component.spec.ts:82:1 › Q7: logout sends the frontend-readable host CSRF cookie in the header
+[7/76] [chromium] › src/auth.component.spec.ts:105:1 › Q12: future login controls stay visible and disabled
+[8/76] [chromium] › src/auth.component.spec.ts:118:1 › WaveOS Figma 13:2 login shell uses the new brand and card geometry
+[9/76] [chromium] › src/auth.component.spec.ts:133:1 › WaveOS Figma 40:2 register has four large fields and the invitation
+[10/76] [chromium] › src/auth.component.spec.ts:149:1 › FR-001/011: login is accessible and offers no self-service recovery
+[11/76] [chromium] › src/auth.component.spec.ts:157:1 › PRD interaction: password visibility can be toggled
+[12/76] [chromium] › src/auth.component.spec.ts:166:1 › FR-004: invitation URL fills the registration field
+[13/76] [chromium] › src/auth.component.spec.ts:171:1 › FR-002: registration rejects an account containing spaces before submission
+[14/76] [chromium] › src/auth.component.spec.ts:186:1 › FR-018: four required character classes suffice without a length hint
+[15/76] [chromium] › src/auth.component.spec.ts:192:1 › FR-018: registration exposes accessible password-strength feedback
+[16/76] [chromium] › src/auth.component.spec.ts:197:1 › FR-007: an anonymous browser cannot enter the protected app
+[17/76] [chromium] › src/auth.component.spec.ts:202:1 › API-14: a current-session service failure is shown as a system error
+[18/76] [chromium] › src/auth.component.spec.ts:208:1 › FR-001 UX: login reports a network failure in plain language
+[19/76] [chromium] › src/auth.component.spec.ts:217:1 › FR-001: wrong credentials show an error and remain unauthenticated
+[20/76] [chromium] › src/auth.component.spec.ts:231:1 › PRD login rule: an empty password is rejected before submission
+[21/76] [chromium] › src/password-ascii.component.spec.ts:4:1 › Q13: space is printable but does not satisfy the special class
+[22/76] [chromium] › src/password-ascii.component.spec.ts:10:1 › Q13: registration rejects Unicode despite having all four ASCII classes
+[23/76] [chromium] › src/password-ascii.component.spec.ts:25:1 › Q13: printable spaces are preserved when four classes are present
+[24/76] [chromium] › src/personnel.component.spec.ts:22:1 › R3 login enters Home with settings and account navigation; admin exit retains Session
+[25/76] [chromium] › src/personnel.component.spec.ts:33:1 › R2 AC02 ordinary member Home has own identity/empty app state; direct admin denies
+[26/76] [chromium] › src/personnel.component.spec.ts:37:1 › R3 four independent shell layouts retain selected tab and unsaved input; icons aligned
+[27/76] [chromium] › src/personnel.component.spec.ts:49:1 › R3 identity separates direct/template sources and confirms impact before versioned save
+[28/76] [chromium] › src/personnel.component.spec.ts:58:2 › R3 save failure 409 preserves input and exposes specific outcome
+[29/76] [chromium] › src/personnel.component.spec.ts:58:2 › R3 save failure 403 preserves input and exposes specific outcome
+[30/76] [chromium] › src/personnel.component.spec.ts:58:2 › R3 save failure 503 preserves input and exposes specific outcome
+[31/76] [chromium] › src/personnel.component.spec.ts:63:1 › R3 dirty tab/object/admin leave requires explicit choice and never saves
+[32/76] [chromium] › src/personnel.component.spec.ts:68:1 › R3 template UI has genuine no-application empty state and referenced delete protection
+[33/76] [chromium] › src/personnel.component.spec.ts:71:1 › R3 members expose multi-identity editor and group operation without changing permissions
+[34/76] [chromium] › src/personnel.component.spec.ts:76:1 › R3 departments create uses selected parent; enterprise root is protected
+[35/76] [chromium] › src/personnel.component.spec.ts:81:1 › R3 invitation is deliberate one-time result; activity has true empty state
+[36/76] [chromium] › src/personnel.component.spec.ts:85:1 › R3 reduced motion and compact layouts retain keyboard-reachable navigation
+[37/76] [chromium] › src/personnel.component.spec.ts:89:1 › R3 browser back with dirty configuration prompts, cancel preserves inputs
+[38/76] [chromium] › src/personnel.component.spec.ts:95:1 › R3 definition creation has no fake seed; validates and sends explicit config
+[39/76] [chromium] › src/personnel.component.spec.ts:101:1 › R3 member explicit move preserves other groups and identity configuration
+[40/76] [chromium] › src/personnel.component.spec.ts:109:1 › R3 member search and pagination send approved filters, no local page-only filtering
+[41/76] [chromium] › src/personnel.component.spec.ts:114:1 › R3 activity search and action filter are server-side, not cosmetic controls
+[42/76] [chromium] › src/personnel.component.spec.ts:119:1 › R3 deleting unreferenced template confirms and sends version; 409 keeps selection
+[43/76] [chromium] › src/personnel.component.spec.ts:127:1 › R3 creates a permission template with explicit empty configuration
+[44/76] [chromium] › src/personnel.component.spec.ts:135:1 › R3 identity deletion protects references and explicitly confirms an unreferenced object
+[45/76] [chromium] › src/personnel.component.spec.ts:142:1 › R3 department selected node filters members; rename and delete use actual version; root protected
+[46/76] [chromium] › src/personnel.component.spec.ts:152:1 › R3 complete assignment choices load beyond the first 100 templates
+[47/76] [chromium] › src/personnel.component.spec.ts:159:1 › R3 identity search and next page query the backend while keeping explicit selection
+[48/76] [chromium] › src/personnel.component.spec.ts:165:1 › R3 member identity filter and activity pagination are server controls
+[49/76] [chromium] › src/personnel.component.spec.ts:171:1 › R3 invitation uses the existing invitationCode response and clears it on close
+[50/76] [chromium] › src/personnel.component.spec.ts:177:1 › R3 activity pagination and explicit time range reach the server independently
+[51/76] [chromium] › src/personnel.component.spec.ts:184:1 › R3 explicit activity time filter sends RFC3339 and resets the page
+[52/76] [chromium] › src/personnel.component.spec.ts:190:1 › R3 empty department deletion confirms version and preserves conflict feedback
+[53/76] [chromium] › src/personnel.component.spec.ts:196:61 › R3 unsaved department form survives close and Escape until explicit discard
+[54/76] [chromium] › src/personnel.component.spec.ts:196:61 › R3 unsaved member form survives close and Escape until explicit discard
+[55/76] [chromium] › src/personnel.component.spec.ts:196:61 › R3 unsaved groups form survives close and Escape until explicit discard
+[56/76] [chromium] › src/personnel.component.spec.ts:206:1 › Figma shell retains each original L material asset and original SVG dimensions
+[57/76] [chromium] › src/personnel.component.spec.ts:218:1 › Q25 default activity range omits optional empty timestamps in every initial request
+[58/76] [chromium] › src/personnel.component.spec.ts:224:1 › Figma original checkbox uses the original check SVG, 20px surface and 6px corners
+[59/76] [chromium] › src/personnel.component.spec.ts:231:1 › Figma shell original translucent material has no extra white foreground layers
+[60/76] [chromium] › src/personnel.component.spec.ts:234:1 › R3 activity presents readable action, target and safe changes rather than raw protocol JSON
+[61/76] [chromium] › src/personnel.component.spec.ts:240:1 › Figma each shell variant retains its own material offset and collapsed 48px menu target
+[62/76] [chromium] › src/personnel.component.spec.ts:247:1 › Figma member table keeps fixed column geometry and page selection never sends a write
+[63/76] [chromium] › src/personnel.component.spec.ts:253:1 › Figma collapsed menu independently has a 48px target at the original sidebar inset
+[64/76] [chromium] › src/personnel.component.spec.ts:256:1 › Figma top-collapsed side-expanded material independently uses the original minus30 top
+[65/76] [chromium] › src/responsive.component.spec.ts:12:5 › Figma responsive /login at 1920×1080
+[66/76] [chromium] › src/responsive.component.spec.ts:12:5 › Figma responsive /login at 2560×1440
+[67/76] [chromium] › src/responsive.component.spec.ts:12:5 › Figma responsive /login at 1440×900
+[68/76] [chromium] › src/responsive.component.spec.ts:44:5 › responsive /login stays usable at 320×568
+[69/76] [chromium] › src/responsive.component.spec.ts:44:5 › responsive /login stays usable at 390×844
+[70/76] [chromium] › src/responsive.component.spec.ts:44:5 › responsive /login stays usable at 768×600
+[71/76] [chromium] › src/responsive.component.spec.ts:12:5 › Figma responsive /register at 1920×1080
+[72/76] [chromium] › src/responsive.component.spec.ts:12:5 › Figma responsive /register at 2560×1440
+[73/76] [chromium] › src/responsive.component.spec.ts:12:5 › Figma responsive /register at 1440×900
+[74/76] [chromium] › src/responsive.component.spec.ts:44:5 › responsive /register stays usable at 320×568
+[75/76] [chromium] › src/responsive.component.spec.ts:44:5 › responsive /register stays usable at 390×844
+[76/76] [chromium] › src/responsive.component.spec.ts:44:5 › responsive /register stays usable at 768×600
+  76 passed (2.3m)
+ Container weaveos-v010-007-1790755994156-postgres-1 Running
+ Container weaveos-v010-007-1790755994156-redis-1 Running
+ Container weaveos-v010-007-1790755994156-bff-1 Creating
+ Container weaveos-v010-007-1790755994156-bff-1 Created
+ Container weaveos-v010-007-1790755994156-nginx-1 Creating
+ Container weaveos-v010-007-1790755994156-nginx-1 Created
+ Container weaveos-v010-007-1790755994156-postgres-1 Waiting
+ Container weaveos-v010-007-1790755994156-redis-1 Waiting
+ Container weaveos-v010-007-1790755994156-redis-1 Healthy
+ Container weaveos-v010-007-1790755994156-postgres-1 Healthy
+ Container weaveos-v010-007-1790755994156-bff-1 Starting
+ Container weaveos-v010-007-1790755994156-bff-1 Started
+ Container weaveos-v010-007-1790755994156-nginx-1 Starting
+ Container weaveos-v010-007-1790755994156-nginx-1 Started
+TAP version 13
+# Subtest: actual ingress config parses and becomes ready
+ok 1 - actual ingress config parses and becomes ready
+  ---
+  duration_ms: 226.7792
+  type: 'test'
+  ...
+# Subtest: API ingress/header/JSON/audit/access log correlate and external IDs cannot be forged
+ok 2 - API ingress/header/JSON/audit/access log correlate and external IDs cannot be forged
+  ---
+  duration_ms: 382.6719
+  type: 'test'
+  ...
+# Subtest: static HTML and assets have ingress metadata and separate cache policy
+ok 3 - static HTML and assets have ingress metadata and separate cache policy
+  ---
+  duration_ms: 5.9545
+  type: 'test'
+  ...
+# Subtest: proxy-generated 413 preserves headers and API no-store without a BFF response
+ok 4 - proxy-generated 413 preserves headers and API no-store without a BFF response
+  ---
+  duration_ms: 5.8764
+  type: 'test'
+  ...
+# Subtest: paused upstream produces identifiable non-cacheable 504
+ok 5 - paused upstream produces identifiable non-cacheable 504
+  ---
+  duration_ms: 5326.8814
+  type: 'test'
+  ...
+# Subtest: real upstream TCP reset produces identifiable non-cacheable 502
+ok 6 - real upstream TCP reset produces identifiable non-cacheable 502
+  ---
+  duration_ms: 13163.7127
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19181.0914
+
+added 1 package in 2s
+
+1 package is looking for funding
+  run `npm fund` for details
+✔ HTTP-01 FR-007: anonymous current-session access is denied (42.199206ms)
+✔ HTTP-02 API-14/15: user header cannot establish identity (5.421568ms)
+✔ HTTP-02 API-14/15: role header cannot establish identity (2.794749ms)
+✔ HTTP-02 API-14/15: tenant header cannot establish identity (3.572826ms)
+✔ HTTP-02 API-14/15: bearer header cannot establish identity (3.426693ms)
+✔ HTTP-02 API-14/15: trace header cannot establish identity (3.176279ms)
+✔ HTTP-03 FR-001: unknown credentials are rejected without Session or disclosure (8.303886ms)
+✔ HTTP-04 FR-001/003: login rejects omitted account (3.969749ms)
+✔ HTTP-04 FR-001/003: login rejects empty account (3.827974ms)
+✔ HTTP-04 FR-001/003: login rejects omitted password (3.599368ms)
+✔ HTTP-04 FR-001/003: login rejects empty password (2.114919ms)
+✔ HTTP-05 API-08: login rejects malformed JSON "{" (1.996333ms)
+✔ HTTP-05 API-08: login rejects malformed JSON "{\"account\":" (3.547215ms)
+✔ HTTP-05 API-08: login rejects malformed JSON "not-json" (2.844039ms)
+✔ HTTP-06 API-14: login rejects foreign Origin without alternate CSRF proof (2.831101ms)
+✔ HTTP-06 API-14: login rejects opaque Origin without alternate CSRF proof (2.917003ms)
+✔ HTTP-06 API-14: login rejects absent Origin without alternate CSRF proof (2.621402ms)
+✔ HTTP-07 API-14: login refuses simple-request media text/plain (1.642867ms)
+✔ HTTP-07 API-14: login refuses simple-request media application/x-www-form-urlencoded (2.892348ms)
+✔ HTTP-07 API-14: login refuses simple-request media multipart/form-data; boundary=test (2.604408ms)
+✔ HTTP-04 FR-001/003: register rejects omitted account (2.808986ms)
+✔ HTTP-04 FR-001/003: register rejects empty account (1.642291ms)
+✔ HTTP-04 FR-001/003: register rejects omitted password (2.765969ms)
+✔ HTTP-04 FR-001/003: register rejects empty password (2.713193ms)
+✔ HTTP-04 FR-001/003: register rejects omitted invitationCode (2.836449ms)
+✔ HTTP-04 FR-001/003: register rejects empty invitationCode (2.730501ms)
+✔ HTTP-05 API-08: register rejects malformed JSON "{" (1.559276ms)
+✔ HTTP-05 API-08: register rejects malformed JSON "{\"account\":" (3.094316ms)
+✔ HTTP-05 API-08: register rejects malformed JSON "not-json" (2.772216ms)
+✔ HTTP-06 API-14: register rejects foreign Origin without alternate CSRF proof (2.509805ms)
+✔ HTTP-06 API-14: register rejects opaque Origin without alternate CSRF proof (2.02518ms)
+✔ HTTP-06 API-14: register rejects absent Origin without alternate CSRF proof (2.752991ms)
+✔ HTTP-07 API-14: register refuses simple-request media text/plain (1.382553ms)
+✔ HTTP-07 API-14: register refuses simple-request media application/x-www-form-urlencoded (2.499198ms)
+✔ HTTP-07 API-14: register refuses simple-request media multipart/form-data; boundary=test (2.895927ms)
+✔ HTTP-08 FR-003: invalid invitation is a registered 400 business error (1.707571ms)
+✔ HTTP-09 FR-018/003: missing uppercase is rejected without consuming invitation (105.712965ms)
+✔ HTTP-09 FR-018/003: missing lowercase is rejected without consuming invitation (59.88274ms)
+✔ HTTP-09 FR-018/003: missing digit is rejected without consuming invitation (59.492631ms)
+✔ HTTP-09 FR-018/003: missing special is rejected without consuming invitation (59.657539ms)
+✔ HTTP-10 FR-018: Aa1! satisfies the policy without an invented length minimum (78.895595ms)
+✔ HTTP-11 FR-003/017: registration creates an account but no Session (81.557796ms)
+✔ HTTP-12 FR-003: used invitation returns 409 and creates no second account (82.561844ms)
+✔ HTTP-13 FR-003: eight concurrent consumers yield one account and seven conflicts (193.655307ms)
+✔ HTTP-14 FR-002/003: duplicate account fails and leaves invitation usable (131.765792ms)
+✔ HTTP-15 FR-002/003: concurrent duplicate account leaves loser invitation usable (174.153061ms)
+✔ HTTP-16 FR-001: unknown account and wrong password share public error (29.956676ms)
+✔ HTTP-17 FR-010: Disabled account cannot obtain a Session (22.903877ms)
+✔ HTTP-18 FR-013: repeated failures do not lock account or return 429 (291.419899ms)
+✔ HTTP-19 FR-005/008: login restores the same user identity (32.198483ms)
+✔ HTTP-20 ADR-001: login and successful activity synchronize one-hour Cookie expiry (27.608716ms)
+✔ HTTP-21 FR-009: logout is empty 204, clears Cookie and rejects replay (49.42096ms)
+✔ HTTP-22 FR-009: concurrent logout and reads do not resurrect Session (46.941977ms)
+✔ HTTP-23 ADR-001: login never adopts attacker-selected Session ID (57.719558ms)
+✔ HTTP-24 ADR-001: query and Authorization cannot replace Cookie authentication (32.718725ms)
+✔ HTTP-25 FR-012/016: anonymous invitations denied (2.84714ms)
+✔ HTTP-26 FR-012/016: member cannot invitations with forged ALL headers (33.406455ms)
+✔ HTTP-25 FR-012/016: anonymous reset denied (2.074492ms)
+✔ HTTP-26 FR-012/016: member cannot reset with forged ALL headers (107.494986ms)
+✔ HTTP-27 FR-016: Bootstrap generates a usable single-use invitation (78.004545ms)
+✔ HTTP-28 FR-012: Bootstrap resets password without disclosure; old password fails (176.297575ms)
+✔ HTTP-29 API-14: foreign Origin rejects writes even with valid token (30.493114ms)
+✔ HTTP-29 API-14: opaque Origin rejects writes even with valid token (29.65082ms)
+✔ HTTP-30 API-14: authenticated write without source or CSRF proof denied (27.66473ms)
+✔ HTTP-31 API-14: foreign-Origin logout rejected without revoking Session (28.524189ms)
+✔ HTTP-32 API-15: request IDs are generated rather than trusted from caller (4.758313ms)
+✔ HTTP-33 API-09: login rejects null account (3.132064ms)
+✔ HTTP-33 API-09: login rejects number account (2.853227ms)
+✔ HTTP-33 API-09: login rejects object account (2.851538ms)
+✔ HTTP-33 API-09: login rejects array account (2.803603ms)
+✔ HTTP-33 API-09: login rejects boolean account (1.495951ms)
+✔ HTTP-33 API-09: login rejects null password (2.68797ms)
+✔ HTTP-33 API-09: login rejects number password (2.629483ms)
+✔ HTTP-33 API-09: login rejects object password (1.304524ms)
+✔ HTTP-33 API-09: login rejects array password (3.528697ms)
+✔ HTTP-33 API-09: login rejects boolean password (1.79797ms)
+✔ HTTP-33 API-09: register rejects null account (2.906581ms)
+✔ HTTP-33 API-09: register rejects number account (3.355556ms)
+✔ HTTP-33 API-09: register rejects object account (2.899153ms)
+✔ HTTP-33 API-09: register rejects array account (1.702825ms)
+✔ HTTP-33 API-09: register rejects boolean account (3.028099ms)
+✔ HTTP-33 API-09: register rejects null password (1.810088ms)
+✔ HTTP-33 API-09: register rejects number password (3.728956ms)
+✔ HTTP-33 API-09: register rejects object password (3.135704ms)
+✔ HTTP-33 API-09: register rejects array password (3.050316ms)
+✔ HTTP-33 API-09: register rejects boolean password (2.829044ms)
+✔ HTTP-33 API-09: register rejects null invitationCode (2.717556ms)
+✔ HTTP-33 API-09: register rejects number invitationCode (2.704879ms)
+✔ HTTP-33 API-09: register rejects object invitationCode (1.575819ms)
+✔ HTTP-33 API-09: register rejects array invitationCode (2.882673ms)
+✔ HTTP-33 API-09: register rejects boolean invitationCode (3.392741ms)
+✔ HTTP-34 API compatibility: registration rejects write to isBootstrapAdmin (89.383598ms)
+✔ HTTP-34 API compatibility: registration rejects write to role (84.130199ms)
+✔ HTTP-34 API compatibility: registration rejects write to permissions (84.284651ms)
+✔ HTTP-34 API compatibility: registration rejects write to id (83.740805ms)
+✔ HTTP-34 API compatibility: registration rejects write to unexpectedField (81.623269ms)
+✔ HTTP-35 API-05: HEAD current-session is bodyless even when anonymous (4.437819ms)
+✔ R2/Q25 ordinary member reads own access and all management read/write families deny (61.190717ms)
+✔ R2/Q25 non-Root template manager, live revoke, versions, invitation and department invariance (362.467978ms)
+✔ FR-007: anonymous current-session request is unauthorized (2.944843ms)
+✔ API-14: forged identity headers cannot authenticate a caller (2.688307ms)
+✔ FR-001: wrong credentials never create a session or leak passwords (5.963067ms)
+✔ FR-003: missing invitation cannot create an account (3.043196ms)
+✔ FR-003: invalid invitation cannot create an account (2.576597ms)
+✔ FR-018: password missing uppercase is rejected (4.673261ms)
+✔ FR-018: password missing lowercase is rejected (3.1216ms)
+✔ FR-018: password missing digit is rejected (4.110782ms)
+✔ FR-018: password missing special is rejected (4.475313ms)
+✔ FR-003/017/001/005/009: registration, explicit login, restore and logout form a real HTTP lifecycle (91.618039ms)
+✔ FR-003: concurrent use of one invitation permits exactly one success (30.846431ms)
+✔ FR-002/003: duplicate account failure does not consume an invitation (66.307803ms)
+✔ FR-010: a disabled account cannot log in (48.028201ms)
+✔ FR-013: consecutive failures do not add a hidden account-lock feature (178.566599ms)
+✔ FR-016: only Bootstrap Admin can generate invitations (64.538179ms)
+✔ API-14: authenticated write without CSRF token is forbidden (28.666477ms)
+✔ FR-012/016: admin resets password, ordinary user cannot; response never contains the reset password (97.32944ms)
+✔ Q13: non-ASCII and space-only special class fail with approved field violations (9.108367ms)
+✔ FR-002/Q13: length applies after ordinary-space trim; four-character password is sufficient (51.645496ms)
+✔ FR-002: distinct case-sensitive accounts both register and authenticate independently (134.420755ms)
+✔ ADR-002 protocol schema: wrong media (3.25124ms)
+✔ ADR-002 protocol schema: foreign source (2.752546ms)
+✔ ADR-002 protocol schema: unknown write field (3.0814ms)
+✔ Administrator target-not-found has the declared404 schema (46.837702ms)
+✔ Successful login replaces an incoming Session instead of fixing its identifier (49.074257ms)
+ℹ tests 124
+ℹ suites 0
+ℹ pass 124
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4230.25746
+
+Running 117 tests using 1 worker
+
+[1/117] [chromium] › tests/acceptance/web.spec.ts:15:5 › FR-001/011: login is accessible and offers no self-service recovery
+[2/117] [chromium] › tests/acceptance/web.spec.ts:23:5 › PRD interaction: password visibility can be toggled
+[3/117] [chromium] › tests/acceptance/web.spec.ts:32:5 › FR-004: invitation URL fills the registration field
+[4/117] [chromium] › tests/acceptance/web.spec.ts:37:5 › FR-002: registration rejects an account containing spaces before submission
+[5/117] [chromium] › tests/acceptance/web.spec.ts:49:5 › FR-018: four required character classes suffice without a length hint
+[6/117] [chromium] › tests/acceptance/web.spec.ts:55:5 › FR-018: registration exposes accessible password-strength feedback
+[7/117] [chromium] › tests/acceptance/web.spec.ts:62:5 › FR-007: an anonymous browser cannot enter the protected app
+[8/117] [chromium] › tests/acceptance/web.spec.ts:66:5 › FR-001: wrong credentials show an error and remain unauthenticated
+[9/117] [chromium] › tests/acceptance/web.spec.ts:74:5 › FR-017: successful registration returns to login without a session
+[10/117] [chromium] › tests/acceptance/web.spec.ts:89:5 › FR-005/008/009: real login survives reload, then logout revokes it
+[11/117] [chromium] › tests/acceptance/web.spec.ts:121:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs
+[12/117] [chromium] › tests/acceptance/web.spec.ts:128:7 › WEB-02 FR-011: /login has no self-service password recovery
+[13/117] [chromium] › tests/acceptance/web.spec.ts:128:7 › WEB-02 FR-011: /register has no self-service password recovery
+[14/117] [chromium] › tests/acceptance/web.spec.ts:141:5 › WEB-03 FR-004: percent-encoded invitation is decoded once and remains editable
+[15/117] [chromium] › tests/acceptance/web.spec.ts:149:5 › WEB-04 FR-004: URL invitation is treated as text, not executable markup
+[16/117] [chromium] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /login missing 账号 is not submitted
+[17/117] [chromium] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /login missing 密码 is not submitted
+[18/117] [chromium] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /register missing 账号 is not submitted
+[19/117] [chromium] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /register missing 密码 is not submitted
+[20/117] [chromium] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /register missing 确认密码 is not submitted
+[21/117] [chromium] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /register missing 邀请码 is not submitted
+[22/117] [chromium] › tests/acceptance/web.spec.ts:174:5 › WEB-06 user confirmation: mismatched password confirmation prevents registration
+[23/117] [chromium] › tests/acceptance/web.spec.ts:187:7 › WEB-07 FR-018: missing uppercase gives feedback and prevents submission
+[24/117] [chromium] › tests/acceptance/web.spec.ts:187:7 › WEB-07 FR-018: missing lowercase gives feedback and prevents submission
+[25/117] [chromium] › tests/acceptance/web.spec.ts:187:7 › WEB-07 FR-018: missing digit gives feedback and prevents submission
+[26/117] [chromium] › tests/acceptance/web.spec.ts:187:7 › WEB-07 FR-018: missing special gives feedback and prevents submission
+[27/117] [chromium] › tests/acceptance/web.spec.ts:203:5 › WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server
+[28/117] [chromium] › tests/acceptance/web.spec.ts:214:5 › WEB-09 PRD keyboard: Enter submits login without mouse interaction
+[29/117] [chromium] › tests/acceptance/web.spec.ts:223:5 › WEB-10 FR-017: registration returns to login and requires password re-entry
+[30/117] [chromium] › tests/acceptance/web.spec.ts:235:5 › WEB-11 PRD UX: login shows pending state and blocks duplicate submit during a real request
+[31/117] [chromium] › tests/acceptance/web.spec.ts:265:5 › WEB-12 PRD login: network failure differs from credential failure and permits retry
+[32/117] [chromium] › tests/acceptance/web.spec.ts:292:5 › WEB-13 FR-010: Disabled user sees failure and cannot enter protected app
+[33/117] [chromium] › tests/acceptance/web.spec.ts:305:5 › WEB-14 FR-002/003: duplicate-account feedback permits retry without losing invitation
+[34/117] [chromium] › tests/acceptance/web.spec.ts:318:5 › WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated
+[35/117] [chromium] › tests/acceptance/web.spec.ts:330:5 › WEB-16 PRD UX: pending real registration prevents duplicate submission
+[36/117] [chromium] › tests/acceptance/web.spec.ts:346:5 › WEB-17 FR-008: Redis-expired browser Session returns to login
+[37/117] [chromium] › tests/acceptance/web.spec.ts:365:5 › WEB-18 PRD security: frontend logs do not contain submitted password
+[38/117] [chromium] › tests/acceptance/web.spec.ts:380:5 › R2/Q25 real ordinary Home, own account and direct admin denial
+[39/117] [chromium] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+[40/117] [firefox] › tests/acceptance/web.spec.ts:15:5 › FR-001/011: login is accessible and offers no self-service recovery
+[41/117] [firefox] › tests/acceptance/web.spec.ts:23:5 › PRD interaction: password visibility can be toggled
+[42/117] [firefox] › tests/acceptance/web.spec.ts:32:5 › FR-004: invitation URL fills the registration field
+[43/117] [firefox] › tests/acceptance/web.spec.ts:37:5 › FR-002: registration rejects an account containing spaces before submission
+[44/117] [firefox] › tests/acceptance/web.spec.ts:49:5 › FR-018: four required character classes suffice without a length hint
+[45/117] [firefox] › tests/acceptance/web.spec.ts:55:5 › FR-018: registration exposes accessible password-strength feedback
+[46/117] [firefox] › tests/acceptance/web.spec.ts:62:5 › FR-007: an anonymous browser cannot enter the protected app
+[47/117] [firefox] › tests/acceptance/web.spec.ts:66:5 › FR-001: wrong credentials show an error and remain unauthenticated
+[48/117] [firefox] › tests/acceptance/web.spec.ts:74:5 › FR-017: successful registration returns to login without a session
+[49/117] [firefox] › tests/acceptance/web.spec.ts:89:5 › FR-005/008/009: real login survives reload, then logout revokes it
+[50/117] [firefox] › tests/acceptance/web.spec.ts:121:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs
+[51/117] [firefox] › tests/acceptance/web.spec.ts:128:7 › WEB-02 FR-011: /login has no self-service password recovery
+[52/117] [firefox] › tests/acceptance/web.spec.ts:128:7 › WEB-02 FR-011: /register has no self-service password recovery
+[53/117] [firefox] › tests/acceptance/web.spec.ts:141:5 › WEB-03 FR-004: percent-encoded invitation is decoded once and remains editable
+[54/117] [firefox] › tests/acceptance/web.spec.ts:149:5 › WEB-04 FR-004: URL invitation is treated as text, not executable markup
+[55/117] [firefox] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /login missing 账号 is not submitted
+[56/117] [firefox] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /login missing 密码 is not submitted
+[57/117] [firefox] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /register missing 账号 is not submitted
+[58/117] [firefox] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /register missing 密码 is not submitted
+[59/117] [firefox] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /register missing 确认密码 is not submitted
+[60/117] [firefox] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /register missing 邀请码 is not submitted
+[61/117] [firefox] › tests/acceptance/web.spec.ts:174:5 › WEB-06 user confirmation: mismatched password confirmation prevents registration
+[62/117] [firefox] › tests/acceptance/web.spec.ts:187:7 › WEB-07 FR-018: missing uppercase gives feedback and prevents submission
+[63/117] [firefox] › tests/acceptance/web.spec.ts:187:7 › WEB-07 FR-018: missing lowercase gives feedback and prevents submission
+[64/117] [firefox] › tests/acceptance/web.spec.ts:187:7 › WEB-07 FR-018: missing digit gives feedback and prevents submission
+[65/117] [firefox] › tests/acceptance/web.spec.ts:187:7 › WEB-07 FR-018: missing special gives feedback and prevents submission
+[66/117] [firefox] › tests/acceptance/web.spec.ts:203:5 › WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server
+[67/117] [firefox] › tests/acceptance/web.spec.ts:214:5 › WEB-09 PRD keyboard: Enter submits login without mouse interaction
+[68/117] [firefox] › tests/acceptance/web.spec.ts:223:5 › WEB-10 FR-017: registration returns to login and requires password re-entry
+[69/117] [firefox] › tests/acceptance/web.spec.ts:235:5 › WEB-11 PRD UX: login shows pending state and blocks duplicate submit during a real request
+[70/117] [firefox] › tests/acceptance/web.spec.ts:265:5 › WEB-12 PRD login: network failure differs from credential failure and permits retry
+[71/117] [firefox] › tests/acceptance/web.spec.ts:292:5 › WEB-13 FR-010: Disabled user sees failure and cannot enter protected app
+[72/117] [firefox] › tests/acceptance/web.spec.ts:305:5 › WEB-14 FR-002/003: duplicate-account feedback permits retry without losing invitation
+[73/117] [firefox] › tests/acceptance/web.spec.ts:318:5 › WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated
+[74/117] [firefox] › tests/acceptance/web.spec.ts:330:5 › WEB-16 PRD UX: pending real registration prevents duplicate submission
+[75/117] [firefox] › tests/acceptance/web.spec.ts:346:5 › WEB-17 FR-008: Redis-expired browser Session returns to login
+[76/117] [firefox] › tests/acceptance/web.spec.ts:365:5 › WEB-18 PRD security: frontend logs do not contain submitted password
+[77/117] [firefox] › tests/acceptance/web.spec.ts:380:5 › R2/Q25 real ordinary Home, own account and direct admin denial
+[78/117] [firefox] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+[79/117] [webkit] › tests/acceptance/web.spec.ts:15:5 › FR-001/011: login is accessible and offers no self-service recovery
+[80/117] [webkit] › tests/acceptance/web.spec.ts:23:5 › PRD interaction: password visibility can be toggled
+[81/117] [webkit] › tests/acceptance/web.spec.ts:32:5 › FR-004: invitation URL fills the registration field
+[82/117] [webkit] › tests/acceptance/web.spec.ts:37:5 › FR-002: registration rejects an account containing spaces before submission
+[83/117] [webkit] › tests/acceptance/web.spec.ts:49:5 › FR-018: four required character classes suffice without a length hint
+[84/117] [webkit] › tests/acceptance/web.spec.ts:55:5 › FR-018: registration exposes accessible password-strength feedback
+[85/117] [webkit] › tests/acceptance/web.spec.ts:62:5 › FR-007: an anonymous browser cannot enter the protected app
+[86/117] [webkit] › tests/acceptance/web.spec.ts:66:5 › FR-001: wrong credentials show an error and remain unauthenticated
+[87/117] [webkit] › tests/acceptance/web.spec.ts:74:5 › FR-017: successful registration returns to login without a session
+[88/117] [webkit] › tests/acceptance/web.spec.ts:89:5 › FR-005/008/009: real login survives reload, then logout revokes it
+[89/117] [webkit] › tests/acceptance/web.spec.ts:121:5 › WEB-01 user confirmation 2026-09-25: registration has four labeled inputs
+[90/117] [webkit] › tests/acceptance/web.spec.ts:128:7 › WEB-02 FR-011: /login has no self-service password recovery
+[91/117] [webkit] › tests/acceptance/web.spec.ts:128:7 › WEB-02 FR-011: /register has no self-service password recovery
+[92/117] [webkit] › tests/acceptance/web.spec.ts:141:5 › WEB-03 FR-004: percent-encoded invitation is decoded once and remains editable
+[93/117] [webkit] › tests/acceptance/web.spec.ts:149:5 › WEB-04 FR-004: URL invitation is treated as text, not executable markup
+[94/117] [webkit] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /login missing 账号 is not submitted
+[95/117] [webkit] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /login missing 密码 is not submitted
+[96/117] [webkit] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /register missing 账号 is not submitted
+[97/117] [webkit] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /register missing 密码 is not submitted
+[98/117] [webkit] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /register missing 确认密码 is not submitted
+[99/117] [webkit] › tests/acceptance/web.spec.ts:160:37 › WEB-05 PRD input validation: /register missing 邀请码 is not submitted
+[100/117] [webkit] › tests/acceptance/web.spec.ts:174:5 › WEB-06 user confirmation: mismatched password confirmation prevents registration
+[101/117] [webkit] › tests/acceptance/web.spec.ts:187:7 › WEB-07 FR-018: missing uppercase gives feedback and prevents submission
+[102/117] [webkit] › tests/acceptance/web.spec.ts:187:7 › WEB-07 FR-018: missing lowercase gives feedback and prevents submission
+[103/117] [webkit] › tests/acceptance/web.spec.ts:187:7 › WEB-07 FR-018: missing digit gives feedback and prevents submission
+[104/117] [webkit] › tests/acceptance/web.spec.ts:187:7 › WEB-07 FR-018: missing special gives feedback and prevents submission
+[105/117] [webkit] › tests/acceptance/web.spec.ts:203:5 › WEB-08 FR-004: prefilled invalid invitation is revalidated by the real server
+[106/117] [webkit] › tests/acceptance/web.spec.ts:214:5 › WEB-09 PRD keyboard: Enter submits login without mouse interaction
+[107/117] [webkit] › tests/acceptance/web.spec.ts:223:5 › WEB-10 FR-017: registration returns to login and requires password re-entry
+[108/117] [webkit] › tests/acceptance/web.spec.ts:235:5 › WEB-11 PRD UX: login shows pending state and blocks duplicate submit during a real request
+[109/117] [webkit] › tests/acceptance/web.spec.ts:265:5 › WEB-12 PRD login: network failure differs from credential failure and permits retry
+[110/117] [webkit] › tests/acceptance/web.spec.ts:292:5 › WEB-13 FR-010: Disabled user sees failure and cannot enter protected app
+[111/117] [webkit] › tests/acceptance/web.spec.ts:305:5 › WEB-14 FR-002/003: duplicate-account feedback permits retry without losing invitation
+[112/117] [webkit] › tests/acceptance/web.spec.ts:318:5 › WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated
+[113/117] [webkit] › tests/acceptance/web.spec.ts:330:5 › WEB-16 PRD UX: pending real registration prevents duplicate submission
+[114/117] [webkit] › tests/acceptance/web.spec.ts:346:5 › WEB-17 FR-008: Redis-expired browser Session returns to login
+[115/117] [webkit] › tests/acceptance/web.spec.ts:365:5 › WEB-18 PRD security: frontend logs do not contain submitted password
+[116/117] [webkit] › tests/acceptance/web.spec.ts:380:5 › R2/Q25 real ordinary Home, own account and direct admin denial
+[117/117] [webkit] › tests/acceptance/web.spec.ts:383:5 › R3 real Root UI creates shared template/identity and assigns a new non-Root manager
+  117 passed (5.4m)
+TAP version 13
+# Subtest: ADR-004: unknown API stays JSON404; untrusted identity/forwarding cannot grant access
+ok 1 - ADR-004: unknown API stays JSON404; untrusted identity/forwarding cannot grant access
+  ---
+  duration_ms: 58.6791
+  type: 'test'
+  ...
+# Subtest: Real redis outage denies authenticated access and login; readiness recovers
+ok 2 - Real redis outage denies authenticated access and login; readiness recovers
+  ---
+  duration_ms: 4145.6395
+  type: 'test'
+  ...
+# Subtest: Real postgres outage denies authenticated access and login; readiness recovers
+ok 3 - Real postgres outage denies authenticated access and login; readiness recovers
+  ---
+  duration_ms: 3131.5875
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7405.5562
+TAP version 13
+# Subtest: transport barrier holds actual Redis EVAL while independent DEL proceeds
+ok 1 - transport barrier holds actual Redis EVAL while independent DEL proceeds
+  ---
+  duration_ms: 2275.3702
+  type: 'test'
+  ...
+# Subtest: observer changes native TTL before testing renewal
+ok 2 - observer changes native TTL before testing renewal
+  ---
+  duration_ms: 891.9844
+  type: 'test'
+  ...
+# Subtest: observer changes native creation timestamp
+ok 3 - observer changes native creation timestamp
+  ---
+  duration_ms: 1065.3194
+  type: 'test'
+  ...
+# Subtest: observer disables an independent account in PostgreSQL
+ok 4 - observer disables an independent account in PostgreSQL
+  ---
+  duration_ms: 749.386
+  type: 'test'
+  ...
+# Subtest: observer interrupts real application postgresql traffic
+ok 5 - observer interrupts real application postgresql traffic
+  ---
+  duration_ms: 2218.8905
+  type: 'test'
+  ...
+# Subtest: observer interrupts real application redis traffic
+ok 6 - observer interrupts real application redis traffic
+  ---
+  duration_ms: 3581.8328
+  type: 'test'
+  ...
+# Subtest: observer forces registration commit failure without consuming its invitation
+ok 7 - observer forces registration commit failure without consuming its invitation
+  ---
+  duration_ms: 968.4843
+  type: 'test'
+  ...
+# Subtest: storage observer expires an existing native Redis key, preserving its neighbor
+ok 8 - storage observer expires an existing native Redis key, preserving its neighbor
+  ---
+  duration_ms: 1782.1994
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13680.0931
+TAP version 13
+# Subtest: STORE-01 FR-006: newly created Redis Session has native one-hour TTL
+ok 1 - STORE-01 FR-006: newly created Redis Session has native one-hour TTL
+  ---
+  duration_ms: 710.4511
+  type: 'test'
+  ...
+# Subtest: STORE-02 FR-006: successful authentication renews a shortened native TTL
+ok 2 - STORE-02 FR-006: successful authentication renews a shortened native TTL
+  ---
+  duration_ms: 1067.2558
+  type: 'test'
+  ...
+# Subtest: STORE-03 FR-006: rejected CSRF activity does not renew Redis TTL
+ok 3 - STORE-03 FR-006: rejected CSRF activity does not renew Redis TTL
+  ---
+  duration_ms: 1068.4988
+  type: 'test'
+  ...
+# Subtest: STORE-04 FR-006: failed privileged activity does not renew ordinary member TTL
+ok 4 - STORE-04 FR-006: failed privileged activity does not renew ordinary member TTL
+  ---
+  duration_ms: 1056.2926
+  type: 'test'
+  ...
+# Subtest: STORE-05 FR-008: Redis-expired Session is denied and not recreated by reads
+ok 5 - STORE-05 FR-008: Redis-expired Session is denied and not recreated by reads
+  ---
+  duration_ms: 1083.4566
+  type: 'test'
+  ...
+# Subtest: STORE-06 FR-006: old creation time does not impose an absolute lifetime
+ok 6 - STORE-06 FR-006: old creation time does not impose an absolute lifetime
+  ---
+  duration_ms: 1028.1786
+  type: 'test'
+  ...
+# Subtest: STORE-07 ADR-001: disabling user rejects an existing Session
+ok 7 - STORE-07 ADR-001: disabling user rejects an existing Session
+  ---
+  duration_ms: 747.5149
+  type: 'test'
+  ...
+# Subtest: STORE-08 PRD fail closed: redis outage denies authenticated access as service failure
+ok 8 - STORE-08 PRD fail closed: redis outage denies authenticated access as service failure
+  ---
+  duration_ms: 3597.1981
+  type: 'test'
+  ...
+# Subtest: STORE-09 PRD fail closed: redis outage cannot report a successful login
+ok 9 - STORE-09 PRD fail closed: redis outage cannot report a successful login
+  ---
+  duration_ms: 3654.0967
+  type: 'test'
+  ...
+# Subtest: STORE-08 PRD fail closed: postgresql outage denies authenticated access as service failure
+ok 10 - STORE-08 PRD fail closed: postgresql outage denies authenticated access as service failure
+  ---
+  duration_ms: 2313.1934
+  type: 'test'
+  ...
+# Subtest: STORE-09 PRD fail closed: postgresql outage cannot report a successful login
+ok 11 - STORE-09 PRD fail closed: postgresql outage cannot report a successful login
+  ---
+  duration_ms: 2215.9082
+  type: 'test'
+  ...
+# Subtest: STORE-10 FR-009: Redis failure cannot falsely confirm logout
+ok 12 - STORE-10 FR-009: Redis failure cannot falsely confirm logout
+  ---
+  duration_ms: 3609.5889
+  type: 'test'
+  ...
+# Subtest: STORE-11 FR-003: forced transaction failure creates no account and does not consume invitation
+ok 13 - STORE-11 FR-003: forced transaction failure creates no account and does not consume invitation
+  ---
+  duration_ms: 1813.9345
+  type: 'test'
+  ...
+# Subtest: STORE-12 FR-003: concurrent registration commits one user, one credential, one consumption
+ok 14 - STORE-12 FR-003: concurrent registration commits one user, one credential, one consumption
+  ---
+  duration_ms: 4227.9008
+  type: 'test'
+  ...
+# Subtest: STORE-13 ADR-001: registration stores independent salted password hashes, never plaintext
+ok 15 - STORE-13 ADR-001: registration stores independent salted password hashes, never plaintext
+  ---
+  duration_ms: 1218.5508
+  type: 'test'
+  ...
+# Subtest: STORE-14 FR-014: success and failure login events contain required observations without secrets
+ok 16 - STORE-14 FR-014: success and failure login events contain required observations without secrets
+  ---
+  duration_ms: 846.0948
+  type: 'test'
+  ...
+# Subtest: STORE-15 PRD rollback: restored storage never resurrects a confirmed logged-out Session
+ok 17 - STORE-15 PRD rollback: restored storage never resurrects a confirmed logged-out Session
+  ---
+  duration_ms: 7532.3395
+  type: 'test'
+  ...
+# Subtest: STORE-16 FR-009: deterministic delete-before-renewal never restores logged-out key
+ok 18 - STORE-16 FR-009: deterministic delete-before-renewal never restores logged-out key
+  ---
+  duration_ms: 6809.8986
+  type: 'test'
+  ...
+# Subtest: STORE-17 FR-012/014: reset storage and logs contain no plaintext old or fixed password
+ok 19 - STORE-17 FR-012/014: reset storage and logs contain no plaintext old or fixed password
+  ---
+  duration_ms: 1157.8988
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 45833.1979
+ Container weaveos-v010-007-1790755994156-nginx-1 Stopping
+ Container weaveos-v010-007-1790755994156-test-redis-1 Stopping
+ Container weaveos-v010-007-1790755994156-test-redis-1 Stopped
+ Container weaveos-v010-007-1790755994156-nginx-1 Stopped
+ Container weaveos-v010-007-1790755994156-bff-1 Stopping
+ Container weaveos-v010-007-1790755994156-bff-1 Stopped
+ Container weaveos-v010-007-1790755994156-redis-1 Stopping
+ Container weaveos-v010-007-1790755994156-postgres-1 Stopping
+ Container weaveos-v010-007-1790755994156-redis-1 Stopped
+ Container weaveos-v010-007-1790755994156-postgres-1 Stopped
