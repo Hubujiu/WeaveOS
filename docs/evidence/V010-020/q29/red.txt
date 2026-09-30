@@ -1,0 +1,77 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:47712) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:44724) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:27128) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [chromium] › apps\web\src\auth.component.spec.ts:5:1 › Q29 login error card and registration retain the current Figma dimensions (2.0s)
+  x  2 [chromium] › apps\web\src\personnel.component.spec.ts:26:1 › Q29 Home navigation uses 56/40px and keeps account controls inside the expanded bar (6.4s)
+(node:39948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [chromium] › apps\web\src\personnel.component.spec.ts:35:1 › Q29 admin chrome uses 176/72px and 56/40px with aligned content and 48px navigation (6.4s)
+
+
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:26:1 › Q29 Home navigation uses 56/40px and keeps account controls inside the expanded bar 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.home-header')
+    Expected: "56px"
+    Received: "72px"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" locator('.home-header') with timeout 5000ms
+      - waiting for locator('.home-header')
+        14 × locator resolved to <header class="home-header">…</header>
+           - unexpected value "72px"
+
+
+      26 | test('Q29 Home navigation uses 56/40px and keeps account controls inside the expanded bar',async({page})=>{
+      27 |  await page.setViewportSize({width:1920,height:1080});await fixture(page);await page.goto('/app');
+    > 28 |  await expect(page.locator('.home-header')).toHaveCSS('height','56px');
+         |                                             ^
+      29 |  for(const selector of ['.home-icon-button','.account-button']){const box=(await page.locator(selector).boundingBox())!;expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThanOrEqual(56);}
+      30 |  await page.getByRole('button',{name:'账号',exact:true}).click();expect((await page.locator('.account-menu').boundingBox())!.y).toBe(66);
+      31 |  await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.home-header')).toHaveCSS('height','40px');await expect(page.locator('.account-menu')).toBeHidden();
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:28:45
+
+    Error Context: .work\q29-test-results\personnel.component-Q29-Ho-69821-ols-inside-the-expanded-bar-chromium\error-context.md
+
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:35:1 › Q29 admin chrome uses 176/72px and 56/40px with aligned content and 48px navigation 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.admin-sidebar')
+    Expected: "176px"
+    Received: "320px"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" locator('.admin-sidebar') with timeout 5000ms
+      - waiting for locator('.admin-sidebar')
+        14 × locator resolved to <aside class="admin-sidebar">…</aside>
+           - unexpected value "320px"
+
+
+      39 |   if((await shell.evaluate(n=>n.classList.contains('side-collapsed')))!==(side===72))await page.locator('.side-trigger').click();
+      40 |   if((await shell.evaluate(n=>n.classList.contains('top-collapsed')))!==(top===40))await page.locator('.top-trigger').click();
+    > 41 |   await expect(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+         |                                                ^
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:41:48
+
+    Error Context: .work\q29-test-results\personnel.component-Q29-ad-4993e-content-and-48px-navigation-chromium\error-context.md
+
+  2 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:26:1 › Q29 Home navigation uses 56/40px and keeps account controls inside the expanded bar 
+    [chromium] › apps\web\src\personnel.component.spec.ts:35:1 › Q29 admin chrome uses 176/72px and 56/40px with aligned content and 48px navigation 
+  1 passed (17.1s)

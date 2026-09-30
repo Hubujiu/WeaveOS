@@ -1,0 +1,515 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:38556) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:45776) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:47752) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [chromium] › apps\web\src\auth.component.spec.ts:5:1 › Q29 login error card and registration retain the current Figma dimensions (1.9s)
+  x  2 [chromium] › apps\web\src\personnel.component.spec.ts:26:1 › Q29 Home navigation uses 56/40px and keeps account controls inside the expanded bar (4.8s)
+(node:44976) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [chromium] › apps\web\src\personnel.component.spec.ts:35:1 › Q29 admin chrome uses 176/72px and 56/40px with aligned content and 48px navigation (10.6s)
+
+
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:26:1 › Q29 Home navigation uses 56/40px and keeps account controls inside the expanded bar 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.home-header')
+    Expected: "56px"
+    Received: "72px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.home-header') with timeout 1500ms
+      - waiting for locator('.home-header')
+        16 × locator resolved to <header class="home-header">…</header>
+           - unexpected value "72px"
+
+
+      26 | test('Q29 Home navigation uses 56/40px and keeps account controls inside the expanded bar',async({page})=>{
+      27 |  await page.setViewportSize({width:1920,height:1080});await fixture(page);await page.goto('/app');
+    > 28 |  await expect.soft(page.locator('.home-header')).toHaveCSS('height','56px');
+         |                                                  ^
+      29 |  for(const selector of ['.home-icon-button','.account-button']){const box=(await page.locator(selector).boundingBox())!;expect.soft(box.y).toBeGreaterThanOrEqual(0);expect.soft(box.y+box.height).toBeLessThanOrEqual(56);}
+      30 |  await page.getByRole('button',{name:'账号',exact:true}).click();expect.soft((await page.locator('.account-menu').boundingBox())!.y).toBe(66);
+      31 |  await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.home-header')).toHaveCSS('height','40px');await expect(page.locator('.account-menu')).toBeHidden();
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:28:50
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 56
+    Received:    58
+
+      27 |  await page.setViewportSize({width:1920,height:1080});await fixture(page);await page.goto('/app');
+      28 |  await expect.soft(page.locator('.home-header')).toHaveCSS('height','56px');
+    > 29 |  for(const selector of ['.home-icon-button','.account-button']){const box=(await page.locator(selector).boundingBox())!;expect.soft(box.y).toBeGreaterThanOrEqual(0);expect.soft(box.y+box.height).toBeLessThanOrEqual(56);}
+         |                                                                                                                                                                                                    ^
+      30 |  await page.getByRole('button',{name:'账号',exact:true}).click();expect.soft((await page.locator('.account-menu').boundingBox())!.y).toBe(66);
+      31 |  await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.home-header')).toHaveCSS('height','40px');await expect(page.locator('.account-menu')).toBeHidden();
+      32 |  await page.getByRole('button',{name:'展开顶栏',exact:true}).click();await expect(page.locator('.home-header')).toHaveCSS('height','56px');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:29:196
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 56
+    Received:    58
+
+      27 |  await page.setViewportSize({width:1920,height:1080});await fixture(page);await page.goto('/app');
+      28 |  await expect.soft(page.locator('.home-header')).toHaveCSS('height','56px');
+    > 29 |  for(const selector of ['.home-icon-button','.account-button']){const box=(await page.locator(selector).boundingBox())!;expect.soft(box.y).toBeGreaterThanOrEqual(0);expect.soft(box.y+box.height).toBeLessThanOrEqual(56);}
+         |                                                                                                                                                                                                    ^
+      30 |  await page.getByRole('button',{name:'账号',exact:true}).click();expect.soft((await page.locator('.account-menu').boundingBox())!.y).toBe(66);
+      31 |  await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.home-header')).toHaveCSS('height','40px');await expect(page.locator('.account-menu')).toBeHidden();
+      32 |  await page.getByRole('button',{name:'展开顶栏',exact:true}).click();await expect(page.locator('.home-header')).toHaveCSS('height','56px');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:29:196
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 66
+    Received: 82
+
+      28 |  await expect.soft(page.locator('.home-header')).toHaveCSS('height','56px');
+      29 |  for(const selector of ['.home-icon-button','.account-button']){const box=(await page.locator(selector).boundingBox())!;expect.soft(box.y).toBeGreaterThanOrEqual(0);expect.soft(box.y+box.height).toBeLessThanOrEqual(56);}
+    > 30 |  await page.getByRole('button',{name:'账号',exact:true}).click();expect.soft((await page.locator('.account-menu').boundingBox())!.y).toBe(66);
+         |                                                                                                                                    ^
+      31 |  await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.home-header')).toHaveCSS('height','40px');await expect(page.locator('.account-menu')).toBeHidden();
+      32 |  await page.getByRole('button',{name:'展开顶栏',exact:true}).click();await expect(page.locator('.home-header')).toHaveCSS('height','56px');
+      33 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:30:132
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.home-header')
+    Expected: "56px"
+    Received: "72px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toHaveCSS" locator('.home-header') with timeout 1500ms
+      - waiting for locator('.home-header')
+        2 × locator resolved to <header class="home-header">…</header>
+          - unexpected value "40px"
+        - locator resolved to <header class="home-header">…</header>
+        - unexpected value "54.2188px"
+        - locator resolved to <header class="home-header">…</header>
+        - unexpected value "69.5938px"
+        12 × locator resolved to <header class="home-header">…</header>
+           - unexpected value "72px"
+
+
+      30 |  await page.getByRole('button',{name:'账号',exact:true}).click();expect.soft((await page.locator('.account-menu').boundingBox())!.y).toBe(66);
+      31 |  await page.getByRole('button',{name:'收起顶栏',exact:true}).click();await expect(page.locator('.home-header')).toHaveCSS('height','40px');await expect(page.locator('.account-menu')).toBeHidden();
+    > 32 |  await page.getByRole('button',{name:'展开顶栏',exact:true}).click();await expect(page.locator('.home-header')).toHaveCSS('height','56px');
+         |                                                                                                             ^
+      33 | });
+      34 |
+      35 | test('Q29 admin chrome uses 176/72px and 56/40px with aligned content and 48px navigation',async({page})=>{
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:32:109
+
+    Error Context: .work\q29-test-results\personnel.component-Q29-Ho-69821-ols-inside-the-expanded-bar-chromium\error-context.md
+
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:35:1 › Q29 admin chrome uses 176/72px and 56/40px with aligned content and 48px navigation 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.admin-sidebar')
+    Expected: "176px"
+    Received: "320px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.admin-sidebar') with timeout 1500ms
+      - waiting for locator('.admin-sidebar')
+        16 × locator resolved to <aside class="admin-sidebar">…</aside>
+           - unexpected value "320px"
+
+
+      39 |   if((await shell.evaluate(n=>n.classList.contains('side-collapsed')))!==(side===72))await page.locator('.side-trigger').click();
+      40 |   if((await shell.evaluate(n=>n.classList.contains('top-collapsed')))!==(top===40))await page.locator('.top-trigger').click();
+    > 41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+         |                                                     ^
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:41:53
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.admin-header')
+    Expected: "56px"
+    Received: "72px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.admin-header') with timeout 1500ms
+      - waiting for locator('.admin-header')
+        16 × locator resolved to <header class="admin-header">…</header>
+           - unexpected value "72px"
+
+
+      39 |   if((await shell.evaluate(n=>n.classList.contains('side-collapsed')))!==(side===72))await page.locator('.side-trigger').click();
+      40 |   if((await shell.evaluate(n=>n.classList.contains('top-collapsed')))!==(top===40))await page.locator('.top-trigger').click();
+    > 41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+         |                                                                                                                                   ^
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:41:131
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 4
+    + Received  + 4
+
+      Object {
+    -   "height": 1024,
+    -   "width": 1744,
+    -   "x": 176,
+    -   "y": 56,
+    +   "height": 1008,
+    +   "width": 1600,
+    +   "x": 320,
+    +   "y": 72,
+      }
+
+      40 |   if((await shell.evaluate(n=>n.classList.contains('top-collapsed')))!==(top===40))await page.locator('.top-trigger').click();
+      41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+    > 42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+         |                                                                                                                                                            ^
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+      45 |  }
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:42:156
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 3
+    + Received  + 3
+
+      Object {
+        "height": 48,
+    -   "width": 144,
+    -   "x": 16,
+    -   "y": 180,
+    +   "width": 256,
+    +   "x": 32,
+    +   "y": 196,
+      }
+
+      41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+    > 43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+         |                                                                                                                                         ^
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+      45 |  }
+      46 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:43:137
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "height": 20,
+        "width": 20,
+    -   "x": 26,
+    +   "x": 44,
+      }
+
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+    > 44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+         |                                                                                                                                     ^
+      45 |  }
+      46 | });
+      47 |
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:44:133
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.admin-header')
+    Expected: "56px"
+    Received: "72px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.admin-header') with timeout 1500ms
+      - waiting for locator('.admin-header')
+        16 × locator resolved to <header class="admin-header">…</header>
+           - unexpected value "72px"
+
+
+      39 |   if((await shell.evaluate(n=>n.classList.contains('side-collapsed')))!==(side===72))await page.locator('.side-trigger').click();
+      40 |   if((await shell.evaluate(n=>n.classList.contains('top-collapsed')))!==(top===40))await page.locator('.top-trigger').click();
+    > 41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+         |                                                                                                                                   ^
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:41:131
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 2
+    + Received  + 2
+
+      Object {
+    -   "height": 1024,
+    +   "height": 1008,
+        "width": 1848,
+        "x": 72,
+    -   "y": 56,
+    +   "y": 72,
+      }
+
+      40 |   if((await shell.evaluate(n=>n.classList.contains('top-collapsed')))!==(top===40))await page.locator('.top-trigger').click();
+      41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+    > 42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+         |                                                                                                                                                            ^
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+      45 |  }
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:42:156
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "height": 48,
+        "width": 48,
+        "x": 12,
+    -   "y": 180,
+    +   "y": 196,
+      }
+
+      41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+    > 43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+         |                                                                                                                                         ^
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+      45 |  }
+      46 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:43:137
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.admin-sidebar')
+    Expected: "176px"
+    Received: "320px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.admin-sidebar') with timeout 1500ms
+      - waiting for locator('.admin-sidebar')
+        16 × locator resolved to <aside class="admin-sidebar">…</aside>
+           - unexpected value "320px"
+
+
+      39 |   if((await shell.evaluate(n=>n.classList.contains('side-collapsed')))!==(side===72))await page.locator('.side-trigger').click();
+      40 |   if((await shell.evaluate(n=>n.classList.contains('top-collapsed')))!==(top===40))await page.locator('.top-trigger').click();
+    > 41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+         |                                                     ^
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:41:53
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 2
+    + Received  + 2
+
+      Object {
+        "height": 1040,
+    -   "width": 1744,
+    -   "x": 176,
+    +   "width": 1600,
+    +   "x": 320,
+        "y": 40,
+      }
+
+      40 |   if((await shell.evaluate(n=>n.classList.contains('top-collapsed')))!==(top===40))await page.locator('.top-trigger').click();
+      41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+    > 42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+         |                                                                                                                                                            ^
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+      45 |  }
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:42:156
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 2
+    + Received  + 2
+
+      Object {
+        "height": 48,
+    -   "width": 144,
+    -   "x": 16,
+    +   "width": 256,
+    +   "x": 32,
+        "y": 164,
+      }
+
+      41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+    > 43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+         |                                                                                                                                         ^
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+      45 |  }
+      46 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:43:137
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "height": 20,
+        "width": 20,
+    -   "x": 26,
+    +   "x": 44,
+      }
+
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+    > 44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+         |                                                                                                                                     ^
+      45 |  }
+      46 | });
+      47 |
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:44:133
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.admin-sidebar')
+    Expected: "176px"
+    Received: "320px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.admin-sidebar') with timeout 1500ms
+      - waiting for locator('.admin-sidebar')
+        16 × locator resolved to <aside class="admin-sidebar">…</aside>
+           - unexpected value "320px"
+
+
+      39 |   if((await shell.evaluate(n=>n.classList.contains('side-collapsed')))!==(side===72))await page.locator('.side-trigger').click();
+      40 |   if((await shell.evaluate(n=>n.classList.contains('top-collapsed')))!==(top===40))await page.locator('.top-trigger').click();
+    > 41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+         |                                                     ^
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:41:53
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.admin-header')
+    Expected: "56px"
+    Received: "72px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.admin-header') with timeout 1500ms
+      - waiting for locator('.admin-header')
+        16 × locator resolved to <header class="admin-header">…</header>
+           - unexpected value "72px"
+
+
+      39 |   if((await shell.evaluate(n=>n.classList.contains('side-collapsed')))!==(side===72))await page.locator('.side-trigger').click();
+      40 |   if((await shell.evaluate(n=>n.classList.contains('top-collapsed')))!==(top===40))await page.locator('.top-trigger').click();
+    > 41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+         |                                                                                                                                   ^
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:41:131
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 4
+    + Received  + 4
+
+      Object {
+    -   "height": 1024,
+    -   "width": 1744,
+    -   "x": 176,
+    -   "y": 56,
+    +   "height": 1008,
+    +   "width": 1600,
+    +   "x": 320,
+    +   "y": 72,
+      }
+
+      40 |   if((await shell.evaluate(n=>n.classList.contains('top-collapsed')))!==(top===40))await page.locator('.top-trigger').click();
+      41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+    > 42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+         |                                                                                                                                                            ^
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+      45 |  }
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:42:156
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 3
+    + Received  + 3
+
+      Object {
+        "height": 48,
+    -   "width": 144,
+    -   "x": 16,
+    -   "y": 180,
+    +   "width": 256,
+    +   "x": 32,
+    +   "y": 196,
+      }
+
+      41 |   await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width',side+'px');await expect.soft(page.locator('.admin-header')).toHaveCSS('height',top+'px');
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+    > 43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+         |                                                                                                                                         ^
+      44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+      45 |  }
+      46 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:43:137
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "height": 20,
+        "width": 20,
+    -   "x": 26,
+    +   "x": 44,
+      }
+
+      42 |   const content=(await page.locator('.personnel-content').boundingBox())!;expect.soft({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:side,y:top,width:1920-side,height:1080-top});
+      43 |   const menu=(await page.locator('.personnel-nav').boundingBox())!;expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:side===72?12:16,y:top+124,width:side===72?48:144,height:48});
+    > 44 |   const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect.soft({x:icon.x,width:icon.width,height:icon.height}).toEqual({x:26,width:20,height:20});
+         |                                                                                                                                     ^
+      45 |  }
+      46 | });
+      47 |
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:44:133
+
+    Error Context: .work\q29-test-results\personnel.component-Q29-ad-4993e-content-and-48px-navigation-chromium\error-context.md
+
+  2 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:26:1 › Q29 Home navigation uses 56/40px and keeps account controls inside the expanded bar 
+    [chromium] › apps\web\src\personnel.component.spec.ts:35:1 › Q29 admin chrome uses 176/72px and 56/40px with aligned content and 48px navigation 
+  1 passed (19.6s)
