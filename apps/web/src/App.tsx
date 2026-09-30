@@ -53,7 +53,7 @@ async function api<T>(path: string, method = 'GET', body?: object): Promise<T> {
 }
 
 function BrandHeader({ register = false }: { register?: boolean }) {
-  return <header className="brand-header"><div className="brand-identity"><img src={register ? brandRegister : brandLogin} width="62" height="46" alt="" /><span>WaveOS</span></div><span className="brand-slogan">安全 · 高效 · 连接世界</span></header>;
+  return <header className="brand-header"><div className="brand-identity"><img src={register ? brandRegister : brandLogin} width="44" height="32" alt="" /><span>WaveOS</span></div><span className="brand-slogan">安全 · 高效 · 连接世界</span></header>;
 }
 
 function AuthLayout({ children, register = false }: { children: ReactNode; register?: boolean }) {

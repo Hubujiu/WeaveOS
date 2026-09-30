@@ -132,7 +132,8 @@ test('WaveOS Figma 40:2 register has four large fields and the invitation', asyn
   await page.goto('/register');
   await expect(page.getByText('创建您的账号，开始使用 WaveOS')).toBeVisible();
   await expect(page.getByLabel('邀请码', { exact: true })).toBeVisible();
-  const fields = await page.locator('.auth-card input').all();
+  // Figma Input (40:28/36/83/95) is the bordered field wrapper, not its inner HTML input.
+  const fields = await page.locator('.auth-card .field-input').all();
   expect(fields).toHaveLength(4);
   for (const field of fields) {
     const box = await field.boundingBox();

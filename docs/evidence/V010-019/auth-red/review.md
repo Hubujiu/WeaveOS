@@ -9,3 +9,7 @@ Command: pnpm exec playwright test --config apps/web/playwright.component.config
 Exit1, eight expected failures: old header72 vs56; old fields56 vs46. Existing behavior source App.tsx/style.css copied unchanged before implementation. Test files are recoverable RED source, checksums reproducible. No credentials; only synthetic network fixtures.
 
 Desktop sample widths490.667/704/330.667 for1920/2560/1440 from fixed192 content insets and12cols32gutter. Card content-driven height; normal login495. Mobile oracle remains usability, no horizontal overflow and visible submit. No product acceptance claim from mocked component checks.
+
+## Measurement correction after first regression
+
+First regression:34/35 passed; the register test measured inner HTML input44 against Figma46 bordered Input wrapper. Figma40:28/36/83/95 explicitly owns46px height including1px borders; inner content44 is correct. Corrected locator to .field-input; expected46 remains unchanged, no product behavior weakened. Original RED and first regression logs retained. Header/card geometry and desktop field wrappers independently follow high-fidelity sources.
