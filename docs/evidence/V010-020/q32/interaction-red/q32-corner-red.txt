@@ -1,0 +1,35 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:56480) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:56500) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:58244) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\personnel.component.spec.ts:118:1 › Q32 upward menus animate the corners adjacent to their trigger (1.5s)
+
+
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:118:1 › Q32 upward menus animate the corners adjacent to their trigger 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 12
+    Received: 0
+
+      121 |  const corners=await page.evaluate(async()=>{document.querySelector<HTMLButtonElement>('[aria-label="父部门"]')!.click();await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const menu=document.querySelector<HTMLElement>('[role=listbox]')!;const s=getComputedStyle(menu);return {side:menu.dataset.side,top:s.borderTopLeftRadius,bottom:s.borderBottomLeftRadius};});
+      122 |  expect(corners.side).toBe('above');
+    > 123 |  expect(parseFloat(corners.top)).toBe(12);expect(parseFloat(corners.bottom)).toBeLessThan(12);
+          |                                  ^
+      124 | });
+      125 |
+      126 | // and moves both sidebar menus to y116; supersedes Q29/Q30 old top/menu geometry. Network fixtures isolate the real rendered components.
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:123:34
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-up-a2f61-s-adjacent-to-their-trigger-chromium\error-context.md
+
+  1 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:118:1 › Q32 upward menus animate the corners adjacent to their trigger 

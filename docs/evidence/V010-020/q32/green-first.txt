@@ -1,0 +1,87 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:57636) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:54540) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 6 tests using 1 worker
+
+(node:57120) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [chromium] › apps\web\src\personnel.component.spec.ts:26:1 › Q32 identity select has the separated rounded menu and preserves server filtering (4.1s)
+  ok 2 [chromium] › apps\web\src\personnel.component.spec.ts:41:1 › Q32 grouped selectors keep modal focus and Escape first dismisses the menu (1.6s)
+  x  3 [chromium] › apps\web\src\personnel.component.spec.ts:52:1 › Q32 parent department chooser uses options without closing the native modal (1.0m)
+(node:56944) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 4 [chromium] › apps\web\src\personnel.component.spec.ts:60:1 › Q32 long action menu stays in the viewport and keyboard chooses the final real action (1.8s)
+  ok 5 [chromium] › apps\web\src\personnel.component.spec.ts:71:1 › Q32 pill indicator slides between tabs only after unsaved changes are resolved (2.5s)
+  x  6 [chromium] › apps\web\src\personnel.component.spec.ts:83:1 › Q32 reduced motion removes displacement and option stagger and keeps compact tabs reachable (1.4s)
+
+
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:52:1 › Q32 parent department chooser uses options without closing the native modal 
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '确认创建', exact: true })
+        - locator resolved to <button class="admin-button primary">确认创建</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div id="_r_4_" role="listbox" popover="manual" aria-label="父部门" data-state="open" data-side="below" aria-hidden="false" class="personnel-select-menu">…</div> from <label>…</label> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <div id="_r_4_-0" role="option" data-active="true" aria-selected="true" class="personnel-select-option">企业</div> from <label>…</label> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        110 × waiting for element to be visible, enabled and stable
+            - element is visible, enabled and stable
+            - scrolling into view if needed
+            - done scrolling
+            - <div id="_r_4_-0" role="option" data-active="true" aria-selected="true" class="personnel-select-option">企业</div> from <label>…</label> subtree intercepts pointer events
+          - retrying click action
+            - waiting 500ms
+
+
+      55 |  await combo.click();await page.getByRole('option',{name:'企业',exact:true}).click();await expect(combo).toBeFocused();await expect(page.getByRole('dialog',{name:'新建部门',exact:true})).toBeVisible();
+      56 |  let sent:unknown;await page.route('**/api/v1/personnel/departments',r=>{sent=r.request().postDataJSON();return r.fulfill({status:201,json:{code:'OK',message:'success',data:department,meta:null}});});
+    > 57 |  await page.getByLabel('部门名称',{exact:true}).fill('设计组');await page.getByRole('button',{name:'确认创建',exact:true}).click();await expect.poll(()=>sent).toEqual({name:'设计组',parentId:department.id});
+         |                                                                                                                 ^
+      58 | });
+      59 |
+      60 | test('Q32 long action menu stays in the viewport and keyboard chooses the final real action',async({page})=>{
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:57:113
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-pa-0a1dd-ut-closing-the-native-modal-chromium\error-context.md
+
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:83:1 › Q32 reduced motion removes displacement and option stagger and keeps compact tabs reachable 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 375
+    Received:    426
+
+      84 |  await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:390,height:844});await admin(page);
+      85 |  const first=page.getByRole('tab',{name:'成员与部门',exact:true});await first.focus();await first.press('End');await page.keyboard.press('Enter');await expect(page.getByRole('tab',{name:'操作记录',exact:true})).toHaveAttribute('aria-selected','true');
+    > 86 |  const last=(await page.getByRole('tab',{name:'操作记录',exact:true}).boundingBox())!,bar=(await page.getByRole('tablist').boundingBox())!;expect(last.x).toBeGreaterThanOrEqual(bar.x);expect(last.x+last.width).toBeLessThanOrEqual(bar.x+bar.width+1);
+         |                                                                                                                                                                                                               ^
+      87 |  expect(await page.getByRole('tablist').evaluate(n=>n.scrollHeight===n.clientHeight)).toBe(true);
+      88 |  const combo=page.getByRole('combobox',{name:'操作类型',exact:true});await combo.click();const menu=page.getByRole('listbox',{name:'操作类型',exact:true});await expect(menu).toBeVisible();await expect(menu).toHaveCSS('transform','none');
+      89 |  await expect(page.getByRole('option').first()).toHaveCSS('filter','none');await expect(page.getByRole('option').first()).toHaveCSS('animation-name','none');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:86:207
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-re-196d2-eeps-compact-tabs-reachable-chromium\error-context.md
+
+  2 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:52:1 › Q32 parent department chooser uses options without closing the native modal 
+    [chromium] › apps\web\src\personnel.component.spec.ts:83:1 › Q32 reduced motion removes displacement and option stagger and keeps compact tabs reachable 
+  4 passed (1.2m)

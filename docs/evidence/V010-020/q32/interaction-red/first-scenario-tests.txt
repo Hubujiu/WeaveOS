@@ -111,15 +111,17 @@ test('Q32 quick reversal preserves the current menu height rather than jumping t
 
 test('Q32 searching below the tabs preserves the narrow-screen content scroll position',async({page})=>{
  await page.setViewportSize({width:390,height:600});await admin(page);const input=page.getByLabel('搜索成员',{exact:true});await input.scrollIntoViewIfNeeded();
- const content=page.locator('.personnel-content');await input.focus();const before=await content.evaluate(n=>n.scrollTop);expect(before).toBeGreaterThan(80);
+ const content=page.locator('.personnel-content');await content.evaluate(n=>{n.scrollTop=n.scrollHeight;});const before=await content.evaluate(n=>n.scrollTop);expect(before).toBeGreaterThan(80);
  await input.fill('连续输入');await expect(input).toHaveValue('连续输入');await expect.poll(()=>content.evaluate(n=>n.scrollTop)).toBe(before);
 });
 
 test('Q32 upward menus animate the corners adjacent to their trigger',async({page})=>{
- await page.setViewportSize({width:390,height:320});await fixture(page);const choices=Array.from({length:20},(_,index)=>({...department,id:'00000000-0000-4000-8000-'+String(index+400).padStart(12,'0'),name:'部门-'+index}));
- await page.route('**/api/v1/personnel/departments',r=>r.fulfill({status:200,json:{code:'OK',message:'success',data:{items:choices},meta:null}}));await page.goto('/app/admin');await page.getByRole('button',{name:'新建部门',exact:true}).click();
- const corners=await page.evaluate(async()=>{document.querySelector<HTMLButtonElement>('[aria-label="父部门"]')!.click();await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const menu=document.querySelector<HTMLElement>('[role=listbox]')!;const s=getComputedStyle(menu);return {side:menu.dataset.side,top:s.borderTopLeftRadius,bottom:s.borderBottomLeftRadius};});
- expect(corners.side).toBe('above');
+ await page.setViewportSize({width:390,height:500});await admin(page);const combo=page.getByRole('combobox',{name:'筛选身份',exact:true});await combo.scrollIntoViewIfNeeded();
+ await combo.click();const menu=page.getByRole('listbox',{name:'筛选身份',exact:true});const side=await menu.getAttribute('data-side');
+ if(side!=='above'){
+  await combo.press('Escape');await page.getByRole('tab',{name:'操作记录',exact:true}).click();await page.getByRole('combobox',{name:'操作类型',exact:true}).click();
+ }
+ const opened=page.getByRole('listbox');await expect(opened).toHaveAttribute('data-side','above');const corners=await opened.evaluate(n=>{const s=getComputedStyle(n);return {top:s.borderTopLeftRadius,bottom:s.borderBottomLeftRadius};});
  expect(parseFloat(corners.top)).toBe(12);expect(parseFloat(corners.bottom)).toBeLessThan(12);
 });
 

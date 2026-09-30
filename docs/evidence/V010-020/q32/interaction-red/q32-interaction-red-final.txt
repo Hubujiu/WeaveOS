@@ -1,0 +1,113 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:55188) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:55768) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:55388) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\personnel.component.spec.ts:95:1 › Q32 large directories expose the final option promptly after End (2.5s)
+(node:58104) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [chromium] › apps\web\src\personnel.component.spec.ts:101:1 › Q32 quick reversal preserves the current menu height rather than jumping to endpoints (2.1s)
+(node:56560) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [chromium] › apps\web\src\personnel.component.spec.ts:112:1 › Q32 searching below the tabs preserves the narrow-screen content scroll position (2.4s)
+(node:57084) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  4 [chromium] › apps\web\src\personnel.component.spec.ts:118:1 › Q32 upward menus animate the corners adjacent to their trigger (1.5s)
+
+
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:95:1 › Q32 large directories expose the final option promptly after End 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  getByRole('option', { name: '身份-099', exact: true })
+    Expected: "1"
+    Received: "0"
+    Timeout:  1000ms
+
+    Call log:
+      - Expect "toHaveCSS" getByRole('option', { name: '身份-099', exact: true }) with timeout 1000ms
+      - waiting for getByRole('option', { name: '身份-099', exact: true })
+        11 × locator resolved to <div role="option" id="_r_2_-100" data-active="true" aria-selected="false" class="personnel-select-option">身份-099</div>
+           - unexpected value "0"
+
+
+       96 |  await fixture(page);const choices=Array.from({length:100},(_,index)=>({...identity,id:'00000000-0000-4000-8000-'+String(index+200).padStart(12,'0'),name:'身份-'+String(index).padStart(3,'0')}));
+       97 |  await page.route('**/api/v1/personnel/identities?**',r=>r.fulfill({status:200,json:{code:'OK',message:'success',data:{...list(choices),pageSize:100},meta:null}}));await page.goto('/app/admin');
+    >  98 |  const combo=page.getByRole('combobox',{name:'筛选身份',exact:true});await combo.press('ArrowDown');await combo.press('End');const last=page.getByRole('option',{name:'身份-099',exact:true});await expect(last).toHaveCSS('opacity','1',{timeout:1000});await combo.press('Enter');await expect(combo).toContainText('身份-099');
+          |                                                                                                                                                                                                            ^
+       99 | });
+      100 |
+      101 | test('Q32 quick reversal preserves the current menu height rather than jumping to endpoints',async({page})=>{
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:98:204
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-la-e1506-l-option-promptly-after-End-chromium\error-context.md
+
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:101:1 › Q32 quick reversal preserves the current menu height rather than jumping to endpoints 
+
+    Error: expect(received).toBeLessThan(expected)
+
+    Expected: < 16
+    Received:   41.78125
+
+      107 |   return {before,closing,beforeReopen,reopened};
+      108 |  });
+    > 109 |  expect(Math.abs(sample.closing-sample.before)).toBeLessThan(16);expect(Math.abs(sample.reopened-sample.beforeReopen)).toBeLessThan(16);await expect(page.getByRole('combobox',{name:'筛选身份',exact:true})).toHaveAttribute('aria-expanded','true');
+          |                                                 ^
+      110 | });
+      111 |
+      112 | test('Q32 searching below the tabs preserves the narrow-screen content scroll position',async({page})=>{
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:109:49
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-qu-2285b-r-than-jumping-to-endpoints-chromium\error-context.md
+
+  3) [chromium] › apps\web\src\personnel.component.spec.ts:112:1 › Q32 searching below the tabs preserves the narrow-screen content scroll position 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 387
+    Received: 124
+
+    Call Log:
+    - Timeout 1500ms exceeded while waiting on the predicate
+
+      113 |  await page.setViewportSize({width:390,height:600});await admin(page);const input=page.getByLabel('搜索成员',{exact:true});await input.scrollIntoViewIfNeeded();
+      114 |  const content=page.locator('.personnel-content');await input.focus();const before=await content.evaluate(n=>n.scrollTop);expect(before).toBeGreaterThan(80);
+    > 115 |  await input.fill('连续输入');await expect(input).toHaveValue('连续输入');await expect.poll(()=>content.evaluate(n=>n.scrollTop)).toBe(before);
+          |                                                                                                                           ^
+      116 | });
+      117 |
+      118 | test('Q32 upward menus animate the corners adjacent to their trigger',async({page})=>{
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:115:123
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-se-50aef-een-content-scroll-position-chromium\error-context.md
+
+  4) [chromium] › apps\web\src\personnel.component.spec.ts:118:1 › Q32 upward menus animate the corners adjacent to their trigger 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "above"
+    Received: "below"
+
+      119 |  await page.setViewportSize({width:390,height:320});await admin(page);await page.getByRole('button',{name:'新建部门',exact:true}).click();
+      120 |  const corners=await page.evaluate(async()=>{document.querySelector<HTMLButtonElement>('[aria-label="父部门"]')!.click();await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const menu=document.querySelector<HTMLElement>('[role=listbox]')!;const s=getComputedStyle(menu);return {side:menu.dataset.side,top:s.borderTopLeftRadius,bottom:s.borderBottomLeftRadius};});
+    > 121 |  expect(corners.side).toBe('above');
+          |                       ^
+      122 |  expect(parseFloat(corners.top)).toBe(12);expect(parseFloat(corners.bottom)).toBeLessThan(12);
+      123 | });
+      124 |
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:121:23
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-up-a2f61-s-adjacent-to-their-trigger-chromium\error-context.md
+
+  4 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:95:1 › Q32 large directories expose the final option promptly after End 
+    [chromium] › apps\web\src\personnel.component.spec.ts:101:1 › Q32 quick reversal preserves the current menu height rather than jumping to endpoints 
+    [chromium] › apps\web\src\personnel.component.spec.ts:112:1 › Q32 searching below the tabs preserves the narrow-screen content scroll position 
+    [chromium] › apps\web\src\personnel.component.spec.ts:118:1 › Q32 upward menus animate the corners adjacent to their trigger 
