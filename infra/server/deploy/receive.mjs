@@ -62,7 +62,7 @@ try{
    phase='migrate';
    // Conservatively freeze every attempted migration, including a partial failure.
    atomic(deploy+'/ledger.json',{runId:e.runId,commit:e.commit,migrations:e.migrations});
-   for(const [directory,env] of [['migrations','migration.env'],['archive-migrations','cold-migration.env']])applyMigrations({container:c.container('postgres'),goose:root+'/tools/goose',directory:stage+'/'+directory,env:readFileSync(root+'/'+env,'utf8')});
+   for(const [directory,env] of [['archive-migrations','cold-migration.env'],['migrations','migration.env']])applyMigrations({container:c.container('postgres'),goose:root+'/tools/goose',directory:stage+'/'+directory,env:readFileSync(root+'/'+env,'utf8')});
   },
   activate:async()=>{
    phase='activate';atomic(deploy+'/journal.json',{stage,previous});

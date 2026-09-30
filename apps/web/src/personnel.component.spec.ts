@@ -177,13 +177,13 @@ test('R3 activity pagination and explicit time range reach the server independen
  await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();const queries:string[]=[];
  await page.route('**/api/v1/personnel/events?**',async route=>{const url=new URL(route.request().url());queries.push(url.search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[],total:21,page:Number(url.searchParams.get('page')||1),pageSize:20},meta:null}});});
  await page.getByLabel('搜索操作记录',{exact:true}).fill('分页');await expect(page.getByRole('button',{name:'下一页',exact:true})).toBeEnabled();await page.getByRole('button',{name:'下一页',exact:true}).click();await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('page')==='2')).toBe(true);
- await page.getByLabel('开始时间',{exact:true}).fill('2026-09-01T00:00');await page.getByLabel('结束时间',{exact:true}).fill('2026-09-02T00:00');await page.getByRole('button',{name:'应用时间范围',exact:true}).click();
+ await page.getByText('最近 7 天',{exact:true}).click();await page.getByLabel('开始时间',{exact:true}).fill('2026-09-01T00:00');await page.getByLabel('结束时间',{exact:true}).fill('2026-09-02T00:00');await page.getByRole('button',{name:'应用时间范围',exact:true}).click();
  await expect.poll(()=>queries.some(q=>{const p=new URLSearchParams(q);return p.get('from')===new Date('2026-09-01T00:00').toISOString()&&p.get('to')===new Date('2026-09-02T00:00').toISOString()&&p.get('page')==='1';})).toBe(true);
 });
 test('R3 explicit activity time filter sends RFC3339 and resets the page',async({page})=>{
  await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();const queries:string[]=[];
  await page.route('**/api/v1/personnel/events?**',async route=>{queries.push(new URL(route.request().url()).search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:list([]),meta:null}});});
- await page.getByLabel('开始时间',{exact:true}).fill('2026-09-01T00:00');await page.getByLabel('结束时间',{exact:true}).fill('2026-09-02T00:00');await page.getByRole('button',{name:'应用时间范围',exact:true}).click();
+ await page.getByText('最近 7 天',{exact:true}).click();await page.getByLabel('开始时间',{exact:true}).fill('2026-09-01T00:00');await page.getByLabel('结束时间',{exact:true}).fill('2026-09-02T00:00');await page.getByRole('button',{name:'应用时间范围',exact:true}).click();
  await expect.poll(()=>queries.some(q=>{const p=new URLSearchParams(q);return p.get('from')===new Date('2026-09-01T00:00').toISOString()&&p.get('to')===new Date('2026-09-02T00:00').toISOString();})).toBe(true);
 });
 test('R3 empty department deletion confirms version and preserves conflict feedback',async({page})=>{

@@ -1,6 +1,6 @@
 // Reproducible isolated Linux product acceptance. No production account or data.
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,8 +36,9 @@ try {
   compose('up', '-d', '--wait', 'postgres', 'redis', 'test-redis');
   compose('exec', '-T', 'postgres', 'createdb', '-U', 'weaveos_test', 'weaveos_ci_archive_test');
   // Published initial migration intentionally has no destructive Down. Recovery is V010-008.
-  go('go install github.com/pressly/goose/v3/cmd/goose@v3.28.0; /repo/.work/acceptance/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up; /repo/.work/acceptance/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up');
+  go('go install github.com/pressly/goose/v3/cmd/goose@v3.28.0');
   go('/repo/.work/acceptance/tools/goose -dir /repo/db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up; /repo/.work/acceptance/tools/goose -dir /repo/db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up');
+  go('/repo/.work/acceptance/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up; /repo/.work/acceptance/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up');
   go('go test -race -p 1 -count=1 ./... && go vet ./... && CGO_ENABLED=0 go build -o /repo/.work/acceptance/bff ./cmd/bff');
   compose('stop', 'test-redis');
   compose('exec', '-T', 'postgres', 'createdb', '-U', 'weaveos_test', 'weaveos_acceptance');
@@ -46,7 +47,7 @@ try {
     // Seed runs as container root; preserve0600 while assigning the sole authorized host reader.
     call('docker', ['run', '--rm', ...mount, goImage, 'chown', `${process.getuid()}:${process.getgid()}`, '/repo/.work/acceptance/fixtures.json']);
   }
-  node('pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; node --test contracts/*.test.mjs tests/governance/*.test.mjs tests/foundation/*.test.mjs tests/acceptance/topology.test.mjs; pnpm exec redocly lint contracts/openapi/openapi.json; pnpm typecheck; pnpm build; cd apps/web; pnpm exec playwright test --config playwright.component.config.ts');
+  node('pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; node --test contracts/*.test.mjs tests/governance/*.test.mjs tests/foundation/*.test.mjs tests/acceptance/topology.test.mjs; pnpm exec redocly lint contracts/openapi/openapi.json; pnpm typecheck; pnpm build; cd apps/web; PLAYWRIGHT_JSON_OUTPUT_NAME=/repo/.work/acceptance/components.json pnpm exec playwright test --config playwright.component.config.ts --reporter=line,json');
   compose('up', '-d', 'bff', 'nginx');
   call(process.execPath, ['--test', 'infra/acceptance/ingress.test.mjs'], { env: { ...env,
     WEAVEOS_API_URL: 'https://localhost:19443',
@@ -58,7 +59,7 @@ try {
   // Serial fault/control qualification precedes product assertions on the same real stack.
   call(process.execPath, ['--test', '--test-concurrency=1', 'tests/acceptance/storage-observer.test.mjs', 'tests/acceptance/redis-gate.test.mjs'], { env: storeEnv });
   call(process.execPath, ['--test', '--test-concurrency=1', 'tests/acceptance/integration.test.mjs'], { env: storeEnv });
-  writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'passed', project, elapsedSeconds: (Date.now() - started) / 1000, api:122, browser:111, components: 23, faults: 3, storageCases:19, storageControls:8, storage: 'actual PostgreSQL18 + Redis8.2', target: 'isolated Linux HTTPS', secrets: 'not included' }, null, 2));
+  writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'passed', project, elapsedSeconds: (Date.now() - started) / 1000, api:122, browser:111, components: JSON.parse(readFileSync(resolve(dir, 'components.json'), 'utf8')).stats.expected, faults: 3, storageCases:19, storageControls:8, storage: 'actual PostgreSQL18 + Redis8.2', target: 'isolated Linux HTTPS', secrets: 'not included' }, null, 2));
 } catch (error) {
   writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'failed', project, exitCode: error.status ?? 1, elapsedSeconds: (Date.now() - started) / 1000 }));
   throw error;

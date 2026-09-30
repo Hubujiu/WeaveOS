@@ -47,7 +47,7 @@ try{
  // Linux private config belongs to the image's dedicated Redis reader.
  if(typeof process.getuid==='function')call('docker',['run','--rm','--mount',`type=bind,src=${dir},dst=/private`,'debian:bookworm-slim','chown','999:999','/private/redis.conf']);
  compose('up','-d','--wait','postgres','redis');sql('postgres','CREATE DATABASE weaveos_cold_archive;');
- go('/repo/.work/runtime/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up; /repo/.work/runtime/tools/goose -dir /repo/db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up; /repo/.work/runtime/tools/seed');
+ go('/repo/.work/runtime/tools/goose -dir /repo/db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up; /repo/.work/runtime/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up; /repo/.work/runtime/tools/seed');
  if(typeof process.getuid==='function')call('docker',['run','--rm','--mount',`type=bind,src=${root},dst=/repo`,'debian:bookworm-slim','chown',`${process.getuid()}:${process.getgid()}`,'/repo/.work/runtime/fixtures.json']);
  sql('weaveos_runtime',readFileSync('infra/runtime/roles.sql','utf8'));sql('weaveos_cold_archive',readFileSync('infra/runtime/cold-roles.sql','utf8'));
  sql('postgres',`CREATE ROLE weaveos_runtime_app LOGIN PASSWORD '${appPassword}' IN ROLE auth_app; CREATE ROLE weaveos_runtime_reader LOGIN PASSWORD '${readerPassword}' IN ROLE auth_reader; CREATE ROLE weaveos_runtime_maintenance LOGIN PASSWORD '${maintenancePassword}' IN ROLE auth_maintenance; CREATE ROLE weaveos_backup LOGIN IN ROLE auth_backup; REVOKE CONNECT ON DATABASE weaveos_cold_archive FROM PUBLIC; GRANT CONNECT ON DATABASE weaveos_cold_archive TO weaveos_owner,auth_maintenance,auth_backup;`);
