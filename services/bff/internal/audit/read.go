@@ -38,7 +38,13 @@ func (r *Reader) List(request *http.Request, limit int) ([]json.RawMessage, erro
 	if err := tx.QueryRow(request.Context(), "SELECT status='active' AND is_bootstrap_admin AND auth_version::text=$2 FROM auth.users WHERE id=$1", p.UserID, p.Record.AuthVersion).Scan(&allowed); err != nil || !allowed {
 		return nil, session.ErrForbidden
 	}
-	rows, err := tx.Query(request.Context(), "SELECT to_jsonb(e) FROM auth.authentication_events e WHERE occurred_at > current_timestamp - interval '1 year' ORDER BY occurred_at DESC,id DESC LIMIT $1", limit)
+	// The authentication reader keeps its approved twelve-field DTO. Personnel
+	// summaries are exposed separately through the qualified safe activity view.
+	rows, err := tx.Query(request.Context(), `SELECT to_jsonb(e) FROM (
+	 SELECT id,event_type,outcome,actor_user_id,subject_user_id,account_fingerprint,
+	 client_ip,user_agent,session_ref,reason_code,request_id,occurred_at
+	 FROM auth.authentication_events WHERE occurred_at > current_timestamp - interval '1 year'
+	 ORDER BY occurred_at DESC,id DESC LIMIT $1) e`, limit)
 	if err != nil {
 		return nil, session.ErrUnavailable
 	}
