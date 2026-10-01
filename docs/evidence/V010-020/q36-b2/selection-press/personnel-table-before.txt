@@ -1,0 +1,18 @@
+/* Page integration only. Table, checkbox, scrollbar and pager styles are the
+   fixed upstream CSS/Tailwind closure in vendor/arca/arca.css. */
+.workspace .member-table.surface,.workspace .activity-table.surface { border-color:oklch(.922 0 0);border-radius:14px; }
+.personnel-source-scope { display:flex;flex:1;flex-direction:column;min-height:0; }
+.arca-source .personnel-source-table { flex:1;min-height:0;overflow:visible;border:0;border-top:1px solid oklch(.922 0 0);border-radius:0; }
+.arca-source .table-cell { display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis; }
+.arca-source .text-button { font:inherit;color:inherit;white-space:nowrap;outline-offset:-2px; }
+.arca-source .text-button:focus-visible { outline:2px solid oklch(.708 0 0);outline-offset:-2px; }
+.arca-source .member-name { display:flex;gap:8px;min-width:0; }
+.arca-source .member-name strong { color:inherit;font-weight:400;overflow:hidden;text-overflow:ellipsis; }
+.arca-source .member-name small { margin:0;font-size:14px;line-height:20px;flex:none;color:oklch(.556 0 0); }
+.activity-table .activity-note { padding:0; }
+.activity-table .table-toolbar { position:relative;z-index:30; }
+@media(max-width:900px) {
+  .personnel-workspace .member-table { height:440px;flex:none; }
+  .activity-table { height:480px;flex:none; }
+}
+@media(prefers-reduced-motion:reduce) { .arca-source tbody tr { transition:none; } }

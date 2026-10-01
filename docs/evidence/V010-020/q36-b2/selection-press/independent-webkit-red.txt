@@ -1,0 +1,53 @@
+
+Running 1 test using 1 worker
+
+(node:84636) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+MARK_PROBE [{"at":2922,"type":"pointerdown","target":"path","trusted":true},{"at":2922,"type":"mousedown","target":"path","trusted":true},{"at":3087,"type":"pointerup","target":"BUTTON","trusted":true},{"at":3087,"type":"mouseup","target":"BUTTON","trusted":true}]
+  x  1 [webkit] 鈥?.work\q36-selection-svg.spec.ts:34:5 鈥?trusted press spanning disappearing indeterminate mark (7.6s)
+
+
+  1) [webkit] 鈥?.work\q36-selection-svg.spec.ts:34:5 鈥?trusted press spanning disappearing indeterminate mark
+
+    Error: expect(locator).toBeChecked() failed
+
+    Locator:  getByLabel('閫夋嫨鎴愬憳锛歲36-admin', { exact: true })
+    Expected: checked
+    Received: unchecked
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "toBeChecked" getByLabel('閫夋嫨鎴愬憳锛歲36-admin', { exact: true }) with timeout 3000ms
+      - waiting for getByLabel('閫夋嫨鎴愬憳锛歲36-admin', { exact: true })
+        10 脳 locator resolved to <button id="_r_c_" tabindex="0" type="button" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="閫夋嫨鎴愬憳锛歲36-admin" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 border-muted-foreground/50 bg-background hover:border-muted-foreground"></button>
+           - unexpected value "unchecked"
+
+
+      44 |  await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+      45 |  console.log('MARK_PROBE '+JSON.stringify(await page.evaluate(()=>(window as any).__markProbe)));
+    > 46 |  await expect(page.getByLabel('閫夋嫨鎴愬憳锛歲36-admin',{exact:true})).toBeChecked();
+         |                                                               ^
+      47 | });
+      48 |
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\.work\q36-selection-svg.spec.ts:46:63
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-selection-svg-red\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-selection-svg-red\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-selection-svg-red\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-selection-svg-red\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-svg-red\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  1 failed
+    [webkit] 鈥?.work\q36-selection-svg.spec.ts:34:5 鈥?trusted press spanning disappearing indeterminate mark

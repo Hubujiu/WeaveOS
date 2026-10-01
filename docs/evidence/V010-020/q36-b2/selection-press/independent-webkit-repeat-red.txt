@@ -1,0 +1,100 @@
+
+Running 2 tests using 1 worker
+
+(node:78248) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+MARK_PROBE [{"at":3766,"type":"pointerdown","target":"path","trusted":true},{"at":3766,"type":"mousedown","target":"path","trusted":true},{"at":3936,"type":"pointerup","target":"BUTTON","trusted":true},{"at":3936,"type":"mouseup","target":"BUTTON","trusted":true}]
+  x  1 [webkit] › .work\q36-selection-svg.spec.ts:34:5 › trusted press spanning disappearing indeterminate mark (7.5s)
+(node:79936) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+MARK_PROBE [{"at":3184,"type":"pointerdown","target":"path","trusted":true},{"at":3184,"type":"mousedown","target":"path","trusted":true},{"at":3353,"type":"pointerup","target":"BUTTON","trusted":true},{"at":3353,"type":"mouseup","target":"BUTTON","trusted":true}]
+  x  2 [webkit] › .work\q36-selection-svg.spec.ts:34:5 › trusted press spanning disappearing indeterminate mark (7.1s)
+
+
+  1) [webkit] › .work\q36-selection-svg.spec.ts:34:5 › trusted press spanning disappearing indeterminate mark
+
+    Error: expect(locator).toBeChecked() failed
+
+    Locator:  getByLabel('选择成员：q36-admin', { exact: true })
+    Expected: checked
+    Received: unchecked
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "toBeChecked" getByLabel('选择成员：q36-admin', { exact: true }) with timeout 3000ms
+      - waiting for getByLabel('选择成员：q36-admin', { exact: true })
+        10 × locator resolved to <button id="_r_c_" tabindex="0" type="button" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="选择成员：q36-admin" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 border-muted-foreground/50 bg-background hover:border-muted-foreground"></button>
+           - unexpected value "unchecked"
+
+
+      44 |  await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+      45 |  console.log('MARK_PROBE '+JSON.stringify(await page.evaluate(()=>(window as any).__markProbe)));
+    > 46 |  await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();
+         |                                                               ^
+      47 | });
+      48 |
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\.work\q36-selection-svg.spec.ts:46:63
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .work\q36-selection-svg-red-repeat\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    .work\q36-selection-svg-red-repeat\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .work\q36-selection-svg-red-repeat\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work\q36-selection-svg-red-repeat\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-svg-red-repeat\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [webkit] › .work\q36-selection-svg.spec.ts:34:5 › trusted press spanning disappearing indeterminate mark
+
+    Error: expect(locator).toBeChecked() failed
+
+    Locator:  getByLabel('选择成员：q36-admin', { exact: true })
+    Expected: checked
+    Received: unchecked
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "toBeChecked" getByLabel('选择成员：q36-admin', { exact: true }) with timeout 3000ms
+      - waiting for getByLabel('选择成员：q36-admin', { exact: true })
+        10 × locator resolved to <button id="_r_c_" tabindex="0" type="button" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="选择成员：q36-admin" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 border-muted-foreground/50 bg-background hover:border-muted-foreground"></button>
+           - unexpected value "unchecked"
+
+
+      44 |  await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+      45 |  console.log('MARK_PROBE '+JSON.stringify(await page.evaluate(()=>(window as any).__markProbe)));
+    > 46 |  await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();
+         |                                                               ^
+      47 | });
+      48 |
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\.work\q36-selection-svg.spec.ts:46:63
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .work\q36-selection-svg-red-repeat\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit-repeat1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    .work\q36-selection-svg-red-repeat\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit-repeat1\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .work\q36-selection-svg-red-repeat\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit-repeat1\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work\q36-selection-svg-red-repeat\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit-repeat1\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-svg-red-repeat\q36-selection-svg-trusted--27ef1-ppearing-indeterminate-mark-webkit-repeat1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [webkit] › .work\q36-selection-svg.spec.ts:34:5 › trusted press spanning disappearing indeterminate mark
+    [webkit] › .work\q36-selection-svg.spec.ts:34:5 › trusted press spanning disappearing indeterminate mark
