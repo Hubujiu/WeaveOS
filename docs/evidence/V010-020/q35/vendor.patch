@@ -1,77 +1,38 @@
 --- upstream/src/components/motion/checkbox.tsx
 +++ apps/web/src/vendor/arca/components/motion/checkbox.tsx
-@@ -2,8 +2,8 @@
- 
- import { AnimatePresence, motion, useReducedMotion } from "motion/react";
- import { useId } from "react";
+@@ -5,2 +5,2 @@
 -import { EASE_OUT, SPRING_PRESS } from "@/lib/ease";
 -import { cn } from "@/lib/utils";
 +import { EASE_OUT, SPRING_PRESS } from "../../lib/ease";
 +import { cn } from "../../lib/utils";
- 
- const CHECK_PATH = "M5 13l4 4L19 7";
- const INDETERMINATE_PATH = "M6 12h12";
 --- upstream/src/components/motion/dropdown-panel.tsx
 +++ apps/web/src/vendor/arca/components/motion/dropdown-panel.tsx
-@@ -14,8 +14,8 @@
-   useRef,
-   useState,
- } from "react";
+@@ -17,2 +17,2 @@
 -import { EASE_OUT } from "@/lib/ease";
 -import { cn } from "@/lib/utils";
 +import { EASE_OUT } from "../../lib/ease";
 +import { cn } from "../../lib/utils";
- 
- export type DropdownPlacement = "bottom" | "top";
- 
 --- upstream/src/components/motion/select.tsx
 +++ apps/web/src/vendor/arca/components/motion/select.tsx
-@@ -21,8 +21,8 @@
-   DropdownPanel,
-   type DropdownPlacement,
-   getDropdownTriggerMotion,
+@@ -24,2 +24,2 @@
 -} from "@/components/motion/dropdown-panel";
 -import { cn } from "@/lib/utils";
 +} from "./dropdown-panel";
 +import { cn } from "../../lib/utils";
- 
- interface SelectContextValue {
-   value: string | undefined;
-@@ -114,8 +114,9 @@
-       if (!controlled) setInternal(next);
-       onValueChange?.(next);
-       setOpen(false);
+@@ -116,0 +117 @@
 +      requestAnimationFrame(() => document.getElementById(`${baseId}-trigger`)?.focus());
-     },
+@@ -118 +119 @@
 -    [controlled, onValueChange, setOpen],
 +    [controlled, onValueChange, setOpen, baseId],
-   );
- 
-   const register = useCallback((v: string, label: string) => {
-@@ -189,12 +190,13 @@
- }
- 
- export interface SelectTriggerProps {
+@@ -191,0 +193 @@
 +  'aria-label'?: string;
-   className?: string;
-   children: ReactNode;
-   id?: string;
- }
- 
+@@ -197 +199 @@
 -export function SelectTrigger({ className, children, id }: SelectTriggerProps) {
 +export function SelectTrigger({ className, children, id, 'aria-label': ariaLabel }: SelectTriggerProps) {
-   const ctx = useSelectContext("SelectTrigger");
-   const triggerMotion = getDropdownTriggerMotion(
-     ctx.open,
-@@ -207,9 +209,22 @@
-       id={id ?? ctx.triggerId}
-       disabled={ctx.disabled}
-       aria-haspopup="listbox"
+@@ -209,0 +212,2 @@
 +      role="combobox"
 +      aria-label={ariaLabel}
-       aria-expanded={ctx.open}
-       aria-controls={ctx.listId}
-       onClick={() => ctx.setOpen(!ctx.open)}
+@@ -212,0 +217,11 @@
 +      onKeyDown={event => {
 +        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
 +        event.preventDefault();
@@ -83,13 +44,7 @@
 +          (key === 'Home' ? options[0] : key === 'End' ? options.at(-1) : selected ?? options[0])?.focus();
 +        });
 +      }}
-       initial={false}
-       animate={triggerMotion.animate}
-       transition={triggerMotion.transition}
-@@ -268,6 +283,19 @@
-         initial={false}
-         animate={ctx.open ? "show" : "hidden"}
-         className="p-1"
+@@ -270,0 +286,13 @@
 +        onKeyDown={event => {
 +          if (event.key === 'Escape') {
 +            event.preventDefault(); event.stopPropagation(); ctx.setOpen(false);
@@ -103,61 +58,31 @@
 +          const index = event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 : Math.max(0, Math.min(options.length - 1, current + (event.key === 'ArrowDown' ? 1 : -1)));
 +          options[index]?.focus(); options[index]?.scrollIntoView({ block: 'nearest' });
 +        }}
-       >
-         {children}
-       </motion.div>
 --- upstream/src/components/motion/table/column-filter-menu.tsx
 +++ apps/web/src/vendor/arca/components/motion/table/column-filter-menu.tsx
-@@ -15,8 +15,8 @@
-   DROPDOWN_LIST_VARIANTS,
-   DropdownPanel,
-   type DropdownPlacement,
+@@ -18,2 +18,2 @@
 -} from "@/components/motion/dropdown-panel";
 -import { cn } from "@/lib/utils";
 +} from "../dropdown-panel";
 +import { cn } from "../../../lib/utils";
- import type { SortDirection, SortState } from "./types";
- 
- const MENU_WIDTH = 168;
-@@ -74,7 +74,11 @@
-       if (trigger?.contains(target) || panel?.contains(target)) return;
-       setOpen(false);
-     };
+@@ -77 +77,5 @@
 -    const onClose = () => setOpen(false);
 +    const onClose = (event: Event) => {
 +      const panel = document.getElementById(`${triggerId}-panel`);
 +      if (event.type === "scroll" && event.target instanceof Node && panel?.contains(event.target)) return;
 +      setOpen(false);
 +    };
-     window.addEventListener("keydown", onKey);
-     window.addEventListener("pointerdown", onPointer);
-     window.addEventListener("scroll", onClose, true);
-@@ -128,7 +132,7 @@
-       {mounted
-         ? createPortal(
-             <div
+@@ -131 +135 @@
 -              className="relative"
 +              className="arca-source relative"
-               style={{
-                 position: "fixed",
-                 top: anchor?.top ?? -9999,
 --- upstream/src/components/motion/table/index.tsx
 +++ apps/web/src/vendor/arca/components/motion/table/index.tsx
-@@ -4,8 +4,8 @@
- import { useVirtualizer } from "@tanstack/react-virtual";
- import { useReducedMotion } from "motion/react";
- import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+@@ -7,2 +7,2 @@
 -import { Checkbox } from "@/components/motion/checkbox";
 -import { cn } from "@/lib/utils";
 +import { Checkbox } from "../checkbox";
 +import { cn } from "../../../lib/utils";
- import { EditableCell } from "./editable-cell";
- import { RowHandle } from "./row-handle";
- import { SkeletonRows } from "./skeleton-rows";
-@@ -103,6 +103,13 @@
-   skeletonRows = 3,
-   emptyState = "No data",
-   className,
+@@ -105,0 +106,7 @@
 +  manualPagination = false,
 +  recordCount: serverCount,
 +  fillViewport = false,
@@ -165,22 +90,13 @@
 +  ariaLabel,
 +  selectAllLabel,
 +  getRowLabel,
- }: TableProps<T>) {
-   const reduce = useReducedMotion();
-   const scrollRef = useRef<HTMLDivElement>(null);
-@@ -141,13 +148,22 @@
-   const pageIndex = pageIndexProp ?? internalPageIndex;
-   const pageSize = pageSizeProp ?? internalPageSize;
- 
+@@ -144 +151 @@
 -  const recordCount = sortedRows.length;
 +  const recordCount = serverCount ?? sortedRows.length;
-   const pageCount = Math.max(1, Math.ceil(recordCount / pageSize) || 1);
-   const currentPage = Math.min(pageIndex, pageCount - 1);
+@@ -147 +154 @@
 -  const pagedRows = paginated
 +  const pagedRows = paginated && !manualPagination
-     ? sortedRows.slice(currentPage * pageSize, currentPage * pageSize + pageSize)
-     : sortedRows;
-   const visibleRows = pagedRows;
+@@ -150,0 +158,9 @@
 +  const [viewportHeight, setViewportHeight] = useState(0);
 +  useEffect(() => {
 +    if (!fillViewport || !scrollRef.current) return;
@@ -190,158 +106,77 @@
 +    observer.observe(el);
 +    return () => observer.disconnect();
 +  }, [fillViewport]);
- 
-   const setPageIndex = useCallback(
-     (next: number) => {
-@@ -171,10 +187,16 @@
-   const handleSetSort = useCallback(
-     (key: string, direction: SortDirection) => {
-       setSort(key, direction);
+@@ -174 +190 @@
 -      setPageIndex(0);
 +      if (!manualPagination) setPageIndex(0);
-     },
+@@ -176 +192 @@
 -    [setPageIndex, setSort],
 +    [setPageIndex, setSort, manualPagination],
-   );
+@@ -177,0 +194,6 @@
 +
 +  useEffect(() => {
 +    // An authoritative total can shrink between requests. Recover the actual
 +    // server page as well as the visible pager; clamping display alone strands it.
 +    if (manualPagination && pageIndex !== currentPage) setPageIndex(currentPage);
 +  }, [manualPagination, pageIndex, currentPage, setPageIndex]);
- 
-   const { widths, startResize, moveResize, endResize } = useColumnResize({
-     orderedColumns,
-@@ -256,6 +278,9 @@
-   }, []);
-   const activeRowEl = activeRow ? rowRefs.current[activeRow.id] : null;
-   const leadColumns = orderedColumns.length + (selectable ? 1 : 0);
+@@ -258,0 +281,3 @@
 +  // Fillers are deliberately outside data, virtualizer, selection and paging.
 +  const remaining = fillViewport ? Math.max(0, viewportHeight - rowHeight - visibleRows.length * rowHeight) : 0;
 +  const blankRows = Array.from({ length: Math.ceil(remaining / rowHeight) }, (_, index) => Math.min(rowHeight, remaining - index * rowHeight));
- 
-   useEffect(() => {
-     scrollRef.current?.scrollTo({ top: 0 });
-@@ -268,21 +293,24 @@
-         className,
-       )}
-     >
+@@ -271 +296 @@
 -      <div className="el-scrollbar relative w-full overflow-hidden">
 +      <div className={cn("el-scrollbar relative w-full overflow-hidden", fillViewport && "min-h-0 flex-1")}>
-         <div
-           ref={scrollRef}
+@@ -273,0 +299,2 @@
 +          tabIndex={0}
 +          aria-label={ariaLabel + '表格滚动区域'}
-           onScroll={handleScroll}
+@@ -275 +302 @@
 -          className="el-scrollbar__wrap el-scrollbar__wrap--hidden-default overflow-x-auto overflow-y-auto"
 +          className="table-scroll el-scrollbar__wrap el-scrollbar__wrap--hidden-default overflow-x-auto overflow-y-auto"
-           style={
+@@ -277 +304 @@
 -            paginated
 +            fillViewport ? { height: '100%', maxHeight: 'none', scrollPaddingTop: rowHeight } : paginated
-               ? { maxHeight: height }
-               : { height }
-           }
-         >
-           <div className="el-scrollbar__view">
-             <table
+@@ -284,2 +311,3 @@
 -              className="w-full border-collapse"
 -              style={{ tableLayout: "fixed", width: "100%" }}
 +              className="personnel-data-table w-full border-collapse"
 +              aria-label={ariaLabel}
 +              style={{ tableLayout: "fixed", width: "100%", minWidth }}
-             >
-           <colgroup>
-             {selectable ? <col style={{ width: INDEX_WIDTH }} /> : null}
-@@ -306,6 +334,8 @@
-             reduce={!!reduce}
-             thRefs={thRefs}
-             selectable={selectable}
+@@ -308,0 +337,2 @@
 +            selectAllLabel={selectAllLabel}
 +            selectionDisabled={!visibleRows.length}
-             allSelected={allSelected}
-             someSelected={someSelected}
-             onToggleAll={toggleAll}
-@@ -330,7 +360,7 @@
-           />
- 
-           <tbody>
+@@ -333 +363 @@
 -            {sortedRows.length === 0 ? (
 +            {sortedRows.length === 0 && !fillViewport ? (
-               loading ? (
-                 <SkeletonRows
-                   count={Math.max(1, Math.ceil(height / rowHeight))}
-@@ -363,6 +393,8 @@
-                   return (
-                     <tr
-                       key={entry.id}
+@@ -365,0 +396,2 @@
 +                      data-row-id={entry.id}
 +                      aria-selected={selectable ? isSelected : undefined}
-                       ref={(el) => {
-                         rowRefs.current[entry.id] = el;
-                       }}
-@@ -401,7 +433,7 @@
-                             <Checkbox
-                               checked={isSelected}
-                               onCheckedChange={() => toggleRow(entry.id)}
+@@ -404 +436 @@
 -                              aria-label={`Select row ${rowNumber}`}
 +                              aria-label={getRowLabel?.(entry.row) ?? `Select row ${rowNumber}`}
-                               className="justify-center gap-0"
-                             />
-                           </div>
-@@ -411,7 +443,7 @@
-                         <td
-                           key={column.key}
-                           className={cn(
+@@ -414 +446 @@
 -                            "truncate px-4 text-foreground",
 +                              "truncate px-4 text-foreground",
-                             alignText(column.align),
-                             columnIndex < orderedColumns.length - 1 &&
-                               "border-border border-r",
-@@ -448,11 +480,15 @@
-                 ) : null}
-               </>
-             )}
+@@ -450,0 +483,3 @@
 +            {blankRows.map((blankHeight, index) => <tr key={'blank-' + index} data-empty-row aria-hidden="true" style={{ height: blankHeight }} className="border-border/60 border-b">
 +              {Array.from({ length: leadColumns }, (_, cell) => <td key={cell} className={cn("p-0", cell < leadColumns - 1 && "border-border border-r")} />)}
 +            </tr>)}
-           </tbody>
-         </table>
-           </div>
-         </div>
-         <TableScrollbar scrollRef={scrollRef} headerHeight={rowHeight} />
+@@ -455,0 +491 @@
 +        {fillViewport && !visibleRows.length && !loading ? <div role="status" className="pointer-events-none absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">{emptyState}</div> : null}
-       </div>
-       {paginated ? (
-         <TablePagination
-@@ -463,7 +499,11 @@
-           sizes={pageSizes}
-           onPageIndexChange={setPageIndex}
-           onPageSizeChange={setPageSize}
+@@ -466 +502,5 @@
 -          className="shrink-0"
 +          className="arca-pagination shrink-0"
 +          rowsPerPageLabel="每页条数"
 +          info="{from} - {to} / 共 {count} 项"
 +          previousPageLabel="上一页"
 +          nextPageLabel="下一页"
-         />
-       ) : null}
-       {hasRowMenu && activeRow ? (
 --- upstream/src/components/motion/table/skeleton-rows.tsx
 +++ apps/web/src/vendor/arca/components/motion/table/skeleton-rows.tsx
-@@ -1,6 +1,6 @@
- "use client";
- 
+@@ -3 +3 @@
 -import { cn } from "@/lib/utils";
 +import { cn } from "../../../lib/utils";
- import type { TableColumn } from "./types";
- import { alignText } from "./utils";
- 
 --- upstream/src/components/motion/table/table-header.tsx
 +++ apps/web/src/vendor/arca/components/motion/table/table-header.tsx
-@@ -10,10 +10,10 @@
- import { motion } from "motion/react";
- import { type PointerEvent as ReactPointerEvent, useEffect } from "react";
- import { createPortal } from "react-dom";
+@@ -13,4 +13,4 @@
 -import { Checkbox } from "@/components/motion/checkbox";
 -import { SPRING_PRESS } from "@/lib/ease";
 -import { TOUCH_GESTURE_CLASS } from "@/lib/touch";
@@ -350,84 +185,42 @@
 +import { SPRING_PRESS } from "../../../lib/ease";
 +import { TOUCH_GESTURE_CLASS } from "../../../lib/touch";
 +import { cn } from "../../../lib/utils";
- import { ColumnFilterMenu } from "./column-filter-menu";
- import { TableMenu } from "./table-menu";
- import type {
-@@ -167,7 +167,9 @@
-   activeColumn,
-   onColumnActivate,
-   onColumnDeactivate,
+@@ -170 +170,3 @@
 -}: TableHeaderProps<T>) {
 +  selectAllLabel = 'Select all rows',
 +  selectionDisabled = false,
 +}: TableHeaderProps<T> & { selectAllLabel?: string; selectionDisabled?: boolean }) {
-   const hasColumnMenu = !!(onInsertColumn || onDeleteColumn);
-   const activeIndex = columns.findIndex((c) => c.key === activeColumn);
-   return (
-@@ -192,7 +194,8 @@
-                   checked={allSelected}
-                   indeterminate={!allSelected && someSelected}
-                   onCheckedChange={onToggleAll}
+@@ -195 +197,2 @@
 -                  aria-label="Select all rows"
 +                  aria-label={selectAllLabel}
 +                  disabled={selectionDisabled}
-                   className="justify-center gap-0"
-                 />
-               </div>
 --- upstream/src/components/motion/table/table-menu.tsx
 +++ apps/web/src/vendor/arca/components/motion/table/table-menu.tsx
-@@ -3,8 +3,8 @@
- import { motion, useReducedMotion } from "motion/react";
- import { type ReactNode, useEffect, useRef, useState } from "react";
- import { createPortal } from "react-dom";
+@@ -6,2 +6,2 @@
 -import { SPRING_PANEL } from "@/lib/ease";
 -import { cn } from "@/lib/utils";
 +import { SPRING_PANEL } from "../../../lib/ease";
 +import { cn } from "../../../lib/utils";
- 
- export type TableMenuItem = {
-   label: string;
 --- upstream/src/components/motion/table/table-pagination.tsx
 +++ apps/web/src/vendor/arca/components/motion/table/table-pagination.tsx
-@@ -7,9 +7,9 @@
-   SelectItem,
-   SelectTrigger,
-   SelectValue,
+@@ -10,3 +10,3 @@
 -} from "@/components/motion/select";
 -import { Button } from "@/components/ui/button";
 -import { cn } from "@/lib/utils";
 +} from "../select";
 +import { Button } from "../../ui/button";
 +import { cn } from "../../../lib/utils";
- 
- export type TablePaginationItem =
-   | { type: "page"; index: number }
-@@ -139,7 +139,7 @@
-           className="w-16"
-           side="top"
-         >
+@@ -142 +142 @@
 -          <SelectTrigger className="h-6 min-h-6 rounded-md px-2 py-0 text-xs gap-1 [&_svg]:size-3">
 +          <SelectTrigger aria-label={rowsPerPageLabel} className="h-6 min-h-6 rounded-md px-2 py-0 text-xs gap-1 [&_svg]:size-3">
-             <SelectValue />
-           </SelectTrigger>
-           <SelectContent>
 --- upstream/src/components/motion/table/table-scrollbar.tsx
 +++ apps/web/src/vendor/arca/components/motion/table/table-scrollbar.tsx
-@@ -8,7 +8,7 @@
-   useRef,
-   useState,
- } from "react";
+@@ -11 +11 @@
 -import { cn } from "@/lib/utils";
 +import { cn } from "../../../lib/utils";
- 
- interface ScrollbarThumbState {
-   size: number;
 --- upstream/src/components/motion/table/types.ts
 +++ apps/web/src/vendor/arca/components/motion/table/types.ts
-@@ -29,6 +29,15 @@
- export type InsertPosition = "before" | "after";
- 
- export interface TableProps<T> {
+@@ -31,0 +32,9 @@
 +  /** WeaveOS: received page and authoritative server total; never slice twice. */
 +  manualPagination?: boolean;
 +  recordCount?: number;
@@ -437,28 +230,13 @@
 +  ariaLabel?: string;
 +  selectAllLabel?: string;
 +  getRowLabel?: (row: T) => string;
-   data: T[];
-   columns: TableColumn<T>[];
-   /** Stable id per row, required for correct selection across sorts. Defaults to row index. */
 --- upstream/src/components/motion/table/use-column-reorder.ts
 +++ apps/web/src/vendor/arca/components/motion/table/use-column-reorder.ts
-@@ -5,7 +5,7 @@
-   useRef,
-   useState,
- } from "react";
+@@ -8 +8 @@
 -import { capturePointer, releasePointer } from "@/lib/touch";
 +import { capturePointer, releasePointer } from "../../../lib/touch";
- import type { HeaderCellRefs, TableColumn } from "./types";
- 
- const DRAG_THRESHOLD = 5;
 --- upstream/src/components/motion/table/use-column-resize.ts
 +++ apps/web/src/vendor/arca/components/motion/table/use-column-resize.ts
-@@ -4,7 +4,7 @@
-   useRef,
-   useState,
- } from "react";
+@@ -7 +7 @@
 -import { capturePointer, releasePointer } from "@/lib/touch";
 +import { capturePointer, releasePointer } from "../../../lib/touch";
- import type { HeaderCellRefs, TableColumn } from "./types";
- 
- export function useColumnResize<T>({

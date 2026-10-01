@@ -30,3 +30,22 @@ test('Q35 sort menu supports direction keys, visible focus and Escape return', a
   await expect(trigger).toHaveAttribute('aria-expanded', 'false'); await expect(trigger).toBeFocused();
   await expect(page.getByRole('columnheader').filter({ hasText: '成员' })).toHaveAttribute('aria-sort', 'descending');
 });
+
+test('Q35 original base foreground and smoothing are scoped to the table', async ({ page }) => {
+  const user = { id: 'synthetic-font-user', account: 'synthetic-font' };
+  await page.route('**/api/v1/**', async route => {
+    const path = new URL(route.request().url()).pathname.replace('/api/v1/', '');
+    const data = path === 'sessions/current' ? user : path === 'me/access'
+      ? { user, bootstrapAdmin: true, personnelManage: true, identities: [], permissions: [], applications: [] }
+      : { items: [], total: path === 'personnel/members' ? 125 : 0, page: 1, pageSize: 20 };
+    await route.fulfill({ json: { code: 'OK', message: 'success', data, meta: null } });
+  });
+  await page.goto('/app/admin');
+  const table = page.locator('.member-table .personnel-source-table');
+  await expect(table).toHaveCSS('color', 'oklch(0.145 0 0)');
+  await expect(page.getByRole('button', { name: 'Page 2', exact: true })).toHaveCSS('color', 'oklch(0.145 0 0)');
+  if (await page.evaluate(() => CSS.supports('-webkit-font-smoothing', 'antialiased'))) {
+    expect(await table.evaluate(n => getComputedStyle(n).getPropertyValue('-webkit-font-smoothing'))).toBe('antialiased');
+  }
+  await expect(page.locator('.personnel-page-heading')).toHaveCSS('color', 'rgb(16, 32, 68)');
+});
