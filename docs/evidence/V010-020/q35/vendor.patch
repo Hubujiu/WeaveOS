@@ -65,16 +65,68 @@
 -import { cn } from "@/lib/utils";
 +} from "../dropdown-panel";
 +import { cn } from "../../../lib/utils";
-@@ -77 +77,5 @@
+@@ -46,0 +47,7 @@
++  const focusMenu = (position: "first" | "last") => {
++    requestAnimationFrame(() => {
++      const items = document.getElementById(`${triggerId}-panel`)?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
++      items?.[position === "last" ? items.length - 1 : 0]?.focus();
++    });
++  };
++
+@@ -68 +75,23 @@
+-      if (event.key === "Escape") setOpen(false);
++      if (event.defaultPrevented) return;
++      const trigger = document.getElementById(triggerId);
++      if (event.key === "Escape") {
++        event.preventDefault();
++        event.stopPropagation();
++        setOpen(false);
++        trigger?.focus();
++        return;
++      }
++      const panel = document.getElementById(`${triggerId}-panel`);
++      if (!(event.target instanceof Node) || !panel?.contains(event.target)) return;
++      if (event.key === "Tab") {
++        setOpen(false);
++        trigger?.focus();
++        return;
++      }
++      const items = [...panel.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')];
++      if (!items.length || !["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
++      event.preventDefault();
++      const index = items.indexOf(document.activeElement as HTMLButtonElement);
++      const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1
++        : (index + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
++      items[next]?.focus();
+@@ -77 +106,5 @@
 -    const onClose = () => setOpen(false);
 +    const onClose = (event: Event) => {
 +      const panel = document.getElementById(`${triggerId}-panel`);
 +      if (event.type === "scroll" && event.target instanceof Node && panel?.contains(event.target)) return;
 +      setOpen(false);
 +    };
-@@ -131 +135 @@
+@@ -98,0 +132 @@
++        aria-controls={mounted ? `${triggerId}-panel` : undefined}
+@@ -99,0 +134,7 @@
++        onKeyDown={(event) => {
++          if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
++          event.preventDefault();
++          event.stopPropagation();
++          setOpen(true);
++          focusMenu(event.key === "ArrowUp" || event.key === "End" ? "last" : "first");
++        }}
+@@ -114,0 +156 @@
++            if (event.detail === 0) focusMenu("first");
+@@ -131 +173 @@
 -              className="relative"
 +              className="arca-source relative"
+@@ -163,0 +206 @@
++                      document.getElementById(triggerId)?.focus();
+@@ -172,0 +216 @@
++                      document.getElementById(triggerId)?.focus();
+@@ -204 +248 @@
+-          "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm outline-none transition-colors",
++          "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm outline-none transition-colors focus-visible:bg-muted focus-visible:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2",
 --- upstream/src/components/motion/table/index.tsx
 +++ apps/web/src/vendor/arca/components/motion/table/index.tsx
 @@ -7,2 +7,2 @@

@@ -2,6 +2,7 @@
 @import "tailwindcss/theme.css";
 @import "@fontsource-variable/geist";
 @source "./components";
+@custom-variant dark (&:is(.dark *));
 @theme inline {
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
@@ -567,4 +568,8 @@ input:where([type='button'], [type='reset'], [type='submit']),
 }
 
 /* Preserve the project's confirmed Chinese font after scoped upstream preflight. */
-.arca-source { font-family:"Geist Variable","Noto Sans SC",sans-serif; }
+.arca-source {
+  @apply bg-background text-foreground antialiased;
+  font-family:"Geist Variable","Noto Sans SC",sans-serif;
+}
+.arca-source * { @apply border-border outline-ring/50; }

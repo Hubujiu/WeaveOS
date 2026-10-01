@@ -1,0 +1,45 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:56092) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:53116) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Port 4176 is in use on a wildcard address, but 127.0.0.1:4176 is available. There may be another server running on a wildcard IP on port 4176.
+
+Running 1 test using 1 worker
+
+(node:67560) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\personnel-arca-focus.component.spec.ts:5:1 › Q35 original column focus excludes the workspace outline while retaining outer focus (7.0s)
+
+
+  1) [chromium] › apps\web\src\personnel-arca-focus.component.spec.ts:5:1 › Q35 original column focus excludes the workspace outline while retaining outer focus
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  getByRole('button', { name: '拖动以调整 部门 列顺序', exact: true })
+    Expected: "oklab(0.708 0 0 / 0.5)"
+    Received: "rgb(47, 116, 244)"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" getByRole('button', { name: '拖动以调整 部门 列顺序', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '拖动以调整 部门 列顺序', exact: true })
+        14 × locator resolved to <button type="button" aria-label="拖动以调整 部门 列顺序" class="flex h-full w-6 shrink-0 items-center justify-center text-muted-foreground/80 cursor-grab select-none [-webkit-touch-callout:none]">…</button>
+           - unexpected value "rgb(47, 116, 244)"
+
+
+      16 |     const control = page.getByRole('button', { name, exact: true });
+      17 |     await control.focus();
+    > 18 |     await expect(control).toHaveCSS('outline-color', 'oklab(0.708 0 0 / 0.5)');
+         |                           ^
+      19 |     await expect(control).toHaveCSS('outline-offset', '0px');
+      20 |   }
+      21 |   const outer = page.getByRole('button', { name: '退出', exact: true });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel-arca-focus.component.spec.ts:18:27
+
+    Error Context: .work\q35-font-results\personnel-arca-focus.compo-e33e2-while-retaining-outer-focus-chromium\error-context.md
+
+  1 failed
+    [chromium] › apps\web\src\personnel-arca-focus.component.spec.ts:5:1 › Q35 original column focus excludes the workspace outline while retaining outer focus

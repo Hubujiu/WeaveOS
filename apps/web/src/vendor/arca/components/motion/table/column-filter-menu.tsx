@@ -44,6 +44,13 @@ export function ColumnFilterMenu({
   );
   const active = sort?.key === columnKey;
 
+  const focusMenu = (position: "first" | "last") => {
+    requestAnimationFrame(() => {
+      const items = document.getElementById(`${triggerId}-panel`)?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
+      items?.[position === "last" ? items.length - 1 : 0]?.focus();
+    });
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -65,7 +72,29 @@ export function ColumnFilterMenu({
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.defaultPrevented) return;
+      const trigger = document.getElementById(triggerId);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        setOpen(false);
+        trigger?.focus();
+        return;
+      }
+      const panel = document.getElementById(`${triggerId}-panel`);
+      if (!(event.target instanceof Node) || !panel?.contains(event.target)) return;
+      if (event.key === "Tab") {
+        setOpen(false);
+        trigger?.focus();
+        return;
+      }
+      const items = [...panel.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')];
+      if (!items.length || !["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const index = items.indexOf(document.activeElement as HTMLButtonElement);
+      const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1
+        : (index + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+      items[next]?.focus();
     };
     const onPointer = (event: PointerEvent) => {
       const trigger = document.getElementById(triggerId);
@@ -100,7 +129,15 @@ export function ColumnFilterMenu({
         aria-label={`筛选 ${columnKey}`}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls={mounted ? `${triggerId}-panel` : undefined}
         onPointerDown={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+          event.preventDefault();
+          event.stopPropagation();
+          setOpen(true);
+          focusMenu(event.key === "ArrowUp" || event.key === "End" ? "last" : "first");
+        }}
         onClick={(event) => {
           event.stopPropagation();
           if (!open) {
@@ -116,6 +153,7 @@ export function ColumnFilterMenu({
               });
             }
             setOpen(true);
+            if (event.detail === 0) focusMenu("first");
             return;
           }
           setOpen(false);
@@ -165,6 +203,7 @@ export function ColumnFilterMenu({
                     onSelect={() => {
                       onSort(columnKey, "asc");
                       setOpen(false);
+                      document.getElementById(triggerId)?.focus();
                     }}
                   />
                   <SortMenuItem
@@ -174,6 +213,7 @@ export function ColumnFilterMenu({
                     onSelect={() => {
                       onSort(columnKey, "desc");
                       setOpen(false);
+                      document.getElementById(triggerId)?.focus();
                     }}
                   />
                 </motion.div>
@@ -205,7 +245,7 @@ function SortMenuItem({
         aria-checked={active}
         onClick={onSelect}
         className={cn(
-          "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm outline-none transition-colors",
+          "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm outline-none transition-colors focus-visible:bg-muted focus-visible:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2",
           active
             ? "bg-muted text-foreground"
             : "text-muted-foreground hover:bg-muted hover:text-foreground",
