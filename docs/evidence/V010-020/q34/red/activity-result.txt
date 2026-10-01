@@ -1,0 +1,47 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:55016) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:63264) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:54104) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › apps\web\src\personnel.component.spec.ts:583:1 › Q34 successful activity uses Arca body typography and retains the result meaning
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:583:1 › Q34 successful activity uses Arca body typography and retains the result meaning 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.activity-table tbody td').last()
+    Expected: "oklch(0.145 0 0)"
+    Received: "rgb(46, 115, 95)"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toHaveCSS" locator('.activity-table tbody td').last() with timeout 1500ms
+      - waiting for locator('.activity-table tbody td').last()
+        16 × locator resolved to <td class="activity-result success">已完成</td>
+           - unexpected value "rgb(46, 115, 95)"
+
+
+      582 | });
+      583 | test('Q34 successful activity uses Arca body typography and retains the result meaning',async({page})=>{
+    > 584 |  await admin(page);await page.route('**/api/v1/personnel/events?*',route=>route.fulfill({json:{code:'OK',message:'success',data:list([{id:user.id,occurredAt:'2026-09-30T05:00:00Z',actorAccount:user.account,action:'TEMPLATE_UPDATED',objectType:'template',objectId:template.id,summary:{before:{name:'旧名称'},after:{name:template.name}},outcome:'success'}]),meta:null}}));await page.getByRole('tab',{name:'操作记录',exact:true}).click();await page.getByLabel('搜索操作记录').fill('模板');const result=page.locator('.activity-table tbody td').last();await expect(result).toHaveText('已完成');await expect(result).toHaveCSS('color','oklch(0.145 0 0)');await expect(result).toHaveCSS('font-size','14px');await expect(result).toHaveCSS('line-height','20px');
+          |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ^
+      585 | });
+      586 |
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:584:593
+
+    Error Context: .work\q34-results\personnel.component-Q34-su-facae--retains-the-result-meaning-chromium\error-context.md
+
+
+  1 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:583:1 › Q34 successful activity uses Arca body typography and retains the result meaning
