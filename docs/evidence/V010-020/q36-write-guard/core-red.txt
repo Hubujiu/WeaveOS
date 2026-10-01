@@ -1,0 +1,36 @@
+--- FAIL: TestQ36HTTPRequiredWriteQueryVersion (0.28s)
+    --- FAIL: TestQ36HTTPRequiredWriteQueryVersion/member-identities (0.07s)
+        query_write_guard_test.go:50: want 400 COMMON_INVALID_ARGUMENT; got 200 {"code":"OK","message":"success","data":{"id":"c2fa1df0-bdf7-45ac-b063-b246b999eda8","account":"target-130bf837-68d1-4135-9e82-c50b4818fbd4","status":"active","bootstrapAdmin":false,"version":1,"departmentIds":[],"identityIds":["a03ddbc6-8d9a-41ef-86d5-14f1641b3bf0"],"departments":[],"identities":[{"id":"a03ddbc6-8d9a-41ef-86d5-14f1641b3bf0","name":"I2","description":"","version":1,"permissionCodes":["app.test.A"],"templateIds":[],"affectedMembers":2,"affectedIdentities":0}],"permissions":[{"code":"app.test.A","name":"A","category":"application","appId":"test-A","enabled":true,"sources":[{"identityId":"a03ddbc6-8d9a-41ef-86d5-14f1641b3bf0","identityName":"I2"}]}]},"meta":{"requestId":"6c7706a46dbe2968547a38f75e430797"}}
+    --- FAIL: TestQ36HTTPRequiredWriteQueryVersion/member-groups (0.06s)
+        query_write_guard_test.go:50: want 400 COMMON_INVALID_ARGUMENT; got 200 {"code":"OK","message":"success","data":{"id":"c74d21c7-5b63-4d88-be37-55776c990148","account":"target-4a20f2c7-c9cb-4eaf-8938-d47418ceaff6","status":"active","bootstrapAdmin":false,"version":1,"departmentIds":["acef7cf5-2e34-42a0-bf01-a67eb3f8f21a"],"identityIds":[],"departments":[{"id":"acef7cf5-2e34-42a0-bf01-a67eb3f8f21a","parentId":"9e8d7821-d5c8-47db-9584-6b41207d2a54","name":"query-required","isRoot":false,"version":1,"memberCount":1,"childrenCount":0}],"identities":[],"permissions":[]},"meta":{"requestId":"ec51a5111dc8cce46907857b52b2b490"}}
+    --- FAIL: TestQ36HTTPRequiredWriteQueryVersion/department-create (0.05s)
+        query_write_guard_test.go:50: want 400 COMMON_INVALID_ARGUMENT; got 201 {"code":"OK","message":"success","data":{"id":"447154fe-b274-4e7c-8f39-4231316d319c","parentId":"9e8d7821-d5c8-47db-9584-6b41207d2a54","name":"must-not-create","isRoot":false,"version":1,"memberCount":0,"childrenCount":0},"meta":{"requestId":"2ba3231bf00f71f38ec16a30e0ba6a2b"}}
+    --- FAIL: TestQ36HTTPRequiredWriteQueryVersion/department-update (0.05s)
+        query_write_guard_test.go:50: want 400 COMMON_INVALID_ARGUMENT; got 200 {"code":"OK","message":"success","data":{"id":"ea9dbb2e-5191-4c3e-85ee-b0ac94151d33","parentId":"9e8d7821-d5c8-47db-9584-6b41207d2a54","name":"must-not-change","isRoot":false,"version":2,"memberCount":0,"childrenCount":0},"meta":{"requestId":"c98932c71089007e1f23da313a99ba24"}}
+    --- FAIL: TestQ36HTTPRequiredWriteQueryVersion/department-delete (0.05s)
+        query_write_guard_test.go:50: want 400 COMMON_INVALID_ARGUMENT; got 204 
+--- FAIL: TestQ36HTTPWriteQueryRelatedUnrelatedAndObjectVersion (0.06s)
+    query_write_guard_test.go:73: unrelated revision must allow write: 400 {"code":"COMMON_INVALID_ARGUMENT","message":"请求参数不合法","data":null,"meta":{"requestId":"492a6f19b2ff2b1e83412c6810ba4884"}}
+--- FAIL: TestQ36WriteGuardRevalidatesBeforeAnyMutation (0.23s)
+    --- FAIL: TestQ36WriteGuardRevalidatesBeforeAnyMutation/unrelated-once (0.05s)
+        query_write_guard_test.go:129: unrelated race must revalidate once: calls=0 err=personnel behavior not implemented
+    --- FAIL: TestQ36WriteGuardRevalidatesBeforeAnyMutation/related (0.05s)
+        query_write_guard_test.go:133: related race: personnel behavior not implemented
+    --- FAIL: TestQ36WriteGuardRevalidatesBeforeAnyMutation/busy (0.04s)
+        query_write_guard_test.go:137: three prevalidations then busy: calls=0 err=personnel behavior not implemented
+    --- FAIL: TestQ36WriteGuardRevalidatesBeforeAnyMutation/revoked (0.05s)
+        query_write_guard_test.go:141: recheck current qualification: personnel behavior not implemented
+    --- FAIL: TestQ36WriteGuardRevalidatesBeforeAnyMutation/auth-version (0.05s)
+        query_write_guard_test.go:145: original auth_version must be rechecked: personnel behavior not implemented
+--- FAIL: TestQ36HTTPBusinessDraftCleanup (0.25s)
+    --- FAIL: TestQ36HTTPBusinessDraftCleanup/exact (0.05s)
+        query_write_guard_test.go:191: business response 400 want 200 {"code":"COMMON_INVALID_ARGUMENT","message":"请求参数不合法","data":null,"meta":{"requestId":"2859dacd02a46f14c4db65fd3e828a8e"}}
+    --- FAIL: TestQ36HTTPBusinessDraftCleanup/newer (0.06s)
+        query_write_guard_test.go:191: business response 400 want 200 {"code":"COMMON_INVALID_ARGUMENT","message":"请求参数不合法","data":null,"meta":{"requestId":"24f4bae4c9d5cd1eb1e3d6472b69877e"}}
+    --- FAIL: TestQ36HTTPBusinessDraftCleanup/failed-business (0.06s)
+        query_write_guard_test.go:191: business response 400 want 409 {"code":"COMMON_INVALID_ARGUMENT","message":"请求参数不合法","data":null,"meta":{"requestId":"f9e457842636f42b43e2cdc873436cb6"}}
+    --- FAIL: TestQ36HTTPBusinessDraftCleanup/new-definition (0.08s)
+        query_write_guard_test.go:191: business response 400 want 201 {"code":"COMMON_INVALID_ARGUMENT","message":"请求参数不合法","data":null,"meta":{"requestId":"5e16a81823f6d42dd544bce4f9142cbb"}}
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/personnel	0.822s
+FAIL
