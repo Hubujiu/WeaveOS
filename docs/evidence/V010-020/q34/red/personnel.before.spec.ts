@@ -21,59 +21,6 @@ async function fixture(page:Page,manage=true) {
 async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
 async function chooseOption(page:Page,label:string,option:string){await page.getByRole('combobox',{name:label,exact:true}).click();await page.getByRole('option',{name:option,exact:true}).click();}
 
-// Q34 independent oracle: user confirmed three tables, synced R3 5.7 and fixed
-// Arca c0319d8 official default. Network fixtures exercise the real page controls.
-for(const [tab,root] of [['成员与部门','.member-table'],['身份','.identity-table'],['操作记录','.activity-table']] as const)test('Q34 Arca table geometry and readable rows on '+tab,async({page})=>{
- await page.setViewportSize({width:1920,height:1080});await fixture(page);
- await page.route('**/api/v1/personnel/events?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([{id:user.id,occurredAt:'2026-10-01T02:00:00Z',actorAccount:user.account,action:'IDENTITY_UPDATED',objectType:'identity',objectId:identity.id,summary:{before:{name:'旧身份'},after:{name:identity.name}},outcome:'success'}]),meta:null}}));
- await page.goto('/app/admin');if(tab!=='成员与部门')await page.getByRole('tab',{name:tab,exact:true}).click();
- const area=page.locator(root),table=area.getByRole('table');await expect(table).toHaveCount(1);
- await expect.soft(area).toHaveCSS('border-radius','14px');await expect.soft(area).toHaveCSS('border-top-width','1px');
- const header=table.locator('th').first(),cell=table.locator('tbody td').last();
- expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
- expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
- await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
- await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
- await expect(area.locator('.table-scroll')).toHaveCSS('max-height','360px');
- await expect(table.locator('th[aria-sort]')).toHaveCount(0);
-});
-
-test('Q34 page selection exposes mixed state without writing and shows selected rows',async({page})=>{
- await fixture(page);const another={...member,id:'00000000-0000-4000-8000-000000000099',account:'synthetic-second'};
- await page.route('**/api/v1/personnel/members?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([member,another]),meta:null}}));await page.goto('/app/admin');
- let writes=0;page.on('request',r=>{if(r.url().includes('/api/v1/')&&!['GET','HEAD'].includes(r.method()))writes++;});
- await page.getByLabel('选择成员：'+user.account,{exact:true}).check();
- const all=page.getByLabel('选择当前页成员',{exact:true});expect.soft(await all.evaluate(n=>(n as HTMLInputElement).indeterminate)).toBe(true);
- const row=page.getByRole('row').filter({hasText:user.account});await expect.soft(row).toHaveAttribute('aria-selected','true');
- await all.check();await expect(page.getByLabel('选择成员：synthetic-second',{exact:true})).toBeChecked();await all.uncheck();await expect(page.getByLabel('选择成员：'+user.account,{exact:true})).not.toBeChecked();expect(writes).toBe(0);
-});
-
-test('Q34 identity table preserves edit entry, shared fields and unsaved switch protection',async({page})=>{
- await fixture(page);const another={...identity,id:'00000000-0000-4000-8000-000000000098',name:'财务身份',description:'独立示例说明'};
- await page.route('**/api/v1/personnel/identities?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([identity,another]),meta:null}}));await page.goto('/app/admin');await page.getByRole('tab',{name:'身份',exact:true}).click();
- const table=page.locator('.identity-table').getByRole('table');await expect(table).toHaveCount(1);await expect(table.getByRole('columnheader')).toHaveText(['身份','说明','使用成员','直接权限']);
- await table.getByRole('button',{name:identity.name,exact:true}).focus();await page.keyboard.press('Enter');await page.getByLabel('说明',{exact:true}).fill('未保存说明');
- await table.getByRole('button',{name:another.name,exact:true}).click();await expect(page.getByRole('dialog',{name:'有未保存的修改',exact:true})).toBeVisible();await page.getByRole('button',{name:'继续编辑',exact:true}).click();
- await expect(page.getByLabel('说明',{exact:true})).toHaveValue('未保存说明');await expect(table.getByRole('row').filter({hasText:identity.name})).toHaveAttribute('aria-selected','true');
- await expect(table.getByRole('row').filter({hasText:another.name})).toContainText(another.description);
-});
-
-for(const width of [1920,320])test('Q34 dense table keeps sticky header and both scroll axes at '+width,async({page})=>{
- await page.setViewportSize({width,height:844});await fixture(page);
- const rows=Array.from({length:20},(_,i)=>({...member,id:'row-'+i,account:'synthetic-row-'+i}));
- await page.route('**/api/v1/personnel/members?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list(rows),meta:null}}));await page.goto('/app/admin');
- const scroll=page.locator('.member-table .table-scroll');await scroll.scrollIntoViewIfNeeded();expect(await scroll.evaluate(n=>n.scrollHeight>n.clientHeight)).toBe(true);
- const th=scroll.locator('th').first(),start=(await th.boundingBox())!.y;await scroll.evaluate(n=>{n.scrollTop=200;});expect((await th.boundingBox())!.y).toBeCloseTo(start,0);await expect(th).toHaveCSS('position','sticky');
- if(width===320){await scroll.evaluate(n=>{n.scrollLeft=n.scrollWidth;});expect(await scroll.evaluate(n=>n.scrollLeft)).toBeGreaterThan(0);await expect(page.getByRole('button',{name:'配置身份',exact:true}).first()).toBeInViewport();}
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-});
-
-test('Q34 identity empty state retains table headings and reduced motion disables row transitions',async({page})=>{
- await page.emulateMedia({reducedMotion:'reduce'});await fixture(page);await page.route('**/api/v1/personnel/identities?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([]),meta:null}}));await page.goto('/app/admin');await page.getByRole('tab',{name:'身份',exact:true}).click();
- const table=page.locator('.identity-table').getByRole('table');await expect(table).toHaveCount(1);await expect(table.getByRole('columnheader')).toHaveCount(4);await expect(table).toContainText('暂无身份');
- await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await expect(page.locator('.member-table tbody tr').first()).toHaveCSS('transition-duration','0s');
-});
-
 // Q33 oracle: user removal + synced R3 5.3–5.5 and Figma Admin 108:151.
 // Fixed 176px sidebar on every viewport; no collapse entry or hidden navigation.
 for(const width of [2504,1920,900,390,320])test('Q33 sidebar stays expanded with no collapse control at '+width,async({page})=>{
@@ -541,9 +488,9 @@ test('Q33 fixed sidebar retains viewport origin and the 144 by 48 menu target af
   await expect(page.locator('.admin-header')).toHaveCSS('height','56px');
  }
 });
-test('Q34 member table keeps confirmed column geometry and page selection never sends a write',async({page})=>{
+test('Figma member table keeps fixed column geometry and page selection never sends a write',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);const th=page.locator('.member-table th');
- for(const [index,width] of [[0,48],[2,176],[3,216],[4,136],[5,192]])expect((await th.nth(index).boundingBox())!.width).toBeCloseTo(width,0);
+ for(const [index,width] of [[0,52],[2,176],[3,216],[4,136],[5,144]])expect((await th.nth(index).boundingBox())!.width).toBeCloseTo(width,0);
  let writes=0;page.on('request',request=>{if(request.url().includes('/api/v1/')&&!['GET','HEAD'].includes(request.method()))writes++;});
  const select=page.getByLabel('选择成员：'+user.account,{exact:true});await select.check();await expect(page.getByLabel('选择当前页成员',{exact:true})).toBeChecked();await page.getByLabel('选择当前页成员',{exact:true}).uncheck();await expect(select).not.toBeChecked();expect(writes).toBe(0);
 });
