@@ -41,7 +41,7 @@
 | identity | name、description、templateIds、permissionCodes |
 | template | name、description、permissionCodes |
 
-允许未完成输入，但不允许任意字段或凭据。草稿整个原始body沿用现有 personnel.decodeBody 的1048576字节限额，可容纳包装与合法JSON转义；不改全局限制。payload 最大 65536 个规范 UTF-8 JSON 字节；每账号最多 20 份，超限报错、不淘汰、无自动过期。恢复读最新业务对象展示冲突，不能自行替换原 baseVersion。成功业务提交可带 `draftRef:{id,version}`，同事务只清理确切提交的版本，更晚保存的版本保留。
+允许未完成输入，但不允许任意字段或凭据。草稿路由整个原始body限131072字节，且规范payload同时限65536字节，两者取交集；正常JSON.stringify UTF-8合法payload加wrapper应通过，过度Unicode转义或空白使raw超限必须拒绝，即使规范payload未超限。不改全局限制。payload 最大 65536 个规范 UTF-8 JSON 字节；每账号最多 20 份，超限报错、不淘汰、无自动过期。恢复读最新业务对象展示冲突，不能自行替换原 baseVersion。成功业务提交可带 `draftRef:{id,version}`，同事务只清理确切提交的版本，更晚保存的版本保留。
 
 | 错误 | HTTP | 行为 |
 | --- | --- | --- |
@@ -74,3 +74,5 @@
 [RED/GREEN 证据](../docs/evidence/V010-020/q36-contracts/)保存了先失败的测试源码、日志和哈希。契约结构/有限响应 oracle 测试不能证明业务权限；真实 PG 约束测试不能证明完整并发工作流。验证明细见同目录 green-manifest.json；全栈、Redis、截图和最终 PR head CI 留待后续实现与根验收。
 
 POST修订已由用户 messageSentinel_7282e2dbf5d881919b08d2691246ad57 批准，见PLAN §9。本轮只修改契约/类型与有限响应测试oracle；真实Nginx大中文POST到BFF测试尚未运行，固定镜像拉取仍受Docker Hub限流，HTTP接线未实现。此前GET复杂filter设计已被本修订替代。
+
+根已明确选择草稿128KiB raw与64KiB canonical独立双上限，替代前次1MiB raw说明；58,355B规范payload但338,420B raw的转义样例应被拒绝。历史q36-post/q36-types证据保留为当时观测，当前以此说明和OpenAPI为准。

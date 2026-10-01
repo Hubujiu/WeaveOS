@@ -2302,8 +2302,8 @@
               }
             }
           },
-          "x-max-raw-bytes": 1048576,
-          "description": "Entire raw JSON body <=1048576 bytes, matching the existing personnel decoder. Canonical payload <=65536 bytes independently; wrapper fields and escaped JSON are not counted as canonical payload. No global body/header limit change."
+          "x-max-raw-bytes": 131072,
+          "description": "Route-local entire raw JSON body <=131072 bytes AND canonical payload <=65536 bytes. Both must hold. Normal JSON.stringify UTF-8 payload plus wrapper fits; excessive Unicode escapes or whitespace may exceed the raw bound and must be rejected even when canonical payload fits. No global body/header limit change."
         }
       }
     },
@@ -2431,8 +2431,8 @@
               }
             }
           },
-          "x-max-raw-bytes": 1048576,
-          "description": "Entire raw JSON body <=1048576 bytes, matching the existing personnel decoder. Canonical payload <=65536 bytes independently; wrapper fields and escaped JSON are not counted as canonical payload. No global body/header limit change."
+          "x-max-raw-bytes": 131072,
+          "description": "Route-local entire raw JSON body <=131072 bytes AND canonical payload <=65536 bytes. Both must hold. Normal JSON.stringify UTF-8 payload plus wrapper fits; excessive Unicode escapes or whitespace may exceed the raw bound and must be rejected even when canonical payload fits. No global body/header limit change."
         }
       },
       "delete": {
