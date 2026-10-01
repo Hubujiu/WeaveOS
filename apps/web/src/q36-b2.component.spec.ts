@@ -25,7 +25,7 @@ async function admin(page:Page){await page.goto('/app/admin');await expect(page.
 async function condition(page:Page){
  await page.getByRole('button',{name:'自定义筛选',exact:true}).click();
  const panel=page.getByRole('dialog',{name:'自定义筛选',exact:true});await expect(panel).toBeVisible();
- await panel.getByRole('button',{name:'添加条件',exact:true}).first().click();
+ await panel.getByRole('button',{name:'组 1 添加条件',exact:true}).click();
  await panel.locator('.q36-filter-condition input').first().fill('q36-admin');
  await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
 }
@@ -37,7 +37,7 @@ test('Q36 B2 real member page uses POST typed filter and old context without tex
  await expect(page.locator('.member-table th[aria-sort]')).toHaveCount(0);
  await condition(page);await expect.poll(()=>requests.at(-1)?.filter).toEqual({operator:'and',children:[{field:'account',operator:'eq',value:'q36-admin'}]});
  expect(requests.at(-1)?.queryVersion).toBe('context-1');
- await page.getByLabel('跳至页码').fill('4');await page.getByLabel('跳至页码').press('Enter');
+ await page.getByLabel('跳至页',{exact:true}).fill('4');await page.getByLabel('跳至页',{exact:true}).press('Enter');
  await expect.poll(()=>requests.at(-1)?.page).toBe(4);
 });
 
@@ -47,16 +47,31 @@ test('Q36 B2 event page uses server display and only occurredAt server ordering'
  await page.route('**/personnel/events/search',r=>{const input=r.request().postDataJSON();requests.push(input);return r.fulfill({json:envelope({...paging([event],input),sort:{key:'occurredAt',direction:input.sortDirection??'desc'},range:{from:'2026-09-24T00:00:00Z',to:'2026-10-02T00:00:00Z'}})});});
  await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();
  await expect(page.locator('.activity-table')).toContainText('当前页之外的成员');await expect(page.locator('.activity-table')).toContainText('后端安全摘要');
- await page.locator('.activity-table th').filter({hasText:'时间'}).getByRole('button').first().click();
- await expect.poll(()=>requests.at(-1)?.sortBy).toBe('occurredAt');expect(requests.at(-1)?.queryVersion).toBeTruthy();
+ await page.getByRole('button',{name:'排序 occurredAt',exact:true}).click();await page.getByRole('menuitem',{name:'升序',exact:true}).click();
+ await expect.poll(()=>requests.at(-1)?.sortDirection).toBe('asc');expect(requests.at(-1)?.sortBy).toBe('occurredAt');expect(requests.at(-1)?.queryVersion).toBeTruthy();
  expect(await page.locator('.activity-table th[aria-sort]').count()).toBe(1);
+});
+
+test('Q36 B2 restored invalid identity reference remains editable until explicitly resolved',async({page})=>{
+ await fixture(page);const missing='00000000-0000-4000-8000-000000000088';
+ const stored={id:draftId,kind:'member-identities',targetId:id,baseVersion:0,version:1,createdAt:'2026-10-01T00:00:00Z',updatedAt:'2026-10-01T00:00:00Z',payload:{identityIds:[missing]}};
+ await page.route('**/personnel/drafts',r=>r.fulfill({json:envelope({items:[stored]})}));await page.route('**/personnel/drafts/'+draftId,r=>r.fulfill({json:envelope(stored)}));
+ await admin(page);await page.getByRole('button',{name:'草稿箱',exact:true}).click();await page.getByRole('button',{name:'恢复草稿',exact:true}).click();
+ await expect(page.getByRole('alert')).toContainText('已失效引用');
+ const invalid=page.getByLabel('已失效身份：'+missing,{exact:true});await expect(invalid).toBeChecked();await invalid.uncheck();
+ await page.getByRole('button',{name:'保留当前输入，使用最新对象版本',exact:true}).click();await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('Q36 B2 modal query refresh preserves unsaved member input and original object version',async({page})=>{
+ await fixture(page);await admin(page);await page.getByRole('button',{name:'配置身份',exact:true}).click();const dialog=page.getByRole('dialog',{name:'配置成员身份',exact:true});
+ await dialog.getByLabel('身份：测试身份',{exact:true}).check();await dialog.getByRole('button',{name:'刷新查询',exact:true}).click();await expect(dialog.getByLabel('身份：测试身份',{exact:true})).toBeChecked();
 });
 
 for(const code of ['COMMON_QUERY_CHANGED','COMMON_QUERY_CONTEXT_EXPIRED'])test('Q36 B2 '+code+' requires explicit page-one refresh and clears selection',async({page})=>{
  await fixture(page);let failed=false;const requests:Record<string,unknown>[]=[];
  await page.route('**/personnel/members/search',r=>{const input=r.request().postDataJSON();requests.push(input);if(input.page===2&&!failed){failed=true;return r.fulfill({status:409,json:{code,message:'conflict',data:null,meta:null}});}return r.fulfill({json:envelope(paging([member],input))});});
  await admin(page);await page.getByLabel('选择成员：q36-admin',{exact:true}).check();
- await page.getByLabel('跳至页码').fill('2');await page.getByLabel('跳至页码').press('Enter');
+ await page.getByLabel('跳至页',{exact:true}).fill('2');await page.getByLabel('跳至页',{exact:true}).press('Enter');
  await expect(page.getByRole('alert')).toContainText(code==='COMMON_QUERY_CHANGED'?'查询结果已变化':'查询上下文已过期');
  await page.getByRole('button',{name:'刷新查询',exact:true}).click();
  await expect.poll(()=>requests.at(-1)?.page).toBe(1);expect(requests.at(-1)?.queryVersion).toBeUndefined();
