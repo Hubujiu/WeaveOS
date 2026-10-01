@@ -8,7 +8,10 @@ root=pathlib.Path(__file__).resolve().parents[4]
 private=pathlib.Path('/tmp/weaveos-q36-drafts')
 pg='weaveos-q36-drafts-pg'; redis='weaveos-q36-drafts-redis'
 tools=pathlib.Path('/workspace/.weaveos-tools')
-def run(args, **kw): return subprocess.run(args,check=True,**kw)
+def run(args, **kw):
+ result=subprocess.run(args,**kw)
+ if result.returncode: raise RuntimeError('command failed with exit '+str(result.returncode))
+ return result
 if sys.argv[1]=='setup':
  private.mkdir(mode=0o700,exist_ok=False)
  password=secrets.token_urlsafe(32)
@@ -19,10 +22,13 @@ if sys.argv[1]=='setup':
   if subprocess.run(['docker','exec',pg,'pg_isready','-h','127.0.0.1','-U','drafts_test','-d','weaveos_drafts_test'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0: break
   time.sleep(.2)
  cfg={'WEAVEOS_TEST_DATABASE_URL':'postgres://drafts_test:'+password+'@127.0.0.1:25436/weaveos_drafts_test?sslmode=disable','WEAVEOS_TEST_REDIS_URL':'redis://127.0.0.1:26436/15'}
+ cfg['WEAVEOS_TEST_ARCHIVE_DATABASE_URL']=cfg['WEAVEOS_TEST_DATABASE_URL'].replace('/weaveos_drafts_test?', '/weaveos_drafts_archive_test?')
  (private/'env.json').write_text(json.dumps(cfg));(private/'env.json').chmod(0o600)
  env=os.environ.copy();env.update(cfg)
  run([str(tools/'gopath/bin/goose'),'-dir',str(root/'db/migrations'),'postgres',cfg['WEAVEOS_TEST_DATABASE_URL'],'up'],env=env)
  with (root/'infra/runtime/roles.sql').open() as f: run(['docker','exec','-i',pg,'psql','-v','ON_ERROR_STOP=1','-U','drafts_test','-d','weaveos_drafts_test'],stdin=f,stdout=subprocess.DEVNULL)
+ run(['docker','exec',pg,'createdb','-U','drafts_test','weaveos_drafts_archive_test'])
+ run([str(tools/'gopath/bin/goose'),'-dir',str(root/'db/archive-migrations'),'postgres',cfg['WEAVEOS_TEST_ARCHIVE_DATABASE_URL'],'up'],env=env)
  # Test-only exact draft capabilities. Production roles.sql belongs to integrator.
  run(['docker','exec',pg,'psql','-v','ON_ERROR_STOP=1','-U','drafts_test','-d','weaveos_drafts_test','-c','GRANT SELECT, INSERT, DELETE ON personnel.drafts TO auth_app; GRANT UPDATE (payload_json,draft_version,updated_at) ON personnel.drafts TO auth_app;'],stdout=subprocess.DEVNULL)
  run(['docker','exec',pg,'psql','-U','drafts_test','-d','weaveos_drafts_test','-Atc','SELECT version()'])
