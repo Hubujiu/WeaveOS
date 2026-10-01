@@ -50,6 +50,12 @@ test('Q36 B2 event page uses server display and only occurredAt server ordering'
  await page.getByRole('button',{name:'排序 occurredAt',exact:true}).click();await page.getByRole('menuitem',{name:'升序',exact:true}).click();
  await expect.poll(()=>requests.at(-1)?.sortDirection).toBe('asc');expect(requests.at(-1)?.sortBy).toBe('occurredAt');expect(requests.at(-1)?.queryVersion).toBeTruthy();
  expect(await page.locator('.activity-table th[aria-sort]').count()).toBe(1);
+ const prior=requests.length;
+ await page.getByRole('button',{name:'排序 occurredAt',exact:true}).click();await page.getByRole('menuitem',{name:'升序',exact:true}).click();
+ await expect.poll(()=>requests.length).toBeGreaterThan(prior);
+ expect(requests.at(-1)?.sortBy).toBeUndefined();expect(requests.at(-1)?.sortDirection).toBeUndefined();
+ expect(requests.at(-1)?.queryVersion).toBeTruthy();expect(requests.at(-1)?.from).toBe('2026-09-24T00:00:00Z');expect(requests.at(-1)?.to).toBe('2026-10-02T00:00:00Z');
+ await expect(page.locator('.activity-table th[aria-sort]')).toHaveCount(0);
 });
 
 test('Q36 B2 restored invalid identity reference remains editable until explicitly resolved',async({page})=>{
@@ -58,7 +64,7 @@ test('Q36 B2 restored invalid identity reference remains editable until explicit
  await page.route('**/personnel/drafts',r=>r.fulfill({json:envelope({items:[stored]})}));await page.route('**/personnel/drafts/'+draftId,r=>r.fulfill({json:envelope(stored)}));
  await admin(page);await page.getByRole('button',{name:'草稿箱',exact:true}).click();await page.getByRole('button',{name:'恢复草稿',exact:true}).click();
  await expect(page.getByRole('alert')).toContainText('已失效引用');
- const invalid=page.getByLabel('已失效身份：'+missing,{exact:true});await expect(invalid).toBeChecked();await invalid.uncheck();
+ const invalid=page.getByLabel('已失效身份：'+missing,{exact:true});await expect(invalid).toBeChecked();await invalid.click();await expect(invalid).toHaveCount(0);
  await page.getByRole('button',{name:'保留当前输入，使用最新对象版本',exact:true}).click();await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
@@ -84,6 +90,17 @@ test('Q36 B2 late responses cannot overwrite the newest search',async({page})=>{
  await admin(page);await page.getByLabel('搜索成员',{exact:true}).fill('older');await expect.poll(()=>!!oldRoute).toBe(true);
  await page.getByLabel('搜索成员',{exact:true}).fill('newer');await expect(page.locator('.member-table')).toContainText('newest-response');
  if(release&&oldRoute)await release(oldRoute);await page.waitForTimeout(200);await expect(page.locator('.member-table')).not.toContainText('late-old-response');
+});
+
+test('Q36 B2 unused template card save keeps member page and validates its existing context on return',async({page})=>{
+ await fixture(page);const queries:Record<string,unknown>[]=[];
+ await page.route('**/personnel/members/search',r=>{const input=r.request().postDataJSON();queries.push(input);return r.fulfill({json:envelope(paging([member],input))});});
+ await page.route('**/personnel/templates',r=>r.fulfill({json:envelope({...identity,id:draftId,name:'不影响成员结果的新模板',templateIds:[]})}));
+ await admin(page);await page.getByLabel('跳至页',{exact:true}).fill('4');await page.getByLabel('跳至页',{exact:true}).press('Enter');await expect(page.getByRole('button',{name:'Page 4',exact:true})).toHaveAttribute('aria-current','page');
+ await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'新建权限模板',exact:true}).click();await page.getByLabel('模板名称',{exact:true}).fill('不影响成员结果的新模板');
+ await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'已保存'})).toBeVisible();
+ await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await expect(page.locator('.member-table table')).toHaveAttribute('aria-busy','false');
+ await expect(page.getByRole('button',{name:'Page 4',exact:true})).toHaveAttribute('aria-current','page');expect(queries.at(-1)?.queryVersion).toBe('context-4');expect(queries.slice(1).every(q=>!!q.queryVersion)).toBe(true);
 });
 
 test('Q36 B2 definition explicitly saves durable draft and restores original version with conflict',async({page})=>{
@@ -115,4 +132,12 @@ test('Q36 B2 real-page animation closes on navigation and leaves no root blocker
  await page.getByRole('tab',{name:'操作记录',exact:true}).click();await page.waitForTimeout(1000);
  await expect.poll(()=>page.evaluate(()=>document.documentElement.classList.contains('q36-filter-transition-active'))).toBe(false);
  await expect(page.getByRole('button',{name:'自定义筛选',exact:true}).locator('svg')).toBeVisible();
+});
+
+test('Q36 B2 applying conditions then pressing the trigger during close honors reopen intent',async({page})=>{
+ await fixture(page);await admin(page);await page.getByRole('button',{name:'自定义筛选',exact:true}).click();const panel=page.getByRole('dialog',{name:'自定义筛选',exact:true});await expect(panel).toBeVisible();
+ await panel.getByRole('button',{name:'组 1 添加条件',exact:true}).click();await panel.locator('.q36-filter-condition input').fill('q36-admin');
+ await page.evaluate(()=>{(document.querySelector('.q36-filter-apply') as HTMLButtonElement).click();(document.querySelector('.q36-filter-trigger') as HTMLButtonElement).click();});
+ await expect(page.locator('.q36-filter-content')).toBeVisible();await expect(panel).toBeVisible();await page.waitForTimeout(1000);await expect(panel).toBeVisible();
+ await expect.poll(()=>page.evaluate(()=>document.documentElement.classList.contains('q36-filter-transition-active'))).toBe(false);
 });

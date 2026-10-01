@@ -1,0 +1,53 @@
+
+Running 1 test using 1 worker
+
+(node:84768) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:137:1 鈥?Q36 B2 applying conditions then pressing the trigger during close honors reopen intent (6.3s)
+
+
+  1) [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:137:1 鈥?Q36 B2 applying conditions then pressing the trigger during close honors reopen intent 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  locator('.q36-filter-content')
+    Expected: visible
+    Received: hidden
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "toBeVisible" locator('.q36-filter-content') with timeout 3000ms
+      - waiting for locator('.q36-filter-content')
+        10 脳 locator resolved to <div class="q36-filter-content">鈥?/div>
+           - unexpected value "hidden"
+
+
+      139 |  await panel.getByRole('button',{name:'缁?1 娣诲姞鏉′欢',exact:true}).click();await panel.locator('.q36-filter-condition input').fill('q36-admin');
+      140 |  await page.evaluate(()=>{(document.querySelector('.q36-filter-apply') as HTMLButtonElement).click();(document.querySelector('.q36-filter-trigger') as HTMLButtonElement).click();});
+    > 141 |  await expect(page.locator('.q36-filter-content')).toBeVisible();await expect(panel).toBeVisible();await page.waitForTimeout(1000);await expect(panel).toBeVisible();
+          |                                                    ^
+      142 |  await expect.poll(()=>page.evaluate(()=>document.documentElement.classList.contains('q36-filter-transition-active'))).toBe(false);
+      143 | });
+      144 |
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:141:52
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-b2-components-final-results\q36-b2.component-Q36-B2-ap-d2785--close-honors-reopen-intent-chromium\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-b2-components-final-results\q36-b2.component-Q36-B2-ap-d2785--close-honors-reopen-intent-chromium\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-b2-components-final-results\q36-b2.component-Q36-B2-ap-d2785--close-honors-reopen-intent-chromium\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-b2-components-final-results\q36-b2.component-Q36-B2-ap-d2785--close-honors-reopen-intent-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-b2-components-final-results\q36-b2.component-Q36-B2-ap-d2785--close-honors-reopen-intent-chromium\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  1 failed
+    [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:137:1 鈥?Q36 B2 applying conditions then pressing the trigger during close honors reopen intent 
