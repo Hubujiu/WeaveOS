@@ -1,0 +1,98 @@
+const imgLucideSearch = "[temporary_asset_url_removed; reuse original matching project asset]";
+
+type AdminDefinitionListItemProps = {
+  className?: string;
+  description?: string;
+  meta?: string;
+  name?: string;
+};
+
+function AdminDefinitionListItem({ className, description = "管理组织、成员和中央访问权限", meta = "2 位成员 · 1 项权限", name = "企业管理员" }: AdminDefinitionListItemProps) {
+  return (
+    <div className={className || "[word-break:break-word] bg-[var(--admin-color-surface,white)] content-stretch flex flex-col gap-[var(--admin-space-8,8px)] h-[108px] items-start overflow-clip p-[var(--admin-space-16,16px)] relative rounded-[var(--admin-radius-8,8px)] w-[328px] whitespace-nowrap"} data-node-id="159:460" data-name="Admin / Definition List Item">
+      <p className="font-['Noto_Sans_SC:Medium'] font-medium leading-[26px] relative shrink-0 text-[16px] text-[color:var(--admin-color-ink,#102044)]" data-node-id="159:461">
+        {name}
+      </p>
+      <p className="font-['Noto_Sans_SC:Regular'] font-normal leading-[20px] relative shrink-0 text-[12px] text-[color:var(--admin-color-secondary,#5e6d83)]" data-node-id="159:462">
+        {description}
+      </p>
+      <p className="font-['Noto_Sans_SC:Regular'] font-normal leading-[20px] relative shrink-0 text-[12px] text-[color:var(--admin-color-muted,#8490a2)]" data-node-id="159:463">
+        {meta}
+      </p>
+    </div>
+  );
+}
+
+function LucideSearch({ className }: { className?: string }) {
+  return (
+    <div className={className || "relative size-[24px]"} data-node-id="159:376" data-name="Lucide / Search">
+      <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgLucideSearch} />
+    </div>
+  );
+}
+
+type AdminInputProps = {
+  className?: string;
+  showIcon?: boolean;
+  value?: string;
+};
+
+function AdminInput({ className, showIcon = true, value = "搜索姓名或邮箱" }: AdminInputProps) {
+  return (
+    <div className={className || "bg-[var(--admin-color-surface,white)] border border-[var(--admin-color-line,#e4e9f1)] border-solid content-stretch flex gap-[var(--admin-space-8,8px)] h-[40px] items-center overflow-clip p-[var(--admin-space-12,12px)] relative rounded-[var(--admin-radius-8,8px)] w-[300px]"} data-node-id="159:420" data-name="Admin / Input">
+      {showIcon && <LucideSearch className="relative shrink-0 size-[16px]" />}
+      <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[22px] relative shrink-0 text-[14px] text-[color:var(--admin-color-muted,#8490a2)] whitespace-nowrap" data-node-id="159:424">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+export default function IdentityList() {
+  return (
+    <div className="bg-[var(--admin-color-surface,white)] border border-[var(--admin-color-line,#e4e9f1)] border-solid content-stretch flex flex-col gap-[12px] items-start overflow-clip p-[var(--admin-space-16,16px)] relative rounded-[var(--admin-radius-16,16px)] size-full" data-node-id="163:3461" data-name="Identity list">
+      <AdminInput className="bg-[var(--admin-color-surface,white)] border border-[var(--admin-color-line,#e4e9f1)] border-solid content-stretch flex gap-[var(--admin-space-8,8px)] h-[40px] items-center overflow-clip p-[var(--admin-space-12,12px)] relative rounded-[var(--admin-radius-8,8px)] shrink-0 w-full" value="搜索身份" />
+      <div className="[word-break:break-word] bg-[var(--admin-color-selected,#eaf0fa)] content-stretch flex flex-col gap-[var(--admin-space-8,8px)] h-[108px] items-start overflow-clip p-[var(--admin-space-16,16px)] relative rounded-[var(--admin-radius-8,8px)] shrink-0 w-full whitespace-nowrap" data-node-id="290:1335" data-name="Identity / 企业管理员">
+        <p className="font-['Noto_Sans_SC:Medium'] font-medium leading-[26px] relative shrink-0 text-[16px] text-[color:var(--admin-color-ink,#102044)]" data-node-id="I290:1335;159:461">
+          企业管理员
+        </p>
+        <p className="font-['Noto_Sans_SC:Regular'] font-normal leading-[20px] relative shrink-0 text-[12px] text-[color:var(--admin-color-secondary,#5e6d83)]" data-node-id="I290:1335;159:462">
+          管理组织、成员和中央权限
+        </p>
+        <p className="font-['Noto_Sans_SC:Regular'] font-normal leading-[20px] relative shrink-0 text-[12px] text-[color:var(--admin-color-muted,#8490a2)]" data-node-id="I290:1335;159:463">
+          1 位成员 · 0 项直接权限
+        </p>
+      </div>
+      <AdminDefinitionListItem className="[word-break:break-word] bg-[var(--admin-color-surface,white)] content-stretch flex flex-col gap-[var(--admin-space-8,8px)] h-[108px] items-start overflow-clip p-[var(--admin-space-16,16px)] relative rounded-[var(--admin-radius-8,8px)] shrink-0 w-full whitespace-nowrap" description="基础成员身份" meta="4 位成员 · 0 项直接权限" name="普通员工" />
+      <AdminDefinitionListItem className="[word-break:break-word] bg-[var(--admin-color-surface,white)] content-stretch flex flex-col gap-[var(--admin-space-8,8px)] h-[108px] items-start overflow-clip p-[var(--admin-space-16,16px)] relative rounded-[var(--admin-radius-8,8px)] shrink-0 w-full whitespace-nowrap" description="组织中的负责人身份" meta="1 位成员 · 0 项直接权限" name="部门负责人" />
+      <AdminDefinitionListItem className="[word-break:break-word] bg-[var(--admin-color-surface,white)] content-stretch flex flex-col gap-[var(--admin-space-8,8px)] h-[108px] items-start overflow-clip p-[var(--admin-space-16,16px)] relative rounded-[var(--admin-radius-8,8px)] shrink-0 w-full whitespace-nowrap" description="财务岗位身份" meta="1 位成员 · 0 项直接权限" name="财务成员" />
+      <div className="flex-[1_0_0] min-h-px relative w-px" data-node-id="290:1351" data-name="Flexible space" />
+      <div className="bg-[var(--admin-color-line,#e4e9f1)] h-px relative shrink-0 w-full" data-node-id="290:1352" data-name="Divider" />
+      <div className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[0] relative shrink-0 text-[#737373] text-[12px] w-[310px]" data-node-id="163:3485">
+        <p className="leading-[20px] mb-0">身份是可分配给成员的模板。</p>
+        <p className="leading-[20px]">同一个身份可供多位成员使用。</p>
+      </div>
+    </div>
+  );
+}
+
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+
+These styles are contained in the design: Admin / Body: Font(family: "Noto Sans SC", style: Regular, size: 14, weight: 400, lineHeight: 22, letterSpacing: 0), Admin / Subheading: Font(family: "Noto Sans SC", style: Medium, size: 16, weight: 500, lineHeight: 26, letterSpacing: 0), Admin / Caption: Font(family: "Noto Sans SC", style: Regular, size: 12, weight: 400, lineHeight: 20, letterSpacing: 0).
+
+Component descriptions: The following components have usage descriptions or documentation links defined in Figma. These descriptions provide important context about the intended usage, best practices, and any constraints for each component. Follow these guidelines when implementing or using these components.
+
+## Lucide / Search
+**Node ID:** 159:376
+
+Editable vector icon from lucide-icons/lucide/icons. Stroke follows WaveOS.
+
+Images and SVGs will be stored as constants, e.g. const image = '[temporary_asset_url_removed; reuse original matching project asset]'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

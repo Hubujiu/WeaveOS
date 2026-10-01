@@ -74,7 +74,11 @@ export function ColumnFilterMenu({
       if (trigger?.contains(target) || panel?.contains(target)) return;
       setOpen(false);
     };
-    const onClose = () => setOpen(false);
+    const onClose = (event: Event) => {
+      const panel = document.getElementById(`${triggerId}-panel`);
+      if (event.type === "scroll" && event.target instanceof Node && panel?.contains(event.target)) return;
+      setOpen(false);
+    };
     window.addEventListener("keydown", onKey);
     window.addEventListener("pointerdown", onPointer);
     window.addEventListener("scroll", onClose, true);

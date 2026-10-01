@@ -1,0 +1,12 @@
+{
+  "fileId": "r0mSerkjrPdwJVME658W6a",
+  "pageId": "0:1",
+  "sourcePageId": "3e92f5a9e64881f4be86c10bc38fff61",
+  "sourceUpdatedAt": "2026-10-01T05:50:38.409Z",
+  "section": "### 5.8 Q35 · 直接使用 Arca Data Table、身份恢复列表、空行填满（2026-10-01）\n本轮用户明确纠正Q34：身份使用权限模板相同的列表加详情组件；成员和操作记录直接使用指定 [Arca UI Data Table](https://hubujiu.github.io/arca-ui/#/components/data-table) 源码及完整必要依赖、样式、字体与动效，不能以近似原生表格替代；数据不足及无数据时以空白网格行填满表体可用高度，分页固定在表格底部。用户随后明确答复“连示例中的表格交互也启用”。本条替代§5.7及Q24中对应两表的原生仿写/不新增UI依赖约束、身份表格、360px最大高度、48px简化分页器。其他外壳、权限模板、表单、Q32筛选选择框和页签不变。\n固定消费公开源 c0319d887e10775c8968a7d6a451f248858726ec，保留原始字节归档、SHA256及必要项目补丁记录。消费范围是 motion/table 与其 Checkbox、DropdownPanel、Select、Button、ease/touch/utils 依赖闭包；原版 Tailwind主题、Geist字体（中文沿用当前Noto Sans SC回退）和自定义el-scrollbar一并接入并隔离作用域，不污染现有页面。允许项目vendor内机械导入路径、服务端分页桥、空行填充、中文可访问名称及减少动效必要补丁；不改React-/arca-ui来源原件或组件审批登记。不引入无关整套组件和额外产品功能。\n两表启用原版列排序、列拖动和列缩放；排序仅在当前已获取页内按实际字段值进行，不伪造服务端全量排序或新增查询契约，翻页继续服务端稳定顺序。成员的行内操作按钮列关闭排序；记录的操作字段可排序。分页用原版完整33px页脚、页码/可跳转省略号、24px上一页下一页按钮和页大小Select，默认20、可选5/10/20/25/50/100（符合Q25上限100）；页码与页大小控制真实page/pageSize请求，改变页大小回到第一页，搜索/筛选继续重置第一页。空行永远不参与排序、分页总数、选择、写请求或键盘操作。\n原样保留40px行、14px外圆角、原版表头/正文/网格/选中/悬停颜色；拉伸表体至容器剩余高度，取消360px缩高。真实数据超出表体时使用原版虚拟化、自定义双轴滚动条和固定表头；不足时加入40px空网格行，最后一行可裁切以适应视口。空列表仍有表头和明确空态，同时网格填满；空行aria-hidden，无行号、业务ID、复选框或操作，分页不因空行改变。窗口变化自动重算填充，避免产生表格自身循环增高。\n成员使用原版48px序号/选择列：非悬停未选中显示灰色序号，hover/focus/选中后显示Motion checkbox，20px/8px圆角/2px边框；按压spring500/30/.6、scale .92；勾线300ms+40ms延迟、进入160ms和退出缩小/blur4px，混合状态横线200ms+40ms。全选只涉及真实当前页成员，页码序号按服务端页大小计算；当前查询/翻页清理选择遵循既有业务。保留原版页脚Select/菜单/拖动/缩放动效以及减少动效终态；中文名称、键盘、焦点和有限视口可达持续验收。成员操作和活动安全摘要/成功失败语义不改。\n身份列表复用权限模板现有definition-list/definition-item卡片和右详情；保留真实名称、说明、去重影响数字、选中与点击/键盘选择。切换身份/页签/退出继续先处理未保存草稿，取消后保留选择和输入；保存仍按共享影响确认和版本并发检查。正式来源及Figma同步并重读后实际RED→GREEN实施；审批、冻结、发布属性不变，此记录不表示已经交付。",
+  "fixedPublicSourceCommit": "c0319d887e10775c8968a7d6a451f248858726ec",
+  "evidenceScope": "Figma only; no worktree/Notion/product code writes",
+  "externalEvidenceDirectory": "D:/Data/.codex/tmp/weaveos-q35-figma/",
+  "sourceRecord": "Q35 replaces Q34 identity table/max360/simplified48px pagination/native approximation",
+  "codeConnect": "get_design_context was not disabled and supplied no mappings. Prior map endpoint was seat-restricted, so server mapping absence is not claimed."
+}

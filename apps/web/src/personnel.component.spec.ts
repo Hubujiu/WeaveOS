@@ -246,7 +246,7 @@ test('Q32 upward expansion and closing stay attached to the trigger edge on ever
  const button=page.getByRole('combobox',{name:'父部门',exact:true});
  const sample=()=>page.evaluate(async()=>{
   const button=document.querySelector<HTMLButtonElement>('[aria-label="父部门"]')!;
-  const points:{gap:number;height:number;side:string|undefined}[]=[];const start=performance.now();while(performance.now()-start<300){await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const menu=document.querySelector<HTMLElement>('[role=listbox]')!;const b=menu.getBoundingClientRect();points.push({gap:button.getBoundingClientRect().top-b.bottom,height:b.height,side:menu.dataset.side});}return points;
+  const points:{gap:number;height:number;side:string|undefined}[]=[];const start=performance.now();while(performance.now()-start<300){await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const menu=document.querySelector<HTMLElement>('.personnel-select-menu[role=listbox]')!;const b=menu.getBoundingClientRect();points.push({gap:button.getBoundingClientRect().top-b.bottom,height:b.height,side:menu.dataset.side});}return points;
  });
  await button.click();const opening=await sample();await button.click();const closing=await sample();const samples={opening,closing};
  expect(samples.opening.every(point=>point.side==='above')).toBe(true);
@@ -257,7 +257,7 @@ test('Q32 upward expansion and closing stay attached to the trigger edge on ever
 test('Q32 upward menus animate the corners adjacent to their trigger',async({page})=>{
  await page.setViewportSize({width:390,height:320});await fixture(page);const choices=Array.from({length:20},(_,index)=>({...department,id:'00000000-0000-4000-8000-'+String(index+400).padStart(12,'0'),name:'部门-'+index}));
  await page.route('**/api/v1/personnel/departments',r=>r.fulfill({status:200,json:{code:'OK',message:'success',data:{items:choices},meta:null}}));await page.goto('/app/admin');await page.getByRole('button',{name:'新建部门',exact:true}).click();
- const corners=await page.evaluate(async()=>{document.querySelector<HTMLButtonElement>('[aria-label="父部门"]')!.click();await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const menu=document.querySelector<HTMLElement>('[role=listbox]')!;const s=getComputedStyle(menu);return {side:menu.dataset.side,top:s.borderTopLeftRadius,bottom:s.borderBottomLeftRadius};});
+ const corners=await page.evaluate(async()=>{document.querySelector<HTMLButtonElement>('[aria-label="父部门"]')!.click();await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const menu=document.querySelector<HTMLElement>('.personnel-select-menu[role=listbox]')!;const s=getComputedStyle(menu);return {side:menu.dataset.side,top:s.borderTopLeftRadius,bottom:s.borderBottomLeftRadius};});
  expect(corners.side).toBe('above');
  expect(parseFloat(corners.top)).toBe(12);expect(parseFloat(corners.bottom)).toBeLessThan(12);
 });
@@ -303,9 +303,9 @@ test('Q31 real member overflow remains scrollable while the tab strip has no ver
  await page.setViewportSize({width:1440,height:600});await fixture(page);
  const members=Array.from({length:20},(_,i)=>({...member,id:'00000000-0000-4000-8000-'+String(i+100).padStart(12,'0'),account:'synthetic-row-'+String(i).padStart(2,'0')}));
  await page.route('**/api/v1/personnel/members?**',r=>r.fulfill({status:200,json:{code:'OK',message:'success',data:list(members),meta:null}}));await page.goto('/app/admin');
- const last=page.getByRole('row').filter({hasText:'synthetic-row-19'});await expect(last).toHaveCount(1);
+ const last=page.getByRole('row').filter({hasText:'synthetic-row-19'});
  const table=page.locator('.table-scroll');expect(await table.evaluate(n=>n.scrollHeight>n.clientHeight)).toBe(true);
- await table.evaluate(n=>{n.scrollTop=n.scrollHeight;});expect(await table.evaluate(n=>n.scrollTop)).toBeGreaterThan(0);
+ await table.evaluate(n=>{n.scrollTop=n.scrollHeight;});expect(await table.evaluate(n=>n.scrollTop)).toBeGreaterThan(0);await expect(last).toHaveCount(1);
  const box=(await table.boundingBox())!,row=(await last.boundingBox())!;expect(row.y).toBeGreaterThanOrEqual(box.y);expect(row.y+row.height).toBeLessThanOrEqual(box.y+box.height+1);
  await page.setViewportSize({width:390,height:844});await table.evaluate(n=>{n.scrollLeft=n.scrollWidth;});expect(await table.evaluate(n=>n.scrollLeft)).toBeGreaterThan(0);
 });

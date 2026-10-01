@@ -1,0 +1,464 @@
+--- upstream/src/components/motion/checkbox.tsx
++++ apps/web/src/vendor/arca/components/motion/checkbox.tsx
+@@ -2,8 +2,8 @@
+ 
+ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+ import { useId } from "react";
+-import { EASE_OUT, SPRING_PRESS } from "@/lib/ease";
+-import { cn } from "@/lib/utils";
++import { EASE_OUT, SPRING_PRESS } from "../../lib/ease";
++import { cn } from "../../lib/utils";
+ 
+ const CHECK_PATH = "M5 13l4 4L19 7";
+ const INDETERMINATE_PATH = "M6 12h12";
+--- upstream/src/components/motion/dropdown-panel.tsx
++++ apps/web/src/vendor/arca/components/motion/dropdown-panel.tsx
+@@ -14,8 +14,8 @@
+   useRef,
+   useState,
+ } from "react";
+-import { EASE_OUT } from "@/lib/ease";
+-import { cn } from "@/lib/utils";
++import { EASE_OUT } from "../../lib/ease";
++import { cn } from "../../lib/utils";
+ 
+ export type DropdownPlacement = "bottom" | "top";
+ 
+--- upstream/src/components/motion/select.tsx
++++ apps/web/src/vendor/arca/components/motion/select.tsx
+@@ -21,8 +21,8 @@
+   DropdownPanel,
+   type DropdownPlacement,
+   getDropdownTriggerMotion,
+-} from "@/components/motion/dropdown-panel";
+-import { cn } from "@/lib/utils";
++} from "./dropdown-panel";
++import { cn } from "../../lib/utils";
+ 
+ interface SelectContextValue {
+   value: string | undefined;
+@@ -114,8 +114,9 @@
+       if (!controlled) setInternal(next);
+       onValueChange?.(next);
+       setOpen(false);
++      requestAnimationFrame(() => document.getElementById(`${baseId}-trigger`)?.focus());
+     },
+-    [controlled, onValueChange, setOpen],
++    [controlled, onValueChange, setOpen, baseId],
+   );
+ 
+   const register = useCallback((v: string, label: string) => {
+@@ -189,12 +190,13 @@
+ }
+ 
+ export interface SelectTriggerProps {
++  'aria-label'?: string;
+   className?: string;
+   children: ReactNode;
+   id?: string;
+ }
+ 
+-export function SelectTrigger({ className, children, id }: SelectTriggerProps) {
++export function SelectTrigger({ className, children, id, 'aria-label': ariaLabel }: SelectTriggerProps) {
+   const ctx = useSelectContext("SelectTrigger");
+   const triggerMotion = getDropdownTriggerMotion(
+     ctx.open,
+@@ -207,9 +209,22 @@
+       id={id ?? ctx.triggerId}
+       disabled={ctx.disabled}
+       aria-haspopup="listbox"
++      role="combobox"
++      aria-label={ariaLabel}
+       aria-expanded={ctx.open}
+       aria-controls={ctx.listId}
+       onClick={() => ctx.setOpen(!ctx.open)}
++      onKeyDown={event => {
++        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
++        event.preventDefault();
++        ctx.setOpen(true);
++        const key = event.key;
++        requestAnimationFrame(() => {
++          const options = Array.from(document.getElementById(ctx.listId)?.querySelectorAll<HTMLButtonElement>('button[role="option"]:not(:disabled)') ?? []);
++          const selected = options.find(option => option.getAttribute('aria-selected') === 'true');
++          (key === 'Home' ? options[0] : key === 'End' ? options.at(-1) : selected ?? options[0])?.focus();
++        });
++      }}
+       initial={false}
+       animate={triggerMotion.animate}
+       transition={triggerMotion.transition}
+@@ -268,6 +283,19 @@
+         initial={false}
+         animate={ctx.open ? "show" : "hidden"}
+         className="p-1"
++        onKeyDown={event => {
++          if (event.key === 'Escape') {
++            event.preventDefault(); event.stopPropagation(); ctx.setOpen(false);
++            document.getElementById(ctx.triggerId)?.focus(); return;
++          }
++          if (event.key === 'Tab') { ctx.setOpen(false); return; }
++          if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
++          event.preventDefault();
++          const options = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button[role="option"]:not(:disabled)'));
++          const current = options.indexOf(document.activeElement as HTMLButtonElement);
++          const index = event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 : Math.max(0, Math.min(options.length - 1, current + (event.key === 'ArrowDown' ? 1 : -1)));
++          options[index]?.focus(); options[index]?.scrollIntoView({ block: 'nearest' });
++        }}
+       >
+         {children}
+       </motion.div>
+--- upstream/src/components/motion/table/column-filter-menu.tsx
++++ apps/web/src/vendor/arca/components/motion/table/column-filter-menu.tsx
+@@ -15,8 +15,8 @@
+   DROPDOWN_LIST_VARIANTS,
+   DropdownPanel,
+   type DropdownPlacement,
+-} from "@/components/motion/dropdown-panel";
+-import { cn } from "@/lib/utils";
++} from "../dropdown-panel";
++import { cn } from "../../../lib/utils";
+ import type { SortDirection, SortState } from "./types";
+ 
+ const MENU_WIDTH = 168;
+@@ -74,7 +74,11 @@
+       if (trigger?.contains(target) || panel?.contains(target)) return;
+       setOpen(false);
+     };
+-    const onClose = () => setOpen(false);
++    const onClose = (event: Event) => {
++      const panel = document.getElementById(`${triggerId}-panel`);
++      if (event.type === "scroll" && event.target instanceof Node && panel?.contains(event.target)) return;
++      setOpen(false);
++    };
+     window.addEventListener("keydown", onKey);
+     window.addEventListener("pointerdown", onPointer);
+     window.addEventListener("scroll", onClose, true);
+@@ -128,7 +132,7 @@
+       {mounted
+         ? createPortal(
+             <div
+-              className="relative"
++              className="arca-source relative"
+               style={{
+                 position: "fixed",
+                 top: anchor?.top ?? -9999,
+--- upstream/src/components/motion/table/index.tsx
++++ apps/web/src/vendor/arca/components/motion/table/index.tsx
+@@ -4,8 +4,8 @@
+ import { useVirtualizer } from "@tanstack/react-virtual";
+ import { useReducedMotion } from "motion/react";
+ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+-import { Checkbox } from "@/components/motion/checkbox";
+-import { cn } from "@/lib/utils";
++import { Checkbox } from "../checkbox";
++import { cn } from "../../../lib/utils";
+ import { EditableCell } from "./editable-cell";
+ import { RowHandle } from "./row-handle";
+ import { SkeletonRows } from "./skeleton-rows";
+@@ -103,6 +103,13 @@
+   skeletonRows = 3,
+   emptyState = "No data",
+   className,
++  manualPagination = false,
++  recordCount: serverCount,
++  fillViewport = false,
++  minWidth,
++  ariaLabel,
++  selectAllLabel,
++  getRowLabel,
+ }: TableProps<T>) {
+   const reduce = useReducedMotion();
+   const scrollRef = useRef<HTMLDivElement>(null);
+@@ -141,13 +148,22 @@
+   const pageIndex = pageIndexProp ?? internalPageIndex;
+   const pageSize = pageSizeProp ?? internalPageSize;
+ 
+-  const recordCount = sortedRows.length;
++  const recordCount = serverCount ?? sortedRows.length;
+   const pageCount = Math.max(1, Math.ceil(recordCount / pageSize) || 1);
+   const currentPage = Math.min(pageIndex, pageCount - 1);
+-  const pagedRows = paginated
++  const pagedRows = paginated && !manualPagination
+     ? sortedRows.slice(currentPage * pageSize, currentPage * pageSize + pageSize)
+     : sortedRows;
+   const visibleRows = pagedRows;
++  const [viewportHeight, setViewportHeight] = useState(0);
++  useEffect(() => {
++    if (!fillViewport || !scrollRef.current) return;
++    const el = scrollRef.current;
++    const observer = new ResizeObserver(() => setViewportHeight(el.clientHeight));
++    setViewportHeight(el.clientHeight);
++    observer.observe(el);
++    return () => observer.disconnect();
++  }, [fillViewport]);
+ 
+   const setPageIndex = useCallback(
+     (next: number) => {
+@@ -171,10 +187,16 @@
+   const handleSetSort = useCallback(
+     (key: string, direction: SortDirection) => {
+       setSort(key, direction);
+-      setPageIndex(0);
++      if (!manualPagination) setPageIndex(0);
+     },
+-    [setPageIndex, setSort],
++    [setPageIndex, setSort, manualPagination],
+   );
++
++  useEffect(() => {
++    // An authoritative total can shrink between requests. Recover the actual
++    // server page as well as the visible pager; clamping display alone strands it.
++    if (manualPagination && pageIndex !== currentPage) setPageIndex(currentPage);
++  }, [manualPagination, pageIndex, currentPage, setPageIndex]);
+ 
+   const { widths, startResize, moveResize, endResize } = useColumnResize({
+     orderedColumns,
+@@ -256,6 +278,9 @@
+   }, []);
+   const activeRowEl = activeRow ? rowRefs.current[activeRow.id] : null;
+   const leadColumns = orderedColumns.length + (selectable ? 1 : 0);
++  // Fillers are deliberately outside data, virtualizer, selection and paging.
++  const remaining = fillViewport ? Math.max(0, viewportHeight - rowHeight - visibleRows.length * rowHeight) : 0;
++  const blankRows = Array.from({ length: Math.ceil(remaining / rowHeight) }, (_, index) => Math.min(rowHeight, remaining - index * rowHeight));
+ 
+   useEffect(() => {
+     scrollRef.current?.scrollTo({ top: 0 });
+@@ -268,21 +293,24 @@
+         className,
+       )}
+     >
+-      <div className="el-scrollbar relative w-full overflow-hidden">
++      <div className={cn("el-scrollbar relative w-full overflow-hidden", fillViewport && "min-h-0 flex-1")}>
+         <div
+           ref={scrollRef}
++          tabIndex={0}
++          aria-label={ariaLabel + '表格滚动区域'}
+           onScroll={handleScroll}
+-          className="el-scrollbar__wrap el-scrollbar__wrap--hidden-default overflow-x-auto overflow-y-auto"
++          className="table-scroll el-scrollbar__wrap el-scrollbar__wrap--hidden-default overflow-x-auto overflow-y-auto"
+           style={
+-            paginated
++            fillViewport ? { height: '100%', maxHeight: 'none', scrollPaddingTop: rowHeight } : paginated
+               ? { maxHeight: height }
+               : { height }
+           }
+         >
+           <div className="el-scrollbar__view">
+             <table
+-              className="w-full border-collapse"
+-              style={{ tableLayout: "fixed", width: "100%" }}
++              className="personnel-data-table w-full border-collapse"
++              aria-label={ariaLabel}
++              style={{ tableLayout: "fixed", width: "100%", minWidth }}
+             >
+           <colgroup>
+             {selectable ? <col style={{ width: INDEX_WIDTH }} /> : null}
+@@ -306,6 +334,8 @@
+             reduce={!!reduce}
+             thRefs={thRefs}
+             selectable={selectable}
++            selectAllLabel={selectAllLabel}
++            selectionDisabled={!visibleRows.length}
+             allSelected={allSelected}
+             someSelected={someSelected}
+             onToggleAll={toggleAll}
+@@ -330,7 +360,7 @@
+           />
+ 
+           <tbody>
+-            {sortedRows.length === 0 ? (
++            {sortedRows.length === 0 && !fillViewport ? (
+               loading ? (
+                 <SkeletonRows
+                   count={Math.max(1, Math.ceil(height / rowHeight))}
+@@ -363,6 +393,8 @@
+                   return (
+                     <tr
+                       key={entry.id}
++                      data-row-id={entry.id}
++                      aria-selected={selectable ? isSelected : undefined}
+                       ref={(el) => {
+                         rowRefs.current[entry.id] = el;
+                       }}
+@@ -401,7 +433,7 @@
+                             <Checkbox
+                               checked={isSelected}
+                               onCheckedChange={() => toggleRow(entry.id)}
+-                              aria-label={`Select row ${rowNumber}`}
++                              aria-label={getRowLabel?.(entry.row) ?? `Select row ${rowNumber}`}
+                               className="justify-center gap-0"
+                             />
+                           </div>
+@@ -411,7 +443,7 @@
+                         <td
+                           key={column.key}
+                           className={cn(
+-                            "truncate px-4 text-foreground",
++                              "truncate px-4 text-foreground",
+                             alignText(column.align),
+                             columnIndex < orderedColumns.length - 1 &&
+                               "border-border border-r",
+@@ -448,11 +480,15 @@
+                 ) : null}
+               </>
+             )}
++            {blankRows.map((blankHeight, index) => <tr key={'blank-' + index} data-empty-row aria-hidden="true" style={{ height: blankHeight }} className="border-border/60 border-b">
++              {Array.from({ length: leadColumns }, (_, cell) => <td key={cell} className={cn("p-0", cell < leadColumns - 1 && "border-border border-r")} />)}
++            </tr>)}
+           </tbody>
+         </table>
+           </div>
+         </div>
+         <TableScrollbar scrollRef={scrollRef} headerHeight={rowHeight} />
++        {fillViewport && !visibleRows.length && !loading ? <div role="status" className="pointer-events-none absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">{emptyState}</div> : null}
+       </div>
+       {paginated ? (
+         <TablePagination
+@@ -463,7 +499,11 @@
+           sizes={pageSizes}
+           onPageIndexChange={setPageIndex}
+           onPageSizeChange={setPageSize}
+-          className="shrink-0"
++          className="arca-pagination shrink-0"
++          rowsPerPageLabel="每页条数"
++          info="{from} - {to} / 共 {count} 项"
++          previousPageLabel="上一页"
++          nextPageLabel="下一页"
+         />
+       ) : null}
+       {hasRowMenu && activeRow ? (
+--- upstream/src/components/motion/table/skeleton-rows.tsx
++++ apps/web/src/vendor/arca/components/motion/table/skeleton-rows.tsx
+@@ -1,6 +1,6 @@
+ "use client";
+ 
+-import { cn } from "@/lib/utils";
++import { cn } from "../../../lib/utils";
+ import type { TableColumn } from "./types";
+ import { alignText } from "./utils";
+ 
+--- upstream/src/components/motion/table/table-header.tsx
++++ apps/web/src/vendor/arca/components/motion/table/table-header.tsx
+@@ -10,10 +10,10 @@
+ import { motion } from "motion/react";
+ import { type PointerEvent as ReactPointerEvent, useEffect } from "react";
+ import { createPortal } from "react-dom";
+-import { Checkbox } from "@/components/motion/checkbox";
+-import { SPRING_PRESS } from "@/lib/ease";
+-import { TOUCH_GESTURE_CLASS } from "@/lib/touch";
+-import { cn } from "@/lib/utils";
++import { Checkbox } from "../checkbox";
++import { SPRING_PRESS } from "../../../lib/ease";
++import { TOUCH_GESTURE_CLASS } from "../../../lib/touch";
++import { cn } from "../../../lib/utils";
+ import { ColumnFilterMenu } from "./column-filter-menu";
+ import { TableMenu } from "./table-menu";
+ import type {
+@@ -167,7 +167,9 @@
+   activeColumn,
+   onColumnActivate,
+   onColumnDeactivate,
+-}: TableHeaderProps<T>) {
++  selectAllLabel = 'Select all rows',
++  selectionDisabled = false,
++}: TableHeaderProps<T> & { selectAllLabel?: string; selectionDisabled?: boolean }) {
+   const hasColumnMenu = !!(onInsertColumn || onDeleteColumn);
+   const activeIndex = columns.findIndex((c) => c.key === activeColumn);
+   return (
+@@ -192,7 +194,8 @@
+                   checked={allSelected}
+                   indeterminate={!allSelected && someSelected}
+                   onCheckedChange={onToggleAll}
+-                  aria-label="Select all rows"
++                  aria-label={selectAllLabel}
++                  disabled={selectionDisabled}
+                   className="justify-center gap-0"
+                 />
+               </div>
+--- upstream/src/components/motion/table/table-menu.tsx
++++ apps/web/src/vendor/arca/components/motion/table/table-menu.tsx
+@@ -3,8 +3,8 @@
+ import { motion, useReducedMotion } from "motion/react";
+ import { type ReactNode, useEffect, useRef, useState } from "react";
+ import { createPortal } from "react-dom";
+-import { SPRING_PANEL } from "@/lib/ease";
+-import { cn } from "@/lib/utils";
++import { SPRING_PANEL } from "../../../lib/ease";
++import { cn } from "../../../lib/utils";
+ 
+ export type TableMenuItem = {
+   label: string;
+--- upstream/src/components/motion/table/table-pagination.tsx
++++ apps/web/src/vendor/arca/components/motion/table/table-pagination.tsx
+@@ -7,9 +7,9 @@
+   SelectItem,
+   SelectTrigger,
+   SelectValue,
+-} from "@/components/motion/select";
+-import { Button } from "@/components/ui/button";
+-import { cn } from "@/lib/utils";
++} from "../select";
++import { Button } from "../../ui/button";
++import { cn } from "../../../lib/utils";
+ 
+ export type TablePaginationItem =
+   | { type: "page"; index: number }
+@@ -139,7 +139,7 @@
+           className="w-16"
+           side="top"
+         >
+-          <SelectTrigger className="h-6 min-h-6 rounded-md px-2 py-0 text-xs gap-1 [&_svg]:size-3">
++          <SelectTrigger aria-label={rowsPerPageLabel} className="h-6 min-h-6 rounded-md px-2 py-0 text-xs gap-1 [&_svg]:size-3">
+             <SelectValue />
+           </SelectTrigger>
+           <SelectContent>
+--- upstream/src/components/motion/table/table-scrollbar.tsx
++++ apps/web/src/vendor/arca/components/motion/table/table-scrollbar.tsx
+@@ -8,7 +8,7 @@
+   useRef,
+   useState,
+ } from "react";
+-import { cn } from "@/lib/utils";
++import { cn } from "../../../lib/utils";
+ 
+ interface ScrollbarThumbState {
+   size: number;
+--- upstream/src/components/motion/table/types.ts
++++ apps/web/src/vendor/arca/components/motion/table/types.ts
+@@ -29,6 +29,15 @@
+ export type InsertPosition = "before" | "after";
+ 
+ export interface TableProps<T> {
++  /** WeaveOS: received page and authoritative server total; never slice twice. */
++  manualPagination?: boolean;
++  recordCount?: number;
++  /** WeaveOS: fit existing flex viewport and add inert visual grid rows. */
++  fillViewport?: boolean;
++  minWidth?: number;
++  ariaLabel?: string;
++  selectAllLabel?: string;
++  getRowLabel?: (row: T) => string;
+   data: T[];
+   columns: TableColumn<T>[];
+   /** Stable id per row, required for correct selection across sorts. Defaults to row index. */
+--- upstream/src/components/motion/table/use-column-reorder.ts
++++ apps/web/src/vendor/arca/components/motion/table/use-column-reorder.ts
+@@ -5,7 +5,7 @@
+   useRef,
+   useState,
+ } from "react";
+-import { capturePointer, releasePointer } from "@/lib/touch";
++import { capturePointer, releasePointer } from "../../../lib/touch";
+ import type { HeaderCellRefs, TableColumn } from "./types";
+ 
+ const DRAG_THRESHOLD = 5;
+--- upstream/src/components/motion/table/use-column-resize.ts
++++ apps/web/src/vendor/arca/components/motion/table/use-column-resize.ts
+@@ -4,7 +4,7 @@
+   useRef,
+   useState,
+ } from "react";
+-import { capturePointer, releasePointer } from "@/lib/touch";
++import { capturePointer, releasePointer } from "../../../lib/touch";
+ import type { HeaderCellRefs, TableColumn } from "./types";
+ 
+ export function useColumnResize<T>({
