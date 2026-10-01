@@ -37,3 +37,5 @@ figma-original-byte-archive.zip包含Git LF规范前完整Figma目录；import-s
 测试配置实际依赖链在configs/。在任务工作树将对应*.ts.txt恢复为.work/同名*.ts；它们引用项目现有apps/web/playwright.component.config.ts，4174/4175均strictPort，不占在用4173。初始RED恢复测试与两份旧产品；焦点、footer、status分别恢复各自snapshot，不把多个阶段混成同一基线。下一条验证命令pnpm exec playwright test --config .work/q34.config.ts，三引擎用q34-cross.config.ts与日志记录的grep。
 
 本机浏览器均合成API边界组件验证，不是真实BFF/PG/Redis产品验收。4173恢复旧命名审核窗口，合成fixture来自已测试样例；HTTP200、实际56/176和40/14表格几何已读回，截图local-preview.png。开放PR/在用服务及恢复资料保留，未合并/accepted/部署；验收后清理按仓库规则另执行。最终完整126/126 Chromium通过（3.9m），最终Chromium/Firefox/WebKit63/63通过（3.2m），根pnpm typecheck/build退出0。较广153/153基线通过（7.4m）亦保留。132基础/治理通过；结构/记录及最终HEAD archive安全检查随后复验，推送后五项CI只引用精确head实际状态。21张最终三引擎截图已人工对照白灰圆角、行列/编辑/焦点与安全业务文案。
+
+固定093ebcf源归档安全检查实际RED：34项通用密钥规则均对应Figma mainComponentKey发布标识。仅更名可读证据字段为mainComponentPublishedIdentifier，值不变、原字节/字段在ZIP、恢复映射已记；无安全规则/忽略变更，也不隐藏真实凭据。secret-scan.json记录实际RED及下一新HEAD GREEN实扫；不把单个选定检查冒充全部安全套件。
