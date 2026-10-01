@@ -1,0 +1,62 @@
+{
+  "stage": "B2 complete read pipeline plus revision writer coverage; write guard and business draft cleanup pending",
+  "baseline": "a73fcddfc94d9bf315e8524a7755f791a69e5c77",
+  "redCommits": [
+    "4907154",
+    "314a9ef",
+    "c91c828",
+    "ff78010",
+    "abd1365",
+    "db79ecd",
+    "3549dae"
+  ],
+  "implemented": [
+    "safe set-based event display, current full-user/reference labels, allowlisted summary and safe search, full-result fingerprint and SQL page path",
+    "POST members/search and events/search with Session/CSRF, strict 64KiB body, canonical 16KiB filter, frozen relative/date boundaries; read-semantic renewal",
+    "legacy simple member/event GET uses same core, independent no-context valid pages retained",
+    "single RR authorization/old baseline/new baseline/page/total/revision; immutable Redis context, changed-revision full recheck, unrelated revision CAS advance, unchanged-revision SQL page only",
+    "00004 visible writer triggers, no-op exclusions, current hot archive delete coverage, same-transaction revisions",
+    "actual business/register/Bootstrap/invitation/archive entrypoints acquire people/configuration/activity locks before original authorization/account/dependency locks; drafts remain outside business revisions",
+    "selected Member page hydrated in one SQL call preserving rich existing DTO"
+  ],
+  "verification": [
+    {
+      "command": "go -C services/bff test -race -p 1 -timeout 90s -count=1 ./...",
+      "exitCode": 0,
+      "log": "final-go-race.txt"
+    },
+    {
+      "command": "go -C services/bff vet ./...",
+      "exitCode": 0,
+      "log": "vet.txt"
+    },
+    {
+      "command": "node --test tests/foundation/*.test.mjs tests/governance/*.test.mjs",
+      "exitCode": 0,
+      "tests": 132,
+      "log": "governance.txt"
+    }
+  ],
+  "realIntegrationCoverage": [
+    "HTTP unchanged revision actually returns at most page rows from PostgreSQL trace; changed revision reads full matches",
+    "cross-page unrelated/related/ABA and changed criteria cannot hide old query differences",
+    "Redis ownership/expiry plus existing TTL/LRU/CAS tests; unrelated change advances revision",
+    "original auth_version and expired-query independent draft save",
+    "large Chinese JSON body >8192 bytes, CSRF reject, raw64KiB, invalid Unicode, strict empty-sort enum",
+    "barrier-controlled concurrent commit proves old validation/new baseline/page use one RR; next request sees change and explicit refresh reads current rows",
+    "actual audit.Maintain moves hot personnel events to separate cold DB and invalidates active HTTP event context",
+    "event referenced name changes; unused metadata does not force refresh; no nonallowlisted audit data in display or matching"
+  ],
+  "environment": "Go1.27.1; isolated PG18.6 weaveos_q36_test hot migrations1..4/q36_archive cold1..2; Redis8.2.10 DB15",
+  "pending": [
+    "guarded write lock-free RR validation then locked RC revision recheck, at most two extra prevalidations/QUERY_BUSY and no write replay",
+    "mandatory member/department write queryVersion, optional invitation queryVersion and auxiliary GET context validation",
+    "same business transaction CleanupDraft kind/target/exact submitted draft version callsites; newer drafts preserved",
+    "additional full query/write races and high-fanout/scale resource and lock-duration measurements",
+    "fixed Nginx real ingress test; pinned image not cached (nginx-image.txt), not run",
+    "frontend B1/business integration and screenshots owned by root/other worker"
+  ],
+  "originalPRBranch": "task/V010-020-admin-shell",
+  "originalPRHead": "09707d90af461b66c281a51666b3ed0f586e4dff",
+  "notDeploymentReady": true
+}

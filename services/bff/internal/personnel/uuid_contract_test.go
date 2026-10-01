@@ -32,7 +32,7 @@ func TestUUIDContractCaseInsensitiveReferencesAndRelations(t *testing.T) {
 	t.Run("identity set", func(t *testing.T) {
 		f := setupWeb(t)
 		body := fmt.Sprintf(`{"version":0,"identityIds":["%s","%s"]}`, f.i1, strings.ToUpper(f.i1))
-		w := f.request("PUT", "/api/v1/personnel/members/"+f.actor.UserID+"/identities", body, true, true)
+		w := f.requestCurrentQuery(t, "PUT", "/api/v1/personnel/members/"+f.actor.UserID+"/identities", body, true, true)
 		if w.Code != 200 {
 			t.Fatalf("same UUID must be one member identity reference, got %d", w.Code)
 		}
@@ -47,11 +47,11 @@ func TestUUIDContractCaseInsensitiveReferencesAndRelations(t *testing.T) {
 		department := rootDepartment(t, f.fixture)
 		path := "/api/v1/personnel/members/" + f.actor.UserID + "/groups"
 		add := fmt.Sprintf(`{"operation":"add","departmentId":"%s","version":0}`, department)
-		if w := f.request("POST", path, add, true, true); w.Code != 200 {
+		if w := f.requestCurrentQuery(t, "POST", path, add, true, true); w.Code != 200 {
 			t.Fatal("lowercase fixture membership could not be created")
 		}
 		remove := fmt.Sprintf(`{"operation":"remove","departmentId":"%s","version":1}`, strings.ToUpper(department))
-		w := f.request("POST", path, remove, true, true)
+		w := f.requestCurrentQuery(t, "POST", path, remove, true, true)
 		if w.Code != 200 {
 			t.Fatalf("uppercase reference must remove the same department, got %d", w.Code)
 		}

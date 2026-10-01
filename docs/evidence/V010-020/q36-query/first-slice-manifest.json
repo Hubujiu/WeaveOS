@@ -1,0 +1,24 @@
+{
+  "observedAt": "2026-10-01T13:05:53.914610+00:00",
+  "stage": "B2 first slice: filter, member projection, Redis metadata; no HTTP or end-to-end query engine",
+  "command": "WEAVEOS_TEST_DATABASE_URL=<isolatedPG18> WEAVEOS_TEST_REDIS_URL=<isolatedRedis8.2.10> go test -race -v ./internal/personnel -run ^TestQ36 -count=1",
+  "exitCode": 0,
+  "topLevelPassed": 5,
+  "log": "core-green.txt",
+  "vet": "go vet ./internal/personnel passed",
+  "notImplemented": [
+    "event safe display and full event projection",
+    "revision unchanged fast path / old + new query orchestration",
+    "fixed timeBounds serialization integration",
+    "RC write revalidation and bounded retries",
+    "00004 revision triggers / all writer coverage",
+    "HTTP POST and legacy GET integration",
+    "draft integration/roles/full Go suite",
+    "performance scale/EXPLAIN evidence; current fixtures only3 matching members"
+  ],
+  "notClaimed": [
+    "full feature acceptance",
+    "all unsafe metadata impossible for a compromised Redis server",
+    "Nginx real POST validation"
+  ]
+}

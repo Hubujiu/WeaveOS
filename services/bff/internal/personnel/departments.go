@@ -24,8 +24,14 @@ func getDepartment(ctx context.Context, tx pgx.Tx, id string) (Department, error
 	err := json.Unmarshal(raw, &result)
 	return result, err
 }
-func (a *Application) Departments(ctx context.Context, p session.Principal) ([]Department, error) {
-	tx, err := a.read(ctx, p)
+func (a *Application) Departments(ctx context.Context, p session.Principal, queryVersion ...string) ([]Department, error) {
+	ctx, cancel := context.WithTimeout(ctx, queryDeadline)
+	defer cancel()
+	version := ""
+	if len(queryVersion) > 0 {
+		version = queryVersion[0]
+	}
+	tx, receipt, err := a.readWithQuery(ctx, p, version)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +53,11 @@ func (a *Application) Departments(ctx context.Context, p session.Principal) ([]D
 		}
 		result = append(result, value)
 	}
-	return result, rows.Err()
+	if err := rows.Err(); err != nil {
+		return result, err
+	}
+	rows.Close()
+	return result, receipt.commit(ctx, tx)
 }
 
 type safeDepartment struct {
@@ -56,10 +66,13 @@ type safeDepartment struct {
 }
 
 func (a *Application) SaveDepartment(ctx context.Context, p session.Principal, id string, in DepartmentInput, meta RequestMetadata) (Department, error) {
+	ctx, cancel := context.WithTimeout(ctx, queryDeadline)
+	defer cancel()
+	originalTarget := draftTarget(id)
 	if !validName(in.Name) || (id == "" && !validID(in.ParentID)) || (id != "" && (!validID(id) || in.Version < 1 || in.Version > maxSafeVersion || in.ParentID != "")) {
 		return Department{}, ErrInvalid
 	}
-	tx, err := a.write(ctx, p)
+	tx, err := a.writeBusiness(ctx, p, meta.QueryVersion)
 	if err != nil {
 		return Department{}, err
 	}
@@ -93,7 +106,7 @@ func (a *Application) SaveDepartment(ctx context.Context, p session.Principal, i
 			return Department{}, err
 		}
 		if old.Name == in.Name {
-			return old, nil
+			return old, commitBusiness(ctx, tx, p, meta, DraftDepartment, originalTarget)
 		}
 		if actual >= maxSafeVersion {
 			return Department{}, ErrConflict
@@ -111,16 +124,18 @@ func (a *Application) SaveDepartment(ctx context.Context, p session.Principal, i
 	if err := appendChange(ctx, tx, p, meta, action, "department", id, before, safeDepartment{value.Name, value.ParentID}); err != nil {
 		return Department{}, err
 	}
-	if err := tx.Commit(ctx); err != nil {
+	if err := commitBusiness(ctx, tx, p, meta, DraftDepartment, originalTarget); err != nil {
 		return Department{}, databaseError(err)
 	}
 	return value, nil
 }
 func (a *Application) DeleteDepartment(ctx context.Context, p session.Principal, id string, version int64, meta RequestMetadata) error {
+	ctx, cancel := context.WithTimeout(ctx, queryDeadline)
+	defer cancel()
 	if !validID(id) || version < 1 || version > maxSafeVersion {
 		return ErrInvalid
 	}
-	tx, err := a.write(ctx, p)
+	tx, err := a.writeBusiness(ctx, p, meta.QueryVersion)
 	if err != nil {
 		return err
 	}

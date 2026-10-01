@@ -1,0 +1,39 @@
+{
+  "sourceHead": "0ca2c30f9a55c8f7ffacd2bf25c58124985416b3",
+  "scope": "Evidence only; one cache check and one normal official pull per missing fixed image; no business/frontend/workflow changes",
+  "ci": {
+    "run": "https://github.com/Hubujiu/WeaveOS/actions/runs/36879428947",
+    "conclusion": "success",
+    "jobs": {
+      "governance": "success",
+      "go": "success",
+      "browser": "success"
+    },
+    "appliesTo": "backend source head 0ca2c30, not final PR21 or product acceptance"
+  },
+  "blocked": [
+    {
+      "check": "Real fixed Nginx large Chinese POST ingress",
+      "status": "NOT RUN",
+      "reason": "Pinned image not cached; single official pull exit1 Docker Hub unauthenticated pull rate limit",
+      "log": "nginx-pull.txt"
+    },
+    {
+      "check": "Fixed Gitleaks source archive scan",
+      "status": "NOT RUN",
+      "reason": "Pinned image not cached; single official pull exit1 Docker Hub unauthenticated pull rate limit",
+      "log": "gitleaks-pull.txt"
+    }
+  ],
+  "newBusinessFailures": [],
+  "noBypass": "No repeated pulls, registry/version changes, new credentials, gate changes, merge or deploy",
+  "originalPRHead": "09707d90af461b66c281a51666b3ed0f586e4dff",
+  "evidenceSha256": {
+    "ci-36879428947.json": "41276a35cb4dc5ee8df4c53eb5e1d0d08e38dc2cf132db8537ebaca1ac0a9b15",
+    "nginx-cache.txt": "9fd8a1cad126b05277812fcc63459409bdd2442a9dfb59a57738780833226e7f",
+    "image-attempt.json": "5778c34425b0f55cb021628977ed95e6cfbfd80520280e2a2fd92684ea776e2b",
+    "nginx-pull.txt": "a396afa93195e23abb3aa7413c31df21a77abfaea0f4151f4baf044b272b4d23",
+    "gitleaks-cache.txt": "27f7909dc0e27d1d1cdba682071ff61e409e0e50daec81ba942c994a99b9b0b5",
+    "gitleaks-pull.txt": "a396afa93195e23abb3aa7413c31df21a77abfaea0f4151f4baf044b272b4d23"
+  }
+}

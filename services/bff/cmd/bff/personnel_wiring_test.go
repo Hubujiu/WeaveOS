@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
@@ -74,6 +75,35 @@ func TestCompositionWiresPersonnelAndOrdinaryInvitationQ25(t *testing.T) {
 		w := request("POST", "/api/v1/invitations", "{}")
 		if w.Code != 201 {
 			t.Fatalf("qualified non-Root invite HTTP: %d", w.Code)
+		}
+	})
+	t.Run("invitation query uses production guard wiring", func(t *testing.T) {
+		baseline := request("POST", "/api/v1/personnel/members/search", `{}`)
+		if baseline.Code != 200 {
+			t.Fatal("query composition unavailable")
+		}
+		var v struct{ Data struct{ QueryVersion string } }
+		if err := json.Unmarshal(baseline.Body.Bytes(), &v); err != nil {
+			t.Fatal(err)
+		}
+		body := `{"queryVersion":"` + v.Data.QueryVersion + `"}`
+		if w := request("POST", "/api/v1/invitations", body); w.Code != 201 {
+			t.Fatalf("valid guarded invitation: %d", w.Code)
+		}
+		if _, err := owner.Exec(ctx, "UPDATE auth.users SET account=account||'-changed' WHERE id=$1", user); err != nil {
+			t.Fatal(err)
+		}
+		w := request("POST", "/api/v1/invitations", body)
+		if w.Code != 409 || !strings.Contains(w.Body.String(), "COMMON_QUERY_CHANGED") {
+			t.Fatalf("mapped original query change: %d", w.Code)
+		}
+		w = request("POST", "/api/v1/invitations", `{"queryVersion":"`+strings.Repeat("x", 43)+`"}`)
+		if w.Code != 409 || !strings.Contains(w.Body.String(), "COMMON_QUERY_CONTEXT_EXPIRED") {
+			t.Fatalf("mapped missing query: %d", w.Code)
+		}
+		var count int
+		if err := owner.QueryRow(ctx, "SELECT count(*) FROM auth.invitations WHERE created_by=$1", user).Scan(&count); err != nil || count != 2 {
+			t.Fatal("only independent and valid-context invitations may commit")
 		}
 	})
 	t.Run("password reset remains Root", func(t *testing.T) {

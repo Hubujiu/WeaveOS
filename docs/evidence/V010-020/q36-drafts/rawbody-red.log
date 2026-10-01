@@ -1,0 +1,15 @@
+=== RUN   TestDraftHTTPQ36RawBodyLimitBoundary
+=== RUN   TestDraftHTTPQ36RawBodyLimitBoundary/create
+    drafts_http_test.go:210: 128KiB+1 rawbody must reject as invalid argument: 201
+    drafts_http_test.go:214: oversized raw create must not save a draft: count=2 error=<nil>
+=== RUN   TestDraftHTTPQ36RawBodyLimitBoundary/update
+    drafts_http_test.go:230: 128KiB+1 raw update must reject: 200
+    drafts_http_test.go:235: rawbody rejection must preserve saved version/payload: version=3 error=<nil>
+--- FAIL: TestDraftHTTPQ36RawBodyLimitBoundary (0.29s)
+    --- FAIL: TestDraftHTTPQ36RawBodyLimitBoundary/create (0.15s)
+    --- FAIL: TestDraftHTTPQ36RawBodyLimitBoundary/update (0.14s)
+=== RUN   TestDraftHTTPQ36CanonicalPayloadWithWrapper
+--- PASS: TestDraftHTTPQ36CanonicalPayloadWithWrapper (0.27s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/personnel	0.575s
+FAIL

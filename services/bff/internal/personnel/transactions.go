@@ -62,6 +62,12 @@ func (a *Application) write(ctx context.Context, p session.Principal) (pgx.Tx, e
 	}
 	return tx, nil
 }
+
+// Only business writes take revision locks; personal drafts keep their own
+// authorization/CAS transaction and never participate in business revisions.
+func (a *Application) writeBusiness(ctx context.Context, p session.Principal, version string) (pgx.Tx, error) {
+	return a.BeginQueryWrite(ctx, p, version)
+}
 func (a *Application) read(ctx context.Context, p session.Principal) (pgx.Tx, error) {
 	if a == nil || a.Pool == nil {
 		return nil, session.ErrUnavailable

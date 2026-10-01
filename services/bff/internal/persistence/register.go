@@ -72,6 +72,9 @@ func (s *Store) Register(ctx context.Context, in RegistrationInput) (User, error
 		return User{}, err
 	}
 	defer func() { _ = tx.Rollback(context.Background()) }()
+	if _, err := tx.Exec(ctx, "SELECT personnel.lock_query_revisions()"); err != nil {
+		return User{}, err
+	}
 	queries := authsql.New(tx)
 	inv, err := queries.LockInvitation(ctx, in.InvitationDigest)
 	if errors.Is(err, pgx.ErrNoRows) {

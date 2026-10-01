@@ -31,6 +31,9 @@ func (s *Store) SeedBootstrap(ctx context.Context, in BootstrapSeedInput) (User,
 		return User{}, err
 	}
 	defer func() { _ = tx.Rollback(context.Background()) }()
+	if _, err := tx.Exec(ctx, "SELECT personnel.lock_query_revisions()"); err != nil {
+		return User{}, err
+	}
 	// Serialize trusted initializers; the unique index remains the final constraint.
 	if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock(7765301003)"); err != nil {
 		return User{}, err

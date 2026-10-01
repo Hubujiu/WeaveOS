@@ -59,3 +59,26 @@ func TestPersonnelArchivePreservesSafeSummaryAndOriginalRetention(t *testing.T) 
 		t.Fatal("one-calendar-year boundary still expires personnel events in both stores")
 	}
 }
+
+func TestQ36ColdOnlyExpiryDoesNotInvalidateHotQueries(t *testing.T) {
+	hot, cold := clean(t)
+	ctx := context.Background()
+	revisions := func() string {
+		var value string
+		if err := hot.QueryRow(ctx, "SELECT jsonb_object_agg(scope,revision)::text FROM personnel.query_revisions").Scan(&value); err != nil {
+			t.Fatal(err)
+		}
+		return value
+	}
+	before := revisions()
+	if _, err := cold.Exec(ctx, `INSERT INTO archive.authentication_events(id,event_type,outcome,request_id,occurred_at) VALUES($1,'invitation_created','success','q36-cold-only','2020-01-01T00:00:00Z')`, eventID); err != nil {
+		t.Fatal(err)
+	}
+	result, err := Maintain(ctx, hot, cold, now)
+	if err != nil || result.Expired != 1 {
+		t.Fatalf("cold expiry: %+v %v", result, err)
+	}
+	if revisions() != before {
+		t.Fatal("cold-only deletion must not invalidate hot activity queries")
+	}
+}

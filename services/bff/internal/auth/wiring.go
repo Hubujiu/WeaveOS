@@ -23,10 +23,11 @@ type Service struct {
 	TrustedProxyHosts    []string
 	Personnel            http.Handler
 	InvitationAuthorizer func(context.Context, pgx.Tx, session.Principal) error
+	InvitationBegin      func(context.Context, session.Principal, string) (pgx.Tx, error)
 }
 
 func (s *Service) application() *Application {
-	return &Application{Pool: s.Pool, Sessions: s.Sessions, AuditKeyID: s.AuditKeyID, AuditKey: s.AuditKey, Logger: s.Logger, InvitationAuthorizer: s.InvitationAuthorizer}
+	return &Application{Pool: s.Pool, Sessions: s.Sessions, AuditKeyID: s.AuditKeyID, AuditKey: s.AuditKey, Logger: s.Logger, InvitationAuthorizer: s.InvitationAuthorizer, InvitationBegin: s.InvitationBegin}
 }
 
 func (s *Service) authenticator() session.Authenticator {

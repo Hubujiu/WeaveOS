@@ -20,7 +20,7 @@ type Service struct {
 func (s *Service) TrustedProxies() []string { return append([]string(nil), s.TrustedProxyHosts...) }
 func (s *Service) finish(w http.ResponseWriter, r *http.Request, p session.Principal, status int, data any, location string) {
 	if status >= 200 && status < 300 {
-		if r.Method == "GET" {
+		if r.Method == "GET" || isQuerySearch(r) {
 			if err := s.Authenticator.Renew(r.Context(), w, r, p); err != nil {
 				fail(w, r, err)
 				return
@@ -58,6 +58,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, session.ErrUnavailable)
 		return
 	}
+	if s.DraftHTTP(w, r, p) {
+		return
+	}
+	if s.QueryHTTP(w, r, p) {
+		return
+	}
 	meta := RequestMetadata{RequestID: httpserver.Metadata(r.Context()).RequestID, ClientIP: httpserver.Metadata(r.Context()).ClientIP, UserAgent: r.UserAgent()}
 	if r.URL.Path == "/api/v1/me/access" && r.Method == "GET" {
 		if _, err := query(r); err != nil {
@@ -82,11 +88,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch parts[0] {
 		case "departments":
 			if r.Method == "GET" {
-				if _, err := query(r); err != nil {
-					fail(w, r, err)
+				values, err := query(r, "queryVersion")
+				if err != nil || values.Has("queryVersion") && values.Get("queryVersion") == "" {
+					fail(w, r, ErrInvalid)
 					return
 				}
-				items, err := s.Application.Departments(r.Context(), p)
+				items, err := s.Application.Departments(r.Context(), p, values.Get("queryVersion"))
 				if err != nil {
 					fail(w, r, err)
 					return
@@ -96,16 +103,22 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			if r.Method == "POST" {
 				var in struct {
+					QueryWriteGuard
 					Name     string `json:"name"`
 					ParentID string `json:"parentId"`
 				}
-				if !decodeBody(w, r, &in, "name", "parentId") {
+				if !decodeBody(w, r, &in, "name", "parentId", "queryVersion") {
 					return
 				}
 				if _, err := query(r); err != nil {
 					fail(w, r, err)
 					return
 				}
+				if in.QueryVersion == "" {
+					fail(w, r, ErrInvalid)
+					return
+				}
+				meta.QueryWriteGuard = in.QueryWriteGuard
 				value, err := s.Application.SaveDepartment(r.Context(), p, "", DepartmentInput{Name: in.Name, ParentID: in.ParentID}, meta)
 				if err != nil {
 					fail(w, r, err)
@@ -114,33 +127,14 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				s.finish(w, r, p, 201, value, "/api/v1/personnel/departments/"+value.ID)
 				return
 			}
-		case "members":
-			if r.Method == "GET" {
-				values, err := query(r, "page", "pageSize", "search", "departmentId", "identityId")
-				if err != nil {
-					fail(w, r, err)
-					return
-				}
-				page, err := pageQuery(values)
-				if err != nil {
-					fail(w, r, err)
-					return
-				}
-				value, err := s.Application.ListMembers(r.Context(), p, MemberQuery{PageQuery: page, DepartmentID: values.Get("departmentId"), IdentityID: values.Get("identityId")})
-				if err != nil {
-					fail(w, r, err)
-					return
-				}
-				s.finish(w, r, p, 200, value, "")
-				return
-			}
 		case "permissions":
 			if r.Method == "GET" {
-				if _, err := query(r); err != nil {
-					fail(w, r, err)
+				values, err := query(r, "queryVersion")
+				if err != nil || values.Has("queryVersion") && values.Get("queryVersion") == "" {
+					fail(w, r, ErrInvalid)
 					return
 				}
-				items, err := s.Application.Catalog(r.Context(), p)
+				items, err := s.Application.Catalog(r.Context(), p, values.Get("queryVersion"))
 				if err != nil {
 					fail(w, r, err)
 					return
@@ -148,41 +142,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				s.finish(w, r, p, 200, map[string]any{"items": items}, "")
 				return
 			}
-		case "events":
-			if r.Method == "GET" {
-				values, err := query(r, "page", "pageSize", "search", "action", "from", "to")
-				if err != nil {
-					fail(w, r, err)
-					return
-				}
-				page, err := pageQuery(values)
-				if err != nil {
-					fail(w, r, err)
-					return
-				}
-				in := EventQuery{PageQuery: page, Action: values.Get("action")}
-				for _, field := range []string{"from", "to"} {
-					if raw, ok := values[field]; ok {
-						value, err := time.Parse(time.RFC3339, raw[0])
-						if err != nil {
-							fail(w, r, ErrInvalid)
-							return
-						}
-						if field == "from" {
-							in.From = value
-						} else {
-							in.To = value
-						}
-					}
-				}
-				value, err := s.Application.Events(r.Context(), p, in)
-				if err != nil {
-					fail(w, r, err)
-					return
-				}
-				s.finish(w, r, p, 200, value, "")
-				return
-			}
+
 		}
 	}
 	if parts[0] == "identities" || parts[0] == "templates" {
@@ -192,16 +152,22 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if len(parts) == 2 && parts[0] == "departments" {
 		if r.Method == "PUT" {
 			var in struct {
+				QueryWriteGuard
 				Name    string `json:"name"`
 				Version int64  `json:"version"`
 			}
-			if !decodeBody(w, r, &in, "name", "version") {
+			if !decodeBody(w, r, &in, "name", "version", "queryVersion") {
 				return
 			}
 			if _, err := query(r); err != nil {
 				fail(w, r, err)
 				return
 			}
+			if in.QueryVersion == "" {
+				fail(w, r, ErrInvalid)
+				return
+			}
+			meta.QueryWriteGuard = in.QueryWriteGuard
 			value, err := s.Application.SaveDepartment(r.Context(), p, parts[1], DepartmentInput{Name: in.Name, Version: in.Version}, meta)
 			if err != nil {
 				fail(w, r, err)
@@ -211,7 +177,11 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if r.Method == "DELETE" {
-			version, err := deleteVersion(r)
+			version, err := deleteVersion(r, "queryVersion")
+			meta.QueryVersion = r.URL.Query().Get("queryVersion")
+			if meta.QueryVersion == "" {
+				err = ErrInvalid
+			}
 			if err == nil {
 				err = s.Application.DeleteDepartment(r.Context(), p, parts[1], version, meta)
 			}
@@ -243,12 +213,18 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		if parts[2] == "identities" && r.Method == "PUT" {
 			var in struct {
+				QueryWriteGuard
 				IdentityIDs []string `json:"identityIds"`
 				Version     int64    `json:"version"`
 			}
-			if !decodeBody(w, r, &in, "identityIds", "version") {
+			if !decodeBody(w, r, &in, "identityIds", "version", "queryVersion") {
 				return
 			}
+			if in.QueryVersion == "" {
+				fail(w, r, ErrInvalid)
+				return
+			}
+			meta.QueryWriteGuard = in.QueryWriteGuard
 			value, err := s.Application.SetMemberIdentities(r.Context(), p, parts[1], in.IdentityIDs, in.Version, meta)
 			if err != nil {
 				fail(w, r, err)
@@ -259,14 +235,20 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		if parts[2] == "groups" && r.Method == "POST" {
 			var in struct {
+				QueryWriteGuard
 				Operation          string `json:"operation"`
 				DepartmentID       string `json:"departmentId"`
 				SourceDepartmentID string `json:"sourceDepartmentId"`
 				Version            int64  `json:"version"`
 			}
-			if !decodeBody(w, r, &in, "operation", "departmentId", "version") {
+			if !decodeBody(w, r, &in, "operation", "departmentId", "version", "queryVersion") {
 				return
 			}
+			if in.QueryVersion == "" {
+				fail(w, r, ErrInvalid)
+				return
+			}
+			meta.QueryWriteGuard = in.QueryWriteGuard
 			value, err := s.Application.ChangeMemberGroups(r.Context(), p, parts[1], GroupInput{in.Operation, in.DepartmentID, in.SourceDepartmentID, in.Version}, meta)
 			if err != nil {
 				fail(w, r, err)
@@ -293,9 +275,13 @@ func (s *Service) definitionHTTP(w http.ResponseWriter, r *http.Request, p sessi
 	}
 	if r.Method == "GET" {
 		if id == "" {
-			values, err := query(r, "page", "pageSize", "search")
+			values, err := query(r, "page", "pageSize", "search", "queryVersion")
 			if err != nil {
 				fail(w, r, err)
+				return
+			}
+			if values.Has("queryVersion") && values.Get("queryVersion") == "" {
+				fail(w, r, ErrInvalid)
 				return
 			}
 			page, err := pageQuery(values)
@@ -303,7 +289,7 @@ func (s *Service) definitionHTTP(w http.ResponseWriter, r *http.Request, p sessi
 				fail(w, r, err)
 				return
 			}
-			value, err := s.Application.ListDefinitions(r.Context(), p, kind, page)
+			value, err := s.Application.ListDefinitions(r.Context(), p, kind, page, values.Get("queryVersion"))
 			if err != nil {
 				fail(w, r, err)
 				return
@@ -349,6 +335,7 @@ func (s *Service) definitionHTTP(w http.ResponseWriter, r *http.Request, p sessi
 		if kind == Identity {
 			required = append(required, "templateIds")
 			var body struct {
+				DraftAcknowledgement
 				Name            string   `json:"name"`
 				Description     string   `json:"description"`
 				Version         *int64   `json:"version"`
@@ -358,10 +345,12 @@ func (s *Service) definitionHTTP(w http.ResponseWriter, r *http.Request, p sessi
 			if !decodeBody(w, r, &body, required...) {
 				return
 			}
+			meta.DraftRef = body.DraftRef
 			suppliedVersion = body.Version
 			in = DefinitionInput{Name: body.Name, Description: body.Description, PermissionCodes: body.PermissionCodes, TemplateIDs: body.TemplateIDs}
 		} else {
 			var body struct {
+				DraftAcknowledgement
 				Name            string   `json:"name"`
 				Description     string   `json:"description"`
 				Version         *int64   `json:"version"`
@@ -370,6 +359,7 @@ func (s *Service) definitionHTTP(w http.ResponseWriter, r *http.Request, p sessi
 			if !decodeBody(w, r, &body, required...) {
 				return
 			}
+			meta.DraftRef = body.DraftRef
 			suppliedVersion = body.Version
 			in = DefinitionInput{Name: body.Name, Description: body.Description, PermissionCodes: body.PermissionCodes}
 		}

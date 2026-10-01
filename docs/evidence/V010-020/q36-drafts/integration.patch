@@ -1,0 +1,19 @@
+diff --git a/services/bff/internal/personnel/http.go b/services/bff/internal/personnel/http.go
+--- a/services/bff/internal/personnel/http.go
++++ b/services/bff/internal/personnel/http.go
+@@ -60,0 +61,3 @@
++	if s.DraftHTTP(w, r, p) {
++		return
++	}
+diff --git a/infra/runtime/roles.sql b/infra/runtime/roles.sql
+--- a/infra/runtime/roles.sql
++++ b/infra/runtime/roles.sql
+@@ -40,0 +41,2 @@
++GRANT SELECT, INSERT, DELETE ON personnel.drafts TO auth_app;
++GRANT UPDATE (payload_json,draft_version,updated_at) ON personnel.drafts TO auth_app;
+diff --git a/services/bff/internal/audit/maintenance_test.go b/services/bff/internal/audit/maintenance_test.go
+--- a/services/bff/internal/audit/maintenance_test.go
++++ b/services/bff/internal/audit/maintenance_test.go
+@@ -74 +74 @@
+-	}{{l, "TRUNCATE auth.authentication_events,auth.invitations,auth.password_credentials,auth.users,personnel.department_members,personnel.member_configuration,personnel.member_identities"}, {c, "TRUNCATE archive.authentication_events"}} {
++	}{{l, "TRUNCATE auth.authentication_events,auth.invitations,auth.password_credentials,auth.users,personnel.department_members,personnel.member_configuration,personnel.member_identities,personnel.drafts"}, {c, "TRUNCATE archive.authentication_events"}} {

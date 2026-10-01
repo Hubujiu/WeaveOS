@@ -47,6 +47,7 @@ type MemberQueryInput struct {
 }
 
 type EventQueryInput struct {
+	FrozenTimeBounds []QueryRange `json:"-"`
 	EventQuery
 	QueryOptions
 	Sort *QuerySort

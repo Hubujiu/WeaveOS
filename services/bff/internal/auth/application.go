@@ -26,13 +26,15 @@ type Application struct {
 	Logger     *slog.Logger
 	// The authentication owner supplies its transaction to current personnel qualification.
 	InvitationAuthorizer func(context.Context, pgx.Tx, session.Principal) error
+	InvitationBegin      func(context.Context, session.Principal, string) (pgx.Tx, error)
 }
 
 // RequestMetadata contains audit facts supplied by the trusted Web boundary.
 type RequestMetadata struct {
-	ClientIP  string
-	UserAgent string
-	RequestID string
+	ClientIP     string
+	UserAgent    string
+	RequestID    string
+	QueryVersion string
 }
 
 type UserResult struct{ ID, Account string }
@@ -50,6 +52,7 @@ type InvitationResult struct{ ID, Code string }
 // Underlying database errors never become its public text.
 type Failure struct {
 	Code       string
+	Reason     string
 	Violations []violation
 }
 
