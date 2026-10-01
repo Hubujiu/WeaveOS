@@ -47,39 +47,11 @@ func (a *Application) MemberProjection(ctx context.Context, p session.Principal,
 	return scanMemberProjection(ctx, tx, input)
 }
 
-// Set aggregates, not one lookup per matched member. Only the actual table
-// display, membership identities and stable ordering key enter the fingerprint.
-// Definition descriptions, usage counts, updated_at and object/auth versions do not.
-const memberProjectionSQL = `
-WITH manage_users AS (
- SELECT m.user_id FROM personnel.member_identities m
- JOIN personnel.identity_permissions ip ON ip.identity_id=m.identity_id WHERE ip.permission_code='personnel.manage'
- UNION
- SELECT m.user_id FROM personnel.member_identities m JOIN personnel.identity_templates it ON it.identity_id=m.identity_id
- JOIN personnel.template_permissions tp ON tp.template_id=it.template_id WHERE tp.permission_code='personnel.manage'
-), department_labels AS (
- SELECT dm.user_id,array_agg(d.id ORDER BY d.id) AS ids,
- jsonb_agg(jsonb_build_object('id',d.id,'name',d.name) ORDER BY d.id) AS labels
- FROM personnel.department_members dm JOIN personnel.departments d ON d.id=dm.department_id GROUP BY dm.user_id
-), identity_labels AS (
- SELECT mi.user_id,array_agg(i.id ORDER BY i.id) AS ids,
- jsonb_agg(jsonb_build_object('id',i.id,'name',i.name) ORDER BY i.id) AS labels
- FROM personnel.member_identities mi JOIN personnel.identities i ON i.id=mi.identity_id GROUP BY mi.user_id
-), q AS (
- SELECT u.id,u.created_at,u.account,u.status,u.is_bootstrap_admin,
- COALESCE(d.ids,ARRAY[]::uuid[]) AS department_ids,COALESCE(i.ids,ARRAY[]::uuid[]) AS identity_ids,
- COALESCE(d.labels,'[]'::jsonb) AS departments,COALESCE(i.labels,'[]'::jsonb) AS identities,
- (u.status='active' AND (u.is_bootstrap_admin OR (
- EXISTS(SELECT 1 FROM personnel.permission_catalog WHERE code='personnel.manage' AND enabled)
- AND EXISTS(SELECT 1 FROM manage_users m WHERE m.user_id=u.id)))) AS personnel_manage
- FROM auth.users u LEFT JOIN department_labels d ON d.user_id=u.id LEFT JOIN identity_labels i ON i.user_id=u.id
-)
-SELECT q.id::text,q.created_at,q.account,q.status,q.is_bootstrap_admin,q.personnel_manage,q.departments,q.identities
-FROM q WHERE ($1='' OR position(lower($1) in lower(q.account))>0)
-AND ($2='' OR NULLIF($2,'')::uuid=ANY(q.department_ids))
-AND ($3='' OR NULLIF($3,'')::uuid=ANY(q.identity_ids)) AND `
-
 func memberProjectionQuery(input MemberQueryInput) (string, []any, PageQuery, error) {
+	return memberSelectQuery(input, false)
+}
+
+func memberProjectionFilter(input MemberQueryInput) (string, []any, PageQuery, error) {
 	page, err := normalizedPage(input.PageQuery)
 	if err != nil {
 		return "", nil, page, err
@@ -99,7 +71,7 @@ func memberProjectionQuery(input MemberQueryInput) (string, []any, PageQuery, er
 		return "", nil, page, err
 	}
 	args := append([]any{page.Search, input.DepartmentID, input.IdentityID}, plan.Arguments...)
-	return memberProjectionSQL + plan.Predicate + " ORDER BY q.created_at ASC,q.id ASC", args, page, nil
+	return plan.Predicate, args, page, nil
 }
 func projectionJSON(v any) ([]byte, error) {
 	var out bytes.Buffer
@@ -139,17 +111,9 @@ func scanMemberProjection(ctx context.Context, tx pgx.Tx, input MemberQueryInput
 	result := MemberProjectionPage{Items: []MemberProjection{}}
 	offset := int64(page.Page-1) * int64(page.PageSize)
 	for rows.Next() {
-		var row MemberProjection
-		var departments, identities []byte
-		if err = rows.Scan(&row.ID, &row.CreatedAt, &row.Account, &row.Status, &row.BootstrapAdmin, &row.PersonnelManage, &departments, &identities); err != nil {
-			return MemberProjectionPage{}, err
-		}
-		row.CreatedAt = row.CreatedAt.UTC()
-		if err = json.Unmarshal(departments, &row.Departments); err != nil {
-			return MemberProjectionPage{}, err
-		}
-		if err = json.Unmarshal(identities, &row.Identities); err != nil {
-			return MemberProjectionPage{}, err
+		row, scanErr := readMemberProjection(rows)
+		if scanErr != nil {
+			return MemberProjectionPage{}, scanErr
 		}
 		if err = fingerprintFrame(h, row); err != nil {
 			return MemberProjectionPage{}, err
