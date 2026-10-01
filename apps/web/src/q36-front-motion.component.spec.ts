@@ -53,7 +53,7 @@ test('Q36 quick native reversal preserves last close intent and trigger focus',a
   await expect.poll(()=>page.evaluate(()=>document.documentElement.classList.contains('q36-filter-transition-active'))).toBe(false);
 });
 
-test('Q36 delayed native opening commit cannot undo a later trusted Escape close',async({page})=>{
+for(const hold of [0,650] as const)test(`Q36 delayed native opening commit ${hold?'after fallback expiry ':' '}cannot undo a later trusted Escape close`,async({page})=>{
   await page.addInitScript(()=>{
     const native=document.startViewTransition?.bind(document);
     let release!:()=>void;
@@ -72,6 +72,7 @@ test('Q36 delayed native opening commit cannot undo a later trusted Escape close
   const trigger=page.getByRole('button',{name:/自定义筛选/});
   await trigger.click();
   await expect.poll(()=>page.evaluate(()=>(window as unknown as {__q36DelayedNativeCommit:{waiting:boolean}}).__q36DelayedNativeCommit.waiting)).toBe(true);
+  if(hold)await page.waitForTimeout(hold); // Exercise the existing 600ms completion fallback.
   await page.keyboard.press('Escape');
   expect(await page.evaluate(()=>(window as unknown as {__q36DelayedNativeCommit:{escapes:number}}).__q36DelayedNativeCommit.escapes)).toBe(1);
   await page.evaluate(()=>(window as unknown as {__q36DelayedNativeCommit:{release:()=>void}}).__q36DelayedNativeCommit.release());

@@ -1,0 +1,53 @@
+
+Running 1 test using 1 worker
+
+(node:78548) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [firefox] › apps\web\src\q36-front-motion.component.spec.ts:56:36 › Q36 delayed native opening commit after fallback expiry cannot undo a later trusted Escape close (6.2s)
+
+
+  1) [firefox] › apps\web\src\q36-front-motion.component.spec.ts:56:36 › Q36 delayed native opening commit after fallback expiry cannot undo a later trusted Escape close
+
+    Error: expect(locator).not.toBeVisible() failed
+
+    Locator:  getByRole('dialog', { name: '自定义筛选' })
+    Expected: not visible
+    Received: visible
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "not toBeVisible" getByRole('dialog', { name: '自定义筛选' }) with timeout 3000ms
+      - waiting for getByRole('dialog', { name: '自定义筛选' })
+        10 × locator resolved to <div id="_r_0_" role="dialog" tabindex="-1" data-closed="" data-side="bottom" data-align="start" aria-label="自定义筛选" aria-hidden="false" data-ending-style="" data-instant="dismiss" class="q36-filter-popup" data-base-ui-focusable="" aria-labelledby="base-ui-_r_b_" aria-describedby="base-ui-_r_c_">…</div>
+           - unexpected value "visible"
+
+
+      77 |   expect(await page.evaluate(()=>(window as unknown as {__q36DelayedNativeCommit:{escapes:number}}).__q36DelayedNativeCommit.escapes)).toBe(1);
+      78 |   await page.evaluate(()=>(window as unknown as {__q36DelayedNativeCommit:{release:()=>void}}).__q36DelayedNativeCommit.release());
+    > 79 |   await expect(page.getByRole('dialog',{name:'自定义筛选'})).not.toBeVisible();
+         |                                                             ^
+      80 |   await expect(trigger).toBeFocused();
+      81 |   await expect.poll(()=>page.evaluate(()=>document.documentElement.classList.contains('q36-filter-transition-active'))).toBe(false);
+      82 |   await expect(trigger).toHaveAttribute('aria-expanded','false');
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-front-motion.component.spec.ts:79:61
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .work\q36-motion-expired-replay-red\q36-front-motion.component-08935--later-trusted-Escape-close-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    .work\q36-motion-expired-replay-red\q36-front-motion.component-08935--later-trusted-Escape-close-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .work\q36-motion-expired-replay-red\q36-front-motion.component-08935--later-trusted-Escape-close-firefox\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work\q36-motion-expired-replay-red\q36-front-motion.component-08935--later-trusted-Escape-close-firefox\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-motion-expired-replay-red\q36-front-motion.component-08935--later-trusted-Escape-close-firefox\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [firefox] › apps\web\src\q36-front-motion.component.spec.ts:56:36 › Q36 delayed native opening commit after fallback expiry cannot undo a later trusted Escape close

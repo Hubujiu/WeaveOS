@@ -49,6 +49,7 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
   const sharedGeneration=useRef(0);
   const sharedFrame=useRef(0);
   const sharedTimer=useRef(0);
+  const sharedVersion=sharedGeneration.current;
   const panelId=useId();
   const sharedName=`q36-filter-shell-${panelId.replace(/[^a-zA-Z0-9_-]/g,'-')}`;
   // WebKit 26.6 can crash the page when a nested filter edit follows a native
@@ -63,13 +64,16 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
     window.clearTimeout(sharedTimer.current);
     document.documentElement.classList.remove('q36-filter-transition-active');
     if(!intent.current){
+      // A delayed opening commit must not leave visible content in a closed root.
+      setExpanded(false);
       setOpen(false);
       if(restoreTriggerFocus.current)trigger.current?.focus({preventScroll:true});
     }
   }
-  function sharedComplete() {
-    const version=sharedGeneration.current;
+  function sharedComplete(version:number) {
+    if(version!==sharedGeneration.current)return;
     requestAnimationFrame(()=>{
+      if(version!==sharedGeneration.current)return;
       // The content was intentionally invisible while Base UI measured it.
       // Move keyboard focus only after the native snapshot makes it visible,
       // without taking focus away from a control already being edited.
@@ -86,13 +90,15 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
       cancelAnimationFrame(sharedFrame.current);
       window.clearTimeout(sharedTimer.current);
       const exchange=()=>{
-        if(version!==sharedGeneration.current)return;
+        if(version!==sharedGeneration.current||next!==intent.current)return;
         document.documentElement.style.setProperty('--q36-filter-shell-duration',next?'300ms':'220ms');
         document.documentElement.classList.add('q36-filter-transition-active');
         // React owns the native transition. Keep the popup's measured geometry
         // in place until its shared shell has finished returning to the trigger.
         sharedTimer.current=window.setTimeout(()=>finishShared(version),600);
-        startTransition(()=>setExpanded(next));
+        // Check at state application too: React may run this update after a
+        // newer input has invalidated the exchange that originally queued it.
+        startTransition(()=>setExpanded(previous=>version===sharedGeneration.current&&next===intent.current?next:previous));
       };
       if(next){
         if(!open)setDraft(initialTree(value));
@@ -103,7 +109,7 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
           sharedFrame.current=requestAnimationFrame(exchange);
         });
       }else if(expanded)exchange();
-      else {setOpen(false);finishShared(version);}
+      else {setExpanded(false);setOpen(false);finishShared(version);}
     } else {
       if(next&&!open)setDraft(initialTree(value));
       setExpanded(next);
@@ -226,13 +232,13 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
       <ViewTransition default="none" update={expanded?'q36-filter-trigger-out':'q36-filter-trigger-in'}>
         <span className="q36-filter-trigger-content" style={{visibility:sharedMotion&&expanded?'hidden':undefined}}><Funnel size={16} weight={value?'fill':'regular'}/><span>自定义筛选</span>{value&&<span className="q36-filter-count">{countLeaves(initialTree(value))}</span>}</span>
       </ViewTransition>
-      {sharedMotion&&!expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={sharedComplete} onEnter={sharedComplete} onExit={sharedComplete}>
+      {sharedMotion&&!expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={()=>sharedComplete(sharedVersion)} onEnter={()=>sharedComplete(sharedVersion)} onExit={()=>sharedComplete(sharedVersion)}>
         <span className="q36-filter-trigger-frame" aria-hidden="true"/>
       </ViewTransition>}
     </Popover.Trigger>
     <Popover.Portal keepMounted><Popover.Positioner side="bottom" align="start" sideOffset={8} collisionPadding={12} sticky className="q36-filter-positioner">
       <Popover.Popup ref={setPopup} id={panelId} className="q36-filter-popup" aria-label="自定义筛选" aria-hidden={sharedMotion?!expanded:!open} inert={sharedMotion?!expanded:!open} initialFocus={firstControl} finalFocus={trigger}>
-        {sharedMotion ? expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={sharedComplete} onEnter={sharedComplete} onExit={sharedComplete}>
+        {sharedMotion ? expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={()=>sharedComplete(sharedVersion)} onEnter={()=>sharedComplete(sharedVersion)} onExit={()=>sharedComplete(sharedVersion)}>
           <div className="q36-filter-shell" aria-hidden="true"/>
         </ViewTransition> : <div className="q36-filter-shell" aria-hidden="true"/>}
         {sharedMotion ? <ViewTransition default="none" update={expanded?'q36-filter-content-in':'q36-filter-content-out'}>{content}</ViewTransition> : content}

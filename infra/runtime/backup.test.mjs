@@ -44,6 +44,8 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  sql('postgres',`CREATE DATABASE ${live}; CREATE DATABASE ${restored};`);
  sql(live,readFileSync('db/migrations/00001_auth.sql','utf8').split('-- +goose Down')[0]);
  sql(live,readFileSync('db/migrations/00002_personnel.sql','utf8').split('-- +goose Down')[0]);
+ sql(live,readFileSync('db/migrations/00003_query_drafts.sql','utf8').split('-- +goose Down')[0]);
+ sql(live,readFileSync('db/migrations/00004_query_revision_writers.sql','utf8').split('-- +goose Down')[0]);
  sql(live,"CREATE TABLE public.goose_db_version(id serial PRIMARY KEY,version_id bigint); INSERT INTO public.goose_db_version(version_id) VALUES(0),(1);");
  sql(live,readFileSync('infra/runtime/roles.sql','utf8'));
  sql('postgres',"DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='weaveos_backup_probe') THEN CREATE ROLE weaveos_backup_probe LOGIN; END IF; END $$; GRANT auth_backup TO weaveos_backup_probe;");
