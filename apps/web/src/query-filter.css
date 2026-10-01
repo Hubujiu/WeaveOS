@@ -26,12 +26,13 @@
 @supports (view-transition-name: none) {
   :root.q36-filter-transition-active::view-transition-old(root),
   :root.q36-filter-transition-active::view-transition-new(root) { animation:none; }
-  ::view-transition-group(.q36-filter-expand) { animation-duration:300ms;animation-timing-function:cubic-bezier(.2,.8,.2,1); }
-  ::view-transition-group(.q36-filter-collapse) { animation-duration:220ms;animation-timing-function:cubic-bezier(.2,.8,.2,1); }
-  ::view-transition-group(.q36-filter-content-in),::view-transition-group(.q36-filter-content-out) { animation:none; }
+  ::view-transition-group(.q36-filter-shell-motion) { z-index:1;animation-duration:var(--q36-filter-shell-duration,300ms);animation-timing-function:cubic-bezier(.2,.8,.2,1); }
+  ::view-transition-group(.q36-filter-content-in),::view-transition-group(.q36-filter-content-out),::view-transition-group(.q36-filter-trigger-in),::view-transition-group(.q36-filter-trigger-out) { z-index:2;animation:none; }
   ::view-transition-new(.q36-filter-content-in) { animation:q36-filter-text-in 170ms 110ms both ease-out; }
   ::view-transition-old(.q36-filter-content-out) { animation:q36-filter-text-out 75ms both ease-in; }
+  ::view-transition-new(.q36-filter-trigger-in) { animation:q36-filter-text-in 110ms 110ms both ease-out; }
+  ::view-transition-old(.q36-filter-trigger-out) { animation:q36-filter-text-out 75ms both ease-in; }
   @keyframes q36-filter-text-in { from { opacity:0;transform:translateY(-4px); } to { opacity:1;transform:none; } }
   @keyframes q36-filter-text-out { from { opacity:1; } to { opacity:0; } }
 }
-@media(prefers-reduced-motion:reduce) { ::view-transition-group(.q36-filter-expand),::view-transition-group(.q36-filter-collapse),::view-transition-new(.q36-filter-content-in),::view-transition-old(.q36-filter-content-out) { animation-duration:0ms!important; } }
+@media(prefers-reduced-motion:reduce) { ::view-transition-group(.q36-filter-shell-motion),::view-transition-new(.q36-filter-content-in),::view-transition-old(.q36-filter-content-out),::view-transition-new(.q36-filter-trigger-in),::view-transition-old(.q36-filter-trigger-out) { animation-duration:0ms!important; } }

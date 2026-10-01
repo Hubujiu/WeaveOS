@@ -35,6 +35,7 @@ function countLeaves(node:EditableNode):number{return node.kind==='condition'?1:
 
 export function QueryFilterPanel<V extends QueryView>({view,value,onApply,options}: QueryFilterPanelProps<V>) {
   const [open,setOpen]=useState(false);
+  const [expanded,setExpanded]=useState(false);
   const [draft,setDraft]=useState(()=>initialTree(value));
   const [popup,setPopup]=useState<HTMLDivElement|null>(null);
   const [reducedMotion,setReducedMotion]=useState(()=>typeof matchMedia!=='undefined'&&matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -42,8 +43,12 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
   const firstControl=useRef<HTMLSelectElement>(null);
   const actions=useRef<Popover.Root.Actions|null>(null);
   const intent=useRef(false);
+  const restoreTriggerFocus=useRef(true);
   const generation=useRef(0);
   const animation=useRef<Animation[]>([]);
+  const sharedGeneration=useRef(0);
+  const sharedFrame=useRef(0);
+  const sharedTimer=useRef(0);
   const panelId=useId();
   const sharedName=`q36-filter-shell-${panelId.replace(/[^a-zA-Z0-9_-]/g,'-')}`;
   // WebKit 26.6 can crash the page when a nested filter edit follows a native
@@ -53,18 +58,55 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
   const fields=view==='members'?memberFilterFields:eventFilterFields;
   const validation=validateQueryFilter(view,wireTree(draft));
   const leafCount=countLeaves(draft);
-  function changeOpen(next:boolean) {
+  function finishShared(version:number) {
+    if(version!==sharedGeneration.current)return;
+    window.clearTimeout(sharedTimer.current);
+    document.documentElement.classList.remove('q36-filter-transition-active');
+    if(!intent.current){
+      setOpen(false);
+      if(restoreTriggerFocus.current)trigger.current?.focus({preventScroll:true});
+    }
+  }
+  function sharedComplete() {
+    const version=sharedGeneration.current;
+    requestAnimationFrame(()=>{
+      // The content was intentionally invisible while Base UI measured it.
+      // Move keyboard focus only after the native snapshot makes it visible,
+      // without taking focus away from a control already being edited.
+      if(intent.current&&(document.activeElement===popup||!popup?.contains(document.activeElement)))firstControl.current?.focus({preventScroll:true});
+      const motions=document.getAnimations().filter(a=>a.effect instanceof KeyframeEffect&&a.effect.pseudoElement?.startsWith('::view-transition'));
+      Promise.allSettled(motions.map(a=>a.finished)).then(()=>finishShared(version));
+    });
+  }
+  function changeOpen(next:boolean,restoreFocus=true) {
     intent.current=next;
+    if(!next)restoreTriggerFocus.current=restoreFocus;
     if(sharedMotion) {
-      // React owns the native transition; the shell's two named boundaries
-      // exchange in one Transition. The table outside them stays stationary.
-      document.documentElement.classList.add('q36-filter-transition-active');
-      startTransition(()=>{
-        if(next&&!open)setDraft(initialTree(value));
-        setOpen(next);
-      });
+      const version=++sharedGeneration.current;
+      cancelAnimationFrame(sharedFrame.current);
+      window.clearTimeout(sharedTimer.current);
+      const exchange=()=>{
+        if(version!==sharedGeneration.current)return;
+        document.documentElement.style.setProperty('--q36-filter-shell-duration',next?'300ms':'220ms');
+        document.documentElement.classList.add('q36-filter-transition-active');
+        // React owns the native transition. Keep the popup's measured geometry
+        // in place until its shared shell has finished returning to the trigger.
+        sharedTimer.current=window.setTimeout(()=>finishShared(version),600);
+        startTransition(()=>setExpanded(next));
+      };
+      if(next){
+        if(!open)setDraft(initialTree(value));
+        setOpen(true);
+        // Base UI positions the mounted popup before React measures the shared
+        // target. Invisible content preserves its final size during this phase.
+        sharedFrame.current=requestAnimationFrame(()=>{
+          sharedFrame.current=requestAnimationFrame(exchange);
+        });
+      }else if(expanded)exchange();
+      else {setOpen(false);finishShared(version);}
     } else {
       if(next&&!open)setDraft(initialTree(value));
+      setExpanded(next);
       setOpen(next);
     }
   }
@@ -79,15 +121,7 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
   useLayoutEffect(()=>{
     if(!popup)return;
     const version=++generation.current;
-    if(sharedMotion){
-      if(!open){
-        const timer=window.setTimeout(()=>{
-          if(version===generation.current&&!intent.current)actions.current?.unmount();
-        },220);
-        return()=>{generation.current++;window.clearTimeout(timer);};
-      }
-      return()=>{generation.current++;};
-    }
+    if(sharedMotion)return;
     // The positioner computes its geometry after the first layout. Measure on
     // the next frame so a newly opened fallback popup has a nonzero target.
     const frame=requestAnimationFrame(()=>{
@@ -112,7 +146,12 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
     });
     return()=>{generation.current++;cancelAnimationFrame(frame);};
   },[open,popup,sharedMotion]);
-  useLayoutEffect(()=>()=>animation.current.forEach(a=>a.cancel()),[]);
+  useLayoutEffect(()=>()=>{
+    animation.current.forEach(a=>a.cancel());
+    cancelAnimationFrame(sharedFrame.current);
+    window.clearTimeout(sharedTimer.current);
+    document.documentElement.classList.remove('q36-filter-transition-active');
+  },[]);
   function update(id:string,transform:(node:EditableNode)=>EditableNode) {
     function visit(node:EditableNode):EditableNode {
       if(node.id===id)return transform(node);
@@ -167,7 +206,7 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
       </div>
     </fieldset>;
   }
-  const content=<div className="q36-filter-content">
+  const content=<div className="q36-filter-content" style={{visibility:sharedMotion&&!expanded?'hidden':undefined}}>
           <div className="q36-filter-heading"><Popover.Title>自定义筛选</Popover.Title><Popover.Close className="q36-filter-delete" aria-label="关闭筛选"><X size={16}/></Popover.Close></div>
           <Popover.Description>搜索、快捷条件与本筛选共同生效。最多 3 层分组、20 个条件。</Popover.Description>
           <div className="q36-filter-tree">{group(draft,'1',1,'root')}</div>
@@ -176,23 +215,21 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
             <button type="button" className="q36-filter-apply" disabled={validation.issues.length>0} onClick={()=>{if(validation.issues.length)return;onApply(validation.filter);changeOpen(false);}}>应用筛选</button>
           </div>
         </div>;
-  const sharedComplete=()=>{
-    // The class only suppresses root crossfading while the panel shell moves.
-    window.setTimeout(()=>document.documentElement.classList.remove('q36-filter-transition-active'),330);
-  };
-  return <Popover.Root open={open} onOpenChange={(next,details)=>{if(!next)details.preventUnmountOnClose();changeOpen(next);}} actionsRef={actions}>
+  return <Popover.Root open={open} onOpenChange={(next,details)=>{if(!next)details.preventUnmountOnClose();changeOpen(next,details.reason!=='outside-press');}} actionsRef={actions}>
     <Popover.Trigger ref={trigger} className="q36-filter-trigger" aria-label={value?'自定义筛选，已应用':'自定义筛选'}>
-      <span className="q36-filter-trigger-content"><Funnel size={16} weight={value?'fill':'regular'}/><span>自定义筛选</span>{value&&<span className="q36-filter-count">{countLeaves(initialTree(value))}</span>}</span>
-      {sharedMotion&&!open&&<ViewTransition name={sharedName} default="none" share="q36-filter-collapse" onShare={sharedComplete}>
+      <ViewTransition default="none" update={expanded?'q36-filter-trigger-out':'q36-filter-trigger-in'}>
+        <span className="q36-filter-trigger-content" style={{visibility:sharedMotion&&expanded?'hidden':undefined}}><Funnel size={16} weight={value?'fill':'regular'}/><span>自定义筛选</span>{value&&<span className="q36-filter-count">{countLeaves(initialTree(value))}</span>}</span>
+      </ViewTransition>
+      {sharedMotion&&!expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={sharedComplete} onEnter={sharedComplete} onExit={sharedComplete}>
         <span className="q36-filter-trigger-frame" aria-hidden="true"/>
       </ViewTransition>}
     </Popover.Trigger>
     <Popover.Portal keepMounted><Popover.Positioner side="bottom" align="start" sideOffset={8} collisionPadding={12} className="q36-filter-positioner">
-      <Popover.Popup ref={setPopup} id={panelId} className="q36-filter-popup" aria-label="自定义筛选" aria-hidden={!open} inert={!open} initialFocus={firstControl} finalFocus={trigger}>
-        {sharedMotion ? open&&<ViewTransition name={sharedName} default="none" share="q36-filter-expand" onShare={sharedComplete}>
+      <Popover.Popup ref={setPopup} id={panelId} className="q36-filter-popup" aria-label="自定义筛选" aria-hidden={sharedMotion?!expanded:!open} inert={sharedMotion?!expanded:!open} initialFocus={firstControl} finalFocus={trigger}>
+        {sharedMotion ? expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={sharedComplete} onEnter={sharedComplete} onExit={sharedComplete}>
           <div className="q36-filter-shell" aria-hidden="true"/>
         </ViewTransition> : <div className="q36-filter-shell" aria-hidden="true"/>}
-        {sharedMotion ? open&&<ViewTransition default="none" enter="q36-filter-content-in" exit="q36-filter-content-out">{content}</ViewTransition> : content}
+        {sharedMotion ? <ViewTransition default="none" update={expanded?'q36-filter-content-in':'q36-filter-content-out'}>{content}</ViewTransition> : content}
       </Popover.Popup>
     </Popover.Positioner></Popover.Portal>
   </Popover.Root>;
