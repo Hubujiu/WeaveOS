@@ -97,10 +97,11 @@ test('Q36 B2 unused template card save keeps member page and validates its exist
  await page.route('**/personnel/members/search',r=>{const input=r.request().postDataJSON();queries.push(input);return r.fulfill({json:envelope(paging([member],input))});});
  await page.route('**/personnel/templates',r=>r.fulfill({json:envelope({...identity,id:draftId,name:'不影响成员结果的新模板',templateIds:[]})}));
  await admin(page);await page.getByLabel('跳至页',{exact:true}).fill('4');await page.getByLabel('跳至页',{exact:true}).press('Enter');await expect(page.getByRole('button',{name:'Page 4',exact:true})).toHaveAttribute('aria-current','page');
+ await expect(page.locator('.member-table table')).toHaveAttribute('aria-busy','false');const beforeSave=queries.length;
  await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'新建权限模板',exact:true}).click();await page.getByLabel('模板名称',{exact:true}).fill('不影响成员结果的新模板');
  await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'已保存'})).toBeVisible();
  await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await expect(page.locator('.member-table table')).toHaveAttribute('aria-busy','false');
- await expect(page.getByRole('button',{name:'Page 4',exact:true})).toHaveAttribute('aria-current','page');expect(queries.at(-1)?.queryVersion).toBe('context-4');expect(queries.slice(1).every(q=>!!q.queryVersion)).toBe(true);
+ await expect.poll(()=>queries.length).toBeGreaterThan(beforeSave);await expect(page.getByRole('button',{name:'Page 4',exact:true})).toHaveAttribute('aria-current','page');expect(queries.at(-1)?.queryVersion).toBe('context-4');expect(queries.slice(beforeSave).every(q=>!!q.queryVersion)).toBe(true);
 });
 
 test('Q36 B2 definition explicitly saves durable draft and restores original version with conflict',async({page})=>{
@@ -140,4 +141,13 @@ test('Q36 B2 applying conditions then pressing the trigger during close honors r
  await page.evaluate(()=>{(document.querySelector('.q36-filter-apply') as HTMLButtonElement).click();(document.querySelector('.q36-filter-trigger') as HTMLButtonElement).click();});
  await expect(page.locator('.q36-filter-content')).toBeVisible();await expect(panel).toBeVisible();await page.waitForTimeout(1000);await expect(panel).toBeVisible();
  await expect.poll(()=>page.evaluate(()=>document.documentElement.classList.contains('q36-filter-transition-active'))).toBe(false);
+});
+
+test('Q36 B2 twenty nested conditions keep the apply footer inside the narrow viewport',async({page})=>{
+ await fixture(page);await page.setViewportSize({width:1440,height:1000});await admin(page);await page.getByRole('button',{name:'自定义筛选',exact:true}).click();const panel=page.getByRole('dialog',{name:'自定义筛选',exact:true});await expect(panel).toBeVisible();
+ await panel.getByRole('button',{name:'组 1 添加分组',exact:true}).click();await panel.getByLabel('组 1.1 匹配方式',{exact:true}).selectOption('or');await panel.getByRole('button',{name:'组 1.1 添加分组',exact:true}).click();
+ for(let i=1;i<=20;i++){await panel.getByRole('button',{name:'组 1.1.1 添加条件',exact:true}).click();await panel.getByLabel('条件 1.1.'+i+' 值',{exact:true}).fill('SyntheticLongAccountOutsidePageScope');}
+ await page.setViewportSize({width:390,height:844});const apply=panel.getByRole('button',{name:'应用筛选',exact:true});await expect(apply).toBeEnabled();
+ await expect.poll(async()=>{const box=(await apply.boundingBox())!;return box.y+box.height;}).toBeLessThanOrEqual(844);
+ await expect(apply).toBeInViewport();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
