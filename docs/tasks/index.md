@@ -34,4 +34,4 @@
 
 本轮完整接入：[V010-019](V010-019.md)，依赖已验收018；task/V010-019-complete-app / ../WeaveOS-worktrees/V010-019。用户要求补齐最新登录注册、Home导航与已批准人员管理R3；Q24确认按Figma原版复刻，组件优化后置。单Agent。
 
-最新尺寸、后台动画与Arca控件：[V010-020](V010-020.md)，依赖已验收019；task/V010-020-admin-shell / ../WeaveOS-worktrees/V010-020，[PR21](https://github.com/Hubujiu/WeaveOS/pull/21)。Q31按用户审核移除顶栏收缩、缩短侧栏菜单间距并消除页签多余纵滚条；先同步Figma唯一视觉/交互源，再RED→GREEN。固定56顶栏、176/72侧栏，保留图标纵坐标与正文必要滚动。Q32追加六处Arca Select样式/分离动效与四页签Pill，先同步Notion/Figma再真实RED→GREEN；106完整组件、96三引擎、类型/构建和132治理通过，强化反向采样再三引擎3项通过。实际状态与验证以任务正文及PR最终head为准；主Agent代码唯一写者，子Agent只读核对与独立Figma同步。未合并/验收/部署。
+最新尺寸、后台动画与Arca控件：[V010-020](V010-020.md)，依赖已验收019；task/V010-020-admin-shell / ../WeaveOS-worktrees/V010-020，[PR21](https://github.com/Hubujiu/WeaveOS/pull/21)。Q31/Q33固定56顶栏与176侧栏、无收缩控件，全视口材质/菜单可达保持；Q32六处Arca Select与四页签Pill；Q34成员/身份/操作记录三个统一Arca Data Table，保留原业务/服务端分页与编辑保护。Notion/Figma已同步重读，严格真实RED→GREEN；最终126完整组件、63三引擎相关回归、类型/构建及132治理通过，更广153基线另存。ready仅可审阅，最终head CI须实际核对任务正文/PR；主Agent代码唯一写者，子Agent只读核对与独立Figma同步。未合并/验收/部署。
