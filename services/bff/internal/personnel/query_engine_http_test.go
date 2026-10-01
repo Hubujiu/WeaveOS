@@ -16,19 +16,30 @@ import (
 	"time"
 )
 
+type queryTraceSQLKey struct{}
 type queryRowTrace struct {
-	mu  sync.Mutex
-	max int64
+	mu            sync.Mutex
+	max           int64
+	afterRevision func()
 }
 
-func (q *queryRowTrace) TraceQueryStart(ctx context.Context, _ *pgx.Conn, _ pgx.TraceQueryStartData) context.Context {
-	return ctx
+func (q *queryRowTrace) TraceQueryStart(ctx context.Context, _ *pgx.Conn, d pgx.TraceQueryStartData) context.Context {
+	return context.WithValue(ctx, queryTraceSQLKey{}, d.SQL)
 }
-func (q *queryRowTrace) TraceQueryEnd(_ context.Context, _ *pgx.Conn, d pgx.TraceQueryEndData) {
+func (q *queryRowTrace) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, d pgx.TraceQueryEndData) {
 	q.mu.Lock()
-	defer q.mu.Unlock()
 	if d.CommandTag.Select() && d.CommandTag.RowsAffected() > q.max {
 		q.max = d.CommandTag.RowsAffected()
+	}
+	var hook func()
+	sql, _ := ctx.Value(queryTraceSQLKey{}).(string)
+	if strings.Contains(sql, "max(revision)") {
+		hook = q.afterRevision
+		q.afterRevision = nil
+	}
+	q.mu.Unlock()
+	if hook != nil {
+		hook()
 	}
 }
 func (q *queryRowTrace) take() int64 {

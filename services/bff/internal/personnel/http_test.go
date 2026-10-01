@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/redis/go-redis/v9"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -29,6 +30,13 @@ func setupWeb(t *testing.T) *webFixture {
 		t.Fatal("isolated real Redis session required")
 	}
 	t.Cleanup(func() { _, _ = store.Revoke(ctx, sid); _ = store.Close() })
+	queryOptions, err := redis.ParseURL(os.Getenv("WEAVEOS_TEST_REDIS_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	queryRedis := redis.NewClient(queryOptions)
+	t.Cleanup(func() { _ = queryRedis.Close() })
+	f.app.Queries = NewQueryContextStore(queryRedis, "personnel-http-"+strings.ReplaceAll(f.actor.UserID, "-", ""))
 	s := &Service{Application: f.app, Authenticator: session.Authenticator{Sessions: store, DB: f.app.Pool, Origin: "https://weaveos.test"}}
 	return &webFixture{f, httpserver.NewHandler(func(context.Context) error { return nil }, s), store, sid, csrf}
 }

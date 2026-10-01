@@ -20,7 +20,7 @@ type Service struct {
 func (s *Service) TrustedProxies() []string { return append([]string(nil), s.TrustedProxyHosts...) }
 func (s *Service) finish(w http.ResponseWriter, r *http.Request, p session.Principal, status int, data any, location string) {
 	if status >= 200 && status < 300 {
-		if r.Method == "GET" {
+		if r.Method == "GET" || isQuerySearch(r) {
 			if err := s.Authenticator.Renew(r.Context(), w, r, p); err != nil {
 				fail(w, r, err)
 				return
@@ -59,6 +59,9 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if s.DraftHTTP(w, r, p) {
+		return
+	}
+	if s.QueryHTTP(w, r, p) {
 		return
 	}
 	meta := RequestMetadata{RequestID: httpserver.Metadata(r.Context()).RequestID, ClientIP: httpserver.Metadata(r.Context()).ClientIP, UserAgent: r.UserAgent()}
@@ -117,26 +120,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				s.finish(w, r, p, 201, value, "/api/v1/personnel/departments/"+value.ID)
 				return
 			}
-		case "members":
-			if r.Method == "GET" {
-				values, err := query(r, "page", "pageSize", "search", "departmentId", "identityId")
-				if err != nil {
-					fail(w, r, err)
-					return
-				}
-				page, err := pageQuery(values)
-				if err != nil {
-					fail(w, r, err)
-					return
-				}
-				value, err := s.Application.ListMembers(r.Context(), p, MemberQuery{PageQuery: page, DepartmentID: values.Get("departmentId"), IdentityID: values.Get("identityId")})
-				if err != nil {
-					fail(w, r, err)
-					return
-				}
-				s.finish(w, r, p, 200, value, "")
-				return
-			}
 		case "permissions":
 			if r.Method == "GET" {
 				if _, err := query(r); err != nil {
@@ -151,41 +134,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				s.finish(w, r, p, 200, map[string]any{"items": items}, "")
 				return
 			}
-		case "events":
-			if r.Method == "GET" {
-				values, err := query(r, "page", "pageSize", "search", "action", "from", "to")
-				if err != nil {
-					fail(w, r, err)
-					return
-				}
-				page, err := pageQuery(values)
-				if err != nil {
-					fail(w, r, err)
-					return
-				}
-				in := EventQuery{PageQuery: page, Action: values.Get("action")}
-				for _, field := range []string{"from", "to"} {
-					if raw, ok := values[field]; ok {
-						value, err := time.Parse(time.RFC3339, raw[0])
-						if err != nil {
-							fail(w, r, ErrInvalid)
-							return
-						}
-						if field == "from" {
-							in.From = value
-						} else {
-							in.To = value
-						}
-					}
-				}
-				value, err := s.Application.Events(r.Context(), p, in)
-				if err != nil {
-					fail(w, r, err)
-					return
-				}
-				s.finish(w, r, p, 200, value, "")
-				return
-			}
+
 		}
 	}
 	if parts[0] == "identities" || parts[0] == "templates" {

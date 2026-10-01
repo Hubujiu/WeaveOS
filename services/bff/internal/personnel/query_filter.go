@@ -24,13 +24,21 @@ type filterCompiler struct {
 	view          string
 	first, leaves int
 	args          []any
+	bounds        []QueryRange
+	dates         []QueryRange
 }
 
 func CompileFilter(view string, raw json.RawMessage, firstParameter int) (FilterPlan, error) {
+	return compileFrozenFilter(view, raw, firstParameter, nil)
+}
+func compileFrozenFilter(view string, raw json.RawMessage, firstParameter int, bounds []QueryRange) (FilterPlan, error) {
 	if view != "members" && view != "events" || firstParameter < 1 || firstParameter > 65000 {
 		return FilterPlan{}, ErrInvalid
 	}
 	if len(raw) == 0 {
+		if len(bounds) > 0 {
+			return FilterPlan{}, ErrInvalid
+		}
 		return FilterPlan{Predicate: "TRUE", Arguments: []any{}}, nil
 	}
 	// Share the strict JSON Unicode validator: encoding/json alone replaces
@@ -47,10 +55,13 @@ func CompileFilter(view string, raw json.RawMessage, firstParameter int) (Filter
 	if _, err = d.Token(); err != io.EOF {
 		return FilterPlan{}, ErrInvalid
 	}
-	c := filterCompiler{view: view, first: firstParameter, args: []any{}}
+	c := filterCompiler{view: view, first: firstParameter, args: []any{}, bounds: bounds, dates: []QueryRange{}}
 	predicate, normalized, err := c.group(v, 1)
 	if err != nil {
 		return FilterPlan{}, err
+	}
+	if bounds != nil && len(bounds) != len(c.dates) {
+		return FilterPlan{}, ErrInvalid
 	}
 	var out bytes.Buffer
 	e := json.NewEncoder(&out)
@@ -62,7 +73,7 @@ func CompileFilter(view string, raw json.RawMessage, firstParameter int) (Filter
 	if len(canonical) > 16384 {
 		return FilterPlan{}, ErrInvalid
 	}
-	return FilterPlan{Predicate: predicate, Arguments: c.args, Canonical: append(json.RawMessage(nil), canonical...)}, nil
+	return FilterPlan{FrozenDates: c.dates, Predicate: predicate, Arguments: c.args, Canonical: append(json.RawMessage(nil), canonical...)}, nil
 }
 
 // Reject duplicate keys recursively before normal JSON decoding can erase them.
@@ -250,6 +261,17 @@ func (c *filterCompiler) condition(m map[string]any) (string, any, error) {
 		}
 		end := start.AddDate(0, 0, 1).UTC()
 		start = start.UTC()
+		if c.bounds != nil {
+			if len(c.dates) >= len(c.bounds) {
+				return "", nil, ErrInvalid
+			}
+			fixed := c.bounds[len(c.dates)]
+			if fixed.From.IsZero() || !fixed.From.Before(fixed.To) || fixed.From.Nanosecond()%1000 != 0 || fixed.To.Nanosecond()%1000 != 0 {
+				return "", nil, ErrInvalid
+			}
+			start, end = fixed.From.UTC(), fixed.To.UTC()
+		}
+		c.dates = append(c.dates, QueryRange{From: start, To: end})
 		switch op {
 		case "eq":
 			return "(" + col + " >= " + c.bind(start) + "::timestamptz AND " + col + " < " + c.bind(end) + "::timestamptz)", normalized, nil

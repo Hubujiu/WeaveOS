@@ -20,12 +20,21 @@ type EventProjectionPage struct {
 // Query only the existing security-barrier activity view. All lookups are sets;
 // raw authentication audit privileges are neither requested nor used.
 const eventSourceSQL = `WITH source AS (
- SELECT e.*,CASE WHEN jsonb_typeof(e.change_summary->'after'->'name')='string' THEN e.change_summary->'after'->>'name'
+ SELECT e.id,e.occurred_at,e.actor_account,e.action,e.object_type,e.object_id,e.outcome,CASE WHEN e.change_summary IS NULL THEN NULL ELSE safe.summary END AS change_summary,CASE WHEN jsonb_typeof(e.change_summary->'after'->'name')='string' THEN e.change_summary->'after'->>'name'
  WHEN jsonb_typeof(e.change_summary->'before'->'name')='string' THEN e.change_summary->'before'->>'name'
  ELSE COALESCE(u.account,(CASE e.object_type WHEN 'department' THEN '部门' WHEN 'identity' THEN '身份' WHEN 'template' THEN '权限模板' WHEN 'member' THEN '成员' WHEN 'invitation' THEN '邀请码' ELSE '操作对象' END)||CASE WHEN e.object_id IS NULL THEN '' ELSE ' · '||left(e.object_id::text,8) END) END AS display_object
  FROM personnel.activity_events e LEFT JOIN auth.users u ON e.object_type='member' AND u.id=e.object_id
+ LEFT JOIN LATERAL (
+  SELECT jsonb_object_agg(s.side,COALESCE(v.body,'{}'::jsonb)) AS summary
+  FROM (VALUES('before'),('after'))s(side) LEFT JOIN LATERAL (
+   SELECT jsonb_object_agg(j.key,j.value) AS body FROM jsonb_each(CASE WHEN jsonb_typeof(e.change_summary->s.side)='object' THEN e.change_summary->s.side ELSE '{}'::jsonb END) j
+   WHERE (j.key IN ('name','description','parentId') AND jsonb_typeof(j.value) IN ('string','null'))
+   OR (j.key IN ('permissionCodes','templateIds','identityIds','departmentIds') AND jsonb_typeof(j.value)='array'
+    AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(j.value)='array' THEN j.value ELSE '[]'::jsonb END) x WHERE jsonb_typeof(x)<>'string'))
+  ) v ON TRUE
+ ) safe ON TRUE
  WHERE e.occurred_at >= $1 AND e.occurred_at < $2 AND ($3='' OR e.action=$3)
- AND ($4='' OR position(lower($4) in lower(e.actor_account||' '||e.action||' '||COALESCE(e.object_type,'')||' '||COALESCE(e.change_summary::text,'')))>0)
+ AND ($4='' OR position(lower($4) in lower(e.actor_account||' '||e.action||' '||COALESCE(e.object_type,'')||' '||CASE WHEN e.change_summary IS NULL THEN '' ELSE safe.summary::text END))>0)
 ), events AS MATERIALIZED (`
 const eventDisplaySQL = `), fields(key,label,position) AS (VALUES
  ('name','名称',1),('description','说明',2),('permissionCodes','权限',3),('templateIds','权限模板',4),('identityIds','身份',5),('departmentIds','部门',6),('parentId','父部门',7)
@@ -38,7 +47,7 @@ const eventDisplaySQL = `), fields(key,label,position) AS (VALUES
  SELECT e.id,f.*,s.side,CASE
  WHEN f.key IN ('name','description','parentId') AND jsonb_typeof(e.change_summary->s.side->f.key) IN ('string','null') THEN e.change_summary->s.side->f.key
  WHEN f.key IN ('permissionCodes','templateIds','identityIds','departmentIds') AND jsonb_typeof(e.change_summary->s.side->f.key)='array'
- AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(e.change_summary->s.side->f.key) x WHERE jsonb_typeof(x)<>'string') THEN e.change_summary->s.side->f.key
+ AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(e.change_summary->s.side->f.key)='array' THEN e.change_summary->s.side->f.key ELSE '[]'::jsonb END) x WHERE jsonb_typeof(x)<>'string') THEN e.change_summary->s.side->f.key
  ELSE NULL END AS value
  FROM events e CROSS JOIN fields f CROSS JOIN (VALUES('before'),('after'))s(side)
 ), rendered AS (
@@ -87,7 +96,7 @@ func eventProjectionQuery(in EventQueryInput, pageOnly bool) (string, []any, Pag
 			return "", nil, page, err
 		}
 	}
-	plan, err := CompileFilter("events", raw, 5)
+	plan, err := compileFrozenFilter("events", raw, 5, in.FrozenTimeBounds)
 	if err != nil {
 		return "", nil, page, err
 	}

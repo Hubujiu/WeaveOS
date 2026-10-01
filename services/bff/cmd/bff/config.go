@@ -10,6 +10,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"log/slog"
 	"net/http"
 	"net/netip"
@@ -57,9 +58,16 @@ func buildHandler(ctx context.Context, cfg config) (http.Handler, func(), error)
 		return nil, nil, errors.New("invalid authentication database configuration")
 	}
 	sessions := session.NewStore(cfg.RedisURL, cfg.Generation)
-	close := func() { _ = sessions.Close(); pool.Close() }
+	queryOptions, err := redis.ParseURL(cfg.RedisURL)
+	if err != nil {
+		_ = sessions.Close()
+		pool.Close()
+		return nil, nil, errors.New("invalid query Redis configuration")
+	}
+	queryRedis := redis.NewClient(queryOptions)
+	close := func() { _ = queryRedis.Close(); _ = sessions.Close(); pool.Close() }
 	s := &auth.Service{Pool: pool, Sessions: sessions, Origin: cfg.Origin, AuditKeyID: cfg.AuditKeyID, AuditKey: cfg.AuditKey, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
-	people := &personnel.Application{Pool: pool}
+	people := &personnel.Application{Pool: pool, Queries: personnel.NewQueryContextStore(queryRedis, cfg.Generation)}
 	s.Personnel = &personnel.Service{Application: people, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	s.InvitationAuthorizer = func(ctx context.Context, tx pgx.Tx, p session.Principal) error {
 		err := people.AuthorizeWrite(ctx, tx, p)
