@@ -47,3 +47,7 @@ pnpm exec tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundle
 ```
 
 解析、lint、bundle、生成和编译已运行通过。lint 报一项尚未决定仓库许可证的元数据警告，不影响规范有效性。生成器提示浏览器不能手动设置 Cookie header；前端不直接采用该生成客户端的 Cookie 注入逻辑，后续按同源 `credentials` 与实际 Cookie 行为验收。使用 `swagger-ui-dist@5.32.2` 从本机提供 bundle，Playwright 浏览器看到标题为 `OAS 3.2` 的七个操作且控制台 0 错误、0 警告；Redoc 2 静态页虽显示内容，但出现 React 控制台错误，未选为文档展示器。实际 HTTP 请求/响应符合度须在 V010-007 的真实服务验收验证，不能由本页的文档 lint 代替。
+
+## Q36 发布前人员查询与持久草稿
+
+已批准的新增协议、DTO、迁移结构和执行边界见 [query-drafts.md](query-drafts.md)。这是阶段 A 契约基线；HTTP 业务实现与完整存储/界面验收仍待后续阶段，不能单独部署。

@@ -6,7 +6,10 @@ const document = JSON.parse(readFileSync(new URL('../../contracts/openapi/openap
 const codes = JSON.parse(readFileSync(new URL('../../contracts/errors/codes.json', import.meta.url)));
 const dereference = ref => ref.slice(2).split('/').reduce((value, key) => value[key], document);
 function matches(schema, value) {
-  for (const key of Object.keys(schema)) assert.ok(['$ref','type','required','additionalProperties','properties','const','enum','minLength','maxLength','minimum','maximum','pattern','format','minItems','uniqueItems','items','allOf','oneOf','description','example'].includes(key), `Unsupported response constraint ${key}`);
+  for (const key of Object.keys(schema)) assert.ok(['$ref','type','required','additionalProperties','properties','const','enum','minLength','maxLength','minimum','maximum','pattern','format','minItems','maxItems','uniqueItems','items','allOf','oneOf','description','example','x-max-canonical-bytes'].includes(key), `Unsupported response constraint ${key}`);
+  // Draft payloads contain only strings/arrays/null; compact JSON has the same
+  // UTF-8 byte count regardless of object key order. Do not measure JS length.
+  if (schema['x-max-canonical-bytes'] !== undefined && Buffer.byteLength(JSON.stringify(value),'utf8') > schema['x-max-canonical-bytes']) return false;
   if (schema.$ref && !matches(dereference(schema.$ref), value)) return false;
   if (schema.allOf && !schema.allOf.every(child => matches(child, value))) return false;
   if (schema.oneOf && schema.oneOf.filter(child => matches(child, value)).length !== 1) return false;
@@ -24,7 +27,7 @@ function matches(schema, value) {
       if (schema.format === 'date-time' && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i.test(value) || !Number.isFinite(Date.parse(value)))) return false;
     }
   }
-  if (type === 'array' && (value.length < (schema.minItems ?? 0) || schema.items && !value.every(item => matches(schema.items, item)))) return false;
+  if (type === 'array' && (value.length < (schema.minItems ?? 0) || value.length > (schema.maxItems ?? Infinity) || schema.items && !value.every(item => matches(schema.items, item)))) return false;
   if (type === 'array' && schema.uniqueItems && new Set(value.map(item=>JSON.stringify(item))).size !== value.length) return false;
   if (type === 'object') {
     if (schema.required?.some(key => !(key in value))) return false;
