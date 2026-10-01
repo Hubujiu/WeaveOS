@@ -1,0 +1,294 @@
+
+Running 6 tests using 1 worker
+
+(node:83288) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+MARK_PROBE [{"type":"pointerdown","trusted":true,"target":"svg"},{"type":"pointerup","trusted":true,"target":"BUTTON"}]
+  x  1 [chromium] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows (7.2s)
+(node:82952) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+MARK_PROBE [{"type":"pointerdown","trusted":true,"target":"svg"},{"type":"pointerup","trusted":true,"target":"BUTTON"}]
+  x  2 [chromium] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows (6.8s)
+(node:80736) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+MARK_PROBE [{"type":"pointerdown","trusted":true,"target":"svg"},{"type":"pointerup","trusted":true,"target":"BUTTON"}]
+  x  3 [firefox] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows (11.1s)
+(node:71112) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+MARK_PROBE [{"type":"pointerdown","trusted":true,"target":"svg"},{"type":"pointerup","trusted":true,"target":"BUTTON"}]
+  x  4 [firefox] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows (10.4s)
+(node:82220) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+MARK_PROBE [{"type":"pointerdown","trusted":true,"target":"svg"},{"type":"pointerup","trusted":true,"target":"BUTTON"}]
+  x  5 [webkit] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows (8.5s)
+(node:82940) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+MARK_PROBE [{"type":"pointerdown","trusted":true,"target":"svg"},{"type":"pointerup","trusted":true,"target":"BUTTON"}]
+  x  6 [webkit] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows (7.1s)
+
+
+  1) [chromium] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+
+    Error: expect(locator).toBeChecked() failed
+
+    Locator:  getByLabel('选择成员：q36-admin', { exact: true })
+    Expected: checked
+    Received: unchecked
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "toBeChecked" getByLabel('选择成员：q36-admin', { exact: true }) with timeout 3000ms
+      - waiting for getByLabel('选择成员：q36-admin', { exact: true })
+        10 × locator resolved to <button id="_r_c_" tabindex="0" type="button" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="选择成员：q36-admin" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 border-muted-foreground/50 bg-background hover:border-muted-foreground"></button>
+           - unexpected value "unchecked"
+
+
+      44 |  await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+      45 |  console.log('MARK_PROBE '+JSON.stringify(await page.evaluate(()=>(window as unknown as {__q36SelectionPress:unknown[]}).__q36SelectionPress)));
+    > 46 |  await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();await expect(all).toBeChecked();
+         |                                                               ^
+      47 |  const events=await page.evaluate(()=>(window as unknown as {__q36SelectionPress:{type:string;trusted:boolean;target:string}[]}).__q36SelectionPress);
+      48 |  expect(events.filter(event=>event.type==='click'&&event.trusted)).toHaveLength(1);
+      49 |  await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();await panel.getByRole('button',{name:'重置条件',exact:true}).click();await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\.work\q36-selection-stable-probe.spec.ts:46:63
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+
+    Error: expect(locator).toBeChecked() failed
+
+    Locator:  getByLabel('选择成员：q36-admin', { exact: true })
+    Expected: checked
+    Received: unchecked
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "toBeChecked" getByLabel('选择成员：q36-admin', { exact: true }) with timeout 3000ms
+      - waiting for getByLabel('选择成员：q36-admin', { exact: true })
+        10 × locator resolved to <button id="_r_c_" tabindex="0" type="button" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="选择成员：q36-admin" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 border-muted-foreground/50 bg-background hover:border-muted-foreground"></button>
+           - unexpected value "unchecked"
+
+
+      44 |  await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+      45 |  console.log('MARK_PROBE '+JSON.stringify(await page.evaluate(()=>(window as unknown as {__q36SelectionPress:unknown[]}).__q36SelectionPress)));
+    > 46 |  await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();await expect(all).toBeChecked();
+         |                                                               ^
+      47 |  const events=await page.evaluate(()=>(window as unknown as {__q36SelectionPress:{type:string;trusted:boolean;target:string}[]}).__q36SelectionPress);
+      48 |  expect(events.filter(event=>event.type==='click'&&event.trusted)).toHaveLength(1);
+      49 |  await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();await panel.getByRole('button',{name:'重置条件',exact:true}).click();await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\.work\q36-selection-stable-probe.spec.ts:46:63
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-chromium-repeat1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-chromium-repeat1\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-chromium-repeat1\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-chromium-repeat1\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-chromium-repeat1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [firefox] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+
+    Error: expect(locator).toBeChecked() failed
+
+    Locator:  getByLabel('选择成员：q36-admin', { exact: true })
+    Expected: checked
+    Received: unchecked
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "toBeChecked" getByLabel('选择成员：q36-admin', { exact: true }) with timeout 3000ms
+      - waiting for getByLabel('选择成员：q36-admin', { exact: true })
+        10 × locator resolved to <button id="_r_c_" tabindex="0" type="button" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="选择成员：q36-admin" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 border-muted-foreground/50 bg-background hover:border-muted-foreground"></button>
+           - unexpected value "unchecked"
+
+
+      44 |  await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+      45 |  console.log('MARK_PROBE '+JSON.stringify(await page.evaluate(()=>(window as unknown as {__q36SelectionPress:unknown[]}).__q36SelectionPress)));
+    > 46 |  await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();await expect(all).toBeChecked();
+         |                                                               ^
+      47 |  const events=await page.evaluate(()=>(window as unknown as {__q36SelectionPress:{type:string;trusted:boolean;target:string}[]}).__q36SelectionPress);
+      48 |  expect(events.filter(event=>event.type==='click'&&event.trusted)).toHaveLength(1);
+      49 |  await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();await panel.getByRole('button',{name:'重置条件',exact:true}).click();await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\.work\q36-selection-stable-probe.spec.ts:46:63
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-firefox\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-firefox\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-firefox\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [firefox] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+
+    Error: expect(locator).toBeChecked() failed
+
+    Locator:  getByLabel('选择成员：q36-admin', { exact: true })
+    Expected: checked
+    Received: unchecked
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "toBeChecked" getByLabel('选择成员：q36-admin', { exact: true }) with timeout 3000ms
+      - waiting for getByLabel('选择成员：q36-admin', { exact: true })
+        10 × locator resolved to <button id="_r_c_" tabindex="0" type="button" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="选择成员：q36-admin" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 border-muted-foreground/50 bg-background hover:border-muted-foreground"></button>
+           - unexpected value "unchecked"
+
+
+      44 |  await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+      45 |  console.log('MARK_PROBE '+JSON.stringify(await page.evaluate(()=>(window as unknown as {__q36SelectionPress:unknown[]}).__q36SelectionPress)));
+    > 46 |  await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();await expect(all).toBeChecked();
+         |                                                               ^
+      47 |  const events=await page.evaluate(()=>(window as unknown as {__q36SelectionPress:{type:string;trusted:boolean;target:string}[]}).__q36SelectionPress);
+      48 |  expect(events.filter(event=>event.type==='click'&&event.trusted)).toHaveLength(1);
+      49 |  await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();await panel.getByRole('button',{name:'重置条件',exact:true}).click();await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\.work\q36-selection-stable-probe.spec.ts:46:63
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-firefox-repeat1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-firefox-repeat1\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-firefox-repeat1\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-firefox-repeat1\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-firefox-repeat1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [webkit] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+
+    Error: expect(locator).toBeChecked() failed
+
+    Locator:  getByLabel('选择成员：q36-admin', { exact: true })
+    Expected: checked
+    Received: unchecked
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "toBeChecked" getByLabel('选择成员：q36-admin', { exact: true }) with timeout 3000ms
+      - waiting for getByLabel('选择成员：q36-admin', { exact: true })
+        10 × locator resolved to <button id="_r_c_" tabindex="0" type="button" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="选择成员：q36-admin" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 border-muted-foreground/50 bg-background hover:border-muted-foreground"></button>
+           - unexpected value "unchecked"
+
+
+      44 |  await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+      45 |  console.log('MARK_PROBE '+JSON.stringify(await page.evaluate(()=>(window as unknown as {__q36SelectionPress:unknown[]}).__q36SelectionPress)));
+    > 46 |  await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();await expect(all).toBeChecked();
+         |                                                               ^
+      47 |  const events=await page.evaluate(()=>(window as unknown as {__q36SelectionPress:{type:string;trusted:boolean;target:string}[]}).__q36SelectionPress);
+      48 |  expect(events.filter(event=>event.type==='click'&&event.trusted)).toHaveLength(1);
+      49 |  await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();await panel.getByRole('button',{name:'重置条件',exact:true}).click();await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\.work\q36-selection-stable-probe.spec.ts:46:63
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-webkit\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-webkit\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-webkit\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-webkit\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [webkit] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+
+    Error: expect(locator).toBeChecked() failed
+
+    Locator:  getByLabel('选择成员：q36-admin', { exact: true })
+    Expected: checked
+    Received: unchecked
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "toBeChecked" getByLabel('选择成员：q36-admin', { exact: true }) with timeout 3000ms
+      - waiting for getByLabel('选择成员：q36-admin', { exact: true })
+        10 × locator resolved to <button id="_r_c_" tabindex="0" type="button" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="选择成员：q36-admin" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 border-muted-foreground/50 bg-background hover:border-muted-foreground"></button>
+           - unexpected value "unchecked"
+
+
+      44 |  await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+      45 |  console.log('MARK_PROBE '+JSON.stringify(await page.evaluate(()=>(window as unknown as {__q36SelectionPress:unknown[]}).__q36SelectionPress)));
+    > 46 |  await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();await expect(all).toBeChecked();
+         |                                                               ^
+      47 |  const events=await page.evaluate(()=>(window as unknown as {__q36SelectionPress:{type:string;trusted:boolean;target:string}[]}).__q36SelectionPress);
+      48 |  expect(events.filter(event=>event.type==='click'&&event.trusted)).toHaveLength(1);
+      49 |  await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();await panel.getByRole('button',{name:'重置条件',exact:true}).click();await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\.work\q36-selection-stable-probe.spec.ts:46:63
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-webkit-repeat1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-webkit-repeat1\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-webkit-repeat1\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-webkit-repeat1\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-stable-probe-red\q36-selection-stable-probe-58279--still-selects-current-rows-webkit-repeat1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6 failed
+    [chromium] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+    [chromium] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+    [firefox] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+    [firefox] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+    [webkit] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+    [webkit] › .work\q36-selection-stable-probe.spec.ts:33:5 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
