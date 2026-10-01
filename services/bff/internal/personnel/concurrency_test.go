@@ -60,9 +60,10 @@ func TestPersonnelCommittedWriteSurvivesRealRenewalFailureQ19(t *testing.T) {
 			f := setupWeb(t)
 			ctx := context.Background()
 			d, blocker, pid := lockedDepartment(t, f.fixture)
+			queryVersion := baselineVersion(t, f, "")
 			done := make(chan *httptest.ResponseRecorder, 1)
 			go func() {
-				done <- f.request("PUT", "/api/v1/personnel/departments/"+d.ID, `{"name":"committed","version":1}`, true, true)
+				done <- f.request("PUT", "/api/v1/personnel/departments/"+d.ID, `{"name":"committed","version":1,"queryVersion":"`+queryVersion+`"}`, true, true)
 			}()
 			awaitBlockedBy(t, f.fixture, pid)
 			if mode == "revoked" {
