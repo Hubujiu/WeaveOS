@@ -20,7 +20,10 @@ type DefinitionInput struct {
 	Version                      int64
 	PermissionCodes, TemplateIDs []string
 }
-type RequestMetadata struct{ RequestID, ClientIP, UserAgent string }
+type RequestMetadata struct {
+	RequestID, ClientIP, UserAgent string
+	QueryWriteGuard
+}
 type PageQuery struct {
 	Page, PageSize int
 	Search         string
@@ -182,6 +185,9 @@ func replaceDefinitionRelations(ctx context.Context, tx pgx.Tx, kind DefinitionK
 	return nil
 }
 func (a *Application) SaveDefinition(ctx context.Context, p session.Principal, kind DefinitionKind, id string, in DefinitionInput, meta RequestMetadata) (Definition, error) {
+	ctx, cancel := context.WithTimeout(ctx, queryDeadline)
+	defer cancel()
+	originalTarget := draftTarget(id)
 	table, err := definitionTable(kind)
 	if err != nil {
 		return Definition{}, err
@@ -191,7 +197,7 @@ func (a *Application) SaveDefinition(ctx context.Context, p session.Principal, k
 	}
 	in.PermissionCodes = unique(in.PermissionCodes)
 	in.TemplateIDs = uniqueIDs(in.TemplateIDs)
-	tx, err := a.writeBusiness(ctx, p)
+	tx, err := a.writeBusiness(ctx, p, meta.QueryVersion)
 	if err != nil {
 		return Definition{}, err
 	}
@@ -226,7 +232,7 @@ func (a *Application) SaveDefinition(ctx context.Context, p session.Principal, k
 		before = safeDefinitionValue(old)
 		next := safeDefinition{in.Name, in.Description, in.PermissionCodes, in.TemplateIDs}
 		if reflect.DeepEqual(before, next) {
-			return old, nil
+			return old, commitBusiness(ctx, tx, p, meta, DraftKind(kind), originalTarget)
 		}
 		if version >= maxSafeVersion {
 			return Definition{}, ErrConflict
@@ -249,12 +255,14 @@ func (a *Application) SaveDefinition(ctx context.Context, p session.Principal, k
 	if err := appendChange(ctx, tx, p, meta, action, string(kind), id, before, safeDefinitionValue(value)); err != nil {
 		return Definition{}, err
 	}
-	if err := tx.Commit(ctx); err != nil {
+	if err := commitBusiness(ctx, tx, p, meta, DraftKind(kind), originalTarget); err != nil {
 		return Definition{}, databaseError(err)
 	}
 	return value, nil
 }
 func (a *Application) DeleteDefinition(ctx context.Context, p session.Principal, kind DefinitionKind, id string, version int64, meta RequestMetadata) error {
+	ctx, cancel := context.WithTimeout(ctx, queryDeadline)
+	defer cancel()
 	if !validID(id) || version < 1 || version > maxSafeVersion {
 		return ErrInvalid
 	}
@@ -262,7 +270,7 @@ func (a *Application) DeleteDefinition(ctx context.Context, p session.Principal,
 	if err != nil {
 		return err
 	}
-	tx, err := a.writeBusiness(ctx, p)
+	tx, err := a.writeBusiness(ctx, p, meta.QueryVersion)
 	if err != nil {
 		return err
 	}

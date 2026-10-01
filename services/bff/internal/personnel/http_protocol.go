@@ -149,8 +149,8 @@ func pageQuery(values url.Values) (PageQuery, error) {
 	}
 	return normalizedPage(result)
 }
-func deleteVersion(r *http.Request) (int64, error) {
-	values, err := query(r, "version")
+func deleteVersion(r *http.Request, extra ...string) (int64, error) {
+	values, err := query(r, append([]string{"version"}, extra...)...)
 	if err != nil {
 		return 0, err
 	}

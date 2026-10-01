@@ -102,16 +102,22 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			if r.Method == "POST" {
 				var in struct {
+					QueryWriteGuard
 					Name     string `json:"name"`
 					ParentID string `json:"parentId"`
 				}
-				if !decodeBody(w, r, &in, "name", "parentId") {
+				if !decodeBody(w, r, &in, "name", "parentId", "queryVersion") {
 					return
 				}
 				if _, err := query(r); err != nil {
 					fail(w, r, err)
 					return
 				}
+				if in.QueryVersion == "" {
+					fail(w, r, ErrInvalid)
+					return
+				}
+				meta.QueryWriteGuard = in.QueryWriteGuard
 				value, err := s.Application.SaveDepartment(r.Context(), p, "", DepartmentInput{Name: in.Name, ParentID: in.ParentID}, meta)
 				if err != nil {
 					fail(w, r, err)
@@ -144,16 +150,22 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if len(parts) == 2 && parts[0] == "departments" {
 		if r.Method == "PUT" {
 			var in struct {
+				QueryWriteGuard
 				Name    string `json:"name"`
 				Version int64  `json:"version"`
 			}
-			if !decodeBody(w, r, &in, "name", "version") {
+			if !decodeBody(w, r, &in, "name", "version", "queryVersion") {
 				return
 			}
 			if _, err := query(r); err != nil {
 				fail(w, r, err)
 				return
 			}
+			if in.QueryVersion == "" {
+				fail(w, r, ErrInvalid)
+				return
+			}
+			meta.QueryWriteGuard = in.QueryWriteGuard
 			value, err := s.Application.SaveDepartment(r.Context(), p, parts[1], DepartmentInput{Name: in.Name, Version: in.Version}, meta)
 			if err != nil {
 				fail(w, r, err)
@@ -163,7 +175,11 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if r.Method == "DELETE" {
-			version, err := deleteVersion(r)
+			version, err := deleteVersion(r, "queryVersion")
+			meta.QueryVersion = r.URL.Query().Get("queryVersion")
+			if meta.QueryVersion == "" {
+				err = ErrInvalid
+			}
 			if err == nil {
 				err = s.Application.DeleteDepartment(r.Context(), p, parts[1], version, meta)
 			}
@@ -195,12 +211,18 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		if parts[2] == "identities" && r.Method == "PUT" {
 			var in struct {
+				QueryWriteGuard
 				IdentityIDs []string `json:"identityIds"`
 				Version     int64    `json:"version"`
 			}
-			if !decodeBody(w, r, &in, "identityIds", "version") {
+			if !decodeBody(w, r, &in, "identityIds", "version", "queryVersion") {
 				return
 			}
+			if in.QueryVersion == "" {
+				fail(w, r, ErrInvalid)
+				return
+			}
+			meta.QueryWriteGuard = in.QueryWriteGuard
 			value, err := s.Application.SetMemberIdentities(r.Context(), p, parts[1], in.IdentityIDs, in.Version, meta)
 			if err != nil {
 				fail(w, r, err)
@@ -211,14 +233,20 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		if parts[2] == "groups" && r.Method == "POST" {
 			var in struct {
+				QueryWriteGuard
 				Operation          string `json:"operation"`
 				DepartmentID       string `json:"departmentId"`
 				SourceDepartmentID string `json:"sourceDepartmentId"`
 				Version            int64  `json:"version"`
 			}
-			if !decodeBody(w, r, &in, "operation", "departmentId", "version") {
+			if !decodeBody(w, r, &in, "operation", "departmentId", "version", "queryVersion") {
 				return
 			}
+			if in.QueryVersion == "" {
+				fail(w, r, ErrInvalid)
+				return
+			}
+			meta.QueryWriteGuard = in.QueryWriteGuard
 			value, err := s.Application.ChangeMemberGroups(r.Context(), p, parts[1], GroupInput{in.Operation, in.DepartmentID, in.SourceDepartmentID, in.Version}, meta)
 			if err != nil {
 				fail(w, r, err)
@@ -301,6 +329,7 @@ func (s *Service) definitionHTTP(w http.ResponseWriter, r *http.Request, p sessi
 		if kind == Identity {
 			required = append(required, "templateIds")
 			var body struct {
+				DraftAcknowledgement
 				Name            string   `json:"name"`
 				Description     string   `json:"description"`
 				Version         *int64   `json:"version"`
@@ -310,10 +339,12 @@ func (s *Service) definitionHTTP(w http.ResponseWriter, r *http.Request, p sessi
 			if !decodeBody(w, r, &body, required...) {
 				return
 			}
+			meta.DraftRef = body.DraftRef
 			suppliedVersion = body.Version
 			in = DefinitionInput{Name: body.Name, Description: body.Description, PermissionCodes: body.PermissionCodes, TemplateIDs: body.TemplateIDs}
 		} else {
 			var body struct {
+				DraftAcknowledgement
 				Name            string   `json:"name"`
 				Description     string   `json:"description"`
 				Version         *int64   `json:"version"`
@@ -322,6 +353,7 @@ func (s *Service) definitionHTTP(w http.ResponseWriter, r *http.Request, p sessi
 			if !decodeBody(w, r, &body, required...) {
 				return
 			}
+			meta.DraftRef = body.DraftRef
 			suppliedVersion = body.Version
 			in = DefinitionInput{Name: body.Name, Description: body.Description, PermissionCodes: body.PermissionCodes}
 		}

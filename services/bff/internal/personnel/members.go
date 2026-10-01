@@ -129,12 +129,18 @@ func finishMember(ctx context.Context, tx pgx.Tx, p session.Principal, id, actio
 	if err != nil {
 		return Member{}, err
 	}
-	if err := tx.Commit(ctx); err != nil {
+	kind := DraftMemberIdentities
+	if action == "MEMBER_GROUPS_UPDATED" {
+		kind = DraftMemberGroups
+	}
+	if err := commitBusiness(ctx, tx, p, meta, kind, &id); err != nil {
 		return Member{}, databaseError(err)
 	}
 	return result, nil
 }
 func (a *Application) SetMemberIdentities(ctx context.Context, p session.Principal, id string, ids []string, version int64, meta RequestMetadata) (Member, error) {
+	ctx, cancel := context.WithTimeout(ctx, queryDeadline)
+	defer cancel()
 	if !validID(id) || version < 0 || version > maxSafeVersion {
 		return Member{}, ErrInvalid
 	}
@@ -144,7 +150,7 @@ func (a *Application) SetMemberIdentities(ctx context.Context, p session.Princip
 			return Member{}, ErrInvalid
 		}
 	}
-	tx, err := a.writeBusiness(ctx, p)
+	tx, err := a.writeBusiness(ctx, p, meta.QueryVersion)
 	if err != nil {
 		return Member{}, err
 	}
@@ -161,7 +167,7 @@ func (a *Application) SetMemberIdentities(ctx context.Context, p session.Princip
 		return Member{}, ErrInvalid
 	}
 	if reflect.DeepEqual(old.IdentityIDs, ids) {
-		return old, nil
+		return old, commitBusiness(ctx, tx, p, meta, DraftMemberIdentities, &id)
 	}
 	if version >= maxSafeVersion {
 		return Member{}, ErrConflict
@@ -177,6 +183,8 @@ func (a *Application) SetMemberIdentities(ctx context.Context, p session.Princip
 	return finishMember(ctx, tx, p, id, "MEMBER_IDENTITIES_UPDATED", meta, map[string]any{"identityIds": old.IdentityIDs}, map[string]any{"identityIds": ids})
 }
 func (a *Application) ChangeMemberGroups(ctx context.Context, p session.Principal, id string, in GroupInput, meta RequestMetadata) (Member, error) {
+	ctx, cancel := context.WithTimeout(ctx, queryDeadline)
+	defer cancel()
 	in.DepartmentID = strings.ToLower(in.DepartmentID)
 	in.SourceDepartmentID = strings.ToLower(in.SourceDepartmentID)
 	if !validID(id) || !validID(in.DepartmentID) || in.Version < 0 || in.Version > maxSafeVersion {
@@ -188,7 +196,7 @@ func (a *Application) ChangeMemberGroups(ctx context.Context, p session.Principa
 	if in.Operation == "move" && !validID(in.SourceDepartmentID) {
 		return Member{}, ErrInvalid
 	}
-	tx, err := a.writeBusiness(ctx, p)
+	tx, err := a.writeBusiness(ctx, p, meta.QueryVersion)
 	if err != nil {
 		return Member{}, err
 	}
@@ -230,7 +238,7 @@ func (a *Application) ChangeMemberGroups(ctx context.Context, p session.Principa
 	}
 	next = unique(next)
 	if reflect.DeepEqual(old.DepartmentIDs, next) {
-		return old, nil
+		return old, commitBusiness(ctx, tx, p, meta, DraftMemberGroups, &id)
 	}
 	if in.Version >= maxSafeVersion {
 		return Member{}, ErrConflict
