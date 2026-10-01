@@ -319,7 +319,9 @@ export function Table<T>({
           onScroll={handleScroll}
           className="table-scroll el-scrollbar__wrap el-scrollbar__wrap--hidden-default overflow-x-auto overflow-y-auto"
           style={
-            fillViewport ? { height: '100%', maxHeight: 'none', scrollPaddingTop: rowHeight } : paginated
+            // Collapsed grid borders add half a pixel to the sticky header.
+            // Round its occupied space up so keyboard-focused actions stay below it.
+            fillViewport ? { height: '100%', maxHeight: 'none', scrollPaddingTop: rowHeight + 1 } : paginated
               ? { maxHeight: height }
               : { height }
           }

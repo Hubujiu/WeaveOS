@@ -73,6 +73,13 @@ export function ColumnFilterMenu({
 
   useEffect(() => {
     if (!open) return;
+    // A focus/scrollIntoView event can already be queued when click opens the
+    // menu. Its geometry is captured after that scroll; only a later position
+    // change should dismiss the correctly anchored menu.
+    const openingScroll = new Map<HTMLElement, {left:number;top:number}>();
+    for (let node=document.getElementById(triggerId)?.parentElement;node;node=node.parentElement) {
+      openingScroll.set(node,{left:node.scrollLeft,top:node.scrollTop});
+    }
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
       const trigger = document.getElementById(triggerId);
@@ -108,6 +115,10 @@ export function ColumnFilterMenu({
     const onClose = (event: Event) => {
       const panel = document.getElementById(`${triggerId}-panel`);
       if (event.type === "scroll" && event.target instanceof Node && panel?.contains(event.target)) return;
+      if (event.type === "scroll" && event.target instanceof HTMLElement) {
+        const position=openingScroll.get(event.target);
+        if(position&&position.left===event.target.scrollLeft&&position.top===event.target.scrollTop)return;
+      }
       setOpen(false);
     };
     window.addEventListener("keydown", onKey);

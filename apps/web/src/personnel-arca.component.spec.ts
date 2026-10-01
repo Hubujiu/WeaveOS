@@ -184,6 +184,8 @@ test('Q35 sorting menu stays open during its own scrolling and closes on table s
   // Q36: the server time sort is the only eligible column.
   await page.getByRole('tab',{name:'操作记录',exact:true}).click();
   const table = page.locator('.activity-table');
+  await expect(table.getByRole('table')).toHaveAttribute('aria-busy','false');
+  await page.evaluate(()=>document.fonts.ready);
   const trigger = table.getByRole('button', { name: '排序 occurredAt', exact: true });
   await trigger.click();
   const menu = page.getByRole('menu');

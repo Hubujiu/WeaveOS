@@ -215,7 +215,13 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
             <button type="button" className="q36-filter-apply" disabled={validation.issues.length>0} onClick={()=>{if(validation.issues.length)return;onApply(validation.filter);changeOpen(false);}}>应用筛选</button>
           </div>
         </div>;
-  return <Popover.Root open={open} onOpenChange={(next,details)=>{if(!next)details.preventUnmountOnClose();changeOpen(next,details.reason!=='outside-press');}} actionsRef={actions}>
+  return <Popover.Root open={open} onOpenChange={(next,details)=>{
+    // The popup stays mounted through native close. A trigger press during
+    // that interval toggles the user's intent, even while Base UI still sees open.
+    const requested=details.reason==='trigger-press'?!intent.current:next;
+    if(!requested)details.preventUnmountOnClose();
+    changeOpen(requested,details.reason!=='outside-press');
+  }} actionsRef={actions}>
     <Popover.Trigger ref={trigger} className="q36-filter-trigger" aria-label={value?'自定义筛选，已应用':'自定义筛选'}>
       <ViewTransition default="none" update={expanded?'q36-filter-trigger-out':'q36-filter-trigger-in'}>
         <span className="q36-filter-trigger-content" style={{visibility:sharedMotion&&expanded?'hidden':undefined}}><Funnel size={16} weight={value?'fill':'regular'}/><span>自定义筛选</span>{value&&<span className="q36-filter-count">{countLeaves(initialTree(value))}</span>}</span>
@@ -224,7 +230,7 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
         <span className="q36-filter-trigger-frame" aria-hidden="true"/>
       </ViewTransition>}
     </Popover.Trigger>
-    <Popover.Portal keepMounted><Popover.Positioner side="bottom" align="start" sideOffset={8} collisionPadding={12} className="q36-filter-positioner">
+    <Popover.Portal keepMounted><Popover.Positioner side="bottom" align="start" sideOffset={8} collisionPadding={12} sticky className="q36-filter-positioner">
       <Popover.Popup ref={setPopup} id={panelId} className="q36-filter-popup" aria-label="自定义筛选" aria-hidden={sharedMotion?!expanded:!open} inert={sharedMotion?!expanded:!open} initialFocus={firstControl} finalFocus={trigger}>
         {sharedMotion ? expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={sharedComplete} onEnter={sharedComplete} onExit={sharedComplete}>
           <div className="q36-filter-shell" aria-hidden="true"/>
