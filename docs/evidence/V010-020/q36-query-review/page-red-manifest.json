@@ -1,0 +1,13 @@
+{
+  "baseline": "d75f53c with independent Unicode fix",
+  "command": "go -C services/bff test -v ./internal/personnel -run ^TestQ36MemberSQLPage -count=1",
+  "environment": "real isolated PG18.6 auth_app role, 2000 matching synthetic users",
+  "exitCode": 1,
+  "failure": "bounded SQL page path absent (compile-only ErrNotImplemented stub)",
+  "baselineObservation": "EXPLAIN ANALYZE: department display aggregate 2000 groups; identity display aggregate 2001 groups, including one nonmatching actor. This confirms prior whole-table relationship aggregation.",
+  "sha256": {
+    "services/bff/internal/personnel/query_projection.go": "8da6855c47058d99975de7d13aa86d2a2b51a995cd26a01439ed1f21bd455fb1",
+    "services/bff/internal/personnel/query_member_page.go": "bac266a135fd557b33b2a20af5030c2b331355ae2b7a599b9460cd860cadfaa9",
+    "services/bff/internal/personnel/query_member_page_test.go": "c95d7c407421560c97b8a30a713eb007eb4c876e693e2f117da66f837f6b182e"
+  }
+}
