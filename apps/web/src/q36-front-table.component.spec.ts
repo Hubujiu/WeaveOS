@@ -27,7 +27,8 @@ test('Q36 typed text has no sort icon; time/number sorting requests preserve rec
 test('Q36 external column width/order controls survive loading; empty grid remains inert', async ({page}) => {
   await page.getByRole('button',{name:'外部恢复列状态'}).click();
   await expect(page.locator('thead th').nth(1)).toContainText('数字示例');
-  await expect(page.locator('colgroup col').nth(1)).toHaveCSS('width','150px');
+  await expect(page.locator('colgroup col').nth(1)).toHaveAttribute('style','width: 150px;');
+  await expect.poll(()=>page.locator('thead th').nth(1).evaluate(n=>n.getBoundingClientRect().width)).toBe(150);
   await page.getByRole('button',{name:'切换加载'}).click();
   await expect(page.getByRole('table',{name:'受控成员'})).toHaveAttribute('aria-busy','true');
   await page.getByRole('button',{name:'切换加载'}).click();
@@ -46,8 +47,8 @@ test('Q36 original selection, drag and resize remain interactive',async({page})=
   await page.mouse.move(target.x+4,target.y+20,{steps:8});await page.mouse.up();
   await expect(page.locator('thead th').nth(1)).toContainText('数字示例');
   const resize=await page.getByRole('button',{name:'Resize amount column'}).boundingBox();
-  const before=await page.locator('colgroup col').nth(1).evaluate(n=>n.getBoundingClientRect().width);
+  const before=await page.locator('thead th').nth(1).evaluate(n=>n.getBoundingClientRect().width);
   if(!resize)throw new Error('visible resize target required');
   await page.mouse.move(resize.x+2,resize.y+20);await page.mouse.down();await page.mouse.move(resize.x+42,resize.y+20,{steps:6});await page.mouse.up();
-  expect(await page.locator('colgroup col').nth(1).evaluate(n=>n.getBoundingClientRect().width)).toBeGreaterThan(before+20);
+  expect(await page.locator('thead th').nth(1).evaluate(n=>n.getBoundingClientRect().width)).toBeGreaterThan(before+20);
 });

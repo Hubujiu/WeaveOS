@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState } from 'react';
+import { startTransition, useId, useLayoutEffect, useRef, useState, ViewTransition } from 'react';
 import { Popover } from '@base-ui/react/popover';
 import { Funnel, X } from '@phosphor-icons/react';
 import {
@@ -37,6 +37,7 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
   const [open,setOpen]=useState(false);
   const [draft,setDraft]=useState(()=>initialTree(value));
   const [popup,setPopup]=useState<HTMLDivElement|null>(null);
+  const [reducedMotion,setReducedMotion]=useState(()=>typeof matchMedia!=='undefined'&&matchMedia('(prefers-reduced-motion: reduce)').matches);
   const trigger=useRef<HTMLButtonElement>(null);
   const firstControl=useRef<HTMLSelectElement>(null);
   const actions=useRef<Popover.Root.Actions|null>(null);
@@ -44,38 +45,73 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
   const generation=useRef(0);
   const animation=useRef<Animation[]>([]);
   const panelId=useId();
+  const sharedName=`q36-filter-shell-${panelId.replace(/[^a-zA-Z0-9_-]/g,'-')}`;
+  // WebKit 26.6 can crash the page when a nested filter edit follows a native
+  // shared transition. Keep its stable WAAPI path until that engine is safe.
+  const sharedMotion=!reducedMotion&&typeof document!=='undefined'&&typeof document.startViewTransition==='function'
+    && navigator.vendor!=='Apple Computer, Inc.';
   const fields=view==='members'?memberFilterFields:eventFilterFields;
   const validation=validateQueryFilter(view,wireTree(draft));
   const leafCount=countLeaves(draft);
   function changeOpen(next:boolean) {
     intent.current=next;
-    if(next&&!open)setDraft(initialTree(value));
-    setOpen(next);
+    if(sharedMotion) {
+      // React owns the native transition; the shell's two named boundaries
+      // exchange in one Transition. The table outside them stays stationary.
+      document.documentElement.classList.add('q36-filter-transition-active');
+      startTransition(()=>{
+        if(next&&!open)setDraft(initialTree(value));
+        setOpen(next);
+      });
+    } else {
+      if(next&&!open)setDraft(initialTree(value));
+      setOpen(next);
+    }
   }
+  useLayoutEffect(()=>{
+    const media=matchMedia('(prefers-reduced-motion: reduce)');
+    const sync=()=>setReducedMotion(media.matches);
+    media.addEventListener('change',sync);
+    return()=>media.removeEventListener('change',sync);
+  },[]);
   // Independent shell/content layers avoid stretching glyphs. This WAAPI path
   // also remains the no-ViewTransition browser fallback after integration.
   useLayoutEffect(()=>{
     if(!popup)return;
     const version=++generation.current;
-    const shell=popup.querySelector<HTMLElement>('.q36-filter-shell');
-    const content=popup.querySelector<HTMLElement>('.q36-filter-content');
-    const previous=animation.current;
-    const currentShell=shell?getComputedStyle(shell).transform:'none';
-    const currentOpacity=content?getComputedStyle(content).opacity:'0';
-    previous.forEach(a=>a.cancel()); animation.current=[];
-    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const complete=()=>{if(version===generation.current&&!intent.current)actions.current?.unmount();};
-    if(reduce||typeof shell?.animate!=='function'){complete();return;}
-    const from=trigger.current?.getBoundingClientRect();const to=popup.getBoundingClientRect();
-    if(!from||!to.width||!to.height){complete();return;}
-    const small=`translate(${from.left-to.left}px,${from.top-to.top}px) scale(${from.width/to.width},${from.height/to.height})`;
-    const duration=open?300:220;
-    const shellMotion=shell.animate([{transform:previous.length?currentShell:open?small:'none'},{transform:open?'none':small}],{duration,easing:'cubic-bezier(.2,.8,.2,1)',fill:'both'});
-    animation.current.push(shellMotion);
-    if(content)animation.current.push(content.animate([{opacity:previous.length?currentOpacity:open?0:1,transform:open?'translateY(-4px)':'none'},{opacity:open?1:0,transform:open?'none':'translateY(-4px)'}],{duration:open?160:80,delay:open?100:0,fill:'both',easing:'ease-out'}));
-    shellMotion.finished.then(complete,()=>{});
-    return()=>{generation.current++;};
-  },[open,popup]);
+    if(sharedMotion){
+      if(!open){
+        const timer=window.setTimeout(()=>{
+          if(version===generation.current&&!intent.current)actions.current?.unmount();
+        },220);
+        return()=>{generation.current++;window.clearTimeout(timer);};
+      }
+      return()=>{generation.current++;};
+    }
+    // The positioner computes its geometry after the first layout. Measure on
+    // the next frame so a newly opened fallback popup has a nonzero target.
+    const frame=requestAnimationFrame(()=>{
+      if(version!==generation.current)return;
+      const shell=popup.querySelector<HTMLElement>('.q36-filter-shell');
+      const content=popup.querySelector<HTMLElement>('.q36-filter-content');
+      const previous=animation.current;
+      const currentShell=shell?getComputedStyle(shell).transform:'none';
+      const currentOpacity=content?getComputedStyle(content).opacity:'0';
+      previous.forEach(a=>a.cancel()); animation.current=[];
+      const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const complete=()=>{if(version===generation.current&&!intent.current)actions.current?.unmount();};
+      if(reduce||typeof shell?.animate!=='function'){complete();return;}
+      const from=trigger.current?.getBoundingClientRect();const to=popup.getBoundingClientRect();
+      if(!from||!to.width||!to.height){complete();return;}
+      const small=`translate(${from.left-to.left}px,${from.top-to.top}px) scale(${from.width/to.width},${from.height/to.height})`;
+      const duration=open?300:220;
+      const shellMotion=shell.animate([{transform:previous.length?currentShell:open?small:'none'},{transform:open?'none':small}],{duration,easing:'cubic-bezier(.2,.8,.2,1)',fill:'both'});
+      animation.current.push(shellMotion);
+      if(content)animation.current.push(content.animate([{opacity:previous.length?currentOpacity:open?0:1,transform:open?'translateY(-4px)':'none'},{opacity:open?1:0,transform:open?'none':'translateY(-4px)'}],{duration:open?160:80,delay:open?100:0,fill:'both',easing:'ease-out'}));
+      shellMotion.finished.then(complete,()=>{});
+    });
+    return()=>{generation.current++;cancelAnimationFrame(frame);};
+  },[open,popup,sharedMotion]);
   useLayoutEffect(()=>()=>animation.current.forEach(a=>a.cancel()),[]);
   function update(id:string,transform:(node:EditableNode)=>EditableNode) {
     function visit(node:EditableNode):EditableNode {
@@ -131,14 +167,7 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
       </div>
     </fieldset>;
   }
-  return <Popover.Root open={open} onOpenChange={(next,details)=>{if(!next)details.preventUnmountOnClose();changeOpen(next);}} actionsRef={actions}>
-    <Popover.Trigger ref={trigger} className="q36-filter-trigger" aria-label={value?'自定义筛选，已应用':'自定义筛选'}>
-      <Funnel size={16} weight={value?'fill':'regular'}/><span>自定义筛选</span>{value&&<span className="q36-filter-count">{countLeaves(initialTree(value))}</span>}
-    </Popover.Trigger>
-    <Popover.Portal><Popover.Positioner side="bottom" align="start" sideOffset={8} collisionPadding={12} className="q36-filter-positioner">
-      <Popover.Popup ref={setPopup} id={panelId} className="q36-filter-popup" aria-label="自定义筛选" aria-hidden={!open} inert={!open} initialFocus={firstControl} finalFocus={trigger}>
-        <div className="q36-filter-shell" aria-hidden="true"/>
-        <div className="q36-filter-content">
+  const content=<div className="q36-filter-content">
           <div className="q36-filter-heading"><Popover.Title>自定义筛选</Popover.Title><Popover.Close className="q36-filter-delete" aria-label="关闭筛选"><X size={16}/></Popover.Close></div>
           <Popover.Description>搜索、快捷条件与本筛选共同生效。最多 3 层分组、20 个条件。</Popover.Description>
           <div className="q36-filter-tree">{group(draft,'1',1,'root')}</div>
@@ -146,7 +175,24 @@ export function QueryFilterPanel<V extends QueryView>({view,value,onApply,option
           <div className="q36-filter-footer"><button type="button" onClick={()=>setDraft(initialTree(undefined))}>重置条件</button><span>{leafCount} / 20</span>
             <button type="button" className="q36-filter-apply" disabled={validation.issues.length>0} onClick={()=>{if(validation.issues.length)return;onApply(validation.filter);changeOpen(false);}}>应用筛选</button>
           </div>
-        </div>
+        </div>;
+  const sharedComplete=()=>{
+    // The class only suppresses root crossfading while the panel shell moves.
+    window.setTimeout(()=>document.documentElement.classList.remove('q36-filter-transition-active'),330);
+  };
+  return <Popover.Root open={open} onOpenChange={(next,details)=>{if(!next)details.preventUnmountOnClose();changeOpen(next);}} actionsRef={actions}>
+    <Popover.Trigger ref={trigger} className="q36-filter-trigger" aria-label={value?'自定义筛选，已应用':'自定义筛选'}>
+      <span className="q36-filter-trigger-content"><Funnel size={16} weight={value?'fill':'regular'}/><span>自定义筛选</span>{value&&<span className="q36-filter-count">{countLeaves(initialTree(value))}</span>}</span>
+      {sharedMotion&&!open&&<ViewTransition name={sharedName} default="none" share="q36-filter-collapse" onShare={sharedComplete}>
+        <span className="q36-filter-trigger-frame" aria-hidden="true"/>
+      </ViewTransition>}
+    </Popover.Trigger>
+    <Popover.Portal keepMounted><Popover.Positioner side="bottom" align="start" sideOffset={8} collisionPadding={12} className="q36-filter-positioner">
+      <Popover.Popup ref={setPopup} id={panelId} className="q36-filter-popup" aria-label="自定义筛选" aria-hidden={!open} inert={!open} initialFocus={firstControl} finalFocus={trigger}>
+        {sharedMotion ? open&&<ViewTransition name={sharedName} default="none" share="q36-filter-expand" onShare={sharedComplete}>
+          <div className="q36-filter-shell" aria-hidden="true"/>
+        </ViewTransition> : <div className="q36-filter-shell" aria-hidden="true"/>}
+        {sharedMotion ? open&&<ViewTransition default="none" enter="q36-filter-content-in" exit="q36-filter-content-out">{content}</ViewTransition> : content}
       </Popover.Popup>
     </Popover.Positioner></Popover.Portal>
   </Popover.Root>;
