@@ -39,3 +39,5 @@ figma-original-byte-archive.zip包含Git LF规范前完整Figma目录；import-s
 本机浏览器均合成API边界组件验证，不是真实BFF/PG/Redis产品验收。4173恢复旧命名审核窗口，合成fixture来自已测试样例；HTTP200、实际56/176和40/14表格几何已读回，截图local-preview.png。开放PR/在用服务及恢复资料保留，未合并/accepted/部署；验收后清理按仓库规则另执行。最终完整126/126 Chromium通过（3.9m），最终Chromium/Firefox/WebKit63/63通过（3.2m），根pnpm typecheck/build退出0。较广153/153基线通过（7.4m）亦保留。132基础/治理通过；结构/记录及最终HEAD archive安全检查随后复验，推送后五项CI只引用精确head实际状态。21张最终三引擎截图已人工对照白灰圆角、行列/编辑/焦点与安全业务文案。
 
 固定093ebcf源归档安全检查实际RED：34项通用密钥规则均对应Figma mainComponentKey发布标识。仅更名可读证据字段为mainComponentPublishedIdentifier，值不变、原字节/字段在ZIP、恢复映射已记；无安全规则/忽略变更，也不隐藏真实凭据。secret-scan.json记录实际RED及下一新HEAD GREEN实扫；不把单个选定检查冒充全部安全套件。
+
+0418be9 HEAD archive同固定镜像/参数实际GREEN退出0，1/1选定检查，0失败/skip，日志secret-scan-green.txt。最终记录提交后须再扫描实际HEAD，推送后核对五项CI，旧head不代替新head。
