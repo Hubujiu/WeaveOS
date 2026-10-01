@@ -116,6 +116,10 @@ test('Q36 B2 definition explicitly saves durable draft and restores original ver
  await page.reload();await page.getByRole('button',{name:'草稿箱',exact:true}).click();await page.getByRole('button',{name:'恢复草稿',exact:true}).first().click();
  await expect(page.getByLabel('说明',{exact:true})).toHaveValue('尚未提交的输入');await expect(page.getByRole('alert')).toContainText('原版本 1');await expect(page.getByRole('alert')).toContainText('最新版本 2');
  await expect(page.getByRole('button',{name:'保存',exact:true})).toBeDisabled();expect(saved?.baseVersion).toBe(1);
+ await page.setViewportSize({width:390,height:844});
+ const resolve=page.getByRole('button',{name:'保留当前输入，使用最新对象版本',exact:true});await resolve.scrollIntoViewIfNeeded();
+ const box=(await resolve.boundingBox())!;
+ expect(box.x).toBeGreaterThanOrEqual(176);expect(box.x+box.width).toBeLessThanOrEqual(390);
 });
 
 test('Q36 B2 explicit member draft does not save automatically or bypass query guard',async({page})=>{
