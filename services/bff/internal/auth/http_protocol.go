@@ -38,6 +38,7 @@ func publicMessage(code string) string {
 		"USER_ACCOUNT_ALREADY_EXISTS": "账号已存在", "USER_NOT_FOUND": "用户不存在",
 		"INVITATION_INVALID": "邀请码无效", "INVITATION_ALREADY_USED": "邀请码已被使用",
 		"COMMON_UNSUPPORTED_MEDIA_TYPE": "仅接受 JSON 请求", "COMMON_SERVICE_UNAVAILABLE": "服务暂时不可用，请稍后重试",
+		"COMMON_QUERY_CHANGED": "查询相关数据已变化，请刷新重查", "COMMON_QUERY_CONTEXT_EXPIRED": "查询上下文已过期，请重新查询",
 		"COMMON_DEADLINE_EXCEEDED": "请求超时，请稍后重试", "API_NOT_FOUND": "请求的接口不存在",
 	}[code]; ok {
 		return message
@@ -59,7 +60,7 @@ func (s *Service) fail(w http.ResponseWriter, r *http.Request, err error) {
 			status, code = 403, failure.Code
 		case "USER_NOT_FOUND":
 			status, code = 404, failure.Code
-		case "USER_ACCOUNT_ALREADY_EXISTS", "INVITATION_ALREADY_USED", "PERSONNEL_CONFLICT":
+		case "USER_ACCOUNT_ALREADY_EXISTS", "INVITATION_ALREADY_USED", "PERSONNEL_CONFLICT", "COMMON_QUERY_CHANGED", "COMMON_QUERY_CONTEXT_EXPIRED":
 			status, code = 409, failure.Code
 		case "COMMON_INTERNAL_ERROR":
 			status, code = 500, failure.Code
@@ -75,6 +76,18 @@ func (s *Service) fail(w http.ResponseWriter, r *http.Request, err error) {
 	}
 	if errors.Is(err, session.ErrForbidden) {
 		status, code = 403, "COMMON_CSRF_REJECTED"
+	}
+	if status == 503 && failure != nil && failure.Reason == "QUERY_BUSY" {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-store")
+		w.WriteHeader(status)
+		_ = json.NewEncoder(w).Encode(struct {
+			Code    string            `json:"code"`
+			Message string            `json:"message"`
+			Data    any               `json:"data"`
+			Meta    map[string]string `json:"meta"`
+		}{code, publicMessage(code), nil, map[string]string{"requestId": httpserver.Metadata(r.Context()).RequestID, "reason": "QUERY_BUSY"}})
+		return
 	}
 	reply(w, r, status, code, data)
 }

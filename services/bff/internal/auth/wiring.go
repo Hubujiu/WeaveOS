@@ -27,7 +27,7 @@ type Service struct {
 }
 
 func (s *Service) application() *Application {
-	return &Application{Pool: s.Pool, Sessions: s.Sessions, AuditKeyID: s.AuditKeyID, AuditKey: s.AuditKey, Logger: s.Logger, InvitationAuthorizer: s.InvitationAuthorizer}
+	return &Application{Pool: s.Pool, Sessions: s.Sessions, AuditKeyID: s.AuditKeyID, AuditKey: s.AuditKey, Logger: s.Logger, InvitationAuthorizer: s.InvitationAuthorizer, InvitationBegin: s.InvitationBegin}
 }
 
 func (s *Service) authenticator() session.Authenticator {

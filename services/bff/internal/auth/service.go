@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -83,10 +84,18 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if r.URL.Path == "/api/v1/invitations" && r.Method == "POST" {
-			if !decode(w, r, &struct{}{}) {
+			var in struct {
+				QueryVersion json.RawMessage `json:"queryVersion"`
+			}
+			if !decode(w, r, &in) {
 				return
 			}
-			s.createInvitation(w, r, p)
+			version := ""
+			if in.QueryVersion != nil && (string(in.QueryVersion) == "null" || json.Unmarshal(in.QueryVersion, &version) != nil || version == "") {
+				reply(w, r, 400, "COMMON_INVALID_ARGUMENT", nil)
+				return
+			}
+			s.createInvitation(w, r, p, version)
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, "/api/v1/users/") && strings.HasSuffix(r.URL.Path, "/password-reset") && r.Method == "POST" {
@@ -146,8 +155,10 @@ func (s *Service) register(w http.ResponseWriter, r *http.Request) {
 	reply(w, r, 201, "OK", map[string]string{"id": user.ID, "account": user.Account})
 }
 
-func (s *Service) createInvitation(w http.ResponseWriter, r *http.Request, p session.Principal) {
-	result, err := s.application().CreateInvitation(r.Context(), p, s.requestMetadata(r))
+func (s *Service) createInvitation(w http.ResponseWriter, r *http.Request, p session.Principal, version string) {
+	meta := s.requestMetadata(r)
+	meta.QueryVersion = version
+	result, err := s.application().CreateInvitation(r.Context(), p, meta)
 	if err != nil {
 		s.fail(w, r, err)
 		return

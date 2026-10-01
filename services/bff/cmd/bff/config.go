@@ -69,15 +69,20 @@ func buildHandler(ctx context.Context, cfg config) (http.Handler, func(), error)
 	s := &auth.Service{Pool: pool, Sessions: sessions, Origin: cfg.Origin, AuditKeyID: cfg.AuditKeyID, AuditKey: cfg.AuditKey, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	people := &personnel.Application{Pool: pool, Queries: personnel.NewQueryContextStore(queryRedis, cfg.Generation)}
 	s.Personnel = &personnel.Service{Application: people, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
-	s.InvitationAuthorizer = func(ctx context.Context, tx pgx.Tx, p session.Principal) error {
-		err := people.AuthorizeWrite(ctx, tx, p)
-		if errors.Is(err, personnel.ErrDenied) {
-			return &auth.Failure{Code: "COMMON_PERMISSION_DENIED"}
+	s.InvitationBegin = func(ctx context.Context, p session.Principal, version string) (pgx.Tx, error) {
+		tx, err := people.BeginQueryWrite(ctx, p, version)
+		for _, entry := range []struct {
+			err  error
+			code string
+		}{{personnel.ErrDenied, "COMMON_PERMISSION_DENIED"}, {personnel.ErrConflict, "PERSONNEL_CONFLICT"}, {personnel.ErrQueryChanged, "COMMON_QUERY_CHANGED"}, {personnel.ErrQueryContextExpired, "COMMON_QUERY_CONTEXT_EXPIRED"}} {
+			if errors.Is(err, entry.err) {
+				return nil, &auth.Failure{Code: entry.code}
+			}
 		}
-		if errors.Is(err, personnel.ErrConflict) {
-			return &auth.Failure{Code: "PERSONNEL_CONFLICT"}
+		if errors.Is(err, personnel.ErrQueryBusy) {
+			return nil, &auth.Failure{Code: "COMMON_SERVICE_UNAVAILABLE", Reason: "QUERY_BUSY"}
 		}
-		return err
+		return tx, err
 	}
 	if err := s.Ready(ctx); err != nil {
 		close()
