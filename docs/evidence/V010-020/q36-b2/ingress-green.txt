@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: fixed actual Nginx config/version unchanged and small canonical Chinese query crosses the old URI-sized budget
+ok 1 - fixed actual Nginx config/version unchanged and small canonical Chinese query crosses the old URI-sized budget
+  ---
+  duration_ms: 777.3283
+  type: 'test'
+  ...
+# Subtest: both POST query routes independently accept raw 64KiB and reject 64KiB+1
+ok 2 - both POST query routes independently accept raw 64KiB and reject 64KiB+1
+  ---
+  duration_ms: 73.4295
+  type: 'test'
+  ...
+# Subtest: filter canonical 16KiB is inclusive independently of query raw spelling and whitespace
+ok 3 - filter canonical 16KiB is inclusive independently of query raw spelling and whitespace
+  ---
+  duration_ms: 114.9355
+  type: 'test'
+  ...
+# Subtest: draft create/update raw 128KiB is inclusive and rejected oversized writes retain the saved version
+ok 4 - draft create/update raw 128KiB is inclusive and rejected oversized writes retain the saved version
+  ---
+  duration_ms: 125.1047
+  type: 'test'
+  ...
+# Subtest: draft canonical Chinese payload 64KiB accepts its wrapper and rejects +1 below the raw cap
+ok 5 - draft canonical Chinese payload 64KiB accepts its wrapper and rejects +1 below the raw cap
+  ---
+  duration_ms: 84.9295
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1254.6819

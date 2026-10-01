@@ -25,8 +25,8 @@ function call(path,body,method='POST'){
 }
 function expectResponse(res,status,code='OK'){assert.equal(res.status,status);if(status!==204)assert.equal(res.body.code,code);}
 function pad(body,size){assert.ok(Buffer.byteLength(body)<=size);return body+' '.repeat(size-Buffer.byteLength(body));}
-function filter(size){
- const empty={children:[{field:'account',operator:'eq',value:''}],operator:'and'};
+function filter(size,field){
+ const empty={children:[{field,operator:'eq',value:''}],operator:'and'};
  const room=size-Buffer.byteLength(JSON.stringify(empty));empty.children[0].value='中'.repeat(Math.floor(room/3))+'x'.repeat(room%3);
  const result=JSON.stringify(empty);assert.equal(Buffer.byteLength(result),size);return result;
 }
@@ -52,11 +52,13 @@ test('both POST query routes independently accept raw 64KiB and reject 64KiB+1',
  for(const view of ['members','events']){const exact=pad('{}',65536);expectResponse(await call('personnel/'+view+'/search',exact),200);expectResponse(await call('personnel/'+view+'/search',exact+' '),400,invalid);}
 });
 test('filter canonical 16KiB is inclusive independently of query raw spelling and whitespace',async()=>{
- const exact=filter(16384),over=filter(16385);
- expectResponse(await call('personnel/members/search','{"filter":'+exact+'}'),200);
- expectResponse(await call('personnel/members/search','{"filter":'+over+'}'),400,invalid);
- const escaped=exact.replace(/中/g,'\\u4e2d');assert.ok(Buffer.byteLength(escaped)<65536&&Buffer.byteLength(escaped)>16384);
- expectResponse(await call('personnel/members/search',pad('{"filter":'+escaped+'}',65536)),200);
+ for(const [view,field] of [['members','account'],['events','actorAccount']]){
+  const exact=filter(16384,field),over=filter(16385,field);
+  expectResponse(await call('personnel/'+view+'/search','{"filter":'+exact+'}'),200);
+  expectResponse(await call('personnel/'+view+'/search','{"filter":'+over+'}'),400,invalid);
+  const escaped=exact.replace(/中/g,'\\u4e2d');assert.ok(Buffer.byteLength(escaped)<65536&&Buffer.byteLength(escaped)>16384);
+  expectResponse(await call('personnel/'+view+'/search',pad('{"filter":'+escaped+'}',65536)),200);
+ }
 });
 test('draft create/update raw 128KiB is inclusive and rejected oversized writes retain the saved version',async()=>{
  const body='{"kind":"department","targetId":null,"baseVersion":null,"payload":{"name":"入口专项中文","parentId":null}}';
