@@ -12,9 +12,11 @@ test('Q35 original column focus excludes the workspace outline while retaining o
     await route.fulfill({ json: { code: 'OK', message: 'success', data, meta: null } });
   });
   await page.goto('/app/admin');
+  await page.keyboard.press('Tab');
   for (const name of ['筛选 成员', '拖动以调整 部门 列顺序']) {
     const control = page.getByRole('button', { name, exact: true });
     await control.focus();
+    expect(await control.evaluate(n => n.matches(':focus-visible'))).toBe(true);
     await expect(control).toHaveCSS('outline-color', 'oklab(0.708 0 0 / 0.5)');
     await expect(control).toHaveCSS('outline-offset', '0px');
   }
