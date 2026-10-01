@@ -29,6 +29,10 @@ test('Q35 sort menu supports direction keys, visible focus and Escape return', a
   await page.keyboard.press('Enter');
   await expect(trigger).toHaveAttribute('aria-expanded', 'false'); await expect(trigger).toBeFocused();
   await expect(page.getByRole('columnheader').filter({ hasText: '成员' })).toHaveAttribute('aria-sort', 'descending');
+  await trigger.press('Enter'); await expect(ascending).toBeFocused();
+  await page.keyboard.press('Escape'); await expect(trigger).toBeFocused();
+  await trigger.press('Space'); await expect(ascending).toBeFocused();
+  await page.keyboard.press('Escape'); await expect(trigger).toBeFocused();
 });
 
 test('Q35 original base foreground and smoothing are scoped to the table', async ({ page }) => {
