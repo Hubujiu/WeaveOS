@@ -50,6 +50,12 @@ export type EventQueryParameters = {
   from?: string; to?: string; filter?: EventFilterGroup; queryVersion?: QueryVersion;
 } & ({ sortBy?: never; sortDirection?: never } | { sortBy: 'occurredAt'; sortDirection: 'asc' | 'desc' });
 
+// Approved POST /personnel/{members,events}/search bodies. These are JSON
+// objects, not URLSearchParams. Whole raw body <=64KiB; filter canonical <=16KiB.
+// Keep aliases so pure filter/state consumers do not need a transport rename.
+export type MemberSearchInput = MemberQueryParameters;
+export type EventSearchInput = EventQueryParameters;
+
 export type DraftReference = { id: string; version: number };
 // Member/department business requests require queryVersion. Definition cards
 // retain their object-version workflow; all supported editors may pass draftRef.

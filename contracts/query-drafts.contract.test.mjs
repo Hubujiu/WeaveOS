@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 const api=JSON.parse(readFileSync('contracts/openapi/openapi.json','utf8'));
 const codes=JSON.parse(readFileSync('contracts/errors/codes.json','utf8'));
 const schemas=api.components.schemas;
-const parameter=(name,key)=>api.paths['/api/v1/personnel/'+name].get.parameters.find(p=>p.name===key);
+const parameter=(name,key)=>{const input=schemas[(name==='members'?'Member':'Event')+'SearchInput'];return input?.properties[key]?{schema:input.properties[key]}:undefined;};
 test('Q36 query responses retain paging and publish a session-owned opaque baseline',()=>{
  for(const name of ['PersonnelMembersPage','PersonnelEventsPage']){
   assert.ok(schemas[name].required.includes('queryVersion'),'queryVersion is absent');
@@ -20,7 +20,7 @@ test('Q36 query responses retain paging and publish a session-owned opaque basel
 });
 test('Q36 both query views declare grouped AND/OR, field types and global bounds',()=>{
  for(const [view,prefix] of [['members','Member'],['events','Event']]){
-  assert.ok(parameter(view,'filter')?.content?.['application/json'],'GET filter is typed JSON');
+  assert.equal(parameter(view,'filter')?.schema.$ref,'#/components/schemas/'+prefix+'FilterGroup','POST filter is a typed JSON object');
   const root=schemas[prefix+'FilterGroup'];assert.ok(root,'group missing');
   assert.deepEqual(root.properties.operator.enum,['and','or']);
   assert.equal(root['x-max-group-depth'],3);assert.equal(root['x-max-leaves'],20);assert.equal(root['x-max-canonical-bytes'],16384);

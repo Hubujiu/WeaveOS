@@ -52,6 +52,31 @@ type EventQueryInput struct {
 	Sort *QuerySort
 }
 
+// POST search wire bodies; the core query input remains transport-independent.
+// Decode with route-local raw 64KiB bound, then apply canonical filter 16KiB.
+type MemberSearchInput struct {
+	Page         int          `json:"page,omitempty"`
+	PageSize     int          `json:"pageSize,omitempty"`
+	Search       string       `json:"search,omitempty"`
+	DepartmentID string       `json:"departmentId,omitempty"`
+	IdentityID   string       `json:"identityId,omitempty"`
+	Filter       *FilterGroup `json:"filter,omitempty"`
+	QueryVersion string       `json:"queryVersion,omitempty"`
+}
+
+type EventSearchInput struct {
+	Page          int          `json:"page,omitempty"`
+	PageSize      int          `json:"pageSize,omitempty"`
+	Search        string       `json:"search,omitempty"`
+	Action        string       `json:"action,omitempty"`
+	From          *time.Time   `json:"from,omitempty"`
+	To            *time.Time   `json:"to,omitempty"`
+	Filter        *FilterGroup `json:"filter,omitempty"`
+	QueryVersion  string       `json:"queryVersion,omitempty"`
+	SortBy        string       `json:"sortBy,omitempty"`
+	SortDirection string       `json:"sortDirection,omitempty"`
+}
+
 type ActivityDisplay struct {
 	Action  string `json:"action"`
 	Object  string `json:"object"`

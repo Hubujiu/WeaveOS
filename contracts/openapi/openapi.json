@@ -516,7 +516,7 @@
       "get": {
         "operationId": "getpersonnel_members",
         "summary": "GET /api/v1/personnel/members",
-        "description": "Requires live personnel.manage. Consistent live authorization; no cross-request cache.  Q36: filter/sort the complete live result before page/offset. Check old baseline, establish new criteria, total/page/revision in ONE short REPEATABLE READ transaction. Revision is only the unchanged fast path; changed revision requires complete safe projection SHA256, excluding object version. Equal fingerprints including ABA are allowed. Never return mixed snapshots or auto-clamp a stale page. Invalid page/pageSize is 400; retain existing valid-page behavior for an empty result. Only numeric/time sorts; members accept no sort parameters. Query metadata is not a historical data snapshot.",
+        "description": "Compatibility-only simple GET using existing page/pageSize/search and shortcut/range parameters. No complex filter or custom sort parameters; new UI uses POST /api/v1/personnel/members/search only. Reuse the same core live authorization, full query, and supplied-context validation. Optional queryVersion never bypasses queryVersion write protection: all guarded writes still require a currently validated query context. Existing simple requests without a context establish an independent current baseline and keep their valid page semantics. Default ordering remains unchanged.",
         "security": [
           {
             "WebSession": []
@@ -567,24 +567,12 @@
             }
           },
           {
-            "name": "filter",
-            "in": "query",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MemberFilterGroup"
-                }
-              }
-            },
-            "description": "URL-encoded JSON. Validate decoded canonical size, depth, leaf count, all operators and typed fields before SQL."
-          },
-          {
             "name": "queryVersion",
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/QueryVersion"
             },
-            "description": "Required for continuing a baseline, including page>1; first query or explicit refresh starts page 1 without it. On changed criteria, validate OLD stored query first and create a NEW context."
+            "description": "Optional continuation context. If supplied, use the same live query validation as POST. Legacy requests without it are independent simple reads; no historical baseline is asserted."
           }
         ],
         "responses": {
@@ -618,7 +606,8 @@
           "409": {
             "$ref": "#/components/responses/QueryConflict"
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/v1/personnel/members/{memberId}": {
@@ -2091,7 +2080,7 @@
       "get": {
         "operationId": "getpersonnel_events",
         "summary": "GET /api/v1/personnel/events",
-        "description": "Requires live personnel.manage. Consistent live authorization; no cross-request cache.  Q36: filter/sort the complete live result before page/offset. Check old baseline, establish new criteria, total/page/revision in ONE short REPEATABLE READ transaction. Revision is only the unchanged fast path; changed revision requires complete safe projection SHA256, excluding object version. Equal fingerprints including ABA are allowed. Never return mixed snapshots or auto-clamp a stale page. Invalid page/pageSize is 400; retain existing valid-page behavior for an empty result. Only numeric/time sorts; members accept no sort parameters. Query metadata is not a historical data snapshot.",
+        "description": "Compatibility-only simple GET using existing page/pageSize/search and shortcut/range parameters. No complex filter or custom sort parameters; new UI uses POST /api/v1/personnel/events/search only. Reuse the same core live authorization, full query, and supplied-context validation. Optional queryVersion never bypasses queryVersion write protection: all guarded writes still require a currently validated query context. Existing simple requests without a context establish an independent current baseline and keep their valid page semantics. Default ordering remains unchanged.",
         "security": [
           {
             "WebSession": []
@@ -2165,46 +2154,12 @@
             "description": "Defaults to now; hot database only."
           },
           {
-            "name": "filter",
-            "in": "query",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EventFilterGroup"
-                }
-              }
-            },
-            "description": "URL-encoded JSON. Validate decoded canonical size, depth, leaf count, all operators and typed fields before SQL."
-          },
-          {
             "name": "queryVersion",
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/QueryVersion"
             },
-            "description": "Required for continuing a baseline, including page>1; first query or explicit refresh starts page 1 without it. On changed criteria, validate OLD stored query first and create a NEW context."
-          },
-          {
-            "name": "sortBy",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "occurredAt"
-              ]
-            }
-          },
-          {
-            "name": "sortDirection",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
-            },
-            "description": "Required together with sortBy. Without both, restore occurred_at DESC,id DESC."
+            "description": "Optional continuation context. If supplied, use the same live query validation as POST. Legacy requests without it are independent simple reads; no historical baseline is asserted."
           }
         ],
         "responses": {
@@ -2238,7 +2193,8 @@
           "409": {
             "$ref": "#/components/responses/QueryConflict"
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/v1/personnel/drafts": {
@@ -2345,7 +2301,9 @@
                 "$ref": "#/components/schemas/DraftCreateInput"
               }
             }
-          }
+          },
+          "x-max-raw-bytes": 1048576,
+          "description": "Entire raw JSON body <=1048576 bytes, matching the existing personnel decoder. Canonical payload <=65536 bytes independently; wrapper fields and escaped JSON are not counted as canonical payload. No global body/header limit change."
         }
       }
     },
@@ -2472,7 +2430,9 @@
                 "$ref": "#/components/schemas/DraftUpdateInput"
               }
             }
-          }
+          },
+          "x-max-raw-bytes": 1048576,
+          "description": "Entire raw JSON body <=1048576 bytes, matching the existing personnel decoder. Canonical payload <=65536 bytes independently; wrapper fields and escaped JSON are not counted as canonical payload. No global body/header limit change."
         }
       },
       "delete": {
@@ -2534,6 +2494,132 @@
                 "$ref": "#/components/headers/RequestId"
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/personnel/members/search": {
+      "post": {
+        "operationId": "searchPersonnelMembers",
+        "summary": "Search personnel members",
+        "description": "Read-only POST; no business writes, business audit events or dataset revision increments. May create/touch bounded Redis query contexts. Live Session, source/CSRF checks remain required despite read semantics. Requires live personnel.manage. Consistent live authorization; no cross-request cache.  Q36: filter/sort the complete live result before page/offset. Check old baseline, establish new criteria, total/page/revision in ONE short REPEATABLE READ transaction. Revision is only the unchanged fast path; changed revision requires complete safe projection SHA256, excluding object version. Equal fingerprints including ABA are allowed. Never return mixed snapshots or auto-clamp a stale page. Invalid page/pageSize is 400; retain existing valid-page behavior for an empty result. Only numeric/time sorts; members accept no sort parameters. Query metadata is not a historical data snapshot.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "x-max-raw-bytes": 65536,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberSearchInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonnelMembersPageEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/QueryUnavailable"
+          },
+          "409": {
+            "$ref": "#/components/responses/QueryConflict"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          }
+        }
+      }
+    },
+    "/api/v1/personnel/events/search": {
+      "post": {
+        "operationId": "searchPersonnelEvents",
+        "summary": "Search personnel events",
+        "description": "Read-only POST; no business writes, business audit events or dataset revision increments. May create/touch bounded Redis query contexts. Live Session, source/CSRF checks remain required despite read semantics. Requires live personnel.manage. Consistent live authorization; no cross-request cache.  Q36: filter/sort the complete live result before page/offset. Check old baseline, establish new criteria, total/page/revision in ONE short REPEATABLE READ transaction. Revision is only the unchanged fast path; changed revision requires complete safe projection SHA256, excluding object version. Equal fingerprints including ABA are allowed. Never return mixed snapshots or auto-clamp a stale page. Invalid page/pageSize is 400; retain existing valid-page behavior for an empty result. Only numeric/time sorts; members accept no sort parameters. Query metadata is not a historical data snapshot.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "x-max-raw-bytes": 65536,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventSearchInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonnelEventsPageEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/QueryUnavailable"
+          },
+          "409": {
+            "$ref": "#/components/responses/QueryConflict"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
           }
         }
       }
@@ -5042,6 +5128,116 @@
             }
           }
         ]
+      },
+      "MemberSearchInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "default": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "search": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "identityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "filter": {
+            "$ref": "#/components/schemas/MemberFilterGroup"
+          },
+          "queryVersion": {
+            "$ref": "#/components/schemas/QueryVersion"
+          }
+        },
+        "description": "Read-only typed search body. filter is an object, never a URL-encoded string. Canonical filter UTF-8 <=16384 bytes and raw entire body <=65536 bytes independently; standard escaped Unicode/date JSON is accepted within both limits. First query/explicit refresh starts page 1 without queryVersion; continue or change criteria using the previous context. Defaults are existing page=1,pageSize=20; default event range last seven days is fixed until explicit refresh."
+      },
+      "EventSearchInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "default": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "search": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "DEPARTMENT_CREATED",
+              "DEPARTMENT_UPDATED",
+              "DEPARTMENT_DELETED",
+              "IDENTITY_CREATED",
+              "IDENTITY_UPDATED",
+              "IDENTITY_DELETED",
+              "TEMPLATE_CREATED",
+              "TEMPLATE_UPDATED",
+              "TEMPLATE_DELETED",
+              "MEMBER_IDENTITIES_UPDATED",
+              "MEMBER_GROUPS_UPDATED",
+              "INVITATION_CREATED"
+            ]
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "filter": {
+            "$ref": "#/components/schemas/EventFilterGroup"
+          },
+          "queryVersion": {
+            "$ref": "#/components/schemas/QueryVersion"
+          },
+          "sortBy": {
+            "type": "string",
+            "enum": [
+              "occurredAt"
+            ]
+          },
+          "sortDirection": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          }
+        },
+        "description": "Read-only typed search body. filter is an object, never a URL-encoded string. Canonical filter UTF-8 <=16384 bytes and raw entire body <=65536 bytes independently; standard escaped Unicode/date JSON is accepted within both limits. First query/explicit refresh starts page 1 without queryVersion; continue or change criteria using the previous context. Defaults are existing page=1,pageSize=20; default event range last seven days is fixed until explicit refresh.",
+        "dependentRequired": {
+          "sortBy": [
+            "sortDirection"
+          ],
+          "sortDirection": [
+            "sortBy"
+          ]
+        }
       }
     },
     "responses": {

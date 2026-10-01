@@ -38,7 +38,7 @@ function matches(schema, value) {
 }
 export async function assertResponseSchema(response, path, method) {
   const pathname = new URL(path, 'https://weaveos.test').pathname;
-  const template = Object.keys(document.paths).find(candidate => {
+  const template = (document.paths[pathname] ? pathname : undefined) ?? Object.keys(document.paths).find(candidate => {
     const pattern = candidate.split('/'); const actual = pathname.split('/');
     return pattern.length === actual.length && pattern.every((part, index) => /^\{[^}]+\}$/.test(part) || part === actual[index]);
   }) ?? pathname;
