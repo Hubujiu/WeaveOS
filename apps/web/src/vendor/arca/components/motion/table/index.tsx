@@ -17,7 +17,7 @@ import { useColumnReorder } from "./use-column-reorder";
 import { useColumnResize } from "./use-column-resize";
 import { useColumnSort } from "./use-column-sort";
 import { useRowSelection } from "./use-row-selection";
-import { alignText, INDEX_WIDTH, readCell } from "./utils";
+import { alignText, INDEX_PX, INDEX_WIDTH, readCell } from "./utils";
 
 export type {
   SortDirection,
@@ -247,7 +247,7 @@ export function Table<T>({
   // Once explicit widths are controlled, an HTML table must not distribute
   // leftover container space over them and silently alter the requested px.
   const controlledTableWidth = columnWidths && Object.keys(columnWidths).length && resolvedWidths.every(width => width !== null)
-    ? resolvedWidths.reduce<number>((sum, width) => sum + (width ?? 0), selectable ? INDEX_WIDTH : 0)
+    ? resolvedWidths.reduce<number>((sum, width) => sum + (width ?? 0), selectable ? INDEX_PX : 0)
     : undefined;
   const rowStart = paginated ? currentPage * pageSize : 0;
 
