@@ -23,6 +23,7 @@ type Service struct {
 	TrustedProxyHosts    []string
 	Personnel            http.Handler
 	InvitationAuthorizer func(context.Context, pgx.Tx, session.Principal) error
+	InvitationBegin      func(context.Context, session.Principal, string) (pgx.Tx, error)
 }
 
 func (s *Service) application() *Application {

@@ -26,6 +26,7 @@ type Application struct {
 	Logger     *slog.Logger
 	// The authentication owner supplies its transaction to current personnel qualification.
 	InvitationAuthorizer func(context.Context, pgx.Tx, session.Principal) error
+	InvitationBegin      func(context.Context, session.Principal, string) (pgx.Tx, error)
 }
 
 // RequestMetadata contains audit facts supplied by the trusted Web boundary.
