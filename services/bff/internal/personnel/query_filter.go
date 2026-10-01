@@ -32,7 +32,9 @@ func CompileFilter(view string, raw json.RawMessage, firstParameter int) (Filter
 	if len(raw) == 0 {
 		return FilterPlan{Predicate: "TRUE", Arguments: []any{}}, nil
 	}
-	if len(raw) > 65536 || !utf8.Valid(raw) {
+	// Share the strict JSON Unicode validator: encoding/json alone replaces
+	// unpaired escaped UTF16 surrogates, silently changing exact comparisons.
+	if len(raw) > 65536 || !draftJSONUnicode(raw) {
 		return FilterPlan{}, ErrInvalid
 	}
 	d := json.NewDecoder(bytes.NewReader(raw))
