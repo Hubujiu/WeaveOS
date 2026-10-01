@@ -9,7 +9,7 @@ test('Q36 Table directly controls 1-based page, arbitrary jump and size reset', 
   await page.getByRole('spinbutton',{name:'跳至页'}).fill('13');
   await page.getByRole('spinbutton',{name:'跳至页'}).press('Enter');
   await expect(page.getByLabel('当前页')).toHaveText('13');
-  await page.getByRole('button',{name:'每页条数'}).click();
+  await page.getByRole('combobox',{name:'每页条数'}).click();
   await page.getByRole('option',{name:'50',exact:true}).click();
   await expect(page.getByLabel('当前页')).toHaveText('1');
 });

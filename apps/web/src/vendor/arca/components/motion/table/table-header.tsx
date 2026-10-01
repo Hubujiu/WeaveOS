@@ -205,7 +205,7 @@ export function TableHeader<T>({
             const active = sort?.key === column.key;
             const isDragging = dragKey === column.key;
             const isActive = activeColumn === column.key;
-            const canSort = column.sortable !== false;
+            const canSort = column.sortable !== false && (column.dataType === undefined || column.dataType === 'number' || column.dataType === 'time');
             const isLast = index === columns.length - 1;
             return (
               <th
@@ -295,6 +295,7 @@ export function TableHeader<T>({
                       sort={sort}
                       onSort={onSetSort}
                       reduce={reduce}
+                      sortOnly={column.dataType !== undefined}
                     />
                   ) : (
                     <span

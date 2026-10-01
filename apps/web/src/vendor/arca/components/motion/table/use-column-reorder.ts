@@ -14,14 +14,17 @@ export function useColumnReorder<T>({
   columns,
   thRefs,
   onColumnOrderChange,
+  columnOrder,
 }: {
   columns: TableColumn<T>[];
   thRefs: HeaderCellRefs;
   onColumnOrderChange?: (keys: string[]) => void;
+  columnOrder?: string[];
 }) {
-  const [order, setOrder] = useState<string[]>(() =>
+  const [internalOrder, setOrder] = useState<string[]>(() =>
     columns.map((c) => c.key),
   );
+  const order = columnOrder ?? internalOrder;
   const [dragKey, setDragKey] = useState<string | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const dragRef = useRef<{
@@ -103,7 +106,7 @@ export function useColumnReorder<T>({
           let to = dropIndexFor(e.clientX);
           if (from < to) to--;
           without.splice(Math.max(0, to), 0, key);
-          setOrder(without);
+          if (columnOrder === undefined) setOrder(without);
           onColumnOrderChange?.(without);
         }
       }
@@ -111,7 +114,7 @@ export function useColumnReorder<T>({
       setDropIndex(null);
       return moved;
     },
-    [dropIndexFor, orderedColumns, onColumnOrderChange],
+    [dropIndexFor, orderedColumns, onColumnOrderChange, columnOrder],
   );
 
   return {

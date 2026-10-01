@@ -27,12 +27,14 @@ export function ColumnFilterMenu({
   sort,
   onSort,
   reduce: reduceProp,
+  sortOnly = false,
 }: {
   columnKey: string;
   header: ReactNode;
   sort: SortState | null;
   onSort: (key: string, direction: SortDirection) => void;
   reduce?: boolean;
+  sortOnly?: boolean;
 }) {
   const reduce = useReducedMotion() ?? reduceProp ?? false;
   const triggerId = useId();
@@ -126,7 +128,7 @@ export function ColumnFilterMenu({
       <button
         id={triggerId}
         type="button"
-        aria-label={`筛选 ${columnKey}`}
+        aria-label={`${sortOnly ? '排序' : '筛选'} ${columnKey}`}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={mounted ? `${triggerId}-panel` : undefined}
@@ -165,7 +167,7 @@ export function ColumnFilterMenu({
             : "opacity-0 text-muted-foreground/70 hover:bg-muted hover:text-foreground group-hover:opacity-100 group-focus-within:opacity-100",
         )}
       >
-        <Funnel size={14} weight={active ? "fill" : "light"} />
+        {sortOnly ? (active && sort?.direction === 'desc' ? <SortDescending size={14} /> : <SortAscending size={14} />) : <Funnel size={14} weight={active ? "fill" : "light"} />}
       </button>
       {mounted
         ? createPortal(

@@ -14,6 +14,9 @@ export type TableColumn<T> = {
   header: ReactNode;
   /** Allow clicking the header to sort by this column. Defaults to true. */
   sortable?: boolean;
+  /** Q36 typed columns: only number/time may expose sorting. Untyped legacy
+   * columns retain their old behavior until the business adapter is migrated. */
+  dataType?: 'text' | 'number' | 'time' | 'enum' | 'boolean' | 'action';
   /** Cell text alignment. */
   align?: "left" | "center" | "right";
   /** Column width as a CSS length, e.g. "160px" or "20%". Omit to share remaining space equally. */
@@ -50,14 +53,20 @@ export interface TableProps<T> {
   sort?: SortState | null;
   defaultSort?: SortState | null;
   onSortChange?: (sort: SortState | null) => void;
+  /** Sorting is performed on the complete server result. Never reorder a page. */
+  manualSorting?: boolean;
   /** Allow dragging the right edge of a header to resize that column. */
   resizable?: boolean;
   /** Minimum column width in px when resizing. */
   minColumnWidth?: number;
   onColumnResize?: (key: string, width: number) => void;
+  columnWidths?: Record<string, number>;
+  /** All affected widths, including neighboring columns, on resize commit. */
+  onColumnWidthsChange?: (widths: Record<string, number>) => void;
   /** Allow dragging a header grip to reorder columns. */
   reorderable?: boolean;
   onColumnOrderChange?: (keys: string[]) => void;
+  columnOrder?: string[];
   /** Called when an `editable` cell changes. */
   onCellEdit?: (rowId: string, columnKey: string, value: string) => void;
   /** When set, non-sortable headers become editable inputs for the column name. */
@@ -81,6 +90,11 @@ export interface TableProps<T> {
   pageSize?: number;
   defaultPageSize?: number;
   onPageSizeChange?: (size: number) => void;
+  /** Public Q36 page API is 1-based. Server pages are not silently clamped. */
+  page?: number;
+  defaultPage?: number;
+  onPageChange?: (page: number) => void;
+  /** @deprecated Transitional 0-based API for the existing PersonnelTable. */
   pageIndex?: number;
   defaultPageIndex?: number;
   onPageIndexChange?: (index: number) => void;

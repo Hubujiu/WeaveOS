@@ -12,11 +12,15 @@ export function useColumnResize<T>({
   thRefs,
   minColumnWidth,
   onColumnResize,
+  columnWidths,
+  onColumnWidthsChange,
 }: {
   orderedColumns: TableColumn<T>[];
   thRefs: HeaderCellRefs;
   minColumnWidth: number;
   onColumnResize?: (key: string, width: number) => void;
+  columnWidths?: Record<string, number>;
+  onColumnWidthsChange?: (widths: Record<string, number>) => void;
 }) {
   const resizeRef = useRef<{
     key: string;
@@ -25,7 +29,9 @@ export function useColumnResize<T>({
     keys: string[];
   } | null>(null);
   const widthsRef = useRef<Record<string, number>>({});
-  const [widths, setWidths] = useState<Record<string, number>>({});
+  const [liveWidths, setWidths] = useState<Record<string, number>>({});
+  const [resizing, setResizing] = useState(false);
+  const widths = resizing ? liveWidths : columnWidths ?? liveWidths;
 
   const commitWidths = useCallback((next: Record<string, number>) => {
     widthsRef.current = next;
@@ -52,6 +58,7 @@ export function useColumnResize<T>({
         startWidths: snapshot,
         keys: orderedColumns.map((column) => column.key),
       };
+      setResizing(true);
       commitWidths(snapshot);
       capturePointer(e.currentTarget, e.pointerId);
     },
@@ -98,15 +105,17 @@ export function useColumnResize<T>({
     (e: ReactPointerEvent) => {
       const state = resizeRef.current;
       resizeRef.current = null;
+      setResizing(false);
       releasePointer(e.currentTarget, e.pointerId);
       if (state) {
+        onColumnWidthsChange?.({...widthsRef.current});
         onColumnResize?.(
           state.key,
           widthsRef.current[state.key] ?? state.startWidths[state.key],
         );
       }
     },
-    [onColumnResize],
+    [onColumnResize, onColumnWidthsChange],
   );
 
   return { widths, startResize, moveResize, endResize };

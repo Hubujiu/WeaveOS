@@ -10,6 +10,7 @@ import {
 } from "../select";
 import { Button } from "../../ui/button";
 import { cn } from "../../../lib/utils";
+import { useEffect, useState } from 'react';
 
 export type TablePaginationItem =
   | { type: "page"; index: number }
@@ -109,6 +110,8 @@ export function TablePagination({
   onPageSizeChange,
   className,
 }: TablePaginationProps) {
+  const [jump, setJump] = useState(String(pageIndex + 1));
+  useEffect(() => setJump(String(pageIndex + 1)), [pageIndex]);
   const from = recordCount === 0 ? 0 : pageIndex * pageSize + 1;
   const to = Math.min((pageIndex + 1) * pageSize, recordCount);
   const paginationInfo = info
@@ -223,6 +226,18 @@ export function TablePagination({
             >
               <CaretRight />
             </Button>
+            <form onSubmit={event => {
+              event.preventDefault();
+              const requested = Number(jump);
+              if (Number.isSafeInteger(requested) && requested >= 1 && requested <= pageCount) onPageIndexChange(requested - 1);
+            }} className="ml-1 flex items-center gap-1">
+              <label className="text-muted-foreground text-xs">跳至页
+                <input type="number" aria-label="跳至页" min={1} max={pageCount} value={jump}
+                  onChange={event=>setJump(event.target.value)}
+                  className="ml-1 h-6 w-12 rounded-md border border-border bg-transparent px-1 text-xs text-foreground" />
+              </label>
+              <Button type="submit" variant="ghost" size="icon-xs" aria-label="跳转到指定页"><CaretRight /></Button>
+            </form>
           </nav>
         ) : null}
       </div>

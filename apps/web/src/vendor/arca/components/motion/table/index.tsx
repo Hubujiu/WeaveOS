@@ -76,11 +76,15 @@ export function Table<T>({
   sort: sortProp,
   defaultSort = null,
   onSortChange,
+  manualSorting = false,
   resizable = false,
   minColumnWidth = 64,
   onColumnResize,
+  columnWidths,
+  onColumnWidthsChange,
   reorderable = false,
   onColumnOrderChange,
+  columnOrder,
   onCellEdit,
   onColumnRename,
   onInsertRow,
@@ -94,10 +98,13 @@ export function Table<T>({
   pageSize: pageSizeProp,
   defaultPageSize = 10,
   onPageSizeChange,
+  page: pageProp,
+  defaultPage = 1,
+  onPageChange,
   pageIndex: pageIndexProp,
   defaultPageIndex = 0,
   onPageIndexChange,
-  pageSizes = [5, 10, 25, 50, 100],
+  pageSizes = [5, 10, 20, 25, 50, 100],
   onEndReached,
   loading = false,
   skeletonRows = 3,
@@ -133,7 +140,7 @@ export function Table<T>({
     startReorder,
     moveReorder,
     endReorder,
-  } = useColumnReorder({ columns, thRefs, onColumnOrderChange });
+  } = useColumnReorder({ columns, thRefs, onColumnOrderChange, columnOrder });
 
   const { sort, sortedRows, setSort } = useColumnSort({
     rows,
@@ -141,16 +148,17 @@ export function Table<T>({
     sort: sortProp,
     defaultSort,
     onSortChange,
+    manualSorting,
   });
 
-  const [internalPageIndex, setInternalPageIndex] = useState(defaultPageIndex);
+  const [internalPageIndex, setInternalPageIndex] = useState(onPageChange ? defaultPage - 1 : defaultPageIndex);
   const [internalPageSize, setInternalPageSize] = useState(defaultPageSize);
-  const pageIndex = pageIndexProp ?? internalPageIndex;
+  const pageIndex = pageProp !== undefined ? pageProp - 1 : pageIndexProp ?? internalPageIndex;
   const pageSize = pageSizeProp ?? internalPageSize;
 
   const recordCount = serverCount ?? sortedRows.length;
   const pageCount = Math.max(1, Math.ceil(recordCount / pageSize) || 1);
-  const currentPage = Math.min(pageIndex, pageCount - 1);
+  const currentPage = pageProp !== undefined && manualPagination ? Math.max(0,pageIndex) : Math.min(pageIndex, pageCount - 1);
   const pagedRows = paginated && !manualPagination
     ? sortedRows.slice(currentPage * pageSize, currentPage * pageSize + pageSize)
     : sortedRows;
@@ -168,20 +176,22 @@ export function Table<T>({
   const setPageIndex = useCallback(
     (next: number) => {
       const clamped = Math.max(0, Math.min(next, pageCount - 1));
-      if (pageIndexProp === undefined) setInternalPageIndex(clamped);
+      if (pageIndexProp === undefined && pageProp === undefined) setInternalPageIndex(clamped);
       onPageIndexChange?.(clamped);
+      onPageChange?.(clamped + 1);
     },
-    [onPageIndexChange, pageCount, pageIndexProp],
+    [onPageIndexChange, onPageChange, pageCount, pageIndexProp, pageProp],
   );
 
   const setPageSize = useCallback(
     (next: number) => {
       if (pageSizeProp === undefined) setInternalPageSize(next);
       onPageSizeChange?.(next);
-      if (pageIndexProp === undefined) setInternalPageIndex(0);
+      if (pageIndexProp === undefined && pageProp === undefined) setInternalPageIndex(0);
       onPageIndexChange?.(0);
+      onPageChange?.(1);
     },
-    [onPageIndexChange, onPageSizeChange, pageIndexProp, pageSizeProp],
+    [onPageIndexChange, onPageChange, onPageSizeChange, pageIndexProp, pageProp, pageSizeProp],
   );
 
   const handleSetSort = useCallback(
@@ -195,14 +205,16 @@ export function Table<T>({
   useEffect(() => {
     // An authoritative total can shrink between requests. Recover the actual
     // server page as well as the visible pager; clamping display alone strands it.
-    if (manualPagination && pageIndex !== currentPage) setPageIndex(currentPage);
-  }, [manualPagination, pageIndex, currentPage, setPageIndex]);
+    if (pageProp === undefined && manualPagination && pageIndex !== currentPage) setPageIndex(currentPage);
+  }, [manualPagination, pageProp, pageIndex, currentPage, setPageIndex]);
 
   const { widths, startResize, moveResize, endResize } = useColumnResize({
     orderedColumns,
     thRefs,
     minColumnWidth,
     onColumnResize,
+    columnWidths,
+    onColumnWidthsChange,
   });
 
   const { selected, allSelected, someSelected, toggleAll, toggleRow } =
@@ -231,6 +243,12 @@ export function Table<T>({
   const hasRowMenu = !!(onInsertRow || onDeleteRow);
   const hasColumnMenu = !!(onInsertColumn || onDeleteColumn);
   const rootFontSize = useRootFontSize();
+  const resolvedWidths = orderedColumns.map(column => widths[column.key] ?? resolveColumnWidth(column.width, rootFontSize));
+  // Once explicit widths are controlled, an HTML table must not distribute
+  // leftover container space over them and silently alter the requested px.
+  const controlledTableWidth = columnWidths && Object.keys(columnWidths).length && resolvedWidths.every(width => width !== null)
+    ? resolvedWidths.reduce<number>((sum, width) => sum + (width ?? 0), selectable ? INDEX_WIDTH : 0)
+    : undefined;
   const rowStart = paginated ? currentPage * pageSize : 0;
 
   // Infinite scroll: fire onEndReached once per near-bottom dwell, paused while
@@ -310,7 +328,8 @@ export function Table<T>({
             <table
               className="personnel-data-table w-full border-collapse"
               aria-label={ariaLabel}
-              style={{ tableLayout: "fixed", width: "100%", minWidth }}
+              aria-busy={loading}
+              style={{ tableLayout: "fixed", width: controlledTableWidth || "100%", minWidth }}
             >
           <colgroup>
             {selectable ? <col style={{ width: INDEX_WIDTH }} /> : null}
@@ -335,7 +354,7 @@ export function Table<T>({
             thRefs={thRefs}
             selectable={selectable}
             selectAllLabel={selectAllLabel}
-            selectionDisabled={!visibleRows.length}
+            selectionDisabled={!visibleRows.length || loading}
             allSelected={allSelected}
             someSelected={someSelected}
             onToggleAll={toggleAll}
@@ -360,10 +379,10 @@ export function Table<T>({
           />
 
           <tbody>
-            {sortedRows.length === 0 && !fillViewport ? (
+            {sortedRows.length === 0 && (!fillViewport || loading) ? (
               loading ? (
                 <SkeletonRows
-                  count={Math.max(1, Math.ceil(height / rowHeight))}
+                  count={Math.max(1, Math.ceil((fillViewport ? viewportHeight - rowHeight : height) / rowHeight))}
                   columns={orderedColumns}
                   selectable={selectable}
                   rowHeight={rowHeight}
@@ -432,6 +451,7 @@ export function Table<T>({
                           >
                             <Checkbox
                               checked={isSelected}
+                              disabled={loading}
                               onCheckedChange={() => toggleRow(entry.id)}
                               aria-label={getRowLabel?.(entry.row) ?? `Select row ${rowNumber}`}
                               className="justify-center gap-0"
@@ -480,7 +500,7 @@ export function Table<T>({
                 ) : null}
               </>
             )}
-            {blankRows.map((blankHeight, index) => <tr key={'blank-' + index} data-empty-row aria-hidden="true" style={{ height: blankHeight }} className="border-border/60 border-b">
+            {(!loading || visibleRows.length > 0) && blankRows.map((blankHeight, index) => <tr key={'blank-' + index} data-empty-row aria-hidden="true" style={{ height: blankHeight }} className="border-border/60 border-b">
               {Array.from({ length: leadColumns }, (_, cell) => <td key={cell} className={cn("p-0", cell < leadColumns - 1 && "border-border border-r")} />)}
             </tr>)}
           </tbody>
