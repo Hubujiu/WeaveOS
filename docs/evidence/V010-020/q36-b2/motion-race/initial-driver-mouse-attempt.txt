@@ -1,0 +1,44 @@
+
+Running 1 test using 1 worker
+
+(node:73044) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [firefox] › apps\web\src\q36-front-motion.component.spec.ts:56:1 › Q36 delayed native opening commit cannot undo a later trusted trigger close (2.5s)
+
+
+  1) [firefox] › apps\web\src\q36-front-motion.component.spec.ts:56:1 › Q36 delayed native opening commit cannot undo a later trusted trigger close
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+      77 |   // waiting for the animation's deliberately pending actionability checks.
+      78 |   await page.mouse.click(bounds!.x+bounds!.width/2,bounds!.y+bounds!.height/2);
+    > 79 |   expect(await page.evaluate(()=>(window as unknown as {__q36DelayedNativeCommit:{clicks:number}}).__q36DelayedNativeCommit.clicks)).toBe(2);
+         |                                                                                                                                      ^
+      80 |   await page.evaluate(()=>(window as unknown as {__q36DelayedNativeCommit:{release:()=>void}}).__q36DelayedNativeCommit.release());
+      81 |   await expect(page.getByRole('dialog',{name:'自定义筛选'})).not.toBeVisible();
+      82 |   await expect(trigger).toBeFocused();
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-front-motion.component.spec.ts:79:134
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .work\q36-motion-race-deterministic-red\q36-front-motion.component-73a43-later-trusted-trigger-close-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    .work\q36-motion-race-deterministic-red\q36-front-motion.component-73a43-later-trusted-trigger-close-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .work\q36-motion-race-deterministic-red\q36-front-motion.component-73a43-later-trusted-trigger-close-firefox\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work\q36-motion-race-deterministic-red\q36-front-motion.component-73a43-later-trusted-trigger-close-firefox\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-motion-race-deterministic-red\q36-front-motion.component-73a43-later-trusted-trigger-close-firefox\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [firefox] › apps\web\src\q36-front-motion.component.spec.ts:56:1 › Q36 delayed native opening commit cannot undo a later trusted trigger close
