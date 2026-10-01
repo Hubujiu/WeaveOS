@@ -1,0 +1,39 @@
+
+Running 10 tests using 1 worker
+
+(node:83724) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:59:5 鈥?Q36 actual members: complete filtering, arbitrary pages, selection, column preservation and screenshots (5.7s)
+  ok  2 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:74:5 鈥?Q36 actual events: backend safe display, absolute range, full-result time ordering and screenshots (6.7s)
+  ok  3 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:83:5 鈥?Q36 actual precision: unrelated option change proceeds; related member change explicitly refreshes (3.3s)
+  ok  4 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:91:5 鈥?Q36 actual context LRU expiry is distinct from changed results (3.1s)
+  ok  5 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:96:5 鈥?Q36 actual five draft kinds persist after fresh login; member/department inputs survive query refresh (9.5s)
+  ok  6 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:107:5 鈥?Q36 actual restoration compares latest target, preserves original base, and requires explicit resolution (3.4s)
+  ok  7 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:115:5 鈥?Q36 actual draft CAS conflict preserves input; business success keeps a newer draft version (3.5s)
+  ok  8 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:126:5 鈥?Q36 actual drafts remain isolated between two currently authorized accounts (4.8s)
+  x   9 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:150:5 鈥?Q36 actual narrow long AND OR groups validate twenty leaves and keep footer reachable (4.3s)
+  -  10 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:167:5 鈥?Q36 actual page records open close stable trigger and reopen without a root blocker
+
+
+  1) [chromium] 鈥?tests\acceptance\q36-web.spec.ts:150:5 鈥?Q36 actual narrow long AND OR groups validate twenty leaves and keep footer reachable 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 844
+    Received:    905
+
+      160 |  await expect(panel.getByRole('button',{name:'缁?1 娣诲姞鏉′欢',exact:true})).toBeDisabled();await expect(panel.getByRole('button',{name:'搴旂敤绛涢€?,exact:true})).toBeEnabled();await shot(page,'filter-long-groups-desktop',true);
+      161 |  await page.setViewportSize({width:390,height:844});await shot(page,'filter-long-groups-narrow',true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    > 162 |  const footer=(await panel.getByRole('button',{name:'搴旂敤绛涢€?,exact:true}).boundingBox())!;expect(footer.y+footer.height).toBeLessThanOrEqual(844);
+          |                                                                                                                        ^
+      163 |  await panel.getByRole('button',{name:'搴旂敤绛涢€?,exact:true}).click();await expect(page.locator('.member-table tbody tr[data-row-id]')).toHaveCount(1);
+      164 |  await page.getByLabel('鎼滅储鎴愬憳',{exact:true}).fill('q36-no-match-'+stamp);await expect(page.locator('.member-table table')).toHaveAttribute('aria-busy','false');await expect(page.locator('.member-table')).toContainText('鏆傛棤鎴愬憳');await shot(page,'members-empty-narrow');
+      165 | });
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\tests\acceptance\q36-web.spec.ts:162:120
+
+    Error Context: .work\q36-b2-real-results\q36-web-Q36-actual-narrow--f1f84-s-and-keep-footer-reachable-chromium\error-context.md
+
+  1 failed
+    [chromium] 鈥?tests\acceptance\q36-web.spec.ts:150:5 鈥?Q36 actual narrow long AND OR groups validate twenty leaves and keep footer reachable 
+  1 did not run
+  8 passed (46.3s)
