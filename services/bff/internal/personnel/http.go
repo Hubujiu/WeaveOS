@@ -88,11 +88,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch parts[0] {
 		case "departments":
 			if r.Method == "GET" {
-				if _, err := query(r); err != nil {
-					fail(w, r, err)
+				values, err := query(r, "queryVersion")
+				if err != nil || values.Has("queryVersion") && values.Get("queryVersion") == "" {
+					fail(w, r, ErrInvalid)
 					return
 				}
-				items, err := s.Application.Departments(r.Context(), p)
+				items, err := s.Application.Departments(r.Context(), p, values.Get("queryVersion"))
 				if err != nil {
 					fail(w, r, err)
 					return
@@ -128,11 +129,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		case "permissions":
 			if r.Method == "GET" {
-				if _, err := query(r); err != nil {
-					fail(w, r, err)
+				values, err := query(r, "queryVersion")
+				if err != nil || values.Has("queryVersion") && values.Get("queryVersion") == "" {
+					fail(w, r, ErrInvalid)
 					return
 				}
-				items, err := s.Application.Catalog(r.Context(), p)
+				items, err := s.Application.Catalog(r.Context(), p, values.Get("queryVersion"))
 				if err != nil {
 					fail(w, r, err)
 					return
@@ -273,9 +275,13 @@ func (s *Service) definitionHTTP(w http.ResponseWriter, r *http.Request, p sessi
 	}
 	if r.Method == "GET" {
 		if id == "" {
-			values, err := query(r, "page", "pageSize", "search")
+			values, err := query(r, "page", "pageSize", "search", "queryVersion")
 			if err != nil {
 				fail(w, r, err)
+				return
+			}
+			if values.Has("queryVersion") && values.Get("queryVersion") == "" {
+				fail(w, r, ErrInvalid)
 				return
 			}
 			page, err := pageQuery(values)
@@ -283,7 +289,7 @@ func (s *Service) definitionHTTP(w http.ResponseWriter, r *http.Request, p sessi
 				fail(w, r, err)
 				return
 			}
-			value, err := s.Application.ListDefinitions(r.Context(), p, kind, page)
+			value, err := s.Application.ListDefinitions(r.Context(), p, kind, page, values.Get("queryVersion"))
 			if err != nil {
 				fail(w, r, err)
 				return

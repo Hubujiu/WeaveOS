@@ -24,8 +24,14 @@ func getDepartment(ctx context.Context, tx pgx.Tx, id string) (Department, error
 	err := json.Unmarshal(raw, &result)
 	return result, err
 }
-func (a *Application) Departments(ctx context.Context, p session.Principal) ([]Department, error) {
-	tx, err := a.read(ctx, p)
+func (a *Application) Departments(ctx context.Context, p session.Principal, queryVersion ...string) ([]Department, error) {
+	ctx, cancel := context.WithTimeout(ctx, queryDeadline)
+	defer cancel()
+	version := ""
+	if len(queryVersion) > 0 {
+		version = queryVersion[0]
+	}
+	tx, receipt, err := a.readWithQuery(ctx, p, version)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +53,11 @@ func (a *Application) Departments(ctx context.Context, p session.Principal) ([]D
 		}
 		result = append(result, value)
 	}
-	return result, rows.Err()
+	if err := rows.Err(); err != nil {
+		return result, err
+	}
+	rows.Close()
+	return result, receipt.commit(ctx, tx)
 }
 
 type safeDepartment struct {

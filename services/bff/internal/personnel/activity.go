@@ -58,8 +58,14 @@ func (a *Application) Events(ctx context.Context, p session.Principal, query Eve
 	}
 	return result, rows.Err()
 }
-func (a *Application) Catalog(ctx context.Context, p session.Principal) ([]Permission, error) {
-	tx, err := a.read(ctx, p)
+func (a *Application) Catalog(ctx context.Context, p session.Principal, queryVersion ...string) ([]Permission, error) {
+	ctx, cancel := context.WithTimeout(ctx, queryDeadline)
+	defer cancel()
+	version := ""
+	if len(queryVersion) > 0 {
+		version = queryVersion[0]
+	}
+	tx, receipt, err := a.readWithQuery(ctx, p, version)
 	if err != nil {
 		return nil, err
 	}
@@ -77,5 +83,9 @@ func (a *Application) Catalog(ctx context.Context, p session.Principal) ([]Permi
 		}
 		result = append(result, value)
 	}
-	return result, rows.Err()
+	if err := rows.Err(); err != nil {
+		return result, err
+	}
+	rows.Close()
+	return result, receipt.commit(ctx, tx)
 }

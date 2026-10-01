@@ -87,7 +87,7 @@ func (a *Application) GetDefinition(ctx context.Context, p session.Principal, ki
 	defer tx.Rollback(context.Background())
 	return getDefinition(ctx, tx, kind, id)
 }
-func (a *Application) ListDefinitions(ctx context.Context, p session.Principal, kind DefinitionKind, query PageQuery) (Page[Definition], error) {
+func (a *Application) ListDefinitions(ctx context.Context, p session.Principal, kind DefinitionKind, query PageQuery, queryVersion ...string) (Page[Definition], error) {
 	query, err := normalizedPage(query)
 	if err != nil {
 		return Page[Definition]{}, err
@@ -97,7 +97,13 @@ func (a *Application) ListDefinitions(ctx context.Context, p session.Principal, 
 		return Page[Definition]{}, err
 	}
 	result := Page[Definition]{Items: []Definition{}, Page: query.Page, PageSize: query.PageSize}
-	tx, err := a.read(ctx, p)
+	ctx, cancel := context.WithTimeout(ctx, queryDeadline)
+	defer cancel()
+	version := ""
+	if len(queryVersion) > 0 {
+		version = queryVersion[0]
+	}
+	tx, receipt, err := a.readWithQuery(ctx, p, version)
 	if err != nil {
 		return result, err
 	}
@@ -122,7 +128,11 @@ func (a *Application) ListDefinitions(ctx context.Context, p session.Principal, 
 		}
 		result.Items = append(result.Items, value)
 	}
-	return result, rows.Err()
+	if err := rows.Err(); err != nil {
+		return result, err
+	}
+	rows.Close()
+	return result, receipt.commit(ctx, tx)
 }
 
 type safeDefinition struct {
