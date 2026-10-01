@@ -108,6 +108,15 @@ func decodeBody(w http.ResponseWriter, r *http.Request, out any, required ...str
 			return false
 		}
 	}
+	// draftRef is a closed object, including nested duplicate-field rejection.
+	if raw, ok := values["draftRef"]; ok {
+		fields, e := draftObject(raw, "id", "version")
+		var ref DraftReference
+		if e != nil || json.Unmarshal(raw, &ref) != nil || len(fields) != 2 || !validID(ref.ID) || ref.Version < 1 || ref.Version > maxSafeVersion {
+			fail(w, r, ErrInvalid)
+			return false
+		}
+	}
 	d = json.NewDecoder(strings.NewReader(string(bytes)))
 	d.DisallowUnknownFields()
 	if err := d.Decode(out); err != nil {
