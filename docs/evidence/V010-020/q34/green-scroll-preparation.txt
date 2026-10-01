@@ -1,0 +1,62 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:64620) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:62156) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 10 tests using 1 worker
+
+(node:63900) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/10] [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 成员与部门
+[2/10] [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 身份
+[3/10] [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 操作记录
+[4/10] [chromium] › apps\web\src\personnel.component.spec.ts:42:1 › Q34 page selection exposes mixed state without writing and shows selected rows
+[5/10] [chromium] › apps\web\src\personnel.component.spec.ts:52:1 › Q34 identity table preserves edit entry, shared fields and unsaved switch protection
+[6/10] [chromium] › apps\web\src\personnel.component.spec.ts:62:31 › Q34 dense table keeps sticky header and both scroll axes at 1920
+[7/10] [chromium] › apps\web\src\personnel.component.spec.ts:62:31 › Q34 dense table keeps sticky header and both scroll axes at 320
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:62:31 › Q34 dense table keeps sticky header and both scroll axes at 320 
+
+    Error: expect(locator).toBeInViewport() failed
+
+    Locator:  getByRole('button', { name: '配置身份', exact: true }).first()
+    Expected: in viewport
+    Received: viewport ratio 0
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toBeInViewport" getByRole('button', { name: '配置身份', exact: true }).first() with timeout 1500ms
+      - waiting for getByRole('button', { name: '配置身份', exact: true }).first()
+        16 × locator resolved to <button class="text-button">配置身份</button>
+           - unexpected value "viewport ratio 0"
+
+
+      66 |  const scroll=page.locator('.member-table .table-scroll');await scroll.scrollIntoViewIfNeeded();expect(await scroll.evaluate(n=>n.scrollHeight>n.clientHeight)).toBe(true);
+      67 |  const th=scroll.locator('th').first(),start=(await th.boundingBox())!.y;await scroll.evaluate(n=>{n.scrollTop=200;});expect((await th.boundingBox())!.y).toBeCloseTo(start,0);await expect(th).toHaveCSS('position','sticky');
+    > 68 |  if(width===320){await scroll.evaluate(n=>{n.scrollLeft=n.scrollWidth;});expect(await scroll.evaluate(n=>n.scrollLeft)).toBeGreaterThan(0);await expect(page.getByRole('button',{name:'配置身份',exact:true}).first()).toBeInViewport();}
+         |                                                                                                                                                                                                                    ^
+      69 |  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+      70 | });
+      71 |
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:68:212
+
+    Error Context: .work\q34-results\personnel.component-Q34-de-a633e-and-both-scroll-axes-at-320-chromium\error-context.md
+
+
+(node:55536) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[8/10] [chromium] › apps\web\src\personnel.component.spec.ts:72:1 › Q34 identity empty state retains table headings and reduced motion disables row transitions
+[9/10] [chromium] › apps\web\src\personnel.component.spec.ts:545:1 › Q34 member table keeps confirmed column geometry and page selection never sends a write
+[10/10] [chromium] › apps\web\src\personnel.component.spec.ts:583:1 › Q34 successful activity uses Arca body typography and retains the result meaning
+  1 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:62:31 › Q34 dense table keeps sticky header and both scroll axes at 320 
+  9 passed (20.6s)

@@ -1,0 +1,294 @@
+const imgLucideSearch = "<temporary Figma asset URL omitted; reuse the existing exact project asset>";
+
+function LucideSearch({ className }: { className?: string }) {
+  return (
+    <div className={className || "relative size-[24px]"} data-node-id="159:376" data-name="Lucide / Search">
+      <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgLucideSearch} />
+    </div>
+  );
+}
+
+type AdminInputProps = {
+  className?: string;
+  showIcon?: boolean;
+  value?: string;
+};
+
+function AdminInput({ className, showIcon = true, value = "搜索姓名或邮箱" }: AdminInputProps) {
+  return (
+    <div className={className || "bg-[var(--admin-color-surface,white)] border border-[var(--admin-color-line,#e4e9f1)] border-solid content-stretch flex gap-[var(--admin-space-8,8px)] h-[40px] items-center overflow-clip p-[var(--admin-space-12,12px)] relative rounded-[var(--admin-radius-8,8px)] w-[300px]"} data-node-id="159:420" data-name="Admin / Input">
+      {showIcon && <LucideSearch className="relative shrink-0 size-[16px]" />}
+      <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[22px] relative shrink-0 text-[14px] text-[color:var(--admin-color-muted,#8490a2)] whitespace-nowrap" data-node-id="159:424">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+export default function ActivityTable() {
+  return (
+    <div className="bg-[var(--admin-color-surface,white)] border border-[#e5e5e5] border-solid content-stretch flex flex-col items-start overflow-clip relative rounded-[14px] size-full" data-node-id="164:3505" data-name="Activity table">
+      <div className="border-[#e5e5e5] border-b border-solid content-stretch flex gap-[12px] h-[64px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-full" data-node-id="164:3506" data-name="Activity toolbar">
+        <AdminInput className="bg-[var(--admin-color-surface,white)] border border-[var(--admin-color-line,#e4e9f1)] border-solid content-stretch flex gap-[var(--admin-space-8,8px)] h-[40px] items-center overflow-clip p-[var(--admin-space-12,12px)] relative rounded-[var(--admin-radius-8,8px)] shrink-0 w-[300px]" value="搜索成员或操作对象" />
+        <div className="flex-[1_0_0] h-px min-w-px relative" data-node-id="164:3512" data-name="Flexible space" />
+        <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[20px] relative shrink-0 text-[12px] text-[color:var(--admin-color-secondary,#5e6d83)] whitespace-nowrap" data-node-id="164:3513">
+          最近 7 天
+        </p>
+      </div>
+      <div className="content-stretch flex flex-col h-[280px] items-start overflow-auto relative shrink-0 w-full" data-node-id="279:1943" data-name="Q34 / Data Table viewport">
+        <div className="content-stretch flex flex-col items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1944" data-name="Q34 / Data Table">
+          <div className="bg-[#f5f5f5] border-[#e5e5e5] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1945" data-name="Q34 / Table header">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[196px]" data-node-id="279:1946" data-name="Column / 时间">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Medium'] font-medium h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#737373] text-[14px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1947">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">时间</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:1948" data-name="Column / 操作者">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Medium'] font-medium h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#737373] text-[14px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1949">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">操作者</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:1950" data-name="Column / 操作">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Medium'] font-medium h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#737373] text-[14px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1951">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">操作</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[224px]" data-node-id="279:1952" data-name="Column / 对象">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Medium'] font-medium h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#737373] text-[14px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1953">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">对象</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:1954" data-name="Column / 变更内容">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Medium'] font-medium h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#737373] text-[14px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1955">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">变更内容</p>
+              </div>
+            </div>
+            <div className="border-0 border-[#e5e5e5] border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:1956" data-name="Column / 结果">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Medium'] font-medium h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#737373] text-[14px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1957">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">结果</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1958" data-name="Q34 / Row / 今天 14:32 / 周涵">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[196px]" data-node-id="279:1959" data-name="Column / 时间">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1960">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">今天 14:32</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:1961" data-name="Column / 操作者">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1962">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">周涵</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:1963" data-name="Column / 操作">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1964">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">分配身份</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[224px]" data-node-id="279:1965" data-name="Column / 对象">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1966">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">林可</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:1967" data-name="Column / 变更内容">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1968">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">分配「普通员工」身份</p>
+              </div>
+            </div>
+            <div className="border-0 border-[#e5e5e5] border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:1969" data-name="Column / 结果">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1970">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">已完成</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1971" data-name="Q34 / Row / 今天 14:18 / 系统管理员">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[196px]" data-node-id="279:1972" data-name="Column / 时间">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1973">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">今天 14:18</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:1974" data-name="Column / 操作者">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1975">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">系统管理员</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:1976" data-name="Column / 操作">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1977">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">配置权限</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[224px]" data-node-id="279:1978" data-name="Column / 对象">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1979">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">企业管理</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:1980" data-name="Column / 变更内容">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1981">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">开启「人员管理」权限</p>
+              </div>
+            </div>
+            <div className="border-0 border-[#e5e5e5] border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:1982" data-name="Column / 结果">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1983">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">已完成</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1984" data-name="Q34 / Row / 今天 13:50 / 周涵">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[196px]" data-node-id="279:1985" data-name="Column / 时间">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1986">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">今天 13:50</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:1987" data-name="Column / 操作者">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1988">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">周涵</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:1989" data-name="Column / 操作">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1990">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">调整部门</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[224px]" data-node-id="279:1991" data-name="Column / 对象">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1992">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">陈远</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:1993" data-name="Column / 变更内容">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1994">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">加入研发部</p>
+              </div>
+            </div>
+            <div className="border-0 border-[#e5e5e5] border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:1995" data-name="Column / 结果">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1996">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">已完成</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1997" data-name="Q34 / Row / 今天 13:24 / 周涵">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[196px]" data-node-id="279:1998" data-name="Column / 时间">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1999">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">今天 13:24</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:2000" data-name="Column / 操作者">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2001">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">周涵</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:2002" data-name="Column / 操作">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2003">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">创建身份</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[224px]" data-node-id="279:2004" data-name="Column / 对象">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2005">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">财务成员</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:2006" data-name="Column / 变更内容">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2007">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">创建身份定义</p>
+              </div>
+            </div>
+            <div className="border-0 border-[#e5e5e5] border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:2008" data-name="Column / 结果">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2009">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">已完成</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:2010" data-name="Q34 / Row / 今天 12:05 / 系统管理员">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[196px]" data-node-id="279:2011" data-name="Column / 时间">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2012">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">今天 12:05</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:2013" data-name="Column / 操作者">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2014">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">系统管理员</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:2015" data-name="Column / 操作">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2016">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">邀请成员</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[224px]" data-node-id="279:2017" data-name="Column / 对象">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2018">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">新成员邀请</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:2019" data-name="Column / 变更内容">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2020">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">生成单次邀请码</p>
+              </div>
+            </div>
+            <div className="border-0 border-[#e5e5e5] border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:2021" data-name="Column / 结果">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2022">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">已完成</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:2023" data-name="Q34 / Row / 昨天 16:42 / 系统管理员">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[196px]" data-node-id="279:2024" data-name="Column / 时间">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2025">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">昨天 16:42</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:2026" data-name="Column / 操作者">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2027">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">系统管理员</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:2028" data-name="Column / 操作">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2029">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">分配身份</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[224px]" data-node-id="279:2030" data-name="Column / 对象">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2031">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">周涵</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:2032" data-name="Column / 变更内容">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2033">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">分配「企业管理员」身份</p>
+              </div>
+            </div>
+            <div className="border-0 border-[#e5e5e5] border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[160px]" data-node-id="279:2034" data-name="Column / 结果">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:2035">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">已完成</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="content-stretch flex flex-col h-[48px] items-start overflow-clip p-[var(--admin-space-16,16px)] relative shrink-0 w-full" data-node-id="164:3606" data-name="Log note">
+        <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[20px] relative shrink-0 text-[#737373] text-[12px] whitespace-nowrap" data-node-id="164:3607">
+          记录仅包含配置变更，不展示密码或邀请码明文。
+        </p>
+      </div>
+    </div>
+  );
+}
+
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+
+These styles are contained in the design: Admin / Body: Font(family: "Noto Sans SC", style: Regular, size: 14, weight: 400, lineHeight: 22, letterSpacing: 0), Admin / Caption: Font(family: "Noto Sans SC", style: Regular, size: 12, weight: 400, lineHeight: 20, letterSpacing: 0), Q34 / Data Table / Header: Font(family: "Noto Sans SC", style: Medium, size: 14, weight: 500, lineHeight: 20, letterSpacing: 0), Q34 / Data Table / Body: Font(family: "Noto Sans SC", style: Regular, size: 14, weight: 400, lineHeight: 20, letterSpacing: 0).
+
+Component descriptions: The following components have usage descriptions or documentation links defined in Figma. These descriptions provide important context about the intended usage, best practices, and any constraints for each component. Follow these guidelines when implementing or using these components.
+
+## Lucide / Search
+**Node ID:** 159:376
+
+Editable vector icon from lucide-icons/lucide/icons. Stroke follows WaveOS.
+
+Images and SVGs will be stored as constants, e.g. const image = '<temporary Figma asset URL omitted; reuse the existing exact project asset>'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.
