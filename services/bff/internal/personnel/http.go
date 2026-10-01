@@ -58,6 +58,9 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, session.ErrUnavailable)
 		return
 	}
+	if s.DraftHTTP(w, r, p) {
+		return
+	}
 	meta := RequestMetadata{RequestID: httpserver.Metadata(r.Context()).RequestID, ClientIP: httpserver.Metadata(r.Context()).ClientIP, UserAgent: r.UserAgent()}
 	if r.URL.Path == "/api/v1/me/access" && r.Method == "GET" {
 		if _, err := query(r); err != nil {
