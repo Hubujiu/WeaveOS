@@ -171,3 +171,20 @@ test('Q35 source font uses Geist with the existing Chinese fallback inside its s
   const outer = await page.locator('.personnel-page-heading').evaluate(n => getComputedStyle(n).fontFamily);
   expect(outer).toContain('Noto Sans SC'); expect(outer).not.toContain('Geist');
 });
+
+test('Q35 sorting menu stays open during its own scrolling and closes on table scrolling', async ({ page }) => {
+  await fixture(page, 3);
+  const table = page.locator('.member-table');
+  const trigger = table.getByRole('button', { name: '筛选 成员', exact: true });
+  await trigger.click();
+  const menu = page.getByRole('menu');
+  await expect(menu).toBeVisible();
+  await menu.dispatchEvent('scroll');
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await menu.getByRole('menuitem', { name: '升序', exact: true }).click();
+  await expect(table.locator('tbody tr[data-row-id] .member-name strong')).toHaveText(['Alpha1', 'Bravo2', 'Zulu0']);
+  await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await table.locator('.el-scrollbar__wrap').dispatchEvent('scroll');
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+});
