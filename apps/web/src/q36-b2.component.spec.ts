@@ -155,3 +155,14 @@ test('Q36 B2 twenty nested conditions keep the apply footer inside the narrow vi
  await expect.poll(async()=>{const box=(await apply.boundingBox())!;return box.y+box.height;}).toBeLessThanOrEqual(844);
  await expect(apply).toBeInViewport();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
+
+test('Q36 B2 select-current-page cannot resurrect a member hidden by custom filtering',async({page})=>{
+ await fixture(page);const other={...member,id:identityId,account:'other-visible-member'};
+ await page.route('**/personnel/members/search',r=>{const input=r.request().postDataJSON();return r.fulfill({json:envelope({...paging(input.filter?[member]:[member,other],input),total:input.filter?1:2})});});
+ await admin(page);await page.getByLabel('选择成员：other-visible-member',{exact:true}).check();await condition(page);
+ await expect(page.getByLabel('选择成员：other-visible-member',{exact:true})).toHaveCount(0);
+ await page.getByLabel('选择当前页成员',{exact:true}).check();await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();
+ await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();const panel=page.getByRole('dialog',{name:'自定义筛选',exact:true});
+ await panel.getByRole('button',{name:'重置条件',exact:true}).click();await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+ await expect(page.getByLabel('选择成员：other-visible-member',{exact:true})).not.toBeChecked();await expect(page.getByLabel('选择当前页成员',{exact:true})).not.toBeChecked();
+});
