@@ -59,7 +59,7 @@ func (a *Application) SaveDepartment(ctx context.Context, p session.Principal, i
 	if !validName(in.Name) || (id == "" && !validID(in.ParentID)) || (id != "" && (!validID(id) || in.Version < 1 || in.Version > maxSafeVersion || in.ParentID != "")) {
 		return Department{}, ErrInvalid
 	}
-	tx, err := a.write(ctx, p)
+	tx, err := a.writeBusiness(ctx, p)
 	if err != nil {
 		return Department{}, err
 	}
@@ -120,7 +120,7 @@ func (a *Application) DeleteDepartment(ctx context.Context, p session.Principal,
 	if !validID(id) || version < 1 || version > maxSafeVersion {
 		return ErrInvalid
 	}
-	tx, err := a.write(ctx, p)
+	tx, err := a.writeBusiness(ctx, p)
 	if err != nil {
 		return err
 	}

@@ -191,7 +191,7 @@ func (a *Application) SaveDefinition(ctx context.Context, p session.Principal, k
 	}
 	in.PermissionCodes = unique(in.PermissionCodes)
 	in.TemplateIDs = uniqueIDs(in.TemplateIDs)
-	tx, err := a.write(ctx, p)
+	tx, err := a.writeBusiness(ctx, p)
 	if err != nil {
 		return Definition{}, err
 	}
@@ -262,7 +262,7 @@ func (a *Application) DeleteDefinition(ctx context.Context, p session.Principal,
 	if err != nil {
 		return err
 	}
-	tx, err := a.write(ctx, p)
+	tx, err := a.writeBusiness(ctx, p)
 	if err != nil {
 		return err
 	}

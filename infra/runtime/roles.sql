@@ -32,7 +32,7 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA auth, public TO auth_backup;
 -- remains owner-controlled. Audit activity is read only through the safe view.
 REVOKE ALL ON SCHEMA personnel FROM PUBLIC;
 REVOKE ALL ON ALL TABLES IN SCHEMA personnel FROM PUBLIC, auth_app, auth_reader, auth_maintenance, auth_backup;
-GRANT USAGE ON SCHEMA personnel TO auth_app, auth_backup;
+GRANT USAGE ON SCHEMA personnel TO auth_app, auth_backup, auth_maintenance;
 GRANT SELECT, INSERT, UPDATE, DELETE ON
  personnel.departments, personnel.department_members, personnel.identities,
  personnel.permission_templates, personnel.member_configuration,
@@ -45,3 +45,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA personnel TO auth_backup;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA personnel TO auth_backup;
 REVOKE ALL ON FUNCTION personnel.lock_permission_catalog(uuid) FROM PUBLIC, auth_reader, auth_maintenance, auth_backup;
 GRANT EXECUTE ON FUNCTION personnel.lock_permission_catalog(uuid) TO auth_app;
+
+-- Revisions are read-only signals; only the fixed-order lock function is callable.
+GRANT SELECT ON personnel.query_revisions TO auth_app;
+GRANT EXECUTE ON FUNCTION personnel.lock_query_revisions() TO auth_app, auth_maintenance;

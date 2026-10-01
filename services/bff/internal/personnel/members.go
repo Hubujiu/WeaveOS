@@ -144,7 +144,7 @@ func (a *Application) SetMemberIdentities(ctx context.Context, p session.Princip
 			return Member{}, ErrInvalid
 		}
 	}
-	tx, err := a.write(ctx, p)
+	tx, err := a.writeBusiness(ctx, p)
 	if err != nil {
 		return Member{}, err
 	}
@@ -188,7 +188,7 @@ func (a *Application) ChangeMemberGroups(ctx context.Context, p session.Principa
 	if in.Operation == "move" && !validID(in.SourceDepartmentID) {
 		return Member{}, ErrInvalid
 	}
-	tx, err := a.write(ctx, p)
+	tx, err := a.writeBusiness(ctx, p)
 	if err != nil {
 		return Member{}, err
 	}

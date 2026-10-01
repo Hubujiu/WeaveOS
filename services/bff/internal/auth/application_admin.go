@@ -24,6 +24,9 @@ func (a *Application) CreateInvitation(ctx context.Context, actor session.Princi
 		return InvitationResult{}, err
 	}
 	defer func() { _ = tx.Rollback(context.Background()) }()
+	if _, err := tx.Exec(ctx, "SELECT personnel.lock_query_revisions()"); err != nil {
+		return InvitationResult{}, err
+	}
 	q := authsql.New(tx)
 	if a.InvitationAuthorizer != nil {
 		if err := a.InvitationAuthorizer(ctx, tx, actor); err != nil {
