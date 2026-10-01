@@ -173,3 +173,13 @@ test('Q36 actual page records open close stable trigger and reopen without a roo
  await trigger.click();await expect(panel).toBeVisible();await shot(page,'motion-reopened',true);await page.waitForTimeout(1000);await page.keyboard.press('Escape');await expect(panel).toBeHidden();await page.waitForTimeout(1100);await shot(page,'motion-final-stable');
  const video=page.video();await context.close();if(!video)throw Error('actual page video unavailable');await rename(await video.path(),resolve(evidence,'actual-filter-open-close-reopen.webm'));
 });
+
+test('Q36 actual custom filtering clears current-page selection without resurrecting hidden members',async({page})=>{
+ await enter(page);await page.setViewportSize({width:1440,height:1000});
+ const hidden=page.getByLabel('选择成员：'+fixture.user.account,{exact:true});await hidden.check();await shot(page,'members-selection-before-filter');
+ await page.getByRole('button',{name:'自定义筛选',exact:true}).click();const panel=page.getByRole('dialog',{name:'自定义筛选',exact:true});
+ await panel.getByRole('button',{name:'组 1 添加条件',exact:true}).click();await panel.locator('.q36-filter-condition input').fill(fixture.admin.account);await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+ await expect(hidden).toHaveCount(0);await page.getByLabel('选择当前页成员',{exact:true}).check();await expect(page.getByLabel('选择成员：'+fixture.admin.account,{exact:true})).toBeChecked();await shot(page,'members-selection-filtered-current-page');
+ await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();await panel.getByRole('button',{name:'重置条件',exact:true}).click();await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+ await expect(hidden).not.toBeChecked();await expect(page.getByLabel('选择成员：'+fixture.admin.account,{exact:true})).not.toBeChecked();await expect(page.getByLabel('选择当前页成员',{exact:true})).not.toBeChecked();await shot(page,'members-selection-reset-cleared');
+});

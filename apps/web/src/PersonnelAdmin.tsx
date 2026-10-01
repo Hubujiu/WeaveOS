@@ -63,7 +63,7 @@ export function PersonnelAdmin({access,onDirty,onExit,onUnauthorized}:{access:Ac
  async function allDefinitions(kind:string){const items:Definition[]=[];let page=1;for(;;){const result=await workspaceApi<PageData<Definition>>('personnel/'+kind+'?pageSize=100&page='+page);items.push(...result.items);if(items.length>=result.total)return items;if(!result.items.length)throw new Error('配置列表未完整加载，请重试');page++;}}
  function pageControls(page:number,data:PageData<unknown>,setPage:(value:number)=>void){return <div className="table-footer"><span>共 {data.total} 项 · 第 {page} 页 / 共 {Math.max(1,Math.ceil(data.total/data.pageSize))} 页</span><button className="text-button" disabled={page<=1} onClick={()=>setPage(page-1)}>上一页</button><button className="text-button" disabled={page*data.pageSize>=data.total} onClick={()=>setPage(page+1)}>下一页</button></div>;}
  useLayoutEffect(()=>{onDirty(dirty);},[dirty,onDirty]);
- useEffect(()=>{setSelectedMembers([]);},[memberSearch,memberPage,memberPageSize,departmentFilter,identityFilter]);
+ useEffect(()=>{setSelectedMembers([]);},[memberSearch,memberPage,memberPageSize,departmentFilter,identityFilter,memberFilter]);
  function fail(e:unknown){if(e instanceof WorkspaceError&&e.status===401){onUnauthorized();return;}if(e instanceof WorkspaceError&&(e.code==='COMMON_QUERY_CHANGED'||e.code==='COMMON_QUERY_CONTEXT_EXPIRED'||e.reason==='QUERY_BUSY')){memberQuery.reject(e);return;}setError(e instanceof Error?e.message:'服务暂时不可用，请稍后重试');}
  async function refreshAux(){
   const sequence=++auxiliarySequence.current;
