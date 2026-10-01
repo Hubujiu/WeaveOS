@@ -1,16 +1,17 @@
+import {fixtureRequestURL,q36FixtureEnvelope} from './personnel-query-fixtures';
 import { test, expect, type Page } from '@playwright/test';
 
 async function tableFixture(page: Page, withMember = false) {
   const user = { id: '00000000-0000-4000-8000-000000000071', account: 'synthetic-footer' };
   const member = { ...user, status: 'active', bootstrapAdmin: true, version: 0, departmentIds: [], identityIds: [], departments: [], identities: [], permissions: [] };
   await page.route('**/api/v1/**', async route => {
-    const path = new URL(route.request().url()).pathname.replace('/api/v1/', '');
+    const path = fixtureRequestURL(route.request()).pathname.replace('/api/v1/', '');
     const items = withMember && path === 'personnel/members' ? [member] : [];
     const data = path === 'sessions/current' ? user : path === 'me/access'
       ? { user, bootstrapAdmin: true, personnelManage: true, identities: [], permissions: [], applications: [] }
       : path === 'personnel/departments' || path === 'personnel/permissions' ? { items: [] }
       : { items, total: items.length, page: 1, pageSize: 20 };
-    await route.fulfill({ json: { code: 'OK', message: 'success', data, meta: null } });
+    await route.fulfill({ json: q36FixtureEnvelope(data,route.request()) });
   });
 }
 

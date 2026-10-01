@@ -1,3 +1,4 @@
+import {fixtureRequestURL,q36FixtureEnvelope} from './personnel-query-fixtures';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
@@ -11,11 +12,11 @@ const member={...user,status:'active',bootstrapAdmin:true,version:0,departmentId
 function list(items: unknown[]) {return {items,total:items.length,page:1,pageSize:20};}
 async function fixture(page:Page,manage=true) {
  await page.route('**/api/v1/**',async route=>{
-  const path=new URL(route.request().url()).pathname.replace('/api/v1/','');
+  const path=fixtureRequestURL(route.request()).pathname.replace('/api/v1/','');
   const data=path==='sessions/current'?user:path==='sessions'?user:path==='me/access'?{user,bootstrapAdmin:manage,personnelManage:manage,identities:[],permissions:manage?catalog:[],applications:[]}:
    path==='personnel/departments'?{items:[department]}:path==='personnel/permissions'?{items:catalog}:
    path==='personnel/identities'?list([identity]):path==='personnel/templates'?list([template]):path==='personnel/members'?list([member]):path==='personnel/members/'+user.id?member:path==='personnel/events'?list([]):{};
-  await route.fulfill({status:route.request().method()==='DELETE'?204:200,contentType:'application/json',body:route.request().method()==='DELETE'?'':JSON.stringify({code:'OK',message:'success',data,meta:null})});
+  await route.fulfill({status:route.request().method()==='DELETE'?204:200,contentType:'application/json',body:route.request().method()==='DELETE'?'':JSON.stringify(q36FixtureEnvelope(data,route.request()))});
  });
 }
 async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
@@ -25,7 +26,7 @@ async function chooseOption(page:Page,label:string,option:string){await page.get
 // Arca c0319d8 official default. Network fixtures exercise the real page controls.
 for(const [tab,root] of [['成员与部门','.member-table'],['操作记录','.activity-table']] as const)test('Q34 Arca table geometry and readable rows on '+tab,async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await fixture(page);
- await page.route('**/api/v1/personnel/events?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([{id:user.id,occurredAt:'2026-10-01T02:00:00Z',actorAccount:user.account,action:'IDENTITY_UPDATED',objectType:'identity',objectId:identity.id,summary:{before:{name:'旧身份'},after:{name:identity.name}},outcome:'success'}]),meta:null}}));
+ await page.route('**/api/v1/personnel/events/search',r=>r.fulfill({json:q36FixtureEnvelope(list([{id:user.id,occurredAt:'2026-10-01T02:00:00Z',actorAccount:user.account,action:'IDENTITY_UPDATED',objectType:'identity',objectId:identity.id,summary:{before:{name:'旧身份'},after:{name:identity.name}},outcome:'success'}]),r.request())}));
  await page.goto('/app/admin');if(tab!=='成员与部门')await page.getByRole('tab',{name:tab,exact:true}).click();
  const area=page.locator(root),table=area.getByRole('table');await expect(table).toHaveCount(1);
  await expect.soft(area).toHaveCSS('border-radius','14px');await expect.soft(area).toHaveCSS('border-top-width','1px');
@@ -38,14 +39,14 @@ for(const [tab,root] of [['成员与部门','.member-table'],['操作记录','.a
  await expect.soft(header).toHaveCSS('text-align','center');
  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
  await expect(area.locator('.table-scroll')).toHaveCSS('max-height','none');
- await expect(table.locator('th[aria-sort]')).toHaveCount(0);
+ await expect(table.locator('th[aria-sort]')).toHaveCount(tab==='成员与部门'?0:1);
  await page.screenshot({path:test.info().outputPath('q35-'+(tab==='成员与部门'?'members':'activity')+'.png'),fullPage:true});
 });
 
 test('Q34 page selection exposes mixed state without writing and shows selected rows',async({page})=>{
  await fixture(page);const another={...member,id:'00000000-0000-4000-8000-000000000099',account:'synthetic-second'};
- await page.route('**/api/v1/personnel/members?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([member,another]),meta:null}}));await page.goto('/app/admin');
- let writes=0;page.on('request',r=>{if(r.url().includes('/api/v1/')&&!['GET','HEAD'].includes(r.method()))writes++;});
+ await page.route('**/api/v1/personnel/members/search',r=>r.fulfill({json:q36FixtureEnvelope(list([member,another]),r.request())}));await page.goto('/app/admin');
+ let writes=0;page.on('request',r=>{if(r.url().includes('/api/v1/')&&!['GET','HEAD'].includes(r.method())&&!r.url().endsWith('/search'))writes++;});
  await page.getByLabel('选择成员：'+user.account,{exact:true}).check();
  const all=page.getByLabel('选择当前页成员',{exact:true});await expect.soft(all).toHaveAttribute('aria-checked','mixed');
  const row=page.getByRole('row').filter({hasText:user.account});await expect.soft(row).toHaveAttribute('aria-selected','true');
@@ -54,7 +55,7 @@ test('Q34 page selection exposes mixed state without writing and shows selected 
 
 test('Q35 identity cards preserve edit entry, shared fields and unsaved switch protection',async({page})=>{
  await fixture(page);const another={...identity,id:'00000000-0000-4000-8000-000000000098',name:'财务身份',description:'独立示例说明'};
- await page.route('**/api/v1/personnel/identities?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([identity,another]),meta:null}}));await page.goto('/app/admin');await page.getByRole('tab',{name:'身份',exact:true}).click();
+ await page.route('**/api/v1/personnel/identities?**',r=>r.fulfill({json:q36FixtureEnvelope(list([identity,another]),r.request())}));await page.goto('/app/admin');await page.getByRole('tab',{name:'身份',exact:true}).click();
  const table=page.locator('.definition-list');await expect(table.getByRole('table')).toHaveCount(0);await expect(table.locator('.definition-item')).toHaveCount(2);
  await table.getByRole('button',{name:identity.name,exact:true}).focus();await page.keyboard.press('Enter');await page.getByLabel('说明',{exact:true}).fill('未保存说明');
  await table.getByRole('button',{name:another.name,exact:true}).click();await expect(page.getByRole('dialog',{name:'有未保存的修改',exact:true})).toBeVisible();await page.getByRole('button',{name:'继续编辑',exact:true}).click();
@@ -66,7 +67,7 @@ test('Q35 identity cards preserve edit entry, shared fields and unsaved switch p
 for(const width of [1920,320])test('Q34 dense table keeps sticky header and both scroll axes at '+width,async({page})=>{
  await page.setViewportSize({width,height:844});await fixture(page);
  const rows=Array.from({length:20},(_,i)=>({...member,id:'row-'+i,account:'synthetic-row-'+i}));
- await page.route('**/api/v1/personnel/members?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list(rows),meta:null}}));await page.goto('/app/admin');
+ await page.route('**/api/v1/personnel/members/search',r=>r.fulfill({json:q36FixtureEnvelope(list(rows),r.request())}));await page.goto('/app/admin');
  const scroll=page.locator('.member-table .table-scroll');await scroll.scrollIntoViewIfNeeded();expect(await scroll.evaluate(n=>n.scrollHeight>n.clientHeight)).toBe(true);
  const th=scroll.locator('th').first(),start=(await th.boundingBox())!.y;await scroll.evaluate(n=>{n.scrollTop=200;});expect((await th.boundingBox())!.y).toBeCloseTo(start,0);await expect(th).toHaveCSS('position','sticky');
  if(width===320){
@@ -78,7 +79,7 @@ for(const width of [1920,320])test('Q34 dense table keeps sticky header and both
 });
 
 test('Q35 identity empty list and reduced motion preserve accessible states',async({page})=>{
- await page.emulateMedia({reducedMotion:'reduce'});await fixture(page);await page.route('**/api/v1/personnel/identities?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([]),meta:null}}));await page.goto('/app/admin');await page.getByRole('tab',{name:'身份',exact:true}).click();
+ await page.emulateMedia({reducedMotion:'reduce'});await fixture(page);await page.route('**/api/v1/personnel/identities?**',r=>r.fulfill({json:q36FixtureEnvelope(list([]),r.request())}));await page.goto('/app/admin');await page.getByRole('tab',{name:'身份',exact:true}).click();
  const table=page.locator('.definition-list');await expect(table.getByRole('table')).toHaveCount(0);await expect(table).toContainText('暂无身份');
  await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await expect(page.locator('.member-table tbody tr').first()).toHaveCSS('transition-duration','0s');
 });
@@ -94,7 +95,7 @@ test('Q34 keyboard focus ring stays visible inside truncated table cells',async(
 
 test('Q34 reverse keyboard navigation keeps row actions below the sticky header',async({page})=>{
  await page.setViewportSize({width:1920,height:844});await fixture(page);const rows=Array.from({length:20},(_,i)=>({...member,id:'keyboard-'+i,account:'synthetic-keyboard-'+i}));
- await page.route('**/api/v1/personnel/members?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list(rows),meta:null}}));await page.goto('/app/admin');
+ await page.route('**/api/v1/personnel/members/search',r=>r.fulfill({json:q36FixtureEnvelope(list(rows),r.request())}));await page.goto('/app/admin');
  const actions=page.getByRole('button',{name:'配置身份',exact:true});await actions.last().focus();await page.keyboard.press('Tab');
  const bottom=(await page.locator('.member-table th').first().boundingBox())!.y+40;
  for(let i=0;i<15;i++){await page.keyboard.press('Shift+Tab');const focused=page.locator('.personnel-data-table :focus');await expect(focused).toHaveCount(1);expect((await focused.boundingBox())!.y).toBeGreaterThanOrEqual(bottom);}
@@ -116,7 +117,7 @@ for(const width of [2504,1920,900,390,320])test('Q33 sidebar stays expanded with
 
 test('Q33 crossing responsive breakpoints preserves navigation, dirty input and explicit leave protection',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill('固定侧栏保留草稿');
- let writes=0;page.on('request',r=>{if(r.url().includes('/api/v1/')&&!['GET','HEAD'].includes(r.method()))writes++;});
+ let writes=0;page.on('request',r=>{if(r.url().includes('/api/v1/')&&!['GET','HEAD'].includes(r.method())&&!r.url().endsWith('/search'))writes++;});
  for(const width of [390,320,900,1920]){
   await page.setViewportSize({width,height:844});await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width','176px');
   await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('固定侧栏保留草稿');await expect(page.getByRole('tab',{name:'身份',exact:true})).toHaveAttribute('aria-selected','true');
@@ -149,7 +150,7 @@ test('Q32 identity select has the separated rounded menu and preserves server fi
  const menu=page.getByRole('listbox',{name:'筛选身份',exact:true});await expect(menu).toBeVisible();
  await expect(menu).toHaveCSS('border-radius','12px');await expect(page.getByRole('option',{name:'全部身份',exact:true})).toHaveCSS('height','32px');
  await expect.poll(async()=>{const a=(await combo.boundingBox())!,b=(await menu.boundingBox())!;return Math.round(b.y-a.y-a.height);}).toBe(8);
- const queries:string[]=[];await page.route('**/api/v1/personnel/members?**',r=>{queries.push(new URL(r.request().url()).search);return r.fulfill({status:200,json:{code:'OK',message:'success',data:list([member]),meta:null}});});
+ const queries:string[]=[];await page.route('**/api/v1/personnel/members/search',r=>{queries.push(fixtureRequestURL(r.request()).search);return r.fulfill({status:200,json:q36FixtureEnvelope(list([member]),r.request())});});
  await page.getByRole('option',{name:'企业管理员',exact:true}).click();await expect(combo).toContainText('企业管理员');await expect(combo).toBeFocused();
  await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('identityId')===identity.id)).toBe(true);
  await combo.press('ArrowDown');await combo.press('Home');await combo.press('Enter');await expect(combo).toContainText('全部身份');
@@ -171,8 +172,8 @@ test('Q32 parent department chooser uses options without closing the native moda
  await admin(page);await page.getByRole('button',{name:'新建部门',exact:true}).click();
  const combo=page.getByRole('combobox',{name:'父部门',exact:true});expect(await combo.evaluate(n=>n.tagName)).toBe('BUTTON');
  await combo.click();await page.getByRole('option',{name:'企业',exact:true}).click();await expect(combo).toBeFocused();await expect(page.getByRole('dialog',{name:'新建部门',exact:true})).toBeVisible();
- let sent:unknown;await page.route('**/api/v1/personnel/departments',r=>{if(r.request().method()!=='POST')return r.fallback();sent=r.request().postDataJSON();return r.fulfill({status:201,json:{code:'OK',message:'success',data:department,meta:null}});});
- await page.getByLabel('部门名称',{exact:true}).fill('设计组');await page.getByRole('button',{name:'确认创建',exact:true}).click();await expect.poll(()=>sent).toEqual({name:'设计组',parentId:department.id});
+ let sent:unknown;await page.route('**/api/v1/personnel/departments',r=>{if(r.request().method()!=='POST')return r.fallback();sent=r.request().postDataJSON();return r.fulfill({status:201,json:q36FixtureEnvelope(department,r.request())});});
+ await page.getByLabel('部门名称',{exact:true}).fill('设计组');await page.getByRole('button',{name:'确认创建',exact:true}).click();await expect.poll(()=>sent).toEqual({name:'设计组',parentId:department.id,queryVersion:'synthetic-q36-context'});
 });
 
 test('Q32 long action menu stays in the viewport and keyboard chooses the final real action',async({page})=>{
@@ -181,7 +182,7 @@ test('Q32 long action menu stays in the viewport and keyboard chooses the final 
  const menu=page.getByRole('listbox',{name:'操作类型',exact:true});await expect(menu).toBeVisible();
  await expect.poll(async()=>{const b=(await menu.boundingBox())!;return b.y>=7&&b.y+b.height<=593;}).toBe(true);
  expect(await menu.evaluate(n=>n.scrollHeight>n.clientHeight)).toBe(true);
- const queries:string[]=[];await page.route('**/api/v1/personnel/events?**',r=>{queries.push(new URL(r.request().url()).search);return r.fulfill({status:200,json:{code:'OK',message:'success',data:list([]),meta:null}});});
+ const queries:string[]=[];await page.route('**/api/v1/personnel/events/search',r=>{queries.push(fixtureRequestURL(r.request()).search);return r.fulfill({status:200,json:q36FixtureEnvelope(list([]),r.request())});});
  await combo.press('End');await combo.press('Enter');await expect(combo).toContainText('邀请成员');await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('action')==='INVITATION_CREATED')).toBe(true);
  await combo.click();await page.getByRole('heading',{name:'人员管理',exact:true}).click();await expect(combo).toHaveAttribute('aria-expanded','false');
 });
@@ -211,7 +212,7 @@ test('Q32 reduced motion removes displacement and option stagger and keeps compa
 // Q31: current Figma75:2 /106:112 /113:425 fixes top56, removes collapse,
 test('Q32 large directories expose the final option promptly after End',async({page})=>{
  await fixture(page);const choices=Array.from({length:100},(_,index)=>({...identity,id:'00000000-0000-4000-8000-'+String(index+200).padStart(12,'0'),name:'身份-'+String(index).padStart(3,'0')}));
- await page.route('**/api/v1/personnel/identities?**',r=>r.fulfill({status:200,json:{code:'OK',message:'success',data:{...list(choices),pageSize:100},meta:null}}));await page.goto('/app/admin');
+ await page.route('**/api/v1/personnel/identities?**',r=>r.fulfill({status:200,json:q36FixtureEnvelope({...list(choices),pageSize:100},r.request())}));await page.goto('/app/admin');
  const combo=page.getByRole('combobox',{name:'筛选身份',exact:true});await combo.press('ArrowDown');await combo.press('End');const last=page.getByRole('option',{name:'身份-099',exact:true});await expect(last).toHaveCSS('opacity','1',{timeout:1000});await combo.press('Enter');await expect(combo).toContainText('身份-099');
 });
 
@@ -242,7 +243,7 @@ test('Q32 searching below the tabs preserves the narrow-screen content scroll po
 
 test('Q32 upward expansion and closing stay attached to the trigger edge on every frame',async({page})=>{
  await page.setViewportSize({width:390,height:320});await fixture(page);const choices=Array.from({length:20},(_,index)=>({...department,id:'00000000-0000-4000-8000-'+String(index+400).padStart(12,'0'),name:'部门-'+index}));
- await page.route('**/api/v1/personnel/departments',r=>r.fulfill({status:200,json:{code:'OK',message:'success',data:{items:choices},meta:null}}));await page.goto('/app/admin');await page.getByRole('button',{name:'新建部门',exact:true}).click();
+ await page.route('**/api/v1/personnel/departments',r=>r.fulfill({status:200,json:q36FixtureEnvelope({items:choices},r.request())}));await page.goto('/app/admin');await page.getByRole('button',{name:'新建部门',exact:true}).click();
  const button=page.getByRole('combobox',{name:'父部门',exact:true});
  const sample=()=>page.evaluate(async()=>{
   const button=document.querySelector<HTMLButtonElement>('[aria-label="父部门"]')!;
@@ -256,7 +257,7 @@ test('Q32 upward expansion and closing stay attached to the trigger edge on ever
 
 test('Q32 upward menus animate the corners adjacent to their trigger',async({page})=>{
  await page.setViewportSize({width:390,height:320});await fixture(page);const choices=Array.from({length:20},(_,index)=>({...department,id:'00000000-0000-4000-8000-'+String(index+400).padStart(12,'0'),name:'部门-'+index}));
- await page.route('**/api/v1/personnel/departments',r=>r.fulfill({status:200,json:{code:'OK',message:'success',data:{items:choices},meta:null}}));await page.goto('/app/admin');await page.getByRole('button',{name:'新建部门',exact:true}).click();
+ await page.route('**/api/v1/personnel/departments',r=>r.fulfill({status:200,json:q36FixtureEnvelope({items:choices},r.request())}));await page.goto('/app/admin');await page.getByRole('button',{name:'新建部门',exact:true}).click();
  const corners=await page.evaluate(async()=>{document.querySelector<HTMLButtonElement>('[aria-label="父部门"]')!.click();await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const menu=document.querySelector<HTMLElement>('.personnel-select-menu[role=listbox]')!;const s=getComputedStyle(menu);return {side:menu.dataset.side,top:s.borderTopLeftRadius,bottom:s.borderBottomLeftRadius};});
  expect(corners.side).toBe('above');
  expect(parseFloat(corners.top)).toBe(12);expect(parseFloat(corners.bottom)).toBeLessThan(12);
@@ -302,7 +303,7 @@ test('Q31 tabs have no vertical overflow and compact layouts retain keyboard acc
 test('Q31 real member overflow remains scrollable while the tab strip has no vertical scrollbar',async({page})=>{
  await page.setViewportSize({width:1440,height:600});await fixture(page);
  const members=Array.from({length:20},(_,i)=>({...member,id:'00000000-0000-4000-8000-'+String(i+100).padStart(12,'0'),account:'synthetic-row-'+String(i).padStart(2,'0')}));
- await page.route('**/api/v1/personnel/members?**',r=>r.fulfill({status:200,json:{code:'OK',message:'success',data:list(members),meta:null}}));await page.goto('/app/admin');
+ await page.route('**/api/v1/personnel/members/search',r=>r.fulfill({status:200,json:q36FixtureEnvelope(list(members),r.request())}));await page.goto('/app/admin');
  const last=page.getByRole('row').filter({hasText:'synthetic-row-19'});
  const table=page.locator('.table-scroll');expect(await table.evaluate(n=>n.scrollHeight>n.clientHeight)).toBe(true);
  await table.evaluate(n=>{n.scrollTop=n.scrollHeight;});expect(await table.evaluate(n=>n.scrollTop)).toBeGreaterThan(0);await expect(last).toHaveCount(1);
@@ -347,7 +348,7 @@ test('Q33 reduced motion and repeated resize keep navigation geometry and unsave
 });
 test('R3 login enters Home with settings and account navigation; admin exit retains Session',async({page})=>{
  await fixture(page);let logouts=0;
- await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:{code:'OK',message:'success',data:user,meta:null}});});
+ await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:q36FixtureEnvelope(user,route.request())});});
  await page.goto('/login');await page.getByLabel('账号',{exact:true}).fill(user.account);await page.getByLabel('密码',{exact:true}).fill('Synthetic@123');await page.getByRole('button',{name:'登录',exact:true}).click();
  await expect(page).toHaveURL(/\/app$/);await expect(page.getByRole('button',{name:'设置',exact:true})).toBeVisible();
  await expect(page.locator('.home-header')).toHaveCSS('height','56px');
@@ -371,7 +372,7 @@ test('Q33 fixed sidebar retains selected tab and unsaved input across viewports;
 });
 test('R3 identity separates direct/template sources and confirms impact before versioned save',async({page})=>{
  await admin(page);const sent:unknown[]=[];
- await page.route('**/api/v1/personnel/identities/'+identity.id,async route=>{sent.push(route.request().postDataJSON());await route.fulfill({status:200,json:{code:'OK',message:'success',data:{...identity,name:'新名称',version:2},meta:null}});});
+ await page.route('**/api/v1/personnel/identities/'+identity.id,async route=>{sent.push(route.request().postDataJSON());await route.fulfill({status:200,json:q36FixtureEnvelope({...identity,name:'新名称',version:2},route.request())});});
  await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();
  await expect(page.getByLabel('直接权限：人员管理',{exact:true})).not.toBeChecked();await expect(page.getByLabel('模板：企业管理',{exact:true})).toBeChecked();await expect(page.getByText('来自模板：企业管理',{exact:true})).toBeVisible();
  await page.getByLabel('身份名称',{exact:true}).fill('新名称');await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('2 位成员');expect(sent).toHaveLength(0);
@@ -393,16 +394,16 @@ test('R3 template UI has genuine no-application empty state and referenced delet
 });
 test('R3 members expose multi-identity editor and group operation without changing permissions',async({page})=>{
  await admin(page);const requests:unknown[]=[];
- await page.route('**/api/v1/personnel/members/'+user.id+'/identities',async route=>{requests.push(route.request().postDataJSON());await route.fulfill({status:200,json:{code:'OK',message:'success',data:{...member,version:1,identityIds:[identity.id],identities:[identity]},meta:null}});});
- await page.getByRole('button',{name:'配置身份',exact:true}).click();await expect(page.getByRole('dialog')).toContainText(user.account);await page.getByLabel('身份：企业管理员',{exact:true}).check();await page.getByRole('button',{name:'确认分配',exact:true}).click();await expect.poll(()=>requests).toEqual([{identityIds:[identity.id],version:0}]);
+ await page.route('**/api/v1/personnel/members/'+user.id+'/identities',async route=>{requests.push(route.request().postDataJSON());await route.fulfill({status:200,json:q36FixtureEnvelope({...member,version:1,identityIds:[identity.id],identities:[identity]},route.request())});});
+ await page.getByRole('button',{name:'配置身份',exact:true}).click();await expect(page.getByRole('dialog')).toContainText(user.account);await page.getByLabel('身份：企业管理员',{exact:true}).check();await page.getByRole('button',{name:'确认分配',exact:true}).click();await expect.poll(()=>requests).toEqual([{identityIds:[identity.id],version:0,queryVersion:'synthetic-q36-context'}]);
 });
 test('R3 departments create uses selected parent; enterprise root is protected',async({page})=>{
  await admin(page);await page.getByRole('button',{name:'新建部门',exact:true}).click();await page.getByLabel('部门名称',{exact:true}).fill('研发');let input:unknown;
- await page.route('**/api/v1/personnel/departments',async route=>{if(route.request().method()==='POST'){input=route.request().postDataJSON();await route.fulfill({status:201,json:{code:'OK',message:'success',data:{...department,id:'00000000-0000-4000-8000-000000000005',name:'研发',isRoot:false,parentId:department.id},meta:null}});}else await route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[department]},meta:null}});});
- await page.getByRole('button',{name:'确认创建',exact:true}).click();await expect.poll(()=>input).toEqual({name:'研发',parentId:department.id});
+ await page.route('**/api/v1/personnel/departments',async route=>{if(route.request().method()==='POST'){input=route.request().postDataJSON();await route.fulfill({status:201,json:q36FixtureEnvelope({...department,id:'00000000-0000-4000-8000-000000000005',name:'研发',isRoot:false,parentId:department.id},route.request())});}else await route.fulfill({status:200,json:q36FixtureEnvelope({items:[department]},route.request())});});
+ await page.getByRole('button',{name:'确认创建',exact:true}).click();await expect.poll(()=>input).toEqual({name:'研发',parentId:department.id,queryVersion:'synthetic-q36-context'});
 });
 test('R3 invitation is deliberate one-time result; activity has true empty state',async({page})=>{
- await admin(page);let created=0;await page.route('**/api/v1/invitations',async route=>{created++;await route.fulfill({status:201,json:{code:'OK',message:'success',data:{id:'00000000-0000-4000-8000-000000000006',invitationCode:'synthetic-component-fixture'},meta:null}});});
+ await admin(page);let created=0;await page.route('**/api/v1/invitations',async route=>{created++;await route.fulfill({status:201,json:q36FixtureEnvelope({id:'00000000-0000-4000-8000-000000000006',invitationCode:'synthetic-component-fixture'},route.request())});});
  await page.getByRole('button',{name:'邀请成员',exact:true}).click();expect(created).toBe(0);await page.getByRole('button',{name:'生成邀请码',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).toHaveValue('synthetic-component-fixture');expect(created).toBe(1);await page.getByRole('button',{name:'关闭',exact:true}).click();await page.getByRole('tab',{name:'操作记录',exact:true}).click();await expect(page.getByText('暂无操作记录',{exact:true})).toBeVisible();await expect(page.getByText('周涵',{exact:true})).toBeHidden();
 });
 test('R3 reduced motion and compact layouts retain keyboard-reachable navigation',async({page})=>{
@@ -416,33 +417,33 @@ test('R3 browser back with dirty configuration prompts, cancel preserves inputs'
  await page.goBack();await page.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page).toHaveURL(/\/app$/);
 });
 test('R3 definition creation has no fake seed; validates and sends explicit config',async({page})=>{
- await admin(page);let created:unknown;await page.route('**/api/v1/personnel/identities?**',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:list([]),meta:null}}));
+ await admin(page);let created:unknown;await page.route('**/api/v1/personnel/identities?**',route=>route.fulfill({status:200,json:q36FixtureEnvelope(list([]),route.request())}));
  await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'新建身份',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill('普通员工');
- await page.route('**/api/v1/personnel/identities',async route=>{created=route.request().postDataJSON();await route.fulfill({status:201,json:{code:'OK',message:'success',data:{...identity,name:'普通员工',description:'',templateIds:[],permissionCodes:[]},meta:null}});});
+ await page.route('**/api/v1/personnel/identities',async route=>{created=route.request().postDataJSON();await route.fulfill({status:201,json:q36FixtureEnvelope({...identity,name:'普通员工',description:'',templateIds:[],permissionCodes:[]},route.request())});});
  await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();await expect.poll(()=>created).toEqual({name:'普通员工',description:'',templateIds:[],permissionCodes:[]});
 });
 test('R3 member explicit move preserves other groups and identity configuration',async({page})=>{
  await admin(page);const other={...department,id:'00000000-0000-4000-8000-000000000010',parentId:department.id,name:'研发部',isRoot:false};
- await page.route('**/api/v1/personnel/departments',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[department,other]},meta:null}}));
- await page.route('**/api/v1/personnel/members**',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:list([{...member,departmentIds:[department.id],departments:[department]}]),meta:null}}));
+ await page.route('**/api/v1/personnel/departments',route=>route.fulfill({status:200,json:q36FixtureEnvelope({items:[department,other]},route.request())}));
+ await page.route('**/api/v1/personnel/members**',route=>route.fulfill({status:200,json:q36FixtureEnvelope(list([{...member,departmentIds:[department.id],departments:[department]}]),route.request())}));
  await page.reload();await page.getByRole('button',{name:'调整分组',exact:true}).click();await chooseOption(page,'分组操作','移动');await chooseOption(page,'来源部门','企业');await chooseOption(page,'目标部门','研发部');
- const sent:unknown[]=[];await page.route('**/api/v1/personnel/members/'+user.id+'/groups',async route=>{sent.push(route.request().postDataJSON());await route.fulfill({status:200,json:{code:'OK',message:'success',data:{...member,version:1},meta:null}});});
- await page.getByRole('button',{name:'确认调整',exact:true}).click();await expect.poll(()=>sent).toEqual([{operation:'move',departmentId:other.id,sourceDepartmentId:department.id,version:0}]);
+ const sent:unknown[]=[];await page.route('**/api/v1/personnel/members/'+user.id+'/groups',async route=>{sent.push(route.request().postDataJSON());await route.fulfill({status:200,json:q36FixtureEnvelope({...member,version:1},route.request())});});
+ await page.getByRole('button',{name:'确认调整',exact:true}).click();await expect.poll(()=>sent).toEqual([{operation:'move',departmentId:other.id,sourceDepartmentId:department.id,version:0,queryVersion:'synthetic-q36-context'}]);
 });
 test('R3 member search and pagination send approved filters, no local page-only filtering',async({page})=>{
- await admin(page);const queries:string[]=[];await page.route('**/api/v1/personnel/members?**',async route=>{queries.push(new URL(route.request().url()).search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:{...list([member]),total:21},meta:null}});});
+ await admin(page);const queries:string[]=[];await page.route('**/api/v1/personnel/members/search',async route=>{queries.push(fixtureRequestURL(route.request()).search);await route.fulfill({status:200,json:q36FixtureEnvelope({...list([member]),total:21},route.request())});});
  await page.getByLabel('搜索成员',{exact:true}).fill('目标');await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('search')==='目标')).toBe(true);
  await page.getByRole('button',{name:'下一页',exact:true}).click();await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('page')==='2')).toBe(true);
 });
 test('R3 activity search and action filter are server-side, not cosmetic controls',async({page})=>{
  await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();const queries:string[]=[];
- await page.route('**/api/v1/personnel/events?**',async route=>{queries.push(new URL(route.request().url()).search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:list([]),meta:null}});});
+ await page.route('**/api/v1/personnel/events/search',async route=>{queries.push(fixtureRequestURL(route.request()).search);await route.fulfill({status:200,json:q36FixtureEnvelope(list([]),route.request())});});
  await page.getByLabel('搜索操作记录',{exact:true}).fill('研发');await chooseOption(page,'操作类型','新建部门');await expect.poll(()=>queries.some(q=>{const p=new URLSearchParams(q);return p.get('search')==='研发'&&p.get('action')==='DEPARTMENT_CREATED';})).toBe(true);
 });
 test('R3 deleting unreferenced template confirms and sends version; 409 keeps selection',async({page})=>{
- await admin(page);await page.route('**/api/v1/personnel/templates?**',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:list([{...template,affectedIdentities:0,affectedMembers:0}]),meta:null}}));
+ await admin(page);await page.route('**/api/v1/personnel/templates?**',route=>route.fulfill({status:200,json:q36FixtureEnvelope(list([{...template,affectedIdentities:0,affectedMembers:0}]),route.request())}));
  await page.reload();await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'企业管理',exact:true}).click();await page.getByRole('button',{name:'删除模板',exact:true}).click();
- let query='';await page.route('**/api/v1/personnel/templates/'+template.id+'?**',async route=>{query=new URL(route.request().url()).search;await route.fulfill({status:409,json:{code:'PERSONNEL_CONFLICT',message:'conflict',data:null,meta:null}});});
+ let query='';await page.route('**/api/v1/personnel/templates/'+template.id+'?**',async route=>{query=fixtureRequestURL(route.request()).search;await route.fulfill({status:409,json:{code:'PERSONNEL_CONFLICT',message:'conflict',data:null,meta:null}});});
  await page.getByRole('button',{name:'确认删除',exact:true}).click();expect(new URLSearchParams(query).get('version')).toBe('1');await expect(page.getByRole('alert')).toContainText('配置已变更');await expect(page.getByLabel('模板名称',{exact:true})).toHaveValue('企业管理');
 });
 
@@ -451,69 +452,69 @@ test('R3 creates a permission template with explicit empty configuration',async(
  await admin(page);await page.getByRole('tab',{name:'权限模板',exact:true}).click();
  await expect(page.getByRole('button',{name:'新建权限模板',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'新建权限模板',exact:true}).click();await page.getByLabel('模板名称',{exact:true}).fill('空模板');
- let body:unknown;await page.route('**/api/v1/personnel/templates',async route=>{body=route.request().postDataJSON();await route.fulfill({status:201,json:{code:'OK',message:'success',data:{...template,id:'00000000-0000-4000-8000-000000000012',name:'空模板',permissionCodes:[],affectedIdentities:0,affectedMembers:0},meta:null}});});
+ let body:unknown;await page.route('**/api/v1/personnel/templates',async route=>{body=route.request().postDataJSON();await route.fulfill({status:201,json:q36FixtureEnvelope({...template,id:'00000000-0000-4000-8000-000000000012',name:'空模板',permissionCodes:[],affectedIdentities:0,affectedMembers:0},route.request())});});
  await page.getByRole('button',{name:'保存',exact:true}).click();await page.getByRole('button',{name:'确认保存',exact:true}).click();
  await expect.poll(()=>body).toEqual({name:'空模板',description:'',permissionCodes:[]});
 });
 test('R3 identity deletion protects references and explicitly confirms an unreferenced object',async({page})=>{
  await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:identity.name,exact:true}).click();
  await expect(page.getByRole('button',{name:'删除身份',exact:true})).toBeDisabled();
- await page.route('**/api/v1/personnel/identities?**',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:list([{...identity,affectedMembers:0}]),meta:null}}));await page.reload();await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:identity.name,exact:true}).click();
- let version='';await page.route('**/api/v1/personnel/identities/'+identity.id+'?**',async route=>{version=new URL(route.request().url()).searchParams.get('version')||'';await route.fulfill({status:204});});
+ await page.route('**/api/v1/personnel/identities?**',route=>route.fulfill({status:200,json:q36FixtureEnvelope(list([{...identity,affectedMembers:0}]),route.request())}));await page.reload();await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:identity.name,exact:true}).click();
+ let version='';await page.route('**/api/v1/personnel/identities/'+identity.id+'?**',async route=>{version=fixtureRequestURL(route.request()).searchParams.get('version')||'';await route.fulfill({status:204});});
  await page.getByRole('button',{name:'删除身份',exact:true}).click();await page.getByRole('button',{name:'确认删除',exact:true}).click();await expect.poll(()=>version).toBe('1');await expect(page.getByText('请选择身份查看配置',{exact:true})).toBeVisible();
 });
 test('R3 department selected node filters members; rename and delete use actual version; root protected',async({page})=>{
  await fixture(page);const d={...department,id:'00000000-0000-4000-8000-000000000010',name:'研发部',parentId:department.id,isRoot:false,memberCount:0,childrenCount:0};
- await page.route('**/api/v1/personnel/departments',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[department,d]},meta:null}}));await page.goto('/app/admin');
+ await page.route('**/api/v1/personnel/departments',route=>route.fulfill({status:200,json:q36FixtureEnvelope({items:[department,d]},route.request())}));await page.goto('/app/admin');
  await page.getByRole('button',{name:/^企业/}).click();await expect(page.getByRole('button',{name:'删除部门',exact:true})).toBeDisabled();
- const queries:string[]=[];await page.route('**/api/v1/personnel/members?**',async route=>{queries.push(new URL(route.request().url()).search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:list([member]),meta:null}});});
+ const queries:string[]=[];await page.route('**/api/v1/personnel/members/search',async route=>{queries.push(fixtureRequestURL(route.request()).search);await route.fulfill({status:200,json:q36FixtureEnvelope(list([member]),route.request())});});
  await page.getByRole('button',{name:/^研发部/}).click();await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('departmentId')===d.id)).toBe(true);
  await page.getByRole('button',{name:'重命名部门',exact:true}).click();await page.getByLabel('部门名称',{exact:true}).fill('研发新名');
- let renamed:unknown;await page.route('**/api/v1/personnel/departments/'+d.id,async route=>{renamed=route.request().postDataJSON();await route.fulfill({status:200,json:{code:'OK',message:'success',data:{...d,name:'研发新名',version:2},meta:null}});});
- await page.getByRole('button',{name:'确认重命名',exact:true}).click();await expect.poll(()=>renamed).toEqual({name:'研发新名',version:1});
+ let renamed:unknown;await page.route('**/api/v1/personnel/departments/'+d.id,async route=>{renamed=route.request().postDataJSON();await route.fulfill({status:200,json:q36FixtureEnvelope({...d,name:'研发新名',version:2},route.request())});});
+ await page.getByRole('button',{name:'确认重命名',exact:true}).click();await expect.poll(()=>renamed).toEqual({name:'研发新名',version:1,queryVersion:'synthetic-q36-context'});
 });
 test('R3 complete assignment choices load beyond the first 100 templates',async({page})=>{
  await fixture(page);const choices=Array.from({length:100},(_,i)=>({...template,id:'00000000-0000-4000-8000-'+String(200+i).padStart(12,'0'),name:'模板'+i,affectedIdentities:0}));
  const last={...template,id:'00000000-0000-4000-8000-000000000399',name:'第101个模板',affectedIdentities:0};
- await page.route('**/api/v1/personnel/templates?**',async route=>{const pageNo=Number(new URL(route.request().url()).searchParams.get('page')||1);await route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:pageNo===2?[last]:choices,total:101,page:pageNo,pageSize:100},meta:null}});});
+ await page.route('**/api/v1/personnel/templates?**',async route=>{const pageNo=Number(fixtureRequestURL(route.request()).searchParams.get('page')||1);await route.fulfill({status:200,json:q36FixtureEnvelope({items:pageNo===2?[last]:choices,total:101,page:pageNo,pageSize:100},route.request())});});
  await page.goto('/app/admin');await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:identity.name,exact:true}).click();
  await expect(page.getByRole('checkbox',{name:'模板：第101个模板',exact:true})).toBeVisible();
 });
 test('R3 identity search and next page query the backend while keeping explicit selection',async({page})=>{
  await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();const queries:string[]=[];
- await page.route('**/api/v1/personnel/identities?**',async route=>{const url=new URL(route.request().url());queries.push(url.search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[identity],total:21,page:Number(url.searchParams.get('page')||1),pageSize:20},meta:null}});});
+ await page.route('**/api/v1/personnel/identities?**',async route=>{const url=fixtureRequestURL(route.request());queries.push(url.search);await route.fulfill({status:200,json:q36FixtureEnvelope({items:[identity],total:21,page:Number(url.searchParams.get('page')||1),pageSize:20},route.request())});});
  await page.getByLabel('搜索身份',{exact:true}).fill('共享');await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('search')==='共享')).toBe(true);
  await page.getByRole('button',{name:'下一页',exact:true}).click();await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('page')==='2')).toBe(true);
 });
 test('R3 member identity filter and activity pagination are server controls',async({page})=>{
- await admin(page);const memberQueries:string[]=[];await page.route('**/api/v1/personnel/members?**',async route=>{memberQueries.push(new URL(route.request().url()).search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:list([member]),meta:null}});});
+ await admin(page);const memberQueries:string[]=[];await page.route('**/api/v1/personnel/members/search',async route=>{memberQueries.push(fixtureRequestURL(route.request()).search);await route.fulfill({status:200,json:q36FixtureEnvelope(list([member]),route.request())});});
  await expect(page.getByLabel('筛选身份',{exact:true})).toBeVisible();await chooseOption(page,'筛选身份','企业管理员');await expect.poll(()=>memberQueries.some(q=>new URLSearchParams(q).get('identityId')===identity.id)).toBe(true);
- await page.getByRole('tab',{name:'操作记录',exact:true}).click();const eventQueries:string[]=[];await page.route('**/api/v1/personnel/events?**',async route=>{const url=new URL(route.request().url());eventQueries.push(url.search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[],total:21,page:Number(url.searchParams.get('page')||1),pageSize:20},meta:null}});});
+ await page.getByRole('tab',{name:'操作记录',exact:true}).click();const eventQueries:string[]=[];await page.route('**/api/v1/personnel/events/search',async route=>{const url=fixtureRequestURL(route.request());eventQueries.push(url.search);await route.fulfill({status:200,json:q36FixtureEnvelope({items:[],total:21,page:Number(url.searchParams.get('page')||1),pageSize:20},route.request())});});
  await page.getByLabel('搜索操作记录',{exact:true}).fill('活动');await expect(page.getByRole('button',{name:'下一页',exact:true})).toBeEnabled();await page.getByRole('button',{name:'下一页',exact:true}).click();await expect.poll(()=>eventQueries.some(q=>new URLSearchParams(q).get('page')==='2')).toBe(true);
 });
 test('R3 invitation uses the existing invitationCode response and clears it on close',async({page})=>{
- await admin(page);await page.route('**/api/v1/invitations',route=>route.fulfill({status:201,json:{code:'OK',message:'success',data:{id:'00000000-0000-4000-8000-000000000006',invitationCode:'synthetic-existing-contract'},meta:null}}));
+ await admin(page);await page.route('**/api/v1/invitations',route=>route.fulfill({status:201,json:q36FixtureEnvelope({id:'00000000-0000-4000-8000-000000000006',invitationCode:'synthetic-existing-contract'},route.request())}));
  await page.getByRole('button',{name:'邀请成员',exact:true}).click();await page.getByRole('button',{name:'生成邀请码',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).toHaveValue('synthetic-existing-contract');
  await page.getByRole('button',{name:'关闭',exact:true}).click();await page.getByRole('button',{name:'邀请成员',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).toBeHidden();await expect(page.getByRole('button',{name:'生成邀请码',exact:true})).toBeVisible();
 });
 
 test('R3 activity pagination and explicit time range reach the server independently',async({page})=>{
  await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();const queries:string[]=[];
- await page.route('**/api/v1/personnel/events?**',async route=>{const url=new URL(route.request().url());queries.push(url.search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[],total:21,page:Number(url.searchParams.get('page')||1),pageSize:20},meta:null}});});
+ await page.route('**/api/v1/personnel/events/search',async route=>{const url=fixtureRequestURL(route.request());queries.push(url.search);await route.fulfill({status:200,json:q36FixtureEnvelope({items:[],total:21,page:Number(url.searchParams.get('page')||1),pageSize:20},route.request())});});
  await page.getByLabel('搜索操作记录',{exact:true}).fill('分页');await expect(page.getByRole('button',{name:'下一页',exact:true})).toBeEnabled();await page.getByRole('button',{name:'下一页',exact:true}).click();await expect.poll(()=>queries.some(q=>new URLSearchParams(q).get('page')==='2')).toBe(true);
  await page.getByText('最近 7 天',{exact:true}).click();await page.getByLabel('开始时间',{exact:true}).fill('2026-09-01T00:00');await page.getByLabel('结束时间',{exact:true}).fill('2026-09-02T00:00');await page.getByRole('button',{name:'应用时间范围',exact:true}).click();
  await expect.poll(()=>queries.some(q=>{const p=new URLSearchParams(q);return p.get('from')===new Date('2026-09-01T00:00').toISOString()&&p.get('to')===new Date('2026-09-02T00:00').toISOString()&&p.get('page')==='1';})).toBe(true);
 });
 test('R3 explicit activity time filter sends RFC3339 and resets the page',async({page})=>{
  await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();const queries:string[]=[];
- await page.route('**/api/v1/personnel/events?**',async route=>{queries.push(new URL(route.request().url()).search);await route.fulfill({status:200,json:{code:'OK',message:'success',data:list([]),meta:null}});});
+ await page.route('**/api/v1/personnel/events/search',async route=>{queries.push(fixtureRequestURL(route.request()).search);await route.fulfill({status:200,json:q36FixtureEnvelope(list([]),route.request())});});
  await page.getByText('最近 7 天',{exact:true}).click();await page.getByLabel('开始时间',{exact:true}).fill('2026-09-01T00:00');await page.getByLabel('结束时间',{exact:true}).fill('2026-09-02T00:00');await page.getByRole('button',{name:'应用时间范围',exact:true}).click();
  await expect.poll(()=>queries.some(q=>{const p=new URLSearchParams(q);return p.get('from')===new Date('2026-09-01T00:00').toISOString()&&p.get('to')===new Date('2026-09-02T00:00').toISOString();})).toBe(true);
 });
 test('R3 empty department deletion confirms version and preserves conflict feedback',async({page})=>{
  await fixture(page);const d={...department,id:'00000000-0000-4000-8000-000000000010',name:'空部门',parentId:department.id,isRoot:false};
- await page.route('**/api/v1/personnel/departments',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:{items:[department,d]},meta:null}}));await page.goto('/app/admin');await page.getByRole('button',{name:/^空部门/}).click();
- let version='';await page.route('**/api/v1/personnel/departments/'+d.id+'?**',async route=>{version=new URL(route.request().url()).searchParams.get('version')||'';await route.fulfill({status:409,json:{code:'PERSONNEL_CONFLICT',message:'conflict',data:null,meta:null}});});
+ await page.route('**/api/v1/personnel/departments',route=>route.fulfill({status:200,json:q36FixtureEnvelope({items:[department,d]},route.request())}));await page.goto('/app/admin');await page.getByRole('button',{name:/^空部门/}).click();
+ let version='';await page.route('**/api/v1/personnel/departments/'+d.id+'?**',async route=>{version=fixtureRequestURL(route.request()).searchParams.get('version')||'';await route.fulfill({status:409,json:{code:'PERSONNEL_CONFLICT',message:'conflict',data:null,meta:null}});});
  await page.getByRole('button',{name:'删除部门',exact:true}).click();await page.getByRole('button',{name:'确认删除',exact:true}).click();await expect.poll(()=>version).toBe('1');await expect(page.getByRole('alert')).toContainText('配置已变更');
 });
 for(const mode of ['department','member','groups'] as const)test('R3 unsaved '+mode+' form survives close and Escape until explicit discard',async({page})=>{
@@ -539,7 +540,7 @@ test('Q33 shell retains responsive L material geometry with one fixed sidebar',a
 
 test('Q25 default activity range omits optional empty timestamps in every initial request',async({page})=>{
  await fixture(page);const queries:URLSearchParams[]=[];
- await page.route('**/api/v1/personnel/events?**',async route=>{queries.push(new URL(route.request().url()).searchParams);await route.fulfill({status:200,json:{code:'OK',message:'success',data:list([]),meta:null}});});
+ await page.route('**/api/v1/personnel/events/search',async route=>{queries.push(fixtureRequestURL(route.request()).searchParams);await route.fulfill({status:200,json:q36FixtureEnvelope(list([]),route.request())});});
  await page.goto('/app/admin');await expect(page.getByLabel('搜索成员',{exact:true})).toBeVisible();
  expect(queries.length).toBeGreaterThan(0);for(const query of queries){expect(query.has('from')).toBe(false);expect(query.has('to')).toBe(false);}
 });
@@ -555,9 +556,9 @@ test('Figma shell original translucent material has no extra white foreground la
 });
 test('R3 activity presents readable action, target and safe changes rather than raw protocol JSON',async({page})=>{
  await fixture(page);const event={id:'00000000-0000-4000-8000-000000000020',occurredAt:'2026-09-30T00:00:00Z',actorAccount:'synthetic-operator',action:'DEPARTMENT_UPDATED',objectType:'department',objectId:department.id,summary:{before:{name:'研发部',parentId:department.id},after:{name:'研发中心',parentId:department.id}},outcome:'success'};
- await page.route('**/api/v1/personnel/events?**',route=>route.fulfill({status:200,json:{code:'OK',message:'success',data:list([event]),meta:null}}));await page.goto('/app/admin');await page.getByRole('tab',{name:'操作记录',exact:true}).click();
+ await page.route('**/api/v1/personnel/events/search',route=>route.fulfill({status:200,json:q36FixtureEnvelope(list([event]),route.request())}));await page.goto('/app/admin');await page.getByRole('tab',{name:'操作记录',exact:true}).click();
  const row=page.getByRole('row').filter({hasText:'synthetic-operator'});await expect(row).toContainText('重命名部门');await expect(row).toContainText('研发中心');await expect(row).toContainText('研发部 → 研发中心');await expect(row).not.toContainText('DEPARTMENT_UPDATED');await expect(row).not.toContainText('parentId');
- const filtered=page.waitForRequest(request=>new URL(request.url()).searchParams.get('action')==='MEMBER_IDENTITIES_UPDATED');await chooseOption(page,'操作类型','分配身份');expect(new URL((await filtered).url()).searchParams.get('action')).toBe('MEMBER_IDENTITIES_UPDATED');
+ const filtered=page.waitForRequest(request=>fixtureRequestURL(request).searchParams.get('action')==='MEMBER_IDENTITIES_UPDATED');await chooseOption(page,'操作类型','分配身份');expect(fixtureRequestURL(await filtered).searchParams.get('action')).toBe('MEMBER_IDENTITIES_UPDATED');
 });
 test('Q33 fixed sidebar retains viewport origin and the 144 by 48 menu target after resize',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);
@@ -570,7 +571,7 @@ test('Q33 fixed sidebar retains viewport origin and the 144 by 48 menu target af
 test('Q34 member table keeps confirmed column geometry and page selection never sends a write',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);const th=page.locator('.member-table th');
  for(const [index,width] of [[0,48],[2,176],[3,216],[4,136],[5,192]])expect((await th.nth(index).boundingBox())!.width).toBeCloseTo(width,0);
- let writes=0;page.on('request',request=>{if(request.url().includes('/api/v1/')&&!['GET','HEAD'].includes(request.method()))writes++;});
+ let writes=0;page.on('request',request=>{if(request.url().includes('/api/v1/')&&!['GET','HEAD'].includes(request.method())&&!request.url().endsWith('/search'))writes++;});
  const select=page.getByLabel('选择成员：'+user.account,{exact:true});await select.check();await expect(page.getByLabel('选择当前页成员',{exact:true})).toBeChecked();await page.getByLabel('选择当前页成员',{exact:true}).uncheck();await expect(select).not.toBeChecked();expect(writes).toBe(0);
 });
 test('Q33 narrow menu retains its expanded 144 by 48 target and y116 position',async({page})=>{
@@ -606,5 +607,5 @@ test('Figma final identity without applications keeps its footer in the original
  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();await expect(page.locator('.definition-details .no-applications')).toHaveCount(0);await expect(page.locator('.definition-footer')).toBeInViewport();
 });
 test('Q34 successful activity uses Arca body typography and retains the result meaning',async({page})=>{
- await admin(page);await page.route('**/api/v1/personnel/events?*',route=>route.fulfill({json:{code:'OK',message:'success',data:list([{id:user.id,occurredAt:'2026-09-30T05:00:00Z',actorAccount:user.account,action:'TEMPLATE_UPDATED',objectType:'template',objectId:template.id,summary:{before:{name:'旧名称'},after:{name:template.name}},outcome:'success'}]),meta:null}}));await page.getByRole('tab',{name:'操作记录',exact:true}).click();await page.getByLabel('搜索操作记录').fill('模板');const result=page.locator('.activity-table tbody tr[data-row-id] td').last();await expect(result).toHaveText('已完成');await expect(result).toHaveCSS('color','oklch(0.145 0 0)');await expect(result).toHaveCSS('font-size','14px');await expect(result).toHaveCSS('line-height','20px');
+ await admin(page);await page.route('**/api/v1/personnel/events/search',route=>route.fulfill({json:q36FixtureEnvelope(list([{id:user.id,occurredAt:'2026-09-30T05:00:00Z',actorAccount:user.account,action:'TEMPLATE_UPDATED',objectType:'template',objectId:template.id,summary:{before:{name:'旧名称'},after:{name:template.name}},outcome:'success'}]),route.request())}));await page.getByRole('tab',{name:'操作记录',exact:true}).click();await page.getByLabel('搜索操作记录').fill('模板');const result=page.locator('.activity-table tbody tr[data-row-id] td').last();await expect(result).toHaveText('已完成');await expect(result).toHaveCSS('color','oklch(0.145 0 0)');await expect(result).toHaveCSS('font-size','14px');await expect(result).toHaveCSS('line-height','20px');
 });
