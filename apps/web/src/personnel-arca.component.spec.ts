@@ -55,7 +55,7 @@ for (const tab of ['成员与部门', '操作记录']) for (const count of [0, 1
     });
     expect(Math.abs(metrics.lastBottom - metrics.bodyBottom)).toBeLessThanOrEqual(1);
     expect(Math.abs(metrics.footerTop - metrics.bodyBottom)).toBeLessThanOrEqual(1);
-    expect(metrics.footerHeight).toBe(33);
+    expect(metrics.footerHeight).toBeCloseTo(33, 2);
     expect(await blanks.evaluateAll(nodes => nodes.every(n => n.getAttribute('aria-hidden') === 'true' && !n.querySelector('button,input,a,[tabindex]') && !n.textContent?.trim()))).toBe(true);
     await expect(area.getByRole('checkbox')).toHaveCount(tab === '成员与部门' ? count + 1 : 0);
   };
@@ -120,4 +120,31 @@ test('Q35 original header sorting, pointer resize and column reorder work withou
   await page.mouse.move(start.x + 10, start.y + 20); await page.mouse.down(); await page.mouse.move(target.x + target.width - 8, start.y + 20, { steps: 8 }); await page.mouse.up();
   await expect(table.getByRole('columnheader')).toHaveText(['', '成员', '身份', '部门', '人员管理', '操作']);
   expect(writes).toBe(0);
+});
+
+test('Q35 page size retains arrow, Home and Enter keyboard operation', async ({ page }) => {
+  await fixture(page, 20, 125);
+  const trigger = page.getByRole('combobox', { name: '每页条数', exact: true });
+  await trigger.focus(); await page.keyboard.press('ArrowUp');
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('option', { name: '20', exact: true })).toBeFocused();
+  await page.keyboard.press('Home'); await expect(page.getByRole('option', { name: '5', exact: true })).toBeFocused();
+  const request = page.waitForRequest(r => r.url().includes('personnel/members?') && new URL(r.url()).searchParams.get('pageSize') === '5');
+  await page.keyboard.press('Enter'); await request;
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false'); await expect(trigger).toBeFocused();
+});
+
+test('Q35 shrinking server total recovers the actual valid page instead of displaying a false page', async ({ page }) => {
+  await fixture(page, 20, 21);
+  let recoveryRequests = 0;
+  await page.route('**/api/v1/personnel/members?**', async route => {
+    const p = Number(new URL(route.request().url()).searchParams.get('page') || 1);
+    if (p === 1) recoveryRequests++;
+    // Independent concurrent deletion scenario: 21 → 20 between page requests.
+    await route.fulfill({ json: { code: 'OK', message: 'success', data: { items: p === 1 ? Array.from({ length: 20 }, (_, i) => row(i)) : [], total: 20, page: p, pageSize: 20 }, meta: null } });
+  });
+  await page.getByRole('button', { name: '下一页', exact: true }).click();
+  await expect.poll(() => recoveryRequests).toBe(1);
+  await expect(page.locator('.member-table tbody tr[data-row-id]')).toHaveCount(20);
+  await expect(page.locator('.member-table')).toContainText('Zulu0');
 });

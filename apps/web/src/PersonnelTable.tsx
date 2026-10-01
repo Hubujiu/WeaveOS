@@ -1,61 +1,61 @@
-import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
+import { Table, type TableColumn } from './vendor/arca/components/motion/table';
+import './vendor/arca/arca.css';
 import './personnel-table.css';
 
 export type PersonnelColumn<T> = {
   label: string;
   width?: number;
   render: (row: T) => ReactNode;
+  sortValue?: (row: T) => string | number;
+  sortable?: boolean;
 };
-
 type Props<T extends { id: string }> = {
   label: string;
   rows: T[];
   columns: PersonnelColumn<T>[];
   minWidth: number;
   empty: string;
-  selected?: (row: T) => boolean;
-  selection?: {
-    ids: string[];
-    onChange: (ids: string[]) => void;
-    label: (row: T) => string;
-  };
+  pagination: { page: number; pageSize: number; total: number; onPageChange: (page: number) => void; onPageSizeChange: (size: number) => void };
+  selection?: { ids: string[]; onChange: (ids: string[]) => void; label: (row: T) => string };
 };
 
-// Q34: page-local Arca presentation. The caller owns queries, paging and edits.
-export function PersonnelTable<T extends { id: string }>({ label, rows, columns, minWidth, empty, selected, selection }: Props<T>) {
-  const selectAll = useRef<HTMLInputElement>(null);
-  const all = rows.length > 0 && rows.every(row => selection?.ids.includes(row.id));
-  const some = rows.some(row => selection?.ids.includes(row.id));
-  useLayoutEffect(() => {
-    if (selectAll.current) selectAll.current.indeterminate = some && !all;
-  }, [some, all]);
-
-  return <div className="table-scroll" tabIndex={0} aria-label={label + '表格滚动区域'}>
-    <table className="personnel-data-table" aria-label={label} style={{ minWidth }}>
-      <colgroup>
-        {selection && <col style={{ width: 48 }} />}
-        {columns.map(column => <col key={column.label} style={column.width ? { width: column.width } : undefined} />)}
-      </colgroup>
-      <thead><tr>
-        {selection && <th scope="col" className="member-selector"><input ref={selectAll} type="checkbox" aria-label="选择当前页成员" aria-checked={some && !all ? 'mixed' : all} disabled={!rows.length} checked={all} onChange={e => selection.onChange(e.target.checked ? rows.map(row => row.id) : [])} /></th>}
-        {columns.map(column => <th scope="col" key={column.label}>{column.label}</th>)}
-      </tr></thead>
-      <tbody>
-        {rows.map((row, index) => {
-          const checked = selection?.ids.includes(row.id) ?? selected?.(row);
-          return <tr key={row.id} aria-selected={checked}>
-            {selection && <td className="member-selector">
-              <span className="table-row-number" aria-hidden="true">{index + 1}</span>
-              <input type="checkbox" aria-label={selection.label(row)} checked={!!checked} onChange={() => selection.onChange(checked ? selection.ids.filter(id => id !== row.id) : [...selection.ids, row.id])} />
-            </td>}
-            {columns.map(column => {
-              const value = column.render(row);
-              return <td key={column.label}><div className="table-cell" title={typeof value === 'string' || typeof value === 'number' ? String(value) : undefined}>{value}</div></td>;
-            })}
-          </tr>;
-        })}
-        {!rows.length && <tr><td colSpan={columns.length + (selection ? 1 : 0)} className="empty-state">{empty}</td></tr>}
-      </tbody>
-    </table>
-  </div>;
+// Q35: actual fixed upstream Table. This bridge only owns business props;
+// original rendering, motion, sorting, drag, resize, scrollbar and pager remain upstream.
+export function PersonnelTable<T extends { id: string }>({ label, rows, columns, minWidth, empty, pagination, selection }: Props<T>) {
+  const sourceColumns = useMemo<TableColumn<T>[]>(() => columns.map(column => ({
+    key: column.label,
+    header: column.label,
+    width: column.width ? `${column.width}px` : undefined,
+    align: 'left',
+    sortable: column.sortable,
+    sortValue: column.sortValue ?? (row => { const value = column.render(row); return typeof value === 'string' || typeof value === 'number' ? value : ''; }),
+    cell: row => { const value = column.render(row); return <div className="table-cell" title={typeof value === 'string' || typeof value === 'number' ? String(value) : undefined}>{value}</div>; },
+  })), [columns]);
+  return <div className="arca-source personnel-source-scope"><Table
+    className="personnel-source-table rounded-xl"
+    ariaLabel={label}
+    data={rows}
+    columns={sourceColumns}
+    getRowId={row => row.id}
+    minWidth={minWidth}
+    rowHeight={40}
+    fillViewport
+    paginated
+    manualPagination
+    recordCount={pagination.total}
+    pageIndex={pagination.page - 1}
+    pageSize={pagination.pageSize}
+    pageSizes={[5, 10, 20, 25, 50, 100]}
+    onPageIndexChange={index => pagination.onPageChange(index + 1)}
+    onPageSizeChange={pagination.onPageSizeChange}
+    resizable
+    reorderable
+    selectable={!!selection}
+    selectedRowIds={selection?.ids}
+    onSelectionChange={selection?.onChange}
+    selectAllLabel="选择当前页成员"
+    getRowLabel={selection?.label}
+    emptyState={empty}
+  /></div>;
 }

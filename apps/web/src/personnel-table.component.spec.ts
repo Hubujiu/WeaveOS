@@ -14,16 +14,16 @@ async function tableFixture(page: Page, withMember = false) {
   });
 }
 
-// Independent visual oracle: synced Figma Q34 identity footer 279:1894 has
-// a 48px outer height and 16px horizontal inset. API fixtures are synthetic.
-test('Q34 identity pagination preserves the confirmed footer inset', async ({ page }) => {
+// Q35 identity uses the same existing definition cards/footer as templates.
+// Table-specific Q34 16px inset is superseded; business paging stays accessible.
+test('Q35 identity pagination remains accessible in the shared definition list', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await tableFixture(page);
   await page.goto('/app/admin');
   await page.getByRole('tab', { name: '身份', exact: true }).click();
-  const footer = page.locator('.identity-table .table-footer');
-  await expect(footer).toHaveCSS('padding-left', '16px');
-  await expect(footer).toHaveCSS('padding-right', '16px');
+  const footer = page.locator('.definition-list .table-footer');
+  await expect(footer).toHaveCSS('padding-left', '0px');
+  await expect(footer).toHaveCSS('padding-right', '0px');
   await expect(footer).toHaveCSS('height', '48px');
   await expect(footer.getByRole('button', { name: '上一页', exact: true })).toBeDisabled();
   await expect(footer.getByRole('button', { name: '下一页', exact: true })).toBeDisabled();

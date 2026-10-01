@@ -21,21 +21,21 @@ async function fixture(page:Page,manage=true) {
 async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
 async function chooseOption(page:Page,label:string,option:string){await page.getByRole('combobox',{name:label,exact:true}).click();await page.getByRole('option',{name:option,exact:true}).click();}
 
-// Q34 independent oracle: user confirmed three tables, synced R3 5.7 and fixed
+// Q35 supersedes identity/max360/native selection under synced R3 5.8; fixed
 // Arca c0319d8 official default. Network fixtures exercise the real page controls.
-for(const [tab,root] of [['成员与部门','.member-table'],['身份','.identity-table'],['操作记录','.activity-table']] as const)test('Q34 Arca table geometry and readable rows on '+tab,async({page})=>{
+for(const [tab,root] of [['成员与部门','.member-table'],['操作记录','.activity-table']] as const)test('Q34 Arca table geometry and readable rows on '+tab,async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await fixture(page);
  await page.route('**/api/v1/personnel/events?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([{id:user.id,occurredAt:'2026-10-01T02:00:00Z',actorAccount:user.account,action:'IDENTITY_UPDATED',objectType:'identity',objectId:identity.id,summary:{before:{name:'旧身份'},after:{name:identity.name}},outcome:'success'}]),meta:null}}));
  await page.goto('/app/admin');if(tab!=='成员与部门')await page.getByRole('tab',{name:tab,exact:true}).click();
  const area=page.locator(root),table=area.getByRole('table');await expect(table).toHaveCount(1);
  await expect.soft(area).toHaveCSS('border-radius','14px');await expect.soft(area).toHaveCSS('border-top-width','1px');
- const header=table.locator('th').first(),cell=table.locator('tbody td').last();
+ const header=table.locator('th').nth(tab==='成员与部门'?1:0),cell=table.locator('tbody tr[data-row-id] td').last();
  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
  await expect.soft(header).toHaveCSS('text-align','center');
  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
- await expect(area.locator('.table-scroll')).toHaveCSS('max-height','360px');
+ await expect(area.locator('.table-scroll')).toHaveCSS('max-height','none');
  await expect(table.locator('th[aria-sort]')).toHaveCount(0);
  await page.screenshot({path:test.info().outputPath('q34-'+(tab==='成员与部门'?'members':tab==='身份'?'identities':'activity')+'.png'),fullPage:true});
 });
@@ -45,19 +45,19 @@ test('Q34 page selection exposes mixed state without writing and shows selected 
  await page.route('**/api/v1/personnel/members?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([member,another]),meta:null}}));await page.goto('/app/admin');
  let writes=0;page.on('request',r=>{if(r.url().includes('/api/v1/')&&!['GET','HEAD'].includes(r.method()))writes++;});
  await page.getByLabel('选择成员：'+user.account,{exact:true}).check();
- const all=page.getByLabel('选择当前页成员',{exact:true});expect.soft(await all.evaluate(n=>(n as HTMLInputElement).indeterminate)).toBe(true);
+ const all=page.getByLabel('选择当前页成员',{exact:true});await expect.soft(all).toHaveAttribute('aria-checked','mixed');
  const row=page.getByRole('row').filter({hasText:user.account});await expect.soft(row).toHaveAttribute('aria-selected','true');
  await all.check();await expect(page.getByLabel('选择成员：synthetic-second',{exact:true})).toBeChecked();await all.uncheck();await expect(page.getByLabel('选择成员：'+user.account,{exact:true})).not.toBeChecked();expect(writes).toBe(0);
 });
 
-test('Q34 identity table preserves edit entry, shared fields and unsaved switch protection',async({page})=>{
+test('Q35 identity cards preserve edit entry, shared fields and unsaved switch protection',async({page})=>{
  await fixture(page);const another={...identity,id:'00000000-0000-4000-8000-000000000098',name:'财务身份',description:'独立示例说明'};
  await page.route('**/api/v1/personnel/identities?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([identity,another]),meta:null}}));await page.goto('/app/admin');await page.getByRole('tab',{name:'身份',exact:true}).click();
- const table=page.locator('.identity-table').getByRole('table');await expect(table).toHaveCount(1);await expect(table.getByRole('columnheader')).toHaveText(['身份','说明','使用成员','直接权限']);
+ const table=page.locator('.definition-list');await expect(table.getByRole('table')).toHaveCount(0);await expect(table.locator('.definition-item')).toHaveCount(2);
  await table.getByRole('button',{name:identity.name,exact:true}).focus();await page.keyboard.press('Enter');await page.getByLabel('说明',{exact:true}).fill('未保存说明');
  await table.getByRole('button',{name:another.name,exact:true}).click();await expect(page.getByRole('dialog',{name:'有未保存的修改',exact:true})).toBeVisible();await page.getByRole('button',{name:'继续编辑',exact:true}).click();
- await expect(page.getByLabel('说明',{exact:true})).toHaveValue('未保存说明');await expect(table.getByRole('row').filter({hasText:identity.name})).toHaveAttribute('aria-selected','true');
- await expect(table.getByRole('row').filter({hasText:another.name})).toContainText(another.description);
+ await expect(page.getByLabel('说明',{exact:true})).toHaveValue('未保存说明');await expect(table.getByRole('button',{name:identity.name,exact:true})).toHaveClass(/selected/);
+ await expect(table.getByRole('button',{name:another.name,exact:true})).toContainText(another.description);
  await page.screenshot({path:test.info().outputPath('q34-identity-editor.png'),fullPage:true});
 });
 
@@ -75,15 +75,15 @@ for(const width of [1920,320])test('Q34 dense table keeps sticky header and both
  await page.screenshot({path:test.info().outputPath('q34-scroll-'+width+'.png'),fullPage:true});
 });
 
-test('Q34 identity empty state retains table headings and reduced motion disables row transitions',async({page})=>{
+test('Q35 identity empty list and reduced motion preserve accessible states',async({page})=>{
  await page.emulateMedia({reducedMotion:'reduce'});await fixture(page);await page.route('**/api/v1/personnel/identities?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([]),meta:null}}));await page.goto('/app/admin');await page.getByRole('tab',{name:'身份',exact:true}).click();
- const table=page.locator('.identity-table').getByRole('table');await expect(table).toHaveCount(1);await expect(table.getByRole('columnheader')).toHaveCount(4);await expect(table).toContainText('暂无身份');
+ const table=page.locator('.definition-list');await expect(table.getByRole('table')).toHaveCount(0);await expect(table).toContainText('暂无身份');
  await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await expect(page.locator('.member-table tbody tr').first()).toHaveCSS('transition-duration','0s');
 });
 
 test('Q34 keyboard focus ring stays visible inside truncated table cells',async({page})=>{
- await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();
- await page.keyboard.press('Tab');const name=page.locator('.identity-table').getByRole('button',{name:identity.name,exact:true});await name.focus();await expect(name).toBeFocused();
+ await admin(page);
+ await page.keyboard.press('Tab');const name=page.locator('.member-table').getByRole('button',{name:'配置身份',exact:true});await name.focus();await expect(name).toBeFocused();
  const ring=await name.evaluate(n=>{const b=n.getBoundingClientRect(),clip=n.parentElement!.getBoundingClientRect(),style=getComputedStyle(n),outset=parseFloat(style.outlineOffset)+parseFloat(style.outlineWidth);return {style:style.outlineStyle,width:parseFloat(style.outlineWidth),left:b.left-outset,right:b.right+outset,top:b.top-outset,bottom:b.bottom+outset,clip:{left:clip.left,right:clip.right,top:clip.top,bottom:clip.bottom}};});
  expect(ring.style).not.toBe('none');expect(ring.width).toBeGreaterThan(0);
  expect.soft(ring.left).toBeGreaterThanOrEqual(ring.clip.left);expect.soft(ring.right).toBeLessThanOrEqual(ring.clip.right);expect.soft(ring.top).toBeGreaterThanOrEqual(ring.clip.top);expect.soft(ring.bottom).toBeLessThanOrEqual(ring.clip.bottom);
@@ -604,5 +604,5 @@ test('Figma final identity without applications keeps its footer in the original
  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();await expect(page.locator('.definition-details .no-applications')).toHaveCount(0);await expect(page.locator('.definition-footer')).toBeInViewport();
 });
 test('Q34 successful activity uses Arca body typography and retains the result meaning',async({page})=>{
- await admin(page);await page.route('**/api/v1/personnel/events?*',route=>route.fulfill({json:{code:'OK',message:'success',data:list([{id:user.id,occurredAt:'2026-09-30T05:00:00Z',actorAccount:user.account,action:'TEMPLATE_UPDATED',objectType:'template',objectId:template.id,summary:{before:{name:'旧名称'},after:{name:template.name}},outcome:'success'}]),meta:null}}));await page.getByRole('tab',{name:'操作记录',exact:true}).click();await page.getByLabel('搜索操作记录').fill('模板');const result=page.locator('.activity-table tbody td').last();await expect(result).toHaveText('已完成');await expect(result).toHaveCSS('color','oklch(0.145 0 0)');await expect(result).toHaveCSS('font-size','14px');await expect(result).toHaveCSS('line-height','20px');
+ await admin(page);await page.route('**/api/v1/personnel/events?*',route=>route.fulfill({json:{code:'OK',message:'success',data:list([{id:user.id,occurredAt:'2026-09-30T05:00:00Z',actorAccount:user.account,action:'TEMPLATE_UPDATED',objectType:'template',objectId:template.id,summary:{before:{name:'旧名称'},after:{name:template.name}},outcome:'success'}]),meta:null}}));await page.getByRole('tab',{name:'操作记录',exact:true}).click();await page.getByLabel('搜索操作记录').fill('模板');const result=page.locator('.activity-table tbody tr[data-row-id] td').last();await expect(result).toHaveText('已完成');await expect(result).toHaveCSS('color','oklch(0.145 0 0)');await expect(result).toHaveCSS('font-size','14px');await expect(result).toHaveCSS('line-height','20px');
 });

@@ -1,38 +1,17 @@
-/* Q34 / R3 5.7: Arca defaults adapted to the existing page and server paging. */
-.member-table.surface,.activity-table.surface,.identity-table.surface { border-color:oklch(.922 0 0);border-radius:14px;background:white; }
-.member-table .table-toolbar,.activity-table .table-toolbar,.identity-table .table-toolbar { border-bottom:1px solid oklch(.922 0 0); }
-.member-table .table-scroll,.activity-table .table-scroll,.identity-table .table-scroll { max-height:360px;flex:0 1 auto;overflow:auto;scrollbar-width:thin;scrollbar-color:#90939980 transparent;overscroll-behavior:contain; }
-.table-scroll:focus-visible { outline:2px solid #3b79f4;outline-offset:-2px; }
-.table-scroll::-webkit-scrollbar { width:6px;height:6px; }
-.table-scroll::-webkit-scrollbar-thumb { background:#90939980;border-radius:8px; }
-.table-scroll::-webkit-scrollbar-track { background:transparent; }
-.workspace .personnel-data-table { table-layout:fixed;border-collapse:separate;border-spacing:0;width:100%;text-align:left; }
-.workspace .personnel-data-table th { position:sticky;top:0;z-index:1;height:40px;padding:0 16px;text-align:center;background:oklch(.97 0 0);color:oklch(.556 0 0);font-size:14px;line-height:20px;font-weight:500;border-bottom:1px solid oklch(.922 0 0);border-right:1px solid oklch(.922 0 0); }
-.workspace .personnel-data-table td { height:40px;padding:0 16px;font-size:14px;line-height:20px;color:oklch(.145 0 0);border-bottom:1px solid color-mix(in oklab,oklch(.922 0 0) 60%,transparent);border-right:1px solid oklch(.922 0 0); }
-.workspace .personnel-data-table th:last-child,.workspace .personnel-data-table td:last-child { border-right:0; }
-.personnel-data-table tbody tr { transition:background-color 150ms cubic-bezier(.4,0,.2,1); }
-.personnel-data-table tbody tr:hover { background:color-mix(in oklab,oklch(.97 0 0) 50%,transparent); }
-.personnel-data-table tbody tr[aria-selected=true] { background:color-mix(in oklab,oklch(.205 0 0) 5%,transparent); }
-.table-cell { overflow:hidden;white-space:nowrap;text-overflow:ellipsis; }
-.personnel-data-table .text-button { font-size:14px;line-height:20px;color:oklch(.145 0 0);white-space:nowrap; }
-.workspace .personnel-data-table button:focus-visible { outline-offset:-2px; }
-.personnel-data-table .member-name { gap:8px;min-width:0; }
-.personnel-data-table .member-name strong { color:inherit;font-weight:400;overflow:hidden;text-overflow:ellipsis; }
-.personnel-data-table .member-name small { margin:0;font-size:14px;line-height:20px;flex:none;color:oklch(.556 0 0); }
-.workspace .personnel-data-table .member-selector { width:48px;padding:0;text-align:center; }
-.workspace .personnel-data-table td.member-selector { position:relative; }
-.workspace .personnel-data-table input[type=checkbox] { vertical-align:middle;margin:0;width:20px;height:20px;border-radius:8px;border:2px solid color-mix(in oklab,oklch(.556 0 0) 50%,transparent);background:white; }
-.workspace .personnel-data-table input[type=checkbox]:checked { border-color:oklch(.205 0 0);background:oklch(.205 0 0) url('./assets/admin-check.svg') center/14px 14px no-repeat; }
-.workspace .personnel-data-table input[type=checkbox]:indeterminate { border-color:oklch(.205 0 0);background:linear-gradient(oklch(.985 0 0),oklch(.985 0 0)) center/10px 2px no-repeat,oklch(.205 0 0); }
-.personnel-data-table td.member-selector input { opacity:0; }
-.table-row-number { position:absolute;inset:0;display:grid;place-items:center;font-size:12px;color:oklch(.556 0 0);pointer-events:none; }
-.personnel-data-table tr:hover .table-row-number,.personnel-data-table tr:focus-within .table-row-number,.personnel-data-table tr[aria-selected=true] .table-row-number { visibility:hidden; }
-.personnel-data-table tr:hover td.member-selector input,.personnel-data-table tr:focus-within td.member-selector input,.personnel-data-table tr[aria-selected=true] td.member-selector input { opacity:1; }
-.member-table .table-footer,.activity-table .table-footer,.identity-table .table-footer { border-top:1px solid oklch(.922 0 0); }
-.workspace .identity-table .table-footer { padding-left:16px;padding-right:16px; }
-.identity-table.definition-list { padding:0;gap:0;width:352px;overflow:hidden; }
-.identity-table .table-toolbar { width:100%; }
-.identity-table .panel-note { margin:0;padding:12px 16px; }
-.identity-table .identity-name { display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;text-align:left; }
-@media(max-width:900px) { .identity-table.definition-list { width:100%;max-height:none; }.member-table .table-scroll,.activity-table .table-scroll { flex:none; }.identity-table .table-footer { flex-wrap:wrap;height:auto;min-height:48px;padding:8px 16px; } }
-@media(prefers-reduced-motion:reduce) { .personnel-data-table tbody tr { transition:none; } }
+/* Page integration only. Table, checkbox, scrollbar and pager styles are the
+   fixed upstream CSS/Tailwind closure in vendor/arca/arca.css. */
+.member-table,.activity-table { border-color:oklch(.922 0 0);border-radius:14px; }
+.personnel-source-scope { display:flex;flex:1;flex-direction:column;min-height:0; }
+.personnel-source-table { flex:1;min-height:0;border:0;border-top:1px solid oklch(.922 0 0);border-radius:0; }
+.arca-source .table-cell { overflow:hidden;white-space:nowrap;text-overflow:ellipsis; }
+.arca-source .text-button { font:inherit;color:inherit;white-space:nowrap;outline-offset:-2px; }
+.arca-source .text-button:focus-visible { outline:2px solid oklch(.708 0 0);outline-offset:-2px; }
+.arca-source .member-name { gap:8px;min-width:0; }
+.arca-source .member-name strong { color:inherit;font-weight:400;overflow:hidden;text-overflow:ellipsis; }
+.arca-source .member-name small { margin:0;font-size:14px;line-height:20px;flex:none;color:oklch(.556 0 0); }
+.activity-table .activity-note { padding:0; }
+@media(max-width:900px) {
+  .personnel-workspace .member-table { height:440px;flex:none; }
+  .activity-table { height:480px;flex:none; }
+}
+@media(prefers-reduced-motion:reduce) { .arca-source tbody tr { transition:none; } }
