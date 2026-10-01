@@ -1,0 +1,335 @@
+
+Running 8 tests using 1 worker
+
+(node:76432) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:33:1 鈥?Q36 B2 real member page uses POST typed filter and old context without text sorting (5.0s)
+(node:74984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:44:1 鈥?Q36 B2 event page uses server display and only occurredAt server ordering (7.1s)
+(node:78800) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:55:75 鈥?Q36 B2 COMMON_QUERY_CHANGED requires explicit page-one refresh and clears selection (15.4s)
+(node:75784) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  4 [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:55:75 鈥?Q36 B2 COMMON_QUERY_CONTEXT_EXPIRED requires explicit page-one refresh and clears selection (15.4s)
+(node:77984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  5 [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:66:1 鈥?Q36 B2 late responses cannot overwrite the newest search (5.1s)
+(node:78804) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  6 [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:74:1 鈥?Q36 B2 definition explicitly saves durable draft and restores original version with conflict (15.4s)
+(node:73200) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  7 [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:88:1 鈥?Q36 B2 explicit member draft does not save automatically or bypass query guard (15.6s)
+(node:72320) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  8 [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:97:1 鈥?Q36 B2 real-page animation closes on navigation and leaves no root blocker (15.4s)
+
+
+  1) [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:33:1 鈥?Q36 B2 real member page uses POST typed filter and old context without text sorting
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+    Call Log:
+    - Timeout 3000ms exceeded while waiting on the predicate
+
+      34 |  await fixture(page);const requests:Record<string,unknown>[]=[];
+      35 |  await page.route('**/personnel/members/search',r=>{expect(r.request().method()).toBe('POST');const input=r.request().postDataJSON();requests.push(input);return r.fulfill({json:envelope(paging([member],input))});});
+    > 36 |  await admin(page);await expect.poll(()=>requests.length).toBeGreaterThan(0);
+         |                                                           ^
+      37 |  await expect(page.locator('.member-table th[aria-sort]')).toHaveCount(0);
+      38 |  await condition(page);await expect.poll(()=>requests.at(-1)?.filter).toEqual({operator:'and',children:[{field:'account',operator:'eq',value:'q36-admin'}]});
+      39 |  expect(requests.at(-1)?.queryVersion).toBe('context-1');
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:36:59
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-re-a93b7-ontext-without-text-sorting-chromium\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-re-a93b7-ontext-without-text-sorting-chromium\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-front-results\q36-b2.component-Q36-B2-re-a93b7-ontext-without-text-sorting-chromium\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-re-a93b7-ontext-without-text-sorting-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-front-results\q36-b2.component-Q36-B2-re-a93b7-ontext-without-text-sorting-chromium\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  2) [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:44:1 鈥?Q36 B2 event page uses server display and only occurredAt server ordering
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.activity-table')
+    Expected substring: "褰撳墠椤典箣澶栫殑鎴愬憳"
+    Received string:    "璁板綍浠呭寘鍚厤缃彉鏇达紝涓嶅睍绀哄瘑鐮佹垨閭€璇风爜鏄庢枃銆傛渶杩?7 澶╁紑濮嬫椂闂寸粨鏉熸椂闂村簲鐢ㄦ椂闂磋寖鍥存椂闂存搷浣滆€呮搷浣滃璞″彉鏇村唴瀹圭粨鏋滄殏鏃犳搷浣滆褰曟瘡椤垫潯鏁?05102025501001 - 20 / 鍏?100 椤?2345璺宠嚦椤?
+    Timeout: 3000ms
+
+    Call log:
+      - Expect "toContainText" locator('.activity-table') with timeout 3000ms
+      - waiting for locator('.activity-table')
+        10 脳 locator resolved to <section class="activity-table surface">鈥?/section>
+           - unexpected value "璁板綍浠呭寘鍚厤缃彉鏇达紝涓嶅睍绀哄瘑鐮佹垨閭€璇风爜鏄庢枃銆傛渶杩?7 澶╁紑濮嬫椂闂寸粨鏉熸椂闂村簲鐢ㄦ椂闂磋寖鍥存椂闂存搷浣滆€呮搷浣滃璞″彉鏇村唴瀹圭粨鏋滄殏鏃犳搷浣滆褰曟瘡椤垫潯鏁?05102025501001 - 20 / 鍏?100 椤?2345璺宠嚦椤?
+
+
+      47 |  await page.route('**/personnel/events/search',r=>{const input=r.request().postDataJSON();requests.push(input);return r.fulfill({json:envelope({...paging([event],input),sort:{key:'occurredAt',direction:input.sortDirection??'desc'},range:{from:'2026-09-24T00:00:00Z',to:'2026-10-02T00:00:00Z'}})});});
+      48 |  await admin(page);await page.getByRole('tab',{name:'鎿嶄綔璁板綍',exact:true}).click();
+    > 49 |  await expect(page.locator('.activity-table')).toContainText('褰撳墠椤典箣澶栫殑鎴愬憳');await expect(page.locator('.activity-table')).toContainText('鍚庣瀹夊叏鎽樿');
+         |                                                ^
+      50 |  await page.locator('.activity-table th').filter({hasText:'鏃堕棿'}).getByRole('button').first().click();
+      51 |  await expect.poll(()=>requests.at(-1)?.sortBy).toBe('occurredAt');expect(requests.at(-1)?.queryVersion).toBeTruthy();
+      52 |  expect(await page.locator('.activity-table th[aria-sort]').count()).toBe(1);
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:49:48
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-ev-6e63e--occurredAt-server-ordering-chromium\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-ev-6e63e--occurredAt-server-ordering-chromium\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-front-results\q36-b2.component-Q36-B2-ev-6e63e--occurredAt-server-ordering-chromium\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-ev-6e63e--occurredAt-server-ordering-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-front-results\q36-b2.component-Q36-B2-ev-6e63e--occurredAt-server-ordering-chromium\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  3) [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:55:75 鈥?Q36 B2 COMMON_QUERY_CHANGED requires explicit page-one refresh and clears selection
+
+    Test timeout of 15000ms exceeded.
+
+    Error: locator.fill: Test timeout of 15000ms exceeded.
+    Call log:
+      - waiting for getByLabel('璺宠嚦椤电爜')
+
+
+      57 |  await page.route('**/personnel/members/search',r=>{const input=r.request().postDataJSON();requests.push(input);if(input.page===2&&!failed){failed=true;return r.fulfill({status:409,json:{code,message:'conflict',data:null,meta:null}});}return r.fulfill({json:envelope(paging([member],input))});});
+      58 |  await admin(page);await page.getByLabel('閫夋嫨鎴愬憳锛歲36-admin',{exact:true}).check();
+    > 59 |  await page.getByLabel('璺宠嚦椤电爜').fill('2');await page.getByLabel('璺宠嚦椤电爜').press('Enter');
+         |                                ^
+      60 |  await expect(page.getByRole('alert')).toContainText(code==='COMMON_QUERY_CHANGED'?'鏌ヨ缁撴灉宸插彉鍖?:'鏌ヨ涓婁笅鏂囧凡杩囨湡');
+      61 |  await page.getByRole('button',{name:'鍒锋柊鏌ヨ',exact:true}).click();
+      62 |  await expect.poll(()=>requests.at(-1)?.page).toBe(1);expect(requests.at(-1)?.queryVersion).toBeUndefined();
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:59:32
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-CO-17c5e-efresh-and-clears-selection-chromium\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-CO-17c5e-efresh-and-clears-selection-chromium\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-front-results\q36-b2.component-Q36-B2-CO-17c5e-efresh-and-clears-selection-chromium\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-CO-17c5e-efresh-and-clears-selection-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-front-results\q36-b2.component-Q36-B2-CO-17c5e-efresh-and-clears-selection-chromium\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  4) [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:55:75 鈥?Q36 B2 COMMON_QUERY_CONTEXT_EXPIRED requires explicit page-one refresh and clears selection
+
+    Test timeout of 15000ms exceeded.
+
+    Error: locator.fill: Test timeout of 15000ms exceeded.
+    Call log:
+      - waiting for getByLabel('璺宠嚦椤电爜')
+
+
+      57 |  await page.route('**/personnel/members/search',r=>{const input=r.request().postDataJSON();requests.push(input);if(input.page===2&&!failed){failed=true;return r.fulfill({status:409,json:{code,message:'conflict',data:null,meta:null}});}return r.fulfill({json:envelope(paging([member],input))});});
+      58 |  await admin(page);await page.getByLabel('閫夋嫨鎴愬憳锛歲36-admin',{exact:true}).check();
+    > 59 |  await page.getByLabel('璺宠嚦椤电爜').fill('2');await page.getByLabel('璺宠嚦椤电爜').press('Enter');
+         |                                ^
+      60 |  await expect(page.getByRole('alert')).toContainText(code==='COMMON_QUERY_CHANGED'?'鏌ヨ缁撴灉宸插彉鍖?:'鏌ヨ涓婁笅鏂囧凡杩囨湡');
+      61 |  await page.getByRole('button',{name:'鍒锋柊鏌ヨ',exact:true}).click();
+      62 |  await expect.poll(()=>requests.at(-1)?.page).toBe(1);expect(requests.at(-1)?.queryVersion).toBeUndefined();
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:59:32
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-CO-bb276-efresh-and-clears-selection-chromium\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-CO-bb276-efresh-and-clears-selection-chromium\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-front-results\q36-b2.component-Q36-B2-CO-bb276-efresh-and-clears-selection-chromium\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-CO-bb276-efresh-and-clears-selection-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-front-results\q36-b2.component-Q36-B2-CO-bb276-efresh-and-clears-selection-chromium\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  5) [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:66:1 鈥?Q36 B2 late responses cannot overwrite the newest search
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 3000ms exceeded while waiting on the predicate
+
+      67 |  await fixture(page);let release:((r:Route)=>Promise<void>)|undefined;let oldRoute:Route|undefined;
+      68 |  await page.route('**/personnel/members/search',async r=>{const input=r.request().postDataJSON();if(input.search==='older'){oldRoute=r;release=async route=>{await route.fulfill({json:envelope(paging([{...member,account:'late-old-response'}],input))}).catch(()=>{});};return;}await r.fulfill({json:envelope(paging([{...member,account:input.search==='newer'?'newest-response':member.account}],input))});});
+    > 69 |  await admin(page);await page.getByLabel('鎼滅储鎴愬憳',{exact:true}).fill('older');await expect.poll(()=>!!oldRoute).toBe(true);
+         |                                                                                                               ^
+      70 |  await page.getByLabel('鎼滅储鎴愬憳',{exact:true}).fill('newer');await expect(page.locator('.member-table')).toContainText('newest-response');
+      71 |  if(release&&oldRoute)await release(oldRoute);await page.waitForTimeout(200);await expect(page.locator('.member-table')).not.toContainText('late-old-response');
+      72 | });
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:69:111
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-la-b8b8d-overwrite-the-newest-search-chromium\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-la-b8b8d-overwrite-the-newest-search-chromium\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-front-results\q36-b2.component-Q36-B2-la-b8b8d-overwrite-the-newest-search-chromium\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-la-b8b8d-overwrite-the-newest-search-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-front-results\q36-b2.component-Q36-B2-la-b8b8d-overwrite-the-newest-search-chromium\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  6) [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:74:1 鈥?Q36 B2 definition explicitly saves durable draft and restores original version with conflict
+
+    Test timeout of 15000ms exceeded.
+
+    Error: locator.click: Test timeout of 15000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '淇濆瓨鑽夌', exact: true })
+
+
+      79 |  await admin(page);await page.getByRole('tab',{name:'韬唤',exact:true}).click();await page.getByRole('button',{name:'娴嬭瘯韬唤',exact:true}).click();
+      80 |  await page.getByLabel('璇存槑',{exact:true}).fill('灏氭湭鎻愪氦鐨勮緭鍏?);expect(saved).toBeUndefined();
+    > 81 |  await page.getByRole('button',{name:'淇濆瓨鑽夌',exact:true}).click();await expect.poll(()=>saved?.baseVersion).toBe(1);
+         |                                                          ^
+      82 |  expect(saved?.payload).toMatchObject({description:'灏氭湭鎻愪氦鐨勮緭鍏?});current={...identity,version:2,description:'鍏朵粬鏍囩宸叉洿鏂?};
+      83 |  await page.reload();await page.getByRole('button',{name:'鑽夌绠?,exact:true}).click();await page.getByRole('button',{name:'鎭㈠鑽夌',exact:true}).first().click();
+      84 |  await expect(page.getByLabel('璇存槑',{exact:true})).toHaveValue('灏氭湭鎻愪氦鐨勮緭鍏?);await expect(page.getByRole('alert')).toContainText('鍘熺増鏈?1');await expect(page.getByRole('alert')).toContainText('鏈€鏂扮増鏈?2');
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:81:58
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-de-e918e-ginal-version-with-conflict-chromium\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-de-e918e-ginal-version-with-conflict-chromium\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-front-results\q36-b2.component-Q36-B2-de-e918e-ginal-version-with-conflict-chromium\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-de-e918e-ginal-version-with-conflict-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-front-results\q36-b2.component-Q36-B2-de-e918e-ginal-version-with-conflict-chromium\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  7) [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:88:1 鈥?Q36 B2 explicit member draft does not save automatically or bypass query guard
+
+    Test timeout of 15000ms exceeded.
+
+    Error: locator.click: Test timeout of 15000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '淇濆瓨鑽夌', exact: true })
+
+
+      91 |  await page.route('**/personnel/members/'+id+'/identities',r=>{write=r.request().postDataJSON();return r.fulfill({json:envelope(member)});});
+      92 |  await admin(page);await page.getByRole('button',{name:'閰嶇疆韬唤',exact:true}).click();await page.getByLabel('韬唤锛氭祴璇曡韩浠?,{exact:true}).check();expect(saved).toBeUndefined();
+    > 93 |  await page.getByRole('button',{name:'淇濆瓨鑽夌',exact:true}).click();await expect.poll(()=>saved?.kind).toBe('member-identities');
+         |                                                          ^
+      94 |  await page.getByRole('button',{name:'纭鍒嗛厤',exact:true}).click();await expect.poll(()=>write?.queryVersion).toBe('context-1');expect(write?.draftRef).toEqual({id:draftId,version:3});
+      95 | });
+      96 |
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:93:58
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-ex-5c4a8-cally-or-bypass-query-guard-chromium\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-ex-5c4a8-cally-or-bypass-query-guard-chromium\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-front-results\q36-b2.component-Q36-B2-ex-5c4a8-cally-or-bypass-query-guard-chromium\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-ex-5c4a8-cally-or-bypass-query-guard-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-front-results\q36-b2.component-Q36-B2-ex-5c4a8-cally-or-bypass-query-guard-chromium\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  8) [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:97:1 鈥?Q36 B2 real-page animation closes on navigation and leaves no root blocker
+
+    Test timeout of 15000ms exceeded.
+
+    Error: locator.click: Test timeout of 15000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '鑷畾涔夌瓫閫?, exact: true })
+
+
+       96 |
+       97 | test('Q36 B2 real-page animation closes on navigation and leaves no root blocker',async({page})=>{
+    >  98 |  await fixture(page);await admin(page);await page.getByRole('button',{name:'鑷畾涔夌瓫閫?,exact:true}).click();await expect(page.getByRole('dialog',{name:'鑷畾涔夌瓫閫?,exact:true})).toBeVisible();
+          |                                                                                                 ^
+       99 |  await page.keyboard.press('Escape');await page.getByRole('button',{name:'鑷畾涔夌瓫閫?,exact:true}).click();await page.keyboard.press('Escape');
+      100 |  await page.getByRole('tab',{name:'鎿嶄綔璁板綍',exact:true}).click();await page.waitForTimeout(1000);
+      101 |  await expect.poll(()=>page.evaluate(()=>document.documentElement.classList.contains('q36-filter-transition-active'))).toBe(false);
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:98:97
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-re-64ed0--and-leaves-no-root-blocker-chromium\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-re-64ed0--and-leaves-no-root-blocker-chromium\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-front-results\q36-b2.component-Q36-B2-re-64ed0--and-leaves-no-root-blocker-chromium\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-b2.component-Q36-B2-re-64ed0--and-leaves-no-root-blocker-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-front-results\q36-b2.component-Q36-B2-re-64ed0--and-leaves-no-root-blocker-chromium\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  8 failed
+    [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:33:1 鈥?Q36 B2 real member page uses POST typed filter and old context without text sorting
+    [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:44:1 鈥?Q36 B2 event page uses server display and only occurredAt server ordering
+    [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:55:75 鈥?Q36 B2 COMMON_QUERY_CHANGED requires explicit page-one refresh and clears selection
+    [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:55:75 鈥?Q36 B2 COMMON_QUERY_CONTEXT_EXPIRED requires explicit page-one refresh and clears selection
+    [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:66:1 鈥?Q36 B2 late responses cannot overwrite the newest search
+    [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:74:1 鈥?Q36 B2 definition explicitly saves durable draft and restores original version with conflict
+    [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:88:1 鈥?Q36 B2 explicit member draft does not save automatically or bypass query guard
+    [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:97:1 鈥?Q36 B2 real-page animation closes on navigation and leaves no root blocker
