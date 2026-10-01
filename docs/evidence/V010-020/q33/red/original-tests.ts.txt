@@ -21,45 +21,6 @@ async function fixture(page:Page,manage=true) {
 async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
 async function chooseOption(page:Page,label:string,option:string){await page.getByRole('combobox',{name:label,exact:true}).click();await page.getByRole('option',{name:option,exact:true}).click();}
 
-// Q33 oracle: user removal + synced R3 5.3–5.5 and Figma Admin 108:151.
-// Fixed 176px sidebar on every viewport; no collapse entry or hidden navigation.
-for(const width of [2504,1920,900,390,320])test('Q33 sidebar stays expanded with no collapse control at '+width,async({page})=>{
- await page.setViewportSize({width,height:844});await admin(page);
- await expect.soft(page.getByRole('button',{name:/收起侧栏|展开侧栏/})).toHaveCount(0);
- await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width','176px');
- await expect.soft(page.locator('.admin-header')).toHaveCSS('height','56px');
- await expect.soft(page.locator('.personnel-nav-label')).toBeVisible();await expect.soft(page.locator('.personnel-nav-label')).toHaveCSS('opacity','1');
- await expect.soft(page.locator('.sidebar-caption').first()).toBeVisible();
- const menu=(await page.getByRole('button',{name:'人员管理',exact:true}).boundingBox())!;
- expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:16,y:116,width:144,height:48});
- expect.soft(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-});
-
-test('Q33 crossing responsive breakpoints preserves navigation, dirty input and explicit leave protection',async({page})=>{
- await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill('固定侧栏保留草稿');
- let writes=0;page.on('request',r=>{if(r.url().includes('/api/v1/')&&!['GET','HEAD'].includes(r.method()))writes++;});
- for(const width of [390,320,900,1920]){
-  await page.setViewportSize({width,height:844});await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width','176px');
-  await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('固定侧栏保留草稿');await expect(page.getByRole('tab',{name:'身份',exact:true})).toHaveAttribute('aria-selected','true');
-  await expect(page.getByRole('button',{name:'保存',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'退出',exact:true})).toBeVisible();
- }
- expect(writes).toBe(0);await page.getByRole('button',{name:'退出',exact:true}).click();await expect(page.getByRole('dialog',{name:'有未保存的修改',exact:true})).toBeVisible();
- await page.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('固定侧栏保留草稿');expect(writes).toBe(0);
-});
-
-for(const width of [390,320])test('Q33 fixed sidebar retains narrow keyboard tabs and real content scrolling at '+width,async({page})=>{
- await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width,height:600});await admin(page);
- await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width','176px');
- const tabs=page.getByRole('tablist'),first=page.getByRole('tab',{name:'成员与部门',exact:true});await first.focus();await first.press('End');await page.keyboard.press('Enter');
- const last=page.getByRole('tab',{name:'操作记录',exact:true});await expect(last).toHaveAttribute('aria-selected','true');
- const bar=(await tabs.boundingBox())!,button=(await last.boundingBox())!;expect(button.x).toBeGreaterThanOrEqual(bar.x);expect(button.x+button.width).toBeLessThanOrEqual(bar.x+bar.width+1);
- expect(await tabs.evaluate(n=>n.scrollHeight===n.clientHeight)).toBe(true);
- await first.focus();await first.press('Enter');const search=page.getByLabel('搜索成员',{exact:true});await search.scrollIntoViewIfNeeded();await search.fill('固定布局');await expect(search).toHaveValue('固定布局');
- expect(await page.locator('.personnel-content').evaluate(n=>n.scrollTop)).toBeGreaterThan(0);
- const table=page.locator('.table-scroll');await table.evaluate(n=>{n.scrollLeft=n.scrollWidth;});expect(await table.evaluate(n=>n.scrollLeft)).toBeGreaterThan(0);
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-});
-
 // Q32 oracle: user-selected Arca Select Menu / default Pill, R3 section 5.6.
 // These tests exercise the real page; only the network boundary uses synthetic data.
 test('Q32 identity select has the separated rounded menu and preserves server filtering',async({page})=>{
