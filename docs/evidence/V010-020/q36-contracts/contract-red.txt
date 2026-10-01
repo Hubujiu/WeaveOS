@@ -1,0 +1,109 @@
+✖ Q36 query responses retain paging and publish a session-owned opaque baseline (1.329499ms)
+✖ Q36 both query views declare grouped AND/OR, field types and global bounds (0.246713ms)
+✖ Q36 query changes, expiry and busy are distinguishable without repurposing old errors (0.457402ms)
+✖ Q36 object checks remain and an exact draft version can be acknowledged on submission (4.561605ms)
+✖ Q36 persistent personal drafts have explicit limits, conflict protection and no expiry (0.192802ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 73.43711
+
+✖ failing tests:
+
+test at contracts/query-drafts.contract.test.mjs:9:1
+✖ Q36 query responses retain paging and publish a session-owned opaque baseline (1.329499ms)
+  AssertionError [ERR_ASSERTION]: queryVersion is absent
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-020-contracts/contracts/query-drafts.contract.test.mjs:11:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at contracts/query-drafts.contract.test.mjs:21:1
+✖ Q36 both query views declare grouped AND/OR, field types and global bounds (0.246713ms)
+  AssertionError [ERR_ASSERTION]: GET filter is typed JSON
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-020-contracts/contracts/query-drafts.contract.test.mjs:23:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at contracts/query-drafts.contract.test.mjs:39:1
+✖ Q36 query changes, expiry and busy are distinguishable without repurposing old errors (0.457402ms)
+  AssertionError [ERR_ASSERTION]: COMMON_QUERY_CHANGED
+  
+  undefined !== 409
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-020-contracts/contracts/query-drafts.contract.test.mjs:40:80)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at contracts/query-drafts.contract.test.mjs:48:1
+✖ Q36 object checks remain and an exact draft version can be acknowledged on submission (4.561605ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(schemas[n].required.includes('queryVersion'))
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-020-contracts/contracts/query-drafts.contract.test.mjs:51:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at contracts/query-drafts.contract.test.mjs:57:1
+✖ Q36 persistent personal drafts have explicit limits, conflict protection and no expiry (0.192802ms)
+  AssertionError [ERR_ASSERTION]: draft collection missing
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-020-contracts/contracts/query-drafts.contract.test.mjs:58:55)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
