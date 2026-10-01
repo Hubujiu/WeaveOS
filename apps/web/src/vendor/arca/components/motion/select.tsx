@@ -114,8 +114,9 @@ export function Select({
       if (!controlled) setInternal(next);
       onValueChange?.(next);
       setOpen(false);
+      requestAnimationFrame(() => document.getElementById(`${baseId}-trigger`)?.focus());
     },
-    [controlled, onValueChange, setOpen],
+    [controlled, onValueChange, setOpen, baseId],
   );
 
   const register = useCallback((v: string, label: string) => {
@@ -213,6 +214,17 @@ export function SelectTrigger({ className, children, id, 'aria-label': ariaLabel
       aria-expanded={ctx.open}
       aria-controls={ctx.listId}
       onClick={() => ctx.setOpen(!ctx.open)}
+      onKeyDown={event => {
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        ctx.setOpen(true);
+        const key = event.key;
+        requestAnimationFrame(() => {
+          const options = Array.from(document.getElementById(ctx.listId)?.querySelectorAll<HTMLButtonElement>('button[role="option"]:not(:disabled)') ?? []);
+          const selected = options.find(option => option.getAttribute('aria-selected') === 'true');
+          (key === 'Home' ? options[0] : key === 'End' ? options.at(-1) : selected ?? options[0])?.focus();
+        });
+      }}
       initial={false}
       animate={triggerMotion.animate}
       transition={triggerMotion.transition}
@@ -271,6 +283,19 @@ export function SelectContent({ className, children }: SelectContentProps) {
         initial={false}
         animate={ctx.open ? "show" : "hidden"}
         className="p-1"
+        onKeyDown={event => {
+          if (event.key === 'Escape') {
+            event.preventDefault(); event.stopPropagation(); ctx.setOpen(false);
+            document.getElementById(ctx.triggerId)?.focus(); return;
+          }
+          if (event.key === 'Tab') { ctx.setOpen(false); return; }
+          if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          const options = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button[role="option"]:not(:disabled)'));
+          const current = options.indexOf(document.activeElement as HTMLButtonElement);
+          const index = event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 : Math.max(0, Math.min(options.length - 1, current + (event.key === 'ArrowDown' ? 1 : -1)));
+          options[index]?.focus(); options[index]?.scrollIntoView({ block: 'nearest' });
+        }}
       >
         {children}
       </motion.div>

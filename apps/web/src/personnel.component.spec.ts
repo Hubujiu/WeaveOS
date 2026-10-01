@@ -30,14 +30,16 @@ for(const [tab,root] of [['成员与部门','.member-table'],['操作记录','.a
  const area=page.locator(root),table=area.getByRole('table');await expect(table).toHaveCount(1);
  await expect.soft(area).toHaveCSS('border-radius','14px');await expect.soft(area).toHaveCSS('border-top-width','1px');
  const header=table.locator('th').nth(tab==='成员与部门'?1:0),cell=table.locator('tbody tr[data-row-id] td').last();
- expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+ // Official c0319d8 measured header is 40.5px due to collapsed grid border;
+ // nominal rowHeight stays 40. See q35 upstream official-default-computed.txt.
+ expect.soft((await header.boundingBox())!.height).toBeCloseTo(40.5,1);
  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
  await expect.soft(header).toHaveCSS('text-align','center');
  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
  await expect(area.locator('.table-scroll')).toHaveCSS('max-height','none');
  await expect(table.locator('th[aria-sort]')).toHaveCount(0);
- await page.screenshot({path:test.info().outputPath('q34-'+(tab==='成员与部门'?'members':tab==='身份'?'identities':'activity')+'.png'),fullPage:true});
+ await page.screenshot({path:test.info().outputPath('q35-'+(tab==='成员与部门'?'members':'activity')+'.png'),fullPage:true});
 });
 
 test('Q34 page selection exposes mixed state without writing and shows selected rows',async({page})=>{

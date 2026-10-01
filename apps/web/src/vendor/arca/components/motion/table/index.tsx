@@ -192,6 +192,12 @@ export function Table<T>({
     [setPageIndex, setSort, manualPagination],
   );
 
+  useEffect(() => {
+    // An authoritative total can shrink between requests. Recover the actual
+    // server page as well as the visible pager; clamping display alone strands it.
+    if (manualPagination && pageIndex !== currentPage) setPageIndex(currentPage);
+  }, [manualPagination, pageIndex, currentPage, setPageIndex]);
+
   const { widths, startResize, moveResize, endResize } = useColumnResize({
     orderedColumns,
     thRefs,

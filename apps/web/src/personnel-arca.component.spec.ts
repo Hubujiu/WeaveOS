@@ -135,6 +135,7 @@ test('Q35 page size retains arrow, Home and Enter keyboard operation', async ({ 
 });
 
 test('Q35 shrinking server total recovers the actual valid page instead of displaying a false page', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await fixture(page, 20, 21);
   let recoveryRequests = 0;
   await page.route('**/api/v1/personnel/members?**', async route => {
@@ -147,4 +148,26 @@ test('Q35 shrinking server total recovers the actual valid page instead of displ
   await expect.poll(() => recoveryRequests).toBe(1);
   await expect(page.locator('.member-table tbody tr[data-row-id]')).toHaveCount(20);
   await expect(page.locator('.member-table')).toContainText('Zulu0');
+});
+
+test('Q35 narrow viewport keeps the original pager controls fully reachable', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 }); await fixture(page, 1, 125);
+  const area = page.locator('.member-table');
+  for (const control of [area.getByRole('combobox', { name: '每页条数', exact: true }), area.getByRole('button', { name: '下一页', exact: true })]) {
+    await control.scrollIntoViewIfNeeded();
+    const bounds = (await area.boundingBox())!, box = (await control.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(bounds.x);
+    expect(box.x + box.width).toBeLessThanOrEqual(bounds.x + bounds.width);
+  }
+  await area.getByRole('combobox', { name: '每页条数', exact: true }).click();
+  await page.getByRole('option', { name: '5', exact: true }).click();
+  await expect(area.getByRole('combobox', { name: '每页条数', exact: true })).toHaveText('5');
+});
+
+test('Q35 source font uses Geist with the existing Chinese fallback inside its scope', async ({ page }) => {
+  await fixture(page);
+  const family = await page.locator('.member-table table').evaluate(n => getComputedStyle(n).fontFamily);
+  expect(family).toContain('Geist Variable'); expect(family).toContain('Noto Sans SC');
+  const outer = await page.locator('.personnel-page-heading').evaluate(n => getComputedStyle(n).fontFamily);
+  expect(outer).toContain('Noto Sans SC'); expect(outer).not.toContain('Geist');
 });
