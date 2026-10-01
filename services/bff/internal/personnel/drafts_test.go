@@ -277,8 +277,25 @@ func TestDraftQ36PreserveTargetBaseAndNoBusinessEffects(t *testing.T) {
 	in := draftInput()
 	in.TargetID = &target
 	in.BaseVersion = &base
+	var configurationRows int
+	if e := f.owner.QueryRow(ctx, "SELECT count(*) FROM personnel.member_configuration WHERE user_id=$1", f.actor.UserID).Scan(&configurationRows); e != nil || configurationRows != 0 {
+		t.Fatalf("fixture must start before authorization initializes version=0: rows=%d error=%v", configurationRows, e)
+	}
 	d := requireDraft(t, f, in)
+	var authorizationVersion int64
+	if e := f.owner.QueryRow(ctx, "SELECT version FROM personnel.member_configuration WHERE user_id=$1", f.actor.UserID).Scan(&authorizationVersion); e != nil || authorizationVersion != 0 {
+		t.Fatalf("authorization initialization must create only internal version=0: %d %v", authorizationVersion, e)
+	}
+	var afterCreate string
+	if e := f.owner.QueryRow(ctx, "SELECT string_agg(scope||':'||revision,',' ORDER BY scope) FROM personnel.query_revisions").Scan(&afterCreate); e != nil || afterCreate != revisions {
+		t.Fatalf("draft save plus initial authorization row must not increment revisions: %v", e)
+	}
 	if _, e := f.owner.Exec(ctx, "DELETE FROM personnel.departments WHERE id=$1", target); e != nil {
+		t.Fatal(e)
+	}
+	// This is a genuine business deletion. Rebaseline only after it so future
+	// revision triggers are allowed to record it, then isolate draft-only effects.
+	if e := f.owner.QueryRow(ctx, "SELECT string_agg(scope||':'||revision,',' ORDER BY scope) FROM personnel.query_revisions").Scan(&revisions); e != nil {
 		t.Fatal(e)
 	}
 	next, e := f.app.UpdateDraft(ctx, f.actor, d.ID, DraftUpdateInput{1, json.RawMessage(`{"name":"keep inputs","parentId":null}`)})
@@ -303,6 +320,12 @@ func TestDraftQ36PreserveTargetBaseAndNoBusinessEffects(t *testing.T) {
 	raw, _ := json.Marshal(list)
 	if strings.Contains(string(raw), "payload") || strings.Contains(string(raw), "expires") {
 		t.Fatal("summary only; no expiry")
+	}
+	if e := f.app.DeleteDraft(ctx, f.actor, d.ID, 2); e != nil {
+		t.Fatal(e)
+	}
+	if e := f.owner.QueryRow(ctx, "SELECT string_agg(scope||':'||revision,',' ORDER BY scope) FROM personnel.query_revisions").Scan(&after); e != nil || after != revisions {
+		t.Fatalf("draft deletion must not increment business revisions: %v", e)
 	}
 }
 func TestDraftQ36ExactTransactionalCleanup(t *testing.T) {

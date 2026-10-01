@@ -89,7 +89,7 @@ func TestDraftHTTPQ36SessionCSRFAndRestore(t *testing.T) {
 		t.Fatalf("relogin restores: %d", w.Code)
 	}
 	// Draft APIs do not require any queryVersion/context to save.
-	update := `{"version":1,"payload":{"name":"saved without query context","parentId":null}}`
+	update := `{"version":1,"payload":{"name":"saved after context expiry","parentId":null}}`
 	if w := f.request("PUT", "/api/v1/personnel/drafts/"+id, update, true, true); w.Code != 200 {
 		t.Fatalf("save without context: %d", w.Code)
 	}
