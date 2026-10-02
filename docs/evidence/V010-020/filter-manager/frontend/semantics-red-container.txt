@@ -1,0 +1,99 @@
+
+Running 3 tests using 1 worker
+
+  ✘  1 [chromium] › apps/web/src/filter-manager.component.spec.ts:97:1 › single Arca Table hides by stable ID and preserves hidden width/order through visible resize (1.4s)
+  ✘  2 [chromium] › apps/web/src/filter-manager.component.spec.ts:105:1 › frozen text empty string stays a typed value and is distinct from zero conditions (6.0s)
+  ✘  3 [chromium] › apps/web/src/filter-manager.component.spec.ts:108:1 › successful active delete and later query failure are reported separately with old snapshot retained (6.0s)
+
+
+  1) [chromium] › apps/web/src/filter-manager.component.spec.ts:97:1 › single Arca Table hides by stable ID and preserves hidden width/order through visible resize
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 240
+    Received: 356.390625
+
+    Expected precision:    0
+    Expected difference: < 0.5
+    Received difference:   116.390625
+
+       99 |  await expect(table.locator('thead th')).toHaveText(['丙','乙','甲']);await page.getByRole('button',{name:'切换乙列',exact:true}).click();await expect(table.locator('thead th')).toHaveText(['丙','甲']);
+      100 |  await expect(table.locator('tbody')).not.toContainText('乙数据');
+    > 101 |  expect((await table.locator('thead th').filter({hasText:'丙'}).boundingBox())!.width).toBeCloseTo(240,0);
+          |                                                                                       ^
+      102 |  const grip=table.locator('thead th').filter({hasText:'丙'}).locator('[data-resize-handle]');const box=(await grip.boundingBox())!;await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+30,box.y+box.height/2);await page.mouse.up();
+      103 |  expect(JSON.parse(await page.locator('output').innerText()).widths.b).toBe(200);await page.getByRole('button',{name:'切换乙列',exact:true}).click();await expect(table.locator('thead th')).toHaveText(['丙','乙','甲']);expect(JSON.parse(await page.locator('output').innerText()).order).toEqual(['c','b','a']);
+      104 | });
+        at /workspace/WeaveOS-worktrees/V010-020/apps/web/src/filter-manager.component.spec.ts:101:87
+
+    Error Context: .work/cloud-filter-manager/cross-browser/results/filter-manager.component-s-d49d8-rder-through-visible-resize-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work/cloud-filter-manager/cross-browser/results/filter-manager.component-s-d49d8-rder-through-visible-resize-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace .work/cloud-filter-manager/cross-browser/results/filter-manager.component-s-d49d8-rder-through-visible-resize-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › apps/web/src/filter-manager.component.spec.ts:105:1 › frozen text empty string stays a typed value and is distinct from zero conditions
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 0
+
+    Call Log:
+    - Timeout 3000ms exceeded while waiting on the predicate
+
+      104 | });
+      105 | test('frozen text empty string stays a typed value and is distinct from zero conditions',async({page})=>{
+    > 106 |  const state=await fixture(page);const d=await editor(page,await manager(page));await d.getByLabel('自定义筛选名称',{exact:true}).fill('空文本值');await d.getByRole('button',{name:'或条件',exact:true}).click();await d.getByRole('button',{name:'确定',exact:true}).click();await expect.poll(()=>state.writes.length).toBe(1);expect(state.writes[0].body.filter).toEqual({operator:'and',children:[{field:'account',operator:'eq',value:''}]});
+          |                                                                                                                                                                                                                                                                                                           ^
+      107 | });
+      108 | test('successful active delete and later query failure are reported separately with old snapshot retained',async({page})=>{
+      109 |  const state=await fixture(page,[saved()]);const p=await manager(page);await p.getByRole('button',{name:'应用方案甲',exact:true}).click();await expect(page.locator('.member-table thead')).not.toContainText('部门');state.queryError='COMMON_QUERY_CHANGED';
+        at /workspace/WeaveOS-worktrees/V010-020/apps/web/src/filter-manager.component.spec.ts:106:299
+
+    Error Context: .work/cloud-filter-manager/cross-browser/results/filter-manager.component-f-6720d-stinct-from-zero-conditions-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work/cloud-filter-manager/cross-browser/results/filter-manager.component-f-6720d-stinct-from-zero-conditions-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace .work/cloud-filter-manager/cross-browser/results/filter-manager.component-f-6720d-stinct-from-zero-conditions-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium] › apps/web/src/filter-manager.component.spec.ts:108:1 › successful active delete and later query failure are reported separately with old snapshot retained
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: 1
+
+    Call Log:
+    - Timeout 3000ms exceeded while waiting on the predicate
+
+      109 |  const state=await fixture(page,[saved()]);const p=await manager(page);await p.getByRole('button',{name:'应用方案甲',exact:true}).click();await expect(page.locator('.member-table thead')).not.toContainText('部门');state.queryError='COMMON_QUERY_CHANGED';
+      110 |  await page.route('**/personnel/members/search',route=>{state.queries.push(route.request().postDataJSON());return route.fulfill({status:409,json:{code:'COMMON_QUERY_CHANGED',message:'changed',data:null,meta:null}});});
+    > 111 |  await p.getByRole('button',{name:'删除方案甲',exact:true}).click();await page.getByRole('dialog',{name:'删除筛选方案',exact:true}).getByRole('button',{name:'确认删除',exact:true}).click();await expect.poll(()=>state.presets.length).toBe(0);await expect(p.getByRole('alert')).toContainText('方案已删除');await expect(p.getByRole('alert')).toContainText('查询结果已变化');await expect(page.locator('.member-table thead')).not.toContainText('部门');await expect(p.getByRole('button',{name:'取消应用',exact:true})).toBeVisible();
+          |                                                                                                                                                                                                                           ^
+      112 | });
+      113 |
+        at /workspace/WeaveOS-worktrees/V010-020/apps/web/src/filter-manager.component.spec.ts:111:219
+
+    Error Context: .work/cloud-filter-manager/cross-browser/results/filter-manager.component-s-5c804--with-old-snapshot-retained-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work/cloud-filter-manager/cross-browser/results/filter-manager.component-s-5c804--with-old-snapshot-retained-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace .work/cloud-filter-manager/cross-browser/results/filter-manager.component-s-5c804--with-old-snapshot-retained-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [chromium] › apps/web/src/filter-manager.component.spec.ts:97:1 › single Arca Table hides by stable ID and preserves hidden width/order through visible resize
+    [chromium] › apps/web/src/filter-manager.component.spec.ts:105:1 › frozen text empty string stays a typed value and is distinct from zero conditions
+    [chromium] › apps/web/src/filter-manager.component.spec.ts:108:1 › successful active delete and later query failure are reported separately with old snapshot retained

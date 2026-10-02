@@ -98,6 +98,15 @@ test('single Arca Table hides by stable ID and preserves hidden width/order thro
  await page.goto('/src/filter-manager-table-fixture.html');const table=page.getByRole('table',{name:'显隐保序',exact:true});
  await expect(table.locator('thead th')).toHaveText(['丙','乙','甲']);await page.getByRole('button',{name:'切换乙列',exact:true}).click();await expect(table.locator('thead th')).toHaveText(['丙','甲']);
  await expect(table.locator('tbody')).not.toContainText('乙数据');
+ expect((await table.locator('thead th').filter({hasText:'丙'}).boundingBox())!.width).toBeCloseTo(240,0);
  const grip=table.locator('thead th').filter({hasText:'丙'}).locator('[data-resize-handle]');const box=(await grip.boundingBox())!;await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+30,box.y+box.height/2);await page.mouse.up();
  expect(JSON.parse(await page.locator('output').innerText()).widths.b).toBe(200);await page.getByRole('button',{name:'切换乙列',exact:true}).click();await expect(table.locator('thead th')).toHaveText(['丙','乙','甲']);expect(JSON.parse(await page.locator('output').innerText()).order).toEqual(['c','b','a']);
+});
+test('frozen text empty string stays a typed value and is distinct from zero conditions',async({page})=>{
+ const state=await fixture(page);const d=await editor(page,await manager(page));await d.getByLabel('自定义筛选名称',{exact:true}).fill('空文本值');await d.getByRole('button',{name:'或条件',exact:true}).click();await d.getByRole('button',{name:'确定',exact:true}).click();await expect.poll(()=>state.writes.length).toBe(1);expect(state.writes[0].body.filter).toEqual({operator:'and',children:[{field:'account',operator:'eq',value:''}]});
+});
+test('successful active delete and later query failure are reported separately with old snapshot retained',async({page})=>{
+ const state=await fixture(page,[saved()]);const p=await manager(page);await p.getByRole('button',{name:'应用方案甲',exact:true}).click();await expect(page.locator('.member-table thead')).not.toContainText('部门');state.queryError='COMMON_QUERY_CHANGED';
+ await page.route('**/personnel/members/search',route=>{state.queries.push(route.request().postDataJSON());return route.fulfill({status:409,json:{code:'COMMON_QUERY_CHANGED',message:'changed',data:null,meta:null}});});
+ await p.getByRole('button',{name:'删除方案甲',exact:true}).click();await page.getByRole('dialog',{name:'删除筛选方案',exact:true}).getByRole('button',{name:'确认删除',exact:true}).click();await expect.poll(()=>state.presets.length).toBe(0);await expect(p.getByRole('alert')).toContainText('方案已删除');await expect(p.getByRole('alert')).toContainText('查询结果已变化');await expect(page.locator('.member-table thead')).not.toContainText('部门');await expect(p.getByRole('button',{name:'取消应用',exact:true})).toBeVisible();
 });
