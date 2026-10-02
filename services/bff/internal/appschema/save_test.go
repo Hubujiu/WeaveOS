@@ -627,6 +627,35 @@ func TestSaveLockTimeoutRollsBack(t *testing.T) {
 	assertState(t, f, []string{column1}, "0")
 }
 
+func TestSaveStatementTimeoutAndCancellationRollBack(t *testing.T) {
+	for _, mode := range []string{"statement", "cancel"} {
+		t.Run(mode, func(t *testing.T) {
+			f := newFixture(t, []Field{{ID: fieldID1, Type: Text}})
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			if mode == "statement" {
+				f.executor.Limits.StatementTimeout = 20 * time.Millisecond
+				f.executor.Guard = guardFunc(func(c context.Context, tx pgx.Tx, id string) error {
+					_, err := tx.Exec(c, "SELECT pg_sleep(0.08)")
+					return err
+				})
+			} else {
+				f.metadata.beforeStore = cancel
+			}
+			_, err := f.executor.Save(ctx, f.request([]Field{{ID: fieldID1, Type: Text}, {ID: fieldID2, Type: Boolean}}))
+			if mode == "statement" {
+				var pg *pgconn.PgError
+				if !errors.As(err, &pg) || pg.Code != "57014" {
+					t.Fatalf("real statement timeout must fail whole Save: %v", err)
+				}
+			} else if !errors.Is(err, context.Canceled) {
+				t.Fatalf("canceled request must fail before commit: %v", err)
+			}
+			assertState(t, f, []string{column1}, "0")
+		})
+	}
+}
+
 func TestSaveConcurrentRevisionCAS(t *testing.T) {
 	f := newFixture(t, []Field{{ID: fieldID1, Type: Text}})
 	entered := make(chan struct{})
