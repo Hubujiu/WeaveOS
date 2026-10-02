@@ -1,0 +1,246 @@
+Readable RED view; trailing whitespace removed. Exact output: ci-wiring-red.stdout.json
+✖ B2 CI: fixture creates a private dedicated socket database with no network/ports (4.81118ms)
+✖ B2 CI: an existing state file is never overwritten (1.271215ms)
+✖ B2 CI: partial startup failure is nonzero and removes only its own fixture (0.623756ms)
+✖ B2 CI: successful cleanup removes its container/data/socket/state and is idempotent (6.18701ms)
+✖ B2 CI: cleanup refuses wrongOwner (1.156681ms)
+✖ B2 CI: cleanup refuses wrongNetwork (1.297445ms)
+✖ B2 CI: cleanup refuses wrongMount (1.141122ms)
+✖ B2 CI: cleanup failure is not swallowed and retains recoverable state (0.892107ms)
+✖ B2 CI: cleanup refuses an outside root without any Docker action (0.977486ms)
+✖ B2 CI: cleanup refuses symlink state and never touches its target (1.108591ms)
+✖ B2 CI: bootstrap exports the dedicated URL and always-cleanup accepts the actual state (0.936981ms)
+✖ B2 CI: bootstrap rejects unknown commands instead of silently succeeding (0.2783ms)
+✖ B2 CI: Go job supplies the fixture before race tests with unconditional owned cleanup (0.477532ms)
+✖ B2 CI: acceptance gives nested Go the dedicated URL and matching socket mount (2.708812ms)
+✖ B2 CI: acceptance failure cleans B2 and preserves original product stop-only lifecycle (1.491567ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 0
+ℹ fail 15
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 123.797867
+
+✖ failing tests:
+
+test at tests/foundation/b2-ci-database.test.mjs:61:1
+✖ B2 CI: fixture creates a private dedicated socket database with no network/ports (4.81118ms)
+  AssertionError [ERR_ASSERTION]: CI must create and return the dedicated fixture
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:64:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:84:1
+✖ B2 CI: an existing state file is never overwritten (1.271215ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:87:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:92:1
+✖ B2 CI: partial startup failure is nonzero and removes only its own fixture (0.623756ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:95:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /isolated startup failure/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:100:1
+✖ B2 CI: successful cleanup removes its container/data/socket/state and is idempotent (6.18701ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+    assert.ok(docker.calls.some(c => c.args[0] === 'rm' && c.args.includes('--volumes') && c.args.includes(f.state.container)))
+
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:103:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:111:68
+✖ B2 CI: cleanup refuses wrongOwner (1.156681ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:113:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:111:68
+✖ B2 CI: cleanup refuses wrongNetwork (1.297445ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:113:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:111:68
+✖ B2 CI: cleanup refuses wrongMount (1.141122ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:113:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:119:1
+✖ B2 CI: cleanup failure is not swallowed and retains recoverable state (0.892107ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:121:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /fixture removal failed/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:126:1
+✖ B2 CI: cleanup refuses an outside root without any Docker action (0.977486ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:129:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:134:1
+✖ B2 CI: cleanup refuses symlink state and never touches its target (1.108591ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:139:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:145:1
+✖ B2 CI: bootstrap exports the dedicated URL and always-cleanup accepts the actual state (0.936981ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^WEAVEOS_B2_TEST_DATABASE_URL=postgres:\/\/\/weaveos_b2_isolated_test\?/m. Input:
+
+  'EXISTING_VARIABLE=retained\n'
+
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:151:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'EXISTING_VARIABLE=retained\n',
+    expected: /^WEAVEOS_B2_TEST_DATABASE_URL=postgres:\/\/\/weaveos_b2_isolated_test\?/m,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:157:1
+✖ B2 CI: bootstrap rejects unknown commands instead of silently succeeding (0.2783ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:158:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:161:1
+✖ B2 CI: Go job supplies the fixture before race tests with unconditional owned cleanup (0.477532ms)
+  AssertionError [ERR_ASSERTION]: Go job must provision the dedicated B2 fixture
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:164:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:193:1
+✖ B2 CI: acceptance gives nested Go the dedicated URL and matching socket mount (2.708812ms)
+  AssertionError [ERR_ASSERTION]: nested Go test env must contain the B2 fixture URL
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:197:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/foundation/b2-ci-database.test.mjs:206:1
+✖ B2 CI: acceptance failure cleans B2 and preserves original product stop-only lifecycle (1.491567ms)
+  AssertionError [ERR_ASSERTION]: new B2 data must be cleaned
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:208:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

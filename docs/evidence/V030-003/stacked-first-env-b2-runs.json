@@ -1,0 +1,47 @@
+{
+  "packageCodeFrom": "0dc3d1350c3582ecafd7935a53ef31e085ec9abf",
+  "integrationMerge": "ae3e29bc7a991acf5d57f57f18c63fef14728bd7",
+  "base": "15eb85ed17e8227dd3995c4089fba8f3e6b310c2",
+  "postgres": "PostgreSQL 18.6 (Debian 18.6-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+  "go": "go version go1.27.1 linux/amd64",
+  "isolation": "network none; no ports; dedicated temporary database/private Unix socket",
+  "runs": [
+    {
+      "command": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "./internal/appschema",
+        "-count=1",
+        "-v",
+        "-coverprofile=/workspace/WeaveOS-worktrees/V030-003/docs/evidence/V030-003/stacked-coverage.out"
+      ],
+      "startedAt": "2026-10-02T14:21:13.421747+00:00",
+      "durationSeconds": 0.006,
+      "exitCode": 1,
+      "log": "stacked-race.txt"
+    },
+    {
+      "command": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "vet",
+        "./..."
+      ],
+      "startedAt": "2026-10-02T14:21:13.427357+00:00",
+      "durationSeconds": 0.013,
+      "exitCode": 1,
+      "log": "stacked-vet.txt"
+    },
+    {
+      "command": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "build",
+        "./..."
+      ],
+      "startedAt": "2026-10-02T14:21:13.440856+00:00",
+      "durationSeconds": 0.008,
+      "exitCode": 1,
+      "log": "stacked-build.txt"
+    }
+  ]
+}
