@@ -1,6 +1,6 @@
 # 任务、验收、squash 与工作树
 
-每任务固定V010-NNN编号、docs/tasks/V010-NNN.md、task/V010-NNN-topic分支和../WeaveOS-worktrees/V010-NNN工作树。规划只登记；领取时创建，不伪造运行中的Agent。每阶段写完成/待完成、来源、owner、允许路径、PR、RED/GREEN、阻塞与下一条命令，并推送，不仅留在聊天。
+每任务使用已约定版本编号（当前V010-NNN或V030-NNN，NNN为三位数字）、docs/tasks/<ID>.md、task/<ID>-topic分支和../WeaveOS-worktrees/<ID>工作树；路径与元数据必须包含同一个完整ID，历史任务不重编号。规划只登记；领取时创建，不伪造运行中的Agent。每阶段写完成/待完成、来源、owner、允许路径、PR、RED/GREEN、阻塞与下一条命令，并推送，不仅留在聊天。
 
 ## 开始或接手
 
