@@ -2,23 +2,27 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { parseTask, validateTask } from './task-policy.mjs';
+import { parseTask, validateTask, taskIDFromBranch, taskIDFromFilename } from './task-policy.mjs';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const directory = new URL('../docs/tasks/', import.meta.url);
 const errors = [];
-for (const file of readdirSync(directory).filter(name => /^V010-\d{3}\.md$/.test(name))) {
+// Version-looking documents must be checked or rejected, not silently skipped.
+// The shared parser accepts only the explicitly supported V010/V030 families.
+for (const file of readdirSync(directory).filter(name => /^[Vv][0-9]/.test(name) && name.endsWith('.md'))) {
+  const id = taskIDFromFilename(file);
+  if (!id) { errors.push(`${file}: invalid task filename`); continue; }
   const text = readFileSync(new URL(file, directory), 'utf8');
   errors.push(...validateTask(text).map(error => `${file}: ${error}`));
-  try { if (parseTask(text).id !== file.slice(0, -3)) errors.push(`${file}: filename/identity mismatch`); } catch { /* reported above */ }
+  try { if (parseTask(text).id !== id) errors.push(`${file}: filename/identity mismatch`); } catch { /* reported above */ }
 }
 // PRs must update their own handoff document, including documentation-only tasks.
 if (process.env.GITHUB_EVENT_NAME === 'pull_request') {
   const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
   const pr = event.pull_request;
-  const match = /^task\/(V010-\d{3})-[a-z0-9-]+$/.exec(pr.head.ref);
-  if (!match) errors.push('PR must use task/V010-NNN-topic branch');
+  const id = taskIDFromBranch(pr.head.ref);
+  if (!id) errors.push('PR must use task/V010-NNN-topic or task/V030-NNN-topic branch');
   else {
-    const path = `docs/tasks/${match[1]}.md`;
+    const path = `docs/tasks/${id}.md`;
     try {
       const task = parseTask(readFileSync(resolve(root, path), 'utf8'));
       if (task.branch !== pr.head.ref || task.pr !== pr.number) errors.push('PR/task identity mismatch');

@@ -2,7 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { parseTask, validateTask, evaluateCleanup, evaluateAcceptance } from './task-policy.mjs';
+import { parseTask, validateTask, evaluateCleanup, evaluateAcceptance, isTaskID } from './task-policy.mjs';
 import { resolveCleanupTip } from './remote-cleanup-policy.mjs';
 const [command, id, ...options] = process.argv.slice(2);
 const apply = options.length === 1 && options[0] === '--apply';
@@ -11,7 +11,7 @@ function run(program, args, cwd = process.cwd()) {
   return execFileSync(program, args, { cwd, encoding: 'utf8', timeout: 60000, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 }
 try {
-  if (!['start', 'status', 'cleanup'].includes(command) || !/^V010-\d{3}$/.test(id ?? '') || (options.length && !apply)) throw new Error('Usage: node scripts/task.mjs start|status|cleanup V010-NNN [--apply]');
+  if (!['start', 'status', 'cleanup'].includes(command) || !isTaskID(id) || (options.length && !apply)) throw new Error('Usage: node scripts/task.mjs start|status|cleanup V010-NNN|V030-NNN [--apply]');
   const first = run('git', ['worktree', 'list', '--porcelain']).split('\n')[0];
   if (!first.startsWith('worktree ')) throw new Error('Primary worktree not found');
   const root = first.slice('worktree '.length);
