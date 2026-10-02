@@ -70,3 +70,9 @@ head. Task metadata records the real PR number and stays blocked for root-owned
 product integration, not accepted. Source pages were re-read and the user
 explicitly approved integration pushes/draft creation; only documentation is
 updated here (TDD:N/A). Main merge, deployment and cleanup remain unauthorized.
+
+The original benchmark CPU line contains trailing spaces from Go. Its output is
+now stored as `benchmark.stdout.json`; decoded `rawOutput` is byte-identical to
+the original B1 commit and `rawOutputSha256` matches. The original raw text also
+remains in earlier commits. Full PR diff whitespace is checked after encoding;
+no evidence line was stripped and application source/tests remain unchanged.
