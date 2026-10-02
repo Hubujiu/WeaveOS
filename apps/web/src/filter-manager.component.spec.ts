@@ -122,3 +122,7 @@ test('unsaved editor Escape preserves input until explicit discard and footer ca
 test('deleted reference and unknown fields fail apply before any search request',async({page})=>{
  const missing={operator:'and',children:[{field:'identityIds',operator:'eq',value:'00000000-0000-4000-8000-000000000099'}]},state=await fixture(page,[saved(presetA,'引用失效',[],missing)]);const p=await manager(page),before=state.queries.length;await p.getByRole('button',{name:'应用引用失效',exact:true}).click();await expect(p.getByRole('alert')).toContainText('已失效引用');expect(state.queries.length).toBe(before);await expect(p.getByText('已应用',{exact:true})).toHaveCount(0);
 });
+test('narrow typed condition retains a readable field name beside NULL controls',async({page})=>{
+ await fixture(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();await page.setViewportSize({width:390,height:844});const d=await editor(page,await manager(page));await d.getByRole('button',{name:'或条件',exact:true}).click();await d.getByLabel('条件 1.1 值类型',{exact:true}).selectOption('null');
+ const size=await d.getByLabel('条件 1.1 字段',{exact:true}).evaluate((el:HTMLSelectElement)=>{const context=document.createElement('canvas').getContext('2d')!;context.font=getComputedStyle(el).font;return {actual:el.clientWidth,required:context.measureText('操作者账号').width+32};});expect(size.actual).toBeGreaterThanOrEqual(size.required);await expect(d.getByRole('button',{name:'确定',exact:true})).toBeInViewport();
+});
