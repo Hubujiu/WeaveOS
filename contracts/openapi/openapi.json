@@ -2623,6 +2623,320 @@
           }
         }
       }
+    },
+    "/api/v1/personnel/table-presets": {
+      "get": {
+        "operationId": "getTablePresets",
+        "summary": "get personal table preset",
+        "description": "ADR008: Session-owned personal configuration, live personnel.manage on every read/write; CSRF/Origin for mutations. Persist without applying or storing active/query state. No business revision/audit changes. List updatedAt DESC,id ASC; missing/foreign id ->404; unsupported schema ->400.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "view",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "members",
+                "events"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablePresetListEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      },
+      "post": {
+        "operationId": "postTablePresets",
+        "summary": "post personal table preset",
+        "description": "ADR008: Session-owned personal configuration, live personnel.manage on every read/write; CSRF/Origin for mutations. Persist without applying or storing active/query state. No business revision/audit changes. List updatedAt DESC,id ASC; missing/foreign id ->404; unsupported schema ->400.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Location": {
+                "description": "Created table preset resource",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablePresetEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/TablePresetConflict"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TablePresetCreateInput"
+              }
+            }
+          },
+          "x-max-raw-bytes": 65536,
+          "description": "Entire raw UTF-8 request <=65536 bytes, canonical configuration <=32768 bytes and canonical filter <=16384 bytes; independent caps. Preserve original query/header limits."
+        }
+      }
+    },
+    "/api/v1/personnel/table-presets/{presetId}": {
+      "get": {
+        "operationId": "getTablePreset",
+        "summary": "get personal table preset",
+        "description": "ADR008: Session-owned personal configuration, live personnel.manage on every read/write; CSRF/Origin for mutations. Persist without applying or storing active/query state. No business revision/audit changes. List updatedAt DESC,id ASC; missing/foreign id ->404; unsupported schema ->400.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "presetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablePresetEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/PersonnelNotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      },
+      "put": {
+        "operationId": "putTablePreset",
+        "summary": "put personal table preset",
+        "description": "ADR008: Session-owned personal configuration, live personnel.manage on every read/write; CSRF/Origin for mutations. Persist without applying or storing active/query state. No business revision/audit changes. List updatedAt DESC,id ASC; missing/foreign id ->404; unsupported schema ->400.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "presetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablePresetEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/PersonnelNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/TablePresetConflict"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TablePresetUpdateInput"
+              }
+            }
+          },
+          "x-max-raw-bytes": 65536,
+          "description": "Entire raw UTF-8 request <=65536 bytes, canonical configuration <=32768 bytes and canonical filter <=16384 bytes; independent caps. Preserve original query/header limits."
+        }
+      },
+      "delete": {
+        "operationId": "deleteTablePreset",
+        "summary": "delete personal table preset",
+        "description": "ADR008: Session-owned personal configuration, live personnel.manage on every read/write; CSRF/Origin for mutations. Persist without applying or storing active/query state. No business revision/audit changes. List updatedAt DESC,id ASC; missing/foreign id ->404; unsupported schema ->400.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "presetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preset deleted; empty body",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/PersonnelNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/TablePresetConflict"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5238,6 +5552,574 @@
             "sortBy"
           ]
         }
+      },
+      "TablePresetMemberAnd": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "const": "and"
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/MemberFilterCondition"
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ]
+      },
+      "TablePresetMemberOr": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "const": "or"
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/TablePresetMemberAnd"
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ]
+      },
+      "TablePresetMemberFilter": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/TablePresetMemberAnd"
+          },
+          {
+            "$ref": "#/components/schemas/TablePresetMemberOr"
+          }
+        ],
+        "x-max-leaves": 20,
+        "x-max-canonical-bytes": 16384,
+        "description": "Editable AND rows / OR blocks only; no empty groups or DNF conversion. Global leaf count <=20; canonical UTF-8 JSON <=16384 bytes. Query AST and typed semantics are unchanged."
+      },
+      "TablePresetEventAnd": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "const": "and"
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/EventFilterCondition"
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ]
+      },
+      "TablePresetEventOr": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "const": "or"
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/TablePresetEventAnd"
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ]
+      },
+      "TablePresetEventFilter": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/TablePresetEventAnd"
+          },
+          {
+            "$ref": "#/components/schemas/TablePresetEventOr"
+          }
+        ],
+        "x-max-leaves": 20,
+        "x-max-canonical-bytes": 16384,
+        "description": "Editable AND rows / OR blocks only; no empty groups or DNF conversion. Global leaf count <=20; canonical UTF-8 JSON <=16384 bytes. Query AST and typed semantics are unchanged."
+      },
+      "TablePresetCreateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "view": {
+            "type": "string",
+            "enum": [
+              "members",
+              "events"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Trim surrounding whitespace, count Unicode characters, retain exact case. Unique per Session owner and view."
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TablePresetMemberFilter"
+              },
+              {
+                "$ref": "#/components/schemas/TablePresetEventFilter"
+              }
+            ]
+          },
+          "hiddenColumnIds": {
+            "type": "array",
+            "uniqueItems": true,
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "enum": [
+                "account",
+                "departments",
+                "identities",
+                "personnelManage",
+                "occurredAt",
+                "actorAccount",
+                "action",
+                "object",
+                "detail",
+                "outcome"
+              ]
+            },
+            "description": "Stable configurable business column IDs only. Validate against immutable view; at least one business column stays visible. Display only, never a query projection/permission input."
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          }
+        },
+        "required": [
+          "view",
+          "name",
+          "hiddenColumnIds",
+          "schemaVersion"
+        ],
+        "x-max-raw-body-bytes": 65536,
+        "x-max-canonical-bytes": 32768,
+        "description": "Independent raw body <=65536 UTF-8 bytes, canonical configuration <=32768 bytes, filter <=16384 bytes. Missing/null filter means visibility-only. Unknown/duplicate fields rejected; no owner or queryVersion. PUT retains view and uses version CAS.",
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "view": {
+                  "const": "members"
+                }
+              },
+              "required": [
+                "view"
+              ]
+            },
+            "then": {
+              "properties": {
+                "hiddenColumnIds": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "account",
+                      "departments",
+                      "identities",
+                      "personnelManage"
+                    ]
+                  }
+                },
+                "filter": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TablePresetMemberFilter"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "view": {
+                  "const": "events"
+                }
+              },
+              "required": [
+                "view"
+              ]
+            },
+            "then": {
+              "properties": {
+                "hiddenColumnIds": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "maxItems": 5,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "occurredAt",
+                      "actorAccount",
+                      "action",
+                      "object",
+                      "detail",
+                      "outcome"
+                    ]
+                  }
+                },
+                "filter": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TablePresetEventFilter"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "TablePresetUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Trim surrounding whitespace, count Unicode characters, retain exact case. Unique per Session owner and view."
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TablePresetMemberFilter"
+              },
+              {
+                "$ref": "#/components/schemas/TablePresetEventFilter"
+              }
+            ]
+          },
+          "hiddenColumnIds": {
+            "type": "array",
+            "uniqueItems": true,
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "enum": [
+                "account",
+                "departments",
+                "identities",
+                "personnelManage",
+                "occurredAt",
+                "actorAccount",
+                "action",
+                "object",
+                "detail",
+                "outcome"
+              ]
+            },
+            "description": "Stable configurable business column IDs only. Validate against immutable view; at least one business column stays visible. Display only, never a query projection/permission input."
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          }
+        },
+        "required": [
+          "version",
+          "name",
+          "hiddenColumnIds",
+          "schemaVersion"
+        ],
+        "x-max-raw-body-bytes": 65536,
+        "x-max-canonical-bytes": 32768,
+        "description": "Independent raw body <=65536 UTF-8 bytes, canonical configuration <=32768 bytes, filter <=16384 bytes. Missing/null filter means visibility-only. Unknown/duplicate fields rejected; no owner or queryVersion. PUT retains view and uses version CAS."
+      },
+      "TablePreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "view": {
+            "type": "string",
+            "enum": [
+              "members",
+              "events"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Trim surrounding whitespace, count Unicode characters, retain exact case. Unique per Session owner and view."
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TablePresetMemberFilter"
+              },
+              {
+                "$ref": "#/components/schemas/TablePresetEventFilter"
+              }
+            ]
+          },
+          "hiddenColumnIds": {
+            "type": "array",
+            "uniqueItems": true,
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "enum": [
+                "account",
+                "departments",
+                "identities",
+                "personnelManage",
+                "occurredAt",
+                "actorAccount",
+                "action",
+                "object",
+                "detail",
+                "outcome"
+              ]
+            },
+            "description": "Stable configurable business column IDs only. Validate against immutable view; at least one business column stays visible. Display only, never a query projection/permission input."
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "view",
+          "name",
+          "filter",
+          "hiddenColumnIds",
+          "schemaVersion",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "view": {
+                  "const": "members"
+                }
+              },
+              "required": [
+                "view"
+              ]
+            },
+            "then": {
+              "properties": {
+                "hiddenColumnIds": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "account",
+                      "departments",
+                      "identities",
+                      "personnelManage"
+                    ]
+                  }
+                },
+                "filter": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TablePresetMemberFilter"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "view": {
+                  "const": "events"
+                }
+              },
+              "required": [
+                "view"
+              ]
+            },
+            "then": {
+              "properties": {
+                "hiddenColumnIds": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "maxItems": 5,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "occurredAt",
+                      "actorAccount",
+                      "action",
+                      "object",
+                      "detail",
+                      "outcome"
+                    ]
+                  }
+                },
+                "filter": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TablePresetEventFilter"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "TablePresetList": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/TablePreset"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "TablePresetEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/TablePreset"
+              }
+            }
+          }
+        ]
+      },
+      "TablePresetListEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/TablePresetList"
+              }
+            }
+          }
+        ]
+      },
+      "TablePresetConflictEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "PERSONNEL_PRESET_NAME_CONFLICT",
+                  "PERSONNEL_PRESET_LIMIT_REACHED",
+                  "PERSONNEL_PRESET_CONFLICT"
+                ]
+              },
+              "data": {
+                "type": "null"
+              }
+            }
+          }
+        ]
       }
     },
     "responses": {
@@ -5449,6 +6331,21 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "TablePresetConflict": {
+        "description": "Independent exact-name, owner/view 20-slot limit, or stale version conflict; preserve inputs and never overwrite/evict.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/TablePresetConflictEnvelope"
             }
           }
         }

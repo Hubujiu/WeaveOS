@@ -58,6 +58,9 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, session.ErrUnavailable)
 		return
 	}
+	if s.PresetHTTP(w, r, p) {
+		return
+	}
 	if s.DraftHTTP(w, r, p) {
 		return
 	}

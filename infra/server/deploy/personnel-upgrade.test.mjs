@@ -5,8 +5,16 @@ import {readFileSync,mkdtempSync,mkdirSync,copyFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {applyMigrations} from './migrate.mjs';
 import {applyPersonnelRoles,validateInstalledPersonnelRoles} from './personnel-upgrade.mjs';
+import {createHash} from 'node:crypto';
 
 const roleSQL=readFileSync('infra/runtime/roles.sql','utf8');
+test('ADR008 exact migration 00005 is registered for compatible packaging',()=>{
+ const manifest=JSON.parse(readFileSync('infra/server/deploy/compatibility.json','utf8'));
+ const expected=createHash('sha256').update(readFileSync('db/migrations/00005_table_presets.sql','utf8').replace(/\r\n/g,'\n')).digest('hex');
+ const entry=manifest.migrations.find(x=>x.path==='migrations/00005_table_presets.sql');
+ assert.equal(entry?.sha256,expected,'new preset migration must be an exact reviewed expansion, not a wildcard');
+ assert.equal(manifest.backwardCompatible,true);
+});
 test('Q25 fixed installed role policy accepts reviewed bytes and rejects arbitrary uploaded SQL',()=>{
  assert.doesNotThrow(()=>validateInstalledPersonnelRoles(roleSQL));
  assert.throws(()=>validateInstalledPersonnelRoles(roleSQL+'\nGRANT ALL ON auth.users TO PUBLIC;'));
@@ -44,6 +52,8 @@ test('Q25 real cold-first expansion and pinned runtime role upgrade preserve dat
   // read-only revisions, and only the reviewed lock operation for writers.
   assert.equal(sql('weaveos_019_hot',"SELECT has_table_privilege('auth_app','personnel.drafts','SELECT'),has_table_privilege('auth_app','personnel.drafts','INSERT'),has_table_privilege('auth_app','personnel.drafts','DELETE'),has_table_privilege('auth_app','personnel.drafts','UPDATE')"),'t|t|t|f');
   assert.equal(sql('weaveos_019_hot',"SELECT attname FROM pg_attribute WHERE attrelid='personnel.drafts'::regclass AND attnum>0 AND NOT attisdropped AND has_column_privilege('auth_app','personnel.drafts',attname,'UPDATE') ORDER BY attname"),'draft_version\npayload_json\nupdated_at');
+  assert.equal(sql('weaveos_019_hot',"SELECT has_table_privilege('auth_app','personnel.table_presets','SELECT'),has_table_privilege('auth_app','personnel.table_presets','INSERT'),has_table_privilege('auth_app','personnel.table_presets','DELETE'),has_table_privilege('auth_app','personnel.table_presets','UPDATE'),has_table_privilege('auth_backup','personnel.table_presets','SELECT')"),'t|t|t|f|t');
+  assert.equal(sql('weaveos_019_hot',"SELECT attname FROM pg_attribute WHERE attrelid='personnel.table_presets'::regclass AND attnum>0 AND NOT attisdropped AND has_column_privilege('auth_app','personnel.table_presets',attname,'UPDATE') ORDER BY attname"),'filter_json\nhidden_column_ids\nname\nschema_version\nupdated_at\nversion');
   assert.equal(sql('weaveos_019_hot',"SELECT has_table_privilege('auth_app','personnel.query_revisions','SELECT'),has_table_privilege('auth_app','personnel.query_revisions','INSERT'),has_table_privilege('auth_app','personnel.query_revisions','UPDATE'),has_table_privilege('auth_app','personnel.query_revisions','DELETE'),has_table_privilege('auth_maintenance','personnel.query_revisions','UPDATE'),has_function_privilege('auth_app','personnel.lock_query_revisions()','EXECUTE'),has_function_privilege('auth_maintenance','personnel.lock_query_revisions()','EXECUTE'),has_function_privilege('auth_backup','personnel.lock_query_revisions()','EXECUTE'),has_function_privilege('auth_reader','personnel.lock_query_revisions()','EXECUTE')"),'t|f|f|f|f|t|t|f|f');
   for(const statement of ["INSERT INTO personnel.query_revisions(scope,revision) VALUES('people',1)","UPDATE personnel.query_revisions SET revision=revision+1","DELETE FROM personnel.query_revisions"]){
    assert.throws(()=>sql('weaveos_019_hot','SET ROLE auth_app; '+statement),error=>String(error.stderr).includes('permission denied'),'application must not write revision rows directly');

@@ -46,6 +46,10 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  sql(live,readFileSync('db/migrations/00002_personnel.sql','utf8').split('-- +goose Down')[0]);
  sql(live,readFileSync('db/migrations/00003_query_drafts.sql','utf8').split('-- +goose Down')[0]);
  sql(live,readFileSync('db/migrations/00004_query_revision_writers.sql','utf8').split('-- +goose Down')[0]);
+ sql(live,readFileSync('db/migrations/00005_table_presets.sql','utf8').split('-- +goose Down')[0]);
+ sql(live,`INSERT INTO auth.users(id,account) VALUES('77777777-7777-4777-8777-777777777777','preset-backup-synthetic');
+ INSERT INTO personnel.table_presets(id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at)
+ VALUES('88888888-8888-4888-8888-888888888888','77777777-7777-4777-8777-777777777777','members','持久方案😀',20,'{"children":[{"field":"account","operator":"eq","value":"A"}],"operator":"and"}','["identities"]',1,7,'2026-10-01T00:00:00Z','2026-10-02T00:00:00Z');`);
  sql(live,"CREATE TABLE public.goose_db_version(id serial PRIMARY KEY,version_id bigint); INSERT INTO public.goose_db_version(version_id) VALUES(0),(1);");
  sql(live,readFileSync('infra/runtime/roles.sql','utf8'));
  sql('postgres',"DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='weaveos_backup_probe') THEN CREATE ROLE weaveos_backup_probe LOGIN; END IF; END $$; GRANT auth_backup TO weaveos_backup_probe;");
@@ -53,5 +57,8 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  backupDatabase({...options,user:'weaveos_backup_probe',database:live,backupFile:encrypted});
  restoreDatabase({...options,database:restored,backupFile:encrypted});
  assert.ok(sql(restored,"SELECT nextval('public.goose_db_version_id_seq')=3 AS original_sequence;").includes('t'),'restored sequence must continue after original ledger rows');
+ const presetColumns="id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at";
+ assert.equal(sql(restored,'SELECT '+presetColumns+' FROM personnel.table_presets;'),sql(live,'SELECT '+presetColumns+' FROM personnel.table_presets;'),'restricted backup must preserve complete named configuration, Unicode, AST, ownership, slot, CAS and timestamps');
+ assert.ok(sql(restored,"SELECT name='持久方案😀' AND slot=20 AND version=7 AS preset_content FROM personnel.table_presets WHERE id='88888888-8888-4888-8888-888888888888';").includes('t'),'synthetic independent preset survives encrypted backup/restore');
  assert.throws(()=>sql(live,"SET ROLE weaveos_backup_probe; SELECT nextval('public.goose_db_version_id_seq');"),'read-only backup must not allocate sequence values');
 });

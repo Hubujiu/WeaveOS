@@ -41,6 +41,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON
 GRANT SELECT ON personnel.permission_catalog, personnel.activity_events TO auth_app;
 GRANT SELECT, INSERT, DELETE ON personnel.drafts TO auth_app;
 GRANT UPDATE (payload_json, draft_version, updated_at) ON personnel.drafts TO auth_app;
+GRANT SELECT, INSERT, DELETE ON personnel.table_presets TO auth_app;
+GRANT UPDATE (name, filter_json, hidden_column_ids, schema_version, version, updated_at) ON personnel.table_presets TO auth_app;
 GRANT SELECT ON ALL TABLES IN SCHEMA personnel TO auth_backup;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA personnel TO auth_backup;
 REVOKE ALL ON FUNCTION personnel.lock_permission_catalog(uuid) FROM PUBLIC, auth_reader, auth_maintenance, auth_backup;
