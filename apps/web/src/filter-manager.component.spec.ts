@@ -41,7 +41,7 @@ async function addRow(dialog:Locator,value='preset-admin'){await dialog.getByRol
 
 test('approved empty manager opens at viewport center with explicit new action',async({page})=>{
  await fixture(page);const panel=await manager(page);await expect(panel.getByRole('button',{name:'新增筛选',exact:true})).toBeVisible();await expect(panel.getByLabel('自定义筛选名称')).toHaveCount(0);
- const box=(await panel.boundingBox())!;expect(Math.abs(box.x+box.width/2-720)).toBeLessThan(2);expect(Math.abs(box.y+box.height/2-500)).toBeLessThan(2);expect(box.width).toBe(440);
+ const box=(await panel.boundingBox())!,viewport=page.viewportSize()!;expect(Math.abs(box.x+box.width/2-viewport.width/2)).toBeLessThan(2);expect(Math.abs(box.y+box.height/2-viewport.height/2)).toBeLessThan(2);expect(box.width).toBe(440);
 });
 test('save finite OR of AND blocks and typed comparison without applying',async({page})=>{
  const state=await fixture(page);const d=await editor(page,await manager(page));await d.getByLabel('自定义筛选名称',{exact:true}).fill('  团队筛选  ');await addRow(d);
