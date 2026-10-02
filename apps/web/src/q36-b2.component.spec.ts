@@ -174,7 +174,7 @@ test('Q36 B2 select-current-page cannot resurrect a member hidden by custom filt
 });
 
 test('Q36 B2 a trusted press spanning the exiting selection mark still selects current rows',async({page})=>{
- await page.addInitScript(()=>{const events:{type:string;trusted:boolean;target:string}[]=[];Object.defineProperty(window,'__q36SelectionPress',{value:events});for(const type of ['pointerdown','pointerup','click'])document.addEventListener(type,event=>{const target=event.target as Element;if(target.closest?.('[aria-label="选择当前页成员"]')){if(type==='pointerdown')events.length=0;events.push({type,trusted:event.isTrusted,target:target.tagName});}},true);});
+ await page.addInitScript(()=>{const events:{type:string;trusted:boolean;target:string}[]=[];Object.defineProperty(window,'__q36SelectionPress',{value:events});for(const type of ['pointerdown','pointerup','click'])document.addEventListener(type,event=>{const target=event.target as Element;if(target.closest?.('[aria-label="选择当前页成员"]')){if(type==='pointerdown')events.length=0;events.push({type,trusted:event.isTrusted,target:target.tagName,time:event.timeStamp,detail:event instanceof MouseEvent?event.detail:0,active:document.activeElement?.getAttribute('aria-label'),selected:target.closest('[aria-label="选择当前页成员"]')?.getAttribute('aria-checked')});}},true);});
  await fixture(page);const other={...member,id:identityId,account:'other-visible-member'};
  await page.route('**/personnel/members/search',r=>{const input=r.request().postDataJSON();return r.fulfill({json:envelope({...paging(input.filter?[member]:[member,other],input),total:input.filter?1:2})});});
  await admin(page);await page.getByLabel('选择成员：other-visible-member',{exact:true}).check();
@@ -185,6 +185,7 @@ test('Q36 B2 a trusted press spanning the exiting selection mark still selects c
  // DOM removal. No sleep, timeout change or click retry determines the result.
  await page.waitForFunction(()=>{const table=document.querySelector('.member-table table'),all=document.querySelector('[aria-label="选择当前页成员"]');return table?.getAttribute('aria-busy')==='false'&&all?.getAttribute('aria-checked')==='false'&&!!document.querySelector('[aria-label="选择成员：q36-admin"]')&&!document.querySelector('[aria-label="选择成员：other-visible-member"]')&&!!all?.querySelector('svg');});
  await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+ await test.info().attach('trusted-selection-press.json',{body:JSON.stringify(await page.evaluate(()=>({events:(window as unknown as {__q36SelectionPress:unknown}).__q36SelectionPress,active:document.activeElement?.getAttribute('aria-label'),button:document.querySelector('[aria-label="选择当前页成员"]')?.outerHTML,transitions:document.documentElement.className}))),contentType:'application/json'});
  await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();await expect(all).toBeChecked();
  const events=await page.evaluate(()=>(window as unknown as {__q36SelectionPress:{type:string;trusted:boolean;target:string}[]}).__q36SelectionPress);
  expect(events.filter(event=>event.type==='click'&&event.trusted)).toHaveLength(1);
