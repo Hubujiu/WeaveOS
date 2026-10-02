@@ -12,10 +12,10 @@ test.describe.configure({mode:'serial'});
 const base=process.env.WEAVEOS_WEB_URL||'https://localhost:19444';
 if(!['localhost','127.0.0.1'].includes(new URL(base).hostname))throw Error('Q36 requires an isolated loopback instance');
 const privateFixtures=process.env.WEAVEOS_ACCEPTANCE_FIXTURES||resolve('.work/q36-b2-runtime/fixtures.json');
-const evidence=resolve('docs/evidence/V010-020/q36-b2/final');mkdirSync(evidence,{recursive:true});
+const evidence=resolve('docs/evidence/V010-020/filter-manager/real/q36-regression');mkdirSync(evidence,{recursive:true});
 const fixture=JSON.parse(readFileSync(privateFixtures,'utf8')) as {admin:{account:string;password:string};user:{account:string;password:string};userId:string};
 let identity:Definition,template:Definition,department:Department,rootDepartment:Department;
-const stamp=Date.now();
+const stamp=Date.now();let presetCounter=0;const createdPresets:string[]=[];
 async function login(context:BrowserContext,credentials=fixture.admin){const response=await context.request.post(base+'/api/v1/sessions',{headers:{Origin:base},data:credentials});expect(response.status(),'isolated prerequisite login').toBe(201);}
 async function response(page:Page,path:string,method='GET',data?:object):Promise<APIResponse>{
  const cookie=(await page.context().cookies(base)).find(c=>c.name==='__Host-csrf');
@@ -28,13 +28,24 @@ async function shot(page:Page,name:string,filterOpen=false){
  // Base UI intentionally remains open while the native close animation runs.
  // Assert the requested screenshot state instead of treating its aria-expanded
  // flag as the user's intent during that interval.
- if(filterOpen){await expect(page.locator('.q36-filter-popup')).toHaveAttribute('aria-hidden','false');await expect(page.locator('.q36-filter-content')).toBeVisible();}
- else await expect(page.getByRole('dialog',{name:'自定义筛选',exact:true})).toBeHidden();
+ if(filterOpen){await expect(page.locator('.preset-popup')).toHaveAttribute('aria-hidden','false');await expect(page.locator('.q36-filter-content')).toBeVisible();}
+ else await expect(page.getByRole('dialog',{name:'管理自定义筛选',exact:true})).toBeHidden();
  await page.evaluate(()=>new Promise<void>(done=>requestAnimationFrame(()=>requestAnimationFrame(()=>done()))));
  await page.waitForFunction(()=>!document.documentElement.classList.contains('q36-filter-transition-active'));
  await page.evaluate(()=>Promise.allSettled(document.getAnimations().map(animation=>animation.finished)));
- await page.screenshot({path:resolve(evidence,name+'.png'),fullPage:true});
+ await page.screenshot({path:resolve(evidence,test.info().project.name+'-'+name+'.png'),fullPage:true});
 }
+async function newFilterEditor(page:Page){
+ await page.getByRole('button',{name:'自定义筛选',exact:true}).click();const manager=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});await manager.getByRole('button',{name:'新增筛选',exact:true}).click();const editor=page.getByRole('dialog',{name:'新增自定义筛选',exact:true});const name='Q36-'+test.info().project.name+'-'+stamp+'-'+(++presetCounter);await editor.getByLabel('自定义筛选名称',{exact:true}).fill(name);return {manager,editor,name};
+}
+async function saveApplyFilter(page:Page,entry:Awaited<ReturnType<typeof newFilterEditor>>){
+ const saved=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname.endsWith('/table-presets'));await entry.editor.getByRole('button',{name:'确定',exact:true}).click();const body=await (await saved).json();createdPresets.push(body.data.id);await entry.manager.getByRole('button',{name:'应用'+entry.name,exact:true}).click();await expect(entry.manager.getByRole('button',{name:'关闭筛选管理',exact:true})).toBeEnabled();await entry.manager.getByRole('button',{name:'关闭筛选管理',exact:true}).click();await expect(entry.manager).toBeHidden();
+}
+async function cancelFilter(page:Page){
+ await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();const manager=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});await manager.getByRole('button',{name:'取消应用',exact:true}).click();await page.getByRole('dialog',{name:'取消当前筛选',exact:true}).getByRole('button',{name:'确认取消',exact:true}).click();await expect(manager.getByRole('button',{name:'关闭筛选管理',exact:true})).toBeEnabled();await manager.getByRole('button',{name:'关闭筛选管理',exact:true}).click();await expect(manager).toBeHidden();
+}
+test.afterEach(async({page})=>{for(const id of createdPresets.splice(0)){const stored=await api<{version:number}>(page,'personnel/table-presets/'+id);await api(page,'personnel/table-presets/'+id+'?version='+stored.version,'DELETE');}});
+
 async function refresh(page:Page){await page.getByRole('button',{name:'刷新查询',exact:true}).first().click();await expect(page.locator('.member-table tbody tr[data-row-id]').first()).toBeVisible();}
 async function saved(page:Page){await page.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'草稿已保存'})).toBeVisible();}
 async function closeSavedForm(page:Page){await page.getByRole('dialog').getByRole('button',{name:'关闭',exact:true}).click();const dirty=page.getByRole('dialog',{name:'有未保存的修改',exact:true});if(await dirty.isVisible())await dirty.getByRole('button',{name:'放弃修改',exact:true}).click();}
@@ -63,9 +74,9 @@ test('Q36 actual members: complete filtering, arbitrary pages, selection, column
  const resize=page.getByRole('button',{name:'Resize account column',exact:true});const box=(await resize.boundingBox())!;await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+50,box.y+box.height/2,{steps:8});await page.mouse.up();
  const before=(await page.locator('.member-table th').nth(1).boundingBox())!.width;
  await page.getByLabel('跳至页',{exact:true}).fill('2');await page.getByLabel('跳至页',{exact:true}).press('Enter');await expect(page.getByRole('button',{name:'Page 2',exact:true})).toHaveAttribute('aria-current','page');
- await page.getByRole('button',{name:'自定义筛选',exact:true}).click();const panel=page.getByRole('dialog',{name:'自定义筛选',exact:true});
- await panel.getByRole('button',{name:'组 1 添加条件',exact:true}).click();await panel.locator('.q36-filter-condition input').first().fill(fixture.admin.account);await shot(page,'members-filter-expanded-desktop',true);
- await panel.getByRole('button',{name:'应用筛选',exact:true}).click();await expect(page.locator('.member-table tbody tr[data-row-id]')).toHaveCount(1);await shot(page,'members-filter-applied-desktop');
+ const entry=await newFilterEditor(page),panel=entry.editor;
+ await panel.getByRole('button',{name:'或条件',exact:true}).click();await panel.getByLabel('条件 1.1 值',{exact:true}).fill(fixture.admin.account);await shot(page,'members-filter-expanded-desktop',true);
+ await saveApplyFilter(page,entry);await expect(page.locator('.member-table tbody tr[data-row-id]')).toHaveCount(1);await shot(page,'members-filter-applied-desktop');
  await refresh(page);await expect(selected).not.toBeChecked();expect((await page.locator('.member-table th').nth(1).boundingBox())!.width).toBeCloseTo(before,0);await expect(page.getByRole('button',{name:'自定义筛选，已应用',exact:true})).toBeVisible();
  await page.setViewportSize({width:390,height:844});await shot(page,'members-filter-applied-narrow');await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();await shot(page,'members-filter-expanded-narrow',true);await page.keyboard.press('Escape');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
@@ -74,7 +85,7 @@ test('Q36 actual members: complete filtering, arbitrary pages, selection, column
 test('Q36 actual events: backend safe display, absolute range, full-result time ordering and screenshots',async({page})=>{
  await enter(page);await page.setViewportSize({width:1440,height:1000});await page.getByRole('tab',{name:'操作记录',exact:true}).click();await expect(page.locator('.activity-table tbody tr[data-row-id]').first()).toBeVisible();await shot(page,'events-default-desktop');await page.setViewportSize({width:390,height:844});await shot(page,'events-default-narrow');await page.setViewportSize({width:1440,height:1000});
  await page.getByRole('button',{name:'排序 occurredAt',exact:true}).click();await page.getByRole('menuitem',{name:'升序',exact:true}).click();await expect(page.locator('.activity-table th[aria-sort]')).toHaveAttribute('aria-sort','ascending');
- await page.getByRole('button',{name:'自定义筛选',exact:true}).click();const panel=page.getByRole('dialog',{name:'自定义筛选',exact:true});await panel.getByRole('button',{name:'组 1 添加条件',exact:true}).click();await panel.locator('.q36-filter-condition input').first().fill(fixture.admin.account);await shot(page,'events-filter-expanded-desktop',true);await panel.getByRole('button',{name:'应用筛选',exact:true}).click();await shot(page,'events-filter-applied-desktop');
+ const entry=await newFilterEditor(page),panel=entry.editor;await panel.getByRole('button',{name:'或条件',exact:true}).click();await panel.getByLabel('条件 1.1 值',{exact:true}).fill(fixture.admin.account);await shot(page,'events-filter-expanded-desktop',true);await saveApplyFilter(page,entry);await shot(page,'events-filter-applied-desktop');
  const result=await api<{items:{occurredAt:string;display:{object:string;detail:string}}[];range:{from:string;to:string}}>(page,'personnel/events/search','POST',{page:1,pageSize:100,sortBy:'occurredAt',sortDirection:'asc',filter:{operator:'and',children:[{field:'actorAccount',operator:'eq',value:fixture.admin.account}]}});
  expect(result.items.length).toBeGreaterThan(0);expect(result.items.every((event,i,all)=>i===0||Date.parse(all[i-1].occurredAt)<=Date.parse(event.occurredAt))).toBe(true);expect(result.items.every(event=>typeof event.display.detail==='string'&&typeof event.display.object==='string')).toBe(true);expect(Date.parse(result.range.to)).toBeGreaterThan(Date.parse(result.range.from));
  await page.setViewportSize({width:390,height:844});await shot(page,'events-filter-applied-narrow');await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();await shot(page,'events-filter-expanded-narrow',true);await page.keyboard.press('Escape');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
@@ -147,39 +158,34 @@ test('Q36 actual drafts remain isolated between two currently authorized account
  }
 });
 
-test('Q36 actual narrow long AND OR groups validate twenty leaves and keep footer reachable',async({page})=>{
- await enter(page);await page.setViewportSize({width:1440,height:1000});await page.getByRole('button',{name:'自定义筛选',exact:true}).click();const panel=page.getByRole('dialog',{name:'自定义筛选',exact:true});
- await panel.getByRole('button',{name:'组 1 添加分组',exact:true}).click();await panel.getByLabel('组 1.1 匹配方式',{exact:true}).selectOption('or');await panel.getByRole('button',{name:'组 1.1 添加分组',exact:true}).click();
- await expect(panel.getByRole('button',{name:'组 1.1.1 添加分组',exact:true})).toBeDisabled();
- // Empty groups are invalid; an empty account text value is a valid exact value.
- await expect(panel.getByRole('button',{name:'应用筛选',exact:true})).toBeDisabled();await shot(page,'filter-invalid-desktop',true);
- for(let i=1;i<=20;i++){
-  await panel.getByRole('button',{name:'组 1.1.1 添加条件',exact:true}).click();
-  await panel.getByLabel('条件 1.1.'+i+' 值',{exact:true}).fill(fixture.admin.account);
- }
- await expect(panel.getByRole('button',{name:'组 1 添加条件',exact:true})).toBeDisabled();await expect(panel.getByRole('button',{name:'应用筛选',exact:true})).toBeEnabled();await shot(page,'filter-long-groups-desktop',true);
+test('Q36 actual narrow finite AND OR groups validate twenty leaves and keep footer reachable',async({page})=>{
+ await enter(page);await page.setViewportSize({width:1440,height:1000});const entry=await newFilterEditor(page),panel=entry.editor;
+ await panel.getByRole('button',{name:'或条件',exact:true}).click();await panel.getByLabel('条件 1.1 字段',{exact:true}).selectOption('identityIds');await panel.getByRole('button',{name:'确定',exact:true}).click();await expect(panel.getByRole('alert')).toContainText('条件 1.1');await shot(page,'filter-invalid-desktop',true);
+ await panel.getByLabel('条件 1.1 字段',{exact:true}).selectOption('account');await panel.getByLabel('条件 1.1 值',{exact:true}).fill(fixture.admin.account);
+ for(let i=2;i<=20;i++){await panel.getByRole('button',{name:'组 1 且条件',exact:true}).click();await panel.getByLabel('条件 1.'+i+' 值',{exact:true}).fill(fixture.admin.account);}
+ await expect(panel.getByRole('button',{name:'或条件',exact:true})).toBeDisabled();await expect(panel.getByRole('button',{name:'确定',exact:true})).toBeEnabled();await shot(page,'filter-long-groups-desktop',true);
  await page.setViewportSize({width:390,height:844});await shot(page,'filter-long-groups-narrow',true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
- const footer=(await panel.getByRole('button',{name:'应用筛选',exact:true}).boundingBox())!;expect(footer.y+footer.height).toBeLessThanOrEqual(844);
- await panel.getByRole('button',{name:'应用筛选',exact:true}).click();await expect(page.locator('.member-table tbody tr[data-row-id]')).toHaveCount(1);
+ const footer=(await panel.getByRole('button',{name:'确定',exact:true}).boundingBox())!;expect(footer.y+footer.height).toBeLessThanOrEqual(844);
+ await saveApplyFilter(page,entry);await expect(page.locator('.member-table tbody tr[data-row-id]')).toHaveCount(1);
  await page.getByLabel('搜索成员',{exact:true}).fill('q36-no-match-'+stamp);await expect(page.locator('.member-table table')).toHaveAttribute('aria-busy','false');await expect(page.locator('.member-table')).toContainText('暂无成员');await shot(page,'members-empty-narrow');
 });
 
 test('Q36 actual page records open close stable trigger and reopen without a root blocker',async({browser})=>{
  const context=await browser.newContext({ignoreHTTPSErrors:true,viewport:{width:1440,height:1000},recordVideo:{dir:evidence,size:{width:1440,height:1000}}});
  await login(context);const page=await context.newPage();await page.goto('/app/admin');await expect(page.locator('.member-table table')).toHaveAttribute('aria-busy','false');await page.evaluate(()=>document.fonts.ready);
- const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),panel=page.getByRole('dialog',{name:'自定义筛选',exact:true});await page.waitForTimeout(1000);
+ const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});await page.waitForTimeout(1000);
  await trigger.click();await expect(panel).toBeVisible();await shot(page,'motion-open',true);await page.waitForTimeout(1000);
  await page.keyboard.press('Escape');await expect(panel).toBeHidden();await page.waitForFunction(()=>!document.documentElement.classList.contains('q36-filter-transition-active'));await page.waitForTimeout(1100);await shot(page,'motion-closed-stable');await expect(trigger.locator('svg')).toBeVisible();await expect(trigger).toContainText('自定义筛选');
  await trigger.click();await expect(panel).toBeVisible();await shot(page,'motion-reopened',true);await page.waitForTimeout(1000);await page.keyboard.press('Escape');await expect(panel).toBeHidden();await page.waitForTimeout(1100);await shot(page,'motion-final-stable');
- const video=page.video();await context.close();if(!video)throw Error('actual page video unavailable');await rename(await video.path(),resolve(evidence,'actual-filter-open-close-reopen.webm'));
+ const video=page.video();await context.close();if(!video)throw Error('actual page video unavailable');await rename(await video.path(),resolve(evidence,test.info().project.name+'-actual-filter-open-close-reopen.webm'));
 });
 
 test('Q36 actual custom filtering clears current-page selection without resurrecting hidden members',async({page})=>{
  await enter(page);await page.setViewportSize({width:1440,height:1000});
  const hidden=page.getByLabel('选择成员：'+fixture.user.account,{exact:true});await hidden.check();await shot(page,'members-selection-before-filter');
- await page.getByRole('button',{name:'自定义筛选',exact:true}).click();const panel=page.getByRole('dialog',{name:'自定义筛选',exact:true});
- await panel.getByRole('button',{name:'组 1 添加条件',exact:true}).click();await panel.locator('.q36-filter-condition input').fill(fixture.admin.account);await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+ const entry=await newFilterEditor(page),panel=entry.editor;
+ await panel.getByRole('button',{name:'或条件',exact:true}).click();await panel.getByLabel('条件 1.1 值',{exact:true}).fill(fixture.admin.account);await saveApplyFilter(page,entry);
  await expect(hidden).toHaveCount(0);await page.getByLabel('选择当前页成员',{exact:true}).check();await expect(page.getByLabel('选择成员：'+fixture.admin.account,{exact:true})).toBeChecked();await shot(page,'members-selection-filtered-current-page');
- await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();await panel.getByRole('button',{name:'重置条件',exact:true}).click();await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+ await cancelFilter(page);
  await expect(hidden).not.toBeChecked();await expect(page.getByLabel('选择成员：'+fixture.admin.account,{exact:true})).not.toBeChecked();await expect(page.getByLabel('选择当前页成员',{exact:true})).not.toBeChecked();await shot(page,'members-selection-reset-cleared');
 });
