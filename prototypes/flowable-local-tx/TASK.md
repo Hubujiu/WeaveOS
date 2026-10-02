@@ -4,7 +4,8 @@
 
 Owner: B3 云执行线程 01a0fcbd-d8d3-72a2-b4c2-d50df7930030。
 分支 task/V030-004-flowable-tx-proof；工作树 /workspace/WeaveOS-worktrees/V030-004。
-允许路径：prototypes/flowable-local-tx/**、docs/evidence/V030-004/**。
+允许路径：prototypes/flowable-local-tx/**、docs/evidence/V030-004/**、docs/tasks/V030-004.md。
+正式 task-meta 与当前 stacked PR 状态见 [V030-004](../../docs/tasks/V030-004.md)；本文件保留原始 B3 包说明。
 仅同库事务原型和测试。没有产品服务、HTTP/gRPC/API、凭据管理、应用库投影或生产集成。
 本包不定义产品触发器、权限、可见性屏障或完整分布式协议，不宣称跨库 ACID。
 
@@ -38,8 +39,8 @@ Boot BOM 声明 Framework7.0.3、JDBC42.7.9、JUnit6.0.2、Jackson2.20.2/3.0.4�
 
 ## Handoff
 
-root 集成需求：正式任务编号/任务索引、Java CI、最终服务版本/资源/安全与 API/proto 均由 root 冻结。现有 task-policy 只识别 V010-NNN；本包不扩写该共享配置或抢占编号。
-本包记录保留在本 TASK.md 与 docs/evidence/V030-004，由 root 统一纳入正式任务治理；不冒充现有 check-tasks 已覆盖 v0.3.0。
+root 集成需求：正式任务编号/任务索引、Java CI、最终服务版本/资源/安全与 API/proto 均由 root 冻结。初次 proof 时 task-policy 仅识别 V010；本轮按 root 明确授权 merge B0 的 V010/V030兼容补丁，不自行编辑共享 checker。
+本轮已建立正式 docs/tasks/V030-004.md，消费 B0 并按指定 base 开 stacked draft PR；实际编号及 CI 状态以正式记录为准。
 实际命令和结果：prepare-build.sh 成功；run-proof.sh verify RED退出1、GREEN退出0；Maven dependency:tree/build-classpath、bash -n、源码／文档 git diff --check（原始Maven日志保留工具行尾空格、不纳入格式检查）、verify-repo/check-tasks均通过。现有 task checker 的绿灯不表示本包已进入正式 V030 治理。
 下一条：root 审查本包 SHA 与永久证据，再统一冻结／集成；不 merge/deploy。本包本地事务 proof 完成，不标产品 accepted。
 未跑：Java远端CI、完整分布式14故障矩阵／产品可见性／取消与fence／两库恢复、真实OS kill、负载／RSS／漏洞扫描、Go/web产品回归。

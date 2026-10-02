@@ -36,4 +36,4 @@ Flowable [固定源码 dependencies POM](https://github.com/flowable/flowable-en
 
 复杂度估计（未经负载压测）：命令唯一索引登记／读取约 O(log C)，完整 payload 比较 O(P)，ledger/outbox 持久空间 O(C×P)；引擎路径成本随节点／数据库写入增长，本夹具路径有固定少量节点。相同 ID 的竞争会等待唯一键所属事务，当前没有产品级超时、保留、清理或容量策略。测试时长不能当吞吐／延迟 SLA。
 
-待 root 集成／NOT RUN：现有任务治理只识别 V010-NNN，正式 v0.3.0 任务记录及 Java CI 需统一接入；OpenAPI、proto、迁移编号、Go/pnpm配置均未改。产品权限／身份、协议字段、可见性屏障、应用 fence/inbox/投影/audit、取消 tombstone、乱序回执、两库恢复、完整14故障场景、OS进程崩溃及负载／资源／漏洞扫描均未验证。Go/web产品回归未跑（相关代码未改）。本地 receipt 仅证明引擎库结果，不代表产品 SUCCESS、跨库 ACID 或完整后端验收。
+待 root 集成／NOT RUN：本轮已消费 B0 的 V010/V030编号兼容补丁并建立正式 [任务记录](../../docs/tasks/V030-004.md)；Java CI仍需root统一接入；OpenAPI、proto、迁移编号、Go/pnpm配置均未改。产品权限／身份、协议字段、可见性屏障、应用 fence/inbox/投影/audit、取消 tombstone、乱序回执、两库恢复、完整14故障场景、OS进程崩溃及负载／资源／漏洞扫描均未验证。Go/web产品回归未跑（相关代码未改）。本地 receipt 仅证明引擎库结果，不代表产品 SUCCESS、跨库 ACID 或完整后端验收。
