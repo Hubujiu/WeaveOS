@@ -6,7 +6,7 @@
 
 先读本文件 → [HANDOFF.md](HANDOFF.md) → [任务流程](docs/workflow.md) → [任务索引](docs/tasks/index.md) → 目标任务文档 → 目标目录沿途AGENTS。实际检查GitHub远程main、任务分支/PR、CI与本机worktree；不得只信聊天或旧摘要。
 
-每任务固定 `docs/tasks/V010-NNN.md`、独立 `task/V010-NNN-topic` 分支、独立 `../WeaveOS-worktrees/V010-NNN` 工作树。领取前核对依赖验收，不同时让多个Agent写同一工作树。规划不是执行，不伪造已启动的Agent或分支。
+每任务使用已约定版本编号（当前支持 `V010-NNN` 与 `V030-NNN`，NNN为三位数字），固定 `docs/tasks/<ID>.md`、独立 `task/<ID>-topic` 分支、独立 `../WeaveOS-worktrees/<ID>` 工作树，完整ID及版本前缀必须一致；不得重编号已有任务。领取前核对依赖验收，不同时让多个Agent写同一工作树。规划不是执行，不伪造已启动的Agent或分支。
 
 任务文档必须记录来源、范围、owner、允许改动路径、依赖、PR、验收项、完成/待完成、RED/GREEN、阻塞和下一条执行命令。每个可验证阶段更新并推送，使中断/换Agent后可恢复。PR必须更新对应任务文档，不把进度只存在临时文件或聊天里。
 
