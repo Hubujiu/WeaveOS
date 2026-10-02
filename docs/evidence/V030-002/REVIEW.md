@@ -55,3 +55,18 @@ proof, full manifest/archive/remapping/binding/import/export, HTTP app-internal
 authorization, complete module DB/Redis tests, browser/product E2E, backup/
 restore or production. A fake Reader verifies the boundary contract and does
 not prove persistent atomicity. No merge or deployment was performed.
+
+## 2026-10-02 stacked draft integration update
+
+Draft PR #23 targets B0 PR #22 branch. Ordinary merge `11ce7269…` consumed B0
+`5571420c…`, preserved original B1 `72b52e1…` as an ancestor, and changed no B1
+application source. The original V010-only checker gap above is historical;
+current B0 validates V030 without weakening scope, acceptance or cleanup guards.
+Current local checks pass: governance 182/182 with zero skips/cancellations,
+B1 race 56 passing test/subtest events, module vet/build, repository structure
+and actual PR23 stacked scope validation. Results are recorded in
+`integration-runs.json`; final CI is evaluated on the pushed
+head. Task metadata records the real PR number and stays blocked for root-owned
+product integration, not accepted. Source pages were re-read and the user
+explicitly approved integration pushes/draft creation; only documentation is
+updated here (TDD:N/A). Main merge, deployment and cleanup remain unauthorized.
