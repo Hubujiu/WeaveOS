@@ -53,6 +53,11 @@ async function restoreKind(page:Page,kind:string){await page.getByRole('button',
 
 test.beforeAll(async({browser})=>{
  const context=await browser.newContext({ignoreHTTPSErrors:true});await login(context);const page=await context.newPage();
+ // This private synthetic account is reused when the cloud matrix is rerun.
+ // Establish the suite's empty draft precondition before its serial lifecycle;
+ // preserve all five kinds throughout the subsequent fresh-login assertions.
+ const priorDrafts=await api<{items:PersonnelDraftSummary[]}>(page,'personnel/drafts');
+ for(const item of priorDrafts.items)await api(page,'personnel/drafts/'+item.id+'?version='+item.version,'DELETE');
  const query=await api<MembersQueryPage<Member>>(page,'personnel/members/search','POST',{page:1,pageSize:20});
  rootDepartment=(await api<{items:Department[]}>(page,'personnel/departments')).items.find(d=>d.isRoot)!;
  identity=await api<Definition>(page,'personnel/identities','POST',{name:'Q36 测试身份 '+stamp,description:'原说明',templateIds:[],permissionCodes:[]});

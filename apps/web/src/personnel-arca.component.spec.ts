@@ -138,6 +138,10 @@ test('Q35 page size retains arrow, Home and Enter keyboard operation', async ({ 
 test('Q36 shrinking full result blocks pagination until explicit refresh instead of silently clamping', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await fixture(page, 20, 21);
+  // Wait for the independent 21-row initial response before replacing its route.
+  // Otherwise the first request can receive the later 20-row response and never
+  // expose the second-page control that this invalidation scenario requires.
+  await expect(page.getByRole('button', { name: 'Page 2', exact: true })).toBeVisible();
   let recoveryRequests = 0;
   await page.route('**/api/v1/personnel/members/search', async route => {
     const p = Number(fixtureRequestURL(route.request()).searchParams.get('page') || 1);
