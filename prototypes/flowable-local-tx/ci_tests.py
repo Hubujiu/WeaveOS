@@ -7,6 +7,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 from ci_report import GateError, validate_reports
@@ -165,6 +166,11 @@ class RunnerExitTests(unittest.TestCase):
         self.assertEqual(0, result["maven_exit"])
         self.assertEqual(15, result["summary"]["tests"])
         self.assertTrue((self.output / "reports" / REPORT_NAME).is_file())
+
+    def test_fresh_child_report_survives_a_wall_clock_ahead_of_filesystem(self):
+        # Both output deletion and the child run are real; only the wall clock is advanced.
+        with patch("ci_runner.time.time_ns", return_value=time.time_ns() + 1_000_000_000):
+            self.assertEqual(0, run_gate(self.proof, self.output, self.command()))
 
     def test_assertion_failure_is_nonzero_and_preserves_report(self):
         self.assertNotEqual(0, run_gate(self.proof, self.output, self.command("failure", 1)))
