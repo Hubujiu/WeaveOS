@@ -25,9 +25,10 @@ Historical task IDs and original 132 tests are retained. `evaluateAcceptance`,
 Authentic test sequence:
 
 1. Before implementation, the 49-test B0 suite returned exit 1 with 10 target
-   failures. `red-run.json` and `red.txt` contain the timestamp/command/output;
+   failures. `red-run.json` and `red.stdout.json` contain the timestamp/command/output;
    `*.red.txt` and `red-sha256.json` preserve the actual original source/tests.
-   The earlier 46-test run remains under `.first`; three further malformed ID
+   The earlier 46-test metadata/source snapshots remain under `.first`, with output
+   in `red-first.stdout.json`; three further malformed ID
    cases were added before implementation and the 49-test RED rerun was committed.
 2. First GREEN passed 48/49. The start fixture incorrectly used a ready task;
    the existing restart guard correctly rejected it. The fixture now uses planned
@@ -40,6 +41,11 @@ Authentic test sequence:
    governance/foundation passes 182/182; zero skips/cancellations. Repository
    structure/task checks and diff whitespace checks pass. Exact commands and
    timestamps are in `verification-runs.json`.
+   Raw failure output has trailing spaces emitted by Node. The four affected
+   logs are stored as `*.stdout.json` with exact `rawOutput` and its byte SHA256;
+   JSON decoding reproduces the original bytes unchanged. Original raw text is
+   also retained in earlier commits. Source/docs and the final full diff pass
+   whitespace checking; no evidence lines or assertions were stripped.
 5. B1's original task metadata passes the patched validator without modifying
    B1. B0's tracked changed paths are inside its enumerated owned scope; see
    `scope-and-b1-validation.json`. Root still coordinates business PR bases/shared
