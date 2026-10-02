@@ -36,4 +36,8 @@ Flowable [固定源码 dependencies POM](https://github.com/flowable/flowable-en
 
 复杂度估计（未经负载压测）：命令唯一索引登记／读取约 O(log C)，完整 payload 比较 O(P)，ledger/outbox 持久空间 O(C×P)；引擎路径成本随节点／数据库写入增长，本夹具路径有固定少量节点。相同 ID 的竞争会等待唯一键所属事务，当前没有产品级超时、保留、清理或容量策略。测试时长不能当吞吐／延迟 SLA。
 
-待 root 集成／NOT RUN：本轮已消费 B0 的 V010/V030编号兼容补丁并建立正式 [任务记录](../../docs/tasks/V030-004.md)；Java CI仍需root统一接入；OpenAPI、proto、迁移编号、Go/pnpm配置均未改。产品权限／身份、协议字段、可见性屏障、应用 fence/inbox/投影/audit、取消 tombstone、乱序回执、两库恢复、完整14故障场景、OS进程崩溃及负载／资源／漏洞扫描均未验证。Go/web产品回归未跑（相关代码未改）。本地 receipt 仅证明引擎库结果，不代表产品 SUCCESS、跨库 ACID 或完整后端验收。
+待 root 集成／NOT RUN：本轮已消费 B0 的 V010/V030编号兼容补丁并建立正式 [任务记录](../../docs/tasks/V030-004.md)；Java专项CI本地已接线，最终head远端结果以任务回报为准；OpenAPI、proto、迁移编号、Go/pnpm配置均未改。产品权限／身份、协议字段、可见性屏障、应用 fence/inbox/投影/audit、取消 tombstone、乱序回执、两库恢复、完整14故障场景、OS进程崩溃及负载／资源／漏洞扫描均未验证。Go/web产品回归未跑（相关代码未改）。本地 receipt 仅证明引擎库结果，不代表产品 SUCCESS、跨库 ACID 或完整后端验收。
+
+root的2026-10-02 Java专项CI补充PLAN已指定独立 .github/workflows/java-flowable-proof.yml，仅相关PR路径和手动触发，无部署调用。CI先执行python3 prototypes/flowable-local-tx/ci_tests.py的25项门禁自测，预取后执行python3 prototypes/flowable-local-tx/ci_runner.py。runner固定调用原脚本clean verify，先删除旧JUnit输出，再核对fresh报告完整15项预期清单、计数及进程退出码；failure/error/skip、缺报告、少跑、重复、陈旧输出或非零退出不能通过。原15项Java源码不变；自测临时XML是门禁fixture，不冒充真实Java/PG结果。
+
+CI首版不启用依赖cache，从固定镜像预取后在内网离线构建。公开诊断仅在.work/java-ci/：门禁日志、预取/工具版本及独立proof/result.json、Maven日志、fresh XML。always上传保留证据，不覆盖失败结论；代理settings、依赖目录和PG数据不在上传路径。证据见[Java CI记录](../../docs/evidence/V030-004/java-ci/README.md)。
