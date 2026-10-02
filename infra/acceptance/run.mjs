@@ -6,15 +6,17 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {countAPIReport,countBrowserReport} from './result-counts.mjs';
 
+export async function runAcceptance(options = {}) {
 const root = fileURLToPath(new URL('../../', import.meta.url));
-const dir = resolve(root, '.work/acceptance');
+const dir = options.directory ?? resolve(root, '.work/acceptance');
 if (existsSync(resolve(dir, 'runtime.env'))) throw new Error('Existing private environment: inspect it before rerunning; no overwrite');
 mkdirSync(resolve(dir, 'tls'), { recursive: true });
 mkdirSync(resolve(dir, 'public'), { recursive: true });
 const project = `weaveos-v010-007-${Date.now()}`;
 const env = { ...process.env, WEAVEOS_ACCEPTANCE_DIR: dir };
 const composeArgs = ['compose', '-p', project, '-f', resolve(root, 'infra/acceptance/compose.json')];
-const call = (command, args, options = {}) => execFileSync(command, args, { cwd: root, env, stdio: 'inherit', ...options });
+const execute = options.execute ?? execFileSync;
+const call = (command, args, options = {}) => execute(command, args, { cwd: root, env, stdio: 'inherit', ...options });
 const compose = (...args) => call('docker', [...composeArgs, ...args]);
 const id = name => call('docker', [...composeArgs, 'ps', '-q', name], { encoding: 'utf8', stdio: 'pipe' }).trim();
 const password = randomBytes(32).toString('hex');
@@ -67,4 +69,15 @@ try {
 } finally {
   // Preserve private fixtures and isolated DB volume; no --volumes or file deletion.
   compose('stop');
+}
+}
+
+// Minimal non-behavior declarations for the CI wiring RED phase.
+export async function startB2TestDatabase(_options = {}) { return undefined; }
+export async function stopB2TestDatabase(_options = {}) { return undefined; }
+export async function runB2FixtureCommand(_args, _options = {}) { return undefined; }
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (process.argv.length > 2) await runB2FixtureCommand(process.argv.slice(2));
+  else await runAcceptance();
 }
