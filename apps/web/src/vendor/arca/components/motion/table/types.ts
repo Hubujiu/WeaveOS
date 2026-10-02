@@ -43,6 +43,8 @@ export interface TableProps<T> {
   getRowLabel?: (row: T) => string;
   data: T[];
   columns: TableColumn<T>[];
+  /** Controlled display IDs; all columns still retain their order and widths. */
+  hiddenColumnIds?: readonly string[];
   /** Stable id per row, required for correct selection across sorts. Defaults to row index. */
   getRowId?: (row: T, index: number) => string;
   /** Render a leading index column; row numbers become checkboxes on hover. */
