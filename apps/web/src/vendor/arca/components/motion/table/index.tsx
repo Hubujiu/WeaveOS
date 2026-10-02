@@ -68,6 +68,7 @@ function resolveColumnWidth(
 export function Table<T>({
   data,
   columns,
+  hiddenColumnIds = [],
   getRowId,
   selectable = false,
   selectedRowIds,
@@ -142,6 +143,8 @@ export function Table<T>({
     endReorder,
   } = useColumnReorder({ columns, thRefs, onColumnOrderChange, columnOrder });
 
+  const visibleColumns = orderedColumns.filter(column => !hiddenColumnIds.includes(column.key));
+
   const { sort, sortedRows, setSort } = useColumnSort({
     rows,
     columns,
@@ -209,7 +212,7 @@ export function Table<T>({
   }, [manualPagination, pageProp, pageIndex, currentPage, setPageIndex]);
 
   const { widths, startResize, moveResize, endResize } = useColumnResize({
-    orderedColumns,
+    orderedColumns: visibleColumns,
     thRefs,
     minColumnWidth,
     onColumnResize,
@@ -243,7 +246,7 @@ export function Table<T>({
   const hasRowMenu = !!(onInsertRow || onDeleteRow);
   const hasColumnMenu = !!(onInsertColumn || onDeleteColumn);
   const rootFontSize = useRootFontSize();
-  const resolvedWidths = orderedColumns.map(column => widths[column.key] ?? resolveColumnWidth(column.width, rootFontSize));
+  const resolvedWidths = visibleColumns.map(column => widths[column.key] ?? resolveColumnWidth(column.width, rootFontSize));
   // Once explicit widths are controlled, an HTML table must not distribute
   // leftover container space over them and silently alter the requested px.
   const controlledTableWidth = columnWidths && Object.keys(columnWidths).length && resolvedWidths.every(width => width !== null)
@@ -295,7 +298,7 @@ export function Table<T>({
     rowTimer.current = setTimeout(() => setActiveRow(null), 100);
   }, []);
   const activeRowEl = activeRow ? rowRefs.current[activeRow.id] : null;
-  const leadColumns = orderedColumns.length + (selectable ? 1 : 0);
+  const leadColumns = visibleColumns.length + (selectable ? 1 : 0);
   // Fillers are deliberately outside data, virtualizer, selection and paging.
   const remaining = fillViewport ? Math.max(0, viewportHeight - rowHeight - visibleRows.length * rowHeight) : 0;
   const blankRows = Array.from({ length: Math.ceil(remaining / rowHeight) }, (_, index) => Math.min(rowHeight, remaining - index * rowHeight));
@@ -331,11 +334,11 @@ export function Table<T>({
               className="personnel-data-table w-full border-collapse"
               aria-label={ariaLabel}
               aria-busy={loading}
-              style={{ tableLayout: "fixed", width: controlledTableWidth || "100%", minWidth }}
+              style={{ tableLayout: "fixed", width: controlledTableWidth || "100%", minWidth: hiddenColumnIds.length && controlledTableWidth ? controlledTableWidth : minWidth }}
             >
           <colgroup>
             {selectable ? <col style={{ width: INDEX_WIDTH }} /> : null}
-            {orderedColumns.map((column) => {
+            {visibleColumns.map((column) => {
               const override = widths[column.key];
               const declared = resolveColumnWidth(column.width, rootFontSize);
               const width = override
@@ -350,7 +353,7 @@ export function Table<T>({
           </colgroup>
 
           <TableHeader
-            columns={orderedColumns}
+            columns={visibleColumns}
             rowHeight={rowHeight}
             reduce={!!reduce}
             thRefs={thRefs}
@@ -368,7 +371,7 @@ export function Table<T>({
             onResizeEnd={endResize}
             reorderable={reorderable}
             dragKey={dragKey}
-            dropIndex={dropIndex}
+            dropIndex={dropIndex === null ? null : orderedColumns.slice(0,dropIndex).filter(column=>!hiddenColumnIds.includes(column.key)).length}
             onReorderStart={startReorder}
             onReorderMove={moveReorder}
             onReorderEnd={endReorder}
@@ -385,7 +388,7 @@ export function Table<T>({
               loading ? (
                 <SkeletonRows
                   count={Math.max(1, Math.ceil((fillViewport ? viewportHeight - rowHeight : height) / rowHeight))}
-                  columns={orderedColumns}
+                  columns={visibleColumns}
                   selectable={selectable}
                   rowHeight={rowHeight}
                 />
@@ -461,7 +464,7 @@ export function Table<T>({
                           </div>
                         </td>
                       ) : null}
-                      {orderedColumns.map((column, columnIndex) => (
+                      {visibleColumns.map((column, columnIndex) => (
                         <td
                           key={column.key}
                           className={cn(
@@ -495,7 +498,7 @@ export function Table<T>({
                 {loading && !paginated ? (
                   <SkeletonRows
                     count={skeletonRows}
-                    columns={orderedColumns}
+                    columns={visibleColumns}
                     selectable={selectable}
                     rowHeight={rowHeight}
                   />

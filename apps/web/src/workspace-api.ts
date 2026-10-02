@@ -1,6 +1,6 @@
 // Cookie-backed application requests; no browser token storage.
 export class WorkspaceError extends Error {
- constructor(readonly status:number,readonly code:string,readonly reason?:string) {super(code==='COMMON_QUERY_CHANGED'?'查询结果已变化，请刷新查询后继续':code==='COMMON_QUERY_CONTEXT_EXPIRED'?'查询上下文已过期，请重新查询后继续':reason==='QUERY_BUSY'?'查询暂时繁忙，请稍后重试':code==='PERSONNEL_DRAFT_CONFLICT'?'草稿已由其他标签页修改，请明确选择后继续':code==='PERSONNEL_DRAFT_LIMIT_REACHED'?'已保存 20 份草稿，请先明确删除不需要的草稿':status===401?'登录已失效，请重新登录':status===403?'没有人员管理权限':status===409?'配置已变更，请重新加载后再编辑':status===400?'输入信息不合法，请检查后重试':status===404?'对象不存在，可能已被删除':'服务暂时不可用，请稍后重试');}
+ constructor(readonly status:number,readonly code:string,readonly reason?:string) {super(code==='COMMON_QUERY_CHANGED'?'查询结果已变化，请刷新查询后继续':code==='COMMON_QUERY_CONTEXT_EXPIRED'?'查询上下文已过期，请重新查询后继续':reason==='QUERY_BUSY'?'查询暂时繁忙，请稍后重试':code==='PERSONNEL_PRESET_NAME_CONFLICT'?'名称已存在，请修改名称':code==='PERSONNEL_PRESET_LIMIT_REACHED'?'当前表格已保存 20 套筛选，请先删除不需要的方案':code==='PERSONNEL_PRESET_CONFLICT'?'方案已由其他标签页修改，请重新加载最新方案后继续':code==='PERSONNEL_DRAFT_CONFLICT'?'草稿已由其他标签页修改，请明确选择后继续':code==='PERSONNEL_DRAFT_LIMIT_REACHED'?'已保存 20 份草稿，请先明确删除不需要的草稿':status===401?'登录已失效，请重新登录':status===403?'没有人员管理权限':status===409?'配置已变更，请重新加载后再编辑':status===400?'输入信息不合法，请检查后重试':status===404?'对象不存在，可能已被删除':'服务暂时不可用，请稍后重试');}
 }
 export async function workspaceApi<T>(path:string,method='GET',body?:object,signal?:AbortSignal):Promise<T>{
  const headers:Record<string,string>={};
