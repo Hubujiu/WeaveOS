@@ -19,20 +19,20 @@ Owner: B3 云执行线程 01a0fcbd-d8d3-72a2-b4c2-d50df7930030。
 
 ## Acceptance
 
-- [ ] 在真实独立 PostgreSQL 测试库证明底层 DataSource/transactionManager 相同、REQUIRED。
-- [ ] ledger、complete、outbox 在各提交前故障点与外层事务回滚时全部回滚。
-- [ ] 重复与并发相同命令只推进一次；同 ID 不同完整夹具 payload 明确冲突。
-- [ ] 引擎提交后响应丢失，重启引擎/Boot context 后回放原持久回执。
-- [ ] 受控人工任务、固定布尔纯条件、结束两路径；没有外部副作用。
-- [ ] 实际 RED/GREEN、永久源码快照、命令及结果、精确依赖和未跑项齐全。
+- [x] 在真实独立 PostgreSQL 测试库证明底层 DataSource/transactionManager 相同、REQUIRED。
+- [x] ledger、complete、outbox 在各提交前故障点与外层事务回滚时全部回滚。
+- [x] 重复与并发相同命令只推进一次；同 ID 不同完整夹具 payload 明确冲突。
+- [x] 引擎提交后响应丢失，重启引擎/Boot context 后回放原持久回执。
+- [x] 受控人工任务、固定布尔纯条件、结束两路径；没有外部副作用。
+- [x] 实际 RED/GREEN、永久源码快照、命令及结果、精确依赖和未跑项齐全。
 
 ## Progress
 
-有效 RED 已于 2026-10-02T13:35:41Z 完成：run-proof.sh verify 退出1，15项、14目标断言失败、0 error、0 skip；同底层 DataSource/transactionManager 与 REQUIRED 夹具核查通过。尚未实现 GREEN。
+有效 RED 已于 2026-10-02T13:35:41Z 完成：run-proof.sh verify 退出1，15项、14目标断言失败、0 error、0 skip；同底层 DataSource/transactionManager 与 REQUIRED 夹具核查通过。GREEN 已于 2026-10-02T13:37:43Z 完成：同一测试源码15/15通过，0 failure/error/skip，verify退出0。RED测试／占位提交 f5ad180b869f9f7cf0b1a3bee7c8ad5e6d609823，原始日志提交4d4c06899c6ca7899dc44a7f35d104416b632fcb。
 永久证据见 docs/evidence/V030-004/red.log、red-junit.xml、red-source.tar.gz 与 SHA256。
 测试数据库：专用无发布端口 Docker 网络，PG18.6，随机 b3_* schema；Flowable 仅在该随机测试 schema 建引擎表。测试账户仅为隔离夹具常量，未创建正式凭据或连接已有数据库。
 构建：独立 Maven POM，Boot 4.0.2 parent、Flowable spring 8.0.0、release17；无 web starter。
-Boot BOM 声明 Framework7.0.3、JDBC42.7.9、JUnit6.0.2、Jackson2.20.2/3.0.4；实际解析依赖树待运行。
+Boot BOM 声明 Framework7.0.3、JDBC42.7.9、JUnit6.0.2、Jackson2.20.2/3.0.4；实际解析依赖树已保留；Jackson2未进入实际class path。MyBatis3.5.19、SLF4J2.0.17、Logback1.5.25；92个测试jar总26,160,520字节，并保留全部哈希。
 构建镜像 Maven3.9.11/Temurin17.0.17+10，amd64 manifest sha256:fa7aa19829157d299ff05f631b51697a388dcd2f6955e84249ecc652015f217b。
 公共 Maven Central HTTP429；仅本包 settings 使用公共 Google Central mirror，未改 root 配置。
 
@@ -40,4 +40,7 @@ Boot BOM 声明 Framework7.0.3、JDBC42.7.9、JUnit6.0.2、Jackson2.20.2/3.0.4�
 
 root 集成需求：正式任务编号/任务索引、Java CI、最终服务版本/资源/安全与 API/proto 均由 root 冻结。现有 task-policy 只识别 V010-NNN；本包不扩写该共享配置或抢占编号。
 本包记录保留在本 TASK.md 与 docs/evidence/V030-004，由 root 统一纳入正式任务治理；不冒充现有 check-tasks 已覆盖 v0.3.0。
-下一条：run-proof.sh verify，必须到达目标行为断言后才记 RED；依赖/编译错误不是 RED。
+实际命令和结果：prepare-build.sh 成功；run-proof.sh verify RED退出1、GREEN退出0；Maven dependency:tree/build-classpath、bash -n、源码／文档 git diff --check（原始Maven日志保留工具行尾空格、不纳入格式检查）、verify-repo/check-tasks均通过。现有 task checker 的绿灯不表示本包已进入正式 V030 治理。
+下一条：root 审查本包 SHA 与永久证据，再统一冻结／集成；不 merge/deploy。本包本地事务 proof 完成，不标产品 accepted。
+未跑：Java远端CI、完整分布式14故障矩阵／产品可见性／取消与fence／两库恢复、真实OS kill、负载／RSS／漏洞扫描、Go/web产品回归。
+复杂度／锁竞争与资源限制见本包 README；不是吞吐或生产容量验收。

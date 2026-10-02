@@ -24,3 +24,10 @@ Acceptance map (test method names):
 | Retry rollback / no fake success on task absence | rolledBackCommandIdCanBeRetried; missingTaskDoesNotInventSuccessOrPersistAReceipt |
 
 Full fault matrix, two-database atomicity, application visibility/fence/inbox/audit, cancellation tombstones, engine transition sequence, external transport, actual OS process kill and backup restoration remain outside this B3 local proof. These are NOT RUN, not passed by the local tests.
+
+
+Original GREEN: 2026-10-02T13:37:43Z, the same `run-proof.sh verify`, exit 0, 15/15 passed, no errors or skips. Suite 9.366s; complete verify 11.917s. `green.log` / `green-junit.xml` preserve original output. `test-source.sha256` was checked after GREEN and remained identical to effective RED.
+
+`resolved-dependencies.txt` records actual mediation under Boot4.0.2; `artifact-sha256.txt` records all 92 test classpath artifacts, 26,160,520 bytes total. `bytecode-and-dependency-footprint.txt` verifies class major61 (Java17). Shell syntax, source/document diff whitespace (excluding unmodified raw Maven logs and dependency command output with tool-generated trailing spaces), repository structure and existing task governance passed; those structural checks do not prove formal V030 task integration or product acceptance.
+
+RED declarations/tests commit: f5ad180b869f9f7cf0b1a3bee7c8ad5e6d609823; original logs commit: 4d4c06899c6ca7899dc44a7f35d104416b632fcb. Neither is a reconstructed RED. Source snapshots can be replayed separately; such runs must be labeled REPLAY.
