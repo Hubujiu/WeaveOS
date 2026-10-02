@@ -704,6 +704,7 @@ func TestSaveConcurrentRevisionCAS(t *testing.T) {
 type commitLossDB struct {
 	pool    *pgxpool.Pool
 	commits *atomic.Int32
+	cause   error
 }
 
 func (d commitLossDB) BeginTx(c context.Context, o pgx.TxOptions) (pgx.Tx, error) {
@@ -711,12 +712,13 @@ func (d commitLossDB) BeginTx(c context.Context, o pgx.TxOptions) (pgx.Tx, error
 	if err != nil {
 		return nil, err
 	}
-	return commitLossTx{Tx: tx, commits: d.commits}, nil
+	return commitLossTx{Tx: tx, commits: d.commits, cause: d.cause}, nil
 }
 
 type commitLossTx struct {
 	pgx.Tx
 	commits *atomic.Int32
+	cause   error
 }
 
 func (t commitLossTx) Commit(c context.Context) error {
@@ -724,7 +726,23 @@ func (t commitLossTx) Commit(c context.Context) error {
 	if err := t.Tx.Commit(c); err != nil {
 		return err
 	}
+	if t.cause != nil {
+		return t.cause
+	}
 	return io.ErrUnexpectedEOF
+}
+
+func TestSaveCommitServerErrorWithoutRollbackProofIsUnknown(t *testing.T) {
+	f := newFixture(t, []Field{{ID: fieldID1, Type: Text}})
+	var commits atomic.Int32
+	// SQLSTATE 40003 explicitly names statement completion uncertainty. A
+	// PostgreSQL error object alone is not evidence that a commit had no effect.
+	f.executor.DB = commitLossDB{pool: f.pool, commits: &commits, cause: &pgconn.PgError{Code: "40003", Message: "statement completion unknown"}}
+	_, err := f.executor.Save(context.Background(), f.request([]Field{{ID: fieldID1, Type: Text}, {ID: fieldID2, Type: Boolean}}))
+	if !errors.Is(err, ErrCommitUnknown) {
+		t.Fatalf("server error without explicit rollback proof must remain unknown: %v", err)
+	}
+	assertState(t, f, []string{column1, column2}, "1")
 }
 
 func TestSaveCommitUncertaintyDoesNotRetryOrReportRollback(t *testing.T) {
