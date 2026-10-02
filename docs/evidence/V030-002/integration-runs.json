@@ -1,0 +1,222 @@
+[
+  {
+    "name": "governance-182",
+    "start": "2026-10-02T14:25:00.898413+00:00",
+    "end": "2026-10-02T14:25:03.270171+00:00",
+    "command": [
+      "/workspace/.weaveos-tools/bin/node",
+      "--test",
+      "--test-reporter=tap",
+      "tests/foundation/pipeline.test.mjs",
+      "tests/foundation/release-policy.test.mjs",
+      "tests/foundation/remote-cleanup.test.mjs",
+      "tests/foundation/task-policy.test.mjs",
+      "tests/foundation/task-versions.test.mjs",
+      "tests/governance/audit-scheduler.test.mjs",
+      "tests/governance/audit-task.test.mjs",
+      "tests/governance/auto-deploy.test.mjs",
+      "tests/governance/daily-logs.test.mjs",
+      "tests/governance/ingress-config.test.mjs",
+      "tests/governance/log-collection.test.mjs",
+      "tests/governance/personnel-release.test.mjs",
+      "tests/governance/policy.test.mjs",
+      "tests/governance/public-entry.test.mjs",
+      "tests/governance/result-counts.test.mjs",
+      "tests/governance/server-deployment.test.mjs"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-002",
+    "env": {},
+    "headBeforeDocumentationCommit": "11ce7269af03ae54e44fc767f13bee1bd94652f7",
+    "taskDocumentSha256": "3f3166dd6ab76ddd131077f9b232a2451c3e0d545933312c7284bbb4f9ff3b7d",
+    "exitCode": 0,
+    "actualPR": {
+      "base": {
+        "ref": "task/V010-021-v030-task-governance",
+        "sha": "5571420c8a50fe41909d75790509b9e5b6b5dbd5"
+      },
+      "draft": true,
+      "head": {
+        "ref": "task/V030-002-application-meta",
+        "sha": "11ce7269af03ae54e44fc767f13bee1bd94652f7"
+      },
+      "number": 23,
+      "state": "open"
+    },
+    "summary": {
+      "tests": 182,
+      "pass": 182,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    }
+  },
+  {
+    "name": "repository-structure",
+    "start": "2026-10-02T14:25:03.273430+00:00",
+    "end": "2026-10-02T14:25:03.305708+00:00",
+    "command": [
+      "/workspace/.weaveos-tools/bin/node",
+      "scripts/verify-repo.mjs"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-002",
+    "env": {},
+    "headBeforeDocumentationCommit": "11ce7269af03ae54e44fc767f13bee1bd94652f7",
+    "taskDocumentSha256": "3f3166dd6ab76ddd131077f9b232a2451c3e0d545933312c7284bbb4f9ff3b7d",
+    "exitCode": 0,
+    "actualPR": {
+      "base": {
+        "ref": "task/V010-021-v030-task-governance",
+        "sha": "5571420c8a50fe41909d75790509b9e5b6b5dbd5"
+      },
+      "draft": true,
+      "head": {
+        "ref": "task/V030-002-application-meta",
+        "sha": "11ce7269af03ae54e44fc767f13bee1bd94652f7"
+      },
+      "number": 23,
+      "state": "open"
+    }
+  },
+  {
+    "name": "actual-stacked-pr-task-checker",
+    "start": "2026-10-02T14:25:03.307563+00:00",
+    "end": "2026-10-02T14:25:03.343377+00:00",
+    "command": [
+      "/workspace/.weaveos-tools/bin/node",
+      "scripts/check-tasks.mjs"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-002",
+    "env": {
+      "GITHUB_EVENT_NAME": "pull_request",
+      "GITHUB_EVENT_PATH": "/tmp/weaveos-b1-pr-event.json"
+    },
+    "headBeforeDocumentationCommit": "11ce7269af03ae54e44fc767f13bee1bd94652f7",
+    "taskDocumentSha256": "3f3166dd6ab76ddd131077f9b232a2451c3e0d545933312c7284bbb4f9ff3b7d",
+    "exitCode": 0,
+    "actualPR": {
+      "base": {
+        "ref": "task/V010-021-v030-task-governance",
+        "sha": "5571420c8a50fe41909d75790509b9e5b6b5dbd5"
+      },
+      "draft": true,
+      "head": {
+        "ref": "task/V030-002-application-meta",
+        "sha": "11ce7269af03ae54e44fc767f13bee1bd94652f7"
+      },
+      "number": 23,
+      "state": "open"
+    }
+  },
+  {
+    "name": "package-race",
+    "start": "2026-10-02T14:25:03.345294+00:00",
+    "end": "2026-10-02T14:25:04.794533+00:00",
+    "command": [
+      "/workspace/.weaveos-tools/go/bin/go",
+      "test",
+      "-race",
+      "-count=1",
+      "-json",
+      "./internal/appmeta"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-002/services/bff",
+    "env": {
+      "GOTOOLCHAIN": "local",
+      "GOMODCACHE": "/workspace/.weaveos-tools/go-mod",
+      "GOCACHE": "/tmp/weaveos-b1-go-cache",
+      "GOPATH": "/workspace/.weaveos-tools/gopath",
+      "GOFLAGS": "-mod=readonly"
+    },
+    "headBeforeDocumentationCommit": "11ce7269af03ae54e44fc767f13bee1bd94652f7",
+    "taskDocumentSha256": "3f3166dd6ab76ddd131077f9b232a2451c3e0d545933312c7284bbb4f9ff3b7d",
+    "exitCode": 0,
+    "actualPR": {
+      "base": {
+        "ref": "task/V010-021-v030-task-governance",
+        "sha": "5571420c8a50fe41909d75790509b9e5b6b5dbd5"
+      },
+      "draft": true,
+      "head": {
+        "ref": "task/V030-002-application-meta",
+        "sha": "11ce7269af03ae54e44fc767f13bee1bd94652f7"
+      },
+      "number": 23,
+      "state": "open"
+    },
+    "passingTestAndSubtestEvents": 56
+  },
+  {
+    "name": "module-vet",
+    "start": "2026-10-02T14:25:04.797400+00:00",
+    "end": "2026-10-02T14:25:04.970094+00:00",
+    "command": [
+      "/workspace/.weaveos-tools/go/bin/go",
+      "vet",
+      "-p",
+      "1",
+      "./..."
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-002/services/bff",
+    "env": {
+      "GOTOOLCHAIN": "local",
+      "GOMODCACHE": "/workspace/.weaveos-tools/go-mod",
+      "GOCACHE": "/tmp/weaveos-b1-go-cache",
+      "GOPATH": "/workspace/.weaveos-tools/gopath",
+      "GOFLAGS": "-mod=readonly"
+    },
+    "headBeforeDocumentationCommit": "11ce7269af03ae54e44fc767f13bee1bd94652f7",
+    "taskDocumentSha256": "3f3166dd6ab76ddd131077f9b232a2451c3e0d545933312c7284bbb4f9ff3b7d",
+    "exitCode": 0,
+    "actualPR": {
+      "base": {
+        "ref": "task/V010-021-v030-task-governance",
+        "sha": "5571420c8a50fe41909d75790509b9e5b6b5dbd5"
+      },
+      "draft": true,
+      "head": {
+        "ref": "task/V030-002-application-meta",
+        "sha": "11ce7269af03ae54e44fc767f13bee1bd94652f7"
+      },
+      "number": 23,
+      "state": "open"
+    }
+  },
+  {
+    "name": "bff-build",
+    "start": "2026-10-02T14:25:04.972366+00:00",
+    "end": "2026-10-02T14:25:06.196487+00:00",
+    "command": [
+      "/workspace/.weaveos-tools/go/bin/go",
+      "build",
+      "-p",
+      "1",
+      "-o",
+      "/tmp/weaveos-b1-integrated-bff",
+      "./cmd/bff"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-002/services/bff",
+    "env": {
+      "GOTOOLCHAIN": "local",
+      "GOMODCACHE": "/workspace/.weaveos-tools/go-mod",
+      "GOCACHE": "/tmp/weaveos-b1-go-cache",
+      "GOPATH": "/workspace/.weaveos-tools/gopath",
+      "GOFLAGS": "-mod=readonly"
+    },
+    "headBeforeDocumentationCommit": "11ce7269af03ae54e44fc767f13bee1bd94652f7",
+    "taskDocumentSha256": "3f3166dd6ab76ddd131077f9b232a2451c3e0d545933312c7284bbb4f9ff3b7d",
+    "exitCode": 0,
+    "actualPR": {
+      "base": {
+        "ref": "task/V010-021-v030-task-governance",
+        "sha": "5571420c8a50fe41909d75790509b9e5b6b5dbd5"
+      },
+      "draft": true,
+      "head": {
+        "ref": "task/V030-002-application-meta",
+        "sha": "11ce7269af03ae54e44fc767f13bee1bd94652f7"
+      },
+      "number": 23,
+      "state": "open"
+    }
+  }
+]

@@ -1,0 +1,131 @@
+package appmeta_test
+
+import (
+	"errors"
+	"reflect"
+	"testing"
+
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appmeta"
+)
+
+// PRD AP-FR-07 and ADR009 D06: structure only, no records/attachments/secrets;
+// explicit people/permission rebinding and disabled workflows on import.
+// These assertions cover B1's internal projection, not an unapproved wire format.
+func templateSample() appmeta.StructureTemplate {
+	return appmeta.StructureTemplate{
+		Structure: sample(),
+		Workflows: []appmeta.WorkflowReference{{ID: "flow-a", TableID: "table-expense", Enabled: true}, {ID: "flow-b", TableID: "table-expense", Enabled: false}},
+		Bindings:  []appmeta.BindingReference{{Kind: "member", SourceID: "source-person"}, {Kind: "department", SourceID: "source-dept"}, {Kind: "permission", SourceID: "source-permission"}},
+	}
+}
+
+func TestTemplateRejectsBusinessDataSecretsAndUnknownContent(t *testing.T) {
+	for _, kind := range []string{"records", "businessAttachments", "secrets", "credentials", "unknown", ""} {
+		t.Run(kind, func(t *testing.T) {
+			candidate := templateSample()
+			candidate.Sections = []appmeta.TemplateSection{{Kind: kind, Payload: []byte(`{"nested":{"password":"synthetic-secret"}}`)}}
+			requireInvalid(t, appmeta.ValidateStructureTemplate(candidate))
+			preview, err := appmeta.PreviewStructureImport(candidate)
+			requireInvalid(t, err)
+			if !reflect.DeepEqual(preview, appmeta.ImportPreview{}) {
+				t.Fatal("rejected template returned a partial import preview")
+			}
+		})
+	}
+}
+
+func TestTemplateFailsClosedForUnfrozenComponentSchemas(t *testing.T) {
+	for _, kind := range []string{"fields", "layouts", "workflows", "roles"} {
+		t.Run(kind, func(t *testing.T) {
+			candidate := templateSample()
+			candidate.Sections = []appmeta.TemplateSection{{Kind: kind, Payload: []byte(`{"hidden":{"records":[1],"secret":"synthetic-secret"}}`)}}
+			if err := appmeta.ValidateStructureTemplate(candidate); !errors.Is(err, appmeta.ErrTemplateContractRequired) {
+				t.Fatalf("unvalidated component payload must not pass: %v", err)
+			}
+			if _, err := appmeta.PreviewStructureImport(candidate); !errors.Is(err, appmeta.ErrTemplateContractRequired) {
+				t.Fatalf("unvalidated component import must not pass: %v", err)
+			}
+		})
+	}
+}
+
+func TestTemplateValidatesEveryStructuralAndSymbolicReference(t *testing.T) {
+	if err := appmeta.ValidateStructureTemplate(templateSample()); err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name   string
+		change func(*appmeta.StructureTemplate)
+	}{
+		{"directory cycle", func(s *appmeta.StructureTemplate) { s.Structure.Groups[0].ParentID = "g-leaf" }},
+		{"foreign table", func(s *appmeta.StructureTemplate) { s.Structure.Tables[0].ApplicationID = "app-b" }},
+		{"missing workflow ID", func(s *appmeta.StructureTemplate) { s.Workflows[0].ID = "" }},
+		{"duplicate workflow ID", func(s *appmeta.StructureTemplate) { s.Workflows[1].ID = "flow-a" }},
+		{"absent workflow table", func(s *appmeta.StructureTemplate) { s.Workflows[0].TableID = "foreign-table" }},
+		{"missing symbolic binding ID", func(s *appmeta.StructureTemplate) { s.Bindings[0].SourceID = "" }},
+		{"missing symbolic binding kind", func(s *appmeta.StructureTemplate) { s.Bindings[0].Kind = "" }},
+		{"duplicate symbolic binding", func(s *appmeta.StructureTemplate) { s.Bindings = append(s.Bindings, s.Bindings[0]) }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := templateSample()
+			tc.change(&s)
+			requireInvalid(t, appmeta.ValidateStructureTemplate(s))
+		})
+	}
+}
+
+func TestImportPreviewKeepsAllBindingsPendingAndAllWorkflowsDisabled(t *testing.T) {
+	candidate := templateSample()
+	preview, err := appmeta.PreviewStructureImport(candidate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(preview.Structure(), candidate.Structure) {
+		t.Fatal("preview changed stable source references before approved ID remapping")
+	}
+	if !reflect.DeepEqual(preview.UnboundReferences(), candidate.Bindings) {
+		t.Fatal("people/permission references must remain explicitly unbound")
+	}
+	want := []appmeta.ImportedWorkflow{{ID: "flow-a", TableID: "table-expense"}, {ID: "flow-b", TableID: "table-expense"}}
+	if !reflect.DeepEqual(preview.Workflows(), want) {
+		t.Fatalf("all imported workflows must be disabled: %+v", preview.Workflows())
+	}
+	// No binding, activation, runtime or persistence API exists in this package.
+	candidate.Workflows = nil
+	candidate.Bindings = nil
+	withoutBindings, err := appmeta.PreviewStructureImport(candidate)
+	if err != nil || len(withoutBindings.UnboundReferences()) != 0 {
+		t.Fatalf("empty binding requirements: %v", err)
+	}
+}
+
+func TestImportPreviewDoesNotAliasCandidateOrReturnedSnapshots(t *testing.T) {
+	candidate := templateSample()
+	preview, err := appmeta.PreviewStructureImport(candidate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	candidate.Structure.Groups[0].Name = "mutated source"
+	candidate.Structure.Tables[0].ID = "mutated source table"
+	candidate.Structure.Views[0].TableID = "mutated source reference"
+	candidate.Bindings[0].SourceID = "mutated source person"
+	candidate.Workflows[0].Enabled = true
+	structure := preview.Structure()
+	structure.Groups[0].ParentID = "g-leaf"
+	structure.Tables[0].ID = "mutated output table"
+	structure.Views[0].TableID = "mutated output reference"
+	bindings := preview.UnboundReferences()
+	if len(bindings) == 0 {
+		t.Fatal("pending references missing")
+	}
+	bindings[0].SourceID = "mutated output person"
+	workflows := preview.Workflows()
+	if len(workflows) == 0 {
+		t.Fatal("disabled workflow references missing")
+	}
+	workflows[0].Enabled = true
+	if !reflect.DeepEqual(preview.Structure(), sample()) || !reflect.DeepEqual(preview.UnboundReferences(), templateSample().Bindings) || preview.Workflows()[0].Enabled {
+		t.Fatal("preview safety state mutated through aliases")
+	}
+}
