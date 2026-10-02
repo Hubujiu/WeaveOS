@@ -50,3 +50,11 @@ AP-FR-02／B2 PLAN 对应稳定 ID、纯计划、真实物理表、默认／NULL
 现有 `node scripts/verify-repo.mjs` 和 legacy `check-tasks.mjs` 通过，但后者没有验证 V030；显式 `validateTask` 本文件返回 `[TASK] invalid id`，这是 root 共享治理接线阻塞。未改脚本、未开 PR、未合并、未部署。
 
 NOT RUN：全部已有 PG／Redis 产品回归；业务数字精度／时区／枚举与成员部门类型；真实 B1/B3 适配；生产最小 DDL 权限；共享迁移及备份升级恢复；公共 API、前端删除确认和完整幂等／恢复协议；最终远程 CI。已完成仅为本包的可隔离执行器与真实事务证明。
+
+## 2026-10-02 stacked draft integration rerun
+
+The preceding V030-checker/PR status describes the original delivery. Root subsequently supplied explicit user permission for B0 integration and stacked draft PR creation. B0 `15eb85ed17e8227dd3995c4089fba8f3e6b310c2` was merged normally; the B2 source is byte-identical to the original final implementation. Shared governance is inherited from the PR base, not edited by B2.
+
+Fresh cloud rerun: [B2 commands/environment](stacked-b2-runs.json), [42-entry race log](stacked-race.txt), [coverage](stacked-coverage.txt), [full BFF vet](stacked-vet.txt), [full BFF build](stacked-build.txt), [182 governance/foundation tests](stacked-governance.txt), [governance command records](stacked-governance-runs.json), and [temporary fixture cleanup](stacked-cleanup.json). All rerun commands exit 0. The first attempt's read-only default Go cache failure is retained in `stacked-first-env-*`; it is not a behavior RED. Only cache environment changed for the successful rerun.
+
+CI integration remains root-owned: existing Go CI lacks this package's mandatory `WEAVEOS_B2_TEST_DATABASE_URL`, private Unix socket and dedicated temporary DB setup. Tests intentionally fail rather than skip when absent. B2 does not modify shared workflows or the fixture guard. Draft PR metadata and final-head CI observations will be recorded after their actual creation/query. This remains limited package verification, not product acceptance.
