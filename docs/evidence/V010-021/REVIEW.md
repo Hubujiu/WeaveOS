@@ -67,3 +67,14 @@ NOT RUN: final-head GitHub Actions or draft-PR review, actual start --apply,
 remote/local accepted-task cleanup, product DB/API/browser tests, merge or deploy.
 No B0 implementation blocker remains; root owns review and coordinated
 integration/consumption. No claim of main acceptance or production readiness.
+
+## 2026-10-02 draft integration update
+
+Draft PR #22 targets main; its actual number is recorded in V010-021. Current
+source pages were re-read after the user explicitly approved draft creation and
+integration branch pushes. This update changes only task/evidence documentation
+(TDD:N/A), preserves the original RED/GREEN sequence and existing guards, and
+retains an in_progress state pending final-head CI/root review. Local commands
+and results are in `integration-runs.json`; final CI is evaluated on the pushed
+PR head. B1 consumption is an ordinary merge on its own branch, with B0 as its
+review base. Main merge, deployment and acceptance/cleanup remain unauthorized.
