@@ -73,13 +73,3 @@ var ErrInvalid = errors.New("invalid application metadata")
 type Reader interface {
 	LoadStructure(context.Context, ID) (Structure, error)
 }
-
-// No-behavior declarations allow tests to reach invariant assertions during RED.
-func ValidateCatalog(Catalog) error     { return nil }
-func ValidateStructure(Structure) error { return nil }
-func ReadStructure(ctx context.Context, reader Reader, appID ID) (Structure, error) {
-	if reader == nil {
-		return Structure{}, nil
-	}
-	return reader.LoadStructure(ctx, appID)
-}
