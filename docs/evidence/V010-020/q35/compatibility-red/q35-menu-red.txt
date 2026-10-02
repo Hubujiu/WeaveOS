@@ -1,0 +1,44 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:63124) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:54936) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:63852) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\personnel-arca.component.spec.ts:175:1 › Q35 sorting menu stays open during its own scrolling and closes on table scrolling (3.6s)
+
+
+  1) [chromium] › apps\web\src\personnel-arca.component.spec.ts:175:1 › Q35 sorting menu stays open during its own scrolling and closes on table scrolling
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  locator('.member-table').getByRole('button', { name: '筛选 成员', exact: true })
+    Expected: "true"
+    Received: "false"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toHaveAttribute" locator('.member-table').getByRole('button', { name: '筛选 成员', exact: true }) with timeout 1500ms
+      - waiting for locator('.member-table').getByRole('button', { name: '筛选 成员', exact: true })
+        16 × locator resolved to <button id="_r_4_" type="button" aria-label="筛选 成员" aria-haspopup="menu" aria-expanded="false" class="relative z-30 mr-1.5 grid size-6 shrink-0 place-items-center rounded-md transition-all duration-150 opacity-0 text-muted-foreground/70 hover:bg-muted hover:text-foreground group-hover:opacity-100 group-focus-within:opacity-100">…</button>
+           - unexpected value "false"
+
+
+      181 |   await expect(menu).toBeVisible();
+      182 |   await menu.dispatchEvent('scroll');
+    > 183 |   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+          |                         ^
+      184 |   await menu.getByRole('menuitem', { name: '升序', exact: true }).click();
+      185 |   await expect(table.locator('tbody tr[data-row-id] .member-name strong')).toHaveText(['Alpha1', 'Bravo2', 'Zulu0']);
+      186 |   await trigger.click();
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel-arca.component.spec.ts:183:25
+
+    Error Context: .work\q35-results\personnel-arca.component-Q-b657a-d-closes-on-table-scrolling-chromium\error-context.md
+
+  1 failed
+    [chromium] › apps\web\src\personnel-arca.component.spec.ts:175:1 › Q35 sorting menu stays open during its own scrolling and closes on table scrolling

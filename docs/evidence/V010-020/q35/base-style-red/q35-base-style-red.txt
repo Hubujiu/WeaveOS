@@ -1,0 +1,44 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:64572) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:62880) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:63748) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\personnel-arca-keyboard.component.spec.ts:34:1 › Q35 original base foreground and smoothing are scoped to the table (7.1s)
+
+
+  1) [chromium] › apps\web\src\personnel-arca-keyboard.component.spec.ts:34:1 › Q35 original base foreground and smoothing are scoped to the table
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.member-table .personnel-source-table')
+    Expected: "oklch(0.145 0 0)"
+    Received: "rgb(16, 32, 68)"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" locator('.member-table .personnel-source-table') with timeout 5000ms
+      - waiting for locator('.member-table .personnel-source-table')
+        14 × locator resolved to <div class="flex w-full flex-col overflow-hidden border border-border bg-background text-sm personnel-source-table rounded-xl">…</div>
+           - unexpected value "rgb(16, 32, 68)"
+
+
+      43 |   await page.goto('/app/admin');
+      44 |   const table = page.locator('.member-table .personnel-source-table');
+    > 45 |   await expect(table).toHaveCSS('color', 'oklch(0.145 0 0)');
+         |                       ^
+      46 |   await expect(page.getByRole('button', { name: 'Page 2', exact: true })).toHaveCSS('color', 'oklch(0.145 0 0)');
+      47 |   if (await page.evaluate(() => CSS.supports('-webkit-font-smoothing', 'antialiased'))) {
+      48 |     expect(await table.evaluate(n => getComputedStyle(n).getPropertyValue('-webkit-font-smoothing'))).toBe('antialiased');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel-arca-keyboard.component.spec.ts:45:23
+
+    Error Context: .work\q35-font-results\personnel-arca-keyboard.co-9cd3b-ing-are-scoped-to-the-table-chromium\error-context.md
+
+  1 failed
+    [chromium] › apps\web\src\personnel-arca-keyboard.component.spec.ts:34:1 › Q35 original base foreground and smoothing are scoped to the table

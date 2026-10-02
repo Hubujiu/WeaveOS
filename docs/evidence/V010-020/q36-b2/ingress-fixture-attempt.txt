@@ -1,0 +1,77 @@
+TAP version 13
+# Subtest: fixed actual Nginx config/version unchanged and small canonical Chinese query crosses the old URI-sized budget
+not ok 1 - fixed actual Nginx config/version unchanged and small canonical Chinese query crosses the old URI-sized budget
+  ---
+  duration_ms: 391.2862
+  type: 'test'
+  location: 'D:\\Data\\Codex\\2026-10-01\\task\\pr21-frontend-isolated\\docs\\evidence\\V010-020\\q36-b2\\ingress-boundaries.test.mjs:41:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /^nginx:1\.30\.5@sha256:b972f831f200b19ef0767938224f9711e74cd783718738cd7405d5cabf75c442$/. Input:
+
+    'nginx:1.30.5'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: 'nginx:1.30.5'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Data/Codex/2026-10-01/task/pr21-frontend-isolated/docs/evidence/V010-020/q36-b2/ingress-boundaries.test.mjs:44:118)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: both POST query routes independently accept raw 64KiB and reject 64KiB+1
+ok 2 - both POST query routes independently accept raw 64KiB and reject 64KiB+1
+  ---
+  duration_ms: 103.9688
+  type: 'test'
+  ...
+# Subtest: filter canonical 16KiB is inclusive independently of query raw spelling and whitespace
+ok 3 - filter canonical 16KiB is inclusive independently of query raw spelling and whitespace
+  ---
+  duration_ms: 16.3235
+  type: 'test'
+  ...
+# Subtest: draft create/update raw 128KiB is inclusive and rejected oversized writes retain the saved version
+ok 4 - draft create/update raw 128KiB is inclusive and rejected oversized writes retain the saved version
+  ---
+  duration_ms: 130.1858
+  type: 'test'
+  ...
+# Subtest: draft canonical Chinese payload 64KiB accepts its wrapper and rejects +1 below the raw cap
+not ok 5 - draft canonical Chinese payload 64KiB accepts its wrapper and rejects +1 below the raw cap
+  ---
+  duration_ms: 3.7882
+  type: 'test'
+  location: 'D:\\Data\\Codex\\2026-10-01\\task\\pr21-frontend-isolated\\docs\\evidence\\V010-020\\q36-b2\\ingress-boundaries.test.mjs:70:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+
+      assert.ok(room>=0&&room<=160)
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    payload (file:///D:/Data/Codex/2026-10-01/task/pr21-frontend-isolated/docs/evidence/V010-020/q36-b2/ingress-boundaries.test.mjs:36:66)
+    TestContext.<anonymous> (file:///D:/Data/Codex/2026-10-01/task/pr21-frontend-isolated/docs/evidence/V010-020/q36-b2/ingress-boundaries.test.mjs:71:14)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 3
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 728.7969

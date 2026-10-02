@@ -1,0 +1,49 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:68340) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:64368) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:59344) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\personnel-arca-theme.component.spec.ts:5:1 › Q35 original dark variant leaves the light pager unchanged without a dark class (7.0s)
+
+
+  1) [chromium] › apps\web\src\personnel-arca-theme.component.spec.ts:5:1 › Q35 original dark variant leaves the light pager unchanged without a dark class
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  getByRole('button', { name: 'Page 1', exact: true })
+    Expected: "oklch(1 0 0)"
+    Received: "oklab(0.922 0 0 / 0.3)"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" getByRole('button', { name: 'Page 1', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: 'Page 1', exact: true })
+        - locator resolved to <button tabindex="0" type="button" data-slot="button" aria-label="Page 1" aria-current="page" class="group/button inline-flex shrink-0 items-center justify-center border bg-clip-padding font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 …>1</button>
+        - unexpected value "oklab(1 0 0)"
+        - locator resolved to <button tabindex="0" type="button" data-slot="button" aria-label="Page 1" aria-current="page" class="group/button inline-flex shrink-0 items-center justify-center border bg-clip-padding font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 …>1</button>
+        - unexpected value "oklab(0.999207 0 0 / 0.976828)"
+        - locator resolved to <button tabindex="0" type="button" data-slot="button" aria-label="Page 1" aria-current="page" class="group/button inline-flex shrink-0 items-center justify-center border bg-clip-padding font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 …>1</button>
+        - unexpected value "oklab(0.952628 0 0 / 0.413716)"
+        11 × locator resolved to <button tabindex="0" type="button" data-slot="button" aria-label="Page 1" aria-current="page" class="group/button inline-flex shrink-0 items-center justify-center border bg-clip-padding font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 …>1</button>
+           - unexpected value "oklab(0.922 0 0 / 0.3)"
+
+
+      17 |   await page.emulateMedia({ colorScheme: 'dark' });
+      18 |   await expect(page.locator('.dark')).toHaveCount(0);
+    > 19 |   await expect(current).toHaveCSS('background-color', 'oklch(1 0 0)');
+         |                         ^
+      20 | });
+      21 |
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel-arca-theme.component.spec.ts:19:25
+
+    Error Context: .work\q35-font-results\personnel-arca-theme.compo-64a9f-hanged-without-a-dark-class-chromium\error-context.md
+
+  1 failed
+    [chromium] › apps\web\src\personnel-arca-theme.component.spec.ts:5:1 › Q35 original dark variant leaves the light pager unchanged without a dark class

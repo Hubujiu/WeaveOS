@@ -115,6 +115,12 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - name: Q36 pure filters and B1 B2 component regressions
+        run: |
+          node apps/web/src/q36-front-filter.test.mjs
+          pnpm exec playwright test --config docs/evidence/V010-020/q36-b2/components.config.ts 'q36-front-|q36-b2\.component' --output test-results/q36-components
+      - name: Saved filter manager browser regressions
+        run: pnpm exec playwright test --config docs/evidence/V010-020/filter-manager/frontend/components.config.ts --output test-results/filter-manager
       - name: Real browser to Go BFF smoke
         run: pnpm exec playwright test tests/e2e
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4

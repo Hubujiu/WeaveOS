@@ -1,0 +1,47 @@
+import {test,expect,type Page,type Route} from '@playwright/test';
+
+const id='00000000-0000-4000-8000-000000000001';
+const identityId='00000000-0000-4000-8000-000000000002';
+const draftId='00000000-0000-4000-8000-000000000009';
+const user={id,account:'q36-admin'};
+const member={...user,status:'active',bootstrapAdmin:true,version:0,departmentIds:[],identityIds:[],departments:[],identities:[],permissions:[]};
+const identity={id:identityId,name:'测试身份',description:'原说明',version:1,templateIds:[],permissionCodes:[],affectedMembers:0,affectedIdentities:0};
+const envelope=(data:unknown)=>({code:'OK',message:'success',data,meta:null});
+const paging=(items:unknown[],input:{page?:number;pageSize?:number}={})=>({items,total:100,page:input.page??1,pageSize:input.pageSize??20,queryVersion:'context-'+(input.page??1),sort:null});
+async function fixture(page:Page){
+ await page.route('**/api/v1/**',async r=>{
+  const path=new URL(r.request().url()).pathname.replace('/api/v1/','');
+  const data=path==='sessions/current'?user:path==='me/access'?{user,bootstrapAdmin:true,personnelManage:true,identities:[],permissions:[],applications:[]}:
+   path==='personnel/departments'?{items:[]}:path==='personnel/permissions'?{items:[]}:
+   path==='personnel/identities'?{items:[identity],total:1,page:1,pageSize:20}:path==='personnel/identities/'+identityId?identity:
+   path==='personnel/templates'?{items:[],total:0,page:1,pageSize:20}:path==='personnel/members/'+id?member:
+   path==='personnel/members'||path==='personnel/members/search'?paging([member]):
+   path==='personnel/events'||path==='personnel/events/search'?{...paging([]),range:{from:'2026-09-24T00:00:00Z',to:'2026-10-02T00:00:00Z'}}:
+   path==='personnel/drafts'?{items:[]}:{};
+  await r.fulfill({json:envelope(data)});
+ });
+}
+async function admin(page:Page){await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
+async function condition(page:Page){
+ await page.getByRole('button',{name:'自定义筛选',exact:true}).click();
+ const panel=page.getByRole('dialog',{name:'自定义筛选',exact:true});await expect(panel).toBeVisible();
+ await panel.getByRole('button',{name:'组 1 添加条件',exact:true}).click();
+ await panel.locator('.q36-filter-condition input').first().fill('q36-admin');
+ await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+}
+
+
+test('trusted press spanning disappearing indeterminate mark',async({page})=>{
+ await page.addInitScript(()=>{const log:any[]=[];(window as any).__markProbe=log;for(const type of ['pointerdown','pointerup','mousedown','mouseup','click'])document.addEventListener(type,e=>{const target=e.target as Element;if(target.closest?.('[aria-label="选择当前页成员"]'))log.push({at:performance.now(),type,target:target.tagName,trusted:e.isTrusted});},true);});
+ await fixture(page);const other={...member,id:identityId,account:'other-visible-member'};
+ await page.route('**/personnel/members/search',r=>{const input=r.request().postDataJSON();return r.fulfill({json:envelope({...paging(input.filter?[member]:[member,other],input),total:input.filter?1:2})});});
+ await admin(page);await page.getByLabel('选择成员：other-visible-member',{exact:true}).check();
+ const all=page.getByLabel('选择当前页成员',{exact:true});const box=(await all.boundingBox())!;
+ await page.getByRole('button',{name:'自定义筛选',exact:true}).click();const panel=page.getByRole('dialog',{name:'自定义筛选',exact:true});await expect(panel).toBeVisible();
+ await panel.getByRole('button',{name:'组 1 添加条件',exact:true}).click();await panel.locator('.q36-filter-condition input').fill('q36-admin');
+ await panel.getByRole('button',{name:'应用筛选',exact:true}).focus();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.keyboard.press('Enter');
+ await page.waitForFunction(()=>{const table=document.querySelector('.member-table table'),all=document.querySelector('[aria-label="选择当前页成员"]');return table?.getAttribute('aria-busy')==='false'&&!!document.querySelector('[aria-label="选择成员：q36-admin"]')&&!document.querySelector('[aria-label="选择成员：other-visible-member"]')&&!!all?.querySelector('svg');});
+ await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+ console.log('MARK_PROBE '+JSON.stringify(await page.evaluate(()=>(window as any).__markProbe)));
+ await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();
+});

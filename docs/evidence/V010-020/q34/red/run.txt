@@ -1,0 +1,594 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:64956) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+
+[WebServer] (node:54744) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 9 tests using 1 worker
+
+
+(node:56576) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/9] [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 成员与部门
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 成员与部门 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.member-table')
+    Expected: "14px"
+    Received: "16px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.member-table') with timeout 1500ms
+      - waiting for locator('.member-table')
+        16 × locator resolved to <section class="member-table surface">…</section>
+           - unexpected value "16px"
+
+
+      29 |  await page.goto('/app/admin');if(tab!=='成员与部门')await page.getByRole('tab',{name:tab,exact:true}).click();
+      30 |  const area=page.locator(root),table=area.getByRole('table');await expect(table).toHaveCount(1);
+    > 31 |  await expect.soft(area).toHaveCSS('border-radius','14px');await expect.soft(area).toHaveCSS('border-top-width','1px');
+         |                          ^
+      32 |  const header=table.locator('th').first(),cell=table.locator('tbody td').last();
+      33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:31:26
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 40
+    Received: 44
+
+    Expected precision:    0
+    Expected difference: < 0.5
+    Received difference:   4
+
+      31 |  await expect.soft(area).toHaveCSS('border-radius','14px');await expect.soft(area).toHaveCSS('border-top-width','1px');
+      32 |  const header=table.locator('th').first(),cell=table.locator('tbody td').last();
+    > 33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+         |                                                    ^
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+      35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+      36 |  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:33:52
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 40
+    Received: 64
+
+    Expected precision:    0
+    Expected difference: < 0.5
+    Received difference:   24
+
+      32 |  const header=table.locator('th').first(),cell=table.locator('tbody td').last();
+      33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+    > 34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+         |                                                                               ^
+      35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+      36 |  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
+      37 |  await expect(area.locator('.table-scroll')).toHaveCSS('max-height','360px');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:34:79
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.member-table').getByRole('table').locator('th').first()
+    Expected: "14px"
+    Received: "12px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.member-table').getByRole('table').locator('th').first() with timeout 1500ms
+      - waiting for locator('.member-table').getByRole('table').locator('th').first()
+        16 × locator resolved to <th class="member-selector">…</th>
+           - unexpected value "12px"
+
+
+      33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+    > 35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+         |                            ^
+      36 |  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
+      37 |  await expect(area.locator('.table-scroll')).toHaveCSS('max-height','360px');
+      38 |  await expect(table.locator('th[aria-sort]')).toHaveCount(0);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:35:28
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.member-table').getByRole('table').locator('th').first()
+    Expected: "500"
+    Received: "400"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.member-table').getByRole('table').locator('th').first() with timeout 1500ms
+      - waiting for locator('.member-table').getByRole('table').locator('th').first()
+        16 × locator resolved to <th class="member-selector">…</th>
+           - unexpected value "400"
+
+
+      33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+    > 35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+         |                                                                                                                                              ^
+      36 |  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
+      37 |  await expect(area.locator('.table-scroll')).toHaveCSS('max-height','360px');
+      38 |  await expect(table.locator('th[aria-sort]')).toHaveCount(0);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:35:142
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.member-table').getByRole('table').locator('tbody td').last()
+    Expected: "20px"
+    Received: "22px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.member-table').getByRole('table').locator('tbody td').last() with timeout 1500ms
+      - waiting for locator('.member-table').getByRole('table').locator('tbody td').last()
+        16 × locator resolved to <td>…</td>
+           - unexpected value "22px"
+
+
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+      35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+    > 36 |  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
+         |                          ^
+      37 |  await expect(area.locator('.table-scroll')).toHaveCSS('max-height','360px');
+      38 |  await expect(table.locator('th[aria-sort]')).toHaveCount(0);
+      39 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:36:26
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.member-table').getByRole('table')
+    Expected: "fixed"
+    Received: "auto"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.member-table').getByRole('table') with timeout 1500ms
+      - waiting for locator('.member-table').getByRole('table')
+        16 × locator resolved to <table>…</table>
+           - unexpected value "auto"
+
+
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+      35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+    > 36 |  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
+         |                                                                                   ^
+      37 |  await expect(area.locator('.table-scroll')).toHaveCSS('max-height','360px');
+      38 |  await expect(table.locator('th[aria-sort]')).toHaveCount(0);
+      39 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:36:83
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.member-table').locator('.table-scroll')
+    Expected: "360px"
+    Received: "none"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toHaveCSS" locator('.member-table').locator('.table-scroll') with timeout 1500ms
+      - waiting for locator('.member-table').locator('.table-scroll')
+        16 × locator resolved to <div class="table-scroll">…</div>
+           - unexpected value "none"
+
+
+      35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+      36 |  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
+    > 37 |  await expect(area.locator('.table-scroll')).toHaveCSS('max-height','360px');
+         |                                              ^
+      38 |  await expect(table.locator('th[aria-sort]')).toHaveCount(0);
+      39 | });
+      40 |
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:37:46
+
+    Error Context: .work\q34-results\personnel.component-Q34-Ar-1e173--and-readable-rows-on-成员与部门-chromium\error-context.md
+
+
+(node:61228) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[2/9] [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 身份
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 身份 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.identity-table').getByRole('table')
+    Expected: 1
+    Received: 0
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toHaveCount" locator('.identity-table').getByRole('table') with timeout 1500ms
+      - waiting for locator('.identity-table').getByRole('table')
+        17 × locator resolved to 0 elements
+           - unexpected value "0"
+
+
+      28 |  await page.route('**/api/v1/personnel/events?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([{id:user.id,occurredAt:'2026-10-01T02:00:00Z',actorAccount:user.account,action:'IDENTITY_UPDATED',objectType:'identity',objectId:identity.id,summary:{before:{name:'旧身份'},after:{name:identity.name}},outcome:'success'}]),meta:null}}));
+      29 |  await page.goto('/app/admin');if(tab!=='成员与部门')await page.getByRole('tab',{name:tab,exact:true}).click();
+    > 30 |  const area=page.locator(root),table=area.getByRole('table');await expect(table).toHaveCount(1);
+         |                                                                                  ^
+      31 |  await expect.soft(area).toHaveCSS('border-radius','14px');await expect.soft(area).toHaveCSS('border-top-width','1px');
+      32 |  const header=table.locator('th').first(),cell=table.locator('tbody td').last();
+      33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:30:82
+
+    Error Context: .work\q34-results\personnel.component-Q34-Ar-6db54-try-and-readable-rows-on-身份-chromium\error-context.md
+
+
+
+(node:52528) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[3/9] [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 操作记录
+  3) [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 操作记录 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.activity-table')
+    Expected: "14px"
+    Received: "16px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.activity-table') with timeout 1500ms
+      - waiting for locator('.activity-table')
+        16 × locator resolved to <section class="activity-table surface">…</section>
+           - unexpected value "16px"
+
+
+      29 |  await page.goto('/app/admin');if(tab!=='成员与部门')await page.getByRole('tab',{name:tab,exact:true}).click();
+      30 |  const area=page.locator(root),table=area.getByRole('table');await expect(table).toHaveCount(1);
+    > 31 |  await expect.soft(area).toHaveCSS('border-radius','14px');await expect.soft(area).toHaveCSS('border-top-width','1px');
+         |                          ^
+      32 |  const header=table.locator('th').first(),cell=table.locator('tbody td').last();
+      33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:31:26
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 40
+    Received: 44
+
+    Expected precision:    0
+    Expected difference: < 0.5
+    Received difference:   4
+
+      31 |  await expect.soft(area).toHaveCSS('border-radius','14px');await expect.soft(area).toHaveCSS('border-top-width','1px');
+      32 |  const header=table.locator('th').first(),cell=table.locator('tbody td').last();
+    > 33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+         |                                                    ^
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+      35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+      36 |  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:33:52
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 40
+    Received: 68
+
+    Expected precision:    0
+    Expected difference: < 0.5
+    Received difference:   28
+
+      32 |  const header=table.locator('th').first(),cell=table.locator('tbody td').last();
+      33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+    > 34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+         |                                                                               ^
+      35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+      36 |  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
+      37 |  await expect(area.locator('.table-scroll')).toHaveCSS('max-height','360px');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:34:79
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.activity-table').getByRole('table').locator('th').first()
+    Expected: "14px"
+    Received: "12px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.activity-table').getByRole('table').locator('th').first() with timeout 1500ms
+      - waiting for locator('.activity-table').getByRole('table').locator('th').first()
+        16 × locator resolved to <th>时间</th>
+           - unexpected value "12px"
+
+
+      33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+    > 35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+         |                            ^
+      36 |  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
+      37 |  await expect(area.locator('.table-scroll')).toHaveCSS('max-height','360px');
+      38 |  await expect(table.locator('th[aria-sort]')).toHaveCount(0);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:35:28
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.activity-table').getByRole('table').locator('th').first()
+    Expected: "500"
+    Received: "400"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.activity-table').getByRole('table').locator('th').first() with timeout 1500ms
+      - waiting for locator('.activity-table').getByRole('table').locator('th').first()
+        16 × locator resolved to <th>时间</th>
+           - unexpected value "400"
+
+
+      33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+    > 35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+         |                                                                                                                                              ^
+      36 |  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
+      37 |  await expect(area.locator('.table-scroll')).toHaveCSS('max-height','360px');
+      38 |  await expect(table.locator('th[aria-sort]')).toHaveCount(0);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:35:142
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.activity-table').getByRole('table')
+    Expected: "fixed"
+    Received: "auto"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.activity-table').getByRole('table') with timeout 1500ms
+      - waiting for locator('.activity-table').getByRole('table')
+        16 × locator resolved to <table>…</table>
+           - unexpected value "auto"
+
+
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+      35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+    > 36 |  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
+         |                                                                                   ^
+      37 |  await expect(area.locator('.table-scroll')).toHaveCSS('max-height','360px');
+      38 |  await expect(table.locator('th[aria-sort]')).toHaveCount(0);
+      39 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:36:83
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.activity-table').locator('.table-scroll')
+    Expected: "360px"
+    Received: "none"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toHaveCSS" locator('.activity-table').locator('.table-scroll') with timeout 1500ms
+      - waiting for locator('.activity-table').locator('.table-scroll')
+        16 × locator resolved to <div class="table-scroll">…</div>
+           - unexpected value "none"
+
+
+      35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+      36 |  await expect.soft(cell).toHaveCSS('line-height','20px');await expect.soft(table).toHaveCSS('table-layout','fixed');
+    > 37 |  await expect(area.locator('.table-scroll')).toHaveCSS('max-height','360px');
+         |                                              ^
+      38 |  await expect(table.locator('th[aria-sort]')).toHaveCount(0);
+      39 | });
+      40 |
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:37:46
+
+    Error Context: .work\q34-results\personnel.component-Q34-Ar-7af81-y-and-readable-rows-on-操作记录-chromium\error-context.md
+
+
+(node:53212) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[4/9] [chromium] › apps\web\src\personnel.component.spec.ts:41:1 › Q34 page selection exposes mixed state without writing and shows selected rows
+  4) [chromium] › apps\web\src\personnel.component.spec.ts:41:1 › Q34 page selection exposes mixed state without writing and shows selected rows 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      44 |  let writes=0;page.on('request',r=>{if(r.url().includes('/api/v1/')&&!['GET','HEAD'].includes(r.method()))writes++;});
+      45 |  await page.getByLabel('选择成员：'+user.account,{exact:true}).check();
+    > 46 |  const all=page.getByLabel('选择当前页成员',{exact:true});expect.soft(await all.evaluate(n=>(n as HTMLInputElement).indeterminate)).toBe(true);
+         |                                                                                                                              ^
+      47 |  const row=page.getByRole('row').filter({hasText:user.account});await expect.soft(row).toHaveAttribute('aria-selected','true');
+      48 |  await all.check();await expect(page.getByLabel('选择成员：synthetic-second',{exact:true})).toBeChecked();await all.uncheck();await expect(page.getByLabel('选择成员：'+user.account,{exact:true})).not.toBeChecked();expect(writes).toBe(0);
+      49 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:46:126
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  getByRole('row').filter({ hasText: 'synthetic-admin' })
+    Expected: "true"
+    Received: ""
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveAttribute" getByRole('row').filter({ hasText: 'synthetic-admin' }) with timeout 1500ms
+      - waiting for getByRole('row').filter({ hasText: 'synthetic-admin' })
+        16 × locator resolved to <tr>…</tr>
+           - unexpected value "null"
+
+
+      45 |  await page.getByLabel('选择成员：'+user.account,{exact:true}).check();
+      46 |  const all=page.getByLabel('选择当前页成员',{exact:true});expect.soft(await all.evaluate(n=>(n as HTMLInputElement).indeterminate)).toBe(true);
+    > 47 |  const row=page.getByRole('row').filter({hasText:user.account});await expect.soft(row).toHaveAttribute('aria-selected','true');
+         |                                                                                        ^
+      48 |  await all.check();await expect(page.getByLabel('选择成员：synthetic-second',{exact:true})).toBeChecked();await all.uncheck();await expect(page.getByLabel('选择成员：'+user.account,{exact:true})).not.toBeChecked();expect(writes).toBe(0);
+      49 | });
+      50 |
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:47:88
+
+    Error Context: .work\q34-results\personnel.component-Q34-pa-90b51-ing-and-shows-selected-rows-chromium\error-context.md
+
+
+
+(node:64660) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[5/9] [chromium] › apps\web\src\personnel.component.spec.ts:51:1 › Q34 identity table preserves edit entry, shared fields and unsaved switch protection
+  5) [chromium] › apps\web\src\personnel.component.spec.ts:51:1 › Q34 identity table preserves edit entry, shared fields and unsaved switch protection 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.identity-table').getByRole('table')
+    Expected: 1
+    Received: 0
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toHaveCount" locator('.identity-table').getByRole('table') with timeout 1500ms
+      - waiting for locator('.identity-table').getByRole('table')
+        17 × locator resolved to 0 elements
+           - unexpected value "0"
+
+
+      52 |  await fixture(page);const another={...identity,id:'00000000-0000-4000-8000-000000000098',name:'财务身份',description:'独立示例说明'};
+      53 |  await page.route('**/api/v1/personnel/identities?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([identity,another]),meta:null}}));await page.goto('/app/admin');await page.getByRole('tab',{name:'身份',exact:true}).click();
+    > 54 |  const table=page.locator('.identity-table').getByRole('table');await expect(table).toHaveCount(1);await expect(table.getByRole('columnheader')).toHaveText(['身份','说明','使用成员','直接权限']);
+         |                                                                                     ^
+      55 |  await table.getByRole('button',{name:identity.name,exact:true}).focus();await page.keyboard.press('Enter');await page.getByLabel('说明',{exact:true}).fill('未保存说明');
+      56 |  await table.getByRole('button',{name:another.name,exact:true}).click();await expect(page.getByRole('dialog',{name:'有未保存的修改',exact:true})).toBeVisible();await page.getByRole('button',{name:'继续编辑',exact:true}).click();
+      57 |  await expect(page.getByLabel('说明',{exact:true})).toHaveValue('未保存说明');await expect(table.getByRole('row').filter({hasText:identity.name})).toHaveAttribute('aria-selected','true');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:54:85
+
+    Error Context: .work\q34-results\personnel.component-Q34-id-b1c88-d-unsaved-switch-protection-chromium\error-context.md
+
+
+(node:62148) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[6/9] [chromium] › apps\web\src\personnel.component.spec.ts:61:31 › Q34 dense table keeps sticky header and both scroll axes at 1920
+  6) [chromium] › apps\web\src\personnel.component.spec.ts:61:31 › Q34 dense table keeps sticky header and both scroll axes at 1920 
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 399
+    Received: 199
+
+    Expected precision:    0
+    Expected difference: < 0.5
+    Received difference:   200
+
+      64 |  await page.route('**/api/v1/personnel/members?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list(rows),meta:null}}));await page.goto('/app/admin');
+      65 |  const scroll=page.locator('.member-table .table-scroll');await scroll.scrollIntoViewIfNeeded();expect(await scroll.evaluate(n=>n.scrollHeight>n.clientHeight)).toBe(true);
+    > 66 |  const th=scroll.locator('th').first(),start=(await th.boundingBox())!.y;await scroll.evaluate(n=>{n.scrollTop=200;});expect((await th.boundingBox())!.y).toBeCloseTo(start,0);await expect(th).toHaveCSS('position','sticky');
+         |                                                                                                                                                           ^
+      67 |  if(width===320){await scroll.evaluate(n=>{n.scrollLeft=n.scrollWidth;});expect(await scroll.evaluate(n=>n.scrollLeft)).toBeGreaterThan(0);await expect(page.getByRole('button',{name:'配置身份',exact:true}).first()).toBeInViewport();}
+      68 |  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+      69 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:66:155
+
+    Error Context: .work\q34-results\personnel.component-Q34-de-41485-nd-both-scroll-axes-at-1920-chromium\error-context.md
+
+
+
+(node:58752) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[7/9] [chromium] › apps\web\src\personnel.component.spec.ts:61:31 › Q34 dense table keeps sticky header and both scroll axes at 320
+  7) [chromium] › apps\web\src\personnel.component.spec.ts:61:31 › Q34 dense table keeps sticky header and both scroll axes at 320 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      63 |  const rows=Array.from({length:20},(_,i)=>({...member,id:'row-'+i,account:'synthetic-row-'+i}));
+      64 |  await page.route('**/api/v1/personnel/members?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list(rows),meta:null}}));await page.goto('/app/admin');
+    > 65 |  const scroll=page.locator('.member-table .table-scroll');await scroll.scrollIntoViewIfNeeded();expect(await scroll.evaluate(n=>n.scrollHeight>n.clientHeight)).toBe(true);
+         |                                                                                                                                                                 ^
+      66 |  const th=scroll.locator('th').first(),start=(await th.boundingBox())!.y;await scroll.evaluate(n=>{n.scrollTop=200;});expect((await th.boundingBox())!.y).toBeCloseTo(start,0);await expect(th).toHaveCSS('position','sticky');
+      67 |  if(width===320){await scroll.evaluate(n=>{n.scrollLeft=n.scrollWidth;});expect(await scroll.evaluate(n=>n.scrollLeft)).toBeGreaterThan(0);await expect(page.getByRole('button',{name:'配置身份',exact:true}).first()).toBeInViewport();}
+      68 |  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:65:161
+
+    Error Context: .work\q34-results\personnel.component-Q34-de-a633e-and-both-scroll-axes-at-320-chromium\error-context.md
+
+
+
+(node:56236) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[8/9] [chromium] › apps\web\src\personnel.component.spec.ts:71:1 › Q34 identity empty state retains table headings and reduced motion disables row transitions
+  8) [chromium] › apps\web\src\personnel.component.spec.ts:71:1 › Q34 identity empty state retains table headings and reduced motion disables row transitions 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.identity-table').getByRole('table')
+    Expected: 1
+    Received: 0
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toHaveCount" locator('.identity-table').getByRole('table') with timeout 1500ms
+      - waiting for locator('.identity-table').getByRole('table')
+        17 × locator resolved to 0 elements
+           - unexpected value "0"
+
+
+      71 | test('Q34 identity empty state retains table headings and reduced motion disables row transitions',async({page})=>{
+      72 |  await page.emulateMedia({reducedMotion:'reduce'});await fixture(page);await page.route('**/api/v1/personnel/identities?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list([]),meta:null}}));await page.goto('/app/admin');await page.getByRole('tab',{name:'身份',exact:true}).click();
+    > 73 |  const table=page.locator('.identity-table').getByRole('table');await expect(table).toHaveCount(1);await expect(table.getByRole('columnheader')).toHaveCount(4);await expect(table).toContainText('暂无身份');
+         |                                                                                     ^
+      74 |  await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await expect(page.locator('.member-table tbody tr').first()).toHaveCSS('transition-duration','0s');
+      75 | });
+      76 |
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:73:85
+
+    Error Context: .work\q34-results\personnel.component-Q34-id-7d0e1-on-disables-row-transitions-chromium\error-context.md
+
+
+
+(node:56848) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[9/9] [chromium] › apps\web\src\personnel.component.spec.ts:544:1 › Q34 member table keeps confirmed column geometry and page selection never sends a write
+  9) [chromium] › apps\web\src\personnel.component.spec.ts:544:1 › Q34 member table keeps confirmed column geometry and page selection never sends a write 
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 48
+    Received: 52
+
+    Expected precision:    0
+    Expected difference: < 0.5
+    Received difference:   4
+
+      544 | test('Q34 member table keeps confirmed column geometry and page selection never sends a write',async({page})=>{
+      545 |  await page.setViewportSize({width:1920,height:1080});await admin(page);const th=page.locator('.member-table th');
+    > 546 |  for(const [index,width] of [[0,48],[2,176],[3,216],[4,136],[5,192]])expect((await th.nth(index).boundingBox())!.width).toBeCloseTo(width,0);
+          |                                                                                                                         ^
+      547 |  let writes=0;page.on('request',request=>{if(request.url().includes('/api/v1/')&&!['GET','HEAD'].includes(request.method()))writes++;});
+      548 |  const select=page.getByLabel('选择成员：'+user.account,{exact:true});await select.check();await expect(page.getByLabel('选择当前页成员',{exact:true})).toBeChecked();await page.getByLabel('选择当前页成员',{exact:true}).uncheck();await expect(select).not.toBeChecked();expect(writes).toBe(0);
+      549 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:546:121
+
+    Error Context: .work\q34-results\personnel.component-Q34-me-c6654-lection-never-sends-a-write-chromium\error-context.md
+
+
+  9 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 成员与部门 
+    [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 身份 
+    [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 操作记录 
+    [chromium] › apps\web\src\personnel.component.spec.ts:41:1 › Q34 page selection exposes mixed state without writing and shows selected rows 
+    [chromium] › apps\web\src\personnel.component.spec.ts:51:1 › Q34 identity table preserves edit entry, shared fields and unsaved switch protection 
+    [chromium] › apps\web\src\personnel.component.spec.ts:61:31 › Q34 dense table keeps sticky header and both scroll axes at 1920 
+    [chromium] › apps\web\src\personnel.component.spec.ts:61:31 › Q34 dense table keeps sticky header and both scroll axes at 320 
+    [chromium] › apps\web\src\personnel.component.spec.ts:71:1 › Q34 identity empty state retains table headings and reduced motion disables row transitions 
+    [chromium] › apps\web\src\personnel.component.spec.ts:544:1 › Q34 member table keeps confirmed column geometry and page selection never sends a write

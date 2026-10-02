@@ -1,0 +1,18 @@
+{
+  "base": "65bdc8f26a6d4c479cc9bfd29fe2593e42019737",
+  "command": "go -C services/bff test -race -p 1 -timeout 90s -count=1 ./internal/personnel -run TestQ36(HTTPRequiredWriteQueryVersion|HTTPWriteQueryRelatedUnrelatedAndObjectVersion|WriteGuardRevalidatesBeforeAnyMutation|HTTPBusinessDraftCleanup)",
+  "environment": "isolated PostgreSQL18.6 hot migrations1..4, Redis8.2.10 DB15",
+  "exitCode": 1,
+  "log": "core-red.txt",
+  "observed": "missing contexts accepted; supplied contexts and draftRef rejected as unknown; compile-only guard returns ErrNotImplemented",
+  "sha256": {
+    "query_write_guard.go": "e39baec3242463092fe2b0125056cd8c8e0728be6286a7d9f83c5e04886acb0b",
+    "query_write_guard_test.go": "a0c441c43533997ffea0c5e4a4eeb96599161470f18813d4b93426389dab21a8",
+    "query_engine_http_test.go": "0a683162b5ba273e260d836b5f3f0f0155b82bea3ecab947db851169effdaedd",
+    "transactions.go": "fe0b90bd87f4adc6ba7d4d2edbccabf1133d656ef8452d615f3c2d5a48d4deaf",
+    "http.go": "e2e4ba2cbf9c0fbed8be5cff94ce62494c7ec350cedb3ed70459554437a1875a",
+    "members.go": "39a7f379282f1bedb4c01f7b547cbe0116befa99fdd8e65ab5f796af1e7c800b",
+    "departments.go": "a0e3fad9c59f5f25bd2dd8a580ddff51199c6040c348758b33488df0fcf789bf",
+    "definitions.go": "35155a9f18ccb1c2f61dff9808c2f63c31ff868cf1ae51c88e49ae1f32c895a5"
+  }
+}

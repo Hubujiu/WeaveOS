@@ -1,0 +1,74 @@
+{
+  "observedAt": "2026-10-01T13:10:34.624832+00:00",
+  "registry": "https://registry.npmjs.org",
+  "stableReactTypes": {
+    "version": "19.3.0",
+    "tarball": "https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz",
+    "integrity": "sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==",
+    "integrityVerified": true,
+    "defaultIndexExports": [
+      "ViewTransition",
+      "ViewTransitionProps"
+    ],
+    "firstMatchingStableMinor": "19.3.0"
+  },
+  "previousStableMinorChecked": {
+    "version": "19.2.17",
+    "tarball": "https://registry.npmjs.org/@types/react/-/react-19.2.17.tgz",
+    "integrity": "sha512-MXfmqaVPEVgkBT/aY0aGCkRWWtByiYQXo3xdQ8r5RzuFrPiRn8Gar2tQdXSUQ2GKV3bkXckek89V8wQBY2Q/Aw==",
+    "integrityVerified": true,
+    "defaultIndexContainsViewTransition": false
+  },
+  "reactDOMTypesRetained": {
+    "version": "19.2.2",
+    "registryPeerDependencies": {
+      "@types/react": "^19.2.0"
+    },
+    "reason": "compatible peer range includes19.3.0; no new ReactDOM API is needed for stable React.ViewTransition"
+  },
+  "pnpmVersion": "10.28.2",
+  "onlyDirectDependencyChanged": "@types/react 19.2.2 ->19.3.0",
+  "runtimeReact": "19.3.0 unchanged",
+  "runtimeReactDOM": "19.3.0 unchanged",
+  "canaryOrShimUsed": false,
+  "checks": [
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "log": "typecheck-green.txt"
+    },
+    {
+      "command": "pnpm build",
+      "exitCode": 0,
+      "log": "build-green.txt",
+      "warning": "existing production bundle exceeds500kB; no threshold changed"
+    },
+    {
+      "command": "pnpm install --frozen-lockfile --ignore-scripts --store-dir <workspace-store>",
+      "exitCode": 0,
+      "log": "frozen-install.txt"
+    },
+    {
+      "command": "node scripts/check-tasks.mjs; git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "notRun": [
+    "offline frontend worker implementation is unavailable; no claim of its integration passing",
+    "actual ViewTransition animation/browser screenshots"
+  ],
+  "files": [
+    {
+      "path": "apps/web/package.json",
+      "sha256": "45b15547314c7b435b29ea12cf5a5b0a641c9c3801a12fb4881df01367f28ff0"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "28747b6d4b197d661d0a74fdae2defe4c70ec1727b2636d8607ca3edf2e027ae"
+    },
+    {
+      "path": "apps/web/src/view-transition-types.fixture.tsx",
+      "sha256": "988aad4e11c239be189452ac1067693700e62d66b3983e2a524ad0f19f9a9667"
+    }
+  ]
+}

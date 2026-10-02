@@ -1,0 +1,144 @@
+{
+  "stage": "B2 remaining backend query-write boundaries implemented; root review and ingress/security gates pending",
+  "baseline": "65bdc8f26a6d4c479cc9bfd29fe2593e42019737",
+  "redCommits": [
+    "e44fba3",
+    "dca785c",
+    "6f973dd",
+    "67eb1b1"
+  ],
+  "implementationCommits": [
+    "684c28f",
+    "b1978ed",
+    "139a3c7",
+    "a0e4bba"
+  ],
+  "implemented": [
+    "Mandatory HTTP queryVersion on member identity/group and department writes",
+    "Outside-lock RR original-query validation; RC fixed revision locks, original authorization/auth_version/dependency locks, revision equality before object-version and one mutation; at most two extra prevalidations, then QUERY_BUSY",
+    "Auxiliary collections validate original member context and read candidate options in one RR; independent no-context reads retained",
+    "Optional invitation context through production composition; auth retains mutation/audit/commit ownership; no fallback bypass when supplied context cannot be validated",
+    "Exact owner/kind/original target/submitted draft-version cleanup before business COMMIT including no-op; newer drafts survive; draft CRUD remains independent"
+  ],
+  "verification": [
+    {
+      "command": "go -C services/bff test -race -p 1 -timeout 90s -count=1 ./...",
+      "exitCode": 0,
+      "log": "full-go-green.txt",
+      "note": "Includes member scale and all production changes. Event scale test added later and separately passed; no later production changes."
+    },
+    {
+      "command": "go -C services/bff test -race -p 1 -v -timeout 90s -count=1 ./internal/personnel -run TestQ36EventScale",
+      "exitCode": 0,
+      "log": "event-scale-green.txt"
+    },
+    {
+      "command": "go -C services/bff vet ./...",
+      "exitCode": 0,
+      "log": "go-vet.txt"
+    },
+    {
+      "command": "node --test tests/foundation/*.test.mjs tests/governance/*.test.mjs",
+      "exitCode": 0,
+      "tests": 132,
+      "log": "foundation-governance.txt"
+    },
+    {
+      "command": "node scripts/check-tasks.mjs",
+      "exitCode": 0,
+      "log": "check-tasks.txt"
+    },
+    {
+      "command": "node scripts/verify-repo.mjs",
+      "exitCode": 0,
+      "log": "verify-repo.txt"
+    }
+  ],
+  "realIntegration": [
+    "lock-prevalidation unrelated/related/busy races",
+    "live permission revocation and original auth_version rejection",
+    "missing context cannot mutate revisions",
+    "object version conflict remains separate",
+    "all draft kinds including new nil target/no-op and later draft version survival",
+    "real deferred PostgreSQL COMMIT failure rolls back business/audit/draft together",
+    "real lost second COMMIT acknowledgement returns503 and never replays actual business write",
+    "production buildHandler invitation context wiring and error mapping",
+    "cold-only expiration leaves hot query revisions unchanged",
+    "original Q19/Q25 feature tests retain assertions and explicitly obtain genuine required query context"
+  ],
+  "performance": {
+    "members": "N10000; M100/1000/10000; K20; shallow and pages5/50/500; initial full606/587/1111ms; reuse53–83ms; actual write455–3473ms with10–16ms revision locks; one full revalidation outside lock and zero inside",
+    "events": "N5000; M100/1000/5000; K20; shallow and pages5/50/250; initial full33–1844ms; reuse13–104ms",
+    "plans": "12 full EXPLAIN ANALYZE BUFFERS VERBOSE JSON in plans/; physical relation row counts in plan-summary.json",
+    "limits": "Single isolated-environment observation with race instrumentation, not a production SLO. Member sample one department and one identity each; high fanout capacity not established. Offset cost is not constant."
+  },
+  "environment": "Go1.27.1; real isolated PG18.6 hot migrations1..4 and cold1..2; Redis8.2.10 DB15",
+  "blocked": [
+    {
+      "task": "fixed Nginx real large Chinese POST ingress",
+      "status": "NOT RUN",
+      "evidence": "nginx-pull.txt",
+      "reason": "Pinned official digest absent locally; Docker Hub unauthenticated pull rate limit, exit1"
+    },
+    {
+      "task": "fixed Gitleaks source scan",
+      "status": "NOT RUN",
+      "evidence": "gitleaks-pull.txt",
+      "reason": "Pinned digest absent locally; Docker Hub unauthenticated pull rate limit, exit1"
+    }
+  ],
+  "scope": "Backend only; no web/Notion/PLAN edits, no original PR branch movement, no merge/deploy",
+  "originalPRHead": "09707d90af461b66c281a51666b3ed0f586e4dff",
+  "noDeploymentClaim": true,
+  "recovery": "All completed commands exited. Retain isolated containers, worktree and evidence; no active business test command. Model metadata unavailable; no model override performed.",
+  "evidenceSha256": {
+    "invitation-green.txt": "e8ed59f53f9f8451ebba090843e5e445763a2bfcc5a2322852ff84877f7ebd47",
+    "auxiliary-red.txt": "05637422cf5419896b091634462e0af3423f300fedc2d115cba4d296cf03b761",
+    "invitation-red-test.go": "6a6e982e0c88a84b7384c3b9cbc0a58c8517b2f6742250f488519336768468dd",
+    "draft-ref-green.txt": "85d9fae2b3e007b7a681fa95cd0ad8e1aacc394b779149866d914412725c3d18",
+    "foundation-governance.txt": "5f53d2d72ea6d3b8ff00d902bfdf156e5520886c1b3c02f63df15c03bad53cc1",
+    "go-vet.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "red-manifest.json": "9c1026be2fb8aab54745269f058ef125fc55dd0ea051e31ea60dc77f1fcbb3b0",
+    "verify-repo.txt": "89854f45285c5947824787fd0b9acd65331e020caaf588b966836a83a5955906",
+    "auxiliary-green.txt": "11a388d304b8f6bb58b65f8331a3e41752bb9a74b03a293c10b46429ea991d09",
+    "commit-fault-green.txt": "11a727a42e93878e6dbbbe1d717ec777bbb6b986b8caa8bd3e1de444d2d8c8bd",
+    "full-go-first.txt": "63de9895452ffb68caff286eb26d2bdf14688a676f1ee939151d92ef96d99e9e",
+    "nginx-pull.txt": "a396afa93195e23abb3aa7413c31df21a77abfaea0f4151f4baf044b272b4d23",
+    "auxiliary-red-manifest.json": "99903d2ee208b27bce14b7171f85e059eacd1fde1bd741c4a348a64068f1b4b4",
+    "core-red.txt": "37c7152c8ed87fcf8db714e7be320d5b95b772c5ca1a184bc49d966355a50ccf",
+    "check-tasks.txt": "c1f006efc1743985c4941fe31069f8c1152b786af73d8c116701c2b6930f2b04",
+    "scale-green.txt": "72095a087a8824585b723a38437eb5eeaa89676db9ec4414d3411e75223f94dc",
+    "all-draft-kinds-green.txt": "b7145464f3a8d499a6f5a5a57ac5261989683fd881fcd1564e9d69b33a873ed5",
+    "invitation-red.txt": "6d523822b6f1a094fb6dfc603c2f91c32d268e8ffdd7999c305c79780207b183",
+    "full-go-green.txt": "7ade91bb5c9c334d2b4cbd1863c9d0550d7396d69944b2d32a320dd8213b5bd3",
+    "draft-ref-red.txt": "e309f288a409e8a10f39c256ab2d92992287fa76e94359453edaebcbad1023b9",
+    "auxiliary-red-test.go": "1b836da909888c60c4f35bd9cb0d3c8573b5003a10c70c191fbbb0f7eb26b268",
+    "core-green.txt": "49c158bfad4c43e8776f36ae54190f071b1271f8512185e0f4cd3c02e465d2de",
+    "event-scale-green.txt": "e4951ff063df80b0a8e9ae69c8223f216c8bc4c6ce8ffc0a316e781c0ca15dbe",
+    "gitleaks-pull.txt": "a396afa93195e23abb3aa7413c31df21a77abfaea0f4151f4baf044b272b4d23",
+    "draft-ref-red-test.go": "43e3b9727a8279f1a43ff2809879227da9a73935ae676902d8b297c24f713fb6",
+    "invitation-red-manifest.json": "b2b6201d9b12bb556378dc25876171b12b58a1b5024db7ce33e0be7c8399267f",
+    "draft-ref-red-manifest.json": "ca76f8ed6d9b2a1efa47b96fce7d59be3455eadebe857735323004439abca599",
+    "plan-summary.json": "7f661ff5688a3c353efe37035e32d1a8d1ebb9a0d4552f4d834af63f48e34a78",
+    "red-source/query_engine_http_test.go": "0a683162b5ba273e260d836b5f3f0f0155b82bea3ecab947db851169effdaedd",
+    "red-source/transactions.go": "fe0b90bd87f4adc6ba7d4d2edbccabf1133d656ef8452d615f3c2d5a48d4deaf",
+    "red-source/members.go": "39a7f379282f1bedb4c01f7b547cbe0116befa99fdd8e65ab5f796af1e7c800b",
+    "red-source/departments.go": "a0e3fad9c59f5f25bd2dd8a580ddff51199c6040c348758b33488df0fcf789bf",
+    "red-source/definitions.go": "35155a9f18ccb1c2f61dff9808c2f63c31ff868cf1ae51c88e49ae1f32c895a5",
+    "red-source/query_write_guard.go": "e39baec3242463092fe2b0125056cd8c8e0728be6286a7d9f83c5e04886acb0b",
+    "red-source/http.go": "e2e4ba2cbf9c0fbed8be5cff94ce62494c7ec350cedb3ed70459554437a1875a",
+    "red-source/query_write_guard_test.go": "a0c441c43533997ffea0c5e4a4eeb96599161470f18813d4b93426389dab21a8",
+    "plans/event-M100-page5.json": "dafd09ec479fbfcbbda6c49aa9a2084d5a2811a6ca2027ef237f74b01df26068",
+    "plans/member-M10000-page500.json": "4b695dbaee074a037c7a818d8f14a158e3464c5643bc8e91f7b5e71cac53a66c",
+    "plans/member-M10000-page1.json": "28622ec7e3a5815e3ca9f849cef6dafbf3ef8cb2a9a7abfcd2b26fc372c622d6",
+    "plans/event-M100-page1.json": "d15e20c33a4eab6e73d7fc1d182069b3766bd254e49d6db65a3f5a7f71af697e",
+    "plans/member-M100-page1.json": "fab821d1bca9d86141af054ecd33473ef16ead565ed1ec06486907eb8f75de9f",
+    "plans/event-M5000-page250.json": "f287403527157e110d695b87f004993d71a8c43b72223aa55611bfa86ea86612",
+    "plans/member-M1000-page1.json": "2fb5cc9f241106261b7f946a72c1099ef7a7fa187ab3654ba01b30820aa8e7e4",
+    "plans/event-M1000-page50.json": "33388ef3e63c901fa63ccea3fbc76a0d480f81c4f2c0aa936f273728c9a7d6c9",
+    "plans/event-M1000-page1.json": "1bf2f58515d062d876c6c52ea29e2c30c720aafd96ec976f4d9a618ac70e573f",
+    "plans/event-M5000-page1.json": "507ea6586709efaa6c646cf4baec6401e47d10b4cc8095d0ba02e372d8a65430",
+    "plans/member-M100-page5.json": "4387f6c07099123ab6925a02856816b57475b9894e3765319ff205da58d1fc6a",
+    "plans/member-M1000-page50.json": "bc7cd7031f9dd697ad04412e1d101d3254d55eee9d8ad27f2d6faecdf0a8eef4"
+  }
+}

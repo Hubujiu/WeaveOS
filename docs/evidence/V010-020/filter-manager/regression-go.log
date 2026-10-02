@@ -1,0 +1,3014 @@
+=== RUN   TestAcceptanceSeedProducesIsolatedUsableFixtures
+    main_test.go:46: isolated acceptance seed must run: refusing non-test database: use a local weaveos_ database
+--- FAIL: TestAcceptanceSeedProducesIsolatedUsableFixtures (0.05s)
+=== RUN   TestAcceptanceSeedRejectsNonTestDatabaseBeforeMutation
+--- PASS: TestAcceptanceSeedRejectsNonTestDatabaseBeforeMutation (0.00s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/cmd/acceptance-seed	0.069s
+=== RUN   TestMaintenanceRequiresExplicitSingleRun
+--- PASS: TestMaintenanceRequiresExplicitSingleRun (9.17s)
+PASS
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-maintenance	10.180s
+?   	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-read	[no test files]
+=== RUN   TestReadAuthenticationConfiguration
+--- PASS: TestReadAuthenticationConfiguration (0.00s)
+=== RUN   TestCompositionWiresRealAuthenticationAndReadiness
+--- PASS: TestCompositionWiresRealAuthenticationAndReadiness (0.03s)
+=== RUN   TestCompositionRejectsIncompleteAuthenticationConfig
+--- PASS: TestCompositionRejectsIncompleteAuthenticationConfig (0.00s)
+=== RUN   TestCompositionWiresPersonnelAndOrdinaryInvitationQ25
+=== RUN   TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/own_access
+=== RUN   TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/ordinary_invitation
+=== RUN   TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/invitation_query_uses_production_guard_wiring
+=== RUN   TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/password_reset_remains_Root
+--- PASS: TestCompositionWiresPersonnelAndOrdinaryInvitationQ25 (0.12s)
+    --- PASS: TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/own_access (0.01s)
+    --- PASS: TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/ordinary_invitation (0.01s)
+    --- PASS: TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/invitation_query_uses_production_guard_wiring (0.04s)
+    --- PASS: TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/password_reset_remains_Root (0.00s)
+=== RUN   TestConfiguredProxyHostsAreReadAndInvalidHostsRejected
+--- PASS: TestConfiguredProxyHostsAreReadAndInvalidHostsRejected (0.00s)
+PASS
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/bff	1.165s
+=== RUN   TestControlledMaintenanceAndReaderUseTheirActualRestrictedRoles
+    maintenance_test.go:45: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestControlledMaintenanceAndReaderUseTheirActualRestrictedRoles (0.02s)
+=== RUN   TestMonthlyArchiveAndAnnualExpiry
+    maintenance_test.go:105: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestMonthlyArchiveAndAnnualExpiry (0.02s)
+=== RUN   TestArchiveConflictAndUnavailableColdPreserveHotHistory
+    maintenance_test.go:135: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestArchiveConflictAndUnavailableColdPreserveHotHistory (0.02s)
+=== RUN   TestCommittedCopyThenRetryIsSafe
+    maintenance_test.go:154: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestCommittedCopyThenRetryIsSafe (0.02s)
+=== RUN   TestLeapYearRetentionUsesCalendarYear
+    maintenance_test.go:165: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestLeapYearRetentionUsesCalendarYear (0.02s)
+=== RUN   TestAuditReadRequiresCurrentBootstrapAndDoesNotReadCold
+    maintenance_test.go:176: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestAuditReadRequiresCurrentBootstrapAndDoesNotReadCold (0.02s)
+=== RUN   TestPersonnelArchivePreservesSafeSummaryAndOriginalRetention
+    personnel_archive_test.go:10: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestPersonnelArchivePreservesSafeSummaryAndOriginalRetention (0.02s)
+=== RUN   TestQ36ColdOnlyExpiryDoesNotInvalidateHotQueries
+    personnel_archive_test.go:64: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestQ36ColdOnlyExpiryDoesNotInvalidateHotQueries (0.02s)
+=== RUN   TestAuditReadDeniesOrdinaryDisabledStaleAndAnonymous
+    read_test.go:33: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestAuditReadDeniesOrdinaryDisabledStaleAndAnonymous (0.02s)
+=== RUN   TestColdArchiveSchema
+--- PASS: TestColdArchiveSchema (0.03s)
+=== RUN   TestRuntimeRolesRestrictAuditAndBootstrap
+--- PASS: TestRuntimeRolesRestrictAuditAndBootstrap (0.02s)
+=== RUN   TestColdMaintenanceRoleCanOnlyMaintainAudit
+--- PASS: TestColdMaintenanceRoleCanOnlyMaintainAudit (0.02s)
+=== RUN   TestBackupIdentitySeparateFromRuntime
+--- PASS: TestBackupIdentitySeparateFromRuntime (0.02s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/audit	0.288s
+=== RUN   TestUncertainCommitNeverClaimsSuccess
+=== RUN   TestUncertainCommitNeverClaimsSuccess/invitation
+=== RUN   TestUncertainCommitNeverClaimsSuccess/reset
+--- PASS: TestUncertainCommitNeverClaimsSuccess (0.64s)
+    --- PASS: TestUncertainCommitNeverClaimsSuccess/invitation (0.30s)
+    --- PASS: TestUncertainCommitNeverClaimsSuccess/reset (0.34s)
+=== RUN   TestApplicationRegistrationWithoutHTTP
+--- PASS: TestApplicationRegistrationWithoutHTTP (0.36s)
+=== RUN   TestApplicationLoginWithoutHTTP
+--- PASS: TestApplicationLoginWithoutHTTP (0.21s)
+=== RUN   TestApplicationInvitationWithoutHTTP
+--- PASS: TestApplicationInvitationWithoutHTTP (0.24s)
+=== RUN   TestApplicationPasswordResetWithoutHTTP
+--- PASS: TestApplicationPasswordResetWithoutHTTP (0.35s)
+=== RUN   TestHTTPFunctionsDoNotExecuteAuthenticationStorage
+--- PASS: TestHTTPFunctionsDoNotExecuteAuthenticationStorage (0.02s)
+=== RUN   TestAcceptedUnauthorizedChallengeAndPublicMessages
+--- PASS: TestAcceptedUnauthorizedChallengeAndPublicMessages (0.03s)
+=== RUN   TestCommittedWriteSurvivesRenewalFailure
+=== RUN   TestCommittedWriteSurvivesRenewalFailure/invitation/revoked
+=== RUN   TestCommittedWriteSurvivesRenewalFailure/invitation/disconnected
+redis: 2026/10/02 03:20:24 pool.go:762: redis: connection pool: failed to dial after 1 attempts: dial tcp 127.0.0.1:35009: connect: connection refused
+redis: 2026/10/02 03:20:24 pool.go:762: redis: connection pool: failed to dial after 1 attempts: dial tcp 127.0.0.1:35009: connect: connection refused
+=== RUN   TestCommittedWriteSurvivesRenewalFailure/reset/revoked
+=== RUN   TestCommittedWriteSurvivesRenewalFailure/reset/disconnected
+redis: 2026/10/02 03:20:25 pool.go:762: redis: connection pool: failed to dial after 1 attempts: dial tcp 127.0.0.1:40281: connect: connection refused
+redis: 2026/10/02 03:20:25 pool.go:762: redis: connection pool: failed to dial after 1 attempts: dial tcp 127.0.0.1:40281: connect: connection refused
+--- PASS: TestCommittedWriteSurvivesRenewalFailure (1.38s)
+    --- PASS: TestCommittedWriteSurvivesRenewalFailure/invitation/revoked (0.30s)
+    --- PASS: TestCommittedWriteSurvivesRenewalFailure/invitation/disconnected (0.33s)
+    --- PASS: TestCommittedWriteSurvivesRenewalFailure/reset/revoked (0.39s)
+    --- PASS: TestCommittedWriteSurvivesRenewalFailure/reset/disconnected (0.36s)
+=== RUN   TestPasswordPrintableASCII
+--- PASS: TestPasswordPrintableASCII (0.00s)
+=== RUN   TestRegistrationRejectsNonPrintableASCIIBeforeConsumingInvitation
+--- PASS: TestRegistrationRejectsNonPrintableASCIIBeforeConsumingInvitation (0.28s)
+=== RUN   TestPasswordPolicy
+--- PASS: TestPasswordPolicy (0.00s)
+=== RUN   TestPasswordHashIsSaltedAndVerifiable
+--- PASS: TestPasswordHashIsSaltedAndVerifiable (0.29s)
+=== RUN   TestVerifyIndependentPHCAndRejectMalformed
+--- PASS: TestVerifyIndependentPHCAndRejectMalformed (0.12s)
+=== RUN   TestInvitationUsesLivePersonnelQualificationInOwnedTransactionQ25
+--- PASS: TestInvitationUsesLivePersonnelQualificationInOwnedTransactionQ25 (0.25s)
+=== RUN   TestRealHTTPSCookiesRestoreAndLogout
+--- PASS: TestRealHTTPSCookiesRestoreAndLogout (0.16s)
+=== RUN   TestHTTPProtocolRejectsMalformedWriteDTOs
+=== RUN   TestHTTPProtocolRejectsMalformedWriteDTOs/unknown
+=== RUN   TestHTTPProtocolRejectsMalformedWriteDTOs/trailing
+=== RUN   TestHTTPProtocolRejectsMalformedWriteDTOs/duplicate
+=== RUN   TestHTTPProtocolRejectsMalformedWriteDTOs/null
+=== RUN   TestHTTPProtocolRejectsMalformedWriteDTOs/wrong_media
+=== RUN   TestHTTPProtocolRejectsMalformedWriteDTOs/foreign_source
+--- PASS: TestHTTPProtocolRejectsMalformedWriteDTOs (0.09s)
+    --- PASS: TestHTTPProtocolRejectsMalformedWriteDTOs/unknown (0.00s)
+    --- PASS: TestHTTPProtocolRejectsMalformedWriteDTOs/trailing (0.00s)
+    --- PASS: TestHTTPProtocolRejectsMalformedWriteDTOs/duplicate (0.00s)
+    --- PASS: TestHTTPProtocolRejectsMalformedWriteDTOs/null (0.00s)
+    --- PASS: TestHTTPProtocolRejectsMalformedWriteDTOs/wrong_media (0.00s)
+    --- PASS: TestHTTPProtocolRejectsMalformedWriteDTOs/foreign_source (0.00s)
+=== RUN   TestAuditRequestIDMatchesResponseAndUnknownAccountHMAC
+--- PASS: TestAuditRequestIDMatchesResponseAndUnknownAccountHMAC (0.03s)
+=== RUN   TestResetAndInvitationAuditFailureRollBack
+--- PASS: TestResetAndInvitationAuditFailureRollBack (0.33s)
+=== RUN   TestUnknownAPIReturnsEnvelope404
+--- PASS: TestUnknownAPIReturnsEnvelope404 (0.02s)
+=== RUN   TestRevokedSessionAndFailedRegistrationProduceSanitizedAudit
+--- PASS: TestRevokedSessionAndFailedRegistrationProduceSanitizedAudit (0.31s)
+=== RUN   TestAuditClientIPOnlyTrustsConfiguredProxy
+--- PASS: TestAuditClientIPOnlyTrustsConfiguredProxy (0.04s)
+=== RUN   TestIngressRequestIDMatchesResponseAndAudit
+--- PASS: TestIngressRequestIDMatchesResponseAndAudit (0.03s)
+=== RUN   TestQ36InvitationOptionalQueryContext
+--- PASS: TestQ36InvitationOptionalQueryContext (0.32s)
+=== RUN   TestPasswordResetBetweenCredentialReadAndSessionCreation
+--- PASS: TestPasswordResetBetweenCredentialReadAndSessionCreation (0.38s)
+=== RUN   TestRegistrationAtomicHTTP
+--- PASS: TestRegistrationAtomicHTTP (0.56s)
+=== RUN   TestConcurrentInvitationHTTP
+--- PASS: TestConcurrentInvitationHTTP (0.21s)
+=== RUN   TestLoginCurrentLogoutHTTP
+--- PASS: TestLoginCurrentLogoutHTTP (0.26s)
+=== RUN   TestBootstrapInvitationResetAndRevocationHTTP
+--- PASS: TestBootstrapInvitationResetAndRevocationHTTP (0.65s)
+=== RUN   TestAuditFailureFailsLoginClosedAndLogoutRemainsRevoked
+--- PASS: TestAuditFailureFailsLoginClosedAndLogoutRemainsRevoked (0.27s)
+=== RUN   TestReadinessAndAuditPrivacyHTTP
+--- PASS: TestReadinessAndAuditPrivacyHTTP (0.23s)
+=== RUN   TestFieldValidationUsesApprovedEnvelope
+--- PASS: TestFieldValidationUsesApprovedEnvelope (0.02s)
+PASS
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/auth	9.103s
+=== RUN   TestOnlyTrustedInjectionCreatesIdentityContext
+--- PASS: TestOnlyTrustedInjectionCreatesIdentityContext (0.00s)
+=== RUN   TestIdentityContextRejectsMissingOrMalformedIdentifiers
+--- PASS: TestIdentityContextRejectsMissingOrMalformedIdentifiers (0.00s)
+PASS
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/identity	1.010s
+=== RUN   TestCanonicalInvitationDigestVector
+--- PASS: TestCanonicalInvitationDigestVector (0.00s)
+=== RUN   TestGenerateIndependentCanonicalCodes
+--- PASS: TestGenerateIndependentCanonicalCodes (0.00s)
+PASS
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/invitation	1.010s
+=== RUN   TestPersonnelActivityViewQ25
+--- PASS: TestPersonnelActivityViewQ25 (0.02s)
+=== RUN   TestPersonnelRuntimeRolesQ25
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_app/personnel.identities/SELECT
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_app/personnel.identities/INSERT
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_app/personnel.identities/UPDATE
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_app/personnel.identities/DELETE
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_app/personnel.permission_catalog/SELECT
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_app/personnel.permission_catalog/INSERT
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_app/personnel.permission_catalog/UPDATE
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_app/personnel.permission_catalog/DELETE
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_app/personnel.activity_events/SELECT
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_app/auth.authentication_events/SELECT
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_app/auth.authentication_events/INSERT
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_app/auth.authentication_events/UPDATE
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_maintenance/personnel.identities/UPDATE
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_reader/personnel.identities/UPDATE
+=== RUN   TestPersonnelRuntimeRolesQ25/auth_backup/personnel.identities/SELECT
+--- PASS: TestPersonnelRuntimeRolesQ25 (0.03s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_app/personnel.identities/SELECT (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_app/personnel.identities/INSERT (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_app/personnel.identities/UPDATE (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_app/personnel.identities/DELETE (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_app/personnel.permission_catalog/SELECT (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_app/personnel.permission_catalog/INSERT (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_app/personnel.permission_catalog/UPDATE (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_app/personnel.permission_catalog/DELETE (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_app/personnel.activity_events/SELECT (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_app/auth.authentication_events/SELECT (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_app/auth.authentication_events/INSERT (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_app/auth.authentication_events/UPDATE (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_maintenance/personnel.identities/UPDATE (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_reader/personnel.identities/UPDATE (0.00s)
+    --- PASS: TestPersonnelRuntimeRolesQ25/auth_backup/personnel.identities/SELECT (0.00s)
+=== RUN   TestPersonnelSchemaMatchesQ25
+--- PASS: TestPersonnelSchemaMatchesQ25 (0.02s)
+=== RUN   TestPersonnelConstraintsQ25
+=== RUN   TestPersonnelConstraintsQ25/one_protected_root
+=== RUN   TestPersonnelConstraintsQ25/nonroot_needs_parent
+=== RUN   TestPersonnelConstraintsQ25/name_required
+=== RUN   TestPersonnelConstraintsQ25/positive_object_version
+=== RUN   TestPersonnelConstraintsQ25/catalog_no_made-up_system_grants
+=== RUN   TestPersonnelConstraintsQ25/application_must_exist_as_stable_id
+=== RUN   TestPersonnelConstraintsQ25/missing_user_rejected
+=== RUN   TestPersonnelConstraintsQ25/audit_cannot_omit_safe_summary
+=== RUN   TestPersonnelConstraintsQ25/audit_summary_cannot_be_SQL_NULL
+=== RUN   TestPersonnelConstraintsQ25/audit_summary_must_be_object
+=== RUN   TestPersonnelConstraintsQ25/old_auth_events_cannot_smuggle_summaries
+--- PASS: TestPersonnelConstraintsQ25 (0.02s)
+    --- PASS: TestPersonnelConstraintsQ25/one_protected_root (0.00s)
+    --- PASS: TestPersonnelConstraintsQ25/nonroot_needs_parent (0.00s)
+    --- PASS: TestPersonnelConstraintsQ25/name_required (0.00s)
+    --- PASS: TestPersonnelConstraintsQ25/positive_object_version (0.00s)
+    --- PASS: TestPersonnelConstraintsQ25/catalog_no_made-up_system_grants (0.00s)
+    --- PASS: TestPersonnelConstraintsQ25/application_must_exist_as_stable_id (0.00s)
+    --- PASS: TestPersonnelConstraintsQ25/missing_user_rejected (0.00s)
+    --- PASS: TestPersonnelConstraintsQ25/audit_cannot_omit_safe_summary (0.00s)
+    --- PASS: TestPersonnelConstraintsQ25/audit_summary_cannot_be_SQL_NULL (0.00s)
+    --- PASS: TestPersonnelConstraintsQ25/audit_summary_must_be_object (0.00s)
+    --- PASS: TestPersonnelConstraintsQ25/old_auth_events_cannot_smuggle_summaries (0.00s)
+=== RUN   TestQ36QueryDraftSchema
+--- PASS: TestQ36QueryDraftSchema (0.03s)
+=== RUN   TestQ36LeastPrivilegeDraftIntegration
+--- PASS: TestQ36LeastPrivilegeDraftIntegration (0.02s)
+=== RUN   TestRegisterConsumesInvitationOnceAndRollsBackConflict
+--- PASS: TestRegisterConsumesInvitationOnceAndRollsBackConflict (0.04s)
+=== RUN   TestRegisterPreservesCaseAndRejectsInternalSpaces
+--- PASS: TestRegisterPreservesCaseAndRejectsInternalSpaces (0.05s)
+=== RUN   TestRegisterConcurrentUseOfOneInvitation
+--- PASS: TestRegisterConcurrentUseOfOneInvitation (0.06s)
+=== RUN   TestAuthSchemaMatchesApprovedDictionary
+--- PASS: TestAuthSchemaMatchesApprovedDictionary (0.01s)
+=== RUN   TestBootstrapSeedIsIdempotentAndDoesNotChangeExistingAccount
+--- PASS: TestBootstrapSeedIsIdempotentAndDoesNotChangeExistingAccount (0.04s)
+=== RUN   TestBootstrapSeedRefusesToPromoteSameNameOrdinaryAccount
+--- PASS: TestBootstrapSeedRefusesToPromoteSameNameOrdinaryAccount (0.03s)
+PASS
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence	1.381s
+?   	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence/authsql	[no test files]
+=== RUN   TestAuthorizationLocksActualDependenciesQ25
+--- PASS: TestAuthorizationLocksActualDependenciesQ25 (0.09s)
+=== RUN   TestRootOnlyKnownEnabledApplicationsQ25
+--- PASS: TestRootOnlyKnownEnabledApplicationsQ25 (0.07s)
+=== RUN   TestLiveUnionAndSourcesQ25
+--- PASS: TestLiveUnionAndSourcesQ25 (0.07s)
+=== RUN   TestNoIdentityNoGrantAndNoForgedRootQ25
+--- PASS: TestNoIdentityNoGrantAndNoForgedRootQ25 (0.07s)
+=== RUN   TestDisabledAndStaleAccountFailClosedQ25
+--- PASS: TestDisabledAndStaleAccountFailClosedQ25 (0.07s)
+=== RUN   TestWriteAuthorizationUsesCurrentConfigurationQ25
+--- PASS: TestWriteAuthorizationUsesCurrentConfigurationQ25 (0.08s)
+=== RUN   TestApplicationFixtureRealHTTPSCentralAndOwnedResourceBoundaries
+--- PASS: TestApplicationFixtureRealHTTPSCentralAndOwnedResourceBoundaries (0.12s)
+=== RUN   TestPersonnelCommittedWriteSurvivesRealRenewalFailureQ19
+=== RUN   TestPersonnelCommittedWriteSurvivesRealRenewalFailureQ19/revoked
+=== RUN   TestPersonnelCommittedWriteSurvivesRealRenewalFailureQ19/unavailable
+--- PASS: TestPersonnelCommittedWriteSurvivesRealRenewalFailureQ19 (0.26s)
+    --- PASS: TestPersonnelCommittedWriteSurvivesRealRenewalFailureQ19/revoked (0.13s)
+    --- PASS: TestPersonnelCommittedWriteSurvivesRealRenewalFailureQ19/unavailable (0.13s)
+=== RUN   TestPersonnelWriteFirstProtectsAuthorizationUntilCommitQ25
+--- PASS: TestPersonnelWriteFirstProtectsAuthorizationUntilCommitQ25 (0.21s)
+=== RUN   TestPersonnelRevocationFirstRejectsBusinessAndAuditQ25
+--- PASS: TestPersonnelRevocationFirstRejectsBusinessAndAuditQ25 (0.18s)
+=== RUN   TestConcurrentFirstMemberEditUsesOneVersionRowQ25
+--- PASS: TestConcurrentFirstMemberEditUsesOneVersionRowQ25 (0.13s)
+=== RUN   TestDefinitionCreateUpdateVersionAndAuditQ25
+--- PASS: TestDefinitionCreateUpdateVersionAndAuditQ25 (0.11s)
+=== RUN   TestDefinitionValidationAndReferenceProtectionQ25
+--- PASS: TestDefinitionValidationAndReferenceProtectionQ25 (0.08s)
+=== RUN   TestDefinitionAuditFailureRollsBackQ25
+--- PASS: TestDefinitionAuditFailureRollsBackQ25 (0.07s)
+=== RUN   TestDefinitionPaginationAndServerSearchQ25
+--- PASS: TestDefinitionPaginationAndServerSearchQ25 (0.11s)
+=== RUN   TestDraftQ36CleanupWaitsForNewerCommit
+--- PASS: TestDraftQ36CleanupWaitsForNewerCommit (0.11s)
+=== RUN   TestDraftQ36SaveHoldsAuthorizationUntilCommit
+--- PASS: TestDraftQ36SaveHoldsAuthorizationUntilCommit (0.20s)
+=== RUN   TestDraftQ36UnicodeCanonicalBoundaryAndOriginalBase
+--- PASS: TestDraftQ36UnicodeCanonicalBoundaryAndOriginalBase (0.15s)
+=== RUN   TestDraftQ36UniqueItemsPreservesUUIDSpellings
+--- PASS: TestDraftQ36UniqueItemsPreservesUUIDSpellings (0.08s)
+=== RUN   TestDraftHTTPQ36SessionCSRFAndRestore
+--- PASS: TestDraftHTTPQ36SessionCSRFAndRestore (0.10s)
+=== RUN   TestDraftHTTPQ36StrictEnvelopeFields
+--- PASS: TestDraftHTTPQ36StrictEnvelopeFields (0.11s)
+=== RUN   TestDraftHTTPQ36QuotaAndSummaryOrder
+--- PASS: TestDraftHTTPQ36QuotaAndSummaryOrder (0.21s)
+=== RUN   TestDraftHTTPQ36RawBodyLimitBoundary
+=== RUN   TestDraftHTTPQ36RawBodyLimitBoundary/create
+=== RUN   TestDraftHTTPQ36RawBodyLimitBoundary/update
+--- PASS: TestDraftHTTPQ36RawBodyLimitBoundary (0.19s)
+    --- PASS: TestDraftHTTPQ36RawBodyLimitBoundary/create (0.09s)
+    --- PASS: TestDraftHTTPQ36RawBodyLimitBoundary/update (0.10s)
+=== RUN   TestDraftHTTPQ36CanonicalPayloadWithWrapper
+--- PASS: TestDraftHTTPQ36CanonicalPayloadWithWrapper (0.18s)
+=== RUN   TestDraftQ36LifecycleAndIsolation
+--- PASS: TestDraftQ36LifecycleAndIsolation (0.16s)
+=== RUN   TestDraftQ36ConcurrentCapacityAndCAS
+--- PASS: TestDraftQ36ConcurrentCapacityAndCAS (0.22s)
+=== RUN   TestDraftQ36LiveAuthorization
+=== RUN   TestDraftQ36LiveAuthorization/permission
+=== RUN   TestDraftQ36LiveAuthorization/disabled
+=== RUN   TestDraftQ36LiveAuthorization/auth-version
+--- PASS: TestDraftQ36LiveAuthorization (0.26s)
+    --- PASS: TestDraftQ36LiveAuthorization/permission (0.09s)
+    --- PASS: TestDraftQ36LiveAuthorization/disabled (0.08s)
+    --- PASS: TestDraftQ36LiveAuthorization/auth-version (0.08s)
+=== RUN   TestDraftQ36VariantsAndStrictPayload
+--- PASS: TestDraftQ36VariantsAndStrictPayload (0.13s)
+=== RUN   TestDraftQ36CanonicalBytes
+--- PASS: TestDraftQ36CanonicalBytes (0.12s)
+=== RUN   TestDraftQ36PreserveTargetBaseAndNoBusinessEffects
+--- PASS: TestDraftQ36PreserveTargetBaseAndNoBusinessEffects (0.10s)
+=== RUN   TestDraftQ36ExactTransactionalCleanup
+--- PASS: TestDraftQ36ExactTransactionalCleanup (0.18s)
+=== RUN   TestHTTPRealSessionOwnAccessAndRevocationQ25
+--- PASS: TestHTTPRealSessionOwnAccessAndRevocationQ25 (0.07s)
+=== RUN   TestHTTPDefinitionStatusesCSRFAndVersionQ25
+--- PASS: TestHTTPDefinitionStatusesCSRFAndVersionQ25 (0.12s)
+=== RUN   TestHTTPStrictBodyAndQueryQ25
+--- PASS: TestHTTPStrictBodyAndQueryQ25 (0.09s)
+=== RUN   TestHTTPMissingAndDependencyFailureQ25
+--- PASS: TestHTTPMissingAndDependencyFailureQ25 (0.07s)
+=== RUN   TestHTTPAllApprovedReadFamiliesQ25
+=== RUN   TestHTTPAllApprovedReadFamiliesQ25/personnel/departments
+=== RUN   TestHTTPAllApprovedReadFamiliesQ25/personnel/members
+=== RUN   TestHTTPAllApprovedReadFamiliesQ25/personnel/identities
+=== RUN   TestHTTPAllApprovedReadFamiliesQ25/personnel/templates
+=== RUN   TestHTTPAllApprovedReadFamiliesQ25/personnel/permissions
+=== RUN   TestHTTPAllApprovedReadFamiliesQ25/personnel/events
+=== RUN   TestHTTPAllApprovedReadFamiliesQ25/members_detail
+=== RUN   TestHTTPAllApprovedReadFamiliesQ25/identities_detail
+=== RUN   TestHTTPAllApprovedReadFamiliesQ25/templates_detail
+--- PASS: TestHTTPAllApprovedReadFamiliesQ25 (0.64s)
+    --- PASS: TestHTTPAllApprovedReadFamiliesQ25/personnel/departments (0.07s)
+    --- PASS: TestHTTPAllApprovedReadFamiliesQ25/personnel/members (0.08s)
+    --- PASS: TestHTTPAllApprovedReadFamiliesQ25/personnel/identities (0.07s)
+    --- PASS: TestHTTPAllApprovedReadFamiliesQ25/personnel/templates (0.07s)
+    --- PASS: TestHTTPAllApprovedReadFamiliesQ25/personnel/permissions (0.07s)
+    --- PASS: TestHTTPAllApprovedReadFamiliesQ25/personnel/events (0.09s)
+    --- PASS: TestHTTPAllApprovedReadFamiliesQ25/members_detail (0.07s)
+    --- PASS: TestHTTPAllApprovedReadFamiliesQ25/identities_detail (0.07s)
+    --- PASS: TestHTTPAllApprovedReadFamiliesQ25/templates_detail (0.07s)
+=== RUN   TestHTTPMemberAndDepartmentWritesQ25
+--- PASS: TestHTTPMemberAndDepartmentWritesQ25 (0.20s)
+=== RUN   TestHTTPOptionalUUIDMustNotBeNullQ25
+--- PASS: TestHTTPOptionalUUIDMustNotBeNullQ25 (0.08s)
+=== RUN   TestDepartmentHierarchyVersionAndProtectedDeleteQ25
+--- PASS: TestDepartmentHierarchyVersionAndProtectedDeleteQ25 (0.13s)
+=== RUN   TestMemberExplicitMoveMultiIdentityAndIdempotencyQ25
+--- PASS: TestMemberExplicitMoveMultiIdentityAndIdempotencyQ25 (0.19s)
+=== RUN   TestMemberAuditFailureRollsBackRelationAndVersionQ25
+--- PASS: TestMemberAuditFailureRollsBackRelationAndVersionQ25 (0.08s)
+=== RUN   TestEventsSafeFieldsDefaultWindowAndServerFiltersQ25
+--- PASS: TestEventsSafeFieldsDefaultWindowAndServerFiltersQ25 (0.08s)
+=== RUN   TestPersonnelReadAndWriteDenyAfterRevokeQ25
+--- PASS: TestPersonnelReadAndWriteDenyAfterRevokeQ25 (0.07s)
+=== RUN   TestPresetLifecycleIsolationAndVersion
+--- PASS: TestPresetLifecycleIsolationAndVersion (0.19s)
+=== RUN   TestPresetSessionCSRFAndLiveRevocation
+--- PASS: TestPresetSessionCSRFAndLiveRevocation (0.10s)
+=== RUN   TestPresetNameCapacityAndCASConcurrency
+--- PASS: TestPresetNameCapacityAndCASConcurrency (0.24s)
+=== RUN   TestPresetUnknownFieldsNamesAndDisplayWhitelist
+--- PASS: TestPresetUnknownFieldsNamesAndDisplayWhitelist (0.09s)
+=== RUN   TestPresetEditableASTAndIndependentUTF8RawBoundaries
+--- PASS: TestPresetEditableASTAndIndependentUTF8RawBoundaries (0.13s)
+=== RUN   TestPresetCRUDNoBusinessRevisionOrAudit
+--- PASS: TestPresetCRUDNoBusinessRevisionOrAudit (0.10s)
+=== RUN   TestPresetDatabaseLeastPrivilegeAndHardConstraints
+--- PASS: TestPresetDatabaseLeastPrivilegeAndHardConstraints (0.06s)
+=== RUN   TestQ36BusinessCommitFaultNeverReplaysOrPartiallyCleansDraft
+=== RUN   TestQ36BusinessCommitFaultNeverReplaysOrPartiallyCleansDraft/lost-ack
+=== RUN   TestQ36BusinessCommitFaultNeverReplaysOrPartiallyCleansDraft/deferred-failure
+--- PASS: TestQ36BusinessCommitFaultNeverReplaysOrPartiallyCleansDraft (0.30s)
+    --- PASS: TestQ36BusinessCommitFaultNeverReplaysOrPartiallyCleansDraft/lost-ack (0.17s)
+    --- PASS: TestQ36BusinessCommitFaultNeverReplaysOrPartiallyCleansDraft/deferred-failure (0.13s)
+=== RUN   TestQ36RealRedisContextOwnershipLimitsAndCAS
+--- PASS: TestQ36RealRedisContextOwnershipLimitsAndCAS (0.01s)
+=== RUN   TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop
+=== RUN   TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/department-new
+=== RUN   TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/department-edit
+=== RUN   TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/department-noop
+=== RUN   TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/identity-edit
+=== RUN   TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/identity-noop
+=== RUN   TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/template-new
+=== RUN   TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/template-edit
+=== RUN   TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/template-noop
+=== RUN   TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/member-groups
+=== RUN   TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/member-groups-noop
+=== RUN   TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/member-identities-noop
+--- PASS: TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop (1.41s)
+    --- PASS: TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/department-new (0.12s)
+    --- PASS: TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/department-edit (0.15s)
+    --- PASS: TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/department-noop (0.14s)
+    --- PASS: TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/identity-edit (0.12s)
+    --- PASS: TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/identity-noop (0.11s)
+    --- PASS: TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/template-new (0.12s)
+    --- PASS: TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/template-edit (0.12s)
+    --- PASS: TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/template-noop (0.11s)
+    --- PASS: TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/member-groups (0.15s)
+    --- PASS: TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/member-groups-noop (0.14s)
+    --- PASS: TestQ36ExactDraftCleanupAllBusinessKindsIncludingNoop/member-identities-noop (0.13s)
+=== RUN   TestQ36DraftSharedRouteAndIndependentRawLimit
+--- PASS: TestQ36DraftSharedRouteAndIndependentRawLimit (0.17s)
+=== RUN   TestQ36HTTPChangedCriteriaUsesOneRRAndNoHistoricalRows
+--- PASS: TestQ36HTTPChangedCriteriaUsesOneRRAndNoHistoricalRows (0.14s)
+=== RUN   TestQ36HTTPEventReferencesAndRealArchiveInvalidation
+--- PASS: TestQ36HTTPEventReferencesAndRealArchiveInvalidation (0.18s)
+=== RUN   TestQ36HTTPExplicitEmptyEventSortIsInvalid
+--- PASS: TestQ36HTTPExplicitEmptyEventSortIsInvalid (0.07s)
+=== RUN   TestQ36HTTPMembersQueryLifecycleAndActualPagePath
+--- PASS: TestQ36HTTPMembersQueryLifecycleAndActualPagePath (0.22s)
+=== RUN   TestQ36HTTPQueryRawUnicodeAndFixedEventRange
+--- PASS: TestQ36HTTPQueryRawUnicodeAndFixedEventRange (0.13s)
+=== RUN   TestQ36EventSafeProjectionReferencesAndRR
+--- PASS: TestQ36EventSafeProjectionReferencesAndRR (0.12s)
+=== RUN   TestQ36EventSearchUsesOnlyAllowlistedSummary
+--- PASS: TestQ36EventSearchUsesOnlyAllowlistedSummary (0.07s)
+=== RUN   TestQ36FilterTypedBoundsAndCanonical
+--- PASS: TestQ36FilterTypedBoundsAndCanonical (0.00s)
+=== RUN   TestQ36FilterRealSQLNullRelationsAndInjection
+--- PASS: TestQ36FilterRealSQLNullRelationsAndInjection (0.01s)
+=== RUN   TestQ36FilterTimeDSTAndPrecision
+--- PASS: TestQ36FilterTimeDSTAndPrecision (0.00s)
+=== RUN   TestQ36FrozenCalendarBoundsAreReusedExactly
+--- PASS: TestQ36FrozenCalendarBoundsAreReusedExactly (0.00s)
+=== RUN   TestQ36BusinessRevisionLockPrecedesAuthorization
+--- PASS: TestQ36BusinessRevisionLockPrecedesAuthorization (0.10s)
+=== RUN   TestQ36MemberSQLPageBeforeDisplayRelations
+    query_member_page_test.go:52: full EXPLAIN [
+          {
+            "Plan": {
+              "Node Type": "Sort",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 33696.14,
+              "Total Cost": 33697.81,
+              "Plan Rows": 667,
+              "Plan Width": 688,
+              "Actual Startup Time": 11.907,
+              "Actual Total Time": 11.973,
+              "Actual Rows": 2000.00,
+              "Actual Loops": 1,
+              "Disabled": false,
+              "Output": ["((u.id)::text)", "u.created_at", "u.account", "u.status", "u.is_bootstrap_admin", "((((u.status)::text = 'active'::text) AND (u.is_bootstrap_admin OR ((InitPlan 2).col1 AND (ANY (u.id = (hashed SubPlan 4).col1))))))", "(COALESCE(d.labels, '[]'::jsonb))", "(COALESCE(i.labels, '[]'::jsonb))", "u.id"],
+              "Sort Key": ["u.created_at", "u.id"],
+              "Sort Method": "quicksort",
+              "Sort Space Used": 595,
+              "Sort Space Type": "Memory",
+              "Shared Hit Blocks": 100,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Sort",
+                  "Parent Relationship": "InitPlan",
+                  "Subplan Name": "CTE selected",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 104.30,
+                  "Total Cost": 105.97,
+                  "Plan Rows": 667,
+                  "Plan Width": 66,
+                  "Actual Startup Time": 0.907,
+                  "Actual Total Time": 0.962,
+                  "Actual Rows": 2000.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Output": ["u_3.id", "u_3.created_at", "u_3.account", "u_3.status", "u_3.is_bootstrap_admin"],
+                  "Sort Key": ["u_3.created_at", "u_3.id"],
+                  "Sort Method": "quicksort",
+                  "Sort Space Used": 220,
+                  "Sort Space Type": "Memory",
+                  "Shared Hit Blocks": 38,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "users",
+                      "Schema": "auth",
+                      "Alias": "u_3",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 73.02,
+                      "Plan Rows": 667,
+                      "Plan Width": 66,
+                      "Actual Startup Time": 0.010,
+                      "Actual Total Time": 0.679,
+                      "Actual Rows": 2000.00,
+                      "Actual Loops": 1,
+                      "Disabled": false,
+                      "Output": ["u_3.id", "u_3.created_at", "u_3.account", "u_3.status", "u_3.is_bootstrap_admin"],
+                      "Filter": "(POSITION(('q36-page-1790911245784376286-'::text) IN (lower((u_3.account)::text))) > 0)",
+                      "Rows Removed by Filter": 1,
+                      "Shared Hit Blocks": 38,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                },
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "InitPlan",
+                  "Subplan Name": "InitPlan 2",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "permission_catalog",
+                  "Schema": "personnel",
+                  "Alias": "permission_catalog",
+                  "Startup Cost": 0.00,
+                  "Total Cost": 1.04,
+                  "Plan Rows": 1,
+                  "Plan Width": 0,
+                  "Actual Startup Time": 0.014,
+                  "Actual Total Time": 0.014,
+                  "Actual Rows": 1.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Filter": "(permission_catalog.enabled AND ((permission_catalog.code)::text = 'personnel.manage'::text))",
+                  "Rows Removed by Filter": 0,
+                  "Shared Hit Blocks": 1,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                {
+                  "Node Type": "Hash Join",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Left",
+                  "Startup Cost": 291.03,
+                  "Total Cost": 33557.84,
+                  "Plan Rows": 667,
+                  "Plan Width": 688,
+                  "Actual Startup Time": 10.608,
+                  "Actual Total Time": 11.481,
+                  "Actual Rows": 2000.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Output": ["(u.id)::text", "u.created_at", "u.account", "u.status", "u.is_bootstrap_admin", "(((u.status)::text = 'active'::text) AND (u.is_bootstrap_admin OR ((InitPlan 2).col1 AND (ANY (u.id = (hashed SubPlan 4).col1)))))", "COALESCE(d.labels, '[]'::jsonb)", "COALESCE(i.labels, '[]'::jsonb)", "u.id"],
+                  "Inner Unique": true,
+                  "Hash Cond": "(u.id = i.user_id)",
+                  "Shared Hit Blocks": 100,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Hash Join",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Join Type": "Left",
+                      "Startup Cost": 151.15,
+                      "Total Cost": 166.25,
+                      "Plan Rows": 667,
+                      "Plan Width": 623,
+                      "Actual Startup Time": 5.305,
+                      "Actual Total Time": 5.696,
+                      "Actual Rows": 2000.00,
+                      "Actual Loops": 1,
+                      "Disabled": false,
+                      "Output": ["u.id", "u.created_at", "u.account", "u.status", "u.is_bootstrap_admin", "d.labels"],
+                      "Inner Unique": true,
+                      "Hash Cond": "(u.id = d.user_id)",
+                      "Shared Hit Blocks": 57,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "CTE Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "CTE Name": "selected",
+                          "Alias": "u",
+                          "Startup Cost": 0.00,
+                          "Total Cost": 13.34,
+                          "Plan Rows": 667,
+                          "Plan Width": 591,
+                          "Actual Startup Time": 0.909,
+                          "Actual Total Time": 0.996,
+                          "Actual Rows": 2000.00,
+                          "Actual Loops": 1,
+                          "Disabled": false,
+                          "Output": ["u.id", "u.created_at", "u.account", "u.status", "u.is_bootstrap_admin"],
+                          "Storage": "Memory",
+                          "Maximum Storage": 204,
+                          "Shared Hit Blocks": 38,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0
+                        },
+                        {
+                          "Node Type": "Hash",
+                          "Parent Relationship": "Inner",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 142.82,
+                          "Total Cost": 142.82,
+                          "Plan Rows": 667,
+                          "Plan Width": 48,
+                          "Actual Startup Time": 4.392,
+                          "Actual Total Time": 4.396,
+                          "Actual Rows": 2000.00,
+                          "Actual Loops": 1,
+                          "Disabled": false,
+                          "Output": ["d.labels", "d.user_id"],
+                          "Hash Buckets": 2048,
+                          "Original Hash Buckets": 1024,
+                          "Hash Batches": 1,
+                          "Original Hash Batches": 1,
+                          "Peak Memory Usage": 261,
+                          "Shared Hit Blocks": 19,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Subquery Scan",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Alias": "d",
+                              "Startup Cost": 121.14,
+                              "Total Cost": 142.82,
+                              "Plan Rows": 667,
+                              "Plan Width": 48,
+                              "Actual Startup Time": 1.524,
+                              "Actual Total Time": 4.093,
+                              "Actual Rows": 2000.00,
+                              "Actual Loops": 1,
+                              "Disabled": false,
+                              "Output": ["d.labels", "d.user_id"],
+                              "Shared Hit Blocks": 19,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0,
+                              "Plans": [
+                                {
+                                  "Node Type": "Aggregate",
+                                  "Strategy": "Sorted",
+                                  "Partial Mode": "Simple",
+                                  "Parent Relationship": "Subquery",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Startup Cost": 121.14,
+                                  "Total Cost": 136.15,
+                                  "Plan Rows": 667,
+                                  "Plan Width": 48,
+                                  "Actual Startup Time": 1.523,
+                                  "Actual Total Time": 3.978,
+                                  "Actual Rows": 2000.00,
+                                  "Actual Loops": 1,
+                                  "Disabled": false,
+                                  "Output": ["dm.user_id", "jsonb_agg(jsonb_build_object('id', d_1.id, 'name', d_1.name) ORDER BY d_1.id)"],
+                                  "Group Key": ["dm.user_id"],
+                                  "Shared Hit Blocks": 19,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0,
+                                  "Plans": [
+                                    {
+                                      "Node Type": "Sort",
+                                      "Parent Relationship": "Outer",
+                                      "Parallel Aware": false,
+                                      "Async Capable": false,
+                                      "Startup Cost": 121.14,
+                                      "Total Cost": 122.81,
+                                      "Plan Rows": 667,
+                                      "Plan Width": 250,
+                                      "Actual Startup Time": 1.508,
+                                      "Actual Total Time": 1.593,
+                                      "Actual Rows": 2000.00,
+                                      "Actual Loops": 1,
+                                      "Disabled": false,
+                                      "Output": ["dm.user_id", "d_1.id", "d_1.name"],
+                                      "Sort Key": ["dm.user_id", "d_1.id"],
+                                      "Sort Method": "quicksort",
+                                      "Sort Space Used": 158,
+                                      "Sort Space Type": "Memory",
+                                      "Shared Hit Blocks": 19,
+                                      "Shared Read Blocks": 0,
+                                      "Shared Dirtied Blocks": 0,
+                                      "Shared Written Blocks": 0,
+                                      "Local Hit Blocks": 0,
+                                      "Local Read Blocks": 0,
+                                      "Local Dirtied Blocks": 0,
+                                      "Local Written Blocks": 0,
+                                      "Temp Read Blocks": 0,
+                                      "Temp Written Blocks": 0,
+                                      "Plans": [
+                                        {
+                                          "Node Type": "Nested Loop",
+                                          "Parent Relationship": "Outer",
+                                          "Parallel Aware": false,
+                                          "Async Capable": false,
+                                          "Join Type": "Inner",
+                                          "Startup Cost": 21.84,
+                                          "Total Cost": 89.85,
+                                          "Plan Rows": 667,
+                                          "Plan Width": 250,
+                                          "Actual Startup Time": 0.504,
+                                          "Actual Total Time": 1.220,
+                                          "Actual Rows": 2000.00,
+                                          "Actual Loops": 1,
+                                          "Disabled": false,
+                                          "Output": ["dm.user_id", "d_1.id", "d_1.name"],
+                                          "Inner Unique": true,
+                                          "Shared Hit Blocks": 19,
+                                          "Shared Read Blocks": 0,
+                                          "Shared Dirtied Blocks": 0,
+                                          "Shared Written Blocks": 0,
+                                          "Local Hit Blocks": 0,
+                                          "Local Read Blocks": 0,
+                                          "Local Dirtied Blocks": 0,
+                                          "Local Written Blocks": 0,
+                                          "Temp Read Blocks": 0,
+                                          "Temp Written Blocks": 0,
+                                          "Plans": [
+                                            {
+                                              "Node Type": "Hash Join",
+                                              "Parent Relationship": "Outer",
+                                              "Parallel Aware": false,
+                                              "Async Capable": false,
+                                              "Join Type": "Inner",
+                                              "Startup Cost": 21.68,
+                                              "Total Cost": 72.85,
+                                              "Plan Rows": 667,
+                                              "Plan Width": 32,
+                                              "Actual Startup Time": 0.444,
+                                              "Actual Total Time": 0.756,
+                                              "Actual Rows": 2000.00,
+                                              "Actual Loops": 1,
+                                              "Disabled": false,
+                                              "Output": ["dm.user_id", "dm.department_id"],
+                                              "Inner Unique": false,
+                                              "Hash Cond": "(dm.user_id = u_1.id)",
+                                              "Shared Hit Blocks": 17,
+                                              "Shared Read Blocks": 0,
+                                              "Shared Dirtied Blocks": 0,
+                                              "Shared Written Blocks": 0,
+                                              "Local Hit Blocks": 0,
+                                              "Local Read Blocks": 0,
+                                              "Local Dirtied Blocks": 0,
+                                              "Local Written Blocks": 0,
+                                              "Temp Read Blocks": 0,
+                                              "Temp Written Blocks": 0,
+                                              "Plans": [
+                                                {
+                                                  "Node Type": "Seq Scan",
+                                                  "Parent Relationship": "Outer",
+                                                  "Parallel Aware": false,
+                                                  "Async Capable": false,
+                                                  "Relation Name": "department_members",
+                                                  "Schema": "personnel",
+                                                  "Alias": "dm",
+                                                  "Startup Cost": 0.00,
+                                                  "Total Cost": 37.00,
+                                                  "Plan Rows": 2000,
+                                                  "Plan Width": 32,
+                                                  "Actual Startup Time": 0.010,
+                                                  "Actual Total Time": 0.100,
+                                                  "Actual Rows": 2000.00,
+                                                  "Actual Loops": 1,
+                                                  "Disabled": false,
+                                                  "Output": ["dm.department_id", "dm.user_id", "dm.created_at"],
+                                                  "Shared Hit Blocks": 17,
+                                                  "Shared Read Blocks": 0,
+                                                  "Shared Dirtied Blocks": 0,
+                                                  "Shared Written Blocks": 0,
+                                                  "Local Hit Blocks": 0,
+                                                  "Local Read Blocks": 0,
+                                                  "Local Dirtied Blocks": 0,
+                                                  "Local Written Blocks": 0,
+                                                  "Temp Read Blocks": 0,
+                                                  "Temp Written Blocks": 0
+                                                },
+                                                {
+                                                  "Node Type": "Hash",
+                                                  "Parent Relationship": "Inner",
+                                                  "Parallel Aware": false,
+                                                  "Async Capable": false,
+                                                  "Startup Cost": 13.34,
+                                                  "Total Cost": 13.34,
+                                                  "Plan Rows": 667,
+                                                  "Plan Width": 16,
+                                                  "Actual Startup Time": 0.429,
+                                                  "Actual Total Time": 0.429,
+                                                  "Actual Rows": 2000.00,
+                                                  "Actual Loops": 1,
+                                                  "Disabled": false,
+                                                  "Output": ["u_1.id"],
+                                                  "Hash Buckets": 2048,
+                                                  "Original Hash Buckets": 1024,
+                                                  "Hash Batches": 1,
+                                                  "Original Hash Batches": 1,
+                                                  "Peak Memory Usage": 110,
+                                                  "Shared Hit Blocks": 0,
+                                                  "Shared Read Blocks": 0,
+                                                  "Shared Dirtied Blocks": 0,
+                                                  "Shared Written Blocks": 0,
+                                                  "Local Hit Blocks": 0,
+                                                  "Local Read Blocks": 0,
+                                                  "Local Dirtied Blocks": 0,
+                                                  "Local Written Blocks": 0,
+                                                  "Temp Read Blocks": 0,
+                                                  "Temp Written Blocks": 0,
+                                                  "Plans": [
+                                                    {
+                                                      "Node Type": "CTE Scan",
+                                                      "Parent Relationship": "Outer",
+                                                      "Parallel Aware": false,
+                                                      "Async Capable": false,
+                                                      "CTE Name": "selected",
+                                                      "Alias": "u_1",
+                                                      "Startup Cost": 0.00,
+                                                      "Total Cost": 13.34,
+                                                      "Plan Rows": 667,
+                                                      "Plan Width": 16,
+                                                      "Actual Startup Time": 0.001,
+                                                      "Actual Total Time": 0.264,
+                                                      "Actual Rows": 2000.00,
+                                                      "Actual Loops": 1,
+                                                      "Disabled": false,
+                                                      "Output": ["u_1.id"],
+                                                      "Storage": "Memory",
+                                                      "Maximum Storage": 204,
+                                                      "Shared Hit Blocks": 0,
+                                                      "Shared Read Blocks": 0,
+                                                      "Shared Dirtied Blocks": 0,
+                                                      "Shared Written Blocks": 0,
+                                                      "Local Hit Blocks": 0,
+                                                      "Local Read Blocks": 0,
+                                                      "Local Dirtied Blocks": 0,
+                                                      "Local Written Blocks": 0,
+                                                      "Temp Read Blocks": 0,
+                                                      "Temp Written Blocks": 0
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "Node Type": "Memoize",
+                                              "Parent Relationship": "Inner",
+                                              "Parallel Aware": false,
+                                              "Async Capable": false,
+                                              "Startup Cost": 0.16,
+                                              "Total Cost": 0.20,
+                                              "Plan Rows": 1,
+                                              "Plan Width": 234,
+                                              "Actual Startup Time": 0.000,
+                                              "Actual Total Time": 0.000,
+                                              "Actual Rows": 1.00,
+                                              "Actual Loops": 2000,
+                                              "Disabled": false,
+                                              "Output": ["d_1.id", "d_1.name"],
+                                              "Cache Key": "dm.department_id",
+                                              "Cache Mode": "logical",
+                                              "Cache Hits": 1999,
+                                              "Cache Misses": 1,
+                                              "Cache Evictions": 0,
+                                              "Cache Overflows": 0,
+                                              "Peak Memory Usage": 1,
+                                              "Shared Hit Blocks": 2,
+                                              "Shared Read Blocks": 0,
+                                              "Shared Dirtied Blocks": 0,
+                                              "Shared Written Blocks": 0,
+                                              "Local Hit Blocks": 0,
+                                              "Local Read Blocks": 0,
+                                              "Local Dirtied Blocks": 0,
+                                              "Local Written Blocks": 0,
+                                              "Temp Read Blocks": 0,
+                                              "Temp Written Blocks": 0,
+                                              "Plans": [
+                                                {
+                                                  "Node Type": "Index Scan",
+                                                  "Parent Relationship": "Outer",
+                                                  "Parallel Aware": false,
+                                                  "Async Capable": false,
+                                                  "Scan Direction": "Forward",
+                                                  "Index Name": "pk_departments",
+                                                  "Relation Name": "departments",
+                                                  "Schema": "personnel",
+                                                  "Alias": "d_1",
+                                                  "Startup Cost": 0.15,
+                                                  "Total Cost": 0.19,
+                                                  "Plan Rows": 1,
+                                                  "Plan Width": 234,
+                                                  "Actual Startup Time": 0.012,
+                                                  "Actual Total Time": 0.012,
+                                                  "Actual Rows": 1.00,
+                                                  "Actual Loops": 1,
+                                                  "Disabled": false,
+                                                  "Output": ["d_1.id", "d_1.name"],
+                                                  "Index Cond": "(d_1.id = dm.department_id)",
+                                                  "Rows Removed by Index Recheck": 0,
+                                                  "Index Searches": 1,
+                                                  "Shared Hit Blocks": 2,
+                                                  "Shared Read Blocks": 0,
+                                                  "Shared Dirtied Blocks": 0,
+                                                  "Shared Written Blocks": 0,
+                                                  "Local Hit Blocks": 0,
+                                                  "Local Read Blocks": 0,
+                                                  "Local Dirtied Blocks": 0,
+                                                  "Local Written Blocks": 0,
+                                                  "Temp Read Blocks": 0,
+                                                  "Temp Written Blocks": 0
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "Node Type": "Hash",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 131.54,
+                      "Total Cost": 131.54,
+                      "Plan Rows": 667,
+                      "Plan Width": 48,
+                      "Actual Startup Time": 3.762,
+                      "Actual Total Time": 3.764,
+                      "Actual Rows": 2000.00,
+                      "Actual Loops": 1,
+                      "Disabled": false,
+                      "Output": ["i.labels", "i.user_id"],
+                      "Hash Buckets": 2048,
+                      "Original Hash Buckets": 1024,
+                      "Hash Batches": 1,
+                      "Original Hash Batches": 1,
+                      "Peak Memory Usage": 253,
+                      "Shared Hit Blocks": 19,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Subquery Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Alias": "i",
+                          "Startup Cost": 109.86,
+                          "Total Cost": 131.54,
+                          "Plan Rows": 667,
+                          "Plan Width": 48,
+                          "Actual Startup Time": 1.028,
+                          "Actual Total Time": 3.507,
+                          "Actual Rows": 2000.00,
+                          "Actual Loops": 1,
+                          "Disabled": false,
+                          "Output": ["i.labels", "i.user_id"],
+                          "Shared Hit Blocks": 19,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Aggregate",
+                              "Strategy": "Sorted",
+                              "Partial Mode": "Simple",
+                              "Parent Relationship": "Subquery",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Startup Cost": 109.86,
+                              "Total Cost": 124.87,
+                              "Plan Rows": 667,
+                              "Plan Width": 48,
+                              "Actual Startup Time": 1.028,
+                              "Actual Total Time": 3.392,
+                              "Actual Rows": 2000.00,
+                              "Actual Loops": 1,
+                              "Disabled": false,
+                              "Output": ["mi.user_id", "jsonb_agg(jsonb_build_object('id', i_1.id, 'name', i_1.name) ORDER BY i_1.id)"],
+                              "Group Key": ["mi.user_id"],
+                              "Shared Hit Blocks": 19,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0,
+                              "Plans": [
+                                {
+                                  "Node Type": "Sort",
+                                  "Parent Relationship": "Outer",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Startup Cost": 109.86,
+                                  "Total Cost": 111.53,
+                                  "Plan Rows": 667,
+                                  "Plan Width": 35,
+                                  "Actual Startup Time": 1.022,
+                                  "Actual Total Time": 1.095,
+                                  "Actual Rows": 2000.00,
+                                  "Actual Loops": 1,
+                                  "Disabled": false,
+                                  "Output": ["mi.user_id", "i_1.id", "i_1.name"],
+                                  "Sort Key": ["mi.user_id", "i_1.id"],
+                                  "Sort Method": "quicksort",
+                                  "Sort Space Used": 158,
+                                  "Sort Space Type": "Memory",
+                                  "Shared Hit Blocks": 19,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0,
+                                  "Plans": [
+                                    {
+                                      "Node Type": "Hash Join",
+                                      "Parent Relationship": "Outer",
+                                      "Parallel Aware": false,
+                                      "Async Capable": false,
+                                      "Join Type": "Inner",
+                                      "Startup Cost": 22.77,
+                                      "Total Cost": 78.57,
+                                      "Plan Rows": 667,
+                                      "Plan Width": 35,
+                                      "Actual Startup Time": 0.291,
+                                      "Actual Total Time": 0.751,
+                                      "Actual Rows": 2000.00,
+                                      "Actual Loops": 1,
+                                      "Disabled": false,
+                                      "Output": ["mi.user_id", "i_1.id", "i_1.name"],
+                                      "Inner Unique": true,
+                                      "Hash Cond": "(mi.identity_id = i_1.id)",
+                                      "Shared Hit Blocks": 19,
+                                      "Shared Read Blocks": 0,
+                                      "Shared Dirtied Blocks": 0,
+                                      "Shared Written Blocks": 0,
+                                      "Local Hit Blocks": 0,
+                                      "Local Read Blocks": 0,
+                                      "Local Dirtied Blocks": 0,
+                                      "Local Written Blocks": 0,
+                                      "Temp Read Blocks": 0,
+                                      "Temp Written Blocks": 0,
+                                      "Plans": [
+                                        {
+                                          "Node Type": "Hash Join",
+                                          "Parent Relationship": "Outer",
+                                          "Parallel Aware": false,
+                                          "Async Capable": false,
+                                          "Join Type": "Inner",
+                                          "Startup Cost": 21.68,
+                                          "Total Cost": 73.88,
+                                          "Plan Rows": 667,
+                                          "Plan Width": 32,
+                                          "Actual Startup Time": 0.268,
+                                          "Actual Total Time": 0.559,
+                                          "Actual Rows": 2000.00,
+                                          "Actual Loops": 1,
+                                          "Disabled": false,
+                                          "Output": ["mi.user_id", "mi.identity_id"],
+                                          "Inner Unique": false,
+                                          "Hash Cond": "(mi.user_id = u_2.id)",
+                                          "Shared Hit Blocks": 18,
+                                          "Shared Read Blocks": 0,
+                                          "Shared Dirtied Blocks": 0,
+                                          "Shared Written Blocks": 0,
+                                          "Local Hit Blocks": 0,
+                                          "Local Read Blocks": 0,
+                                          "Local Dirtied Blocks": 0,
+                                          "Local Written Blocks": 0,
+                                          "Temp Read Blocks": 0,
+                                          "Temp Written Blocks": 0,
+                                          "Plans": [
+                                            {
+                                              "Node Type": "Seq Scan",
+                                              "Parent Relationship": "Outer",
+                                              "Parallel Aware": false,
+                                              "Async Capable": false,
+                                              "Relation Name": "member_identities",
+                                              "Schema": "personnel",
+                                              "Alias": "mi",
+                                              "Startup Cost": 0.00,
+                                              "Total Cost": 38.02,
+                                              "Plan Rows": 2002,
+                                              "Plan Width": 32,
+                                              "Actual Startup Time": 0.004,
+                                              "Actual Total Time": 0.087,
+                                              "Actual Rows": 2002.00,
+                                              "Actual Loops": 1,
+                                              "Disabled": false,
+                                              "Output": ["mi.user_id", "mi.identity_id", "mi.created_at"],
+                                              "Shared Hit Blocks": 18,
+                                              "Shared Read Blocks": 0,
+                                              "Shared Dirtied Blocks": 0,
+                                              "Shared Written Blocks": 0,
+                                              "Local Hit Blocks": 0,
+                                              "Local Read Blocks": 0,
+                                              "Local Dirtied Blocks": 0,
+                                              "Local Written Blocks": 0,
+                                              "Temp Read Blocks": 0,
+                                              "Temp Written Blocks": 0
+                                            },
+                                            {
+                                              "Node Type": "Hash",
+                                              "Parent Relationship": "Inner",
+                                              "Parallel Aware": false,
+                                              "Async Capable": false,
+                                              "Startup Cost": 13.34,
+                                              "Total Cost": 13.34,
+                                              "Plan Rows": 667,
+                                              "Plan Width": 16,
+                                              "Actual Startup Time": 0.254,
+                                              "Actual Total Time": 0.254,
+                                              "Actual Rows": 2000.00,
+                                              "Actual Loops": 1,
+                                              "Disabled": false,
+                                              "Output": ["u_2.id"],
+                                              "Hash Buckets": 2048,
+                                              "Original Hash Buckets": 1024,
+                                              "Hash Batches": 1,
+                                              "Original Hash Batches": 1,
+                                              "Peak Memory Usage": 110,
+                                              "Shared Hit Blocks": 0,
+                                              "Shared Read Blocks": 0,
+                                              "Shared Dirtied Blocks": 0,
+                                              "Shared Written Blocks": 0,
+                                              "Local Hit Blocks": 0,
+                                              "Local Read Blocks": 0,
+                                              "Local Dirtied Blocks": 0,
+                                              "Local Written Blocks": 0,
+                                              "Temp Read Blocks": 0,
+                                              "Temp Written Blocks": 0,
+                                              "Plans": [
+                                                {
+                                                  "Node Type": "CTE Scan",
+                                                  "Parent Relationship": "Outer",
+                                                  "Parallel Aware": false,
+                                                  "Async Capable": false,
+                                                  "CTE Name": "selected",
+                                                  "Alias": "u_2",
+                                                  "Startup Cost": 0.00,
+                                                  "Total Cost": 13.34,
+                                                  "Plan Rows": 667,
+                                                  "Plan Width": 16,
+                                                  "Actual Startup Time": 0.001,
+                                                  "Actual Total Time": 0.090,
+                                                  "Actual Rows": 2000.00,
+                                                  "Actual Loops": 1,
+                                                  "Disabled": false,
+                                                  "Output": ["u_2.id"],
+                                                  "Storage": "Memory",
+                                                  "Maximum Storage": 204,
+                                                  "Shared Hit Blocks": 0,
+                                                  "Shared Read Blocks": 0,
+                                                  "Shared Dirtied Blocks": 0,
+                                                  "Shared Written Blocks": 0,
+                                                  "Local Hit Blocks": 0,
+                                                  "Local Read Blocks": 0,
+                                                  "Local Dirtied Blocks": 0,
+                                                  "Local Written Blocks": 0,
+                                                  "Temp Read Blocks": 0,
+                                                  "Temp Written Blocks": 0
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "Node Type": "Hash",
+                                          "Parent Relationship": "Inner",
+                                          "Parallel Aware": false,
+                                          "Async Capable": false,
+                                          "Startup Cost": 1.04,
+                                          "Total Cost": 1.04,
+                                          "Plan Rows": 4,
+                                          "Plan Width": 19,
+                                          "Actual Startup Time": 0.012,
+                                          "Actual Total Time": 0.012,
+                                          "Actual Rows": 2.00,
+                                          "Actual Loops": 1,
+                                          "Disabled": false,
+                                          "Output": ["i_1.id", "i_1.name"],
+                                          "Hash Buckets": 1024,
+                                          "Original Hash Buckets": 1024,
+                                          "Hash Batches": 1,
+                                          "Original Hash Batches": 1,
+                                          "Peak Memory Usage": 9,
+                                          "Shared Hit Blocks": 1,
+                                          "Shared Read Blocks": 0,
+                                          "Shared Dirtied Blocks": 0,
+                                          "Shared Written Blocks": 0,
+                                          "Local Hit Blocks": 0,
+                                          "Local Read Blocks": 0,
+                                          "Local Dirtied Blocks": 0,
+                                          "Local Written Blocks": 0,
+                                          "Temp Read Blocks": 0,
+                                          "Temp Written Blocks": 0,
+                                          "Plans": [
+                                            {
+                                              "Node Type": "Seq Scan",
+                                              "Parent Relationship": "Outer",
+                                              "Parallel Aware": false,
+                                              "Async Capable": false,
+                                              "Relation Name": "identities",
+                                              "Schema": "personnel",
+                                              "Alias": "i_1",
+                                              "Startup Cost": 0.00,
+                                              "Total Cost": 1.04,
+                                              "Plan Rows": 4,
+                                              "Plan Width": 19,
+                                              "Actual Startup Time": 0.008,
+                                              "Actual Total Time": 0.009,
+                                              "Actual Rows": 2.00,
+                                              "Actual Loops": 1,
+                                              "Disabled": false,
+                                              "Output": ["i_1.id", "i_1.name"],
+                                              "Shared Hit Blocks": 1,
+                                              "Shared Read Blocks": 0,
+                                              "Shared Dirtied Blocks": 0,
+                                              "Shared Written Blocks": 0,
+                                              "Local Hit Blocks": 0,
+                                              "Local Read Blocks": 0,
+                                              "Local Dirtied Blocks": 0,
+                                              "Local Written Blocks": 0,
+                                              "Temp Read Blocks": 0,
+                                              "Temp Written Blocks": 0
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "Node Type": "Aggregate",
+                      "Strategy": "Hashed",
+                      "Partial Mode": "Simple",
+                      "Parent Relationship": "SubPlan",
+                      "Subplan Name": "SubPlan 4",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 165.11,
+                      "Total Cost": 173.45,
+                      "Plan Rows": 834,
+                      "Plan Width": 16,
+                      "Actual Startup Time": 1.167,
+                      "Actual Total Time": 1.281,
+                      "Actual Rows": 2000.00,
+                      "Actual Loops": 1,
+                      "Disabled": false,
+                      "Output": ["mi_1.user_id"],
+                      "Group Key": ["mi_1.user_id"],
+                      "Planned Partitions": 0,
+                      "HashAgg Batches": 1,
+                      "Peak Memory Usage": 153,
+                      "Disk Usage": 0,
+                      "Shared Hit Blocks": 23,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Append",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 56.15,
+                          "Total Cost": 163.03,
+                          "Plan Rows": 834,
+                          "Plan Width": 16,
+                          "Actual Startup Time": 0.319,
+                          "Actual Total Time": 0.875,
+                          "Actual Rows": 2000.00,
+                          "Actual Loops": 1,
+                          "Disabled": false,
+                          "Shared Hit Blocks": 23,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Subplans Removed": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Hash Join",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Join Type": "Inner",
+                              "Startup Cost": 56.15,
+                              "Total Cost": 73.66,
+                              "Plan Rows": 167,
+                              "Plan Width": 16,
+                              "Actual Startup Time": 0.031,
+                              "Actual Total Time": 0.033,
+                              "Actual Rows": 0.00,
+                              "Actual Loops": 1,
+                              "Disabled": false,
+                              "Output": ["mi_1.user_id"],
+                              "Inner Unique": false,
+                              "Hash Cond": "(u_4.id = mi_1.user_id)",
+                              "Shared Hit Blocks": 3,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0,
+                              "Plans": [
+                                {
+                                  "Node Type": "CTE Scan",
+                                  "Parent Relationship": "Outer",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "CTE Name": "selected",
+                                  "Alias": "u_4",
+                                  "Startup Cost": 0.00,
+                                  "Total Cost": 13.34,
+                                  "Plan Rows": 667,
+                                  "Plan Width": 16,
+                                  "Actual Startup Time": 0.001,
+                                  "Actual Total Time": 0.001,
+                                  "Actual Rows": 1.00,
+                                  "Actual Loops": 1,
+                                  "Disabled": false,
+                                  "Output": ["u_4.id", "u_4.created_at", "u_4.account", "u_4.status", "u_4.is_bootstrap_admin"],
+                                  "Storage": "Memory",
+                                  "Maximum Storage": 204,
+                                  "Shared Hit Blocks": 0,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0
+                                },
+                                {
+                                  "Node Type": "Hash",
+                                  "Parent Relationship": "Inner",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Startup Cost": 49.90,
+                                  "Total Cost": 49.90,
+                                  "Plan Rows": 500,
+                                  "Plan Width": 16,
+                                  "Actual Startup Time": 0.021,
+                                  "Actual Total Time": 0.022,
+                                  "Actual Rows": 0.00,
+                                  "Actual Loops": 1,
+                                  "Disabled": false,
+                                  "Output": ["mi_1.user_id"],
+                                  "Hash Buckets": 1024,
+                                  "Original Hash Buckets": 1024,
+                                  "Hash Batches": 1,
+                                  "Original Hash Batches": 1,
+                                  "Peak Memory Usage": 8,
+                                  "Shared Hit Blocks": 3,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0,
+                                  "Plans": [
+                                    {
+                                      "Node Type": "Hash Join",
+                                      "Parent Relationship": "Outer",
+                                      "Parallel Aware": false,
+                                      "Async Capable": false,
+                                      "Join Type": "Inner",
+                                      "Startup Cost": 1.06,
+                                      "Total Cost": 49.90,
+                                      "Plan Rows": 500,
+                                      "Plan Width": 16,
+                                      "Actual Startup Time": 0.021,
+                                      "Actual Total Time": 0.022,
+                                      "Actual Rows": 0.00,
+                                      "Actual Loops": 1,
+                                      "Disabled": false,
+                                      "Output": ["mi_1.user_id"],
+                                      "Inner Unique": true,
+                                      "Hash Cond": "(mi_1.identity_id = ip.identity_id)",
+                                      "Shared Hit Blocks": 3,
+                                      "Shared Read Blocks": 0,
+                                      "Shared Dirtied Blocks": 0,
+                                      "Shared Written Blocks": 0,
+                                      "Local Hit Blocks": 0,
+                                      "Local Read Blocks": 0,
+                                      "Local Dirtied Blocks": 0,
+                                      "Local Written Blocks": 0,
+                                      "Temp Read Blocks": 0,
+                                      "Temp Written Blocks": 0,
+                                      "Plans": [
+                                        {
+                                          "Node Type": "Seq Scan",
+                                          "Parent Relationship": "Outer",
+                                          "Parallel Aware": false,
+                                          "Async Capable": false,
+                                          "Relation Name": "member_identities",
+                                          "Schema": "personnel",
+                                          "Alias": "mi_1",
+                                          "Startup Cost": 0.00,
+                                          "Total Cost": 38.02,
+                                          "Plan Rows": 2002,
+                                          "Plan Width": 32,
+                                          "Actual Startup Time": 0.004,
+                                          "Actual Total Time": 0.004,
+                                          "Actual Rows": 1.00,
+                                          "Actual Loops": 1,
+                                          "Disabled": false,
+                                          "Output": ["mi_1.user_id", "mi_1.identity_id", "mi_1.created_at"],
+                                          "Shared Hit Blocks": 2,
+                                          "Shared Read Blocks": 0,
+                                          "Shared Dirtied Blocks": 0,
+                                          "Shared Written Blocks": 0,
+                                          "Local Hit Blocks": 0,
+                                          "Local Read Blocks": 0,
+                                          "Local Dirtied Blocks": 0,
+                                          "Local Written Blocks": 0,
+                                          "Temp Read Blocks": 0,
+                                          "Temp Written Blocks": 0
+                                        },
+                                        {
+                                          "Node Type": "Hash",
+                                          "Parent Relationship": "Inner",
+                                          "Parallel Aware": false,
+                                          "Async Capable": false,
+                                          "Startup Cost": 1.05,
+                                          "Total Cost": 1.05,
+                                          "Plan Rows": 1,
+                                          "Plan Width": 16,
+                                          "Actual Startup Time": 0.005,
+                                          "Actual Total Time": 0.006,
+                                          "Actual Rows": 0.00,
+                                          "Actual Loops": 1,
+                                          "Disabled": false,
+                                          "Output": ["ip.identity_id"],
+                                          "Hash Buckets": 1024,
+                                          "Original Hash Buckets": 1024,
+                                          "Hash Batches": 1,
+                                          "Original Hash Batches": 1,
+                                          "Peak Memory Usage": 8,
+                                          "Shared Hit Blocks": 1,
+                                          "Shared Read Blocks": 0,
+                                          "Shared Dirtied Blocks": 0,
+                                          "Shared Written Blocks": 0,
+                                          "Local Hit Blocks": 0,
+                                          "Local Read Blocks": 0,
+                                          "Local Dirtied Blocks": 0,
+                                          "Local Written Blocks": 0,
+                                          "Temp Read Blocks": 0,
+                                          "Temp Written Blocks": 0,
+                                          "Plans": [
+                                            {
+                                              "Node Type": "Seq Scan",
+                                              "Parent Relationship": "Outer",
+                                              "Parallel Aware": false,
+                                              "Async Capable": false,
+                                              "Relation Name": "identity_permissions",
+                                              "Schema": "personnel",
+                                              "Alias": "ip",
+                                              "Startup Cost": 0.00,
+                                              "Total Cost": 1.05,
+                                              "Plan Rows": 1,
+                                              "Plan Width": 16,
+                                              "Actual Startup Time": 0.005,
+                                              "Actual Total Time": 0.005,
+                                              "Actual Rows": 0.00,
+                                              "Actual Loops": 1,
+                                              "Disabled": false,
+                                              "Output": ["ip.identity_id"],
+                                              "Filter": "((ip.permission_code)::text = 'personnel.manage'::text)",
+                                              "Rows Removed by Filter": 2,
+                                              "Shared Hit Blocks": 1,
+                                              "Shared Read Blocks": 0,
+                                              "Shared Dirtied Blocks": 0,
+                                              "Shared Written Blocks": 0,
+                                              "Local Hit Blocks": 0,
+                                              "Local Read Blocks": 0,
+                                              "Local Dirtied Blocks": 0,
+                                              "Local Written Blocks": 0,
+                                              "Temp Read Blocks": 0,
+                                              "Temp Written Blocks": 0
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "Node Type": "Hash Join",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Join Type": "Inner",
+                              "Startup Cost": 23.83,
+                              "Total Cost": 85.20,
+                              "Plan Rows": 667,
+                              "Plan Width": 16,
+                              "Actual Startup Time": 0.287,
+                              "Actual Total Time": 0.754,
+                              "Actual Rows": 2000.00,
+                              "Actual Loops": 1,
+                              "Disabled": false,
+                              "Output": ["mi_2.user_id"],
+                              "Inner Unique": false,
+                              "Hash Cond": "(mi_2.identity_id = it.identity_id)",
+                              "Shared Hit Blocks": 20,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0,
+                              "Plans": [
+                                {
+                                  "Node Type": "Hash Join",
+                                  "Parent Relationship": "Outer",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Join Type": "Inner",
+                                  "Startup Cost": 21.68,
+                                  "Total Cost": 73.88,
+                                  "Plan Rows": 667,
+                                  "Plan Width": 32,
+                                  "Actual Startup Time": 0.262,
+                                  "Actual Total Time": 0.559,
+                                  "Actual Rows": 2000.00,
+                                  "Actual Loops": 1,
+                                  "Disabled": false,
+                                  "Output": ["mi_2.user_id", "mi_2.identity_id"],
+                                  "Inner Unique": false,
+                                  "Hash Cond": "(mi_2.user_id = u_5.id)",
+                                  "Shared Hit Blocks": 18,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0,
+                                  "Plans": [
+                                    {
+                                      "Node Type": "Seq Scan",
+                                      "Parent Relationship": "Outer",
+                                      "Parallel Aware": false,
+                                      "Async Capable": false,
+                                      "Relation Name": "member_identities",
+                                      "Schema": "personnel",
+                                      "Alias": "mi_2",
+                                      "Startup Cost": 0.00,
+                                      "Total Cost": 38.02,
+                                      "Plan Rows": 2002,
+                                      "Plan Width": 32,
+                                      "Actual Startup Time": 0.003,
+                                      "Actual Total Time": 0.084,
+                                      "Actual Rows": 2002.00,
+                                      "Actual Loops": 1,
+                                      "Disabled": false,
+                                      "Output": ["mi_2.user_id", "mi_2.identity_id", "mi_2.created_at"],
+                                      "Shared Hit Blocks": 18,
+                                      "Shared Read Blocks": 0,
+                                      "Shared Dirtied Blocks": 0,
+                                      "Shared Written Blocks": 0,
+                                      "Local Hit Blocks": 0,
+                                      "Local Read Blocks": 0,
+                                      "Local Dirtied Blocks": 0,
+                                      "Local Written Blocks": 0,
+                                      "Temp Read Blocks": 0,
+                                      "Temp Written Blocks": 0
+                                    },
+                                    {
+                                      "Node Type": "Hash",
+                                      "Parent Relationship": "Inner",
+                                      "Parallel Aware": false,
+                                      "Async Capable": false,
+                                      "Startup Cost": 13.34,
+                                      "Total Cost": 13.34,
+                                      "Plan Rows": 667,
+                                      "Plan Width": 16,
+                                      "Actual Startup Time": 0.248,
+                                      "Actual Total Time": 0.249,
+                                      "Actual Rows": 2000.00,
+                                      "Actual Loops": 1,
+                                      "Disabled": false,
+                                      "Output": ["u_5.id"],
+                                      "Hash Buckets": 2048,
+                                      "Original Hash Buckets": 1024,
+                                      "Hash Batches": 1,
+                                      "Original Hash Batches": 1,
+                                      "Peak Memory Usage": 110,
+                                      "Shared Hit Blocks": 0,
+                                      "Shared Read Blocks": 0,
+                                      "Shared Dirtied Blocks": 0,
+                                      "Shared Written Blocks": 0,
+                                      "Local Hit Blocks": 0,
+                                      "Local Read Blocks": 0,
+                                      "Local Dirtied Blocks": 0,
+                                      "Local Written Blocks": 0,
+                                      "Temp Read Blocks": 0,
+                                      "Temp Written Blocks": 0,
+                                      "Plans": [
+                                        {
+                                          "Node Type": "CTE Scan",
+                                          "Parent Relationship": "Outer",
+                                          "Parallel Aware": false,
+                                          "Async Capable": false,
+                                          "CTE Name": "selected",
+                                          "Alias": "u_5",
+                                          "Startup Cost": 0.00,
+                                          "Total Cost": 13.34,
+                                          "Plan Rows": 667,
+                                          "Plan Width": 16,
+                                          "Actual Startup Time": 0.000,
+                                          "Actual Total Time": 0.089,
+                                          "Actual Rows": 2000.00,
+                                          "Actual Loops": 1,
+                                          "Disabled": false,
+                                          "Output": ["u_5.id"],
+                                          "Storage": "Memory",
+                                          "Maximum Storage": 204,
+                                          "Shared Hit Blocks": 0,
+                                          "Shared Read Blocks": 0,
+                                          "Shared Dirtied Blocks": 0,
+                                          "Shared Written Blocks": 0,
+                                          "Local Hit Blocks": 0,
+                                          "Local Read Blocks": 0,
+                                          "Local Dirtied Blocks": 0,
+                                          "Local Written Blocks": 0,
+                                          "Temp Read Blocks": 0,
+                                          "Temp Written Blocks": 0
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "Node Type": "Hash",
+                                  "Parent Relationship": "Inner",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Startup Cost": 2.12,
+                                  "Total Cost": 2.12,
+                                  "Plan Rows": 2,
+                                  "Plan Width": 16,
+                                  "Actual Startup Time": 0.016,
+                                  "Actual Total Time": 0.017,
+                                  "Actual Rows": 1.00,
+                                  "Actual Loops": 1,
+                                  "Disabled": false,
+                                  "Output": ["it.identity_id"],
+                                  "Hash Buckets": 1024,
+                                  "Original Hash Buckets": 1024,
+                                  "Hash Batches": 1,
+                                  "Original Hash Batches": 1,
+                                  "Peak Memory Usage": 9,
+                                  "Shared Hit Blocks": 2,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0,
+                                  "Plans": [
+                                    {
+                                      "Node Type": "Nested Loop",
+                                      "Parent Relationship": "Outer",
+                                      "Parallel Aware": false,
+                                      "Async Capable": false,
+                                      "Join Type": "Inner",
+                                      "Startup Cost": 0.00,
+                                      "Total Cost": 2.12,
+                                      "Plan Rows": 2,
+                                      "Plan Width": 16,
+                                      "Actual Startup Time": 0.014,
+                                      "Actual Total Time": 0.015,
+                                      "Actual Rows": 1.00,
+                                      "Actual Loops": 1,
+                                      "Disabled": false,
+                                      "Output": ["it.identity_id"],
+                                      "Inner Unique": true,
+                                      "Join Filter": "(it.template_id = tp.template_id)",
+                                      "Rows Removed by Join Filter": 0,
+                                      "Shared Hit Blocks": 2,
+                                      "Shared Read Blocks": 0,
+                                      "Shared Dirtied Blocks": 0,
+                                      "Shared Written Blocks": 0,
+                                      "Local Hit Blocks": 0,
+                                      "Local Read Blocks": 0,
+                                      "Local Dirtied Blocks": 0,
+                                      "Local Written Blocks": 0,
+                                      "Temp Read Blocks": 0,
+                                      "Temp Written Blocks": 0,
+                                      "Plans": [
+                                        {
+                                          "Node Type": "Seq Scan",
+                                          "Parent Relationship": "Outer",
+                                          "Parallel Aware": false,
+                                          "Async Capable": false,
+                                          "Relation Name": "identity_templates",
+                                          "Schema": "personnel",
+                                          "Alias": "it",
+                                          "Startup Cost": 0.00,
+                                          "Total Cost": 1.02,
+                                          "Plan Rows": 2,
+                                          "Plan Width": 32,
+                                          "Actual Startup Time": 0.004,
+                                          "Actual Total Time": 0.004,
+                                          "Actual Rows": 1.00,
+                                          "Actual Loops": 1,
+                                          "Disabled": false,
+                                          "Output": ["it.identity_id", "it.template_id"],
+                                          "Shared Hit Blocks": 1,
+                                          "Shared Read Blocks": 0,
+                                          "Shared Dirtied Blocks": 0,
+                                          "Shared Written Blocks": 0,
+                                          "Local Hit Blocks": 0,
+                                          "Local Read Blocks": 0,
+                                          "Local Dirtied Blocks": 0,
+                                          "Local Written Blocks": 0,
+                                          "Temp Read Blocks": 0,
+                                          "Temp Written Blocks": 0
+                                        },
+                                        {
+                                          "Node Type": "Materialize",
+                                          "Parent Relationship": "Inner",
+                                          "Parallel Aware": false,
+                                          "Async Capable": false,
+                                          "Startup Cost": 0.00,
+                                          "Total Cost": 1.06,
+                                          "Plan Rows": 2,
+                                          "Plan Width": 16,
+                                          "Actual Startup Time": 0.008,
+                                          "Actual Total Time": 0.009,
+                                          "Actual Rows": 1.00,
+                                          "Actual Loops": 1,
+                                          "Disabled": false,
+                                          "Output": ["tp.template_id"],
+                                          "Storage": "Memory",
+                                          "Maximum Storage": 17,
+                                          "Shared Hit Blocks": 1,
+                                          "Shared Read Blocks": 0,
+                                          "Shared Dirtied Blocks": 0,
+                                          "Shared Written Blocks": 0,
+                                          "Local Hit Blocks": 0,
+                                          "Local Read Blocks": 0,
+                                          "Local Dirtied Blocks": 0,
+                                          "Local Written Blocks": 0,
+                                          "Temp Read Blocks": 0,
+                                          "Temp Written Blocks": 0,
+                                          "Plans": [
+                                            {
+                                              "Node Type": "Seq Scan",
+                                              "Parent Relationship": "Outer",
+                                              "Parallel Aware": false,
+                                              "Async Capable": false,
+                                              "Relation Name": "template_permissions",
+                                              "Schema": "personnel",
+                                              "Alias": "tp",
+                                              "Startup Cost": 0.00,
+                                              "Total Cost": 1.05,
+                                              "Plan Rows": 2,
+                                              "Plan Width": 16,
+                                              "Actual Startup Time": 0.004,
+                                              "Actual Total Time": 0.004,
+                                              "Actual Rows": 1.00,
+                                              "Actual Loops": 1,
+                                              "Disabled": false,
+                                              "Output": ["tp.template_id"],
+                                              "Filter": "((tp.permission_code)::text = 'personnel.manage'::text)",
+                                              "Rows Removed by Filter": 1,
+                                              "Shared Hit Blocks": 1,
+                                              "Shared Read Blocks": 0,
+                                              "Shared Dirtied Blocks": 0,
+                                              "Shared Written Blocks": 0,
+                                              "Local Hit Blocks": 0,
+                                              "Local Read Blocks": 0,
+                                              "Local Dirtied Blocks": 0,
+                                              "Local Written Blocks": 0,
+                                              "Temp Read Blocks": 0,
+                                              "Temp Written Blocks": 0
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 159,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 1.079,
+            "Triggers": [
+            ],
+            "Execution Time": 12.220
+          }
+        ]
+    query_member_page_test.go:57: page EXPLAIN [
+          {
+            "Plan": {
+              "Node Type": "Nested Loop",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Join Type": "Left",
+              "Startup Cost": 127.45,
+              "Total Cost": 353.75,
+              "Plan Rows": 7,
+              "Plan Width": 688,
+              "Actual Startup Time": 0.901,
+              "Actual Total Time": 0.998,
+              "Actual Rows": 7.00,
+              "Actual Loops": 1,
+              "Disabled": false,
+              "Output": ["(u.id)::text", "u.created_at", "u.account", "u.status", "u.is_bootstrap_admin", "(((u.status)::text = 'active'::text) AND (u.is_bootstrap_admin OR ((InitPlan 2).col1 AND EXISTS(SubPlan 3))))", "COALESCE((jsonb_agg(jsonb_build_object('id', d.id, 'name', d.name) ORDER BY d.id)), '[]'::jsonb)", "COALESCE((jsonb_agg(jsonb_build_object('id', i.id, 'name', i.name) ORDER BY i.id)), '[]'::jsonb)", "u.id"],
+              "Inner Unique": false,
+              "Shared Hit Blocks": 165,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Limit",
+                  "Parent Relationship": "InitPlan",
+                  "Subplan Name": "CTE selected",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 100.46,
+                  "Total Cost": 100.48,
+                  "Plan Rows": 7,
+                  "Plan Width": 66,
+                  "Actual Startup Time": 0.838,
+                  "Actual Total Time": 0.839,
+                  "Actual Rows": 7.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Output": ["u_1.id", "u_1.created_at", "u_1.account", "u_1.status", "u_1.is_bootstrap_admin"],
+                  "Shared Hit Blocks": 38,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Sort",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 100.13,
+                      "Total Cost": 101.80,
+                      "Plan Rows": 667,
+                      "Plan Width": 66,
+                      "Actual Startup Time": 0.830,
+                      "Actual Total Time": 0.834,
+                      "Actual Rows": 140.00,
+                      "Actual Loops": 1,
+                      "Disabled": false,
+                      "Output": ["u_1.id", "u_1.created_at", "u_1.account", "u_1.status", "u_1.is_bootstrap_admin"],
+                      "Sort Key": ["u_1.created_at", "u_1.id"],
+                      "Sort Method": "top-N heapsort",
+                      "Sort Space Used": 43,
+                      "Sort Space Type": "Memory",
+                      "Shared Hit Blocks": 38,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Seq Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Relation Name": "users",
+                          "Schema": "auth",
+                          "Alias": "u_1",
+                          "Startup Cost": 0.00,
+                          "Total Cost": 73.02,
+                          "Plan Rows": 667,
+                          "Plan Width": 66,
+                          "Actual Startup Time": 0.012,
+                          "Actual Total Time": 0.646,
+                          "Actual Rows": 2000.00,
+                          "Actual Loops": 1,
+                          "Disabled": false,
+                          "Output": ["u_1.id", "u_1.created_at", "u_1.account", "u_1.status", "u_1.is_bootstrap_admin"],
+                          "Filter": "(POSITION(('q36-page-1790911245784376286-'::text) IN (lower((u_1.account)::text))) > 0)",
+                          "Rows Removed by Filter": 1,
+                          "Shared Hit Blocks": 38,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "InitPlan",
+                  "Subplan Name": "InitPlan 2",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "permission_catalog",
+                  "Schema": "personnel",
+                  "Alias": "permission_catalog",
+                  "Startup Cost": 0.00,
+                  "Total Cost": 1.04,
+                  "Plan Rows": 1,
+                  "Plan Width": 0,
+                  "Actual Startup Time": 0.003,
+                  "Actual Total Time": 0.003,
+                  "Actual Rows": 1.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Filter": "(permission_catalog.enabled AND ((permission_catalog.code)::text = 'personnel.manage'::text))",
+                  "Rows Removed by Filter": 0,
+                  "Shared Hit Blocks": 1,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                {
+                  "Node Type": "Nested Loop",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Left",
+                  "Startup Cost": 16.54,
+                  "Total Cost": 116.09,
+                  "Plan Rows": 7,
+                  "Plan Width": 623,
+                  "Actual Startup Time": 0.867,
+                  "Actual Total Time": 0.899,
+                  "Actual Rows": 7.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Output": ["u.id", "u.created_at", "u.account", "u.status", "u.is_bootstrap_admin", "(jsonb_agg(jsonb_build_object('id', d.id, 'name', d.name) ORDER BY d.id))"],
+                  "Inner Unique": false,
+                  "Shared Hit Blocks": 73,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "CTE Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "CTE Name": "selected",
+                      "Alias": "u",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 0.14,
+                      "Plan Rows": 7,
+                      "Plan Width": 591,
+                      "Actual Startup Time": 0.839,
+                      "Actual Total Time": 0.841,
+                      "Actual Rows": 7.00,
+                      "Actual Loops": 1,
+                      "Disabled": false,
+                      "Output": ["u.id", "u.created_at", "u.account", "u.status", "u.is_bootstrap_admin"],
+                      "Storage": "Memory",
+                      "Maximum Storage": 17,
+                      "Shared Hit Blocks": 38,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Aggregate",
+                      "Strategy": "Plain",
+                      "Partial Mode": "Simple",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 16.54,
+                      "Total Cost": 16.55,
+                      "Plan Rows": 1,
+                      "Plan Width": 32,
+                      "Actual Startup Time": 0.008,
+                      "Actual Total Time": 0.008,
+                      "Actual Rows": 1.00,
+                      "Actual Loops": 7,
+                      "Disabled": false,
+                      "Output": ["jsonb_agg(jsonb_build_object('id', d.id, 'name', d.name) ORDER BY d.id)"],
+                      "Shared Hit Blocks": 35,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Sort",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 16.53,
+                          "Total Cost": 16.54,
+                          "Plan Rows": 1,
+                          "Plan Width": 234,
+                          "Actual Startup Time": 0.005,
+                          "Actual Total Time": 0.005,
+                          "Actual Rows": 1.00,
+                          "Actual Loops": 7,
+                          "Disabled": false,
+                          "Output": ["d.id", "d.name"],
+                          "Sort Key": ["d.id"],
+                          "Sort Method": "quicksort",
+                          "Sort Space Used": 25,
+                          "Sort Space Type": "Memory",
+                          "Shared Hit Blocks": 35,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Nested Loop",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Join Type": "Inner",
+                              "Startup Cost": 0.43,
+                              "Total Cost": 16.52,
+                              "Plan Rows": 1,
+                              "Plan Width": 234,
+                              "Actual Startup Time": 0.004,
+                              "Actual Total Time": 0.004,
+                              "Actual Rows": 1.00,
+                              "Actual Loops": 7,
+                              "Disabled": false,
+                              "Output": ["d.id", "d.name"],
+                              "Inner Unique": true,
+                              "Shared Hit Blocks": 35,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0,
+                              "Plans": [
+                                {
+                                  "Node Type": "Index Scan",
+                                  "Parent Relationship": "Outer",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Scan Direction": "Forward",
+                                  "Index Name": "ix_department_members_user_id",
+                                  "Relation Name": "department_members",
+                                  "Schema": "personnel",
+                                  "Alias": "dm",
+                                  "Startup Cost": 0.28,
+                                  "Total Cost": 8.29,
+                                  "Plan Rows": 1,
+                                  "Plan Width": 16,
+                                  "Actual Startup Time": 0.002,
+                                  "Actual Total Time": 0.002,
+                                  "Actual Rows": 1.00,
+                                  "Actual Loops": 7,
+                                  "Disabled": false,
+                                  "Output": ["dm.department_id", "dm.user_id", "dm.created_at"],
+                                  "Index Cond": "(dm.user_id = u.id)",
+                                  "Rows Removed by Index Recheck": 0,
+                                  "Index Searches": 7,
+                                  "Shared Hit Blocks": 21,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0
+                                },
+                                {
+                                  "Node Type": "Index Scan",
+                                  "Parent Relationship": "Inner",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Scan Direction": "Forward",
+                                  "Index Name": "pk_departments",
+                                  "Relation Name": "departments",
+                                  "Schema": "personnel",
+                                  "Alias": "d",
+                                  "Startup Cost": 0.15,
+                                  "Total Cost": 8.17,
+                                  "Plan Rows": 1,
+                                  "Plan Width": 234,
+                                  "Actual Startup Time": 0.001,
+                                  "Actual Total Time": 0.001,
+                                  "Actual Rows": 1.00,
+                                  "Actual Loops": 7,
+                                  "Disabled": false,
+                                  "Output": ["d.id", "d.parent_id", "d.name", "d.is_root", "d.version", "d.created_at", "d.updated_at"],
+                                  "Index Cond": "(d.id = dm.department_id)",
+                                  "Rows Removed by Index Recheck": 0,
+                                  "Index Searches": 7,
+                                  "Shared Hit Blocks": 14,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Node Type": "Aggregate",
+                  "Strategy": "Plain",
+                  "Partial Mode": "Simple",
+                  "Parent Relationship": "Inner",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 9.39,
+                  "Total Cost": 9.40,
+                  "Plan Rows": 1,
+                  "Plan Width": 32,
+                  "Actual Startup Time": 0.006,
+                  "Actual Total Time": 0.006,
+                  "Actual Rows": 1.00,
+                  "Actual Loops": 7,
+                  "Disabled": false,
+                  "Output": ["jsonb_agg(jsonb_build_object('id', i.id, 'name', i.name) ORDER BY i.id)"],
+                  "Shared Hit Blocks": 28,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Nested Loop",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Join Type": "Inner",
+                      "Startup Cost": 0.28,
+                      "Total Cost": 9.39,
+                      "Plan Rows": 1,
+                      "Plan Width": 19,
+                      "Actual Startup Time": 0.004,
+                      "Actual Total Time": 0.004,
+                      "Actual Rows": 1.00,
+                      "Actual Loops": 7,
+                      "Disabled": false,
+                      "Output": ["i.id", "i.name"],
+                      "Inner Unique": true,
+                      "Join Filter": "(mi.identity_id = i.id)",
+                      "Rows Removed by Join Filter": 0,
+                      "Shared Hit Blocks": 28,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Index Only Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Scan Direction": "Forward",
+                          "Index Name": "pk_member_identities",
+                          "Relation Name": "member_identities",
+                          "Schema": "personnel",
+                          "Alias": "mi",
+                          "Startup Cost": 0.28,
+                          "Total Cost": 8.29,
+                          "Plan Rows": 1,
+                          "Plan Width": 16,
+                          "Actual Startup Time": 0.002,
+                          "Actual Total Time": 0.002,
+                          "Actual Rows": 1.00,
+                          "Actual Loops": 7,
+                          "Disabled": false,
+                          "Output": ["mi.user_id", "mi.identity_id"],
+                          "Index Cond": "(mi.user_id = u.id)",
+                          "Rows Removed by Index Recheck": 0,
+                          "Heap Fetches": 7,
+                          "Index Searches": 7,
+                          "Shared Hit Blocks": 21,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0
+                        },
+                        {
+                          "Node Type": "Seq Scan",
+                          "Parent Relationship": "Inner",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Relation Name": "identities",
+                          "Schema": "personnel",
+                          "Alias": "i",
+                          "Startup Cost": 0.00,
+                          "Total Cost": 1.04,
+                          "Plan Rows": 4,
+                          "Plan Width": 19,
+                          "Actual Startup Time": 0.001,
+                          "Actual Total Time": 0.001,
+                          "Actual Rows": 1.00,
+                          "Actual Loops": 7,
+                          "Disabled": false,
+                          "Output": ["i.id", "i.name", "i.description", "i.version", "i.created_at", "i.updated_at"],
+                          "Shared Hit Blocks": 7,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Node Type": "Limit",
+                  "Parent Relationship": "SubPlan",
+                  "Subplan Name": "SubPlan 3",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 0.28,
+                  "Total Cost": 10.03,
+                  "Plan Rows": 1,
+                  "Plan Width": 4,
+                  "Actual Startup Time": 0.007,
+                  "Actual Total Time": 0.007,
+                  "Actual Rows": 1.00,
+                  "Actual Loops": 7,
+                  "Disabled": false,
+                  "Output": ["(1)"],
+                  "Shared Hit Blocks": 63,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Append",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 0.28,
+                      "Total Cost": 19.78,
+                      "Plan Rows": 2,
+                      "Plan Width": 4,
+                      "Actual Startup Time": 0.007,
+                      "Actual Total Time": 0.007,
+                      "Actual Rows": 1.00,
+                      "Actual Loops": 7,
+                      "Disabled": false,
+                      "Shared Hit Blocks": 63,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Subplans Removed": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Nested Loop",
+                          "Parent Relationship": "Member",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Join Type": "Inner",
+                          "Startup Cost": 0.28,
+                          "Total Cost": 9.36,
+                          "Plan Rows": 1,
+                          "Plan Width": 4,
+                          "Actual Startup Time": 0.002,
+                          "Actual Total Time": 0.002,
+                          "Actual Rows": 0.00,
+                          "Actual Loops": 7,
+                          "Disabled": false,
+                          "Output": ["1"],
+                          "Inner Unique": true,
+                          "Join Filter": "(mi_1.identity_id = ip.identity_id)",
+                          "Rows Removed by Join Filter": 0,
+                          "Shared Hit Blocks": 28,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Index Only Scan",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Scan Direction": "Forward",
+                              "Index Name": "pk_member_identities",
+                              "Relation Name": "member_identities",
+                              "Schema": "personnel",
+                              "Alias": "mi_1",
+                              "Startup Cost": 0.28,
+                              "Total Cost": 8.29,
+                              "Plan Rows": 1,
+                              "Plan Width": 16,
+                              "Actual Startup Time": 0.001,
+                              "Actual Total Time": 0.001,
+                              "Actual Rows": 1.00,
+                              "Actual Loops": 7,
+                              "Disabled": false,
+                              "Output": ["mi_1.user_id", "mi_1.identity_id"],
+                              "Index Cond": "(mi_1.user_id = u.id)",
+                              "Rows Removed by Index Recheck": 0,
+                              "Heap Fetches": 7,
+                              "Index Searches": 7,
+                              "Shared Hit Blocks": 21,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            },
+                            {
+                              "Node Type": "Seq Scan",
+                              "Parent Relationship": "Inner",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Relation Name": "identity_permissions",
+                              "Schema": "personnel",
+                              "Alias": "ip",
+                              "Startup Cost": 0.00,
+                              "Total Cost": 1.05,
+                              "Plan Rows": 1,
+                              "Plan Width": 16,
+                              "Actual Startup Time": 0.001,
+                              "Actual Total Time": 0.001,
+                              "Actual Rows": 0.00,
+                              "Actual Loops": 7,
+                              "Disabled": false,
+                              "Output": ["ip.identity_id", "ip.permission_code"],
+                              "Filter": "((ip.permission_code)::text = 'personnel.manage'::text)",
+                              "Rows Removed by Filter": 2,
+                              "Shared Hit Blocks": 7,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            }
+                          ]
+                        },
+                        {
+                          "Node Type": "Nested Loop",
+                          "Parent Relationship": "Member",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Join Type": "Inner",
+                          "Startup Cost": 0.28,
+                          "Total Cost": 10.42,
+                          "Plan Rows": 1,
+                          "Plan Width": 4,
+                          "Actual Startup Time": 0.004,
+                          "Actual Total Time": 0.004,
+                          "Actual Rows": 1.00,
+                          "Actual Loops": 7,
+                          "Disabled": false,
+                          "Output": ["1"],
+                          "Inner Unique": true,
+                          "Join Filter": "(it.template_id = tp.template_id)",
+                          "Rows Removed by Join Filter": 0,
+                          "Shared Hit Blocks": 35,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Nested Loop",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Join Type": "Inner",
+                              "Startup Cost": 0.28,
+                              "Total Cost": 9.34,
+                              "Plan Rows": 1,
+                              "Plan Width": 16,
+                              "Actual Startup Time": 0.003,
+                              "Actual Total Time": 0.003,
+                              "Actual Rows": 1.00,
+                              "Actual Loops": 7,
+                              "Disabled": false,
+                              "Output": ["it.template_id"],
+                              "Inner Unique": false,
+                              "Join Filter": "(mi_2.identity_id = it.identity_id)",
+                              "Rows Removed by Join Filter": 0,
+                              "Shared Hit Blocks": 28,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0,
+                              "Plans": [
+                                {
+                                  "Node Type": "Index Only Scan",
+                                  "Parent Relationship": "Outer",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Scan Direction": "Forward",
+                                  "Index Name": "pk_member_identities",
+                                  "Relation Name": "member_identities",
+                                  "Schema": "personnel",
+                                  "Alias": "mi_2",
+                                  "Startup Cost": 0.28,
+                                  "Total Cost": 8.29,
+                                  "Plan Rows": 1,
+                                  "Plan Width": 16,
+                                  "Actual Startup Time": 0.001,
+                                  "Actual Total Time": 0.001,
+                                  "Actual Rows": 1.00,
+                                  "Actual Loops": 7,
+                                  "Disabled": false,
+                                  "Output": ["mi_2.user_id", "mi_2.identity_id"],
+                                  "Index Cond": "(mi_2.user_id = u.id)",
+                                  "Rows Removed by Index Recheck": 0,
+                                  "Heap Fetches": 7,
+                                  "Index Searches": 7,
+                                  "Shared Hit Blocks": 21,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0
+                                },
+                                {
+                                  "Node Type": "Seq Scan",
+                                  "Parent Relationship": "Inner",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Relation Name": "identity_templates",
+                                  "Schema": "personnel",
+                                  "Alias": "it",
+                                  "Startup Cost": 0.00,
+                                  "Total Cost": 1.02,
+                                  "Plan Rows": 2,
+                                  "Plan Width": 32,
+                                  "Actual Startup Time": 0.001,
+                                  "Actual Total Time": 0.001,
+                                  "Actual Rows": 1.00,
+                                  "Actual Loops": 7,
+                                  "Disabled": false,
+                                  "Output": ["it.identity_id", "it.template_id"],
+                                  "Shared Hit Blocks": 7,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0
+                                }
+                              ]
+                            },
+                            {
+                              "Node Type": "Seq Scan",
+                              "Parent Relationship": "Inner",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Relation Name": "template_permissions",
+                              "Schema": "personnel",
+                              "Alias": "tp",
+                              "Startup Cost": 0.00,
+                              "Total Cost": 1.05,
+                              "Plan Rows": 2,
+                              "Plan Width": 16,
+                              "Actual Startup Time": 0.001,
+                              "Actual Total Time": 0.001,
+                              "Actual Rows": 1.00,
+                              "Actual Loops": 7,
+                              "Disabled": false,
+                              "Output": ["tp.template_id", "tp.permission_code"],
+                              "Filter": "((tp.permission_code)::text = 'personnel.manage'::text)",
+                              "Rows Removed by Filter": 1,
+                              "Shared Hit Blocks": 7,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 8,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.433,
+            "Triggers": [
+            ],
+            "Execution Time": 1.052
+          }
+        ]
+--- PASS: TestQ36MemberSQLPageBeforeDisplayRelations (1.03s)
+=== RUN   TestQ36MemberCompleteProjectionAndRR
+--- PASS: TestQ36MemberCompleteProjectionAndRR (0.16s)
+=== RUN   TestQ36RevisionActualWriterCoverageAndNoops
+--- PASS: TestQ36RevisionActualWriterCoverageAndNoops (0.19s)
+=== RUN   TestQ36ScaleShallowDeepDifferentMatchesAndWriteLockDuration
+    query_scale_test.go:131: N=10000 M=100 page=1 K=20 initial_full_ms=676.902 reused_query_ms=36.881 page_sql_ms=3.12
+    query_scale_test.go:131: N=10000 M=100 page=5 K=20 initial_full_ms=676.902 reused_query_ms=39.308 page_sql_ms=3.181
+    query_scale_test.go:157: N=10000 M=100 mutation_total_ms=381.938 revision_locks_held_ms=15.844 full_projection_outside=1 inside=0
+    query_scale_test.go:131: N=10000 M=1000 page=1 K=20 initial_full_ms=428.566 reused_query_ms=40.024 page_sql_ms=3.279
+    query_scale_test.go:131: N=10000 M=1000 page=50 K=20 initial_full_ms=428.566 reused_query_ms=35.845 page_sql_ms=3.228
+    query_scale_test.go:157: N=10000 M=1000 mutation_total_ms=403.312 revision_locks_held_ms=9.804 full_projection_outside=1 inside=0
+    query_scale_test.go:131: N=10000 M=10000 page=1 K=20 initial_full_ms=944.001 reused_query_ms=34.362 page_sql_ms=4.864
+    query_scale_test.go:131: N=10000 M=10000 page=500 K=20 initial_full_ms=944.001 reused_query_ms=35.916 page_sql_ms=5.536
+    query_scale_test.go:157: N=10000 M=10000 mutation_total_ms=2036.955 revision_locks_held_ms=20.007 full_projection_outside=1 inside=0
+--- PASS: TestQ36ScaleShallowDeepDifferentMatchesAndWriteLockDuration (14.09s)
+=== RUN   TestQ36EventScaleShallowDeepDifferentMatches
+    query_scale_test.go:212: events N=5000 M=100 page=1 K=20 initial_full_ms=95.494 reused_query_ms=8.735 page_sql_ms=3.017
+    query_scale_test.go:212: events N=5000 M=100 page=5 K=20 initial_full_ms=95.494 reused_query_ms=7.058 page_sql_ms=2.48
+    query_scale_test.go:212: events N=5000 M=1000 page=1 K=20 initial_full_ms=940.606 reused_query_ms=12.151 page_sql_ms=8.611
+    query_scale_test.go:212: events N=5000 M=1000 page=50 K=20 initial_full_ms=940.606 reused_query_ms=13.391 page_sql_ms=9.07
+    query_scale_test.go:212: events N=5000 M=5000 page=1 K=20 initial_full_ms=1387.939 reused_query_ms=34.643 page_sql_ms=35.667
+    query_scale_test.go:212: events N=5000 M=5000 page=250 K=20 initial_full_ms=1387.939 reused_query_ms=45.024 page_sql_ms=39.721
+--- PASS: TestQ36EventScaleShallowDeepDifferentMatches (3.66s)
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ud800"
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\udfff"
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ud800x"
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ud800\u0041"
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ud800\ud800"
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\udc00\ud800"
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ud83d\ude00\ud800"
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ud83d\ude00"
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\uD83D\uDE00"
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"😀中文"
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ufffd"
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"�"
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\\ud800"
+=== RUN   TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"a\"b\\c"
+--- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ud800" (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\udfff" (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ud800x" (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ud800\u0041" (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ud800\ud800" (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\udc00\ud800" (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ud83d\ude00\ud800" (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ud83d\ude00" (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\uD83D\uDE00" (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"😀中文" (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\ufffd" (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"�" (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"\\ud800" (0.00s)
+    --- PASS: TestQ36FilterRejectsLoneSurrogatesWithoutChangingValidStrings/"a\"b\\c" (0.00s)
+=== RUN   TestQ36HTTPRequiredWriteQueryVersion
+=== RUN   TestQ36HTTPRequiredWriteQueryVersion/member-identities
+=== RUN   TestQ36HTTPRequiredWriteQueryVersion/member-groups
+=== RUN   TestQ36HTTPRequiredWriteQueryVersion/department-create
+=== RUN   TestQ36HTTPRequiredWriteQueryVersion/department-update
+=== RUN   TestQ36HTTPRequiredWriteQueryVersion/department-delete
+--- PASS: TestQ36HTTPRequiredWriteQueryVersion (0.58s)
+    --- PASS: TestQ36HTTPRequiredWriteQueryVersion/member-identities (0.12s)
+    --- PASS: TestQ36HTTPRequiredWriteQueryVersion/member-groups (0.12s)
+    --- PASS: TestQ36HTTPRequiredWriteQueryVersion/department-create (0.11s)
+    --- PASS: TestQ36HTTPRequiredWriteQueryVersion/department-update (0.12s)
+    --- PASS: TestQ36HTTPRequiredWriteQueryVersion/department-delete (0.11s)
+=== RUN   TestQ36HTTPWriteQueryRelatedUnrelatedAndObjectVersion
+--- PASS: TestQ36HTTPWriteQueryRelatedUnrelatedAndObjectVersion (1.57s)
+=== RUN   TestQ36WriteGuardRevalidatesBeforeAnyMutation
+=== RUN   TestQ36WriteGuardRevalidatesBeforeAnyMutation/unrelated-once
+=== RUN   TestQ36WriteGuardRevalidatesBeforeAnyMutation/related
+=== RUN   TestQ36WriteGuardRevalidatesBeforeAnyMutation/busy
+=== RUN   TestQ36WriteGuardRevalidatesBeforeAnyMutation/revoked
+=== RUN   TestQ36WriteGuardRevalidatesBeforeAnyMutation/auth-version
+--- PASS: TestQ36WriteGuardRevalidatesBeforeAnyMutation (3.89s)
+    --- PASS: TestQ36WriteGuardRevalidatesBeforeAnyMutation/unrelated-once (0.84s)
+    --- PASS: TestQ36WriteGuardRevalidatesBeforeAnyMutation/related (0.83s)
+    --- PASS: TestQ36WriteGuardRevalidatesBeforeAnyMutation/busy (1.24s)
+    --- PASS: TestQ36WriteGuardRevalidatesBeforeAnyMutation/revoked (0.50s)
+    --- PASS: TestQ36WriteGuardRevalidatesBeforeAnyMutation/auth-version (0.49s)
+=== RUN   TestQ36HTTPBusinessDraftCleanup
+=== RUN   TestQ36HTTPBusinessDraftCleanup/exact
+=== RUN   TestQ36HTTPBusinessDraftCleanup/newer
+=== RUN   TestQ36HTTPBusinessDraftCleanup/failed-business
+=== RUN   TestQ36HTTPBusinessDraftCleanup/new-definition
+--- PASS: TestQ36HTTPBusinessDraftCleanup (2.08s)
+    --- PASS: TestQ36HTTPBusinessDraftCleanup/exact (0.51s)
+    --- PASS: TestQ36HTTPBusinessDraftCleanup/newer (0.53s)
+    --- PASS: TestQ36HTTPBusinessDraftCleanup/failed-business (0.53s)
+    --- PASS: TestQ36HTTPBusinessDraftCleanup/new-definition (0.51s)
+=== RUN   TestQ36HTTPAuxiliaryReadsValidateOriginalQuery
+=== RUN   TestQ36HTTPAuxiliaryReadsValidateOriginalQuery/departments
+=== RUN   TestQ36HTTPAuxiliaryReadsValidateOriginalQuery/identities
+=== RUN   TestQ36HTTPAuxiliaryReadsValidateOriginalQuery/templates
+=== RUN   TestQ36HTTPAuxiliaryReadsValidateOriginalQuery/permissions
+--- PASS: TestQ36HTTPAuxiliaryReadsValidateOriginalQuery (4.74s)
+    --- PASS: TestQ36HTTPAuxiliaryReadsValidateOriginalQuery/departments (1.16s)
+    --- PASS: TestQ36HTTPAuxiliaryReadsValidateOriginalQuery/identities (1.16s)
+    --- PASS: TestQ36HTTPAuxiliaryReadsValidateOriginalQuery/templates (1.21s)
+    --- PASS: TestQ36HTTPAuxiliaryReadsValidateOriginalQuery/permissions (1.21s)
+=== RUN   TestQ36HTTPWriteBusyLeavesBusinessAndDraftUntouched
+--- PASS: TestQ36HTTPWriteBusyLeavesBusinessAndDraftUntouched (1.17s)
+=== RUN   TestQ36HTTPDraftReferenceRejectsDuplicateFields
+--- PASS: TestQ36HTTPDraftReferenceRejectsDuplicateFields (0.46s)
+=== RUN   TestEmptyDefinitionRelationsSerializeAsArraysQ25
+--- PASS: TestEmptyDefinitionRelationsSerializeAsArraysQ25 (0.06s)
+=== RUN   TestUUIDContractCaseInsensitiveReferencesAndRelations
+=== RUN   TestUUIDContractCaseInsensitiveReferencesAndRelations/detail_path
+=== RUN   TestUUIDContractCaseInsensitiveReferencesAndRelations/template_set
+=== RUN   TestUUIDContractCaseInsensitiveReferencesAndRelations/identity_set
+=== RUN   TestUUIDContractCaseInsensitiveReferencesAndRelations/explicit_group_removal
+--- PASS: TestUUIDContractCaseInsensitiveReferencesAndRelations (1.48s)
+    --- PASS: TestUUIDContractCaseInsensitiveReferencesAndRelations/detail_path (0.07s)
+    --- PASS: TestUUIDContractCaseInsensitiveReferencesAndRelations/template_set (0.08s)
+    --- PASS: TestUUIDContractCaseInsensitiveReferencesAndRelations/identity_set (0.51s)
+    --- PASS: TestUUIDContractCaseInsensitiveReferencesAndRelations/explicit_group_removal (0.81s)
+PASS
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/personnel	46.107s
+=== RUN   TestBusinessHandlerReceivesPlatformSecurityHeaders
+--- PASS: TestBusinessHandlerReceivesPlatformSecurityHeaders (0.00s)
+=== RUN   TestLiveness
+=== RUN   TestLiveness/GET
+=== RUN   TestLiveness/HEAD
+--- PASS: TestLiveness (0.00s)
+    --- PASS: TestLiveness/GET (0.00s)
+    --- PASS: TestLiveness/HEAD (0.00s)
+=== RUN   TestReadiness
+=== RUN   TestReadiness/unwired
+=== RUN   TestReadiness/healthy
+=== RUN   TestReadiness/failed
+--- PASS: TestReadiness (0.00s)
+    --- PASS: TestReadiness/unwired (0.00s)
+    --- PASS: TestReadiness/healthy (0.00s)
+    --- PASS: TestReadiness/failed (0.00s)
+=== RUN   TestCancelledReadinessFailsClosed
+--- PASS: TestCancelledReadinessFailsClosed (0.00s)
+=== RUN   TestHealthRejectsWriteMethods
+--- PASS: TestHealthRejectsWriteMethods (0.00s)
+=== RUN   TestHeadersAndUntrustedRequestID
+--- PASS: TestHeadersAndUntrustedRequestID (0.00s)
+=== RUN   TestUnknownAPINeverFallsBackToHTML
+--- PASS: TestUnknownAPINeverFallsBackToHTML (0.00s)
+=== RUN   TestIngressMetadataTrustAndContext
+=== RUN   TestIngressMetadataTrustAndContext/trusted
+=== RUN   TestIngressMetadataTrustAndContext/direct
+=== RUN   TestIngressMetadataTrustAndContext/duplicate-id
+=== RUN   TestIngressMetadataTrustAndContext/invalid-id
+=== RUN   TestIngressMetadataTrustAndContext/xff-chain
+=== RUN   TestIngressMetadataTrustAndContext/duplicate-xff
+--- PASS: TestIngressMetadataTrustAndContext (0.00s)
+    --- PASS: TestIngressMetadataTrustAndContext/trusted (0.00s)
+    --- PASS: TestIngressMetadataTrustAndContext/direct (0.00s)
+    --- PASS: TestIngressMetadataTrustAndContext/duplicate-id (0.00s)
+    --- PASS: TestIngressMetadataTrustAndContext/invalid-id (0.00s)
+    --- PASS: TestIngressMetadataTrustAndContext/xff-chain (0.00s)
+    --- PASS: TestIngressMetadataTrustAndContext/duplicate-xff (0.00s)
+PASS
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver	1.014s
+=== RUN   TestCSRFTokenIsIndependentCanonicalSecretBoundBySHA256
+--- PASS: TestCSRFTokenIsIndependentCanonicalSecretBoundBySHA256 (0.00s)
+=== RUN   TestCSRFTokenRejectsMalformedOrDifferentValue
+--- PASS: TestCSRFTokenRejectsMalformedOrDifferentValue (0.00s)
+=== RUN   TestSourceMustMatchConfiguredOrigin
+--- PASS: TestSourceMustMatchConfiguredOrigin (0.00s)
+=== RUN   TestCSRFRequiresHeaderCookieAndSessionBinding
+--- PASS: TestCSRFRequiresHeaderCookieAndSessionBinding (0.00s)
+=== RUN   TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid
+=== RUN   TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/password_reset_invalidates_all_old_sessions
+=== RUN   TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/disabled_account
+=== RUN   TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/reenabled_account_uses_a_new_version
+=== RUN   TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/noncanonical_leading_zero
+=== RUN   TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/noninteger_JSON-like_version
+=== RUN   TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/negative_snapshot
+=== RUN   TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/zero_current_version
+=== RUN   TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/unknown_account_state
+--- PASS: TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid (0.00s)
+    --- PASS: TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/password_reset_invalidates_all_old_sessions (0.00s)
+    --- PASS: TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/disabled_account (0.00s)
+    --- PASS: TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/reenabled_account_uses_a_new_version (0.00s)
+    --- PASS: TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/noncanonical_leading_zero (0.00s)
+    --- PASS: TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/noninteger_JSON-like_version (0.00s)
+    --- PASS: TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/negative_snapshot (0.00s)
+    --- PASS: TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/zero_current_version (0.00s)
+    --- PASS: TestOnlyActiveMatchingAuthenticationVersionKeepsSessionValid/unknown_account_state (0.00s)
+PASS
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/security	1.013s
+=== RUN   TestRedisTransportHonorsCallerDeadline
+--- PASS: TestRedisTransportHonorsCallerDeadline (0.15s)
+=== RUN   TestSessionDialFailureDoesNotRetryAuthenticationTransport
+redis: 2026/10/02 03:21:25 pool.go:762: redis: connection pool: failed to dial after 1 attempts: dial tcp 127.0.0.1:46499: connect: connection refused
+--- PASS: TestSessionDialFailureDoesNotRetryAuthenticationTransport (0.00s)
+=== RUN   TestLifecycleUsesRealRedisAndClosesClient
+--- PASS: TestLifecycleUsesRealRedisAndClosesClient (0.00s)
+=== RUN   TestAuthenticationChecksRealCurrentUserAndBoundWrites
+    authenticate_test.go:32: test Redis must be local: "weaveos-filter-manager-1790910244181-redis:6379"
+--- FAIL: TestAuthenticationChecksRealCurrentUserAndBoundWrites (0.02s)
+=== RUN   TestUninitializedSessionStoreFailsClosed
+--- PASS: TestUninitializedSessionStoreFailsClosed (0.00s)
+=== RUN   TestHostCookiesAndClearing
+--- PASS: TestHostCookiesAndClearing (0.00s)
+=== RUN   TestCreateLoadUsesApprovedRedisShapeAndOneHourTTL
+    store_test.go:135: test Redis must be local: "weaveos-filter-manager-1790910244181-redis:6379"
+--- FAIL: TestCreateLoadUsesApprovedRedisShapeAndOneHourTTL (0.00s)
+=== RUN   TestTouchSlidesTTLButNeverRevivesRevokedSession
+    store_test.go:176: test Redis must be local: "weaveos-filter-manager-1790910244181-redis:6379"
+--- FAIL: TestTouchSlidesTTLButNeverRevivesRevokedSession (0.00s)
+=== RUN   TestConcurrentTouchAndRevokeCannotResurrectSession
+    store_test.go:212: test Redis must be local: "weaveos-filter-manager-1790910244181-redis:6379"
+--- FAIL: TestConcurrentTouchAndRevokeCannotResurrectSession (0.00s)
+=== RUN   TestLoadRejectsTrailingJSONDocument
+    store_test.go:248: test Redis must be local: "weaveos-filter-manager-1790910244181-redis:6379"
+--- FAIL: TestLoadRejectsTrailingJSONDocument (0.00s)
+=== RUN   TestTouchRefusesCorruptedTimestampsWithoutRenewingTTL
+    store_test.go:268: test Redis must be local: "weaveos-filter-manager-1790910244181-redis:6379"
+--- FAIL: TestTouchRefusesCorruptedTimestampsWithoutRenewingTTL (0.00s)
+=== RUN   TestLoadAndTouchRejectOverlongTTL
+    store_test.go:308: test Redis must be local: "weaveos-filter-manager-1790910244181-redis:6379"
+--- FAIL: TestLoadAndTouchRejectOverlongTTL (0.00s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/session	0.192s
+FAIL
+go: downloading golang.org/x/crypto v0.56.0

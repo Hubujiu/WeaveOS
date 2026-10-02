@@ -1,0 +1,41 @@
+{
+  "scope": "root B2 correctness/performance review: strict filter Unicode; explicit SQL member page reader, with shared predicate/row decoder and separate physical access plans for current page vs full fingerprint",
+  "redCommits": [
+    "23413ee",
+    "babf795",
+    "4339e14"
+  ],
+  "verification": [
+    {
+      "command": "go -C services/bff test ./internal/personnel -run ^TestQ36FilterRejectsLone -count=1",
+      "exitCode": 0,
+      "log": "unicode-green.txt"
+    },
+    {
+      "command": "go -C services/bff test -v -race ./internal/personnel -run ^TestQ36Member(SQLPage|Complete) -count=1",
+      "exitCode": 0,
+      "log": "page-green.txt"
+    },
+    {
+      "command": "go -C services/bff test -race -p 1 -count=1 ./...",
+      "exitCode": 0,
+      "log": "full-go-race.txt"
+    },
+    {
+      "command": "go -C services/bff vet ./...",
+      "exitCode": 0,
+      "log": "vet.txt"
+    }
+  ],
+  "environment": "Go1.27.1 / PostgreSQL18.6 isolated weaveos_q36_test hot migrations1..3 and q36_archive cold1..2 / Redis8.2.10 DB15",
+  "performance": "EXPLAIN ANALYZE BUFFERS VERBOSE with real auth_app role: 2000 matching users, page20 size7; final page relation rows28, display aggregate input14, 1.397ms/187 shared hits. Full projection14.24ms/186 shared hits; planner may use sequential relationship scans for full projection. Single synthetic sample, not final scale acceptance; predicate/order/offset costs remain. Full plans and failed intermediate physical plans retained.",
+  "pending": [
+    "engine revision fast-path dispatch not yet integrated",
+    "single RR old-criteria validation/new baseline/page pipeline",
+    "frozen absolute calendar bounds in engine",
+    "event safe projection",
+    "writer revisions and guarded writes",
+    "actual production scale EXPLAIN/load budgets"
+  ],
+  "noNewProductDecision": true
+}

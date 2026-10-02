@@ -1,0 +1,47 @@
+
+Running 1 test using 1 worker
+
+(node:70248) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] 鈥?apps\web\src\q36-front-trigger-visual.component.spec.ts:48:1 鈥?Q36 native shell shares geometry with 300ms open and 220ms close (4.3s)
+
+
+  1) [chromium] 鈥?apps\web\src\q36-front-trigger-visual.component.spec.ts:48:1 鈥?Q36 native shell shares geometry with 300ms open and 220ms close 
+
+    Error: expect(received).toContainEqual(expected) // deep equality
+
+    Expected value: {"duration": 300, "shared": true}
+    Received array: [{"duration": 220, "shared": false}]
+
+    Call Log:
+    - Timeout 3000ms exceeded while waiting on the predicate
+
+      60 |   test.skip(!await page.evaluate(()=>typeof document.startViewTransition==='function'&&navigator.vendor!=='Apple Computer, Inc.'),'native shared transition unavailable or unsafe in this engine');
+      61 |   await page.getByRole('button',{name:/鑷畾涔夌瓫閫?}).click();
+    > 62 |   await expect.poll(()=>page.evaluate(()=>(window as unknown as {__q36ShellTiming:{motions:{duration:number;shared:boolean}[][]}}).__q36ShellTiming.motions[0])).toContainEqual({duration:300,shared:true});
+         |                                                                                                                                                                  ^
+      63 |   await page.keyboard.press('Escape');
+      64 |   await expect.poll(()=>page.evaluate(()=>(window as unknown as {__q36ShellTiming:{motions:{duration:number;shared:boolean}[][]}}).__q36ShellTiming.motions.at(-1))).toContainEqual({duration:220,shared:true});
+      65 | });
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-front-trigger-visual.component.spec.ts:62:162
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-front-trigger-visual.c-3f003--300ms-open-and-220ms-close-chromium\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-front-trigger-visual.c-3f003--300ms-open-and-220ms-close-chromium\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-front-results\q36-front-trigger-visual.c-3f003--300ms-open-and-220ms-close-chromium\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-front-results\q36-front-trigger-visual.c-3f003--300ms-open-and-220ms-close-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-front-results\q36-front-trigger-visual.c-3f003--300ms-open-and-220ms-close-chromium\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  1 failed
+    [chromium] 鈥?apps\web\src\q36-front-trigger-visual.component.spec.ts:48:1 鈥?Q36 native shell shares geometry with 300ms open and 220ms close 

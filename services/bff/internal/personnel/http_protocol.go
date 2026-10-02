@@ -20,7 +20,7 @@ func respond(w http.ResponseWriter, r *http.Request, status int, code string, da
 	if status == 204 || r.Method == "HEAD" {
 		return
 	}
-	message := map[string]string{"OK": "success", "AUTH_UNAUTHENTICATED": "请先登录", "COMMON_PERMISSION_DENIED": "没有执行此操作的权限", "COMMON_CSRF_REJECTED": "请求来源或安全校验失败", "COMMON_INVALID_ARGUMENT": "请求参数不合法", "COMMON_UNSUPPORTED_MEDIA_TYPE": "仅接受 JSON 请求", "PERSONNEL_CONFLICT": "配置已变更或仍被引用，请重新核对", "PERSONNEL_NOT_FOUND": "对象不存在", "COMMON_SERVICE_UNAVAILABLE": "服务暂时不可用，请稍后重试", "API_NOT_FOUND": "请求的接口不存在"}[code]
+	message := map[string]string{"OK": "success", "AUTH_UNAUTHENTICATED": "请先登录", "COMMON_PERMISSION_DENIED": "没有执行此操作的权限", "COMMON_CSRF_REJECTED": "请求来源或安全校验失败", "COMMON_INVALID_ARGUMENT": "请求参数不合法", "COMMON_UNSUPPORTED_MEDIA_TYPE": "仅接受 JSON 请求", "PERSONNEL_CONFLICT": "配置已变更或仍被引用，请重新核对", "PERSONNEL_NOT_FOUND": "对象不存在", "COMMON_SERVICE_UNAVAILABLE": "服务暂时不可用，请稍后重试", "API_NOT_FOUND": "请求的接口不存在", "COMMON_QUERY_CHANGED": "查询相关数据已变化，请刷新重查", "COMMON_QUERY_CONTEXT_EXPIRED": "查询上下文已过期，请重新查询"}[code]
 	_ = json.NewEncoder(w).Encode(struct {
 		Code    string            `json:"code"`
 		Message string            `json:"message"`
@@ -29,6 +29,10 @@ func respond(w http.ResponseWriter, r *http.Request, status int, code string, da
 	}{code, message, data, map[string]string{"requestId": httpserver.Metadata(r.Context()).RequestID}})
 }
 func fail(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, ErrQueryBusy) {
+		queryBusyResponse(w, r)
+		return
+	}
 	status, code := 503, "COMMON_SERVICE_UNAVAILABLE"
 	switch {
 	case errors.Is(err, session.ErrUnauthorized):
@@ -40,6 +44,10 @@ func fail(w http.ResponseWriter, r *http.Request, err error) {
 		status, code = 403, "COMMON_PERMISSION_DENIED"
 	case errors.Is(err, ErrInvalid):
 		status, code = 400, "COMMON_INVALID_ARGUMENT"
+	case errors.Is(err, ErrQueryChanged):
+		status, code = 409, "COMMON_QUERY_CHANGED"
+	case errors.Is(err, ErrQueryContextExpired):
+		status, code = 409, "COMMON_QUERY_CONTEXT_EXPIRED"
 	case errors.Is(err, ErrConflict):
 		status, code = 409, "PERSONNEL_CONFLICT"
 	case errors.Is(err, ErrMissing):
@@ -100,6 +108,15 @@ func decodeBody(w http.ResponseWriter, r *http.Request, out any, required ...str
 			return false
 		}
 	}
+	// draftRef is a closed object, including nested duplicate-field rejection.
+	if raw, ok := values["draftRef"]; ok {
+		fields, e := draftObject(raw, "id", "version")
+		var ref DraftReference
+		if e != nil || json.Unmarshal(raw, &ref) != nil || len(fields) != 2 || !validID(ref.ID) || ref.Version < 1 || ref.Version > maxSafeVersion {
+			fail(w, r, ErrInvalid)
+			return false
+		}
+	}
 	d = json.NewDecoder(strings.NewReader(string(bytes)))
 	d.DisallowUnknownFields()
 	if err := d.Decode(out); err != nil {
@@ -141,8 +158,8 @@ func pageQuery(values url.Values) (PageQuery, error) {
 	}
 	return normalizedPage(result)
 }
-func deleteVersion(r *http.Request) (int64, error) {
-	values, err := query(r, "version")
+func deleteVersion(r *http.Request, extra ...string) (int64, error) {
+	values, err := query(r, append([]string{"version"}, extra...)...)
 	if err != nil {
 		return 0, err
 	}

@@ -1,0 +1,37 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:38992) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:38336) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:38100) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [webkit] › apps\web\src\personnel.component.spec.ts:46:1 › Q28 side toggle moves icon horizontally at a stable height on every animation frame (2.7s)
+
+
+  1) [webkit] › apps\web\src\personnel.component.spec.ts:46:1 › Q28 side toggle moves icon horizontally at a stable height on every animation frame 
+
+    Error: {"before":{"x":44,"y":210},"samples":[{"x":25.53125,"y":210},{"x":25.984375,"y":210},{"x":26,"y":210}]}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      53 |  });
+      54 |  expect(frames.samples.every(s=>Math.abs(s.y-frames.before.y)<0.5)).toBe(true);
+    > 55 |  expect(frames.samples.some(s=>s.x>26.5&&s.x<frames.before.x-0.5),JSON.stringify(frames)).toBe(true);
+         |                                                                                           ^
+      56 |  expect(frames.samples.at(-1)!.x).toBeCloseTo(26,0);
+      57 |  await page.getByRole('button',{name:'展开侧栏',exact:true}).click();await expect.poll(async()=> (await page.locator('.personnel-nav-icon').boundingBox())!.x).toBeCloseTo(44,0);
+      58 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:55:91
+
+    Error Context: test-results\personnel.component-Q28-si-6b19c-ht-on-every-animation-frame-webkit\error-context.md
+
+  1 failed
+    [webkit] › apps\web\src\personnel.component.spec.ts:46:1 › Q28 side toggle moves icon horizontally at a stable height on every animation frame 

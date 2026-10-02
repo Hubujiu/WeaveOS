@@ -1,0 +1,17 @@
+diff --git a/infra/runtime/operations.test.mjs b/infra/runtime/operations.test.mjs
+--- a/infra/runtime/operations.test.mjs
++++ b/infra/runtime/operations.test.mjs
+@@ -50,10 +50,10 @@ test('encrypted hot/cold backup restores true state, rotates generation, and rejec
+  const member=await personnelData('/registrations','POST',{account:'runtime-personnel-restore',password:'Synthetic@123',invitationCode:invite.invitationCode},undefined,201);
+  const template=await personnelData('/personnel/templates','POST',{name:'restore template',description:'preserve configuration',permissionCodes:['personnel.manage']},admin,201);
+  const identity=await personnelData('/personnel/identities','POST',{name:'restore identity',description:'',templateIds:[template.id],permissionCodes:[]},admin,201);
+- await personnelData('/personnel/members/'+member.id+'/identities','PUT',{identityIds:[identity.id],version:0},admin);
++ await personnelData('/personnel/members/'+member.id+'/identities','PUT',{identityIds:[identity.id],version:0,queryVersion:(await personnelData('/personnel/members/search','POST',{page:1,pageSize:20},admin)).queryVersion},admin);
+  const departments=await personnelData('/personnel/departments','GET',undefined,admin);
+- const department=await personnelData('/personnel/departments','POST',{name:'restore department',parentId:departments.items.find(d=>d.isRoot).id},admin,201);
+- await personnelData('/personnel/members/'+member.id+'/groups','POST',{operation:'add',departmentId:department.id,version:1},admin);
++ const department=await personnelData('/personnel/departments','POST',{name:'restore department',parentId:departments.items.find(d=>d.isRoot).id,queryVersion:(await personnelData('/personnel/members/search','POST',{page:1,pageSize:20},admin)).queryVersion},admin,201);
++ await personnelData('/personnel/members/'+member.id+'/groups','POST',{operation:'add',departmentId:department.id,version:1,queryVersion:(await personnelData('/personnel/members/search','POST',{page:1,pageSize:20},admin)).queryVersion},admin);
+  personnelSnapshot={member,template,identity,department};
+  const backupDir=resolve(c.dir,'backups'),keyFile=resolve(c.dir,'secrets/backup.key');
+  const options={container:c.container('postgres'),user:'weaveos_backup',keyFile,alertFile:resolve(c.dir,'public/alerts.jsonl')};

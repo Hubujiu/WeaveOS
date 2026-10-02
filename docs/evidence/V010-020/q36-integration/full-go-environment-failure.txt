@@ -1,0 +1,79 @@
+--- FAIL: TestAcceptanceSeedProducesIsolatedUsableFixtures (0.00s)
+    main_test.go:36: refusing fixture cleanup outside a weaveos_ test database: "q36_contracts"
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/cmd/acceptance-seed	0.013s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-maintenance	1.722s
+?   	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-read	[no test files]
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/bff	1.059s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/audit	1.268s
+--- FAIL: TestUncertainCommitNeverClaimsSuccess (0.01s)
+    --- FAIL: TestUncertainCommitNeverClaimsSuccess/invitation (0.00s)
+        ambiguous_commit_test.go:51: test database required
+    --- FAIL: TestUncertainCommitNeverClaimsSuccess/reset (0.00s)
+        ambiguous_commit_test.go:51: test database required
+--- FAIL: TestApplicationRegistrationWithoutHTTP (0.00s)
+    application_test.go:31: test database required
+--- FAIL: TestApplicationLoginWithoutHTTP (0.00s)
+    application_test.go:58: test database required
+--- FAIL: TestApplicationInvitationWithoutHTTP (0.00s)
+    application_test.go:81: test database required
+--- FAIL: TestApplicationPasswordResetWithoutHTTP (0.00s)
+    application_test.go:99: test database required
+--- FAIL: TestAcceptedUnauthorizedChallengeAndPublicMessages (0.00s)
+    challenge_acceptance_test.go:10: test database required
+--- FAIL: TestCommittedWriteSurvivesRenewalFailure (0.03s)
+    --- FAIL: TestCommittedWriteSurvivesRenewalFailure/invitation/revoked (0.00s)
+        committed_test.go:96: test database required
+    --- FAIL: TestCommittedWriteSurvivesRenewalFailure/invitation/disconnected (0.00s)
+        committed_test.go:96: test database required
+    --- FAIL: TestCommittedWriteSurvivesRenewalFailure/reset/revoked (0.02s)
+        committed_test.go:96: test database required
+    --- FAIL: TestCommittedWriteSurvivesRenewalFailure/reset/disconnected (0.00s)
+        committed_test.go:96: test database required
+--- FAIL: TestRegistrationRejectsNonPrintableASCIIBeforeConsumingInvitation (0.00s)
+    password_ascii_test.go:20: test database required
+--- FAIL: TestInvitationUsesLivePersonnelQualificationInOwnedTransactionQ25 (0.00s)
+    personnel_invitation_test.go:13: test database required
+--- FAIL: TestRealHTTPSCookiesRestoreAndLogout (0.00s)
+    protocol_test.go:16: test database required
+--- FAIL: TestHTTPProtocolRejectsMalformedWriteDTOs (0.00s)
+    protocol_test.go:87: test database required
+--- FAIL: TestAuditRequestIDMatchesResponseAndUnknownAccountHMAC (0.00s)
+    protocol_test.go:115: test database required
+--- FAIL: TestResetAndInvitationAuditFailureRollBack (0.00s)
+    protocol_test.go:145: test database required
+--- FAIL: TestUnknownAPIReturnsEnvelope404 (0.00s)
+    protocol_test.go:177: test database required
+--- FAIL: TestRevokedSessionAndFailedRegistrationProduceSanitizedAudit (0.00s)
+    protocol_test.go:186: test database required
+--- FAIL: TestAuditClientIPOnlyTrustsConfiguredProxy (0.00s)
+    proxy_acceptance_test.go:14: test database required
+--- FAIL: TestIngressRequestIDMatchesResponseAndAudit (0.01s)
+    proxy_acceptance_test.go:43: test database required
+--- FAIL: TestPasswordResetBetweenCredentialReadAndSessionCreation (0.00s)
+    race_test.go:39: test database required
+--- FAIL: TestRegistrationAtomicHTTP (0.00s)
+    service_test.go:129: test database required
+--- FAIL: TestConcurrentInvitationHTTP (0.00s)
+    service_test.go:160: test database required
+--- FAIL: TestLoginCurrentLogoutHTTP (0.00s)
+    service_test.go:183: test database required
+--- FAIL: TestBootstrapInvitationResetAndRevocationHTTP (0.00s)
+    service_test.go:212: test database required
+--- FAIL: TestAuditFailureFailsLoginClosedAndLogoutRemainsRevoked (0.00s)
+    service_test.go:253: test database required
+--- FAIL: TestReadinessAndAuditPrivacyHTTP (0.00s)
+    service_test.go:279: test database required
+--- FAIL: TestFieldValidationUsesApprovedEnvelope (0.00s)
+    validation_acceptance_test.go:10: test database required
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/auth	0.456s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/identity	1.008s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/invitation	1.008s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence	1.177s
+?   	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence/authsql	[no test files]
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/personnel	4.168s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver	1.012s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/security	1.012s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/session	1.235s
+FAIL

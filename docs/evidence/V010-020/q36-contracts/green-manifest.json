@@ -1,0 +1,99 @@
+{
+  "observedAt": "2026-10-01T12:31:00.034534+00:00",
+  "stage": "A only: contracts, shared DTO declarations, database structure",
+  "oracle": "docs/tasks/V010-020-PLAN.md, approved temporary source order",
+  "checks": [
+    {
+      "command": "node --test contracts/*.test.mjs",
+      "exitCode": 0,
+      "passed": 28,
+      "log": "contract-green.txt"
+    },
+    {
+      "command": "node --test tests/governance/*.test.mjs tests/foundation/*.test.mjs",
+      "exitCode": 0,
+      "passed": 132
+    },
+    {
+      "command": "node scripts/verify-repo.mjs && node scripts/check-tasks.mjs",
+      "exitCode": 0
+    },
+    {
+      "command": "redocly lint contracts/openapi/openapi.json",
+      "exitCode": 0,
+      "warnings": 12,
+      "log": "openapi-lint.txt"
+    },
+    {
+      "command": "go test -race -v ./internal/persistence -count=1",
+      "environment": "isolated PostgreSQL 18.6, goose v3, loopback port 55436",
+      "exitCode": 0,
+      "topLevelPassed": 11,
+      "log": "schema-green.txt"
+    },
+    {
+      "command": "goose -dir db/migrations postgres <isolated-url> up; down; up",
+      "exitCode": 0,
+      "result": "00003 applied, rolled back on synthetic DB, reapplied; version 3"
+    },
+    {
+      "command": "go vet ./... && go build -o /tmp/weaveos-q36-bff ./cmd/bff",
+      "cwd": "services/bff",
+      "exitCode": 0
+    },
+    {
+      "command": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution Bundler apps/web/src/query-contracts.ts",
+      "exitCode": 0
+    },
+    {
+      "command": "python3 docs/evidence/V010-020/q36-contracts/validate-contract-examples.py",
+      "tool": "jsonschema 4.26.0 (supplementary local check, not a new CI dependency)",
+      "exitCode": 0,
+      "passed": 20
+    }
+  ],
+  "notRun": [
+    "full Go suite with Redis/archive",
+    "full web typecheck/build/browser acceptance",
+    "runtime HTTP new query/draft behavior",
+    "real Redis context TTL/CAS/LRU",
+    "new write-lock/invalidation/permission/draft workflow concurrency",
+    "screenshots or motion capture",
+    "final PR21 head CI"
+  ],
+  "handoffPending": [
+    "Notion sync/re-read after recovery",
+    "query/draft/UI business implementation",
+    "new migration for writer revision/locking functions",
+    "runtime least-privilege grants",
+    "separately reviewed migration compatibility registry integration"
+  ],
+  "remotePRHeadUnchanged": "09707d90af461b66c281a51666b3ed0f586e4dff",
+  "effectiveModelAndReasoning": "unknown; runtime metadata not exposed",
+  "files": [
+    {
+      "path": "contracts/openapi/openapi.json",
+      "sha256": "15eebb9c5f8369938c3b0617396b05d35498a8f540dc65cc9760fa251fed9276"
+    },
+    {
+      "path": "contracts/errors/codes.json",
+      "sha256": "05d35181812506ac84299afe4687cd17dc5bfcf0e0ae35e7c8f0fcbba9b4a2aa"
+    },
+    {
+      "path": "apps/web/src/query-contracts.ts",
+      "sha256": "3171687ceb02853668dc15b8e22c2751636c17c32c35d7d16d8f8e7e92bf3ab3"
+    },
+    {
+      "path": "services/bff/internal/personnel/query_contracts.go",
+      "sha256": "3d76353cedb60cb080deb0918ca14f73fdae0bcf9b95c8783f475fe806aa2a4e"
+    },
+    {
+      "path": "db/migrations/00003_query_drafts.sql",
+      "sha256": "9b1f546d158931d09245070a4d5b6b46dd64b128b008363ae7a44f74bae8860a"
+    },
+    {
+      "path": "tests/acceptance/response-schema.mjs",
+      "sha256": "1db8d85460d5bb99761ee188d7ba5dd4204852b7c314b6e0dae146b3b051f42d"
+    }
+  ]
+}

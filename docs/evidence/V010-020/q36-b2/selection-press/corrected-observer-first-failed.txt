@@ -1,0 +1,123 @@
+
+Running 3 tests using 1 worker
+
+(node:84284) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\q36-b2.component.spec.ts:172:1 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows (5.8s)
+(node:79392) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [firefox] › apps\web\src\q36-b2.component.spec.ts:172:1 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows (7.7s)
+(node:83716) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [webkit] › apps\web\src\q36-b2.component.spec.ts:172:1 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows (7.6s)
+
+
+  1) [chromium] › apps\web\src\q36-b2.component.spec.ts:172:1 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+
+    Error: expect(received).toHaveLength(expected)
+
+    Expected length: 1
+    Received length: 3
+    Received array:  [{"target": "BUTTON", "trusted": true, "type": "click"}, {"target": "BUTTON", "trusted": true, "type": "click"}, {"target": "BUTTON", "trusted": true, "type": "click"}]
+
+      184 |  await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();await expect(all).toBeChecked();
+      185 |  const events=await page.evaluate(()=>(window as unknown as {__q36SelectionPress:{type:string;trusted:boolean;target:string}[]}).__q36SelectionPress);
+    > 186 |  expect(events.filter(event=>event.type==='click'&&event.trusted)).toHaveLength(1);
+          |                                                                    ^
+      187 |  await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();await panel.getByRole('button',{name:'重置条件',exact:true}).click();await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+      188 |  await expect(page.getByLabel('选择成员：other-visible-member',{exact:true})).not.toBeChecked();await expect(all).not.toBeChecked();
+      189 | });
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:186:68
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [firefox] › apps\web\src\q36-b2.component.spec.ts:172:1 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+
+    Error: expect(received).toHaveLength(expected)
+
+    Expected length: 1
+    Received length: 3
+    Received array:  [{"target": "BUTTON", "trusted": true, "type": "click"}, {"target": "BUTTON", "trusted": true, "type": "click"}, {"target": "BUTTON", "trusted": true, "type": "click"}]
+
+      184 |  await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();await expect(all).toBeChecked();
+      185 |  const events=await page.evaluate(()=>(window as unknown as {__q36SelectionPress:{type:string;trusted:boolean;target:string}[]}).__q36SelectionPress);
+    > 186 |  expect(events.filter(event=>event.type==='click'&&event.trusted)).toHaveLength(1);
+          |                                                                    ^
+      187 |  await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();await panel.getByRole('button',{name:'重置条件',exact:true}).click();await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+      188 |  await expect(page.getByLabel('选择成员：other-visible-member',{exact:true})).not.toBeChecked();await expect(all).not.toBeChecked();
+      189 | });
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:186:68
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-firefox\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-firefox\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-firefox\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [webkit] › apps\web\src\q36-b2.component.spec.ts:172:1 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+
+    Error: expect(received).toHaveLength(expected)
+
+    Expected length: 1
+    Received length: 3
+    Received array:  [{"target": "BUTTON", "trusted": true, "type": "click"}, {"target": "BUTTON", "trusted": true, "type": "click"}, {"target": "BUTTON", "trusted": true, "type": "click"}]
+
+      184 |  await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();await expect(all).toBeChecked();
+      185 |  const events=await page.evaluate(()=>(window as unknown as {__q36SelectionPress:{type:string;trusted:boolean;target:string}[]}).__q36SelectionPress);
+    > 186 |  expect(events.filter(event=>event.type==='click'&&event.trusted)).toHaveLength(1);
+          |                                                                    ^
+      187 |  await page.getByRole('button',{name:'自定义筛选，已应用',exact:true}).click();await panel.getByRole('button',{name:'重置条件',exact:true}).click();await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+      188 |  await expect(page.getByLabel('选择成员：other-visible-member',{exact:true})).not.toBeChecked();await expect(all).not.toBeChecked();
+      189 | });
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:186:68
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-webkit\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-webkit\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-webkit\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-press-keyboard-green-first\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-webkit\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [chromium] › apps\web\src\q36-b2.component.spec.ts:172:1 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+    [firefox] › apps\web\src\q36-b2.component.spec.ts:172:1 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 
+    [webkit] › apps\web\src\q36-b2.component.spec.ts:172:1 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows 

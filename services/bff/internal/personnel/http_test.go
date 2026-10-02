@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/redis/go-redis/v9"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -29,6 +30,13 @@ func setupWeb(t *testing.T) *webFixture {
 		t.Fatal("isolated real Redis session required")
 	}
 	t.Cleanup(func() { _, _ = store.Revoke(ctx, sid); _ = store.Close() })
+	queryOptions, err := redis.ParseURL(os.Getenv("WEAVEOS_TEST_REDIS_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	queryRedis := redis.NewClient(queryOptions)
+	t.Cleanup(func() { _ = queryRedis.Close() })
+	f.app.Queries = NewQueryContextStore(queryRedis, "personnel-http-"+strings.ReplaceAll(f.actor.UserID, "-", ""))
 	s := &Service{Application: f.app, Authenticator: session.Authenticator{Sessions: store, DB: f.app.Pool, Origin: "https://weaveos.test"}}
 	return &webFixture{f, httpserver.NewHandler(func(context.Context) error { return nil }, s), store, sid, csrf}
 }
@@ -131,7 +139,7 @@ func TestHTTPStrictBodyAndQueryQ25(t *testing.T) {
 		t.Fatalf("create must reject edit-only version even zero, got %d", w.Code)
 	}
 	root := rootDepartment(t, f.fixture)
-	if w := f.request("POST", "/api/v1/personnel/members/"+f.actor.UserID+"/groups", `{"operation":"add","departmentId":"`+root+`","sourceDepartmentId":null,"version":0}`, true, true); w.Code != 400 {
+	if w := f.requestCurrentQuery(t, "POST", "/api/v1/personnel/members/"+f.actor.UserID+"/groups", `{"operation":"add","departmentId":"`+root+`","sourceDepartmentId":null,"version":0}`, true, true); w.Code != 400 {
 		t.Fatalf("optional UUID may be absent but not null, got %d", w.Code)
 	}
 	for _, query := range []string{"?page=0", "?pageSize=101", "?page=1&page=2", "?bootstrapAdmin=true"} {
@@ -189,14 +197,14 @@ func TestHTTPMemberAndDepartmentWritesQ25(t *testing.T) {
 	target := newTarget(t, f.fixture)
 	root := rootDepartment(t, f.fixture)
 	identities := `{"identityIds":["` + f.i1 + `","` + f.i2 + `"],"version":0}`
-	if w := f.request("PUT", "/api/v1/personnel/members/"+target+"/identities", identities, true, true); w.Code != 200 {
+	if w := f.requestCurrentQuery(t, "PUT", "/api/v1/personnel/members/"+target+"/identities", identities, true, true); w.Code != 200 {
 		t.Fatalf("member identity write: %d", w.Code)
 	}
 	groups := `{"operation":"add","departmentId":"` + root + `","version":1}`
-	if w := f.request("POST", "/api/v1/personnel/members/"+target+"/groups", groups, true, true); w.Code != 200 {
+	if w := f.requestCurrentQuery(t, "POST", "/api/v1/personnel/members/"+target+"/groups", groups, true, true); w.Code != 200 {
 		t.Fatalf("explicit group write: %d", w.Code)
 	}
-	created := f.request("POST", "/api/v1/personnel/departments", `{"name":"HTTP部门","parentId":"`+root+`"}`, true, true)
+	created := f.requestCurrentQuery(t, "POST", "/api/v1/personnel/departments", `{"name":"HTTP部门","parentId":"`+root+`"}`, true, true)
 	if created.Code != 201 {
 		t.Fatalf("department creation: %d", created.Code)
 	}
@@ -204,10 +212,10 @@ func TestHTTPMemberAndDepartmentWritesQ25(t *testing.T) {
 	var id string
 	_ = json.Unmarshal(data["id"], &id)
 	cleanDepartment(t, f.fixture, id)
-	if w := f.request("PUT", "/api/v1/personnel/departments/"+id, `{"name":"HTTP重命名","version":1}`, true, true); w.Code != 200 {
+	if w := f.requestCurrentQuery(t, "PUT", "/api/v1/personnel/departments/"+id, `{"name":"HTTP重命名","version":1}`, true, true); w.Code != 200 {
 		t.Fatalf("department rename: %d", w.Code)
 	}
-	if w := f.request("DELETE", "/api/v1/personnel/departments/"+id+"?version=2", "", true, true); w.Code != 204 || w.Body.Len() != 0 {
+	if w := f.requestCurrentQuery(t, "DELETE", "/api/v1/personnel/departments/"+id+"?version=2", "", true, true); w.Code != 204 || w.Body.Len() != 0 {
 		t.Fatal("department delete empty 204")
 	}
 }
@@ -215,8 +223,22 @@ func TestHTTPMemberAndDepartmentWritesQ25(t *testing.T) {
 func TestHTTPOptionalUUIDMustNotBeNullQ25(t *testing.T) {
 	f := setupWeb(t)
 	root := rootDepartment(t, f.fixture)
-	w := f.request("POST", "/api/v1/personnel/members/"+f.actor.UserID+"/groups", `{"operation":"add","departmentId":"`+root+`","sourceDepartmentId":null,"version":0}`, true, true)
+	w := f.requestCurrentQuery(t, "POST", "/api/v1/personnel/members/"+f.actor.UserID+"/groups", `{"operation":"add","departmentId":"`+root+`","sourceDepartmentId":null,"version":0}`, true, true)
 	if w.Code != 400 {
 		t.Fatalf("optional UUID may be absent but not null, got %d", w.Code)
 	}
+}
+
+// Q36 contract requires a genuine fresh baseline on table-origin writes. Use
+// this explicitly in older feature fixtures; raw request remains unchanged so
+// absence/expiration and stale-context tests cannot be silently bypassed.
+func (f *webFixture) requestCurrentQuery(t *testing.T, method, path, body string, login, csrf bool) *httptest.ResponseRecorder {
+	t.Helper()
+	version := baselineVersion(t, f, "")
+	if method == "DELETE" {
+		path += "&queryVersion=" + version
+	} else {
+		body = strings.TrimSuffix(strings.TrimSpace(body), "}") + `,"queryVersion":"` + version + `"}`
+	}
+	return f.request(method, path, body, login, csrf)
 }

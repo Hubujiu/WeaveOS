@@ -81,6 +81,10 @@ func Maintain(ctx context.Context, live, cold *pgxpool.Pool, now time.Time) (Res
 }
 
 func moveBatch(ctx context.Context, hot pgx.Tx, cold *pgxpool.Pool, now time.Time) (Result, bool, error) {
+	if _, err := hot.Exec(ctx, "SELECT personnel.lock_query_revisions()"); err != nil {
+		return Result{}, false, err
+	}
+
 	if _, err := hot.Exec(ctx, "SET LOCAL TIME ZONE 'UTC'"); err != nil {
 		return Result{}, false, err
 	}

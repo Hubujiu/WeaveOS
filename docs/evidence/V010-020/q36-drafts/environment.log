@@ -1,0 +1,10 @@
+2026/10/01 12:41:58 goose run: failed to connect to `user=drafts_test database=weaveos_drafts_test`: 127.0.0.1:25436 (127.0.0.1): failed to receive message: read tcp 127.0.0.1:54724->127.0.0.1:25436: read: connection reset by peer; failed to connect to `user=drafts_test database=weaveos_drafts_test`: 127.0.0.1:25436 (127.0.0.1): failed to receive message: unexpected EOF
+Traceback (most recent call last):
+  File "/workspace/WeaveOS-worktrees/V010-020-drafts/docs/evidence/V010-020/q36-drafts/run.py", line 24, in <module>
+    run([str(tools/'gopath/bin/goose'),'-dir',str(root/'db/migrations'),'postgres',cfg['WEAVEOS_TEST_DATABASE_URL'],'up'],env=env)
+  File "/workspace/WeaveOS-worktrees/V010-020-drafts/docs/evidence/V010-020/q36-drafts/run.py", line 11, in run
+    def run(args, **kw): return subprocess.run(args,check=True,**kw)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/workspace/.weaveos-tools/gopath/bin/goose', '-dir', '/workspace/WeaveOS-worktrees/V010-020-drafts/db/migrations', 'postgres', '[private isolated DB URL]', 'up']' returned non-zero exit status 1.

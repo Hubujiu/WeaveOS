@@ -1,0 +1,64 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:53396) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+
+[WebServer] (node:55584) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 10 tests using 1 worker
+
+(node:53108) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/10] [chromium] › apps\web\src\personnel.component.spec.ts:27:1 › Q32 identity select has the separated rounded menu and preserves server filtering
+[2/10] [chromium] › apps\web\src\personnel.component.spec.ts:42:1 › Q32 grouped selectors keep modal focus and Escape first dismisses the menu
+[3/10] [chromium] › apps\web\src\personnel.component.spec.ts:53:1 › Q32 parent department chooser uses options without closing the native modal
+[4/10] [chromium] › apps\web\src\personnel.component.spec.ts:61:1 › Q32 long action menu stays in the viewport and keyboard chooses the final real action
+[5/10] [chromium] › apps\web\src\personnel.component.spec.ts:72:1 › Q32 pill indicator slides between tabs only after unsaved changes are resolved
+[6/10] [chromium] › apps\web\src\personnel.component.spec.ts:84:1 › Q32 reduced motion removes displacement and option stagger and keeps compact tabs reachable
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:84:1 › Q32 reduced motion removes displacement and option stagger and keeps compact tabs reachable 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  getByRole('option').first()
+    Expected: "none"
+    Received: "blur(0px)"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toHaveCSS" getByRole('option').first() with timeout 1500ms
+      - waiting for getByRole('option').first()
+        2 × locator resolved to <div id="_r_3_-0" role="option" data-active="true" aria-selected="true" data-entering="true" class="personnel-select-option">全部操作</div>
+          - unexpected value "blur(3px)"
+        14 × locator resolved to <div id="_r_3_-0" role="option" data-active="true" aria-selected="true" data-entering="true" class="personnel-select-option">全部操作</div>
+           - unexpected value "blur(0px)"
+
+
+      88 |  expect(await page.getByRole('tablist').evaluate(n=>n.scrollHeight===n.clientHeight)).toBe(true);
+      89 |  const combo=page.getByRole('combobox',{name:'操作类型',exact:true});await combo.click();const menu=page.getByRole('listbox',{name:'操作类型',exact:true});await expect(menu).toBeVisible();await expect(menu).toHaveCSS('transform','none');
+    > 90 |  await expect(page.getByRole('option').first()).toHaveCSS('filter','none');await expect(page.getByRole('option').first()).toHaveCSS('animation-name','none');
+         |                                                 ^
+      91 |  await combo.press('Tab');await expect(combo).toHaveAttribute('aria-expanded','false');
+      92 | });
+      93 |
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:90:49
+
+    Error Context: .work\q31-test-results\personnel.component-Q32-re-196d2-eeps-compact-tabs-reachable-chromium\error-context.md
+
+
+(node:53360) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[7/10] [chromium] › apps\web\src\personnel.component.spec.ts:95:1 › Q32 large directories expose the final option promptly after End
+[8/10] [chromium] › apps\web\src\personnel.component.spec.ts:101:1 › Q32 quick reversal preserves the current menu height rather than jumping to endpoints
+[9/10] [chromium] › apps\web\src\personnel.component.spec.ts:112:1 › Q32 searching below the tabs preserves the narrow-screen content scroll position
+[10/10] [chromium] › apps\web\src\personnel.component.spec.ts:118:1 › Q32 upward menus animate the corners adjacent to their trigger
+  1 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:84:1 › Q32 reduced motion removes displacement and option stagger and keeps compact tabs reachable 
+  9 passed (21.9s)

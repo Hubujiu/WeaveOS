@@ -1,0 +1,157 @@
+
+Running 6 tests using 1 worker
+
+(node:78820) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:172:1 鈥?Q36 B2 a trusted press spanning the exiting selection mark still selects current rows (7.3s)
+(node:80760) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 2 [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:192:1 鈥?Q36 B2 trusted select-all clicks while loading or empty cannot persist into restored or next-page rows (4.8s)
+(node:73732) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 [firefox] 鈥?apps\web\src\q36-b2.component.spec.ts:172:1 鈥?Q36 B2 a trusted press spanning the exiting selection mark still selects current rows (11.3s)
+(node:82948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 4 [firefox] 鈥?apps\web\src\q36-b2.component.spec.ts:192:1 鈥?Q36 B2 trusted select-all clicks while loading or empty cannot persist into restored or next-page rows (8.1s)
+(node:78856) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  5 [webkit] 鈥?apps\web\src\q36-b2.component.spec.ts:172:1 鈥?Q36 B2 a trusted press spanning the exiting selection mark still selects current rows (7.7s)
+(node:79576) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 6 [webkit] 鈥?apps\web\src\q36-b2.component.spec.ts:192:1 鈥?Q36 B2 trusted select-all clicks while loading or empty cannot persist into restored or next-page rows (5.5s)
+
+
+  1) [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:172:1 鈥?Q36 B2 a trusted press spanning the exiting selection mark still selects current rows
+
+    Error: expect(locator).toBeChecked() failed
+
+    Locator:  getByLabel('閫夋嫨鎴愬憳锛歲36-admin', { exact: true })
+    Expected: checked
+    Received: unchecked
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "toBeChecked" getByLabel('閫夋嫨鎴愬憳锛歲36-admin', { exact: true }) with timeout 3000ms
+      - waiting for getByLabel('閫夋嫨鎴愬憳锛歲36-admin', { exact: true })
+        10 脳 locator resolved to <button id="_r_c_" tabindex="0" type="button" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="閫夋嫨鎴愬憳锛歲36-admin" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 border-muted-foreground/50 bg-background hover:border-muted-foreground"></button>
+           - unexpected value "unchecked"
+
+
+      183 |  await page.waitForFunction(()=>{const table=document.querySelector('.member-table table'),all=document.querySelector('[aria-label="閫夋嫨褰撳墠椤垫垚鍛?]');return table?.getAttribute('aria-busy')==='false'&&!!document.querySelector('[aria-label="閫夋嫨鎴愬憳锛歲36-admin"]')&&!document.querySelector('[aria-label="閫夋嫨鎴愬憳锛歰ther-visible-member"]')&&!!all?.querySelector('svg');});
+      184 |  await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+    > 185 |  await expect(page.getByLabel('閫夋嫨鎴愬憳锛歲36-admin',{exact:true})).toBeChecked();await expect(all).toBeChecked();
+          |                                                               ^
+      186 |  const events=await page.evaluate(()=>(window as unknown as {__q36SelectionPress:{type:string;trusted:boolean;target:string}[]}).__q36SelectionPress);
+      187 |  expect(events.filter(event=>event.type==='click'&&event.trusted)).toHaveLength(1);
+      188 |  await page.getByRole('button',{name:'鑷畾涔夌瓫閫夛紝宸插簲鐢?,exact:true}).click();await panel.getByRole('button',{name:'閲嶇疆鏉′欢',exact:true}).click();await panel.getByRole('button',{name:'搴旂敤绛涢€?,exact:true}).click();
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:185:63
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-chromium\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-chromium\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-chromium\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-chromium\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  2) [firefox] 鈥?apps\web\src\q36-b2.component.spec.ts:172:1 鈥?Q36 B2 a trusted press spanning the exiting selection mark still selects current rows
+
+    Error: expect(locator).toBeChecked() failed
+
+    Locator:  getByLabel('閫夋嫨鎴愬憳锛歲36-admin', { exact: true })
+    Expected: checked
+    Received: unchecked
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "toBeChecked" getByLabel('閫夋嫨鎴愬憳锛歲36-admin', { exact: true }) with timeout 3000ms
+      - waiting for getByLabel('閫夋嫨鎴愬憳锛歲36-admin', { exact: true })
+        10 脳 locator resolved to <button id="_r_c_" tabindex="0" type="button" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="閫夋嫨鎴愬憳锛歲36-admin" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 border-muted-foreground/50 bg-background hover:border-muted-foreground"></button>
+           - unexpected value "unchecked"
+
+
+      183 |  await page.waitForFunction(()=>{const table=document.querySelector('.member-table table'),all=document.querySelector('[aria-label="閫夋嫨褰撳墠椤垫垚鍛?]');return table?.getAttribute('aria-busy')==='false'&&!!document.querySelector('[aria-label="閫夋嫨鎴愬憳锛歲36-admin"]')&&!document.querySelector('[aria-label="閫夋嫨鎴愬憳锛歰ther-visible-member"]')&&!!all?.querySelector('svg');});
+      184 |  await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+    > 185 |  await expect(page.getByLabel('閫夋嫨鎴愬憳锛歲36-admin',{exact:true})).toBeChecked();await expect(all).toBeChecked();
+          |                                                               ^
+      186 |  const events=await page.evaluate(()=>(window as unknown as {__q36SelectionPress:{type:string;trusted:boolean;target:string}[]}).__q36SelectionPress);
+      187 |  expect(events.filter(event=>event.type==='click'&&event.trusted)).toHaveLength(1);
+      188 |  await page.getByRole('button',{name:'鑷畾涔夌瓫閫夛紝宸插簲鐢?,exact:true}).click();await panel.getByRole('button',{name:'閲嶇疆鏉′欢',exact:true}).click();await panel.getByRole('button',{name:'搴旂敤绛涢€?,exact:true}).click();
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:185:63
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-firefox\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-firefox\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-firefox\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-firefox\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-firefox\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  3) [webkit] 鈥?apps\web\src\q36-b2.component.spec.ts:172:1 鈥?Q36 B2 a trusted press spanning the exiting selection mark still selects current rows
+
+    Error: expect(locator).toBeChecked() failed
+
+    Locator:  getByLabel('閫夋嫨鎴愬憳锛歲36-admin', { exact: true })
+    Expected: checked
+    Received: unchecked
+    Timeout:  3000ms
+
+    Call log:
+      - Expect "toBeChecked" getByLabel('閫夋嫨鎴愬憳锛歲36-admin', { exact: true }) with timeout 3000ms
+      - waiting for getByLabel('閫夋嫨鎴愬憳锛歲36-admin', { exact: true })
+        10 脳 locator resolved to <button id="_r_c_" tabindex="0" type="button" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="閫夋嫨鎴愬憳锛歲36-admin" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 border-muted-foreground/50 bg-background hover:border-muted-foreground"></button>
+           - unexpected value "unchecked"
+
+
+      183 |  await page.waitForFunction(()=>{const table=document.querySelector('.member-table table'),all=document.querySelector('[aria-label="閫夋嫨褰撳墠椤垫垚鍛?]');return table?.getAttribute('aria-busy')==='false'&&!!document.querySelector('[aria-label="閫夋嫨鎴愬憳锛歲36-admin"]')&&!document.querySelector('[aria-label="閫夋嫨鎴愬憳锛歰ther-visible-member"]')&&!!all?.querySelector('svg');});
+      184 |  await page.mouse.down();await expect(all.locator('svg')).toHaveCount(0);await page.mouse.up();
+    > 185 |  await expect(page.getByLabel('閫夋嫨鎴愬憳锛歲36-admin',{exact:true})).toBeChecked();await expect(all).toBeChecked();
+          |                                                               ^
+      186 |  const events=await page.evaluate(()=>(window as unknown as {__q36SelectionPress:{type:string;trusted:boolean;target:string}[]}).__q36SelectionPress);
+      187 |  expect(events.filter(event=>event.type==='click'&&event.trusted)).toHaveLength(1);
+      188 |  await page.getByRole('button',{name:'鑷畾涔夌瓫閫夛紝宸插簲鐢?,exact:true}).click();await panel.getByRole('button',{name:'閲嶇疆鏉′欢',exact:true}).click();await panel.getByRole('button',{name:'搴旂敤绛涢€?,exact:true}).click();
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\apps\web\src\q36-b2.component.spec.ts:185:63
+
+    attachment #1: screenshot (image/png) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-webkit\test-failed-1.png
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    attachment #2: video (video/webm) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-webkit\video.webm
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+    Error Context: .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-webkit\error-context.md
+
+    attachment #4: trace (application/zip) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-webkit\trace.zip
+    Usage:
+
+        npx playwright show-trace .work\q36-selection-official-red\q36-b2.component-Q36-B2-a--8d62f--still-selects-current-rows-webkit\trace.zip
+
+    鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+  3 failed
+    [chromium] 鈥?apps\web\src\q36-b2.component.spec.ts:172:1 鈥?Q36 B2 a trusted press spanning the exiting selection mark still selects current rows
+    [firefox] 鈥?apps\web\src\q36-b2.component.spec.ts:172:1 鈥?Q36 B2 a trusted press spanning the exiting selection mark still selects current rows
+    [webkit] 鈥?apps\web\src\q36-b2.component.spec.ts:172:1 鈥?Q36 B2 a trusted press spanning the exiting selection mark still selects current rows
+  3 passed (49.9s)

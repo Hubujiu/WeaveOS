@@ -3,7 +3,7 @@
   "info": {
     "title": "WeaveOS Authentication and Personnel API",
     "version": "1.0.0",
-    "description": "Product version v0.1.0; public compatibility path /api/v1. Browser session authentication follows ADR-001. This contract does not define general RBAC or cross-service RPC. Q25 / accepted ADR006 add personnel administration and a scoped page-based pagination exception."
+    "description": "Product version v0.1.0; public compatibility path /api/v1. Browser session authentication follows ADR-001. This contract does not define general RBAC or cross-service RPC. Q25 / accepted ADR006 add personnel administration and a scoped page-based pagination exception. Q36 approved execution source: docs/tasks/V010-020-PLAN.md. New contracts are frozen before implementation; phase-A schema/contract passing is not runtime acceptance."
   },
   "servers": [
     {
@@ -327,14 +327,19 @@
             "WebSession": []
           }
         ],
-        "description": "Only the current personnel.manage-qualified account may create an invitation. A generated code has no time expiry and is displayed once. Requires same-origin/CSRF proof and application/json body. Qualification is live personnel.manage; existing invitation ownership, atomic consumption and secrecy remain unchanged.",
+        "description": "Only the current personnel.manage-qualified account may create an invitation. A generated code has no time expiry and is displayed once. Requires same-origin/CSRF proof and application/json body. Qualification is live personnel.manage; existing invitation ownership, atomic consumption and secrecy remain unchanged. Optional queryVersion guards invocation from the member table; existing non-table invocation still rechecks current permission. Invitation material is never saved in a draft.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "additionalProperties": false
+                "additionalProperties": false,
+                "properties": {
+                  "queryVersion": {
+                    "$ref": "#/components/schemas/QueryVersion"
+                  }
+                }
               }
             }
           }
@@ -377,7 +382,10 @@
             "$ref": "#/components/responses/InternalError"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
+          },
+          "409": {
+            "$ref": "#/components/responses/QueryConflict"
           }
         },
         "parameters": [
@@ -508,7 +516,7 @@
       "get": {
         "operationId": "getpersonnel_members",
         "summary": "GET /api/v1/personnel/members",
-        "description": "Requires live personnel.manage. Consistent live authorization; no cross-request cache. ",
+        "description": "Compatibility-only simple GET using existing page/pageSize/search and shortcut/range parameters. No complex filter or custom sort parameters; new UI uses POST /api/v1/personnel/members/search only. Reuse the same core live authorization, full query, and supplied-context validation. Optional queryVersion never bypasses queryVersion write protection: all guarded writes still require a currently validated query context. Existing simple requests without a context establish an independent current baseline and keep their valid page semantics. Default ordering remains unchanged.",
         "security": [
           {
             "WebSession": []
@@ -557,6 +565,14 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "queryVersion",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/QueryVersion"
+            },
+            "description": "Optional continuation context. If supplied, use the same live query validation as POST. Legacy requests without it are independent simple reads; no historical baseline is asserted."
           }
         ],
         "responses": {
@@ -585,9 +601,13 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
+          },
+          "409": {
+            "$ref": "#/components/responses/QueryConflict"
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/v1/personnel/members/{memberId}": {
@@ -649,7 +669,7 @@
       "put": {
         "operationId": "putpersonnel_members__memberId__identities",
         "summary": "PUT /api/v1/personnel/members/{memberId}/identities",
-        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay. ",
+        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay.  Q36: query-guarded member/department writes prevalidate full old query in short RR OUTSIDE revision write locks. RC write transaction locks needed revisions people/configuration/activity in fixed order, reauthorizes with existing account/auth_version and dependency locks, verifies observed revisions, checks object version, then mutates/audits. A changed observed revision restarts prevalidation (maximum two extra attempts); not automatically QUERY_CHANGED. Identity/template card writes keep object checks and only invalidate dependent datasets. Optional draftRef cleanup is conditional and atomic with successful business write.",
         "security": [
           {
             "WebSession": []
@@ -698,13 +718,13 @@
             "$ref": "#/components/responses/PersonnelNotFound"
           },
           "409": {
-            "$ref": "#/components/responses/PersonnelConflict"
+            "$ref": "#/components/responses/QueryConflict"
           },
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
           }
         },
         "requestBody": {
@@ -727,11 +747,18 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 9007199254740991
+                  },
+                  "draftRef": {
+                    "$ref": "#/components/schemas/DraftReference"
+                  },
+                  "queryVersion": {
+                    "$ref": "#/components/schemas/QueryVersion"
                   }
                 },
                 "required": [
                   "identityIds",
-                  "version"
+                  "version",
+                  "queryVersion"
                 ]
               }
             }
@@ -743,7 +770,7 @@
       "post": {
         "operationId": "postpersonnel_members__memberId__groups",
         "summary": "POST /api/v1/personnel/members/{memberId}/groups",
-        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay. ",
+        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay.  Q36: query-guarded member/department writes prevalidate full old query in short RR OUTSIDE revision write locks. RC write transaction locks needed revisions people/configuration/activity in fixed order, reauthorizes with existing account/auth_version and dependency locks, verifies observed revisions, checks object version, then mutates/audits. A changed observed revision restarts prevalidation (maximum two extra attempts); not automatically QUERY_CHANGED. Identity/template card writes keep object checks and only invalidate dependent datasets. Optional draftRef cleanup is conditional and atomic with successful business write.",
         "security": [
           {
             "WebSession": []
@@ -792,13 +819,13 @@
             "$ref": "#/components/responses/PersonnelNotFound"
           },
           "409": {
-            "$ref": "#/components/responses/PersonnelConflict"
+            "$ref": "#/components/responses/QueryConflict"
           },
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
           }
         },
         "requestBody": {
@@ -829,12 +856,19 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 9007199254740991
+                  },
+                  "draftRef": {
+                    "$ref": "#/components/schemas/DraftReference"
+                  },
+                  "queryVersion": {
+                    "$ref": "#/components/schemas/QueryVersion"
                   }
                 },
                 "required": [
                   "operation",
                   "departmentId",
-                  "version"
+                  "version",
+                  "queryVersion"
                 ],
                 "allOf": [
                   {
@@ -868,7 +902,16 @@
             "WebSession": []
           }
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "queryVersion",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/QueryVersion"
+            },
+            "description": "Optional member-query context for auxiliary choices. Recheck the stored member baseline by exact fingerprint; unrelated option changes alone do not expire it. Cards can continue existing object-version workflow."
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -895,14 +938,17 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
+          },
+          "409": {
+            "$ref": "#/components/responses/QueryConflict"
           }
         }
       },
       "post": {
         "operationId": "postpersonnel_departments",
         "summary": "POST /api/v1/personnel/departments",
-        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay. ",
+        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay.  Q36: query-guarded member/department writes prevalidate full old query in short RR OUTSIDE revision write locks. RC write transaction locks needed revisions people/configuration/activity in fixed order, reauthorizes with existing account/auth_version and dependency locks, verifies observed revisions, checks object version, then mutates/audits. A changed observed revision restarts prevalidation (maximum two extra attempts); not automatically QUERY_CHANGED. Identity/template card writes keep object checks and only invalidate dependent datasets. Optional draftRef cleanup is conditional and atomic with successful business write.",
         "security": [
           {
             "WebSession": []
@@ -945,13 +991,13 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "409": {
-            "$ref": "#/components/responses/PersonnelConflict"
+            "$ref": "#/components/responses/QueryConflict"
           },
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
           }
         },
         "requestBody": {
@@ -971,11 +1017,18 @@
                   "parentId": {
                     "type": "string",
                     "format": "uuid"
+                  },
+                  "draftRef": {
+                    "$ref": "#/components/schemas/DraftReference"
+                  },
+                  "queryVersion": {
+                    "$ref": "#/components/schemas/QueryVersion"
                   }
                 },
                 "required": [
                   "name",
-                  "parentId"
+                  "parentId",
+                  "queryVersion"
                 ]
               }
             }
@@ -987,7 +1040,7 @@
       "put": {
         "operationId": "putpersonnel_departments__departmentId_",
         "summary": "PUT /api/v1/personnel/departments/{departmentId}",
-        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay. ",
+        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay.  Q36: query-guarded member/department writes prevalidate full old query in short RR OUTSIDE revision write locks. RC write transaction locks needed revisions people/configuration/activity in fixed order, reauthorizes with existing account/auth_version and dependency locks, verifies observed revisions, checks object version, then mutates/audits. A changed observed revision restarts prevalidation (maximum two extra attempts); not automatically QUERY_CHANGED. Identity/template card writes keep object checks and only invalidate dependent datasets. Optional draftRef cleanup is conditional and atomic with successful business write.",
         "security": [
           {
             "WebSession": []
@@ -1036,13 +1089,13 @@
             "$ref": "#/components/responses/PersonnelNotFound"
           },
           "409": {
-            "$ref": "#/components/responses/PersonnelConflict"
+            "$ref": "#/components/responses/QueryConflict"
           },
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
           }
         },
         "requestBody": {
@@ -1063,11 +1116,18 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 9007199254740991
+                  },
+                  "draftRef": {
+                    "$ref": "#/components/schemas/DraftReference"
+                  },
+                  "queryVersion": {
+                    "$ref": "#/components/schemas/QueryVersion"
                   }
                 },
                 "required": [
                   "name",
-                  "version"
+                  "version",
+                  "queryVersion"
                 ]
               }
             }
@@ -1077,7 +1137,7 @@
       "delete": {
         "operationId": "deletepersonnel_departments__departmentId_",
         "summary": "DELETE /api/v1/personnel/departments/{departmentId}",
-        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay. ",
+        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay.  Q36: query-guarded member/department writes prevalidate full old query in short RR OUTSIDE revision write locks. RC write transaction locks needed revisions people/configuration/activity in fixed order, reauthorizes with existing account/auth_version and dependency locks, verifies observed revisions, checks object version, then mutates/audits. A changed observed revision restarts prevalidation (maximum two extra attempts); not automatically QUERY_CHANGED. Identity/template card writes keep object checks and only invalidate dependent datasets. Optional draftRef cleanup is conditional and atomic with successful business write.",
         "security": [
           {
             "WebSession": []
@@ -1106,6 +1166,14 @@
             },
             "description": "Required current object version",
             "required": true
+          },
+          {
+            "name": "queryVersion",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/QueryVersion"
+            }
           }
         ],
         "responses": {
@@ -1130,10 +1198,10 @@
             "$ref": "#/components/responses/PersonnelNotFound"
           },
           "409": {
-            "$ref": "#/components/responses/PersonnelConflict"
+            "$ref": "#/components/responses/QueryConflict"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
           }
         }
       }
@@ -1175,6 +1243,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "queryVersion",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/QueryVersion"
+            },
+            "description": "Optional member-query context for auxiliary choices. Recheck the stored member baseline by exact fingerprint; unrelated option changes alone do not expire it. Cards can continue existing object-version workflow."
           }
         ],
         "responses": {
@@ -1203,14 +1279,17 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
+          },
+          "409": {
+            "$ref": "#/components/responses/QueryConflict"
           }
         }
       },
       "post": {
         "operationId": "postpersonnel_identities",
         "summary": "POST /api/v1/personnel/identities",
-        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay. ",
+        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay.  Q36: query-guarded member/department writes prevalidate full old query in short RR OUTSIDE revision write locks. RC write transaction locks needed revisions people/configuration/activity in fixed order, reauthorizes with existing account/auth_version and dependency locks, verifies observed revisions, checks object version, then mutates/audits. A changed observed revision restarts prevalidation (maximum two extra attempts); not automatically QUERY_CHANGED. Identity/template card writes keep object checks and only invalidate dependent datasets. Optional draftRef cleanup is conditional and atomic with successful business write.",
         "security": [
           {
             "WebSession": []
@@ -1253,13 +1332,13 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "409": {
-            "$ref": "#/components/responses/PersonnelConflict"
+            "$ref": "#/components/responses/QueryConflict"
           },
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
           }
         },
         "requestBody": {
@@ -1294,6 +1373,9 @@
                       "type": "string"
                     },
                     "uniqueItems": true
+                  },
+                  "draftRef": {
+                    "$ref": "#/components/schemas/DraftReference"
                   }
                 },
                 "required": [
@@ -1365,7 +1447,7 @@
       "put": {
         "operationId": "putpersonnel_identities__identityId_",
         "summary": "PUT /api/v1/personnel/identities/{identityId}",
-        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay. ",
+        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay.  Q36: query-guarded member/department writes prevalidate full old query in short RR OUTSIDE revision write locks. RC write transaction locks needed revisions people/configuration/activity in fixed order, reauthorizes with existing account/auth_version and dependency locks, verifies observed revisions, checks object version, then mutates/audits. A changed observed revision restarts prevalidation (maximum two extra attempts); not automatically QUERY_CHANGED. Identity/template card writes keep object checks and only invalidate dependent datasets. Optional draftRef cleanup is conditional and atomic with successful business write.",
         "security": [
           {
             "WebSession": []
@@ -1414,13 +1496,13 @@
             "$ref": "#/components/responses/PersonnelNotFound"
           },
           "409": {
-            "$ref": "#/components/responses/PersonnelConflict"
+            "$ref": "#/components/responses/QueryConflict"
           },
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
           }
         },
         "requestBody": {
@@ -1460,6 +1542,9 @@
                       "type": "string"
                     },
                     "uniqueItems": true
+                  },
+                  "draftRef": {
+                    "$ref": "#/components/schemas/DraftReference"
                   }
                 },
                 "required": [
@@ -1477,7 +1562,7 @@
       "delete": {
         "operationId": "deletepersonnel_identities__identityId_",
         "summary": "DELETE /api/v1/personnel/identities/{identityId}",
-        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay. ",
+        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay.  Q36: query-guarded member/department writes prevalidate full old query in short RR OUTSIDE revision write locks. RC write transaction locks needed revisions people/configuration/activity in fixed order, reauthorizes with existing account/auth_version and dependency locks, verifies observed revisions, checks object version, then mutates/audits. A changed observed revision restarts prevalidation (maximum two extra attempts); not automatically QUERY_CHANGED. Identity/template card writes keep object checks and only invalidate dependent datasets. Optional draftRef cleanup is conditional and atomic with successful business write.",
         "security": [
           {
             "WebSession": []
@@ -1530,10 +1615,10 @@
             "$ref": "#/components/responses/PersonnelNotFound"
           },
           "409": {
-            "$ref": "#/components/responses/PersonnelConflict"
+            "$ref": "#/components/responses/QueryConflict"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
           }
         }
       }
@@ -1575,6 +1660,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "queryVersion",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/QueryVersion"
+            },
+            "description": "Optional member-query context for auxiliary choices. Recheck the stored member baseline by exact fingerprint; unrelated option changes alone do not expire it. Cards can continue existing object-version workflow."
           }
         ],
         "responses": {
@@ -1603,14 +1696,17 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
+          },
+          "409": {
+            "$ref": "#/components/responses/QueryConflict"
           }
         }
       },
       "post": {
         "operationId": "postpersonnel_templates",
         "summary": "POST /api/v1/personnel/templates",
-        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay. ",
+        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay.  Q36: query-guarded member/department writes prevalidate full old query in short RR OUTSIDE revision write locks. RC write transaction locks needed revisions people/configuration/activity in fixed order, reauthorizes with existing account/auth_version and dependency locks, verifies observed revisions, checks object version, then mutates/audits. A changed observed revision restarts prevalidation (maximum two extra attempts); not automatically QUERY_CHANGED. Identity/template card writes keep object checks and only invalidate dependent datasets. Optional draftRef cleanup is conditional and atomic with successful business write.",
         "security": [
           {
             "WebSession": []
@@ -1653,13 +1749,13 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "409": {
-            "$ref": "#/components/responses/PersonnelConflict"
+            "$ref": "#/components/responses/QueryConflict"
           },
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
           }
         },
         "requestBody": {
@@ -1686,6 +1782,9 @@
                       "type": "string"
                     },
                     "uniqueItems": true
+                  },
+                  "draftRef": {
+                    "$ref": "#/components/schemas/DraftReference"
                   }
                 },
                 "required": [
@@ -1756,7 +1855,7 @@
       "put": {
         "operationId": "putpersonnel_templates__templateId_",
         "summary": "PUT /api/v1/personnel/templates/{templateId}",
-        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay. ",
+        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay.  Q36: query-guarded member/department writes prevalidate full old query in short RR OUTSIDE revision write locks. RC write transaction locks needed revisions people/configuration/activity in fixed order, reauthorizes with existing account/auth_version and dependency locks, verifies observed revisions, checks object version, then mutates/audits. A changed observed revision restarts prevalidation (maximum two extra attempts); not automatically QUERY_CHANGED. Identity/template card writes keep object checks and only invalidate dependent datasets. Optional draftRef cleanup is conditional and atomic with successful business write.",
         "security": [
           {
             "WebSession": []
@@ -1805,13 +1904,13 @@
             "$ref": "#/components/responses/PersonnelNotFound"
           },
           "409": {
-            "$ref": "#/components/responses/PersonnelConflict"
+            "$ref": "#/components/responses/QueryConflict"
           },
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
           }
         },
         "requestBody": {
@@ -1843,6 +1942,9 @@
                       "type": "string"
                     },
                     "uniqueItems": true
+                  },
+                  "draftRef": {
+                    "$ref": "#/components/schemas/DraftReference"
                   }
                 },
                 "required": [
@@ -1859,7 +1961,7 @@
       "delete": {
         "operationId": "deletepersonnel_templates__templateId_",
         "summary": "DELETE /api/v1/personnel/templates/{templateId}",
-        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay. ",
+        "description": "Requires live personnel.manage. Transaction rechecks current Session account/version and qualification, holds actual authorization dependency locks, writes configuration and safe audit atomically. Stale version/reference/deadlock conflict returns 409 without automatic replay.  Q36: query-guarded member/department writes prevalidate full old query in short RR OUTSIDE revision write locks. RC write transaction locks needed revisions people/configuration/activity in fixed order, reauthorizes with existing account/auth_version and dependency locks, verifies observed revisions, checks object version, then mutates/audits. A changed observed revision restarts prevalidation (maximum two extra attempts); not automatically QUERY_CHANGED. Identity/template card writes keep object checks and only invalidate dependent datasets. Optional draftRef cleanup is conditional and atomic with successful business write.",
         "security": [
           {
             "WebSession": []
@@ -1912,10 +2014,10 @@
             "$ref": "#/components/responses/PersonnelNotFound"
           },
           "409": {
-            "$ref": "#/components/responses/PersonnelConflict"
+            "$ref": "#/components/responses/QueryConflict"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
           }
         }
       }
@@ -1930,7 +2032,16 @@
             "WebSession": []
           }
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "queryVersion",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/QueryVersion"
+            },
+            "description": "Optional member-query context for auxiliary choices. Recheck the stored member baseline by exact fingerprint; unrelated option changes alone do not expire it. Cards can continue existing object-version workflow."
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -1957,7 +2068,10 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "503": {
-            "$ref": "#/components/responses/Unavailable"
+            "$ref": "#/components/responses/QueryUnavailable"
+          },
+          "409": {
+            "$ref": "#/components/responses/QueryConflict"
           }
         }
       }
@@ -1966,7 +2080,7 @@
       "get": {
         "operationId": "getpersonnel_events",
         "summary": "GET /api/v1/personnel/events",
-        "description": "Requires live personnel.manage. Consistent live authorization; no cross-request cache. ",
+        "description": "Compatibility-only simple GET using existing page/pageSize/search and shortcut/range parameters. No complex filter or custom sort parameters; new UI uses POST /api/v1/personnel/events/search only. Reuse the same core live authorization, full query, and supplied-context validation. Optional queryVersion never bypasses queryVersion write protection: all guarded writes still require a currently validated query context. Existing simple requests without a context establish an independent current baseline and keep their valid page semantics. Default ordering remains unchanged.",
         "security": [
           {
             "WebSession": []
@@ -2038,6 +2152,14 @@
               "format": "date-time"
             },
             "description": "Defaults to now; hot database only."
+          },
+          {
+            "name": "queryVersion",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/QueryVersion"
+            },
+            "description": "Optional continuation context. If supplied, use the same live query validation as POST. Legacy requests without it are independent simple reads; no historical baseline is asserted."
           }
         ],
         "responses": {
@@ -2064,6 +2186,751 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/QueryUnavailable"
+          },
+          "409": {
+            "$ref": "#/components/responses/QueryConflict"
+          }
+        },
+        "deprecated": true
+      }
+    },
+    "/api/v1/personnel/drafts": {
+      "get": {
+        "operationId": "getPersonnelDrafts",
+        "summary": "get personal personnel draft",
+        "description": "Live personnel.manage and Session required for every access, including restore. Owner from Session; other owners return PERSONNEL_NOT_FOUND after authorization. Drafts survive reload/browser close and have no expiry; saving does not change business data, audit or query revisions. Restore separately reads current target, keeps original baseVersion and inputs; never auto-recreates deleted targets or overwrites newer object/draft versions. List order updated_at DESC,id DESC.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          },
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonnelDraftListEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postPersonnelDrafts",
+        "summary": "post personal personnel draft",
+        "description": "Live personnel.manage and Session required for every access, including restore. Owner from Session; other owners return PERSONNEL_NOT_FOUND after authorization. Drafts survive reload/browser close and have no expiry; saving does not change business data, audit or query revisions. Restore separately reads current target, keeps original baseVersion and inputs; never auto-recreates deleted targets or overwrites newer object/draft versions. List order updated_at DESC,id DESC.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          },
+          "409": {
+            "$ref": "#/components/responses/DraftConflict"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "201": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Location": {
+                "description": "Created draft resource",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonnelDraftEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftCreateInput"
+              }
+            }
+          },
+          "x-max-raw-bytes": 131072,
+          "description": "Route-local entire raw JSON body <=131072 bytes AND canonical payload <=65536 bytes. Both must hold. Normal JSON.stringify UTF-8 payload plus wrapper fits; excessive Unicode escapes or whitespace may exceed the raw bound and must be rejected even when canonical payload fits. No global body/header limit change."
+        }
+      }
+    },
+    "/api/v1/personnel/drafts/{draftId}": {
+      "get": {
+        "operationId": "getPersonnelDraft",
+        "summary": "get personal personnel draft",
+        "description": "Live personnel.manage and Session required for every access, including restore. Owner from Session; other owners return PERSONNEL_NOT_FOUND after authorization. Drafts survive reload/browser close and have no expiry; saving does not change business data, audit or query revisions. Restore separately reads current target, keeps original baseVersion and inputs; never auto-recreates deleted targets or overwrites newer object/draft versions. List order updated_at DESC,id DESC.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draftId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          },
+          "404": {
+            "$ref": "#/components/responses/PersonnelNotFound"
+          },
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonnelDraftEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putPersonnelDraft",
+        "summary": "put personal personnel draft",
+        "description": "Live personnel.manage and Session required for every access, including restore. Owner from Session; other owners return PERSONNEL_NOT_FOUND after authorization. Drafts survive reload/browser close and have no expiry; saving does not change business data, audit or query revisions. Restore separately reads current target, keeps original baseVersion and inputs; never auto-recreates deleted targets or overwrites newer object/draft versions. List order updated_at DESC,id DESC.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draftId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          },
+          "404": {
+            "$ref": "#/components/responses/PersonnelNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/DraftConflict"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonnelDraftEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftUpdateInput"
+              }
+            }
+          },
+          "x-max-raw-bytes": 131072,
+          "description": "Route-local entire raw JSON body <=131072 bytes AND canonical payload <=65536 bytes. Both must hold. Normal JSON.stringify UTF-8 payload plus wrapper fits; excessive Unicode escapes or whitespace may exceed the raw bound and must be rejected even when canonical payload fits. No global body/header limit change."
+        }
+      },
+      "delete": {
+        "operationId": "deletePersonnelDraft",
+        "summary": "delete personal personnel draft",
+        "description": "Live personnel.manage and Session required for every access, including restore. Owner from Session; other owners return PERSONNEL_NOT_FOUND after authorization. Drafts survive reload/browser close and have no expiry; saving does not change business data, audit or query revisions. Restore separately reads current target, keeps original baseVersion and inputs; never auto-recreates deleted targets or overwrites newer object/draft versions. List order updated_at DESC,id DESC.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draftId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          },
+          "404": {
+            "$ref": "#/components/responses/PersonnelNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/DraftConflict"
+          },
+          "204": {
+            "description": "Draft deleted; empty body",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/personnel/members/search": {
+      "post": {
+        "operationId": "searchPersonnelMembers",
+        "summary": "Search personnel members",
+        "description": "Read-only POST; no business writes, business audit events or dataset revision increments. May create/touch bounded Redis query contexts. Live Session, source/CSRF checks remain required despite read semantics. Requires live personnel.manage. Consistent live authorization; no cross-request cache.  Q36: filter/sort the complete live result before page/offset. Check old baseline, establish new criteria, total/page/revision in ONE short REPEATABLE READ transaction. Revision is only the unchanged fast path; changed revision requires complete safe projection SHA256, excluding object version. Equal fingerprints including ABA are allowed. Never return mixed snapshots or auto-clamp a stale page. Invalid page/pageSize is 400; retain existing valid-page behavior for an empty result. Only numeric/time sorts; members accept no sort parameters. Query metadata is not a historical data snapshot.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "x-max-raw-bytes": 65536,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberSearchInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonnelMembersPageEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/QueryUnavailable"
+          },
+          "409": {
+            "$ref": "#/components/responses/QueryConflict"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          }
+        }
+      }
+    },
+    "/api/v1/personnel/events/search": {
+      "post": {
+        "operationId": "searchPersonnelEvents",
+        "summary": "Search personnel events",
+        "description": "Read-only POST; no business writes, business audit events or dataset revision increments. May create/touch bounded Redis query contexts. Live Session, source/CSRF checks remain required despite read semantics. Requires live personnel.manage. Consistent live authorization; no cross-request cache.  Q36: filter/sort the complete live result before page/offset. Check old baseline, establish new criteria, total/page/revision in ONE short REPEATABLE READ transaction. Revision is only the unchanged fast path; changed revision requires complete safe projection SHA256, excluding object version. Equal fingerprints including ABA are allowed. Never return mixed snapshots or auto-clamp a stale page. Invalid page/pageSize is 400; retain existing valid-page behavior for an empty result. Only numeric/time sorts; members accept no sort parameters. Query metadata is not a historical data snapshot.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "x-max-raw-bytes": 65536,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventSearchInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonnelEventsPageEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/QueryUnavailable"
+          },
+          "409": {
+            "$ref": "#/components/responses/QueryConflict"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          }
+        }
+      }
+    },
+    "/api/v1/personnel/table-presets": {
+      "get": {
+        "operationId": "getTablePresets",
+        "summary": "get personal table preset",
+        "description": "ADR008: Session-owned personal configuration, live personnel.manage on every read/write; CSRF/Origin for mutations. Persist without applying or storing active/query state. No business revision/audit changes. List updatedAt DESC,id ASC; missing/foreign id ->404; unsupported schema ->400.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "view",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "members",
+                "events"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablePresetListEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      },
+      "post": {
+        "operationId": "postTablePresets",
+        "summary": "post personal table preset",
+        "description": "ADR008: Session-owned personal configuration, live personnel.manage on every read/write; CSRF/Origin for mutations. Persist without applying or storing active/query state. No business revision/audit changes. List updatedAt DESC,id ASC; missing/foreign id ->404; unsupported schema ->400.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Location": {
+                "description": "Created table preset resource",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablePresetEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/TablePresetConflict"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TablePresetCreateInput"
+              }
+            }
+          },
+          "x-max-raw-bytes": 65536,
+          "description": "Entire raw UTF-8 request <=65536 bytes, canonical configuration <=32768 bytes and canonical filter <=16384 bytes; independent caps. Preserve original query/header limits."
+        }
+      }
+    },
+    "/api/v1/personnel/table-presets/{presetId}": {
+      "get": {
+        "operationId": "getTablePreset",
+        "summary": "get personal table preset",
+        "description": "ADR008: Session-owned personal configuration, live personnel.manage on every read/write; CSRF/Origin for mutations. Persist without applying or storing active/query state. No business revision/audit changes. List updatedAt DESC,id ASC; missing/foreign id ->404; unsupported schema ->400.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "presetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablePresetEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/PersonnelNotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      },
+      "put": {
+        "operationId": "putTablePreset",
+        "summary": "put personal table preset",
+        "description": "ADR008: Session-owned personal configuration, live personnel.manage on every read/write; CSRF/Origin for mutations. Persist without applying or storing active/query state. No business revision/audit changes. List updatedAt DESC,id ASC; missing/foreign id ->404; unsupported schema ->400.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "presetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablePresetEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/PersonnelNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/TablePresetConflict"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TablePresetUpdateInput"
+              }
+            }
+          },
+          "x-max-raw-bytes": 65536,
+          "description": "Entire raw UTF-8 request <=65536 bytes, canonical configuration <=32768 bytes and canonical filter <=16384 bytes; independent caps. Preserve original query/header limits."
+        }
+      },
+      "delete": {
+        "operationId": "deleteTablePreset",
+        "summary": "delete personal table preset",
+        "description": "ADR008: Session-owned personal configuration, live personnel.manage on every read/write; CSRF/Origin for mutations. Persist without applying or storing active/query state. No business revision/audit changes. List updatedAt DESC,id ASC; missing/foreign id ->404; unsupported schema ->400.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "presetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preset deleted; empty body",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/PersonnelNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/TablePresetConflict"
           },
           "503": {
             "$ref": "#/components/responses/Unavailable"
@@ -2692,6 +3559,9 @@
               "failure",
               "error"
             ]
+          },
+          "display": {
+            "$ref": "#/components/schemas/ActivityDisplay"
           }
         },
         "required": [
@@ -2702,7 +3572,8 @@
           "objectType",
           "objectId",
           "summary",
-          "outcome"
+          "outcome",
+          "display"
         ]
       },
       "PersonnelIdentityInput": {
@@ -2738,6 +3609,9 @@
               "type": "string"
             },
             "uniqueItems": true
+          },
+          "draftRef": {
+            "$ref": "#/components/schemas/DraftReference"
           }
         },
         "required": [
@@ -2776,6 +3650,9 @@
               "type": "string"
             },
             "uniqueItems": true
+          },
+          "draftRef": {
+            "$ref": "#/components/schemas/DraftReference"
           }
         },
         "required": [
@@ -2810,6 +3687,9 @@
               "type": "string"
             },
             "uniqueItems": true
+          },
+          "draftRef": {
+            "$ref": "#/components/schemas/DraftReference"
           }
         },
         "required": [
@@ -2839,6 +3719,9 @@
               "type": "string"
             },
             "uniqueItems": true
+          },
+          "draftRef": {
+            "$ref": "#/components/schemas/DraftReference"
           }
         },
         "required": [
@@ -2863,11 +3746,18 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
+          },
+          "draftRef": {
+            "$ref": "#/components/schemas/DraftReference"
+          },
+          "queryVersion": {
+            "$ref": "#/components/schemas/QueryVersion"
           }
         },
         "required": [
           "identityIds",
-          "version"
+          "version",
+          "queryVersion"
         ]
       },
       "MemberGroupsInput": {
@@ -2894,12 +3784,19 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
+          },
+          "draftRef": {
+            "$ref": "#/components/schemas/DraftReference"
+          },
+          "queryVersion": {
+            "$ref": "#/components/schemas/QueryVersion"
           }
         },
         "required": [
           "operation",
           "departmentId",
-          "version"
+          "version",
+          "queryVersion"
         ],
         "allOf": [
           {
@@ -2931,11 +3828,18 @@
           "parentId": {
             "type": "string",
             "format": "uuid"
+          },
+          "draftRef": {
+            "$ref": "#/components/schemas/DraftReference"
+          },
+          "queryVersion": {
+            "$ref": "#/components/schemas/QueryVersion"
           }
         },
         "required": [
           "name",
-          "parentId"
+          "parentId",
+          "queryVersion"
         ]
       },
       "DepartmentUpdateInput": {
@@ -2952,11 +3856,18 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 9007199254740991
+          },
+          "draftRef": {
+            "$ref": "#/components/schemas/DraftReference"
+          },
+          "queryVersion": {
+            "$ref": "#/components/schemas/QueryVersion"
           }
         },
         "required": [
           "name",
-          "version"
+          "version",
+          "queryVersion"
         ]
       },
       "PersonnelMembersPage": {
@@ -2983,13 +3894,21 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 100
+          },
+          "queryVersion": {
+            "$ref": "#/components/schemas/QueryVersion"
+          },
+          "sort": {
+            "type": "null"
           }
         },
         "required": [
           "items",
           "total",
           "page",
-          "pageSize"
+          "pageSize",
+          "queryVersion",
+          "sort"
         ]
       },
       "PersonnelIdentitiesPage": {
@@ -3082,13 +4001,32 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 100
+          },
+          "queryVersion": {
+            "$ref": "#/components/schemas/QueryVersion"
+          },
+          "sort": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/QuerySort"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "range": {
+            "$ref": "#/components/schemas/QueryRange"
           }
         },
         "required": [
           "items",
           "total",
           "page",
-          "pageSize"
+          "pageSize",
+          "queryVersion",
+          "sort",
+          "range"
         ]
       },
       "PersonnelDepartments": {
@@ -3318,6 +4256,1870 @@
             }
           }
         ]
+      },
+      "QueryVersion": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Opaque Redis query context identifier owned by the current Session. Idle TTL 30 minutes; 20 per Session, LRU. No result rows/ID list; missing/expired/evicted is COMMON_QUERY_CONTEXT_EXPIRED, not QUERY_CHANGED."
+      },
+      "QuerySort": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "occurredAt"
+            ]
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "direction"
+        ]
+      },
+      "QueryRange": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "description": "Effective absolute half-open [from,to) range. Default last seven days is fixed for this context; explicit refresh resolves it again."
+      },
+      "CalendarDateValue": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "timeZone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "date",
+          "timeZone"
+        ],
+        "description": "Valid calendar date and supported IANA zone; server resolves actual local-day [start,nextStart), including DST. eq=inside, neq=outside; gt>=nextStart, gte>=start, lt<start, lte<nextStart. Do not assume 24h."
+      },
+      "MemberFilterCondition": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string",
+                "enum": [
+                  "account"
+                ]
+              },
+              "operator": {
+                "type": "string",
+                "enum": [
+                  "eq",
+                  "neq"
+                ]
+              },
+              "value": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 16384
+              }
+            },
+            "required": [
+              "field",
+              "operator",
+              "value"
+            ],
+            "description": "Exact case-sensitive text. Ordinary comparisons exclude SQL NULL; null value eq/neq means IS NULL/IS NOT NULL."
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string",
+                "enum": [
+                  "status"
+                ]
+              },
+              "operator": {
+                "type": "string",
+                "enum": [
+                  "eq",
+                  "neq"
+                ]
+              },
+              "value": {
+                "enum": [
+                  "active",
+                  "disabled",
+                  null
+                ]
+              }
+            },
+            "required": [
+              "field",
+              "operator",
+              "value"
+            ],
+            "description": "Controlled status enum; ordinary comparisons exclude NULL."
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string",
+                "enum": [
+                  "departmentIds",
+                  "identityIds"
+                ]
+              },
+              "operator": {
+                "type": "string",
+                "enum": [
+                  "eq",
+                  "neq"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "field",
+              "operator",
+              "value"
+            ],
+            "description": "eq=EXISTS this UUID; neq=NOT EXISTS this UUID. Empty relationship set satisfies neq. No relation-null operand."
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string",
+                "enum": [
+                  "personnelManage"
+                ]
+              },
+              "operator": {
+                "type": "string",
+                "enum": [
+                  "eq",
+                  "neq"
+                ]
+              },
+              "value": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "field",
+              "operator",
+              "value"
+            ],
+            "description": "Effective permission shown in the member column; live Bootstrap qualification and account status rules remain in force."
+          }
+        ],
+        "description": "Allowlisted typed leaf. NULL never matches an ordinary comparison; explicit value:null only eq/neq. No SQL, arbitrary fields, text inequalities or numeric enum ranking."
+      },
+      "MemberFilterGroupLevel3": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "type": "string",
+            "enum": [
+              "and",
+              "or"
+            ]
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/MemberFilterCondition"
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ],
+        "description": "Grouped predicate; root depth is 1. All leaves across the tree count toward 20; whole canonical UTF-8 JSON <=16384 bytes. No DNF expansion; empty group invalid. Existing shortcut/search predicates AND the whole tree."
+      },
+      "MemberFilterGroupLevel2": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "type": "string",
+            "enum": [
+              "and",
+              "or"
+            ]
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/MemberFilterCondition"
+                },
+                {
+                  "$ref": "#/components/schemas/MemberFilterGroupLevel3"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ],
+        "description": "Grouped predicate; root depth is 1. All leaves across the tree count toward 20; whole canonical UTF-8 JSON <=16384 bytes. No DNF expansion; empty group invalid. Existing shortcut/search predicates AND the whole tree."
+      },
+      "MemberFilterGroup": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "type": "string",
+            "enum": [
+              "and",
+              "or"
+            ]
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/MemberFilterCondition"
+                },
+                {
+                  "$ref": "#/components/schemas/MemberFilterGroupLevel2"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ],
+        "description": "Grouped predicate; root depth is 1. All leaves across the tree count toward 20; whole canonical UTF-8 JSON <=16384 bytes. No DNF expansion; empty group invalid. Existing shortcut/search predicates AND the whole tree.",
+        "x-max-group-depth": 3,
+        "x-max-leaves": 20,
+        "x-max-canonical-bytes": 16384
+      },
+      "EventFilterCondition": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string",
+                "enum": [
+                  "actorAccount",
+                  "object",
+                  "detail"
+                ]
+              },
+              "operator": {
+                "type": "string",
+                "enum": [
+                  "eq",
+                  "neq"
+                ]
+              },
+              "value": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 16384
+              }
+            },
+            "required": [
+              "field",
+              "operator",
+              "value"
+            ],
+            "description": "Compare server-owned safe display text exactly, case-sensitive; ordinary comparisons exclude SQL NULL."
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string",
+                "enum": [
+                  "action"
+                ]
+              },
+              "operator": {
+                "type": "string",
+                "enum": [
+                  "eq",
+                  "neq"
+                ]
+              },
+              "value": {
+                "enum": [
+                  "DEPARTMENT_CREATED",
+                  "DEPARTMENT_UPDATED",
+                  "DEPARTMENT_DELETED",
+                  "IDENTITY_CREATED",
+                  "IDENTITY_UPDATED",
+                  "IDENTITY_DELETED",
+                  "TEMPLATE_CREATED",
+                  "TEMPLATE_UPDATED",
+                  "TEMPLATE_DELETED",
+                  "MEMBER_IDENTITIES_UPDATED",
+                  "MEMBER_GROUPS_UPDATED",
+                  "INVITATION_CREATED",
+                  null
+                ]
+              }
+            },
+            "required": [
+              "field",
+              "operator",
+              "value"
+            ],
+            "description": "Controlled raw action code, UI label does not become a SQL field."
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string",
+                "enum": [
+                  "outcome"
+                ]
+              },
+              "operator": {
+                "type": "string",
+                "enum": [
+                  "eq",
+                  "neq"
+                ]
+              },
+              "value": {
+                "enum": [
+                  "success",
+                  "failure",
+                  "error",
+                  null
+                ]
+              }
+            },
+            "required": [
+              "field",
+              "operator",
+              "value"
+            ],
+            "description": "Controlled raw outcome; safe display still groups failure/error as failure."
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string",
+                "enum": [
+                  "occurredAt"
+                ]
+              },
+              "operator": {
+                "type": "string",
+                "enum": [
+                  "eq",
+                  "neq"
+                ]
+              },
+              "value": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CalendarDateValue"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "field",
+              "operator",
+              "value"
+            ],
+            "description": "Absolute instant (RFC3339, at most microsecond precision) or explicit calendar day; null only eq/neq."
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string",
+                "enum": [
+                  "occurredAt"
+                ]
+              },
+              "operator": {
+                "type": "string",
+                "enum": [
+                  "gt",
+                  "gte",
+                  "lt",
+                  "lte"
+                ]
+              },
+              "value": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CalendarDateValue"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "field",
+              "operator",
+              "value"
+            ],
+            "description": "Non-null instant or calendar day; ordinary comparisons exclude NULL. Reject invalid dates/zones and lossy sub-microsecond input."
+          }
+        ],
+        "description": "Allowlisted typed leaf. NULL never matches an ordinary comparison; explicit value:null only eq/neq. No SQL, arbitrary fields, text inequalities or numeric enum ranking."
+      },
+      "EventFilterGroupLevel3": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "type": "string",
+            "enum": [
+              "and",
+              "or"
+            ]
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/EventFilterCondition"
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ],
+        "description": "Grouped predicate; root depth is 1. All leaves across the tree count toward 20; whole canonical UTF-8 JSON <=16384 bytes. No DNF expansion; empty group invalid. Existing shortcut/search predicates AND the whole tree."
+      },
+      "EventFilterGroupLevel2": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "type": "string",
+            "enum": [
+              "and",
+              "or"
+            ]
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/EventFilterCondition"
+                },
+                {
+                  "$ref": "#/components/schemas/EventFilterGroupLevel3"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ],
+        "description": "Grouped predicate; root depth is 1. All leaves across the tree count toward 20; whole canonical UTF-8 JSON <=16384 bytes. No DNF expansion; empty group invalid. Existing shortcut/search predicates AND the whole tree."
+      },
+      "EventFilterGroup": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "type": "string",
+            "enum": [
+              "and",
+              "or"
+            ]
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/EventFilterCondition"
+                },
+                {
+                  "$ref": "#/components/schemas/EventFilterGroupLevel2"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ],
+        "description": "Grouped predicate; root depth is 1. All leaves across the tree count toward 20; whole canonical UTF-8 JSON <=16384 bytes. No DNF expansion; empty group invalid. Existing shortcut/search predicates AND the whole tree.",
+        "x-max-group-depth": 3,
+        "x-max-leaves": 20,
+        "x-max-canonical-bytes": 16384
+      },
+      "ActivityDisplay": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "object": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "object",
+          "detail",
+          "outcome"
+        ],
+        "description": "Server-owned safe display values; resolve against full allowed data, never the current member page. No secrets or arbitrary audit columns."
+      },
+      "QueryBusyEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "const": "COMMON_SERVICE_UNAVAILABLE"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "null"
+          },
+          "meta": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "requestId": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "const": "QUERY_BUSY"
+              }
+            },
+            "required": [
+              "requestId",
+              "reason"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data",
+          "meta"
+        ]
+      },
+      "DraftReference": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "version"
+        ],
+        "description": "Acknowledge only this owner-owned draft revision after successful business commit; preserve a concurrently newer revision. Never delete on failed/ambiguous business write."
+      },
+      "DraftPayloadMemberIdentities": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "identityIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "identityIds"
+        ]
+      },
+      "DraftPayloadMemberGroups": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operation": {
+            "type": "string",
+            "enum": [
+              "add",
+              "remove",
+              "move"
+            ]
+          },
+          "departmentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "sourceDepartmentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "operation",
+          "departmentId",
+          "sourceDepartmentId"
+        ]
+      },
+      "DraftPayloadDepartment": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "name",
+          "parentId"
+        ]
+      },
+      "DraftPayloadIdentity": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "templateIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "uniqueItems": true
+          },
+          "permissionCodes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 160
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "templateIds",
+          "permissionCodes"
+        ]
+      },
+      "DraftPayloadTemplate": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "permissionCodes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 160
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "permissionCodes"
+        ]
+      },
+      "DraftPayload": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/DraftPayloadMemberIdentities"
+          },
+          {
+            "$ref": "#/components/schemas/DraftPayloadMemberGroups"
+          },
+          {
+            "$ref": "#/components/schemas/DraftPayloadDepartment"
+          },
+          {
+            "$ref": "#/components/schemas/DraftPayloadIdentity"
+          },
+          {
+            "$ref": "#/components/schemas/DraftPayloadTemplate"
+          }
+        ],
+        "x-max-canonical-bytes": 65536,
+        "description": "Explicit editable field allowlist only; canonical UTF-8 JSON <=65536 bytes. Empty/incomplete input and now-invalid reference IDs may be saved. No credentials, invitation plaintext, Session, full query rows or arbitrary metadata. Validate payload variant against persisted kind on update."
+      },
+      "DraftKind": {
+        "type": "string",
+        "enum": [
+          "member-identities",
+          "member-groups",
+          "department",
+          "identity",
+          "template"
+        ]
+      },
+      "DraftCreateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/DraftKind"
+          },
+          "targetId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "baseVersion": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "payload": {
+            "$ref": "#/components/schemas/DraftPayload"
+          }
+        },
+        "required": [
+          "kind",
+          "targetId",
+          "baseVersion",
+          "payload"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "member-identities"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "payload": {
+                  "$ref": "#/components/schemas/DraftPayloadMemberIdentities"
+                },
+                "targetId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "baseVersion": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "member-groups"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "payload": {
+                  "$ref": "#/components/schemas/DraftPayloadMemberGroups"
+                },
+                "targetId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "baseVersion": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "department"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "payload": {
+                  "$ref": "#/components/schemas/DraftPayloadDepartment"
+                },
+                "baseVersion": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "identity"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "payload": {
+                  "$ref": "#/components/schemas/DraftPayloadIdentity"
+                },
+                "baseVersion": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "template"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "payload": {
+                  "$ref": "#/components/schemas/DraftPayloadTemplate"
+                },
+                "baseVersion": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "targetId": {
+                  "type": "null"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "baseVersion": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "baseVersion": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          }
+        ],
+        "description": "Owner comes only from Session. targetId/baseVersion null only for new department/identity/template; existing definition/department baseVersion>=1, member baseVersion>=0. Immutable kind/target/original baseVersion. No automatic expiration. Maximum 20 per owner; exceeding capacity returns PERSONNEL_DRAFT_LIMIT_REACHED, never evicts."
+      },
+      "DraftUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "payload": {
+            "$ref": "#/components/schemas/DraftPayload"
+          }
+        },
+        "required": [
+          "version",
+          "payload"
+        ],
+        "description": "Owner and live personnel.manage required. CAS draft version; do not rebase original baseVersion. Only explicit inputs are replaced, never silently merge tabs."
+      },
+      "PersonnelDraftSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DraftKind"
+          },
+          "targetId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "baseVersion": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "targetId",
+          "baseVersion",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PersonnelDraft": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DraftKind"
+          },
+          "targetId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "baseVersion": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/DraftPayload"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "targetId",
+          "baseVersion",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "payload"
+        ]
+      },
+      "PersonnelDraftList": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/PersonnelDraftSummary"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PersonnelDraftEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/PersonnelDraft"
+              }
+            }
+          }
+        ]
+      },
+      "PersonnelDraftListEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/PersonnelDraftList"
+              }
+            }
+          }
+        ]
+      },
+      "MemberSearchInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "default": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "search": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "identityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "filter": {
+            "$ref": "#/components/schemas/MemberFilterGroup"
+          },
+          "queryVersion": {
+            "$ref": "#/components/schemas/QueryVersion"
+          }
+        },
+        "description": "Read-only typed search body. filter is an object, never a URL-encoded string. Canonical filter UTF-8 <=16384 bytes and raw entire body <=65536 bytes independently; standard escaped Unicode/date JSON is accepted within both limits. First query/explicit refresh starts page 1 without queryVersion; continue or change criteria using the previous context. Defaults are existing page=1,pageSize=20; default event range last seven days is fixed until explicit refresh."
+      },
+      "EventSearchInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "default": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "search": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "DEPARTMENT_CREATED",
+              "DEPARTMENT_UPDATED",
+              "DEPARTMENT_DELETED",
+              "IDENTITY_CREATED",
+              "IDENTITY_UPDATED",
+              "IDENTITY_DELETED",
+              "TEMPLATE_CREATED",
+              "TEMPLATE_UPDATED",
+              "TEMPLATE_DELETED",
+              "MEMBER_IDENTITIES_UPDATED",
+              "MEMBER_GROUPS_UPDATED",
+              "INVITATION_CREATED"
+            ]
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "filter": {
+            "$ref": "#/components/schemas/EventFilterGroup"
+          },
+          "queryVersion": {
+            "$ref": "#/components/schemas/QueryVersion"
+          },
+          "sortBy": {
+            "type": "string",
+            "enum": [
+              "occurredAt"
+            ]
+          },
+          "sortDirection": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          }
+        },
+        "description": "Read-only typed search body. filter is an object, never a URL-encoded string. Canonical filter UTF-8 <=16384 bytes and raw entire body <=65536 bytes independently; standard escaped Unicode/date JSON is accepted within both limits. First query/explicit refresh starts page 1 without queryVersion; continue or change criteria using the previous context. Defaults are existing page=1,pageSize=20; default event range last seven days is fixed until explicit refresh.",
+        "dependentRequired": {
+          "sortBy": [
+            "sortDirection"
+          ],
+          "sortDirection": [
+            "sortBy"
+          ]
+        }
+      },
+      "TablePresetMemberAnd": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "const": "and"
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/MemberFilterCondition"
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ]
+      },
+      "TablePresetMemberOr": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "const": "or"
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/TablePresetMemberAnd"
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ]
+      },
+      "TablePresetMemberFilter": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/TablePresetMemberAnd"
+          },
+          {
+            "$ref": "#/components/schemas/TablePresetMemberOr"
+          }
+        ],
+        "x-max-leaves": 20,
+        "x-max-canonical-bytes": 16384,
+        "description": "Editable AND rows / OR blocks only; no empty groups or DNF conversion. Global leaf count <=20; canonical UTF-8 JSON <=16384 bytes. Query AST and typed semantics are unchanged."
+      },
+      "TablePresetEventAnd": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "const": "and"
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/EventFilterCondition"
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ]
+      },
+      "TablePresetEventOr": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "const": "or"
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/TablePresetEventAnd"
+            }
+          }
+        },
+        "required": [
+          "operator",
+          "children"
+        ]
+      },
+      "TablePresetEventFilter": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/TablePresetEventAnd"
+          },
+          {
+            "$ref": "#/components/schemas/TablePresetEventOr"
+          }
+        ],
+        "x-max-leaves": 20,
+        "x-max-canonical-bytes": 16384,
+        "description": "Editable AND rows / OR blocks only; no empty groups or DNF conversion. Global leaf count <=20; canonical UTF-8 JSON <=16384 bytes. Query AST and typed semantics are unchanged."
+      },
+      "TablePresetCreateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "view": {
+            "type": "string",
+            "enum": [
+              "members",
+              "events"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Trim surrounding whitespace, count Unicode characters, retain exact case. Unique per Session owner and view."
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TablePresetMemberFilter"
+              },
+              {
+                "$ref": "#/components/schemas/TablePresetEventFilter"
+              }
+            ]
+          },
+          "hiddenColumnIds": {
+            "type": "array",
+            "uniqueItems": true,
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "enum": [
+                "account",
+                "departments",
+                "identities",
+                "personnelManage",
+                "occurredAt",
+                "actorAccount",
+                "action",
+                "object",
+                "detail",
+                "outcome"
+              ]
+            },
+            "description": "Stable configurable business column IDs only. Validate against immutable view; at least one business column stays visible. Display only, never a query projection/permission input."
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          }
+        },
+        "required": [
+          "view",
+          "name",
+          "hiddenColumnIds",
+          "schemaVersion"
+        ],
+        "x-max-raw-body-bytes": 65536,
+        "x-max-canonical-bytes": 32768,
+        "description": "Independent raw body <=65536 UTF-8 bytes, canonical configuration <=32768 bytes, filter <=16384 bytes. Missing/null filter means visibility-only. Unknown/duplicate fields rejected; no owner or queryVersion. PUT retains view and uses version CAS.",
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "view": {
+                  "const": "members"
+                }
+              },
+              "required": [
+                "view"
+              ]
+            },
+            "then": {
+              "properties": {
+                "hiddenColumnIds": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "account",
+                      "departments",
+                      "identities",
+                      "personnelManage"
+                    ]
+                  }
+                },
+                "filter": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TablePresetMemberFilter"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "view": {
+                  "const": "events"
+                }
+              },
+              "required": [
+                "view"
+              ]
+            },
+            "then": {
+              "properties": {
+                "hiddenColumnIds": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "maxItems": 5,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "occurredAt",
+                      "actorAccount",
+                      "action",
+                      "object",
+                      "detail",
+                      "outcome"
+                    ]
+                  }
+                },
+                "filter": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TablePresetEventFilter"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "TablePresetUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Trim surrounding whitespace, count Unicode characters, retain exact case. Unique per Session owner and view."
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TablePresetMemberFilter"
+              },
+              {
+                "$ref": "#/components/schemas/TablePresetEventFilter"
+              }
+            ]
+          },
+          "hiddenColumnIds": {
+            "type": "array",
+            "uniqueItems": true,
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "enum": [
+                "account",
+                "departments",
+                "identities",
+                "personnelManage",
+                "occurredAt",
+                "actorAccount",
+                "action",
+                "object",
+                "detail",
+                "outcome"
+              ]
+            },
+            "description": "Stable configurable business column IDs only. Validate against immutable view; at least one business column stays visible. Display only, never a query projection/permission input."
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          }
+        },
+        "required": [
+          "version",
+          "name",
+          "hiddenColumnIds",
+          "schemaVersion"
+        ],
+        "x-max-raw-body-bytes": 65536,
+        "x-max-canonical-bytes": 32768,
+        "description": "Independent raw body <=65536 UTF-8 bytes, canonical configuration <=32768 bytes, filter <=16384 bytes. Missing/null filter means visibility-only. Unknown/duplicate fields rejected; no owner or queryVersion. PUT retains view and uses version CAS."
+      },
+      "TablePreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "view": {
+            "type": "string",
+            "enum": [
+              "members",
+              "events"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Trim surrounding whitespace, count Unicode characters, retain exact case. Unique per Session owner and view."
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TablePresetMemberFilter"
+              },
+              {
+                "$ref": "#/components/schemas/TablePresetEventFilter"
+              }
+            ]
+          },
+          "hiddenColumnIds": {
+            "type": "array",
+            "uniqueItems": true,
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "enum": [
+                "account",
+                "departments",
+                "identities",
+                "personnelManage",
+                "occurredAt",
+                "actorAccount",
+                "action",
+                "object",
+                "detail",
+                "outcome"
+              ]
+            },
+            "description": "Stable configurable business column IDs only. Validate against immutable view; at least one business column stays visible. Display only, never a query projection/permission input."
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "view",
+          "name",
+          "filter",
+          "hiddenColumnIds",
+          "schemaVersion",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "view": {
+                  "const": "members"
+                }
+              },
+              "required": [
+                "view"
+              ]
+            },
+            "then": {
+              "properties": {
+                "hiddenColumnIds": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "account",
+                      "departments",
+                      "identities",
+                      "personnelManage"
+                    ]
+                  }
+                },
+                "filter": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TablePresetMemberFilter"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "view": {
+                  "const": "events"
+                }
+              },
+              "required": [
+                "view"
+              ]
+            },
+            "then": {
+              "properties": {
+                "hiddenColumnIds": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "maxItems": 5,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "occurredAt",
+                      "actorAccount",
+                      "action",
+                      "object",
+                      "detail",
+                      "outcome"
+                    ]
+                  }
+                },
+                "filter": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TablePresetEventFilter"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "TablePresetList": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/TablePreset"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "TablePresetEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/TablePreset"
+              }
+            }
+          }
+        ]
+      },
+      "TablePresetListEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/TablePresetList"
+              }
+            }
+          }
+        ]
+      },
+      "TablePresetConflictEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "PERSONNEL_PRESET_NAME_CONFLICT",
+                  "PERSONNEL_PRESET_LIMIT_REACHED",
+                  "PERSONNEL_PRESET_CONFLICT"
+                ]
+              },
+              "data": {
+                "type": "null"
+              }
+            }
+          }
+        ]
       }
     },
     "responses": {
@@ -3477,6 +6279,73 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "QueryConflict": {
+        "description": "COMMON_QUERY_CHANGED: current full related result differs; explicit refresh required. COMMON_QUERY_CONTEXT_EXPIRED: missing/idle-expired/evicted/foreign-session context, restart query; no claim that data changed. Existing object conflict stays PERSONNEL_CONFLICT.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "QueryUnavailable": {
+        "description": "COMMON_SERVICE_UNAVAILABLE; meta.reason=QUERY_BUSY distinguishes exhausted prevalidation retries from dependency failure. At most two additional prevalidations within request deadline; never replay executed writes.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                },
+                {
+                  "$ref": "#/components/schemas/QueryBusyEnvelope"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "DraftConflict": {
+        "description": "PERSONNEL_DRAFT_CONFLICT for stale draft version; PERSONNEL_DRAFT_LIMIT_REACHED at 20 drafts. No silent overwrite or eviction. Payload >64KiB is COMMON_INVALID_ARGUMENT (400).",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "TablePresetConflict": {
+        "description": "Independent exact-name, owner/view 20-slot limit, or stale version conflict; preserve inputs and never overwrite/evict.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/TablePresetConflictEnvelope"
             }
           }
         }

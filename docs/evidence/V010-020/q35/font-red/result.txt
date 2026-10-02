@@ -1,0 +1,35 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:66028) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:64004) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:57636) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\personnel-arca.component.spec.ts:167:1 › Q35 source font uses Geist with the existing Chinese fallback inside its scope (2.4s)
+
+
+  1) [chromium] › apps\web\src\personnel-arca.component.spec.ts:167:1 › Q35 source font uses Geist with the existing Chinese fallback inside its scope
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "Noto Sans SC"
+    Received string:    "\"Geist Variable\", sans-serif"
+
+      168 |   await fixture(page);
+      169 |   const family = await page.locator('.member-table table').evaluate(n => getComputedStyle(n).fontFamily);
+    > 170 |   expect(family).toContain('Geist Variable'); expect(family).toContain('Noto Sans SC');
+          |                                                              ^
+      171 |   const outer = await page.locator('.personnel-page-heading').evaluate(n => getComputedStyle(n).fontFamily);
+      172 |   expect(outer).toContain('Noto Sans SC'); expect(outer).not.toContain('Geist');
+      173 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel-arca.component.spec.ts:170:62
+
+    Error Context: .work\q35-font-results\personnel-arca.component-Q-f8276-e-fallback-inside-its-scope-chromium\error-context.md
+
+  1 failed
+    [chromium] › apps\web\src\personnel-arca.component.spec.ts:167:1 › Q35 source font uses Geist with the existing Chinese fallback inside its scope

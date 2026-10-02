@@ -71,7 +71,7 @@ func clean(t *testing.T) (*pgxpool.Pool, *pgxpool.Pool) {
 	for _, v := range []struct {
 		p *pgxpool.Pool
 		q string
-	}{{l, "TRUNCATE auth.authentication_events,auth.invitations,auth.password_credentials,auth.users,personnel.department_members,personnel.member_configuration,personnel.member_identities"}, {c, "TRUNCATE archive.authentication_events"}} {
+	}{{l, "TRUNCATE auth.authentication_events,auth.invitations,auth.password_credentials,auth.users,personnel.department_members,personnel.member_configuration,personnel.member_identities,personnel.drafts,personnel.table_presets"}, {c, "TRUNCATE archive.authentication_events"}} {
 		if _, err := v.p.Exec(context.Background(), v.q); err != nil {
 			t.Fatal(err)
 		}

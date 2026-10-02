@@ -1,0 +1,69 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:65400) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:62124) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:52276) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › apps\web\src\personnel-arca.component.spec.ts:125:1 › Q35 page size retains arrow, Home and Enter keyboard operation (5.1s)
+(node:53184) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 [chromium] › apps\web\src\personnel-arca.component.spec.ts:137:1 › Q35 shrinking server total recovers the actual valid page instead of displaying a false page (3.0s)
+
+
+  1) [chromium] › apps\web\src\personnel-arca.component.spec.ts:125:1 › Q35 page size retains arrow, Home and Enter keyboard operation
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  getByRole('combobox', { name: '每页条数', exact: true })
+    Expected: "true"
+    Received: "false"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toHaveAttribute" getByRole('combobox', { name: '每页条数', exact: true }) with timeout 1500ms
+      - waiting for getByRole('combobox', { name: '每页条数', exact: true })
+        16 × locator resolved to <button type="button" role="combobox" aria-label="每页条数" id="_r_8_-trigger" aria-expanded="false" aria-haspopup="listbox" aria-controls="_r_8_-list" class="relative z-10 flex w-full items-center justify-between border border-border bg-background text-foreground outline-none disabled:pointer-events-none disabled:opacity-50 h-6 min-h-6 rounded-md px-2 py-0 text-xs gap-1 [&_svg]:size-3">…</button>
+           - unexpected value "false"
+
+
+      127 |   const trigger = page.getByRole('combobox', { name: '每页条数', exact: true });
+      128 |   await trigger.focus(); await page.keyboard.press('ArrowUp');
+    > 129 |   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+          |                         ^
+      130 |   await expect(page.getByRole('option', { name: '20', exact: true })).toBeFocused();
+      131 |   await page.keyboard.press('Home'); await expect(page.getByRole('option', { name: '5', exact: true })).toBeFocused();
+      132 |   const request = page.waitForRequest(r => r.url().includes('personnel/members?') && new URL(r.url()).searchParams.get('pageSize') === '5');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel-arca.component.spec.ts:129:25
+
+    Error Context: .work\q35-results\personnel-arca.component-Q-bbdf3-nd-Enter-keyboard-operation-chromium\error-context.md
+
+  2) [chromium] › apps\web\src\personnel-arca.component.spec.ts:137:1 › Q35 shrinking server total recovers the actual valid page instead of displaying a false page
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 0
+
+    Call Log:
+    - Timeout 1500ms exceeded while waiting on the predicate
+
+      145 |   });
+      146 |   await page.getByRole('button', { name: '下一页', exact: true }).click();
+    > 147 |   await expect.poll(() => recoveryRequests).toBe(1);
+          |                                             ^
+      148 |   await expect(page.locator('.member-table tbody tr[data-row-id]')).toHaveCount(20);
+      149 |   await expect(page.locator('.member-table')).toContainText('Zulu0');
+      150 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel-arca.component.spec.ts:147:45
+
+    Error Context: .work\q35-results\personnel-arca.component-Q-fdfc3--of-displaying-a-false-page-chromium\error-context.md
+
+  2 failed
+    [chromium] › apps\web\src\personnel-arca.component.spec.ts:125:1 › Q35 page size retains arrow, Home and Enter keyboard operation
+    [chromium] › apps\web\src\personnel-arca.component.spec.ts:137:1 › Q35 shrinking server total recovers the actual valid page instead of displaying a false page

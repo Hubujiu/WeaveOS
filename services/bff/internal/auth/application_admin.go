@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strconv"
+	"time"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/invitation"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/persistence/authsql"
@@ -15,28 +16,44 @@ import (
 // CreateInvitation owns one authentication-domain transaction. The caller must
 // authenticate its session; the transaction rechecks the current admin state.
 func (a *Application) CreateInvitation(ctx context.Context, actor session.Principal, meta RequestMetadata) (InvitationResult, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 	code, err := invitation.Generate()
 	if err != nil {
 		return InvitationResult{}, err
 	}
-	tx, err := a.Pool.BeginTx(ctx, pgx.TxOptions{})
+	var tx pgx.Tx
+	if a.InvitationBegin != nil {
+		tx, err = a.InvitationBegin(ctx, actor, meta.QueryVersion)
+	} else {
+		// An isolated legacy composition can only process independent invitations.
+		// A supplied context must never silently fall back to an unguarded write.
+		if meta.QueryVersion != "" {
+			return InvitationResult{}, session.ErrUnavailable
+		}
+		tx, err = a.Pool.BeginTx(ctx, pgx.TxOptions{})
+	}
 	if err != nil {
 		return InvitationResult{}, err
 	}
-	defer func() { _ = tx.Rollback(context.Background()) }()
+	defer tx.Rollback(context.Background())
 	q := authsql.New(tx)
-	if a.InvitationAuthorizer != nil {
-		if err := a.InvitationAuthorizer(ctx, tx, actor); err != nil {
+	if a.InvitationBegin == nil {
+		if _, err := tx.Exec(ctx, "SELECT personnel.lock_query_revisions()"); err != nil {
 			return InvitationResult{}, err
 		}
-	} else {
-		// A legacy isolated auth composition has only its trusted Bootstrap capability.
-		users, err := q.LockAdminUsers(ctx, []pgtype.UUID{uuidValue(actor.UserID)})
-		if err != nil {
-			return InvitationResult{}, err
-		}
-		if len(users) != 1 || users[0].Status != "active" || !users[0].IsBootstrapAdmin || strconv.FormatInt(users[0].AuthVersion, 10) != actor.Record.AuthVersion {
-			return InvitationResult{}, &Failure{Code: "COMMON_PERMISSION_DENIED"}
+		if a.InvitationAuthorizer != nil {
+			if err := a.InvitationAuthorizer(ctx, tx, actor); err != nil {
+				return InvitationResult{}, err
+			}
+		} else {
+			users, err := q.LockAdminUsers(ctx, []pgtype.UUID{uuidValue(actor.UserID)})
+			if err != nil {
+				return InvitationResult{}, err
+			}
+			if len(users) != 1 || users[0].Status != "active" || !users[0].IsBootstrapAdmin || strconv.FormatInt(users[0].AuthVersion, 10) != actor.Record.AuthVersion {
+				return InvitationResult{}, &Failure{Code: "COMMON_PERMISSION_DENIED"}
+			}
 		}
 	}
 	id, err := q.CreateAdminInvitation(ctx, authsql.CreateAdminInvitationParams{CodeHash: code.Digest[:], CreatedBy: uuidValue(actor.UserID)})

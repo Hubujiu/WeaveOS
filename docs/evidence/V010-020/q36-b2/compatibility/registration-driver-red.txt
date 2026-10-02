@@ -1,0 +1,41 @@
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: only two reviewed additions allowed
++ actual - expected
+
+  [
+    'archive-migrations/00001_archive.sql',
+    'archive-migrations/00002_personnel_audit.sql',
+    'migrations/00001_auth.sql',
+    'migrations/00002_personnel.sql',
+-   'migrations/00003_query_drafts.sql',
+-   'migrations/00004_query_revision_writers.sql'
+  ]
+
+    at file:///D:/Data/Codex/2026-10-01/task/pr21-frontend-isolated/docs/evidence/V010-020/q36-b2/compatibility/verify-registration.mjs:14:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'archive-migrations/00001_archive.sql',
+    'archive-migrations/00002_personnel_audit.sql',
+    'migrations/00001_auth.sql',
+    'migrations/00002_personnel.sql'
+  ],
+  expected: [
+    'archive-migrations/00001_archive.sql',
+    'archive-migrations/00002_personnel_audit.sql',
+    'migrations/00001_auth.sql',
+    'migrations/00002_personnel.sql',
+    'migrations/00003_query_drafts.sql',
+    'migrations/00004_query_revision_writers.sql'
+  ],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.1

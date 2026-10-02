@@ -1,0 +1,48 @@
+
+Running 10 tests using 1 worker
+
+(node:77848) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   1 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:56:5 鈥?Q36 actual members: complete filtering, arbitrary pages, selection, column preservation and screenshots (14.7s)
+  -   2 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:71:5 鈥?Q36 actual events: backend safe display, absolute range, full-result time ordering and screenshots
+  -   3 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:80:5 鈥?Q36 actual precision: unrelated option change proceeds; related member change explicitly refreshes
+  -   4 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:88:5 鈥?Q36 actual context LRU expiry is distinct from changed results
+  -   5 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:93:5 鈥?Q36 actual five draft kinds persist after fresh login; member/department inputs survive query refresh
+  -   6 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:104:5 鈥?Q36 actual restoration compares latest target, preserves original base, and requires explicit resolution
+  -   7 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:112:5 鈥?Q36 actual draft CAS conflict preserves input; business success keeps a newer draft version
+  -   8 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:123:5 鈥?Q36 actual drafts remain isolated between two currently authorized accounts
+  -   9 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:147:5 鈥?Q36 actual narrow long AND OR groups validate twenty leaves and keep footer reachable
+  -  10 [chromium] 鈥?tests\acceptance\q36-web.spec.ts:163:5 鈥?Q36 actual page records open close stable trigger and reopen without a root blocker
+
+
+  1) [chromium] 鈥?tests\acceptance\q36-web.spec.ts:56:5 鈥?Q36 actual members: complete filtering, arbitrary pages, selection, column preservation and screenshots 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  locator('.q36-filter-content')
+    Expected: visible
+    Received: hidden
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toBeVisible" locator('.q36-filter-content') with timeout 10000ms
+      - waiting for locator('.q36-filter-content')
+        24 脳 locator resolved to <div class="q36-filter-content">鈥?/div>
+           - unexpected value "hidden"
+
+
+      27 |  await page.evaluate(()=>document.fonts.ready);
+      28 |  const trigger=page.locator('.q36-filter-trigger');
+    > 29 |  if(await trigger.count()&&await trigger.getAttribute('aria-expanded')==='true')await expect(page.locator('.q36-filter-content')).toBeVisible();
+         |                                                                                                                                   ^
+      30 |  await page.evaluate(()=>new Promise<void>(done=>requestAnimationFrame(()=>requestAnimationFrame(()=>done()))));
+      31 |  await page.waitForFunction(()=>!document.documentElement.classList.contains('q36-filter-transition-active'));
+      32 |  await page.evaluate(()=>Promise.allSettled(document.getAnimations().map(animation=>animation.finished)));
+        at shot (D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\tests\acceptance\q36-web.spec.ts:29:131)
+        at D:\Data\Codex\2026-10-01\task\pr21-frontend-isolated\tests\acceptance\q36-web.spec.ts:65:148
+
+    Error Context: .work\q36-b2-real-results\q36-web-Q36-actual-members-2de2d-reservation-and-screenshots-chromium\error-context.md
+
+  1 failed
+    [chromium] 鈥?tests\acceptance\q36-web.spec.ts:56:5 鈥?Q36 actual members: complete filtering, arbitrary pages, selection, column preservation and screenshots 
+  9 did not run

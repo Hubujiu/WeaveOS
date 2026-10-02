@@ -1,0 +1,126 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:54532) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:63548) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 13 tests using 1 worker
+
+(node:63004) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [chromium] › apps\web\src\personnel-table.component.spec.ts:19:1 › Q35 identity pagination remains accessible in the shared definition list (2.1s)
+  ok  2 [chromium] › apps\web\src\personnel-table.component.spec.ts:32:1 › Q34 member status retains its meaning with the confirmed body typography (2.0s)
+  x   3 [chromium] › apps\web\src\personnel.component.spec.ts:26:89 › Q34 Arca table geometry and readable rows on 成员与部门 (3.5s)
+(node:54452) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   4 [chromium] › apps\web\src\personnel.component.spec.ts:26:89 › Q34 Arca table geometry and readable rows on 操作记录 (3.8s)
+(node:55468) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  5 [chromium] › apps\web\src\personnel.component.spec.ts:43:1 › Q34 page selection exposes mixed state without writing and shows selected rows (4.1s)
+  ok  6 [chromium] › apps\web\src\personnel.component.spec.ts:53:1 › Q35 identity cards preserve edit entry, shared fields and unsaved switch protection (3.7s)
+  ok  7 [chromium] › apps\web\src\personnel.component.spec.ts:64:31 › Q34 dense table keeps sticky header and both scroll axes at 1920 (3.6s)
+  ok  8 [chromium] › apps\web\src\personnel.component.spec.ts:64:31 › Q34 dense table keeps sticky header and both scroll axes at 320 (3.6s)
+[WebServer] 13:33:26 [vite] (client) [console.warn] You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled
+  ok  9 [chromium] › apps\web\src\personnel.component.spec.ts:78:1 › Q35 identity empty list and reduced motion preserve accessible states (2.0s)
+  ok 10 [chromium] › apps\web\src\personnel.component.spec.ts:84:1 › Q34 keyboard focus ring stays visible inside truncated table cells (3.5s)
+  ok 11 [chromium] › apps\web\src\personnel.component.spec.ts:93:1 › Q34 reverse keyboard navigation keeps row actions below the sticky header (3.8s)
+  ok 12 [chromium] › apps\web\src\personnel.component.spec.ts:568:1 › Q34 member table keeps confirmed column geometry and page selection never sends a write (3.7s)
+  ok 13 [chromium] › apps\web\src\personnel.component.spec.ts:606:1 › Q34 successful activity uses Arca body typography and retains the result meaning (2.1s)
+
+
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:26:89 › Q34 Arca table geometry and readable rows on 成员与部门
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.member-table')
+    Expected: "14px"
+    Received: "16px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.member-table') with timeout 1500ms
+      - waiting for locator('.member-table')
+        16 × locator resolved to <section class="member-table surface">…</section>
+           - unexpected value "16px"
+
+
+      29 |  await page.goto('/app/admin');if(tab!=='成员与部门')await page.getByRole('tab',{name:tab,exact:true}).click();
+      30 |  const area=page.locator(root),table=area.getByRole('table');await expect(table).toHaveCount(1);
+    > 31 |  await expect.soft(area).toHaveCSS('border-radius','14px');await expect.soft(area).toHaveCSS('border-top-width','1px');
+         |                          ^
+      32 |  const header=table.locator('th').nth(tab==='成员与部门'?1:0),cell=table.locator('tbody tr[data-row-id] td').last();
+      33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:31:26
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 40
+    Received: 40.5
+
+    Expected precision:    0
+    Expected difference: < 0.5
+    Received difference:   0.5
+
+      31 |  await expect.soft(area).toHaveCSS('border-radius','14px');await expect.soft(area).toHaveCSS('border-top-width','1px');
+      32 |  const header=table.locator('th').nth(tab==='成员与部门'?1:0),cell=table.locator('tbody tr[data-row-id] td').last();
+    > 33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+         |                                                    ^
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+      35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+      36 |  await expect.soft(header).toHaveCSS('text-align','center');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:33:52
+
+    Error Context: .work\q35-results\personnel.component-Q34-Ar-1e173--and-readable-rows-on-成员与部门-chromium\error-context.md
+
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:26:89 › Q34 Arca table geometry and readable rows on 操作记录
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.activity-table')
+    Expected: "14px"
+    Received: "16px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCSS" locator('.activity-table') with timeout 1500ms
+      - waiting for locator('.activity-table')
+        16 × locator resolved to <section class="activity-table surface">…</section>
+           - unexpected value "16px"
+
+
+      29 |  await page.goto('/app/admin');if(tab!=='成员与部门')await page.getByRole('tab',{name:tab,exact:true}).click();
+      30 |  const area=page.locator(root),table=area.getByRole('table');await expect(table).toHaveCount(1);
+    > 31 |  await expect.soft(area).toHaveCSS('border-radius','14px');await expect.soft(area).toHaveCSS('border-top-width','1px');
+         |                          ^
+      32 |  const header=table.locator('th').nth(tab==='成员与部门'?1:0),cell=table.locator('tbody tr[data-row-id] td').last();
+      33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:31:26
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 40
+    Received: 40.5
+
+    Expected precision:    0
+    Expected difference: < 0.5
+    Received difference:   0.5
+
+      31 |  await expect.soft(area).toHaveCSS('border-radius','14px');await expect.soft(area).toHaveCSS('border-top-width','1px');
+      32 |  const header=table.locator('th').nth(tab==='成员与部门'?1:0),cell=table.locator('tbody tr[data-row-id] td').last();
+    > 33 |  expect.soft((await header.boundingBox())!.height).toBeCloseTo(40,0);
+         |                                                    ^
+      34 |  expect.soft((await table.locator('tbody tr').first().boundingBox())!.height).toBeCloseTo(40,0);
+      35 |  await expect.soft(header).toHaveCSS('font-size','14px');await expect.soft(header).toHaveCSS('line-height','20px');await expect.soft(header).toHaveCSS('font-weight','500');
+      36 |  await expect.soft(header).toHaveCSS('text-align','center');
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:33:52
+
+    Error Context: .work\q35-results\personnel.component-Q34-Ar-7af81-y-and-readable-rows-on-操作记录-chromium\error-context.md
+
+  2 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:26:89 › Q34 Arca table geometry and readable rows on 成员与部门
+    [chromium] › apps\web\src\personnel.component.spec.ts:26:89 › Q34 Arca table geometry and readable rows on 操作记录
+  11 passed (44.6s)

@@ -1,0 +1,85 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:64328) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+
+
+[WebServer] (node:55132) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 10 tests using 1 worker
+
+
+(node:63788) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/10] [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 成员与部门
+[2/10] [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 身份
+[3/10] [chromium] › apps\web\src\personnel.component.spec.ts:26:114 › Q34 Arca table geometry and readable rows on 操作记录
+[4/10] [chromium] › apps\web\src\personnel.component.spec.ts:42:1 › Q34 page selection exposes mixed state without writing and shows selected rows
+[5/10] [chromium] › apps\web\src\personnel.component.spec.ts:52:1 › Q34 identity table preserves edit entry, shared fields and unsaved switch protection
+[6/10] [chromium] › apps\web\src\personnel.component.spec.ts:62:31 › Q34 dense table keeps sticky header and both scroll axes at 1920
+  1) [chromium] › apps\web\src\personnel.component.spec.ts:62:31 › Q34 dense table keeps sticky header and both scroll axes at 1920
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 399
+    Received: 199
+
+    Expected precision:    0
+    Expected difference: < 0.5
+    Received difference:   200
+
+      65 |  await page.route('**/api/v1/personnel/members?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list(rows),meta:null}}));await page.goto('/app/admin');
+      66 |  const scroll=page.locator('.member-table .table-scroll');await scroll.scrollIntoViewIfNeeded();expect(await scroll.evaluate(n=>n.scrollHeight>n.clientHeight)).toBe(true);
+    > 67 |  const th=scroll.locator('th').first(),start=(await th.boundingBox())!.y;await scroll.evaluate(n=>{n.scrollTop=200;});expect((await th.boundingBox())!.y).toBeCloseTo(start,0);await expect(th).toHaveCSS('position','sticky');
+         |                                                                                                                                                           ^
+      68 |  if(width===320){await scroll.evaluate(n=>{n.scrollLeft=n.scrollWidth;});expect(await scroll.evaluate(n=>n.scrollLeft)).toBeGreaterThan(0);await expect(page.getByRole('button',{name:'配置身份',exact:true}).first()).toBeInViewport();}
+      69 |  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+      70 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:67:155
+
+    Error Context: .work\q34-results\personnel.component-Q34-de-41485-nd-both-scroll-axes-at-1920-chromium\error-context.md
+
+
+(node:63988) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[7/10] [chromium] › apps\web\src\personnel.component.spec.ts:62:31 › Q34 dense table keeps sticky header and both scroll axes at 320
+  2) [chromium] › apps\web\src\personnel.component.spec.ts:62:31 › Q34 dense table keeps sticky header and both scroll axes at 320
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 415
+    Received: 215
+
+    Expected precision:    0
+    Expected difference: < 0.5
+    Received difference:   200
+
+      65 |  await page.route('**/api/v1/personnel/members?**',r=>r.fulfill({json:{code:'OK',message:'success',data:list(rows),meta:null}}));await page.goto('/app/admin');
+      66 |  const scroll=page.locator('.member-table .table-scroll');await scroll.scrollIntoViewIfNeeded();expect(await scroll.evaluate(n=>n.scrollHeight>n.clientHeight)).toBe(true);
+    > 67 |  const th=scroll.locator('th').first(),start=(await th.boundingBox())!.y;await scroll.evaluate(n=>{n.scrollTop=200;});expect((await th.boundingBox())!.y).toBeCloseTo(start,0);await expect(th).toHaveCSS('position','sticky');
+         |                                                                                                                                                           ^
+      68 |  if(width===320){await scroll.evaluate(n=>{n.scrollLeft=n.scrollWidth;});expect(await scroll.evaluate(n=>n.scrollLeft)).toBeGreaterThan(0);await expect(page.getByRole('button',{name:'配置身份',exact:true}).first()).toBeInViewport();}
+      69 |  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+      70 | });
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel.component.spec.ts:67:155
+
+    Error Context: .work\q34-results\personnel.component-Q34-de-a633e-and-both-scroll-axes-at-320-chromium\error-context.md
+
+
+(node:47284) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[8/10] [chromium] › apps\web\src\personnel.component.spec.ts:72:1 › Q34 identity empty state retains table headings and reduced motion disables row transitions
+[9/10] [chromium] › apps\web\src\personnel.component.spec.ts:545:1 › Q34 member table keeps confirmed column geometry and page selection never sends a write
+[10/10] [chromium] › apps\web\src\personnel.component.spec.ts:583:1 › Q34 successful activity uses Arca body typography and retains the result meaning
+  2 failed
+    [chromium] › apps\web\src\personnel.component.spec.ts:62:31 › Q34 dense table keeps sticky header and both scroll axes at 1920
+    [chromium] › apps\web\src\personnel.component.spec.ts:62:31 › Q34 dense table keeps sticky header and both scroll axes at 320
+  8 passed (19.6s)

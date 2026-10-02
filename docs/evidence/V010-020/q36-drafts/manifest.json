@@ -1,0 +1,53 @@
+{
+  "baseSHA": "1468a969d25d0ba73586db65e83ac21ea8647b20",
+  "runtime": {
+    "go": "1.27.1",
+    "postgres": "18.6",
+    "redis": "8.2.10"
+  },
+  "tests": {
+    "personnel": {
+      "exit": 0,
+      "topLevelPassed": 45,
+      "draftTopLevelPassed": 16,
+      "log": "rawbody-personnel-green.log"
+    },
+    "allGoRace": {
+      "exit": 1,
+      "failedPackages": [
+        "internal/audit",
+        "internal/personnel"
+      ],
+      "log": "go-all-race.log"
+    },
+    "vet": {
+      "exit": 0,
+      "log": "rawbody-vet.log"
+    },
+    "build": {
+      "exit": 0,
+      "log": "rawbody-build.log"
+    },
+    "governance": {
+      "exit": 0,
+      "passed": 132,
+      "log": "governance.log"
+    }
+  },
+  "effectiveModel": "unknown",
+  "hashes": {
+    "services/bff/internal/personnel/drafts_http.go": "5c546b789c26b2fc3a77951225f9f5b2e911742f99b986c53395c15db785b69e",
+    "services/bff/internal/personnel/drafts_http_test.go": "6f69c9066d429acb34695d8df573dd92e050f0bd7a564b1a82af88108579770b",
+    "services/bff/internal/personnel/drafts_test.go": "d1a0987a2c1bd2fe2b9e87c2c75be1cdd978f61811ccc634ddf5e96ff82c9a66",
+    "services/bff/internal/personnel/drafts_concurrency_test.go": "7596d174a1e0f971dfcf629792deb1f2192201acfd6cdd0b33f8d9390daf315a",
+    "services/bff/internal/personnel/drafts_validation.go": "812132c3672ce5735db6795c97f40e3014f5a630a3667f476945b9ca52fa49dd",
+    "services/bff/internal/personnel/drafts.go": "91beaf3723f2abcd79948181e04a203285a0566b8f9b2bce33c691b959b40258"
+  },
+  "rawBodyLimitBytes": 131072,
+  "canonicalPayloadLimitBytes": 65536,
+  "pendingIntegration": [
+    "actual querycontext expiry with final queryguard",
+    "version=0 authorization insertion under final revision triggers",
+    "shared roles/TRUNCATE/router and formal cleanup call sites"
+  ]
+}

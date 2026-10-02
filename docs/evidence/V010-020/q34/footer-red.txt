@@ -1,0 +1,48 @@
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+ WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+[WebServer] (node:60856) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer]  WARN  Issue while reading "C:\Users\Hubujiu\AppData\Local\pnpm\config\rc". UNKNOWN: unknown error, open 'C:\Users\Hubujiu\AppData\Local\pnpm\config\rc'
+
+[WebServer] (node:62416) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:55044) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › apps\web\src\personnel-table.component.spec.ts:5:1 › Q34 identity pagination preserves the confirmed footer inset
+  1) [chromium] › apps\web\src\personnel-table.component.spec.ts:5:1 › Q34 identity pagination preserves the confirmed footer inset
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.identity-table .table-footer')
+    Expected: "16px"
+    Received: "0px"
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "toHaveCSS" locator('.identity-table .table-footer') with timeout 1500ms
+      - waiting for locator('.identity-table .table-footer')
+        16 × locator resolved to <div class="table-footer">…</div>
+           - unexpected value "0px"
+
+
+      17 |   await page.getByRole('tab', { name: '身份', exact: true }).click();
+      18 |   const footer = page.locator('.identity-table .table-footer');
+    > 19 |   await expect(footer).toHaveCSS('padding-left', '16px');
+         |                        ^
+      20 |   await expect(footer).toHaveCSS('padding-right', '16px');
+      21 |   await expect(footer).toHaveCSS('height', '48px');
+      22 |   await expect(footer.getByRole('button', { name: '上一页', exact: true })).toBeDisabled();
+        at D:\Workspace\WeaveOS-worktrees\V010-020\apps\web\src\personnel-table.component.spec.ts:19:24
+
+    Error Context: .work\q34-results\personnel-table.component--70452--the-confirmed-footer-inset-chromium\error-context.md
+
+
+  1 failed
+    [chromium] › apps\web\src\personnel-table.component.spec.ts:5:1 › Q34 identity pagination preserves the confirmed footer inset

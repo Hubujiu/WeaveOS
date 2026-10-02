@@ -1,0 +1,3 @@
+import {defineConfig,devices} from '@playwright/test';
+import base from './q31.config';
+export default defineConfig({...base,expect:{timeout:5000},projects:['chromium','firefox','webkit'].map(name=>({name,use:{...devices[name==='chromium'?'Desktop Chrome':name==='firefox'?'Desktop Firefox':'Desktop Safari']}}))});

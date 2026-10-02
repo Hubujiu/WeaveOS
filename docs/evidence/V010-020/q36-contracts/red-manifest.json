@@ -1,0 +1,26 @@
+{
+  "observedAt": "2026-10-01T12:14:44.655139+00:00",
+  "baseline": "2857c299a245eebd01cdd837cfcf0b67252ee13d",
+  "oracle": "docs/tasks/V010-020-PLAN.md",
+  "contract": {
+    "command": "node --test contracts/query-drafts.contract.test.mjs",
+    "exitCode": 1,
+    "failure": "five Q36 contract requirements absent in existing OpenAPI"
+  },
+  "schema": {
+    "command": "go test ./internal/persistence -run TestQ36QueryDraftSchema -count=1",
+    "exitCode": 1,
+    "environment": "isolated PostgreSQL 18.6, goose version 2",
+    "failure": "approved Q36 schema personnel.query_revisions is absent"
+  },
+  "files": [
+    {
+      "path": "contracts/query-drafts.contract.test.mjs",
+      "sha256": "1f98a48c1be044d52e94091834cd479844ea0d73e125fa9b002c3f55eaa23009"
+    },
+    {
+      "path": "services/bff/internal/persistence/query_drafts_schema_test.go",
+      "sha256": "79a7e85ec077b59c2fa76eadc38662f1f89fee22b4a9caa21e1e4af1d7e1bd3b"
+    }
+  ]
+}

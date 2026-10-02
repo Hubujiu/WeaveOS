@@ -1,0 +1,294 @@
+--- upstream/src/components/motion/checkbox.tsx
++++ apps/web/src/vendor/arca/components/motion/checkbox.tsx
+@@ -5,2 +5,2 @@
+-import { EASE_OUT, SPRING_PRESS } from "@/lib/ease";
+-import { cn } from "@/lib/utils";
++import { EASE_OUT, SPRING_PRESS } from "../../lib/ease";
++import { cn } from "../../lib/utils";
+--- upstream/src/components/motion/dropdown-panel.tsx
++++ apps/web/src/vendor/arca/components/motion/dropdown-panel.tsx
+@@ -17,2 +17,2 @@
+-import { EASE_OUT } from "@/lib/ease";
+-import { cn } from "@/lib/utils";
++import { EASE_OUT } from "../../lib/ease";
++import { cn } from "../../lib/utils";
+--- upstream/src/components/motion/select.tsx
++++ apps/web/src/vendor/arca/components/motion/select.tsx
+@@ -24,2 +24,2 @@
+-} from "@/components/motion/dropdown-panel";
+-import { cn } from "@/lib/utils";
++} from "./dropdown-panel";
++import { cn } from "../../lib/utils";
+@@ -116,0 +117 @@
++      requestAnimationFrame(() => document.getElementById(`${baseId}-trigger`)?.focus());
+@@ -118 +119 @@
+-    [controlled, onValueChange, setOpen],
++    [controlled, onValueChange, setOpen, baseId],
+@@ -191,0 +193 @@
++  'aria-label'?: string;
+@@ -197 +199 @@
+-export function SelectTrigger({ className, children, id }: SelectTriggerProps) {
++export function SelectTrigger({ className, children, id, 'aria-label': ariaLabel }: SelectTriggerProps) {
+@@ -209,0 +212,2 @@
++      role="combobox"
++      aria-label={ariaLabel}
+@@ -212,0 +217,11 @@
++      onKeyDown={event => {
++        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
++        event.preventDefault();
++        ctx.setOpen(true);
++        const key = event.key;
++        requestAnimationFrame(() => {
++          const options = Array.from(document.getElementById(ctx.listId)?.querySelectorAll<HTMLButtonElement>('button[role="option"]:not(:disabled)') ?? []);
++          const selected = options.find(option => option.getAttribute('aria-selected') === 'true');
++          (key === 'Home' ? options[0] : key === 'End' ? options.at(-1) : selected ?? options[0])?.focus();
++        });
++      }}
+@@ -270,0 +286,13 @@
++        onKeyDown={event => {
++          if (event.key === 'Escape') {
++            event.preventDefault(); event.stopPropagation(); ctx.setOpen(false);
++            document.getElementById(ctx.triggerId)?.focus(); return;
++          }
++          if (event.key === 'Tab') { ctx.setOpen(false); return; }
++          if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
++          event.preventDefault();
++          const options = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button[role="option"]:not(:disabled)'));
++          const current = options.indexOf(document.activeElement as HTMLButtonElement);
++          const index = event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 : Math.max(0, Math.min(options.length - 1, current + (event.key === 'ArrowDown' ? 1 : -1)));
++          options[index]?.focus(); options[index]?.scrollIntoView({ block: 'nearest' });
++        }}
+--- upstream/src/components/motion/table/column-filter-menu.tsx
++++ apps/web/src/vendor/arca/components/motion/table/column-filter-menu.tsx
+@@ -18,2 +18,2 @@
+-} from "@/components/motion/dropdown-panel";
+-import { cn } from "@/lib/utils";
++} from "../dropdown-panel";
++import { cn } from "../../../lib/utils";
+@@ -46,0 +47,7 @@
++  const focusMenu = (position: "first" | "last") => {
++    requestAnimationFrame(() => {
++      const items = document.getElementById(`${triggerId}-panel`)?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
++      items?.[position === "last" ? items.length - 1 : 0]?.focus();
++    });
++  };
++
+@@ -68 +75,23 @@
+-      if (event.key === "Escape") setOpen(false);
++      if (event.defaultPrevented) return;
++      const trigger = document.getElementById(triggerId);
++      if (event.key === "Escape") {
++        event.preventDefault();
++        event.stopPropagation();
++        setOpen(false);
++        trigger?.focus();
++        return;
++      }
++      const panel = document.getElementById(`${triggerId}-panel`);
++      if (!(event.target instanceof Node) || !panel?.contains(event.target)) return;
++      if (event.key === "Tab") {
++        setOpen(false);
++        trigger?.focus();
++        return;
++      }
++      const items = [...panel.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')];
++      if (!items.length || !["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
++      event.preventDefault();
++      const index = items.indexOf(document.activeElement as HTMLButtonElement);
++      const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1
++        : (index + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
++      items[next]?.focus();
+@@ -77 +106,5 @@
+-    const onClose = () => setOpen(false);
++    const onClose = (event: Event) => {
++      const panel = document.getElementById(`${triggerId}-panel`);
++      if (event.type === "scroll" && event.target instanceof Node && panel?.contains(event.target)) return;
++      setOpen(false);
++    };
+@@ -98,0 +132 @@
++        aria-controls={mounted ? `${triggerId}-panel` : undefined}
+@@ -99,0 +134,7 @@
++        onKeyDown={(event) => {
++          if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
++          event.preventDefault();
++          event.stopPropagation();
++          setOpen(true);
++          focusMenu(event.key === "ArrowUp" || event.key === "End" ? "last" : "first");
++        }}
+@@ -114,0 +156 @@
++            if (event.detail === 0) focusMenu("first");
+@@ -131 +173 @@
+-              className="relative"
++              className="arca-source relative"
+@@ -163,0 +206 @@
++                      document.getElementById(triggerId)?.focus();
+@@ -172,0 +216 @@
++                      document.getElementById(triggerId)?.focus();
+@@ -204 +248 @@
+-          "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm outline-none transition-colors",
++          "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm outline-none transition-colors focus-visible:bg-muted focus-visible:text-foreground focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2",
+--- upstream/src/components/motion/table/index.tsx
++++ apps/web/src/vendor/arca/components/motion/table/index.tsx
+@@ -7,2 +7,2 @@
+-import { Checkbox } from "@/components/motion/checkbox";
+-import { cn } from "@/lib/utils";
++import { Checkbox } from "../checkbox";
++import { cn } from "../../../lib/utils";
+@@ -105,0 +106,7 @@
++  manualPagination = false,
++  recordCount: serverCount,
++  fillViewport = false,
++  minWidth,
++  ariaLabel,
++  selectAllLabel,
++  getRowLabel,
+@@ -144 +151 @@
+-  const recordCount = sortedRows.length;
++  const recordCount = serverCount ?? sortedRows.length;
+@@ -147 +154 @@
+-  const pagedRows = paginated
++  const pagedRows = paginated && !manualPagination
+@@ -150,0 +158,9 @@
++  const [viewportHeight, setViewportHeight] = useState(0);
++  useEffect(() => {
++    if (!fillViewport || !scrollRef.current) return;
++    const el = scrollRef.current;
++    const observer = new ResizeObserver(() => setViewportHeight(el.clientHeight));
++    setViewportHeight(el.clientHeight);
++    observer.observe(el);
++    return () => observer.disconnect();
++  }, [fillViewport]);
+@@ -174 +190 @@
+-      setPageIndex(0);
++      if (!manualPagination) setPageIndex(0);
+@@ -176 +192 @@
+-    [setPageIndex, setSort],
++    [setPageIndex, setSort, manualPagination],
+@@ -177,0 +194,6 @@
++
++  useEffect(() => {
++    // An authoritative total can shrink between requests. Recover the actual
++    // server page as well as the visible pager; clamping display alone strands it.
++    if (manualPagination && pageIndex !== currentPage) setPageIndex(currentPage);
++  }, [manualPagination, pageIndex, currentPage, setPageIndex]);
+@@ -258,0 +281,3 @@
++  // Fillers are deliberately outside data, virtualizer, selection and paging.
++  const remaining = fillViewport ? Math.max(0, viewportHeight - rowHeight - visibleRows.length * rowHeight) : 0;
++  const blankRows = Array.from({ length: Math.ceil(remaining / rowHeight) }, (_, index) => Math.min(rowHeight, remaining - index * rowHeight));
+@@ -271 +296 @@
+-      <div className="el-scrollbar relative w-full overflow-hidden">
++      <div className={cn("el-scrollbar relative w-full overflow-hidden", fillViewport && "min-h-0 flex-1")}>
+@@ -273,0 +299,2 @@
++          tabIndex={0}
++          aria-label={ariaLabel + '表格滚动区域'}
+@@ -275 +302 @@
+-          className="el-scrollbar__wrap el-scrollbar__wrap--hidden-default overflow-x-auto overflow-y-auto"
++          className="table-scroll el-scrollbar__wrap el-scrollbar__wrap--hidden-default overflow-x-auto overflow-y-auto"
+@@ -277 +304 @@
+-            paginated
++            fillViewport ? { height: '100%', maxHeight: 'none', scrollPaddingTop: rowHeight } : paginated
+@@ -284,2 +311,3 @@
+-              className="w-full border-collapse"
+-              style={{ tableLayout: "fixed", width: "100%" }}
++              className="personnel-data-table w-full border-collapse"
++              aria-label={ariaLabel}
++              style={{ tableLayout: "fixed", width: "100%", minWidth }}
+@@ -308,0 +337,2 @@
++            selectAllLabel={selectAllLabel}
++            selectionDisabled={!visibleRows.length}
+@@ -333 +363 @@
+-            {sortedRows.length === 0 ? (
++            {sortedRows.length === 0 && !fillViewport ? (
+@@ -365,0 +396,2 @@
++                      data-row-id={entry.id}
++                      aria-selected={selectable ? isSelected : undefined}
+@@ -404 +436 @@
+-                              aria-label={`Select row ${rowNumber}`}
++                              aria-label={getRowLabel?.(entry.row) ?? `Select row ${rowNumber}`}
+@@ -414 +446 @@
+-                            "truncate px-4 text-foreground",
++                              "truncate px-4 text-foreground",
+@@ -450,0 +483,3 @@
++            {blankRows.map((blankHeight, index) => <tr key={'blank-' + index} data-empty-row aria-hidden="true" style={{ height: blankHeight }} className="border-border/60 border-b">
++              {Array.from({ length: leadColumns }, (_, cell) => <td key={cell} className={cn("p-0", cell < leadColumns - 1 && "border-border border-r")} />)}
++            </tr>)}
+@@ -455,0 +491 @@
++        {fillViewport && !visibleRows.length && !loading ? <div role="status" className="pointer-events-none absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">{emptyState}</div> : null}
+@@ -466 +502,5 @@
+-          className="shrink-0"
++          className="arca-pagination shrink-0"
++          rowsPerPageLabel="每页条数"
++          info="{from} - {to} / 共 {count} 项"
++          previousPageLabel="上一页"
++          nextPageLabel="下一页"
+--- upstream/src/components/motion/table/skeleton-rows.tsx
++++ apps/web/src/vendor/arca/components/motion/table/skeleton-rows.tsx
+@@ -3 +3 @@
+-import { cn } from "@/lib/utils";
++import { cn } from "../../../lib/utils";
+--- upstream/src/components/motion/table/table-header.tsx
++++ apps/web/src/vendor/arca/components/motion/table/table-header.tsx
+@@ -13,4 +13,4 @@
+-import { Checkbox } from "@/components/motion/checkbox";
+-import { SPRING_PRESS } from "@/lib/ease";
+-import { TOUCH_GESTURE_CLASS } from "@/lib/touch";
+-import { cn } from "@/lib/utils";
++import { Checkbox } from "../checkbox";
++import { SPRING_PRESS } from "../../../lib/ease";
++import { TOUCH_GESTURE_CLASS } from "../../../lib/touch";
++import { cn } from "../../../lib/utils";
+@@ -170 +170,3 @@
+-}: TableHeaderProps<T>) {
++  selectAllLabel = 'Select all rows',
++  selectionDisabled = false,
++}: TableHeaderProps<T> & { selectAllLabel?: string; selectionDisabled?: boolean }) {
+@@ -195 +197,2 @@
+-                  aria-label="Select all rows"
++                  aria-label={selectAllLabel}
++                  disabled={selectionDisabled}
+--- upstream/src/components/motion/table/table-menu.tsx
++++ apps/web/src/vendor/arca/components/motion/table/table-menu.tsx
+@@ -6,2 +6,2 @@
+-import { SPRING_PANEL } from "@/lib/ease";
+-import { cn } from "@/lib/utils";
++import { SPRING_PANEL } from "../../../lib/ease";
++import { cn } from "../../../lib/utils";
+--- upstream/src/components/motion/table/table-pagination.tsx
++++ apps/web/src/vendor/arca/components/motion/table/table-pagination.tsx
+@@ -10,3 +10,3 @@
+-} from "@/components/motion/select";
+-import { Button } from "@/components/ui/button";
+-import { cn } from "@/lib/utils";
++} from "../select";
++import { Button } from "../../ui/button";
++import { cn } from "../../../lib/utils";
+@@ -142 +142 @@
+-          <SelectTrigger className="h-6 min-h-6 rounded-md px-2 py-0 text-xs gap-1 [&_svg]:size-3">
++          <SelectTrigger aria-label={rowsPerPageLabel} className="h-6 min-h-6 rounded-md px-2 py-0 text-xs gap-1 [&_svg]:size-3">
+--- upstream/src/components/motion/table/table-scrollbar.tsx
++++ apps/web/src/vendor/arca/components/motion/table/table-scrollbar.tsx
+@@ -11 +11 @@
+-import { cn } from "@/lib/utils";
++import { cn } from "../../../lib/utils";
+--- upstream/src/components/motion/table/types.ts
++++ apps/web/src/vendor/arca/components/motion/table/types.ts
+@@ -31,0 +32,9 @@
++  /** WeaveOS: received page and authoritative server total; never slice twice. */
++  manualPagination?: boolean;
++  recordCount?: number;
++  /** WeaveOS: fit existing flex viewport and add inert visual grid rows. */
++  fillViewport?: boolean;
++  minWidth?: number;
++  ariaLabel?: string;
++  selectAllLabel?: string;
++  getRowLabel?: (row: T) => string;
+--- upstream/src/components/motion/table/use-column-reorder.ts
++++ apps/web/src/vendor/arca/components/motion/table/use-column-reorder.ts
+@@ -8 +8 @@
+-import { capturePointer, releasePointer } from "@/lib/touch";
++import { capturePointer, releasePointer } from "../../../lib/touch";
+--- upstream/src/components/motion/table/use-column-resize.ts
++++ apps/web/src/vendor/arca/components/motion/table/use-column-resize.ts
+@@ -7 +7 @@
+-import { capturePointer, releasePointer } from "@/lib/touch";
++import { capturePointer, releasePointer } from "../../../lib/touch";

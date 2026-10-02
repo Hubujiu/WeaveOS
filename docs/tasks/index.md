@@ -1,5 +1,7 @@
 # v0.1.0 任务索引
 
+后台外壳修复：[V010-020](V010-020.md)，依赖已验收019；task/V010-020-admin-shell / ../WeaveOS-worktrees/V010-020。用户2026-09-30要求全视口背景、图标水平折叠及arca-ui动效参考，单Agent。
+
 后端精简剩余需求：[V010-018](V010-018.md)，依赖已验收016/017；task/V010-018-backend-simplification / ../WeaveOS-worktrees/V010-018，[PR19](https://github.com/Hubujiu/WeaveOS/pull/19)。用户2026-09-29确认采用剩余全部方案，单Agent实施；日志留存参数见任务文档及Notion Q20。
 
 公网入口：[V010-015](V010-015.md)，依赖已验收011；task/V010-015-public-https / ../WeaveOS-worktrees/V010-015。用户2026-09-28明确部署授权，ADR004已接受；单Agent实施，不触碰014界面工作树。
@@ -31,3 +33,5 @@
 新增用户授权的测试先行任务：[V010-009](V010-009.md)，依赖已验收001；task/V010-009-test-first / ../WeaveOS-worktrees/V010-009。用户2026-09-27追加授权完成PR #3：扩展HTTP/浏览器已通过，剩余19项真实STORE已本机通过并纳入CI；等待最终head完整远端复验，不提前accepted。正式来源和002–008验收不被本任务替代。
 
 本轮完整接入：[V010-019](V010-019.md)，依赖已验收018；task/V010-019-complete-app / ../WeaveOS-worktrees/V010-019。用户要求补齐最新登录注册、Home导航与已批准人员管理R3；Q24确认按Figma原版复刻，组件优化后置。单Agent。
+
+最新尺寸、后台动画与Arca原版表格：[V010-020](V010-020.md)，依赖已验收019；task/V010-020-admin-shell / ../WeaveOS-worktrees/V010-020，[PR21](https://github.com/Hubujiu/WeaveOS/pull/21)。固定56顶栏/176侧栏与全视口材质、Q32六处Select/四页签Pill；Q35身份复用模板卡片+详情，成员/操作记录直接消费固定22模块Arca源码/完整样式Motion，启用当前页排序/拖列/列宽/真实服务端页大小，少零数据空网格填满/分页贴底。Notion/Figma已同步重读，严格多阶段真实RED→GREEN；最终143完整组件/54源三引擎、类型构建/132治理/官方依赖audit通过，永久原字节/哈希/必要补丁及截图在q35。ready可审阅；提交后的实际HEAD归档安全与五项CI另按PR实时核对，不冒充accepted/合并/部署。root代码唯一写者，子Agent只读复审与独立项目Figma同步。

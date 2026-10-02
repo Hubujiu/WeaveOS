@@ -1,0 +1,391 @@
+const imgLucideSearch = "<temporary Figma asset URL omitted; reuse the existing exact project asset>";
+
+function LucideSearch({ className }: { className?: string }) {
+  return (
+    <div className={className || "relative size-[24px]"} data-node-id="159:376" data-name="Lucide / Search">
+      <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgLucideSearch} />
+    </div>
+  );
+}
+
+type AdminInputProps = {
+  className?: string;
+  showIcon?: boolean;
+  value?: string;
+};
+
+function AdminInput({ className, showIcon = true, value = "搜索姓名或邮箱" }: AdminInputProps) {
+  return (
+    <div className={className || "bg-[var(--admin-color-surface,white)] border border-[var(--admin-color-line,#e4e9f1)] border-solid content-stretch flex gap-[var(--admin-space-8,8px)] h-[40px] items-center overflow-clip p-[var(--admin-space-12,12px)] relative rounded-[var(--admin-radius-8,8px)] w-[300px]"} data-node-id="159:420" data-name="Admin / Input">
+      {showIcon && <LucideSearch className="relative shrink-0 size-[16px]" />}
+      <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[22px] relative shrink-0 text-[14px] text-[color:var(--admin-color-muted,#8490a2)] whitespace-nowrap" data-node-id="159:424">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+export default function MembersTable() {
+  return (
+    <div className="bg-[var(--admin-color-surface,white)] border border-[#e5e5e5] border-solid content-stretch flex flex-col items-start overflow-clip relative rounded-[14px] size-full" data-node-id="161:441" data-name="Members table">
+      <div className="border-[#e5e5e5] border-b border-solid content-stretch flex gap-[12px] h-[64px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-full" data-node-id="161:442" data-name="Table toolbar">
+        <AdminInput className="bg-[var(--admin-color-surface,white)] border border-[var(--admin-color-line,#e4e9f1)] border-solid content-stretch flex gap-[var(--admin-space-8,8px)] h-[40px] items-center overflow-clip p-[var(--admin-space-12,12px)] relative rounded-[var(--admin-radius-8,8px)] shrink-0 w-[300px]" />
+        <div className="flex-[1_0_0] h-px min-w-px relative" data-node-id="161:448" data-name="Flexible space" />
+        <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[20px] relative shrink-0 text-[12px] text-[color:var(--admin-color-secondary,#5e6d83)] whitespace-nowrap" data-node-id="161:449">
+          8 位成员
+        </p>
+        <div className="bg-[var(--admin-color-surface,white)] border border-[var(--admin-color-line,#e4e9f1)] border-solid content-stretch flex gap-[var(--admin-space-8,8px)] h-[40px] items-center justify-center overflow-clip px-[var(--admin-space-16,16px)] relative rounded-[var(--admin-radius-8,8px)] shrink-0" data-node-id="161:450" data-name="Admin / Button / Secondary">
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[22px] relative shrink-0 text-[14px] text-[color:var(--admin-color-ink,#102044)] whitespace-nowrap" data-node-id="I161:450;159:407">
+            全部身份
+          </p>
+        </div>
+      </div>
+      <div className="content-stretch flex flex-col h-[360px] items-start overflow-auto relative shrink-0 w-full" data-node-id="279:1767" data-name="Q34 / Data Table viewport">
+        <div className="content-stretch flex flex-col items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1768" data-name="Q34 / Data Table">
+          <div className="bg-[#f5f5f5] border-[#e5e5e5] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1769" data-name="Q34 / Table header">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center justify-center overflow-clip relative shrink-0 w-[48px]" data-node-id="279:1770" data-name="Selection">
+              <div className="border-2 border-[rgba(115,115,115,0.5)] border-solid relative rounded-[var(--admin-radius-8,8px)] shrink-0 size-[20px]" data-node-id="279:1771" data-name="Checkbox / Unchecked" />
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:1772" data-name="Column / 成员">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Medium'] font-medium h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#737373] text-[14px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1773">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">成员</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:1774" data-name="Column / 部门">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Medium'] font-medium h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#737373] text-[14px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1775">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">部门</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[216px]" data-node-id="279:1776" data-name="Column / 身份">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Medium'] font-medium h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#737373] text-[14px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1777">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">身份</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[136px]" data-node-id="279:1778" data-name="Column / 人员管理">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Medium'] font-medium h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#737373] text-[14px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1779">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">人员管理</p>
+              </div>
+            </div>
+            <div className="border-0 border-[#e5e5e5] border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[192px]" data-node-id="279:1780" data-name="Column / 操作">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Medium'] font-medium h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#737373] text-[14px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1781">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">操作</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1782" data-name="Q34 / Row / 系统管理员">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center justify-center overflow-clip relative shrink-0 w-[48px]" data-node-id="279:1783" data-name="Selection">
+              <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_SC:Regular'] font-normal justify-center leading-[0] overflow-hidden relative shrink-0 size-[20px] text-[#737373] text-[12px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1784">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">1</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:1785" data-name="Column / 成员">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1786">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">系统管理员 · admin@example.com</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:1787" data-name="Column / 部门">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1788">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">未分组</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[216px]" data-node-id="279:1789" data-name="Column / 身份">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1790">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">Bootstrap Admin</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[136px]" data-node-id="279:1791" data-name="Column / 人员管理">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1792">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">默认拥有</p>
+              </div>
+            </div>
+            <div className="content-stretch flex h-[40px] items-center overflow-clip px-[16px] relative shrink-0 w-[192px]" data-node-id="279:1793" data-name="Column / 操作">
+              <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] overflow-hidden relative shrink-0 text-[#171717] text-[14px] text-ellipsis w-[32px] whitespace-nowrap" data-node-id="279:1794">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">查看</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1795" data-name="Q34 / Row / 周涵">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center justify-center overflow-clip relative shrink-0 w-[48px]" data-node-id="279:1796" data-name="Selection">
+              <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_SC:Regular'] font-normal justify-center leading-[0] overflow-hidden relative shrink-0 size-[20px] text-[#737373] text-[12px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1797">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">2</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:1798" data-name="Column / 成员">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1799">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">周涵 · zhou.han@example.com</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:1800" data-name="Column / 部门">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1801">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">运营部</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[216px]" data-node-id="279:1802" data-name="Column / 身份">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1803">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">企业管理员</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[136px]" data-node-id="279:1804" data-name="Column / 人员管理">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1805">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">已开启</p>
+              </div>
+            </div>
+            <div className="[word-break:break-word] content-stretch flex font-['Noto_Sans_SC:Regular'] font-normal gap-[12px] h-[40px] items-center leading-[0] overflow-clip px-[16px] relative shrink-0 text-[#171717] text-[14px] w-[192px] whitespace-nowrap" data-node-id="279:1806" data-name="Column / 操作">
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1807">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">配置身份</p>
+              </div>
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1808">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">调整分组</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1809" data-name="Q34 / Row / 林可">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center justify-center overflow-clip relative shrink-0 w-[48px]" data-node-id="279:1810" data-name="Selection">
+              <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_SC:Regular'] font-normal justify-center leading-[0] overflow-hidden relative shrink-0 size-[20px] text-[#737373] text-[12px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1811">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">3</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:1812" data-name="Column / 成员">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1813">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">林可 · lin.ke@example.com</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:1814" data-name="Column / 部门">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1815">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">研发部</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[216px]" data-node-id="279:1816" data-name="Column / 身份">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1817">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">普通员工</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[136px]" data-node-id="279:1818" data-name="Column / 人员管理">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1819">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">未开启</p>
+              </div>
+            </div>
+            <div className="[word-break:break-word] content-stretch flex font-['Noto_Sans_SC:Regular'] font-normal gap-[12px] h-[40px] items-center leading-[0] overflow-clip px-[16px] relative shrink-0 text-[#171717] text-[14px] w-[192px] whitespace-nowrap" data-node-id="279:1820" data-name="Column / 操作">
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1821">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">配置身份</p>
+              </div>
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1822">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">调整分组</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1823" data-name="Q34 / Row / 陈远">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center justify-center overflow-clip relative shrink-0 w-[48px]" data-node-id="279:1824" data-name="Selection">
+              <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_SC:Regular'] font-normal justify-center leading-[0] overflow-hidden relative shrink-0 size-[20px] text-[#737373] text-[12px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1825">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">4</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:1826" data-name="Column / 成员">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1827">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">陈远 · chen.yuan@example.com</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:1828" data-name="Column / 部门">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1829">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">研发部</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[216px]" data-node-id="279:1830" data-name="Column / 身份">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1831">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">部门负责人</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[136px]" data-node-id="279:1832" data-name="Column / 人员管理">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1833">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">未开启</p>
+              </div>
+            </div>
+            <div className="[word-break:break-word] content-stretch flex font-['Noto_Sans_SC:Regular'] font-normal gap-[12px] h-[40px] items-center leading-[0] overflow-clip px-[16px] relative shrink-0 text-[#171717] text-[14px] w-[192px] whitespace-nowrap" data-node-id="279:1834" data-name="Column / 操作">
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1835">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">配置身份</p>
+              </div>
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1836">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">调整分组</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1837" data-name="Q34 / Row / 宋宁">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center justify-center overflow-clip relative shrink-0 w-[48px]" data-node-id="279:1838" data-name="Selection">
+              <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_SC:Regular'] font-normal justify-center leading-[0] overflow-hidden relative shrink-0 size-[20px] text-[#737373] text-[12px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1839">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">5</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:1840" data-name="Column / 成员">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1841">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">宋宁 · song.ning@example.com</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:1842" data-name="Column / 部门">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1843">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">研发部</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[216px]" data-node-id="279:1844" data-name="Column / 身份">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1845">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">普通员工</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[136px]" data-node-id="279:1846" data-name="Column / 人员管理">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1847">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">未开启</p>
+              </div>
+            </div>
+            <div className="[word-break:break-word] content-stretch flex font-['Noto_Sans_SC:Regular'] font-normal gap-[12px] h-[40px] items-center leading-[0] overflow-clip px-[16px] relative shrink-0 text-[#171717] text-[14px] w-[192px] whitespace-nowrap" data-node-id="279:1848" data-name="Column / 操作">
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1849">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">配置身份</p>
+              </div>
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1850">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">调整分组</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1851" data-name="Q34 / Row / 许言">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center justify-center overflow-clip relative shrink-0 w-[48px]" data-node-id="279:1852" data-name="Selection">
+              <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_SC:Regular'] font-normal justify-center leading-[0] overflow-hidden relative shrink-0 size-[20px] text-[#737373] text-[12px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1853">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">6</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:1854" data-name="Column / 成员">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1855">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">许言 · xu.yan@example.com</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:1856" data-name="Column / 部门">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1857">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">研发部</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[216px]" data-node-id="279:1858" data-name="Column / 身份">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1859">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">普通员工</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[136px]" data-node-id="279:1860" data-name="Column / 人员管理">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1861">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">未开启</p>
+              </div>
+            </div>
+            <div className="[word-break:break-word] content-stretch flex font-['Noto_Sans_SC:Regular'] font-normal gap-[12px] h-[40px] items-center leading-[0] overflow-clip px-[16px] relative shrink-0 text-[#171717] text-[14px] w-[192px] whitespace-nowrap" data-node-id="279:1862" data-name="Column / 操作">
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1863">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">配置身份</p>
+              </div>
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1864">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">调整分组</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1865" data-name="Q34 / Row / 沈嘉">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center justify-center overflow-clip relative shrink-0 w-[48px]" data-node-id="279:1866" data-name="Selection">
+              <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_SC:Regular'] font-normal justify-center leading-[0] overflow-hidden relative shrink-0 size-[20px] text-[#737373] text-[12px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1867">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">7</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:1868" data-name="Column / 成员">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1869">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">沈嘉 · shen.jia@example.com</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:1870" data-name="Column / 部门">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1871">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">财务部</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[216px]" data-node-id="279:1872" data-name="Column / 身份">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1873">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">财务成员</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[136px]" data-node-id="279:1874" data-name="Column / 人员管理">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1875">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">未开启</p>
+              </div>
+            </div>
+            <div className="[word-break:break-word] content-stretch flex font-['Noto_Sans_SC:Regular'] font-normal gap-[12px] h-[40px] items-center leading-[0] overflow-clip px-[16px] relative shrink-0 text-[#171717] text-[14px] w-[192px] whitespace-nowrap" data-node-id="279:1876" data-name="Column / 操作">
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1877">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">配置身份</p>
+              </div>
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1878">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">调整分组</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border-[rgba(229,229,229,0.6)] border-b border-solid content-stretch flex h-[40px] items-start overflow-clip relative shrink-0 w-full" data-node-id="279:1879" data-name="Q34 / Row / 顾云">
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center justify-center overflow-clip relative shrink-0 w-[48px]" data-node-id="279:1880" data-name="Selection">
+              <div className="[word-break:break-word] flex flex-col font-['Noto_Sans_SC:Regular'] font-normal justify-center leading-[0] overflow-hidden relative shrink-0 size-[20px] text-[#737373] text-[12px] text-center text-ellipsis whitespace-nowrap" data-node-id="279:1881">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">8</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex flex-[1_0_0] h-[40px] items-center min-w-px overflow-clip px-[var(--admin-space-16,16px)] relative" data-node-id="279:1882" data-name="Column / 成员">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1883">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">顾云 · gu.yun@example.com</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[176px]" data-node-id="279:1884" data-name="Column / 部门">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1885">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">财务部</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[216px]" data-node-id="279:1886" data-name="Column / 身份">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1887">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">普通员工</p>
+              </div>
+            </div>
+            <div className="border-[#e5e5e5] border-r border-solid content-stretch flex h-[40px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-[136px]" data-node-id="279:1888" data-name="Column / 人员管理">
+              <div className="[word-break:break-word] flex flex-[1_0_0] flex-col font-['Noto_Sans_SC:Regular'] font-normal h-[20px] justify-center leading-[0] min-w-px overflow-hidden relative text-[#0a0a0a] text-[14px] text-ellipsis whitespace-nowrap" data-node-id="279:1889">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">未开启</p>
+              </div>
+            </div>
+            <div className="[word-break:break-word] content-stretch flex font-['Noto_Sans_SC:Regular'] font-normal gap-[12px] h-[40px] items-center leading-[0] overflow-clip px-[16px] relative shrink-0 text-[#171717] text-[14px] w-[192px] whitespace-nowrap" data-node-id="279:1890" data-name="Column / 操作">
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1891">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">配置身份</p>
+              </div>
+              <div className="flex flex-col h-[20px] justify-center overflow-hidden relative shrink-0 text-ellipsis w-[56px]" data-node-id="279:1892">
+                <p className="leading-[20px] overflow-hidden text-ellipsis">调整分组</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="content-stretch flex gap-[12px] h-[48px] items-center overflow-clip px-[var(--admin-space-16,16px)] relative shrink-0 w-full" data-node-id="161:623" data-name="Table footer">
+        <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[20px] relative shrink-0 text-[#737373] text-[12px] whitespace-nowrap" data-node-id="161:624">
+          共 8 位成员
+        </p>
+        <div className="flex-[1_0_0] h-px min-w-px relative" data-node-id="161:625" data-name="Flexible space" />
+        <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[20px] relative shrink-0 text-[#737373] text-[12px] whitespace-nowrap" data-node-id="161:626">
+          第 1 页 / 共 1 页
+        </p>
+      </div>
+    </div>
+  );
+}
+
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+
+These styles are contained in the design: Admin / Body: Font(family: "Noto Sans SC", style: Regular, size: 14, weight: 400, lineHeight: 22, letterSpacing: 0), Admin / Caption: Font(family: "Noto Sans SC", style: Regular, size: 12, weight: 400, lineHeight: 20, letterSpacing: 0), Admin / Label: Font(family: "Noto Sans SC", style: Medium, size: 14, weight: 500, lineHeight: 22, letterSpacing: 0), Q34 / Data Table / Header: Font(family: "Noto Sans SC", style: Medium, size: 14, weight: 500, lineHeight: 20, letterSpacing: 0), Q34 / Data Table / Row number: Font(family: "Noto Sans SC", style: Regular, size: 12, weight: 400, lineHeight: 20, letterSpacing: 0), Q34 / Data Table / Body: Font(family: "Noto Sans SC", style: Regular, size: 14, weight: 400, lineHeight: 20, letterSpacing: 0).
+
+Component descriptions: The following components have usage descriptions or documentation links defined in Figma. These descriptions provide important context about the intended usage, best practices, and any constraints for each component. Follow these guidelines when implementing or using these components.
+
+## Lucide / Search
+**Node ID:** 159:376
+
+Editable vector icon from lucide-icons/lucide/icons. Stroke follows WaveOS.
+
+## Admin / Button / Secondary
+**Node ID:** 159:403
+
+40px action button with editable label and optional Lucide icon.
+
+Images and SVGs will be stored as constants, e.g. const image = '<temporary Figma asset URL omitted; reuse the existing exact project asset>'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

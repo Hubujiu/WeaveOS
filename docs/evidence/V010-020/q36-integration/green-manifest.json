@@ -1,0 +1,39 @@
+{
+  "redCommit": "1fde0f6",
+  "draftWorkerIntegrated": "8a2322d8af76b0515ef9ed190f9e951ae3cbf63a",
+  "contractsIntegrated": "cb193b49123e05d4c3f6a1e080a9ef19038a2ac1",
+  "scope": [
+    "register DraftHTTP after shared Prepare/Authenticate/CSRF",
+    "least-privilege draft grants; update only payload_json,draft_version,updated_at",
+    "explicit draft table in audit test cleanup, without CASCADE",
+    "normal UTF8 wrapper accepted; equivalent excessive escaping rejected over 128KiB without draft insertion"
+  ],
+  "verification": [
+    {
+      "command": "go -C services/bff test -race -p 1 -count=1 ./...",
+      "environment": "isolated PostgreSQL18.6 weaveos_q36_test hot migration3/q36_archive cold migration2; Redis8.2.10 DB15; Go1.27.1",
+      "exitCode": 0,
+      "log": "full-go-race.txt"
+    },
+    {
+      "command": "go -C services/bff vet ./...",
+      "exitCode": 0,
+      "log": "vet.txt"
+    },
+    {
+      "command": "node --test tests/foundation/*.test.mjs tests/governance/*.test.mjs",
+      "exitCode": 0,
+      "tests": 132,
+      "log": "governance.txt"
+    }
+  ],
+  "initialEnvironmentFailures": "Full suite first required weaveos_ database prefix, then fixed Redis DB15. Both original logs retained; no test guards changed. Fresh isolated database created and empty DB15 verified before retry. These are not product RED.",
+  "pending": [
+    "business same-transaction CleanupDraft callsites",
+    "events set-based safe projection",
+    "query engine/revisions/write guards/HTTP search",
+    "frontend integration and actual animation checks",
+    "scale performance/EXPLAIN and final PR CI"
+  ],
+  "originalPRHeadUnchanged": "09707d90af461b66c281a51666b3ed0f586e4dff"
+}
