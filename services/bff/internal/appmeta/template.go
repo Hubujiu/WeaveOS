@@ -1,6 +1,9 @@
 package appmeta
 
-import "errors"
+import (
+	"errors"
+	"slices"
+)
 
 // TemplateSection is untrusted component content retained by an upstream parser.
 // B1 must not discard unrecognized parts or accept opaque component payloads.
@@ -53,8 +56,72 @@ type ImportPreview struct {
 	unbound   []BindingReference
 }
 
-func ValidateStructureTemplate(StructureTemplate) error               { return nil }
-func PreviewStructureImport(StructureTemplate) (ImportPreview, error) { return ImportPreview{}, nil }
-func (p ImportPreview) Structure() Structure                          { return p.structure }
-func (p ImportPreview) Workflows() []ImportedWorkflow                 { return p.workflows }
-func (p ImportPreview) UnboundReferences() []BindingReference         { return p.unbound }
+func ValidateStructureTemplate(candidate StructureTemplate) error {
+	if err := ValidateStructure(candidate.Structure); err != nil {
+		return err
+	}
+	tables := make(map[ID]bool, len(candidate.Structure.Tables))
+	for _, table := range candidate.Structure.Tables {
+		tables[table.ID] = true
+	}
+	workflows, err := index(candidate.Workflows, func(w WorkflowReference) ID { return w.ID }, "workflow")
+	if err != nil {
+		return err
+	}
+	for _, workflow := range workflows {
+		if !tables[workflow.TableID] {
+			return invalid("template workflow table is absent")
+		}
+	}
+	bindings := make(map[BindingReference]bool, len(candidate.Bindings))
+	for _, reference := range candidate.Bindings {
+		if reference.Kind == "" || reference.SourceID == "" {
+			return invalid("incomplete symbolic binding reference")
+		}
+		if bindings[reference] {
+			return invalid("duplicate symbolic binding reference")
+		}
+		bindings[reference] = true
+	}
+	for _, section := range candidate.Sections {
+		switch section.Kind {
+		case "fields", "layouts", "workflows", "roles":
+			// Arbitrary payloads stay rejected until root integrates the
+			// component owner's reviewed schema, even in an allowed section.
+		default:
+			return invalid("unknown or forbidden template section")
+		}
+	}
+	if len(candidate.Sections) != 0 {
+		return ErrTemplateContractRequired
+	}
+	return nil
+}
+
+// PreviewStructureImport never binds source accounts, expands grants, generates
+// replacement IDs, writes metadata, or activates the source workflows.
+func PreviewStructureImport(candidate StructureTemplate) (ImportPreview, error) {
+	if err := ValidateStructureTemplate(candidate); err != nil {
+		return ImportPreview{}, err
+	}
+	preview := ImportPreview{
+		structure: cloneStructure(candidate.Structure),
+		unbound:   slices.Clone(candidate.Bindings),
+		workflows: make([]ImportedWorkflow, len(candidate.Workflows)),
+	}
+	for i, workflow := range candidate.Workflows {
+		preview.workflows[i] = ImportedWorkflow{ID: workflow.ID, TableID: workflow.TableID, Enabled: false}
+	}
+	return preview, nil
+}
+
+func cloneStructure(s Structure) Structure {
+	s.Groups = slices.Clone(s.Groups)
+	s.Tables = slices.Clone(s.Tables)
+	s.Views = slices.Clone(s.Views)
+	return s
+}
+
+func (p ImportPreview) Structure() Structure                  { return cloneStructure(p.structure) }
+func (p ImportPreview) Workflows() []ImportedWorkflow         { return slices.Clone(p.workflows) }
+func (p ImportPreview) UnboundReferences() []BindingReference { return slices.Clone(p.unbound) }
