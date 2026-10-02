@@ -1,3 +1,4 @@
+Readable RED view; trailing whitespace removed. Exact output: ci-wiring-red.stdout.json
 ✖ B2 CI: fixture creates a private dedicated socket database with no network/ports (4.81118ms)
 ✖ B2 CI: an existing state file is never overwritten (1.271215ms)
 ✖ B2 CI: partial startup failure is nonzero and removes only its own fixture (0.623756ms)
@@ -69,9 +70,9 @@ test at tests/foundation/b2-ci-database.test.mjs:92:1
 test at tests/foundation/b2-ci-database.test.mjs:100:1
 ✖ B2 CI: successful cleanup removes its container/data/socket/state and is idempotent (6.18701ms)
   AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
-  
+
     assert.ok(docker.calls.some(c => c.args[0] === 'rm' && c.args.includes('--volumes') && c.args.includes(f.state.container)))
-  
+
       at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:103:10)
       at async Test.run (node:internal/test_runner/test:1389:7)
       at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
@@ -170,9 +171,9 @@ test at tests/foundation/b2-ci-database.test.mjs:134:1
 test at tests/foundation/b2-ci-database.test.mjs:145:1
 ✖ B2 CI: bootstrap exports the dedicated URL and always-cleanup accepts the actual state (0.936981ms)
   AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^WEAVEOS_B2_TEST_DATABASE_URL=postgres:\/\/\/weaveos_b2_isolated_test\?/m. Input:
-  
+
   'EXISTING_VARIABLE=retained\n'
-  
+
       at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-003/tests/foundation/b2-ci-database.test.mjs:151:10)
       at async Test.run (node:internal/test_runner/test:1389:7)
       at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
