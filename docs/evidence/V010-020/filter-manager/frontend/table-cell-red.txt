@@ -1,0 +1,49 @@
+[WebServer] (node:23262) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:23274) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:23307) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › apps/web/src/filter-manager.component.spec.ts:97:1 › single Arca Table hides by stable ID and preserves hidden width/order through visible resize (4.4s)
+
+
+  1) [chromium] › apps/web/src/filter-manager.component.spec.ts:97:1 › single Arca Table hides by stable ID and preserves hidden width/order through visible resize
+
+    Error: expect(locator).not.toContainText(expected) failed
+
+    Locator: getByRole('table', { name: '显隐保序', exact: true }).locator('tbody')
+    Expected substring: not "乙数据"
+    Received string: "丙数据乙数据甲数据"
+    Timeout: 3000ms
+
+    Call log:
+      - Expect "not toContainText" getByRole('table', { name: '显隐保序', exact: true }).locator('tbody') with timeout 3000ms
+      - waiting for getByRole('table', { name: '显隐保序', exact: true }).locator('tbody')
+        10 × locator resolved to <tbody>…</tbody>
+           - unexpected value "丙数据乙数据甲数据"
+
+
+       98 |  await page.goto('/src/filter-manager-table-fixture.html');const table=page.getByRole('table',{name:'显隐保序',exact:true});
+       99 |  await expect(table.locator('thead th')).toHaveText(['丙','乙','甲']);await page.getByRole('button',{name:'切换乙列',exact:true}).click();await expect(table.locator('thead th')).toHaveText(['丙','甲']);
+    > 100 |  await expect(table.locator('tbody')).not.toContainText('乙数据');
+          |                                           ^
+      101 |  const grip=table.locator('thead th').filter({hasText:'丙'}).locator('[data-resize-handle]');const box=(await grip.boundingBox())!;await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+30,box.y+box.height/2);await page.mouse.up();
+      102 |  expect(JSON.parse(await page.locator('output').innerText()).widths.b).toBe(200);await page.getByRole('button',{name:'切换乙列',exact:true}).click();await expect(table.locator('thead th')).toHaveText(['丙','乙','甲']);expect(JSON.parse(await page.locator('output').innerText()).order).toEqual(['c','b','a']);
+      103 | });
+        at /workspace/WeaveOS-worktrees/V010-020/apps/web/src/filter-manager.component.spec.ts:100:43
+
+    Error Context: .work/cloud-filter-manager/frontend-results/filter-manager.component-s-d49d8-rder-through-visible-resize-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    .work/cloud-filter-manager/frontend-results/filter-manager.component-s-d49d8-rder-through-visible-resize-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace .work/cloud-filter-manager/frontend-results/filter-manager.component-s-d49d8-rder-through-visible-resize-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › apps/web/src/filter-manager.component.spec.ts:97:1 › single Arca Table hides by stable ID and preserves hidden width/order through visible resize

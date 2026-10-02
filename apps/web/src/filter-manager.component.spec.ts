@@ -97,6 +97,7 @@ test('open close reopen last intent survives transition and reduced motion remai
 test('single Arca Table hides by stable ID and preserves hidden width/order through visible resize',async({page})=>{
  await page.goto('/src/filter-manager-table-fixture.html');const table=page.getByRole('table',{name:'显隐保序',exact:true});
  await expect(table.locator('thead th')).toHaveText(['丙','乙','甲']);await page.getByRole('button',{name:'切换乙列',exact:true}).click();await expect(table.locator('thead th')).toHaveText(['丙','甲']);
+ await expect(table.locator('tbody')).not.toContainText('乙数据');
  const grip=table.locator('thead th').filter({hasText:'丙'}).locator('[data-resize-handle]');const box=(await grip.boundingBox())!;await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+30,box.y+box.height/2);await page.mouse.up();
  expect(JSON.parse(await page.locator('output').innerText()).widths.b).toBe(200);await page.getByRole('button',{name:'切换乙列',exact:true}).click();await expect(table.locator('thead th')).toHaveText(['丙','乙','甲']);expect(JSON.parse(await page.locator('output').innerText()).order).toEqual(['c','b','a']);
 });
