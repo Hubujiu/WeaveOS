@@ -1,0 +1,126 @@
+=== RUN   TestPlanStableIDsAndMetadataRename
+    plan_test.go:29: display-only rename must be plannable: schema behavior not implemented
+--- FAIL: TestPlanStableIDsAndMetadataRename (0.00s)
+=== RUN   TestPlanTypedAddChangeAndDrop
+    plan_test.go:44: confirmed typed schema diff must be planned: schema behavior not implemented
+--- FAIL: TestPlanTypedAddChangeAndDrop (0.00s)
+=== RUN   TestPlanRejectsUnsafeIDsAndUnfrozenPhysicalTypes
+    plan_test.go:64: unsafe table ID "display name" must be rejected: schema behavior not implemented
+    plan_test.go:68: unsafe field ID "display name" must be rejected: schema behavior not implemented
+    plan_test.go:64: unsafe table ID "x\";DROP TABLE auth.users;--" must be rejected: schema behavior not implemented
+    plan_test.go:68: unsafe field ID "x\";DROP TABLE auth.users;--" must be rejected: schema behavior not implemented
+    plan_test.go:64: unsafe table ID "00000000-0000-4000-8000-00000000001" must be rejected: schema behavior not implemented
+    plan_test.go:68: unsafe field ID "00000000-0000-4000-8000-00000000001" must be rejected: schema behavior not implemented
+    plan_test.go:64: unsafe table ID "00000000-0000-4000-8000-00000000001A" must be rejected: schema behavior not implemented
+    plan_test.go:68: unsafe field ID "00000000-0000-4000-8000-00000000001A" must be rejected: schema behavior not implemented
+    plan_test.go:74: unregistered primitive "jsonb" must fail closed: schema behavior not implemented
+    plan_test.go:74: unregistered primitive "numeric" must fail closed: schema behavior not implemented
+    plan_test.go:74: unregistered primitive "timestamp" must fail closed: schema behavior not implemented
+    plan_test.go:74: unregistered primitive "text);DROP SCHEMA auth CASCADE;--" must fail closed: schema behavior not implemented
+    plan_test.go:79: duplicate stable IDs must be rejected
+    plan_test.go:83: default must match the declared physical type
+    plan_test.go:87: PostgreSQL text cannot contain a NUL byte
+--- FAIL: TestPlanRejectsUnsafeIDsAndUnfrozenPhysicalTypes (0.00s)
+=== RUN   TestSaveCreatesRealTypedTableOnlyAtSave
+    save_test.go:220: pure plan: schema behavior not implemented
+--- FAIL: TestSaveCreatesRealTypedTableOnlyAtSave (0.02s)
+=== RUN   TestSaveNewColumnDefaultsAndNull
+    save_test.go:244: default/NULL on existing records: schema behavior not implemented
+--- FAIL: TestSaveNewColumnDefaultsAndNull (0.01s)
+=== RUN   TestSaveRequiredOldRowsNeedDefaultOrBackfill
+=== RUN   TestSaveRequiredOldRowsNeedDefaultOrBackfill/missing
+    save_test.go:272: required existing rows must fail without default/backfill: schema behavior not implemented
+=== RUN   TestSaveRequiredOldRowsNeedDefaultOrBackfill/default
+    save_test.go:278: required default Save: schema behavior not implemented
+=== RUN   TestSaveRequiredOldRowsNeedDefaultOrBackfill/backfill
+    save_test.go:278: required backfill Save: schema behavior not implemented
+=== RUN   TestSaveRequiredOldRowsNeedDefaultOrBackfill/empty
+    save_test.go:278: required empty Save: schema behavior not implemented
+--- FAIL: TestSaveRequiredOldRowsNeedDefaultOrBackfill (0.05s)
+    --- FAIL: TestSaveRequiredOldRowsNeedDefaultOrBackfill/missing (0.01s)
+    --- FAIL: TestSaveRequiredOldRowsNeedDefaultOrBackfill/default (0.01s)
+    --- FAIL: TestSaveRequiredOldRowsNeedDefaultOrBackfill/backfill (0.01s)
+    --- FAIL: TestSaveRequiredOldRowsNeedDefaultOrBackfill/empty (0.01s)
+=== RUN   TestSaveIncompatibleConversionRollsBackAllDDL
+    save_test.go:301: actual incompatible data must fail at PostgreSQL cast: schema behavior not implemented
+--- FAIL: TestSaveIncompatibleConversionRollsBackAllDDL (0.01s)
+=== RUN   TestSaveCompatiblePhysicalConversion
+    save_test.go:313: explicit physical primitive cast proof: schema behavior not implemented
+--- FAIL: TestSaveCompatiblePhysicalConversion (0.01s)
+=== RUN   TestSaveTypeChangeReplacesOldDefaultAtomically
+    save_test.go:324: old default must not obstruct explicit physical cast: schema behavior not implemented
+--- FAIL: TestSaveTypeChangeReplacesOldDefaultAtomically (0.01s)
+=== RUN   TestSaveDefaultChangeOnlyAffectsFutureRecords
+    save_test.go:338: typed default change: schema behavior not implemented
+--- FAIL: TestSaveDefaultChangeOnlyAffectsFutureRecords (0.01s)
+=== RUN   TestSaveExistingNullsCannotBecomeRequiredAndPartialDDLRemainsRolledBack
+    save_test.go:354: real NULL constraint must reject whole Save: schema behavior not implemented
+--- FAIL: TestSaveExistingNullsCannotBecomeRequiredAndPartialDDLRemainsRolledBack (0.01s)
+=== RUN   TestSaveBackfillCannotOverwriteExistingOrUnknownFields
+=== RUN   TestSaveBackfillCannotOverwriteExistingOrUnknownFields/00000000-0000-4000-8000-000000000011
+    save_test.go:366: backfill must be limited to new typed fields: schema behavior not implemented
+=== RUN   TestSaveBackfillCannotOverwriteExistingOrUnknownFields/00000000-0000-4000-8000-000000000013
+    save_test.go:366: backfill must be limited to new typed fields: schema behavior not implemented
+--- FAIL: TestSaveBackfillCannotOverwriteExistingOrUnknownFields (0.03s)
+    --- FAIL: TestSaveBackfillCannotOverwriteExistingOrUnknownFields/00000000-0000-4000-8000-000000000011 (0.01s)
+    --- FAIL: TestSaveBackfillCannotOverwriteExistingOrUnknownFields/00000000-0000-4000-8000-000000000013 (0.01s)
+=== RUN   TestSaveDependencyRegistrationCannotRaceDelete
+    save_test.go:400: Save must reach its transaction: schema behavior not implemented
+--- FAIL: TestSaveDependencyRegistrationCannotRaceDelete (0.01s)
+=== RUN   TestSaveMetadataFailureRollsBackPhysicalAndMetadata
+    save_test.go:445: fixture metadata/audit failure must be returned: schema behavior not implemented
+--- FAIL: TestSaveMetadataFailureRollsBackPhysicalAndMetadata (0.01s)
+=== RUN   TestSaveDeletionRequiresCurrentImpactConfirmation
+    save_test.go:460: populated delete must report current affected field/count: schema behavior not implemented
+--- FAIL: TestSaveDeletionRequiresCurrentImpactConfirmation (0.02s)
+=== RUN   TestSaveNullOnlyColumnNeedsNoDataDeletionConsent
+    save_test.go:501: NULL-only column has no populated data to confirm: schema behavior not implemented
+--- FAIL: TestSaveNullOnlyColumnNeedsNoDataDeletionConsent (0.01s)
+=== RUN   TestSaveDependenciesBlockDeleteAndTypeChange
+=== RUN   TestSaveDependenciesBlockDeleteAndTypeChange/delete
+    save_test.go:524: enabled/in-flight references must be reported: schema behavior not implemented
+=== RUN   TestSaveDependenciesBlockDeleteAndTypeChange/type
+    save_test.go:524: enabled/in-flight references must be reported: schema behavior not implemented
+--- FAIL: TestSaveDependenciesBlockDeleteAndTypeChange (0.03s)
+    --- FAIL: TestSaveDependenciesBlockDeleteAndTypeChange/delete (0.01s)
+    --- FAIL: TestSaveDependenciesBlockDeleteAndTypeChange/type (0.01s)
+=== RUN   TestSaveMissingOrFailedDependencyProtectionIsClosed
+=== RUN   TestSaveMissingOrFailedDependencyProtectionIsClosed/true
+    save_test.go:547: cannot treat missing/failed registry as no references: schema behavior not implemented
+=== RUN   TestSaveMissingOrFailedDependencyProtectionIsClosed/false
+    save_test.go:547: cannot treat missing/failed registry as no references: schema behavior not implemented
+--- FAIL: TestSaveMissingOrFailedDependencyProtectionIsClosed (0.02s)
+    --- FAIL: TestSaveMissingOrFailedDependencyProtectionIsClosed/true (0.01s)
+    --- FAIL: TestSaveMissingOrFailedDependencyProtectionIsClosed/false (0.01s)
+=== RUN   TestSaveDisplayRenameKeepsDataAndPhysicalIdentifier
+    save_test.go:558: rename metadata Save: schema behavior not implemented
+--- FAIL: TestSaveDisplayRenameKeepsDataAndPhysicalIdentifier (0.01s)
+=== RUN   TestSaveTypedDefaultIsDataNotSQL
+    save_test.go:574: quoted typed default: schema behavior not implemented
+--- FAIL: TestSaveTypedDefaultIsDataNotSQL (0.01s)
+=== RUN   TestSaveGuardDenialAndRevisionConflictDoNotMutate
+=== RUN   TestSaveGuardDenialAndRevisionConflictDoNotMutate/guard
+    save_test.go:603: guard/conflict/config must reject before mutations: schema behavior not implemented
+=== RUN   TestSaveGuardDenialAndRevisionConflictDoNotMutate/revision
+    save_test.go:603: guard/conflict/config must reject before mutations: schema behavior not implemented
+=== RUN   TestSaveGuardDenialAndRevisionConflictDoNotMutate/missing_guard
+    save_test.go:603: guard/conflict/config must reject before mutations: schema behavior not implemented
+=== RUN   TestSaveGuardDenialAndRevisionConflictDoNotMutate/limits
+    save_test.go:603: guard/conflict/config must reject before mutations: schema behavior not implemented
+--- FAIL: TestSaveGuardDenialAndRevisionConflictDoNotMutate (0.05s)
+    --- FAIL: TestSaveGuardDenialAndRevisionConflictDoNotMutate/guard (0.01s)
+    --- FAIL: TestSaveGuardDenialAndRevisionConflictDoNotMutate/revision (0.01s)
+    --- FAIL: TestSaveGuardDenialAndRevisionConflictDoNotMutate/missing_guard (0.01s)
+    --- FAIL: TestSaveGuardDenialAndRevisionConflictDoNotMutate/limits (0.01s)
+=== RUN   TestSaveLockTimeoutRollsBack
+    save_test.go:625: real schema lock timeout required: schema behavior not implemented
+--- FAIL: TestSaveLockTimeoutRollsBack (0.01s)
+=== RUN   TestSaveConcurrentRevisionCAS
+    save_test.go:649: first transaction must reach metadata after DDL: schema behavior not implemented
+--- FAIL: TestSaveConcurrentRevisionCAS (0.01s)
+=== RUN   TestSaveCommitUncertaintyDoesNotRetryOrReportRollback
+    save_test.go:707: injected lost result after REAL commit is unknown, not no-effect: schema behavior not implemented
+--- FAIL: TestSaveCommitUncertaintyDoesNotRetryOrReportRollback (0.01s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/appschema	0.390s
+FAIL
