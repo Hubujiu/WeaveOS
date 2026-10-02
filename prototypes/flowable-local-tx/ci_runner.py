@@ -19,9 +19,12 @@ def run_gate(proof_dir, output_dir, command):
     if output_dir.exists():
         shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True)
-    started_ns = time.time_ns()
+    wall_started_ns = time.time_ns()
+    marker = output_dir / "run-start.marker"
+    marker.touch()
+    started_ns = marker.stat().st_mtime_ns
     result = {"status": "failed", "started_at": datetime.now(timezone.utc).isoformat(),
-              "started_ns": started_ns, "maven_exit": None,
+              "started_ns": started_ns, "wall_started_ns": wall_started_ns, "maven_exit": None,
               "head_sha": os.environ.get("B3_CI_HEAD_SHA"),
               "checkout_sha": os.environ.get("B3_CI_CHECKOUT_SHA")}
     try:

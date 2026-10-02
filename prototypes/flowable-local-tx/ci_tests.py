@@ -31,7 +31,8 @@ class ReportGateTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.reports = Path(self.temp.name)
-        self.started = time.time_ns()
+        # Use the same filesystem clock as a real run marker, not the wall clock.
+        self.started = self.reports.stat().st_mtime_ns
         self.root = fixture_xml()
 
     def save(self):
