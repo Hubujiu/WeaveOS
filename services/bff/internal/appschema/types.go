@@ -135,7 +135,6 @@ type Result struct {
 }
 
 var (
-	ErrNotImplemented          = errors.New("schema behavior not implemented")
 	ErrInvalid                 = errors.New("invalid schema request or executor configuration")
 	ErrUnsupportedType         = errors.New("physical primitive not supported")
 	ErrRevisionConflict        = errors.New("schema revision conflict")

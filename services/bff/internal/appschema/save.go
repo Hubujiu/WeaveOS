@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var namespaceID = regexp.MustCompile(`^[a-z_][a-z0-9_]{0,62}$`)
@@ -88,8 +87,7 @@ func (e Executor) Save(ctx context.Context, request Request) (Result, error) {
 		return Result{}, err
 	}
 	if err = tx.Commit(ctx); err != nil {
-		var pg *pgconn.PgError
-		if errors.Is(err, pgx.ErrTxCommitRollback) || errors.As(err, &pg) {
+		if errors.Is(err, pgx.ErrTxCommitRollback) {
 			return Result{}, err
 		}
 		// A lost/canceled commit response cannot prove no effect. Never retry.

@@ -1,0 +1,31 @@
+{
+  "scope": "isolated B2 physical schema plan and Save",
+  "baseline": "6ffba4d41cb7ee1c70a862e12a9bd9ca88be77a5",
+  "pr21ReadOnlyHead": "74cc5824ee4336dd76c72874f0cc4cf38fe9e889",
+  "go": "go1.27.1 linux/amd64",
+  "postgres": "18.6 (Debian 18.6-1.pgdg13+2)",
+  "database": "weaveos_b2_isolated_test",
+  "network": "none; private Unix socket; no exposed ports",
+  "checks": [
+    {"command": "go test ./internal/appschema -count=1 -v", "phase": "RED", "exitCode": 1, "log": "red-complete.txt", "entries": 38, "snapshot": "red-source.tar.gz"},
+    {"command": "go test ./internal/appschema -run TestSaveStatementTimeoutAndCancellationRollBack -count=1 -v", "phase": "RED", "exitCode": 1, "log": "red-timeout.txt", "snapshot": "red-timeout-source.tar.gz"},
+    {"command": "go test ./internal/appschema -count=1 -v", "phase": "initial GREEN", "exitCode": 0, "log": "green-first.txt", "entries": 41},
+    {"command": "go test ./internal/appschema -run TestSaveCommitServerErrorWithoutRollbackProofIsUnknown -count=1 -v", "phase": "regression RED", "exitCode": 1, "log": "red-commit-classification.txt", "snapshot": "red-commit-source.tar.gz"},
+    {"command": "go test -race ./internal/appschema -count=1 -v -coverprofile=/tmp/weaveos-b2-01a0fcbd/coverage.out", "phase": "final GREEN", "exitCode": 0, "log": "green-race.txt", "topLevelTests": 26, "subtests": 16, "coveragePercent": 87.7},
+    {"command": "go vet ./internal/appschema", "exitCode": 0, "log": "vet.txt"},
+    {"command": "go vet ./...", "exitCode": 0, "log": "full-vet.txt"},
+    {"command": "go build ./...", "exitCode": 0, "log": "build.txt"},
+    {"command": "node scripts/verify-repo.mjs", "exitCode": 0, "scope": "repository structure only"},
+    {"command": "node scripts/check-tasks.mjs", "exitCode": 0, "scope": "legacy V010 tasks only; does not validate this task"},
+    {"command": "validateTask(docs/tasks/V030-003.md)", "exitCode": 1, "knownBlocker": "[TASK] invalid id; root must coordinate V030 governance"},
+    {"command": "git diff --check", "exitCode": 0}
+  ],
+  "notRun": [
+    "whole existing PostgreSQL/Redis product race suite",
+    "full business field types and conversion matrix",
+    "real B1/B3 adapters and permission/confirmation/command protocol",
+    "production DDL privileges, shared migrations and backup/upgrade/restore",
+    "10k/100k/1m capacity measurements",
+    "remote final-head CI"
+  ]
+}

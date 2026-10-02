@@ -1,0 +1,87 @@
+=== RUN   TestPlanStableIDsAndMetadataRename
+--- PASS: TestPlanStableIDsAndMetadataRename (0.00s)
+=== RUN   TestPlanTypedAddChangeAndDrop
+--- PASS: TestPlanTypedAddChangeAndDrop (0.00s)
+=== RUN   TestPlanRejectsUnsafeIDsAndUnfrozenPhysicalTypes
+--- PASS: TestPlanRejectsUnsafeIDsAndUnfrozenPhysicalTypes (0.00s)
+=== RUN   TestSaveCreatesRealTypedTableOnlyAtSave
+--- PASS: TestSaveCreatesRealTypedTableOnlyAtSave (0.03s)
+=== RUN   TestSaveNewColumnDefaultsAndNull
+--- PASS: TestSaveNewColumnDefaultsAndNull (0.02s)
+=== RUN   TestSaveRequiredOldRowsNeedDefaultOrBackfill
+=== RUN   TestSaveRequiredOldRowsNeedDefaultOrBackfill/missing
+=== RUN   TestSaveRequiredOldRowsNeedDefaultOrBackfill/default
+=== RUN   TestSaveRequiredOldRowsNeedDefaultOrBackfill/backfill
+=== RUN   TestSaveRequiredOldRowsNeedDefaultOrBackfill/empty
+--- PASS: TestSaveRequiredOldRowsNeedDefaultOrBackfill (0.09s)
+    --- PASS: TestSaveRequiredOldRowsNeedDefaultOrBackfill/missing (0.02s)
+    --- PASS: TestSaveRequiredOldRowsNeedDefaultOrBackfill/default (0.03s)
+    --- PASS: TestSaveRequiredOldRowsNeedDefaultOrBackfill/backfill (0.02s)
+    --- PASS: TestSaveRequiredOldRowsNeedDefaultOrBackfill/empty (0.02s)
+=== RUN   TestSaveIncompatibleConversionRollsBackAllDDL
+--- PASS: TestSaveIncompatibleConversionRollsBackAllDDL (0.02s)
+=== RUN   TestSaveCompatiblePhysicalConversion
+--- PASS: TestSaveCompatiblePhysicalConversion (0.02s)
+=== RUN   TestSaveTypeChangeReplacesOldDefaultAtomically
+--- PASS: TestSaveTypeChangeReplacesOldDefaultAtomically (0.02s)
+=== RUN   TestSaveDefaultChangeOnlyAffectsFutureRecords
+--- PASS: TestSaveDefaultChangeOnlyAffectsFutureRecords (0.02s)
+=== RUN   TestSaveExistingNullsCannotBecomeRequiredAndPartialDDLRemainsRolledBack
+--- PASS: TestSaveExistingNullsCannotBecomeRequiredAndPartialDDLRemainsRolledBack (0.02s)
+=== RUN   TestSaveBackfillCannotOverwriteExistingOrUnknownFields
+=== RUN   TestSaveBackfillCannotOverwriteExistingOrUnknownFields/00000000-0000-4000-8000-000000000011
+=== RUN   TestSaveBackfillCannotOverwriteExistingOrUnknownFields/00000000-0000-4000-8000-000000000013
+--- PASS: TestSaveBackfillCannotOverwriteExistingOrUnknownFields (0.05s)
+    --- PASS: TestSaveBackfillCannotOverwriteExistingOrUnknownFields/00000000-0000-4000-8000-000000000011 (0.03s)
+    --- PASS: TestSaveBackfillCannotOverwriteExistingOrUnknownFields/00000000-0000-4000-8000-000000000013 (0.02s)
+=== RUN   TestSaveDependencyRegistrationCannotRaceDelete
+--- PASS: TestSaveDependencyRegistrationCannotRaceDelete (0.04s)
+=== RUN   TestSaveMetadataFailureRollsBackPhysicalAndMetadata
+--- PASS: TestSaveMetadataFailureRollsBackPhysicalAndMetadata (0.04s)
+=== RUN   TestSaveDeletionRequiresCurrentImpactConfirmation
+--- PASS: TestSaveDeletionRequiresCurrentImpactConfirmation (0.07s)
+=== RUN   TestSaveNullOnlyColumnNeedsNoDataDeletionConsent
+--- PASS: TestSaveNullOnlyColumnNeedsNoDataDeletionConsent (0.06s)
+=== RUN   TestSaveDependenciesBlockDeleteAndTypeChange
+=== RUN   TestSaveDependenciesBlockDeleteAndTypeChange/delete
+=== RUN   TestSaveDependenciesBlockDeleteAndTypeChange/type
+--- PASS: TestSaveDependenciesBlockDeleteAndTypeChange (0.10s)
+    --- PASS: TestSaveDependenciesBlockDeleteAndTypeChange/delete (0.04s)
+    --- PASS: TestSaveDependenciesBlockDeleteAndTypeChange/type (0.06s)
+=== RUN   TestSaveMissingOrFailedDependencyProtectionIsClosed
+=== RUN   TestSaveMissingOrFailedDependencyProtectionIsClosed/true
+=== RUN   TestSaveMissingOrFailedDependencyProtectionIsClosed/false
+--- PASS: TestSaveMissingOrFailedDependencyProtectionIsClosed (0.07s)
+    --- PASS: TestSaveMissingOrFailedDependencyProtectionIsClosed/true (0.03s)
+    --- PASS: TestSaveMissingOrFailedDependencyProtectionIsClosed/false (0.04s)
+=== RUN   TestSaveDisplayRenameKeepsDataAndPhysicalIdentifier
+--- PASS: TestSaveDisplayRenameKeepsDataAndPhysicalIdentifier (0.03s)
+=== RUN   TestSaveTypedDefaultIsDataNotSQL
+--- PASS: TestSaveTypedDefaultIsDataNotSQL (0.03s)
+=== RUN   TestSaveGuardDenialAndRevisionConflictDoNotMutate
+=== RUN   TestSaveGuardDenialAndRevisionConflictDoNotMutate/guard
+=== RUN   TestSaveGuardDenialAndRevisionConflictDoNotMutate/revision
+=== RUN   TestSaveGuardDenialAndRevisionConflictDoNotMutate/missing_guard
+=== RUN   TestSaveGuardDenialAndRevisionConflictDoNotMutate/limits
+--- PASS: TestSaveGuardDenialAndRevisionConflictDoNotMutate (0.12s)
+    --- PASS: TestSaveGuardDenialAndRevisionConflictDoNotMutate/guard (0.04s)
+    --- PASS: TestSaveGuardDenialAndRevisionConflictDoNotMutate/revision (0.03s)
+    --- PASS: TestSaveGuardDenialAndRevisionConflictDoNotMutate/missing_guard (0.03s)
+    --- PASS: TestSaveGuardDenialAndRevisionConflictDoNotMutate/limits (0.02s)
+=== RUN   TestSaveLockTimeoutRollsBack
+--- PASS: TestSaveLockTimeoutRollsBack (0.11s)
+=== RUN   TestSaveStatementTimeoutAndCancellationRollBack
+=== RUN   TestSaveStatementTimeoutAndCancellationRollBack/statement
+=== RUN   TestSaveStatementTimeoutAndCancellationRollBack/cancel
+--- PASS: TestSaveStatementTimeoutAndCancellationRollBack (0.10s)
+    --- PASS: TestSaveStatementTimeoutAndCancellationRollBack/statement (0.06s)
+    --- PASS: TestSaveStatementTimeoutAndCancellationRollBack/cancel (0.04s)
+=== RUN   TestSaveConcurrentRevisionCAS
+--- PASS: TestSaveConcurrentRevisionCAS (0.06s)
+=== RUN   TestSaveCommitServerErrorWithoutRollbackProofIsUnknown
+--- PASS: TestSaveCommitServerErrorWithoutRollbackProofIsUnknown (0.05s)
+=== RUN   TestSaveCommitUncertaintyDoesNotRetryOrReportRollback
+--- PASS: TestSaveCommitUncertaintyDoesNotRetryOrReportRollback (0.05s)
+PASS
+coverage: 87.7% of statements
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appschema	2.237s	coverage: 87.7% of statements
