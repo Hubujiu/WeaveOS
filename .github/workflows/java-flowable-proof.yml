@@ -1,0 +1,46 @@
+name: Java Flowable proof
+on:
+  pull_request:
+    paths:
+      - prototypes/flowable-local-tx/**
+      - .github/workflows/java-flowable-proof.yml
+      - docs/evidence/V030-004/**
+      - docs/tasks/V030-004.md
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: java-flowable-proof-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  java-flowable-proof:
+    name: Java Flowable proof (15 required tests)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify report and exit-code rejection gates
+        run: |
+          set -euo pipefail
+          mkdir -p prototypes/flowable-local-tx/.work/java-ci
+          python3 prototypes/flowable-local-tx/ci_tests.py 2>&1 | tee prototypes/flowable-local-tx/.work/java-ci/gate-tests.txt
+      - name: Prefetch using the existing pinned Maven and Java image
+        run: |
+          set -euo pipefail
+          prototypes/flowable-local-tx/prepare-build.sh 2>&1 | tee prototypes/flowable-local-tx/.work/java-ci/prepare.txt
+          JAVA_HOME="$PWD/prototypes/flowable-local-tx/.work/toolchain/jdk" prototypes/flowable-local-tx/.work/toolchain/maven/bin/mvn --version > prototypes/flowable-local-tx/.work/java-ci/toolchain.txt
+      - name: Run all 15 tests against dedicated temporary PostgreSQL
+        env:
+          B3_CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          B3_CI_CHECKOUT_SHA: ${{ github.sha }}
+        run: python3 prototypes/flowable-local-tx/ci_runner.py
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: java-flowable-proof-${{ github.sha }}-${{ github.run_attempt }}
+          path: prototypes/flowable-local-tx/.work/java-ci/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
