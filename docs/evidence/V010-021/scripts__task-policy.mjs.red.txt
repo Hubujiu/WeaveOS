@@ -1,17 +1,5 @@
 // Offline validation only. Remote reads and Git operations belong to the caller.
-const idPattern = /^(?:V010|V030)-[0-9]{3}$/;
-const branchPattern = /^task\/((?:V010|V030)-[0-9]{3})-[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const filenamePattern = /^((?:V010|V030)-[0-9]{3})\.md$/;
-export function isTaskID(value) {
-  return typeof value === 'string' && value.length === 8 && idPattern.test(value);
-}
-function exactIdentity(pattern, value) {
-  if (typeof value !== 'string') return null;
-  const match = pattern.exec(value);
-  return match && match[0] === value ? match[1] : null;
-}
-export function taskIDFromBranch(value) { return exactIdentity(branchPattern, value); }
-export function taskIDFromFilename(value) { return exactIdentity(filenamePattern, value); }
+const idPattern = /^V010-\d{3}$/;
 const nonempty = value => typeof value === 'string' && value.trim().length > 0;
 export function parseTask(text) {
   if (typeof text !== 'string') throw new Error('task document must be text');
@@ -25,14 +13,13 @@ export function validateTask(text) {
   const errors = [];
   let task;
   try { task = parseTask(text); } catch (error) { return [`[TASK] ${error.message}`]; }
-  const validID = isTaskID(task.id);
-  if (!validID) errors.push('[TASK] invalid id');
+  if (!idPattern.test(task.id ?? '')) errors.push('[TASK] invalid id');
   for (const key of ['title', 'owner']) if (!nonempty(task[key])) errors.push(`[TASK] missing ${key}`);
-  if (!validID || taskIDFromBranch(task.branch) !== task.id) errors.push('[TASK] invalid branch');
-  if (!validID || task.worktree !== `../WeaveOS-worktrees/${task.id}`) errors.push('[TASK] invalid worktree');
+  if (typeof task.branch !== 'string' || !new RegExp(`^task/${task.id}-[a-z0-9]+(?:-[a-z0-9]+)*$`).test(task.branch)) errors.push('[TASK] invalid branch');
+  if (task.worktree !== `../WeaveOS-worktrees/${task.id}`) errors.push('[TASK] invalid worktree');
   if (task.pr !== null && (!Number.isInteger(task.pr) || task.pr < 1)) errors.push('[TASK] invalid pr');
   if (!['planned', 'in_progress', 'blocked', 'ready'].includes(task.deliveryState)) errors.push('[TASK] invalid deliveryState; acceptance is a remote fact');
-  if (!Array.isArray(task.dependsOn) || task.dependsOn.some(id => !isTaskID(id) || id === task.id) || new Set(task.dependsOn).size !== task.dependsOn.length) errors.push('[TASK] invalid dependsOn');
+  if (!Array.isArray(task.dependsOn) || task.dependsOn.some(id => !idPattern.test(id) || id === task.id) || new Set(task.dependsOn).size !== task.dependsOn.length) errors.push('[TASK] invalid dependsOn');
   if (!Array.isArray(task.allowedPaths) || !task.allowedPaths.length || task.allowedPaths.some(path => !nonempty(path) || path.startsWith('/') || path.includes('..') || path.includes('\\') || path.includes(':'))) errors.push('[TASK] invalid allowedPaths');
   for (const section of ['Scope', 'Sources', 'Acceptance', 'Progress', 'Handoff']) if (!text.includes(`\n## ${section}\n`)) errors.push(`[TASK] missing ${section}`);
   const acceptance = text.match(/\n## Acceptance\n([\s\S]*?)(?=\n## |$)/)?.[1] ?? '';

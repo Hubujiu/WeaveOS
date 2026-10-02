@@ -1,8 +1,9 @@
 ## 任务与范围
 
-任务文档：docs/tasks/V010-NNN.md
-独立分支：task/V010-NNN-topic
-工作树：../WeaveOS-worktrees/V010-NNN
+任务文档：docs/tasks/<ID>.md（当前ID支持V010-NNN或V030-NNN，NNN为三位数字）
+独立分支：task/<ID>-topic
+工作树：../WeaveOS-worktrees/<ID>
+三个路径与任务元数据使用同一个完整ID及版本，不重编号历史任务。
 本次完成 / 待完成 / 不做什么：
 
 ## 需求来源
@@ -15,7 +16,7 @@
 实现前测试版本与RED真实命令/退出码/失败原因：
 GREEN实现、回归、构建/契约/存储/E2E结果：
 测试预期是否改动；独立需求依据：
-squash后仍可恢复的证据路径：docs/evidence/V010-NNN/
+squash后仍可恢复的证据路径：docs/evidence/<ID>/
 
 ## 合并与验收
 
