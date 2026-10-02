@@ -1,0 +1,289 @@
+✖ B0: V010 and V030 metadata and mixed approved dependencies remain valid (2.698448ms)
+✔ B0: malformed/injected ID is rejected without throwing #0 (0.334401ms)
+✔ B0: malformed/injected ID is rejected without throwing #1 (0.18007ms)
+✔ B0: malformed/injected ID is rejected without throwing #2 (0.297086ms)
+✔ B0: malformed/injected ID is rejected without throwing #3 (0.148623ms)
+✔ B0: malformed/injected ID is rejected without throwing #4 (0.124487ms)
+✖ B0: malformed/injected ID is rejected without throwing #5 (0.209304ms)
+✔ B0: malformed/injected ID is rejected without throwing #6 (0.165669ms)
+✔ B0: malformed/injected ID is rejected without throwing #7 (0.183976ms)
+✔ B0: malformed/injected ID is rejected without throwing #8 (0.211978ms)
+✔ B0: malformed/injected ID is rejected without throwing #9 (0.133821ms)
+✔ B0: malformed/injected ID is rejected without throwing #10 (0.103165ms)
+✔ B0: malformed/injected ID is rejected without throwing #11 (0.132198ms)
+✔ B0: malformed/injected ID is rejected without throwing #12 (0.077105ms)
+✔ B0: malformed/injected ID is rejected without throwing #13 (0.107551ms)
+✔ B0: malformed/injected ID is rejected without throwing #14 (0.075183ms)
+✔ B0: malformed/injected ID is rejected without throwing #15 (0.071838ms)
+✔ B0: malformed/injected ID is rejected without throwing #16 (0.067161ms)
+✔ B0: malformed/injected ID is rejected without throwing #17 (0.070336ms)
+✔ B0: malformed/injected ID is rejected without throwing #18 (0.114042ms)
+✔ B0: malformed/injected ID is rejected without throwing #19 (0.107671ms)
+✔ B0: malformed/injected ID is rejected without throwing #20 (0.080481ms)
+✔ B0: malformed/injected ID is rejected without throwing #21 (0.062674ms)
+✔ B0: malformed/injected ID is rejected without throwing #22 (0.058978ms)
+✔ B0: same task number in another version cannot satisfy branch/worktree identity (0.209133ms)
+✔ B0: V030 retains unsafe-path, incomplete, no-PR and premature-acceptance guards (0.196905ms)
+✖ B0: complete matching V030 permits the same acceptance/cleanup decisions as V010 (0.796585ms)
+✔ B0: V030 acceptance and cleanup reject offline (0.188763ms)
+✔ B0: V030 acceptance and cleanup reject unfinished (0.097376ms)
+✔ B0: V030 acceptance and cleanup reject other version (0.084837ms)
+✔ B0: V030 acceptance and cleanup reject unmerged (0.128022ms)
+✔ B0: V030 acceptance and cleanup reject wrong base (0.128182ms)
+✔ B0: V030 acceptance and cleanup reject wrong repository (0.143095ms)
+✔ B0: V030 acceptance and cleanup reject wrong version PR (0.132649ms)
+✔ B0: V030 cleanup still rejects dirty, changed-tip and unverified squash states (0.24001ms)
+✖ B0: task discovery validates V030 documents instead of silently skipping them (30.657697ms)
+✖ B0: discovered same-number metadata from another version is rejected (29.450126ms)
+✖ B0: malformed and unsupported version-task filenames cannot disappear from discovery (32.748043ms)
+✖ B0: real Git diff verifies a valid V030 PR and an unchanged V010 PR rule (111.230857ms)
+✖ B0: V030 PR scope rejects an unrelated changed path (44.631237ms)
+✔ B0: a V010 PR cannot consume a same-number V030 task document (50.095639ms)
+✔ B0: V030 branch syntax remains exact and cannot contain malformed slug or injection (189.530552ms)
+✖ B0: V030 CLI passes ID parsing then uses exact remote task path in start dry-run (28.115436ms)
+✔ B0: malformed/injected CLI IDs stop before any Git/gh execution (483.188877ms)
+✖ B0: remote helper recognizes V030 while retaining exact-head conditional deletion (57.800735ms)
+✔ B0: remote helper never deletes an unmerged or other-version task (202.238482ms)
+ℹ tests 46
+ℹ suites 0
+ℹ pass 36
+ℹ fail 10
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1351.031307
+
+✖ failing tests:
+
+test at tests/foundation/task-versions.test.mjs:32:1
+✖ B0: V010 and V030 metadata and mixed approved dependencies remain valid (2.698448ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   '[TASK] invalid id'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-021/tests/foundation/task-versions.test.mjs:33:53)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ '[TASK] invalid id' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/task-versions.test.mjs:40:41
+✖ B0: malformed/injected ID is rejected without throwing #5 (0.209304ms)
+  AssertionError [ERR_ASSERTION]: Got unwanted exception.
+  Actual message: "Cannot convert object to primitive value"
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-021/tests/foundation/task-versions.test.mjs:43:10)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: TypeError: Cannot convert object to primitive value
+        at RegExp.test (<anonymous>)
+        at validateTask (file:///workspace/WeaveOS-worktrees/V010-021/scripts/task-policy.mjs:16:18)
+        at file:///workspace/WeaveOS-worktrees/V010-021/tests/foundation/task-versions.test.mjs:43:40
+        at getActual (node:assert:611:5)
+        at strict.doesNotThrow (node:assert:779:32)
+        at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-021/tests/foundation/task-versions.test.mjs:43:10)
+        at Test.runInAsyncScope (node:async_hooks:228:14)
+        at Test.run (node:internal/test_runner/test:1118:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+        at Test.postRun (node:internal/test_runner/test:1247:19),
+    expected: undefined,
+    operator: 'doesNotThrow',
+    diff: 'simple'
+  }
+
+test at tests/foundation/task-versions.test.mjs:64:1
+✖ B0: complete matching V030 permits the same acceptance/cleanup decisions as V010 (0.796585ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   accepted: false,
+  +   reasons: [
+  +     '[DOCUMENT] matching completed remote task required'
+  +   ]
+  -   accepted: true,
+  -   reasons: []
+    }
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-021/tests/foundation/task-versions.test.mjs:66:12)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { accepted: false, reasons: [ '[DOCUMENT] matching completed remote task required' ] },
+    expected: { accepted: true, reasons: [] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/task-versions.test.mjs:106:1
+✖ B0: task discovery validates V030 documents instead of silently skipping them (30.657697ms)
+  AssertionError [ERR_ASSERTION]: Task documents and current PR scope are structurally valid.
+  
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-021/tests/foundation/task-versions.test.mjs:110:10)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/task-versions.test.mjs:113:1
+✖ B0: discovered same-number metadata from another version is rejected (29.450126ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /filename\/identity mismatch/. Input:
+  
+  ''
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-021/tests/foundation/task-versions.test.mjs:116:10)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: /filename\/identity mismatch/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests/foundation/task-versions.test.mjs:118:1
+✖ B0: malformed and unsupported version-task filenames cannot disappear from discovery (32.748043ms)
+  AssertionError [ERR_ASSERTION]: V030-99.md: Task documents and current PR scope are structurally valid.
+  
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-021/tests/foundation/task-versions.test.mjs:121:42)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/task-versions.test.mjs:140:1
+✖ B0: real Git diff verifies a valid V030 PR and an unchanged V010 PR rule (111.230857ms)
+  AssertionError [ERR_ASSERTION]: PR must use task/V010-NNN-topic branch
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-021/tests/foundation/task-versions.test.mjs:141:92)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/task-versions.test.mjs:143:1
+✖ B0: V030 PR scope rejects an unrelated changed path (44.631237ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Outside task scope: outside\/change\.txt/. Input:
+  
+  'PR must use task/V010-NNN-topic branch\n'
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-021/tests/foundation/task-versions.test.mjs:145:42)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'PR must use task/V010-NNN-topic branch\n',
+    expected: /Outside task scope: outside\/change\.txt/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests/foundation/task-versions.test.mjs:190:1
+✖ B0: V030 CLI passes ID parsing then uses exact remote task path in start dry-run (28.115436ms)
+  AssertionError [ERR_ASSERTION]: [TASK BLOCKED] Usage: node scripts/task.mjs start|status|cleanup V010-NNN [--apply]
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-021/tests/foundation/task-versions.test.mjs:193:10)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/task-versions.test.mjs:206:1
+✖ B0: remote helper recognizes V030 while retaining exact-head conditional deletion (57.800735ms)
+  AssertionError [ERR_ASSERTION]: [REMOTE CLEANUP BLOCKED] Only merged same-repository task PRs to main are eligible
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V010-021/tests/foundation/task-versions.test.mjs:208:10)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
