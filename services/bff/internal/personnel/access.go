@@ -124,3 +124,9 @@ func (a *Application) AuthorizeWrite(ctx context.Context, tx pgx.Tx, p session.P
 }
 
 func parseVersion(value string) int64 { n, _ := strconv.ParseInt(value, 10, 64); return n }
+
+// AccessForWrite returns live, dependency-protected access in the caller's
+// transaction. The caller must acquire PR21 query revision locks first.
+func (a *Application) AccessForWrite(ctx context.Context, tx pgx.Tx, p session.Principal) (Access, error) {
+	return Access{}, ErrNotImplemented
+}
