@@ -131,7 +131,7 @@ export function FormDesigner({appId,viewId,onDirtyChange,onBack}:FormDesignerPro
         ?{...entry,children:[...entry.children,item]}:entry):[...removed,item]};});
     setGroup(target);setNotice('');
   };
-  const addKind=useCallback((kind:PaletteKind)=>{
+  const addKind=useCallback((kind:PaletteKind,dropTarget?:UUID|null)=>{
     if(!editable)return;
     const systemCode=kind==='system_field'?base?.systemFields.find(item=>!systemCodesIn(draft?.layout??[]).includes(item.id))?.id:undefined;
     if(kind==='system_field'&&!systemCode){setError('所有系统字段都已添加到此视图');return;}
@@ -140,20 +140,31 @@ export function FormDesigner({appId,viewId,onDirtyChange,onBack}:FormDesignerPro
       kind==='group'?{id,kind:'group',title:'新建分组',span:12,children:[]}:
       kind==='divider'?{id,kind:'divider'}:kind==='description'?{id,kind:'description',text:'说明文字'}:
       {id,kind:'system_field',fieldId:systemCode!,span:12};
-    setDraft(previous=>previous?{...previous,fields:created?[...previous.fields,created]:previous.fields,
-      layout:group?mapLayout(previous.layout,item=>item.id===group&&item.kind==='group'
-        ?{...item,children:[...item.children,next]}:item):[...previous.layout,next]}:previous);
+    setDraft(previous=>{
+      if(!previous)return previous;
+      const target=dropTarget===undefined?group:dropTarget;
+      const parent=target?findNode(previous.layout,target):null;
+      const layout=parent?.kind==='group'?mapLayout(previous.layout,item=>item.id===target&&item.kind==='group'
+        ?{...item,children:[...item.children,next]}:item):
+        target&&parent?insertAfter(previous.layout,target,next):[...previous.layout,next];
+      return {...previous,fields:created?[...previous.fields,created]:previous.fields,layout};
+    });
     setSelected(created?.id??id);setNotice('');
   },[editable,group,base,draft]);
   const drop=(event:DragEvent<HTMLElement>,target?:UUID)=>{
     event.preventDefault();if(!editable)return;
     try{const value=JSON.parse(event.dataTransfer.getData('application/x-weaveos-form')) as
       {kind:'palette';value:PaletteKind}|{kind:'layout';value:UUID};
-      if(value.kind==='palette'){addKind(value.value);return;}
+      if(value.kind==='palette'){addKind(value.value,target??null);return;}
       if(value.value===target)return;
       setDraft(previous=>{if(!previous)return previous;const item=findNode(previous.layout,value.value);
         if(!item)return previous;const removed=removeNode(previous.layout,item.id);
-        return {...previous,layout:target?insertAfter(removed,target,item):[...removed,item]};});
+        if(target&&item.kind==='group'&&contains(item.children,target))return previous;
+        const parent=target?findNode(removed,target):null;
+        const layout=parent?.kind==='group'?mapLayout(removed,entry=>entry.id===target&&entry.kind==='group'
+          ?{...entry,children:[...entry.children,item]}:entry):
+          target&&parent?insertAfter(removed,target,item):[...removed,item];
+        return {...previous,layout};});
     }catch{ /* unrelated browser drag */ }
   };
   const accepted=(value:{definition:Definition})=>{setBase(value.definition);setDraft(fromDefinition(value.definition));
@@ -386,7 +397,12 @@ function FieldConfig({field,disabled,onPatch}:{field:FieldInput;disabled:boolean
       <input aria-label={`选项 ${option.id}`} value={option.label} disabled={disabled}
         onChange={event=>onPatch({config:{options:field.config.options.map(item=>item.id===option.id?{...item,label:event.target.value}:item)}} as Partial<FieldInput>)}/>
       <button type="button" aria-label={`删除选项 ${option.label}`} disabled={disabled}
-        onClick={()=>onPatch({config:{options:field.config.options.filter(item=>item.id!==option.id)}} as Partial<FieldInput>)}>×</button></div>)}
+        onClick={()=>{const remaining=field.config.options.filter(item=>item.id!==option.id);
+          const currentDefault=field.default;
+          const nextDefault=Array.isArray(currentDefault)?currentDefault.filter(id=>id!==option.id):
+            currentDefault===option.id?null:currentDefault;
+          onPatch({config:{options:remaining},default:nextDefault} as Partial<FieldInput>);
+        }}>×</button></div>)}
     <button type="button" disabled={disabled} onClick={()=>onPatch({config:{options:[...field.config.options,{id:uuid(),label:`选项 ${field.config.options.length+1}`}]}} as Partial<FieldInput>)}>添加选项</button>
     <small>选项 ID 改名不变，删除已使用选项需预检并明确映射。</small>
     {field.kind==='single_select'?<label>默认选项<select value={field.default??''} disabled={disabled}
@@ -398,7 +414,12 @@ function FieldConfig({field,disabled,onPatch}:{field:FieldInput;disabled:boolean
   </>;
   if(field.kind==='boolean')return <label className="forms-checkbox"><input type="checkbox" checked={field.default===true} disabled={disabled}
     onChange={event=>onPatch({default:event.target.checked} as Partial<FieldInput>)}/>默认勾选</label>;
-  if(field.kind==='member'||field.kind==='department')return <p className="forms-muted">默认引用需服务端活跃来源校验；当前未选择默认值。</p>;
+  if(field.kind==='member'||field.kind==='department')return <>
+    {field.default&&<><label>当前默认引用 ID<input aria-label="当前默认引用 ID" value={field.default} readOnly/></label>
+      <button type="button" disabled={disabled} onClick={()=>onPatch({default:null} as Partial<FieldInput>)}>清除默认引用</button></>}
+    <p className="forms-muted">{field.default?'保存时服务端会验证默认引用仍可用。':
+      '当前无默认引用；选择新引用需要有权限的来源接口。'}</p>
+  </>;
   return <label>默认值<input value={field.default??''} disabled={disabled}
     onChange={event=>onPatch({default:event.target.value||null} as Partial<FieldInput>)}/></label>;
 }

@@ -472,6 +472,9 @@ test('existing-table form source creates another view without creating a table',
   await page.getByLabel('现有逻辑表',{exact:true}).selectOption(tableId);
   await page.getByRole('button',{name:'创建表单'}).click();
   await expect(page.getByRole('treeitem',{name:'第二视图'})).toBeVisible();
+  await page.getByRole('treeitem',{name:'第二视图'}).getByRole('button').first().click();
+  await page.getByRole('button',{name:'编辑表单名称与位置'}).click();
+  await page.screenshot({path:test.info().outputPath('form-edit.png'),fullPage:true});
   const writes=state.seen.filter(item=>item.method==='POST');
   expect(writes).toHaveLength(1);
   expect(writes[0].path).toBe(`/api/v1/applications/${appId}/forms`);
@@ -488,11 +491,13 @@ test('directory rename and same-app move use current structure CAS while descend
   await page.getByRole('treeitem',{name:'子目录',exact:true}).getByRole('button').first().click();
   const rename=page.getByRole('button',{name:'重命名目录'});
   await rename.focus();await page.keyboard.press('Enter');
+  await page.screenshot({path:test.info().outputPath('directory-rename.png'),fullPage:true});
   await page.getByLabel('目录名称').fill('已改名');
   await page.getByRole('button',{name:'保存变更'}).click();
   await expect(page.getByRole('treeitem',{name:'已改名',exact:true})).toBeVisible();
   await page.getByRole('treeitem',{name:'父目录',exact:true}).getByRole('button').first().click();
   await page.getByRole('button',{name:'移动目录',exact:true}).click();
+  await page.screenshot({path:test.info().outputPath('directory-move.png'),fullPage:true});
   await expect(page.getByLabel('所属目录').getByRole('option',{name:'已改名'})).toHaveCount(0);
   await page.getByRole('button',{name:'取消'}).click();
   await page.getByRole('treeitem',{name:'已改名',exact:true}).getByRole('button').first().click();

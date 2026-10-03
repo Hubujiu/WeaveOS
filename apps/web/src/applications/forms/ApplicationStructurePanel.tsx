@@ -17,31 +17,39 @@ export function ApplicationStructurePanel({appId,onOpenForm,onDirtyChange}:Appli
   const [dialog,setDialog]=useState<Dialog>(null),[name,setName]=useState(''),[parentId,setParentId]=useState<UUID|null>(null);
   const [source,setSource]=useState<FormSource>({kind:'new_table'}),[error,setError]=useState(''),[notice,setNotice]=useState('');
   const [busy,setBusy]=useState(false),[unconfirmed,setUnconfirmed]=useState(false),[pending,setPending]=useState<Pending|null>(null);
-  const [reload,setReload]=useState(0),request=useRef(0);
+  const [conflict,setConflict]=useState(false),[permissionRevoked,setPermissionRevoked]=useState(false);
+  const [reload,setReload]=useState(0),request=useRef(0),scope=useRef(appId);
+  scope.current=appId;
   useEffect(()=>{const current=++request.current,controller=new AbortController();setStructure(null);setError('');
+    setConflict(false);setPermissionRevoked(false);setSelected(null);setDialog(null);setName('');
+    setNotice('');setPending(null);setBusy(false);setUnconfirmed(false);
     void formApi.structure(appId,controller.signal).then(value=>{if(current===request.current)setStructure(value);})
       .catch(problem=>{if(!controller.signal.aborted&&current===request.current)setError(formErrorText(problem));});
     return()=>{controller.abort();request.current++;};},[appId,reload]);
   useEffect(()=>onDirtyChange?.(!!dialog&&(!!name.trim()||unconfirmed)),[dialog,name,unconfirmed,onDirtyChange]);
   const folder=structure?.directories.find(item=>selected?.kind==='directory'&&item.id===selected.id);
   const form=structure?.forms.find(item=>selected?.kind==='form'&&item.id===selected.id);
-  const canEdit=!!structure?.capabilities.canManageDefinition;
+  const canEdit=!!structure?.capabilities.canManageDefinition&&!permissionRevoked;
   const dirs=[...(structure?.directories??[])].sort((a,b)=>a.position-b.position);
   const open=(kind:Exclude<Dialog,null>,item?:{id:UUID;name:string;parentId?:UUID|null})=>{
-    if(!canEdit)return;setDialog(kind);setError('');setNotice('');setUnconfirmed(false);setPending(null);
+    if(!canEdit)return;setDialog(kind);setError('');setNotice('');setUnconfirmed(false);setPending(null);setConflict(false);
     setName(kind==='renameDirectory'||kind==='moveDirectory'||kind==='editForm'?item?.name??'':'');
     setParentId(kind==='directory'?item?.id??null:item?.parentId??null);setSource({kind:'new_table'});
   };
-  const refresh=()=>formApi.structure(appId).then(setStructure);
-  const apply=async(work:Pending)=>{setPending(work);setBusy(true);setError('');
-    try{await work.run();setPending(null);setUnconfirmed(false);setDialog(null);setName('');setNotice('已保存');
-      try{await refresh();}catch(problem){setError(`更改已确认，目录刷新失败：${formErrorText(problem)}`);}}
-    catch(problem){if(problem instanceof FormApiError&&(problem.status===0||problem.code==='APPLICATION_OPERATION_UNCONFIRMED')){
+  const refresh=()=>formApi.structure(appId).then(value=>{if(scope.current===appId)setStructure(value);});
+  const apply=async(work:Pending)=>{const current=scope.current;setPending(work);setBusy(true);setError('');
+    try{await work.run();if(scope.current!==current)return;
+      setPending(null);setUnconfirmed(false);setConflict(false);setDialog(null);setName('');setNotice('已保存');
+      try{await refresh();}catch(problem){if(scope.current===current)setError(`更改已确认，目录刷新失败：${formErrorText(problem)}`);}}
+    catch(problem){if(scope.current!==current)return;
+      if(problem instanceof FormApiError&&(problem.status===0||problem.code==='APPLICATION_OPERATION_UNCONFIRMED')){
       setUnconfirmed(true);setError('网络连接中断，操作结果暂未确认；请查询原操作或按原请求重试');
-    }else setError(formErrorText(problem));}
-    finally{setBusy(false);}
+      }else{setError(formErrorText(problem));
+        if(problem instanceof FormApiError&&problem.status===403)setPermissionRevoked(true);
+        if(problem instanceof FormApiError&&problem.code==='APPLICATION_STRUCTURE_CONFLICT')setConflict(true);}}
+    finally{if(scope.current===current)setBusy(false);}
   };
-  const submit=async()=>{if(!structure||!dialog||busy||unconfirmed)return;const clean=name.trim();
+  const submit=async()=>{if(!structure||!dialog||!canEdit||busy||unconfirmed||conflict)return;const clean=name.trim();
     if(!clean&&dialog!=='moveDirectory'){setError('请输入名称');return;}
     const operationId=uuid(),expectedStructureVersion=structure.structureVersion;
     let work:Pending;
@@ -67,14 +75,17 @@ export function ApplicationStructurePanel({appId,onOpenForm,onDirtyChange}:Appli
     }
     await apply(work);
   };
-  const check=async()=>{if(!pending)return;setBusy(true);setError('');
-    try{const value=await formApi.operation(pending.operationId);if(value.status==='confirmed'){
+  const check=async()=>{if(!pending)return;const current=scope.current;setBusy(true);setError('');
+    try{const value=await formApi.operation(pending.operationId);if(scope.current!==current)return;
+      if(value.status==='confirmed'){
       setPending(null);setUnconfirmed(false);setDialog(null);setName('');setNotice('原操作已确认');
-      try{await refresh();}catch(problem){setError(`原操作已确认，目录刷新失败：${formErrorText(problem)}`);}return;}
+      try{await refresh();}catch(problem){if(scope.current===current)setError(`原操作已确认，目录刷新失败：${formErrorText(problem)}`);}return;}
       setError('原操作状态暂不能确认，请保留当前输入');
-    }catch(problem){setError(problem instanceof FormApiError&&problem.status===404?
+    }catch(problem){if(scope.current!==current)return;
+      if(problem instanceof FormApiError&&problem.status===403)setPermissionRevoked(true);
+      setError(problem instanceof FormApiError&&problem.status===404?
       '暂未查到原操作；这不能证明操作已回滚，可按原请求重试':formErrorText(problem));}
-    finally{setBusy(false);}
+    finally{if(scope.current===current)setBusy(false);}
   };
   const tree=(parent:UUID|null,seen=new Set<UUID>()):React.ReactNode=>{
     if(!structure)return null;
@@ -97,9 +108,12 @@ export function ApplicationStructurePanel({appId,onOpenForm,onDirtyChange}:Appli
   return <section className="forms-module" aria-label="目录与视图管理">
     <div className="forms-structure-head"><div><strong>应用目录与视图</strong><p className="forms-muted">管理目录、逻辑表和表单视图</p></div>
       <div className="forms-structure-actions"><button type="button" disabled={!canEdit} onClick={()=>open('directory',folder)}>新建目录</button>
-      <button type="button" className="forms-primary" disabled={!canEdit} onClick={()=>open('form',form??folder)}>新建表单</button></div></div>
+      <button type="button" className="forms-primary" disabled={!canEdit} onClick={()=>open('form',form?{...form,parentId:form.directoryId}:
+        folder?{...folder,parentId:folder.id}:undefined)}>新建表单</button></div></div>
     {error&&!dialog&&<p className="forms-alert" role="alert">{error}</p>}{notice&&<p className="forms-success" role="status">{notice}</p>}
-    <div className="forms-structure-layout"><nav className="forms-structure-tree">{tree(null)}</nav>
+    <div className="forms-structure-layout"><nav className="forms-structure-tree">{tree(null)}
+      {!structure.directories.length&&!structure.forms.length&&!structure.tables.length&&
+        <p className="forms-muted" role="status">暂无目录或表单。可用上方按钮创建第一个项目。</p>}</nav>
       <section className="forms-structure-detail" aria-label="目录与视图详情">
       {folder?<><h2>📁 {folder.name}</h2><p>位置 {folder.position+1}</p>{canEdit&&<>
         <button type="button" onClick={()=>open('renameDirectory',folder)}>重命名目录</button>
@@ -124,11 +138,14 @@ export function ApplicationStructurePanel({appId,onOpenForm,onDirtyChange}:Appli
           onChange={event=>setSource({kind:'existing_table',tableId:event.target.value})}>
           {structure.tables.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select>}</fieldset>}
       {error&&<p className="forms-alert" role="alert">{error}</p>}
+      {conflict&&<div className="forms-dialog-actions"><button type="button" onClick={()=>{
+        setDialog(null);setName('');setSelected(null);setReload(value=>value+1);
+      }}>放弃输入并加载最新版</button></div>}
       {unconfirmed&&pending?<div className="forms-dialog-actions">
         <button type="button" disabled={busy} onClick={()=>void check()}>查询原操作结果</button>
         <button type="button" disabled={busy} onClick={()=>void apply(pending)}>按原请求重试</button></div>:
       <div className="forms-dialog-actions"><button type="button" disabled={busy} onClick={()=>setDialog(null)}>取消</button>
-        <button type="button" className="forms-primary" disabled={busy} onClick={()=>void submit()}>{dialog==='directory'?'创建目录':dialog==='form'?'创建表单':'保存变更'}</button></div>}
+        <button type="button" className="forms-primary" disabled={busy||!canEdit||conflict} onClick={()=>void submit()}>{dialog==='directory'?'创建目录':dialog==='form'?'创建表单':'保存变更'}</button></div>}
       </FormsDialog>}
   </section>;
 }
