@@ -1,0 +1,91 @@
+✔ frozen record draft runtime and history methods are exact and actor guarded (0.926781ms)
+✔ frozen record payloads and confirmations contain precise allowed values (0.834752ms)
+✔ runtime and history expose only frozen safe DTO and record errors (0.23808ms)
+✔ frozen application definition methods expose actual complete DTOs (2.215279ms)
+✔ frozen structure errors have stable status and recoverability (0.189757ms)
+✔ appendix A exposes minimal owner-only member candidates and actual group labels (0.29116ms)
+✔ appendix B marks optional negative actor constraint on every application method (0.429429ms)
+✖ all shared OpenAPI references resolve (5.30508ms)
+✔ appendix A.5 exposes minimal real department candidates (0.21126ms)
+✔ API-CI-01: validator version is pinned in the frozen workspace lock (1.355529ms)
+✔ API-CI-02: PR CI executes contract tests and 3.2.1 lint (0.211409ms)
+✔ API-01: contract is OpenAPI 3.2.1 with the five authentication routes (1.413748ms)
+✔ API-02: public writes and protected Cookie security match ADR-001/002 (1.043818ms)
+✔ API-10: login delivers separate host cookies and protected writes require CSRF header (0.477222ms)
+✔ API-03: creation, current session, logout and reset have precise statuses (0.219382ms)
+✔ API-04: JSON envelope has exact required keys and no arbitrary top-level data (0.191019ms)
+✔ API-05: registration and login require account/password; registration requires invitation (0.263529ms)
+✔ API-06: published error table preserves accepted ADR mapping (0.550552ms)
+✔ API-07: account rule preserves case and rejects internal ordinary spaces after trimming (0.181604ms)
+✖ API-08: every declared response carries a server-issued request ID (1.831269ms)
+✔ API-09: Alice and alice are distinct registrations and login lookups (0.306223ms)
+✔ Q13: registration schema accepts only printable ASCII with four classes (1.324482ms)
+✔ approved account length applies after ordinary-space trimming, not to raw input (0.354006ms)
+✔ Q25 definition response accepts optional explicit empty templateIds and integer version (31.088898ms)
+✔ Q25 response validator resolves pagination query without ignoring declared constraints (0.875704ms)
+✔ Q25 invalid definition response integer, UUID and length fail independently (6.652838ms)
+✔ Q25 template DTO optional relation array is registered in the executable contract (3.547062ms)
+✔ Q25 all personnel operations are typed, Cookie protected and fail closed (0.920862ms)
+✔ Q25 page pagination exception is explicit, bounded, and filtered server-side (0.172281ms)
+✔ Q25 versions and explicit sets cannot mutate Root or directory ownership (0.76751ms)
+✔ Q25 stable conflict/missing errors and invitation qualification are registered (0.231179ms)
+✔ Q36 response oracle enforces draft capacity and payload bounds instead of ignoring extensions (40.610713ms)
+✔ Q36 query responses retain paging and publish a session-owned opaque baseline (2.077551ms)
+✔ Q36 both query views declare grouped AND/OR, field types and global bounds (0.453195ms)
+✔ Q36 query changes, expiry and busy are distinguishable without repurposing old errors (0.205691ms)
+✔ Q36 object checks remain and an exact draft version can be acknowledged on submission (0.479595ms)
+✔ Q36 persistent personal drafts have explicit limits, conflict protection and no expiry (0.526887ms)
+✔ Q36 approved POST searches carry object filters with route-local raw-body bounds and CSRF (1.44861ms)
+✔ Q36 literal POST search response is not mistaken for a memberId route (27.586524ms)
+✔ Q36 legacy GET has no complex filter/sort; draft raw wrapper budget exceeds canonical payload (0.3969ms)
+✔ ADR008 personal table preset routes and three independent conflict codes (0.794231ms)
+✔ ADR008 preset DTOs isolate ownership and freeze independent capacities (0.645185ms)
+ℹ tests 42
+ℹ suites 0
+ℹ pass 40
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 311.069667
+
+✖ failing tests:
+
+test at contracts/application-structure.contract.test.mjs:30:1
+✖ all shared OpenAPI references resolve (5.30508ms)
+  AssertionError [ERR_ASSERTION]: unresolved #/components/parameters/CSRFToken
+      at visit (file:///workspace/WeaveOS-worktrees/V030-013/contracts/application-structure.contract.test.mjs:30:216)
+      at visit (file:///workspace/WeaveOS-worktrees/V030-013/contracts/application-structure.contract.test.mjs:30:288)
+      at visit (file:///workspace/WeaveOS-worktrees/V030-013/contracts/application-structure.contract.test.mjs:30:288)
+      at visit (file:///workspace/WeaveOS-worktrees/V030-013/contracts/application-structure.contract.test.mjs:30:288)
+      at visit (file:///workspace/WeaveOS-worktrees/V030-013/contracts/application-structure.contract.test.mjs:30:288)
+      at visit (file:///workspace/WeaveOS-worktrees/V030-013/contracts/application-structure.contract.test.mjs:30:288)
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-013/contracts/application-structure.contract.test.mjs:30:302)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at contracts/openapi.contract.test.mjs:101:1
+✖ API-08: every declared response carries a server-issued request ID (1.831269ms)
+  AssertionError [ERR_ASSERTION]: GET /api/v1/applications/{appId}/forms/{viewId}/runtime 400 needs X-Request-Id
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-013/contracts/openapi.contract.test.mjs:106:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
