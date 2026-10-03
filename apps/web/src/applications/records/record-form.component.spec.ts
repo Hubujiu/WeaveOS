@@ -5,6 +5,7 @@ test('record form keeps precise and false values, excludes denied fields, and re
  await expect(page.getByLabel('金额')).toHaveValue('9007199254740993.01');
  await expect(page.getByLabel('同意')).not.toBeChecked();
  await expect(page.getByLabel('无权字段')).toHaveCount(0);
+ await expect(page.getByText('未选择')).toBeVisible();
  await page.getByLabel('金额').fill('9007199254740993.02');
  await expect(page.getByLabel('form-state')).toContainText('"dirty":true');
  await page.getByRole('button',{name:'保存记录'}).click();
@@ -17,6 +18,16 @@ test('record form keeps precise and false values, excludes denied fields, and re
  const after=await page.evaluate(()=>(window as typeof window&{__recordFormFixture:{saves:{operationId:string}[];recoveries:string[];confirmations:{identity:{recordId:string}}[]}}).__recordFormFixture);
  expect(after.recoveries).toEqual([before[0].operationId]);
  expect(after.confirmations[0].identity.recordId).toBe('77777777-7777-4777-8777-777777777777');
+});
+
+test('record form uses scoped ordinary candidate selector and keeps selected label only in unsaved state',async({page})=>{
+ await page.goto('/src/applications/records/record-form-fixture.html');
+ await page.getByRole('button',{name:'选择成员'}).click();
+ await page.getByRole('searchbox',{name:'搜索成员'}).fill('可选');
+ await page.getByRole('button',{name:'可选成员'}).click();
+ await expect(page.getByText('可选成员')).toBeVisible();
+ await page.getByRole('button',{name:'更改结构版本'}).click();
+ await expect(page.getByText('引用信息不可用（需修复）')).toBeVisible();
 });
 
 test('dirty form preserves input and blocks save when runtime control version changes',async({page})=>{
