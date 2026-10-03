@@ -108,6 +108,17 @@ func classify(err error) error {
 	return err
 }
 
+// A SQLSTATE describes a server error, not proof that COMMIT rolled back.
+// Preserve its cause internally while the HTTP boundary exposes only the
+// unconfirmed operation contract. Never retry an ambiguous commit here.
+func commitWrite(ctx context.Context, tx pgx.Tx) error {
+	err := tx.Commit(ctx)
+	if err == nil || errors.Is(err, pgx.ErrTxCommitRollback) {
+		return err
+	}
+	return errors.Join(ErrUnconfirmed, err)
+}
+
 // Every read stays in one short RR snapshot; none of the metadata or policy
 // reads escape to the pool. Central grants are not a second app-entry gate.
 func (a *Application) read(ctx context.Context, p session.Principal) (pgx.Tx, apppolicy.TrustedActor, error) {
@@ -230,7 +241,19 @@ func (a *Application) List(ctx context.Context, p session.Principal) ([]App, err
 		return nil, err
 	}
 	defer tx.Rollback(context.Background())
-	rows, err := tx.Query(ctx, "SELECT id::text,name,owner_user_id::text,policy_revision FROM applications.apps ORDER BY created_at,id")
+	rows, err := tx.Query(ctx, `SELECT a.id::text,a.name,a.owner_user_id::text,a.policy_revision
+ FROM applications.apps a
+ JOIN applications.menu_resources mr ON mr.app_id=a.id AND mr.resource_kind='application' AND mr.resource_id=a.id
+ JOIN personnel.permission_catalog c ON c.code='app.'||a.id::text||'.access' AND c.app_id=a.id::text AND c.category='application' AND c.enabled
+ WHERE $2::boolean OR a.owner_user_id=$1::uuid OR EXISTS (
+   SELECT 1 FROM applications.group_members m
+   JOIN applications.permission_groups g ON g.app_id=m.app_id AND g.id=m.group_id AND g.enabled
+   JOIN applications.grants r ON r.app_id=m.app_id AND r.group_id=m.group_id
+     AND r.resource_kind=mr.resource_kind AND r.resource_id=mr.resource_id
+     AND r.action='menu.enter' AND r.row_scope='all'
+   WHERE m.app_id=a.id AND m.user_id=$1::uuid
+     AND NOT EXISTS (SELECT 1 FROM applications.grant_fields f WHERE f.app_id=r.app_id AND f.grant_id=r.id)
+ ) ORDER BY a.created_at,a.id`, actor.ID, actor.BootstrapAdmin)
 	if err != nil {
 		return nil, err
 	}
@@ -241,6 +264,10 @@ func (a *Application) List(ctx context.Context, p session.Principal) ([]App, err
 			rows.Close()
 			return nil, err
 		}
+		if err := appmeta.ValidateStructure(appmeta.Structure{Application: appmeta.Application{ID: appmeta.ID(v.ID), Name: v.Name}}); err != nil {
+			rows.Close()
+			return nil, err
+		}
 		apps = append(apps, v)
 	}
 	err = rows.Err()
@@ -248,20 +275,7 @@ func (a *Application) List(ctx context.Context, p session.Principal) ([]App, err
 	if err != nil {
 		return nil, err
 	}
-	result := []App{}
-	for _, v := range apps {
-		access, e := entry(ctx, tx, actor, v)
-		if errors.Is(e, ErrDenied) {
-			continue
-		}
-		if e != nil {
-			return nil, e
-		}
-		if access.CanEnter {
-			result = append(result, v)
-		}
-	}
-	return result, tx.Commit(ctx)
+	return apps, tx.Commit(ctx)
 }
 func (a *Application) Get(ctx context.Context, p session.Principal, id string) (App, Access, error) {
 	tx, actor, err := a.read(ctx, p)
@@ -459,8 +473,8 @@ func (a *Application) Write(ctx context.Context, p session.Principal, kind, appI
 		if err := readableOperation(ctx, tx, actor, oldApp, oldKind); err != nil {
 			return Result{}, err
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return Result{}, ErrUnconfirmed
+		if err := commitWrite(ctx, tx); err != nil {
+			return Result{}, err
 		}
 		return Result{Status: old.HTTPStatus, Location: old.Location, Data: old.Result}, nil
 	}
@@ -555,16 +569,10 @@ func (a *Application) Write(ctx context.Context, p session.Principal, kind, appI
 		counts["groups"] = 1
 		result = Group{ID: groupID, Name: in.Name, Enabled: in.Enabled, PolicyRevision: before + 1}
 	case "members.replace":
-		for _, id := range in.MemberIDs {
-			var yes bool
-			if e := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM auth.users WHERE id=$1)", id).Scan(&yes); e != nil {
-				err = e
-				break
-			}
-			if !yes {
-				err = ErrResourceInvalid
-				break
-			}
+		var found int
+		err = tx.QueryRow(ctx, "SELECT count(*) FROM auth.users WHERE id=ANY($1::uuid[])", in.MemberIDs).Scan(&found)
+		if err == nil && found != len(in.MemberIDs) {
+			err = ErrResourceInvalid
 		}
 		if err != nil {
 			break
@@ -572,25 +580,30 @@ func (a *Application) Write(ctx context.Context, p session.Principal, kind, appI
 		if _, err = tx.Exec(ctx, "DELETE FROM applications.group_members WHERE app_id=$1 AND group_id=$2", appID, groupID); err != nil {
 			break
 		}
-		for _, id := range in.MemberIDs {
-			if _, err = tx.Exec(ctx, "INSERT INTO applications.group_members(app_id,group_id,user_id) VALUES($1,$2,$3)", appID, groupID, id); err != nil {
-				break
-			}
-		}
+		_, err = tx.Exec(ctx, "INSERT INTO applications.group_members(app_id,group_id,user_id) SELECT $1,$2,user_id FROM unnest($3::uuid[]) AS members(user_id)", appID, groupID, in.MemberIDs)
 		reason = "GROUP_MEMBERS_REPLACED"
 		counts["members"] = int64(len(in.MemberIDs))
 		result = map[string]any{"id": groupID, "policyRevision": before + 1}
 	case "grants.replace":
+		// Parallel arrays come from each normalized complete tuple. UNNEST zips
+		// those tuples; independent ANY predicates could combine privileges.
+		kinds := make([]string, 0, len(in.Grants))
+		ids := make([]string, 0, len(in.Grants))
+		actions := make([]string, 0, len(in.Grants))
+		scopes := make([]string, 0, len(in.Grants))
 		for _, g := range in.Grants {
-			var yes bool
-			if e := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM applications.menu_resources WHERE app_id=$1 AND resource_kind=$2 AND resource_id=$3)", appID, g.ResourceKind, g.ResourceID).Scan(&yes); e != nil {
-				err = e
-				break
-			}
-			if !yes {
-				err = ErrResourceInvalid
-				break
-			}
+			kinds = append(kinds, g.ResourceKind)
+			ids = append(ids, g.ResourceID)
+			actions = append(actions, g.Action)
+			scopes = append(scopes, g.RowScope)
+		}
+		var found int
+		err = tx.QueryRow(ctx, `SELECT count(*)
+ FROM unnest($2::text[],$3::uuid[],$4::text[],$5::text[]) AS submitted(resource_kind,resource_id,action,row_scope)
+ JOIN applications.menu_resources mr ON mr.app_id=$1 AND mr.resource_kind=submitted.resource_kind AND mr.resource_id=submitted.resource_id
+ WHERE submitted.action='menu.enter' AND submitted.row_scope='all'`, appID, kinds, ids, actions, scopes).Scan(&found)
+		if err == nil && found != len(in.Grants) {
+			err = ErrResourceInvalid
 		}
 		if err != nil {
 			break
@@ -601,11 +614,9 @@ func (a *Application) Write(ctx context.Context, p session.Principal, kind, appI
 		if _, err = tx.Exec(ctx, "DELETE FROM applications.grants WHERE app_id=$1 AND group_id=$2", appID, groupID); err != nil {
 			break
 		}
-		for _, g := range in.Grants {
-			if _, err = tx.Exec(ctx, "INSERT INTO applications.grants(app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,$3,$4,$5,$6)", appID, groupID, g.ResourceKind, g.ResourceID, g.Action, g.RowScope); err != nil {
-				break
-			}
-		}
+		_, err = tx.Exec(ctx, `INSERT INTO applications.grants(app_id,group_id,resource_kind,resource_id,action,row_scope)
+ SELECT $1,$2,resource_kind,resource_id,action,row_scope
+ FROM unnest($3::text[],$4::uuid[],$5::text[],$6::text[]) AS submitted(resource_kind,resource_id,action,row_scope)`, appID, groupID, kinds, ids, actions, scopes)
 		reason = "GROUP_GRANTS_REPLACED"
 		counts["grants"] = int64(len(in.Grants))
 		result = map[string]any{"id": groupID, "policyRevision": before + 1}
@@ -632,12 +643,8 @@ func (a *Application) Write(ctx context.Context, p session.Principal, kind, appI
 	if _, err := tx.Exec(ctx, "UPDATE applications.operations SET result_json=$3::jsonb,http_status=$4,location=$5 WHERE actor_user_id=$1 AND operation_id=$2", actor.ID, in.OperationID, raw, status, location); err != nil {
 		return Result{}, err
 	}
-	if err := tx.Commit(ctx); err != nil {
-		var p *pgconn.PgError
-		if errors.As(err, &p) || errors.Is(err, pgx.ErrTxCommitRollback) {
-			return Result{}, classify(err)
-		}
-		return Result{}, ErrUnconfirmed
+	if err := commitWrite(ctx, tx); err != nil {
+		return Result{}, err
 	}
 	return Result{Status: status, Location: location, Data: raw}, nil
 }

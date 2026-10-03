@@ -30,3 +30,11 @@ The SQL tracer excludes transaction control and SET ROLE, never logs values.
 Scale fixtures explicitly reset only the seven application tables and their
 synthetic catalogue entries in the known isolated test DB. No production,
 remote push, new PR, original PR21 edit, main merge or deployment is authorized.
+
+Current outcome: store.go alone changes runtime behavior. commitWrite preserves
+unknown COMMIT cause via errors.Join and recognizes only ErrTxCommitRollback
+as definite. Same-RR List uses one complete authorized set query; member/grant
+validation and persistence use sets with complete zipped grant tuples.
+Supplementary authorization/RR/atomicity coverage is passing coverage of the
+frozen semantics, not relabeled as additional missing-behavior RED. See current
+verification and cost observation files for exact final results and limits.

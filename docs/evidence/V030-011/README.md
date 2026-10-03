@@ -1,4 +1,18 @@
-# V030-011 B5 integration checkpoint
+# V030-011 B5a local backend delivery
+
+Current root P1/P2 repair is documented in [repair-review.md](repair-review.md),
+[repair-final-verification.json](repair-final-verification.json) and
+[repair-cost-observations.md](repair-cost-observations.md). Actual successful
+COMMIT plus PgError now stays UNCONFIRMED; set SQL removes List/member N+1.
+Final race: 498 passes / 233 top-level, zero fail/skip. Vet/build, 222 governance/
+foundation, 33 contracts, 6 migration/upgrade/restore and OpenAPI lint pass.
+The original rejected delivery is superseded locally, pending root acceptance.
+See the task document for full frozen B5a scope and the unchanged input SHAs.
+
+## Historical integration checkpoint
+
+The following records the earlier checkpoint; its contract gates were later
+released by root in the B5a.1–10 readback. It does not describe current blockers.
 
 This checkpoint completes fixed-baseline integration and a reusable transaction
 access boundary. It is **not completed B5 application storage/HTTP**. Root released
