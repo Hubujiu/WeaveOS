@@ -7,6 +7,8 @@ const appId = '00000000-0000-4000-8000-000000000101';
 const tableId = '00000000-0000-4000-8000-000000000102';
 const viewId = '00000000-0000-4000-8000-000000000103';
 const folderId = '00000000-0000-4000-8000-000000000104';
+const actorA='00000000-0000-4000-8000-000000000181';
+const actorB='00000000-0000-4000-8000-000000000182';
 const createdTableId='00000000-0000-4000-8000-000000000105';
 const createdViewId='00000000-0000-4000-8000-000000000106';
 const table = {id:tableId,appId,name:'请假申请',directoryId:null,position:0,schemaVersion:0,schemaReady:false};
@@ -19,7 +21,7 @@ const definition:Definition = {appId,table,form,fields:[],systemFields:[
 const structure:Structure = {appId,structureVersion:0,directories:[],tables:[table],forms:[form],capabilities:{canManageDefinition:true}};
 const ok = (data: unknown) => ({code:'OK',message:'success',data,meta:{requestId:'test-request'}});
 
-type Seen = {method:string;path:string;body:Record<string,unknown>|null};
+type Seen = {method:string;path:string;body:Record<string,unknown>|null;expectedActor:string|null};
 async function fixture(page:Page, mode:'designer'|'structure'='designer', initialDefinition:Definition=definition,
   initialStructure:Structure=structure) {
   const seen:Seen[]=[];
@@ -32,7 +34,7 @@ async function fixture(page:Page, mode:'designer'|'structure'='designer', initia
     const path=new URL(request.url()).pathname;
     const method=request.method();
     const body=request.postDataJSON() as Record<string,unknown>|null;
-    seen.push({method,path,body});
+    seen.push({method,path,body,expectedActor:request.headers()['x-expected-actor-id']??null});
     if(path.endsWith('/structure')&&method==='GET')return route.fulfill({json:ok(currentStructure)});
     if(path.endsWith('/definition')&&method==='GET')return route.fulfill({json:ok(currentDefinition)});
     if(path.endsWith('/definition/preflight')&&method==='POST')return route.fulfill({json:ok({
@@ -88,7 +90,7 @@ async function fixture(page:Page, mode:'designer'|'structure'='designer', initia
     }
     return route.fulfill({status:404,json:{code:'APPLICATION_NOT_FOUND',message:'not found',data:null,meta:{requestId:'test-request'}}});
   });
-  await page.goto(`/src/applications/forms/harness.html?mode=${mode}&appId=${appId}&viewId=${viewId}`);
+  await page.goto(`/src/applications/forms/harness.html?mode=${mode}&appId=${appId}&viewId=${viewId}&actorId=${actorA}`);
   return {seen,loseSaveResponse:()=>{loseSaveResponse=true;},getCommitted:()=>committedSave};
 }
 
@@ -549,4 +551,232 @@ test('existing member default remains visible and can be cleared without a candi
   await expect(page.getByRole('status')).toContainText('已保存');
   const saved=(state.seen.find(item=>item.method==='PUT')?.body?.fields as Field[])[0];
   expect(saved.default).toBeNull();
+});
+
+test('text empty-string default and boolean unset false true remain distinct on Save',async({page})=>{
+  const state=await fixture(page);
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('启用默认值').check();
+  await expect(page.getByLabel('默认值')).toHaveValue('');
+  await page.getByRole('button',{name:'布尔',exact:true}).click();
+  await page.getByLabel('默认状态').selectOption('false');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const fields=state.seen.find(item=>item.method==='PUT')?.body?.fields as Field[];
+  expect(fields.map(item=>item.default)).toEqual(['',false]);
+  await page.getByRole('button',{name:'新建布尔 布尔'}).click();
+  await page.getByLabel('默认状态').selectOption('unset');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const latest=state.seen.filter(item=>item.method==='PUT').at(-1)?.body?.fields as Field[];
+  expect(latest[1].default).toBeNull();
+});
+
+test('no-op Save with unknown result blocks exit even when definition is not dirty',async({page})=>{
+  const ready:Definition={...definition,table:{...table,schemaReady:true,schemaVersion:1},
+    form:{...form,viewVersion:1}};
+  const state=await fixture(page,'designer',ready);
+  state.loseSaveResponse();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('保存结果暂未确认');
+  await expect(page.getByText('未保存',{exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'返回工作台'}).click();
+  await expect(page.getByRole('dialog')).toContainText('保存结果未确认');
+  const blocked=await page.evaluate(()=>window.dispatchEvent(new Event('beforeunload',{cancelable:true})));
+  expect(blocked).toBe(false);
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(1);
+});
+
+test('A to B to A navigation ignores a late first-generation preflight',async({page})=>{
+  const nextViewId='00000000-0000-4000-8000-000000000160';
+  const state=await fixture(page);
+  let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  let started!:()=>void;const startedPromise=new Promise<void>(resolve=>{started=resolve;});
+  await page.route('**/definition/preflight',async route=>{
+    started();await gate;
+    await route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,dataRevision:0,
+      dependencyRevision:0,plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},
+      impacts:[{fieldId:'old-field',kind:'column_removal',nonNullRows:1,optionId:null}],
+      dependencies:[],blockingIssues:[],saveAllowed:true,confirmation:{token:'old-token',expiresAt:'2099-01-01T00:00:00Z'}})});
+  });
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await startedPromise;
+  await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),nextViewId);
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),viewId);
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  release();await page.waitForTimeout(100);
+  await expect(page.getByRole('dialog',{name:'保存预检：表单结构与布局'})).toHaveCount(0);
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+});
+
+test('definition requests bind verified actor and B cannot replay A unknown Save',async({page})=>{
+  const state=await fixture(page);
+  state.loseSaveResponse();
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('A 未确认字段');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('保存结果暂未确认');
+  expect(state.seen.filter(item=>item.method!=='GET').every(item=>item.expectedActor===actorA)).toBe(true);
+  await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchActor?:(id:string)=>void}).__formsHarnessSwitchActor?.(id),actorB);
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await expect(page.getByLabel('字段名称')).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'查询保存结果'})).toHaveCount(0);
+  await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchActor?:(id:string)=>void}).__formsHarnessSwitchActor?.(id),actorA);
+  await expect(page.getByLabel('字段名称')).toHaveValue('A 未确认字段');
+  await page.getByRole('button',{name:'查询保存结果'}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const recovery=state.seen.find(item=>item.path.includes('/application-operations/'));
+  expect(recovery?.expectedActor).toBe(actorA);
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(1);
+});
+
+test('second view can place an existing table field without creating another field ID',async({page})=>{
+  const fieldId='00000000-0000-4000-8000-000000000191';
+  const seeded:Definition={...definition,table:{...table,schemaReady:true,schemaVersion:1},form:{...form,viewVersion:0},
+    fields:[{id:fieldId,name:'申请人',kind:'text',required:false,default:null,
+      config:{maxLength:null},presentation:{helpText:null,displayTimeZone:null}}],layout:[]};
+  const state=await fixture(page,'designer',seeded);
+  await page.getByRole('button',{name:'将已有字段加入布局 申请人'}).click();
+  await expect(page.getByRole('region',{name:'表单画布'})).toContainText('申请人');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const saved=state.seen.find(item=>item.method==='PUT')!.body!;
+  expect((saved.fields as Field[]).map(item=>item.id)).toEqual([fieldId]);
+  expect(saved.layout).toMatchObject([{kind:'field',fieldId,span:12}]);
+});
+
+test('removing a group leaves its table field available to place again',async({page})=>{
+  const fieldId='00000000-0000-4000-8000-000000000192';
+  const seeded:Definition={...definition,table:{...table,schemaReady:true,schemaVersion:1},form:{...form,viewVersion:1},
+    fields:[{id:fieldId,name:'申请人',kind:'text',required:false,default:null,
+      config:{maxLength:null},presentation:{helpText:null,displayTimeZone:null}}],
+    layout:[{id:'00000000-0000-4000-8000-000000000193',kind:'group',title:'基本信息',span:12,
+      children:[{id:'00000000-0000-4000-8000-000000000194',kind:'field',fieldId,span:12}]}]};
+  const state=await fixture(page,'designer',seeded);
+  await page.getByRole('button',{name:'基本信息 分组'}).click();
+  await page.getByRole('button',{name:'移除布局节点'}).click();
+  await page.getByRole('button',{name:'将已有字段加入布局 申请人'}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const saved=state.seen.find(item=>item.method==='PUT')!.body!;
+  expect((saved.fields as Field[]).map(item=>item.id)).toEqual([fieldId]);
+  expect(saved.layout).toMatchObject([{kind:'field',fieldId,span:12}]);
+});
+
+test('preview explicit null selection does not bounce back to the configured default',async({page})=>{
+  const fieldId='00000000-0000-4000-8000-000000000195',optionId='00000000-0000-4000-8000-000000000196';
+  const seeded:Definition={...definition,fields:[{id:fieldId,name:'状态',kind:'single_select',required:false,
+    default:optionId,config:{options:[{id:optionId,label:'进行中'}]},
+    presentation:{helpText:null,displayTimeZone:null}}],
+    layout:[{id:'00000000-0000-4000-8000-000000000197',kind:'field',fieldId,span:12}]};
+  await fixture(page,'designer',seeded);
+  await page.getByRole('button',{name:'预览',exact:true}).click();
+  const select=page.getByRole('dialog').getByRole('combobox',{name:'状态'});
+  await expect(select).toHaveValue(optionId);
+  await select.selectOption('');
+  await expect(select).toHaveValue('');
+});
+
+test('malformed successful structure receipt remains unconfirmed with the original operation',async({page})=>{
+  const state=await fixture(page,'structure');
+  await page.route('**/directories',route=>route.fulfill({status:200,json:ok({})}));
+  await page.getByRole('button',{name:'新建目录'}).click();
+  await page.getByLabel('目录名称').fill('保留目录');
+  await page.getByRole('button',{name:'创建目录',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+  await expect(page.getByLabel('目录名称')).toHaveValue('保留目录');
+  await expect(page.getByRole('button',{name:'按原请求重试'})).toBeVisible();
+  expect(state.seen.filter(item=>item.method==='POST')).toHaveLength(1);
+});
+
+test('malformed successful definition receipt does not erase draft or issue a new key',async({page})=>{
+  const state=await fixture(page);
+  await page.route('**/definition',route=>route.request().method()==='PUT'
+    ?route.fulfill({status:200,json:ok({operationId:'wrong',definition:{}})})
+    :route.continue());
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('保留字段');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+  await expect(page.getByLabel('字段名称')).toHaveValue('保留字段');
+  await expect(page.getByRole('button',{name:'按原请求重试'})).toBeVisible();
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(1);
+});
+
+test('existing text field can request a guarded number type conversion',async({page})=>{
+  const fieldId='00000000-0000-4000-8000-000000000198';
+  const seeded:Definition={...definition,table:{...table,schemaReady:true,schemaVersion:1},form:{...form,viewVersion:1},
+    fields:[{id:fieldId,name:'预算',kind:'text',required:false,default:null,config:{maxLength:null},
+      presentation:{helpText:null,displayTimeZone:null}}],
+    layout:[{id:'00000000-0000-4000-8000-000000000199',kind:'field',fieldId,span:12}]};
+  const state=await fixture(page,'designer',seeded);
+  await page.getByRole('button',{name:'预算 文本'}).click();
+  await page.getByLabel('字段类型').selectOption('number');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const preflight=state.seen.find(item=>item.path.endsWith('/definition/preflight'))!.body!;
+  expect((preflight.fields as Field[])[0]).toMatchObject({id:fieldId,name:'预算',kind:'number'});
+});
+
+test('designer canvas renders the actual field control in a nonediting design state',async({page})=>{
+  const fieldId='00000000-0000-4000-8000-000000000200';
+  const seeded:Definition={...definition,fields:[{id:fieldId,name:'申请人',kind:'text',required:false,
+    default:null,config:{maxLength:null},presentation:{helpText:null,displayTimeZone:null}}],
+    layout:[{id:'00000000-0000-4000-8000-000000000201',kind:'field',fieldId,span:12}]};
+  await fixture(page,'designer',seeded);
+  const control=page.getByRole('region',{name:'表单画布'}).getByRole('textbox',{name:'申请人'});
+  await expect(control).toBeVisible();
+  await expect(control).toBeDisabled();
+});
+
+test('changing an option mapping after successful preflight invalidates its token and pending packet',async({page})=>{
+  const fieldId='00000000-0000-4000-8000-000000000211';
+  const oldId='00000000-0000-4000-8000-000000000212';
+  const keepId='00000000-0000-4000-8000-000000000213';
+  const seeded:Definition={...definition,table:{...table,schemaVersion:1,schemaReady:true},form:{...form,viewVersion:1},
+    fields:[{id:fieldId,name:'审批结果',kind:'single_select',required:false,default:null,
+      config:{options:[{id:oldId,label:'旧选项'},{id:keepId,label:'保留选项'}]},
+      presentation:{helpText:null,displayTimeZone:null}}],
+    layout:[{id:'00000000-0000-4000-8000-000000000214',kind:'field',fieldId,span:12}]};
+  const state=await fixture(page,'designer',seeded);
+  await page.route('**/definition/preflight',route=>{
+    const body=route.request().postDataJSON() as {optionMappings:{toOptionId:string|null}[]};
+    const mapped=body.optionMappings.some(item=>item.toOptionId===keepId);
+    return route.fulfill({json:ok({
+    appId,tableId,viewId,schemaVersion:1,viewVersion:1,dataRevision:2,dependencyRevision:1,
+    plan:{schemaChanges:[{kind:'change_config',fieldId,beforeKind:'single_select',afterKind:'single_select'}],metadataChanged:true,layoutChanged:false},
+    impacts:[{fieldId,kind:'option_mapping',nonNullRows:3,optionId:oldId}],dependencies:[],
+    blockingIssues:mapped?[]:[{code:'APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED',fieldIds:[fieldId]}],
+    saveAllowed:mapped,confirmation:mapped?{token:'first-token',expiresAt:'2099-01-01T00:00:00Z'}:null,
+  })});});
+  await page.getByRole('button',{name:'审批结果 单选'}).click();
+  await page.getByRole('button',{name:'删除选项 旧选项'}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await page.getByLabel('已用选项映射 旧选项').selectOption(keepId);
+  await page.getByRole('button',{name:'重新预检'}).click();
+  await expect(page.getByRole('button',{name:'确认保存'})).toBeEnabled();
+  await page.getByLabel('已用选项映射 旧选项').selectOption('__null__');
+  await expect(page.getByRole('button',{name:'确认保存'})).toBeDisabled();
+  await expect(page.getByRole('dialog')).toContainText('重新预检');
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+});
+
+test('expired confirmation token asks for another preflight instead of silently ignoring click',async({page})=>{
+  const state=await fixture(page);
+  await page.route('**/definition/preflight',route=>route.fulfill({json:ok({
+    appId,tableId,viewId,schemaVersion:0,viewVersion:0,dataRevision:1,dependencyRevision:0,
+    plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},
+    impacts:[{fieldId:'impact',kind:'column_removal',nonNullRows:1,optionId:null}],
+    dependencies:[],blockingIssues:[],saveAllowed:true,
+    confirmation:{token:'short-lived',expiresAt:new Date(Date.now()+700).toISOString()},
+  })}));
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('button',{name:'确认保存'})).toBeEnabled();
+  await page.waitForTimeout(900);
+  await page.getByRole('button',{name:'确认保存'}).click();
+  await expect(page.getByRole('dialog')).toContainText('确认已过期，请重新预检');
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
 });

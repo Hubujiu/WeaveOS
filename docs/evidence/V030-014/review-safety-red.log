@@ -1,0 +1,366 @@
+[WebServer] (node:34121) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:34135) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 13 tests using 1 worker
+
+(node:34164) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   1 [chromium] › src/applications/forms/forms.component.spec.ts:556:1 › text empty-string default and boolean unset false true remain distinct on Save (8.0s)
+(node:34250) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   2 [chromium] › src/applications/forms/forms.component.spec.ts:575:1 › no-op Save with unknown result blocks exit even when definition is not dirty (5.3s)
+(node:34328) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   3 [chromium] › src/applications/forms/forms.component.spec.ts:590:1 › A to B to A navigation ignores a late first-generation preflight (5.4s)
+(node:34406) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   4 [chromium] › src/applications/forms/forms.component.spec.ts:614:1 › definition requests bind verified actor and B cannot replay A unknown Save (361ms)
+(node:34477) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   5 [chromium] › src/applications/forms/forms.component.spec.ts:635:1 › second view can place an existing table field without creating another field ID (8.0s)
+(node:34560) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   6 [chromium] › src/applications/forms/forms.component.spec.ts:650:1 › removing a group leaves its table field available to place again (8.0s)
+(node:34643) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   7 [chromium] › src/applications/forms/forms.component.spec.ts:668:1 › preview explicit null selection does not bounce back to the configured default (5.3s)
+(node:34714) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   8 [chromium] › src/applications/forms/forms.component.spec.ts:682:1 › malformed successful structure receipt remains unconfirmed with the original operation (5.3s)
+(node:34784) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 10:59:45 AM [vite] http proxy error: /api/v1/applications/00000000-0000-4000-8000-000000000101/forms/00000000-0000-4000-8000-000000000103/definition
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:8080
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1864:16)
+  ✘   9 [chromium] › src/applications/forms/forms.component.spec.ts:694:1 › malformed successful definition receipt does not erase draft or issue a new key (8.0s)
+(node:34854) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  10 [chromium] › src/applications/forms/forms.component.spec.ts:708:1 › existing text field can request a guarded number type conversion (8.0s)
+(node:34926) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  11 [chromium] › src/applications/forms/forms.component.spec.ts:723:1 › designer canvas renders the actual field control in a nonediting design state (5.2s)
+(node:34997) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  12 [chromium] › src/applications/forms/forms.component.spec.ts:734:1 › changing an option mapping after successful preflight invalidates its token and pending packet (5.5s)
+(node:35077) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  13 [chromium] › src/applications/forms/forms.component.spec.ts:766:1 › expired confirmation token asks for another preflight instead of silently ignoring click (6.3s)
+
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:556:1 › text empty-string default and boolean unset false true remain distinct on Save 
+
+    Test timeout of 8000ms exceeded.
+
+    Error: locator.check: Test timeout of 8000ms exceeded.
+    Call log:
+      - waiting for getByLabel('启用默认值')
+
+
+      557 |   const state=await fixture(page);
+      558 |   await page.getByRole('button',{name:'文本',exact:true}).click();
+    > 559 |   await page.getByLabel('启用默认值').check();
+          |                                  ^
+      560 |   await expect(page.getByLabel('默认值')).toHaveValue('');
+      561 |   await page.getByRole('button',{name:'布尔',exact:true}).click();
+      562 |   await page.getByLabel('默认状态').selectOption('false');
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:559:34
+
+    Error Context: test-results/forms.component-text-empty-5ec0c-rue-remain-distinct-on-Save-chromium/error-context.md
+
+  2) [chromium] › src/applications/forms/forms.component.spec.ts:575:1 › no-op Save with unknown result blocks exit even when definition is not dirty 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog')
+    Expected substring: "保存结果未确认"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog') with timeout 5000ms
+      - waiting for getByRole('dialog')
+
+
+      582 |   await expect(page.getByText('未保存',{exact:true})).toHaveCount(0);
+      583 |   await page.getByRole('button',{name:'返回工作台'}).click();
+    > 584 |   await expect(page.getByRole('dialog')).toContainText('保存结果未确认');
+          |                                          ^
+      585 |   const blocked=await page.evaluate(()=>window.dispatchEvent(new Event('beforeunload',{cancelable:true})));
+      586 |   expect(blocked).toBe(false);
+      587 |   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(1);
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:584:42
+
+    Error Context: test-results/forms.component-no-op-Save-e44f0-hen-definition-is-not-dirty-chromium/error-context.md
+
+  3) [chromium] › src/applications/forms/forms.component.spec.ts:590:1 › A to B to A navigation ignores a late first-generation preflight 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog', { name: '保存预检：表单结构与布局' })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog', { name: '保存预检：表单结构与布局' }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '保存预检：表单结构与布局' })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      608 |   await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+      609 |   release();await page.waitForTimeout(100);
+    > 610 |   await expect(page.getByRole('dialog',{name:'保存预检：表单结构与布局'})).toHaveCount(0);
+          |                                                                ^
+      611 |   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+      612 | });
+      613 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:610:64
+
+    Error Context: test-results/forms.component-A-to-B-to--4832d--first-generation-preflight-chromium/error-context.md
+
+  4) [chromium] › src/applications/forms/forms.component.spec.ts:614:1 › definition requests bind verified actor and B cannot replay A unknown Save 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      619 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+      620 |   await expect(page.getByRole('alert')).toContainText('保存结果暂未确认');
+    > 621 |   expect(state.seen.filter(item=>item.method!=='GET').every(item=>item.expectedActor===actorA)).toBe(true);
+          |                                                                                                 ^
+      622 |   await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchActor?:(id:string)=>void}).__formsHarnessSwitchActor?.(id),actorB);
+      623 |   await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+      624 |   await expect(page.getByLabel('字段名称')).toHaveCount(0);
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:621:97
+
+    Error Context: test-results/forms.component-definition-9f57c-annot-replay-A-unknown-Save-chromium/error-context.md
+
+  5) [chromium] › src/applications/forms/forms.component.spec.ts:635:1 › second view can place an existing table field without creating another field ID 
+
+    Test timeout of 8000ms exceeded.
+
+    Error: locator.click: Test timeout of 8000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '将已有字段加入布局 申请人' })
+
+
+      639 |       config:{maxLength:null},presentation:{helpText:null,displayTimeZone:null}}],layout:[]};
+      640 |   const state=await fixture(page,'designer',seeded);
+    > 641 |   await page.getByRole('button',{name:'将已有字段加入布局 申请人'}).click();
+          |                                                         ^
+      642 |   await expect(page.getByRole('region',{name:'表单画布'})).toContainText('申请人');
+      643 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+      644 |   await expect(page.getByRole('status')).toContainText('已保存');
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:641:57
+
+    Error Context: test-results/forms.component-second-vie-e81c1-t-creating-another-field-ID-chromium/error-context.md
+
+  6) [chromium] › src/applications/forms/forms.component.spec.ts:650:1 › removing a group leaves its table field available to place again 
+
+    Test timeout of 8000ms exceeded.
+
+    Error: locator.click: Test timeout of 8000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '将已有字段加入布局 申请人' })
+
+
+      658 |   await page.getByRole('button',{name:'基本信息 分组'}).click();
+      659 |   await page.getByRole('button',{name:'移除布局节点'}).click();
+    > 660 |   await page.getByRole('button',{name:'将已有字段加入布局 申请人'}).click();
+          |                                                         ^
+      661 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+      662 |   await expect(page.getByRole('status')).toContainText('已保存');
+      663 |   const saved=state.seen.find(item=>item.method==='PUT')!.body!;
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:660:57
+
+    Error Context: test-results/forms.component-removing-a-035a7-ld-available-to-place-again-chromium/error-context.md
+
+  7) [chromium] › src/applications/forms/forms.component.spec.ts:668:1 › preview explicit null selection does not bounce back to the configured default 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  getByRole('dialog').getByRole('combobox', { name: '状态' })
+    Expected: ""
+    Received: "00000000-0000-4000-8000-000000000196"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveValue" getByRole('dialog').getByRole('combobox', { name: '状态' }) with timeout 5000ms
+      - waiting for getByRole('dialog').getByRole('combobox', { name: '状态' })
+        14 × locator resolved to <select id="preview-00000000-0000-4000-8000-000000000195">…</select>
+           - unexpected value "00000000-0000-4000-8000-000000000196"
+
+
+      677 |   await expect(select).toHaveValue(optionId);
+      678 |   await select.selectOption('');
+    > 679 |   await expect(select).toHaveValue('');
+          |                        ^
+      680 | });
+      681 |
+      682 | test('malformed successful structure receipt remains unconfirmed with the original operation',async({page})=>{
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:679:24
+
+    Error Context: test-results/forms.component-preview-ex-4197c-k-to-the-configured-default-chromium/error-context.md
+
+  8) [chromium] › src/applications/forms/forms.component.spec.ts:682:1 › malformed successful structure receipt remains unconfirmed with the original operation 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('alert')
+    Expected substring: "结果暂未确认"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('alert')
+
+
+      686 |   await page.getByLabel('目录名称').fill('保留目录');
+      687 |   await page.getByRole('button',{name:'创建目录',exact:true}).click();
+    > 688 |   await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+          |                                         ^
+      689 |   await expect(page.getByLabel('目录名称')).toHaveValue('保留目录');
+      690 |   await expect(page.getByRole('button',{name:'按原请求重试'})).toBeVisible();
+      691 |   expect(state.seen.filter(item=>item.method==='POST')).toHaveLength(1);
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:688:41
+
+    Error Context: test-results/forms.component-malformed--74ef4-with-the-original-operation-chromium/error-context.md
+
+  9) [chromium] › src/applications/forms/forms.component.spec.ts:694:1 › malformed successful definition receipt does not erase draft or issue a new key 
+
+    Test timeout of 8000ms exceeded.
+
+    Error: locator.click: Test timeout of 8000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '文本', exact: true })
+
+
+      697 |     ?route.fulfill({status:200,json:ok({operationId:'wrong',definition:{}})})
+      698 |     :route.continue());
+    > 699 |   await page.getByRole('button',{name:'文本',exact:true}).click();
+          |                                                         ^
+      700 |   await page.getByLabel('字段名称').fill('保留字段');
+      701 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+      702 |   await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:699:57
+
+    Error Context: test-results/forms.component-malformed--670fb-se-draft-or-issue-a-new-key-chromium/error-context.md
+
+  10) [chromium] › src/applications/forms/forms.component.spec.ts:708:1 › existing text field can request a guarded number type conversion 
+
+    Test timeout of 8000ms exceeded.
+
+    Error: locator.selectOption: Test timeout of 8000ms exceeded.
+    Call log:
+      - waiting for getByLabel('字段类型')
+
+
+      714 |   const state=await fixture(page,'designer',seeded);
+      715 |   await page.getByRole('button',{name:'预算 文本'}).click();
+    > 716 |   await page.getByLabel('字段类型').selectOption('number');
+          |                                 ^
+      717 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+      718 |   await expect(page.getByRole('status')).toContainText('已保存');
+      719 |   const preflight=state.seen.find(item=>item.path.endsWith('/definition/preflight'))!.body!;
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:716:33
+
+    Error Context: test-results/forms.component-existing-t-22a91-rded-number-type-conversion-chromium/error-context.md
+
+  11) [chromium] › src/applications/forms/forms.component.spec.ts:723:1 › designer canvas renders the actual field control in a nonediting design state 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('region', { name: '表单画布' }).getByRole('textbox', { name: '申请人' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('region', { name: '表单画布' }).getByRole('textbox', { name: '申请人' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '表单画布' }).getByRole('textbox', { name: '申请人' })
+
+
+      728 |   await fixture(page,'designer',seeded);
+      729 |   const control=page.getByRole('region',{name:'表单画布'}).getByRole('textbox',{name:'申请人'});
+    > 730 |   await expect(control).toBeVisible();
+          |                         ^
+      731 |   await expect(control).toBeDisabled();
+      732 | });
+      733 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:730:25
+
+    Error Context: test-results/forms.component-designer-c-7abfe-n-a-nonediting-design-state-chromium/error-context.md
+
+  12) [chromium] › src/applications/forms/forms.component.spec.ts:734:1 › changing an option mapping after successful preflight invalidates its token and pending packet 
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator:  getByRole('button', { name: '确认保存' })
+    Expected: disabled
+    Received: enabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('button', { name: '确认保存' }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '确认保存' })
+        14 × locator resolved to <button type="button" class="forms-primary">确认保存</button>
+           - unexpected value "enabled"
+
+
+      759 |   await expect(page.getByRole('button',{name:'确认保存'})).toBeEnabled();
+      760 |   await page.getByLabel('已用选项映射 旧选项').selectOption('__null__');
+    > 761 |   await expect(page.getByRole('button',{name:'确认保存'})).toBeDisabled();
+          |                                                        ^
+      762 |   await expect(page.getByRole('dialog')).toContainText('重新预检');
+      763 |   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+      764 | });
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:761:56
+
+    Error Context: test-results/forms.component-changing-a-48b41-ts-token-and-pending-packet-chromium/error-context.md
+
+  13) [chromium] › src/applications/forms/forms.component.spec.ts:766:1 › expired confirmation token asks for another preflight instead of silently ignoring click 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog')
+    Expected substring: "确认已过期，请重新预检"
+    Received string:    "保存预检：表单结构与布局×本次变更计划表单布局将更新数据影响字段 impact · 1 条已有值确认有效期至 2026/10/3 11:00:15继续编辑确认保存"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog') with timeout 5000ms
+      - waiting for getByRole('dialog')
+        14 × locator resolved to <dialog open="" class="forms-dialog" aria-labelledby="_r_0_">…</dialog>
+           - unexpected value "保存预检：表单结构与布局×本次变更计划表单布局将更新数据影响字段 impact · 1 条已有值确认有效期至 2026/10/3 11:00:15继续编辑确认保存"
+
+
+      778 |   await page.waitForTimeout(900);
+      779 |   await page.getByRole('button',{name:'确认保存'}).click();
+    > 780 |   await expect(page.getByRole('dialog')).toContainText('确认已过期，请重新预检');
+          |                                          ^
+      781 |   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+      782 | });
+      783 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:780:42
+
+    Error Context: test-results/forms.component-expired-co-e9455--of-silently-ignoring-click-chromium/error-context.md
+
+  13 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:556:1 › text empty-string default and boolean unset false true remain distinct on Save 
+    [chromium] › src/applications/forms/forms.component.spec.ts:575:1 › no-op Save with unknown result blocks exit even when definition is not dirty 
+    [chromium] › src/applications/forms/forms.component.spec.ts:590:1 › A to B to A navigation ignores a late first-generation preflight 
+    [chromium] › src/applications/forms/forms.component.spec.ts:614:1 › definition requests bind verified actor and B cannot replay A unknown Save 
+    [chromium] › src/applications/forms/forms.component.spec.ts:635:1 › second view can place an existing table field without creating another field ID 
+    [chromium] › src/applications/forms/forms.component.spec.ts:650:1 › removing a group leaves its table field available to place again 
+    [chromium] › src/applications/forms/forms.component.spec.ts:668:1 › preview explicit null selection does not bounce back to the configured default 
+    [chromium] › src/applications/forms/forms.component.spec.ts:682:1 › malformed successful structure receipt remains unconfirmed with the original operation 
+    [chromium] › src/applications/forms/forms.component.spec.ts:694:1 › malformed successful definition receipt does not erase draft or issue a new key 
+    [chromium] › src/applications/forms/forms.component.spec.ts:708:1 › existing text field can request a guarded number type conversion 
+    [chromium] › src/applications/forms/forms.component.spec.ts:723:1 › designer canvas renders the actual field control in a nonediting design state 
+    [chromium] › src/applications/forms/forms.component.spec.ts:734:1 › changing an option mapping after successful preflight invalidates its token and pending packet 
+    [chromium] › src/applications/forms/forms.component.spec.ts:766:1 › expired confirmation token asks for another preflight instead of silently ignoring click 
