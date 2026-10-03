@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appdrafts"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -101,6 +102,13 @@ type EditRequest struct {
 	AppID, ViewID, RecordID, OperationID         string
 	ExpectedSchemaVersion, ExpectedRecordVersion int64
 	Changes                                      map[string]any
+}
+type DraftCreateRequest struct {
+	AppID, ViewID, OperationID string
+	SchemaVersion              int64
+	TargetRecordID             *string
+	BaseRecordVersion          *int64
+	Values                     appdrafts.Values
 }
 type MutationResult struct {
 	OperationID   string `json:"operationId"`

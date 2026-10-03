@@ -184,7 +184,6 @@ func TestRestrictedEditCASAndPendingFence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("created for edit: %+v", created)
 	var editOp string
 	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&editOp); err != nil {
 		t.Fatal(err)
@@ -241,6 +240,27 @@ func TestRestrictedReferenceWriteRequiresActiveAuthoritativeSource(t *testing.T)
 	req.OperationID = op
 	if _, err = f.service.Create(f.ctx, f.principal, req, applications.Metadata{RequestID: "v015-ref-disabled"}); err == nil {
 		t.Fatal("disabled source accepted as new reference")
+	}
+}
+
+func TestRestrictedDraftCreateIsExplicitAndDoesNotMutateRecord(t *testing.T) {
+	f := newRecordFixture(t)
+	var op string
+	if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	req := DraftCreateRequest{AppID: f.app, ViewID: f.view, OperationID: op, SchemaVersion: 1, Values: map[string]any{f.public: "unfinished"}}
+	draft, err := f.service.CreateDraft(f.ctx, f.principal, req, applications.Metadata{RequestID: "v015-draft"})
+	if err != nil || draft.ID == "" || draft.DraftVersion != 1 || draft.Values[f.public] != "unfinished" {
+		t.Fatalf("explicit draft %+v %v", draft, err)
+	}
+	var count int
+	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM "+relation).Scan(&count); err != nil || count != 2 {
+		t.Fatalf("draft changed formal rows %d %v", count, err)
+	}
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_write_audit WHERE app_id=$1", f.app).Scan(&count); err != nil || count != 0 {
+		t.Fatalf("draft wrote record audit %d %v", count, err)
 	}
 }
 
