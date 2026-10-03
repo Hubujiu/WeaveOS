@@ -2,8 +2,9 @@ package personnel
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
 )
@@ -55,65 +56,41 @@ func (a *Application) BeginQueryWrite(ctx context.Context, p session.Principal, 
 }
 
 type queryReadReceipt struct {
-	app       *Application
-	principal session.Principal
-	version   string
-	saved     QueryContext
+	shared    querycontext.Receipt
 	revisions QueryRevisions
 }
 
 // Candidate option reads use this same RR snapshot; their own parameters never
 // replace the original member query. Advance only after that read commits.
 func (a *Application) readWithQuery(ctx context.Context, p session.Principal, version string) (pgx.Tx, queryReadReceipt, error) {
-	receipt := queryReadReceipt{app: a, principal: p, version: version}
-	var loadErr error
-	if version != "" {
-		if a == nil || a.Queries == nil {
-			loadErr = session.ErrUnavailable
-		} else {
-			receipt.saved, loadErr = a.Queries.Load(ctx, p.SessionRef, version)
+	// Preserve the old auth-before-unavailable error priority when the optional
+	// context store is absent. No-token reads never need that store.
+	if version != "" && (a == nil || a.Queries == nil) {
+		tx, err := a.read(ctx, p)
+		if err != nil {
+			return nil, queryReadReceipt{}, err
 		}
-	}
-	tx, err := a.read(ctx, p)
-	if err != nil {
-		return nil, receipt, err
-	}
-	fail := func(e error) (pgx.Tx, queryReadReceipt, error) {
 		_ = tx.Rollback(context.Background())
-		return nil, receipt, e
+		return nil, queryReadReceipt{}, session.ErrUnavailable
 	}
-	if loadErr != nil {
-		return fail(loadErr)
+	var store *querycontext.Store
+	if a != nil && a.Queries != nil {
+		store = a.Queries.shared
 	}
-	if version == "" {
-		return tx, receipt, nil
-	}
-	var criteria queryCriteria
-	if receipt.saved.View != "members" || !decodeQueryMetadata(receipt.saved.Criteria, &criteria) {
-		return fail(ErrQueryContextExpired)
-	}
-	receipt.revisions, err = readQueryRevisions(ctx, tx, "members")
+	tx, shared, err := querycontext.ValidateSavedRead(ctx, store, p.SessionRef, version,
+		personnelQueryStrategy{app: a, principal: p, view: "members"})
 	if err != nil {
-		return fail(err)
+		return nil, queryReadReceipt{}, personnelContextError(err)
 	}
-	if _, err = validateSavedQuery(ctx, tx, receipt.saved, receipt.revisions, criteria, PageQuery{Page: 1, PageSize: 1}); err != nil {
-		return fail(err)
+	receipt := queryReadReceipt{shared: shared}
+	if version != "" && json.Unmarshal(shared.Revision(), &receipt.revisions) != nil {
+		_ = tx.Rollback(context.Background())
+		return nil, queryReadReceipt{}, ErrInvalid
 	}
 	return tx, receipt, nil
 }
 func (v queryReadReceipt) commit(ctx context.Context, tx pgx.Tx) error {
-	defer tx.Rollback(context.Background())
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	if v.version == "" || v.saved.Revisions == v.revisions {
-		return nil
-	}
-	err := v.app.Queries.Advance(ctx, v.principal.SessionRef, v.version, v.saved.Fingerprint, v.saved.Revisions, v.revisions)
-	if errors.Is(err, ErrQueryContextCAS) {
-		return nil
-	}
-	return err
+	return personnelContextError(v.shared.Commit(ctx, tx))
 }
 
 func draftTarget(id string) *string {

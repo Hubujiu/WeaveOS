@@ -52,12 +52,12 @@ func TestB5ResourceOwnershipClosedGrantAndConfigurationReads(t *testing.T) {
 		t.Fatal("all rejected grants must preserve policy revision")
 	}
 	member := fixture(t, false)
+	data(t, f.call("PUT", gp+"/members", map[string]any{"memberIds": []string{member.actor}, "operationId": f.operation(t), "expectedPolicyRevision": 2}), 200)
 	if _, err := f.owner.Exec(context.Background(), "UPDATE auth.users SET status='disabled' WHERE id=$1", member.actor); err != nil {
 		t.Fatal(err)
 	}
-	data(t, f.call("PUT", gp+"/members", map[string]any{"memberIds": []string{member.actor}, "operationId": f.operation(t), "expectedPolicyRevision": 2}), 200)
 	if w := member.call("GET", base+"/access", nil); w.Code != 401 {
-		t.Fatal("inactive members may register but never get active access")
+		t.Fatal("members admitted while active must lose access after disable")
 	}
 	// Identical non-replay full replacement is still a policy change.
 	d := data(t, f.call("PUT", gp+"/members", map[string]any{"memberIds": []string{member.actor}, "operationId": f.operation(t), "expectedPolicyRevision": 3}), 200)

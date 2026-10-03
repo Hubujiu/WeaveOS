@@ -71,7 +71,7 @@ func clean(t *testing.T) (*pgxpool.Pool, *pgxpool.Pool) {
 	for _, v := range []struct {
 		p *pgxpool.Pool
 		q string
-	}{{l, "TRUNCATE auth.authentication_events,auth.invitations,auth.password_credentials,auth.users,personnel.department_members,personnel.member_configuration,personnel.member_identities,personnel.drafts,personnel.table_presets,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps"}, {c, "TRUNCATE archive.authentication_events"}} {
+	}{{l, "TRUNCATE applications.record_change_values,applications.record_change_events,applications.field_option_tombstones,applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,auth.authentication_events,auth.invitations,auth.password_credentials,auth.users,personnel.department_members,personnel.member_configuration,personnel.member_identities,personnel.drafts,personnel.table_presets,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps"}, {c, "TRUNCATE archive.authentication_events"}} {
 		if _, err := v.p.Exec(context.Background(), v.q); err != nil {
 			t.Fatal(err)
 		}

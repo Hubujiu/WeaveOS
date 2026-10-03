@@ -1,0 +1,239 @@
+package main
+
+// Root-authored contract test. This verifies the configured BFF over trusted
+// local TLS and real isolated PG/Redis. It is not browser/login UI acceptance.
+// Oracle: V030-013 first Save semantics and V030-015 ADR section 8 error codes,
+// minimum mutation receipts, record CAS, idempotency and atomic rejection.
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+func TestRootHTTPSRecordVersionContract(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	defer cancel()
+	if os.Getenv("WEAVEOS_TEST_DATABASE_URL") == "" || os.Getenv("WEAVEOS_TEST_REDIS_URL") == "" {
+		t.Fatal("isolated migrated PostgreSQL and Redis are required; this is NOT RUN without them")
+	}
+	pool, err := pgxpool.New(ctx, os.Getenv("WEAVEOS_TEST_DATABASE_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	newID := func() string {
+		var id string
+		if err := pool.QueryRow(ctx, "SELECT gen_random_uuid()::text").Scan(&id); err != nil {
+			t.Fatal(err)
+		}
+		return id
+	}
+	actor, app := newID(), newID()
+	if _, err := pool.Exec(ctx, "INSERT INTO auth.users(id,account) VALUES($1,$2)", actor, "root-http-"+actor); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, "INSERT INTO applications.apps(id,name,owner_user_id) VALUES($1,'Root HTTP contract',$2)", app, actor); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, "INSERT INTO applications.menu_resources VALUES($1,'application',$1)", app); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, "SELECT applications.register_catalog_entry($1)", app); err != nil {
+		t.Fatal(err)
+	}
+
+	auditKey, definitionKey := make([]byte, 32), make([]byte, 32)
+	if _, err := rand.Read(auditKey); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := rand.Read(definitionKey); err != nil {
+		t.Fatal(err)
+	}
+	runtimeURL, err := url.Parse(os.Getenv("WEAVEOS_TEST_DATABASE_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	query := runtimeURL.Query()
+	query.Set("options", "-c role=auth_app")
+	runtimeURL.RawQuery = query.Encode()
+	values := map[string]string{
+		"WEAVEOS_DATABASE_URL":                runtimeURL.String(),
+		"WEAVEOS_REDIS_URL":                   os.Getenv("WEAVEOS_TEST_REDIS_URL"),
+		"WEAVEOS_PUBLIC_ORIGIN":               "https://root-contract.test",
+		"WEAVEOS_SESSION_GENERATION":          "root-" + app,
+		"WEAVEOS_AUDIT_KEY_ID":                "root_test",
+		"WEAVEOS_AUDIT_HMAC_KEY":              base64.StdEncoding.EncodeToString(auditKey),
+		"WEAVEOS_DEFINITION_KEY_ID":           "root_test",
+		"WEAVEOS_DEFINITION_HMAC_KEY":         base64.StdEncoding.EncodeToString(definitionKey),
+		"WEAVEOS_SCHEMA_LOCK_TIMEOUT_MS":      "1000",
+		"WEAVEOS_SCHEMA_STATEMENT_TIMEOUT_MS": "5000",
+	}
+	cfg, err := readConfig(func(name string) string { return values[name] })
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := session.NewStore(cfg.RedisURL, cfg.Generation)
+	defer store.Close()
+	sid, csrf, err := store.Create(ctx, session.Record{UserID: actor, SessionRef: newID(), AuthVersion: "1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Revoke(context.Background(), sid)
+	server := httptest.NewUnstartedServer(nil)
+	cfg.Origin = "https://" + server.Listener.Addr().String()
+	handler, release, err := buildHandler(ctx, cfg)
+	if err != nil {
+		server.Close()
+		t.Fatal(err)
+	}
+	defer release()
+	server.Config.Handler = handler
+	server.StartTLS()
+	defer server.Close()
+	client := server.Client() // Trusts only this test server; no InsecureSkipVerify.
+	client.Timeout = 10 * time.Second
+
+	type envelope struct {
+		Code string          `json:"code"`
+		Data json.RawMessage `json:"data"`
+	}
+	request := func(method, path string, body any, wantStatus int, wantCode string) json.RawMessage {
+		t.Helper()
+		var reader io.Reader
+		if body != nil {
+			encoded, err := json.Marshal(body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			reader = strings.NewReader(string(encoded))
+		}
+		r, err := http.NewRequestWithContext(ctx, method, cfg.Origin+"/api/v1/applications/"+app+path, reader)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r.Header.Set("Origin", cfg.Origin)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("X-CSRF-Token", csrf)
+		r.Header.Set("X-Expected-Actor-Id", actor)
+		r.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: sid})
+		r.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: csrf})
+		response, err := client.Do(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+		if response.TLS == nil || len(response.TLS.VerifiedChains) == 0 {
+			t.Fatal("verified HTTPS is required")
+		}
+		raw, err := io.ReadAll(response.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var out envelope
+		if err := json.Unmarshal(raw, &out); err != nil {
+			t.Fatalf("invalid JSON envelope: %v", err)
+		}
+		if response.StatusCode != wantStatus || out.Code != wantCode {
+			t.Fatalf("%s %s: want %d/%s got %d/%s; body=%s", method, path, wantStatus, wantCode, response.StatusCode, out.Code, raw)
+		}
+		return out.Data
+	}
+	created := request("POST", "/forms", map[string]any{"operationId": newID(), "name": "Root record form", "source": map[string]any{"kind": "new_table"}, "directoryId": nil, "position": 0, "expectedStructureVersion": 0}, 201, "OK")
+	var form struct {
+		Form  struct{ ID string }
+		Table struct{ ID string }
+	}
+	if err := json.Unmarshal(created, &form); err != nil || form.Form.ID == "" || form.Table.ID == "" {
+		t.Fatalf("missing real form/table: %s", created)
+	}
+	base := "/forms/" + form.Form.ID
+	unreadyOperation := newID()
+	request("POST", base+"/records", map[string]any{"operationId": unreadyOperation, "expectedSchemaVersion": 0, "values": map[string]any{}}, 409, "APPLICATION_SCHEMA_NOT_READY")
+	field := newID()
+	definition := map[string]any{
+		"expectedSchemaVersion": 0, "expectedViewVersion": 0,
+		"fields": []any{map[string]any{"id": field, "name": "事项", "kind": "text", "required": false, "default": nil, "config": map[string]any{"maxLength": nil}, "presentation": map[string]any{"helpText": nil, "displayTimeZone": nil}}},
+		"layout": []any{}, "optionMappings": []any{},
+	}
+	request("POST", base+"/definition/preflight", definition, 200, "OK")
+	definition["operationId"], definition["confirmationToken"] = newID(), nil
+	request("PUT", base+"/definition", definition, 200, "OK")
+	createOperation := newID()
+	body := map[string]any{"operationId": createOperation, "expectedSchemaVersion": 1, "values": map[string]any{field: "最初内容"}}
+	mutation := request("POST", base+"/records", body, 201, "OK")
+	var receipt map[string]any
+	if err := json.Unmarshal(mutation, &receipt); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"operationId", "id", "recordVersion", "schemaVersion", "createdAt", "updatedAt"} {
+		if _, ok := receipt[key]; !ok {
+			t.Fatalf("missing minimum receipt key %s", key)
+		}
+	}
+	if len(receipt) != 6 || receipt["operationId"] != createOperation || receipt["recordVersion"] != float64(1) || receipt["schemaVersion"] != float64(1) {
+		t.Fatalf("invalid minimum receipt: %s", mutation)
+	}
+	record, ok := receipt["id"].(string)
+	if !ok || record == "" {
+		t.Fatal("record ID is required")
+	}
+	var replay map[string]any
+	if err := json.Unmarshal(request("POST", base+"/records", body, 201, "OK"), &replay); err != nil || !reflect.DeepEqual(receipt, replay) {
+		t.Fatal("confirmed replay must retain the exact minimum result")
+	}
+	readValue := func(want string, version int64) {
+		t.Helper()
+		raw := request("GET", base+"/records/"+record, nil, 200, "OK")
+		var out struct {
+			AppID, TableID, ViewID, CreatedBy string
+			SchemaVersion, RecordVersion      int64
+			Values                            map[string]any
+		}
+		if err := json.Unmarshal(raw, &out); err != nil {
+			t.Fatal(err)
+		}
+		if out.AppID != app || out.TableID != form.Table.ID || out.ViewID != form.Form.ID || out.CreatedBy != actor || out.SchemaVersion != 1 || out.RecordVersion != version || out.Values[field] != want {
+			t.Fatalf("unexpected current record: %s", raw)
+		}
+	}
+	readValue("最初内容", 1)
+	search := request("POST", base+"/records/search", map[string]any{"page": 1, "pageSize": 20, "filter": nil, "sort": nil}, 200, "OK")
+	var page struct {
+		Total        int
+		QueryVersion string
+		Items        []json.RawMessage
+	}
+	if err := json.Unmarshal(search, &page); err != nil || page.Total != 1 || len(page.Items) != 1 || page.QueryVersion == "" {
+		t.Fatalf("unexpected real query: %s", search)
+	}
+	badSchemaOperation, staleRowOperation := newID(), newID()
+	request("PATCH", base+"/records/"+record, map[string]any{"operationId": badSchemaOperation, "expectedSchemaVersion": 2, "expectedRecordVersion": 1, "changes": map[string]any{field: "不得写入"}}, 409, "APPLICATION_SCHEMA_CONFLICT")
+	readValue("最初内容", 1)
+	request("PATCH", base+"/records/"+record, map[string]any{"operationId": newID(), "expectedSchemaVersion": 1, "expectedRecordVersion": 1, "queryVersion": page.QueryVersion, "changes": map[string]any{field: "修改后的内容"}}, 200, "OK")
+	readValue("修改后的内容", 2)
+	request("PATCH", base+"/records/"+record, map[string]any{"operationId": staleRowOperation, "expectedSchemaVersion": 1, "expectedRecordVersion": 1, "changes": map[string]any{field: "不得覆盖"}}, 409, "APPLICATION_RECORD_CONFLICT")
+	readValue("修改后的内容", 2)
+	for _, operation := range []string{unreadyOperation, badSchemaOperation, staleRowOperation} {
+		var count int
+		if err := pool.QueryRow(ctx, "SELECT count(*) FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2", actor, operation).Scan(&count); err != nil || count != 0 {
+			t.Fatalf("rejected operation persisted: count=%d err=%v", count, err)
+		}
+		if err := pool.QueryRow(ctx, "SELECT count(*) FROM applications.record_write_audit WHERE actor_user_id=$1 AND operation_id=$2", actor, operation).Scan(&count); err != nil || count != 0 {
+			t.Fatalf("rejected audit persisted: count=%d err=%v", count, err)
+		}
+	}
+}

@@ -1,0 +1,52 @@
+=== RUN   TestDecimalIndependentOracle
+=== RUN   TestDecimalIndependentOracle/-1.25HALF_UP
+    fields_test.go:29: exact oracle want -1.30 got  error invalid field configuration or value
+=== RUN   TestDecimalIndependentOracle/-1.25HALF_EVEN
+    fields_test.go:29: exact oracle want -1.20 got  error invalid field configuration or value
+=== RUN   TestDecimalIndependentOracle/1.35HALF_EVEN
+    fields_test.go:29: exact oracle want 1.40 got  error invalid field configuration or value
+=== RUN   TestDecimalIndependentOracle/-149TOWARD_ZERO
+    fields_test.go:29: exact oracle want -100.00 got  error invalid field configuration or value
+=== RUN   TestDecimalIndependentOracle/-149FLOOR
+    fields_test.go:29: exact oracle want -200.00 got  error invalid field configuration or value
+=== RUN   TestDecimalIndependentOracle/-149CEILING
+    fields_test.go:29: exact oracle want -100.00 got  error invalid field configuration or value
+=== RUN   TestDecimalIndependentOracle/150HALF_UP
+    fields_test.go:29: exact oracle want 200.00 got  error invalid field configuration or value
+=== RUN   TestDecimalIndependentOracle/-0.001CEILING
+    fields_test.go:29: exact oracle want 0.00 got  error invalid field configuration or value
+=== RUN   TestDecimalIndependentOracle/9.999HALF_EVEN
+    fields_test.go:29: exact oracle want 10.00 got  error invalid field configuration or value
+=== RUN   TestDecimalIndependentOracle/100000000000000001.25HALF_EVEN
+    fields_test.go:29: exact oracle want 100000000000000001.20 got  error invalid field configuration or value
+=== RUN   TestDecimalIndependentOracle/99999999999999999999.999999999999999999TOWARD_ZERO
+    fields_test.go:29: exact oracle want 99999999999999999999.999999999999999999 got  error invalid field configuration or value
+=== RUN   TestDecimalIndependentOracle/1500000000000000000HALF_UP
+    fields_test.go:29: exact oracle want 2000000000000000000.00 got  error invalid field configuration or value
+--- FAIL: TestDecimalIndependentOracle (0.00s)
+    --- FAIL: TestDecimalIndependentOracle/-1.25HALF_UP (0.00s)
+    --- FAIL: TestDecimalIndependentOracle/-1.25HALF_EVEN (0.00s)
+    --- FAIL: TestDecimalIndependentOracle/1.35HALF_EVEN (0.00s)
+    --- FAIL: TestDecimalIndependentOracle/-149TOWARD_ZERO (0.00s)
+    --- FAIL: TestDecimalIndependentOracle/-149FLOOR (0.00s)
+    --- FAIL: TestDecimalIndependentOracle/-149CEILING (0.00s)
+    --- FAIL: TestDecimalIndependentOracle/150HALF_UP (0.00s)
+    --- FAIL: TestDecimalIndependentOracle/-0.001CEILING (0.00s)
+    --- FAIL: TestDecimalIndependentOracle/9.999HALF_EVEN (0.00s)
+    --- FAIL: TestDecimalIndependentOracle/100000000000000001.25HALF_EVEN (0.00s)
+    --- FAIL: TestDecimalIndependentOracle/99999999999999999999.999999999999999999TOWARD_ZERO (0.00s)
+    --- FAIL: TestDecimalIndependentOracle/1500000000000000000HALF_UP (0.00s)
+=== RUN   TestFieldDefaultsAndWireTypes
+    fields_test.go:44: normalize omitted defaults invalid field configuration or value
+--- FAIL: TestFieldDefaultsAndWireTypes (0.00s)
+=== RUN   TestDatesOffsetsAndPrecision
+    fields_test.go:65: time oracle "2024-02-29" got null invalid field configuration or value
+    fields_test.go:65: time oracle "2026-10-03T08:23:00Z" got null invalid field configuration or value
+    fields_test.go:65: time oracle "1969-12-31T23:59:59.999Z" got null invalid field configuration or value
+--- FAIL: TestDatesOffsetsAndPrecision (0.00s)
+=== RUN   TestGridSpanAndFieldIdentity
+    fields_test.go:83: 12 column grid [] invalid field configuration or value
+--- FAIL: TestGridSpanAndFieldIdentity (0.00s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/appfields	0.003s
+FAIL

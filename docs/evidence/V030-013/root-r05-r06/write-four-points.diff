@@ -1,0 +1,40 @@
+diff --git a/services/bff/internal/apprecordservice/write.go b/services/bff/internal/apprecordservice/write.go
+index 352f342..f367f70 100644
+--- a/services/bff/internal/apprecordservice/write.go
++++ b/services/bff/internal/apprecordservice/write.go
+@@ -188,7 +188,7 @@ func validateNewReferences(ctx context.Context, tx pgx.Tx, values map[string]any
+ 
+ func (s *Service) Create(ctx context.Context, principal session.Principal, req CreateRequest, metadata applications.Metadata) (MutationResult, error) {
+ 	var result MutationResult
+-	if s == nil || s.Pool == nil || !validWriteLimits(s.Limits) || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.OperationID) || req.Values == nil || req.ExpectedSchemaVersion < 1 || metadata.RequestID == "" {
++	if s == nil || s.Pool == nil || !validWriteLimits(s.Limits) || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.OperationID) || req.Values == nil || req.ExpectedSchemaVersion < 0 || metadata.RequestID == "" {
+ 		return result, apprecords.ErrInvalid
+ 	}
+ 	canonical, _ := json.Marshal(struct {
+@@ -244,7 +244,7 @@ func (s *Service) Create(ctx context.Context, principal session.Principal, req C
+ 	}
+ 	facts := write.Context()
+ 	if req.ExpectedSchemaVersion != facts.SchemaVersion {
+-		return result, apprecords.ErrConflict
++		return result, &appstructure.Error{Code: "APPLICATION_SCHEMA_CONFLICT", Data: map[string]int64{"currentSchemaVersion": facts.SchemaVersion}}
+ 	}
+ 	values, err := normalizeRecordValues(req.Values, fields, true)
+ 	if err != nil {
+@@ -425,7 +425,7 @@ func (s *Service) CreateDraft(ctx context.Context, principal session.Principal,
+ 
+ func (s *Service) Edit(ctx context.Context, principal session.Principal, req EditRequest, metadata applications.Metadata) (MutationResult, error) {
+ 	var result MutationResult
+-	if s == nil || s.Pool == nil || !validWriteLimits(s.Limits) || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.RecordID) || !appfields.ValidID(req.OperationID) || req.Changes == nil || req.ExpectedSchemaVersion < 1 || req.ExpectedRecordVersion < 1 || metadata.RequestID == "" {
++	if s == nil || s.Pool == nil || !validWriteLimits(s.Limits) || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.RecordID) || !appfields.ValidID(req.OperationID) || req.Changes == nil || req.ExpectedSchemaVersion < 0 || req.ExpectedRecordVersion < 1 || metadata.RequestID == "" {
+ 		return result, apprecords.ErrInvalid
+ 	}
+ 	canonical, _ := json.Marshal(struct {
+@@ -482,7 +482,7 @@ func (s *Service) Edit(ctx context.Context, principal session.Principal, req Edi
+ 	}
+ 	facts := write.Context()
+ 	if req.ExpectedSchemaVersion != facts.SchemaVersion {
+-		return result, apprecords.ErrConflict
++		return result, &appstructure.Error{Code: "APPLICATION_SCHEMA_CONFLICT", Data: map[string]int64{"currentSchemaVersion": facts.SchemaVersion}}
+ 	}
+ 	values, err := normalizeRecordValues(req.Changes, fields, false)
+ 	if err != nil {

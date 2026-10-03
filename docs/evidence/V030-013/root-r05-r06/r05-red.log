@@ -1,0 +1,10 @@
+Command:
+/workspace/.weaveos-tools/go/bin/go test -race -count=1 -timeout 2m ./cmd/bff -run '^TestRootHTTPSRecordVersionContract$' -v
+Exit: 1
+
+=== RUN   TestRootHTTPSRecordVersionContract
+    schema_boundary_root_http_test.go:165: POST /forms/44a785eb-d268-4f3d-bebd-37302e2eed9e/records: want 409/APPLICATION_SCHEMA_NOT_READY got 400/COMMON_VALIDATION_FAILED; body={"code":"COMMON_VALIDATION_FAILED","message":"请求未完成","data":{"violations":[{"code":"VALIDATION_INVALID","field":"record","location":"body","message":"记录或草稿输入不合法"}]},"meta":{"requestId":"dae6e21d958c518f486fa6b3aab53cc5"}}
+--- FAIL: TestRootHTTPSRecordVersionContract (0.06s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/cmd/bff	0.078s
+FAIL

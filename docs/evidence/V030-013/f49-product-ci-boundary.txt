@@ -1,0 +1,13 @@
+PR27 head: f49f18b4c4cb882a896e1e04e300092bed4a10ad
+Product run 37128809552 / job 111219562248, completed failure 2026-10-03T14:33:37Z.
+Migrations, HTTPS and real product acceptance: success.
+Runtime configuration, crypto, failure handling and dependency security: success.
+Build once and verify immutable runtime, restore, rollback and browsers: failure.
+Actual failure (connector job log):
+2026-10-03T14:33:10.8236321Z ✖ restricted backup preserves migration ledger sequence and remains unable to advance it (975.266984ms)
+2026-10-03T14:33:10.8312308Z test at infra/runtime/backup.test.mjs:42:1
+2026-10-03T14:33:10.8312925Z ✖ restricted backup preserves migration ledger sequence and remains unable to advance it (975.266984ms)
+2026-10-03T14:33:10.8314467Z   ERROR:  relation "applications.record_change_events" does not exist
+2026-10-03T14:33:10.8320452Z     output: [ null, 'DO\nREVOKE\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\n', 'ERROR:  relation "applications.record_change_events" does not exist\n' ],
+2026-10-03T14:33:10.8324475Z     stderr: 'ERROR:  relation "applications.record_change_events" does not exist\n'
+Later deployment/packaging/signoff steps skipped by Actions after failure; they were not verified.
