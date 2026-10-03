@@ -63,9 +63,9 @@ test('Root read-only POST does not grant mutation paths read semantics',async({p
  let requests=0;await page.route('**/api/v1/**',route=>{requests++;return route.abort();});
  const result=await page.evaluate(async({actor,path})=>{
   try{await (window as any).__rootApplicationBoundary.api.applicationReadPost(actor,path,{values:{}});return false;}
-  catch(error){return error instanceof TypeError;}
+  catch(error){return {typeError:error instanceof TypeError,message:(error as Error).message};}
  },{actor,path});
- expect(result).toBe(true);expect(requests).toBe(0);
+ expect(result).toEqual({typeError:true,message:'Read-only POST is restricted to record search'});expect(requests).toBe(0);
 });
 
 test('Root malformed read-only search response does not create unknown write state',async({page})=>{
