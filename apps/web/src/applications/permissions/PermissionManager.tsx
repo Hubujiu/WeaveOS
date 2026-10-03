@@ -15,10 +15,14 @@ type Section = '基本信息' | '成员' | '菜单';
 type BasicDraft = { name: string; enabled: boolean; originalName: string; originalEnabled: boolean; revision: number };
 type MemberDraft = { ids: string[]; originalIds: string[]; labels: Record<string, MemberLabel>; revision: number };
 type GrantDraft = { checked: boolean; originalChecked: boolean; unsupported: boolean; revision: number };
+type BasicReview = { revision: number; name: string; enabled: boolean };
+type MemberReview = { revision: number; ids: string[]; labels: Record<string, MemberLabel> };
+type GrantReview = { revision: number; checked: boolean; unsupported: boolean };
 
 const validRevision = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 1;
 const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const sameIds = (a: string[], b: string[]) => a.length === b.length && a.every(id => b.includes(id));
+const memberNames = (ids: string[], labels: Record<string, MemberLabel>) => ids.map(id => labels[id]?.label || id).join('、') || '无';
 const basicDirty = (value: BasicDraft) => value.name !== value.originalName || value.enabled !== value.originalEnabled;
 const memberDirty = (value: MemberDraft) => !sameIds(value.ids, value.originalIds);
 const grantDirty = (value: GrantDraft) => value.checked !== value.originalChecked;
@@ -117,6 +121,11 @@ function GroupEditor({ actorId, appId, group, reloadList, onDirty, onUnauthorize
  const [error, setError] = useState('');
  const [status, setStatus] = useState('');
  const [reloadRequired, setReloadRequired] = useState(false);
+ const [basicReview, setBasicReview] = useState<BasicReview | null>(null);
+ const [memberReview, setMemberReview] = useState<MemberReview | null>(null);
+ const [grantReview, setGrantReview] = useState<GrantReview | null>(null);
+ const drafts = useRef({ basic, members, grants });
+ drafts.current = { basic, members, grants };
  const confirmedSection = useRef<Section | null>(null);
  const [candidateQuery, setCandidateQuery] = useState('');
  const [pageToken, setPageToken] = useState('');
@@ -134,12 +143,14 @@ function GroupEditor({ actorId, appId, group, reloadList, onDirty, onUnauthorize
   else if (cause instanceof ApplicationError && cause.code === 'AUTH_SESSION_CHANGED') onIdentityMismatch();
   else setError(message(cause));
  }, [onUnauthorized, onIdentityMismatch]);
- const reread = useCallback(async (saved?: Section) => {
+ const reread = useCallback(async (saved?: Section, conflicted?: Section) => {
   if (saved) confirmedSection.current = saved;
   const section = saved ?? confirmedSection.current;
   const token = ++sequence.current;
   setError(''); setLoading(true);
-  if (section) setReloadRequired(true);
+  // A split GET can observe different policy revisions. No section may save
+  // until all three responses represent one consistent server snapshot.
+  setReloadRequired(true);
   try {
    const [list, memberResult, grantResult] = await Promise.all([
     applicationApi<GroupList>(actorId, 'applications/' + encodeURIComponent(appId) + '/permission-groups'),
@@ -148,29 +159,38 @@ function GroupEditor({ actorId, appId, group, reloadList, onDirty, onUnauthorize
    ]);
    const latest = list.items?.find(value => value.id === group.id);
    if (!listValid(list) || !latest || !membersValid(memberResult) || !grantsValid(grantResult)) throw new Error('权限配置响应无效，请重试');
+   if (list.policyRevision !== memberResult.policyRevision || list.policyRevision !== grantResult.policyRevision) throw new Error('权限配置读取期间发生变化，请重新加载配置');
    if (token !== sequence.current) return;
+   const current = drafts.current;
+   const revision = list.policyRevision;
+   const serverLabels = Object.fromEntries(memberResult.members.map(value => [value.id, value]));
+   const serverChecked = grantResult.grants.some(value => isRootGrant(value, appId));
+   const serverUnsupported = grantResult.grants.some(value => !isRootGrant(value, appId));
+   setBasicReview(section !== '基本信息' && basicDirty(current.basic) && current.basic.revision !== revision && !getRecovery(actorId, scope + 'basic')?.unknown ? { revision, name: latest.name, enabled: latest.enabled } : null);
+   setMemberReview(section !== '成员' && current.members && memberDirty(current.members) && current.members.revision !== revision && !getRecovery(actorId, scope + 'members')?.unknown ? { revision, ids: [...memberResult.memberIds], labels: serverLabels } : null);
+   setGrantReview(section !== '菜单' && current.grants && grantDirty(current.grants) && current.grants.revision !== revision && !getRecovery(actorId, scope + 'menu')?.unknown ? { revision, checked: serverChecked, unsupported: serverUnsupported } : null);
    setBasic(previous => section === '基本信息' || !basicDirty(previous) ? { name: latest.name, enabled: latest.enabled, originalName: latest.name, originalEnabled: latest.enabled, revision: list.policyRevision } : previous);
    setMembers(previous => {
     if (previous && section !== '成员' && memberDirty(previous)) return previous;
     const packet = section ? null : getRecovery(actorId, scope + 'members')?.packet?.body;
-    return { ids: Array.isArray(packet?.memberIds) && packet.memberIds.every(id => typeof id === 'string') ? packet.memberIds as string[] : [...memberResult.memberIds], originalIds: [...memberResult.memberIds], labels: Object.fromEntries(memberResult.members.map(value => [value.id, value])), revision: typeof packet?.expectedPolicyRevision === 'number' ? packet.expectedPolicyRevision : list.policyRevision };
+    return { ids: Array.isArray(packet?.memberIds) && packet.memberIds.every(id => typeof id === 'string') ? packet.memberIds as string[] : [...memberResult.memberIds], originalIds: [...memberResult.memberIds], labels: serverLabels, revision: typeof packet?.expectedPolicyRevision === 'number' ? packet.expectedPolicyRevision : list.policyRevision };
    });
    setGrants(previous => {
     if (previous && section !== '菜单' && grantDirty(previous)) return previous;
     const packet = section ? null : getRecovery(actorId, scope + 'menu')?.packet?.body;
-    const originalChecked = grantResult.grants.some(value => isRootGrant(value, appId));
-    return { checked: Array.isArray(packet?.grants) ? packet.grants.some(value => isRootGrant(value, appId)) : originalChecked, originalChecked, unsupported: grantResult.grants.some(value => !isRootGrant(value, appId)), revision: typeof packet?.expectedPolicyRevision === 'number' ? packet.expectedPolicyRevision : list.policyRevision };
+    return { checked: Array.isArray(packet?.grants) ? packet.grants.some(value => isRootGrant(value, appId)) : serverChecked, originalChecked: serverChecked, unsupported: serverUnsupported, revision: typeof packet?.expectedPolicyRevision === 'number' ? packet.expectedPolicyRevision : list.policyRevision };
    });
    confirmedSection.current = null;
    setReloadRequired(false);
-   if (section) { setStatus(section + '已保存'); void reloadList(); }
-  } catch (cause) { if (token === sequence.current) { if (section) setStatus(section + '已保存，但重读失败；请重试读取配置'); handleError(cause); } }
+   if (section) setStatus(section + '已保存');
+   if (section || conflicted) void reloadList();
+  } catch (cause) { if (token === sequence.current) { if (section) setStatus(section + '已保存，但重读失败；请重试读取配置'); else if (conflicted) setStatus(conflicted + '出现版本冲突，重读失败；请重新加载配置'); handleError(cause); } }
   finally { if (token === sequence.current) setLoading(false); }
  }, [actorId, appId, base, group.id, scope, handleError, reloadList]);
  useEffect(() => { void reread(); return () => { sequence.current++; }; }, [reread]);
- const basicOperation = useApplicationOperation<PermissionGroup>(actorId, () => { clearScopedDraft(actorId, scope + 'basic'); void reread('基本信息'); }, onUnauthorized, onIdentityMismatch, value => !!value && value.id === group.id && typeof value.name === 'string' && typeof value.enabled === 'boolean' && validRevision(value.policyRevision), scope + 'basic');
- const memberOperation = useApplicationOperation<PolicyResult>(actorId, () => { clearScopedDraft(actorId, scope + 'members'); void reread('成员'); }, onUnauthorized, onIdentityMismatch, value => !!value && value.id === group.id && validRevision(value.policyRevision), scope + 'members');
- const menuOperation = useApplicationOperation<PolicyResult>(actorId, () => { clearScopedDraft(actorId, scope + 'menu'); void reread('菜单'); }, onUnauthorized, onIdentityMismatch, value => !!value && value.id === group.id && validRevision(value.policyRevision), scope + 'menu');
+ const basicOperation = useApplicationOperation<PermissionGroup>(actorId, () => { clearScopedDraft(actorId, scope + 'basic'); void reread('基本信息'); }, onUnauthorized, onIdentityMismatch, value => !!value && value.id === group.id && typeof value.name === 'string' && typeof value.enabled === 'boolean' && validRevision(value.policyRevision), scope + 'basic', () => void reread(undefined, '基本信息'));
+ const memberOperation = useApplicationOperation<PolicyResult>(actorId, () => { clearScopedDraft(actorId, scope + 'members'); void reread('成员'); }, onUnauthorized, onIdentityMismatch, value => !!value && value.id === group.id && validRevision(value.policyRevision), scope + 'members', () => void reread(undefined, '成员'));
+ const menuOperation = useApplicationOperation<PolicyResult>(actorId, () => { clearScopedDraft(actorId, scope + 'menu'); void reread('菜单'); }, onUnauthorized, onIdentityMismatch, value => !!value && value.id === group.id && validRevision(value.policyRevision), scope + 'menu', () => void reread(undefined, '菜单'));
  useEffect(() => { if (basicDirty(basic)) keepScopedDraft(actorId, scope + 'basic', basic); else clearScopedDraft(actorId, scope + 'basic'); }, [actorId, scope, basic]);
  useEffect(() => { if (members && memberDirty(members)) keepScopedDraft(actorId, scope + 'members', members); else if (members) clearScopedDraft(actorId, scope + 'members'); }, [actorId, scope, members]);
  useEffect(() => { if (grants && grantDirty(grants)) keepScopedDraft(actorId, scope + 'menu', grants); else if (grants) clearScopedDraft(actorId, scope + 'menu'); }, [actorId, scope, grants]);
@@ -192,33 +212,37 @@ function GroupEditor({ actorId, appId, group, reloadList, onDirty, onUnauthorize
   }).catch(cause => { if (live) { if (cause instanceof ApplicationError && cause.status === 401) onUnauthorized(); else if (cause instanceof ApplicationError && cause.code === 'AUTH_SESSION_CHANGED') onIdentityMismatch(); else setCandidateError(message(cause)); } }).finally(() => { if (live) setCandidateLoading(false); });
   return () => { live = false; controller.abort(); };
  }, [actorId, appId, candidateQuery, pageToken, candidateRetry, onUnauthorized, onIdentityMismatch]);
- const saveBasic = () => {
+ const saveBasic = (revision: number) => {
   if (writeBlocked) return;
   const name = basic.name.trim();
   if (!name || [...name].length > 100 || name.includes('\0')) { setError('权限组名称须为 1–100 个字符'); return; }
-  setError(''); setStatus(''); basicOperation.start(base, { name, enabled: basic.enabled, expectedPolicyRevision: basic.revision }, 'PUT', 200);
+  setError(''); setStatus(''); basicOperation.start(base, { name, enabled: basic.enabled, expectedPolicyRevision: revision }, 'PUT', 200);
  };
- const saveMembers = () => { if (!members || writeBlocked) return; setError(''); setStatus(''); memberOperation.start(base + '/members', { memberIds: members.ids, expectedPolicyRevision: members.revision }, 'PUT', 200); };
- const saveMenu = () => { if (!grants || grants.unsupported || writeBlocked) return; setError(''); setStatus(''); menuOperation.start(base + '/grants', { grants: grants.checked ? [rootGrant(appId)] : [], expectedPolicyRevision: grants.revision }, 'PUT', 200); };
+ const saveMembers = (revision: number) => { if (!members || writeBlocked) return; setError(''); setStatus(''); memberOperation.start(base + '/members', { memberIds: members.ids, expectedPolicyRevision: revision }, 'PUT', 200); };
+ const saveMenu = (revision: number) => { if (!grants || grants.unsupported || grantReview?.unsupported || writeBlocked) return; setError(''); setStatus(''); menuOperation.start(base + '/grants', { grants: grants.checked ? [rootGrant(appId)] : [], expectedPolicyRevision: revision }, 'PUT', 200); };
  const operationControl = (operation: typeof basicOperation) => operation.phase === 'unconfirmed' ? <div className="app-operation-controls"><p role="alert">{operation.message}</p><button className="admin-button" onClick={operation.query}>核查原操作</button><button className="admin-button" onClick={operation.retry}>使用同一操作重试</button></div> : operation.message ? <p role="alert">{operation.message}</p> : null;
  return <>
   <div className="detail-heading"><h2>{group.name}</h2><button className="admin-button" onClick={() => void reread()} disabled={loading}>重新加载配置</button></div>
   {status && <p className="app-success" role="status">{status}</p>}
   {error && <p className="workspace-error" role="alert">{error}</p>}
   {loading && <p role="status">正在读取权限配置…</p>}
-  <section className="config-section"><h3>基本信息</h3><label>权限组名称<input value={basic.name} disabled={busy || basicOperation.phase === 'unconfirmed'} onChange={event => setBasic(value => ({ ...value, name: event.target.value }))} /></label><label className="template-choice"><input type="checkbox" checked={basic.enabled} disabled={busy || basicOperation.phase === 'unconfirmed'} onChange={event => setBasic(value => ({ ...value, enabled: event.target.checked }))} />启用权限组</label><div><button className="admin-button primary" disabled={!basicDirty(basic) || writeBlocked || basicOperation.phase === 'unconfirmed'} onClick={saveBasic}>保存基本信息</button></div>{operationControl(basicOperation)}</section>
+  <section className="config-section"><h3>基本信息</h3><label>权限组名称<input value={basic.name} disabled={busy || basicOperation.phase === 'unconfirmed'} onChange={event => setBasic(value => ({ ...value, name: event.target.value }))} /></label><label className="template-choice"><input type="checkbox" checked={basic.enabled} disabled={busy || basicOperation.phase === 'unconfirmed'} onChange={event => setBasic(value => ({ ...value, enabled: event.target.checked }))} />启用权限组</label><div><button className="admin-button primary" disabled={!basicDirty(basic) || !!basicReview || writeBlocked || basicOperation.phase === 'unconfirmed'} onClick={() => saveBasic(basic.revision)}>保存基本信息</button></div>{operationControl(basicOperation)}
+   {basicReview && basicOperation.phase !== 'unconfirmed' && <div className="app-conflict-review" role="group" aria-label="基本信息版本核对"><p>权限配置版本已变化，请核对本段差异后选择。</p><p>服务器当前：{basicReview.name}（{basicReview.enabled ? '启用' : '停用'}）</p><p>本地草稿：{basic.name}（{basic.enabled ? '启用' : '停用'}）</p><div className="app-conflict-actions"><button className="admin-button primary" disabled={writeBlocked || !basicDirty(basic)} onClick={() => saveBasic(basicReview.revision)}>基于最新版本重试保存</button><button className="admin-button" disabled={writeBlocked} onClick={() => { setBasic({ name: basicReview.name, enabled: basicReview.enabled, originalName: basicReview.name, originalEnabled: basicReview.enabled, revision: basicReview.revision }); setBasicReview(null); clearScopedDraft(actorId, scope + 'basic'); basicOperation.dismissError(); }}>放弃本段修改并重载</button></div></div>}
+  </section>
   <section className="config-section"><h3>成员</h3><p>仅当前应用 owner 可查询活跃成员。已停用的现有成员可以保留或移除。</p>
    {members ? <>
     {members.ids.map(id => { const member = members.labels[id]; return <div className="app-member-selected" key={id}><span><span>{member?.label || id}</span>{member?.status === 'disabled' && <small>（已停用）</small>}</span><button type="button" className="text-button" disabled={busy || memberOperation.phase === 'unconfirmed'} onClick={() => setMembers(value => value && ({ ...value, ids: value.ids.filter(valueId => valueId !== id) }))}>移除{member?.status === 'disabled' ? '停用成员' : '已选成员'}</button></div>; })}
     <label>按账号前缀搜索<input value={candidateQuery} onChange={event => { setCandidateQuery(event.target.value); setPageToken(''); setPreviousTokens([]); }} /></label>
     {candidateLoading ? <p role="status">正在加载成员候选…</p> : candidateError ? <div className="app-state"><p role="alert">{candidateError}</p><button className="admin-button" onClick={() => setCandidateRetry(value => value + 1)}>重试候选</button></div> : candidates.length ? candidates.map(candidate => <label className="template-choice" key={candidate.id}><input type="checkbox" checked={members.ids.includes(candidate.id)} disabled={busy || memberOperation.phase === 'unconfirmed'} onChange={event => setMembers(value => value && ({ ...value, ids: event.target.checked ? [...value.ids, candidate.id] : value.ids.filter(id => id !== candidate.id), labels: { ...value.labels, [candidate.id]: { ...candidate, selectable: true } } }))} />{candidate.label}</label>) : <p className="empty-state">没有匹配的活跃成员</p>}
     <div className="app-candidate-pages"><button className="admin-button" disabled={!previousTokens.length || candidateLoading} onClick={() => { const previous = [...previousTokens]; setPageToken(previous.pop() || ''); setPreviousTokens(previous); }}>上一页</button><button className="admin-button" disabled={!hasMore || !nextToken || candidateLoading} onClick={() => { setPreviousTokens(tokens => [...tokens, pageToken]); setPageToken(nextToken || ''); }}>下一页</button></div>
-    <div><button className="admin-button primary" disabled={!memberDirty(members) || writeBlocked || memberOperation.phase === 'unconfirmed'} onClick={saveMembers}>保存成员</button></div>{operationControl(memberOperation)}
+    <div><button className="admin-button primary" disabled={!memberDirty(members) || !!memberReview || writeBlocked || memberOperation.phase === 'unconfirmed'} onClick={() => saveMembers(members.revision)}>保存成员</button></div>{operationControl(memberOperation)}
+    {memberReview && memberOperation.phase !== 'unconfirmed' && <div className="app-conflict-review" role="group" aria-label="成员版本核对"><p>权限配置版本已变化，请核对本段差异后选择。</p><p>服务器当前：{memberNames(memberReview.ids, memberReview.labels)}</p><p>本地草稿：{memberNames(members.ids, members.labels)}</p><div className="app-conflict-actions"><button className="admin-button primary" disabled={writeBlocked || !memberDirty(members)} onClick={() => saveMembers(memberReview.revision)}>基于最新版本重试保存</button><button className="admin-button" disabled={writeBlocked} onClick={() => { setMembers({ ids: [...memberReview.ids], originalIds: [...memberReview.ids], labels: memberReview.labels, revision: memberReview.revision }); setMemberReview(null); clearScopedDraft(actorId, scope + 'members'); memberOperation.dismissError(); }}>放弃本段修改并重载</button></div></div>}
    </> : !loading && <p className="empty-state">成员配置暂不可用</p>}
   </section>
   <section className="config-section"><h3>菜单</h3><p>此阶段只配置当前应用根入口；成员身份本身不会授予菜单或数据权限。</p>{grants ? <>
    {grants.unsupported && <p className="workspace-error" role="alert">包含当前客户端不理解的授权，请使用新版客户端。此处为只读，避免替换时丢失权限。</p>}
-   <label className="template-choice"><input type="checkbox" checked={grants.checked} disabled={busy || grants.unsupported || menuOperation.phase === 'unconfirmed'} onChange={event => setGrants(value => value && ({ ...value, checked: event.target.checked }))} />允许进入应用</label><div><button className="admin-button primary" disabled={!grantDirty(grants) || writeBlocked || grants.unsupported || menuOperation.phase === 'unconfirmed'} onClick={saveMenu}>保存菜单</button></div>{operationControl(menuOperation)}
+   <label className="template-choice"><input type="checkbox" checked={grants.checked} disabled={busy || grants.unsupported || menuOperation.phase === 'unconfirmed'} onChange={event => setGrants(value => value && ({ ...value, checked: event.target.checked }))} />允许进入应用</label><div><button className="admin-button primary" disabled={!grantDirty(grants) || !!grantReview || writeBlocked || grants.unsupported || menuOperation.phase === 'unconfirmed'} onClick={() => saveMenu(grants.revision)}>保存菜单</button></div>{operationControl(menuOperation)}
+   {grantReview && menuOperation.phase !== 'unconfirmed' && <div className="app-conflict-review" role="group" aria-label="菜单版本核对"><p>权限配置版本已变化，请核对本段差异后选择。</p><p>服务器当前：{grantReview.checked ? '允许进入应用' : '不允许进入应用'}{grantReview.unsupported ? '，另有当前客户端不理解的授权' : ''}</p><p>本地草稿：{grants.checked ? '允许进入应用' : '不允许进入应用'}</p><div className="app-conflict-actions"><button className="admin-button primary" disabled={writeBlocked || !grantDirty(grants) || grantReview.unsupported} onClick={() => saveMenu(grantReview.revision)}>基于最新版本重试保存</button><button className="admin-button" disabled={writeBlocked} onClick={() => { setGrants({ checked: grantReview.checked, originalChecked: grantReview.checked, unsupported: grantReview.unsupported, revision: grantReview.revision }); setGrantReview(null); clearScopedDraft(actorId, scope + 'menu'); menuOperation.dismissError(); }}>放弃本段修改并重载</button></div></div>}
   </> : !loading && <p className="empty-state">菜单配置暂不可用</p>}</section>
  </>;
 }

@@ -1,0 +1,123 @@
+
+Running 4 tests using 1 worker
+FFFF
+
+  1) [chromium] › apps/web/src/applications.permissions.component.spec.ts:278:1 › V030-012 CAS review lets two dirty sections save in sequence only after explicit retry
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator:  getByRole('heading', { name: '菜单', exact: true }).locator('..').getByRole('button', { name: '保存菜单' })
+    Expected: disabled
+    Received: enabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('heading', { name: '菜单', exact: true }).locator('..').getByRole('button', { name: '保存菜单' }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '菜单', exact: true }).locator('..').getByRole('button', { name: '保存菜单' })
+        14 × locator resolved to <button class="admin-button primary">保存菜单</button>
+           - unexpected value "enabled"
+
+
+      286 |  await expect(page.getByRole('status').filter({ hasText: '成员已保存' })).toBeVisible();
+      287 |  const menu = page.getByRole('heading', { name: '菜单', exact: true }).locator('..');
+    > 288 |  await expect(menu.getByRole('button', { name: '保存菜单' })).toBeDisabled();
+          |                                                           ^
+      289 |  await expect(menu).toContainText('服务器当前');
+      290 |  await expect(menu).toContainText('本地草稿');
+      291 |  await menu.getByRole('button', { name: '基于最新版本重试保存' }).click();
+        at /repo/apps/web/src/applications.permissions.component.spec.ts:288:59
+
+    Error Context: .work/v030012/browser-results/applications.permissions.c-42ab7-e-only-after-explicit-retry-chromium/error-context.md
+
+  2) [chromium] › apps/web/src/applications.permissions.component.spec.ts:297:1 › V030-012 CAS review keeps a same-section draft after another actor changes its server baseline
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('heading', { name: '基本信息', exact: true }).locator('..')
+    Expected substring: "服务器当前：他人版本"
+    Received string:    "基本信息权限组名称启用权限组保存基本信息权限配置已变化，请重新加载后再编辑"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('heading', { name: '基本信息', exact: true }).locator('..') with timeout 5000ms
+      - waiting for getByRole('heading', { name: '基本信息', exact: true }).locator('..')
+        - locator resolved to <section class="config-section">…</section>
+        - unexpected value "基本信息权限组名称启用权限组保存基本信息"
+        13 × locator resolved to <section class="config-section">…</section>
+           - unexpected value "基本信息权限组名称启用权限组保存基本信息权限配置已变化，请重新加载后再编辑"
+
+
+      304 |  backend.externalBasic('他人版本');
+      305 |  await basic.getByRole('button', { name: '保存基本信息' }).click();
+    > 306 |  await expect(basic).toContainText('服务器当前：他人版本');
+          |                      ^
+      307 |  await expect(basic).toContainText('本地草稿：我的草稿');
+      308 |  await expect(basic.getByRole('textbox', { name: '权限组名称' })).toHaveValue('我的草稿');
+      309 |  await basic.getByRole('button', { name: '基于最新版本重试保存' }).click();
+        at /repo/apps/web/src/applications.permissions.component.spec.ts:306:22
+
+    Error Context: .work/v030012/browser-results/applications.permissions.c-757aa-changes-its-server-baseline-chromium/error-context.md
+
+  3) [chromium] › apps/web/src/applications.permissions.component.spec.ts:317:1 › V030-012 CAS review discards only the selected section and retains a dirty peer
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('heading', { name: '菜单', exact: true }).locator('..')
+    Expected substring: "服务器当前"
+    Received string:    "菜单此阶段只配置当前应用根入口；成员身份本身不会授予菜单或数据权限。允许进入应用保存菜单权限配置已变化，请重新加载后再编辑"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('heading', { name: '菜单', exact: true }).locator('..') with timeout 5000ms
+      - waiting for getByRole('heading', { name: '菜单', exact: true }).locator('..')
+        - locator resolved to <section class="config-section">…</section>
+        - unexpected value "菜单此阶段只配置当前应用根入口；成员身份本身不会授予菜单或数据权限。允许进入应用保存菜单"
+        13 × locator resolved to <section class="config-section">…</section>
+           - unexpected value "菜单此阶段只配置当前应用根入口；成员身份本身不会授予菜单或数据权限。允许进入应用保存菜单权限配置已变化，请重新加载后再编辑"
+
+
+      325 |  await page.getByRole('button', { name: '保存菜单' }).click();
+      326 |  const menu = page.getByRole('heading', { name: '菜单', exact: true }).locator('..');
+    > 327 |  await expect(menu).toContainText('服务器当前');
+          |                     ^
+      328 |  await menu.getByRole('button', { name: '放弃本段修改并重载' }).click();
+      329 |  await expect(menu.getByRole('checkbox', { name: '允许进入应用' })).not.toBeChecked();
+      330 |  await expect(page.getByRole('textbox', { name: '权限组名称' })).toHaveValue('保留的名称');
+        at /repo/apps/web/src/applications.permissions.component.spec.ts:327:21
+
+    Error Context: .work/v030012/browser-results/applications.permissions.c-f059d-on-and-retains-a-dirty-peer-chromium/error-context.md
+
+  4) [chromium] › apps/web/src/applications.permissions.component.spec.ts:334:1 › V030-012 CAS review handles a second definite conflict without losing input or reusing a key
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('heading', { name: '基本信息', exact: true }).locator('..')
+    Expected substring: "服务器当前：外部一"
+    Received string:    "基本信息权限组名称启用权限组保存基本信息权限配置已变化，请重新加载后再编辑"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('heading', { name: '基本信息', exact: true }).locator('..') with timeout 5000ms
+      - waiting for getByRole('heading', { name: '基本信息', exact: true }).locator('..')
+        - locator resolved to <section class="config-section">…</section>
+        - unexpected value "基本信息权限组名称启用权限组保存基本信息"
+        13 × locator resolved to <section class="config-section">…</section>
+           - unexpected value "基本信息权限组名称启用权限组保存基本信息权限配置已变化，请重新加载后再编辑"
+
+
+      341 |  backend.externalBasic('外部一');
+      342 |  await basic.getByRole('button', { name: '保存基本信息' }).click();
+    > 343 |  await expect(basic).toContainText('服务器当前：外部一');
+          |                      ^
+      344 |  backend.externalBasic('外部二');
+      345 |  await basic.getByRole('button', { name: '基于最新版本重试保存' }).click();
+      346 |  await expect(basic).toContainText('服务器当前：外部二');
+        at /repo/apps/web/src/applications.permissions.component.spec.ts:343:22
+
+    Error Context: .work/v030012/browser-results/applications.permissions.c-bf965-sing-input-or-reusing-a-key-chromium/error-context.md
+
+  4 failed
+    [chromium] › apps/web/src/applications.permissions.component.spec.ts:278:1 › V030-012 CAS review lets two dirty sections save in sequence only after explicit retry
+    [chromium] › apps/web/src/applications.permissions.component.spec.ts:297:1 › V030-012 CAS review keeps a same-section draft after another actor changes its server baseline
+    [chromium] › apps/web/src/applications.permissions.component.spec.ts:317:1 › V030-012 CAS review discards only the selected section and retains a dirty peer
+    [chromium] › apps/web/src/applications.permissions.component.spec.ts:334:1 › V030-012 CAS review handles a second definite conflict without losing input or reusing a key

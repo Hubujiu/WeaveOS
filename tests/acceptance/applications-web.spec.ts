@@ -148,6 +148,45 @@ test('V030-012 real B5: owner saves permission-group basics, members and root me
  } finally { await memberContext.close(); }
 });
 
+test('V030-012 real B5: concurrent policy change requires explicit menu review before grant write', async ({ page }, info) => {
+ const f = fixture();
+ await login(page, f.admin);
+ const created = await realApi(page.context(), f.adminId, 'applications', 'POST', { name: '并发授权核对 ' + info.project.name + ' ' + Date.now(), operationId: crypto.randomUUID() });
+ expect(created.status).toBe(201);
+ const app = created.data as { id: string; name: string };
+ const groupCreated = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups', 'POST', {
+  name: '初始权限组', expectedPolicyRevision: 1, operationId: crypto.randomUUID(),
+ });
+ expect(groupCreated.status).toBe(201);
+ const group = groupCreated.data as { id: string; policyRevision: number };
+ await page.goto('/app/applications/' + app.id);
+ await page.getByRole('button', { name: '权限管理', exact: true }).click();
+ await page.getByRole('button', { name: '初始权限组', exact: true }).click();
+ const menu = page.getByRole('heading', { name: '菜单', exact: true }).locator('..');
+ await menu.getByRole('checkbox', { name: '允许进入应用' }).check();
+ const peer = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups/' + group.id, 'PUT', {
+  name: '其他客户端已更新', enabled: true, expectedPolicyRevision: group.policyRevision, operationId: crypto.randomUUID(),
+ });
+ expect(peer.status).toBe(200);
+ const stale = page.waitForResponse(response => response.request().method() === 'PUT' && new URL(response.url()).pathname.endsWith('/grants'));
+ await menu.getByRole('button', { name: '保存菜单' }).click();
+ expect((await stale).status()).toBe(409);
+ await expect(menu.getByRole('group', { name: '菜单版本核对' })).toContainText('服务器当前：不允许进入应用');
+ await expect(menu.getByRole('group', { name: '菜单版本核对' })).toContainText('本地草稿：允许进入应用');
+ await expect(menu.getByRole('button', { name: '保存菜单' })).toBeDisabled();
+ const before = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups/' + group.id + '/grants');
+ expect(before.status).toBe(200);
+ expect(before.data.grants).toEqual([]);
+ await menu.getByRole('group', { name: '菜单版本核对' }).scrollIntoViewIfNeeded();
+ if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('permission-real-conflict-review.png'), fullPage: true });
+ const retried = page.waitForResponse(response => response.request().method() === 'PUT' && new URL(response.url()).pathname.endsWith('/grants'));
+ await menu.getByRole('button', { name: '基于最新版本重试保存' }).click();
+ expect((await retried).status()).toBe(200);
+ await expect(page.getByRole('status').filter({ hasText: '菜单已保存' })).toBeVisible();
+ const after = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups/' + group.id + '/grants');
+ expect(after.data.grants).toEqual([{ resourceKind: 'application', resourceId: app.id, action: 'menu.enter', rowScope: 'all', fields: [] }]);
+});
+
 test('V030-012 real HTTPS Shell persists a directory, form and saved designer field', async ({ page }, info) => {
  const f = fixture();
  await page.setViewportSize({ width: 1920, height: 1080 });

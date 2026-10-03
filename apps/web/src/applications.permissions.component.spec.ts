@@ -50,7 +50,12 @@ async function fixture(page: Page, options: { owner?: boolean; groups?: boolean 
   if (method !== 'GET') writes.push({ path, method, body, status });
   await route.fulfill({ status, json: { code: 'OK', message: 'success', data, meta } });
  });
- return { writes, state: () => ({ revision, groups, memberIds, grants }) };
+ return {
+  writes, state: () => ({ revision, groups, memberIds, grants }),
+  externalBasic(name: string) { revision++; groups = groups.map(group => ({ ...group, name, policyRevision: revision })); },
+  externalMenu(values: typeof rootGrant[]) { revision++; grants = values; groups = groups.map(group => ({ ...group, policyRevision: revision })); },
+  externalRevision() { revision++; groups = groups.map(group => ({ ...group, policyRevision: revision })); },
+ };
 }
 
 test('V030-012 owner manages a real group with three independent server saves', async ({ page }) => {
@@ -244,7 +249,7 @@ test('V030-012 preserves an unsupported grant by making the menu read-only', asy
  expect(backend.writes).toHaveLength(0);
 });
 
-test('V030-012 selected members survive search and cursor paging; a dirty menu retains its old CAS', async ({ page }, info) => {
+test('V030-012 selected members survive cursor paging and a dirty menu requires review after member save', async ({ page }, info) => {
  const backend = await fixture(page);
  const secondId = '00000000-0000-4000-8000-000000000006';
  await page.route('**/api/v1/applications/' + app.id + '/member-candidates?**', route => {
@@ -263,11 +268,121 @@ test('V030-012 selected members survive search and cursor paging; a dirty menu r
  await page.getByRole('button', { name: '保存成员' }).click();
  await expect(page.getByRole('status').filter({ hasText: '成员已保存' })).toBeVisible();
  expect(backend.state().memberIds).toEqual([inactiveId, memberId, secondId]);
- await page.getByRole('button', { name: '保存菜单' }).click();
- await expect(page.getByRole('alert').filter({ hasText: '权限配置已变化' })).toBeVisible();
+ await expect(page.getByRole('button', { name: '保存菜单' })).toBeDisabled();
+ await expect(page.getByRole('group', { name: '菜单版本核对' })).toBeVisible();
+ await page.getByRole('group', { name: '菜单版本核对' }).scrollIntoViewIfNeeded();
  await capture(page, info, 'permission-conflict');
- expect(backend.writes.at(-1)?.body).toMatchObject({ expectedPolicyRevision: 1, grants: [] });
+ expect(backend.writes).toHaveLength(1);
  expect(backend.state().grants).toEqual([rootGrant]);
+});
+
+test('V030-012 CAS review lets two dirty sections save in sequence only after explicit retry', async ({ page }) => {
+ const backend = await fixture(page);
+ await page.goto('/app/applications/' + app.id);
+ await page.getByRole('button', { name: '权限管理' }).click();
+ await page.getByRole('button', { name: '业务管理员', exact: true }).click();
+ await page.getByRole('checkbox', { name: '活跃成员' }).check();
+ await page.getByRole('checkbox', { name: '允许进入应用' }).uncheck();
+ await page.getByRole('button', { name: '保存成员' }).click();
+ await expect(page.getByRole('status').filter({ hasText: '成员已保存' })).toBeVisible();
+ const menu = page.getByRole('heading', { name: '菜单', exact: true }).locator('..');
+ await expect(menu.getByRole('button', { name: '保存菜单' })).toBeDisabled();
+ await expect(menu).toContainText('服务器当前');
+ await expect(menu).toContainText('本地草稿');
+ await menu.getByRole('button', { name: '基于最新版本重试保存' }).click();
+ await expect(page.getByRole('status').filter({ hasText: '菜单已保存' })).toBeVisible();
+ expect(backend.writes.map(write => write.body.expectedPolicyRevision)).toEqual([1, 2]);
+ expect(backend.state().grants).toEqual([]);
+});
+
+test('V030-012 CAS review keeps a same-section draft after another actor changes its server baseline', async ({ page }, info) => {
+ const backend = await fixture(page);
+ await page.goto('/app/applications/' + app.id);
+ await page.getByRole('button', { name: '权限管理' }).click();
+ await page.getByRole('button', { name: '业务管理员', exact: true }).click();
+ const basic = page.getByRole('heading', { name: '基本信息', exact: true }).locator('..');
+ await basic.getByRole('textbox', { name: '权限组名称' }).fill('我的草稿');
+ backend.externalBasic('他人版本');
+ await basic.getByRole('button', { name: '保存基本信息' }).click();
+ await expect(basic).toContainText('服务器当前：他人版本');
+ await expect(basic).toContainText('本地草稿：我的草稿');
+ await expect(basic.getByRole('textbox', { name: '权限组名称' })).toHaveValue('我的草稿');
+ await basic.getByRole('group', { name: '基本信息版本核对' }).scrollIntoViewIfNeeded();
+ await capture(page, info, 'permission-basic-conflict-review');
+ await basic.getByRole('button', { name: '基于最新版本重试保存' }).click();
+ await expect(page.getByRole('status').filter({ hasText: '基本信息已保存' })).toBeVisible();
+ expect(backend.writes.map(write => write.status)).toEqual([409, 200]);
+ expect(backend.writes.map(write => write.body.expectedPolicyRevision)).toEqual([1, 2]);
+ expect(backend.writes[1].body.operationId).not.toBe(backend.writes[0].body.operationId);
+ expect(backend.state().groups[0].name).toBe('我的草稿');
+});
+
+test('V030-012 CAS review discards only the selected section and retains a dirty peer', async ({ page }) => {
+ const backend = await fixture(page);
+ await page.goto('/app/applications/' + app.id);
+ await page.getByRole('button', { name: '权限管理' }).click();
+ await page.getByRole('button', { name: '业务管理员', exact: true }).click();
+ await page.getByRole('textbox', { name: '权限组名称' }).fill('保留的名称');
+ await page.getByRole('checkbox', { name: '允许进入应用' }).uncheck();
+ backend.externalMenu([]);
+ await page.getByRole('button', { name: '保存菜单' }).click();
+ const menu = page.getByRole('heading', { name: '菜单', exact: true }).locator('..');
+ await expect(menu).toContainText('服务器当前');
+ await menu.getByRole('button', { name: '放弃本段修改并重载' }).click();
+ await expect(menu.getByRole('checkbox', { name: '允许进入应用' })).not.toBeChecked();
+ await expect(page.getByRole('textbox', { name: '权限组名称' })).toHaveValue('保留的名称');
+ expect(backend.writes).toHaveLength(1);
+});
+
+test('V030-012 CAS review handles a second definite conflict without losing input or reusing a key', async ({ page }) => {
+ const backend = await fixture(page);
+ await page.goto('/app/applications/' + app.id);
+ await page.getByRole('button', { name: '权限管理' }).click();
+ await page.getByRole('button', { name: '业务管理员', exact: true }).click();
+ const basic = page.getByRole('heading', { name: '基本信息', exact: true }).locator('..');
+ await basic.getByRole('textbox', { name: '权限组名称' }).fill('持久草稿');
+ backend.externalBasic('外部一');
+ await basic.getByRole('button', { name: '保存基本信息' }).click();
+ await expect(basic).toContainText('服务器当前：外部一');
+ backend.externalBasic('外部二');
+ await basic.getByRole('button', { name: '基于最新版本重试保存' }).click();
+ await expect(basic).toContainText('服务器当前：外部二');
+ await expect(basic.getByRole('textbox', { name: '权限组名称' })).toHaveValue('持久草稿');
+ await basic.getByRole('button', { name: '基于最新版本重试保存' }).click();
+ await expect(page.getByRole('status').filter({ hasText: '基本信息已保存' })).toBeVisible();
+ expect(backend.writes.map(write => write.status)).toEqual([409, 409, 200]);
+ expect(new Set(backend.writes.map(write => write.body.operationId)).size).toBe(3);
+});
+
+test('V030-012 CAS review rejects a split policy snapshot before any grant write', async ({ page }, info) => {
+ const backend = await fixture(page);
+ await page.goto('/app/applications/' + app.id);
+ await page.getByRole('button', { name: '权限管理' }).click();
+ await page.getByRole('button', { name: '业务管理员', exact: true }).click();
+ const menu = page.getByRole('heading', { name: '菜单', exact: true }).locator('..');
+ await menu.getByRole('checkbox', { name: '允许进入应用' }).uncheck();
+ backend.externalRevision();
+ let skewOnce = true;
+ await page.route('**/api/v1/applications/' + app.id + '/permission-groups/' + groupId + '/members', route => {
+  if (!skewOnce || route.request().method() !== 'GET') return route.fallback();
+  skewOnce = false;
+  return route.fulfill({ status: 200, json: { code: 'OK', data: { memberIds: [inactiveId], members: [{ id: inactiveId, label: '停用成员', status: 'disabled', selectable: false }], policyRevision: 1 } } });
+ });
+ await page.getByRole('button', { name: '重新加载配置' }).click();
+ await expect(page.getByRole('alert').filter({ hasText: '权限配置读取期间发生变化' })).toBeVisible();
+ await expect(menu.getByRole('checkbox', { name: '允许进入应用' })).not.toBeChecked();
+ await expect(menu.getByRole('button', { name: '保存菜单' })).toBeDisabled();
+ expect(backend.writes).toHaveLength(0);
+ await capture(page, info, 'permission-split-snapshot-blocked');
+ await page.getByRole('button', { name: '重新加载配置' }).click();
+ await expect(menu).toContainText('服务器当前：允许进入应用');
+ await expect(menu).toContainText('本地草稿：不允许进入应用');
+ await expect(menu.getByRole('button', { name: '保存菜单' })).toBeDisabled();
+ expect(backend.writes).toHaveLength(0);
+ await menu.getByRole('button', { name: '基于最新版本重试保存' }).click();
+ await expect(page.getByRole('status').filter({ hasText: '菜单已保存' })).toBeVisible();
+ expect(backend.writes).toHaveLength(1);
+ expect(backend.writes[0].body.expectedPolicyRevision).toBe(2);
 });
 
 test('V030-012 Back discard cancels a gated group preflight before PUT', async ({ page }, info) => {
@@ -295,7 +410,7 @@ test('V030-012 Back discard cancels a gated group preflight before PUT', async (
 });
 
 test('V030-012 an unconfirmed group PUT keeps its original actor, body, key and editable scope', async ({ page }, info) => {
- await fixture(page);
+ const backend = await fixture(page);
  const writes: any[] = [];
  const queries: string[] = [];
  await page.route('**/api/v1/applications/' + app.id + '/permission-groups/' + groupId, route => {
@@ -313,6 +428,11 @@ test('V030-012 an unconfirmed group PUT keeps its original actor, body, key and 
  await expect(page.getByRole('button', { name: '核查原操作' })).toBeVisible();
  await page.getByRole('button', { name: '核查原操作' }).scrollIntoViewIfNeeded();
  await capture(page, info, 'permission-unconfirmed');
+ backend.externalRevision();
+ await page.getByRole('button', { name: '重新加载配置' }).click();
+ await expect(page.getByRole('button', { name: '核查原操作' })).toBeVisible();
+ await expect(page.getByRole('group', { name: '基本信息版本核对' })).toHaveCount(0);
+ expect(writes).toHaveLength(1);
  await page.getByRole('checkbox', { name: '允许进入应用' }).uncheck();
  await expect(page.getByRole('button', { name: '保存菜单' })).toBeDisabled();
  await page.getByRole('navigation', { name: '全局应用标签' }).getByRole('button', { name: '全部应用' }).click();

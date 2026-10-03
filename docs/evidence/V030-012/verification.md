@@ -312,3 +312,42 @@ added to the screenshot inventory: empty structure, saved directory, form
 creation dialog, empty designer, and saved field designer. All 37 PNGs match
 their recorded dimensions and SHA-256 digests; no login credential screen is
 stored. The screenshots are QA evidence, not app assets.
+
+## Permission policy CAS review after integration review
+
+The integration review found that a confirmed save in one permission-group
+section advanced the global policy revision while another dirty section kept
+its old revision. The old UI could send the second section's stale CAS, but
+offered no explicit recovery after the definite 409. A second case mixed the
+three independently fetched group, member, and grant responses even when their
+`policyRevision` values differed. Four new component scenarios reproduced the
+missing review flow before implementation (`preflight-red/permission-cas-review-red.txt`).
+
+The editor now blocks writes while it reads all three responses and accepts a
+baseline only when their global revisions agree. A skewed read leaves the
+draft untouched, blocks every save, and offers a finite reload. A definite 409
+loads a consistent current baseline and presents the server value alongside
+the local draft for the affected section. Explicit retry sends a fresh
+operation key with the reviewed revision; discard resets only that section.
+Dirty peers receive their own review after another section saves. Sent-unknown
+operations remain separate: rereads never create a new key or replace their
+immutable packet, and the same-key query/retry controls remain available.
+
+The focused Chromium review tests passed 5/5, including two dirty sections,
+external same-section edits, selected-section discard, repeated conflicts,
+and a deliberately skewed member GET (`permission-cas-screenshot-chromium.txt`
+contains a subsequent screenshot capture). The complete permission component
+matrix passed 120/120 across Chromium, Firefox, WebKit and reduced-motion
+variants (`permission-cas-review-full-browser.txt`). The real TLS B5 suite,
+extended with a second-client policy mutation between dirty menu and save,
+passed 36/36 across the same six projects (`permission-cas-real-full.txt`).
+Its concurrency case verifies the stale PUT returns 409, no grant is written
+before review, and the user's explicit retry commits the root-menu grant.
+The final source passed 36/36 focused CAS and sent-unknown cases across the six
+browser modes (`permission-cas-final-six-browser.txt`). After rebuilding the
+production bundle, the real B5 concurrency case passed 6/6
+(`permission-cas-real-final-six.txt`). Web and test TypeScript checks, Vite
+build, task structure validation, and `git diff --check` passed. The updated
+conflict screenshot and three new review/skew screenshots were visually
+inspected; all 40 PNG dimensions and SHA-256 digests match
+`screenshots/manifest.json`.

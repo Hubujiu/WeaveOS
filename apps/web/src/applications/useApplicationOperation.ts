@@ -7,7 +7,7 @@ import type { ApplicationOperation } from './types';
 
 type State = { phase: 'idle' | 'preflight' | 'pending' | 'error' | 'unconfirmed'; message: string; packet: ApplicationPacket | null };
 
-export function useApplicationOperation<T>(actorId: string, confirmed: (result: T) => void, unauthorized: () => void, identityMismatch: () => void, valid: (result: T) => boolean, scope?: string) {
+export function useApplicationOperation<T>(actorId: string, confirmed: (result: T) => void, unauthorized: () => void, identityMismatch: () => void, valid: (result: T) => boolean, scope?: string, onDefinitePolicyConflict?: () => void) {
  const [state, setState] = useState<State>(() => {
   const previous = getRecovery(actorId, scope);
   return previous?.unknown && previous.packet
@@ -82,6 +82,7 @@ export function useApplicationOperation<T>(actorId: string, confirmed: (result: 
    const message = unknown && !(cause instanceof ApplicationError && cause.unconfirmed)
     ? reason + '。操作结果仍未确认，请稍后核查或使用同一操作重试。' : reason;
    setState({ phase: unknown ? 'unconfirmed' : 'error', packet, message });
+   if (!unknown && cause instanceof ApplicationError && cause.status === 409 && cause.code === 'APPLICATION_POLICY_CONFLICT') onDefinitePolicyConflict?.();
   } finally { unregister(); if (token === lifecycle.current) inFlight.current = false; }
  };
  const start = (path: string, body: object, method: 'POST' | 'PUT' = 'POST', expectedStatus: 200 | 201 = method === 'POST' ? 201 : 200) => {
@@ -91,5 +92,7 @@ export function useApplicationOperation<T>(actorId: string, confirmed: (result: 
  };
  const query = () => { if (snapshot.current) void perform(snapshot.current, true); };
  const retry = () => { if (snapshot.current) void perform(snapshot.current, false); };
- return { ...state, start, query, retry, cancelPreflight: () => cancelUnsentPreflights(actorId, scope) };
+ return { ...state, start, query, retry,
+  dismissError: () => setState(previous => previous.phase === 'error' ? { phase: 'idle', message: '', packet: null } : previous),
+  cancelPreflight: () => cancelUnsentPreflights(actorId, scope) };
 }
