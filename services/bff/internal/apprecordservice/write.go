@@ -452,6 +452,9 @@ func (s *Service) Edit(ctx context.Context, principal session.Principal, req Edi
 					return applications.ErrDenied
 				}
 			}
+			if !facts.SchemaReady {
+				return &appstructure.Error{Code: "APPLICATION_SCHEMA_NOT_READY"}
+			}
 			return validateNewReferences(c, tx, req.Changes, fields, false)
 		},
 	}

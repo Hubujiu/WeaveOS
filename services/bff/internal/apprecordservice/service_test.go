@@ -226,6 +226,36 @@ func TestRestrictedCreateNotReadyAfterLiveAuthorization(t *testing.T) {
 	})
 }
 
+func TestRestrictedReadAndEditNotReadyAfterLiveAuthorization(t *testing.T) {
+	f := newRecordFixture(t)
+	if _, err := f.owner.Exec(f.ctx, "UPDATE applications.logical_tables SET schema_ready=false WHERE app_id=$1 AND id=$2", f.app, f.table); err != nil {
+		t.Fatal(err)
+	}
+	var code *appstructure.Error
+	if _, err := f.service.Search(f.ctx, f.principal, SearchRequest{AppID: f.app, ViewID: f.view, Page: 1, PageSize: 1}); !errors.As(err, &code) || code.Code != "APPLICATION_SCHEMA_NOT_READY" {
+		t.Fatalf("authorized search not-ready: %v", err)
+	}
+	if _, err := f.service.GetRecord(f.ctx, f.principal, f.app, f.view, f.ownRecord); !errors.As(err, &code) || code.Code != "APPLICATION_SCHEMA_NOT_READY" {
+		t.Fatalf("authorized detail not-ready: %v", err)
+	}
+	var op string
+	if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: op, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "x"}}, applications.Metadata{RequestID: "v015-edit-not-ready"}); !errors.As(err, &code) || code.Code != "APPLICATION_SCHEMA_NOT_READY" {
+		t.Fatalf("authorized edit not-ready: %v", err)
+	}
+	if _, err := f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.read')", f.app); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.owner.Exec(f.ctx, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.read'", f.app); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.service.Search(f.ctx, f.principal, SearchRequest{AppID: f.app, ViewID: f.view, Page: 1, PageSize: 1}); !errors.Is(err, applications.ErrDenied) {
+		t.Fatalf("unauthorized search leaked schema state: %v", err)
+	}
+}
+
 func TestRestrictedEditCASAndPendingFence(t *testing.T) {
 	f := newRecordFixture(t)
 	var op string

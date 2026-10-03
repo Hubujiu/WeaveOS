@@ -11,6 +11,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
@@ -109,9 +110,6 @@ func (s *recordStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
 	if err != nil {
 		return fail(err)
 	}
-	if !ready {
-		return fail(ErrUnavailable)
-	}
 	var grants []appaccess.Grant
 	var menu bool
 	if !bootstrap && s.principal.UserID != s.ownerID {
@@ -193,6 +191,9 @@ func (s *recordStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
 		if !allowed {
 			return fail(applications.ErrDenied)
 		}
+	}
+	if !ready {
+		return fail(&appstructure.Error{Code: "APPLICATION_SCHEMA_NOT_READY"})
 	}
 	if e = tx.QueryRow(ctx, "SELECT revision FROM applications.reference_source_revision WHERE singleton").Scan(&s.control.Source); errors.Is(e, pgx.ErrNoRows) {
 		return fail(ErrUnavailable)
