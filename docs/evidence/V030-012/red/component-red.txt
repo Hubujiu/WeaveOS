@@ -1,0 +1,128 @@
+[WebServer] (node:1250) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:1264) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 4 tests using 1 worker
+
+(node:1296) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/4] [chromium] › src/applications.component.spec.ts:32:1 › V030-012 Home opens the real application catalogue
+  1) [chromium] › src/applications.component.spec.ts:32:1 › V030-012 Home opens the real application catalogue 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '打开应用中心', exact: true })
+
+
+      34 |   await page.goto('/app');
+      35 |   await expect(page.getByText('WaveOS', { exact: true })).toBeVisible();
+    > 36 |   await page.getByRole('button', { name: '打开应用中心', exact: true }).click();
+         |                                                                   ^
+      37 |   await expect(page).toHaveURL(/\/app\/applications$/);
+      38 |   await expect(page.getByRole('heading', { name: '应用中心', exact: true })).toBeVisible();
+      39 |   await expect(page.getByRole('button', { name: application.name, exact: true })).toBeVisible();
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:36:67
+
+    Error Context: test-results/applications.component-V03-0f539--real-application-catalogue-chromium/error-context.md
+
+
+(node:1451) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/4] [chromium] › src/applications.component.spec.ts:42:1 › V030-012 catalogue reads B5 without parameters and filters its authorized result
+  2) [chromium] › src/applications.component.spec.ts:42:1 › V030-012 catalogue reads B5 without parameters and filters its authorized result 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '应用中心', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '应用中心', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '应用中心', exact: true })
+
+
+      49 |   await page.goto('/app/applications');
+      50 |   await expect(page.getByText('WaveOS', { exact: true })).toBeVisible();
+    > 51 |   await expect(page.getByRole('heading', { name: '应用中心', exact: true })).toBeVisible();
+         |                                                                          ^
+      52 |   await expect(page.getByRole('button', { name: application.name, exact: true })).toBeVisible();
+      53 |   expect(urls.length).toBeGreaterThan(0);
+      54 |   expect(urls.every(url => url.search === '')).toBe(true);
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:51:74
+
+    Error Context: test-results/applications.component-V03-3c7f0-lters-its-authorized-result-chromium/error-context.md
+
+
+(node:1522) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/4] [chromium] › src/applications.component.spec.ts:60:1 › V030-012 live create capability opens a name-only real create flow
+  3) [chromium] › src/applications.component.spec.ts:60:1 › V030-012 live create capability opens a name-only real create flow 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '新建应用', exact: true })
+
+
+      62 |   await page.goto('/app/applications');
+      63 |   await expect(page.getByText('WaveOS', { exact: true })).toBeVisible();
+    > 64 |   await page.getByRole('button', { name: '新建应用', exact: true }).click();
+         |                                                                 ^
+      65 |   const dialog = page.getByRole('dialog', { name: '新建应用', exact: true });
+      66 |   await expect(dialog).toBeVisible();
+      67 |   await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toBeVisible();
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:64:65
+
+    Error Context: test-results/applications.component-V03-06de7--name-only-real-create-flow-chromium/error-context.md
+
+
+(node:1595) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[4/4] [chromium] › src/applications.component.spec.ts:71:1 › V030-012 opening an application rechecks access and presents its actual empty workspace
+  4) [chromium] › src/applications.component.spec.ts:71:1 › V030-012 opening an application rechecks access and presents its actual empty workspace 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '业务应用甲', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '业务应用甲', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '业务应用甲', exact: true })
+
+
+      77 |   await page.goto('/app/applications/' + application.id);
+      78 |   await expect(page.getByText('WaveOS', { exact: true })).toBeVisible();
+    > 79 |   await expect(page.getByRole('heading', { name: application.name, exact: true })).toBeVisible();
+         |                                                                                    ^
+      80 |   await expect(page.getByText('尚未配置表单', { exact: true })).toBeVisible();
+      81 |   expect(accesses.length).toBeGreaterThan(0);
+      82 | });
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:79:84
+
+    Error Context: test-results/applications.component-V03-eed0f--its-actual-empty-workspace-chromium/error-context.md
+
+
+  4 failed
+    [chromium] › src/applications.component.spec.ts:32:1 › V030-012 Home opens the real application catalogue 
+    [chromium] › src/applications.component.spec.ts:42:1 › V030-012 catalogue reads B5 without parameters and filters its authorized result 
+    [chromium] › src/applications.component.spec.ts:60:1 › V030-012 live create capability opens a name-only real create flow 
+    [chromium] › src/applications.component.spec.ts:71:1 › V030-012 opening an application rechecks access and presents its actual empty workspace 
