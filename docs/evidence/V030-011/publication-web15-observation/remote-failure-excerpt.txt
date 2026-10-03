@@ -1,0 +1,16 @@
+1) [firefox] › tests/acceptance/web.spec.ts:318:5 › WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated 
+2026-10-03T09:49:43.3067883Z 
+2026-10-03T09:49:43.3068282Z     Test timeout of 30000ms exceeded.
+2026-10-03T09:49:43.3068897Z 
+2026-10-03T09:49:43.3069292Z     Error: page.waitForResponse: Test timeout of 30000ms exceeded.
+2026-10-03T09:49:43.3069606Z 
+2026-10-03T09:49:43.3069840Z       322 |   await expect(page).toHaveURL(/\/login(?:\?|$)/);
+2026-10-03T09:49:43.3070400Z       323 |   await fillRegistration(page, `second-${info.project.name}-${Date.now()}`, code);
+2026-10-03T09:49:43.3071715Z     > 324 |   const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/v1/registrations' && r.request().method() === 'POST');
+2026-10-03T09:49:43.3072578Z           |                         ^
+2026-10-03T09:49:43.3073615Z       325 |   await page.getByRole('button', { name: '注册', exact: true }).click();
+2026-10-03T09:49:43.3074430Z       326 |   expect((await response).status()).toBe(409);
+2026-10-03T09:49:43.3075362Z       327 |   await expect(page.getByRole('alert')).toBeVisible();
+2026-10-03T09:49:43.3076086Z         at /repo/tests/acceptance/web.spec.ts:324:25
+2026-10-03T09:49:43.3076870Z 
+2026-10-03T09:49:43.3078043Z     
