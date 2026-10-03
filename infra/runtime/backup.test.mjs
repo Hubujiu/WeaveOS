@@ -47,6 +47,7 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  sql(live,readFileSync('db/migrations/00003_query_drafts.sql','utf8').split('-- +goose Down')[0]);
  sql(live,readFileSync('db/migrations/00004_query_revision_writers.sql','utf8').split('-- +goose Down')[0]);
  sql(live,readFileSync('db/migrations/00005_table_presets.sql','utf8').split('-- +goose Down')[0]);
+ sql(live,readFileSync('db/migrations/00006_apps_policy.sql','utf8').split('-- +goose Down')[0]);
  sql(live,`INSERT INTO auth.users(id,account) VALUES('77777777-7777-4777-8777-777777777777','preset-backup-synthetic');
  INSERT INTO personnel.table_presets(id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at)
  VALUES('88888888-8888-4888-8888-888888888888','77777777-7777-4777-8777-777777777777','members','持久方案😀',20,'{"children":[{"field":"account","operator":"eq","value":"A"}],"operator":"and"}','["identities"]',1,7,'2026-10-01T00:00:00Z','2026-10-02T00:00:00Z');`);
