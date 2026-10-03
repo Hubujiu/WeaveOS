@@ -7,3 +7,5 @@
 - Create, edit and unresolved-operation screenshots were captured with the pinned Playwright image from the root editor fixture. They are component fixture evidence, not acceptance of a production visual design.
 - Container image: `mcr.microsoft.com/playwright@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27`; test containers used `--network none` and pnpm 10.28.2 from `/tmp` because the workspace image's pnpm 11 auto-switches based on `packageManager`.
 - This verification does not claim the live HTTPS/BFF/Postgres/Redis or whole v0.3 acceptance gates.
+
+Root's follow-up test-only commits and the bounded RecordForm corrections are documented with separate RED/GREEN evidence in [`follow-up/README.md`](../follow-up/README.md).
