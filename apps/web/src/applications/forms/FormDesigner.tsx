@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
-import { formApi, formErrorText, FormApiError, type SaveWrite } from './api';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import { formApi, formErrorText, FormApiError, immutablePacket, validSaveResult,
+  type ReferenceCandidate, type SaveWrite } from './api';
 import type { Definition, DefinitionInput, FieldInput, FieldKind, LayoutNodeInput, Preflight, UUID } from './contracts';
-import { FormPreview } from './FieldRenderer';
+import { FieldRenderer, FormPreview } from './FieldRenderer';
 import { FormsDialog } from './FormsDialog';
 import './forms.css';
 
 export type FormDesignerProps = {
-  appId:string;viewId:string;onDirtyChange?:(dirty:boolean)=>void;onBack?:()=>void;
+  appId:string;actorId:string;viewId:string;onDirtyChange?:(dirty:boolean)=>void;onBack?:()=>void;
+  onUnauthorized?:()=>void;onIdentityMismatch?:()=>void;
 };
 type PaletteKind=FieldKind|'group'|'divider'|'description'|'system_field';
 const palette:{kind:PaletteKind;label:string}[]=[
@@ -72,49 +74,85 @@ function systemCodesIn(nodes:LayoutNodeInput[]):string[] {
   return nodes.flatMap(item=>item.kind==='system_field'?[item.fieldId]:
     item.kind==='group'?systemCodesIn(item.children):[]);
 }
+function placedFields(nodes:LayoutNodeInput[]):Set<UUID> {
+  const values=new Set<UUID>();
+  const visit=(items:LayoutNodeInput[])=>items.forEach(item=>{
+    if(item.kind==='field')values.add(item.fieldId);
+    if(item.kind==='group')visit(item.children);
+  });
+  visit(nodes);return values;
+}
 function contains(nodes:LayoutNodeInput[],id:UUID):boolean {
   return nodes.some(item=>item.id===id||(item.kind==='group'&&contains(item.children,id)));
 }
 function unknownWrite(error:unknown):boolean {
-  return error instanceof FormApiError&&(error.status===0||error.code==='APPLICATION_OPERATION_UNCONFIRMED'||
+  return error instanceof FormApiError&&(error.status===0||error.status===408||error.status>=500||
+    error.code==='APPLICATION_OPERATION_UNCONFIRMED'||
     (error.status>=200&&error.status<300&&error.code==='INVALID_RESPONSE'));
 }
 
-export function FormDesigner({appId,viewId,onDirtyChange,onBack}:FormDesignerProps){
-  const [base,setBase]=useState<Definition|null>(null),[draft,setDraft]=useState<DefinitionInput|null>(null);
-  const [phase,setPhase]=useState<'loading'|'idle'|'preflight'|'saving'|'unconfirmed'>('loading');
-  const [selected,setSelected]=useState<UUID|null>(null),[group,setGroup]=useState<UUID|null>(null);
+type DesignerPhase='loading'|'idle'|'preflight'|'saving'|'unconfirmed';
+type DesignerSnapshot={base:Definition|null;draft:DefinitionInput|null;phase:DesignerPhase;
+  pending:SaveWrite|null;permissionRevoked:boolean;error:string;notice:string;
+  selected:UUID|null;group:UUID|null};
+const draftMemory=new Map<string,DesignerSnapshot>();
+export function FormDesigner(props:FormDesignerProps){
+  const scopeKey=JSON.stringify([props.actorId,props.appId,props.viewId]);
+  return <FormDesignerScope key={scopeKey} {...props} scopeKey={scopeKey}/>;
+}
+function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthorized,onIdentityMismatch,
+  scopeKey}:FormDesignerProps&{scopeKey:string}){
+  const restored=draftMemory.get(scopeKey);
+  const [base,setBase]=useState<Definition|null>(restored?.base??null),[draft,setDraft]=useState<DefinitionInput|null>(restored?.draft??null);
+  const [phase,setPhase]=useState<DesignerPhase>(restored?.phase==='saving'?'unconfirmed':
+    restored?.phase==='preflight'?'idle':restored?.phase??'loading');
+  const [selected,setSelected]=useState<UUID|null>(restored?.selected??null),
+    [group,setGroup]=useState<UUID|null>(restored?.group??null);
   const [dialog,setDialog]=useState<'preview'|'impact'|'dirty'|'conflict'|null>(null);
-  const [impact,setImpact]=useState<Preflight|null>(null),[pending,setPending]=useState<SaveWrite|null>(null);
-  const [error,setError]=useState(''),[notice,setNotice]=useState(''),[reload,setReload]=useState(0);
-  const [permissionRevoked,setPermissionRevoked]=useState(false);
+  const [impact,setImpact]=useState<Preflight|null>(null),[pending,setPending]=useState<SaveWrite|null>(restored?.pending??null);
+  const [impactStale,setImpactStale]=useState(false),[impactError,setImpactError]=useState('');
+  const [error,setError]=useState(restored?.phase==='saving'?'保存结果暂未确认，请查询原操作':restored?.error??''),
+    [notice,setNotice]=useState(restored?.notice??''),[reload,setReload]=useState(0);
+  const [permissionRevoked,setPermissionRevoked]=useState(restored?.permissionRevoked??false);
   const requestKey=useRef(0);
-  const scope=useRef(`${appId}/${viewId}`);
-  scope.current=`${appId}/${viewId}`;
+  const alive=useRef(true);
+  const scope=useRef(scopeKey);
+  const reportAuth=(problem:unknown)=>{
+    if(!(problem instanceof FormApiError))return;
+    if(problem.status===401)onUnauthorized?.();
+    else if(problem.code==='AUTH_SESSION_CHANGED')onIdentityMismatch?.();
+  };
+  useEffect(()=>()=>{alive.current=false;requestKey.current++;},[]);
+  useLayoutEffect(()=>{draftMemory.set(scopeKey,{base,draft,phase,pending,permissionRevoked,error,notice,selected,group});},
+    [scopeKey,base,draft,phase,pending,permissionRevoked,error,notice,selected,group]);
   useEffect(()=>{
+    if(reload===0&&draftMemory.get(scopeKey)?.base)return;
     const key=++requestKey.current,controller=new AbortController();
     setPhase('loading');setBase(null);setDraft(null);setSelected(null);setGroup(null);
-    setPending(null);setImpact(null);setError('');setNotice('');setDialog(null);
+    setPending(null);setImpact(null);setImpactStale(false);setImpactError('');setError('');setNotice('');setDialog(null);
     setPermissionRevoked(false);
-    void formApi.definition(appId,viewId,controller.signal).then(value=>{
-      if(key!==requestKey.current)return;
+    void formApi.definition(appId,actorId,viewId,controller.signal).then(value=>{
+      if(!alive.current||key!==requestKey.current)return;
       setBase(value);setDraft(fromDefinition(value));setPhase('idle');
-    }).catch(problem=>{if(controller.signal.aborted||key!==requestKey.current)return;
+    }).catch(problem=>{if(!alive.current||controller.signal.aborted||key!==requestKey.current)return;
+      reportAuth(problem);
       setError(formErrorText(problem));setPhase('idle');});
     return()=>{controller.abort();requestKey.current++;};
-  },[appId,viewId,reload]);
+  },[appId,actorId,viewId,reload,scopeKey]);
   const dirty=useMemo(()=>!!base&&!!draft&&(!base.table.schemaReady||
     JSON.stringify(draft.fields)!==JSON.stringify(base.fields)||
     JSON.stringify(draft.layout)!==JSON.stringify(base.layout)||draft.optionMappings.length>0),[base,draft]);
-  useEffect(()=>onDirtyChange?.(dirty),[dirty,onDirtyChange]);
-  useEffect(()=>{if(!dirty)return;const handler=(event:BeforeUnloadEvent)=>event.preventDefault();
-    window.addEventListener('beforeunload',handler);return()=>window.removeEventListener('beforeunload',handler);},[dirty]);
+  const uncertain=phase==='unconfirmed'||phase==='saving'&&!!pending;
+  useEffect(()=>onDirtyChange?.(dirty||uncertain),[dirty,uncertain,onDirtyChange]);
+  useEffect(()=>{if(!dirty&&!uncertain)return;const handler=(event:BeforeUnloadEvent)=>event.preventDefault();
+    window.addEventListener('beforeunload',handler);return()=>window.removeEventListener('beforeunload',handler);},[dirty,uncertain]);
   const locked=phase==='preflight'||phase==='saving'||phase==='unconfirmed';
   const editable=!!base?.capabilities.canManageDefinition&&!permissionRevoked&&!locked;
   const field=draft?.fields.find(item=>item.id===selected);
   const node=draft&&selected?findNode(draft.layout,selected):undefined;
   const fieldNode=draft&&field?findFieldNode(draft.layout,field.id):undefined;
   const availableGroups=draft?groupsIn(draft.layout):[];
+  const unplacedFields=draft?draft.fields.filter(item=>!placedFields(draft.layout).has(item.id)):[];
   const patchField=useCallback((id:UUID,patch:Partial<FieldInput>)=>{
     setDraft(previous=>previous?{...previous,fields:previous.fields.map(item=>item.id===id?{...item,...patch} as FieldInput:item)}:previous);
     setNotice('');
@@ -151,11 +189,27 @@ export function FormDesigner({appId,viewId,onDirtyChange,onBack}:FormDesignerPro
     });
     setSelected(created?.id??id);setNotice('');
   },[editable,group,base,draft]);
+  const addExistingField=(fieldId:UUID,dropTarget?:UUID|null)=>{
+    if(!editable)return;
+    const id=uuid();
+    setDraft(previous=>{
+      if(!previous||!previous.fields.some(item=>item.id===fieldId)||placedFields(previous.layout).has(fieldId))return previous;
+      const next:LayoutNodeInput={id,kind:'field',fieldId,span:12};
+      const target=dropTarget===undefined?group:dropTarget;
+      const parent=target?findNode(previous.layout,target):null;
+      const layout=parent?.kind==='group'?mapLayout(previous.layout,item=>item.id===target&&item.kind==='group'
+        ?{...item,children:[...item.children,next]}:item):
+        target&&parent?insertAfter(previous.layout,target,next):[...previous.layout,next];
+      return {...previous,layout};
+    });
+    setSelected(fieldId);setNotice('');
+  };
   const drop=(event:DragEvent<HTMLElement>,target?:UUID)=>{
     event.preventDefault();if(!editable)return;
     try{const value=JSON.parse(event.dataTransfer.getData('application/x-weaveos-form')) as
-      {kind:'palette';value:PaletteKind}|{kind:'layout';value:UUID};
+      {kind:'palette';value:PaletteKind}|{kind:'layout';value:UUID}|{kind:'existing';value:UUID};
       if(value.kind==='palette'){addKind(value.value,target??null);return;}
+      if(value.kind==='existing'){addExistingField(value.value,target??null);return;}
       if(value.value===target)return;
       setDraft(previous=>{if(!previous)return previous;const item=findNode(previous.layout,value.value);
         if(!item)return previous;const removed=removeNode(previous.layout,item.id);
@@ -168,32 +222,36 @@ export function FormDesigner({appId,viewId,onDirtyChange,onBack}:FormDesignerPro
     }catch{ /* unrelated browser drag */ }
   };
   const accepted=(value:{definition:Definition})=>{setBase(value.definition);setDraft(fromDefinition(value.definition));
-    setPending(null);setImpact(null);setDialog(null);setPhase('idle');setError('');setNotice('已保存');};
+    setPending(null);setImpact(null);setImpactStale(false);setImpactError('');setDialog(null);setPhase('idle');setError('');setNotice('已保存');};
   const commit=async(input:SaveWrite)=>{const current=scope.current;setPending(input);setPhase('saving');setDialog(null);setError('');
-    try{const saved=await formApi.save(appId,viewId,input);if(scope.current!==current)return;accepted(saved);}
-    catch(problem){if(scope.current!==current)return;
-      if(unknownWrite(problem)){setPhase('unconfirmed');setError('网络连接中断，保存结果暂未确认');}
+    try{const saved=await formApi.save(appId,actorId,base!.table.id,viewId,input);if(!alive.current||scope.current!==current)return;accepted(saved);}
+    catch(problem){if(!alive.current||scope.current!==current)return;
+      reportAuth(problem);
+      if(unknownWrite(problem)){setPhase('unconfirmed');setError('保存结果暂未确认，请查询原操作或按原请求重试');}
       else{setPhase('idle');setPending(null);setError(formErrorText(problem));
         if(problem instanceof FormApiError&&problem.status===403)setPermissionRevoked(true);
         if(problem instanceof FormApiError&&problem.status===409)setDialog('conflict');}}
   };
   const save=async()=>{if(!draft||!editable)return;const current=scope.current;setPhase('preflight');setError('');setNotice('');
-    try{const plan=await formApi.preflight(appId,viewId,draft);if(scope.current!==current)return;setImpact(plan);
+    try{const plan=await formApi.preflight(appId,actorId,base.table.id,viewId,draft);if(!alive.current||scope.current!==current)return;
+      setImpact(plan);setImpactStale(false);setImpactError('');
       if(!plan.saveAllowed){setError(plan.dependencies.length?'字段仍被流程或其他视图引用，无法保存':
         '预检发现问题，请按提示调整字段或布局');setDialog('impact');setPhase('idle');return;}
-      const input:SaveWrite={...structuredClone(draft),operationId:uuid(),confirmationToken:plan.confirmation?.token??null};
+      const input=immutablePacket<SaveWrite>({...draft,operationId:uuid(),confirmationToken:plan.confirmation?.token??null});
       if(plan.impacts.length){setPending(input);setDialog('impact');setPhase('idle');return;}
       await commit(input);
-    }catch(problem){if(scope.current!==current)return;setPhase('idle');setError(formErrorText(problem));
+    }catch(problem){if(!alive.current||scope.current!==current)return;reportAuth(problem);
+      setPhase('idle');setError(formErrorText(problem));
       if(problem instanceof FormApiError&&problem.status===403)setPermissionRevoked(true);}
   };
   const checkOriginal=async()=>{if(!pending)return;const current=scope.current;setError('正在查询原操作结果…');
-    try{const operation=await formApi.operation(pending.operationId);
-      if(scope.current!==current)return;
-      const result=operation.result as {definition?:Definition};
-      if(operation.status==='confirmed'&&result?.definition){accepted({definition:result.definition});return;}
-      setError('原操作已确认，但定义结果不可读取；请保留草稿');
-    }catch(problem){if(scope.current!==current)return;if(problem instanceof FormApiError&&problem.status===403)setPermissionRevoked(true);
+    try{const operation=await formApi.operation(pending.operationId,actorId);
+      if(!alive.current||scope.current!==current)return;
+      if(operation.httpStatus===200&&base&&validSaveResult(operation.result,appId,base.table.id,viewId,pending)){
+        accepted(operation.result);return;}
+      setError('原操作回执与当前表单或原请求不匹配；请保留草稿');
+    }catch(problem){if(!alive.current||scope.current!==current)return;reportAuth(problem);
+      if(problem instanceof FormApiError&&problem.status===403)setPermissionRevoked(true);
       setError(problem instanceof FormApiError&&problem.status===404?
       '暂未查到原操作；这不能证明保存已回滚，可按原请求重试':formErrorText(problem));}
   };
@@ -215,9 +273,11 @@ export function FormDesigner({appId,viewId,onDirtyChange,onBack}:FormDesignerPro
         <span aria-hidden="true">⋮⋮</span><span>{label}{current?.required?' *':''}</span>
         <small>{current?labelFor[current.kind]:item.kind==='group'?'分组':''}</small>
       </button>
+      {current&&<div className="forms-canvas-control"><FieldRenderer field={current} idPrefix="canvas"
+        value={current.default} readOnly/></div>}
       {editable&&<div className="forms-node-actions">
-        <button type="button" aria-label={`上移 ${label}`} onClick={()=>setDraft(previous=>previous?{...previous,layout:moveNode(previous.layout,item.id,-1)}:previous)}>↑</button>
-        <button type="button" aria-label={`下移 ${label}`} onClick={()=>setDraft(previous=>previous?{...previous,layout:moveNode(previous.layout,item.id,1)}:previous)}>↓</button>
+        <button type="button" aria-label={`上移 ${label}`} onClick={()=>setDraft(previous=>previous?{...previous,layout:moveNode(previous.layout,item.id,-1)}:previous)}>上移</button>
+        <button type="button" aria-label={`下移 ${label}`} onClick={()=>setDraft(previous=>previous?{...previous,layout:moveNode(previous.layout,item.id,1)}:previous)}>下移</button>
         {item.kind!=='divider'&&item.kind!=='description'&&<>
           <button type="button" aria-label={`缩小 ${label}`} disabled={span<=1} onClick={()=>patchNode(item.id,{span:span-1})}>−</button>
           <button type="button" aria-label={`扩大 ${label}`} disabled={span>=12} onClick={()=>patchNode(item.id,{span:span+1})}>＋</button>
@@ -231,7 +291,7 @@ export function FormDesigner({appId,viewId,onDirtyChange,onBack}:FormDesignerPro
   };
   return <section className="forms-module" aria-label="表单设计器">
     <div className="forms-toolbar"><div className="forms-toolbar-title">
-      <button type="button" className="forms-link" onClick={()=>dirty?setDialog('dirty'):onBack?.()}>返回工作台</button>
+      <button type="button" className="forms-link" onClick={()=>dirty||uncertain?setDialog('dirty'):onBack?.()}>返回工作台</button>
       <strong>{base.form.name}</strong>{dirty&&<span className="forms-unsaved">未保存</span>}</div>
       <div className="forms-toolbar-actions">
         {(phase==='preflight'||phase==='saving')&&<span role="status">{phase==='preflight'?'正在预检…':'正在保存…'}</span>}
@@ -248,6 +308,11 @@ export function FormDesigner({appId,viewId,onDirtyChange,onBack}:FormDesignerPro
         <div>{palette.map(entry=><button type="button" key={entry.kind} disabled={!editable}
           draggable={editable} onDragStart={event=>event.dataTransfer.setData('application/x-weaveos-form',JSON.stringify({kind:'palette',value:entry.kind}))}
           onClick={()=>addKind(entry.kind)}>{entry.label}</button>)}</div>
+        {!!unplacedFields.length&&<><h3>已有字段</h3><div>{unplacedFields.map(item=><button type="button"
+          key={item.id} aria-label={`将已有字段加入布局 ${item.name}`} disabled={!editable} draggable={editable}
+          onDragStart={event=>event.dataTransfer.setData('application/x-weaveos-form',
+            JSON.stringify({kind:'existing',value:item.id}))}
+          onClick={()=>addExistingField(item.id)}>{item.name} · {labelFor[item.kind]}</button>)}</div></>}
         <h3>高级字段</h3><p>附件、关联、公式等将在后续版本接入。</p>
       </section>
       <section className="forms-panel forms-canvas" role="region" aria-label="表单画布"
@@ -261,7 +326,14 @@ export function FormDesigner({appId,viewId,onDirtyChange,onBack}:FormDesignerPro
           <h3>{field.name}</h3><label>稳定字段 ID<input value={field.id} readOnly/></label>
           <label>字段名称<input aria-label="字段名称" value={field.name} disabled={!editable}
             onChange={event=>patchField(field.id,{name:event.target.value})}/></label>
-          <label>类型<input value={labelFor[field.kind]} readOnly/></label>
+          <label>字段类型<select aria-label="字段类型" value={field.kind} disabled={!editable}
+            onChange={event=>{const kind=event.target.value as FieldKind;
+              setDraft(previous=>previous?{...previous,fields:previous.fields.map(item=>item.id===field.id&&item.kind!==kind
+                ?{...makeField(kind),id:item.id,name:item.name,required:item.required,
+                  presentation:item.presentation,default:null}:item)}:previous);
+              setNotice('');}}>
+            {palette.filter(entry=>dataKind(entry.kind)).map(entry=><option key={entry.kind}
+              value={entry.kind}>{entry.label}</option>)}</select></label>
           <label className="forms-checkbox"><input type="checkbox" checked={field.required} disabled={!editable}
             onChange={event=>patchField(field.id,{required:event.target.checked})}/>必填</label>
           {fieldNode&&<label>字段宽度<select aria-label="字段宽度" value={fieldNode.span??12} disabled={!editable}
@@ -273,7 +345,9 @@ export function FormDesigner({appId,viewId,onDirtyChange,onBack}:FormDesignerPro
           </select></label>}
           <label>帮助文字<input value={field.presentation.helpText??''} disabled={!editable}
             onChange={event=>patchField(field.id,{presentation:{...field.presentation,helpText:event.target.value||null}})}/></label>
-          <FieldConfig field={field} disabled={!editable} onPatch={patch=>patchField(field.id,patch)}/>
+          <FieldConfig key={`${field.id}/${field.kind}`} appId={appId} actorId={actorId} field={field}
+            onAuthError={reportAuth}
+            disabled={!editable} onPatch={patch=>patchField(field.id,patch)}/>
           <button type="button" className="forms-danger" disabled={!editable} onClick={()=>{
             setDraft(previous=>previous?{...previous,fields:previous.fields.filter(item=>item.id!==field.id),
               layout:fieldNode?removeNode(previous.layout,fieldNode.id):previous.layout}:previous);setSelected(null);
@@ -303,9 +377,10 @@ export function FormDesigner({appId,viewId,onDirtyChange,onBack}:FormDesignerPro
     {dialog==='preview'&&<FormsDialog title="表单预览" onClose={()=>setDialog(null)}>
       <p className="forms-muted">本地预览，尚未保存。输入不会创建记录。</p>
       <div className="forms-preview"><FormPreview fields={draft.fields} layout={draft.layout}/></div>
-      <div className="forms-dialog-actions"><button type="button" onClick={()=>setDialog(null)}>返回设计器</button></div>
+      <div className="forms-dialog-actions"><button type="button" data-forms-close>返回设计器</button></div>
     </FormsDialog>}
     {dialog==='impact'&&<FormsDialog title="保存预检：表单结构与布局" onClose={()=>setDialog(null)}>
+      {impactStale&&<p className="forms-alert" role="alert">{impactError||'当前确认方案已失效，请重新预检'}</p>}
       <p>本次变更计划</p><ul>{impact?.plan.schemaChanges.map(change=><li key={change.fieldId+change.kind}>{change.kind} · {change.fieldId}</li>)}
         {impact?.plan.layoutChanged&&<li>表单布局将更新</li>}</ul>
       {!!impact?.impacts.length&&<><h3>数据影响</h3><ul>{impact.impacts.map(item=><li key={item.fieldId+item.kind}>
@@ -316,15 +391,20 @@ export function FormDesigner({appId,viewId,onDirtyChange,onBack}:FormDesignerPro
         const oldLabel=previous&&(previous.kind==='single_select'||previous.kind==='multi_select')
           ?previous.config.options.find(option=>option.id===item.optionId)?.label??item.optionId:item.optionId;
         const targets=current&&(current.kind==='single_select'||current.kind==='multi_select')?current.config.options:[];
-        const mapping=draft.optionMappings.find(entry=>entry.fieldId===item.fieldId&&entry.fromOptionId===item.optionId);
+        const mapping=(pending?.optionMappings??draft.optionMappings).find(entry=>entry.fieldId===item.fieldId&&entry.fromOptionId===item.optionId);
         return <label key={item.fieldId+item.optionId}>已用选项映射 {oldLabel}
           <select aria-label={`已用选项映射 ${oldLabel}`} value={mapping?mapping.toOptionId??'__null__':''}
-            disabled={phase==='preflight'} onChange={event=>setDraft(previousDraft=>previousDraft?{
-              ...previousDraft,optionMappings:[
-                ...previousDraft.optionMappings.filter(entry=>!(entry.fieldId===item.fieldId&&entry.fromOptionId===item.optionId)),
-                {fieldId:item.fieldId,fromOptionId:item.optionId!,toOptionId:event.target.value==='__null__'?null:event.target.value},
-              ],
-            }:previousDraft)}>
+            disabled={phase==='preflight'} onChange={event=>{
+              const target=event.target.value==='__null__'?null:event.target.value;
+              if(pending&&mapping?.toOptionId!==target){setPending(null);setImpactStale(true);
+                setImpactError('映射已修改，请重新预检');}
+              setDraft(previousDraft=>previousDraft?{
+                ...previousDraft,optionMappings:[
+                  ...previousDraft.optionMappings.filter(entry=>!(entry.fieldId===item.fieldId&&entry.fromOptionId===item.optionId)),
+                  {fieldId:item.fieldId,fromOptionId:item.optionId!,toOptionId:target},
+                ],
+              }:previousDraft);
+            }}>
             <option value="">请选择处理方式</option><option value="__null__">清空已有值</option>
             {targets.map(option=><option key={option.id} value={option.id}>{option.label}</option>)}
           </select></label>;
@@ -334,21 +414,28 @@ export function FormDesigner({appId,viewId,onDirtyChange,onBack}:FormDesignerPro
       {!!impact?.blockingIssues.length&&<ul>{impact.blockingIssues.map(item=><li key={item.code}>{item.code} · {item.fieldIds.join('、')}</li>)}</ul>}
       {impact?.confirmation?<p>确认有效期至 {new Date(impact.confirmation.expiresAt).toLocaleString('zh-CN')}</p>:
         impact?.impacts.length?<p className="forms-alert" role="alert">预检未返回有效确认令牌，请重新预检后再保存。</p>:null}
-      <div className="forms-dialog-actions"><button type="button" onClick={()=>setDialog(null)}>继续编辑</button>
-        {impact?.blockingIssues.some(item=>item.code==='APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED')&&
+      <div className="forms-dialog-actions"><button type="button" data-forms-close>继续编辑</button>
+        {(impactStale||impact?.blockingIssues.some(item=>item.code==='APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED'))&&
           <button type="button" disabled={phase==='preflight'} onClick={()=>{setDialog(null);void save();}}>重新预检</button>}
-        {impact?.saveAllowed&&pending&&<button type="button" className="forms-primary"
-          disabled={!impact.confirmation?.token||Date.parse(impact.confirmation.expiresAt)<=Date.now()}
-          onClick={()=>{if(impact.confirmation?.token&&Date.parse(impact.confirmation.expiresAt)>Date.now())void commit(pending);}}>确认保存</button>}</div>
+        {impact?.saveAllowed&&<button type="button" className="forms-primary"
+          disabled={!pending||impactStale||!impact.confirmation?.token}
+          onClick={()=>{
+            if(!pending||!impact.confirmation?.token)return;
+            if(Date.parse(impact.confirmation.expiresAt)<=Date.now()){
+              setPending(null);setImpactStale(true);setImpactError('确认已过期，请重新预检');return;
+            }
+            void commit(pending);
+          }}>确认保存</button>}</div>
     </FormsDialog>}
-    {dialog==='dirty'&&<FormsDialog title="结构或布局尚未保存" onClose={()=>setDialog(null)}>
-      <p>离开将放弃此处未保存的修改。</p><div className="forms-dialog-actions">
-        <button type="button" onClick={()=>setDialog(null)}>继续编辑</button>
-        <button type="button" className="forms-danger" onClick={()=>{setDialog(null);onBack?.();}}>放弃修改并离开</button>
+    {dialog==='dirty'&&<FormsDialog title={uncertain?'保存结果未确认':'结构或布局尚未保存'} onClose={()=>setDialog(null)}>
+      <p>{uncertain?'离开前请查询原操作结果；当前草稿和原操作号将在此浏览器页面中保留。':'离开将放弃此处未保存的修改。'}</p><div className="forms-dialog-actions">
+        <button type="button" data-forms-close>继续编辑</button>
+        <button type="button" className="forms-danger" onClick={()=>{setDialog(null);onBack?.();}}>
+          {uncertain?'离开并保留待核查操作':'放弃修改并离开'}</button>
       </div></FormsDialog>}
     {dialog==='conflict'&&<FormsDialog title="配置版本已变化" onClose={()=>setDialog(null)}>
       <p>其他编辑者已修改此表单。当前输入仍保留，请核对服务器最新定义。</p>
-      <div className="forms-dialog-actions"><button type="button" onClick={()=>setDialog(null)}>继续查看我的输入</button>
+      <div className="forms-dialog-actions"><button type="button" data-forms-close>继续查看我的输入</button>
         <button type="button" onClick={()=>{setDialog(null);setReload(value=>value+1);}}>放弃草稿并加载最新版</button></div>
     </FormsDialog>}
   </section>;
@@ -359,7 +446,9 @@ function findFieldNode(nodes:LayoutNodeInput[],fieldId:UUID):Extract<LayoutNodeI
     if(node.kind==='group'){const nested=findFieldNode(node.children,fieldId);if(nested)return nested;}}
 }
 
-function FieldConfig({field,disabled,onPatch}:{field:FieldInput;disabled:boolean;onPatch:(patch:Partial<FieldInput>)=>void}){
+function FieldConfig({appId,actorId,field,disabled,onPatch,onAuthError}:{appId:UUID;actorId:UUID;
+  field:FieldInput;disabled:boolean;onPatch:(patch:Partial<FieldInput>)=>void;
+  onAuthError:(problem:unknown)=>void}){
   if(field.kind==='number'||field.kind==='money'){
     const cfg=field.config,change=(patch:object)=>onPatch({config:{...cfg,...patch}} as Partial<FieldInput>);
     return <>
@@ -380,8 +469,10 @@ function FieldConfig({field,disabled,onPatch}:{field:FieldInput;disabled:boolean
   if(field.kind==='text'||field.kind==='multiline')return <>
     <label>最大字数<input type="number" min="1" value={field.config.maxLength??''} disabled={disabled}
       onChange={event=>onPatch({config:{maxLength:event.target.value?Number(event.target.value):null}} as Partial<FieldInput>)}/></label>
-    <label>默认值<input value={field.default??''} disabled={disabled}
-      onChange={event=>onPatch({default:event.target.value||null} as Partial<FieldInput>)}/></label>
+    <label className="forms-checkbox"><input type="checkbox" aria-label="启用默认值" checked={field.default!==null}
+      disabled={disabled} onChange={event=>onPatch({default:event.target.checked?'':null} as Partial<FieldInput>)}/>启用默认值</label>
+    {field.default!==null&&<label>默认值<input value={field.default} disabled={disabled}
+      onChange={event=>onPatch({default:event.target.value} as Partial<FieldInput>)}/></label>}
   </>;
   if(field.kind==='datetime')return <>
     <label>时间精度<select value={field.config.precision??'second'} disabled={disabled}
@@ -412,14 +503,62 @@ function FieldConfig({field,disabled,onPatch}:{field:FieldInput;disabled:boolean
         onChange={event=>onPatch({default:Array.from(event.target.selectedOptions,item=>item.value)} as Partial<FieldInput>)}>
         {field.config.options.map(item=><option key={item.id} value={item.id}>{item.label}</option>)}</select></label>}
   </>;
-  if(field.kind==='boolean')return <label className="forms-checkbox"><input type="checkbox" checked={field.default===true} disabled={disabled}
-    onChange={event=>onPatch({default:event.target.checked} as Partial<FieldInput>)}/>默认勾选</label>;
-  if(field.kind==='member'||field.kind==='department')return <>
-    {field.default&&<><label>当前默认引用 ID<input aria-label="当前默认引用 ID" value={field.default} readOnly/></label>
-      <button type="button" disabled={disabled} onClick={()=>onPatch({default:null} as Partial<FieldInput>)}>清除默认引用</button></>}
-    <p className="forms-muted">{field.default?'保存时服务端会验证默认引用仍可用。':
-      '当前无默认引用；选择新引用需要有权限的来源接口。'}</p>
-  </>;
+  if(field.kind==='boolean')return <label>默认状态<select aria-label="默认状态"
+    value={field.default===null?'unset':field.default?'true':'false'} disabled={disabled}
+    onChange={event=>onPatch({default:event.target.value==='unset'?null:event.target.value==='true'} as Partial<FieldInput>)}>
+    <option value="unset">无默认值</option><option value="false">默认不勾选</option><option value="true">默认勾选</option>
+  </select></label>;
+  if(field.kind==='member'||field.kind==='department')return <ReferenceDefaultSelector
+    appId={appId} actorId={actorId} kind={field.kind} value={field.default} disabled={disabled}
+    onAuthError={onAuthError}
+    onChange={value=>onPatch({default:value} as Partial<FieldInput>)}/>;
   return <label>默认值<input value={field.default??''} disabled={disabled}
     onChange={event=>onPatch({default:event.target.value||null} as Partial<FieldInput>)}/></label>;
+}
+
+function ReferenceDefaultSelector({appId,actorId,kind,value,disabled,onChange,onAuthError}:{
+  appId:UUID;actorId:UUID;kind:'member'|'department';value:UUID|null;disabled:boolean;
+  onChange:(value:UUID|null)=>void;onAuthError:(problem:unknown)=>void;
+}){
+  const [search,setSearch]=useState(''),[query,setQuery]=useState('');
+  const [items,setItems]=useState<ReferenceCandidate[]>([]),[next,setNext]=useState<string|null>(null);
+  const [loading,setLoading]=useState(false),[error,setError]=useState('');
+  const generation=useRef(0);
+  useEffect(()=>{
+    const controller=new AbortController(),current=++generation.current;
+    setLoading(true);setError('');setItems([]);setNext(null);
+    void formApi.candidates(appId,actorId,kind,query,undefined,controller.signal).then(page=>{
+      if(current!==generation.current)return;
+      setItems(page.items);setNext(page.nextPageToken);
+    }).catch(problem=>{if(!controller.signal.aborted&&current===generation.current){
+      onAuthError(problem);setError(formErrorText(problem));}})
+      .finally(()=>{if(current===generation.current)setLoading(false);});
+    return()=>{controller.abort();generation.current++;};
+  },[appId,actorId,kind,query]);
+  const more=async()=>{if(!next||loading)return;const current=++generation.current;
+    setLoading(true);setError('');
+    try{const page=await formApi.candidates(appId,actorId,kind,query,next);
+      if(current===generation.current){setItems(previous=>[...previous,...page.items]);setNext(page.nextPageToken);}}
+    catch(problem){if(current===generation.current){onAuthError(problem);setError(formErrorText(problem));}}
+    finally{if(current===generation.current)setLoading(false);}
+  };
+  const label=kind==='member'?'成员':'部门';
+  return <div className="forms-reference-default">
+    {value&&<><label>当前默认引用 ID<input aria-label="当前默认引用 ID" value={value} readOnly/></label>
+      <button type="button" disabled={disabled} onClick={()=>onChange(null)}>清除默认引用</button></>}
+    <label>搜索{label}<input aria-label={`搜索${label}`} value={search} disabled={disabled}
+      onChange={event=>setSearch(event.target.value)} onKeyDown={event=>{if(event.key==='Enter')setQuery(search.trim());}}/></label>
+    <button type="button" disabled={disabled||loading} onClick={()=>setQuery(search.trim())}>查询{label}</button>
+    {loading&&<p role="status">正在读取{label}候选…</p>}
+    {error&&<p role="alert">{label}候选读取失败：{error}</p>}
+    {!loading&&!error&&!items.length&&<p className="forms-muted">没有匹配的{label}候选</p>}
+    {!!items.length&&<label>默认{label}<select aria-label={`默认${label}`} value={value??''} disabled={disabled}
+      onChange={event=>onChange(event.target.value||null)}>
+      <option value="">无默认值</option>
+      {value&&!items.some(item=>item.id===value)&&<option value={value}>当前引用 · {value}</option>}
+      {items.map(item=><option key={item.id} value={item.id}>{item.label}</option>)}
+    </select></label>}
+    {next&&<button type="button" disabled={disabled||loading} onClick={()=>void more()}>加载更多{label}</button>}
+    <p className="forms-muted">保存时服务端会重新检查默认引用是否仍可用。</p>
+  </div>;
 }

@@ -11,13 +11,14 @@ export type FieldRendererProps = {
   onChange?: (value: FieldValue) => void;
   readOnly?: boolean;
   referenceOptions?: ReferenceOption[];
+  idPrefix?: string;
 };
 
 /** Business-field input only. The parent decides when a value is persisted. */
-export function FieldRenderer({field,value,onChange,readOnly=false,referenceOptions}:FieldRendererProps) {
+export function FieldRenderer({field,value,onChange,readOnly=false,referenceOptions,idPrefix='field'}:FieldRendererProps) {
   const disabled=readOnly || !onChange;
   const help=field.presentation.helpText;
-  const inputId=`preview-${field.id}`;
+  const inputId=`${idPrefix}-${field.id}`;
   let control;
   switch(field.kind) {
     case 'text':
@@ -117,7 +118,7 @@ export function FormPreview({fields,layout,referenceOptions}:FormPreviewProps) {
     const options=field.kind==='member'?referenceOptions?.member:
       field.kind==='department'?referenceOptions?.department:undefined;
     return <div key={node.id} style={style}>
-      <FieldRenderer field={field} value={values[field.id]??field.default}
+      <FieldRenderer field={field} idPrefix="preview" value={Object.hasOwn(values,field.id)?values[field.id]:field.default}
         onChange={value=>update(field.id,value)} referenceOptions={options}/>
     </div>;
   };

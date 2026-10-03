@@ -20,6 +20,11 @@ const definition:Definition = {appId,table,form,fields:[],systemFields:[
 ],layout:[],capabilities:{canManageDefinition:true}};
 const structure:Structure = {appId,structureVersion:0,directories:[],tables:[table],forms:[form],capabilities:{canManageDefinition:true}};
 const ok = (data: unknown) => ({code:'OK',message:'success',data,meta:{requestId:'test-request'}});
+async function capture(page:Page,path:string){
+  const dialog=page.getByRole('dialog');
+  if(await dialog.count())await expect(dialog).toHaveAttribute('data-motion-ready','true');
+  await page.screenshot({path,fullPage:true});
+}
 
 type Seen = {method:string;path:string;body:Record<string,unknown>|null;expectedActor:string|null};
 async function fixture(page:Page, mode:'designer'|'structure'='designer', initialDefinition:Definition=definition,
@@ -36,9 +41,12 @@ async function fixture(page:Page, mode:'designer'|'structure'='designer', initia
     const body=request.postDataJSON() as Record<string,unknown>|null;
     seen.push({method,path,body,expectedActor:request.headers()['x-expected-actor-id']??null});
     if(path.endsWith('/structure')&&method==='GET')return route.fulfill({json:ok(currentStructure)});
-    if(path.endsWith('/definition')&&method==='GET')return route.fulfill({json:ok(currentDefinition)});
+    if(path.endsWith('/definition')&&method==='GET')return route.fulfill({json:ok({
+      ...currentDefinition,form:{...currentDefinition.form,id:path.split('/')[6]??viewId},
+    })});
     if(path.endsWith('/definition/preflight')&&method==='POST')return route.fulfill({json:ok({
-      appId,tableId,viewId,schemaVersion:0,viewVersion:0,dataRevision:0,dependencyRevision:0,
+      appId,tableId,viewId,schemaVersion:currentDefinition.table.schemaVersion,
+      viewVersion:currentDefinition.form.viewVersion,dataRevision:0,dependencyRevision:0,
       plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},impacts:[],dependencies:[],
       blockingIssues:[],saveAllowed:true,confirmation:null,
     })});
@@ -103,12 +111,12 @@ test('original designer shows three panels and keyboard-added draft can preview 
   await page.keyboard.press('Enter');
   await expect(page.getByRole('region',{name:'表单画布'})).toContainText('新建文本');
   await page.getByLabel('字段名称').fill('申请人');
-  await page.screenshot({path:test.info().outputPath('designer-main.png'),fullPage:true});
+  await capture(page,test.info().outputPath('designer-main.png'));
   await page.getByRole('button',{name:'预览',exact:true}).click();
   await expect(page.getByText('本地预览，尚未保存')).toBeVisible();
   await expect(page.getByRole('dialog').getByText('申请人')).toBeVisible();
   expect(state.seen.filter(x=>x.method!=='GET')).toHaveLength(0);
-  await page.screenshot({path:test.info().outputPath('designer-preview.png'),fullPage:true});
+  await capture(page,test.info().outputPath('designer-preview.png'));
 });
 
 test('save preflights and commits with both versions and stable IDs only after server success',async({page})=>{
@@ -146,13 +154,13 @@ test('directory creation and new form creation use coherent structure and one at
   const state=await fixture(page,'structure');
   await expect(page.getByRole('tree',{name:'应用目录'})).toBeVisible();
   await page.getByRole('button',{name:'新建目录'}).click();
-  await page.screenshot({path:test.info().outputPath('directory-create.png'),fullPage:true});
+  await capture(page,test.info().outputPath('directory-create.png'));
   await page.getByLabel('目录名称').fill('请假');
   await page.getByRole('button',{name:'创建目录',exact:true}).click();
   await expect(page.getByRole('treeitem',{name:'请假',exact:true})).toBeVisible();
-  await page.screenshot({path:test.info().outputPath('directory-tree.png'),fullPage:true});
+  await capture(page,test.info().outputPath('directory-tree.png'));
   await page.getByRole('button',{name:'新建表单'}).click();
-  await page.screenshot({path:test.info().outputPath('form-create.png'),fullPage:true});
+  await capture(page,test.info().outputPath('form-create.png'));
   await page.getByLabel('表单名称').fill('差旅申请');
   await page.getByRole('button',{name:'创建表单',exact:true}).click();
   await expect(page.getByRole('treeitem',{name:'差旅申请'})).toBeVisible();
@@ -176,7 +184,7 @@ test('impact dialog requires a live confirmation token before a schema write',as
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'保存预检：表单结构与布局'})).toBeVisible();
   await expect(page.getByRole('dialog').getByText('4 条已有值')).toBeVisible();
-  await page.screenshot({path:test.info().outputPath('impact-missing-token.png'),fullPage:true});
+  await capture(page,test.info().outputPath('impact-missing-token.png'));
   await expect(page.getByRole('button',{name:'确认保存'})).toBeDisabled();
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
 });
@@ -194,7 +202,7 @@ test('blocked dependencies show the affected resource and prevent PUT',async({pa
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('dialog').getByText('enabled_flow · flow-42')).toBeVisible();
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
-  await page.screenshot({path:test.info().outputPath('designer-dependency-block.png'),fullPage:true});
+  await capture(page,test.info().outputPath('designer-dependency-block.png'));
 });
 
 test('used option deletion maps old option IDs before renewed preflight and confirmed Save',async({page})=>{
@@ -220,7 +228,7 @@ test('used option deletion maps old option IDs before renewed preflight and conf
   await page.getByRole('button',{name:'删除选项 旧选项'}).click();
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('dialog')).toContainText('APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED');
-  await page.screenshot({path:test.info().outputPath('option-mapping.png'),fullPage:true});
+  await capture(page,test.info().outputPath('option-mapping.png'));
   await page.getByLabel('已用选项映射 旧选项').selectOption(keepId);
   await page.getByRole('button',{name:'重新预检'}).click();
   await expect(page.getByRole('button',{name:'确认保存'})).toBeEnabled();
@@ -288,7 +296,7 @@ test('permission revoked during Save keeps the draft but stops further configura
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('没有此应用的表单配置权限');
   await expect(page.getByLabel('字段名称')).toHaveValue('保留草稿');
-  await page.screenshot({path:test.info().outputPath('permission-revoked.png'),fullPage:true});
+  await capture(page,test.info().outputPath('permission-revoked.png'));
   await expect(page.getByRole('button',{name:'保存',exact:true})).toBeDisabled();
   expect(writes).toBe(1);
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
@@ -321,7 +329,7 @@ test('destructive preflight waits for explicit confirmation and sends its exact 
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('dialog')).toContainText('7 条已有值');
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
-  await page.screenshot({path:test.info().outputPath('impact-confirm.png'),fullPage:true});
+  await capture(page,test.info().outputPath('impact-confirm.png'));
   await page.getByRole('button',{name:'确认保存'}).click();
   await expect(page.getByRole('status')).toContainText('已保存');
   expect(state.seen.find(item=>item.method==='PUT')?.body?.confirmationToken).toBe('impact-token-from-server');
@@ -336,12 +344,12 @@ test('dirty exit and CAS conflict require an explicit decision while preserving 
   await page.getByLabel('字段名称').fill('并发中的草稿');
   await page.getByRole('button',{name:'返回工作台'}).click();
   await expect(page.getByRole('dialog',{name:'结构或布局尚未保存'})).toBeVisible();
-  await page.screenshot({path:test.info().outputPath('dirty-exit.png'),fullPage:true});
+  await capture(page,test.info().outputPath('dirty-exit.png'));
   await page.getByRole('button',{name:'继续编辑'}).click();
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'配置版本已变化'})).toBeVisible();
   await expect(page.getByLabel('字段名称')).toHaveValue('并发中的草稿');
-  await page.screenshot({path:test.info().outputPath('schema-conflict.png'),fullPage:true});
+  await capture(page,test.info().outputPath('schema-conflict.png'));
 });
 
 test('structure CAS conflict keeps the entered name and offers an explicit latest-version reload',async({page})=>{
@@ -356,7 +364,7 @@ test('structure CAS conflict keeps the entered name and offers an explicit lates
   await expect(page.getByRole('dialog')).toContainText('配置已被其他编辑者修改');
   await expect(page.getByLabel('目录名称')).toHaveValue('待核对目录');
   await expect(page.getByRole('button',{name:'放弃输入并加载最新版'})).toBeVisible();
-  await page.screenshot({path:test.info().outputPath('structure-conflict.png'),fullPage:true});
+  await capture(page,test.info().outputPath('structure-conflict.png'));
 });
 
 test('structure write permission revocation disables further directory and form mutations',async({page})=>{
@@ -411,7 +419,7 @@ test('empty structure explains the next action to keyboard and screen reader use
   await expect(page.getByText('暂无目录或表单')).toBeVisible();
   await expect(page.getByRole('button',{name:'新建目录'})).toBeEnabled();
   await expect(page.getByRole('button',{name:'新建表单'})).toBeEnabled();
-  await page.screenshot({path:test.info().outputPath('structure-empty.png'),fullPage:true});
+  await capture(page,test.info().outputPath('structure-empty.png'));
 });
 
 test('removing an optional selected default option clears the invalid default before Save',async({page})=>{
@@ -476,7 +484,7 @@ test('existing-table form source creates another view without creating a table',
   await expect(page.getByRole('treeitem',{name:'第二视图'})).toBeVisible();
   await page.getByRole('treeitem',{name:'第二视图'}).getByRole('button').first().click();
   await page.getByRole('button',{name:'编辑表单名称与位置'}).click();
-  await page.screenshot({path:test.info().outputPath('form-edit.png'),fullPage:true});
+  await capture(page,test.info().outputPath('form-edit.png'));
   const writes=state.seen.filter(item=>item.method==='POST');
   expect(writes).toHaveLength(1);
   expect(writes[0].path).toBe(`/api/v1/applications/${appId}/forms`);
@@ -493,13 +501,13 @@ test('directory rename and same-app move use current structure CAS while descend
   await page.getByRole('treeitem',{name:'子目录',exact:true}).getByRole('button').first().click();
   const rename=page.getByRole('button',{name:'重命名目录'});
   await rename.focus();await page.keyboard.press('Enter');
-  await page.screenshot({path:test.info().outputPath('directory-rename.png'),fullPage:true});
+  await capture(page,test.info().outputPath('directory-rename.png'));
   await page.getByLabel('目录名称').fill('已改名');
   await page.getByRole('button',{name:'保存变更'}).click();
   await expect(page.getByRole('treeitem',{name:'已改名',exact:true})).toBeVisible();
   await page.getByRole('treeitem',{name:'父目录',exact:true}).getByRole('button').first().click();
   await page.getByRole('button',{name:'移动目录',exact:true}).click();
-  await page.screenshot({path:test.info().outputPath('directory-move.png'),fullPage:true});
+  await capture(page,test.info().outputPath('directory-move.png'));
   await expect(page.getByLabel('所属目录').getByRole('option',{name:'已改名'})).toHaveCount(0);
   await page.getByRole('button',{name:'取消'}).click();
   await page.getByRole('treeitem',{name:'已改名',exact:true}).getByRole('button').first().click();
@@ -557,7 +565,7 @@ test('text empty-string default and boolean unset false true remain distinct on 
   const state=await fixture(page);
   await page.getByRole('button',{name:'文本',exact:true}).click();
   await page.getByLabel('启用默认值').check();
-  await expect(page.getByLabel('默认值')).toHaveValue('');
+  await expect(page.getByLabel('默认值',{exact:true})).toHaveValue('');
   await page.getByRole('button',{name:'布尔',exact:true}).click();
   await page.getByLabel('默认状态').selectOption('false');
   await page.getByRole('button',{name:'保存',exact:true}).click();
@@ -632,6 +640,98 @@ test('definition requests bind verified actor and B cannot replay A unknown Save
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(1);
 });
 
+test('401 and actor mismatch are handed to Shell without losing the designer draft',async({page})=>{
+  await fixture(page);
+  await page.route('**/definition/preflight',route=>route.fulfill({status:401,json:{code:'AUTH_REQUIRED',message:'',data:null,meta:{}}}));
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('待恢复');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('登录已失效');
+  await expect(page.getByLabel('字段名称')).toHaveValue('待恢复');
+  expect(await page.evaluate(()=>(window as Window & {__formsHarnessAuthEvents?:string[]}).__formsHarnessAuthEvents)).toContain('401');
+  await page.unroute('**/definition/preflight');
+  await page.route('**/definition/preflight',route=>route.fulfill({status:409,json:{code:'AUTH_SESSION_CHANGED',message:'',data:null,meta:{}}}));
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('当前账号已变化');
+  expect(await page.evaluate(()=>(window as Window & {__formsHarnessAuthEvents?:string[]}).__formsHarnessAuthEvents)).toContain('AUTH_SESSION_CHANGED');
+  await expect(page.getByLabel('字段名称')).toHaveValue('待恢复');
+});
+
+test('structure unknown operation stays with A through an actor switch',async({page})=>{
+  const state=await fixture(page,'structure');
+  await page.route('**/directories',route=>route.abort('failed'));
+  await page.getByRole('button',{name:'新建目录'}).click();
+  await page.getByLabel('目录名称').fill('A 的目录');
+  await page.getByRole('button',{name:'创建目录',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+  await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchActor?:(id:string)=>void}).__formsHarnessSwitchActor?.(id),actorB);
+  await expect(page.getByRole('button',{name:'查询原操作结果'})).toHaveCount(0);
+  await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchActor?:(id:string)=>void}).__formsHarnessSwitchActor?.(id),actorA);
+  await expect(page.getByLabel('目录名称')).toHaveValue('A 的目录');
+  await expect(page.getByRole('button',{name:'查询原操作结果'})).toBeVisible();
+  expect(state.seen.filter(item=>item.method==='POST').every(item=>item.expectedActor===actorA)).toBe(true);
+});
+
+test('dialog returns focus to its source after quick reverse and reopens',async({page})=>{
+  await fixture(page);
+  const source=page.getByRole('button',{name:'预览',exact:true});
+  await source.click();
+  await page.getByRole('button',{name:'关闭弹窗'}).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(source).toBeFocused();
+  await source.click();
+  await expect(page.getByRole('dialog',{name:'表单预览'})).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('dialog closes immediately when reduced motion is requested',async({page})=>{
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await fixture(page);
+  await page.getByRole('button',{name:'预览',exact:true}).click();
+  await page.getByRole('button',{name:'关闭弹窗'}).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('owner member default picker searches, pages and saves the selected stable ID',async({page})=>{
+  const member1='00000000-0000-4000-8000-000000000221';
+  const member2='00000000-0000-4000-8000-000000000222';
+  const state=await fixture(page);
+  const queries:{q:string;token:string|null;actor:string|null}[]=[];
+  await page.route('**/member-candidates?*',route=>{
+    const url=new URL(route.request().url()),token=url.searchParams.get('pageToken');
+    queries.push({q:url.searchParams.get('q')??'',token,actor:route.request().headers()['x-expected-actor-id']??null});
+    return route.fulfill({json:{...ok({items:token?[{id:member2,label:'成员甲二',status:'active'}]:
+      [{id:member1,label:'成员甲一',status:'active'}]}),
+      meta:{pagination:{nextPageToken:token?null:'opaque-next',hasMore:!token}}}});
+  });
+  await page.getByRole('button',{name:'成员',exact:true}).click();
+  await expect(page.getByRole('combobox',{name:'默认成员'})).toContainText('成员甲一');
+  await page.getByRole('button',{name:'加载更多成员'}).click();
+  await page.getByRole('combobox',{name:'默认成员'}).selectOption(member2);
+  await page.getByLabel('搜索成员').fill(' 成员甲 ');
+  await page.getByRole('button',{name:'查询成员'}).click();
+  await expect.poll(()=>queries.at(-1)?.q).toBe('成员甲');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  expect((state.seen.find(item=>item.method==='PUT')?.body?.fields as Field[])[0].default).toBe(member2);
+  expect(queries.every(item=>item.actor===actorA)).toBe(true);
+});
+
+test('owner department default picker displays hierarchy candidate and saves ID',async({page})=>{
+  const departmentId='00000000-0000-4000-8000-000000000223';
+  const state=await fixture(page);
+  await page.route('**/department-candidates?*',route=>route.fulfill({json:{
+    ...ok({items:[{id:departmentId,label:'财务部',parentId:null,status:'active'}]}),
+    meta:{pagination:{nextPageToken:null,hasMore:false}},
+  }}));
+  await page.getByRole('button',{name:'部门',exact:true}).click();
+  await page.getByRole('combobox',{name:'默认部门'}).selectOption(departmentId);
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  expect((state.seen.find(item=>item.method==='PUT')?.body?.fields as Field[])[0].default).toBe(departmentId);
+});
+
 test('second view can place an existing table field without creating another field ID',async({page})=>{
   const fieldId='00000000-0000-4000-8000-000000000191';
   const seeded:Definition={...definition,table:{...table,schemaReady:true,schemaVersion:1},form:{...form,viewVersion:0},
@@ -680,29 +780,75 @@ test('preview explicit null selection does not bounce back to the configured def
 });
 
 test('malformed successful structure receipt remains unconfirmed with the original operation',async({page})=>{
-  const state=await fixture(page,'structure');
-  await page.route('**/directories',route=>route.fulfill({status:200,json:ok({})}));
+  await fixture(page,'structure');
+  let writes=0;
+  await page.route('**/directories',route=>{writes++;return route.fulfill({status:200,json:ok({})});});
   await page.getByRole('button',{name:'新建目录'}).click();
   await page.getByLabel('目录名称').fill('保留目录');
   await page.getByRole('button',{name:'创建目录',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('结果暂未确认');
   await expect(page.getByLabel('目录名称')).toHaveValue('保留目录');
   await expect(page.getByRole('button',{name:'按原请求重试'})).toBeVisible();
-  expect(state.seen.filter(item=>item.method==='POST')).toHaveLength(1);
+  expect(writes).toBe(1);
 });
 
 test('malformed successful definition receipt does not erase draft or issue a new key',async({page})=>{
-  const state=await fixture(page);
+  await fixture(page);
+  let writes=0;
   await page.route('**/definition',route=>route.request().method()==='PUT'
-    ?route.fulfill({status:200,json:ok({operationId:'wrong',definition:{}})})
-    :route.continue());
+    ?(writes++,route.fulfill({status:200,json:ok({operationId:'wrong',definition:{}})}))
+    :route.fulfill({json:ok(definition)}));
   await page.getByRole('button',{name:'文本',exact:true}).click();
   await page.getByLabel('字段名称').fill('保留字段');
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('结果暂未确认');
   await expect(page.getByLabel('字段名称')).toHaveValue('保留字段');
   await expect(page.getByRole('button',{name:'按原请求重试'})).toBeVisible();
-  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(1);
+  expect(writes).toBe(1);
+});
+
+test('null JSON success envelope retains the original Save for recovery',async({page})=>{
+  await fixture(page);
+  let writes=0;
+  await page.route('**/definition',route=>route.request().method()==='PUT'
+    ?(writes++,route.fulfill({status:200,json:null}))
+    :route.fulfill({json:ok(definition)}));
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('回执丢失');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+  await expect(page.getByLabel('字段名称')).toHaveValue('回执丢失');
+  await expect(page.getByRole('button',{name:'按原请求重试'})).toBeVisible();
+  expect(writes).toBe(1);
+});
+
+test('server failure after a Save request keeps its operation until verified',async({page})=>{
+  await fixture(page);
+  let writes=0;
+  await page.route('**/definition',route=>route.request().method()==='PUT'
+    ?(writes++,route.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',message:'',data:null,meta:{}}}))
+    :route.fulfill({json:ok(definition)}));
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('待核查字段');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+  await expect(page.getByLabel('字段名称')).toHaveValue('待核查字段');
+  await expect(page.getByRole('button',{name:'按原请求重试'})).toBeVisible();
+  expect(writes).toBe(1);
+});
+
+test('server failure after a directory request keeps its name and operation',async({page})=>{
+  await fixture(page,'structure');
+  let writes=0;
+  await page.route('**/directories',route=>{writes++;return route.fulfill({status:503,
+    json:{code:'COMMON_SERVICE_UNAVAILABLE',message:'',data:null,meta:{}}});});
+  await page.getByRole('button',{name:'新建目录'}).click();
+  await page.getByLabel('目录名称').fill('待核查目录');
+  await page.getByRole('button',{name:'创建目录',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+  await expect(page.getByLabel('目录名称')).toHaveValue('待核查目录');
+  await expect(page.getByRole('button',{name:'按原请求重试'})).toBeVisible();
+  expect(writes).toBe(1);
 });
 
 test('existing text field can request a guarded number type conversion',async({page})=>{

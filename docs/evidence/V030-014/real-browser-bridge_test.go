@@ -13,12 +13,13 @@ import (
 // Temporary detached-worktree bridge: one real HTTP service, PG18, Redis session.
 func TestV014BrowserBridge(t *testing.T) {
   f := setup(t)
+  f.service.Application.References = CurrentSources{}
   appService := &applications.Service{Application:&applications.Application{Pool:f.runtime},
     Authenticator:session.Authenticator{Sessions:f.session,DB:f.runtime,Origin:"https://weaveos.test"},
     Definitions:f.service}
   server := httptest.NewServer(appService)
   defer server.Close()
-  bridge := map[string]string{"url": server.URL, "appId": f.app, "sid": f.sid, "csrf": f.csrf}
+  bridge := map[string]string{"url": server.URL, "appId": f.app, "actorId": f.actor, "sid": f.sid, "csrf": f.csrf}
   raw, err := json.Marshal(bridge); if err != nil { t.Fatal(err) }
   if err := os.WriteFile("/tmp/v014-browser-bridge.json", raw, 0600); err != nil { t.Fatal(err) }
   t.Logf("V014_BRIDGE_READY %s", server.URL)
