@@ -124,7 +124,7 @@ func newRecordFixture(t *testing.T) recordFixture {
 	for _, g := range []struct {
 		action, scope string
 		fields        []string
-	}{{"menu.enter", "all", nil}, {"data.read", "all", []string{f.public, f.reference}}, {"data.read", "own", []string{f.secret}}, {"data.create", "all", []string{f.public}}, {"data.edit", "all", []string{f.public}}} {
+	}{{"menu.enter", "all", nil}, {"data.read", "all", []string{f.public, f.reference}}, {"data.read", "own", []string{f.secret}}, {"data.create", "all", []string{f.public, f.reference}}, {"data.edit", "all", []string{f.public, f.reference}}} {
 		var grant string
 		if err := owner.QueryRow(ctx, "INSERT INTO applications.grants(app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,'form',$3,$4,$5) RETURNING id::text", f.app, group, f.view, g.action, g.scope).Scan(&grant); err != nil {
 			t.Fatal(err)
@@ -184,6 +184,7 @@ func TestRestrictedEditCASAndPendingFence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Logf("created for edit: %+v", created)
 	var editOp string
 	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&editOp); err != nil {
 		t.Fatal(err)
@@ -217,6 +218,29 @@ func TestRestrictedEditCASAndPendingFence(t *testing.T) {
 		if !errors.As(err, &code) || code.Code != "APPLICATION_RECORD_FENCED" {
 			t.Fatalf("fence: %v", err)
 		}
+	}
+}
+
+func TestRestrictedReferenceWriteRequiresActiveAuthoritativeSource(t *testing.T) {
+	f := newRecordFixture(t)
+	var op string
+	if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	req := CreateRequest{AppID: f.app, ViewID: f.view, OperationID: op, ExpectedSchemaVersion: 1, Values: map[string]any{f.reference: f.other}}
+	got, err := f.service.Create(f.ctx, f.principal, req, applications.Metadata{RequestID: "v015-ref-active"})
+	if err != nil || got.RecordVersion != 1 {
+		t.Fatalf("active source rejected %+v %v", got, err)
+	}
+	if _, err = f.owner.Exec(f.ctx, "UPDATE auth.users SET status='disabled' WHERE id=$1", f.other); err != nil {
+		t.Fatal(err)
+	}
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	req.OperationID = op
+	if _, err = f.service.Create(f.ctx, f.principal, req, applications.Metadata{RequestID: "v015-ref-disabled"}); err == nil {
+		t.Fatal("disabled source accepted as new reference")
 	}
 }
 
