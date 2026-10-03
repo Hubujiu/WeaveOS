@@ -1,0 +1,35 @@
+[WebServer] (node:152893) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:152907) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:152936) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:71:1 › closing reference chooser aborts an in-flight later cursor page (5.2s)
+
+
+  1) [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:71:1 › closing reference chooser aborts an in-flight later cursor page 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      76 |   await expect.poll(()=>page.evaluate(()=>(window as Window&{__moreState?:()=>{started:boolean}}).__moreState?.().started)).toBe(true);
+      77 |   await page.getByRole('button',{name:'选择成员'}).click();
+    > 78 |   await expect.poll(()=>page.evaluate(()=>(window as Window&{__moreState?:()=>{aborted:boolean}}).__moreState?.().aborted)).toBe(true);
+         |                                                                                                                             ^
+      79 |   await page.evaluate(()=>(window as Window&{__releaseMore?:()=>void}).__releaseMore?.());
+      80 |   await page.getByRole('button',{name:'选择成员'}).click();
+      81 |   await expect(page.getByRole('button',{name:'王乙'})).toHaveCount(0);
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.renderer.component.spec.ts:78:125
+
+    Error Context: apps/web/test-results/forms.renderer.component-c-27b01-in-flight-later-cursor-page-chromium/error-context.md
+
+  1 failed
+    [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:71:1 › closing reference chooser aborts an in-flight later cursor page 

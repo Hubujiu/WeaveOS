@@ -13,9 +13,14 @@ const field:RuntimeField={id:'field-member',name:'负责人',kind:'member',requi
   access:{read:'all',create:true,edit:'all',history:'all'},
   query:{operators:[],sortable:false,quickSearchable:false}};
 const requests:{q:string;pageToken:string|null}[]=[];
-const controls=window as Window&{__referenceRequests?:typeof requests;__scopeIsolation?:()=>boolean};
+let holdMore=false,moreStarted=false,moreAborted=false,releaseMore=()=>{};
+const controls=window as Window&{__referenceRequests?:typeof requests;__scopeIsolation?:()=>boolean;
+  __holdMore?:()=>void;__releaseMore?:()=>void;__moreState?:()=>{started:boolean;aborted:boolean}};
 exposeHarnessGuard(window);
 controls.__referenceRequests=requests;
+controls.__holdMore=()=>{holdMore=true;};
+controls.__releaseMore=()=>releaseMore();
+controls.__moreState=()=>({started:moreStarted,aborted:moreAborted});
 controls.__scopeIsolation=()=>{
   const first={getStatus:()=> 'draft' as const,prepareLeave:()=>({ok:true as const})};
   const second={getStatus:()=> 'unknown' as const,prepareLeave:()=>({ok:true as const})};
@@ -26,10 +31,16 @@ controls.__scopeIsolation=()=>{
   const retained=(window as Window&{__formsGuardStatus?:()=>string|null}).__formsGuardStatus?.()==='draft';
   a();return retained;
 };
-async function load({q,pageToken}:{q:string;pageSize:number;pageToken:string|null},_signal:AbortSignal):Promise<ReferenceCandidatePage>{
+async function load({q,pageToken}:{q:string;pageSize:number;pageToken:string|null},signal:AbortSignal):Promise<ReferenceCandidatePage>{
   requests.push({q,pageToken});
   if(q==='林')return {items:[{id:'member-lin',label:'林海',status:'active'}],nextPageToken:null};
-  if(pageToken)return {items:[{id:'member-b',label:'王乙',status:'active'}],nextPageToken:null};
+  if(pageToken){
+    if(holdMore){moreStarted=true;await new Promise<void>(resolve=>{
+      releaseMore=resolve;
+      signal.addEventListener('abort',()=>{moreAborted=true;resolve();},{once:true});
+    });}
+    return {items:[{id:'member-b',label:'王乙',status:'active'}],nextPageToken:null};
+  }
   return {items:[{id:'member-a',label:'王甲',status:'active'}],nextPageToken:'next-page'};
 }
 function ReferenceHarness(){
@@ -39,6 +50,7 @@ function ReferenceHarness(){
   const [hasDisplay,setHasDisplay]=useState(true);
   return <><button onClick={()=>setReadOnly(!readOnly)}>切换只读</button>
     <button onClick={()=>{setReferenceScopeKey('actor-b/app/view/record-b/field-member');setHasDisplay(false);}}>切换引用作用域</button>
+    <button onClick={()=>{setHasDisplay(false);setReadOnly(true);}}>撤销引用显示</button>
     <output data-testid="selected">{String(value)}</output>
     <FieldRenderer field={field} value={value} onChange={setValue} readOnly={readOnly}
       referenceScopeKey={referenceScopeKey}

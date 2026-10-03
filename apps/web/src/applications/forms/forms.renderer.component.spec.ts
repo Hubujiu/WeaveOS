@@ -63,9 +63,22 @@ test('read-only reference never shows an unsaved selected label without current 
   await page.getByRole('button',{name:'选择成员'}).click();
   await page.getByRole('button',{name:'王甲'}).click();
   await expect(page.getByText('王甲')).toBeVisible();
-  await page.getByRole('button',{name:'切换只读'}).click();
+  await page.getByRole('button',{name:'撤销引用显示'}).click();
   await expect(page.getByText('引用信息不可用（需修复）')).toBeVisible();
   await expect(page.getByText('王甲')).toHaveCount(0);
+});
+
+test('closing reference chooser aborts an in-flight later cursor page',async({page})=>{
+  await page.goto(url);
+  await page.evaluate(()=>(window as Window&{__holdMore?:()=>void}).__holdMore?.());
+  await page.getByRole('button',{name:'选择成员'}).click();
+  await page.getByRole('button',{name:'加载更多'}).click();
+  await expect.poll(()=>page.evaluate(()=>(window as Window&{__moreState?:()=>{started:boolean}}).__moreState?.().started)).toBe(true);
+  await page.getByRole('button',{name:'选择成员'}).click();
+  await expect.poll(()=>page.evaluate(()=>(window as Window&{__moreState?:()=>{aborted:boolean}}).__moreState?.().aborted)).toBe(true);
+  await page.evaluate(()=>(window as Window&{__releaseMore?:()=>void}).__releaseMore?.());
+  await page.getByRole('button',{name:'选择成员'}).click();
+  await expect(page.getByRole('button',{name:'王乙'})).toHaveCount(0);
 });
 
 test('reference scope remount clears local selected label and prior candidate page',async({page})=>{
