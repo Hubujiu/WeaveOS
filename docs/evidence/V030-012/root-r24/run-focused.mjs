@@ -17,7 +17,7 @@ const privateFile=(name,value)=>writeFileSync(resolve(dir,name),value,{mode:0o60
 let sequence=0;
 function run(command,args,options={}){
  const label=String(++sequence).padStart(3,'0');
- pub(label+'-command.json',JSON.stringify({command,args},null,2));
+ pub(label+'-command.json',JSON.stringify({command,args,cwd:options.cwd??root,environment:{WEAVEOS_ACCEPTANCE_DIR:dir}},null,2));
  const result=spawnSync(command,args,{cwd:root,env,encoding:'utf8',stdio:'pipe',maxBuffer:64*1024*1024,timeout:900_000,...options});
  const code=result.status??1;
  pub(label+'.log',redact(String(result.stdout??'')+'\n'+String(result.stderr??'')+(result.error?'\n'+String(result.error.message):'')));
@@ -33,9 +33,9 @@ const pgURL='postgres://weaveos_test:'+secrets[0]+'@127.0.0.1:5432/weaveos_accep
 privateFile('postgres.env','POSTGRES_USER=weaveos_test\nPOSTGRES_PASSWORD='+secrets[0]+'\nPOSTGRES_DB=weaveos_ci_test\n');
 privateFile('runtime.env','WEAVEOS_DATABASE_URL='+pgURL.replace('@127.0.0.1:','@postgres:')+'\nWEAVEOS_REDIS_URL=redis://redis:6379/0\nWEAVEOS_SESSION_GENERATION='+project+'\nWEAVEOS_AUDIT_KEY_ID=test\nWEAVEOS_AUDIT_HMAC_KEY='+secrets[1]+'\n');
 privateFile('seed.env','WEAVEOS_TEST_DATABASE_URL='+pgURL+'\nWEAVEOS_ACCEPTANCE_FIXTURES=/repo/'+relative+'/fixtures.json\n');
-const goImage='golang:1.25.7';
+const goImage='golang:1.27.1';
 const browserImage='mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27';
-const go=script=>run('docker',['run','--rm','--network','container:'+container('postgres'),...mount,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build','--env-file',resolve(dir,'seed.env'),'-e','GOTOOLCHAIN=auto','-e','GOFLAGS=-buildvcs=false','-e','GOBIN=/repo/'+relative+'/tools','-w','/repo/services/bff',goImage,'sh','-ec',script]);
+const go=script=>run('docker',['run','--rm','--network','container:'+container('postgres'),...mount,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build','--env-file',resolve(dir,'seed.env'),'-e','GOTOOLCHAIN=local','-e','GOFLAGS=-buildvcs=false','-e','GOBIN=/repo/'+relative+'/tools','-w','/repo/services/bff',goImage,'sh','-ec',script]);
 const node=(script,network)=>run('docker',['run','--rm','--init','--shm-size=1g',...(network?['--network','container:'+network]:[]),...mount,'--mount','type=volume,src=weaveos-v010-linux-node,dst=/repo/node_modules','--mount','type=volume,src=weaveos-v010-linux-web-node,dst=/repo/apps/web/node_modules','-e','CI=true','-e','WEAVEOS_WEB_URL=https://localhost:19443','-e','WEAVEOS_ACCEPTANCE_FIXTURES=/repo/'+relative+'/fixtures.json','-e','NODE_EXTRA_CA_CERTS=/repo/'+relative+'/tls/cert.pem','-w','/repo',browserImage,'bash','-euc','npm install --global pnpm@10.28.2 --ignore-scripts; '+script]);
 const started=Date.now();
 pub('result.json',JSON.stringify({result:'running',project,scope:'one Root real record journey; not full product acceptance'}));
@@ -44,7 +44,7 @@ try{
  run('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-days','2','-keyout',resolve(dir,'tls/key.pem'),'-out',resolve(dir,'tls/cert.pem'),'-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost,IP:127.0.0.1']);
  startedCompose=true;compose('up','-d','--wait','postgres','redis');
  compose('exec','-T','postgres','createdb','-U','weaveos_test','weaveos_acceptance');
- go('go install github.com/pressly/goose/v3/cmd/goose@v3.28.0; /repo/'+relative+'/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up; CGO_ENABLED=0 go build -o /repo/'+relative+'/bff ./cmd/bff; go run ./cmd/acceptance-seed');
+ go('test "$(go env GOVERSION)" = "go$(cat /repo/.go-version)"; go install github.com/pressly/goose/v3/cmd/goose@v3.28.0; /repo/'+relative+'/tools/goose -dir /repo/db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up; CGO_ENABLED=0 go build -o /repo/'+relative+'/bff ./cmd/bff; go run ./cmd/acceptance-seed');
  if(typeof process.getuid==='function')run('docker',['run','--rm',...mount,goImage,'chown',process.getuid()+':'+process.getgid(),'/repo/'+relative+'/fixtures.json']);
  const fixture=JSON.parse(readFileSync(resolve(dir,'fixtures.json'),'utf8'));
  const capturePasswords=value=>{if(value&&typeof value==='object')for(const [key,child] of Object.entries(value)){if(/password|secret|token/i.test(key)&&typeof child==='string')secrets.push(child);else capturePasswords(child);}};
