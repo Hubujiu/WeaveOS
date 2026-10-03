@@ -106,3 +106,13 @@ export function validateQueryFilter<V extends QueryView>(view: V, input: unknown
   // Depth/shape/typed-field checks above establish the frozen recursive DTO.
   return {issues:[],filter:result as QueryFilter<V>};
 }
+
+// V030-017 RED scaffold: the runtime field descriptor is supplied by the
+// authorized RuntimeView. The implementation follows the contract tests.
+export type ResourceFieldKind = 'text' | 'multiline' | 'number' | 'money' | 'date' | 'datetime' | 'single_select' | 'multi_select' | 'boolean' | 'member' | 'department';
+export type ResourceFilterField = { id: string; kind: ResourceFieldKind; operators: readonly ('eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte')[]; optionIds?: readonly string[] };
+export type ResourceFilterCondition = {fieldId:string;operator:'eq'|'neq'|'gt'|'gte'|'lt'|'lte';value:string|boolean|string[]|null};
+export type ResourceFilterGroup = {operator:'and'|'or';children:(ResourceFilterGroup|ResourceFilterCondition)[]};
+export function validateResourceFilter(_fields:readonly ResourceFilterField[],_input:unknown):{filter?:ResourceFilterGroup;issues:FilterIssue[]} {
+ return {issues:[]};
+}
