@@ -48,6 +48,7 @@ test('Root definitive first-write rejection allows editing and a fresh submissio
  await expect(page.getByRole('status')).toHaveCount(0);
  await expect(page.getByRole('button',{name:'保存记录',exact:true})).toBeEnabled();
  await expect(page.getByRole('button',{name:'恢复保存结果',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'使用同一操作重试',exact:true})).toHaveCount(0);
  await page.getByLabel('事由',{exact:true}).fill('修正值');
  await page.getByRole('button',{name:'保存记录',exact:true}).click();
  await expect.poll(async()=> (await inspect(page)).confirmations.length).toBe(1);

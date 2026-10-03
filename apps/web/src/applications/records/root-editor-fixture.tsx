@@ -20,7 +20,7 @@ const initial:RuntimeView={appId,viewId,tableId:appId,schemaVersion:2,viewVersio
 const record:RecordItem={id:recordId,appId,tableId:appId,viewId,createdBy:actorId,createdAt:'2026-10-03T09:00:00Z',updatedAt:'2026-10-03T09:01:00Z',recordVersion:4,schemaVersion:2,values:{[title]:'原事由',[amount]:'9007199254740993.01',[flag]:false},referenceDisplays:{}};
 const mode=new URLSearchParams(location.search).get('mode')==='edit'?'edit':'create';
 const guards=new LeaveGuards();
-const events={confirmations:[] as unknown[],dirty:[] as boolean[],discarded:0,refreshes:0,unauthorized:0,identityMismatch:0};
+const events={confirmations:[] as unknown[],dirty:[] as boolean[],discarded:0,refreshes:0,unauthorized:0,identityMismatch:0,confirmationGuardStatuses:[] as string[][]};
 Object.assign(window,{__rootEditor:events,__rootGuardStatus:()=>guards.snapshot(actorId).map(entry=>entry.status),__rootPrepareLeave:()=>guards.prepare(guards.snapshot(actorId))});
 function Fixture(){
  const [actor,setActor]=useState(actorId),[mounted,setMounted]=useState(true),[view,setView]=useState(initial);
@@ -31,7 +31,7 @@ function Fixture(){
  registerLeaveGuard={(scope,controller)=>guards.register(scope,controller)}
  onUnauthorized={()=>{events.unauthorized++;}} onIdentityMismatch={()=>{events.identityMismatch++;}}
  onRefresh={()=>{events.refreshes++;}}
- onConfirmed={(result,next)=>events.confirmations.push({result,identity:next})} onDirtyChange={dirty=>events.dirty.push(dirty)} onDiscard={()=>{events.discarded++;}}/>}
+ onConfirmed={(result,next)=>{events.confirmationGuardStatuses.push(guards.snapshot(actor).map(entry=>entry.status));events.confirmations.push({result,identity:next});}} onDirtyChange={dirty=>events.dirty.push(dirty)} onDiscard={()=>{events.discarded++;}}/>}
  </main></div>;
 }
 createRoot(document.getElementById('root')!).render(<Fixture/>);
