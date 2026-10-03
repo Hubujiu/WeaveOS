@@ -25,6 +25,21 @@ default reference set from the same gated transaction; V015 did not change
 that shared port. It must not require the caller to send defaults or use the
 caller field mask as a substitute for source validation.
 
+The [service COMMIT boundary tests](consumer-commit-boundary-green.txt) use
+the same actual PostgreSQL wire-frame seam as V013's application tests. A
+test-only connection drops the reply after reading the server's successful
+`COMMIT` tag. The service returns `applications.ErrUnconfirmed`; the separate
+normal connection sees one typed row, the draft consumed, one audit row and
+one confirmed minimum operation result. GET Operation and replay with the
+original key return the same result without repeating work. Reusing the key
+with a changed body returns `ErrOperationConflict`. A second test injects
+`SELECT 1/0` in the real transaction just before COMMIT: PostgreSQL reports
+`pgx.ErrTxCommitRollback`, the draft remains, and no row/audit/operation is
+committed; an explicit original-key retry then commits once. These tests
+exercise the restricted `auth_app` service transaction, not HTTPS/CSRF or
+browser handling. They passed on first run and therefore have no fabricated
+RED stage. No production fault hook or shared V013 file was changed.
+
 The combined [V015 core race suite](consumer-followup-core-race.txt) passed
 against PostgreSQL 18.6 with runtime `SET ROLE auth_app` and Redis. The
 [BFF-wide follow-up](consumer-followup-bff-race-shared-skip.txt) retains one
@@ -34,6 +49,6 @@ requires active members; V013 owns that oracle repair. A skip is not a fully
 green BFF gate.
 
 Shared HTTP/OpenAPI/config/history wiring, real Session/CSRF and browser API
-acceptance, an injected unknown-business-COMMIT service test, and the broad
+acceptance, and the broad
 million-row × 200-context full-chain capacity gate remain open. No compact
 algorithm or timeout substitution was made.
