@@ -13,7 +13,7 @@ import type {LoadReferenceCandidates,ReferenceCandidate} from './forms';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type Editor={identity:RecordEditorIdentity;view:RuntimeView;record?:RecordItem;mode:'create'|'edit'|'read';queryVersion?:string};
-type PendingRead={identity:RecordEditorIdentity;view:RuntimeView|null;recordId:UUID;queryVersion?:string;mode:'read'|'edit'};
+type PendingRead={identity:RecordEditorIdentity;view:RuntimeView|null;recordId:UUID;queryVersion?:string;mode:'read'|'edit';confirmedWrite:boolean};
 
 export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMismatch,onDirtyChange,registerLeaveGuard,requestSectionLeave}:{
  actorId:string;appId:string;viewId:string;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onDirtyChange:(dirty:boolean)=>void;
@@ -41,38 +41,38 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   const current=++generation.current;
   readController.current?.abort();const controller=new AbortController();readController.current=controller;
   const nextIdentity=identity??{kind:'record' as const,actorId,appId,viewId,recordId};
-  setReadError('');setPendingRead({identity:nextIdentity,view,recordId,queryVersion,mode});
+  setReadError('');setPendingRead({identity:nextIdentity,view,recordId,queryVersion,mode,confirmedWrite:false});
   try{
    const raw=await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/records/${encodeURIComponent(recordId)}`,'GET',undefined,controller.signal);
    const record=parseRecordItem(raw,view,actorId);
    if(record.id!==recordId)throw new Error('记录身份不匹配');
    if(current!==generation.current)return;
    setPendingRead(null);setEditor({identity:nextIdentity,view,record,mode,queryVersion});
-  }catch(error){if(current!==generation.current||controller.signal.aborted)return;handleError(error);setPendingRead({identity:nextIdentity,view,recordId,queryVersion,mode});setReadError('无法读取记录，请重试读取记录');}
+  }catch(error){if(current!==generation.current||controller.signal.aborted)return;handleError(error);setPendingRead({identity:nextIdentity,view,recordId,queryVersion,mode,confirmedWrite:false});setReadError('无法读取记录，请重试读取记录');}
  },[actorId,appId,viewId,onUnauthorized,onIdentityMismatch]);
  const openNew=(view:RuntimeView,queryVersion?:string)=>{captureOriginFocus();setSaved(false);setReadError('');setEditor({identity:createNewRecordIdentity(actorId,appId,viewId),view,mode:'create',queryVersion});};
  const openRow=(view:RuntimeView,row:RecordItem,queryVersion:string)=>{
   if(view.capabilities.read==='none')return;
   setSaved(false);void readRecord(view,row.id,queryVersion);
  };
- const refreshRead=useCallback(async(identity:RecordEditorIdentity,recordId:UUID,showSaved=true)=>{
+ const refreshRead=useCallback(async(identity:RecordEditorIdentity,recordId:UUID,confirmedWrite:boolean)=>{
   setWorkspaceRefresh(value=>value+1);
   const current=++generation.current;readController.current?.abort();const controller=new AbortController();readController.current=controller;
-  setEditor(null);setPendingRead({identity,view:null,recordId,mode:'read'});setReadError('');
+  setEditor(null);setPendingRead({identity,view:null,recordId,mode:'read',confirmedWrite});setReadError('');
   try{
    const runtime=parseRuntimeView(await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/runtime`,'GET',undefined,controller.signal),{appId,viewId});
    if(current!==generation.current)return;
-   if(runtime.capabilities.read==='none'){setPendingRead(null);setSaved(showSaved);onDirtyChange(false);return;}
+   if(runtime.capabilities.read==='none'){setPendingRead(null);setSaved(confirmedWrite);onDirtyChange(false);return;}
    const raw=await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/records/${encodeURIComponent(recordId)}`,'GET',undefined,controller.signal);
    const record=parseRecordItem(raw,runtime,actorId);
    if(record.id!==recordId)throw new Error('记录身份不匹配');
    if(current!==generation.current)return;
-   setPendingRead(null);setEditor({identity,view:runtime,record,mode:'read'});setSaved(showSaved);onDirtyChange(false);
-  }catch(error){if(current!==generation.current||controller.signal.aborted)return;handleError(error);setPendingRead({identity,view:null,recordId,mode:'read'});setReadError(showSaved?'记录已保存，但无法读取记录；请重试读取记录':'无法读取记录，请重试读取记录');setSaved(showSaved);onDirtyChange(false);}
+   setPendingRead(null);setEditor({identity,view:runtime,record,mode:'read'});setSaved(confirmedWrite);onDirtyChange(false);
+  }catch(error){if(current!==generation.current||controller.signal.aborted)return;handleError(error);setPendingRead({identity,view:null,recordId,mode:'read',confirmedWrite});setReadError(confirmedWrite?'记录已保存，但无法读取记录；请重试读取记录':'无法读取记录，请重试读取记录');setSaved(confirmedWrite);onDirtyChange(false);}
  },[actorId,appId,viewId,onUnauthorized,onIdentityMismatch,onDirtyChange]);
  const onConfirmed=useCallback((result:MutationResult,identity:RecordEditorIdentity)=>{
   setSaved(true);onDirtyChange(false);
-  void refreshRead(identity,result.id);
+  void refreshRead(identity,result.id,true);
  },[onDirtyChange,refreshRead]);
  const editAllowed=(value:Editor)=>!!value.record&&scopeAllows(value.view.capabilities.edit,actorId,value.record.createdBy)&&projectRuntimeFields(value.view,'edit',actorId,value.record).some(field=>field.editable);
  const loadCandidates=useCallback<NonNullable<Parameters<typeof RecordForm>[0]['loadCandidates']>>(async(field:RuntimeField,request,signal)=>{
@@ -120,8 +120,12 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
  // cancellation; this callback only offers a matching immutable unknown write.
  const runtimeReady=useCallback((view:RuntimeView)=>recoverPacket(view),[recoverPacket]);
  const refreshEditor=()=>{
-  if(!editor?.record)return;
-  requestSectionLeave(()=>void refreshRead(editor.identity,editor.record!.id,false));
+  if(!editor)return;
+  if(editor.record){requestSectionLeave(()=>{setSaved(false);void refreshRead(editor.identity,editor.record!.id,false);});return;}
+  requestSectionLeave(()=>{
+   setEditor(null);setPendingRead(null);setReadError('');setSaved(false);onDirtyChange(false);
+   setWorkspaceRefresh(value=>value+1);
+  });
  };
  const canRetryRead=!!pendingRead&&!!readError;
  return <section className="record-route" aria-label="记录路由">
@@ -129,11 +133,11 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   <RecordWorkspace key={`${actorId}:${appId}:${viewId}:${workspaceRefresh}`} actorId={actorId} appId={appId} viewId={viewId}
    onCreate={openNew} onOpenRecord={openRow} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onRuntimeReady={runtimeReady}/>
   {(editor||pendingRead)&&<Modal title={editor?.mode==='create'?'新建记录':'记录详情'} onClose={guardedClose}>
-   {pendingRead&&<p role="status">正在读取记录…</p>}
-   {readError&&<><p role="alert">{readError}</p>{canRetryRead&&<button type="button" className="admin-button" onClick={()=>{const target=pendingRead!;setReadError('');if(target.view)void readRecord(target.view,target.recordId,target.queryVersion,target.identity,target.mode);else void refreshRead(target.identity,target.recordId);}}>重试读取记录</button>}</>}
-   {editor?.mode==='read'&&<div className="record-route-actions">{editAllowed(editor)&&<button type="button" className="admin-button" onClick={()=>setEditor({...editor,mode:'edit',queryVersion:editor.queryVersion})}>编辑记录</button>}</div>}
+   {pendingRead&&!readError&&<p role="status">正在读取记录…</p>}
+   {readError&&<><p role="alert">{readError}</p>{canRetryRead&&<button type="button" className="admin-button" onClick={()=>{const target=pendingRead!;setReadError('');if(target.view)void readRecord(target.view,target.recordId,target.queryVersion,target.identity,target.mode);else void refreshRead(target.identity,target.recordId,target.confirmedWrite);}}>重试读取记录</button>}</>}
+   {editor?.mode==='read'&&<div className="record-route-actions">{editAllowed(editor)&&<button type="button" className="admin-button" onClick={()=>{setSaved(false);setEditor({...editor,mode:'edit',queryVersion:editor.queryVersion});}}>编辑记录</button>}</div>}
    {editor&&<RecordForm key={JSON.stringify([editor.identity,editor.mode,editor.view.policyRevision,editor.view.schemaVersion,editor.view.viewVersion,editor.record?.recordVersion??'new'])} view={editor.view} identity={editor.identity} record={editor.record} mode={editor.mode} authorityKey={`${editor.view.policyRevision}:${editor.view.schemaVersion}:${editor.view.viewVersion}:${editor.record?.recordVersion??'new'}`}
-    queryVersion={editor.queryVersion} loadCandidates={loadCandidates} onConfirmed={onConfirmed} onDirtyChange={onDirtyChange} onDiscard={guardedClose}
+    queryVersion={editor.queryVersion} loadCandidates={loadCandidates} onConfirmed={onConfirmed} onDirtyChange={onDirtyChange} onDiscard={closeEditor}
     onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard}
     onRefresh={refreshEditor}/>}</Modal>}
  </section>;
