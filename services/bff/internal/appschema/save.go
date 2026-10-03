@@ -249,3 +249,7 @@ func executeChange(ctx context.Context, tx pgx.Tx, table string, change Change, 
 		return ErrInvalid
 	}
 }
+
+func (e Executor) ApplyInTx(ctx context.Context, tx pgx.Tx, request Request) (Result, error) {
+	return Result{}, ErrInvalid
+}
