@@ -1,0 +1,84 @@
+
+Running 9 tests using 1 worker
+
+  ✓  1 [chromium] › src/root-record-shell.component.spec.ts:44:1 › Root Shell ordinary form route mounts records under the original persistent chrome (1.7s)
+  ✘  2 [chromium] › src/root-record-shell.component.spec.ts:54:1 › Root Shell create then read authoritative normalized data and edit a record (2.3s)
+  ✓  3 [chromium] › src/root-record-shell.component.spec.ts:73:1 › Root confirmed write with failed reread remains saved and cannot submit again (2.1s)
+  ✓  4 [chromium] › src/root-record-shell.component.spec.ts:82:1 › Root create-only actor confirms a receipt without an unauthorized detail or search read (1.7s)
+  ✘  5 [chromium] › src/root-record-shell.component.spec.ts:88:1 › Root opening an existing row validates the original query before reading detail (30.0s)
+  ✘  6 [chromium] › src/root-record-shell.component.spec.ts:95:1 › Root dirty record modal close requires an explicit discard and restores the origin focus (7.1s)
+  ✓  7 [chromium] › src/root-record-shell.component.spec.ts:103:1 › Root ordinary actor cannot load owner definition by entering the design URL (1.5s)
+  ✓  8 [chromium] › src/root-record-shell.component.spec.ts:110:1 › Root ordinary record editor searches only field-scoped reference candidates (2.3s)
+  ✓  9 [chromium] › src/root-record-shell.component.spec.ts:127:1 › Root owner returns from configuration to the runtime page that opened it (1.9s)
+
+
+  1) [chromium] › src/root-record-shell.component.spec.ts:54:1 › Root Shell create then read authoritative normalized data and edit a record 
+
+    Error: expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 2
+    Received:    1
+
+      67 |  expect(writes[1].body).toMatchObject({expectedSchemaVersion:1,expectedRecordVersion:1,changes:{[fieldId]:'20.10'}});
+      68 |  expect(writes[1].body.operationId).not.toBe(writes[0].body.operationId);
+    > 69 |  expect(api.calls.filter(c=>c.path===formPath+'/records/'+recordId&&c.method==='GET').length).toBeGreaterThanOrEqual(2);
+         |                                                                                               ^
+      70 |  expect(await shell!.evaluate(node=>node.isConnected)).toBe(true);
+      71 |  await page.screenshot({path:test.info().outputPath('record-shell-saved-detail.png'),fullPage:true});
+      72 | });
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:69:95
+
+    Error Context: ../../../out/root-record-shell.componen-470b5-ized-data-and-edit-a-record-chromium/error-context.md
+
+  2) [chromium] › src/root-record-shell.component.spec.ts:88:1 › Root opening an existing row validates the original query before reading detail 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '打开记录：金额 18.00', exact: true })
+
+
+      88 | test('Root opening an existing row validates the original query before reading detail',async({page})=>{
+      89 |  const api=await fixture(page,{ordinary:true,staleOpen:true});api.seed('18.00');await page.goto(routePath);
+    > 90 |  await page.getByRole('button',{name:'打开记录：金额 18.00',exact:true}).click();
+         |                                                                   ^
+      91 |  await expect(page.getByRole('alert')).toContainText('刷新');await expect(page.getByRole('dialog',{name:'记录详情',exact:true})).toHaveCount(0);
+      92 |  const searches=api.calls.filter(c=>c.path===formPath+'/records/search');expect(searches).toHaveLength(2);expect(searches[1].body.queryVersion).toBe('query-1');
+      93 |  expect(api.calls.filter(c=>c.path===formPath+'/records/'+recordId)).toEqual([]);
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:90:67
+
+    Error Context: ../../../out/root-record-shell.componen-50d82-query-before-reading-detail-chromium/error-context.md
+
+  3) [chromium] › src/root-record-shell.component.spec.ts:95:1 › Root dirty record modal close requires an explicit discard and restores the origin focus 
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  getByRole('button', { name: '新建记录', exact: true })
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" getByRole('button', { name: '新建记录', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '新建记录', exact: true })
+        14 × locator resolved to <button type="button" class="admin-button">新建记录</button>
+           - unexpected value "inactive"
+
+
+       98 |  const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'继续编辑',exact:true}).click();
+       99 |  await expect(editor.getByLabel('金额',{exact:true})).toHaveValue('7.00');await page.keyboard.press('Escape');await guard.getByRole('button',{name:'放弃修改',exact:true}).click();
+    > 100 |  await expect(editor).toHaveCount(0);await expect(trigger).toBeFocused();
+          |                                                            ^
+      101 | });
+      102 |
+      103 | test('Root ordinary actor cannot load owner definition by entering the design URL',async({page})=>{
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:100:60
+
+    Error Context: ../../../out/root-record-shell.componen-1459c-d-restores-the-origin-focus-chromium/error-context.md
+
+  3 failed
+    [chromium] › src/root-record-shell.component.spec.ts:54:1 › Root Shell create then read authoritative normalized data and edit a record 
+    [chromium] › src/root-record-shell.component.spec.ts:88:1 › Root opening an existing row validates the original query before reading detail 
+    [chromium] › src/root-record-shell.component.spec.ts:95:1 › Root dirty record modal close requires an explicit discard and restores the origin focus 
+  6 passed (58.9s)
