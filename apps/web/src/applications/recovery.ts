@@ -1,10 +1,52 @@
 // Per-document recovery survives SPA auth-route unmounts, not a page refresh.
 // Keys are verified actor IDs; no other account may read a former actor's draft.
-export type ApplicationPacket = { actorId: string; path: string; body: { operationId: string; [key: string]: unknown } };
-type Recovery = { name: string; packet: ApplicationPacket | null; unknown: boolean };
+export type ApplicationPacket = { actorId: string; path: string; method: 'POST' | 'PUT'; expectedStatus: 200 | 201; scope?: string; body: { operationId: string; [key: string]: unknown } };
+type Recovery = { name: string; packet: ApplicationPacket | null; unknown: boolean; draft?: unknown };
 const byActor = new Map<string, Recovery>();
+const byScope = new Map<string, Recovery>();
+const unsentCancels = new Map<string, Set<{ scope?: string; cancel: () => void }>>();
+const scopedKey = (actorId: string, scope: string) => JSON.stringify([actorId, scope]);
+const recoveryMap = (scope?: string) => scope ? byScope : byActor;
+const recoveryKey = (actorId: string, scope?: string) => scope ? scopedKey(actorId, scope) : actorId;
 
-export function getRecovery(actorId: string): Recovery | null { return byActor.get(actorId) ?? null; }
+// Only the preflight before a write leaves this document can be cancelled.
+// Sent writes remain in byActor until their original operation is confirmed.
+export function registerUnsentPreflight(actorId: string, cancel: () => void, scope?: string): () => void {
+ let active = unsentCancels.get(actorId);
+ if (!active) { active = new Set(); unsentCancels.set(actorId, active); }
+ const entry = { scope, cancel };
+ active.add(entry);
+ return () => {
+  active.delete(entry);
+  if (!active.size && unsentCancels.get(actorId) === active) unsentCancels.delete(actorId);
+ };
+}
+
+export function cancelUnsentPreflights(actorId: string, scope?: string) {
+ for (const entry of [...(unsentCancels.get(actorId) ?? [])]) if (scope === undefined || entry.scope === scope) entry.cancel();
+}
+
+export function getRecovery(actorId: string, scope?: string): Recovery | null { return recoveryMap(scope).get(recoveryKey(actorId, scope)) ?? null; }
+export function keepScopedDraft(actorId: string, scope: string, draft: unknown) {
+ const key = recoveryKey(actorId, scope), current = byScope.get(key);
+ byScope.set(key, { name: current?.name ?? '', packet: current?.packet ?? null, unknown: current?.unknown ?? false, draft });
+}
+export function clearScopedDraft(actorId: string, scope: string) {
+ const key = recoveryKey(actorId, scope), current = byScope.get(key);
+ if (current?.packet || current?.unknown) byScope.set(key, { ...current, draft: undefined });
+ else byScope.delete(key);
+}
+export function clearScopedDrafts(actorId: string, scopePrefix: string) {
+ for (const [key, value] of byScope) {
+  if (key.startsWith('["' + actorId + '","' + scopePrefix)) {
+   if (value.packet || value.unknown) byScope.set(key, { ...value, draft: undefined });
+   else byScope.delete(key);
+  }
+ }
+}
+export function scopedUnconfirmed(actorId: string): ApplicationPacket[] {
+ return [...byScope.entries()].filter(([key, value]) => key.startsWith('["' + actorId + '",') && value.unknown && value.packet).map(([, value]) => value.packet!);
+}
 
 export function keepName(actorId: string, name: string) {
  const current = byActor.get(actorId);
@@ -12,16 +54,21 @@ export function keepName(actorId: string, name: string) {
 }
 
 export function keepPacket(packet: ApplicationPacket, unknown: boolean) {
- const current = byActor.get(packet.actorId);
- byActor.set(packet.actorId, {
+ const map = recoveryMap(packet.scope), key = recoveryKey(packet.actorId, packet.scope);
+ const current = map.get(key);
+ map.set(key, {
   name: typeof packet.body.name === 'string' ? packet.body.name : current?.name ?? '',
-  packet, unknown,
+  packet, unknown, draft: current?.draft,
  });
 }
 
-export function clearPacket(actorId: string) {
- const current = byActor.get(actorId);
- if (current) byActor.set(actorId, { ...current, packet: null, unknown: false });
+export function clearPacket(actorId: string, scope?: string) {
+ const map = recoveryMap(scope), key = recoveryKey(actorId, scope);
+ const current = map.get(key);
+ if (current) {
+  if (scope && current.draft === undefined) map.delete(key);
+  else map.set(key, { ...current, packet: null, unknown: false });
+ }
 }
 
-export function clearRecovery(actorId: string) { byActor.delete(actorId); }
+export function clearRecovery(actorId: string, scope?: string) { recoveryMap(scope).delete(recoveryKey(actorId, scope)); }

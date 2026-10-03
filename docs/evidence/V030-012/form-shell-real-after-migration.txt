@@ -1,0 +1,26 @@
+
+Running 1 test using 1 worker
+F
+
+  1) [chromium] › tests/acceptance/applications-web.spec.ts:148:5 › V030-012 real HTTPS Shell persists a directory, form and saved designer field
+
+    Error: COMMON_SERVICE_UNAVAILABLE
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 503
+
+      173 |  await page.getByRole('button', { name: '创建目录', exact: true }).click();
+      174 |  const directoryResponse = await directoryWrite;
+    > 175 |  expect(directoryResponse.status(), (await directoryResponse.json()).code).toBe(201);
+          |                                                                            ^
+      176 |  await expect(page.getByRole('treeitem', { name: folderName, exact: true })).toBeVisible();
+      177 |  if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('form-directory-created.png'), fullPage: true });
+      178 |  await page.getByRole('treeitem', { name: folderName, exact: true }).getByRole('button').first().click();
+        at /repo/tests/acceptance/applications-web.spec.ts:175:76
+
+    Error Context: .work/v030012/browser-results/applications-web-V030-012--34174-rm-and-saved-designer-field-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/acceptance/applications-web.spec.ts:148:5 › V030-012 real HTTPS Shell persists a directory, form and saved designer field

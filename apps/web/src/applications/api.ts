@@ -13,7 +13,9 @@ export class ApplicationError extends Error {
  }
 }
 
-export async function applicationApi<T>(actorId: string, path: string, method = 'GET', body?: object, signal?: AbortSignal, expectedStatus?: number): Promise<T> {
+export type ApplicationEnvelope<T> = { data: T; meta: { pagination?: { nextPageToken: string | null; hasMore: boolean } } | null };
+
+export async function applicationApiEnvelope<T>(actorId: string, path: string, method = 'GET', body?: object, signal?: AbortSignal, expectedStatus?: number): Promise<ApplicationEnvelope<T>> {
  const write = method !== 'GET';
  const headers: Record<string, string> = { 'X-Expected-Actor-Id': actorId };
  if (body) headers['Content-Type'] = 'application/json';
@@ -27,9 +29,14 @@ export async function applicationApi<T>(actorId: string, path: string, method = 
  let raw: unknown;
  try { raw = await response.json(); }
  catch { throw new ApplicationError(response.status, 'COMMON_SERVICE_UNAVAILABLE', write); }
- const envelope = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as { code?: unknown; data?: T } : null;
+ const envelope = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as { code?: unknown; data?: T; meta?: ApplicationEnvelope<T>['meta'] } : null;
  const code = typeof envelope?.code === 'string' ? envelope.code : 'COMMON_SERVICE_UNAVAILABLE';
  if (!response.ok || code !== 'OK') throw new ApplicationError(response.status, code, write && (response.ok || code === 'APPLICATION_OPERATION_UNCONFIRMED'));
  if (expectedStatus !== undefined && response.status !== expectedStatus) throw new ApplicationError(response.status, 'APPLICATION_OPERATION_UNCONFIRMED', true);
- return envelope?.data as T;
+ if (!envelope || !Object.hasOwn(envelope, 'data')) throw new ApplicationError(response.status, 'APPLICATION_OPERATION_UNCONFIRMED', write);
+ return { data: envelope.data as T, meta: envelope.meta ?? null };
+}
+
+export async function applicationApi<T>(actorId: string, path: string, method = 'GET', body?: object, signal?: AbortSignal, expectedStatus?: number): Promise<T> {
+ return (await applicationApiEnvelope<T>(actorId, path, method, body, signal, expectedStatus)).data;
 }

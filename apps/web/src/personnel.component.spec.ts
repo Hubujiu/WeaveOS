@@ -416,6 +416,41 @@ test('R3 browser back with dirty configuration prompts, cancel preserves inputs'
  await page.goBack();await expect(page.getByRole('dialog')).toContainText('未保存');await page.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('浏览器返回保护');
  await page.goBack();await page.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page).toHaveURL(/\/app$/);
 });
+test('V030-012 retained app operation does not hide the current personnel discard consequence',async({page})=>{
+ await fixture(page);
+ let writes=0;
+ await page.route('**/api/v1/applications',route=>{
+  if(route.request().method()==='GET')return route.fulfill({json:q36FixtureEnvelope({items:[]},route.request())});
+  writes++;return route.fulfill({status:503,json:{code:'APPLICATION_OPERATION_UNCONFIRMED',data:null}});
+ });
+ await page.goto('/app/applications');
+ await page.getByRole('button',{name:'新建应用',exact:true}).click();
+ const create=page.getByRole('dialog',{name:'新建应用',exact:true});
+ await create.getByRole('textbox',{name:'应用名称',exact:true}).fill('待核查应用');
+ await create.getByRole('button',{name:'创建应用',exact:true}).click();
+ await expect(create.getByRole('alert')).toContainText('尚未确认');
+ await create.getByRole('button',{name:'关闭',exact:true}).click();
+ await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'关闭并保留待核查操作',exact:true}).click();
+ await expect(create).toHaveCount(0);
+ await page.getByRole('button',{name:'设置',exact:true}).click();
+ await page.getByRole('tab',{name:'身份',exact:true}).click();
+ await page.getByRole('button',{name:'企业管理员',exact:true}).click();
+ await page.getByLabel('身份名称',{exact:true}).fill('未保存人员更改');
+ await page.goBack();
+ const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});
+ await expect(guard).toContainText('人员更改将丢失');
+ await expect(guard).toContainText('应用创建结果仍未确认');
+ await guard.getByRole('button',{name:'继续编辑',exact:true}).click();
+ await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('未保存人员更改');
+ await page.goBack();
+ await guard.getByRole('button',{name:/放弃人员更改.*保留待核查操作/}).click();
+ await expect(page).toHaveURL(/\/app\/applications$/);
+ await page.getByRole('button',{name:'新建应用',exact:true}).click();
+ const restored=page.getByRole('dialog',{name:'新建应用',exact:true});
+ await expect(restored.getByRole('textbox',{name:'应用名称',exact:true})).toHaveValue('待核查应用');
+ await expect(restored.getByRole('alert')).toContainText('尚未确认');
+ expect(writes).toBe(1);
+});
 test('R3 definition creation has no fake seed; validates and sends explicit config',async({page})=>{
  await admin(page);let created:unknown;await page.route('**/api/v1/personnel/identities?**',route=>route.fulfill({status:200,json:q36FixtureEnvelope(list([]),route.request())}));
  await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'新建身份',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill('普通员工');

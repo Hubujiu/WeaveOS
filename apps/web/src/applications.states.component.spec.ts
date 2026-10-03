@@ -10,6 +10,7 @@ async function fixture(page: Page) {
    : path === 'applications' ? { items: [app] }
    : path === `applications/${app.id}` ? app
    : path === `applications/${app.id}/access` ? { appId: app.id, canEnter: true, policyRevision: 1, menus: [{ resourceKind: 'application', resourceId: app.id }] }
+   : path === `applications/${app.id}/structure` ? { appId: app.id, structureVersion: 0, directories: [], tables: [], forms: [], capabilities: { canManageDefinition: true } }
    : {};
   await route.fulfill({ json: { code: 'OK', data } });
  });
@@ -47,7 +48,7 @@ test('V030-012 stale app access is denied and a fresh retry reauthorizes it', as
  if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('access-denied.png') });
  denied = false;
  await page.getByRole('button', { name: '重试', exact: true }).click();
- await expect(page.getByText('尚未配置表单', { exact: true })).toBeVisible();
+ await expect(page.getByRole('status').filter({ hasText: '暂无目录或表单' })).toBeVisible();
 });
 
 test('V030-012 catalog 401 sends the user to login', async ({ page }) => {

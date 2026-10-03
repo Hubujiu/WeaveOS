@@ -1,0 +1,68 @@
+
+Running 324 tests using 1 worker
+················································································
+················································································
+···································································[WebServer] 12:38:58 PM [vite] http proxy error: /api/v1/applications
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:8080
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2017:16)
+·[WebServer] 12:38:59 PM [vite] http proxy error: /api/v1/applications
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:8080
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2017:16)
+············
+·························F·····················································F
+····
+
+  1) [webkit] › apps/web/src/applications.permissions.component.spec.ts:280:1 › V030-012 group preflight 401 preserves the unsent scoped draft for the same actor
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /\/app$/
+    Received string:  "http://127.0.0.1:4173/login"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 5000ms
+        14 × locator resolved to <html lang="zh-CN">…</html>
+           - unexpected value "http://127.0.0.1:4173/login"
+
+
+      293 |  await page.getByRole('main').getByRole('button', { name: app.name, exact: true }).click();
+      294 |  await page.getByRole('button', { name: '权限管理' }).click();
+    > 295 |  await page.getByRole('button', { name: '业务管理员', exact: true }).click();
+          |                     ^
+      296 |  await page.getByRole('textbox', { name: '权限组名称' }).fill('保留的组名');
+      297 |  await page.getByRole('button', { name: '保存基本信息' }).click();
+      298 |  await expect(page.getByRole('button', { name: '核查原操作' })).toBeVisible();
+        at /repo/apps/web/src/applications.permissions.component.spec.ts:295:21
+
+    Error Context: .work/v030012/browser-results/applications.permissions.c-0380c-ed-draft-for-the-same-actor-webkit/error-context.md
+
+  2) [webkit-reduced] › apps/web/src/applications.permissions.component.spec.ts:280:1 › V030-012 group preflight 401 preserves the unsent scoped draft for the same actor
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /\/app$/
+    Received string:  "http://127.0.0.1:4173/login"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 5000ms
+        14 × locator resolved to <html lang="zh-CN">…</html>
+           - unexpected value "http://127.0.0.1:4173/login"
+
+
+      293 |  await page.getByRole('main').getByRole('button', { name: app.name, exact: true }).click();
+      294 |  await page.getByRole('button', { name: '权限管理' }).click();
+    > 295 |  await page.getByRole('button', { name: '业务管理员', exact: true }).click();
+          |                     ^
+      296 |  await page.getByRole('textbox', { name: '权限组名称' }).fill('保留的组名');
+      297 |  await page.getByRole('button', { name: '保存基本信息' }).click();
+      298 |  await expect(page.getByRole('button', { name: '核查原操作' })).toBeVisible();
+        at /repo/apps/web/src/applications.permissions.component.spec.ts:295:21
+
+    Error Context: .work/v030012/browser-results/applications.permissions.c-0380c-ed-draft-for-the-same-actor-webkit-reduced/error-context.md
+
+  2 failed
+    [webkit] › apps/web/src/applications.permissions.component.spec.ts:280:1 › V030-012 group preflight 401 preserves the unsent scoped draft for the same actor
+    [webkit-reduced] › apps/web/src/applications.permissions.component.spec.ts:280:1 › V030-012 group preflight 401 preserves the unsent scoped draft for the same actor
+  322 passed (11.3m)

@@ -1,0 +1,34 @@
+
+Running 1 test using 1 worker
+
+[1/1] [chromium] › apps/web/src/personnel.component.spec.ts:419:1 › V030-012 retained app operation does not hide the current personnel discard consequence
+  1) [chromium] › apps/web/src/personnel.component.spec.ts:419:1 › V030-012 retained app operation does not hide the current personnel discard consequence
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: '有未保存的修改', exact: true })
+    Expected substring: "人员更改将丢失"
+    Received string:    "有未保存的修改×创建结果仍未确认。离开后仍可使用原操作继续核查。继续编辑离开并保留待核查操作"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog', { name: '有未保存的修改', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '有未保存的修改', exact: true })
+        14 × locator resolved to <dialog open="" aria-labelledby="_r_f_" class="personnel-dialog">…</dialog>
+           - unexpected value "有未保存的修改×创建结果仍未确认。离开后仍可使用原操作继续核查。继续编辑离开并保留待核查操作"
+
+
+      439 |  await page.goBack();
+      440 |  const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});
+    > 441 |  await expect(guard).toContainText('人员更改将丢失');
+          |                      ^
+      442 |  await expect(guard).toContainText('应用创建结果仍未确认');
+      443 |  await guard.getByRole('button',{name:'继续编辑',exact:true}).click();
+      444 |  await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('未保存人员更改');
+        at /repo/apps/web/src/personnel.component.spec.ts:441:22
+
+    Error Context: apps/web/test-results/personnel.component-V030-0-b4dd4-rsonnel-discard-consequence-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › apps/web/src/personnel.component.spec.ts:419:1 › V030-012 retained app operation does not hide the current personnel discard consequence

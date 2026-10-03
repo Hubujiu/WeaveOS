@@ -24,6 +24,9 @@ async function fixture(page: Page, create = true) {
           appId: application.id, canEnter: true, policyRevision: 1,
           menus: [{ resourceKind: 'application', resourceId: application.id }],
         }
+      : path === 'applications/' + application.id + '/structure' ? {
+          appId: application.id, structureVersion: 0, directories: [], tables: [], forms: [], capabilities: { canManageDefinition: true },
+        }
       : {};
     await route.fulfill({ status: 200, json: { code: 'OK', message: 'success', data, meta: null } });
   });
@@ -87,7 +90,7 @@ test('V030-012 opening an application rechecks access and presents its actual em
   await page.goto('/app/applications/' + application.id);
   await expect(page.getByText('WaveOS', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: application.name, exact: true })).toBeVisible();
-  await expect(page.getByText('尚未配置表单', { exact: true })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: '暂无目录或表单' })).toBeVisible();
   expect(accesses.length).toBeGreaterThan(0);
 });
 
@@ -97,6 +100,139 @@ async function creation(page: Page) {
  await page.getByRole('textbox', { name: '应用名称', exact: true }).fill('新业务应用');
  return page.getByRole('dialog', { name: '新建应用', exact: true });
 }
+
+test('V030-012 slow create preflight locks its name, ignores repeat clicks, and retains the matching unknown packet', async ({ page }) => {
+ await fixture(page);
+ const dialog = await creation(page);
+ const input = dialog.getByRole('textbox', { name: '应用名称', exact: true });
+ let release!: () => void;
+ const gate = new Promise<void>(resolve => { release = resolve; });
+ let entered!: () => void;
+ const preflightStarted = new Promise<void>(resolve => { entered = resolve; });
+ let preflights = 0;
+ const writes: { name: string; operationId: string }[] = [];
+ await page.route('**/api/v1/sessions/current', async route => { preflights++; entered(); await gate; await route.fulfill({ json: { code: 'OK', data: user } }); });
+ await page.route('**/api/v1/applications', route => {
+  if (route.request().method() === 'GET') return route.fulfill({ json: { code: 'OK', data: { items: [] } } });
+  writes.push(route.request().postDataJSON());
+  return route.fulfill({ status: 503, json: { code: 'APPLICATION_OPERATION_UNCONFIRMED' } });
+ });
+ const submit = dialog.getByRole('button', { name: '创建应用', exact: true });
+ await submit.evaluate(button => { (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click(); });
+ await preflightStarted;
+ try {
+  await expect(input).toBeDisabled();
+  const renamed = await input.fill('改名后的应用', { timeout: 250 }).then(() => true, () => false);
+  expect(renamed).toBe(false);
+  await expect(input).toHaveValue('新业务应用');
+  expect(preflights).toBe(1);
+  expect(writes).toHaveLength(0);
+ } finally { release(); }
+ await expect(dialog.getByRole('alert')).toContainText('尚未确认');
+ expect(writes).toHaveLength(1);
+ expect(writes[0].name).toBe('新业务应用');
+ await expect(input).toHaveValue(writes[0].name);
+ await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
+ await expect.poll(() => writes.length).toBe(2);
+ expect(writes[1]).toEqual(writes[0]);
+ await expect(input).toHaveValue(writes[0].name);
+});
+
+test('V030-012 preflight 401 keeps the unsent name without a write or unknown operation', async ({ page }) => {
+ await fixture(page);
+ await page.route('**/api/v1/sessions', route => route.fulfill({ json: { code: 'OK', data: user } }));
+ const dialog = await creation(page);
+ let release!: () => void;
+ const gate = new Promise<void>(resolve => { release = resolve; });
+ let entered!: () => void;
+ const started = new Promise<void>(resolve => { entered = resolve; });
+ let first = true; let writes = 0;
+ await page.route('**/api/v1/sessions/current', async route => {
+  if (first) { first = false; entered(); await gate; return route.fulfill({ status: 401, json: { code: 'AUTH_UNAUTHENTICATED' } }); }
+  return route.fulfill({ json: { code: 'OK', data: user } });
+ });
+ await page.route('**/api/v1/applications', route => {
+  if (route.request().method() === 'POST') writes++;
+  return route.fulfill({ json: { code: 'OK', data: { items: [] } } });
+ });
+ await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+ await started;
+ await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toBeDisabled();
+ release();
+ await expect(page).toHaveURL(/\/login$/);
+ expect(writes).toBe(0);
+ await page.getByRole('textbox', { name: '账号', exact: true }).fill(user.account);
+ await page.getByLabel('密码', { exact: true }).fill('test-password');
+ await page.getByRole('button', { name: '登录', exact: true }).click();
+ await expect(page).toHaveURL(/\/app$/);
+ await page.getByRole('button', { name: '打开应用中心', exact: true }).click();
+ await page.getByRole('button', { name: '新建应用', exact: true }).click();
+ const restored = page.getByRole('dialog', { name: '新建应用', exact: true });
+ await expect(restored.getByRole('textbox', { name: '应用名称', exact: true })).toHaveValue('新业务应用');
+ await expect(restored.getByRole('button', { name: '核查操作', exact: true })).toHaveCount(0);
+ expect(writes).toBe(0);
+});
+
+test('V030-012 preflight actor mismatch masks the Shell before any create POST', async ({ page }) => {
+ await fixture(page);
+ const dialog = await creation(page);
+ let release!: () => void;
+ const gate = new Promise<void>(resolve => { release = resolve; });
+ let entered!: () => void;
+ const started = new Promise<void>(resolve => { entered = resolve; });
+ let writes = 0;
+ await page.route('**/api/v1/sessions/current', async route => {
+  entered(); await gate;
+  return route.fulfill({ json: { code: 'OK', data: { id: '00000000-0000-4000-8000-000000000003', account: 'other-owner' } } });
+ });
+ await page.route('**/api/v1/applications', route => {
+  if (route.request().method() === 'POST') writes++;
+  return route.fulfill({ json: { code: 'OK', data: { items: [] } } });
+ });
+ await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+ await started;
+ await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toBeDisabled();
+ release();
+ await expect(page.getByRole('alert').filter({ hasText: '登录身份已变化' })).toBeVisible();
+ await expect(page.getByTestId('application-shell')).toHaveCount(0);
+ expect(writes).toBe(0);
+});
+
+test('V030-012 discarding a gated unsent create through Back prevents its later POST and success', async ({ page }) => {
+ await fixture(page);
+ await page.goto('/app');
+ await page.getByRole('button', { name: '打开应用中心', exact: true }).click();
+ await page.getByRole('button', { name: '新建应用', exact: true }).click();
+ const dialog = page.getByRole('dialog', { name: '新建应用', exact: true });
+ await dialog.getByRole('textbox', { name: '应用名称', exact: true }).fill('放弃的应用');
+ let release!: () => void;
+ const gate = new Promise<void>(resolve => { release = resolve; });
+ let entered!: () => void;
+ const started = new Promise<void>(resolve => { entered = resolve; });
+ let completed!: () => void;
+ const preflightCompleted = new Promise<void>(resolve => { completed = resolve; });
+ let writes = 0;
+ await page.route('**/api/v1/sessions/current', async route => { entered(); await gate; await route.fulfill({ json: { code: 'OK', data: user } }).catch(() => {}); completed(); });
+ await page.route('**/api/v1/applications', route => {
+  if (route.request().method() === 'POST') writes++;
+  return route.fulfill({ json: { code: 'OK', data: { items: [] } } });
+ });
+ await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+ await started;
+ await page.goBack();
+ const guard = page.getByRole('dialog', { name: '有未保存的修改', exact: true });
+ await expect(guard).toContainText('丢失');
+ await expect(guard).not.toContainText('结果仍未确认');
+ await guard.getByRole('button', { name: '放弃修改', exact: true }).click();
+ await expect(page).toHaveURL(/\/app$/);
+ release();
+ await preflightCompleted;
+ expect(writes).toBe(0);
+ await page.getByRole('button', { name: '打开应用中心', exact: true }).click();
+ await page.getByRole('button', { name: '新建应用', exact: true }).click();
+ await expect(page.getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true })).toHaveValue('');
+ await expect(page.getByRole('status').filter({ hasText: '应用已创建' })).toHaveCount(0);
+});
 
 test('V030-012 create waits for server acknowledgement and sends only the frozen DTO', async ({ page }) => {
  await fixture(page);

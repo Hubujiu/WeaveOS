@@ -202,3 +202,113 @@ The read-only V030-014 mounting assessment at
 `v014-interface-review.md`. Its checkpoint lacks the shared actor-bound
 request and recovery protocol, so form mounting awaits the reviewed compatible
 module SHA and root's integration freeze.
+
+## Permission-management increment (after dedicated PRD/ADR §7 freeze)
+
+This supersedes the earlier statement that group/member/root-menu UI was
+pending. Source authority is the dedicated V030-012 PRD/ADR §7, V013 ADR
+Appendix A/B, and the verified B5/V013-bf API implementation. The later Figma
+exploration was not an accepted replacement baseline for these checks.
+
+The first review's race was reproduced before repair: four browser assertions
+failed on the slow create preflight/name lock or Back-discard POST, and the
+Personnel guard assertion failed because it hid the live Personnel edit loss
+behind a retained create warning. The exact pre-repair source and browser
+output are in `preflight-red/`. The permission entry test failed before the
+new UI, and `preflight-red/unknown-cross-section.txt` proves that a menu save
+was incorrectly enabled while another policy write remained unconfirmed.
+Those original assertions subsequently passed in focused Chromium runs;
+none was weakened or skipped.
+
+The implementation keeps application-create, Personnel, and permission dirty
+sources distinct. Preflight freezes the operation snapshot before Session
+verification and invalidates a discarded generation before POST/PUT. Sent
+writes retain actor/app/resource-scoped method, status, path, body and original
+operation ID; query 401/404 and malformed/nonconfirming replies remain
+unknown. The permission manager reads real groups, members, grants, and
+paginated candidates; its three edit regions save independently with CAS.
+Unknown grants block replacement. Confirmed permission saves reread the
+policy and related data; dirty peer regions keep their original baseline.
+
+The isolated HTTPS BFF built from V013 checkpoint
+`bf4956394581979f3371a8840a95f3c59166b801` passed the new Chromium
+owner screen test: group create201, basic PUT200, member PUT200, and menu
+PUT200 were each confirmed and reread. Real membership alone gave the member
+no app access; the root-menu grant then enabled access. The test ran against
+PostgreSQL, Redis, Session/CSRF, TLS Nginx and the negative actor guard, not
+mocked application APIs. The V013 newer server-side disabled-member delta
+validation remains outside this frozen binary and must be checked when its
+owner supplies an accepted replacement SHA.
+
+Six production/HTTPS screenshots and eleven HTTP-boundary state screenshots
+were added to `screenshots/manifest.json`, raising the inventory from 15 to
+32. They cover empty/list/create/edit, member candidate, root menu, paging,
+disabled member, unsupported grant, loading/error/empty candidate, CAS
+conflict, unknown recovery, unsent discard and nonowner view. All 32 files
+exist and matched their recorded PNG dimensions and SHA-256 hashes at this
+check. The local full browser and current-head CI results are recorded after
+their terminal outcome; this paragraph makes no claim that either is complete.
+
+## V030-014 form module and Shell integration
+
+The mounted module source is the root-reviewed `task/V030-014-form-designer`
+checkpoint `e60f7171e6000dbe48e6dc28cb50fdd639e12cb8`, selectively imported
+as `apps/web/src/applications/forms/` and `motion/` with its pinned GSAP
+package and lockfile entries. It was not merged into V030-014's branch. The
+Shell supplies the verified session actor, app/form routes, existing original
+global tabs, and an instance-scoped `registerLeaveGuard` per ADR009 §8.
+`onDirtyChange` remains a display signal. Route and section confirmations
+invoke the module's synchronous `prepareLeave` before unmount; a changed
+status or draft fingerprint requires a new confirmation. Personnel,
+application-create, permission, and form consequences are aggregated. Forced
+401 exits preserve the actor-scoped form memory for revalidation on return.
+
+The guard's stale-fingerprint defect was reproduced RED before repair:
+`preflight-red/leave-fingerprint-red.txt`. Four registry tests now pass. The
+first joint Chromium navigation run was 3/3; the preflight cancellation and
+sent-unknown preservation run was 2/2. The final reviewed-module joint Shell
+matrix passed 36/36 across Chromium, Firefox, WebKit, and their reduced-motion
+variants (`form-shell-six.txt`). It includes a real mounted structure and
+designer, Back discard without resurrection, slow preflight cancellation,
+preflight-to-unknown re-confirmation, and forced 401 same-actor recovery.
+The complete V030-012 component matrix passed 378/378 (`component-six-final.txt`).
+A subsequent current-app tab close test confirmed that cancel retains the tab
+and draft, while confirmed discard removes the tab and unsent draft. The
+expanded joint Shell matrix passed 42/42 (`form-shell-seven-six.txt`). Direct
+web and test TypeScript checks, the Vite production build, four Shell registry
+unit tests, task structure validation, and `git diff --check` passed.
+An additional sent-unknown close-tab case verified that confirming close
+removes the tab while retaining the original operation packet for same-actor
+revalidation. The final expanded joint Shell matrix passed 48/48
+(`form-shell-eight-six.txt`).
+
+The isolated TLS stack used V013 BFF `bf4956394581979f3371a8840a95f3c59166b801`,
+PostgreSQL18.6 and Redis8.2.10. Its initial structure GET was 503 because the
+disposable `weaveos_acceptance` database still held only B5 migrations. Goose
+applied exactly V013 `00007_app_structure.sql` in that database, and the
+reviewed V013 role grants were applied to the isolated application login.
+The first write then returned 503 because this old test stack lacked V013's
+required dedicated definition HMAC key and schema lock budgets. These were
+supplied in ignored mode0600 `.work/v030012/runtime.env`, and only the
+isolated BFF service was restarted. The exact Chromium HTTPS browser flow then
+passed: app create → directory create → form create → designer field save and
+reload with persisted content (`form-shell-real-after-config.txt`). Earlier
+503 output is retained as fixture diagnostic evidence; no production config or
+database was touched.
+
+The broader real suite's first pass was 24/30. All six failures were the same
+test's expectation that the shared member fixture have no other accessible
+apps; previous accepted tests had legitimately granted that member other apps.
+The scenario still asserts absence of the newly created, ungranted app and a
+direct-link 403. Its catalogue-wide empty assertion was removed. A subsequent
+28/30 run found a WebKit timing assertion that counted access requests before
+the Home route had rendered; the test now waits for Home and polls the actual
+reopened access request. The isolated final HTTPS suite then passed 30/30 in
+Chromium, Firefox, WebKit and their reduced-motion projects
+(`real-six-final.txt`).
+
+Five new actual TLS/production-build form screens were visually reviewed and
+added to the screenshot inventory: empty structure, saved directory, form
+creation dialog, empty designer, and saved field designer. All 37 PNGs match
+their recorded dimensions and SHA-256 digests; no login credential screen is
+stored. The screenshots are QA evidence, not app assets.

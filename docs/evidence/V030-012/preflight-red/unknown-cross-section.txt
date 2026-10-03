@@ -1,0 +1,33 @@
+
+Running 1 test using 1 worker
+F
+
+  1) [chromium] › apps/web/src/applications.permissions.component.spec.ts:241:1 › V030-012 an unconfirmed group PUT keeps its original actor, body, key and editable scope
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator:  getByRole('button', { name: '保存菜单' })
+    Expected: disabled
+    Received: enabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('button', { name: '保存菜单' }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '保存菜单' })
+        14 × locator resolved to <button class="admin-button primary">保存菜单</button>
+           - unexpected value "enabled"
+
+
+      259 |  await capture(page, info, 'permission-unconfirmed');
+      260 |  await page.getByRole('checkbox', { name: '允许进入应用' }).uncheck();
+    > 261 |  await expect(page.getByRole('button', { name: '保存菜单' })).toBeDisabled();
+          |                                                           ^
+      262 |  await page.getByRole('navigation', { name: '全局应用标签' }).getByRole('button', { name: '全部应用' }).click();
+      263 |  await page.getByRole('dialog', { name: '有未保存的修改' }).getByRole('button', { name: '放弃权限组更改并保留待核查操作' }).click();
+      264 |  await page.getByRole('main').getByRole('button', { name: app.name, exact: true }).click();
+        at /repo/apps/web/src/applications.permissions.component.spec.ts:261:59
+
+    Error Context: .work/v030012/browser-results/applications.permissions.c-ebcfc-body-key-and-editable-scope-chromium/error-context.md
+
+  1 failed
+    [chromium] › apps/web/src/applications.permissions.component.spec.ts:241:1 › V030-012 an unconfirmed group PUT keeps its original actor, body, key and editable scope

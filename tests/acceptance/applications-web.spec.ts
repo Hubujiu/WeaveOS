@@ -65,15 +65,18 @@ test('V030-012 real B5: root creates, reopens and member without a grant is deni
  page.on('request', req => { if (new URL(req.url()).pathname === `/api/v1/applications/${app.id}/access`) accesses.push(req.url()); });
  await page.getByRole('main').getByRole('button', { name, exact: true }).click();
  await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
- await expect(page.getByText('尚未配置表单', { exact: true })).toBeVisible();
+ await expect(page.getByRole('region', { name: '目录与视图管理' })).toBeVisible();
+ await expect(page.getByRole('status').filter({ hasText: '暂无目录或表单' })).toBeVisible();
  await expect(page.getByRole('status').filter({ hasText: '应用已创建' })).toHaveCount(0);
  expect(accesses.length).toBeGreaterThan(0);
  if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('workspace.png') });
  await page.getByRole('navigation', { name: '全局应用标签' }).getByRole('button', { name: '首页', exact: true }).click();
+ await expect(page).toHaveURL(/\/app$/);
+ await expect(page.getByRole('heading', { name: '主页', exact: true })).toBeVisible();
  const before = accesses.length;
  await page.getByRole('navigation', { name: '全局应用标签' }).getByRole('button', { name, exact: true }).click();
  await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
- expect(accesses.length).toBeGreaterThan(before);
+ await expect.poll(() => accesses.length).toBeGreaterThan(before);
 
  const memberContext = await browser.newContext({ baseURL: 'https://localhost:19443', ignoreHTTPSErrors: true, viewport: { width: 1920, height: 1080 } });
  try {
@@ -81,12 +84,127 @@ test('V030-012 real B5: root creates, reopens and member without a grant is deni
   await login(member, f.user);
   await member.getByRole('button', { name: '打开应用中心', exact: true }).click();
   await expect(member.getByRole('button', { name, exact: true })).toHaveCount(0);
-  await expect(member.getByText('暂无可用应用', { exact: true })).toBeVisible();
-  if (info.project.name === 'chromium') await member.screenshot({ path: info.outputPath('catalog-empty.png') });
+  // The shared isolated member may retain grants to apps created by other cases;
+  // this new app must remain absent until its own grant is written.
+  if (info.project.name === 'chromium') await member.screenshot({ path: info.outputPath('catalog-member.png') });
   await member.goto(`/app/applications/${app.id}`);
   await expect(member.getByRole('alert')).toContainText('没有应用访问或管理权限');
   if (info.project.name === 'chromium') await member.screenshot({ path: info.outputPath('access-denied.png') });
  } finally { await memberContext.close(); }
+});
+
+test('V030-012 real B5: owner saves permission-group basics, members and root menu independently', async ({ page, browser }, info) => {
+ const f = fixture();
+ await page.setViewportSize({ width: 1920, height: 1080 });
+ await login(page, f.admin);
+ const appResult = await realApi(page.context(), f.adminId, 'applications', 'POST', { name: '真实权限界面 ' + info.project.name + ' ' + Date.now(), operationId: crypto.randomUUID() });
+ expect(appResult.status).toBe(201);
+ const app = appResult.data as { id: string; name: string; policyRevision: number };
+ await page.goto('/app/applications/' + app.id);
+ await expect(page.getByRole('heading', { name: app.name, exact: true })).toBeVisible();
+ await page.getByRole('button', { name: '权限管理', exact: true }).click();
+ await expect(page.getByText('暂无权限组', { exact: true })).toBeVisible();
+ if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('permission-empty.png') });
+ await page.getByRole('button', { name: '新建权限组', exact: true }).click();
+ const dialog = page.getByRole('dialog', { name: '新建权限组', exact: true });
+ if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('permission-create.png') });
+ await dialog.getByRole('textbox', { name: '权限组名称', exact: true }).fill('真实权限组');
+ const created = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/permission-groups'));
+ await dialog.getByRole('button', { name: '创建权限组', exact: true }).click();
+ expect((await created).status()).toBe(201);
+ await expect(page.getByRole('button', { name: '真实权限组', exact: true })).toBeVisible();
+ await page.getByRole('button', { name: '真实权限组', exact: true }).click();
+ await expect(page.getByRole('checkbox', { name: '允许进入应用', exact: true })).toBeVisible();
+ if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('permission-detail.png') });
+ await page.getByRole('textbox', { name: '权限组名称', exact: true }).fill('真实权限组更新');
+ await page.getByRole('button', { name: '保存基本信息', exact: true }).click();
+ await expect(page.getByRole('status').filter({ hasText: '基本信息已保存' })).toBeVisible();
+ await page.getByRole('textbox', { name: '按账号前缀搜索', exact: true }).fill(f.user.account);
+ await expect(page.getByRole('checkbox', { name: f.user.account, exact: true })).toBeVisible();
+ if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('permission-candidate.png') });
+ await page.getByRole('checkbox', { name: f.user.account, exact: true }).check();
+ await page.getByRole('button', { name: '保存成员', exact: true }).click();
+ await expect(page.getByRole('status').filter({ hasText: '成员已保存' })).toBeVisible();
+ const groups = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups');
+ const group = (groups.data.items as { id: string; name: string }[]).find(value => value.name === '真实权限组更新');
+ expect(group).toBeTruthy();
+ const members = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups/' + group!.id + '/members');
+ expect(members.data.memberIds).toContain(f.userId);
+ const memberContext = await browser.newContext({ baseURL: 'https://localhost:19443', ignoreHTTPSErrors: true });
+ try {
+  const memberPage = await memberContext.newPage();
+  await login(memberPage, f.user);
+  const beforeGrant = await realApi(memberContext, f.userId, 'applications/' + app.id + '/access');
+  expect(beforeGrant.status).toBe(403);
+  await page.getByRole('checkbox', { name: '允许进入应用', exact: true }).check();
+  if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('permission-menu-dirty.png') });
+  await page.getByRole('button', { name: '保存菜单', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: '菜单已保存' })).toBeVisible();
+  if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('permission-menu-saved.png') });
+  const grant = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups/' + group!.id + '/grants');
+  expect(grant.data.grants).toEqual([{ resourceKind: 'application', resourceId: app.id, action: 'menu.enter', rowScope: 'all', fields: [] }]);
+  const afterGrant = await realApi(memberContext, f.userId, 'applications/' + app.id + '/access');
+  expect(afterGrant.status).toBe(200);
+ } finally { await memberContext.close(); }
+});
+
+test('V030-012 real HTTPS Shell persists a directory, form and saved designer field', async ({ page }, info) => {
+ const f = fixture();
+ await page.setViewportSize({ width: 1920, height: 1080 });
+ await login(page, f.admin);
+ const created = await realApi(page.context(), f.adminId, 'applications', 'POST', {
+  name: '真实表单壳 ' + info.project.name + ' ' + Date.now(), operationId: crypto.randomUUID(),
+ });
+ expect(created.status).toBe(201);
+ const app = created.data as { id: string; name: string };
+ const formName = '审批视图 ' + info.project.name + ' ' + Date.now();
+ const folderName = '业务目录 ' + info.project.name + ' ' + Date.now();
+ const writes: { path: string; actor: string | undefined; method: string }[] = [];
+ page.on('request', request => {
+  const path = new URL(request.url()).pathname;
+  if (path.startsWith('/api/v1/applications/' + app.id) && request.method() !== 'GET')
+   writes.push({ path, actor: request.headers()['x-expected-actor-id'], method: request.method() });
+ });
+ const initialStructure = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/structure');
+ expect(initialStructure.status, initialStructure.code).toBe(200);
+ await page.goto('/app/applications/' + app.id);
+ await expect(page.getByRole('region', { name: '目录与视图管理' })).toBeVisible();
+ if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('form-structure-empty.png'), fullPage: true });
+ await page.getByRole('button', { name: '新建目录' }).click();
+ await page.getByLabel('目录名称').fill(folderName);
+ const directoryWrite = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/directories'));
+ await page.getByRole('button', { name: '创建目录', exact: true }).click();
+ const directoryResponse = await directoryWrite;
+ expect(directoryResponse.status(), (await directoryResponse.json()).code).toBe(201);
+ await expect(page.getByRole('treeitem', { name: folderName, exact: true })).toBeVisible();
+ if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('form-directory-created.png'), fullPage: true });
+ await page.getByRole('treeitem', { name: folderName, exact: true }).getByRole('button').first().click();
+ await page.getByRole('button', { name: '新建表单' }).click();
+ await page.getByLabel('表单名称').fill(formName);
+ if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('form-create-dialog.png'), fullPage: true });
+ await page.getByRole('button', { name: '创建表单', exact: true }).click();
+ await expect(page.getByRole('treeitem', { name: formName, exact: true })).toBeVisible();
+ const savedStructure = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/structure');
+ expect(savedStructure.status).toBe(200);
+ const forms = savedStructure.data.forms as { id: string; name: string; directoryId: string | null }[];
+ const form = forms.find(value => value.name === formName);
+ expect(form?.directoryId).toBeTruthy();
+ await page.getByRole('button', { name: '打开表单 ' + formName }).click();
+ await expect(page).toHaveURL(new RegExp('/app/applications/' + app.id + '/forms/' + form!.id + '$'));
+ await expect(page.getByRole('region', { name: '表单设计器' })).toBeVisible();
+ if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('form-designer-empty.png'), fullPage: true });
+ await page.getByRole('button', { name: '文本', exact: true }).click();
+ await page.getByLabel('字段名称').fill('申请事项');
+ await page.getByRole('button', { name: '保存', exact: true }).click();
+ await expect(page.getByRole('status').filter({ hasText: '已保存' })).toBeVisible();
+ if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('form-designer-saved.png'), fullPage: true });
+ await page.reload();
+ await expect(page.getByRole('region', { name: '表单画布' })).toContainText('申请事项');
+ expect(writes.some(write => write.path.endsWith('/directories') && write.method === 'POST')).toBe(true);
+ expect(writes.some(write => write.path.endsWith('/forms') && write.method === 'POST')).toBe(true);
+ expect(writes.some(write => write.path.endsWith('/definition/preflight') && write.method === 'POST')).toBe(true);
+ expect(writes.some(write => write.path.endsWith('/definition') && write.method === 'PUT')).toBe(true);
+ expect(writes.every(write => write.actor === f.adminId)).toBe(true);
 });
 
 test('V030-012 real B5: create-only owner, same-app menu member and cross-app denial', async ({ page, browser }, info) => {
