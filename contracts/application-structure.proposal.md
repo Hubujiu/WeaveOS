@@ -445,3 +445,17 @@ other-view field removal guard; constant default-only old-row fill and explicit
 option mappings; confirmation expiry/key configuration; restricted typed-DDL port.
 The PLAN releases field core/schema tests and implementation independently; this
 contract records the authorized implementation scope.
+
+## Accepted appendix A.5: department definition-default candidates
+
+Actual ADR revision2026-10-03T10:50:22.720Z explicitly freezes
+`GET /api/v1/applications/{appId}/department-candidates`. Current actual
+owner/Bootstrap only; existing Session/current account/auth_version/negative
+expected actor checks apply. q uses TrimSpace and exact name prefix, max100;
+pageSize1..50/default20; name/id keyset cursor binds actor/app/q/candidate kind
+with the same opaque state/expiry as member candidates. `data.items` is exactly
+`{id:UUID,label:string,parentId:UUID|null,status:"active"}` from existing real
+personnel.departments; `meta.pagination` is unchanged. No full organization or
+permissions DTO. Save revalidates/locks actual sources after candidate selection.
+Ordinary record candidate permissions remain V015-owned. No global grant,
+production role configuration or navigation persistence is introduced.

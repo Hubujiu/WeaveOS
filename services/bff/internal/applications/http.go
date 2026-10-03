@@ -32,7 +32,7 @@ func respond(w http.ResponseWriter, r *http.Request, status int, code string, da
 	if r.Method == "HEAD" {
 		return
 	}
-	message := map[string]string{"OK": "success", "AUTH_UNAUTHENTICATED": "请先登录", "COMMON_CSRF_REJECTED": "请求来源或安全校验失败", "COMMON_INVALID_ARGUMENT": "请求参数不合法", "COMMON_VALIDATION_FAILED":"请求参数校验失败", "AUTH_SESSION_CHANGED":"当前账号已变化，请重新加载", "COMMON_UNSUPPORTED_MEDIA_TYPE": "仅接受 JSON 请求", "COMMON_SERVICE_UNAVAILABLE": "服务暂时不可用，请稍后重试", "API_NOT_FOUND": "请求的接口不存在", "APPLICATION_NOT_FOUND": "应用或配置不存在", "APPLICATION_FORBIDDEN": "没有应用权限", "APPLICATION_POLICY_CONFLICT": "应用权限配置已变化", "APPLICATION_OPERATION_CONFLICT": "操作标识已用于不同请求", "APPLICATION_OPERATION_UNCONFIRMED": "操作结果尚未确认，请查询原操作", "APPLICATION_RESOURCE_INVALID": "应用资源不合法"}[code]
+	message := map[string]string{"OK": "success", "AUTH_UNAUTHENTICATED": "请先登录", "COMMON_CSRF_REJECTED": "请求来源或安全校验失败", "COMMON_INVALID_ARGUMENT": "请求参数不合法", "COMMON_VALIDATION_FAILED": "请求参数校验失败", "AUTH_SESSION_CHANGED": "当前账号已变化，请重新加载", "COMMON_UNSUPPORTED_MEDIA_TYPE": "仅接受 JSON 请求", "COMMON_SERVICE_UNAVAILABLE": "服务暂时不可用，请稍后重试", "API_NOT_FOUND": "请求的接口不存在", "APPLICATION_NOT_FOUND": "应用或配置不存在", "APPLICATION_FORBIDDEN": "没有应用权限", "APPLICATION_POLICY_CONFLICT": "应用权限配置已变化", "APPLICATION_OPERATION_CONFLICT": "操作标识已用于不同请求", "APPLICATION_OPERATION_UNCONFIRMED": "操作结果尚未确认，请查询原操作", "APPLICATION_RESOURCE_INVALID": "应用资源不合法"}[code]
 	_ = json.NewEncoder(w).Encode(struct {
 		Code    string            `json:"code"`
 		Message string            `json:"message"`
@@ -233,7 +233,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if s.Definitions != nil {
 		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
 		parts := strings.Split(path, "/")
-		if path != r.URL.Path && len(parts) >= 2 && (parts[1] == "structure" || parts[1] == "directories" || parts[1] == "tables" || parts[1] == "forms" || parts[1] == "member-candidates") {
+		if path != r.URL.Path && len(parts) >= 2 && (parts[1] == "structure" || parts[1] == "directories" || parts[1] == "tables" || parts[1] == "forms" || parts[1] == "member-candidates" || parts[1] == "department-candidates") {
 			s.Definitions.ServeHTTP(w, r)
 			return
 		}

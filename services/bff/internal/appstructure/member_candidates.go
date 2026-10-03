@@ -27,8 +27,15 @@ type MemberCandidate struct {
 	Label  string `json:"label"`
 	Status string `json:"status"`
 }
+type DepartmentCandidate struct {
+	ID       string  `json:"id"`
+	Label    string  `json:"label"`
+	ParentID *string `json:"parentId"`
+	Status   string  `json:"status"`
+}
 type candidateCursor struct {
 	Actor, App, Query, Account, ID string
+	Kind                           string
 	Expires                        int64
 }
 
@@ -52,7 +59,7 @@ func (a *Application) loadCursor(c context.Context, token string, expected candi
 		return candidateCursor{}, ErrUnavailable
 	}
 	var cursor candidateCursor
-	if json.Unmarshal(data, &cursor) != nil || cursor.Expires <= a.now().Unix() || cursor.Actor != expected.Actor || cursor.App != expected.App || cursor.Query != expected.Query {
+	if json.Unmarshal(data, &cursor) != nil || cursor.Expires <= a.now().Unix() || cursor.Actor != expected.Actor || cursor.App != expected.App || cursor.Query != expected.Query || cursor.Kind != expected.Kind {
 		return candidateCursor{}, invalid()
 	}
 	return cursor, nil
@@ -73,7 +80,7 @@ func (a *Application) storeCursor(c context.Context, cursor candidateCursor) (st
 	}
 	return token, nil
 }
-func (s *Service) candidates(w http.ResponseWriter, r *http.Request, p session.Principal, app string) {
+func (s *Service) candidates(w http.ResponseWriter, r *http.Request, p session.Principal, app, kind string) {
 	query, e := url.ParseQuery(r.URL.RawQuery)
 	if e != nil {
 		fail(w, r, invalid(), "")
@@ -108,7 +115,7 @@ func (s *Service) candidates(w http.ResponseWriter, r *http.Request, p session.P
 		return
 	}
 	defer tx.Rollback(context.Background())
-	cursor := candidateCursor{Actor: p.UserID, App: app, Query: q}
+	cursor := candidateCursor{Actor: p.UserID, App: app, Query: q, Kind: kind}
 	var afterAccount, afterID any
 	if token := query.Get("pageToken"); token != "" {
 		cursor, e = s.Application.loadCursor(r.Context(), token, cursor)
@@ -118,18 +125,35 @@ func (s *Service) candidates(w http.ResponseWriter, r *http.Request, p session.P
 		}
 		afterAccount, afterID = cursor.Account, cursor.ID
 	}
-	rows, e := tx.Query(r.Context(), "SELECT id::text,account,status FROM auth.users WHERE status='active' AND starts_with(account,$1) AND ($2::text IS NULL OR (account,id)>($2,$3::uuid)) ORDER BY account,id LIMIT $4", q, afterAccount, afterID, size+1)
+	sql := "SELECT id::text,account,status FROM auth.users WHERE status='active' AND starts_with(account,$1) AND ($2::text IS NULL OR (account,id)>($2,$3::uuid)) ORDER BY account,id LIMIT $4"
+	if kind == "department" {
+		sql = "SELECT id::text,name,status,parent_id::text FROM (SELECT id,name,parent_id,'active'::text AS status FROM personnel.departments) d WHERE starts_with(name,$1) AND ($2::text IS NULL OR (name,id)>($2,$3::uuid)) ORDER BY name,id LIMIT $4"
+	}
+	rows, e := tx.Query(r.Context(), sql, q, afterAccount, afterID, size+1)
 	if e != nil {
 		fail(w, r, e, "")
 		return
 	}
-	items := []MemberCandidate{}
+	items := []any{}
 	for rows.Next() {
 		var item MemberCandidate
-		if e = rows.Scan(&item.ID, &item.Label, &item.Status); e != nil {
+		var parent *string
+		if kind == "department" {
+			e = rows.Scan(&item.ID, &item.Label, &item.Status, &parent)
+		} else {
+			e = rows.Scan(&item.ID, &item.Label, &item.Status)
+		}
+		if e != nil {
 			break
 		}
-		items = append(items, item)
+		if kind == "department" {
+			items = append(items, DepartmentCandidate{item.ID, item.Label, parent, item.Status})
+		} else {
+			items = append(items, item)
+		}
+		if len(items) == size {
+			cursor.Account, cursor.ID = item.Label, item.ID
+		}
 	}
 	if e == nil {
 		e = rows.Err()
@@ -142,8 +166,6 @@ func (s *Service) candidates(w http.ResponseWriter, r *http.Request, p session.P
 	page := Pagination{}
 	if len(items) > size {
 		items = items[:size]
-		last := items[len(items)-1]
-		cursor.Account, cursor.ID = last.Label, last.ID
 		token, e := s.Application.storeCursor(r.Context(), cursor)
 		if e != nil {
 			fail(w, r, e, "")

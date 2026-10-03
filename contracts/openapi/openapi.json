@@ -7126,6 +7126,168 @@
           }
         }
       }
+    },
+    "/api/v1/applications/{appId}/department-candidates": {
+      "get": {
+        "operationId": "listApplicationDepartmentCandidates",
+        "summary": "List existing department candidates for application management",
+        "description": "Accepted task ADR appendix A.5. Actual owner/Bootstrap only; minimum id/label/parentId/status from existing personnel departments. TrimSpace q is exact name prefix; stable name/id keyset order. Opaque cursor binds actor/app/normalized q and candidate kind, expires after10min. Read never grants access; Save revalidates and locks actual sources. Ordinary record candidates remain a separate contract.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentCandidatesEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -14154,6 +14316,86 @@
             "properties": {
               "code": {
                 "const": "AUTH_SESSION_CHANGED"
+              }
+            }
+          }
+        ]
+      },
+      "DepartmentCandidate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "parentId",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active"
+            ]
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "DepartmentCandidates": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DepartmentCandidate"
+            }
+          }
+        }
+      },
+      "DepartmentCandidatesEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/DepartmentCandidates"
+              },
+              "meta": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requestId",
+                  "pagination"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "$ref": "#/components/schemas/CursorPagination"
+                  }
+                }
               }
             }
           }

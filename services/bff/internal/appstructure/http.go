@@ -310,7 +310,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, ErrUnavailable, "")
 		return
 	}
-	if r.URL.RawQuery != "" && !strings.HasSuffix(r.URL.Path, "/member-candidates") {
+	if r.URL.RawQuery != "" && !strings.HasSuffix(r.URL.Path, "/member-candidates") && !strings.HasSuffix(r.URL.Path, "/department-candidates") {
 		fail(w, r, invalid(), "")
 		return
 	}
@@ -325,8 +325,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, invalid(), "")
 		return
 	}
-	if len(parts) == 2 && parts[1] == "member-candidates" && r.Method == "GET" {
-		s.candidates(w, r, p, app)
+	if len(parts) == 2 && (parts[1] == "member-candidates" || parts[1] == "department-candidates") && r.Method == "GET" {
+		kind := "member"
+		if parts[1] == "department-candidates" {
+			kind = "department"
+		}
+		s.candidates(w, r, p, app, kind)
 		return
 	}
 	id, kind := "", ""
