@@ -1,8 +1,12 @@
 type AppScope={actorId:string;appId:string};
+type RecordScope=AppScope&{kind:'record';viewId:string}&(
+  | {recordId:string;clientDraftId?:never}
+  | {recordId?:never;clientDraftId:string}
+);
 export type LeaveScope=
   | (AppScope&{kind:'structure'})
   | (AppScope&{kind:'designer';viewId:string})
-  | (AppScope&{kind:'record';viewId:string;recordId:string})
+  | RecordScope
   | (AppScope&{kind:'draft';viewId:string;draftId:string});
 export type LeaveStatus='clean'|'draft'|'preflight'|'write_in_flight'|'unknown';
 export type LeaveDecision='discard'|'retain_operation';

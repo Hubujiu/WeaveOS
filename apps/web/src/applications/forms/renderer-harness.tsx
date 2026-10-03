@@ -35,8 +35,8 @@ controls.__scopeIsolation=()=>{
 controls.__clientDraftIsolation=()=>{
   const first={getStatus:()=> 'draft' as const,prepareLeave:()=>({ok:true as const})};
   const second={getStatus:()=> 'unknown' as const,prepareLeave:()=>({ok:true as const})};
-  const a=registerHarnessGuard({kind:'record',actorId:'actor',appId:'app',viewId:'view',clientDraftId:'local-a'} as never,first);
-  const b=registerHarnessGuard({kind:'record',actorId:'actor',appId:'app',viewId:'view',clientDraftId:'local-b'} as never,second);
+  const a=registerHarnessGuard({kind:'record',actorId:'actor',appId:'app',viewId:'view',clientDraftId:'local-a'},first);
+  const b=registerHarnessGuard({kind:'record',actorId:'actor',appId:'app',viewId:'view',clientDraftId:'local-b'},second);
   b();
   const retained=(window as Window&{__formsGuardStatus?:()=>string|null}).__formsGuardStatus?.()==='draft';
   a();return retained;

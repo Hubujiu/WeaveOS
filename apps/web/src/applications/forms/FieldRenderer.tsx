@@ -22,7 +22,7 @@ export type LoadReferenceCandidates = (
 export type FieldRendererProps = {
   field: DisplayField;
   value: FieldValue;
-  onChange?: (value: FieldValue) => void;
+  onChange?: (value: FieldValue, selectedCandidate?: ReferenceCandidate) => void;
   readOnly?: boolean;
   referenceOptions?: ReferenceOption[];
   referenceDisplay?: ReferenceDisplay|null;
@@ -54,15 +54,13 @@ function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,refer
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState(false);
   const [retryEpoch,setRetryEpoch]=useState(0);
-  const [selected,setSelected]=useState<ReferenceOption|null>(null);
   const generation=useRef(0);
   const activeRequest=useRef<AbortController|null>(null);
   const disabled=readOnly||!onChange;
   const inputId=`${idPrefix}-${field.id}`;
   const selectedId=typeof value==='string'?value:null;
   const display=selectedId===referenceDisplay?.id?referenceDisplay:
-    selectedId===selected?.id?{...selected,deleted:false}:
-    referenceOptions?.find(option=>option.id===selectedId);
+    !loadReferenceCandidates&&!readOnly?referenceOptions?.find(option=>option.id===selectedId):undefined;
   const unavailable=!!selectedId&&!display;
   const referenceName=field.kind==='member'?'成员':'部门';
 
@@ -79,7 +77,7 @@ function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,refer
       setNextPageToken(page.nextPageToken);
     }).catch(()=>{if(current===generation.current&&!request.signal.aborted)setError(true);})
       .finally(()=>{if(current===generation.current&&!request.signal.aborted)setBusy(false);});
-    return ()=>{request.abort();generation.current++;};
+    return ()=>{request.abort();activeRequest.current?.abort();activeRequest.current=null;generation.current++;};
   },[open,disabled,loadReferenceCandidates,query,field.id,referenceDisplay?.id,referenceDisplay?.deleted,retryEpoch]);
 
   const loadMore=async()=>{
@@ -121,7 +119,7 @@ function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,refer
           if(next!==query){setItems([]);setNextPageToken(null);setQuery(next);}}}/>
       {error&&<p role="alert">候选加载失败，请重试</p>}
       {items.map(item=><button type="button" key={item.id} onClick={()=>{
-        setSelected(item);onChange?.(item.id);setOpen(false);
+        onChange?.(item.id,item);setOpen(false);
       }}>{item.label}</button>)}
       {busy&&<span role="status">正在加载候选</span>}
       {!busy&&!error&&!items.length&&<span>无可选{referenceName}</span>}
@@ -132,7 +130,7 @@ function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,refer
 }
 
 /** Business-field input only. The parent decides when a value is persisted. */
-export function FieldRenderer({field,value,onChange,readOnly=false,referenceOptions,referenceDisplay,loadReferenceCandidates,idPrefix='field'}:FieldRendererProps) {
+export function FieldRenderer({field,value,onChange,readOnly=false,referenceOptions,referenceDisplay,loadReferenceCandidates,referenceScopeKey,idPrefix='field'}:FieldRendererProps) {
   const disabled=readOnly || !onChange;
   const help=field.presentation.helpText;
   const inputId=`${idPrefix}-${field.id}`;
@@ -184,11 +182,17 @@ export function FieldRenderer({field,value,onChange,readOnly=false,referenceOpti
       break;
     }
     case 'boolean':
-      control=<input id={inputId} type="checkbox" checked={value===true} disabled={disabled}
-        onChange={event=>onChange?.(event.target.checked)}/>;
+      control=<div className="forms-boolean-control">
+        <input id={inputId} type="checkbox" checked={value===true} disabled={disabled}
+          onChange={event=>onChange?.(event.target.checked)}/>
+        <span>{value===null?'未设置':value===true?'是':'否'}</span>
+        {!disabled&&<button type="button" aria-label={`清空 ${field.name}`}
+          disabled={value===null} onClick={()=>onChange?.(null)}>清空</button>}
+      </div>;
       break;
     case 'member': case 'department':
-      control=<ReferenceSelector {...{field,value,onChange,readOnly,referenceOptions,referenceDisplay,loadReferenceCandidates,idPrefix}}/>;
+      control=<ReferenceSelector key={referenceScopeKey??field.id}
+        {...{field,value,onChange,readOnly,referenceOptions,referenceDisplay,loadReferenceCandidates,idPrefix}}/>;
       break;
   }
   return <div className="forms-rendered-field">

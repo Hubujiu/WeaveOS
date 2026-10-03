@@ -625,12 +625,21 @@ test('A to B to A navigation ignores a late first-generation preflight',async({p
   })}));
   let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
   let started!:()=>void;const startedPromise=new Promise<void>(resolve=>{started=resolve;});
+  let routeSettled!:()=>void;const routeSettledPromise=new Promise<void>(resolve=>{routeSettled=resolve;});
+  const preflightWireSettled=new Promise<'finished'|'failed'>(resolve=>{
+    const target=(request:{url:()=>string;method:()=>string})=>
+      request.method()==='POST'&&request.url().endsWith('/definition/preflight');
+    page.on('requestfinished',request=>{if(target(request))resolve('finished');});
+    page.on('requestfailed',request=>{if(target(request))resolve('failed');});
+  });
   await page.route('**/definition/preflight',async route=>{
     started();await gate;
-    await route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,dataRevision:0,
+    try{await route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,dataRevision:0,
       dependencyRevision:0,plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},
       impacts:[{fieldId:'old-field',kind:'column_removal',nonNullRows:1,optionId:null}],
       dependencies:[],blockingIssues:[],saveAllowed:true,confirmation:{token:'old-token',expiresAt:'2099-01-01T00:00:00Z'}})});
+    }catch{ /* The browser may already have aborted the intercepted request on B mount. */ }
+    finally{routeSettled();}
   });
   await page.getByRole('button',{name:'文本',exact:true}).click();
   await page.getByRole('button',{name:'保存',exact:true}).click();
@@ -639,7 +648,10 @@ test('A to B to A navigation ignores a late first-generation preflight',async({p
   await expect(page.locator('.forms-toolbar-title strong')).toHaveText('B 表单');
   await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),viewId);
   await expect(page.locator('.forms-toolbar-title strong')).toHaveText('请假申请');
-  release();await page.waitForTimeout(100);
+  release();
+  const [wireOutcome]=await Promise.all([preflightWireSettled,routeSettledPromise]);
+  expect(wireOutcome).toBe('failed');
+  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
   await expect(page.getByRole('dialog',{name:'保存预检：表单结构与布局'})).toHaveCount(0);
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
 });
