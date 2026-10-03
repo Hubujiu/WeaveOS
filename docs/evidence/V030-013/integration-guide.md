@@ -226,3 +226,25 @@ change. Consumers should take the updated source/migration checkpoint, without
 editing goose history. Upgrade7→10 and empty1→10 both passed in owned isolated
 PostgreSQL; full race/vet and279 governance/foundation/contract tests passed.
 No production role/schema/data action was performed.
+
+## Effective new-reference guard (hot11)
+
+The finite native record capability now validates member/department references
+for every actual INSERT value, including omitted metadata constants that PG
+DEFAULT applies. New refs require actual active auth.users/personnel.departments
+and consistent active registries; missing registry/counter is explicitly
+unavailable. The same existing reference on an old row remains allowed; clearing
+a nullable reference does not select a new source. No field authorization is
+expanded: a defaults-only create still sends an empty explicit field mask.
+
+The shared SQL adds no source locks after table/row gates. BeginRecordWrite and
+the V015 service retain the established personnel revision/source-before-app
+lock order and must validate effective defaults in their own authorization
+callback. Trusted auth_app is still the service boundary, not independent
+Session proof. The controlled capability signature and role grants are unchanged;
+no second query/policy engine or source-write grant was introduced.
+
+Real target RED/source, native/default/registry GREEN, hot10→11 and empty1→11,
+full Go race/vet and fresh restricted-PG appstructure regression are under
+reference-default-*.txt and hot11-*.txt. Public metadata hash registration is a
+separate exact-path gate, with reviewable unapplied proposed-compatibility-hot11.patch.

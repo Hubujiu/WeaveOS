@@ -1,0 +1,41 @@
+--- a/infra/server/deploy/compatibility.json
++++ b/infra/server/deploy/compatibility.json
+@@ -1,6 +1,6 @@
+ {
+   "backwardCompatible": true,
+-  "source": "ADR-004 Q18, ADR-006 R3/Q25, ADR-007 Q36 query drafts/revision writers and accepted ADR-008 A1/A7 personal table presets. The administrator-installed fixed receiver/role policy must be upgraded together before migration promotion. Cold before hot; published migrations unchanged; compatible expansion and artifact rollback retain auth/personnel data and personal presets. B5a frozen limited applications expansion: cold00003 before hot00006; exact reviewed role pin; no production authorization.",
++  "source": "ADR-004 Q18, ADR-006 R3/Q25, ADR-007 Q36 query drafts/revision writers and accepted ADR-008 A1/A7 personal table presets. The administrator-installed fixed receiver/role policy must be upgraded together before migration promotion. Cold before hot; published migrations unchanged; compatible expansion and artifact rollback retain auth/personnel data and personal presets. B5a frozen limited applications expansion: cold00003 before hot00006; exact reviewed role pin; no production authorization. Accepted V030-013 structure/fields and V030-015 ADR11/13 shared expansion: cold00004 before hot00007-00011, typed records and save history, authoritative254 labels and active new-reference defaults. Existing metadata/data retained; no production authorization.",
+   "migrations": [
+     {
+       "path": "migrations/00001_auth.sql",
+@@ -37,6 +37,30 @@
+     {
+       "path": "migrations/00006_apps_policy.sql",
+       "sha256": "1cca96dc6e5b7acf11c0c9f40364d1fdb5d9d57b4f8ddd8b0036dd5b5bf15fb0"
++    },
++    {
++      "path": "archive-migrations/00004_app_structure_audit.sql",
++      "sha256": "8e6ff898386db6ec02a09a33c46b24d3787293d21eb4246020740825a5a49a16"
++    },
++    {
++      "path": "migrations/00007_app_structure.sql",
++      "sha256": "080b6daf0aacf0763d54dfadcbcffc2135486835700895b08010c77cb5d12531"
++    },
++    {
++      "path": "migrations/00008_app_records.sql",
++      "sha256": "3df7c46c65744b6bf42ba37e625e8fa2d865806ed139e03306d5a8a2b42d63b0"
++    },
++    {
++      "path": "migrations/00009_record_save_history.sql",
++      "sha256": "6468e6f8bf0e1d349840238c5fa44a316abf9ad53cf46055b6a9b025bdf8bed1"
++    },
++    {
++      "path": "migrations/00010_member_source_label_width.sql",
++      "sha256": "326d7d0f171dba8350f7e8fbd1f96c5182235c969d73b4f0a585571c7b8a9a51"
++    },
++    {
++      "path": "migrations/00011_record_reference_defaults.sql",
++      "sha256": "d15de1b9265a7d8da2dab448cfe2ba026472a15a08c0163f5e60f237b1c1e9f8"
+     }
+   ],
+   "config": {
