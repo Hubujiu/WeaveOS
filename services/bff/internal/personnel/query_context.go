@@ -3,27 +3,21 @@ package personnel
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"io"
-	"regexp"
-	"strings"
 
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/redis/go-redis/v9"
 )
 
-var ErrQueryContextExpired = errors.New("query context expired")
-var ErrQueryContextCAS = errors.New("query context revision advanced concurrently")
-var queryGeneration = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+// Preserve personnel error identity and the public Q36 API while the Redis
+// scripts and lifecycle live in the one neutral querycontext package.
+var ErrQueryContextExpired = querycontext.ErrExpired
+var ErrQueryContextCAS = querycontext.ErrCAS
 
 type QueryRevisions struct{ People, Configuration, Activity int64 }
 
-// Criteria contains normalized conditions/fixed range, never page data or IDs of
-// matched results. Revisions are kept separately for atomic monotonic CAS.
 type QueryContext struct {
 	View            string          `json:"view"`
 	Criteria        json.RawMessage `json:"criteria"`
@@ -33,67 +27,78 @@ type QueryContext struct {
 	Revisions       QueryRevisions  `json:"-"`
 }
 type QueryContextStore struct {
-	client     redis.UniversalClient
-	generation string
+	client redis.UniversalClient // retained for existing package-level Redis tests
+	shared *querycontext.Store
 }
 
 func NewQueryContextStore(client redis.UniversalClient, generation string) *QueryContextStore {
-	return &QueryContextStore{client: client, generation: generation}
+	policy := querycontext.Policy{
+		Validate: func(m querycontext.Metadata) bool {
+			var revision QueryRevisions
+			return json.Unmarshal(m.Revision, &revision) == nil && validQueryMetadata(QueryContext{
+				View: m.View, Criteria: m.Criteria, Total: m.Total, Fingerprint: m.Fingerprint,
+				ProtocolVersion: m.ProtocolVersion, Revisions: revision,
+			})
+		},
+		Forward: func(previous, next json.RawMessage) bool {
+			var old, now QueryRevisions
+			return json.Unmarshal(previous, &old) == nil && json.Unmarshal(next, &now) == nil &&
+				validQueryRevisions(old) && validQueryRevisions(now) &&
+				now.People >= old.People && now.Configuration >= old.Configuration && now.Activity >= old.Activity &&
+				(old.Activity != 0 || now.Activity == 0)
+		},
+	}
+	return &QueryContextStore{client: client, shared: querycontext.NewStore(client, "personnel", generation, policy)}
 }
 
-const queryIdleMS = 1800000
-
-// Index scores form a monotonic access order, independent of client clocks and
-// same-microsecond requests. All keys share the session hash tag for Redis cluster.
-const queryTouchLua = `
-local function touch()
- local top=redis.call('ZREVRANGE',KEYS[1],0,0,'WITHSCORES')
- local score=1
- if #top>0 then score=tonumber(top[2])+1 end
- redis.call('ZADD',KEYS[1],score,ARGV[1])
- redis.call('PEXPIRE',KEYS[1],1800000)
- redis.call('PEXPIRE',KEYS[2],1800000)
-end
-`
-
-var createQueryScript = redis.NewScript(queryTouchLua + `
-if redis.call('EXISTS',KEYS[2])==1 then return 0 end
-redis.call('HSET',KEYS[2],'data',ARGV[2],'revision',ARGV[3])
-touch()
-while redis.call('ZCARD',KEYS[1])>20 do
- local oldest=redis.call('ZRANGE',KEYS[1],0,0)[1]
- redis.call('ZREM',KEYS[1],oldest)
- redis.call('DEL',ARGV[4]..oldest)
-end
-return 1
-`)
-var loadQueryScript = redis.NewScript(queryTouchLua + `
-local data=redis.call('HGET',KEYS[2],'data')
-local revision=redis.call('HGET',KEYS[2],'revision')
-if not data or not revision then redis.call('ZREM',KEYS[1],ARGV[1]);return false end
-touch()
-return {data,revision}
-`)
-var advanceQueryScript = redis.NewScript(queryTouchLua + `
-local data=redis.call('HGET',KEYS[2],'data')
-if not data then redis.call('ZREM',KEYS[1],ARGV[1]);return 0 end
-if redis.call('HGET',KEYS[2],'revision')~=ARGV[2] or cjson.decode(data).fingerprint~=ARGV[4] then return -1 end
-redis.call('HSET',KEYS[2],'revision',ARGV[3])
-touch()
-return 1
-`)
-
+func personnelContextError(err error) error {
+	if errors.Is(err, querycontext.ErrInvalid) {
+		return ErrInvalid
+	}
+	return err
+}
 func (s *QueryContextStore) prefix(sessionRef string) (string, error) {
-	if s == nil || s.client == nil || !queryGeneration.MatchString(s.generation) || !validID(sessionRef) {
+	if s == nil {
 		return "", ErrInvalid
 	}
-	digest := sha256.Sum256([]byte(strings.ToLower(sessionRef)))
-	return "ems:personnel:query:" + s.generation + ":v1:{" + hex.EncodeToString(digest[:]) + "}:", nil
+	prefix, err := s.shared.Prefix(sessionRef)
+	return prefix, personnelContextError(err)
 }
-func validQueryID(id string) bool {
-	raw, err := base64.RawURLEncoding.DecodeString(id)
-	return err == nil && len(raw) == 32 && base64.RawURLEncoding.EncodeToString(raw) == id
+func (s *QueryContextStore) Create(ctx context.Context, sessionRef string, value QueryContext) (string, error) {
+	if s == nil || !validQueryMetadata(value) {
+		return "", ErrInvalid
+	}
+	revision, _ := json.Marshal(value.Revisions)
+	id, err := s.shared.Create(ctx, sessionRef, querycontext.Metadata{
+		View: value.View, Criteria: value.Criteria, Total: value.Total, Fingerprint: value.Fingerprint,
+		ProtocolVersion: value.ProtocolVersion, Revision: revision,
+	})
+	return id, personnelContextError(err)
 }
+func (s *QueryContextStore) Load(ctx context.Context, sessionRef, id string) (QueryContext, error) {
+	if s == nil {
+		return QueryContext{}, ErrInvalid
+	}
+	m, err := s.shared.Load(ctx, sessionRef, id)
+	if err != nil {
+		return QueryContext{}, personnelContextError(err)
+	}
+	var revision QueryRevisions
+	if json.Unmarshal(m.Revision, &revision) != nil {
+		return QueryContext{}, ErrInvalid
+	}
+	return QueryContext{View: m.View, Criteria: m.Criteria, Total: m.Total, Fingerprint: m.Fingerprint,
+		ProtocolVersion: m.ProtocolVersion, Revisions: revision}, nil
+}
+func (s *QueryContextStore) Advance(ctx context.Context, sessionRef, id, fingerprint string, previous, next QueryRevisions) error {
+	if s == nil {
+		return ErrInvalid
+	}
+	before, _ := json.Marshal(previous)
+	after, _ := json.Marshal(next)
+	return personnelContextError(s.shared.Advance(ctx, sessionRef, id, fingerprint, before, after))
+}
+
 func validFingerprint(v string) bool {
 	raw, err := hex.DecodeString(v)
 	return err == nil && len(raw) == 32 && hex.EncodeToString(raw) == v
@@ -108,8 +113,6 @@ func validQueryMetadata(v QueryContext) bool {
 	if v.View != "members" && v.View != "events" || v.View == "events" && v.Revisions.Activity == 0 || v.View == "members" && v.Revisions.Activity != 0 {
 		return false
 	}
-	// A closed top-level vocabulary forbids a caller from persisting result sets.
-	// The query engine independently validates values and frozen time bounds.
 	var fields map[string]json.RawMessage
 	if json.Unmarshal(v.Criteria, &fields) != nil || fields == nil {
 		return false
@@ -162,92 +165,8 @@ func validQueryMetadata(v QueryContext) bool {
 	}
 	return true
 }
-
 func decodeQueryMetadata(raw []byte, out any) bool {
 	d := json.NewDecoder(bytes.NewReader(raw))
 	d.DisallowUnknownFields()
 	return d.Decode(out) == nil
-}
-func (s *QueryContextStore) Create(ctx context.Context, sessionRef string, value QueryContext) (string, error) {
-	prefix, err := s.prefix(sessionRef)
-	if err != nil || !validQueryMetadata(value) {
-		return "", ErrInvalid
-	}
-	token := make([]byte, 32)
-	if _, err = io.ReadFull(rand.Reader, token); err != nil {
-		return "", err
-	}
-	id := base64.RawURLEncoding.EncodeToString(token)
-	var data bytes.Buffer
-	e := json.NewEncoder(&data)
-	e.SetEscapeHTML(false)
-	if err = e.Encode(value); err != nil {
-		return "", err
-	}
-	revision, _ := json.Marshal(value.Revisions)
-	result, err := createQueryScript.Run(ctx, s.client, []string{prefix + "lru", prefix + id}, id, bytes.TrimSpace(data.Bytes()), revision, prefix).Int()
-	if err != nil {
-		return "", err
-	}
-	if result != 1 {
-		return "", ErrQueryContextCAS
-	}
-	return id, nil
-}
-func (s *QueryContextStore) Load(ctx context.Context, sessionRef, id string) (QueryContext, error) {
-	prefix, err := s.prefix(sessionRef)
-	if err != nil {
-		return QueryContext{}, err
-	}
-	if !validQueryID(id) {
-		return QueryContext{}, ErrQueryContextExpired
-	}
-	result, err := loadQueryScript.Run(ctx, s.client, []string{prefix + "lru", prefix + id}, id).Slice()
-	if errors.Is(err, redis.Nil) {
-		return QueryContext{}, ErrQueryContextExpired
-	}
-	if err != nil {
-		return QueryContext{}, err
-	}
-	if len(result) != 2 {
-		return QueryContext{}, ErrInvalid
-	}
-	data, ok := result[0].(string)
-	revision, rok := result[1].(string)
-	if !ok || !rok {
-		return QueryContext{}, ErrInvalid
-	}
-	var out QueryContext
-	if json.Unmarshal([]byte(data), &out) != nil || json.Unmarshal([]byte(revision), &out.Revisions) != nil || !validQueryMetadata(out) {
-		return QueryContext{}, ErrInvalid
-	}
-	return out, nil
-}
-func (s *QueryContextStore) Advance(ctx context.Context, sessionRef, id, fingerprint string, previous, next QueryRevisions) error {
-	prefix, err := s.prefix(sessionRef)
-	if err != nil {
-		return err
-	}
-	if !validQueryID(id) {
-		return ErrQueryContextExpired
-	}
-	if !validFingerprint(fingerprint) || !validQueryRevisions(previous) || !validQueryRevisions(next) || next.People < previous.People || next.Configuration < previous.Configuration || next.Activity < previous.Activity || previous.Activity == 0 && next.Activity != 0 {
-		return ErrInvalid
-	}
-	before, _ := json.Marshal(previous)
-	after, _ := json.Marshal(next)
-	result, err := advanceQueryScript.Run(ctx, s.client, []string{prefix + "lru", prefix + id}, id, before, after, fingerprint).Int()
-	if err != nil {
-		return err
-	}
-	switch result {
-	case 0:
-		return ErrQueryContextExpired
-	case -1:
-		return ErrQueryContextCAS
-	case 1:
-		return nil
-	default:
-		return ErrInvalid
-	}
 }

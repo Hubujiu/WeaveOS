@@ -28,7 +28,7 @@ func TestQ36RealRedisOldNewContextBytesAndTokens(t *testing.T) {
 		t.Fatal(err)
 	}
 	generation := fmt.Sprintf("q36-parity-%d", time.Now().UnixNano())
-	sessionRef := "00000000-0000-4000-8000-000000000001"
+	sessionRef := "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 	hash := sha256.Sum256([]byte(sessionRef))
 	prefix := "ems:personnel:query:" + generation + ":v1:{" + hex.EncodeToString(hash[:]) + "}:"
 	t.Cleanup(func() {
@@ -67,6 +67,11 @@ func TestQ36RealRedisOldNewContextBytesAndTokens(t *testing.T) {
 	loaded, err := shared.Load(ctx, sessionRef, oldToken)
 	if err != nil || loaded.View != "members" || string(loaded.Criteria) != string(value.Criteria) || string(loaded.Revision) != wantRevision {
 		t.Fatalf("old token must load in neutral store: %+v %v", loaded, err)
+	}
+	// The historical validID accepted uppercase UUID text and hashed its
+	// lowercase form. Existing Session-bound tokens must retain that behavior.
+	if upper, e := shared.Load(ctx, strings.ToUpper(sessionRef), oldToken); e != nil || upper.View != "members" {
+		t.Fatalf("uppercase canonical-equivalent Session ref lost old token: %+v %v", upper, e)
 	}
 	meta := querycontext.Metadata{View: value.View, Criteria: value.Criteria, Total: value.Total, Fingerprint: value.Fingerprint, ProtocolVersion: value.ProtocolVersion, Revision: json.RawMessage(wantRevision)}
 	newToken, err := shared.Create(ctx, sessionRef, meta)

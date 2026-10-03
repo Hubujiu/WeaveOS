@@ -56,7 +56,7 @@ func NewStore(client redis.UniversalClient, namespace, generation string, policy
 // Prefix preserves personnel's v1 key byte format and Redis Cluster hash tag.
 func (s *Store) Prefix(sessionRef string) (string, error) {
 	var id pgtype.UUID
-	if s == nil || s.client == nil || !namespacePattern.MatchString(s.namespace) || !generationPattern.MatchString(s.generation) || id.Scan(sessionRef) != nil || !id.Valid || id.String() != sessionRef {
+	if s == nil || s.client == nil || !namespacePattern.MatchString(s.namespace) || !generationPattern.MatchString(s.generation) || id.Scan(sessionRef) != nil || !id.Valid || id.String() != strings.ToLower(sessionRef) {
 		return "", ErrInvalid
 	}
 	digest := sha256.Sum256([]byte(strings.ToLower(sessionRef)))
