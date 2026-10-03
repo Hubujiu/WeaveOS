@@ -18,6 +18,28 @@ result, implementation claim, or product acceptance.
   `aed9cfd3277740755f6bfc1155c7aa645403b760` were read; dependency/version
   installation requires coordination with the lead.
 
+Proposed Shell mount contract, pending V030-014 PLAN readback and not yet an
+exported implementation:
+
+```ts
+type ApplicationStructureProps = {
+  appId: string;
+  onOpenForm: (viewId: string) => void;
+  onDirtyChange: (dirty: boolean) => void;
+};
+type FormDesignerProps = {
+  appId: string;
+  viewId: string;
+  onDirtyChange: (dirty: boolean) => void;
+  onBack: () => void;
+};
+```
+
+The Shell chooses route paths, tab state and navigation blocker. The module
+loads the actual structure/definition, owns field/layout drafts, and reports
+dirty state. Shell calls `onOpenForm` only for a persisted server view ID. No
+fake form object or cross-module mutable store is required.
+
 ## Source ledger
 
 | Source | Observed fact relevant here |
