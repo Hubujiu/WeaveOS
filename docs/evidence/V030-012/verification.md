@@ -1,7 +1,8 @@
 # V030-012 verification, 2026-10-03 UTC
 
-Source branch: `task/V030-012-original-app-shell`, based on verified PR26 head
-`9b89e8e928aedf30df235492fe89bc52021f6fe9`. Scope excludes PR26/PR21/main.
+Source branch: `task/V030-012-original-app-shell`, initially based on verified
+PR26 head `9b89e8e928aedf30df235492fe89bc52021f6fe9`. Scope excludes
+editing PR26/PR21/main.
 All tests below exercised actual React/Vite code. HTTP boundary fixtures are
 identified separately from the isolated real B5 service.
 
@@ -28,20 +29,22 @@ identified separately from the isolated real B5 service.
 - `pnpm typecheck`, `pnpm build`, `pnpm check:tasks`, and `git diff --check`
   passed. Vite's existing >500kB chunk warning persists; no dependency or
   framework change was made.
-- Inherited full component suite ran 233 tests: 229 passed, 3 failed, 1
-  skipped. Two failed because the Home header's historical `.home-header`
-  selector was absent; that selector now exists and both failures were
-  rerun successfully (`legacy-home-green.txt`). The remaining R2 AC02 test
-  mocks the new `GET /api/v1/applications` as `{}`. B5 requires `{items: []}`;
-  the product correctly reports malformed data. This older personnel test
-  fixture is outside V030-012's owned paths and awaits its owner. Exact first
-  run is `inherited-regression.txt`.
+- Inherited full component suite initially ran 233 tests: 229 passed, 3 failed,
+  1 skipped. Two Home header compatibility failures were fixed and rerun
+  (`legacy-home-green.txt`). The remaining R2 AC02 test was independently
+  reproduced RED with a malformed `GET /api/v1/applications` fixture `{}`;
+  B5 requires `{items: []}`. Its single fixture response was corrected without
+  changing the expected empty-state or denied-admin assertions. Targeted test
+  then passed. Exact before source, RED and GREEN logs are in `legacy-fixture/`.
 - `screenshots/manifest.json` records 13 inspected product/state screenshots,
   including all current entry flow views, create, empty workspace, denied,
   loading/error and unresolved operation. `assets.json` records exact unchanged
   SVG export bytes/dimensions/source nodes; all six hashes were rechecked.
 
-The earlier Library ZIP helper returned a transfer failure twice. Direct
-Figma contexts and screenshots supplied the original source. No ZIP bytes were
-claimed or used. Permission-group/member/root-menu UI still needs the
-candidate-member endpoint and approved original-native composition from root.
+The earlier Figma handoff Library ZIP helper returned a transfer failure twice.
+Direct Figma contexts and screenshots supplied the original source. No bytes
+from that ZIP were claimed or used. A separate V030-012 review bundle containing
+the 13 screenshots and source evidence was saved to ChatGPT Library as
+`libfile_0302d213ca6481918f863a8a3a1f82f0`, version 0. Permission-group/
+member/root-menu UI still needs the candidate-member endpoint and approved
+original-native composition from root.

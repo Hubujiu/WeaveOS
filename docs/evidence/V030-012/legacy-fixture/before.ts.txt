@@ -14,7 +14,7 @@ async function fixture(page:Page,manage=true) {
  await page.route('**/api/v1/**',async route=>{
   const path=fixtureRequestURL(route.request()).pathname.replace('/api/v1/','');
   const data=path==='sessions/current'?user:path==='sessions'?user:path==='me/access'?{user,bootstrapAdmin:manage,personnelManage:manage,identities:[],permissions:manage?catalog:[],applications:[]}:
-   path==='applications'?{items:[]}:path==='personnel/departments'?{items:[department]}:path==='personnel/permissions'?{items:catalog}:
+   path==='personnel/departments'?{items:[department]}:path==='personnel/permissions'?{items:catalog}:
    path==='personnel/identities'?list([identity]):path==='personnel/templates'?list([template]):path==='personnel/members'?list([member]):path==='personnel/members/'+user.id?member:path==='personnel/events'?list([]):{};
   await route.fulfill({status:route.request().method()==='DELETE'?204:200,contentType:'application/json',body:route.request().method()==='DELETE'?'':JSON.stringify(q36FixtureEnvelope(data,route.request()))});
  });
