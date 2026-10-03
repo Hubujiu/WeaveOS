@@ -74,7 +74,7 @@ test('original designer shows three panels and keyboard-added draft can preview 
   await page.getByLabel('字段名称').fill('申请人');
   await page.getByRole('button',{name:'预览',exact:true}).click();
   await expect(page.getByText('本地预览，尚未保存')).toBeVisible();
-  await expect(page.getByText('申请人')).toBeVisible();
+  await expect(page.getByRole('dialog').getByText('申请人')).toBeVisible();
   expect(state.seen.filter(x=>x.method!=='GET')).toHaveLength(0);
   await page.screenshot({path:test.info().outputPath('designer-preview.png'),fullPage:true});
 });
@@ -126,4 +126,36 @@ test('directory creation and new form creation use coherent structure and one at
     `/api/v1/applications/${appId}/forms`,
   ]);
   expect(creates[1].body).toMatchObject({name:'请假申请',source:{kind:'new_table'},expectedStructureVersion:1});
+});
+
+test('impact dialog requires a live confirmation token before a schema write',async({page})=>{
+  const state=await fixture(page);
+  await page.route('**/definition/preflight',route=>route.fulfill({json:ok({
+    appId,tableId,viewId,schemaVersion:0,viewVersion:0,dataRevision:2,dependencyRevision:1,
+    plan:{schemaChanges:[{kind:'add',fieldId:'field-new',beforeKind:null,afterKind:'text'}],metadataChanged:true,layoutChanged:true},
+    impacts:[{fieldId:'field-new',kind:'column_removal',nonNullRows:4,optionId:null}],
+    dependencies:[],blockingIssues:[],saveAllowed:true,confirmation:null,
+  })}));
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'保存预检：表单结构与布局'})).toBeVisible();
+  await expect(page.getByRole('dialog').getByText('4 条已有值')).toBeVisible();
+  await expect(page.getByRole('button',{name:'确认保存'})).toBeDisabled();
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+});
+
+test('blocked dependencies show the affected resource and prevent PUT',async({page})=>{
+  const state=await fixture(page);
+  await page.route('**/definition/preflight',route=>route.fulfill({json:ok({
+    appId,tableId,viewId,schemaVersion:0,viewVersion:0,dataRevision:2,dependencyRevision:1,
+    plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},impacts:[],
+    dependencies:[{fieldId:'field-in-use',kind:'enabled_flow',resourceId:'flow-42'}],
+    blockingIssues:[{code:'APPLICATION_SCHEMA_DEPENDENCY_BLOCKED',fieldIds:['field-in-use']}],
+    saveAllowed:false,confirmation:null,
+  })}));
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('dialog').getByText('enabled_flow · flow-42')).toBeVisible();
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+  await page.screenshot({path:test.info().outputPath('designer-dependency-block.png'),fullPage:true});
 });

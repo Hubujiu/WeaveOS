@@ -1,0 +1,41 @@
+[WebServer] (node:2928) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:2942) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:2971) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/forms/forms.component.spec.ts:131:1 › impact dialog requires a live confirmation token before a schema write (5.4s)
+
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:131:1 › impact dialog requires a live confirmation token before a schema write 
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator:  getByRole('button', { name: '确认保存' })
+    Expected: disabled
+    Received: enabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('button', { name: '确认保存' }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '确认保存' })
+        14 × locator resolved to <button type="button" class="forms-primary">确认保存</button>
+           - unexpected value "enabled"
+
+
+      141 |   await expect(page.getByRole('dialog',{name:'保存预检：表单结构与布局'})).toBeVisible();
+      142 |   await expect(page.getByRole('dialog').getByText('4 条已有值')).toBeVisible();
+    > 143 |   await expect(page.getByRole('button',{name:'确认保存'})).toBeDisabled();
+          |                                                        ^
+      144 |   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+      145 | });
+      146 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:143:56
+
+    Error Context: test-results/applications-forms-forms.c-4391e-token-before-a-schema-write-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:131:1 › impact dialog requires a live confirmation token before a schema write 
