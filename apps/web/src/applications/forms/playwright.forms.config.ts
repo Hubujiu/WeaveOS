@@ -2,7 +2,7 @@ import {defineConfig,devices} from '@playwright/test';
 
 // V030-014 component boundary only; the eventual product E2E uses a real BFF/PG.
 export default defineConfig({
-  testDir: '.',testMatch:['forms.component.spec.ts','forms.renderer.spec.ts'],workers:1,retries:0,timeout:30_000,
+  testDir: '.',testMatch:['forms.component.spec.ts','forms.renderer.component.spec.ts'],workers:1,retries:0,timeout:30_000,
   expect:{timeout:5_000},use:{baseURL:'http://127.0.0.1:4173'},
   projects:[
     {name:'chromium',use:{...devices['Desktop Chrome']}},

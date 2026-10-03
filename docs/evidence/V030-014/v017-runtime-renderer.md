@@ -1,0 +1,19 @@
+# V017 runtime renderer handoff · 2026-10-03
+
+Frozen sources read at 14:47:49 UTC: [V017 PRD](https://app.notion.com/p/3ee2f5a9e64881cca5e6eb314c6ec899), [V017 ADR](https://app.notion.com/p/3ee2f5a9e6488179816fc7f286376d5e), [V015 ADR §14](https://app.notion.com/p/3ee2f5a9e6488163a144fba5f55e3c14). V014 owns only the forms renderer/selector/types/guard boundary. No runtime record transport, owner definition read, or record CRUD is added here.
+
+## Imports and contracts
+
+`apps/web/src/applications/forms/index.ts` exports `FieldRenderer`, `DisplayField`, `FieldValue`, `ReferenceDisplay`, `ReferenceCandidate`, `ReferenceCandidatePage`, `LoadReferenceCandidates`, and `LeaveScope`.
+
+- `DisplayField` requires only `id`, `name`, `kind`, `required`, and `presentation.helpText`; optional runtime `input` exposes `options`, `decimal`, `timePrecision`, `referenceKind`. The legacy owner `config` is read only inside the renderer. A V017 RuntimeField with these projected properties is assignable directly, as the typechecked harness shows. The renderer does not read owner `default`, DDL, dependencies, or permissions.
+- `FieldRenderer` remains controlled: V017 supplies `value` and `onChange` (when editable), and sets `readOnly` from effective row and field capability. Omission, explicit null, empty string, and false remain decisions of the V017 caller; this component does not invent defaults.
+- For member/department, pass `referenceDisplay` from `Record.referenceDisplays[field.id][selectedId]` when available. `{id,label,deleted:true}` remains visible as a tombstone and is never offered as an active candidate. A readable ID without a registry display shows “引用信息不可用（需修复）” rather than an empty or fabricated label. Readonly fields do not enumerate.
+- Editable reference fields pass `loadReferenceCandidates(request, signal)` where `request={q,pageSize:20,pageToken}` and the result is `{items,nextPageToken}`. Only active items can be selected. The picker trims searches to 100 Unicode code points, resets pagination on search, aborts obsolete requests, reports loading/error, and displays a real “加载更多” action. V017's transport closure must call the ordinary field scoped `/reference-candidates` route with its own app/view/field/action/record context and map the service envelope `data.items` + `meta.pagination` to this page shape. Do not call V013 owner-only member/department candidate routes for ordinary record use. Server save remains the authority for eligibility.
+- `LeaveScope` has discriminated `structure` (`actorId`,`appId`), `designer` (+`viewId`), `record` (+`recordId`), and `draft` (+`draftId`) variants. The existing `LeaveController` handshake and registration-bound unsubscribe behavior are unchanged. The registry harness key includes actual record/draft identity, so two resources in one view do not overwrite each other.
+
+Open integration detail for V017 owner: a *new unsaved record* has no server record or draft ID. Its navigation scope needs an agreed stable client instance key or server draft creation point; do not reuse another record's ID or invent a server resource. Existing persisted record and draft IDs are supported now.
+
+## Evidence
+
+RED commit `b653dbb373e7f315fd9dde35deded16907045d55` contains the failing browser assertions and no behavior implementation. `v017-renderer-red.log` records Chromium tombstone and record scope failures. GREEN commit `61bae61140db703441f4c9846e02ab84b8edc5c2` adds the narrow renderer, selector, and scope type. Local Chromium/Firefox forms suite (before the test-file rename and PR28 fixture synchronization) passed 164/164 in `v017-component-two-browser-green.log`; final targeted six cases in each browser passed 12/12 in `v017-pr28-targeted-two-browser-green.log`. `pnpm --dir apps/web typecheck` and `pnpm --dir apps/web build` passed. The host lacks WebKit GTK dependencies, so local WebKit was not run; the GitHub Actions browser environment installs them.

@@ -620,6 +620,9 @@ test('no-op Save with unknown result blocks exit even when definition is not dir
 test('A to B to A navigation ignores a late first-generation preflight',async({page})=>{
   const nextViewId='00000000-0000-4000-8000-000000000160';
   const state=await fixture(page);
+  await page.route(`**/forms/${nextViewId}/definition`,route=>route.fulfill({json:ok({
+    ...definition,form:{...form,id:nextViewId,name:'B 表单'},
+  })}));
   let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
   let started!:()=>void;const startedPromise=new Promise<void>(resolve=>{started=resolve;});
   await page.route('**/definition/preflight',async route=>{
@@ -633,9 +636,9 @@ test('A to B to A navigation ignores a late first-generation preflight',async({p
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await startedPromise;
   await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),nextViewId);
-  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await expect(page.locator('.forms-toolbar-title strong')).toHaveText('B 表单');
   await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),viewId);
-  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await expect(page.locator('.forms-toolbar-title strong')).toHaveText('请假申请');
   release();await page.waitForTimeout(100);
   await expect(page.getByRole('dialog',{name:'保存预检：表单结构与布局'})).toHaveCount(0);
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
@@ -1077,8 +1080,15 @@ test('revalidated newer structure retains original name and CAS version',async({
   await fixture(page,'structure');
   await page.getByRole('button',{name:'新建目录'}).click();
   await page.getByLabel('目录名称').fill('本地目录');
+  const otherAppId='00000000-0000-4000-8000-000000000339';
+  await page.route(`**/applications/${otherAppId}/structure`,route=>route.fulfill({json:ok({
+    ...structure,appId:otherAppId,tables:[],forms:[],directories:[
+      {id:folderId,appId:otherAppId,name:'B 目录',parentId:null,position:0},
+    ],
+  })}));
   await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),
-    '00000000-0000-4000-8000-000000000339');
+    otherAppId);
+  await expect(page.getByRole('treeitem',{name:'B 目录'})).toBeVisible();
   await page.route(`**/applications/${appId}/structure`,route=>route.fulfill({json:ok({...structure,
     structureVersion:1,directories:[{id:folderId,appId,name:'服务器目录',parentId:null,position:0}]})}));
   await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),appId);
