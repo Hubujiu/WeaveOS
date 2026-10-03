@@ -1,0 +1,130 @@
+[WebServer] (node:14400) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:14414) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:14443) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/records/root-layout.component.spec.ts:2:1 › Root configured group and field order override schema field order (5.2s)
+(node:14520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [chromium] › src/applications/records/root-layout.component.spec.ts:11:1 › Root layout does not expose unplaced or denied fields (5.2s)
+(node:14593) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 [chromium] › src/applications/records/root-layout.component.spec.ts:17:1 › Root read layout preserves exact values and disables edits (5.2s)
+(node:14664) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  4 [chromium] › src/applications/records/root-layout.component.spec.ts:26:1 › Root system record version comes from actual record metadata (5.2s)
+
+
+  1) [chromium] › src/applications/records/root-layout.component.spec.ts:2:1 › Root configured group and field order override schema field order 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('group', { name: '基本信息', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('group', { name: '基本信息', exact: true }) with timeout 5000ms
+      - waiting for getByRole('group', { name: '基本信息', exact: true })
+
+
+      3 |  await page.goto('/src/applications/records/root-layout-fixture.html');
+      4 |  const group=page.getByRole('group',{name:'基本信息',exact:true});
+    > 5 |  await expect(group).toBeVisible();
+        |                      ^
+      6 |  await expect(group.getByRole('textbox')).toHaveCount(2);
+      7 |  await expect(group.getByRole('textbox').nth(0)).toHaveAccessibleName('金额');
+      8 |  await expect(group.getByRole('textbox').nth(1)).toHaveAccessibleName('事由');
+        at /workspace/WeaveOS-worktrees/V030-017-r19-check/apps/web/src/applications/records/root-layout.component.spec.ts:5:22
+
+    Error Context: ../../../../../tmp/weaveos-r19-red.2E11ZF/pw-output/applications-records-root--9bae8-override-schema-field-order-chromium/error-context.md
+
+  2) [chromium] › src/applications/records/root-layout.component.spec.ts:11:1 › Root layout does not expose unplaced or denied fields 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByLabel('未放入布局', { exact: true })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByLabel('未放入布局', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('未放入布局', { exact: true })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      12 |  await page.goto('/src/applications/records/root-layout-fixture.html');
+      13 |  await expect(page.getByLabel('事由',{exact:true})).toBeVisible();
+    > 14 |  await expect(page.getByLabel('未放入布局',{exact:true})).toHaveCount(0);
+         |                                                      ^
+      15 |  await expect(page.getByLabel('无权字段',{exact:true})).toHaveCount(0);
+      16 | });
+      17 | test('Root read layout preserves exact values and disables edits',async({page})=>{
+        at /workspace/WeaveOS-worktrees/V030-017-r19-check/apps/web/src/applications/records/root-layout.component.spec.ts:14:54
+
+    Error Context: ../../../../../tmp/weaveos-r19-red.2E11ZF/pw-output/applications-records-root--adec7-e-unplaced-or-denied-fields-chromium/error-context.md
+
+  3) [chromium] › src/applications/records/root-layout.component.spec.ts:17:1 › Root read layout preserves exact values and disables edits 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByLabel('未放入布局', { exact: true })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByLabel('未放入布局', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('未放入布局', { exact: true })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      21 |  await expect(page.getByLabel('金额',{exact:true})).not.toBeEditable();
+      22 |  await expect(page.getByRole('button',{name:'保存记录',exact:true})).toBeDisabled();
+    > 23 |  await expect(page.getByLabel('未放入布局',{exact:true})).toHaveCount(0);
+         |                                                      ^
+      24 |  await expect(page.getByLabel('无权字段',{exact:true})).toHaveCount(0);
+      25 | });
+      26 | test('Root system record version comes from actual record metadata',async({page})=>{
+        at /workspace/WeaveOS-worktrees/V030-017-r19-check/apps/web/src/applications/records/root-layout.component.spec.ts:23:54
+
+    Error Context: ../../../../../tmp/weaveos-r19-red.2E11ZF/pw-output/applications-records-root--2611a-t-values-and-disables-edits-chromium/error-context.md
+
+  4) [chromium] › src/applications/records/root-layout.component.spec.ts:26:1 › Root system record version comes from actual record metadata 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: getByLabel('记录版本', { exact: true })
+    Expected: "4"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" getByLabel('记录版本', { exact: true }) with timeout 5000ms
+      - waiting for getByLabel('记录版本', { exact: true })
+
+
+      26 | test('Root system record version comes from actual record metadata',async({page})=>{
+      27 |  await page.goto('/src/applications/records/root-layout-fixture.html?mode=read');
+    > 28 |  await expect(page.getByLabel('记录版本',{exact:true})).toHaveValue('4');
+         |                                                     ^
+      29 |  await expect(page.getByLabel('记录版本',{exact:true})).not.toBeEditable();
+      30 | });
+      31 |
+        at /workspace/WeaveOS-worktrees/V030-017-r19-check/apps/web/src/applications/records/root-layout.component.spec.ts:28:53
+
+    Error Context: ../../../../../tmp/weaveos-r19-red.2E11ZF/pw-output/applications-records-root--eaa55-from-actual-record-metadata-chromium/error-context.md
+
+  4 failed
+    [chromium] › src/applications/records/root-layout.component.spec.ts:2:1 › Root configured group and field order override schema field order 
+    [chromium] › src/applications/records/root-layout.component.spec.ts:11:1 › Root layout does not expose unplaced or denied fields 
+    [chromium] › src/applications/records/root-layout.component.spec.ts:17:1 › Root read layout preserves exact values and disables edits 
+    [chromium] › src/applications/records/root-layout.component.spec.ts:26:1 › Root system record version comes from actual record metadata 
