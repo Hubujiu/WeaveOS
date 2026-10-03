@@ -38,3 +38,10 @@ validation and persistence use sets with complete zipped grant tuples.
 Supplementary authorization/RR/atomicity coverage is passing coverage of the
 frozen semantics, not relabeled as additional missing-behavior RED. See current
 verification and cost observation files for exact final results and limits.
+
+Repair implementation is committed locally as
+447e427a01fa3d72b21eeb8fd8c603092141d674, after RED
+f62eb148ad1ef9e1f3d5bf651eb93e265e45a8c9. The verified replacement package
+contains the entire owned B5a delta, with all historical evidence retained.
+Final documentation does not alter tested source bytes; the ZIP manifest
+records its final head. Root acceptance remains pending.
