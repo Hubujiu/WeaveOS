@@ -39,6 +39,11 @@ test('record leave scopes retain another actual resource after one unregisters',
   expect(await page.evaluate(()=>(window as Window&{__scopeIsolation?:()=>boolean}).__scopeIsolation?.())).toBe(true);
 });
 
+test('separate unsaved record client draft scopes do not overwrite each other',async({page})=>{
+  await page.goto(url);
+  expect(await page.evaluate(()=>(window as Window&{__clientDraftIsolation?:()=>boolean}).__clientDraftIsolation?.())).toBe(true);
+});
+
 test('nullable boolean keeps unset, false, and true distinct with an explicit clear action',async({page})=>{
   await page.goto(`${url}?mode=boolean`);
   await expect(page.getByTestId('selected')).toHaveText('null');

@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {FieldRenderer,type FieldValue,type ReferenceCandidatePage} from './FieldRenderer';
+import {FieldRenderer,type FieldValue,type ReferenceCandidatePage,type ReferenceDisplay} from './FieldRenderer';
 import {exposeHarnessGuard,registerHarnessGuard} from './guardHarness';
 
 type RuntimeField={id:string;name:string;kind:'member';required:boolean;
@@ -15,6 +15,7 @@ const field:RuntimeField={id:'field-member',name:'负责人',kind:'member',requi
 const requests:{q:string;pageToken:string|null}[]=[];
 let holdMore=false,moreStarted=false,moreAborted=false,releaseMore=()=>{};
 const controls=window as Window&{__referenceRequests?:typeof requests;__scopeIsolation?:()=>boolean;
+  __clientDraftIsolation?:()=>boolean;
   __holdMore?:()=>void;__releaseMore?:()=>void;__moreState?:()=>{started:boolean;aborted:boolean}};
 exposeHarnessGuard(window);
 controls.__referenceRequests=requests;
@@ -28,6 +29,15 @@ controls.__scopeIsolation=()=>{
   const b=registerHarnessGuard({kind:'record',actorId:'actor',appId:'app',viewId:'view',recordId:'record-b'},second);
   b();
   // The test harness registry must retain the other resource after one unmounts.
+  const retained=(window as Window&{__formsGuardStatus?:()=>string|null}).__formsGuardStatus?.()==='draft';
+  a();return retained;
+};
+controls.__clientDraftIsolation=()=>{
+  const first={getStatus:()=> 'draft' as const,prepareLeave:()=>({ok:true as const})};
+  const second={getStatus:()=> 'unknown' as const,prepareLeave:()=>({ok:true as const})};
+  const a=registerHarnessGuard({kind:'record',actorId:'actor',appId:'app',viewId:'view',clientDraftId:'local-a'} as never,first);
+  const b=registerHarnessGuard({kind:'record',actorId:'actor',appId:'app',viewId:'view',clientDraftId:'local-b'} as never,second);
+  b();
   const retained=(window as Window&{__formsGuardStatus?:()=>string|null}).__formsGuardStatus?.()==='draft';
   a();return retained;
 };
@@ -47,14 +57,17 @@ function ReferenceHarness(){
   const [value,setValue]=useState<FieldValue>('member-deleted');
   const [readOnly,setReadOnly]=useState(false);
   const [referenceScopeKey,setReferenceScopeKey]=useState('actor-a/app/view/record-a/field-member');
-  const [hasDisplay,setHasDisplay]=useState(true);
+  const [referenceDisplay,setReferenceDisplay]=useState<ReferenceDisplay|null>(
+    {id:'member-deleted',label:'已离职成员',deleted:true});
   return <><button onClick={()=>setReadOnly(!readOnly)}>切换只读</button>
-    <button onClick={()=>{setReferenceScopeKey('actor-b/app/view/record-b/field-member');setHasDisplay(false);}}>切换引用作用域</button>
-    <button onClick={()=>{setHasDisplay(false);setReadOnly(true);}}>撤销引用显示</button>
+    <button onClick={()=>{setReferenceScopeKey('actor-b/app/view/record-b/field-member');setReferenceDisplay(null);}}>切换引用作用域</button>
+    <button onClick={()=>{setReferenceDisplay(null);setReadOnly(true);}}>撤销引用显示</button>
     <output data-testid="selected">{String(value)}</output>
-    <FieldRenderer field={field} value={value} onChange={setValue} readOnly={readOnly}
+    <FieldRenderer field={field} value={value} onChange={(next,candidate)=>{
+      setValue(next);if(candidate)setReferenceDisplay({id:candidate.id,label:candidate.label,deleted:false});
+    }} readOnly={readOnly}
       referenceScopeKey={referenceScopeKey}
-      referenceDisplay={hasDisplay?{id:'member-deleted',label:'已离职成员',deleted:true}:null}
+      referenceDisplay={referenceDisplay}
       loadReferenceCandidates={load}/>
   </>;
 }

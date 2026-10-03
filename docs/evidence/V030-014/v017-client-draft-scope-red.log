@@ -1,0 +1,32 @@
+[WebServer] (node:153835) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:153849) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:153878) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:42:1 › separate unsaved record client draft scopes do not overwrite each other (202ms)
+
+
+  1) [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:42:1 › separate unsaved record client draft scopes do not overwrite each other 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 | test('separate unsaved record client draft scopes do not overwrite each other',async({page})=>{
+      43 |   await page.goto(url);
+    > 44 |   expect(await page.evaluate(()=>(window as Window&{__clientDraftIsolation?:()=>boolean}).__clientDraftIsolation?.())).toBe(true);
+         |                                                                                                                        ^
+      45 | });
+      46 |
+      47 | test('nullable boolean keeps unset, false, and true distinct with an explicit clear action',async({page})=>{
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.renderer.component.spec.ts:44:120
+
+    Error Context: apps/web/test-results/forms.renderer.component-s-fb462-do-not-overwrite-each-other-chromium/error-context.md
+
+  1 failed
+    [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:42:1 › separate unsaved record client draft scopes do not overwrite each other 
