@@ -20,7 +20,7 @@ export function RecordForm({view,identity,record,mode,renderField,onSave,onRecov
  const fields=projectRuntimeFields(startView.current,mode,identity.actorId,record);
  async function accept(outcome:SaveOutcome,operationId:UUID){
   if(outcome.kind==='unknown'){setUnknownOperation(operationId);setError('');return;}
-  if(outcome.kind==='failed'){setUnknownOperation(null);setError(outcome.message);return;}
+  if(outcome.kind==='failed'){setError(outcome.message);return;}
   const expected=identity.kind==='record'?identity.recordId:record?.id;
   if(!isMutationResult(outcome.result,operationId,expected)){setUnknownOperation(operationId);setError('确认回执不完整，请恢复原操作');return;}
   const next=identity.kind==='new'?confirmRecordIdentity(identity,outcome.result,operationId):identity;
