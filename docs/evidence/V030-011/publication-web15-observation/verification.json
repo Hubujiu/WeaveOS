@@ -1,0 +1,160 @@
+{
+  "baselineRemote": {
+    "head": "d7f70701db6475b8c8fcef858dbefa8f31797afe",
+    "productRun": 37113314796,
+    "productJob": 111175246725,
+    "observedFailure": "Firefox WEB-15 second POST response wait exceeded original 30s; request/form/DOM stage unknown"
+  },
+  "source": {
+    "baselineSha256": "970f6b956b01c9005fd21d1a46480850f30ab525fdc266eec0e4c58be02c42e7",
+    "restoredOriginalExact": true,
+    "observedSourceSha256": "f6ead57c6744315981b7341226893b9b7ad5724ab2533cb683f16df16d00ad70",
+    "productAppSha256": "ac8c629d2f0d99fcfd9d26db545de3640ecab45d3e9870954b66df7c1db84dd3",
+    "addedObservationCallCount": 1,
+    "originalAssertionsAndOrder": "byte-exact after removing only adjacent observer and its call"
+  },
+  "environment": {
+    "stack": "isolated real HTTPS+BFF+PostgreSQL 18.6+Redis 8.2.10",
+    "baseURLPath": "https://localhost:19443",
+    "freshSyntheticInvitations": true,
+    "redisObserver": "private host wrapper around unchanged native Redis observer",
+    "traceScreenshotVideo": "off"
+  },
+  "results": {
+    "targetFinal": "3 passed, 0 failed, 0 skipped",
+    "fullFinal": "117 passed, 0 failed, 0 skipped",
+    "typecheck": "pass",
+    "build": "pass, inherited >500 kB chunk warning",
+    "governanceFoundation": "222 pass, 0 fail/skip",
+    "contracts": "33 pass, 0 fail/skip",
+    "repositoryStructure": "pass",
+    "firstFull": "114 pass, 3 WEB-17 runner errors due missing isolated host Redis observer; corrected command alone, no WEB-17 source edit"
+  },
+  "runs": [
+    {
+      "name": "web15-tracked-observer-target-final",
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "--config",
+        "apps/web/playwright.integration.config.ts",
+        "--grep",
+        "WEB-15 FR-003"
+      ],
+      "startedAtUTC": "2026-10-03T10:26:14.258040+00:00",
+      "finishedAtUTC": "2026-10-03T10:26:22.707434+00:00",
+      "exitCode": 0,
+      "privateLogPath": ".work/focus-integration/web15-tracked-observer-target-final.log",
+      "privateLogSha256": "4886ad5bc2f3a5729e126d8238053f59908deaae83bc75119e5e0080eb7195a8",
+      "privateLogBytes": 8812
+    },
+    {
+      "name": "web15-tracked-observer-full-final",
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "--config",
+        "apps/web/playwright.integration.config.ts"
+      ],
+      "startedAtUTC": "2026-10-03T10:26:32.655325+00:00",
+      "finishedAtUTC": "2026-10-03T10:28:58.204298+00:00",
+      "exitCode": 0,
+      "privateLogPath": ".work/focus-integration/web15-tracked-observer-full-final.log",
+      "privateLogSha256": "2973c893c6e67a015cfe1493d6ea24d711d592da805f23673e5c1f1a6f723753",
+      "privateLogBytes": 25038
+    },
+    {
+      "name": "web15-tracked-observer-typecheck",
+      "command": [
+        "pnpm",
+        "typecheck"
+      ],
+      "startedAtUTC": "2026-10-03T10:26:13.611222+00:00",
+      "finishedAtUTC": "2026-10-03T10:26:19.669804+00:00",
+      "exitCode": 0,
+      "privateLogPath": ".work/focus-integration/web15-tracked-observer-typecheck.log",
+      "privateLogSha256": "bd8e84a6f820be722677aae20b537b4fb153142d5d4970180c3c04570cad6913",
+      "privateLogBytes": 266
+    },
+    {
+      "name": "web15-tracked-observer-build",
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "startedAtUTC": "2026-10-03T10:29:11.755517+00:00",
+      "finishedAtUTC": "2026-10-03T10:29:13.980458+00:00",
+      "exitCode": 0,
+      "privateLogPath": ".work/focus-integration/web15-tracked-observer-build.log",
+      "privateLogSha256": "55fe4c88bd0012e9d914c992dfd84638b5bc8956653b52bb7141f3004e113467",
+      "privateLogBytes": 1366
+    },
+    {
+      "name": "web15-tracked-observer-governance",
+      "command": [
+        "bash",
+        "-c",
+        "node --test tests/governance/*.test.mjs tests/foundation/*.test.mjs"
+      ],
+      "startedAtUTC": "2026-10-03T10:29:11.768651+00:00",
+      "finishedAtUTC": "2026-10-03T10:29:15.267491+00:00",
+      "exitCode": 0,
+      "privateLogPath": ".work/focus-integration/web15-tracked-observer-governance.log",
+      "privateLogSha256": "86928e8734681cb8d764c1ffdcdf33dcfeaa92b3fe11244153373f4b50c6e999",
+      "privateLogBytes": 18982
+    },
+    {
+      "name": "web15-tracked-observer-contracts",
+      "command": [
+        "bash",
+        "-c",
+        "node --test contracts/*.test.mjs"
+      ],
+      "startedAtUTC": "2026-10-03T10:29:11.773280+00:00",
+      "finishedAtUTC": "2026-10-03T10:29:12.409859+00:00",
+      "exitCode": 0,
+      "privateLogPath": ".work/focus-integration/web15-tracked-observer-contracts.log",
+      "privateLogSha256": "eeede42ebef08c25f3ad2165a38199916e6aeeee0e2a32e8a2a2b9a796c4b2a8",
+      "privateLogBytes": 3243
+    },
+    {
+      "name": "web15-tracked-observer-repository-final",
+      "command": [
+        "node",
+        "scripts/verify-repo.mjs"
+      ],
+      "startedAtUTC": "2026-10-03T10:29:26.150814+00:00",
+      "finishedAtUTC": "2026-10-03T10:29:26.187642+00:00",
+      "exitCode": 0,
+      "privateLogPath": ".work/focus-integration/web15-tracked-observer-repository-final.log",
+      "privateLogSha256": "89854f45285c5947824787fd0b9acd65331e020caaf588b966836a83a5955906",
+      "privateLogBytes": 77
+    },
+    {
+      "name": "web15-tracked-observer-full",
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "--config",
+        "apps/web/playwright.integration.config.ts"
+      ],
+      "startedAtUTC": "2026-10-03T10:22:32.575298+00:00",
+      "finishedAtUTC": "2026-10-03T10:25:16.664246+00:00",
+      "exitCode": 1,
+      "privateLogPath": ".work/focus-integration/web15-tracked-observer-full.log",
+      "privateLogSha256": "31702e117ee5ef141a0423da4566155c1a8920c92a73665b5d4f97ffea979361",
+      "privateLogBytes": 28998
+    }
+  ],
+  "limitations": [
+    "Local passing controls do not determine original remote timeout root cause.",
+    "No product/auth/contract/migration/CI config changes.",
+    "Pinned final-head secret scan, actual PR scope, and one new remote diagnostic HEAD CI remain publication gates."
+  ]
+}
