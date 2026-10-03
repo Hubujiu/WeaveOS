@@ -528,3 +528,20 @@ test('new view beside a selected form inherits its directory',async({page})=>{
   await page.getByRole('button',{name:'新建表单'}).click();
   await expect(page.getByLabel('所属目录')).toHaveValue(folderId);
 });
+
+test('existing member default remains visible and can be cleared without a candidate source',async({page})=>{
+  const fieldId='00000000-0000-4000-8000-000000000151';
+  const memberId='00000000-0000-4000-8000-000000000152';
+  const seeded:Definition={...definition,table:{...table,schemaVersion:1,schemaReady:true},
+    form:{...form,viewVersion:1},fields:[{id:fieldId,name:'负责人',kind:'member',required:false,
+      default:memberId,config:{},presentation:{helpText:null,displayTimeZone:null}}],
+    layout:[{id:'00000000-0000-4000-8000-000000000153',kind:'field',fieldId,span:12}]};
+  const state=await fixture(page,'designer',seeded);
+  await page.getByRole('button',{name:'负责人 成员'}).click();
+  await expect(page.getByLabel('当前默认引用 ID')).toHaveValue(memberId);
+  await page.getByRole('button',{name:'清除默认引用'}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const saved=(state.seen.find(item=>item.method==='PUT')?.body?.fields as Field[])[0];
+  expect(saved.default).toBeNull();
+});

@@ -1,0 +1,39 @@
+[WebServer] (node:28093) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28107) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:28140) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/forms/forms.component.spec.ts:532:1 › existing member default remains visible and can be cleared without a candidate source (5.3s)
+
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:532:1 › existing member default remains visible and can be cleared without a candidate source 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: getByLabel('当前默认引用 ID')
+    Expected: "00000000-0000-4000-8000-000000000152"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" getByLabel('当前默认引用 ID') with timeout 5000ms
+      - waiting for getByLabel('当前默认引用 ID')
+
+
+      539 |   const state=await fixture(page,'designer',seeded);
+      540 |   await page.getByRole('button',{name:'负责人 成员'}).click();
+    > 541 |   await expect(page.getByLabel('当前默认引用 ID')).toHaveValue(memberId);
+          |                                              ^
+      542 |   await page.getByRole('button',{name:'清除默认引用'}).click();
+      543 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+      544 |   await expect(page.getByRole('status')).toContainText('已保存');
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:541:46
+
+    Error Context: test-results/forms.component-existing-m-810f9--without-a-candidate-source-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:532:1 › existing member default remains visible and can be cleared without a candidate source 
