@@ -4,7 +4,7 @@
 {"id":"V010-NNN","title":"任务名称","branch":"task/V010-NNN-topic","worktree":"../WeaveOS-worktrees/V010-NNN","pr":null,"owner":"领取时填写","dependsOn":[],"allowedPaths":["docs/tasks/V010-NNN.md"],"deliveryState":"planned"}
 -->
 
-本模板NNN替换为三位数字，文件名/ID/branch/worktree一致。allowedPaths逐项登记，不能用全仓路径回避分工。每任务独立分支与工作树，阶段性更新并推送。
+本模板以V010为示例；本轮V030任务按相同格式使用V030前缀。NNN替换为三位数字，文件名/ID/branch/worktree的完整ID与版本一致，不重编号历史任务。allowedPaths逐项登记，不能用全仓路径回避分工。每任务独立分支与工作树，阶段性更新并推送。
 
 ## Scope
 
