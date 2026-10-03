@@ -38,6 +38,7 @@ test('Root leave guard distinguishes a sent write and clears only on confirmatio
  finally{release();}
  await expect.poll(async()=> (await events(page)).confirmed.length).toBe(1);
  expect(await pending(page)).toBeNull();
+ expect((await events(page)).confirmedPending).toEqual([null]);
 });
 
 for(const status of [408,500,504]){

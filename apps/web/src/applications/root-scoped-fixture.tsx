@@ -11,7 +11,7 @@ const draftId='88888888-8888-4888-8888-888888888888';
 const mode=new URLSearchParams(location.search).get('mode')??'create';
 const resource=mode==='delete'?{kind:'draft' as const,appId,viewId,id:draftId}:mode==='edit'?{kind:'record' as const,appId,viewId,id:recordId}:{kind:'record' as const,appId,viewId,creationNonce:'99999999-9999-4999-8999-999999999999'};
 const path='applications/'+appId+'/forms/'+viewId+'/'+(mode==='delete'?'drafts/'+draftId:mode==='edit'?'records/'+recordId:'records');
-const events={confirmed:[] as unknown[],authLost:0,identityMismatch:0,afterStartPending:[] as (string|null)[]};
+const events={confirmed:[] as unknown[],authLost:0,identityMismatch:0,afterStartPending:[] as (string|null)[],confirmedPending:[] as (string|null)[]};
 Object.assign(window,{__rootScopedOperation:events});
 function valid(result:unknown,packet:ApplicationPacket){
  if(!result||typeof result!=='object'||Array.isArray(result))return false;
@@ -23,13 +23,15 @@ function valid(result:unknown,packet:ApplicationPacket){
  return Number.isSafeInteger(r.recordVersion)&&(r.recordVersion as number)>=1&&Number.isSafeInteger(r.schemaVersion)&&(r.schemaVersion as number)>=1&&
  typeof r.createdAt==='string'&&Number.isFinite(Date.parse(r.createdAt))&&typeof r.updatedAt==='string'&&Number.isFinite(Date.parse(r.updatedAt));
 }
+let readPending:()=>string|null=()=> 'missing';
 function Fixture(){
  const [amount,setAmount]=useState('1.20');
  const operation=useApplicationOperation<unknown>({actorId,scope:'root-scoped',resource,
-  confirmed:result=>events.confirmed.push({empty:result===undefined,result}),
+  confirmed:result=>{events.confirmed.push({empty:result===undefined,result});events.confirmedPending.push(readPending());},
   unauthorized:()=>{events.authLost++;},identityMismatch:()=>{events.identityMismatch++;},valid});
  const observed=operation as typeof operation&{getPendingStatus?:()=>string|null;errorCode?:string};
  const pending=()=>observed.getPendingStatus?observed.getPendingStatus():'missing';
+ readPending=pending;
  Object.assign(window,{__rootPendingStatus:pending,__rootCancelPreflight:()=>{operation.cancelPreflight();return pending();}});
  const blocked=['preflight','pending','unconfirmed'].includes(operation.phase);
  return <main>
