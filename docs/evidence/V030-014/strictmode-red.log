@@ -1,0 +1,138 @@
+[WebServer] (node:65200) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:65214) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 4 tests using 1 worker
+
+(node:65247) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/4] [chromium] › src/applications/forms/forms.component.spec.ts:854:1 › StrictMode designer boots after effect setup cleanup setup and repeated component mounting
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:854:1 › StrictMode designer boots after effect setup cleanup setup and repeated component mounting 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('region', { name: '字段面板' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('region', { name: '字段面板' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '字段面板' })
+
+
+      854 | test('StrictMode designer boots after effect setup cleanup setup and repeated component mounting',async({page})=>{
+      855 |   await fixture(page,'designer',definition,structure,true);
+    > 856 |   await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+          |                                                        ^
+      857 |   await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(false));
+      858 |   await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+      859 |   await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(true));
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:856:56
+
+    Error Context: test-results/forms.component-StrictMode-84717-repeated-component-mounting-chromium/error-context.md
+
+
+(node:65345) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/4] [chromium] › src/applications/forms/forms.component.spec.ts:863:1 › StrictMode structure boots after effect setup cleanup setup and repeated component mounting
+  2) [chromium] › src/applications/forms/forms.component.spec.ts:863:1 › StrictMode structure boots after effect setup cleanup setup and repeated component mounting 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('region', { name: '目录与视图管理' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('region', { name: '目录与视图管理' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '目录与视图管理' })
+
+
+      863 | test('StrictMode structure boots after effect setup cleanup setup and repeated component mounting',async({page})=>{
+      864 |   await fixture(page,'structure',definition,structure,true);
+    > 865 |   await expect(page.getByRole('region',{name:'目录与视图管理'})).toBeVisible();
+          |                                                           ^
+      866 |   await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(false));
+      867 |   await expect(page.getByRole('region',{name:'目录与视图管理'})).toHaveCount(0);
+      868 |   await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(true));
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:865:59
+
+    Error Context: test-results/forms.component-StrictMode-af2dd-repeated-component-mounting-chromium/error-context.md
+
+
+(node:65414) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/4] [chromium] › src/applications/forms/forms.component.spec.ts:872:1 › StrictMode designer ignores a late first setup response after the replayed setup
+  3) [chromium] › src/applications/forms/forms.component.spec.ts:872:1 › StrictMode designer ignores a late first setup response after the replayed setup 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('region', { name: '字段面板' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('region', { name: '字段面板' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '字段面板' })
+
+
+      872 | test('StrictMode designer ignores a late first setup response after the replayed setup',async({page})=>{
+      873 |   await fixture(page,'designer',definition,structure,true);
+    > 874 |   await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+          |                                                        ^
+      875 |   const nextView='00000000-0000-4000-8000-000000000321';
+      876 |   let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+      877 |   let count=0;
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:874:56
+
+    Error Context: test-results/forms.component-StrictMode-857b6-se-after-the-replayed-setup-chromium/error-context.md
+
+
+(node:65485) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[4/4] [chromium] › src/applications/forms/forms.component.spec.ts:892:1 › StrictMode structure ignores a late first setup response after the replayed setup
+  4) [chromium] › src/applications/forms/forms.component.spec.ts:892:1 › StrictMode structure ignores a late first setup response after the replayed setup 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('region', { name: '目录与视图管理' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('region', { name: '目录与视图管理' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '目录与视图管理' })
+
+
+      892 | test('StrictMode structure ignores a late first setup response after the replayed setup',async({page})=>{
+      893 |   await fixture(page,'structure',definition,structure,true);
+    > 894 |   await expect(page.getByRole('region',{name:'目录与视图管理'})).toBeVisible();
+          |                                                           ^
+      895 |   const nextApp='00000000-0000-4000-8000-000000000322';
+      896 |   let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+      897 |   let count=0;
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:894:59
+
+    Error Context: test-results/forms.component-StrictMode-eb060-se-after-the-replayed-setup-chromium/error-context.md
+
+
+  4 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:854:1 › StrictMode designer boots after effect setup cleanup setup and repeated component mounting 
+    [chromium] › src/applications/forms/forms.component.spec.ts:863:1 › StrictMode structure boots after effect setup cleanup setup and repeated component mounting 
+    [chromium] › src/applications/forms/forms.component.spec.ts:872:1 › StrictMode designer ignores a late first setup response after the replayed setup 
+    [chromium] › src/applications/forms/forms.component.spec.ts:892:1 › StrictMode structure ignores a late first setup response after the replayed setup 

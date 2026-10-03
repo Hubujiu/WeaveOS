@@ -28,7 +28,7 @@ async function capture(page:Page,path:string){
 
 type Seen = {method:string;path:string;body:Record<string,unknown>|null;expectedActor:string|null};
 async function fixture(page:Page, mode:'designer'|'structure'='designer', initialDefinition:Definition=definition,
-  initialStructure:Structure=structure) {
+  initialStructure:Structure=structure,strict=false) {
   const seen:Seen[]=[];
   let currentDefinition=structuredClone(initialDefinition);
   let currentStructure=structuredClone(initialStructure);
@@ -98,7 +98,7 @@ async function fixture(page:Page, mode:'designer'|'structure'='designer', initia
     }
     return route.fulfill({status:404,json:{code:'APPLICATION_NOT_FOUND',message:'not found',data:null,meta:{requestId:'test-request'}}});
   });
-  await page.goto(`/src/applications/forms/harness.html?mode=${mode}&appId=${appId}&viewId=${viewId}&actorId=${actorA}`);
+  await page.goto(`/src/applications/forms/${strict?'strict-harness':'harness'}.html?mode=${mode}&appId=${appId}&viewId=${viewId}&actorId=${actorA}`);
   return {seen,loseSaveResponse:()=>{loseSaveResponse=true;},getCommitted:()=>committedSave};
 }
 
@@ -849,6 +849,64 @@ test('server failure after a directory request keeps its name and operation',asy
   await expect(page.getByLabel('目录名称')).toHaveValue('待核查目录');
   await expect(page.getByRole('button',{name:'按原请求重试'})).toBeVisible();
   expect(writes).toBe(1);
+});
+
+test('StrictMode designer boots after effect setup cleanup setup and repeated component mounting',async({page})=>{
+  await fixture(page,'designer',definition,structure,true);
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(false));
+  await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(true));
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+});
+
+test('StrictMode structure boots after effect setup cleanup setup and repeated component mounting',async({page})=>{
+  await fixture(page,'structure',definition,structure,true);
+  await expect(page.getByRole('region',{name:'目录与视图管理'})).toBeVisible();
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(false));
+  await expect(page.getByRole('region',{name:'目录与视图管理'})).toHaveCount(0);
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(true));
+  await expect(page.getByRole('region',{name:'目录与视图管理'})).toBeVisible();
+});
+
+test('StrictMode designer ignores a late first setup response after the replayed setup',async({page})=>{
+  await fixture(page,'designer',definition,structure,true);
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  const nextView='00000000-0000-4000-8000-000000000321';
+  let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  let count=0;
+  await page.route(`**/forms/${nextView}/definition`,async route=>{
+    const first=++count===1;
+    if(first)await gate;
+    try{await route.fulfill({json:ok({...definition,form:{...form,id:nextView,name:first?'旧响应':'新响应'}})});}
+    catch{ /* first StrictMode request was aborted by cleanup */ }
+  });
+  await page.evaluate((id:string)=>(window as Window&{__formsStrictView?:(value:string)=>void}).__formsStrictView?.(id),nextView);
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await expect(page.locator('.forms-toolbar-title strong')).toHaveText('新响应');
+  release();await page.waitForTimeout(50);
+  await expect(page.locator('.forms-toolbar-title strong')).toHaveText('新响应');
+  expect(count).toBeGreaterThanOrEqual(2);
+});
+
+test('StrictMode structure ignores a late first setup response after the replayed setup',async({page})=>{
+  await fixture(page,'structure',definition,structure,true);
+  await expect(page.getByRole('region',{name:'目录与视图管理'})).toBeVisible();
+  const nextApp='00000000-0000-4000-8000-000000000322';
+  let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  let count=0;
+  await page.route(`**/applications/${nextApp}/structure`,async route=>{
+    const first=++count===1;
+    if(first)await gate;
+    try{await route.fulfill({json:ok({...structure,appId:nextApp,forms:[],tables:[],directories:first?[]:
+      [{...structure.directories[0],id:folderId,appId:nextApp,name:'新目录',parentId:null,position:0}]})});}
+    catch{ /* first StrictMode request was aborted by cleanup */ }
+  });
+  await page.evaluate((id:string)=>(window as Window&{__formsStrictApp?:(value:string)=>void}).__formsStrictApp?.(id),nextApp);
+  await expect(page.getByRole('treeitem',{name:'新目录'})).toBeVisible();
+  release();await page.waitForTimeout(50);
+  await expect(page.getByRole('treeitem',{name:'新目录'})).toBeVisible();
+  expect(count).toBeGreaterThanOrEqual(2);
 });
 
 test('existing text field can request a guarded number type conversion',async({page})=>{
