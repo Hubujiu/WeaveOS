@@ -1,0 +1,40 @@
+[WebServer] (node:20829) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:20843) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:20876) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/forms/forms.component.spec.ts:523:1 › new view beside a selected form inherits its directory (5.3s)
+
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:523:1 › new view beside a selected form inherits its directory 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  getByLabel('所属目录')
+    Expected: "00000000-0000-4000-8000-000000000104"
+    Received: ""
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveValue" getByLabel('所属目录') with timeout 5000ms
+      - waiting for getByLabel('所属目录')
+        14 × locator resolved to <select aria-label="所属目录">…</select>
+           - unexpected value ""
+
+
+      527 |   await page.getByRole('treeitem',{name:'请假申请'}).getByRole('button').first().click();
+      528 |   await page.getByRole('button',{name:'新建表单'}).click();
+    > 529 |   await expect(page.getByLabel('所属目录')).toHaveValue(folderId);
+          |                                         ^
+      530 | });
+      531 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:529:41
+
+    Error Context: test-results/forms.component-new-view-b-4bc99-form-inherits-its-directory-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:523:1 › new view beside a selected form inherits its directory 

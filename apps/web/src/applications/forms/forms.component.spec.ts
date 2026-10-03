@@ -519,3 +519,12 @@ test('palette drag into a group preserves the chosen drop parent in saved layout
   expect(layout[0].kind).toBe('group');
   if(layout[0].kind==='group')expect(layout[0].children).toMatchObject([{kind:'field',span:12}]);
 });
+
+test('new view beside a selected form inherits its directory',async({page})=>{
+  const initial:Structure={...structure,directories:[{id:folderId,appId,name:'业务目录',parentId:null,position:0}],
+    forms:[{...form,directoryId:folderId}]};
+  await fixture(page,'structure',definition,initial);
+  await page.getByRole('treeitem',{name:'请假申请'}).getByRole('button').first().click();
+  await page.getByRole('button',{name:'新建表单'}).click();
+  await expect(page.getByLabel('所属目录')).toHaveValue(folderId);
+});
