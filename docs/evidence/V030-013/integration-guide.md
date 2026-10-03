@@ -71,8 +71,73 @@ active-column registration, canonical values, protected system columns and CAS,
 with no generic SQL/DDL. BFF performs current Session/CSRF/grants/fence in the same
 transaction. V015's older credential proposal is superseded on this point.
 
-Shared incremental hot8 numbering and exact added paths have been submitted to
-the lead for registration before edits. Hot7 remains byte-identical. Value history,
-runtime DTO/reference displays, quick-search and public data-grant dependency
-expression still require their exact technical review. Neither owner-only
-definition endpoints nor this baseline provides ordinary record HTTP yet.
+The parent's renewed implementation instruction and ADR §8.10 sole-owner
+allocation cover registered hot8 `00008_app_records.sql`; actual scans found it
+unoccupied. Hot7 remains byte-identical. ADR11–12 was subsequently fetched and
+freezes runtime/history/quick-search; Q36 extraction belongs to V015. Neither
+owner-only definition endpoints nor this checkpoint provides record HTTP yet.
+
+## Shared ports available in the hot8 checkpoint
+
+Apply current hot migrations through8 and reviewed roles to an isolated DB.
+The following implementations are actual restricted-PG ports, not runtime mocks:
+
+```go
+applications.Application.BeginRecordWrite(ctx, principal, appID, viewID,
+    applications.RecordWriteOptions{OperationID: operationID, Kind: kind,
+      Fingerprint: fingerprint, LockTimeout: limits.LockTimeout,
+      StatementTimeout: limits.StatementTimeout,
+      SourceGuard: sortedSourceLocker, Authorize: trustedActionPolicy})
+// Returned RecordWrite exposes Tx, Context, Replay, Claim, Complete, Commit,
+// Rollback. Replay must precede Claim/new schema/record/draft/fence checks.
+// Claim invokes the required injected policy; nil fails closed.
+
+appstructure.RecordDML{}.Insert(ctx, tx, table, create, selectedIDs)
+appstructure.RecordDML{}.LockHeader(ctx, tx, table, recordID)
+appstructure.RecordDML{}.UpdateCAS(ctx, tx, table, edit, selectedIDs)
+appstructure.RecordGate{AppID: appID, TableID: tableID, ViewID: viewID}
+appstructure.RecordFence{AppID: appID, TableID: tableID}
+appstructure.RecordAudit{Context: write.Context(), OperationID: operationID,
+    BeforeRecordVersion: oldRecordVersion, Metadata: actualRequestMetadata}
+```
+
+Neutral shapes RecordTable/RecordCreate/RecordEdit/StoredRecordHeader/
+RecordMutationResult exactly mirror V015's fixed field order/types. V015 can use
+ordinary Go conversions inside its own adapter, preserving its exclusive package:
+`appstructure.RecordTable(table)`, `appstructure.RecordCreate(in)` and
+`apprecords.StoredHeader(header)`. No V015 core files are copied here. DML ignores
+the supplied Namespace and derives appdata physical identifiers solely from actual
+app/form/table/active-field registration. Canonical values are checked in Go and
+in the finite DB capability. Shared native errors are appstructure.Error with
+registered code, applications.ErrMissing/ErrResourceInvalid, or session.ErrUnavailable;
+the consumer must preserve those identities/codes when mapping HTTP results.
+
+RecordContext holds actual live actor/bootstrap/app owner, form→table/schema facts
+and complete enabled-group grants with field IDs, loaded under the app/policy gate.
+Injected policy is the entry/action boundary; the V015 writer must still check
+complete row/field policy, CAS, references and fence inside this caller transaction.
+No ordinary member is routed through manager-only BeginManagerWrite.
+
+Operation kinds include record.create/edit and draft.create/update/discard;
+confirmed record result is exactly operationId/id/recordVersion/schemaVersion/
+createdAt/updatedAt. Draft ledger uses only operationId/id/draftVersion, never
+stored payload. Discard ledger accepts204 internally; external204 has no body.
+Active actors can recover their own minimum confirmation after grant revocation;
+confirmed replay skips new-source/action-policy checks and old CAS.
+
+Minimum RecordAudit contains IDs/versions/changed field IDs and actual requestId,
+no raw values. It is not the newly frozen record save history; history delta and
+read/runtime/search HTTP are still the next shared/consumer integration stage.
+
+Hot8 source tables member_sources/department_sources/member_department_sources
+and singleton reference_source_revision are real. Actual SQL source insert/rename/
+status/delete and multi-department changes synchronize them transactionally;
+deleted UUIDs retain labels and cannot be reused. Ordinary display/candidate ports
+and query hydration must be wired using the frozen minimum DTO, not by opening
+the owner-only candidates. Do not interpret missing source rows/counters as zero.
+
+Real hot8 fresh upgrade, native DML/system/CAS/NULL capability guards, grants,
+multiple departments/tombstones, unchanged20-statement grant budget and FK cleanup
+pass in record-shared-fresh-green.txt. Real gate/empty+pending fence/minimum audit/
+operation commit/replay pass in record-ports-green.txt. Full regression/CI still
+needs the independently registered old member oracle and deploy source pin changes.

@@ -23,6 +23,14 @@ import (
 
 const maxRevision = int64(9007199254740991)
 
+func grantResourceIDs(grants []Grant) []string {
+	out := []string{}
+	for _, g := range grants {
+		out = append(out, g.ResourceID)
+	}
+	return out
+}
+
 func canonicalID(id string) (string, bool) {
 	var u pgtype.UUID
 	if u.Scan(id) != nil || !u.Valid || u.String() != strings.ToLower(id) {
@@ -82,17 +90,50 @@ func normalized(kind string, in Input) (Input, error) {
 		grants := make([]Grant, 0, len(in.Grants))
 		for _, g := range in.Grants {
 			v, ok := canonicalID(g.ResourceID)
-			if !ok || g.ResourceKind != "application" || g.Action != "menu.enter" || g.RowScope != "all" || g.Fields == nil || len(g.Fields) != 0 {
+			menu := g.Action == "menu.enter" && (g.ResourceKind == "application" || g.ResourceKind == "directory" || g.ResourceKind == "form") && g.RowScope == "all"
+			data := g.ResourceKind == "form" && ((g.Action == "data.create" && g.RowScope == "all") || ((g.Action == "data.read" || g.Action == "data.edit" || g.Action == "data.history") && (g.RowScope == "all" || g.RowScope == "own")))
+			if !ok || !menu && !data || g.Fields == nil || menu && len(g.Fields) != 0 {
 				return in, ErrResourceInvalid
 			}
 			g.ResourceID = v
+			fields := map[string]bool{}
+			for _, id := range g.Fields {
+				canonical, ok := canonicalID(id)
+				if !ok {
+					return in, ErrResourceInvalid
+				}
+				fields[canonical] = true
+			}
 			g.Fields = []string{}
-			if !seen[v] {
+			for id := range fields {
+				g.Fields = append(g.Fields, id)
+			}
+			sort.Strings(g.Fields)
+			key := g.ResourceKind + ":" + v + ":" + g.Action + ":" + g.RowScope
+			if !seen[key] {
 				grants = append(grants, g)
-				seen[v] = true
+				seen[key] = true
+			} else {
+				for i := range grants {
+					old := &grants[i]
+					if old.ResourceKind == g.ResourceKind && old.ResourceID == g.ResourceID && old.Action == g.Action && old.RowScope == g.RowScope {
+						for _, id := range old.Fields {
+							fields[id] = true
+						}
+						old.Fields = []string{}
+						for id := range fields {
+							old.Fields = append(old.Fields, id)
+						}
+						sort.Strings(old.Fields)
+						break
+					}
+				}
 			}
 		}
-		sort.Slice(grants, func(i, j int) bool { return grants[i].ResourceID < grants[j].ResourceID })
+		sort.Slice(grants, func(i, j int) bool {
+			a, b := grants[i], grants[j]
+			return a.ResourceKind+":"+a.ResourceID+":"+a.Action+":"+a.RowScope < b.ResourceKind+":"+b.ResourceID+":"+b.Action+":"+b.RowScope
+		})
 		in.Grants = grants
 	}
 	return in, nil
@@ -360,14 +401,16 @@ func (a *Application) Configuration(ctx context.Context, p session.Principal, ap
 		}
 		return map[string]any{"memberIds": ids, "members": members, "policyRevision": app.PolicyRevision}, tx.Commit(ctx)
 	}
-	rows, err := tx.Query(ctx, "SELECT resource_kind,resource_id::text,action,row_scope FROM applications.grants WHERE app_id=$1 AND group_id=$2 ORDER BY resource_kind,resource_id,action,row_scope", appID, groupID)
+	rows, err := tx.Query(ctx, `SELECT resource_kind,resource_id::text,action,row_scope,
+ ARRAY(SELECT field_id::text FROM applications.grant_fields f WHERE f.app_id=g.app_id AND f.grant_id=g.id ORDER BY field_id)
+ FROM applications.grants g WHERE app_id=$1 AND group_id=$2 ORDER BY resource_kind,resource_id,action,row_scope`, appID, groupID)
 	if err != nil {
 		return nil, err
 	}
 	grants := []Grant{}
 	for rows.Next() {
 		g := Grant{Fields: []string{}}
-		if err := rows.Scan(&g.ResourceKind, &g.ResourceID, &g.Action, &g.RowScope); err != nil {
+		if err := rows.Scan(&g.ResourceKind, &g.ResourceID, &g.Action, &g.RowScope, &g.Fields); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -390,6 +433,11 @@ func loadGroup(ctx context.Context, tx pgx.Tx, appID, id string) (Group, error) 
 }
 
 func readableOperation(ctx context.Context, tx pgx.Tx, actor apppolicy.TrustedActor, appID, kind string) error {
+	// operation() already constrains the lookup to this live actor. New record/
+	// draft kinds store only minimum results, independently of current data grants.
+	if recordOperation(kind) {
+		return nil
+	}
 	app, err := loadApp(ctx, tx, appID, false)
 	if err != nil {
 		return err
@@ -633,11 +681,21 @@ func (a *Application) Write(ctx context.Context, p session.Principal, kind, appI
 			actions = append(actions, g.Action)
 			scopes = append(scopes, g.RowScope)
 		}
+		grantJSON, _ := json.Marshal(in.Grants)
 		var found int
-		err = tx.QueryRow(ctx, `SELECT count(*)
- FROM unnest($2::text[],$3::uuid[],$4::text[],$5::text[]) AS submitted(resource_kind,resource_id,action,row_scope)
+		err = tx.QueryRow(ctx, `WITH locked_tables AS MATERIALIZED (
+ SELECT id FROM applications.logical_tables WHERE app_id=$1 AND id IN (
+ SELECT v.table_id FROM applications.form_views v WHERE v.app_id=$1 AND v.id IN (SELECT resource_id FROM applications.grants WHERE app_id=$1 AND group_id=$7)
+ UNION SELECT v.table_id FROM applications.form_views v WHERE v.app_id=$1 AND v.id=ANY($3::uuid[])) ORDER BY id FOR UPDATE
+ ) SELECT count(*)
+ FROM unnest($2::text[],$3::uuid[],$4::text[],$5::text[]) WITH ORDINALITY AS submitted(resource_kind,resource_id,action,row_scope,position)
  JOIN applications.menu_resources mr ON mr.app_id=$1 AND mr.resource_kind=submitted.resource_kind AND mr.resource_id=submitted.resource_id
- WHERE submitted.action='menu.enter' AND submitted.row_scope='all'`, appID, kinds, ids, actions, scopes).Scan(&found)
+ WHERE (SELECT count(*) FROM locked_tables)>=0 AND ((submitted.action='menu.enter' AND submitted.row_scope='all' AND jsonb_array_length(($6::jsonb->(position::integer-1))->'fields')=0)
+ OR (submitted.resource_kind='form' AND ((submitted.action='data.create' AND submitted.row_scope='all') OR (submitted.action IN('data.read','data.edit','data.history') AND submitted.row_scope IN('all','own')))
+ AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text(($6::jsonb->(position::integer-1))->'fields') field_id
+ LEFT JOIN applications.form_views v ON v.app_id=$1 AND v.id=submitted.resource_id
+ LEFT JOIN applications.fields f ON f.app_id=$1 AND f.table_id=v.table_id AND f.id=field_id::uuid AND NOT f.removed
+ WHERE f.id IS NULL)))`, appID, kinds, ids, actions, scopes, grantJSON, groupID).Scan(&found)
 		if err == nil && found != len(in.Grants) {
 			err = ErrResourceInvalid
 		}
@@ -650,9 +708,15 @@ func (a *Application) Write(ctx context.Context, p session.Principal, kind, appI
 		if _, err = tx.Exec(ctx, "DELETE FROM applications.grants WHERE app_id=$1 AND group_id=$2", appID, groupID); err != nil {
 			break
 		}
-		_, err = tx.Exec(ctx, `INSERT INTO applications.grants(app_id,group_id,resource_kind,resource_id,action,row_scope)
+		_, err = tx.Exec(ctx, `WITH new_grants AS (
+ INSERT INTO applications.grants(app_id,group_id,resource_kind,resource_id,action,row_scope)
  SELECT $1,$2,resource_kind,resource_id,action,row_scope
- FROM unnest($3::text[],$4::uuid[],$5::text[],$6::text[]) AS submitted(resource_kind,resource_id,action,row_scope)`, appID, groupID, kinds, ids, actions, scopes)
+ FROM unnest($3::text[],$4::uuid[],$5::text[],$6::text[]) AS submitted(resource_kind,resource_id,action,row_scope) RETURNING *
+ ) INSERT INTO applications.grant_fields(app_id,grant_id,table_id,field_id)
+ SELECT $1,g.id,v.table_id,fid::uuid FROM jsonb_to_recordset($7::jsonb) AS submitted("resourceKind" text,"resourceId" uuid,action text,"rowScope" text,fields jsonb)
+ JOIN new_grants g ON g.resource_kind=submitted."resourceKind" AND g.resource_id=submitted."resourceId" AND g.action=submitted.action AND g.row_scope=submitted."rowScope"
+ JOIN applications.form_views v ON v.app_id=g.app_id AND v.id=g.resource_id AND g.resource_kind='form'
+ CROSS JOIN LATERAL jsonb_array_elements_text(submitted.fields) fid`, appID, groupID, kinds, ids, actions, scopes, grantJSON)
 		reason = "GROUP_GRANTS_REPLACED"
 		counts["grants"] = int64(len(in.Grants))
 		result = map[string]any{"id": groupID, "policyRevision": before + 1}
