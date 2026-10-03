@@ -60,6 +60,12 @@ func TestB5WriteAccessRechecksAccount(t *testing.T) {
 func TestB5WriteAccessProtectsActualDependencies(t *testing.T) {
 	f := setup(t)
 	ctx := context.Background()
+	// Probe a committed dependency. A row first inserted by the writer is
+	// invisible to this second transaction and is protected by unique-key wait,
+	// not by locking an as-yet-invisible row (the approved Q25 distinction).
+	if _, err := f.owner.Exec(ctx, "INSERT INTO personnel.member_configuration(user_id) VALUES($1)", f.actor.UserID); err != nil {
+		t.Fatal(err)
+	}
 	tx := b5WriteTx(t, f)
 	if _, err := f.app.AccessForWrite(ctx, tx, f.actor); err != nil {
 		t.Fatalf("qualified transaction must protect actual dependencies: %v", err)
