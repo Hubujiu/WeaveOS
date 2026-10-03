@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"reflect"
 	"strings"
@@ -45,6 +46,23 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 		t.Fatal(e)
 	}
 	defer p.Close()
+	roles, e := os.ReadFile("../../../../infra/runtime/roles.sql")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e = p.Exec(c, string(roles)); e != nil {
+		t.Fatal(e)
+	}
+	// Compose the service using the actual restricted runtime role, while the
+	// separate fixture connection owns isolated setup and source application.
+	runtimeURL, e := url.Parse(cfg.DatabaseURL)
+	if e != nil {
+		t.Fatal(e)
+	}
+	query := runtimeURL.Query()
+	query.Set("options", "-c role=auth_app")
+	runtimeURL.RawQuery = query.Encode()
+	cfg.DatabaseURL = runtimeURL.String()
 	var actor, app, operation string
 	e = p.QueryRow(c, "INSERT INTO auth.users(account) VALUES('definition-composition-'||gen_random_uuid()) RETURNING id::text,gen_random_uuid()::text").Scan(&actor, &operation)
 	if e != nil {

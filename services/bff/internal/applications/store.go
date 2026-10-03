@@ -484,6 +484,28 @@ func (a *Application) Write(ctx context.Context, p session.Principal, kind, appI
 	if !errors.Is(err, ErrMissing) {
 		return Result{}, err
 	}
+	// Source rows precede the application/policy gate. Defer source validation
+	// until after the real app/group permission checks to preserve error order.
+	memberStatuses := map[string]string{}
+	if kind == "members.replace" {
+		rows, e := tx.Query(ctx, "SELECT id::text,status FROM auth.users WHERE id=ANY($1::uuid[]) ORDER BY id FOR SHARE", in.MemberIDs)
+		if e != nil {
+			return Result{}, classify(e)
+		}
+		for rows.Next() {
+			var id, status string
+			if e = rows.Scan(&id, &status); e != nil {
+				rows.Close()
+				return Result{}, e
+			}
+			memberStatuses[id] = status
+		}
+		e = rows.Err()
+		rows.Close()
+		if e != nil {
+			return Result{}, e
+		}
+	}
 	var app App
 	if kind == "application.create" {
 		for _, permission := range access.Permissions {
@@ -572,10 +594,21 @@ func (a *Application) Write(ctx context.Context, p session.Principal, kind, appI
 		counts["groups"] = 1
 		result = Group{ID: groupID, Name: in.Name, Enabled: in.Enabled, PolicyRevision: before + 1}
 	case "members.replace":
-		var found int
-		err = tx.QueryRow(ctx, "SELECT count(*) FROM auth.users WHERE id=ANY($1::uuid[])", in.MemberIDs).Scan(&found)
-		if err == nil && found != len(in.MemberIDs) {
+		if len(memberStatuses) != len(in.MemberIDs) {
 			err = ErrResourceInvalid
+		}
+		inactive := []string{}
+		for _, id := range in.MemberIDs {
+			if memberStatuses[id] != "active" {
+				inactive = append(inactive, id)
+			}
+		}
+		if err == nil && len(inactive) > 0 {
+			var existing int
+			err = tx.QueryRow(ctx, "SELECT count(*) FROM applications.group_members WHERE app_id=$1 AND group_id=$2 AND user_id=ANY($3::uuid[])", appID, groupID, inactive).Scan(&existing)
+			if err == nil && existing != len(inactive) {
+				err = ErrResourceInvalid
+			}
 		}
 		if err != nil {
 			break

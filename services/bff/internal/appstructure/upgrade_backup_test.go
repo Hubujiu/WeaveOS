@@ -72,6 +72,18 @@ func TestAllCommonKindsProduceTypedPGColumnsAndConstantDefaults(t *testing.T) {
 
 func TestNewStructureAuditArchivesWithActualMaintenanceRoles(t *testing.T) {
 	f := setup(t)
+	coldOwner, e := pgxpool.New(context.Background(), os.Getenv("WEAVEOS_TEST_ARCHIVE_DATABASE_URL"))
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer coldOwner.Close()
+	coldRoles, e := os.ReadFile("../../../../infra/runtime/cold-roles.sql")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e = coldOwner.Exec(context.Background(), string(coldRoles)); e != nil {
+		t.Fatal(e)
+	}
 	view, _ := newForm(t, f)
 	if _, e := f.owner.Exec(context.Background(), "UPDATE auth.authentication_events SET occurred_at=date_trunc('month',now())-interval '1 day' WHERE object_id=$1 AND event_type='application_structure_changed'", view); e != nil {
 		t.Fatal(e)
