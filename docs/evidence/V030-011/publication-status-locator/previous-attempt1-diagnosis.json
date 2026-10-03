@@ -1,0 +1,65 @@
+{
+  "head": "9b89e8e928aedf30df235492fe89bc52021f6fe9",
+  "recordedAt": "2026-10-03T08:20:38.887889+00:00",
+  "runId": 37108687347,
+  "failedJob": 111162161731,
+  "failedAttempt": 1,
+  "test": "TestQ36ScaleShallowDeepDifferentMatchesAndWriteLockDuration",
+  "failure": "query_scale_test.go:98 baseline M=10000 total=0 err=timeout: context deadline exceeded",
+  "deadline": "production executeQuery context.WithTimeout 10 seconds; original test context.Background; setup has no overall deadline",
+  "sameHeadGoJob": {
+    "id": 111162161971,
+    "conclusion": "success",
+    "personnelSeconds": 61.777
+  },
+  "protectedSourcesUnchanged": true,
+  "sourceRecords": [
+    {
+      "path": "services/bff/internal/personnel/query_scale_test.go",
+      "sha256": "c2960105bd8b4db85d6f2636f9be8fdd5c5b5e4b13878fa1cb609a23a0d7c59d"
+    },
+    {
+      "path": "services/bff/internal/personnel/query_engine.go",
+      "sha256": "4b8bc75c77eb80b36c500d1a67fc2bd869639c1fec3aeaad28dcc6ea8d758fb0"
+    },
+    {
+      "path": "services/bff/internal/personnel/query_engine_http_test.go",
+      "sha256": "0a683162b5ba273e260d836b5f3f0f0155b82bea3ecab947db851169effdaedd"
+    },
+    {
+      "path": "services/bff/internal/personnel/query_projection.go",
+      "sha256": "4e3e9840f010f81917e38204863be7a2a8e2b3a6418c382afb5431718d98cdd7"
+    },
+    {
+      "path": "infra/acceptance/run.mjs",
+      "sha256": "b63d53511402edcb90d5cdd8831cfce5fa2fbfc3cf42d8034cad7e342c2e962d"
+    },
+    {
+      "path": "infra/acceptance/compose.json",
+      "sha256": "ab2e8d87519090d2b55868130aeb53f3c1e435f88a19be7f2df3d5d2ffcc3ec1"
+    }
+  ],
+  "newCodeCausality": "new focus TypeScript executes/builds after failed Go stage; protected runtime/fixture/SQL/workflow identical to green684e599, so this new focus repair is not on failure path",
+  "contention": "not demonstrated; failed CI provides no DB wait/SQL plan/CPU diagnostics",
+  "localTargetRun": {
+    "head": "9b89e8e928aedf30df235492fe89bc52021f6fe9",
+    "startedAt": "2026-10-03T08:18:20.780207+00:00",
+    "command": [
+      "/workspace/.weaveos-tools/go/bin/go",
+      "test",
+      "-race",
+      "-p",
+      "1",
+      "-count=1",
+      "-run",
+      "^TestQ36ScaleShallowDeepDifferentMatchesAndWriteLockDuration$",
+      "-v",
+      "./internal/personnel"
+    ],
+    "scope": "own loopback PG18.6/Redis8.2.10; unchanged deadline/scale/assertions",
+    "exitCode": 0,
+    "finishedAt": "2026-10-03T08:18:41.389731+00:00"
+  },
+  "localM10000InitialFullMs": 1033.956,
+  "retryPolicy": "one same-HEAD failed product job rerun after diagnosis; no deadline/assertion/scale/config edits; stop if repeat failure"
+}

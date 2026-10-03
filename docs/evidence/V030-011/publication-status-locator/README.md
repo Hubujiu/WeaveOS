@@ -36,3 +36,22 @@ real template/identity POST201 + GET200 pass in all engines. All original member
 refresh/queryVersion/assignment/template-revocation/direct-denial assertions pass.
 No first(), arbitrary toast, changed timeout or production edit was introduced.
 Runtime complexity/storage behavior are unchanged; two constant DOM selectors.
+
+Full unchanged integration config against actual isolated HTTPS/BFF/PG18.6/Redis8.2.10,
+09:25:48.776–09:28:12.607 UTC at5cf78f2:117 pass0 fail0 skip (39 per engine).
+The original Redis Session expiry test uses the unchanged native Redis observer
+via host-redis-observer.mjs and a private loopback26380 binding. No response mocks.
+Governance/foundation222, contracts33, typecheck/build, repo and actual PR26 scope
+pass. Build's inherited large-chunk warning remains. Expanded gzip logs were
+scanned with the unchanged pinned Gitleaks image:0 findings. Full final tracked
+head scan follows this evidence commit. PRD/ADR009 latest09:17:57.318Z/09:18:03.164Z
+retain B5 clauses and add separate013/014/015 scopes; this package edits none.
+
+Only the two existing save locators differ from9b89 executable bytes. Historical
+attempt1 scale timeout and attempt2 locator failure remain classified separately;
+this correction does not prove the failed runner's SQL plan/CPU/lock cause.
+No extra local Go/Q36/manager rerun for unchanged source; prior9b89 checks remain
+historical evidence, and final-head remote CI must run those gates again.
+No release signoff/merge/deploy/production check is authorized. The final remote
+run IDs/conclusions will be reported from GitHub metadata in the PR and handoff;
+this local117 pass cannot stand in for pending remote runtime/packaging/OCI gates.
