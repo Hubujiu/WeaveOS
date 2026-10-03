@@ -1,0 +1,90 @@
+diff --git a/tests/acceptance/web.spec.ts b/tests/acceptance/web.spec.ts
+index 3d15e17..ac9b8d4 100644
+--- a/tests/acceptance/web.spec.ts
++++ b/tests/acceptance/web.spec.ts
+@@ -315,8 +315,85 @@ test('WEB-14 FR-002/003: duplicate-account feedback permits retry without losing
+   await page.getByRole('button', { name: '注册', exact: true }).click();
+   await expect(page).toHaveURL(/\/login(?:\?|$)/);
+ });
++// WEB-15-only live diagnostics: log lifecycle phases without input values or URL queries.
++async function observeWeb15Registration(page: Page, expectedCode: string) {
++  const started = performance.now();
++  const emit = (event: Record<string, string | number | boolean | null>) => {
++    console.log('WEB15_PHASE ' + JSON.stringify({ relativeMs: Math.round(performance.now() - started), ...event }));
++  };
++  await page.addInitScript(({ code }) => {
++    const capture = (phase: string) => {
++      const form = document.querySelector<HTMLFormElement>('form.register-form');
++      const button = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
++      const input = (name: string) => form?.querySelector<HTMLInputElement>(`input[name="${name}"]`);
++      const account = input('account')?.value ?? '';
++      const password = input('password')?.value ?? '';
++      const confirmation = input('confirmation')?.value ?? '';
++      const invitation = input('invitationCode')?.value ?? '';
++      console.log('WEB15_BROWSER_PHASE ' + JSON.stringify({
++        phase,
++        path: location.pathname,
++        ready: document.readyState,
++        formAttached: !!form?.isConnected,
++        buttonEnabled: !!button && !button.disabled,
++        accountValid: !!account && !account.includes(' ') && Array.from(account).length <= 254,
++        passwordValid: !!password && !/[^\x20-\x7e]/.test(password) &&
++          [/[A-Z]/, /[a-z]/, /[0-9]/, /[^A-Za-z0-9]/].every(pattern => pattern.test(password)),
++        confirmationMatches: !!confirmation && password === confirmation,
++        invitationPresent: !!invitation.trim(),
++        invitationMatchesFixture: invitation === code,
++        nativeFieldsValid: !!form && Array.from(form.querySelectorAll('input')).every(field => field.validity.valid),
++      }));
++    };
++    document.addEventListener('DOMContentLoaded', () => capture('dom-ready'), { once: true });
++    document.addEventListener('click', event => {
++      if (event.target instanceof Element && event.target.closest('form.register-form button[type="submit"]')) capture('button-click');
++    }, true);
++    document.addEventListener('submit', event => {
++      if (event.target instanceof Element && event.target.matches('form.register-form')) capture('form-submit');
++    }, true);
++  }, { code: expectedCode });
++  page.on('console', message => {
++    const prefix = 'WEB15_BROWSER_PHASE ';
++    if (!message.text().startsWith(prefix)) return;
++    try {
++      const state = JSON.parse(message.text().slice(prefix.length)) as Record<string, unknown>;
++      const phase = ['dom-ready', 'button-click', 'form-submit'].includes(String(state.phase)) ? String(state.phase) : 'unknown-browser-phase';
++      const ready = ['loading', 'interactive', 'complete'].includes(String(state.ready)) ? String(state.ready) : 'unknown';
++      emit({
++        phase,
++        path: state.path === '/register' || state.path === '/login' ? state.path : '/other',
++        ready,
++        formAttached: state.formAttached === true,
++        buttonEnabled: state.buttonEnabled === true,
++        accountValid: state.accountValid === true,
++        passwordValid: state.passwordValid === true,
++        confirmationMatches: state.confirmationMatches === true,
++        invitationPresent: state.invitationPresent === true,
++        invitationMatchesFixture: state.invitationMatchesFixture === true,
++        nativeFieldsValid: state.nativeFieldsValid === true,
++      });
++    } catch { emit({ phase: 'unreadable-browser-phase' }); }
++  });
++  const registration = (url: string, method: string) => new URL(url).pathname === '/api/v1/registrations' && method === 'POST';
++  page.on('request', request => {
++    if (registration(request.url(), request.method())) emit({ phase: 'request', path: '/api/v1/registrations', method: 'POST' });
++  });
++  page.on('requestfailed', request => {
++    if (registration(request.url(), request.method())) emit({ phase: 'request-failed', path: '/api/v1/registrations', method: 'POST' });
++  });
++  page.on('response', response => {
++    if (registration(response.url(), response.request().method())) emit({ phase: 'response', path: '/api/v1/registrations', method: 'POST', status: response.status() });
++  });
++  page.on('framenavigated', frame => {
++    if (frame === page.mainFrame()) emit({ phase: 'navigation', path: new URL(frame.url()).pathname });
++  });
++  page.on('pageerror', () => emit({ phase: 'page-error' }));
++  page.on('crash', () => emit({ phase: 'page-crash' }));
++}
+ test('WEB-15 FR-003: already-used invitation shows failure and keeps browser unauthenticated', async ({ page, context }, info) => {
+   const code = caseInvitation(info, 'reuse');
++  await observeWeb15Registration(page, code);
+   await fillRegistration(page, `first-${info.project.name}-${Date.now()}`, code);
+   await page.getByRole('button', { name: '注册', exact: true }).click();
+   await expect(page).toHaveURL(/\/login(?:\?|$)/);
