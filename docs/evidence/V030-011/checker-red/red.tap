@@ -1,0 +1,247 @@
+TAP version 13
+# Subtest: B5a.9: fixture preserves the exact approved PR21 legacy PLAN bytes
+ok 1 - B5a.9: fixture preserves the exact approved PR21 legacy PLAN bytes
+  ---
+  duration_ms: 2.736192
+  type: 'test'
+  ...
+# Subtest: B5a.9: a valid canonical task without an auxiliary document still passes
+ok 2 - B5a.9: a valid canonical task without an auxiliary document still passes
+  ---
+  duration_ms: 35.853642
+  type: 'test'
+  ...
+# Subtest: B5a.9: exact registered and referenced PR21 auxiliary PLAN passes discovery
+not ok 3 - B5a.9: exact registered and referenced PR21 auxiliary PLAN passes discovery
+  ---
+  duration_ms: 33.081925
+  type: 'test'
+  location: '/workspace/WeaveOS-worktrees/V030-011/tests/foundation/b5-plan-compat.test.mjs:73:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    V010-020-PLAN.md: invalid task filename
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-011/tests/foundation/b5-plan-compat.test.mjs:75:10)
+    Test.runInAsyncScope (node:async_hooks:228:14)
+    Test.run (node:internal/test_runner/test:1118:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+    Test.postRun (node:internal/test_runner/test:1247:19)
+    Test.run (node:internal/test_runner/test:1175:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:787:7)
+  ...
+# Subtest: B5a.9: known auxiliary path rejects replaced contents
+ok 4 - B5a.9: known auxiliary path rejects replaced contents
+  ---
+  duration_ms: 32.509548
+  type: 'test'
+  ...
+# Subtest: B5a.9: known auxiliary path rejects one-byte addition
+ok 5 - B5a.9: known auxiliary path rejects one-byte addition
+  ---
+  duration_ms: 35.754303
+  type: 'test'
+  ...
+# Subtest: B5a.9: known auxiliary path rejects forged task metadata
+ok 6 - B5a.9: known auxiliary path rejects forged task metadata
+  ---
+  duration_ms: 34.309477
+  type: 'test'
+  ...
+# Subtest: B5a.9: known auxiliary path rejects a complete second task
+ok 7 - B5a.9: known auxiliary path rejects a complete second task
+  ---
+  duration_ms: 34.919571
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects missing canonical task
+ok 8 - B5a.9: auxiliary compatibility rejects missing canonical task
+  ---
+  duration_ms: 32.764169
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects missing canonical metadata
+ok 9 - B5a.9: auxiliary compatibility rejects missing canonical metadata
+  ---
+  duration_ms: 31.730639
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects duplicate canonical metadata
+ok 10 - B5a.9: auxiliary compatibility rejects duplicate canonical metadata
+  ---
+  duration_ms: 34.507573
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects invalid canonical JSON
+ok 11 - B5a.9: auxiliary compatibility rejects invalid canonical JSON
+  ---
+  duration_ms: 35.440141
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects other task identity
+ok 12 - B5a.9: auxiliary compatibility rejects other task identity
+  ---
+  duration_ms: 31.682197
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects missing canonical owner
+ok 13 - B5a.9: auxiliary compatibility rejects missing canonical owner
+  ---
+  duration_ms: 35.094182
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects wrong branch identity
+ok 14 - B5a.9: auxiliary compatibility rejects wrong branch identity
+  ---
+  duration_ms: 38.002784
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects wrong worktree identity
+ok 15 - B5a.9: auxiliary compatibility rejects wrong worktree identity
+  ---
+  duration_ms: 32.727204
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects invalid canonical scope
+ok 16 - B5a.9: auxiliary compatibility rejects invalid canonical scope
+  ---
+  duration_ms: 33.330819
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects empty canonical scope
+ok 17 - B5a.9: auxiliary compatibility rejects empty canonical scope
+  ---
+  duration_ms: 32.608265
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects unregistered auxiliary scope
+ok 18 - B5a.9: auxiliary compatibility rejects unregistered auxiliary scope
+  ---
+  duration_ms: 31.035927
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects a scope path that merely shares the prefix
+ok 19 - B5a.9: auxiliary compatibility rejects a scope path that merely shares the prefix
+  ---
+  duration_ms: 32.879236
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects missing canonical reference
+ok 20 - B5a.9: auxiliary compatibility rejects missing canonical reference
+  ---
+  duration_ms: 36.395915
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects a reference to a different PLAN
+ok 21 - B5a.9: auxiliary compatibility rejects a reference to a different PLAN
+  ---
+  duration_ms: 31.524841
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects incomplete ready canonical task
+ok 22 - B5a.9: auxiliary compatibility rejects incomplete ready canonical task
+  ---
+  duration_ms: 36.192199
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility rejects a prematurely accepted canonical task
+ok 23 - B5a.9: auxiliary compatibility rejects a prematurely accepted canonical task
+  ---
+  duration_ms: 33.781425
+  type: 'test'
+  ...
+# Subtest: B5a.9: legacy exception does not admit similar or malformed name V010-021-PLAN.md
+ok 24 - B5a.9: legacy exception does not admit similar or malformed name V010-021-PLAN.md
+  ---
+  duration_ms: 31.561365
+  type: 'test'
+  ...
+# Subtest: B5a.9: legacy exception does not admit similar or malformed name V030-020-PLAN.md
+ok 25 - B5a.9: legacy exception does not admit similar or malformed name V030-020-PLAN.md
+  ---
+  duration_ms: 32.133583
+  type: 'test'
+  ...
+# Subtest: B5a.9: legacy exception does not admit similar or malformed name V020-020-PLAN.md
+ok 26 - B5a.9: legacy exception does not admit similar or malformed name V020-020-PLAN.md
+  ---
+  duration_ms: 33.380384
+  type: 'test'
+  ...
+# Subtest: B5a.9: legacy exception does not admit similar or malformed name V999-020-PLAN.md
+ok 27 - B5a.9: legacy exception does not admit similar or malformed name V999-020-PLAN.md
+  ---
+  duration_ms: 32.989903
+  type: 'test'
+  ...
+# Subtest: B5a.9: legacy exception does not admit similar or malformed name V010-20-PLAN.md
+ok 28 - B5a.9: legacy exception does not admit similar or malformed name V010-20-PLAN.md
+  ---
+  duration_ms: 32.567785
+  type: 'test'
+  ...
+# Subtest: B5a.9: legacy exception does not admit similar or malformed name V010-0020-PLAN.md
+ok 29 - B5a.9: legacy exception does not admit similar or malformed name V010-0020-PLAN.md
+  ---
+  duration_ms: 31.149087
+  type: 'test'
+  ...
+# Subtest: B5a.9: legacy exception does not admit similar or malformed name v010-020-PLAN.md
+ok 30 - B5a.9: legacy exception does not admit similar or malformed name v010-020-PLAN.md
+  ---
+  duration_ms: 31.036308
+  type: 'test'
+  ...
+# Subtest: B5a.9: legacy exception does not admit similar or malformed name V010-020-plan.md
+ok 31 - B5a.9: legacy exception does not admit similar or malformed name V010-020-plan.md
+  ---
+  duration_ms: 33.433743
+  type: 'test'
+  ...
+# Subtest: B5a.9: legacy exception does not admit similar or malformed name V010-020-PLAN-copy.md
+ok 32 - B5a.9: legacy exception does not admit similar or malformed name V010-020-PLAN-copy.md
+  ---
+  duration_ms: 34.838009
+  type: 'test'
+  ...
+# Subtest: B5a.9: legacy exception does not admit similar or malformed name V010-020-PLAN.md.md
+ok 33 - B5a.9: legacy exception does not admit similar or malformed name V010-020-PLAN.md.md
+  ---
+  duration_ms: 31.35059
+  type: 'test'
+  ...
+# Subtest: B5a.9: an approved auxiliary does not conceal an additional fake task document
+ok 34 - B5a.9: an approved auxiliary does not conceal an additional fake task document
+  ---
+  duration_ms: 30.041996
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary filename and content remain unsuitable as a canonical task
+ok 35 - B5a.9: auxiliary filename and content remain unsuitable as a canonical task
+  ---
+  duration_ms: 0.61299
+  type: 'test'
+  ...
+# Subtest: B5a.9: auxiliary compatibility cannot supply cleanup completion or a fake task identity
+ok 36 - B5a.9: auxiliary compatibility cannot supply cleanup completion or a fake task identity
+  ---
+  duration_ms: 1.652227
+  type: 'test'
+  ...
+1..36
+# tests 36
+# suites 0
+# pass 35
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1183.106459
