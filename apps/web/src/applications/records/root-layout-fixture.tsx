@@ -14,4 +14,4 @@ createRoot(document.getElementById('root')!).render(<RecordForm view={view}
  identity={read?{kind:'record',actorId,appId,viewId,recordId:record.id}:{kind:'new',actorId,appId,viewId,clientDraftId:'88888888-8888-4888-8888-888888888888'}}
  record={read?record:undefined} mode={read?'read':'create'} authorityKey="layout-root-1"
  onUnauthorized={()=>{}} onIdentityMismatch={()=>{}} registerLeaveGuard={()=>()=>{}} onRefresh={()=>{}}
- onConfirmed={()=>{throw new Error('layout test must not save');}} onDirtyChange={()=>{}} onDiscard={()=>{}}/>);
+ onConfirmed={()=>{throw new Error('layout test must not save');}} onDirtyChange={()=>{}} onRequestDiscard={()=>{}} onDiscard={()=>{}}/>);

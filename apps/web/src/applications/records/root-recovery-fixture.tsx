@@ -26,5 +26,5 @@ createRoot(document.getElementById('root')!).render(<RecordForm
  onIdentityMismatch={()=>{throw new Error('unexpected identity mismatch');}}
  registerLeaveGuard={()=>()=>{}} onRefresh={()=>{}}
  onConfirmed={(result,identity)=>events.confirmations.push({result,identity})}
- onDirtyChange={()=>{}} onDiscard={()=>{events.discarded++;}}
+ onDirtyChange={()=>{}} onRequestDiscard={()=>{events.discarded++;}} onDiscard={()=>{events.discarded++;}}
 />);

@@ -31,7 +31,7 @@ function Fixture(){
  registerLeaveGuard={(scope,controller)=>guards.register(scope,controller)}
  onUnauthorized={()=>{events.unauthorized++;}} onIdentityMismatch={()=>{events.identityMismatch++;}}
  onRefresh={()=>{events.refreshes++;}}
- onConfirmed={(result,next)=>{events.confirmationGuardStatuses.push(guards.snapshot(actor).map(entry=>entry.status));events.confirmations.push({result,identity:next});}} onDirtyChange={dirty=>events.dirty.push(dirty)} onDiscard={()=>{events.discarded++;}}/>}
+ onConfirmed={(result,next)=>{events.confirmationGuardStatuses.push(guards.snapshot(actor).map(entry=>entry.status));events.confirmations.push({result,identity:next});}} onDirtyChange={dirty=>events.dirty.push(dirty)} onRequestDiscard={()=>{events.discarded++;}} onDiscard={()=>{events.discarded++;}}/>}
  </main></div>;
 }
 createRoot(document.getElementById('root')!).render(<Fixture/>);

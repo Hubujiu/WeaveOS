@@ -163,3 +163,28 @@ test('Root retry after rejected edit and failed refresh never invents a saved re
  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toHaveCount(0);
  expect(api.calls.filter(c=>c.path===formPath+'/records/'+recordId&&c.method==='PATCH')).toHaveLength(1);
 });
+
+test('Root footer discard confirms before dropping dirty record input',async({page})=>{
+ const api=await fixture(page);await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
+ const editor=page.getByRole('dialog',{name:'新建记录',exact:true});await editor.getByLabel('金额',{exact:true}).fill('7.00');
+ await editor.getByRole('button',{name:'放弃填写',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();
+ await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(editor.getByLabel('金额',{exact:true})).toHaveValue('7.00');
+ await editor.getByRole('button',{name:'放弃填写',exact:true}).click();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(editor).toHaveCount(0);
+ expect(api.calls.filter(c=>c.path===formPath+'/records'&&c.method==='POST')).toEqual([]);
+});
+test('Root shared record route fills its work area and keeps its legend visually hidden',async({page})=>{
+ const api=await fixture(page);api.seed('18.00');await page.setViewportSize({width:1280,height:800});await page.goto(routePath);
+ await expect(page.getByRole('button',{name:'打开记录：金额 18.00',exact:true})).toBeVisible();
+ const group=page.getByRole('group',{name:'记录操作',exact:true});await expect(group).toHaveAccessibleName('记录操作');
+ const legend=await page.locator('.record-table-frame > legend').boundingBox();expect(legend).not.toBeNull();expect(legend!.width).toBeLessThanOrEqual(1);expect(legend!.height).toBeLessThanOrEqual(1);
+ await expect.poll(async()=>{const area=await page.getByRole('main',{name:'应用工作台',exact:true}).boundingBox();const jump=await page.getByRole('button',{name:'跳转到指定页',exact:true}).boundingBox();if(!area||!jump)return false;const gap=area.y+area.height-jump.y-jump.height;return gap>=0&&gap<=80;}).toBe(true);
+ await page.screenshot({path:test.info().outputPath('record-shell-list.png'),fullPage:true});
+});
+test('Root record dialog separates fields from shared action buttons',async({page})=>{
+ await fixture(page);await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
+ const dialog=page.getByRole('dialog',{name:'新建记录',exact:true});await expect(dialog.getByLabel('金额',{exact:true})).toBeVisible();
+ const field=await dialog.locator('.record-form-fields').boundingBox(),footer=await dialog.locator('.record-form footer').boundingBox();
+ expect(field).not.toBeNull();expect(footer).not.toBeNull();expect(footer!.y-field!.y-field!.height).toBeGreaterThanOrEqual(12);
+ const cancel=await dialog.getByRole('button',{name:'放弃填写',exact:true}).boundingBox(),save=await dialog.getByRole('button',{name:'保存记录',exact:true}).boundingBox();
+ expect(cancel).not.toBeNull();expect(save).not.toBeNull();expect(save!.x-cancel!.x-cancel!.width).toBeGreaterThanOrEqual(7.5);
+});
