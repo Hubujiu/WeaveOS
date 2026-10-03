@@ -56,10 +56,74 @@ type RecordContext struct {
 	App             App
 	ViewID, TableID string
 	SchemaVersion   int64
+	ViewVersion     int64
 	SchemaReady     bool
 	Fields          json.RawMessage
+	Layout          json.RawMessage
 	Grants          []Grant
 }
+
+// BeginRecordRead leaves the RR transaction owned by the consumer.
+func (a *Application) BeginRecordRead(c context.Context, p session.Principal, appID, viewID string) (pgx.Tx, RecordContext, error) {
+	if canonical, ok := canonicalID(appID); !ok || canonical != appID {
+		return nil, RecordContext{}, ErrInvalid
+	}
+	if canonical, ok := canonicalID(viewID); !ok || canonical != viewID {
+		return nil, RecordContext{}, ErrInvalid
+	}
+	tx, actor, e := a.read(c, p)
+	if e != nil {
+		return nil, RecordContext{}, e
+	}
+	fail := func(e error) (pgx.Tx, RecordContext, error) {
+		tx.Rollback(context.Background())
+		return nil, RecordContext{}, e
+	}
+	app, e := loadApp(c, tx, appID, false)
+	if e != nil {
+		return fail(e)
+	}
+	if e = registered(c, tx, app); e != nil {
+		return fail(e)
+	}
+	facts, e := loadRecordContext(c, tx, actor, app, viewID)
+	if e != nil {
+		return fail(e)
+	}
+	return tx, facts, nil
+}
+
+func loadRecordContext(c context.Context, tx pgx.Tx, actor apppolicy.TrustedActor, app App, viewID string) (RecordContext, error) {
+	facts := RecordContext{Actor: actor, App: app, ViewID: viewID, Grants: []Grant{}}
+	e := tx.QueryRow(c, `SELECT f.table_id::text,t.schema_version,t.schema_ready,t.fields_json,f.view_version,f.layout
+ FROM applications.form_views f JOIN applications.logical_tables t ON t.app_id=f.app_id AND t.id=f.table_id
+ JOIN applications.menu_resources r ON r.app_id=f.app_id AND r.resource_kind='form' AND r.resource_id=f.id
+ WHERE f.app_id=$1 AND f.id=$2`, app.ID, viewID).Scan(&facts.TableID, &facts.SchemaVersion, &facts.SchemaReady, &facts.Fields, &facts.ViewVersion, &facts.Layout)
+	if errors.Is(e, pgx.ErrNoRows) {
+		return RecordContext{}, ErrMissing
+	}
+	if e != nil {
+		return RecordContext{}, e
+	}
+	rows, e := tx.Query(c, `SELECT g.resource_kind,g.resource_id::text,g.action,g.row_scope,
+ ARRAY(SELECT field_id::text FROM applications.grant_fields gf WHERE gf.app_id=g.app_id AND gf.grant_id=g.id ORDER BY gf.field_id)
+ FROM applications.grants g JOIN applications.permission_groups p ON p.app_id=g.app_id AND p.id=g.group_id AND p.enabled
+ JOIN applications.group_members m ON m.app_id=p.app_id AND m.group_id=p.id AND m.user_id=$2
+ WHERE g.app_id=$1 AND g.resource_kind='form' AND g.resource_id=$3 ORDER BY g.id`, app.ID, actor.ID, viewID)
+	if e != nil {
+		return RecordContext{}, e
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var grant Grant
+		if e = rows.Scan(&grant.ResourceKind, &grant.ResourceID, &grant.Action, &grant.RowScope, &grant.Fields); e != nil {
+			return RecordContext{}, e
+		}
+		facts.Grants = append(facts.Grants, grant)
+	}
+	return facts, rows.Err()
+}
+
 type RecordWriteOptions struct {
 	LockTimeout, StatementTimeout time.Duration
 	OperationID, Kind             string
@@ -125,34 +189,7 @@ func (a *Application) BeginRecordWrite(c context.Context, p session.Principal, a
 		if e = registered(c, tx, app); e != nil {
 			return fail(e)
 		}
-		e = tx.QueryRow(c, `SELECT f.table_id::text,t.schema_version,t.schema_ready,t.fields_json
- FROM applications.form_views f JOIN applications.logical_tables t ON t.app_id=f.app_id AND t.id=f.table_id
- JOIN applications.menu_resources r ON r.app_id=f.app_id AND r.resource_kind='form' AND r.resource_id=f.id
- WHERE f.app_id=$1 AND f.id=$2`, appID, viewID).Scan(&facts.TableID, &facts.SchemaVersion, &facts.SchemaReady, &facts.Fields)
-		if errors.Is(e, pgx.ErrNoRows) {
-			return fail(ErrMissing)
-		}
-		if e != nil {
-			return fail(e)
-		}
-		rows, e := tx.Query(c, `SELECT g.resource_kind,g.resource_id::text,g.action,g.row_scope,
- ARRAY(SELECT field_id::text FROM applications.grant_fields gf WHERE gf.app_id=g.app_id AND gf.grant_id=g.id ORDER BY gf.field_id)
- FROM applications.grants g JOIN applications.permission_groups p ON p.app_id=g.app_id AND p.id=g.group_id AND p.enabled
- JOIN applications.group_members m ON m.app_id=p.app_id AND m.group_id=p.id AND m.user_id=$2
- WHERE g.app_id=$1 AND g.resource_kind='form' AND g.resource_id=$3 ORDER BY g.id`, appID, actor.ID, viewID)
-		if e != nil {
-			return fail(e)
-		}
-		for rows.Next() {
-			var grant Grant
-			if e = rows.Scan(&grant.ResourceKind, &grant.ResourceID, &grant.Action, &grant.RowScope, &grant.Fields); e != nil {
-				rows.Close()
-				return fail(e)
-			}
-			facts.Grants = append(facts.Grants, grant)
-		}
-		e = rows.Err()
-		rows.Close()
+		facts, e = loadRecordContext(c, tx, actor, app, viewID)
 		if e != nil {
 			return fail(e)
 		}

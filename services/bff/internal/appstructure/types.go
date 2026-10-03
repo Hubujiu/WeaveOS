@@ -18,6 +18,7 @@ type Application struct {
 	Now                func() time.Time
 	CandidateRedis     redis.Cmdable
 	CandidateNamespace string
+	RecordAccess       ResolveRecordAccess
 }
 type Service struct {
 	Application       *Application

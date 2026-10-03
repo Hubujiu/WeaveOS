@@ -141,3 +141,30 @@ multiple departments/tombstones, unchanged20-statement grant budget and FK clean
 pass in record-shared-fresh-green.txt. Real gate/empty+pending fence/minimum audit/
 operation commit/replay pass in record-ports-green.txt. Full regression/CI still
 needs the independently registered old member oracle and deploy source pin changes.
+
+## Runtime and shared RR read port (after249dc59)
+
+`applications.Application.BeginRecordRead(ctx,principal,appID,viewID)` returns
+`(pgx.Tx, applications.RecordContext, error)` with caller-owned read-only RR;
+live active actor/auth-version, real enabled catalog and registered form/table,
+complete current form grants and masks stay in that snapshot. Context now adds
+`ViewVersion` and `Layout json.RawMessage`; writes use the same metadata loader.
+This resolves facts only; the consumer must enforce actual menu/action policy.
+
+`appstructure.ResolveRecordAccess` is injected on `Application.RecordAccess`:
+`func(context.Context, pgx.Tx, applications.RecordContext) (RecordAccess,error)`.
+`RecordAccess` has MenuEnter/Create bool, Read/Edit/History scopes string
+(none/own/all), Fields map[fieldID]FieldAccess; FieldAccess has Read/Edit/History
+scopes and Create bool. The V015 policy consumer owns tuple evaluation; this
+shared port must receive trusted facts and the caller's same snapshot, not body.
+Runtime excludes History from the public field access object. Owner/Bootstrap
+uses existing live manager identity over real registered resources. Ordinary
+subjects require this injected resolver; absent resolver fails503.
+
+`ProjectRuntime` returns the frozen safe RuntimeView, union create/read/edit
+fields, permitted constant defaults, whitelisted kind inputs including minute,
+scope-covered query affordances and pruned layout/empty groups. Actual owner GET
+`/forms/{viewId}/runtime` now passes Session/expected-actor/resource/not-ready,
+restricted-PG and canonical-minute/default checks. Ordinary HTTP permission
+matrix waits for the V015 resolver; projection tests are not that acceptance.
+Source read SQL/hydration remains V015-owned per ADR§13; no shared duplicate.

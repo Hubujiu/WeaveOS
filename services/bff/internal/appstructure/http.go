@@ -325,6 +325,24 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, invalid(), "")
 		return
 	}
+	if len(parts) == 4 && parts[1] == "forms" && parts[3] == "runtime" && r.Method == "GET" {
+		if !appfields.ValidID(parts[2]) {
+			fail(w, r, invalid(), "")
+			return
+		}
+		value, e := s.Application.runtime(r.Context(), p, app, parts[2])
+		if e != nil {
+			fail(w, r, e, "")
+			return
+		}
+		raw, e := json.Marshal(value)
+		if e != nil {
+			fail(w, r, ErrUnavailable, "")
+			return
+		}
+		s.finish(w, r, p, applications.Result{Status: 200, Data: raw}, false)
+		return
+	}
 	if len(parts) == 2 && (parts[1] == "member-candidates" || parts[1] == "department-candidates") && r.Method == "GET" {
 		kind := "member"
 		if parts[1] == "department-candidates" {
