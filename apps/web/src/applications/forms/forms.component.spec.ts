@@ -254,3 +254,17 @@ test('permission revoked during Save keeps the draft but stops further configura
   expect(writes).toBe(1);
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
 });
+
+test('system fields stay read-only and each inserted node references a distinct server-defined code',async({page})=>{
+  const state=await fixture(page);
+  await page.getByRole('button',{name:'系统字段',exact:true}).click();
+  await page.getByRole('button',{name:'系统字段',exact:true}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const saved=state.seen.find(item=>item.method==='PUT')?.body;
+  expect(saved?.fields).toEqual([]);
+  const nodes=saved?.layout as {kind:string;fieldId:string}[];
+  expect(nodes).toHaveLength(2);
+  expect(new Set(nodes.map(item=>item.fieldId)).size).toBe(2);
+  expect(nodes.every(item=>item.kind==='system_field')).toBe(true);
+});

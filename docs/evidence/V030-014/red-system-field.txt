@@ -1,0 +1,32 @@
+[WebServer] (node:5050) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:5064) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:5097) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/forms/forms.component.spec.ts:258:1 › system fields stay read-only and each inserted node references a distinct server-defined code (408ms)
+
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:258:1 › system fields stay read-only and each inserted node references a distinct server-defined code 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+      266 |   const nodes=saved?.layout as {kind:string;fieldId:string}[];
+      267 |   expect(nodes).toHaveLength(2);
+    > 268 |   expect(new Set(nodes.map(item=>item.fieldId)).size).toBe(2);
+          |                                                       ^
+      269 |   expect(nodes.every(item=>item.kind==='system_field')).toBe(true);
+      270 | });
+      271 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:268:55
+
+    Error Context: test-results/applications-forms-forms.c-543e0-istinct-server-defined-code-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:258:1 › system fields stay read-only and each inserted node references a distinct server-defined code 
