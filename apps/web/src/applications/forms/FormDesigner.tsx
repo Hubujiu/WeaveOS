@@ -121,6 +121,7 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
   const [permissionRevoked,setPermissionRevoked]=useState(restored?.permissionRevoked??false);
   const [verified,setVerified]=useState(false),[verificationError,setVerificationError]=useState('');
   const requestKey=useRef(0);
+  const saveEpoch=useRef(0),preflightAbort=useRef<AbortController|null>(null);
   const alive=useRef(true);
   const scope=useRef(scopeKey);
   const dirtyCallback=useRef(onDirtyChange);dirtyCallback.current=onDirtyChange;
@@ -132,7 +133,8 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
     if(problem.status===401)onUnauthorized?.();
     else if(problem.code==='AUTH_SESSION_CHANGED')onIdentityMismatch?.();
   };
-  useEffect(()=>{alive.current=true;return()=>{alive.current=false;requestKey.current++;};},[]);
+  useEffect(()=>{alive.current=true;return()=>{alive.current=false;requestKey.current++;
+    saveEpoch.current++;preflightAbort.current?.abort();preflightAbort.current=null;};},[]);
   useEffect(()=>()=>{dirtyCallback.current?.(false);},[]);
   useLayoutEffect(()=>{draftMemory.set(scopeKey,{base,draft,phase,pending,permissionRevoked,error,notice,selected,group});},
     [scopeKey,base,draft,phase,pending,permissionRevoked,error,notice,selected,group]);
@@ -162,7 +164,7 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
   },[appId,actorId,viewId,reload,scopeKey]);
   const dirty=useMemo(()=>definitionDirty(base,draft),[base,draft]);
   const uncertain=phase==='unconfirmed'||phase==='saving'&&!!pending;
-  useEffect(()=>onDirtyChange?.(dirty||uncertain),[dirty,uncertain,onDirtyChange]);
+  useEffect(()=>onDirtyChange?.(dirty||uncertain||phase==='preflight'),[dirty,uncertain,phase,onDirtyChange]);
   useEffect(()=>{if(!dirty&&!uncertain)return;const handler=(event:BeforeUnloadEvent)=>event.preventDefault();
     window.addEventListener('beforeunload',handler);return()=>window.removeEventListener('beforeunload',handler);},[dirty,uncertain]);
   const locked=phase==='preflight'||phase==='saving'||phase==='unconfirmed';
@@ -242,6 +244,7 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
   };
   const accepted=(value:{definition:Definition})=>{setBase(value.definition);setDraft(fromDefinition(value.definition));
     setPending(null);setImpact(null);setImpactStale(false);setImpactError('');setDialog(null);setPhase('idle');setError('');setNotice('已保存');};
+  const cancelPreflight=()=>{saveEpoch.current++;preflightAbort.current?.abort();preflightAbort.current=null;};
   const commit=async(input:SaveWrite,wasUnknown=false)=>{const current=scope.current;
     const cached=draftMemory.get(scopeKey);if(cached)draftMemory.set(scopeKey,{...cached,pending:input,phase:'saving'});
     setPending(input);setPhase('saving');setDialog(null);setError('');
@@ -255,15 +258,20 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
         if(problem instanceof FormApiError&&problem.status===403)setPermissionRevoked(true);
         if(problem instanceof FormApiError&&problem.status===409&&problem.code!=='AUTH_SESSION_CHANGED')setDialog('conflict');}}
   };
-  const save=async()=>{if(!draft||!editable)return;const current=scope.current;setPhase('preflight');setError('');setNotice('');
-    try{const plan=await formApi.preflight(appId,actorId,base.table.id,viewId,draft);if(!alive.current||scope.current!==current)return;
+  const save=async()=>{if(!draft||!editable)return;const current=scope.current,epoch=++saveEpoch.current;
+    preflightAbort.current?.abort();const controller=new AbortController();preflightAbort.current=controller;
+    setPhase('preflight');setError('');setNotice('');
+    try{const plan=await formApi.preflight(appId,actorId,base.table.id,viewId,draft,controller.signal);
+      if(!alive.current||scope.current!==current||epoch!==saveEpoch.current||controller.signal.aborted)return;
+      preflightAbort.current=null;
       setImpact(plan);setImpactStale(false);setImpactError('');
       if(!plan.saveAllowed){setError(plan.dependencies.length?'字段仍被流程或其他视图引用，无法保存':
         '预检发现问题，请按提示调整字段或布局');setDialog('impact');setPhase('idle');return;}
       const input=immutablePacket<SaveWrite>({...draft,operationId:uuid(),confirmationToken:plan.confirmation?.token??null});
       if(plan.impacts.length){setPending(input);setDialog('impact');setPhase('idle');return;}
       await commit(input);
-    }catch(problem){if(!alive.current||scope.current!==current)return;reportAuth(problem);
+    }catch(problem){if(!alive.current||scope.current!==current||epoch!==saveEpoch.current||controller.signal.aborted)return;
+      preflightAbort.current=null;reportAuth(problem);
       setPhase('idle');setError(formErrorText(problem));
       if(problem instanceof FormApiError&&problem.status===403)setPermissionRevoked(true);}
   };
@@ -318,7 +326,7 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
   };
   return <section className="forms-module" aria-label="表单设计器">
     <div className="forms-toolbar"><div className="forms-toolbar-title">
-      <button type="button" className="forms-link" onClick={()=>dirty||uncertain?setDialog('dirty'):onBack?.()}>返回工作台</button>
+      <button type="button" className="forms-link" onClick={()=>dirty||uncertain||phase==='preflight'?setDialog('dirty'):onBack?.()}>返回工作台</button>
       <strong>{base.form.name}</strong>{dirty&&<span className="forms-unsaved">未保存</span>}</div>
       <div className="forms-toolbar-actions">
         {(phase==='preflight'||phase==='saving')&&<span role="status">{phase==='preflight'?'正在预检…':'正在保存…'}</span>}
@@ -461,8 +469,9 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
         <button type="button" className="forms-danger" onClick={()=>{
           setDialog(null);
           if(!uncertain){const clean=fromDefinition(base),cached=draftMemory.get(scopeKey);
+            cancelPreflight();
             if(cached)draftMemory.set(scopeKey,{...cached,draft:clean,pending:null,phase:'idle',error:''});
-            setDraft(clean);setPending(null);setImpact(null);setError('');}
+            setDraft(clean);setPending(null);setImpact(null);setPhase('idle');setError('');}
           onBack?.();}}>
           {uncertain?'离开并保留待核查操作':'放弃修改并离开'}</button>
       </div></FormsDialog>}

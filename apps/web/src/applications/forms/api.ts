@@ -217,8 +217,8 @@ export const formApi = {
     const value=await formRequest<Definition>(`${formPrefix(appId,viewId)}/definition`,actorId,'GET',undefined,signal);
     return checked(value,validDefinition(value,appId,viewId));
   },
-  preflight: async(appId:UUID,actorId:UUID,tableId:UUID,viewId:UUID,input:DefinitionInput)=>{
-    const value=await formRequest<Preflight>(`${formPrefix(appId,viewId)}/definition/preflight`,actorId,'POST',input);
+  preflight: async(appId:UUID,actorId:UUID,tableId:UUID,viewId:UUID,input:DefinitionInput,signal?:AbortSignal)=>{
+    const value=await formRequest<Preflight>(`${formPrefix(appId,viewId)}/definition/preflight`,actorId,'POST',input,signal);
     return checked(value,validPreflight(value,appId,tableId,viewId,input));
   },
   save: async(appId:UUID,actorId:UUID,tableId:UUID,viewId:UUID,input:SaveWrite)=>{

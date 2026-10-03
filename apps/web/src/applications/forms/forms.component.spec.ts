@@ -1193,9 +1193,9 @@ test('discard cancels a gated preflight even when onBack is absent and the desig
   let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
   let started!:()=>void;const firstStarted=new Promise<void>(resolve=>{started=resolve;});
   await page.route('**/definition/preflight',async route=>{started();await gate;
-    await route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,
+    try{await route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,
       dataRevision:0,dependencyRevision:0,plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},
-      impacts:[],dependencies:[],blockingIssues:[],saveAllowed:true,confirmation:null})});});
+      impacts:[],dependencies:[],blockingIssues:[],saveAllowed:true,confirmation:null})});}catch{/* discarded request */}});
   await page.getByRole('button',{name:'文本',exact:true}).click();
   await page.getByLabel('字段名称').fill('已放弃的慢预检');
   await page.getByRole('button',{name:'保存',exact:true}).click();
@@ -1204,11 +1204,10 @@ test('discard cancels a gated preflight even when onBack is absent and the desig
   await page.getByRole('button',{name:'放弃修改并离开'}).click();
   await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
   await expect(page.getByText('已放弃的慢预检')).toHaveCount(0);
-  const preflightResponse=page.waitForResponse(response=>response.url().includes('/definition/preflight'));
-  release();await (await preflightResponse).finished();
+  release();
   await page.waitForTimeout(100);
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
-  await expect(page.getByRole('status')).not.toContainText('已保存');
+  await expect(page.getByText('已保存',{exact:true})).toHaveCount(0);
 });
 
 test('explicit discard removes an ordinary draft while an unknown packet is never discarded implicitly',async({page})=>{
