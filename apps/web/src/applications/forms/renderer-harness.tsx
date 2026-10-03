@@ -32,14 +32,29 @@ async function load({q,pageToken}:{q:string;pageSize:number;pageToken:string|nul
   if(pageToken)return {items:[{id:'member-b',label:'王乙',status:'active'}],nextPageToken:null};
   return {items:[{id:'member-a',label:'王甲',status:'active'}],nextPageToken:'next-page'};
 }
-function Harness(){
+function ReferenceHarness(){
   const [value,setValue]=useState<FieldValue>('member-deleted');
   const [readOnly,setReadOnly]=useState(false);
+  const [referenceScopeKey,setReferenceScopeKey]=useState('actor-a/app/view/record-a/field-member');
+  const [hasDisplay,setHasDisplay]=useState(true);
   return <><button onClick={()=>setReadOnly(!readOnly)}>切换只读</button>
+    <button onClick={()=>{setReferenceScopeKey('actor-b/app/view/record-b/field-member');setHasDisplay(false);}}>切换引用作用域</button>
     <output data-testid="selected">{String(value)}</output>
     <FieldRenderer field={field} value={value} onChange={setValue} readOnly={readOnly}
-      referenceDisplay={{id:'member-deleted',label:'已离职成员',deleted:true}}
+      referenceScopeKey={referenceScopeKey}
+      referenceDisplay={hasDisplay?{id:'member-deleted',label:'已离职成员',deleted:true}:null}
       loadReferenceCandidates={load}/>
   </>;
 }
-createRoot(document.getElementById('root')!).render(<Harness/>);
+const booleanField={id:'field-boolean',name:'是否生效',kind:'boolean' as const,required:true,
+  presentation:{helpText:null}};
+function BooleanHarness(){
+  const [value,setValue]=useState<FieldValue>(null);
+  const [readOnly,setReadOnly]=useState(false);
+  return <><button onClick={()=>setReadOnly(!readOnly)}>切换只读</button>
+    <output data-testid="selected">{value===null?'null':String(value)}</output>
+    <FieldRenderer field={booleanField} value={value} onChange={setValue} readOnly={readOnly}/>
+  </>;
+}
+createRoot(document.getElementById('root')!).render(
+  new URLSearchParams(location.search).get('mode')==='boolean'?<BooleanHarness/>:<ReferenceHarness/>);

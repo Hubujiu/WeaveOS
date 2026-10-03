@@ -27,6 +27,7 @@ export type FieldRendererProps = {
   referenceOptions?: ReferenceOption[];
   referenceDisplay?: ReferenceDisplay|null;
   loadReferenceCandidates?: LoadReferenceCandidates;
+  referenceScopeKey?: string;
   idPrefix?: string;
 };
 

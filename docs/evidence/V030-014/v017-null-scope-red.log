@@ -1,0 +1,97 @@
+[WebServer] (node:152547) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:152561) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:152590) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:42:1 › nullable boolean keeps unset, false, and true distinct with an explicit clear action (5.2s)
+(node:152666) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:61:1 › read-only reference never shows an unsaved selected label without current display authority (5.3s)
+(node:152735) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:71:1 › reference scope remount clears local selected label and prior candidate page (5.3s)
+
+
+  1) [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:42:1 › nullable boolean keeps unset, false, and true distinct with an explicit clear action 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('未设置')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('未设置') with timeout 5000ms
+      - waiting for getByText('未设置')
+
+
+      43 |   await page.goto(`${url}?mode=boolean`);
+      44 |   await expect(page.getByTestId('selected')).toHaveText('null');
+    > 45 |   await expect(page.getByText('未设置')).toBeVisible();
+         |                                       ^
+      46 |   await page.getByRole('button',{name:'切换只读'}).click();
+      47 |   await expect(page.getByText('未设置')).toBeVisible();
+      48 |   await page.getByRole('button',{name:'切换只读'}).click();
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.renderer.component.spec.ts:45:39
+
+    Error Context: apps/web/test-results/forms.renderer.component-n-002ba-th-an-explicit-clear-action-chromium/error-context.md
+
+  2) [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:61:1 › read-only reference never shows an unsaved selected label without current display authority 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('引用信息不可用（需修复）')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('引用信息不可用（需修复）') with timeout 5000ms
+      - waiting for getByText('引用信息不可用（需修复）')
+
+
+      65 |   await expect(page.getByText('王甲')).toBeVisible();
+      66 |   await page.getByRole('button',{name:'切换只读'}).click();
+    > 67 |   await expect(page.getByText('引用信息不可用（需修复）')).toBeVisible();
+         |                                                ^
+      68 |   await expect(page.getByText('王甲')).toHaveCount(0);
+      69 | });
+      70 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.renderer.component.spec.ts:67:48
+
+    Error Context: apps/web/test-results/forms.renderer.component-r-46bba-t-current-display-authority-chromium/error-context.md
+
+  3) [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:71:1 › reference scope remount clears local selected label and prior candidate page 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('引用信息不可用（需修复）')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('引用信息不可用（需修复）') with timeout 5000ms
+      - waiting for getByText('引用信息不可用（需修复）')
+
+
+      75 |   await expect(page.getByText('王甲')).toBeVisible();
+      76 |   await page.getByRole('button',{name:'切换引用作用域'}).click();
+    > 77 |   await expect(page.getByText('引用信息不可用（需修复）')).toBeVisible();
+         |                                                ^
+      78 |   await expect(page.getByText('王甲')).toHaveCount(0);
+      79 |   await expect(page.getByRole('button',{name:'选择成员'})).toHaveAttribute('aria-expanded','false');
+      80 | });
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.renderer.component.spec.ts:77:48
+
+    Error Context: apps/web/test-results/forms.renderer.component-r-13510-el-and-prior-candidate-page-chromium/error-context.md
+
+  3 failed
+    [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:42:1 › nullable boolean keeps unset, false, and true distinct with an explicit clear action 
+    [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:61:1 › read-only reference never shows an unsaved selected label without current display authority 
+    [chromium] › apps/web/src/applications/forms/forms.renderer.component.spec.ts:71:1 › reference scope remount clears local selected label and prior candidate page 

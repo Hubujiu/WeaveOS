@@ -38,3 +38,43 @@ test('record leave scopes retain another actual resource after one unregisters',
   await page.goto(url);
   expect(await page.evaluate(()=>(window as Window&{__scopeIsolation?:()=>boolean}).__scopeIsolation?.())).toBe(true);
 });
+
+test('nullable boolean keeps unset, false, and true distinct with an explicit clear action',async({page})=>{
+  await page.goto(`${url}?mode=boolean`);
+  await expect(page.getByTestId('selected')).toHaveText('null');
+  await expect(page.getByText('未设置')).toBeVisible();
+  await page.getByRole('button',{name:'切换只读'}).click();
+  await expect(page.getByText('未设置')).toBeVisible();
+  await page.getByRole('button',{name:'切换只读'}).click();
+  const checkbox=page.getByRole('checkbox',{name:'是否生效'});
+  await checkbox.check();
+  await expect(page.getByTestId('selected')).toHaveText('true');
+  await expect(page.getByText('是',{exact:true})).toBeVisible();
+  await checkbox.uncheck();
+  await expect(page.getByTestId('selected')).toHaveText('false');
+  await expect(page.getByText('否',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'清空 是否生效'}).click();
+  await expect(page.getByTestId('selected')).toHaveText('null');
+  await expect(page.getByText('未设置')).toBeVisible();
+});
+
+test('read-only reference never shows an unsaved selected label without current display authority',async({page})=>{
+  await page.goto(url);
+  await page.getByRole('button',{name:'选择成员'}).click();
+  await page.getByRole('button',{name:'王甲'}).click();
+  await expect(page.getByText('王甲')).toBeVisible();
+  await page.getByRole('button',{name:'切换只读'}).click();
+  await expect(page.getByText('引用信息不可用（需修复）')).toBeVisible();
+  await expect(page.getByText('王甲')).toHaveCount(0);
+});
+
+test('reference scope remount clears local selected label and prior candidate page',async({page})=>{
+  await page.goto(url);
+  await page.getByRole('button',{name:'选择成员'}).click();
+  await page.getByRole('button',{name:'王甲'}).click();
+  await expect(page.getByText('王甲')).toBeVisible();
+  await page.getByRole('button',{name:'切换引用作用域'}).click();
+  await expect(page.getByText('引用信息不可用（需修复）')).toBeVisible();
+  await expect(page.getByText('王甲')).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'选择成员'})).toHaveAttribute('aria-expanded','false');
+});
