@@ -260,3 +260,104 @@ test('Q36 B2 completed filter exit preserves a newer deliberate checkbox focus',
  await expect(all).toBeChecked();await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();
  await expect(panel).toBeHidden();await expect(trigger).toHaveAttribute('aria-expanded','false');
 });
+
+type ExitFocusState={captured:boolean;finished:boolean;release:()=>void;focusCalls:string[]};
+async function holdFilterExit(page:Page,mode:'engine'|'fallback'='fallback'){
+ await page.addInitScript(mode=>{
+  if(mode==='fallback')Object.defineProperty(document,'startViewTransition',{value:undefined,configurable:true});
+  let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  const state:ExitFocusState={captured:false,finished:false,release,focusCalls:[]};
+  Object.defineProperty(window,'__q36HeldFilterExit',{value:state});
+  const held=new WeakSet<Animation>();
+  function hold(motion:Animation){
+   if(held.has(motion))return;held.add(motion);state.captured=true;
+   const finished=motion.finished;finished.then(()=>{state.finished=true;},()=>{});
+   Object.defineProperty(motion,'finished',{value:finished.then(()=>gate)});
+  }
+  const animate=Element.prototype.animate;
+  Element.prototype.animate=function(...args){
+   const motion=animate.apply(this,args),options=args[1];
+   if(this.classList.contains('q36-filter-shell')&&typeof options==='object'&&options?.duration===220)hold(motion);
+   return motion;
+  };
+  const animations=document.getAnimations.bind(document);
+  document.getAnimations=function(...args){
+   const motions=animations(...args);
+   if(document.querySelector('.preset-popup[aria-hidden="true"]')&&document.documentElement.style.getPropertyValue('--q36-filter-shell-duration')==='220ms'){
+    for(const motion of motions)if(motion.effect instanceof KeyframeEffect&&motion.effect.pseudoElement?.startsWith('::view-transition'))hold(motion);
+   }
+   return motions;
+  };
+  const timeout=window.setTimeout.bind(window);
+  window.setTimeout=((handler,delay,...args)=>{
+   if(typeof handler==='function'&&delay===600&&document.documentElement.classList.contains('q36-preset-transition-active')&&document.documentElement.style.getPropertyValue('--q36-filter-shell-duration')==='220ms'){
+    state.captured=true;return timeout(()=>{state.finished=true;void gate.then(()=>handler(...args));},delay);
+   }
+   return timeout(handler,delay,...args);
+  }) as typeof window.setTimeout;
+  const focus=HTMLElement.prototype.focus;
+  HTMLElement.prototype.focus=function(...args){state.focusCalls.push(this.getAttribute('aria-label')??this.tagName);return focus.apply(this,args);};
+ },mode);
+}
+async function waitHeldExit(page:Page){await expect.poll(()=>page.evaluate(()=>(window as unknown as {__q36HeldFilterExit:ExitFocusState}).__q36HeldFilterExit.finished)).toBe(true);}
+async function releaseHeldExit(page:Page){await page.evaluate(async()=>{(window as unknown as {__q36HeldFilterExit:ExitFocusState}).__q36HeldFilterExit.release();await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));});}
+async function focusFixture(page:Page){
+ await fixture(page);await page.route('**/personnel/members/search',r=>r.fulfill({json:envelope(paging([member],r.request().postDataJSON()))}));await admin(page);
+}
+
+for(const mode of ['engine','fallback','reduced'] as const)for(const close of ['button','Escape'] as const)test(`Q36 B2 ${mode} ${close} restores focus once after an ordinary close`,async({page})=>{
+ if(mode==='fallback')await page.addInitScript(()=>Object.defineProperty(document,'startViewTransition',{value:undefined,configurable:true}));
+ if(mode==='reduced')await page.emulateMedia({reducedMotion:'reduce'});
+ await page.addInitScript(()=>{const state={calls:0};Object.defineProperty(window,'__q36NormalCloseFocus',{value:state});const focus=HTMLElement.prototype.focus;HTMLElement.prototype.focus=function(...args){if(this.classList.contains('q36-filter-trigger'))state.calls++;return focus.apply(this,args);};});
+ await focusFixture(page);const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});
+ await trigger.click();await expect(panel).toBeVisible();await expect(panel.getByRole('button',{name:'新增筛选',exact:true})).toBeEnabled();
+ await page.evaluate(()=>(window as unknown as {__q36NormalCloseFocus:{calls:number}}).__q36NormalCloseFocus.calls=0);
+ if(close==='button')await panel.getByRole('button',{name:'关闭筛选管理',exact:true}).click();else await page.keyboard.press('Escape');
+ await expect(panel).toBeHidden();await expect(trigger).toBeFocused();
+ await page.waitForFunction(()=>!document.documentElement.classList.contains('q36-preset-transition-active')&&document.getAnimations().every(a=>a.playState!=='running'||!(a.effect instanceof KeyframeEffect)||(!(a.effect.target as Element|null)?.classList?.contains('q36-filter-shell')&&!a.effect.pseudoElement?.startsWith('::view-transition'))));
+ expect(await page.evaluate(()=>(window as unknown as {__q36NormalCloseFocus:{calls:number}}).__q36NormalCloseFocus.calls)).toBe(1);
+});
+
+for(const mode of ['engine','fallback'] as const)test(`Q36 B2 ${mode} late close honors newer focus even after that target is removed`,async({page})=>{
+ await holdFilterExit(page,mode);await focusFixture(page);const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});
+ await trigger.click();await expect(panel).toBeVisible();await panel.getByRole('button',{name:'关闭筛选管理',exact:true}).click();await waitHeldExit(page);
+ await page.getByLabel('搜索成员',{exact:true}).focus();await expect(page.getByLabel('搜索成员',{exact:true})).toBeFocused();
+ await page.evaluate(()=>{document.activeElement?.remove();});expect(await page.evaluate(()=>document.activeElement===document.body)).toBe(true);
+ await page.evaluate(()=>(window as unknown as {__q36HeldFilterExit:ExitFocusState}).__q36HeldFilterExit.focusCalls=[]);
+ await releaseHeldExit(page);await expect(trigger).not.toBeFocused();
+ expect(await page.evaluate(()=>(window as unknown as {__q36HeldFilterExit:ExitFocusState}).__q36HeldFilterExit.focusCalls)).not.toContain('自定义筛选');
+ await expect(panel).toBeHidden();
+});
+
+test('Q36 B2 removal-induced body focus still restores after Escape',async({page})=>{
+ await page.addInitScript(()=>Object.defineProperty(document,'startViewTransition',{value:undefined,configurable:true}));await focusFixture(page);
+ const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});await trigger.click();await expect(panel).toBeVisible();
+ await panel.getByRole('button',{name:'新增筛选',exact:true}).focus();expect(await page.evaluate(()=>{document.activeElement?.remove();return document.activeElement===document.body;})).toBe(true);
+ await page.keyboard.press('Escape');await expect(panel).toBeHidden();await expect(trigger).toBeFocused();
+});
+
+for(const mode of ['engine','fallback'] as const)test(`Q36 B2 ${mode} stale exit cannot focus the trigger after reopen or unmount`,async({page})=>{
+ await holdFilterExit(page,mode);await focusFixture(page);const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});
+ await trigger.click();await expect(panel).toBeVisible();await panel.getByRole('button',{name:'关闭筛选管理',exact:true}).click();await waitHeldExit(page);
+ await trigger.click();await expect(panel).toBeVisible();const first=panel.getByRole('button',{name:'新增筛选',exact:true});await first.focus();await releaseHeldExit(page);await expect(first).toBeFocused();await expect(panel).toBeVisible();
+ await page.getByRole('tab',{name:'身份',exact:true}).click();await expect(page.getByLabel('搜索身份',{exact:true})).toBeVisible();await expect(panel).toBeHidden();
+ const search=page.getByLabel('搜索身份',{exact:true});await search.focus();await expect(search).toBeFocused();await expect(trigger).toHaveCount(0);
+});
+
+for(const mode of ['engine','fallback'] as const)test(`Q36 B2 ${mode} outside pointer and keyboard navigation keep their new focus`,async({page})=>{
+ if(mode==='fallback')await page.addInitScript(()=>Object.defineProperty(document,'startViewTransition',{value:undefined,configurable:true}));await focusFixture(page);
+ const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true}),search=page.getByLabel('选择当前页成员',{exact:true});
+ await trigger.click();await expect(panel).toBeVisible();await search.click();await expect(panel).toBeHidden();await expect(search).toBeFocused();
+ await page.waitForFunction(()=>!document.documentElement.classList.contains('q36-preset-transition-active')&&document.getAnimations().every(a=>a.playState!=='running'||!(a.effect instanceof KeyframeEffect)||(!(a.effect.target as Element|null)?.classList?.contains('q36-filter-shell')&&!a.effect.pseudoElement?.startsWith('::view-transition'))));
+ await expect(search).toBeFocused();await trigger.click();await expect(panel).toBeVisible();await page.keyboard.press('Escape');await expect(trigger).toBeFocused();await page.keyboard.press('Tab');await expect(trigger).not.toBeFocused();
+});
+
+for(const mode of ['engine','fallback'] as const)test(`Q36 B2 ${mode} completion delivered after unmount cannot move focus`,async({page})=>{
+ await holdFilterExit(page,mode);await focusFixture(page);const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});
+ await trigger.click();await expect(panel).toBeVisible();await panel.getByRole('button',{name:'关闭筛选管理',exact:true}).click();await waitHeldExit(page);
+ await page.getByRole('tab',{name:'身份',exact:true}).click();const search=page.getByLabel('搜索身份',{exact:true});await expect(search).toBeVisible();await search.focus();await expect(trigger).toHaveCount(0);
+ await page.evaluate(()=>(window as unknown as {__q36HeldFilterExit:ExitFocusState}).__q36HeldFilterExit.focusCalls=[]);
+ await releaseHeldExit(page);await expect(search).toBeFocused();
+ expect(await page.evaluate(()=>(window as unknown as {__q36HeldFilterExit:ExitFocusState}).__q36HeldFilterExit.focusCalls)).not.toContain('自定义筛选');
+ await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await expect(trigger).toBeVisible();await expect(trigger).toHaveAttribute('aria-expanded','false');
+});
