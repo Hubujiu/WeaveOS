@@ -3,6 +3,7 @@ package appschema
 import (
 	"fmt"
 	"regexp"
+ "reflect"
 	"strings"
 )
 
@@ -97,5 +98,5 @@ func sameValue(a, b *Value) bool {
 	if a == nil || b == nil {
 		return a == b
 	}
-	return *a == *b
+	return reflect.DeepEqual(a,b)
 }

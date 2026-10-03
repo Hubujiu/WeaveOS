@@ -17,7 +17,30 @@ var namespaceID = regexp.MustCompile(`^[a-z_][a-z0-9_]{0,62}$`)
 // Save owns exactly one transaction. Dependency and metadata adapters are
 // injected; no flow/application tables or permission rules are guessed here.
 func (e Executor) Save(ctx context.Context, request Request) (Result, error) {
-	if e.DB == nil || e.Metadata == nil || e.Guard == nil || !namespaceID.MatchString(e.Namespace) || e.Limits.LockTimeout < time.Millisecond || e.Limits.StatementTimeout < time.Millisecond {
+	if e.DB == nil {
+		return Result{}, ErrInvalid
+	}
+	tx, err := e.DB.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	if err != nil {
+		return Result{}, err
+	}
+	defer tx.Rollback(context.Background())
+	result, err := e.ApplyInTx(ctx, tx, request)
+	if err != nil {
+		return Result{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		if errors.Is(err, pgx.ErrTxCommitRollback) {
+			return Result{}, err
+		}
+		return Result{}, &CommitError{Cause: err}
+	}
+	return result, nil
+}
+
+// ApplyInTx never owns the caller's transaction lifetime.
+func (e Executor) ApplyInTx(ctx context.Context, tx pgx.Tx, request Request) (Result, error) {
+	if tx == nil || e.Metadata == nil || e.Guard == nil || !namespaceID.MatchString(e.Namespace) || e.Limits.LockTimeout < time.Millisecond || e.Limits.StatementTimeout < time.Millisecond {
 		return Result{}, ErrInvalid
 	}
 	input, err := BuildPlan(request.TableID, nil, request.Fields)
@@ -25,15 +48,6 @@ func (e Executor) Save(ctx context.Context, request Request) (Result, error) {
 		return Result{}, err
 	}
 	request.Fields = input.Fields
-	tx, err := e.DB.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
-	if err != nil {
-		return Result{}, err
-	}
-	defer func() {
-		cleanup, cancel := context.WithTimeout(context.Background(), e.Limits.StatementTimeout)
-		defer cancel()
-		_ = tx.Rollback(cleanup)
-	}()
 	if _, err = tx.Exec(ctx, "SELECT set_config('lock_timeout',$1,true),set_config('statement_timeout',$2,true)", milliseconds(e.Limits.LockTimeout), milliseconds(e.Limits.StatementTimeout)); err != nil {
 		return Result{}, err
 	}
@@ -85,13 +99,6 @@ func (e Executor) Save(ctx context.Context, request Request) (Result, error) {
 	revision, err := e.Metadata.Store(ctx, tx, request.TableID, before, plan.Fields)
 	if err != nil {
 		return Result{}, err
-	}
-	if err = tx.Commit(ctx); err != nil {
-		if errors.Is(err, pgx.ErrTxCommitRollback) {
-			return Result{}, err
-		}
-		// A lost/canceled commit response cannot prove no effect. Never retry.
-		return Result{}, &CommitError{Cause: err}
 	}
 	return Result{Revision: revision, Plan: plan}, nil
 }
@@ -248,8 +255,4 @@ func executeChange(ctx context.Context, tx pgx.Tx, table string, change Change, 
 	default:
 		return ErrInvalid
 	}
-}
-
-func (e Executor) ApplyInTx(ctx context.Context, tx pgx.Tx, request Request) (Result, error) {
-	return Result{}, ErrInvalid
 }

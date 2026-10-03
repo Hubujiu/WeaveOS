@@ -18,12 +18,18 @@ type Type string
 const (
 	Text    Type = "text"
 	Boolean Type = "boolean"
+ Numeric Type = "numeric"
+ Date Type = "date"
+ Timestamp Type = "timestamptz"
+ UUID Type = "uuid"
+ UUIDArray Type = "uuid[]"
 )
 
 type Value struct {
 	Type    Type
 	Text    string
 	Boolean bool
+ UUIDs []string
 }
 
 type Field struct {
@@ -31,6 +37,12 @@ type Field struct {
 	Name     string
 	Type     Type
 	Required bool
+ Precision int
+ Scale int
+ Kind string
+ RoundingPlaces int
+ RoundingMode string
+ TimePrecision string
 	Default  *Value
 }
 
