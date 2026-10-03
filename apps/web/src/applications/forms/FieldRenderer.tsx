@@ -1,25 +1,137 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
-  Field, FieldInput, LayoutNode, LayoutNodeInput, Option, SystemFieldCode, UUID,
+  DecimalConfig, Field, FieldInput, FieldKind, LayoutNode, LayoutNodeInput, Option, SystemFieldCode, UUID,
 } from './contracts';
 
 export type FieldValue = string | boolean | UUID[] | null;
 export type ReferenceOption = { id: UUID; label: string };
-// V017 test scaffold; behavior is implemented after the reference scenarios fail.
-export type ReferenceCandidatePage = {items:{id:UUID;label:string;status:'active';parentId?:UUID|null}[];nextPageToken:string|null};
+/** The safe subset shared by owner definitions and V017 RuntimeField projections. */
+export type DisplayField = {
+  id: UUID; name: string; kind: FieldKind; required: boolean;
+  presentation: {helpText: string | null};
+  input?: {options?: Option[];referenceKind?:'member'|'department';decimal?:DecimalConfig;
+    timePrecision?:'minute'|'second'|'millisecond'};
+  config?: unknown;
+};
+export type ReferenceDisplay = {id:UUID;label:string;deleted:boolean};
+export type ReferenceCandidate = {id:UUID;label:string;status:'active'|'disabled'|'deleted';parentId?:UUID|null};
+export type ReferenceCandidatePage = {items:ReferenceCandidate[];nextPageToken:string|null};
+export type LoadReferenceCandidates = (
+  request:{q:string;pageSize:number;pageToken:string|null},signal:AbortSignal,
+) => Promise<ReferenceCandidatePage>;
 export type FieldRendererProps = {
-  field: Field | FieldInput;
+  field: DisplayField;
   value: FieldValue;
   onChange?: (value: FieldValue) => void;
   readOnly?: boolean;
   referenceOptions?: ReferenceOption[];
-  referenceDisplay?: {id:UUID;label:string;deleted:boolean}|null;
-  loadReferenceCandidates?: (request:{q:string;pageSize:number;pageToken:string|null},signal:AbortSignal)=>Promise<ReferenceCandidatePage>;
+  referenceDisplay?: ReferenceDisplay|null;
+  loadReferenceCandidates?: LoadReferenceCandidates;
   idPrefix?: string;
 };
 
+function ownerConfig(field:DisplayField):Record<string,unknown>{
+  return field.config&&typeof field.config==='object'&&!Array.isArray(field.config)
+    ?field.config as Record<string,unknown>:{};
+}
+function maxLength(field:DisplayField){
+  const value=ownerConfig(field).maxLength;
+  return typeof value==='number'?value:undefined;
+}
+function options(field:DisplayField):Option[]{
+  const value=field.input?.options??ownerConfig(field).options;
+  return Array.isArray(value)?value.filter((item):item is Option=>
+    !!item&&typeof item==='object'&&typeof item.id==='string'&&typeof item.label==='string'):[];
+}
+
+function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,referenceDisplay,loadReferenceCandidates,idPrefix}:
+  Pick<FieldRendererProps,'field'|'value'|'onChange'|'readOnly'|'referenceOptions'|'referenceDisplay'|'loadReferenceCandidates'|'idPrefix'>){
+  const [open,setOpen]=useState(false);
+  const [query,setQuery]=useState('');
+  const [items,setItems]=useState<ReferenceCandidate[]>([]);
+  const [nextPageToken,setNextPageToken]=useState<string|null>(null);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState(false);
+  const [retryEpoch,setRetryEpoch]=useState(0);
+  const [selected,setSelected]=useState<ReferenceOption|null>(null);
+  const generation=useRef(0);
+  const activeRequest=useRef<AbortController|null>(null);
+  const disabled=readOnly||!onChange;
+  const inputId=`${idPrefix}-${field.id}`;
+  const selectedId=typeof value==='string'?value:null;
+  const display=selectedId===referenceDisplay?.id?referenceDisplay:
+    selectedId===selected?.id?{...selected,deleted:false}:
+    referenceOptions?.find(option=>option.id===selectedId);
+  const unavailable=!!selectedId&&!display;
+  const referenceName=field.kind==='member'?'成员':'部门';
+
+  useEffect(()=>{
+    if(!open||disabled||!loadReferenceCandidates)return;
+    const request=new AbortController();
+    activeRequest.current?.abort();activeRequest.current=request;
+    const current=++generation.current;
+    setBusy(true);setError(false);setItems([]);setNextPageToken(null);
+    void loadReferenceCandidates({q:query,pageSize:20,pageToken:null},request.signal).then(page=>{
+      if(current!==generation.current||request.signal.aborted)return;
+      setItems(page.items.filter(item=>item.status==='active'&&
+        !(referenceDisplay?.deleted&&item.id===referenceDisplay.id)));
+      setNextPageToken(page.nextPageToken);
+    }).catch(()=>{if(current===generation.current&&!request.signal.aborted)setError(true);})
+      .finally(()=>{if(current===generation.current&&!request.signal.aborted)setBusy(false);});
+    return ()=>{request.abort();generation.current++;};
+  },[open,disabled,loadReferenceCandidates,query,field.id,referenceDisplay?.id,referenceDisplay?.deleted,retryEpoch]);
+
+  const loadMore=async()=>{
+    if(!nextPageToken||busy||!loadReferenceCandidates)return;
+    const request=new AbortController();activeRequest.current=request;
+    const current=generation.current;
+    setBusy(true);setError(false);
+    try{
+      const page=await loadReferenceCandidates({q:query,pageSize:20,pageToken:nextPageToken},request.signal);
+      if(current!==generation.current||request.signal.aborted)return;
+      setItems(previous=>{
+        const ids=new Set(previous.map(item=>item.id));
+        return [...previous,...page.items.filter(item=>item.status==='active'&&!ids.has(item.id)&&
+          !(referenceDisplay?.deleted&&item.id===referenceDisplay.id))];
+      });
+      setNextPageToken(page.nextPageToken);
+    }catch{if(current===generation.current&&!request.signal.aborted)setError(true);}
+    finally{if(current===generation.current&&!request.signal.aborted)setBusy(false);}
+  };
+  const currentDisplay=<span id={inputId} className="forms-reference-value">
+    {display?.label??(unavailable?'引用信息不可用（需修复）':'未选择')}
+    {display&&'deleted'in display&&display.deleted===true&&<span className="forms-reference-deleted">已删除</span>}
+  </span>;
+  if(!loadReferenceCandidates&&!referenceDisplay&&!readOnly){
+    return <select id={inputId} value={selectedId??''} disabled={disabled||!referenceOptions?.length}
+      onChange={event=>onChange?.(event.target.value||null)}>
+      <option value="">{referenceOptions?.length?'请选择':'来源尚未接入'}</option>
+      {referenceOptions?.map(option=><option key={option.id} value={option.id}>{option.label}</option>)}
+    </select>;
+  }
+  return <div className="forms-reference-selector">
+    {currentDisplay}
+    {!disabled&&loadReferenceCandidates&&<button type="button" aria-expanded={open}
+      aria-controls={`${inputId}-candidates`} onClick={()=>setOpen(previous=>!previous)}>选择{referenceName}</button>}
+    {open&&!disabled&&loadReferenceCandidates&&<div id={`${inputId}-candidates`} className="forms-reference-candidates">
+      <label htmlFor={`${inputId}-search`}>搜索{referenceName}</label>
+      <input id={`${inputId}-search`} type="search" value={query}
+        onChange={event=>{const next=Array.from(event.target.value.trim()).slice(0,100).join('');
+          if(next!==query){setItems([]);setNextPageToken(null);setQuery(next);}}}/>
+      {error&&<p role="alert">候选加载失败，请重试</p>}
+      {items.map(item=><button type="button" key={item.id} onClick={()=>{
+        setSelected(item);onChange?.(item.id);setOpen(false);
+      }}>{item.label}</button>)}
+      {busy&&<span role="status">正在加载候选</span>}
+      {!busy&&!error&&!items.length&&<span>无可选{referenceName}</span>}
+      {error&&<button type="button" onClick={()=>setRetryEpoch(previous=>previous+1)}>重试</button>}
+      {nextPageToken&&<button type="button" disabled={busy} onClick={()=>void loadMore()}>加载更多</button>}
+    </div>}
+  </div>;
+}
+
 /** Business-field input only. The parent decides when a value is persisted. */
-export function FieldRenderer({field,value,onChange,readOnly=false,referenceOptions,idPrefix='field'}:FieldRendererProps) {
+export function FieldRenderer({field,value,onChange,readOnly=false,referenceOptions,referenceDisplay,loadReferenceCandidates,idPrefix='field'}:FieldRendererProps) {
   const disabled=readOnly || !onChange;
   const help=field.presentation.helpText;
   const inputId=`${idPrefix}-${field.id}`;
@@ -27,12 +139,12 @@ export function FieldRenderer({field,value,onChange,readOnly=false,referenceOpti
   switch(field.kind) {
     case 'text':
       control=<input id={inputId} type="text" value={typeof value==='string'?value:''}
-        maxLength={field.config.maxLength??undefined} disabled={disabled}
+        maxLength={maxLength(field)} disabled={disabled}
         onChange={event=>onChange?.(event.target.value)}/>;
       break;
     case 'multiline':
       control=<textarea id={inputId} value={typeof value==='string'?value:''}
-        maxLength={field.config.maxLength??undefined} disabled={disabled}
+        maxLength={maxLength(field)} disabled={disabled}
         onChange={event=>onChange?.(event.target.value)}/>;
       break;
     case 'number': case 'money':
@@ -54,19 +166,19 @@ export function FieldRenderer({field,value,onChange,readOnly=false,referenceOpti
       control=<select id={inputId} value={typeof value==='string'?value:''} disabled={disabled}
         onChange={event=>onChange?.(event.target.value||null)}>
         <option value="">请选择</option>
-        {field.config.options.map(option=><option key={option.id} value={option.id}>{option.label}</option>)}
+        {options(field).map(option=><option key={option.id} value={option.id}>{option.label}</option>)}
       </select>;
       break;
     case 'multi_select': {
       const selected=Array.isArray(value)?value:[];
       control=<div className="forms-multi-options" role="group" aria-label={field.name}>
-        {field.config.options.map((option:Option)=><label key={option.id}>
+        {options(field).map((option:Option)=><label key={option.id}>
           <input type="checkbox" checked={selected.includes(option.id)} disabled={disabled}
             onChange={event=>onChange?.(event.target.checked
               ? [...selected.filter(id=>id!==option.id),option.id]
               : selected.filter(id=>id!==option.id))}/>{option.label}
         </label>)}
-        {!field.config.options.length&&<span>尚无选项</span>}
+        {!options(field).length&&<span>尚无选项</span>}
       </div>;
       break;
     }
@@ -75,12 +187,7 @@ export function FieldRenderer({field,value,onChange,readOnly=false,referenceOpti
         onChange={event=>onChange?.(event.target.checked)}/>;
       break;
     case 'member': case 'department':
-      control=<select id={inputId} value={typeof value==='string'?value:''}
-        disabled={disabled||!referenceOptions?.length}
-        onChange={event=>onChange?.(event.target.value||null)}>
-        <option value="">{referenceOptions?.length?'请选择':'来源尚未接入'}</option>
-        {referenceOptions?.map(option=><option key={option.id} value={option.id}>{option.label}</option>)}
-      </select>;
+      control=<ReferenceSelector {...{field,value,onChange,readOnly,referenceOptions,referenceDisplay,loadReferenceCandidates,idPrefix}}/>;
       break;
   }
   return <div className="forms-rendered-field">

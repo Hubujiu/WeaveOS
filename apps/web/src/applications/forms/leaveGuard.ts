@@ -1,4 +1,9 @@
-export type LeaveScope={kind:'structure'|'designer';actorId:string;appId:string;viewId?:string};
+type AppScope={actorId:string;appId:string};
+export type LeaveScope=
+  | (AppScope&{kind:'structure'})
+  | (AppScope&{kind:'designer';viewId:string})
+  | (AppScope&{kind:'record';viewId:string;recordId:string})
+  | (AppScope&{kind:'draft';viewId:string;draftId:string});
 export type LeaveStatus='clean'|'draft'|'preflight'|'write_in_flight'|'unknown';
 export type LeaveDecision='discard'|'retain_operation';
 export type LeaveResult={ok:true}|{ok:false;status:LeaveStatus};

@@ -27,7 +27,7 @@ test('reference search is scoped to its query and does not reuse a prior cursor'
   await page.goto(url);
   await page.getByRole('button',{name:'选择成员'}).click();
   await expect(page.getByRole('button',{name:'王甲'})).toBeVisible();
-  await page.getByRole('textbox',{name:'搜索成员'}).fill('  林  ');
+  await page.getByRole('searchbox',{name:'搜索成员'}).fill('  林  ');
   await expect(page.getByRole('button',{name:'林海'})).toBeVisible();
   await expect(page.getByRole('button',{name:'王甲'})).toHaveCount(0);
   const requests=await page.evaluate(()=>(window as Window&{__referenceRequests?:{q:string;pageToken:string|null}[]}).__referenceRequests);
