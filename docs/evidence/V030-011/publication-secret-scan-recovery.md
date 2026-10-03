@@ -27,3 +27,10 @@ code, contract, migration, role policy or dependency is changed. No source-diges
 consumer exists in scripts/tests; the representation is documented here for
 reviewers. This is evidence formatting, TDD N/A; the actual unchanged security
 scan is the verification oracle. Remote final-head CI remains pending.
+
+Actual metadata HEAD 6b7063c677bee6dbc6e2285591e85aa1e026d321 now scans with
+the same pinned image: exit 0, zero findings. The exact unmodified existing
+tracked-source security test also passes, without diagnostic extra flags.
+All 555 digest pairs and raw originals pass a fresh independent reconstruction
+check; governance/foundation 222, real-PR task scope and structure checks pass.
+The final evidence-only follow-up will be rescanned before normal push.
