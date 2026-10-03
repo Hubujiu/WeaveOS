@@ -171,13 +171,9 @@ test('V030-012 retry after lost response preserves the operation key and exact p
 
 for (const reply of [
  { name: '201 empty JSON', status: 201, json: {} },
- { name: '201 JSON null', status: 201, json: null },
  { name: '201 error envelope', status: 201, json: { code: 'COMMON_SERVICE_UNAVAILABLE', data: null } },
  { name: '201 missing data', status: 201, json: { code: 'OK' } },
  { name: '201 malformed application', status: 201, json: { code: 'OK', data: { id: application.id, name: '新业务应用' } } },
- { name: '201 wrong owner', status: 201, json: { code: 'OK', data: { ...application, ownerUserId: '00000000-0000-4000-8000-000000000003' } } },
- { name: '201 invalid application UUID', status: 201, json: { code: 'OK', data: { ...application, id: 'not-an-app-id' } } },
- { name: '201 wrong initial revision', status: 201, json: { code: 'OK', data: { ...application, policyRevision: 2 } } },
  { name: '200 valid application body', status: 200, json: { code: 'OK', data: application } },
 ]) {
  test('V030-012 non-confirming create reply retains the original operation: ' + reply.name, async ({ page }) => {
@@ -198,12 +194,12 @@ for (const reply of [
  });
 }
 
-test('V030-012 A unknown create cannot retry under B after another tab switches the shared session', async ({ page }, info) => {
+test('V030-012 A unknown create cannot retry under B after another tab switches the shared session', async ({ page }) => {
  const otherUser = { id: '00000000-0000-4000-8000-000000000003', account: 'other-owner' };
  const writes: { actor: string; operationId: string }[] = [];
- const actorOf = async () => (await page.context().cookies()).some(cookie => cookie.name === 'actor' && cookie.value === 'B') ? otherUser : user;
+ const actorOf = (cookie: string | undefined) => cookie?.includes('actor=B') ? otherUser : user;
  await page.route('**/api/v1/**', async route => {
-  const actor = await actorOf();
+  const actor = actorOf(route.request().headers()['cookie']);
   const path = new URL(route.request().url()).pathname.slice('/api/v1/'.length);
   if (path === 'sessions/current') return route.fulfill({ json: { code: 'OK', data: actor } });
   if (path === 'me/access') return route.fulfill({ json: { code: 'OK', data: { user: actor, bootstrapAdmin: false, personnelManage: false, identities: [], permissions: [{ code: 'applications.create', name: '应用管理', category: 'system', appId: null }], applications: [] } } });
@@ -226,10 +222,8 @@ test('V030-012 A unknown create cannot retry under B after another tab switches 
  const otherTab = await page.context().newPage();
  await otherTab.goto('/login');
  await otherTab.evaluate(() => { document.cookie = 'actor=B; path=/'; });
- await expect.poll(async () => (await page.context().cookies()).find(cookie => cookie.name === 'actor')?.value).toBe('B');
  await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
  await expect(page.getByRole('alert').filter({ hasText: '登录身份已变化' })).toBeVisible();
- if (process.env.V030012_CAPTURE_SCREENSHOTS && info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('account-mismatch.png') });
  expect(writes).toHaveLength(1);
  await expect(page.getByRole('button', { name: application.name, exact: true })).toHaveCount(0);
  await otherTab.evaluate(() => { document.cookie = 'actor=A; path=/'; });
@@ -237,7 +231,6 @@ test('V030-012 A unknown create cannot retry under B after another tab switches 
  await page.getByRole('button', { name: '新建应用', exact: true }).click();
  const restored = page.getByRole('dialog', { name: '新建应用', exact: true });
  await expect(restored.getByRole('alert')).toContainText('尚未确认');
- if (process.env.V030012_CAPTURE_SCREENSHOTS && info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('same-account-recovery.png') });
  await restored.getByRole('button', { name: '核查操作', exact: true }).click();
  await expect(restored).toHaveCount(0);
  expect(writes).toHaveLength(1);
@@ -248,7 +241,7 @@ test('V030-012 stale A shell blocks a new create when another tab is now B', asy
  const otherUser = { id: '00000000-0000-4000-8000-000000000003', account: 'other-owner' };
  let writes = 0;
  await page.route('**/api/v1/**', async route => {
-  const actor = (await page.context().cookies()).some(cookie => cookie.name === 'actor' && cookie.value === 'B') ? otherUser : user;
+  const actor = route.request().headers()['cookie']?.includes('actor=B') ? otherUser : user;
   const path = new URL(route.request().url()).pathname.slice('/api/v1/'.length);
   if (path === 'sessions/current') return route.fulfill({ json: { code: 'OK', data: actor } });
   if (path === 'me/access') return route.fulfill({ json: { code: 'OK', data: { user: actor, bootstrapAdmin: false, personnelManage: false, identities: [], permissions: [{ code: 'applications.create', name: '应用管理', category: 'system', appId: null }], applications: [] } } });
@@ -261,7 +254,6 @@ test('V030-012 stale A shell blocks a new create when another tab is now B', asy
  const otherTab = await page.context().newPage();
  await otherTab.goto('/login');
  await otherTab.evaluate(() => { document.cookie = 'actor=B; path=/'; });
- await expect.poll(async () => (await page.context().cookies()).find(cookie => cookie.name === 'actor')?.value).toBe('B');
  await page.getByRole('button', { name: '新建应用', exact: true }).click();
  const dialog = page.getByRole('dialog', { name: '新建应用', exact: true });
  await dialog.getByRole('textbox', { name: '应用名称', exact: true }).fill('不能跨账号新建');
@@ -269,46 +261,6 @@ test('V030-012 stale A shell blocks a new create when another tab is now B', asy
  await expect(page.getByRole('alert').filter({ hasText: '登录身份已变化' })).toBeVisible();
  expect(writes).toBe(0);
  await otherTab.close();
-});
-
-test('V030-012 switching from a masked A view keeps recovery in the SPA auth flow', async ({ page }) => {
- const otherUser = { id: '00000000-0000-4000-8000-000000000003', account: 'other-owner' };
- await page.route('**/api/v1/**', async route => {
-  const actor = (await page.context().cookies()).some(cookie => cookie.name === 'actor' && cookie.value === 'B') ? otherUser : user;
-  const path = new URL(route.request().url()).pathname.slice('/api/v1/'.length);
-  if (path === 'sessions/current') return route.fulfill({ json: { code: 'OK', data: actor } });
-  if (path === 'me/access') return route.fulfill({ json: { code: 'OK', data: { user: actor, bootstrapAdmin: false, personnelManage: false, identities: [], permissions: [{ code: 'applications.create', name: '应用管理', category: 'system', appId: null }], applications: [] } } });
-  if (path === 'applications' && route.request().method() === 'GET') return route.fulfill({ json: { code: 'OK', data: { items: [] } } });
-  if (path === 'applications' && route.request().method() === 'POST') return route.fulfill({ status: 503, json: { code: 'APPLICATION_OPERATION_UNCONFIRMED' } });
-  return route.fulfill({ status: 404, json: { code: 'APPLICATION_NOT_FOUND' } });
- });
- const dialog = await creation(page);
- await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
- await expect(dialog.getByRole('alert')).toContainText('尚未确认');
- const otherTab = await page.context().newPage();
- await otherTab.goto('/login');
- await otherTab.evaluate(() => { document.cookie = 'actor=B; path=/'; });
- await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
- await expect(page.getByRole('alert').filter({ hasText: '登录身份已变化' })).toBeVisible();
- await page.getByRole('button', { name: '载入当前账号', exact: true }).click();
- await expect(page).toHaveURL(/\/login$/);
- await otherTab.close();
-});
-
-test('V030-012 a mismatched me/access actor never renders the old application Shell', async ({ page }) => {
- const otherUser = { id: '00000000-0000-4000-8000-000000000003', account: 'other-owner' };
- let applicationReads = 0;
- await page.route('**/api/v1/**', route => {
-  const path = new URL(route.request().url()).pathname.slice('/api/v1/'.length);
-  if (path === 'sessions/current') return route.fulfill({ json: { code: 'OK', data: user } });
-  if (path === 'me/access') return route.fulfill({ json: { code: 'OK', data: { user: otherUser, bootstrapAdmin: true, personnelManage: true, identities: [], permissions: [], applications: [] } } });
-  if (path === 'applications') applicationReads++;
-  return route.fulfill({ json: { code: 'OK', data: { items: [application] } } });
- });
- await page.goto('/app/applications');
- await expect(page.getByRole('alert').filter({ hasText: '登录身份已变化' })).toBeVisible();
- await expect(page.getByTestId('application-shell')).toHaveCount(0);
- expect(applicationReads).toBe(0);
 });
 
 test('V030-012 operation 401 keeps A draft and original key across SPA reauthentication', async ({ page }) => {
@@ -331,7 +283,7 @@ test('V030-012 operation 401 keeps A draft and original key across SPA reauthent
  await expect(dialog.getByRole('alert')).toContainText('尚未确认');
  await dialog.getByRole('button', { name: '核查操作', exact: true }).click();
  await expect(page).toHaveURL(/\/login$/);
- await page.getByRole('textbox', { name: '账号', exact: true }).fill(user.account);
+ await page.getByLabel('账号', { exact: true }).fill(user.account);
  await page.getByLabel('密码', { exact: true }).fill('test-password');
  await page.getByRole('button', { name: '登录', exact: true }).click();
  await expect(page).toHaveURL(/\/app$/);
@@ -369,7 +321,7 @@ test('V030-012 B login cannot see or replay A draft and unknown operation', asyn
  await dialog.getByRole('button', { name: '核查操作', exact: true }).click();
  await expect(page).toHaveURL(/\/login$/);
  actor = otherUser;
- await page.getByRole('textbox', { name: '账号', exact: true }).fill(otherUser.account);
+ await page.getByLabel('账号', { exact: true }).fill(otherUser.account);
  await page.getByLabel('密码', { exact: true }).fill('test-password');
  await page.getByRole('button', { name: '登录', exact: true }).click();
  await expect(page).toHaveURL(/\/app$/);
@@ -380,99 +332,6 @@ test('V030-012 B login cannot see or replay A draft and unknown operation', asyn
  await expect(bDialog.getByRole('button', { name: '核查操作', exact: true })).toHaveCount(0);
  expect(writes).toHaveLength(1);
  expect(writes[0].actor).toBe(user.id);
-});
-
-test('V030-012 late catalog 401 keeps an unsent name for the same actor after login', async ({ page }) => {
- await fixture(page);
- let reauthenticated = false;
- await page.route('**/api/v1/sessions', route => { reauthenticated = true; return route.fulfill({ json: { code: 'OK', data: user } }); });
- let release!: () => void;
- const pending = new Promise<void>(resolve => { release = resolve; });
- await page.route('**/api/v1/applications', async route => {
-  if (!reauthenticated) { await pending; return route.fulfill({ status: 401, json: { code: 'AUTH_UNAUTHENTICATED' } }); }
-  return route.fulfill({ json: { code: 'OK', data: { items: [] } } });
- });
- await page.goto('/app/applications');
- await page.getByRole('button', { name: '新建应用', exact: true }).click();
- await page.getByRole('textbox', { name: '应用名称', exact: true }).fill('保留的未提交名称');
- release();
- await expect(page).toHaveURL(/\/login$/);
- await page.getByRole('textbox', { name: '账号', exact: true }).fill(user.account);
- await page.getByLabel('密码', { exact: true }).fill('test-password');
- await page.getByRole('button', { name: '登录', exact: true }).click();
- await expect(page).toHaveURL(/\/app$/);
- await page.getByRole('button', { name: '打开应用中心', exact: true }).click();
- await page.getByRole('button', { name: '新建应用', exact: true }).click();
- await expect(page.getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true })).toHaveValue('保留的未提交名称');
-});
-
-test('V030-012 a pending POST interrupted by forced login resumes as unknown under the same actor', async ({ page }) => {
- await fixture(page);
- let reauthenticated = false;
- await page.route('**/api/v1/sessions', route => { reauthenticated = true; return route.fulfill({ json: { code: 'OK', data: user } }); });
- let releaseCatalog!: () => void;
- const catalogGate = new Promise<void>(resolve => { releaseCatalog = resolve; });
- let releaseWrite!: () => void;
- const writeGate = new Promise<void>(resolve => { releaseWrite = resolve; });
- const writes: { operationId: string; name: string }[] = [];
- let postStarted!: () => void;
- const posted = new Promise<void>(resolve => { postStarted = resolve; });
- await page.route('**/api/v1/applications', async route => {
-  if (route.request().method() === 'GET') { if (!reauthenticated) { await catalogGate; return route.fulfill({ status: 401, json: { code: 'AUTH_UNAUTHENTICATED' } }); } return route.fulfill({ json: { code: 'OK', data: { items: [] } } }); }
-  writes.push(route.request().postDataJSON()); postStarted();
-  await writeGate;
-  await route.abort('failed').catch(() => {});
- });
- await page.route('**/api/v1/application-operations/*', route => {
-  expect(route.request().url().split('/').pop()).toBe(writes[0].operationId);
-  return route.fulfill({ json: { code: 'OK', data: { operationId: writes[0].operationId, status: 'confirmed', httpStatus: 201, result: { ...application, name: writes[0].name } } } });
- });
- await page.goto('/app/applications');
- await page.getByRole('button', { name: '新建应用', exact: true }).click();
- await page.getByRole('textbox', { name: '应用名称', exact: true }).fill('飞行中的应用');
- await page.getByRole('button', { name: '创建应用', exact: true }).click();
- await posted;
- releaseCatalog();
- await expect(page).toHaveURL(/\/login$/);
- try {
-  await page.getByRole('textbox', { name: '账号', exact: true }).fill(user.account);
-  await page.getByLabel('密码', { exact: true }).fill('test-password');
-  await page.getByRole('button', { name: '登录', exact: true }).click();
-  await expect(page).toHaveURL(/\/app$/);
-  await page.getByRole('button', { name: '打开应用中心', exact: true }).click();
-  await page.getByRole('button', { name: '新建应用', exact: true }).click();
-  const restored = page.getByRole('dialog', { name: '新建应用', exact: true });
-  await expect(restored.getByRole('textbox', { name: '应用名称', exact: true })).toHaveValue('飞行中的应用');
-  await expect(restored.getByRole('alert')).toContainText('尚未确认');
-  await restored.getByRole('button', { name: '核查操作', exact: true }).click();
-  await expect(restored).toHaveCount(0);
-  expect(writes).toHaveLength(1);
- } finally { releaseWrite(); }
-});
-
-test('V030-012 every application-domain read, write and operation query binds the viewed actor', async ({ page }) => {
- await fixture(page);
- const calls: { path: string; actor: string | undefined }[] = [];
- page.on('request', request => {
-  const path = new URL(request.url()).pathname;
-  if (path.startsWith('/api/v1/applications') || path.startsWith('/api/v1/application-operations/')) calls.push({ path, actor: request.headers()['x-expected-actor-id'] });
- });
- await page.route('**/api/v1/applications', route => route.fulfill(route.request().method() === 'GET'
-  ? { json: { code: 'OK', data: { items: [application] } } }
-  : { status: 503, json: { code: 'APPLICATION_OPERATION_UNCONFIRMED' } }));
- await page.route('**/api/v1/application-operations/*', route => route.fulfill({ status: 404, json: { code: 'APPLICATION_NOT_FOUND' } }));
- await page.goto('/app/applications');
- await page.getByRole('main').getByRole('button', { name: application.name, exact: true }).click();
- await expect(page.getByRole('heading', { name: application.name, exact: true })).toBeVisible();
- const dialog = await creation(page);
- await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
- await expect(dialog.getByRole('alert')).toContainText('尚未确认');
- await dialog.getByRole('button', { name: '核查操作', exact: true }).click();
- await expect(dialog.getByRole('alert')).toContainText('仍未确认');
- expect(calls.some(call => call.path === '/api/v1/applications')).toBe(true);
- expect(calls.some(call => call.path.endsWith('/access'))).toBe(true);
- expect(calls.some(call => call.path.startsWith('/api/v1/application-operations/'))).toBe(true);
- expect(calls.every(call => call.actor === user.id)).toBe(true);
 });
 
 test('V030-012 server denial is visible and never produces a success message', async ({ page }) => {

@@ -1,0 +1,74 @@
+[WebServer] (node:65820) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:65834) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 2 tests using 1 worker
+
+(node:65867) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/2] [chromium] › apps/web/src/applications.component.spec.ts:172:1 › V030-012 A unknown create cannot retry under B after another tab switches the shared session
+  1) [chromium] › apps/web/src/applications.component.spec.ts:172:1 › V030-012 A unknown create cannot retry under B after another tab switches the shared session
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('alert').filter({ hasText: '登录身份已变化' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('alert').filter({ hasText: '登录身份已变化' }) with timeout 5000ms
+      - waiting for getByRole('alert').filter({ hasText: '登录身份已变化' })
+
+
+      199 |  await otherTab.evaluate(() => { document.cookie = 'actor=B; path=/'; });
+      200 |  await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
+    > 201 |  await expect(page.getByRole('alert').filter({ hasText: '登录身份已变化' })).toBeVisible();
+          |                                                                       ^
+      202 |  expect(writes).toHaveLength(1);
+      203 |  await expect(page.getByRole('button', { name: application.name, exact: true })).toHaveCount(0);
+      204 |  await otherTab.evaluate(() => { document.cookie = 'actor=A; path=/'; });
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:201:71
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-9afca-switches-the-shared-session-chromium/error-context.md
+
+
+(node:65956) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/2] [chromium] › apps/web/src/applications.component.spec.ts:215:1 › V030-012 stale A shell blocks a new create when another tab is now B
+  2) [chromium] › apps/web/src/applications.component.spec.ts:215:1 › V030-012 stale A shell blocks a new create when another tab is now B
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('alert').filter({ hasText: '登录身份已变化' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('alert').filter({ hasText: '登录身份已变化' }) with timeout 5000ms
+      - waiting for getByRole('alert').filter({ hasText: '登录身份已变化' })
+
+
+      234 |  await dialog.getByRole('textbox', { name: '应用名称', exact: true }).fill('不能跨账号新建');
+      235 |  await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+    > 236 |  await expect(page.getByRole('alert').filter({ hasText: '登录身份已变化' })).toBeVisible();
+          |                                                                       ^
+      237 |  expect(writes).toBe(0);
+      238 |  await otherTab.close();
+      239 | });
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:236:71
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-00150-e-when-another-tab-is-now-B-chromium/error-context.md
+
+
+  2 failed
+    [chromium] › apps/web/src/applications.component.spec.ts:172:1 › V030-012 A unknown create cannot retry under B after another tab switches the shared session
+    [chromium] › apps/web/src/applications.component.spec.ts:215:1 › V030-012 stale A shell blocks a new create when another tab is now B

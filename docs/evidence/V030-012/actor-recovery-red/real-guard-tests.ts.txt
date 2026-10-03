@@ -49,7 +49,6 @@ test('V030-012 real B5: root creates, reopens and member without a grant is deni
  await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
  const written = await response;
  expect(written.status()).toBe(201);
- expect(written.request().headers()['x-expected-actor-id']).toBe(f.adminId);
  const packet = written.request().postDataJSON();
  expect(Object.keys(packet).sort()).toEqual(['name', 'operationId']);
  expect(packet.name).toBe(name);

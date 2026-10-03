@@ -15,30 +15,27 @@ import sidebarHome from '../assets/sidebar-home.svg';
 import sidebarCatalog from '../assets/sidebar-catalog.svg';
 import '../applications.css';
 
-const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
-const validCreatedApplication = (app: Application, actorId: string) => uuid.test(app?.id) && typeof app.name === 'string' && app.name.trim().length > 0 && app.ownerUserId === actorId && app.policyRevision === 1;
+const validApplication = (app: Application) => typeof app?.id === 'string' && typeof app.name === 'string' && typeof app.ownerUserId === 'string' && Number.isSafeInteger(app.policyRevision) && app.policyRevision >= 1;
 
-export function AppShell({ user, access, logout, pending, error, onDirty, onIdentityMismatch, suspended }: { user: User; access: Access; logout: () => void; pending: boolean; error: string; onDirty: (dirty: boolean) => void; onIdentityMismatch: () => void; suspended: boolean }) {
+export function AppShell({ user, access, logout, pending, error, onDirty }: { user: User; access: Access; logout: () => void; pending: boolean; error: string; onDirty: (dirty: boolean) => void }) {
  const location = useLocation(); const navigate = useNavigate();
- const catalog = location.pathname === '/app/applications' || location.pathname === '/app/applications/';
+ const catalog = location.pathname === '/app/applications';
  const appId = location.pathname.match(/^\/app\/applications\/([^/]+)\/?$/)?.[1];
  const [tabs, setTabs] = useState<ApplicationTab[]>([]);
  const [account, setAccount] = useState(false);
  const [create, setCreate] = useState(false); const [success, setSuccess] = useState('');
- useEffect(() => { if (suspended) { setTabs([]); setAccount(false); setCreate(false); setSuccess(''); onDirty(false); } }, [suspended, onDirty]);
  const createTrigger = useRef<HTMLButtonElement | null>(null);
  const closeCreate = useCallback(() => { setCreate(false); queueMicrotask(() => { if (createTrigger.current?.isConnected) createTrigger.current.focus(); }); }, []);
  const previousPath = useRef(location.pathname);
  useEffect(() => { if (previousPath.current !== location.pathname && create) closeCreate(); previousPath.current = location.pathname; }, [location.pathname, create, closeCreate]);
  const onUnauthorized = useCallback(() => { onDirty(false); navigate('/login', { replace: true }); }, [navigate, onDirty]);
- const apps = useApplications(user.id, !suspended, onUnauthorized, onIdentityMismatch);
+ const apps = useApplications(onUnauthorized);
  const confirmed = useCallback((app: Application) => { onDirty(false); closeCreate(); setSuccess('应用已创建：' + app.name); apps.reload(); }, [onDirty, closeCreate, apps.reload]);
- const operation = useApplicationOperation(user.id, confirmed, onUnauthorized, onIdentityMismatch, app => validCreatedApplication(app, user.id));
+ const operation = useApplicationOperation(confirmed, onUnauthorized, validApplication);
  const opened = useCallback((app: Application) => setTabs(items => items.some(v => v.application.id === app.id) ? items.map(v => v.application.id === app.id ? { ...v, application: app } : v) : [...items, { application: app, pinned: false }]), []);
  const open = (app: Application) => navigate('/app/applications/' + encodeURIComponent(app.id));
  const closeTab = (id: string) => { setTabs(items => items.filter(v => v.application.id !== id)); if (appId === id) navigate('/app/applications'); };
  const canCreate = access.bootstrapAdmin || access.permissions.some(p => p.code === 'applications.create');
- if (suspended) return null;
  return <div className="admin-shell app-shell" data-testid="application-shell">
   <AdminMaterial />
   <header className="admin-header home-header app-global-header">
@@ -59,11 +56,11 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onIden
   </nav>
   <main className="app-content" aria-label={catalog ? '应用中心' : appId ? '应用工作台' : '主页'}>
    {error && <p role="alert">{error}</p>}{catalog && success && <p className="app-success" role="status">{success}</p>}
-   {appId ? <ApplicationWorkspace actorId={user.id} appId={appId} opened={opened} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} />
+   {appId ? <ApplicationWorkspace appId={appId} opened={opened} onUnauthorized={onUnauthorized} />
     : catalog ? <ApplicationCatalog applications={apps.items} loading={apps.loading} error={apps.error} retry={apps.reload} canCreate={canCreate} create={trigger => { createTrigger.current = trigger; setSuccess(''); setCreate(true); }} open={open} />
     : <><div className="app-page-heading"><h1>主页</h1><p>打开业务应用；已打开的应用显示在顶部标签中</p></div><section className="app-surface app-home-section"><h2>我的应用</h2>{apps.loading ? <p role="status">正在加载应用…</p> : apps.error ? <div className="app-state"><p role="alert">{apps.error}</p><button className="admin-button" onClick={apps.reload}>重试</button></div> : apps.items.length ? <ApplicationCards applications={apps.items} open={open} /> : <div className="home-empty"><h3>暂无可用应用</h3><p>获得应用访问权限后，将在这里显示。</p></div>}</section><div><button className="admin-button" onClick={() => navigate('/app/applications')}>打开应用中心</button></div></>}
   </main>
   {account && <section className="account-menu" aria-label="账号信息"><strong>{user.account}</strong><p>{access.bootstrapAdmin ? 'Bootstrap Admin' : access.identities.length ? access.identities.map(v => v.name).join('、') : '尚未分配身份'}</p>{access.permissions.map(p => <div key={p.code}><span>{p.name}</span>{p.sources?.map((s, i) => <small key={i}>{s.identityName}{s.templateName ? ' · ' + s.templateName : ' · 直接权限'}</small>)}</div>)}<button className="admin-button" disabled={pending} onClick={logout}>退出登录</button></section>}
-  {create && <CreateApplication actorId={user.id} close={closeCreate} onDirty={onDirty} operation={operation} />}
+  {create && <CreateApplication close={closeCreate} onDirty={onDirty} operation={operation} />}
  </div>;
 }

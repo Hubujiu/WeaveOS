@@ -24,12 +24,10 @@ export async function applicationApi<T>(actorId: string, path: string, method = 
  let response: Response;
  try { response = await fetch('/api/v1/' + path, { method, credentials: 'include', headers, body: body ? JSON.stringify(body) : undefined, signal }); }
  catch (cause) { if (signal?.aborted) throw cause; throw new ApplicationError(0, 'COMMON_SERVICE_UNAVAILABLE', write); }
- let raw: unknown;
- try { raw = await response.json(); }
+ let envelope: { code: string; data: T };
+ try { envelope = await response.json(); }
  catch { throw new ApplicationError(response.status, 'COMMON_SERVICE_UNAVAILABLE', write); }
- const envelope = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as { code?: unknown; data?: T } : null;
- const code = typeof envelope?.code === 'string' ? envelope.code : 'COMMON_SERVICE_UNAVAILABLE';
- if (!response.ok || code !== 'OK') throw new ApplicationError(response.status, code, write && (response.ok || code === 'APPLICATION_OPERATION_UNCONFIRMED'));
+ if (!response.ok || envelope.code !== 'OK') throw new ApplicationError(response.status, envelope.code, write && (response.ok || envelope.code === 'APPLICATION_OPERATION_UNCONFIRMED'));
  if (expectedStatus !== undefined && response.status !== expectedStatus) throw new ApplicationError(response.status, 'APPLICATION_OPERATION_UNCONFIRMED', true);
- return envelope?.data as T;
+ return envelope.data;
 }

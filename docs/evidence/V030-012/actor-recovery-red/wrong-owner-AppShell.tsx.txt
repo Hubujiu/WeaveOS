@@ -15,8 +15,7 @@ import sidebarHome from '../assets/sidebar-home.svg';
 import sidebarCatalog from '../assets/sidebar-catalog.svg';
 import '../applications.css';
 
-const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
-const validCreatedApplication = (app: Application, actorId: string) => uuid.test(app?.id) && typeof app.name === 'string' && app.name.trim().length > 0 && app.ownerUserId === actorId && app.policyRevision === 1;
+const validApplication = (app: Application) => typeof app?.id === 'string' && typeof app.name === 'string' && typeof app.ownerUserId === 'string' && Number.isSafeInteger(app.policyRevision) && app.policyRevision >= 1;
 
 export function AppShell({ user, access, logout, pending, error, onDirty, onIdentityMismatch, suspended }: { user: User; access: Access; logout: () => void; pending: boolean; error: string; onDirty: (dirty: boolean) => void; onIdentityMismatch: () => void; suspended: boolean }) {
  const location = useLocation(); const navigate = useNavigate();
@@ -33,7 +32,7 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onIden
  const onUnauthorized = useCallback(() => { onDirty(false); navigate('/login', { replace: true }); }, [navigate, onDirty]);
  const apps = useApplications(user.id, !suspended, onUnauthorized, onIdentityMismatch);
  const confirmed = useCallback((app: Application) => { onDirty(false); closeCreate(); setSuccess('应用已创建：' + app.name); apps.reload(); }, [onDirty, closeCreate, apps.reload]);
- const operation = useApplicationOperation(user.id, confirmed, onUnauthorized, onIdentityMismatch, app => validCreatedApplication(app, user.id));
+ const operation = useApplicationOperation(user.id, confirmed, onUnauthorized, onIdentityMismatch, validApplication);
  const opened = useCallback((app: Application) => setTabs(items => items.some(v => v.application.id === app.id) ? items.map(v => v.application.id === app.id ? { ...v, application: app } : v) : [...items, { application: app, pinned: false }]), []);
  const open = (app: Application) => navigate('/app/applications/' + encodeURIComponent(app.id));
  const closeTab = (id: string) => { setTabs(items => items.filter(v => v.application.id !== id)); if (appId === id) navigate('/app/applications'); };

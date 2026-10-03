@@ -2,7 +2,6 @@ export class ApplicationError extends Error {
  constructor(readonly status: number, readonly code: string, readonly unconfirmed = false) {
   super(unconfirmed ? '操作结果尚未确认，请核查原操作或使用同一操作重试'
    : status === 401 ? '登录已失效，请重新登录'
-   : code === 'AUTH_SESSION_CHANGED' ? '登录身份已变化，请重新核对身份'
    : code === 'COMMON_CSRF_REJECTED' ? '安全校验失败，请重新登录后再试'
    : status === 403 ? '没有应用访问或管理权限'
    : code === 'APPLICATION_POLICY_CONFLICT' ? '权限配置已变化，请重新加载后再编辑'
@@ -13,9 +12,9 @@ export class ApplicationError extends Error {
  }
 }
 
-export async function applicationApi<T>(actorId: string, path: string, method = 'GET', body?: object, signal?: AbortSignal, expectedStatus?: number): Promise<T> {
+export async function applicationApi<T>(path: string, method = 'GET', body?: object, signal?: AbortSignal): Promise<T> {
  const write = method !== 'GET';
- const headers: Record<string, string> = { 'X-Expected-Actor-Id': actorId };
+ const headers: Record<string, string> = {};
  if (body) headers['Content-Type'] = 'application/json';
  if (write) {
   const csrf = document.cookie.split(';').map(v => v.trim()).find(v => v.startsWith('__Host-csrf='));
@@ -24,12 +23,9 @@ export async function applicationApi<T>(actorId: string, path: string, method = 
  let response: Response;
  try { response = await fetch('/api/v1/' + path, { method, credentials: 'include', headers, body: body ? JSON.stringify(body) : undefined, signal }); }
  catch (cause) { if (signal?.aborted) throw cause; throw new ApplicationError(0, 'COMMON_SERVICE_UNAVAILABLE', write); }
- let raw: unknown;
- try { raw = await response.json(); }
+ let envelope: { code: string; data: T };
+ try { envelope = await response.json(); }
  catch { throw new ApplicationError(response.status, 'COMMON_SERVICE_UNAVAILABLE', write); }
- const envelope = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as { code?: unknown; data?: T } : null;
- const code = typeof envelope?.code === 'string' ? envelope.code : 'COMMON_SERVICE_UNAVAILABLE';
- if (!response.ok || code !== 'OK') throw new ApplicationError(response.status, code, write && (response.ok || code === 'APPLICATION_OPERATION_UNCONFIRMED'));
- if (expectedStatus !== undefined && response.status !== expectedStatus) throw new ApplicationError(response.status, 'APPLICATION_OPERATION_UNCONFIRMED', true);
- return envelope?.data as T;
+ if (!response.ok || envelope.code !== 'OK') throw new ApplicationError(response.status, envelope.code, write && envelope.code === 'APPLICATION_OPERATION_UNCONFIRMED');
+ return envelope.data;
 }

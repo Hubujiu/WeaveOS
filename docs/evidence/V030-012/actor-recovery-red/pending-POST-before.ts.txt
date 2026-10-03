@@ -28,9 +28,7 @@ export function useApplicationOperation<T>(actorId: string, confirmed: (result: 
    const current = await workspaceApi<User>('sessions/current');
    if (token !== lifecycle.current) return;
    if (current?.id !== packet.actorId || packet.actorId !== actorId) { identityMismatch(); return; }
-   // Once the request can leave this tab, a route unmount may hide its reply.
-   // Keep the original key conservatively until a valid confirmation arrives.
-   if (!query && !snapshot.current) { snapshot.current = packet; keepPacket(packet, true); }
+   if (!query && !snapshot.current) { snapshot.current = packet; keepPacket(packet, false); }
    setState({ phase: 'pending', message: '', packet });
    sent = true;
    let result: T;
