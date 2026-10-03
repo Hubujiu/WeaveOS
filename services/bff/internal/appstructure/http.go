@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func respond(w http.ResponseWriter, r *http.Request, status int, code string, value any) {
+func respond(w http.ResponseWriter, r *http.Request, status int, code string, value any, pagination ...Pagination) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
@@ -27,17 +27,25 @@ func respond(w http.ResponseWriter, r *http.Request, status int, code string, va
 	if code == "OK" {
 		message = "success"
 	}
+	meta := map[string]any{"requestId": httpserver.Metadata(r.Context()).RequestID}
+	if len(pagination) > 0 {
+		meta["pagination"] = pagination[0]
+	}
 	_ = json.NewEncoder(w).Encode(struct {
-		Code    string            `json:"code"`
-		Message string            `json:"message"`
-		Data    any               `json:"data"`
-		Meta    map[string]string `json:"meta"`
-	}{code, message, value, map[string]string{"requestId": httpserver.Metadata(r.Context()).RequestID}})
+		Code    string         `json:"code"`
+		Message string         `json:"message"`
+		Data    any            `json:"data"`
+		Meta    map[string]any `json:"meta"`
+	}{code, message, value, meta})
 }
 func fail(w http.ResponseWriter, r *http.Request, e error, operationID string) {
 	status, code, value := 503, "COMMON_SERVICE_UNAVAILABLE", any(nil)
 	var domain *Error
 	switch {
+	case errors.Is(e, applications.ErrExpectedActorInvalid):
+		status, code, value = 400, "COMMON_VALIDATION_FAILED", applications.ActorHeaderViolation()
+	case errors.Is(e, applications.ErrSessionChanged):
+		status, code = 409, "AUTH_SESSION_CHANGED"
 	case errors.As(e, &domain):
 		code, value = domain.Code, domain.Data
 		status = 409
@@ -288,11 +296,15 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, e, "")
 		return
 	}
+	if e = applications.ExpectedActor(r, p); e != nil {
+		fail(w, r, e, "")
+		return
+	}
 	if s.Application == nil || s.Application.Pool == nil {
 		fail(w, r, ErrUnavailable, "")
 		return
 	}
-	if r.URL.RawQuery != "" {
+	if r.URL.RawQuery != "" && !strings.HasSuffix(r.URL.Path, "/member-candidates") {
 		fail(w, r, invalid(), "")
 		return
 	}
@@ -305,6 +317,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	app := parts[0]
 	if !appfields.ValidID(app) {
 		fail(w, r, invalid(), "")
+		return
+	}
+	if len(parts) == 2 && parts[1] == "member-candidates" && r.Method == "GET" {
+		s.candidates(w, r, p, app)
 		return
 	}
 	id, kind := "", ""
@@ -366,7 +382,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			var d Definition
 			d, e = definition(r.Context(), tx, app, id, false)
 			if e == nil {
-				value, e = s.Application.inspect(r.Context(), tx, p, d, in, true)
+				e = s.Application.references(r.Context(), tx, app, id, in)
+				if e == nil {
+					value, e = s.Application.inspect(r.Context(), tx, p, d, in, true)
+				}
 			}
 		}
 	case len(parts) == 2:

@@ -167,7 +167,13 @@ func (m *adapters) Change(c context.Context, tx pgx.Tx, id string, change appsch
 	return e
 }
 func (m *adapters) Protect(c context.Context, tx pgx.Tx, id string, fields []string) ([]appschema.Reference, error) {
-	deps, e := m.a.dependencies(c, tx, m.before, fields)
+	removed := []string{}
+	for _, change := range m.plan.SchemaChanges {
+		if change.Kind == "remove" {
+			removed = append(removed, change.FieldID)
+		}
+	}
+	deps, e := m.a.dependencies(c, tx, m.before, fields, removed)
 	if e != nil {
 		return nil, e
 	}
@@ -180,7 +186,7 @@ func (m *adapters) Protect(c context.Context, tx pgx.Tx, id string, fields []str
 func (m *adapters) Verify(c context.Context, tx pgx.Tx, id string, impacts []appschema.ColumnImpact) error {
 	return m.a.verifyConfirmation(c, tx, m.p, m.before, m.input)
 }
-func (a *Application) dependencies(c context.Context, tx pgx.Tx, d Definition, ids []string) ([]Dependency, error) {
+func (a *Application) dependencies(c context.Context, tx pgx.Tx, d Definition, ids, removed []string) ([]Dependency, error) {
 	if a.Dependencies == nil {
 		return nil, ErrUnavailable
 	}
@@ -220,7 +226,7 @@ func (a *Application) dependencies(c context.Context, tx pgx.Tx, d Definition, i
 		var visit func([]appfields.LayoutNode)
 		visit = func(nodes []appfields.LayoutNode) {
 			for _, n := range nodes {
-				for _, f := range ids {
+				for _, f := range removed {
 					if n.Kind == "field" && n.FieldID == f {
 						out = append(out, Dependency{f, "view_layout", id})
 					}

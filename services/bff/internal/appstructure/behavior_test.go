@@ -31,7 +31,6 @@ func preflight(in map[string]any) map[string]any {
 	}
 	return out
 }
-func code(t *testing.T, w interface{ GetCode() int }, want string) {}
 func expectError(t *testing.T, f *fixture, method, path string, body any, status int, want string) {
 	t.Helper()
 	w := f.call(t, method, path, body)

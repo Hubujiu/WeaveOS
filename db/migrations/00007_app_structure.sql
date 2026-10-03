@@ -93,6 +93,17 @@ BEGIN
 END $$;
 -- +goose StatementEnd
 CREATE TRIGGER dependency_revision_changed AFTER INSERT OR UPDATE OR DELETE ON applications.table_field_dependencies FOR EACH ROW EXECUTE FUNCTION applications.dependency_revision_changed();
+-- +goose StatementBegin
+CREATE FUNCTION applications.view_dependency_changed() RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS $$
+BEGIN
+ IF TG_OP='UPDATE' AND (NEW.table_id<>OLD.table_id OR NEW.app_id<>OLD.app_id) THEN RAISE EXCEPTION 'view table is immutable' USING ERRCODE='23514';END IF;
+ IF TG_OP<>'UPDATE' OR NEW.layout IS DISTINCT FROM OLD.layout THEN
+  UPDATE applications.logical_tables SET dependency_revision=dependency_revision+1 WHERE id=COALESCE(NEW.table_id,OLD.table_id);
+ END IF;
+ RETURN COALESCE(NEW,OLD);
+END $$;
+-- +goose StatementEnd
+CREATE TRIGGER view_dependency_changed BEFORE INSERT OR UPDATE OR DELETE ON applications.form_views FOR EACH ROW EXECUTE FUNCTION applications.view_dependency_changed();
 -- No arbitrary SQL argument. Only migration-owned typed primitives with canonical IDs.
 -- +goose StatementBegin
 CREATE FUNCTION applications.apply_schema_change(actor_uuid uuid,app_uuid uuid,table_uuid uuid,operation text,before_field jsonb,after_field jsonb) RETURNS void

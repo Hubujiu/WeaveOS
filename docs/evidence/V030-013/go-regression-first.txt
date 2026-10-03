@@ -1,0 +1,87 @@
+--- FAIL: TestAcceptanceSeedProducesIsolatedUsableFixtures (0.03s)
+    main_test.go:46: isolated acceptance seed must run: refusing non-test database: use a local weaveos_ database
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/cmd/acceptance-seed	0.041s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-maintenance	1.675s
+?   	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-read	[no test files]
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/bff	1.124s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appfields	1.017s
+--- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale (0.06s)
+    --- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale/0 (0.02s)
+        set_cost_test.go:112: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+    --- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale/10 (0.02s)
+        set_cost_test.go:112: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+    --- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale/100 (0.02s)
+        set_cost_test.go:112: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+    --- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale/1000 (0.02s)
+        set_cost_test.go:112: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestB5MemberReplacementHasConstantStatementsAtThousandMembers (0.02s)
+    set_cost_test.go:172: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/applications	2.004s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appmeta	1.094s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/apppolicy	1.011s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appschema	1.589s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure	1.831s
+--- FAIL: TestB5ApplicationArchivePreservesAllFifteenColumnsAndConflictRetainsHot (0.01s)
+    applications_archive_test.go:11: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestB5ColdUnavailableRetainsHotApplicationAudit (0.00s)
+    applications_archive_test.go:52: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestB5BothAuditConstraintsRejectUnsafeOrIncompleteApplicationSummary (0.00s)
+    applications_archive_test.go:70: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestControlledMaintenanceAndReaderUseTheirActualRestrictedRoles (0.00s)
+    maintenance_test.go:45: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestMonthlyArchiveAndAnnualExpiry (0.00s)
+    maintenance_test.go:105: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestArchiveConflictAndUnavailableColdPreserveHotHistory (0.00s)
+    maintenance_test.go:135: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestCommittedCopyThenRetryIsSafe (0.00s)
+    maintenance_test.go:154: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestLeapYearRetentionUsesCalendarYear (0.00s)
+    maintenance_test.go:165: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestAuditReadRequiresCurrentBootstrapAndDoesNotReadCold (0.00s)
+    maintenance_test.go:176: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestPersonnelArchivePreservesSafeSummaryAndOriginalRetention (0.00s)
+    personnel_archive_test.go:10: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestQ36ColdOnlyExpiryDoesNotInvalidateHotQueries (0.00s)
+    personnel_archive_test.go:64: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestAuditReadDeniesOrdinaryDisabledStaleAndAnonymous (0.00s)
+    read_test.go:33: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/audit	0.103s
+--- FAIL: TestCommittedWriteSurvivesRenewalFailure (0.89s)
+    --- FAIL: TestCommittedWriteSurvivesRenewalFailure/invitation/disconnected (0.20s)
+        committed_test.go:159: both browser cookies must be cleared without renewal
+        committed_test.go:162: missing post-commit diagnostic
+        committed_test.go:184: status=200 want=503 (response omitted to protect credentials)
+    --- FAIL: TestCommittedWriteSurvivesRenewalFailure/reset/disconnected (0.24s)
+        committed_test.go:159: both browser cookies must be cleared without renewal
+        committed_test.go:162: missing post-commit diagnostic
+        committed_test.go:184: status=200 want=503 (response omitted to protect credentials)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/auth	5.369s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/identity	1.007s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/invitation	1.008s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence	1.264s
+?   	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence/authsql	[no test files]
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/personnel	34.479s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver	1.012s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/security	1.010s
+redis: 2026/10/03 09:48:31 pool.go:762: redis: connection pool: failed to dial after 1 attempts: dial tcp 127.0.0.1:36557: connect: connection refused
+--- FAIL: TestAuthenticationChecksRealCurrentUserAndBoundWrites (0.01s)
+    authenticate_test.go:32: test Redis must be local: ""
+--- FAIL: TestCreateLoadUsesApprovedRedisShapeAndOneHourTTL (0.00s)
+    store_test.go:135: test Redis must be local: ""
+--- FAIL: TestTouchSlidesTTLButNeverRevivesRevokedSession (0.00s)
+    store_test.go:176: test Redis must be local: ""
+--- FAIL: TestConcurrentTouchAndRevokeCannotResurrectSession (0.00s)
+    store_test.go:212: test Redis must be local: ""
+--- FAIL: TestLoadRejectsTrailingJSONDocument (0.00s)
+    store_test.go:248: test Redis must be local: ""
+--- FAIL: TestTouchRefusesCorruptedTimestampsWithoutRenewingTTL (0.00s)
+    store_test.go:268: test Redis must be local: ""
+--- FAIL: TestLoadAndTouchRejectOverlongTTL (0.00s)
+    store_test.go:308: test Redis must be local: ""
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/session	0.176s
+FAIL

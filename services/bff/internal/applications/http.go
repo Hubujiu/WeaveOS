@@ -21,6 +21,7 @@ type Service struct {
 	Authenticator     session.Authenticator
 	Logger            *slog.Logger
 	TrustedProxyHosts []string
+	Definitions       http.Handler
 }
 
 func (s *Service) TrustedProxies() []string { return append([]string(nil), s.TrustedProxyHosts...) }
@@ -41,7 +42,13 @@ func respond(w http.ResponseWriter, r *http.Request, status int, code string, da
 }
 func fail(w http.ResponseWriter, r *http.Request, err error) {
 	status, code := 503, "COMMON_SERVICE_UNAVAILABLE"
+	var value any
 	switch {
+	case errors.Is(err, ErrExpectedActorInvalid):
+		status, code = 400, "COMMON_VALIDATION_FAILED"
+		value = ActorHeaderViolation()
+	case errors.Is(err, ErrSessionChanged):
+		status, code = 409, "AUTH_SESSION_CHANGED"
 	case errors.Is(err, session.ErrUnauthorized):
 		status, code = 401, "AUTH_UNAUTHENTICATED"
 		w.Header().Set("WWW-Authenticate", `Session realm="enterprise-management-system"`)
@@ -62,7 +69,7 @@ func fail(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, ErrInvalid):
 		status, code = 400, "COMMON_INVALID_ARGUMENT"
 	}
-	respond(w, r, status, code, nil)
+	respond(w, r, status, code, value)
 }
 func (s *Service) finish(w http.ResponseWriter, r *http.Request, p session.Principal, result Result) {
 	if r.Method == "GET" {
@@ -223,6 +230,14 @@ func (s *Service) write(w http.ResponseWriter, r *http.Request, p session.Princi
 	s.finish(w, r, p, result)
 }
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if s.Definitions != nil {
+		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
+		parts := strings.Split(path, "/")
+		if path != r.URL.Path && len(parts) >= 2 && (parts[1] == "structure" || parts[1] == "directories" || parts[1] == "tables" || parts[1] == "forms" || parts[1] == "member-candidates") {
+			s.Definitions.ServeHTTP(w, r)
+			return
+		}
+	}
 	var err error
 	r, err = httpserver.Prepare(w, r, s.TrustedProxyHosts)
 	if err != nil {
@@ -231,6 +246,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	p, err := s.Authenticator.Authenticate(r, r.Method != "GET" && r.Method != "HEAD")
 	if err != nil {
+		fail(w, r, err)
+		return
+	}
+	if err = ExpectedActor(r, p); err != nil {
 		fail(w, r, err)
 		return
 	}

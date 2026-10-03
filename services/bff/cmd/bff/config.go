@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/auth"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/personnel"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
@@ -17,13 +19,18 @@ import (
 	"net/netip"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type config struct {
 	DatabaseURL, RedisURL, Origin, Generation, AuditKeyID string
 	AuditKey                                              []byte
 	TrustedProxyHosts                                     []string
+	DefinitionKey                                         []byte
+	DefinitionKeyID                                       string
+	SchemaLimits                                          appschema.Limits
 }
 
 func readConfig(get func(string) string) (config, error) {
@@ -43,6 +50,18 @@ func readConfig(get func(string) string) (config, error) {
 			return config{}, errors.New("invalid audit key encoding")
 		}
 		cfg.AuditKey = key
+	}
+	definitionKey, keyID, lock, statement := get("WEAVEOS_DEFINITION_HMAC_KEY"), get("WEAVEOS_DEFINITION_KEY_ID"), get("WEAVEOS_SCHEMA_LOCK_TIMEOUT_MS"), get("WEAVEOS_SCHEMA_STATEMENT_TIMEOUT_MS")
+	if definitionKey != "" || keyID != "" || lock != "" || statement != "" {
+		key, e := base64.StdEncoding.Strict().DecodeString(definitionKey)
+		l, le := strconv.ParseInt(lock, 10, 32)
+		s, se := strconv.ParseInt(statement, 10, 32)
+		if e != nil || len(key) < 32 || !regexp.MustCompile(`^[A-Za-z0-9_-]{1,16}$`).MatchString(keyID) || le != nil || se != nil || l <= 0 || s <= 0 {
+			return config{}, errors.New("incomplete or invalid definition configuration")
+		}
+		cfg.DefinitionKey = key
+		cfg.DefinitionKeyID = keyID
+		cfg.SchemaLimits = appschema.Limits{LockTimeout: time.Duration(l) * time.Millisecond, StatementTimeout: time.Duration(s) * time.Millisecond}
 	}
 	return cfg, nil
 }
@@ -70,7 +89,9 @@ func buildHandler(ctx context.Context, cfg config) (http.Handler, func(), error)
 	s := &auth.Service{Pool: pool, Sessions: sessions, Origin: cfg.Origin, AuditKeyID: cfg.AuditKeyID, AuditKey: cfg.AuditKey, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	people := &personnel.Application{Pool: pool, Queries: personnel.NewQueryContextStore(queryRedis, cfg.Generation)}
 	s.Personnel = &personnel.Service{Application: people, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
-	s.Applications = &applications.Service{Application: &applications.Application{Pool: pool}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
+	apps := &applications.Service{Application: &applications.Application{Pool: pool}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
+	apps.Definitions = &appstructure.Service{Application: &appstructure.Application{Pool: pool, ConfirmationKey: cfg.DefinitionKey, ConfirmationKeyID: cfg.DefinitionKeyID, Limits: cfg.SchemaLimits, Dependencies: appstructure.LocalRegistry{}, CandidateRedis: queryRedis, CandidateNamespace: cfg.Generation}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
+	s.Applications = apps
 	s.InvitationBegin = func(ctx context.Context, p session.Principal, version string) (pgx.Tx, error) {
 		tx, err := people.BeginQueryWrite(ctx, p, version)
 		for _, entry := range []struct {

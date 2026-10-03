@@ -156,6 +156,9 @@ func definition(c context.Context, tx pgx.Tx, app, id string, lock bool) (Defini
 		return Definition{}, e
 	}
 	if lock {
+		if _, e = tx.Exec(c, "SELECT id FROM applications.form_views WHERE app_id=$1 AND table_id=$2 ORDER BY id FOR UPDATE", app, v.TableID); e != nil {
+			return Definition{}, e
+		}
 		v, l, e = loadForm(c, tx, app, id, true)
 		if e != nil {
 			return Definition{}, e

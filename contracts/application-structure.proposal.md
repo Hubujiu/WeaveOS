@@ -1,11 +1,11 @@
 # V030-013 frozen product contract
 
-Review status: lead approved 2980b5e with the atomic-form-create and 12-column
-span amendments below. HTTP wiring waits only for the matching Notion readback.
-The V030-013 technical PLAN was read from PRD at
-2026-10-03T08:40:01.401Z and ADR009 at 2026-10-03T08:40:07.467Z; the
-two PLAN sections are byte-identical. This document supplies precise derived
-contracts for the lead to freeze; it does not amend product decisions.
+Frozen status: the lead accepted the task-specific ADR at
+2026-10-03T09:09:21.333Z and released core and HTTP implementation after actual
+readback. Authoritative contract:
+https://app.notion.com/p/3ee2f5a9e64881489017e2f38a4bb29f . This document is the
+derived executable specification; it does not change whole-product approval.
+The earlier PLAN was read from PRD at 08:40:01.401Z and ADR009 at 08:40:07.467Z.
 
 Base: PR26 actual HEAD `9b89e8e928aedf30df235492fe89bc52021f6fe9`.
 B2 reusable source: `04c91479e24de95fc6b25ba9efc76a8f6b72de5f` (PR25).
@@ -438,10 +438,10 @@ inspection and old package evidence are not new tests or product acceptance.
 ## 9. Lead review items
 
 The lead froze the following choices and approved §7 shared scope, with the
-atomic creation and span amendments. Read back matching Notion before HTTP wiring:
+atomic creation and span amendments. Matching Notion was read back before HTTP wiring:
 pending table/form creation with first-Save DDL; independent structureVersion CAS;
 roundingPlaces sign/defaults and storage-scale compatibility; UTC time truncation;
 other-view field removal guard; constant default-only old-row fill and explicit
 option mappings; confirmation expiry/key configuration; restricted typed-DDL port.
 The PLAN releases field core/schema tests and implementation independently; this
-proposal does not postpone that authorized work pending all HTTP decisions.
+contract records the authorized implementation scope.

@@ -112,6 +112,7 @@ func normalizeConfig(f Field) (Field, error) {
 			v.Scale = 2
 		}
 		for k, b := range m {
+			e = nil
 			switch k {
 			case "precision":
 				e = json.Unmarshal(b, &v.Precision)
@@ -119,6 +120,9 @@ func normalizeConfig(f Field) (Field, error) {
 				e = json.Unmarshal(b, &v.Scale)
 			case "roundingMode":
 				e = json.Unmarshal(b, &v.RoundingMode)
+			}
+			if e != nil {
+				return f, ErrInvalid
 			}
 		}
 		if e != nil {
@@ -135,6 +139,13 @@ func normalizeConfig(f Field) (Field, error) {
 		}
 		c = v
 	case "text", "multiline":
+		var keys map[string]json.RawMessage
+		if json.Unmarshal(f.Config, &keys) != nil || len(keys) != 1 {
+			return f, ErrInvalid
+		}
+		if _, ok := keys["maxLength"]; !ok {
+			return f, ErrInvalid
+		}
 		var v struct {
 			MaxLength *int `json:"maxLength"`
 		}

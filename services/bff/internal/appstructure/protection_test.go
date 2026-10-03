@@ -2,7 +2,6 @@ package appstructure
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/jackc/pgx/v5"
 	"testing"
 )
@@ -76,5 +75,4 @@ func TestPreflightReferenceSourceAndStrictCompleteDTO(t *testing.T) {
 	member["required"] = false
 	in["fields"] = nil
 	expectError(t, f, "PUT", "/forms/"+view+"/definition", in, 400, "COMMON_VALIDATION_FAILED")
-	_ = json.Valid
 }

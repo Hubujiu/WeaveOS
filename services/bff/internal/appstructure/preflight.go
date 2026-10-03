@@ -116,13 +116,17 @@ func (a *Application) inspect(c context.Context, tx pgx.Tx, p session.Principal,
 		newFields[f.ID] = f
 	}
 	protected := []string{}
+	removed := []string{}
 	for _, ch := range plan.SchemaChanges {
 		if ch.Kind == "remove" || ch.Kind == "change_type" || ch.Kind == "change_config" {
 			protected = append(protected, ch.FieldID)
 		}
+		if ch.Kind == "remove" {
+			removed = append(removed, ch.FieldID)
+		}
 	}
 	if len(protected) > 0 {
-		out.Dependencies, e = a.dependencies(c, tx, d, protected)
+		out.Dependencies, e = a.dependencies(c, tx, d, protected, removed)
 		if e != nil {
 			return out, e
 		}

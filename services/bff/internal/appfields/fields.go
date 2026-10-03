@@ -39,3 +39,23 @@ type LayoutNode struct {
 	Text     string       `json:"text,omitempty"`
 	Children []LayoutNode `json:"children,omitempty"`
 }
+
+func (n LayoutNode) MarshalJSON() ([]byte, error) {
+	m := map[string]any{"id": n.ID, "kind": n.Kind}
+	switch n.Kind {
+	case "field", "system_field":
+		m["fieldId"] = n.FieldID
+		if n.Span != 0 {
+			m["span"] = n.Span
+		}
+	case "group":
+		m["title"] = n.Title
+		m["children"] = n.Children
+		if n.Span != 0 {
+			m["span"] = n.Span
+		}
+	case "description":
+		m["text"] = n.Text
+	}
+	return json.Marshal(m)
+}

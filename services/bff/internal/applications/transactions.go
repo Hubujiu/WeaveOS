@@ -8,9 +8,33 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/personnel"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
+	"net/http"
 	"strconv"
 	"time"
 )
+
+// ExpectedActor is solely a negative constraint on an already authenticated principal.
+// An absent legacy header is compatible; it never supplies an identity or a grant.
+func ExpectedActor(r *http.Request, p session.Principal) error {
+	values := r.Header.Values("X-Expected-Actor-Id")
+	if len(values) == 0 {
+		return nil
+	}
+	if len(values) != 1 {
+		return ErrExpectedActorInvalid
+	}
+	id, ok := canonicalID(values[0])
+	if !ok {
+		return ErrExpectedActorInvalid
+	}
+	if id != p.UserID {
+		return ErrSessionChanged
+	}
+	return nil
+}
+func ActorHeaderViolation() any {
+	return map[string]any{"violations": []any{map[string]string{"location": "header", "field": "X-Expected-Actor-Id", "code": "VALIDATION_INVALID", "message": "预期账号格式不合法"}}}
+}
 
 // ManagerWrite is the shared trusted lifecycle; domain adapters use its one tx.
 type ManagerWrite struct {

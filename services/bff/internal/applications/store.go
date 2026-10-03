@@ -337,25 +337,28 @@ func (a *Application) Configuration(ctx context.Context, p session.Principal, ap
 		return nil, err
 	}
 	if part == "members" {
-		rows, err := tx.Query(ctx, "SELECT user_id::text FROM applications.group_members WHERE app_id=$1 AND group_id=$2 ORDER BY user_id", appID, groupID)
+		rows, err := tx.Query(ctx, "SELECT u.id::text,u.account,u.status FROM applications.group_members m JOIN auth.users u ON u.id=m.user_id WHERE m.app_id=$1 AND m.group_id=$2 ORDER BY u.id", appID, groupID)
 		if err != nil {
 			return nil, err
 		}
 		ids := []string{}
+		members := []MemberDisplay{}
 		for rows.Next() {
-			var id string
-			if err := rows.Scan(&id); err != nil {
+			var member MemberDisplay
+			if err := rows.Scan(&member.ID, &member.Label, &member.Status); err != nil {
 				rows.Close()
 				return nil, err
 			}
-			ids = append(ids, id)
+			ids = append(ids, member.ID)
+			member.Selectable = member.Status == "active"
+			members = append(members, member)
 		}
 		err = rows.Err()
 		rows.Close()
 		if err != nil {
 			return nil, err
 		}
-		return map[string]any{"memberIds": ids, "policyRevision": app.PolicyRevision}, tx.Commit(ctx)
+		return map[string]any{"memberIds": ids, "members": members, "policyRevision": app.PolicyRevision}, tx.Commit(ctx)
 	}
 	rows, err := tx.Query(ctx, "SELECT resource_kind,resource_id::text,action,row_scope FROM applications.grants WHERE app_id=$1 AND group_id=$2 ORDER BY resource_kind,resource_id,action,row_scope", appID, groupID)
 	if err != nil {
