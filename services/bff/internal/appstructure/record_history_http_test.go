@@ -56,7 +56,7 @@ func TestHistoryHTTPRealOwnerCursorAndDeletedFieldTombstone(t *testing.T) {
 	}
 	change := items[0].(map[string]any)["changes"].([]any)[0].(map[string]any)
 	if change["fieldLabel"] != "当期金额" || change["fieldDeleted"] != false || change["valueLabels"] == nil {
-		t.Fatalf("ADR14 allowed delta display missing %s", response.Body.String())
+		t.Fatalf("ADR14 allowed delta display missing: fieldLabel=%q fieldDeleted=%v valueLabelsPresent=%t", change["fieldLabel"], change["fieldDeleted"], change["valueLabels"] != nil)
 	}
 	var env struct {
 		Meta struct{ Pagination Pagination }
