@@ -39,8 +39,3 @@ type LayoutNode struct {
 	Text     string       `json:"text,omitempty"`
 	Children []LayoutNode `json:"children,omitempty"`
 }
-
-func RoundDecimal(string, DecimalConfig) (string, error)             { return "", ErrInvalid }
-func NormalizeValue(Field, json.RawMessage) (json.RawMessage, error) { return nil, ErrInvalid }
-func NormalizeFields([]Field) ([]Field, error)                       { return nil, ErrInvalid }
-func NormalizeLayout([]LayoutNode, []Field) ([]LayoutNode, error)    { return nil, ErrInvalid }
