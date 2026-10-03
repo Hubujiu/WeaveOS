@@ -20,7 +20,8 @@ test('Root read layout preserves exact values and disables edits',async({page})=
  await expect(page.getByLabel('金额',{exact:true})).toHaveValue('9007199254740993.01');
  await expect(page.getByLabel('金额',{exact:true})).not.toBeEditable();
  await expect(page.getByRole('button',{name:'保存记录',exact:true})).toBeDisabled();
- await expect(page.getByText('隐藏内容',{exact:true})).toHaveCount(0);
+ await expect(page.getByLabel('未放入布局',{exact:true})).toHaveCount(0);
+ await expect(page.getByLabel('无权字段',{exact:true})).toHaveCount(0);
 });
 test('Root system record version comes from actual record metadata',async({page})=>{
  await page.goto('/src/applications/records/root-layout-fixture.html?mode=read');
