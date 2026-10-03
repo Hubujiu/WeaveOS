@@ -34,6 +34,16 @@ func fixture(t *testing.T, root bool) *webFixture {
 		t.Fatal(err)
 	}
 	t.Cleanup(owner.Close)
+	// Each package must work against a freshly migrated isolated database,
+	// without depending on the later audit package to install runtime roles.
+	// Use the exact reviewed policy, not a permissive fixture-only GRANT.
+	roles, err := os.ReadFile("../../../../infra/runtime/roles.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := owner.Exec(ctx, string(roles)); err != nil {
+		t.Fatal("initialize reviewed isolated runtime roles", err)
+	}
 	var actor string
 	if root {
 		err = owner.QueryRow(ctx, "SELECT id::text FROM auth.users WHERE is_bootstrap_admin").Scan(&actor)
