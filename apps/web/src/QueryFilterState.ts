@@ -107,12 +107,55 @@ export function validateQueryFilter<V extends QueryView>(view: V, input: unknown
   return {issues:[],filter:result as QueryFilter<V>};
 }
 
-// V030-017 RED scaffold: the runtime field descriptor is supplied by the
-// authorized RuntimeView. The implementation follows the contract tests.
+// Runtime descriptors are supplied only from the authorized RuntimeView. This
+// editor guard does not grant access; the server rechecks every field/scope.
 export type ResourceFieldKind = 'text' | 'multiline' | 'number' | 'money' | 'date' | 'datetime' | 'single_select' | 'multi_select' | 'boolean' | 'member' | 'department';
 export type ResourceFilterField = { id: string; kind: ResourceFieldKind; operators: readonly ('eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte')[]; optionIds?: readonly string[] };
 export type ResourceFilterCondition = {fieldId:string;operator:'eq'|'neq'|'gt'|'gte'|'lt'|'lte';value:string|boolean|string[]|null};
 export type ResourceFilterGroup = {operator:'and'|'or';children:(ResourceFilterGroup|ResourceFilterCondition)[]};
-export function validateResourceFilter(_fields:readonly ResourceFilterField[],_input:unknown):{filter?:ResourceFilterGroup;issues:FilterIssue[]} {
- return {issues:[]};
+export function validateResourceFilter(fields:readonly ResourceFilterField[],input:unknown):{filter?:ResourceFilterGroup;issues:FilterIssue[]} {
+ if(input===null||input===undefined)return {issues:[]};
+ const issues:FilterIssue[]=[],seen=new WeakSet<object>();let leaves=0;
+ const issue=(path:string,message:string)=>issues.push({path,message});
+ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ function visit(node:unknown,path:string,depth:number):ResourceFilterGroup|ResourceFilterCondition|null{
+  if(!record(node)){issue(path,'请选择有效的条件或分组');return null;}
+  if(seen.has(node)){issue(path,'筛选不能循环引用');return null;}
+  seen.add(node);
+  if(Object.hasOwn(node,'children')){
+   if(!exactKeys(node,['operator','children'])||!['and','or'].includes(String(node.operator))||!Array.isArray(node.children)||!node.children.length){issue(path,'分组必须为非空 AND 或 OR');return null;}
+   if(depth>MAX_FILTER_DEPTH)issue(path,'最多支持 3 层分组');
+   const children=node.children.map((child,i)=>visit(child,`${path}.${i}`,depth+(record(child)&&Object.hasOwn(child,'children')?1:0))).filter((child):child is ResourceFilterGroup|ResourceFilterCondition=>child!==null);
+   return {operator:node.operator as 'and'|'or',children};
+  }
+  leaves++;
+  if(!exactKeys(node,['fieldId','operator','value'])||typeof node.fieldId!=='string'){issue(path,'请选择有效字段');return null;}
+  const field=fields.find(candidate=>candidate.id===node.fieldId);
+  if(!field){issue(path,'此字段不可用于当前查询');return null;}
+  const operator=node.operator;
+  if(!['eq','neq','gt','gte','lt','lte'].includes(String(operator))||!field.operators.includes(operator as ResourceFilterCondition['operator']))issue(path,'此字段不支持该比较方式');
+  const value=node.value,equality=operator==='eq'||operator==='neq';
+  if(value===null){if(!equality)issue(path,'NULL 只可用于等于或不等于');}
+  else if(field.kind==='text'||field.kind==='multiline'){
+   if(typeof value!=='string'||!equality)issue(path,'文本仅支持等于或不等于的文本值');
+  }else if(field.kind==='number'||field.kind==='money'){
+   if(typeof value!=='string'||!/^[-]?\d+(?:\.\d+)?$/.test(value))issue(path,'数字须使用精确十进制字符串');
+  }else if(field.kind==='date'){
+   if(typeof value!=='string'||!validDate(value))issue(path,'请输入有效日期');
+  }else if(field.kind==='datetime'){
+   if(typeof value!=='string'||!validTime(value))issue(path,'请输入带明确偏移的时刻');
+  }else if(field.kind==='boolean'){
+   if(typeof value!=='boolean'||!equality)issue(path,'布尔字段仅支持等于或不等于');
+  }else if(field.kind==='single_select'){
+   if(typeof value!=='string'||!field.optionIds?.includes(value)||!equality)issue(path,'请选择当前有效选项');
+  }else if(field.kind==='multi_select'){
+   if(!Array.isArray(value)||!value.every(id=>typeof id==='string'&&field.optionIds?.includes(id))||new Set(value).size!==value.length||!equality)issue(path,'请选择不重复的当前有效选项集合');
+  }else if(typeof value!=='string'||!uuid.test(value)||!equality)issue(path,'请选择有效引用');
+  return {fieldId:node.fieldId,operator:operator as ResourceFilterCondition['operator'],value:value as ResourceFilterCondition['value']};
+ }
+ if(!record(input)||!Object.hasOwn(input,'children'))return {issues:[{path:'root',message:'根必须为 AND/OR 分组'}]};
+ const filter=visit(input,'root',1);
+ if(leaves>MAX_FILTER_LEAVES)issue('root','整个筛选最多 20 个条件');
+ if(filter&&new TextEncoder().encode(JSON.stringify(filter)).byteLength>MAX_FILTER_BYTES)issue('root','筛选超过 16 KiB');
+ return issues.length?{issues}:{issues:[],filter:filter as ResourceFilterGroup};
 }
