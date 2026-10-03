@@ -1,0 +1,40 @@
+{
+  "environment": {
+    "GOTOOLCHAIN": "local",
+    "GOCACHE": "/tmp/weaveos-b4b-go-cache",
+    "GOPATH": "/workspace/.weaveos-tools/gopath",
+    "GOFLAGS": "-mod=readonly"
+  },
+  "runs": [
+    {
+      "name": "vet",
+      "command": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "vet",
+        "-p",
+        "1",
+        "./..."
+      ],
+      "cwd": "services/bff",
+      "started_utc": "2026-10-03T00:59:26.061081+00:00",
+      "ended_utc": "2026-10-03T00:59:58.473592+00:00",
+      "exit_code": 0
+    },
+    {
+      "name": "build",
+      "command": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "build",
+        "-p",
+        "1",
+        "-o",
+        "/tmp/weaveos-b4b-bff",
+        "./cmd/bff"
+      ],
+      "cwd": "services/bff",
+      "started_utc": "2026-10-03T00:59:58.473611+00:00",
+      "ended_utc": "2026-10-03T00:59:59.274369+00:00",
+      "exit_code": 0
+    }
+  ]
+}
