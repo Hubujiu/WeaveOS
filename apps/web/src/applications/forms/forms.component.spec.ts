@@ -1329,7 +1329,8 @@ test('external structure leave keeps an unknown directory operation and entered 
   await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(true));
   await expect(page.getByLabel('目录名称')).toHaveValue('外部保留目录');
   await page.getByRole('button',{name:'查询原操作结果'}).click();
-  expect(state.seen.find(item=>item.path.includes('/application-operations/'))?.path).toContain(String(original));
+  await expect.poll(()=>state.seen.find(item=>item.path.includes('/application-operations/'))?.path)
+    .toContain(String(original));
 });
 
 test('StrictMode old same-scope unsubscribe cannot clear the current controller',async({page})=>{
@@ -1353,11 +1354,27 @@ test('external leave rejects a decision made before draft becomes preflight',asy
   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('draft');
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await firstStarted;
+  // A status read for display must not silently replace the decision the user already saw.
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('preflight');
   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:false,status:'preflight'});
   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('preflight');
   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:true});
   release();
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+});
+
+test('external leave rejects a stale confirmation after draft content changes',async({page})=>{
+  await fixture(page,'designer',{...definition,table:{...table,schemaReady:true}},structure,true,'none');
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('draft');
+  await page.getByLabel('字段名称').fill('确认期间新输入');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('draft');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard')))
+    .toEqual({ok:false,status:'draft'});
+  expect(await page.getByLabel('字段名称').inputValue()).toBe('确认期间新输入');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('draft');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:true});
+  await expect(page.getByText('确认期间新输入')).toHaveCount(0);
 });
 
 test('explicit discard removes an ordinary draft while an unknown packet is never discarded implicitly',async({page})=>{

@@ -1,0 +1,44 @@
+[WebServer] (node:121504) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:121518) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:121551) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › src/applications/forms/forms.component.spec.ts:1344:1 › external leave rejects a decision made before draft becomes preflight
+[chromium] › src/applications/forms/forms.component.spec.ts:1344:1 › external leave rejects a decision made before draft becomes preflight
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:1344:1 › external leave rejects a decision made before draft becomes preflight
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 2
+    + Received  + 1
+
+      Object {
+    -   "ok": false,
+    -   "status": "preflight",
+    +   "ok": true,
+      }
+
+      1356 |   // A status read for display must not silently replace the decision the user already saw.
+      1357 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('preflight');
+    > 1358 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:false,status:'preflight'});
+           |                                                                                              ^
+      1359 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('preflight');
+      1360 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:true});
+      1361 |   release();
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1358:94
+
+    Error Context: test-results/forms.component-external-l-77704-ore-draft-becomes-preflight-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:1344:1 › external leave rejects a decision made before draft becomes preflight

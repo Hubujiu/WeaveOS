@@ -4,7 +4,7 @@
 
 按冻结 ADR 第 I 节，两组件现在都要求 `registerLeaveGuard(scope,controller):()=>void`。共同的 `LeaveScope`、`LeaveStatus`、`LeaveDecision`、`LeaveResult`、`LeaveController`、`RegisterLeaveGuard` 与 `LeaveGuardProps` 类型从同一 `index.ts` 导出。Shell 返回的 unsubscribe 必须绑定**该次注册实例**；同 scope 旧卸载或 StrictMode 旧 cleanup 不能删去新的 controller。
 
-Shell 弹离开确认前调用 `controller.getStatus()`；确认后调用 `prepareLeave('discard'|'retain_operation')`，先得到 `{ok:true}` 才能卸载或切路由。若返回 `{ok:false,status}`，说明确认期间状态或输入已变，须按新 status 重新说明并再次确认。`clean` 可直接离开；`draft`（含未发 PUT 的影响包）与 `preflight` 只允许 `discard`；`write_in_flight` 与 `unknown` 只允许 `retain_operation`。控制器同步取消预检或同步保留原请求包，模块内部“返回工作台”使用同一控制器。`onDirtyChange` 只供兼容显示，不能代替确认后的 `prepareLeave`。
+Shell 弹离开确认前调用 `controller.getStatus()`；确认后调用 `prepareLeave('discard'|'retain_operation')`，先得到 `{ok:true}` 才能卸载或切路由。首次 `getStatus()` 锁定这次确认的状态与输入快照；弹窗期间重复读取只返回当前显示状态，不替换首次确认快照。若返回 `{ok:false,status}`，说明确认期间状态或输入已变，须按新 status 重新说明、再次调用 `getStatus()` 并重新确认。`clean` 可直接离开；`draft`（含未发 PUT 的影响包）与 `preflight` 只允许 `discard`；`write_in_flight` 与 `unknown` 只允许 `retain_operation`。控制器同步取消预检或同步保留原请求包，模块内部“返回工作台”使用同一控制器。`onDirtyChange` 只供兼容显示，不能代替确认后的 `prepareLeave`。
 
 | Prop | Shell 提供及处理 |
 | --- | --- |

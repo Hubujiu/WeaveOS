@@ -10,7 +10,7 @@ type GuardSnapshot={status:LeaveStatus;fingerprint:string};
 export function createLeaveController(read:()=>GuardSnapshot,apply:(decision:LeaveDecision)=>void):LeaveController{
   let observed:GuardSnapshot|null=null;
   return {
-    getStatus(){observed=read();return observed.status;},
+    getStatus(){const current=read();observed??=current;return current.status;},
     prepareLeave(decision){
       const current=read();
       const allowed=current.status==='clean'||

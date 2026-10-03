@@ -125,7 +125,7 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
   const [verified,setVerified]=useState(false),[verificationError,setVerificationError]=useState('');
   const requestKey=useRef(0);
   const saveEpoch=useRef(0),preflightAbort=useRef<AbortController|null>(null);
-  const live=useRef({base,draft,phase,pending});live.current={base,draft,phase,pending};
+  const live=useRef({base,draft,phase,pending});
   const setBase=(next:Definition|null)=>{live.current.base=next;reactSetBase(next);};
   const setDraft=(update:SetStateAction<DefinitionInput|null>)=>{
     const next=typeof update==='function'?update(live.current.draft):update;

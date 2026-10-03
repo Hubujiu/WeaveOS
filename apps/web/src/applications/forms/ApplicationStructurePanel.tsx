@@ -39,7 +39,6 @@ function ApplicationStructureScope({appId,actorId,onOpenForm,onDirtyChange,onUna
   const [verified,setVerified]=useState(false),[verificationError,setVerificationError]=useState('');
   const [reload,setReload]=useState(0),request=useRef(0),scope=useRef(scopeKey),alive=useRef(true);
   const live=useRef({structure,selected,dialog,name,parentId,source,busy,unconfirmed,pending});
-  live.current={structure,selected,dialog,name,parentId,source,busy,unconfirmed,pending};
   const setStructure=(next:Structure|null)=>{live.current.structure=next;reactSetStructure(next);};
   const setSelected=(next:Selected)=>{live.current.selected=next;reactSetSelected(next);};
   const setDialog=(next:Dialog)=>{live.current.dialog=next;reactSetDialog(next);};
