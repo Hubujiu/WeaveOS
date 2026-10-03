@@ -127,6 +127,10 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
    snapshot.current = null; uncertain.current = false;
    clearRecovery(packet.actorId, packet.scope);
    setState({ phase: 'idle', message: '', packet: null });
+   // A valid receipt ends the write synchronously, before observers can start
+   // another operation from inside the confirmation callback.
+   inFlight.current = false;
+   lifecycle.current++;
    confirmed(result);
   } catch (cause) {
    if (token !== lifecycle.current) return;
