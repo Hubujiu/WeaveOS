@@ -16,6 +16,13 @@ function initialValues(view:RuntimeView,actorId:UUID,mode:RecordFormProps['mode'
 const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
 
 export function RecordForm(props:RecordFormProps){
+ const {identity,mode}=props;
+ const resourceId=identity.kind==='new'?identity.clientDraftId:identity.kind==='record'?identity.recordId:identity.draftId;
+ const scopeKey=JSON.stringify([identity.actorId,identity.appId,identity.viewId,identity.kind,resourceId,mode]);
+ return <RecordFormScope key={scopeKey} {...props}/>;
+}
+
+function RecordFormScope(props:RecordFormProps){
  const {view,identity,record,mode,authorityKey,queryVersion,loadCandidates,onUnauthorized,onIdentityMismatch,registerLeaveGuard,onRefresh,onConfirmed,onDirtyChange,onDiscard}=props;
  const saved=identity.kind==='record';
  const resource=useMemo(()=>identity.kind==='new'?{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,creationNonce:identity.clientDraftId}:identity.kind==='record'?{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,id:identity.recordId}:null,[identity]);
@@ -23,9 +30,10 @@ export function RecordForm(props:RecordFormProps){
  const confirmedRef=useRef(onConfirmed);confirmedRef.current=onConfirmed;
  const unauthorizedRef=useRef(onUnauthorized);unauthorizedRef.current=onUnauthorized;
  const identityMismatchRef=useRef(onIdentityMismatch);identityMismatchRef.current=onIdentityMismatch;
+ const confirmationSync=useRef(false);
  const [confirmed,setConfirmed]=useState(false);
  const hookResource=resource??{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,id:identity.kind==='draft'?identity.draftId:identity.kind==='record'?identity.recordId:''};
- const operation=useApplicationOperation<MutationResult>({actorId:identity.actorId,scope:operationScope,resource:hookResource,confirmed:(result)=>{if(!result)return;const next=identity.kind==='new'?confirmRecordIdentity(identity,result,result.operationId):identity;if(!next)return;setConfirmed(true);confirmedRef.current(result,next);},unauthorized:()=>unauthorizedRef.current(),identityMismatch:()=>identityMismatchRef.current(),valid:(result,packet)=>!!packet.operationId&&isMutationResult(result,packet.operationId,identity.kind==='record'?identity.recordId:undefined)});
+ const operation=useApplicationOperation<MutationResult>({actorId:identity.actorId,scope:operationScope,resource:hookResource,confirmed:(result)=>{if(!result)return;const next=identity.kind==='new'?confirmRecordIdentity(identity,result,result.operationId):identity;if(!next)return;confirmationSync.current=true;setConfirmed(true);readGuard.current={...readGuard.current,confirmed:true,packetId:null,phase:'idle',dirty:false};onDirtyChange(false);confirmedRef.current(result,next);},unauthorized:()=>unauthorizedRef.current(),identityMismatch:()=>identityMismatchRef.current(),valid:(result,packet)=>!!packet.operationId&&isMutationResult(result,packet.operationId,identity.kind==='record'?identity.recordId:undefined)});
  const startView=useRef(view),startValues=useRef(initialValues(view,identity.actorId,mode,record));
  const [values,setValues]=useState<Values>(startValues.current),[pendingDisplays,setPendingDisplays]=useState<Record<UUID,ReferenceDisplay>>({});
  const fields=projectRuntimeFields(view,mode,identity.actorId,record);
@@ -38,6 +46,8 @@ export function RecordForm(props:RecordFormProps){
  const dirty=!same(values,startValues.current);
  const needsReview=requiresRuntimeReview(startView.current,view,dirty||!!packet);
  const visibleRecord=record&&record.appId===view.appId&&record.tableId===view.tableId&&record.viewId===view.viewId&&scopeAllows(view.capabilities.read,identity.actorId,record.createdBy)?record:undefined;
+ const canEditRecord=saved&&!!visibleRecord&&scopeAllows(view.capabilities.edit,identity.actorId,visibleRecord.createdBy);
+ const retainedUnknown=unknown&&!!packet?.operationId&&operation.getPendingStatus()==='unknown';
 
  // Recovery packets are immutable. Reconstruct only present values/changes the
  // current runtime still permits, over this mount's projected baseline.
@@ -46,19 +56,19 @@ export function RecordForm(props:RecordFormProps){
  useEffect(()=>{setPendingDisplays({});},[authorityKey]);
  useEffect(()=>{onDirtyChange(dirty&&!confirmed);},[dirty,confirmed,onDirtyChange]);
 
- const readGuard=useRef({values,packetId:packet?.operationId??null,phase,needsReview,dirty});
- readGuard.current={values,packetId:packet?.operationId??null,phase,needsReview,dirty};
+ const readGuard=useRef({values,packetId:packet?.operationId??null,phase,needsReview,dirty,confirmed:confirmationSync.current});
+ readGuard.current={values,packetId:packet?.operationId??null,phase,needsReview,dirty,confirmed:confirmationSync.current};
  const discardRef=useRef(onDiscard);discardRef.current=onDiscard;
  const cancelRef=useRef(operation.cancelPreflight);cancelRef.current=operation.cancelPreflight;
  const pendingStatusRef=useRef(operation.getPendingStatus);pendingStatusRef.current=operation.getPendingStatus;
  useEffect(()=>{
   const scope=identity.kind==='new'?{kind:'record' as const,actorId:identity.actorId,appId:identity.appId,viewId:identity.viewId,clientDraftId:identity.clientDraftId}:identity.kind==='record'?{kind:'record' as const,actorId:identity.actorId,appId:identity.appId,viewId:identity.viewId,recordId:identity.recordId}:{kind:'record' as const,actorId:identity.actorId,appId:identity.appId,viewId:identity.viewId,clientDraftId:identity.draftId};
-  const controller=createLeaveController(()=>{const s=readGuard.current;const pending=pendingStatusRef.current();const status=pending==='unknown'?'unknown':pending==='write_in_flight'?'write_in_flight':pending==='preflight'?'preflight':s.dirty?'draft':'clean';return {status,fingerprint:JSON.stringify([s.values,s.packetId,s.phase,s.needsReview,status])};},decision=>{if(decision==='discard'){cancelRef.current();discardRef.current();}});
+  const controller=createLeaveController(()=>{const s=readGuard.current;const pending=pendingStatusRef.current();const status=s.confirmed?'clean':pending==='unknown'?'unknown':pending==='write_in_flight'?'write_in_flight':pending==='preflight'?'preflight':s.dirty?'draft':'clean';return {status,fingerprint:JSON.stringify([s.values,s.packetId,s.phase,s.needsReview,s.confirmed,status])};},decision=>{if(decision==='discard'){cancelRef.current();discardRef.current();}});
   return registerLeaveGuard(scope,controller);
  },[identity,registerLeaveGuard]);
 
  const save=()=>{
-  if(!resource||identity.kind==='draft'||busy||unknown||confirmed||needsReview||mode==='read'||saved&&!dirty||!view.capabilities.create&&!saved||saved&&!view.capabilities.edit)return;
+  if(!resource||identity.kind==='draft'||busy||unknown||confirmed||needsReview||mode==='read'||saved&&!dirty||!view.capabilities.create&&!saved||saved&&!canEditRecord)return;
   const path='applications/'+encodeURIComponent(identity.appId)+'/forms/'+encodeURIComponent(identity.viewId)+'/records'+(saved?'/'+encodeURIComponent(identity.recordId):'');
   const payload:Values=Object.fromEntries(Object.entries(values).filter(([id,value])=>currentEditable.has(id)&&(mode==='create'||!same(startValues.current[id],value))));
   if(saved&&!Object.keys(payload).length)return;
@@ -85,7 +95,7 @@ export function RecordForm(props:RecordFormProps){
   if(node.kind==='system_field'){const label=systemFieldLabels.get(node.fieldId);if(!label)return null;const value=mode==='create'?'由系统填写':visibleRecord?systemFieldValue(node.fieldId,visibleRecord):undefined;if(value===undefined)return null;const span=layoutSpan(node.span),inputId=`record-system-${node.id}`;return <div key={node.id} style={{gridColumn:`span ${span} / span ${span}`}} className="forms-rendered-field"><label htmlFor={inputId}>{label}</label><input id={inputId} aria-label={label} readOnly value={value}/></div>;}
   return null;
  };
- const conflict=operation.phase==='error'&&['APPLICATION_RECORD_CONFLICT','APPLICATION_SCHEMA_CONFLICT','APPLICATION_QUERY_CHANGED','APPLICATION_POLICY_CONFLICT'].includes(operation.errorCode??'');
+ const conflict=operation.phase==='error'&&['APPLICATION_RECORD_CONFLICT','APPLICATION_SCHEMA_CONFLICT','APPLICATION_QUERY_CHANGED','APPLICATION_QUERY_CONTEXT_EXPIRED','APPLICATION_POLICY_CONFLICT'].includes(operation.errorCode??'');
  const statusMessage=unknown?'保存结果待确认':busy?'正在确认并保存…':'';
  return <section aria-label="记录填写" className="surface record-form">
   {identity.kind==='draft'?<p role="alert">草稿身份不能保存为普通记录</p>:null}
@@ -94,11 +104,11 @@ export function RecordForm(props:RecordFormProps){
   {operation.phase==='error'&&!conflict?<p role="alert">{operation.message}</p>:null}
   {unknown?<p role="status">{statusMessage}</p>:busy?<p role="status">{statusMessage}</p>:null}
   {unknown&&operation.message?<p role="alert">{operation.message}</p>:null}
-  {unknown?<button type="button" onClick={operation.query}>恢复保存结果</button>:null}
-  {(unknown||operation.phase==='error'&&operation.message)?<button type="button" onClick={operation.retry} disabled={busy}>使用同一操作重试</button>:null}
-  {conflict?<button type="button" onClick={onRefresh}>刷新记录</button>:null}
-  {needsReview&&!conflict?<button type="button" onClick={onRefresh}>刷新记录</button>:null}
+  {unknown?<button type="button" className="admin-button" onClick={operation.query}>恢复保存结果</button>:null}
+  {retainedUnknown?<button type="button" className="admin-button" onClick={operation.retry} disabled={busy}>使用同一操作重试</button>:null}
+  {conflict?<button type="button" className="admin-button" onClick={onRefresh}>刷新记录</button>:null}
+  {needsReview&&!conflict?<button type="button" className="admin-button" onClick={onRefresh}>刷新记录</button>:null}
   <div className="record-form-fields forms-preview-grid">{view.layout.map(renderLayoutNode)}</div>
-  <footer><button type="button" className="admin-button" onClick={onDiscard} disabled={busy||unknown}>放弃填写</button><button type="button" className="admin-button" onClick={save} disabled={!canEdit||conflict||saved&&!dirty||!saved&&!view.capabilities.create||saved&&!view.capabilities.edit}>保存记录</button></footer>
+  <footer><button type="button" className="admin-button" onClick={onDiscard} disabled={busy||unknown}>放弃填写</button><button type="button" className="admin-button" onClick={save} disabled={!canEdit||conflict||saved&&!dirty||!saved&&!view.capabilities.create||saved&&!canEditRecord}>保存记录</button></footer>
  </section>;
 }
