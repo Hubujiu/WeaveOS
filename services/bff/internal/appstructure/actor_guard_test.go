@@ -53,3 +53,31 @@ func TestExpectedActorGuardCoversOriginalOperationAndReads(t *testing.T) {
 		}
 	}
 }
+
+func TestExpectedActorHeaderStrictnessAndLegacyCompatibility(t *testing.T) {
+	f := setup(t)
+	view, _ := newForm(t, f)
+	for _, headers := range [][]string{{}, {f.actor}, {""}, {"not-a-uuid"}, {strings.ToUpper(f.actor)}, {f.actor, f.actor}, {" " + f.actor}} {
+		r := httptest.NewRequest("GET", "https://weaveos.test/api/v1/applications/"+f.app+"/forms/"+view+"/definition", nil)
+		r.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: f.sid})
+		for _, value := range headers {
+			r.Header.Add("X-Expected-Actor-Id", value)
+		}
+		w := httptest.NewRecorder()
+		f.service.ServeHTTP(w, r)
+		if len(headers) == 0 || len(headers) == 1 && strings.EqualFold(headers[0], f.actor) {
+			data(t, w, 200)
+		} else if w.Code != 400 || !strings.Contains(w.Body.String(), "COMMON_VALIDATION_FAILED") || !strings.Contains(w.Body.String(), `"location":"header"`) {
+			t.Fatalf("malformed negative actor constraint: %d %s", w.Code, w.Body.String())
+		}
+	}
+	other := setup(t)
+	r := httptest.NewRequest("GET", "https://weaveos.test/api/v1/applications/"+other.app+"/structure", nil)
+	r.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: f.sid})
+	r.Header.Set("X-Expected-Actor-Id", f.actor)
+	w := httptest.NewRecorder()
+	f.service.ServeHTTP(w, r)
+	if w.Code != 403 || !strings.Contains(w.Body.String(), "APPLICATION_FORBIDDEN") {
+		t.Fatalf("matched header cannot add a resource grant: %d %s", w.Code, w.Body.String())
+	}
+}

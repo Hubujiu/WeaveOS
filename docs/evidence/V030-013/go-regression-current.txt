@@ -1,0 +1,56 @@
+--- FAIL: TestAcceptanceSeedProducesIsolatedUsableFixtures (0.06s)
+    main_test.go:46: isolated acceptance seed must run: refusing non-test database: use a local weaveos_ database
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/cmd/acceptance-seed	0.069s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-maintenance	1.764s
+?   	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-read	[no test files]
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/bff	(cached)
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appfields	(cached)
+--- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale (0.08s)
+    --- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale/0 (0.02s)
+        set_cost_test.go:112: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+    --- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale/10 (0.02s)
+        set_cost_test.go:112: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+    --- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale/100 (0.02s)
+        set_cost_test.go:112: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+    --- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale/1000 (0.02s)
+        set_cost_test.go:112: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestB5MemberReplacementHasConstantStatementsAtThousandMembers (0.02s)
+    set_cost_test.go:172: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/applications	2.592s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appmeta	1.125s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/apppolicy	1.015s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appschema	(cached)
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure	4.203s
+--- FAIL: TestB5ApplicationArchivePreservesAllFifteenColumnsAndConflictRetainsHot (0.01s)
+    applications_archive_test.go:11: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestB5ColdUnavailableRetainsHotApplicationAudit (0.01s)
+    applications_archive_test.go:52: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestB5BothAuditConstraintsRejectUnsafeOrIncompleteApplicationSummary (0.00s)
+    applications_archive_test.go:70: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestControlledMaintenanceAndReaderUseTheirActualRestrictedRoles (0.00s)
+    maintenance_test.go:45: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestMonthlyArchiveAndAnnualExpiry (0.01s)
+    maintenance_test.go:105: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestArchiveConflictAndUnavailableColdPreserveHotHistory (0.01s)
+    maintenance_test.go:135: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestCommittedCopyThenRetryIsSafe (0.01s)
+    maintenance_test.go:154: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestLeapYearRetentionUsesCalendarYear (0.00s)
+    maintenance_test.go:165: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestAuditReadRequiresCurrentBootstrapAndDoesNotReadCold (0.00s)
+    maintenance_test.go:176: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestPersonnelArchivePreservesSafeSummaryAndOriginalRetention (0.00s)
+    personnel_archive_test.go:10: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestQ36ColdOnlyExpiryDoesNotInvalidateHotQueries (0.00s)
+    personnel_archive_test.go:64: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestAuditReadDeniesOrdinaryDisabledStaleAndAnonymous (0.01s)
+    read_test.go:33: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/audit	0.116s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/auth	7.253s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/identity	1.009s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/invitation	1.009s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence	1.272s
+?   	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence/authsql	[no test files]

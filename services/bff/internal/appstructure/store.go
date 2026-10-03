@@ -10,6 +10,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appmeta"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
 	"sort"
@@ -270,7 +271,7 @@ func checkTree(c context.Context, tx pgx.Tx, app, id string, in Input) error {
 }
 func audit(c context.Context, tx pgx.Tx, p session.Principal, app, op, kind, id, object string, version, schema, view int64, count int) error {
 	summary, _ := json.Marshal(map[string]any{"appId": app, "operationId": op, "structureVersion": version, "schemaVersion": schema, "viewVersion": view, "changeCount": count})
-	_, e := tx.Exec(c, "INSERT INTO auth.authentication_events(event_type,outcome,actor_user_id,session_ref,reason_code,request_id,object_type,object_id,change_summary) VALUES('application_structure_changed','success',$1,NULLIF($2,'')::uuid,$3,'definition',$4,$5,$6)", p.UserID, p.SessionRef, strings.ToUpper(strings.ReplaceAll(kind, ".", "_")), object, id, summary)
+	_, e := tx.Exec(c, "INSERT INTO auth.authentication_events(event_type,outcome,actor_user_id,session_ref,reason_code,request_id,object_type,object_id,change_summary) VALUES('application_structure_changed','success',$1,NULLIF($2,'')::uuid,$3,$4,$5,$6,$7)", p.UserID, p.SessionRef, strings.ToUpper(strings.ReplaceAll(kind, ".", "_")), httpserver.Metadata(c).RequestID, object, id, summary)
 	return e
 }
 func (a *Application) write(c context.Context, p session.Principal, app, id, kind string, in Input) (applications.Result, error) {
@@ -290,6 +291,9 @@ func (a *Application) write(c context.Context, p session.Principal, app, id, kin
 		return applications.Result{}, ErrUnavailable
 	}
 	guard := func(c context.Context, tx pgx.Tx) error {
+		if kind != "definition.save" {
+			return nil
+		}
 		var replay bool
 		if e := tx.QueryRow(c, "SELECT EXISTS(SELECT 1 FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2)", p.UserID, in.OperationID).Scan(&replay); e != nil {
 			return e

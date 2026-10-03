@@ -78,6 +78,18 @@ func (a *Application) BeginManagerWrite(c context.Context, p session.Principal, 
 	}
 	actor := apppolicy.TrustedActor{ID: access.User.ID, BootstrapAdmin: access.BootstrapAdmin}
 	if len(options) > 0 && options[0].SourceGuard != nil {
+		// Owner is immutable. Check current registration and permission before
+		// inspecting sources, then recheck after acquiring the app gate below.
+		app, e := loadApp(c, tx, id, false)
+		if e != nil {
+			return fail(e)
+		}
+		if e = registered(c, tx, app); e != nil {
+			return fail(e)
+		}
+		if !manager(actor, app) {
+			return fail(ErrDenied)
+		}
 		if e = options[0].SourceGuard(c, tx); e != nil {
 			return fail(e)
 		}

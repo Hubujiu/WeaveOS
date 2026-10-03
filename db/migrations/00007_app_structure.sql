@@ -153,6 +153,7 @@ BEGIN
    expr:=format('date_trunc(%L,%I::timestamptz,''UTC'')',CASE WHEN mode='millisecond' THEN 'milliseconds' ELSE mode END,column_name);
   ELSIF old_typ='uuid' AND after_field->>'Type'='uuid[]' THEN expr:=format('CASE WHEN %I IS NULL THEN NULL ELSE ARRAY[%I] END',column_name,column_name);
   ELSIF old_typ='uuid[]' AND after_field->>'Type'='uuid' THEN expr:=format('(%I)[1]',column_name);
+  ELSIF old_typ='timestamptz' AND after_field->>'Type'='text' THEN expr:=format('to_char(%I AT TIME ZONE ''UTC'',%L)',column_name,CASE WHEN before_field->>'TimePrecision'='millisecond' THEN 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"' ELSE 'YYYY-MM-DD"T"HH24:MI:SS"Z"' END);
   END IF;
   EXECUTE format('ALTER TABLE %s ALTER COLUMN %I TYPE %s USING %s',qualified,column_name,typ,expr);
  WHEN 'alter_default' THEN EXECUTE format('ALTER TABLE %s ALTER COLUMN %I %s',qualified,column_name,CASE WHEN default_sql IS NULL THEN 'DROP DEFAULT' ELSE 'SET DEFAULT '||default_sql END);
@@ -181,7 +182,7 @@ BEGIN
  IF old_kind='single_select' THEN
   EXECUTE format('UPDATE %s SET %I=(SELECT (m->>''toOptionId'')::uuid FROM jsonb_array_elements($1) m WHERE (m->>''fromOptionId'')::uuid=%I) WHERE EXISTS(SELECT 1 FROM jsonb_array_elements($1) m WHERE (m->>''fromOptionId'')::uuid=%I)',qualified,column_name,column_name,column_name) USING mappings;
  ELSE
-  expr:=format('NULLIF(ARRAY(SELECT (o->>''id'')::uuid FROM jsonb_array_elements($2->''options'') WITH ORDINALITY AS options(o,ordering) WHERE (o->>''id'')::uuid=ANY(ARRAY(SELECT CASE WHEN EXISTS(SELECT 1 FROM jsonb_array_elements($1) m WHERE (m->>''fromOptionId'')::uuid=value) THEN (SELECT (m->>''toOptionId'')::uuid FROM jsonb_array_elements($1) m WHERE (m->>''fromOptionId'')::uuid=value) ELSE value END FROM unnest(%I) value)) ORDER BY ordering),ARRAY[]::uuid[])',column_name);
+  expr:=format('NULLIF(ARRAY(SELECT (o->>''id'')::uuid FROM jsonb_array_elements($2->''options'') WITH ORDINALITY AS options(o,ordering) WHERE (o->>''id'')::uuid=ANY(ARRAY(SELECT CASE WHEN EXISTS(SELECT 1 FROM jsonb_array_elements($1) m WHERE (m->>''fromOptionId'')::uuid=selected.option_id) THEN (SELECT (m->>''toOptionId'')::uuid FROM jsonb_array_elements($1) m WHERE (m->>''fromOptionId'')::uuid=selected.option_id) ELSE selected.option_id END FROM unnest(%I) AS selected(option_id))) ORDER BY ordering),ARRAY[]::uuid[])',column_name);
   EXECUTE format('UPDATE %s SET %I=%s WHERE %I IS NOT NULL AND %I IS DISTINCT FROM %s',qualified,column_name,expr,column_name,column_name,expr) USING mappings,next_config;
  END IF;
 END $$;

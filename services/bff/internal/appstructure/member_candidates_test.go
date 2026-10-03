@@ -11,7 +11,9 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
+	"time"
 )
 
 func candidateFixture(t *testing.T) *fixture {
@@ -98,5 +100,54 @@ func TestActualGroupMembersRetainIdsAndInactiveDisplay(t *testing.T) {
 	json.Unmarshal(raw, &out)
 	if len(out.MemberIDs) != 1 || out.MemberIDs[0] != member || len(out.Members) != 1 || out.Members[0].ID != member || out.Members[0].Label == "" || out.Members[0].Status != "disabled" || out.Members[0].Selectable {
 		t.Fatalf("real inactive group display %s", raw)
+	}
+}
+
+func TestCandidateCursorBindsActorAppExpiryAndLiveAuthorization(t *testing.T) {
+	f := candidateFixture(t)
+	app := f.service.Application
+	cursor := candidateCursor{Actor: f.actor, App: f.app, Query: "v013-", Account: "v013-before", ID: f.actor}
+	token, err := app.storeCursor(context.Background(), cursor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, facts := range []candidateCursor{{Actor: uuid(t, f.owner), App: f.app, Query: cursor.Query}, {Actor: f.actor, App: uuid(t, f.owner), Query: cursor.Query}} {
+		if _, err := app.loadCursor(context.Background(), token, facts); err == nil {
+			t.Fatal("cross-scope real Redis cursor accepted")
+		}
+	}
+	app.Now = func() time.Time { return time.Now().Add(11 * time.Minute) }
+	if w := candidateCall(t, f, "?q=v013-&pageToken="+token); w.Code != 400 {
+		t.Fatalf("expired cursor %d %s", w.Code, w.Body.String())
+	}
+	app.Now = nil
+	other := setup(t)
+	r := httptest.NewRequest("GET", "https://weaveos.test/api/v1/applications/"+other.app+"/member-candidates", nil)
+	r.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: f.sid})
+	w := httptest.NewRecorder()
+	f.service.ServeHTTP(w, r)
+	if w.Code != 403 {
+		t.Fatalf("ordinary member must not enumerate account candidates: %d %s", w.Code, w.Body.String())
+	}
+	if _, err = f.owner.Exec(context.Background(), "UPDATE auth.users SET auth_version=auth_version+1 WHERE id=$1", f.actor); err != nil {
+		t.Fatal(err)
+	}
+	if w := candidateCall(t, f, "?q=v013-&pageToken="+token); w.Code != 401 {
+		t.Fatalf("changed auth_version must revoke candidate read: %d %s", w.Code, w.Body.String())
+	}
+}
+
+func TestCandidateSearchTreatsWildcardCharactersAsLiteralPrefix(t *testing.T) {
+	f := candidateFixture(t)
+	prefix := "literal-" + uuid(t, f.owner) + "%_"
+	for _, account := range []string{prefix + "yes", strings.ReplaceAll(strings.ReplaceAll(prefix, "%", "X"), "_", "Y") + "no"} {
+		if _, err := f.owner.Exec(context.Background(), "INSERT INTO auth.users(account) VALUES($1)", account); err != nil {
+			t.Fatal(err)
+		}
+	}
+	out := data(t, candidateCall(t, f, "?q="+url.QueryEscape(prefix)), 200)
+	items := out["items"].([]any)
+	if len(items) != 1 || items[0].(map[string]any)["label"] != prefix+"yes" {
+		t.Fatalf("prefix must not interpret SQL wildcard characters: %+v", out)
 	}
 }

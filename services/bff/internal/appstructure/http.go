@@ -167,6 +167,12 @@ func layouts(raw json.RawMessage) error {
 		if e != nil {
 			return e
 		}
+		if raw, ok := m["span"]; ok {
+			var span int
+			if json.Unmarshal(raw, &span) != nil || span < 1 || span > 12 {
+				return invalid()
+			}
+		}
 		if tag.Kind == "group" {
 			if e = layouts(m["children"]); e != nil {
 				return e

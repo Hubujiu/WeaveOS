@@ -9,7 +9,9 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"strconv"
+	"strings"
 )
 
 func physicalFields(fs []appfields.Field) ([]appschema.Field, error) {
@@ -309,6 +311,9 @@ func (a *Application) save(c context.Context, tx pgx.Tx, p session.Principal, ap
 		return applications.Result{}, &Error{issue.Code, map[string]any{"fieldIds": issue.FieldIDs}}
 	}
 	if len(pre.Impacts) > 0 {
+		if in.ConfirmationToken == nil {
+			return applications.Result{}, &Error{"APPLICATION_SCHEMA_CONFIRMATION_REQUIRED", map[string]any{"impacts": pre.Impacts}}
+		}
 		if e = a.verifyConfirmation(c, tx, p, d, in); e != nil {
 			return applications.Result{}, e
 		}
@@ -337,7 +342,7 @@ func (a *Application) save(c context.Context, tx pgx.Tx, p session.Principal, ap
 				mappings = append(mappings, mapping)
 			}
 		}
-		if len(mappings) > 0 || old.Kind == "multi_select" {
+		if len(mappings) > 0 {
 			raw, _ := json.Marshal(mappings)
 			if _, e = tx.Exec(c, "SELECT applications.apply_option_mapping($1,$2,$3,$4,$5,$6,$7)", p.UserID, app, d.Table.ID, old.ID, old.Kind, target.Config, raw); e != nil {
 				return applications.Result{}, e
@@ -359,7 +364,15 @@ func (a *Application) save(c context.Context, tx pgx.Tx, p session.Principal, ap
 		if errors.Is(e, appschema.ErrRequiredBackfill) {
 			return applications.Result{}, &Error{"APPLICATION_SCHEMA_REQUIRED_BACKFILL", map[string]any{"fieldIds": []string{}}}
 		}
-		return applications.Result{}, &Error{"APPLICATION_SCHEMA_CONVERSION_FAILED", map[string]any{"fieldIds": []string{}}}
+		var pg *pgconn.PgError
+		if errors.As(e, &pg) && (strings.HasPrefix(pg.Code, "22") || pg.Code == "23502") {
+			ids := []string{}
+			for _, change := range pre.Plan.SchemaChanges {
+				ids = append(ids, change.FieldID)
+			}
+			return applications.Result{}, &Error{"APPLICATION_SCHEMA_CONVERSION_FAILED", map[string]any{"fieldIds": ids}}
+		}
+		return applications.Result{}, e
 	}
 	after, e := definition(c, tx, app, id, false)
 	if e != nil {

@@ -73,6 +73,7 @@ GRANT UPDATE (structure_version) ON applications.apps TO auth_app;
 GRANT SELECT,INSERT,UPDATE ON applications.directories,applications.logical_tables,applications.fields,applications.form_views TO auth_app;
 GRANT SELECT,INSERT,UPDATE,DELETE ON applications.table_field_dependencies TO auth_app;
 GRANT USAGE ON SCHEMA appdata TO auth_app,auth_backup;
+REVOKE ALL ON FUNCTION applications.apply_schema_change(uuid,uuid,uuid,text,jsonb,jsonb),applications.apply_option_mapping(uuid,uuid,uuid,uuid,text,jsonb,jsonb) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION applications.apply_schema_change(uuid,uuid,uuid,text,jsonb,jsonb) TO auth_app;
 GRANT EXECUTE ON FUNCTION applications.apply_option_mapping(uuid,uuid,uuid,uuid,text,jsonb,jsonb) TO auth_app;
 GRANT SELECT ON ALL TABLES IN SCHEMA appdata TO auth_backup;

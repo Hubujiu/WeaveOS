@@ -35,10 +35,11 @@ func BuildPlan(tableID string, before, after []Field) (Plan, error) {
 			p.Changes = append(p.Changes, Change{Operation: AddColumn, Column: column, After: &f})
 			continue
 		}
+		typeChanged := previous.Type != field.Type || previous.Precision != field.Precision || previous.Scale != field.Scale || previous.RoundingPlaces != field.RoundingPlaces || previous.RoundingMode != field.RoundingMode || previous.TimePrecision != field.TimePrecision
 		for _, changed := range []struct {
 			op  Operation
 			yes bool
-		}{{AlterType, previous.Type != field.Type || previous.Precision != field.Precision || previous.Scale != field.Scale || previous.RoundingPlaces != field.RoundingPlaces || previous.RoundingMode != field.RoundingMode || previous.TimePrecision != field.TimePrecision}, {AlterDefault, !sameValue(previous.Default, field.Default)}, {AlterRequired, previous.Required != field.Required}} {
+		}{{AlterType, typeChanged}, {AlterDefault, !sameValue(previous.Default, field.Default) || typeChanged && field.Default != nil}, {AlterRequired, previous.Required != field.Required}} {
 			if changed.yes {
 				b, a := previous, field
 				p.Changes = append(p.Changes, Change{Operation: changed.op, Column: column, Before: &b, After: &a})

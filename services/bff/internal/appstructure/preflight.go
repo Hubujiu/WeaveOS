@@ -99,6 +99,9 @@ func (a *Application) verifyConfirmation(c context.Context, tx pgx.Tx, p session
 	return nil
 }
 func (a *Application) inspect(c context.Context, tx pgx.Tx, p session.Principal, d Definition, in Input, sign bool) (Preflight, error) {
+	if e := validateMappings(d, in); e != nil {
+		return Preflight{}, e
+	}
 	plan := planFor(d, in)
 	data, dep, e := revisions(c, tx, d.Table.ID)
 	out := Preflight{AppID: d.AppID, TableID: d.Table.ID, ViewID: d.Form.ID, SchemaVersion: d.Table.SchemaVersion, ViewVersion: d.Form.ViewVersion, DataRevision: data, DependencyRevision: dep, Plan: plan, Impacts: []Impact{}, Dependencies: []Dependency{}, BlockingIssues: []Issue{}, SaveAllowed: true}
@@ -207,6 +210,13 @@ func (a *Application) inspect(c context.Context, tx pgx.Tx, p session.Principal,
 				mappingCounts[id] += count
 			}
 			if old.Kind != next.Kind && next.Kind == "text" && old.Kind != "multi_select" {
+				if old.Kind == "datetime" {
+					mapped, err = appfields.NormalizeValue(old, mapped)
+					if err != nil {
+						issue("APPLICATION_SCHEMA_CONVERSION_FAILED", old.ID)
+						continue
+					}
+				}
 				var value any
 				json.Unmarshal(mapped, &value)
 				if s, ok := value.(string); ok {
