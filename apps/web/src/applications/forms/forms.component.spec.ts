@@ -18,10 +18,11 @@ const structure:Structure = {appId,structureVersion:0,directories:[],tables:[tab
 const ok = (data: unknown) => ({code:'OK',message:'success',data,meta:{requestId:'test-request'}});
 
 type Seen = {method:string;path:string;body:Record<string,unknown>|null};
-async function fixture(page:Page, mode:'designer'|'structure'='designer', initialDefinition:Definition=definition) {
+async function fixture(page:Page, mode:'designer'|'structure'='designer', initialDefinition:Definition=definition,
+  initialStructure:Structure=structure) {
   const seen:Seen[]=[];
   let currentDefinition=structuredClone(initialDefinition);
-  let currentStructure=structuredClone(structure);
+  let currentStructure=structuredClone(initialStructure);
   let loseSaveResponse=false;
   let committedSave:Record<string,unknown>|null=null;
   await page.route('**/api/v1/**',async route=>{
@@ -365,11 +366,19 @@ test('late directory create for an old app cannot replace the selected app tree'
   await page.getByLabel('目录名称').fill('旧应用目录');
   await page.getByRole('button',{name:'创建目录'}).click();
   await requestStarted;
-  await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchApp:(id:string)=>void}).__formsHarnessSwitchApp(id),nextAppId);
+  await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),nextAppId);
   await expect(page.getByRole('button',{name:'新建目录'})).toBeEnabled();
   const oldReply=page.waitForResponse(response=>response.url().includes(`/applications/${appId}/directories`));
   release();await oldReply;
   await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
   await expect(page.getByRole('treeitem',{name:'旧应用目录'})).toHaveCount(0);
   await expect(page.getByText('已保存', {exact:true})).toHaveCount(0);
+});
+
+test('empty structure explains the next action to keyboard and screen reader users',async({page})=>{
+  await fixture(page,'structure',definition,{...structure,tables:[],forms:[]});
+  await expect(page.getByText('暂无目录或表单')).toBeVisible();
+  await expect(page.getByRole('button',{name:'新建目录'})).toBeEnabled();
+  await expect(page.getByRole('button',{name:'新建表单'})).toBeEnabled();
+  await page.screenshot({path:test.info().outputPath('structure-empty.png'),fullPage:true});
 });

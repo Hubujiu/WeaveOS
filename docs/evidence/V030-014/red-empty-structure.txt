@@ -1,0 +1,39 @@
+[WebServer] (node:13320) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:13334) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:13363) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/forms/forms.component.spec.ts:378:1 › empty structure explains the next action to keyboard and screen reader users (5.2s)
+
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:378:1 › empty structure explains the next action to keyboard and screen reader users 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('暂无目录或表单')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('暂无目录或表单') with timeout 5000ms
+      - waiting for getByText('暂无目录或表单')
+
+
+      378 | test('empty structure explains the next action to keyboard and screen reader users',async({page})=>{
+      379 |   await fixture(page,'structure',definition,{...structure,tables:[],forms:[]});
+    > 380 |   await expect(page.getByText('暂无目录或表单')).toBeVisible();
+          |                                           ^
+      381 |   await expect(page.getByRole('button',{name:'新建目录'})).toBeEnabled();
+      382 |   await expect(page.getByRole('button',{name:'新建表单'})).toBeEnabled();
+      383 |   await page.screenshot({path:test.info().outputPath('structure-empty.png'),fullPage:true});
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:380:43
+
+    Error Context: test-results/applications-forms-forms.c-15dcf-ard-and-screen-reader-users-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:378:1 › empty structure explains the next action to keyboard and screen reader users 
