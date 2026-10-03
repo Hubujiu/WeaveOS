@@ -27,7 +27,11 @@ schema budgets for protected writes. No new identity credential or broad role.
 Boundary: private table presets are NOT available until lead reads back exact
 ADR14.4 proposal and implementation passes. Schema conflict error remains owner
 consumer defect (real HTTP RED retained); don't pretend every error is validated.
-Migration compatibility manifest scope registration and new-head CI are pending.
+Migration compatibility manifest scope registration remains pending. Actual
+b66 CI Go/governance passed; browser/Product failed at the exact missing migration
+registration contract, so their later checks did not execute. See
+b66-ci-boundary.txt. Current configured-BFF record integration additionally passes
+over real certificate-verified HTTPS (real-https-record-http.txt).
 Capacity and V017 joint browser acceptance remain independent open gates.
 
 ---

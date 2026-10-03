@@ -1,0 +1,62 @@
+# Actual b66 CI boundary, observed 2026-10-03 after 15:32:56 UTC
+
+Exact workflow head: b66d5603551b5df558e7e1195de488140a284371.
+Repository governance run37133234291 SUCCESS.
+CI run37133234298 FAILURE; governance SUCCESS and Go SUCCESS, browser FAILURE.
+https://github.com/Hubujiu/WeaveOS/actions/runs/37133234298
+Go job111232389413: isolated hot/cold migrations, real B2 fixture, formatting,
+static checks, race tests and build all SUCCESS.
+Browser job111232389616 fails contracts; later browser/Q36/component steps SKIPPED.
+Product run37133234292 FAILURE, job111232389490 fails same contract within
+Migrations, HTTPS and real product acceptance. Later security/runtime/restore/
+automatic migration/packaging/signoff steps SKIPPED, not validated at this head.
+https://github.com/Hubujiu/WeaveOS/actions/runs/37133234292
+
+Read-only commands: gh run view <id> --json status,conclusion,jobs;
+gh api repos/Hubujiu/WeaveOS/actions/runs/<id> --jq '{id,head_sha,status,conclusion,html_url}';
+gh run view <id> --log-failed. Excerpts below are exact returned log lines.
+
+The single failure is unchanged, independently checked candidate migration hashes.
+Root AGENTS section5 requires exact shared-path registration; do not bypass test.
+Prepared unapplied patch: proposed-compatibility-hot12.patch. Existing frozen
+migration hashes/config/enforcement/role pin preserved. No deployment attempted.
+
+## CI browser
+
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0311598Z ℹ tests 45
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0311991Z ℹ pass 44
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0312173Z ℹ fail 1
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0312575Z ℹ skipped 0
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0313344Z ✖ failing tests:
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0313471Z 
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0313772Z test at contracts/application-structure.contract.test.mjs:25:1
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0314367Z ✖ application candidate registers exact frozen incremental migration hashes (1.297623ms)
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0315067Z   AssertionError [ERR_ASSERTION]: unregistered reviewed source archive-migrations/00004_app_structure_audit.sql
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0315514Z   + actual - expected
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0315702Z   
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0315863Z   + undefined
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0316192Z   - '8e6ff898386db6ec02a09a33c46b24d3787293d21eb4246020740825a5a49a16'
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0316519Z   
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0317107Z       at TestContext.<anonymous> (file:///home/runner/work/WeaveOS/WeaveOS/contracts/application-structure.contract.test.mjs:30:10)
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0317933Z       at Test.runInAsyncScope (node:async_hooks:228:14)
+browser	Authentication OpenAPI 3.2.1 contract	2026-10-03T15:26:39.0318189Z       at Test.run (node:internal/test_runner/test:1118:25)
+
+## Product
+
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7661894Z ℹ tests 289
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7662249Z ℹ pass 288
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7662362Z ℹ fail 1
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7662608Z ℹ skipped 0
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7663626Z ✖ failing tests:
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7663777Z 
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7664047Z test at contracts/application-structure.contract.test.mjs:25:1
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7664614Z ✖ application candidate registers exact frozen incremental migration hashes (1.05363ms)
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7665225Z   AssertionError [ERR_ASSERTION]: unregistered reviewed source archive-migrations/00004_app_structure_audit.sql
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7665653Z   + actual - expected
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7665835Z   
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7665989Z   + undefined
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7666279Z   - '8e6ff898386db6ec02a09a33c46b24d3787293d21eb4246020740825a5a49a16'
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7666585Z   
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7666985Z       at TestContext.<anonymous> (file:///repo/contracts/application-structure.contract.test.mjs:30:10)
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7667452Z       at Test.runInAsyncScope (node:async_hooks:227:14)
+product	Migrations, HTTPS and real product acceptance	2026-10-03T15:32:37.7667807Z       at Test.run (node:internal/test_runner/test:1397:25)

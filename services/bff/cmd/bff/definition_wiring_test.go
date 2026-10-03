@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -85,11 +86,41 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 		t.Fatal(e)
 	}
 	defer store.Revoke(c, sid)
+	server := httptest.NewUnstartedServer(nil)
+	cfg.Origin = "https://" + server.Listener.Addr().String()
 	h, close, e := buildHandler(c, cfg)
 	if e != nil {
 		t.Fatal(e)
 	}
 	defer close()
+	server.Config.Handler = h
+	server.StartTLS()
+	defer server.Close()
+	// The client trusts the isolated server certificate; HTTPS transport,
+	// configured origin, Session and CSRF are real rather than an in-memory call.
+	client := server.Client()
+	serve := func(r *http.Request) *httptest.ResponseRecorder {
+		r.RequestURI = ""
+		response, e := client.Do(r)
+		if e != nil {
+			t.Fatal(e)
+		}
+		defer response.Body.Close()
+		if response.TLS == nil {
+			t.Fatal("real HTTPS transport required")
+		}
+		body, e := io.ReadAll(response.Body)
+		if e != nil {
+			t.Fatal(e)
+		}
+		w := httptest.NewRecorder()
+		for k, v := range response.Header {
+			w.Header()[k] = v
+		}
+		w.WriteHeader(response.StatusCode)
+		_, _ = w.Write(body)
+		return w
+	}
 	request := func(method, path, body string) *httptest.ResponseRecorder {
 		r := httptest.NewRequest(method, cfg.Origin+"/api/v1/applications/"+app+path, strings.NewReader(body))
 		r.Header.Set("Origin", cfg.Origin)
@@ -98,7 +129,7 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 		r.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: sid})
 		r.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: csrf})
 		w := httptest.NewRecorder()
-		h.ServeHTTP(w, r)
+		*w = *serve(r)
 		return w
 	}
 	w := request("GET", "/structure", "")
@@ -222,7 +253,7 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 			r.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: sid})
 			r.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: csrf})
 			w := httptest.NewRecorder()
-			h.ServeHTTP(w, r)
+			*w = *serve(r)
 			if w.Code != bad.status || !strings.Contains(w.Body.String(), bad.code) {
 				t.Fatalf("shared guard %s %d %s", bad.header, w.Code, w.Body.String())
 			}
@@ -319,7 +350,7 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 		r.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: memberSID})
 		r.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: memberCSRF})
 		w := httptest.NewRecorder()
-		h.ServeHTTP(w, r)
+		*w = *serve(r)
 		if w.Code != 200 || !strings.Contains(w.Body.String(), `"read":"own"`) || strings.Contains(w.Body.String(), `"create":true`) {
 			t.Fatalf("ordinary runtime actual grant projection %d %s", w.Code, w.Body.String())
 		}
@@ -334,7 +365,7 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 			r.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: memberSID})
 			r.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: memberCSRF})
 			w := httptest.NewRecorder()
-			h.ServeHTTP(w, r)
+			*w = *serve(r)
 			return w
 		}
 		w = memberRequest("POST", root+"/records/search", `{"page":1,"pageSize":20,"filter":null,"sort":null}`)
