@@ -1,0 +1,39 @@
+✖ ADR14 draft write minimum and history safe displays are explicit (2.431756ms)
+✔ frozen record draft runtime and history methods are exact and actor guarded (0.498954ms)
+✔ frozen record payloads and confirmations contain precise allowed values (0.465203ms)
+✔ runtime and history expose only frozen safe DTO and record errors (0.170808ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 80.131096
+
+✖ failing tests:
+
+test at contracts/application-records.contract.test.mjs:7:1
+✖ ADR14 draft write minimum and history safe displays are explicit (2.431756ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - [
+  -   'operationId',
+  -   'id',
+  -   'draftVersion'
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-013/contracts/application-records.contract.test.mjs:9:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [ 'operationId', 'id', 'draftVersion' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

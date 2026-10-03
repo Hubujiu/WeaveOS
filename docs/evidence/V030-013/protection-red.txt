@@ -1,0 +1,73 @@
+=== RUN   TestDecimalIndependentOracle
+=== RUN   TestDecimalIndependentOracle/-1.25HALF_UP
+=== RUN   TestDecimalIndependentOracle/-1.25HALF_EVEN
+=== RUN   TestDecimalIndependentOracle/1.35HALF_EVEN
+=== RUN   TestDecimalIndependentOracle/-149TOWARD_ZERO
+=== RUN   TestDecimalIndependentOracle/-149FLOOR
+=== RUN   TestDecimalIndependentOracle/-149CEILING
+=== RUN   TestDecimalIndependentOracle/150HALF_UP
+=== RUN   TestDecimalIndependentOracle/-0.001CEILING
+=== RUN   TestDecimalIndependentOracle/9.999HALF_EVEN
+=== RUN   TestDecimalIndependentOracle/100000000000000001.25HALF_EVEN
+=== RUN   TestDecimalIndependentOracle/99999999999999999999.999999999999999999TOWARD_ZERO
+=== RUN   TestDecimalIndependentOracle/1500000000000000000HALF_UP
+--- PASS: TestDecimalIndependentOracle (0.00s)
+    --- PASS: TestDecimalIndependentOracle/-1.25HALF_UP (0.00s)
+    --- PASS: TestDecimalIndependentOracle/-1.25HALF_EVEN (0.00s)
+    --- PASS: TestDecimalIndependentOracle/1.35HALF_EVEN (0.00s)
+    --- PASS: TestDecimalIndependentOracle/-149TOWARD_ZERO (0.00s)
+    --- PASS: TestDecimalIndependentOracle/-149FLOOR (0.00s)
+    --- PASS: TestDecimalIndependentOracle/-149CEILING (0.00s)
+    --- PASS: TestDecimalIndependentOracle/150HALF_UP (0.00s)
+    --- PASS: TestDecimalIndependentOracle/-0.001CEILING (0.00s)
+    --- PASS: TestDecimalIndependentOracle/9.999HALF_EVEN (0.00s)
+    --- PASS: TestDecimalIndependentOracle/100000000000000001.25HALF_EVEN (0.00s)
+    --- PASS: TestDecimalIndependentOracle/99999999999999999999.999999999999999999TOWARD_ZERO (0.00s)
+    --- PASS: TestDecimalIndependentOracle/1500000000000000000HALF_UP (0.00s)
+=== RUN   TestFieldDefaultsAndWireTypes
+--- PASS: TestFieldDefaultsAndWireTypes (0.00s)
+=== RUN   TestDatesOffsetsAndPrecision
+--- PASS: TestDatesOffsetsAndPrecision (0.00s)
+=== RUN   TestGridSpanAndFieldIdentity
+--- PASS: TestGridSpanAndFieldIdentity (0.00s)
+=== RUN   TestRequiredConfigAndMalformedDecimalKeysCannotNormalize
+    regression_test.go:4: malformed exact configuration accepted {"precision":"38","scale":2,"roundingMode":"HALF_UP"}
+--- FAIL: TestRequiredConfigAndMalformedDecimalKeysCannotNormalize (0.00s)
+=== RUN   TestEveryFieldValueAndConfigBoundary
+--- PASS: TestEveryFieldValueAndConfigBoundary (0.00s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/appfields	0.007s
+=== RUN   TestExactStoredDefaultsAndLayoutOnlyPreservesRows
+--- PASS: TestExactStoredDefaultsAndLayoutOnlyPreservesRows (0.10s)
+=== RUN   TestNewReferenceDefaultNeedsActiveSource
+--- PASS: TestNewReferenceDefaultNeedsActiveSource (0.04s)
+=== RUN   TestNormalizedDefaultsReplaySameOperation
+--- PASS: TestNormalizedDefaultsReplaySameOperation (0.06s)
+=== RUN   TestOptionsMappingChangesRealValuesAndPreflightIsReadOnly
+--- PASS: TestOptionsMappingChangesRealValuesAndPreflightIsReadOnly (0.06s)
+=== RUN   TestConfirmationSameCountChangeExpiryAndReplay
+--- PASS: TestConfirmationSameCountChangeExpiryAndReplay (0.07s)
+=== RUN   TestRequiredAndConversionFailureRollBack
+--- PASS: TestRequiredAndConversionFailureRollBack (0.06s)
+=== RUN   TestRealPGStructureMigrationAndRestrictedDDL
+--- PASS: TestRealPGStructureMigrationAndRestrictedDDL (0.02s)
+=== RUN   TestAtomicFormCreateAndGridSave
+--- PASS: TestAtomicFormCreateAndGridSave (0.05s)
+=== RUN   TestOrdinaryRootMenuDoesNotGrantDefinition
+--- PASS: TestOrdinaryRootMenuDoesNotGrantDefinition (0.02s)
+=== RUN   TestOtherViewRemovalAndTypeConversionHaveDifferentGuards
+    protection_test.go:3: product contract status want 200 got 409: {"code":"APPLICATION_SCHEMA_DEPENDENCY_BLOCKED","message":"请求未完成","data":{"dependencies":[{"fieldId":"161bb76e-2449-479d-bc0e-76789e312649","kind":"view_layout","resourceId":"0a78d722-c2b7-43b1-a4d8-a37d52b84684"}]},"meta":{"requestId":"98c07d9def1e5dcca3e71758398e6adb"}}
+--- FAIL: TestOtherViewRemovalAndTypeConversionHaveDifferentGuards (0.06s)
+=== RUN   TestOtherViewLayoutChangesDependencyRevision
+    protection_test.go:4: want 409 APPLICATION_SCHEMA_CONFIRMATION_STALE got 200 {"code":"OK","message":"success","data":{"appliedPlan":{"schemaChanges":[{"kind":"remove","fieldId":"47170eeb-3768-4ba0-abb9-d5385524b94a","beforeKind":"text","afterKind":null}],"metadataChanged":true,"layoutChanged":false},"definition":{"appId":"b91f0f10-7b81-45f0-ad33-b43482db1926","table":{"id":"083e7b67-9f5f-42bf-b812-278ebcb56e56","appId":"b91f0f10-7b81-45f0-ad33-b43482db1926","name":"表单","directoryId":null,"position":0,"schemaVersion":2,"schemaReady":true},"form":{"id":"25fd02b0-4443-4a1e-80ea-85a5b9cbe831","appId":"b91f0f10-7b81-45f0-ad33-b43482db1926","tableId":"083e7b67-9f5f-42bf-b812-278ebcb56e56","name":"表单","directoryId":null,"position":0,"viewVersion":1},"fields":[],"systemFields":[{"id":"id","kind":"uuid","readOnly":true},{"id":"createdBy","kind":"member","readOnly":true},{"id":"createdAt","kind":"datetime","readOnly":true},{"id":"updatedAt","kind":"datetime","readOnly":true},{"id":"recordVersion","kind":"number","readOnly":true}],"layout":[],"capabilities":{"canManageDefinition":true}},"operationId":"9bee281b-a378-40ba-b04d-106b12b1339b"},"meta":{"requestId":"75a8f8b167d6c03e3a89b65f7e67f3a4"}}
+--- FAIL: TestOtherViewLayoutChangesDependencyRevision (0.06s)
+=== RUN   TestRequiredSelectionCannotBeClearedAndMultiToSingleCannotHideCardinality
+--- PASS: TestRequiredSelectionCannotBeClearedAndMultiToSingleCannotHideCardinality (0.05s)
+=== RUN   TestDependencyUnavailableDoesNotPretendEmpty
+--- PASS: TestDependencyUnavailableDoesNotPretendEmpty (0.07s)
+=== RUN   TestPreflightReferenceSourceAndStrictCompleteDTO
+    protection_test.go:9: want 503 COMMON_SERVICE_UNAVAILABLE got 200 {"code":"OK","message":"success","data":{"appId":"c78b550c-cdae-4fb1-a449-8c95b01cf499","tableId":"cb405eda-0ef9-403c-bf1d-962fa1294328","viewId":"722ad68a-9af6-4a75-8ae4-49d112c45b52","schemaVersion":0,"viewVersion":0,"dataRevision":0,"dependencyRevision":0,"plan":{"schemaChanges":[{"kind":"add","fieldId":"f84beb6d-bf91-42ae-bf6c-3b418ebbf8a9","beforeKind":null,"afterKind":"member"}],"metadataChanged":true,"layoutChanged":false},"impacts":[],"dependencies":[],"blockingIssues":[],"saveAllowed":true,"confirmation":null},"meta":{"requestId":"9c37310d10ebf623ebc2b4d47da42c3e"}}
+--- FAIL: TestPreflightReferenceSourceAndStrictCompleteDTO (0.05s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure	0.792s
+FAIL

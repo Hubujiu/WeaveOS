@@ -1,0 +1,20 @@
+--- a/services/bff/internal/apprecordservice/write.go
++++ b/services/bff/internal/apprecordservice/write.go
+@@ -244,7 +244,7 @@
+ 	}
+ 	facts := write.Context()
+ 	if req.ExpectedSchemaVersion != facts.SchemaVersion {
+-		return result, apprecords.ErrConflict
++		return result, &appstructure.Error{Code: "APPLICATION_SCHEMA_CONFLICT", Data: map[string]int64{"currentSchemaVersion": facts.SchemaVersion}}
+ 	}
+ 	values, err := normalizeRecordValues(req.Values, fields, true)
+ 	if err != nil {
+@@ -482,7 +482,7 @@
+ 	}
+ 	facts := write.Context()
+ 	if req.ExpectedSchemaVersion != facts.SchemaVersion {
+-		return result, apprecords.ErrConflict
++		return result, &appstructure.Error{Code: "APPLICATION_SCHEMA_CONFLICT", Data: map[string]int64{"currentSchemaVersion": facts.SchemaVersion}}
+ 	}
+ 	values, err := normalizeRecordValues(req.Changes, fields, false)
+ 	if err != nil {

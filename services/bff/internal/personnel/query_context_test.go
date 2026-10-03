@@ -2,6 +2,8 @@ package personnel
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,8 +12,94 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/redis/go-redis/v9"
 )
+
+func TestQ36RealRedisOldNewContextBytesAndTokens(t *testing.T) {
+	ctx := context.Background()
+	opts, err := redis.ParseURL(os.Getenv("WEAVEOS_TEST_REDIS_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := redis.NewClient(opts)
+	defer client.Close()
+	if err := client.Ping(ctx).Err(); err != nil {
+		t.Fatal(err)
+	}
+	generation := fmt.Sprintf("q36-parity-%d", time.Now().UnixNano())
+	sessionRef := "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+	hash := sha256.Sum256([]byte(sessionRef))
+	prefix := "ems:personnel:query:" + generation + ":v1:{" + hex.EncodeToString(hash[:]) + "}:"
+	t.Cleanup(func() {
+		keys, _ := client.Keys(ctx, "ems:personnel:query:"+generation+":*").Result()
+		if len(keys) > 0 {
+			_ = client.Del(ctx, keys...).Err()
+		}
+	})
+	fingerprint := strings.Repeat("a", 64)
+	value := QueryContext{View: "members", Criteria: json.RawMessage(`{"search":"Alice","filter":null}`), Total: 23, Fingerprint: fingerprint, ProtocolVersion: 1, Revisions: QueryRevisions{People: 1, Configuration: 1}}
+	wantData := fmt.Sprintf(`{"view":"members","criteria":{"search":"Alice","filter":null},"total":23,"fingerprint":"%s","protocolVersion":1}`, fingerprint)
+	wantRevision := `{"People":1,"Configuration":1,"Activity":0}`
+	legacy := NewQueryContextStore(client, generation)
+	oldToken, err := legacy.Create(ctx, sessionRef, value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldFields, err := client.HGetAll(ctx, prefix+oldToken).Result()
+	if err != nil || len(oldFields) != 2 || oldFields["data"] != wantData || oldFields["revision"] != wantRevision {
+		t.Fatalf("pre-extraction Redis bytes differ: fields=%v err=%v", oldFields, err)
+	}
+	policy := querycontext.Policy{
+		Validate: func(m querycontext.Metadata) bool {
+			var r QueryRevisions
+			if json.Unmarshal(m.Revision, &r) != nil {
+				return false
+			}
+			return validQueryMetadata(QueryContext{View: m.View, Criteria: m.Criteria, Total: m.Total, Fingerprint: m.Fingerprint, ProtocolVersion: m.ProtocolVersion, Revisions: r})
+		},
+		Forward: func(_ string, old, next json.RawMessage) bool {
+			var a, b QueryRevisions
+			return json.Unmarshal(old, &a) == nil && json.Unmarshal(next, &b) == nil && validQueryRevisions(a) && validQueryRevisions(b) && b.People >= a.People && b.Configuration >= a.Configuration && b.Activity >= a.Activity && (a.Activity != 0 || b.Activity == 0)
+		},
+	}
+	shared := querycontext.NewStore(client, "personnel", generation, policy)
+	loaded, err := shared.Load(ctx, sessionRef, oldToken)
+	if err != nil || loaded.View != "members" || string(loaded.Criteria) != string(value.Criteria) || string(loaded.Revision) != wantRevision {
+		t.Fatalf("old token must load in neutral store: %+v %v", loaded, err)
+	}
+	// The historical validID accepted uppercase UUID text and hashed its
+	// lowercase form. Existing Session-bound tokens must retain that behavior.
+	if upper, e := shared.Load(ctx, strings.ToUpper(sessionRef), oldToken); e != nil || upper.View != "members" {
+		t.Fatalf("uppercase canonical-equivalent Session ref lost old token: %+v %v", upper, e)
+	}
+	meta := querycontext.Metadata{View: value.View, Criteria: value.Criteria, Total: value.Total, Fingerprint: value.Fingerprint, ProtocolVersion: value.ProtocolVersion, Revision: json.RawMessage(wantRevision)}
+	newToken, err := shared.Create(ctx, sessionRef, meta)
+	if err != nil {
+		t.Fatal(err)
+	}
+	newFields, err := client.HGetAll(ctx, prefix+newToken).Result()
+	if err != nil || len(newFields) != 2 || newFields["data"] != wantData || newFields["revision"] != wantRevision {
+		t.Fatalf("new context bytes must be readable by old code: fields=%v err=%v", newFields, err)
+	}
+	if old, err := legacy.Load(ctx, sessionRef, newToken); err != nil || old.View != value.View || string(old.Criteria) != string(value.Criteria) || old.Total != value.Total || old.Fingerprint != value.Fingerprint || old.Revisions != value.Revisions {
+		t.Fatalf("new token must load in old store: %+v %v", old, err)
+	}
+	next := QueryRevisions{People: 2, Configuration: 1}
+	nextBytes := json.RawMessage(`{"People":2,"Configuration":1,"Activity":0}`)
+	if err := shared.Advance(ctx, sessionRef, oldToken, fingerprint, json.RawMessage(wantRevision), nextBytes); err != nil {
+		t.Fatal(err)
+	}
+	if old, err := legacy.Load(ctx, sessionRef, oldToken); err != nil || old.Revisions != next {
+		t.Fatalf("new CAS must advance old token: %+v %v", old, err)
+	}
+	if err := legacy.Advance(ctx, sessionRef, newToken, fingerprint, value.Revisions, next); err != nil {
+		t.Fatal(err)
+	}
+	if now, err := shared.Load(ctx, sessionRef, newToken); err != nil || string(now.Revision) != string(nextBytes) {
+		t.Fatalf("old CAS must advance new token: %+v %v", now, err)
+	}
+}
 
 func TestQ36RealRedisContextOwnershipLimitsAndCAS(t *testing.T) {
 	ctx := context.Background()

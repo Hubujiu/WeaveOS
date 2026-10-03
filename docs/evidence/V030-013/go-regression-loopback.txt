@@ -1,0 +1,58 @@
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/acceptance-seed	1.371s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-maintenance	1.624s
+?   	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-read	[no test files]
+ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/bff	1.250s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appfields	(cached)
+--- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale (0.08s)
+    --- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale/0 (0.02s)
+        set_cost_test.go:112: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+    --- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale/10 (0.02s)
+        set_cost_test.go:112: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+    --- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale/100 (0.02s)
+        set_cost_test.go:112: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+    --- FAIL: TestB5ListHasTwoDataStatementsAtControlledScale/1000 (0.02s)
+        set_cost_test.go:112: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestB5MemberReplacementHasConstantStatementsAtThousandMembers (0.02s)
+    set_cost_test.go:172: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/applications	3.467s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appmeta	(cached)
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/apppolicy	(cached)
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appschema	(cached)
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure	4.768s
+--- FAIL: TestB5ApplicationArchivePreservesAllFifteenColumnsAndConflictRetainsHot (0.01s)
+    applications_archive_test.go:11: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestB5ColdUnavailableRetainsHotApplicationAudit (0.01s)
+    applications_archive_test.go:52: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestB5BothAuditConstraintsRejectUnsafeOrIncompleteApplicationSummary (0.01s)
+    applications_archive_test.go:70: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestControlledMaintenanceAndReaderUseTheirActualRestrictedRoles (0.05s)
+    maintenance_test.go:45: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestMonthlyArchiveAndAnnualExpiry (0.05s)
+    maintenance_test.go:105: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestArchiveConflictAndUnavailableColdPreserveHotHistory (0.05s)
+    maintenance_test.go:135: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestCommittedCopyThenRetryIsSafe (0.05s)
+    maintenance_test.go:154: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestLeapYearRetentionUsesCalendarYear (0.01s)
+    maintenance_test.go:165: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestAuditReadRequiresCurrentBootstrapAndDoesNotReadCold (0.01s)
+    maintenance_test.go:176: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestPersonnelArchivePreservesSafeSummaryAndOriginalRetention (0.01s)
+    personnel_archive_test.go:10: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestQ36ColdOnlyExpiryDoesNotInvalidateHotQueries (0.05s)
+    personnel_archive_test.go:64: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+--- FAIL: TestAuditReadDeniesOrdinaryDisabledStaleAndAnonymous (0.01s)
+    read_test.go:33: ERROR: cannot truncate a table referenced in a foreign key constraint (SQLSTATE 0A000)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/audit	0.353s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/auth	7.942s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/identity	(cached)
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/invitation	(cached)
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence	1.870s
+?   	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence/authsql	[no test files]
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/personnel	49.680s
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver	(cached)
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/security	(cached)
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/session	1.210s
+FAIL

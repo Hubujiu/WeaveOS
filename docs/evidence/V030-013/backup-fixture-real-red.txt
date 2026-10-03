@@ -1,0 +1,37 @@
+✔ real encrypted logical backup restores into an isolated empty database (393.246207ms)
+✔ missing source produces a failure and no successful backup file (76.643469ms)
+✔ wrong-key restore fails before any database mutation (193.954697ms)
+✖ restricted backup preserves migration ledger sequence and remains unable to advance it (976.131303ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1972.976173
+
+✖ failing tests:
+
+test at infra/runtime/backup.test.mjs:42:1
+✖ restricted backup preserves migration ledger sequence and remains unable to advance it (976.131303ms)
+  Error: Command failed: docker exec -i weaveos-v010-v013-backup-pg psql -X -v ON_ERROR_STOP=1 -U weaveos_test -d weaveos_backup_ledger_1791040208321
+  ERROR:  relation "applications.record_change_events" does not exist
+  
+      at genericNodeError (node:internal/errors:985:15)
+      at wrappedFn (node:internal/errors:539:14)
+      at checkExecSyncError (node:child_process:942:11)
+      at execFileSync (node:child_process:978:15)
+      at sql (file:///workspace/WeaveOS-worktrees/V030-013/infra/runtime/backup.test.mjs:13:28)
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-013/infra/runtime/backup.test.mjs:55:2)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19) {
+    status: 3,
+    signal: null,
+    output: [ null, 'DO\nREVOKE\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\n', 'ERROR:  relation "applications.record_change_events" does not exist\n' ],
+    pid: 61234,
+    stdout: 'DO\nREVOKE\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\n',
+    stderr: 'ERROR:  relation "applications.record_change_events" does not exist\n'
+  }

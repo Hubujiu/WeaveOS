@@ -1,0 +1,43 @@
+✔ B5a frozen HTTP routes, method sets and live Web Session are explicit (1.557104ms)
+✔ B5a DTOs use exact closed fields and finite menu grants (0.235126ms)
+✔ B5a six public error codes retain frozen HTTP status (0.27763ms)
+✖ B5a new migrations have exact reviewed compatibility hashes and runtime role pin (1.241046ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 69.175885
+
+✖ failing tests:
+
+test at tests/foundation/b5-contract.test.mjs:39:1
+✖ B5a new migrations have exact reviewed compatibility hashes and runtime role pin (1.241046ms)
+  AssertionError [ERR_ASSERTION]: Got unwanted exception.
+  Actual message: "Installed personnel role policy differs from reviewed source"
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-013/tests/foundation/b5-contract.test.mjs:42:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: Error: Installed personnel role policy differs from reviewed source
+        at validateInstalledPersonnelRoles (file:///workspace/WeaveOS-worktrees/V030-013/infra/server/deploy/personnel-upgrade.mjs:6:114)
+        at file:///workspace/WeaveOS-worktrees/V030-013/tests/foundation/b5-contract.test.mjs:42:26
+        at getActual (node:assert:611:5)
+        at strict.doesNotThrow (node:assert:779:32)
+        at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-013/tests/foundation/b5-contract.test.mjs:42:9)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1382:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+        at Test.postRun (node:internal/test_runner/test:1522:19)
+        at Test.run (node:internal/test_runner/test:1447:12),
+    expected: undefined,
+    operator: 'doesNotThrow',
+    diff: 'simple'
+  }
