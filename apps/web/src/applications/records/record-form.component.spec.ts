@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test';
 test('record form keeps precise and false values, excludes denied fields, and recovers the same unknown operation',async({page})=>{
  await page.goto('/src/applications/records/record-form-fixture.html');
  await expect(page.getByLabel('金额')).toHaveValue('9007199254740993.01');
- await expect(page.getByLabel('同意')).not.toBeChecked();
+ await expect(page.getByRole('checkbox',{name:'同意',exact:true})).not.toBeChecked();
  await expect(page.getByLabel('无权字段')).toHaveCount(0);
  await expect(page.getByText('未选择')).toBeVisible();
  await page.getByLabel('金额').fill('9007199254740993.02');
