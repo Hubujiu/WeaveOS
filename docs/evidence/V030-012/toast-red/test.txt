@@ -1,0 +1,43 @@
+[WebServer] (node:27170) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:27203) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:27252) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › apps/web/src/applications.component.spec.ts:259:1 › V030-012 confirmed create notice stays in the catalogue after opening the workspace
+  1) [chromium] › apps/web/src/applications.component.spec.ts:259:1 › V030-012 confirmed create notice stays in the catalogue after opening the workspace
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('status').filter({ hasText: '应用已创建' })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('status').filter({ hasText: '应用已创建' }) with timeout 5000ms
+      - waiting for getByRole('status').filter({ hasText: '应用已创建' })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      271 |  await page.getByRole('main').getByRole('button', { name: created.name, exact: true }).click();
+      272 |  await expect(page.getByRole('heading', { name: created.name, exact: true })).toBeVisible();
+    > 273 |  await expect(page.getByRole('status').filter({ hasText: '应用已创建' })).toHaveCount(0);
+          |                                                                      ^
+      274 | });
+      275 |
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:273:70
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-f204a-after-opening-the-workspace-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › apps/web/src/applications.component.spec.ts:259:1 › V030-012 confirmed create notice stays in the catalogue after opening the workspace

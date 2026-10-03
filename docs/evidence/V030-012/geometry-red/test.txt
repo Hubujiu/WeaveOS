@@ -1,0 +1,42 @@
+[WebServer] (node:29401) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:29448) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:29481) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › apps/web/src/applications.component.spec.ts:276:1 › V030-012 original Home keeps the 56/176 shell and native sidebar item geometry
+  1) [chromium] › apps/web/src/applications.component.spec.ts:276:1 › V030-012 original Home keeps the 56/176 shell and native sidebar item geometry
+
+    Error: expect(received).toMatchObject(expected)
+
+    - Expected  - 2
+    + Received  + 2
+
+      Object {
+    -   "x": 16,
+    -   "y": 80,
+    +   "x": 24,
+    +   "y": 96,
+      }
+
+      282 |  expect(await rect('.app-global-header')).toMatchObject({ x: 0, y: 0, height: 56 });
+      283 |  expect(await rect('.app-sidebar')).toMatchObject({ x: 0, y: 56, width: 176 });
+    > 284 |  expect(await rect('.app-sidebar .sidebar-caption')).toMatchObject({ x: 16, y: 80 });
+          |                                                      ^
+      285 |  expect(await rect('.app-sidebar-item.selected')).toMatchObject({ x: 16, y: 116, width: 144, height: 48 });
+      286 |  expect(await rect('.app-content')).toMatchObject({ x: 176, y: 56 });
+      287 |  expect(await rect('.app-page-heading')).toMatchObject({ x: 216, y: 88, height: 80 });
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:284:54
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-b04b4-ative-sidebar-item-geometry-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › apps/web/src/applications.component.spec.ts:276:1 › V030-012 original Home keeps the 56/176 shell and native sidebar item geometry

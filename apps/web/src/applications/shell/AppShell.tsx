@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import type { Access, User } from '../../workspace-types';
 import { AdminMaterial } from '../../AdminMaterial';
@@ -26,6 +26,8 @@ export function AppShell({ user, access, logout, pending, error, onDirty }: { us
  const [create, setCreate] = useState(false); const [success, setSuccess] = useState('');
  const createTrigger = useRef<HTMLButtonElement | null>(null);
  const closeCreate = useCallback(() => { setCreate(false); queueMicrotask(() => { if (createTrigger.current?.isConnected) createTrigger.current.focus(); }); }, []);
+ const previousPath = useRef(location.pathname);
+ useEffect(() => { if (previousPath.current !== location.pathname && create) closeCreate(); previousPath.current = location.pathname; }, [location.pathname, create, closeCreate]);
  const onUnauthorized = useCallback(() => { onDirty(false); navigate('/login', { replace: true }); }, [navigate, onDirty]);
  const apps = useApplications(onUnauthorized);
  const confirmed = useCallback((app: Application) => { onDirty(false); closeCreate(); setSuccess('应用已创建：' + app.name); apps.reload(); }, [onDirty, closeCreate, apps.reload]);
@@ -36,7 +38,7 @@ export function AppShell({ user, access, logout, pending, error, onDirty }: { us
  const canCreate = access.bootstrapAdmin || access.permissions.some(p => p.code === 'applications.create');
  return <div className="admin-shell app-shell" data-testid="application-shell">
   <AdminMaterial />
-  <header className="admin-header app-global-header">
+  <header className="admin-header home-header app-global-header">
    <div className="brand-identity"><img src={brand} alt="" /><span>WaveOS</span></div>
    <nav className="app-tabs" aria-label="全局应用标签">
     <button className="app-global-tab app-home-tab" aria-current={!catalog && !appId ? 'page' : undefined} onClick={() => navigate('/app')}>首页</button>
@@ -53,7 +55,7 @@ export function AppShell({ user, access, logout, pending, error, onDirty }: { us
    <div className="app-sidebar-extension"><button className="app-sidebar-item" onClick={() => navigate('/app/applications')}><img src={sidebarCatalog} alt="" />应用中心</button></div>
   </nav>
   <main className="app-content" aria-label={catalog ? '应用中心' : appId ? '应用工作台' : '主页'}>
-   {error && <p role="alert">{error}</p>}{success && <p className="app-success" role="status">{success}</p>}
+   {error && <p role="alert">{error}</p>}{catalog && success && <p className="app-success" role="status">{success}</p>}
    {appId ? <ApplicationWorkspace appId={appId} opened={opened} onUnauthorized={onUnauthorized} />
     : catalog ? <ApplicationCatalog applications={apps.items} loading={apps.loading} error={apps.error} retry={apps.reload} canCreate={canCreate} create={trigger => { createTrigger.current = trigger; setSuccess(''); setCreate(true); }} open={open} />
     : <><div className="app-page-heading"><h1>主页</h1><p>打开业务应用；已打开的应用显示在顶部标签中</p></div><section className="app-surface app-home-section"><h2>我的应用</h2>{apps.loading ? <p role="status">正在加载应用…</p> : apps.error ? <div className="app-state"><p role="alert">{apps.error}</p><button className="admin-button" onClick={apps.reload}>重试</button></div> : apps.items.length ? <ApplicationCards applications={apps.items} open={open} /> : <div className="home-empty"><h3>暂无可用应用</h3><p>获得应用访问权限后，将在这里显示。</p></div>}</section><div><button className="admin-button" onClick={() => navigate('/app/applications')}>打开应用中心</button></div></>}

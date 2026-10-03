@@ -17,5 +17,5 @@ export function CreateApplication({ close, onDirty, operation }: { close: () => 
    {unconfirmed ? <div className="dialog-actions"><button type="button" className="admin-button" onClick={operation.query}>核查操作</button><button type="button" className="admin-button primary" onClick={operation.retry}>使用同一操作重试</button></div>
     : <div className="dialog-actions"><button type="button" className="admin-button" disabled={busy} onClick={requestClose}>取消</button><button type="submit" className="admin-button primary" disabled={busy}>{busy ? '创建中…' : '创建应用'}</button></div>}
   </form>
- </Modal>{confirm && <Modal title="有未保存的修改" onClose={() => setConfirm(false)}><p>{unconfirmed ? '创建结果尚未确认。关闭后仍可在新建应用中核查原操作。' : '关闭将丢失未保存的应用名称。'}</p><div className="dialog-actions"><button className="admin-button" onClick={() => setConfirm(false)}>继续编辑</button><button className="admin-button primary" onClick={close}>放弃修改</button></div></Modal>}</>;
+ </Modal>{confirm && <Modal title="有未保存的修改" onClose={() => setConfirm(false)}><p>{unconfirmed ? '创建结果尚未确认。关闭后仍可在新建应用中核查原操作。' : '关闭将丢失未保存的应用名称。'}</p><div className="dialog-actions"><button className="admin-button" onClick={() => setConfirm(false)}>继续编辑</button><button className="admin-button primary" onClick={close}>{unconfirmed ? '关闭并保留待核查操作' : '放弃修改'}</button></div></Modal>}</>;
 }

@@ -1,0 +1,42 @@
+[WebServer] (node:45943) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:45957) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:45989) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › apps/web/src/applications.states.component.spec.ts:61:1 › V030-012 unknown create and dirty-close states show the retained operation
+  1) [chromium] › apps/web/src/applications.states.component.spec.ts:61:1 › V030-012 unknown create and dirty-close states show the retained operation
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: '有未保存的修改', exact: true }).getByRole('button', { name: '关闭并保留待核查操作', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: '有未保存的修改', exact: true }).getByRole('button', { name: '关闭并保留待核查操作', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '有未保存的修改', exact: true }).getByRole('button', { name: '关闭并保留待核查操作', exact: true })
+
+
+      74 |  const guard = page.getByRole('dialog', { name: '有未保存的修改', exact: true });
+      75 |  await expect(guard).toBeVisible();
+    > 76 |  await expect(guard.getByRole('button', { name: '关闭并保留待核查操作', exact: true })).toBeVisible();
+         |                                                                               ^
+      77 |  if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('create-dirty-close.png') });
+      78 |  await guard.getByRole('button', { name: '继续编辑', exact: true }).click();
+      79 |  await expect(dialog.getByRole('button', { name: '核查操作', exact: true })).toBeVisible();
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.states.component.spec.ts:76:79
+
+    Error Context: .work/v030012/browser-results/applications.states.compon-37f62-show-the-retained-operation-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › apps/web/src/applications.states.component.spec.ts:61:1 › V030-012 unknown create and dirty-close states show the retained operation

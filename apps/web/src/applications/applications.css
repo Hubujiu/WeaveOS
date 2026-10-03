@@ -1,5 +1,5 @@
 .app-shell { background:#f2f4f7; }
-.app-global-header { padding:0 26px;border-radius:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none; }
+.app-global-header.home-header { padding:0 26px;border-radius:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none; }
 .app-global-header img,.app-sidebar img,.app-tile img { display:block;flex:none;max-width:none; }
 .app-tabs { position:absolute;left:208px;right:164px;top:8px;display:flex;gap:8px;height:40px;overflow-x:auto;scrollbar-width:thin;align-items:center; }
 .app-global-tab { flex:none;min-width:120px;height:40px;padding:4px 12px;border:0;border-radius:8px;background:transparent;color:#5e6d83;white-space:nowrap;font-size:14px;font-weight:500;line-height:22px; }
@@ -8,11 +8,12 @@
 .app-tab-group { display:flex;align-items:center;flex:none;position:relative; }
 .app-tab-group .app-global-tab { padding-right:32px; }
 .app-close-tab { position:absolute;right:8px;top:10px;width:20px;height:20px;padding:0;border:0;background:transparent;color:#8490a2;font-size:14px;line-height:20px; }
-.app-sidebar { padding:8px;gap:0;overflow-y:auto; }
+.app-shell .app-sidebar { padding:8px;gap:0;overflow-y:auto; }
 .app-sidebar-block { display:flex;flex-direction:column;gap:16px;width:160px;padding:16px 8px;flex:none; }
 .app-sidebar-item { display:flex;align-items:center;gap:12px;padding:12px 10px;border:0;border-radius:8px;height:48px;min-height:48px;width:144px;background:transparent;color:#5e6d83;font-size:14px;line-height:22px;font-weight:500;text-align:left; }
 .app-sidebar-item.selected { background:#eaf0fa;color:#102044; }
 .app-sidebar-note { margin:0;color:#5e6d83;font-size:12px;line-height:20px; }
+.app-sidebar .sidebar-caption { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%; }
 .app-sidebar-extension { padding:16px 8px; }
 .app-content { grid-column:2;grid-row:2;position:relative;z-index:1;min-width:0;min-height:0;overflow:auto;padding:32px 40px;display:flex;flex-direction:column;gap:24px; }
 .app-page-heading { min-height:80px;flex:none; }
@@ -22,7 +23,7 @@
 .app-search-row { display:flex;align-items:center;gap:12px;flex:none; }
 .app-search-row input { height:40px;width:400px;max-width:100%;border:1px solid #e4e9f1;border-radius:8px;padding:12px;background:white;color:#102044;font-size:14px;line-height:22px;min-width:0; }
 .app-search-row input::placeholder { color:#8490a2; }
-.app-filter-label { font-size:14px; }
+.app-filter-label { font-size:14px;color:#5e6d83; }
 .app-surface { background:white;border:1px solid #e4e9f1;border-radius:12px;padding:24px;flex:none; }
 .app-surface h2 { margin:0;font-size:16px;font-weight:500;line-height:26px; }
 .app-home-section { min-height:416px;display:flex;flex-direction:column;gap:16px; }
@@ -56,4 +57,5 @@
 
 .personnel-dialog:has(.app-create-form) { width:640px;max-width:min(640px,calc(100vw - 32px));padding:32px;box-shadow:none; }
 .personnel-dialog:has(.app-create-form)::backdrop { background:rgba(16,32,68,.28);backdrop-filter:none; }
+.app-shell .personnel-dialog:not(:has(.app-create-form))::backdrop { background:rgba(16,32,68,.28);backdrop-filter:none; }
 .app-success { margin:0;padding:12px 16px;border:1px solid #d9e9e1;border-radius:8px;background:#f2f8f5;color:#2e735f;font-size:14px;line-height:22px; }

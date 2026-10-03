@@ -32,11 +32,12 @@ export function useApplicationOperation<T>(confirmed: (result: T) => void, unaut
   } catch (cause) {
    if (token !== lifecycle.current) return;
    if (cause instanceof ApplicationError && cause.status === 401) { unauthorized(); return; }
-   const unknown = query || cause instanceof ApplicationError && cause.unconfirmed;
+   const unknown = uncertain.current || query || cause instanceof ApplicationError && cause.unconfirmed;
    uncertain.current = unknown;
-   setState({ phase: unknown ? 'unconfirmed' : 'error', packet, message: query
-    ? '操作结果仍未确认，请稍后核查或使用同一操作重试。'
-    : cause instanceof Error ? cause.message : '服务暂时不可用，请稍后重试' });
+   const reason = cause instanceof Error ? cause.message : '服务暂时不可用，请稍后重试';
+   const message = unknown && !(cause instanceof ApplicationError && cause.unconfirmed)
+    ? reason + '。操作结果仍未确认，请稍后核查或使用同一操作重试。' : reason;
+   setState({ phase: unknown ? 'unconfirmed' : 'error', packet, message });
   } finally { inFlight.current = false; }
  };
  const start = (path: string, body: object) => {
@@ -49,4 +50,3 @@ export function useApplicationOperation<T>(confirmed: (result: T) => void, unaut
  const retry = () => { if (snapshot.current) void perform(snapshot.current, false); };
  return { ...state, start, query, retry };
 }
-
