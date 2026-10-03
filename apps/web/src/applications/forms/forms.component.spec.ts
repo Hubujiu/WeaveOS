@@ -239,3 +239,18 @@ test('keyboard can move an existing field into a group with the same ordered 12-
   expect(layout).toHaveLength(1);
   expect(layout[0]).toMatchObject({kind:'group',span:12,children:[{kind:'field',span:6}]});
 });
+
+test('permission revoked during Save keeps the draft but stops further configuration writes',async({page})=>{
+  const state=await fixture(page);
+  let writes=0;
+  await page.route('**/definition',route=>{if(route.request().method()!=='PUT')return route.fallback();writes++;
+    return route.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',message:'forbidden',data:null,meta:{requestId:'forbidden'}}});});
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('保留草稿');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('没有此应用的表单配置权限');
+  await expect(page.getByLabel('字段名称')).toHaveValue('保留草稿');
+  await expect(page.getByRole('button',{name:'保存',exact:true})).toBeDisabled();
+  expect(writes).toBe(1);
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+});
