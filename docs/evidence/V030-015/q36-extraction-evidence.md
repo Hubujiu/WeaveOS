@@ -67,6 +67,18 @@ shared database was used; Redis test keys use unique generations and cleanup.
   `go test -race ... -run` for real Session/CSRF member search, changed
   criteria and concurrent RR, revision lock order, Redis compatibility,
   deferred COMMIT failure and lost COMMIT acknowledgement, **exit 0**.
+- [Neutral RR fault regression](q36-fault-regression.txt): two new tests use
+  real PostgreSQL Repeatable Read reads and real Redis. A transaction wrapper
+  injects failure before PG COMMIT or returns an ambiguous acknowledgement
+  after actual PG COMMIT. Both `Execute` and `Receipt.Commit` return the error
+  without Redis Create/Advance. A concurrent Redis revision CAS winner after
+  verified RR is tolerated on both paths; a different Redis failure after
+  COMMIT is returned on both paths. The fault is at the transaction boundary,
+  not an induced network failure. `go test -race ./internal/querycontext
+  -run 'TestRealPGRR(CommitFailureNeverPublishesRedis|ConcurrentCASLossAndOtherRedisError)$'
+  -count=1 -v` exited **0** against the isolated services. This was
+  **regression GREEN on first run**: the existing extraction already had the
+  required behavior, so there is no new production change or invented RED.
 - `go vet ./...`, `node scripts/check-tasks.mjs`,
   `node scripts/verify-repo.mjs`, `git diff --check` and `gofmt -l` pass.
   These verify the extraction and repository structure, not the incomplete
