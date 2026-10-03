@@ -163,21 +163,37 @@ The full inherited Chromium component run reached 248/261 before a concurrent
 Docker writable layer ran out of space while Playwright attached a screenshot
 to an unrelated Q36 visual test. `full-component-final.txt` contains the exact
 `ENOSPC` trace; no product assertion failed before that point. The prior full
-run passed 253 with one skipped, and a sequential final run is pending. The
+run passed 253 with one skipped. The final sequential pinned-container run
+passed **260/260**, with one unchanged skip across 261 listed cases;
+`full-component-final-green.txt` records the complete result, including the
+previously interrupted visual case. The
 first PR27 exact-head real matrix attempt hit the same Docker npm temporary
 space limit before test collection; its raw diagnostic is in
 `real-v013-e0f-environment-retry.txt`. After the other container exited, the
-available workspace disk rose from 3.4 GiB to 13 GiB. Both runs are being
-retried sequentially.
+available workspace disk rose from 3.4 GiB to 13 GiB. Both runs passed when
+retried sequentially. A host fallback lacked Playwright's Chromium binary;
+its full raw setup log is retained privately, not in this review bundle.
 
-The current PR27 exact head `e0f1820c1d9bf579b7039b0590632c79cf98be98`
+The earlier PR27 head `e0f1820c1d9bf579b7039b0590632c79cf98be98`
 compiled with Go1.26 into SHA-256
 `0e07897527f66080851c52df3242e494bf5c87d04c9d232338c333dc72b7753d`.
 `real-v013-e0f-matrix-six.txt` then passed 18/18 real HTTPS cases with this
 binary, including actor mismatch 409, malformed actor 400, same-actor and
 legacy controls, role matrix, and root/member UI. This proves this frontend
-and candidate server behavior together; it does not override PR27's separate
-Go/governance CI failures or constitute a formal source merge.
+and candidate server behavior together; it does not constitute a formal source
+merge. The newer PR27 `bf4956394581979f3371a8840a95f3c59166b801`
+compiled into SHA-256
+`f27233763d9cac230c4ab9efc1d8fa237f838d33ae85a62b5d7c5ee55a2007b8`.
+With only that BFF binary mount changed, the exact same 18 real HTTPS tests
+passed again across all six browser/reduced modes; see
+`real-v013-bf-matrix-six.txt`. This is isolated integration evidence, not
+approval of PR27's broader server tests or its remote CI.
+
+After the node_modules refresh, `final-typecheck-build.txt` records passing
+typecheck, production build, and task structure check. `git diff --check`
+also passed. The existing Vite chunk-size warning is unchanged. Draft PR28
+targets `task/V030-011-applications` at `b4c0fb3`; its remote checks are
+tracked against the eventual exact evidence commit.
 
 The read-only V030-014 mounting assessment at
 `cb08774ed00e715402e45c31228a508e86d93055` is in
