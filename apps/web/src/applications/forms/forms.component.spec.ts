@@ -72,6 +72,7 @@ test('original designer shows three panels and keyboard-added draft can preview 
   await page.keyboard.press('Enter');
   await expect(page.getByRole('region',{name:'表单画布'})).toContainText('新建文本');
   await page.getByLabel('字段名称').fill('申请人');
+  await page.screenshot({path:test.info().outputPath('designer-main.png'),fullPage:true});
   await page.getByRole('button',{name:'预览',exact:true}).click();
   await expect(page.getByText('本地预览，尚未保存')).toBeVisible();
   await expect(page.getByRole('dialog').getByText('申请人')).toBeVisible();
@@ -114,10 +115,13 @@ test('directory creation and new form creation use coherent structure and one at
   const state=await fixture(page,'structure');
   await expect(page.getByRole('tree',{name:'应用目录'})).toBeVisible();
   await page.getByRole('button',{name:'新建目录'}).click();
+  await page.screenshot({path:test.info().outputPath('directory-create.png'),fullPage:true});
   await page.getByLabel('目录名称').fill('请假');
   await page.getByRole('button',{name:'创建目录',exact:true}).click();
-  await expect(page.getByRole('treeitem',{name:'请假'})).toBeVisible();
+  await expect(page.getByRole('treeitem',{name:'请假',exact:true})).toBeVisible();
+  await page.screenshot({path:test.info().outputPath('directory-tree.png'),fullPage:true});
   await page.getByRole('button',{name:'新建表单'}).click();
+  await page.screenshot({path:test.info().outputPath('form-create.png'),fullPage:true});
   await page.getByLabel('表单名称').fill('请假申请');
   await page.getByRole('button',{name:'创建表单',exact:true}).click();
   const creates=state.seen.filter(x=>x.method==='POST');
@@ -140,6 +144,7 @@ test('impact dialog requires a live confirmation token before a schema write',as
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'保存预检：表单结构与布局'})).toBeVisible();
   await expect(page.getByRole('dialog').getByText('4 条已有值')).toBeVisible();
+  await page.screenshot({path:test.info().outputPath('impact-missing-token.png'),fullPage:true});
   await expect(page.getByRole('button',{name:'确认保存'})).toBeDisabled();
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
 });
@@ -183,6 +188,7 @@ test('used option deletion maps old option IDs before renewed preflight and conf
   await page.getByRole('button',{name:'删除选项 旧选项'}).click();
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('dialog')).toContainText('APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED');
+  await page.screenshot({path:test.info().outputPath('option-mapping.png'),fullPage:true});
   await page.getByLabel('已用选项映射 旧选项').selectOption(keepId);
   await page.getByRole('button',{name:'重新预检'}).click();
   await expect(page.getByRole('button',{name:'确认保存'})).toBeEnabled();
@@ -250,6 +256,7 @@ test('permission revoked during Save keeps the draft but stops further configura
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('没有此应用的表单配置权限');
   await expect(page.getByLabel('字段名称')).toHaveValue('保留草稿');
+  await page.screenshot({path:test.info().outputPath('permission-revoked.png'),fullPage:true});
   await expect(page.getByRole('button',{name:'保存',exact:true})).toBeDisabled();
   expect(writes).toBe(1);
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
@@ -267,4 +274,70 @@ test('system fields stay read-only and each inserted node references a distinct 
   expect(nodes).toHaveLength(2);
   expect(new Set(nodes.map(item=>item.fieldId)).size).toBe(2);
   expect(nodes.every(item=>item.kind==='system_field')).toBe(true);
+});
+
+test('destructive preflight waits for explicit confirmation and sends its exact token',async({page})=>{
+  const state=await fixture(page);
+  await page.route('**/definition/preflight',route=>route.fulfill({json:ok({
+    appId,tableId,viewId,schemaVersion:0,viewVersion:0,dataRevision:2,dependencyRevision:1,
+    plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},
+    impacts:[{fieldId:'field-affected',kind:'column_removal',nonNullRows:7,optionId:null}],
+    dependencies:[],blockingIssues:[],saveAllowed:true,
+    confirmation:{token:'impact-token-from-server',expiresAt:'2099-01-01T00:00:00Z'},
+  })}));
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('dialog')).toContainText('7 条已有值');
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+  await page.screenshot({path:test.info().outputPath('impact-confirm.png'),fullPage:true});
+  await page.getByRole('button',{name:'确认保存'}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  expect(state.seen.find(item=>item.method==='PUT')?.body?.confirmationToken).toBe('impact-token-from-server');
+});
+
+test('dirty exit and CAS conflict require an explicit decision while preserving the draft',async({page})=>{
+  await fixture(page);
+  await page.route('**/definition',route=>route.request().method()==='PUT'
+    ?route.fulfill({status:409,json:{code:'APPLICATION_SCHEMA_CONFLICT',message:'conflict',data:{currentSchemaVersion:2},meta:{requestId:'conflict'}}})
+    :route.fallback());
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('并发中的草稿');
+  await page.getByRole('button',{name:'返回工作台'}).click();
+  await expect(page.getByRole('dialog',{name:'结构或布局尚未保存'})).toBeVisible();
+  await page.screenshot({path:test.info().outputPath('dirty-exit.png'),fullPage:true});
+  await page.getByRole('button',{name:'继续编辑'}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'配置版本已变化'})).toBeVisible();
+  await expect(page.getByLabel('字段名称')).toHaveValue('并发中的草稿');
+  await page.screenshot({path:test.info().outputPath('schema-conflict.png'),fullPage:true});
+});
+
+test('structure CAS conflict keeps the entered name and offers an explicit latest-version reload',async({page})=>{
+  await fixture(page,'structure');
+  await page.route('**/directories',route=>route.request().method()==='POST'
+    ?route.fulfill({status:409,json:{code:'APPLICATION_STRUCTURE_CONFLICT',message:'stale',
+      data:{currentStructureVersion:3},meta:{requestId:'structure-conflict'}}})
+    :route.fallback());
+  await page.getByRole('button',{name:'新建目录'}).click();
+  await page.getByLabel('目录名称').fill('待核对目录');
+  await page.getByRole('button',{name:'创建目录'}).click();
+  await expect(page.getByRole('dialog')).toContainText('配置已被其他编辑者修改');
+  await expect(page.getByLabel('目录名称')).toHaveValue('待核对目录');
+  await expect(page.getByRole('button',{name:'放弃输入并加载最新版'})).toBeVisible();
+  await page.screenshot({path:test.info().outputPath('structure-conflict.png'),fullPage:true});
+});
+
+test('structure write permission revocation disables further directory and form mutations',async({page})=>{
+  await fixture(page,'structure');
+  await page.route('**/directories',route=>route.request().method()==='POST'
+    ?route.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',message:'forbidden',data:null,meta:{requestId:'denied'}}})
+    :route.fallback());
+  await page.getByRole('button',{name:'新建目录'}).click();
+  await page.getByLabel('目录名称').fill('保留输入');
+  await page.getByRole('button',{name:'创建目录'}).click();
+  await expect(page.getByRole('dialog')).toContainText('没有此应用的表单配置权限');
+  await expect(page.getByLabel('目录名称')).toHaveValue('保留输入');
+  await page.getByRole('button',{name:'取消'}).click();
+  await expect(page.getByRole('button',{name:'新建目录'})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'新建表单'})).toBeDisabled();
 });

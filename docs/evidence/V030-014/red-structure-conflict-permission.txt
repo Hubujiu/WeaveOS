@@ -1,0 +1,70 @@
+[WebServer] (node:11927) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:11941) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:11974) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/forms/forms.component.spec.ts:315:1 › structure CAS conflict keeps the entered name and offers an explicit latest-version reload (5.4s)
+(node:12047) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [chromium] › src/applications/forms/forms.component.spec.ts:330:1 › structure write permission revocation disables further directory and form mutations (5.4s)
+
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:315:1 › structure CAS conflict keeps the entered name and offers an explicit latest-version reload 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: '放弃输入并加载最新版' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('button', { name: '放弃输入并加载最新版' }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '放弃输入并加载最新版' })
+
+
+      324 |   await expect(page.getByRole('dialog')).toContainText('配置已被其他编辑者修改');
+      325 |   await expect(page.getByLabel('目录名称')).toHaveValue('待核对目录');
+    > 326 |   await expect(page.getByRole('button',{name:'放弃输入并加载最新版'})).toBeVisible();
+          |                                                              ^
+      327 |   await page.screenshot({path:test.info().outputPath('structure-conflict.png'),fullPage:true});
+      328 | });
+      329 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:326:62
+
+    Error Context: test-results/applications-forms-forms.c-fb302-licit-latest-version-reload-chromium/error-context.md
+
+  2) [chromium] › src/applications/forms/forms.component.spec.ts:330:1 › structure write permission revocation disables further directory and form mutations 
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator:  getByRole('button', { name: '新建目录' })
+    Expected: disabled
+    Received: enabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('button', { name: '新建目录' }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '新建目录' })
+        14 × locator resolved to <button type="button">新建目录</button>
+           - unexpected value "enabled"
+
+
+      339 |   await expect(page.getByLabel('目录名称')).toHaveValue('保留输入');
+      340 |   await page.getByRole('button',{name:'取消'}).click();
+    > 341 |   await expect(page.getByRole('button',{name:'新建目录'})).toBeDisabled();
+          |                                                        ^
+      342 |   await expect(page.getByRole('button',{name:'新建表单'})).toBeDisabled();
+      343 | });
+      344 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:341:56
+
+    Error Context: test-results/applications-forms-forms.c-da0d6-irectory-and-form-mutations-chromium/error-context.md
+
+  2 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:315:1 › structure CAS conflict keeps the entered name and offers an explicit latest-version reload 
+    [chromium] › src/applications/forms/forms.component.spec.ts:330:1 › structure write permission revocation disables further directory and form mutations 
