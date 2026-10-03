@@ -3,9 +3,10 @@ import {formApi,formErrorText,FormApiError,immutablePacket,validDirectoryResult,
   type FormWrite,type FormUpdate,type StructureWrite} from './api';
 import type {Directory,FormSource,Structure,UUID} from './contracts';
 import {FormsDialog} from './FormsDialog';
+import {createLeaveController,type LeaveController,type LeaveGuardProps,type LeaveStatus} from './leaveGuard';
 import './forms.css';
 
-export type ApplicationStructureProps={appId:string;actorId:string;onOpenForm?:(viewId:string)=>void;
+export type ApplicationStructureProps=LeaveGuardProps&{appId:string;actorId:string;onOpenForm?:(viewId:string)=>void;
   onDirtyChange?:(dirty:boolean)=>void;onUnauthorized?:()=>void;onIdentityMismatch?:()=>void};
 type Selected={kind:'directory'|'form';id:UUID}|null;
 type Dialog='directory'|'renameDirectory'|'moveDirectory'|'form'|'editForm'|null;
@@ -22,20 +23,33 @@ export function ApplicationStructurePanel(props:ApplicationStructureProps){
   const scopeKey=JSON.stringify([props.actorId,props.appId]);
   return <ApplicationStructureScope key={scopeKey} {...props} scopeKey={scopeKey}/>;
 }
-function ApplicationStructureScope({appId,actorId,onOpenForm,onDirtyChange,onUnauthorized,onIdentityMismatch,
+function ApplicationStructureScope({appId,actorId,onOpenForm,onDirtyChange,onUnauthorized,onIdentityMismatch,registerLeaveGuard,
   scopeKey}:ApplicationStructureProps&{scopeKey:string}){
   const restored=structureMemory.get(scopeKey);
-  const [structure,setStructure]=useState<Structure|null>(restored?.structure??null),[selected,setSelected]=useState<Selected>(restored?.selected??null);
-  const [dialog,setDialog]=useState<Dialog>(restored?.dialog??null),[name,setName]=useState(restored?.name??''),
-    [parentId,setParentId]=useState<UUID|null>(restored?.parentId??null);
-  const [source,setSource]=useState<FormSource>(restored?.source??{kind:'new_table'}),
+  const [structure,reactSetStructure]=useState<Structure|null>(restored?.structure??null),
+    [selected,reactSetSelected]=useState<Selected>(restored?.selected??null);
+  const [dialog,reactSetDialog]=useState<Dialog>(restored?.dialog??null),[name,reactSetName]=useState(restored?.name??''),
+    [parentId,reactSetParentId]=useState<UUID|null>(restored?.parentId??null);
+  const [source,reactSetSource]=useState<FormSource>(restored?.source??{kind:'new_table'}),
     [error,setError]=useState(restored?.error??''),[notice,setNotice]=useState(restored?.notice??'');
-  const [busy,setBusy]=useState(false),[unconfirmed,setUnconfirmed]=useState(restored?.unconfirmed||!!restored?.pending),
-    [pending,setPending]=useState<Pending|null>(restored?.pending??null);
+  const [busy,reactSetBusy]=useState(false),[unconfirmed,reactSetUnconfirmed]=useState(restored?.unconfirmed||!!restored?.pending),
+    [pending,reactSetPending]=useState<Pending|null>(restored?.pending??null);
   const [conflict,setConflict]=useState(restored?.conflict??false),
     [permissionRevoked,setPermissionRevoked]=useState(restored?.permissionRevoked??false);
   const [verified,setVerified]=useState(false),[verificationError,setVerificationError]=useState('');
   const [reload,setReload]=useState(0),request=useRef(0),scope=useRef(scopeKey),alive=useRef(true);
+  const live=useRef({structure,selected,dialog,name,parentId,source,busy,unconfirmed,pending});
+  live.current={structure,selected,dialog,name,parentId,source,busy,unconfirmed,pending};
+  const setStructure=(next:Structure|null)=>{live.current.structure=next;reactSetStructure(next);};
+  const setSelected=(next:Selected)=>{live.current.selected=next;reactSetSelected(next);};
+  const setDialog=(next:Dialog)=>{live.current.dialog=next;reactSetDialog(next);};
+  const setName=(next:string)=>{live.current.name=next;reactSetName(next);};
+  const setParentId=(next:UUID|null)=>{live.current.parentId=next;reactSetParentId(next);};
+  const setSource=(next:FormSource)=>{live.current.source=next;reactSetSource(next);};
+  const setBusy=(next:boolean)=>{live.current.busy=next;reactSetBusy(next);};
+  const setUnconfirmed=(next:boolean)=>{live.current.unconfirmed=next;reactSetUnconfirmed(next);};
+  const setPending=(next:Pending|null)=>{live.current.pending=next;reactSetPending(next);};
+  const leaveController=useRef<LeaveController|null>(null);
   const dirtyCallback=useRef(onDirtyChange);dirtyCallback.current=onDirtyChange;
   const reportAuth=(problem:unknown)=>{
     if(!(problem instanceof FormApiError))return;
@@ -45,6 +59,29 @@ function ApplicationStructureScope({appId,actorId,onOpenForm,onDirtyChange,onUna
     if(problem.status===401)onUnauthorized?.();
     else if(problem.code==='AUTH_SESSION_CHANGED')onIdentityMismatch?.();
   };
+  if(!leaveController.current)leaveController.current=createLeaveController(()=>{
+    const current=live.current;
+    const status:LeaveStatus=current.pending?(current.unconfirmed?'unknown':'write_in_flight'):
+      current.dialog&&(!!current.name.trim()||current.dialog==='moveDirectory')?'draft':'clean';
+    return {status,fingerprint:JSON.stringify({status,structureVersion:current.structure?.structureVersion,
+      selected:current.selected,dialog:current.dialog,name:current.name,parentId:current.parentId,
+      source:current.source,busy:current.busy,unconfirmed:current.unconfirmed,
+      pending:current.pending?.operationId})};
+  },decision=>{
+    const cached=structureMemory.get(scopeKey),current=live.current;
+    if(decision==='retain_operation'){
+      if(cached)structureMemory.set(scopeKey,{...cached,structure:current.structure,selected:current.selected,
+        dialog:current.dialog,name:current.name,parentId:current.parentId,source:current.source,
+        unconfirmed:current.unconfirmed||!!current.pending,pending:current.pending});
+      return;
+    }
+    if(cached)structureMemory.set(scopeKey,{...cached,selected:null,dialog:null,name:'',parentId:null,
+      source:{kind:'new_table'},pending:null,unconfirmed:false,conflict:false,error:'',notice:''});
+    setSelected(null);setDialog(null);setName('');setParentId(null);setSource({kind:'new_table'});
+    setPending(null);setUnconfirmed(false);setBusy(false);setConflict(false);setError('');setNotice('');
+  });
+  useEffect(()=>registerLeaveGuard({kind:'structure',actorId,appId},leaveController.current!),
+    [registerLeaveGuard,actorId,appId]);
   useEffect(()=>{alive.current=true;return()=>{alive.current=false;request.current++;};},[]);
   useEffect(()=>()=>{dirtyCallback.current?.(false);},[]);
   useLayoutEffect(()=>{structureMemory.set(scopeKey,{structure,selected,dialog,name,parentId,source,error,notice,

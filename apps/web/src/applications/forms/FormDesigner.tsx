@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type SetStateAction } from 'react';
 import { formApi, formErrorText, FormApiError, immutablePacket, validSaveResult,
   type ReferenceCandidate, type SaveWrite } from './api';
 import type { Definition, DefinitionInput, FieldInput, FieldKind, LayoutNodeInput, Preflight, UUID } from './contracts';
 import { FieldRenderer, FormPreview } from './FieldRenderer';
 import { FormsDialog } from './FormsDialog';
+import {createLeaveController,type LeaveController,type LeaveGuardProps,type LeaveStatus} from './leaveGuard';
 import './forms.css';
 
-export type FormDesignerProps = {
+export type FormDesignerProps = LeaveGuardProps&{
   appId:string;actorId:string;viewId:string;onDirtyChange?:(dirty:boolean)=>void;onBack?:()=>void;
   onUnauthorized?:()=>void;onIdentityMismatch?:()=>void;
 };
@@ -105,16 +106,18 @@ export function FormDesigner(props:FormDesignerProps){
   const scopeKey=JSON.stringify([props.actorId,props.appId,props.viewId]);
   return <FormDesignerScope key={scopeKey} {...props} scopeKey={scopeKey}/>;
 }
-function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthorized,onIdentityMismatch,
+function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthorized,onIdentityMismatch,registerLeaveGuard,
   scopeKey}:FormDesignerProps&{scopeKey:string}){
   const restored=draftMemory.get(scopeKey);
-  const [base,setBase]=useState<Definition|null>(restored?.base??null),[draft,setDraft]=useState<DefinitionInput|null>(restored?.draft??null);
-  const [phase,setPhase]=useState<DesignerPhase>(restored?.phase==='saving'?'unconfirmed':
+  const [base,reactSetBase]=useState<Definition|null>(restored?.base??null),
+    [draft,reactSetDraft]=useState<DefinitionInput|null>(restored?.draft??null);
+  const [phase,reactSetPhase]=useState<DesignerPhase>(restored?.phase==='saving'?'unconfirmed':
     restored?.phase==='preflight'?'idle':restored?.phase??'loading');
   const [selected,setSelected]=useState<UUID|null>(restored?.selected??null),
     [group,setGroup]=useState<UUID|null>(restored?.group??null);
   const [dialog,setDialog]=useState<'preview'|'impact'|'dirty'|'conflict'|null>(null);
-  const [impact,setImpact]=useState<Preflight|null>(null),[pending,setPending]=useState<SaveWrite|null>(restored?.pending??null);
+  const [leavePrompt,setLeavePrompt]=useState<LeaveStatus>('clean');
+  const [impact,setImpact]=useState<Preflight|null>(null),[pending,reactSetPending]=useState<SaveWrite|null>(restored?.pending??null);
   const [impactStale,setImpactStale]=useState(false),[impactError,setImpactError]=useState('');
   const [error,setError]=useState(restored?.phase==='saving'?'保存结果暂未确认，请查询原操作':restored?.error??''),
     [notice,setNotice]=useState(restored?.notice??''),[reload,setReload]=useState(0);
@@ -122,6 +125,15 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
   const [verified,setVerified]=useState(false),[verificationError,setVerificationError]=useState('');
   const requestKey=useRef(0);
   const saveEpoch=useRef(0),preflightAbort=useRef<AbortController|null>(null);
+  const live=useRef({base,draft,phase,pending});live.current={base,draft,phase,pending};
+  const setBase=(next:Definition|null)=>{live.current.base=next;reactSetBase(next);};
+  const setDraft=(update:SetStateAction<DefinitionInput|null>)=>{
+    const next=typeof update==='function'?update(live.current.draft):update;
+    live.current.draft=next;reactSetDraft(next);
+  };
+  const setPhase=(next:DesignerPhase)=>{live.current.phase=next;reactSetPhase(next);};
+  const setPending=(next:SaveWrite|null)=>{live.current.pending=next;reactSetPending(next);};
+  const leaveController=useRef<LeaveController|null>(null);
   const alive=useRef(true);
   const scope=useRef(scopeKey);
   const dirtyCallback=useRef(onDirtyChange);dirtyCallback.current=onDirtyChange;
@@ -245,6 +257,32 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
   const accepted=(value:{definition:Definition})=>{setBase(value.definition);setDraft(fromDefinition(value.definition));
     setPending(null);setImpact(null);setImpactStale(false);setImpactError('');setDialog(null);setPhase('idle');setError('');setNotice('已保存');};
   const cancelPreflight=()=>{saveEpoch.current++;preflightAbort.current?.abort();preflightAbort.current=null;};
+  if(!leaveController.current)leaveController.current=createLeaveController(()=>{
+    const {base:currentBase,draft:currentDraft,phase:currentPhase,pending:currentPending}=live.current;
+    const status:LeaveStatus=currentPhase==='saving'?'write_in_flight':currentPhase==='unconfirmed'?'unknown':
+      currentPhase==='preflight'?'preflight':currentPending||definitionDirty(currentBase,currentDraft)?'draft':'clean';
+    return {status,fingerprint:JSON.stringify({status,phase:currentPhase,
+      schemaVersion:currentBase?.table.schemaVersion,viewVersion:currentBase?.form.viewVersion,
+      draft:currentDraft,pending:currentPending})};
+  },decision=>{
+    const cached=draftMemory.get(scopeKey);
+    if(decision==='retain_operation'){
+      if(cached)draftMemory.set(scopeKey,{...cached,base:live.current.base,draft:live.current.draft,
+        phase:live.current.phase,pending:live.current.pending});
+      setDialog(null);return;
+    }
+    cancelPreflight();
+    const clean=live.current.base?fromDefinition(live.current.base):null;
+    if(cached)draftMemory.set(scopeKey,{...cached,base:live.current.base,draft:clean,phase:'idle',pending:null,
+      error:'',notice:'',selected:null,group:null});
+    setDraft(clean);setPending(null);setPhase('idle');setImpact(null);setImpactStale(false);
+    setImpactError('');setSelected(null);setGroup(null);setError('');setNotice('');setDialog(null);
+  });
+  useEffect(()=>registerLeaveGuard({kind:'designer',actorId,appId,viewId},leaveController.current!),
+    [registerLeaveGuard,actorId,appId,viewId]);
+  const openLeave=()=>{const status=leaveController.current!.getStatus();
+    if(status==='clean'){onBack?.();return;}
+    setLeavePrompt(status);setDialog('dirty');};
   const commit=async(input:SaveWrite,wasUnknown=false)=>{const current=scope.current;
     const cached=draftMemory.get(scopeKey);if(cached)draftMemory.set(scopeKey,{...cached,pending:input,phase:'saving'});
     setPending(input);setPhase('saving');setDialog(null);setError('');
@@ -326,7 +364,7 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
   };
   return <section className="forms-module" aria-label="表单设计器">
     <div className="forms-toolbar"><div className="forms-toolbar-title">
-      <button type="button" className="forms-link" onClick={()=>dirty||uncertain||phase==='preflight'?setDialog('dirty'):onBack?.()}>返回工作台</button>
+      <button type="button" className="forms-link" onClick={openLeave}>返回工作台</button>
       <strong>{base.form.name}</strong>{dirty&&<span className="forms-unsaved">未保存</span>}</div>
       <div className="forms-toolbar-actions">
         {(phase==='preflight'||phase==='saving')&&<span role="status">{phase==='preflight'?'正在预检…':'正在保存…'}</span>}
@@ -463,17 +501,16 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
             void commit(pending);
           }}>确认保存</button>}</div>
     </FormsDialog>}
-    {dialog==='dirty'&&<FormsDialog title={uncertain?'保存结果未确认':'结构或布局尚未保存'} onClose={()=>setDialog(null)}>
-      <p>{uncertain?'离开前请查询原操作结果；当前草稿和原操作号将在此浏览器页面中保留。':'离开将放弃此处未保存的修改。'}</p><div className="forms-dialog-actions">
+    {dialog==='dirty'&&<FormsDialog title={leavePrompt==='unknown'||leavePrompt==='write_in_flight'?'保存结果未确认':'结构或布局尚未保存'} onClose={()=>setDialog(null)}>
+      <p>{leavePrompt==='unknown'||leavePrompt==='write_in_flight'?'离开前请查询原操作结果；当前草稿和原操作号将在此浏览器页面中保留。':'离开将放弃此处未保存的修改。'}</p><div className="forms-dialog-actions">
         <button type="button" data-forms-close>继续编辑</button>
         <button type="button" className="forms-danger" onClick={()=>{
-          setDialog(null);
-          if(!uncertain){const clean=fromDefinition(base),cached=draftMemory.get(scopeKey);
-            cancelPreflight();
-            if(cached)draftMemory.set(scopeKey,{...cached,draft:clean,pending:null,phase:'idle',error:''});
-            setDraft(clean);setPending(null);setImpact(null);setPhase('idle');setError('');}
+          const decision=leavePrompt==='unknown'||leavePrompt==='write_in_flight'?'retain_operation':'discard';
+          const result=leaveController.current!.prepareLeave(decision);
+          if(!result.ok){setLeavePrompt(leaveController.current!.getStatus());
+            if(result.status==='clean')setDialog(null);return;}
           onBack?.();}}>
-          {uncertain?'离开并保留待核查操作':'放弃修改并离开'}</button>
+          {leavePrompt==='unknown'||leavePrompt==='write_in_flight'?'离开并保留待核查操作':'放弃修改并离开'}</button>
       </div></FormsDialog>}
     {dialog==='conflict'&&<FormsDialog title="配置版本已变化" onClose={()=>setDialog(null)}>
       <p>其他编辑者已修改此表单。当前输入仍保留，请核对服务器最新定义。</p>

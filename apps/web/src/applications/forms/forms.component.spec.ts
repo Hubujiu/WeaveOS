@@ -1283,6 +1283,55 @@ test('external leave retains an already sent unknown Save and its original key',
   expect(state.seen.find(item=>item.path.includes('/application-operations/'))?.path).toContain(String(original));
 });
 
+test('external leave during sent PUT retains the packet until a same-actor result lookup',async({page})=>{
+  const state=await fixture(page,'designer',definition,structure,true,'none');
+  let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  let started!:()=>void;const firstStarted=new Promise<void>(resolve=>{started=resolve;});
+  let original:string|null=null;
+  await page.route('**/definition',async route=>{
+    if(route.request().method()==='PUT'){
+      original=(route.request().postDataJSON() as {operationId:string}).operationId;
+      started();await gate;
+    }
+    await route.fallback();
+  });
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('发送后保留');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await firstStarted;
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('write_in_flight');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard')))
+    .toEqual({ok:false,status:'write_in_flight'});
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('write_in_flight');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('retain_operation'))).toEqual({ok:true});
+  await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(false));
+  const completed=page.waitForResponse(response=>response.request().method()==='PUT'&&response.url().endsWith('/definition'));
+  release();await completed;
+  await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(true));
+  await expect(page.getByRole('button',{name:'查询保存结果'})).toBeVisible();
+  await page.getByRole('button',{name:'查询保存结果'}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  expect(state.seen.find(item=>item.path.includes('/application-operations/'))?.path).toContain(String(original));
+});
+
+test('external structure leave keeps an unknown directory operation and entered name',async({page})=>{
+  const state=await fixture(page,'structure',definition,structure,true);
+  let original:string|null=null;
+  await page.route('**/directories',route=>{original=(route.request().postDataJSON() as {operationId:string}).operationId;
+    return route.abort('failed');});
+  await page.getByRole('button',{name:'新建目录'}).click();
+  await page.getByLabel('目录名称').fill('外部保留目录');
+  await page.getByRole('button',{name:'创建目录',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('unknown');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('retain_operation'))).toEqual({ok:true});
+  await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(false));
+  await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(true));
+  await expect(page.getByLabel('目录名称')).toHaveValue('外部保留目录');
+  await page.getByRole('button',{name:'查询原操作结果'}).click();
+  expect(state.seen.find(item=>item.path.includes('/application-operations/'))?.path).toContain(String(original));
+});
+
 test('StrictMode old same-scope unsubscribe cannot clear the current controller',async({page})=>{
   await fixture(page,'designer',definition,structure,true);
   await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
