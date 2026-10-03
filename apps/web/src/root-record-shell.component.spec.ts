@@ -5,8 +5,8 @@ const app={id:appId,name:'报销管理',ownerUserId:actor.id,policyRevision:1};
 const formPath='applications/'+appId+'/forms/'+viewId,routePath='/app/'+formPath;
 const ok=(data:unknown)=>({code:'OK',data,meta:null});
 const runtime={appId,viewId,tableId:appId,schemaVersion:1,viewVersion:1,policyRevision:1,fields:[{id:fieldId,name:'金额',kind:'money',required:false,presentation:{helpText:null,displayTimeZone:null},input:{decimal:{precision:20,scale:2,roundingPlaces:2,roundingMode:'HALF_UP'}},access:{read:'all',create:true,edit:'all',history:'none'},query:{operators:['eq','neq','gt','gte','lt','lte'],sortable:true,quickSearchable:false}}],layout:[{id:'aaaaaaaa-aaaa-4aaa-8aaa-000000000001',kind:'field',fieldId}],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}};
-async function fixture(page:Page,options:{ordinary?:boolean;createOnly?:boolean;detailFailure?:boolean;staleOpen?:boolean;reference?:boolean}={}){
- const calls:{path:string;method:string;body:any;actor?:string}[]=[];let value:string|null=null,version=0,searches=0;
+async function fixture(page:Page,options:{ordinary?:boolean;createOnly?:boolean;detailFailure?:boolean;staleOpen?:boolean;reference?:boolean;rejectCreate?:boolean;rejectEditRefresh?:boolean}={}){
+ const calls:{path:string;method:string;body:any;actor?:string}[]=[];let value:string|null=null,version=0,searches=0,rejectedEdits=0,failedRefreshedReads=0;
  const referenceId='66666666-6666-4666-8666-666666666666',candidateId='88888888-8888-4888-8888-888888888888';
  const currentRuntime: any=structuredClone(runtime);
  if(options.reference){currentRuntime.fields.push({id:referenceId,name:'申请人',kind:'member',required:false,presentation:{helpText:null,displayTimeZone:null},input:{referenceKind:'member'},access:{read:'all',create:true,edit:'all',history:'none'},query:{operators:['eq','neq'],sortable:false,quickSearchable:false}});currentRuntime.layout.push({id:'aaaaaaaa-aaaa-4aaa-8aaa-000000000002',kind:'field',fieldId:referenceId});}if(options.createOnly){currentRuntime.capabilities.read='none';currentRuntime.capabilities.search=false;}
@@ -28,13 +28,15 @@ async function fixture(page:Page,options:{ordinary?:boolean;createOnly?:boolean;
    if(options.staleOpen&&searches>1)return route.fulfill({status:409,json:{code:'APPLICATION_QUERY_CHANGED',data:null}});
    data={items:value===null?[]:[item()],total:value===null?0:1,page:body.page,pageSize:body.pageSize,sort:body.sort,queryVersion:'query-'+version,schemaVersion:1,viewVersion:1};
   }else if(path===formPath+'/records'&&method==='POST'){
+   if(options.rejectCreate)return route.fulfill({status:409,json:{code:'APPLICATION_QUERY_CONTEXT_EXPIRED',data:null}});
    value=body.values[fieldId]==='12.345'?'12.35':body.values[fieldId];version=1;
    return route.fulfill({status:201,headers:{Location:'/api/v1/'+formPath+'/records/'+recordId},json:ok({operationId:body.operationId,id:recordId,recordVersion:version,schemaVersion:1,createdAt:'2026-10-03T09:00:00Z',updatedAt:'2026-10-03T09:01:00Z'})});
   }else if(path===formPath+'/records/'+recordId&&method==='PATCH'){
-   value=body.changes[fieldId];version++;
+   if(options.rejectEditRefresh){rejectedEdits++;return route.fulfill({status:409,json:{code:'APPLICATION_RECORD_CONFLICT',data:null}});}
+   value=body.changes[fieldId]==='20.105'?'20.11':body.changes[fieldId];version++;
    return route.fulfill({status:200,json:ok({operationId:body.operationId,id:recordId,recordVersion:version,schemaVersion:1,createdAt:'2026-10-03T09:00:00Z',updatedAt:'2026-10-03T09:01:00Z'})});
   }else if(path===formPath+'/records/'+recordId&&method==='GET'){
-   if(options.detailFailure)return route.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
+   if(options.detailFailure||options.rejectEditRefresh&&rejectedEdits>0&&failedRefreshedReads++===0)return route.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
    data=item();
   }else return route.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
   return route.fulfill({status:200,json:ok(data)});
@@ -56,17 +58,21 @@ test('Root Shell create then read authoritative normalized data and edit a recor
  const shell=await page.getByTestId('application-shell').elementHandle();
  await page.getByRole('button',{name:'新建记录',exact:true}).click();
  const create=page.getByRole('dialog',{name:'新建记录',exact:true});await expect(create).toBeVisible();
- await create.getByLabel('金额',{exact:true}).fill('12.345');await create.getByRole('button',{name:'保存记录',exact:true}).click();
+ await create.getByLabel('金额',{exact:true}).fill('12.345');
+ await page.screenshot({path:test.info().outputPath('record-shell-create.png'),fullPage:true});
+ await create.getByRole('button',{name:'保存记录',exact:true}).click();
  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
  const detail=page.getByRole('dialog',{name:'记录详情',exact:true});await expect(detail).toBeVisible();await expect(detail.getByLabel('金额',{exact:true})).toHaveValue('12.35');
+ await page.screenshot({path:test.info().outputPath('record-shell-created-detail.png'),fullPage:true});
  await detail.getByRole('button',{name:'编辑记录',exact:true}).click();
- await detail.getByLabel('金额',{exact:true}).fill('20.10');await detail.getByRole('button',{name:'保存记录',exact:true}).click();
- await expect(detail.getByLabel('金额',{exact:true})).not.toBeEditable();await expect(detail.getByLabel('金额',{exact:true})).toHaveValue('20.10');
+ await detail.getByLabel('金额',{exact:true}).fill('20.105');
+ await page.screenshot({path:test.info().outputPath('record-shell-edit.png'),fullPage:true});await detail.getByRole('button',{name:'保存记录',exact:true}).click();
+ await expect(detail.getByLabel('金额',{exact:true})).not.toBeEditable();await expect(detail.getByLabel('金额',{exact:true})).toHaveValue('20.11');
  const writes=api.calls.filter(c=>c.path.startsWith(formPath+'/records')&&['POST','PATCH'].includes(c.method)&&!c.path.endsWith('/search'));
  expect(writes).toHaveLength(2);expect(writes[0].body.values).toEqual({[fieldId]:'12.345'});
- expect(writes[1].body).toMatchObject({expectedSchemaVersion:1,expectedRecordVersion:1,changes:{[fieldId]:'20.10'}});
+ expect(writes[1].body).toMatchObject({expectedSchemaVersion:1,expectedRecordVersion:1,changes:{[fieldId]:'20.105'}});
  expect(writes[1].body.operationId).not.toBe(writes[0].body.operationId);
- expect(api.calls.filter(c=>c.path===formPath+'/records/'+recordId&&c.method==='GET').length).toBeGreaterThanOrEqual(2);
+ await expect.poll(()=>api.calls.filter(c=>c.path===formPath+'/records/'+recordId&&c.method==='GET').length).toBeGreaterThanOrEqual(2);
  expect(await shell!.evaluate(node=>node.isConnected)).toBe(true);
  await page.screenshot({path:test.info().outputPath('record-shell-saved-detail.png'),fullPage:true});
 });
@@ -76,6 +82,8 @@ test('Root confirmed write with failed reread remains saved and cannot submit ag
  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
  await expect(page.getByRole('alert')).toContainText('无法读取');
  await expect(page.getByRole('button',{name:'重试读取记录',exact:true})).toBeVisible();
+ await expect(page.getByRole('status').filter({hasText:'正在读取记录'})).toHaveCount(0);
+ await page.screenshot({path:test.info().outputPath('record-shell-read-error.png'),fullPage:true});
  expect(api.calls.filter(c=>c.path===formPath+'/records'&&c.method==='POST')).toHaveLength(1);
  await expect(page.getByRole('button',{name:'保存记录',exact:true})).toHaveCount(0);
 });
@@ -131,4 +139,27 @@ test('Root owner returns from configuration to the runtime page that opened it',
  await expect(page.getByRole('region',{name:'表单设计器'})).toBeVisible();
  await page.getByRole('button',{name:'返回工作台',exact:true}).click();await expect(page).toHaveURL(new RegExp(routePath+'$'));
  await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();expect(await shell!.evaluate(node=>node.isConnected)).toBe(true);
+});
+
+test('Root rejected create refresh discards only after confirmation and rebuilds page one',async({page})=>{
+ const api=await fixture(page,{rejectCreate:true});await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
+ const editor=page.getByRole('dialog',{name:'新建记录',exact:true});await editor.getByLabel('金额',{exact:true}).fill('7.00');await editor.getByRole('button',{name:'保存记录',exact:true}).click();
+ await expect(editor.getByRole('alert')).toContainText('刷新');const before=api.calls.filter(c=>c.path===formPath+'/records/search').length;
+ await editor.getByRole('button',{name:'刷新记录',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();
+ await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(editor.getByLabel('金额',{exact:true})).toHaveValue('7.00');
+ await editor.getByRole('button',{name:'刷新记录',exact:true}).click();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(editor).toHaveCount(0);
+ await expect.poll(()=>api.calls.filter(c=>c.path===formPath+'/records/search').length).toBeGreaterThan(before);
+ const last=api.calls.filter(c=>c.path===formPath+'/records/search').at(-1)!;expect(last.body.page).toBe(1);expect(Object.hasOwn(last.body,'queryVersion')).toBe(false);
+ await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toHaveCount(0);
+ await page.getByRole('button',{name:'新建记录',exact:true}).click();await expect(page.getByRole('dialog',{name:'新建记录',exact:true}).getByLabel('金额',{exact:true})).toHaveValue('');
+ expect(api.calls.filter(c=>c.path===formPath+'/records'&&c.method==='POST')).toHaveLength(1);
+});
+test('Root retry after rejected edit and failed refresh never invents a saved result',async({page})=>{
+ const api=await fixture(page,{rejectEditRefresh:true});api.seed('18.00');await page.goto(routePath);await page.getByRole('button',{name:'打开记录：金额 18.00',exact:true}).click();
+ const detail=page.getByRole('dialog',{name:'记录详情',exact:true});await detail.getByRole('button',{name:'编辑记录',exact:true}).click();await detail.getByLabel('金额',{exact:true}).fill('20.00');await detail.getByRole('button',{name:'保存记录',exact:true}).click();
+ await expect(detail.getByRole('alert')).toContainText('刷新');await detail.getByRole('button',{name:'刷新记录',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();
+ await expect(page.getByRole('alert')).toContainText('无法读取');await expect(page.getByRole('status').filter({hasText:'正在读取记录'})).toHaveCount(0);await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toHaveCount(0);
+ await page.getByRole('button',{name:'重试读取记录',exact:true}).click();await expect(detail.getByLabel('金额',{exact:true})).toHaveValue('18.00');
+ await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toHaveCount(0);
+ expect(api.calls.filter(c=>c.path===formPath+'/records/'+recordId&&c.method==='PATCH')).toHaveLength(1);
 });
