@@ -7,11 +7,8 @@ import (
 	"io"
 	"strings"
 
-	"context"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
-	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
-	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -100,12 +97,16 @@ type CreateRequest struct {
 	ExpectedSchemaVersion      int64
 	Values                     map[string]any
 }
-type MutationResult struct {
-	OperationID, ID              string
-	RecordVersion, SchemaVersion int64
-	CreatedAt, UpdatedAt         string
+type EditRequest struct {
+	AppID, ViewID, RecordID, OperationID         string
+	ExpectedSchemaVersion, ExpectedRecordVersion int64
+	Changes                                      map[string]any
 }
-
-func (s *Service) Create(context.Context, session.Principal, CreateRequest, applications.Metadata) (MutationResult, error) {
-	return MutationResult{}, ErrUnavailable
+type MutationResult struct {
+	OperationID   string `json:"operationId"`
+	ID            string `json:"id"`
+	RecordVersion int64  `json:"recordVersion"`
+	SchemaVersion int64  `json:"schemaVersion"`
+	CreatedAt     string `json:"createdAt"`
+	UpdatedAt     string `json:"updatedAt"`
 }

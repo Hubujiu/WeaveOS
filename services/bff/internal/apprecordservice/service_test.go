@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
@@ -169,6 +171,52 @@ func TestRestrictedRecordCreateReplaysMinimumAndUsesControlledDML(t *testing.T) 
 	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
 	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM "+relation+" WHERE id=$1", got.ID).Scan(&count); err != nil || count != 1 {
 		t.Fatalf("typed row count %d %v", count, err)
+	}
+}
+
+func TestRestrictedEditCASAndPendingFence(t *testing.T) {
+	f := newRecordFixture(t)
+	var op string
+	if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	created, err := f.service.Create(f.ctx, f.principal, CreateRequest{AppID: f.app, ViewID: f.view, OperationID: op, ExpectedSchemaVersion: 1, Values: map[string]any{f.public: "created"}}, applications.Metadata{RequestID: "v015-edit-create"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var editOp string
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&editOp); err != nil {
+		t.Fatal(err)
+	}
+	req := EditRequest{AppID: f.app, ViewID: f.view, RecordID: created.ID, OperationID: editOp, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "edited"}}
+	changed, err := f.service.Edit(f.ctx, f.principal, req, applications.Metadata{RequestID: "v015-edit"})
+	if err != nil || changed.RecordVersion != 2 || changed.ID != created.ID {
+		t.Fatalf("edit %+v %v", changed, err)
+	}
+	var staleOp string
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&staleOp); err != nil {
+		t.Fatal(err)
+	}
+	req.OperationID = staleOp
+	if _, err = f.service.Edit(f.ctx, f.principal, req, applications.Metadata{RequestID: "v015-stale"}); !errors.Is(err, apprecords.ErrConflict) {
+		t.Fatalf("stale CAS: %v", err)
+	}
+	if _, err = f.owner.Exec(f.ctx, "INSERT INTO applications.record_command_fences(app_id,table_id,record_id,command_id,state,expected_record_version) VALUES($1,$2,$3,gen_random_uuid(),'pending',2)", f.app, f.table, created.ID); err != nil {
+		t.Fatal(err)
+	}
+	var fencedOp string
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&fencedOp); err != nil {
+		t.Fatal(err)
+	}
+	req.OperationID = fencedOp
+	req.ExpectedRecordVersion = 2
+	if _, err = f.service.Edit(f.ctx, f.principal, req, applications.Metadata{RequestID: "v015-fenced"}); err == nil {
+		t.Fatal("pending command fence bypassed")
+	} else {
+		var code *appstructure.Error
+		if !errors.As(err, &code) || code.Code != "APPLICATION_RECORD_FENCED" {
+			t.Fatalf("fence: %v", err)
+		}
 	}
 }
 

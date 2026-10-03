@@ -1,0 +1,251 @@
+package apprecordservice
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/json"
+	"errors"
+	"sort"
+	"time"
+
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appaccess"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/jackc/pgx/v5"
+)
+
+type sourceGuard func(context.Context, pgx.Tx) error
+
+type controlledDML struct{ implementation appstructure.RecordDML }
+
+func (d controlledDML) Insert(ctx context.Context, tx pgx.Tx, t apprecords.Table, in apprecords.Create, ids []string) (apprecords.StoredHeader, error) {
+	h, e := d.implementation.Insert(ctx, tx, appstructure.RecordTable(t), appstructure.RecordCreate(in), ids)
+	return apprecords.StoredHeader(h), e
+}
+func (d controlledDML) LockHeader(ctx context.Context, tx pgx.Tx, t apprecords.Table, id string) (apprecords.StoredHeader, error) {
+	h, e := d.implementation.LockHeader(ctx, tx, appstructure.RecordTable(t), id)
+	return apprecords.StoredHeader(h), e
+}
+func (d controlledDML) UpdateCAS(ctx context.Context, tx pgx.Tx, t apprecords.Table, in apprecords.Edit, ids []string) (apprecords.StoredHeader, error) {
+	h, e := d.implementation.UpdateCAS(ctx, tx, appstructure.RecordTable(t), appstructure.RecordEdit(in), ids)
+	return apprecords.StoredHeader(h), e
+}
+
+type recordAuthorization struct{ policy appaccess.Policy }
+
+func (a recordAuthorization) Check(_ context.Context, _ pgx.Tx, action, owner string, ids []string) error {
+	switch action {
+	case "data.create":
+		if a.policy.CanCreate(ids) {
+			return nil
+		}
+	case "data.edit":
+		if a.policy.CanEdit(owner, ids) {
+			return nil
+		}
+	}
+	return applications.ErrDenied
+}
+
+type recordAudit struct{ port appstructure.RecordAudit }
+
+func (a recordAudit) Append(ctx context.Context, tx pgx.Tx, result apprecords.MutationResult, kind string, ids []string) error {
+	return a.port.Append(ctx, tx, appstructure.RecordMutationResult(result), kind, ids)
+}
+
+func policyFor(facts applications.RecordContext) (appaccess.Policy, bool) {
+	p := appaccess.Policy{ActorID: facts.Actor.ID, AppID: facts.App.ID, OwnerID: facts.App.OwnerUserID, ViewID: facts.ViewID, ResourceExists: appfields.ValidID(facts.TableID), BootstrapAdmin: facts.Actor.BootstrapAdmin}
+	menu := p.BootstrapAdmin || p.ActorID == p.OwnerID
+	for _, g := range facts.Grants {
+		if g.ResourceKind != "form" || g.ResourceID != facts.ViewID {
+			continue
+		}
+		if g.Action == "menu.enter" {
+			menu = true
+			continue
+		}
+		var scope appaccess.Scope
+		switch g.RowScope {
+		case "all":
+			scope = appaccess.All
+		case "own":
+			scope = appaccess.Own
+		default:
+			return p, false
+		}
+		p.Grants = append(p.Grants, appaccess.Grant{AppID: facts.App.ID, ViewID: facts.ViewID, Action: appaccess.Action(g.Action), Scope: scope, Fields: g.Fields})
+	}
+	return p, menu
+}
+
+func normalizeRecordValues(raw map[string]any, fields []appfields.Field) (map[string]any, error) {
+	if raw == nil {
+		return nil, apprecords.ErrInvalid
+	}
+	definitions := map[string]appfields.Field{}
+	for _, f := range fields {
+		definitions[f.ID] = f
+	}
+	ids := make([]string, 0, len(raw))
+	for id := range raw {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	values := make(map[string]any, len(raw))
+	for _, id := range ids {
+		f, ok := definitions[id]
+		if !ok {
+			return nil, apprecords.ErrInvalid
+		}
+		encoded, e := json.Marshal(raw[id])
+		if e != nil {
+			return nil, apprecords.ErrInvalid
+		}
+		canonical, e := appfields.NormalizeValue(f, encoded)
+		if e != nil {
+			return nil, e
+		}
+		var value any
+		if e = json.Unmarshal(canonical, &value); e != nil {
+			return nil, e
+		}
+		values[id] = value
+	}
+	for _, f := range fields {
+		if f.Required {
+			if _, ok := values[f.ID]; !ok && (len(f.Default) == 0 || string(f.Default) == "null") {
+				return nil, apprecords.ErrInvalid
+			}
+		}
+	}
+	return values, nil
+}
+
+func fieldsInContext(facts applications.RecordContext) ([]appfields.Field, []string, error) {
+	var fields []appfields.Field
+	if json.Unmarshal(facts.Fields, &fields) != nil {
+		return nil, nil, ErrUnavailable
+	}
+	ids := make([]string, 0, len(fields))
+	seen := map[string]bool{}
+	for _, f := range fields {
+		if !appfields.ValidID(f.ID) || seen[f.ID] {
+			return nil, nil, ErrUnavailable
+		}
+		seen[f.ID] = true
+		ids = append(ids, f.ID)
+	}
+	return fields, ids, nil
+}
+func rejectUnlockedNewReferences(values map[string]any, fields []appfields.Field, guard sourceGuard) error {
+	for _, f := range fields {
+		if f.Kind != "member" && f.Kind != "department" {
+			continue
+		}
+		if value, ok := values[f.ID]; ok && value != nil && guard == nil {
+			return ErrUnavailable
+		}
+	}
+	return nil
+}
+
+func (s *Service) Create(ctx context.Context, principal session.Principal, req CreateRequest, metadata applications.Metadata) (MutationResult, error) {
+	var result MutationResult
+	if s == nil || s.Pool == nil || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.OperationID) || req.Values == nil || req.ExpectedSchemaVersion < 1 || metadata.RequestID == "" {
+		return result, apprecords.ErrInvalid
+	}
+	canonical, _ := json.Marshal(struct {
+		Kind, AppID, ViewID string
+		Body                CreateRequest
+	}{"record.create", req.AppID, req.ViewID, req})
+	fingerprint := sha256.Sum256(canonical)
+	var policy appaccess.Policy
+	var fields []appfields.Field
+	options := applications.RecordWriteOptions{LockTimeout: time.Second, StatementTimeout: 5 * time.Second, OperationID: req.OperationID, Kind: "record.create", Fingerprint: fingerprint,
+		Authorize: func(_ context.Context, _ pgx.Tx, facts applications.RecordContext) error {
+			var menu bool
+			policy, menu = policyFor(facts)
+			if !menu || !facts.SchemaReady {
+				return applications.ErrDenied
+			}
+			var ids []string
+			var err error
+			fields, ids, err = fieldsInContext(facts)
+			if err != nil {
+				return err
+			}
+			_ = ids
+			selected := make([]string, 0, len(req.Values))
+			for id := range req.Values {
+				selected = append(selected, id)
+			}
+			if !policy.CanCreate(selected) {
+				return applications.ErrDenied
+			}
+			return rejectUnlockedNewReferences(req.Values, fields, nil)
+		},
+	}
+	write, err := (&applications.Application{Pool: s.Pool}).BeginRecordWrite(ctx, principal, req.AppID, req.ViewID, options)
+	if err != nil {
+		return result, err
+	}
+	defer write.Rollback(context.Background())
+	replayed, err := write.Replay(ctx, req.OperationID, "record.create", fingerprint)
+	if err != nil {
+		return result, err
+	}
+	if replayed != nil {
+		if err = write.Commit(ctx); err != nil {
+			return result, err
+		}
+		if json.Unmarshal(replayed.Data, &result) != nil {
+			return MutationResult{}, ErrUnavailable
+		}
+		return result, nil
+	}
+	if err = write.Claim(ctx, req.OperationID, "record.create", fingerprint); err != nil {
+		return result, err
+	}
+	facts := write.Context()
+	if req.ExpectedSchemaVersion != facts.SchemaVersion {
+		return result, apprecords.ErrConflict
+	}
+	values, err := normalizeRecordValues(req.Values, fields)
+	if err != nil {
+		return result, err
+	}
+	var id string
+	if err = write.Tx().QueryRow(ctx, "SELECT gen_random_uuid()::text").Scan(&id); err != nil {
+		return result, err
+	}
+	writer := apprecords.Writer{Gate: appstructure.RecordGate{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID}, Authorization: recordAuthorization{policy: policy}, Fence: appstructure.RecordFence{AppID: req.AppID, TableID: facts.TableID}, Audit: recordAudit{port: appstructure.RecordAudit{Context: facts, OperationID: req.OperationID, Metadata: metadata}}, DML: controlledDML{}}
+	_, active, err := fieldsInContext(facts)
+	if err != nil {
+		return result, err
+	}
+	stored, err := writer.CreateInTx(ctx, write.Tx(), apprecords.Table{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID, Namespace: "appdata", SchemaVersion: facts.SchemaVersion, Ready: facts.SchemaReady, ActiveFieldIDs: active}, apprecords.Create{OperationID: req.OperationID, ID: id, ActorID: facts.Actor.ID, ExpectedSchemaVersion: req.ExpectedSchemaVersion, Values: values})
+	if err != nil {
+		return result, err
+	}
+	result = MutationResult{OperationID: stored.OperationID, ID: stored.ID, RecordVersion: stored.RecordVersion, SchemaVersion: stored.SchemaVersion, CreatedAt: stored.CreatedAt.UTC().Format(time.RFC3339Nano), UpdatedAt: stored.UpdatedAt.UTC().Format(time.RFC3339Nano)}
+	raw, _ := json.Marshal(result)
+	if err = write.Complete(ctx, req.OperationID, applications.Result{Status: 201, Location: "", Data: raw}); err != nil {
+		return MutationResult{}, err
+	}
+	if err = write.Commit(ctx); err != nil {
+		return MutationResult{}, err
+	}
+	return result, nil
+}
+
+var _ apprecords.TypedDML = controlledDML{}
+var _ apprecords.Authorization = recordAuthorization{}
+var _ apprecords.Audit = recordAudit{}
+var _ = errors.Is
+
+func (s *Service) Edit(context.Context, session.Principal, EditRequest, applications.Metadata) (MutationResult, error) {
+	return MutationResult{}, ErrUnavailable
+}
