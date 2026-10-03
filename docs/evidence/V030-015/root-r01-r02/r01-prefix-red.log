@@ -1,0 +1,27 @@
+=== RUN   TestRootSchemaZeroUsesLiveAuthorizationBeforeNotReady
+=== RUN   TestRootSchemaZeroUsesLiveAuthorizationBeforeNotReady/create/authorized
+    schema_boundary_root_test.go:98: want APPLICATION_SCHEMA_NOT_READY, got *errors.errorString: invalid record input
+=== RUN   TestRootSchemaZeroUsesLiveAuthorizationBeforeNotReady/create/menu-only
+    schema_boundary_root_test.go:100: menu-only request must be denied without exposing schema readiness, got invalid record input
+=== RUN   TestRootSchemaZeroUsesLiveAuthorizationBeforeNotReady/edit/authorized
+    schema_boundary_root_test.go:98: want APPLICATION_SCHEMA_NOT_READY, got *errors.errorString: invalid record input
+=== RUN   TestRootSchemaZeroUsesLiveAuthorizationBeforeNotReady/edit/menu-only
+    schema_boundary_root_test.go:100: menu-only request must be denied without exposing schema readiness, got invalid record input
+--- FAIL: TestRootSchemaZeroUsesLiveAuthorizationBeforeNotReady (0.32s)
+    --- FAIL: TestRootSchemaZeroUsesLiveAuthorizationBeforeNotReady/create/authorized (0.09s)
+    --- FAIL: TestRootSchemaZeroUsesLiveAuthorizationBeforeNotReady/create/menu-only (0.07s)
+    --- FAIL: TestRootSchemaZeroUsesLiveAuthorizationBeforeNotReady/edit/authorized (0.09s)
+    --- FAIL: TestRootSchemaZeroUsesLiveAuthorizationBeforeNotReady/edit/menu-only (0.07s)
+=== RUN   TestRootSchemaConflictIsDistinctFromRecordConflict
+=== RUN   TestRootSchemaConflictIsDistinctFromRecordConflict/create
+    schema_boundary_root_test.go:121: want APPLICATION_SCHEMA_CONFLICT, got *errors.errorString: record version conflict
+=== RUN   TestRootSchemaConflictIsDistinctFromRecordConflict/edit
+    schema_boundary_root_test.go:121: want APPLICATION_SCHEMA_CONFLICT, got *errors.errorString: record version conflict
+=== RUN   TestRootSchemaConflictIsDistinctFromRecordConflict/stale-record-with-current-schema
+--- FAIL: TestRootSchemaConflictIsDistinctFromRecordConflict (0.31s)
+    --- FAIL: TestRootSchemaConflictIsDistinctFromRecordConflict/create (0.11s)
+    --- FAIL: TestRootSchemaConflictIsDistinctFromRecordConflict/edit (0.09s)
+    --- PASS: TestRootSchemaConflictIsDistinctFromRecordConflict/stale-record-with-current-schema (0.12s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice	0.657s
+FAIL
