@@ -1,0 +1,58 @@
+[
+  {
+    "name": "package-race",
+    "start": "2026-10-02T13:30:26.610204+00:00",
+    "command": [
+      "/workspace/.weaveos-tools/go/bin/go",
+      "test",
+      "-race",
+      "-count=1",
+      "-json",
+      "./internal/appmeta"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "module-vet",
+    "start": "2026-10-02T13:30:36.834198+00:00",
+    "command": [
+      "/workspace/.weaveos-tools/go/bin/go",
+      "vet",
+      "-p",
+      "1",
+      "./..."
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "bff-build",
+    "start": "2026-10-02T13:31:03.294106+00:00",
+    "command": [
+      "/workspace/.weaveos-tools/go/bin/go",
+      "build",
+      "-p",
+      "1",
+      "-o",
+      "/tmp/weaveos-b1-bff",
+      "./cmd/bff"
+    ],
+    "exitCode": 0
+  },
+  {
+    "name": "benchmark",
+    "start": "2026-10-02T13:31:04.075990+00:00",
+    "command": [
+      "/workspace/.weaveos-tools/go/bin/go",
+      "test",
+      "-run",
+      "^$",
+      "-bench",
+      "BenchmarkValidateStructure",
+      "-benchmem",
+      "-benchtime",
+      "100ms",
+      "./internal/appmeta"
+    ],
+    "exitCode": 0
+  }
+]
