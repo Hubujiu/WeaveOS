@@ -249,18 +249,17 @@ full projection validation, page-only path, context eviction, and a write
 receipt. V015 currently provides only dynamic exact filter compiler and
 bounded streaming hash in `services/bff/internal/appquery`.
 
-**Q36 extraction is now V015-owned for planning only; implementation waits for
-the Notion freeze and lead release.** Its precise source-derived interface,
+**Q36 extraction is V015-owned and released under ADR §12.** Its precise source-derived interface,
 Redis compatibility and regression sequence are in
 [q36-extraction-plan.md](q36-extraction-plan.md). Other shared files remain
 with their named owners.
 
 | Exact path | Required change / ownership |
 | --- | --- |
-| `services/bff/internal/personnel/query_context.go` | V015 after freeze: extract finite Redis Create/Load/Advance, per-Session LRU/TTL and CAS into `services/bff/internal/querycontext/`. Preserve existing personnel key format and limits through a wrapper; parameterize domain validator and revision vector. |
-| `services/bff/internal/personnel/query_engine.go` | V015 after freeze: route personnel through the single shared RR/revision/fingerprint/page lifecycle without changing existing HTTP behavior; use a minimal strategy for appquery's compiler, live policy and typed projection. |
-| `services/bff/internal/personnel/query_write_guard.go` | V015 after freeze: expose the same lifecycle's read receipt for list-origin writes. Personnel retains its RC lock/authorization/retry order; V015 records uses its V013-owned business transaction port. |
-| `services/bff/internal/personnel/query_context_test.go`, `query_projection_test.go`, `query_write_guard_test.go` and Q36 HTTP regression tests | V015 regression scope after freeze; preserve existing keys, changed/expired distinction, CAS, RR and write behavior with real Redis/PG. Other personnel files/source hooks remain V013-owned. |
+| `services/bff/internal/personnel/query_context.go` | V015: extract finite Redis Create/Load/Advance, per-Session LRU/TTL and CAS into `services/bff/internal/querycontext/`. Preserve existing personnel key format and limits through a wrapper; parameterize domain validator and revision vector. |
+| `services/bff/internal/personnel/query_engine.go` | V015: route personnel through the single shared RR/revision/fingerprint/page lifecycle without changing existing HTTP behavior; use a minimal strategy for appquery's compiler, live policy and typed projection. |
+| `services/bff/internal/personnel/query_write_guard.go` | V015: expose the same lifecycle's read receipt for list-origin writes. Personnel retains its RC lock/authorization/retry order; V015 records uses its V013-owned business transaction port. |
+| `services/bff/internal/personnel/query_context_test.go`, `query_projection_test.go`, `query_write_guard_test.go` and Q36 HTTP regression tests | V015 regression scope; preserve existing keys, changed/expired distinction, CAS, RR and write behavior with real Redis/PG. Other personnel files/source hooks remain V013-owned. |
 | `services/bff/internal/applications/transactions.go`, `store.go`, `http.go`; `services/bff/cmd/bff/config.go` | Supply non-manager lifecycle, operation routing and real app HTTP composition. V013 owner controls these files. |
 | `db/migrations/00008_*.sql`, `infra/runtime/roles.sql`, `contracts/errors/codes.json`, `contracts/openapi/openapi.json` | One shared owner allocates schema/roles/error/API edits. V015 supplies delta only. |
 
@@ -315,6 +314,8 @@ not an independent personnel adapter or duplicate Redis engine.
 The lead confirmed that observable `Record` metadata, including
 `recordVersion` and `updatedAt`, belongs in P alongside ID/order/count,
 readable business fields and readable reference `(id,label,deleted)` display.
+SchemaVersion, viewVersion and policyRevision are control dependencies that
+trigger old-P recomputation; their numeric values are not P bytes.
 Any version-changing edit to a matching row is therefore relevant even if
 only an unreadable business field changed. A nonmatching row or unrelated
 resource still must not force a **user-visible** refresh. Selected A may
@@ -322,9 +323,10 @@ still need an expensive complete rehash after a same-table revision bump;
 that read cost is separately measured. `FingerprintRows` is input-agnostic;
 the final SQL strategy must include these system fields explicitly.
 
-## 5. Lead-selected quick-search contract, pending source/API writeback
+## 5. Frozen quick-search contract; API implementation pending
 
-Add `RecordSearch.quickSearch?: {term:string;fieldIds:UUID[]}`. Require 1–20
+Add `RecordSearch.quickSearch?: {term:string;fieldIds:UUID[]}`. Explicit null
+is invalid. Require 1–20
 distinct current `text`/`multiline` IDs on this form/table. Trim outer
 Unicode whitespace; then require 1–160 Unicode scalar values, valid Unicode
 and no NUL. Matching is a **literal substring with ASCII A–Z folded to a–z
@@ -340,12 +342,14 @@ each selected field's read scope must cover the entire visible row scope; any
 failure rejects the whole request with 403. Never search hidden fields,
 reference labels, audit, layout text, system fields or all schema fields by
 default. Canonical criteria sort field IDs and record the ASCII-folded term;
-changing either starts a new context and page 1. No implicit empty-term
+changing either starts a new context; the UI returns to page 1, while the
+server accepts any otherwise valid requested page after checking an old
+queryVersion. No implicit empty-term
 search is defined: reject an empty term, or omit `quickSearch` entirely.
 `strpos` can scan `O(N × selected text fields × term length)`; ordinary BTree
 does not make arbitrary contains search indexed. Measure EXPLAIN and write
-cost before choosing any specialized index. This is a lead-selected contract
-direction, not implemented SQL/OpenAPI yet.
+cost before choosing any specialized index. ADR §11.2 freezes this contract;
+SQL/OpenAPI are not implemented yet.
 
 An [isolated PG18.6 probe](quick-search-cost.txt) with 1,000,002 text rows
 and a BTree on the text column measured about 5.0–5.3 seconds for each
@@ -356,13 +360,13 @@ This one-run fixture is evidence **against assuming the existing BTree helps**;
 it is not a p95 SLA or approval for a trigram/index migration. Twenty OR
 fields and concurrent load remain unmeasured.
 
-## 6. Lead-selected history authorization direction; exposure still gated
+## 6. Frozen record save history; implementation pending
 
 Keep minimum actor/app/table/record/version/operation/changed-field-ID audit
 with the record transaction. To satisfy the financial old/new example,
 propose separate restricted `applications.record_change_events` and
 `record_change_values` (precise candidate columns and wire route in
-[contract-and-algorithms.md](contract-and-algorithms.md#separate-record-change-history-privacyretention-proposal-for-freeze)).
+[contract-and-algorithms.md](contract-and-algorithms.md#frozen-record-save-history-persistence-and-api-implementation-pending)).
 Changed values are canonical per-field old/new only, keyed by event and
 field ID, never in global personnel authentication audit, operation result,
 log or ordinary query context. One version-changing write, including future
@@ -370,7 +374,8 @@ task Save, appends an event in the same transaction; no-op has no value delta.
 
 Add independent `data.history` complete grant tuples on the real form, default
 no grant; owner/Bootstrap retains full capability only for an existing real
-resource. A history read requires both current row `data.read` and a
+resource. A history read first requires that form's actual menu.enter, then
+both current row `data.read` and a
 field-by-field intersection of current `data.read` and `data.history`
 row-scope/field masks. A caller without row read gets 404; a caller with no
 history action gets 403. Filter events with zero permitted deltas **before**
@@ -389,8 +394,8 @@ label, return its stable ID with an unavailable-label marker, never guess a
 new option. A removed field's historical value is not made readable to an
 ordinary actor by an old grant: field deletion first requires explicit grant
 revocation, so current masks exclude it. Owner/Bootstrap rendering of a
-removed field would use the retained field tombstone and event-time kind;
-precise label and field-removal history presentation still need final review.
+removed field uses the retained field tombstone and event-time kind. Current
+or last retained labels never purport to be event-time labels.
 
 The events/values tables are separate from global authentication audit,
 operation receipts and ordinary logs. Backups use the existing encrypted
@@ -398,14 +403,14 @@ backup controls and a minimum role; the global auth-audit reader gains no
 business-value access. With no automatic purge or new retention days, data,
 index, WAL and encrypted-backup growth is unbounded over time:
 `O(sum(changed canonical value bytes + per-delta/event overhead))`. No
-retention cap or cold archive is silently inferred. A V013 schema conversion
-that changes stored values but only advances schemaVersion is **not yet a
-per-record old/new event**. Before claiming complete business history or
-exposing a history API, the lead must decide whether to add atomic per-row
-conversion deltas/version bumps (potentially O(N) writes and WAL per schema
-Save) or explicitly limit history to record/task Save mutations. Also confirm
-removed-field presentation and option tombstone retention. The history route
-remains proposal-only until these are frozen and source/API writeback is done.
+retention cap or cold archive is silently inferred. A V013 schema Save
+records its rule, actor, time and before/after schema versions atomically, but
+produces **no per-row old/new history, recordVersion or updatedAt bump**.
+Lossy conversion values cannot be recovered from record save history;
+preflight must say so. Retained field/option tombstones support owner/
+Bootstrap removed-field rendering and current/last labels. ADR §11.4 freezes
+the route and authorization; shared OpenAPI, storage and handler remain
+unimplemented.
 
 ## 7. Ordinary-user runtime form and reference-display contract
 
@@ -426,7 +431,8 @@ type RuntimeField = {
   presentation: {helpText: string | null; displayTimeZone: string | null};
   // Curated input constraints only; no raw fields_json or dependency config.
   input: {decimal?: {precision:number;scale:number;roundingPlaces:number;
-      roundingMode:string}; timePrecision?: "second" | "millisecond";
+      roundingMode:"HALF_UP"|"HALF_EVEN"|"TOWARD_ZERO"|"FLOOR"|"CEILING"};
+    timePrecision?: "minute" | "second" | "millisecond";
     options?: {id:UUID;label:string}[];
     referenceKind?: "member" | "department"};
   default?: FieldValue; // only when this field is create-authorized

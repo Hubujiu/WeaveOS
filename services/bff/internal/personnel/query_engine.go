@@ -5,14 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
-	"github.com/jackc/pgx/v5"
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/jackc/pgx/v5"
 )
 
-var ErrQueryChanged = errors.New("complete query projection changed")
+var ErrQueryChanged = querycontext.ErrChanged
 var ErrQueryBusy = errors.New("query validation remained busy")
 
 const queryDeadline = 10 * time.Second
@@ -135,22 +137,6 @@ func fullQueryProjection(ctx context.Context, tx pgx.Tx, view string, c queryCri
 	r, err := scanEventProjection(ctx, tx, c.events(page))
 	return queryProjection{events: r.Items, total: r.Total, fingerprint: r.Fingerprint}, err
 }
-func validateSavedQuery(ctx context.Context, tx pgx.Tx, saved QueryContext, r QueryRevisions, c queryCriteria, page PageQuery) (*queryProjection, error) {
-	if saved.Revisions == r {
-		return nil, nil
-	}
-	if saved.Revisions.People > r.People || saved.Revisions.Configuration > r.Configuration || saved.Revisions.Activity > r.Activity {
-		return nil, ErrQueryContextExpired
-	}
-	projected, err := fullQueryProjection(ctx, tx, saved.View, c, page)
-	if err != nil {
-		return nil, err
-	}
-	if projected.fingerprint != saved.Fingerprint || projected.total != saved.Total {
-		return nil, ErrQueryChanged
-	}
-	return &projected, nil
-}
 
 type queryReadResult struct {
 	Members  []Member
@@ -161,114 +147,113 @@ type queryReadResult struct {
 	Page     PageQuery
 }
 
+type queryItems struct {
+	members []Member
+	events  []QueryActivity
+}
+type personnelQueryStrategy struct {
+	app       *Application
+	principal session.Principal
+	view      string
+}
+
+func (s personnelQueryStrategy) Resource() string { return s.view }
+func (s personnelQueryStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
+	return s.app.read(ctx, s.principal)
+}
+func (s personnelQueryStrategy) Prepare(_ context.Context, _ pgx.Tx, saved, incoming json.RawMessage) (json.RawMessage, json.RawMessage, error) {
+	var old *queryCriteria
+	if saved != nil {
+		old = &queryCriteria{}
+		if !decodeQueryMetadata(saved, old) {
+			return nil, nil, ErrQueryContextExpired
+		}
+	}
+	if incoming == nil {
+		return saved, saved, nil
+	}
+	var current queryCriteria
+	if !decodeQueryMetadata(incoming, &current) {
+		return nil, nil, ErrInvalid
+	}
+	normalized, err := normalizedCriteria(s.view, current, old)
+	if err != nil {
+		return nil, nil, err
+	}
+	canonical, err := projectionJSON(normalized)
+	if err != nil {
+		return nil, nil, err
+	}
+	return saved, canonical, nil
+}
+func (s personnelQueryStrategy) Revisions(ctx context.Context, tx pgx.Tx) (json.RawMessage, error) {
+	revision, err := readQueryRevisions(ctx, tx, s.view)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(revision)
+}
+func (s personnelQueryStrategy) Observe(ctx context.Context, tx pgx.Tx, raw json.RawMessage, page querycontext.Page) (querycontext.Observation[queryItems], error) {
+	var c queryCriteria
+	if !decodeQueryMetadata(raw, &c) {
+		return querycontext.Observation[queryItems]{}, ErrQueryContextExpired
+	}
+	projected, err := fullQueryProjection(ctx, tx, s.view, c, PageQuery{Page: page.Number, PageSize: page.Size})
+	if err != nil {
+		return querycontext.Observation[queryItems]{}, err
+	}
+	items := queryItems{events: projected.events}
+	if s.view == "members" {
+		items.members, err = hydrateQueryMembers(ctx, tx, projected.members)
+		if err != nil {
+			return querycontext.Observation[queryItems]{}, err
+		}
+	}
+	return querycontext.Observation[queryItems]{Items: items, Total: projected.total, Fingerprint: projected.fingerprint}, nil
+}
+func (s personnelQueryStrategy) Page(ctx context.Context, tx pgx.Tx, raw json.RawMessage, page querycontext.Page) (queryItems, error) {
+	var c queryCriteria
+	if !decodeQueryMetadata(raw, &c) {
+		return queryItems{}, ErrQueryContextExpired
+	}
+	p := PageQuery{Page: page.Number, PageSize: page.Size}
+	if s.view == "members" {
+		projected, err := scanMemberPage(ctx, tx, c.members(p))
+		if err != nil {
+			return queryItems{}, err
+		}
+		members, err := hydrateQueryMembers(ctx, tx, projected)
+		return queryItems{members: members}, err
+	}
+	events, err := scanEventPage(ctx, tx, c.events(p))
+	return queryItems{events: events}, err
+}
 func (a *Application) executeQuery(ctx context.Context, p session.Principal, view string, c queryCriteria, page PageQuery, version string) (queryReadResult, error) {
 	result := queryReadResult{}
-	var err error
-	page, err = normalizedPage(page)
+	normalized, err := normalizedPage(page)
 	if err != nil {
 		return result, err
 	}
 	if a == nil || a.Queries == nil {
 		return result, session.ErrUnavailable
 	}
+	incoming, err := projectionJSON(c)
+	if err != nil {
+		return result, ErrInvalid
+	}
 	ctx, cancel := context.WithTimeout(ctx, queryDeadline)
 	defer cancel()
-	// Load immutable metadata before opening RR so its verified revision cannot
-	// originate from a snapshot newer than ours. Authorization still decides every
-	// response, including a missing/expired context; errors are deferred until read().
-	var saved QueryContext
-	var loadErr error
-	if version != "" {
-		saved, loadErr = a.Queries.Load(ctx, p.SessionRef, version)
-	}
-	tx, err := a.read(ctx, p)
+	executed, err := querycontext.Execute(ctx, a.Queries.shared, p.SessionRef, version, incoming,
+		querycontext.Page{Number: normalized.Page, Size: normalized.PageSize},
+		personnelQueryStrategy{app: a, principal: p, view: view})
 	if err != nil {
-		return result, err
+		return result, personnelContextError(err)
 	}
-	defer tx.Rollback(context.Background())
-	if loadErr != nil {
-		return result, loadErr
+	if !decodeQueryMetadata(executed.Criteria, &result.Criteria) {
+		return queryReadResult{}, ErrInvalid
 	}
-	var old *queryCriteria
-	if version != "" {
-		if saved.View != view {
-			return result, ErrQueryContextExpired
-		}
-		old = &queryCriteria{}
-		if !decodeQueryMetadata(saved.Criteria, old) {
-			return result, ErrQueryContextExpired
-		}
-	}
-	c, err = normalizedCriteria(view, c, old)
-	if err != nil {
-		return result, err
-	}
-	canonical, err := projectionJSON(c)
-	if err != nil {
-		return result, err
-	}
-	r, err := readQueryRevisions(ctx, tx, view)
-	if err != nil {
-		return result, err
-	}
-	same := version != "" && bytes.Equal(saved.Criteria, canonical)
-	var verified *queryProjection
-	if old != nil {
-		validationPage := PageQuery{Page: 1, PageSize: 1}
-		if same {
-			validationPage = page
-		}
-		verified, err = validateSavedQuery(ctx, tx, saved, r, *old, validationPage)
-		if err != nil {
-			return result, err
-		}
-	}
-	var projection queryProjection
-	if !same {
-		projection, err = fullQueryProjection(ctx, tx, view, c, page)
-	} else if verified != nil {
-		projection = *verified
-	} else {
-		projection.total = saved.Total
-		projection.fingerprint = saved.Fingerprint
-		if view == "members" {
-			projection.members, err = scanMemberPage(ctx, tx, c.members(page))
-		} else {
-			projection.events, err = scanEventPage(ctx, tx, c.events(page))
-		}
-	}
-	if err != nil {
-		return result, err
-	}
-	if view == "members" {
-		result.Members, err = hydrateQueryMembers(ctx, tx, projection.members)
-		if err != nil {
-			return result, err
-		}
-	} else {
-		result.Events = projection.events
-	}
-	// Authorization, old/new projections, page, total and r were read in this one
-	// snapshot. Release the read transaction before bounded Redis metadata writes.
-	if err = tx.Commit(ctx); err != nil {
-		return result, err
-	}
-	if old != nil && saved.Revisions != r {
-		err = a.Queries.Advance(ctx, p.SessionRef, version, saved.Fingerprint, saved.Revisions, r)
-		if err != nil && !errors.Is(err, ErrQueryContextCAS) {
-			return result, err
-		}
-	}
-	if !same {
-		version, err = a.Queries.Create(ctx, p.SessionRef, QueryContext{View: view, Criteria: canonical, Total: projection.total, Fingerprint: projection.fingerprint, Revisions: r, ProtocolVersion: 1})
-		if err != nil {
-			return result, err
-		}
-	}
-	result.Total = projection.total
-	result.Version = version
-	result.Criteria = c
-	result.Page = page
+	result.Members, result.Events = executed.Items.members, executed.Items.events
+	result.Total, result.Version, result.Page = executed.Total, executed.Version, normalized
 	return result, nil
 }
 func (a *Application) SearchMembers(ctx context.Context, p session.Principal, in MemberQueryInput) (MembersQueryPage, error) {

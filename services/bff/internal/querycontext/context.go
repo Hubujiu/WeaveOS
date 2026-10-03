@@ -39,7 +39,7 @@ type Metadata struct {
 
 type Policy struct {
 	Validate func(Metadata) bool
-	Forward  func(previous, next json.RawMessage) bool
+	Forward  func(view string, previous, next json.RawMessage) bool
 }
 
 type Store struct {
@@ -183,7 +183,22 @@ func (s *Store) Advance(ctx context.Context, sessionRef, id, fingerprint string,
 	if !validToken(id) {
 		return ErrExpired
 	}
-	if !validFingerprint(fingerprint) || s.policy.Forward == nil || !s.policy.Forward(previous, next) {
+	if !validFingerprint(fingerprint) || s.policy.Forward == nil {
+		return ErrInvalid
+	}
+	// Read only the immutable view discriminator without touching LRU/TTL.
+	// The Lua CAS below still decides whether the exact old revision is current.
+	data, err := s.client.HGet(ctx, prefix+id, "data").Result()
+	if errors.Is(err, redis.Nil) {
+		return ErrExpired
+	}
+	if err != nil {
+		return err
+	}
+	var header struct {
+		View string `json:"view"`
+	}
+	if json.Unmarshal([]byte(data), &header) != nil || !s.policy.Forward(header.View, previous, next) {
 		return ErrInvalid
 	}
 	result, err := advanceScript.Run(ctx, s.client, []string{prefix + "lru", prefix + id}, id, []byte(previous), []byte(next), fingerprint).Int()

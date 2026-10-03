@@ -7,10 +7,9 @@ Source and branch provenance: [task record](../../tasks/V030-015.md).
 The V030-015 PRD and ADR §8 are the accepted source for record/query/draft
 semantics. V030-013's separate authoritative ADR freezes structure/field
 semantics; this document only extends those boundaries. The lead selected
-Candidate A. The lead later selected the quick-search matching rule and
-independent history authorization direction; neither is an available API,
-and history exposure still has explicit decisions open in the
-[shared integration delta](shared-integration-proposal.md).
+Candidate A. The lead later froze RuntimeView, quickSearch, observable P and
+record save history in ADR §11; none is an available API yet. Q36 extraction
+is separately released under ADR §12.
 
 ## 1. Actual code facts and integration gaps
 
@@ -87,7 +86,7 @@ does not define business JSONB storage.
 | DELETE /forms/{viewId}/drafts/{draftId} | operationId,expectedDraftVersion query | 204 |
 | GET /api/v1/application-operations/{operationId} | existing route | additive record/draft result kinds |
 
-Proposed wire types, all shown keys required unless suffixed ?:
+Frozen wire types; all shown keys are required unless suffixed ?:
 
     type UUID = string; type Version = number; // safe JSON integer 0..2^53-1
     type FieldValue = string | boolean | string[] | null;
@@ -95,9 +94,11 @@ Proposed wire types, all shown keys required unless suffixed ?:
     // datetime explicit-offset RFC3339 normalized UTC; option/ref stable UUID.
     // Only multi_select uses string[]; null is explicit clear.
     type Values = {[fieldId:UUID]:FieldValue};
+    type ReferenceDisplay = {id:UUID; label:string; deleted:boolean};
     type BusinessRecord = {id:UUID; appId:UUID; tableId:UUID; viewId:UUID;
       createdBy:UUID; createdAt:string; updatedAt:string;
-      recordVersion:Version; schemaVersion:Version; values:Values};
+      recordVersion:Version; schemaVersion:Version; values:Values;
+      referenceDisplays:{[fieldId:UUID]:{[sourceId:UUID]:ReferenceDisplay}}};
     type MutationResult = {operationId:UUID; id:UUID;
       recordVersion:Version; schemaVersion:Version;
       createdAt:string; updatedAt:string};
@@ -114,8 +115,10 @@ Proposed wire types, all shown keys required unless suffixed ?:
       value:FieldValue};
     type Sort = {fieldId:UUID|"createdAt"|"updatedAt";
       direction:"asc"|"desc"} | null;
+    type QuickSearch = {term:string; fieldIds:UUID[]};
     type RecordSearch = {page:Version; pageSize:Version;
-      filter:FilterGroup|null; sort:Sort; queryVersion?:string};
+      filter:FilterGroup|null; sort:Sort; queryVersion?:string;
+      quickSearch?:QuickSearch};
     type RecordPage = {items:BusinessRecord[]; total:Version; page:Version;
       pageSize:Version; sort:Sort; queryVersion:string;
       schemaVersion:Version; viewVersion:Version};
@@ -141,7 +144,7 @@ Proposed wire types, all shown keys required unless suffixed ?:
     type DraftDeleteQuery = {operationId:UUID;
       expectedDraftVersion:Version};
 
-Ordinary users cannot call V013's owner-only definition read. The proposed
+Ordinary users cannot call V013's owner-only definition read. The frozen
 `RuntimeView` DTO and additive `BusinessRecord.referenceDisplays` map are
 specified in the [shared integration delta](shared-integration-proposal.md#7-ordinary-user-runtime-form-and-reference-display-contract).
 They provide V014 FieldRenderer's permitted field/layout props and only the
@@ -250,15 +253,12 @@ V030-015 ADR §8.3 records **new limited ADR-002 exceptions** solely for
 record search. Draft GET remains
 cursor-paginated under the accepted default.
 
-### Lead-selected quick-search direction, pending source/API writeback
+### Frozen quick-search input; API implementation pending
 
 The lead selected an additive request member on 2026-10-03; exact integration
-delta and costs are in [shared-integration-proposal.md](shared-integration-proposal.md#5-lead-selected-quick-search-contract-pending-sourceapi-writeback):
+delta and costs are in [shared-integration-proposal.md](shared-integration-proposal.md#5-frozen-quick-search-contract-api-implementation-pending):
 
-    type QuickSearch = {term:string; fieldIds:UUID[]} | null;
-    type RecordSearch = {page:Version; pageSize:Version;
-      filter:FilterGroup|null; sort:Sort; quickSearch?:QuickSearch;
-      queryVersion?:string};
+    // QuickSearch and RecordSearch are declared in the frozen DTO above.
 
 The explicit fieldIds must contain 1–20 distinct current text/multiline
 fields of this table. Each must be readable across the entire visible row
@@ -268,7 +268,8 @@ both sides; other Unicode stays literal. Parameterized `translate` plus
 `strpos` makes `%`, `_` and backslash ordinary characters and avoids
 database-locale casefold. The OR is ANDed with structured filter. No implicit
 scan of every field, reference display, hidden column, system field or
-unauthorized value. Empty term is invalid; omit quickSearch to disable it.
+unauthorized value. Empty term and explicit null are invalid; omit quickSearch
+to disable it.
 Arbitrary contains may scan N rows; index strategy requires EXPLAIN.
 
 Proposed additive error mapping (names/statuses for review, not registered):
@@ -487,8 +488,8 @@ normalization, context metadata, revision-vs-fingerprint decision, RR
 snapshot, bounded streaming hash and page-one refresh semantics. Keep
 personnel SQL vocabulary isolated; appquery uses metadata-compiled typed
 SQL and the same shared lifecycle, not a second web table adapter. Existing
-personnel functions are package-private, so one coordinated owner must
-extract the lifecycle. Duplicating the Redis context implementation inside
+personnel functions were package-private; V015 extracted the lifecycle under
+ADR §12 while keeping personnel's SQL/criteria strategy. Duplicating the Redis context implementation inside
 appquery is not reuse. On a data,
 policy, schema or relevant registry revision change, stream the complete
 authorized projection in the **same RR snapshot** and compare digest+count.
@@ -516,8 +517,10 @@ plans/RSS/timing evidence to the lead; increasing timeouts alone does not
 change the selected design.
 
 Correctness proof obligation: digest includes every observable authorized
-projection byte and selected source display, deterministic order and schema
-version. A cryptographic collision remains theoretical; independent tests
+projection byte and selected source display in deterministic order. Schema,
+view and policy versions are control dependencies that trigger old-P
+recomputation; they are not bytes of P. A cryptographic collision remains
+theoretical; independent tests
 compare exact expected result. Any source hook missing a revision can create
 false negatives, so unavailable source integration must fail closed.
 
@@ -712,10 +715,10 @@ least privilege; V030-015 does not edit shared roles or migration files now.
   display mapping and normalized multi-department edges; its local
   module alone is insufficient.
 
-### Separate record change history: privacy/retention proposal for freeze
+### Frozen record save history; persistence and API implementation pending
 
 Ordinary edits and future financial-node Save must preserve enough canonical
-before/after data to inspect a changed amount. Propose two application-owned
+before/after data to inspect a changed amount. The frozen storage contract uses two application-owned
 hot tables, distinct from personnel-visible auth.authentication_events:
 
     record_change_events {
@@ -745,7 +748,7 @@ are **not** invented here; no automatic purge or retention period is proposed.
 Backups of this table contain potentially sensitive history and require the
 same restricted role/encryption controls as business data.
 
-Proposed read route, not part of the current OpenAPI until freeze:
+Frozen read route, not yet written into the shared OpenAPI by its owner:
 
     GET /forms/{viewId}/records/{recordId}/history?pageSize=&pageToken=
     type HistoryChange = {fieldId:UUID; fieldKind:string;
@@ -755,7 +758,8 @@ Proposed read route, not part of the current OpenAPI until freeze:
       origin:"ordinary"|"task_save"; changes:HistoryChange[]};
     // Response data.items:HistoryEvent[]; meta.pagination: ADR-002 cursor.
 
-Use the *current* actual form, row createdBy and both current `data.read` and
+First require the actual form's `menu.enter`. Use the *current* actual form,
+row createdBy and both current `data.read` and
 independent `data.history` complete tuples to authorize each field before
 projecting history. `data.history` has no grants by default; owner/Bootstrap
 has full capability only for a real resource. A caller without current row
@@ -777,12 +781,15 @@ permitted delta, and task linkage only when the current actor can access that
 actual task. Current registry/tombstone labels explain stored option/ref
 IDs but are not event-time snapshots. Removed fields are inaccessible to
 ordinary grants after explicit revoke; event-time field kind remains stored.
-The precise owner/Bootstrap presentation of removed fields, schema conversion
-delta policy, option tombstone labels and exposure API remain for final
-review as detailed in the
-[shared integration delta](shared-integration-proposal.md#6-lead-selected-history-authorization-direction-exposure-still-gated).
+Owner/Bootstrap may read existing removed-field history while the real form
+and table exist, using retained field tombstones and event-time kind. Option
+and reference labels resolve from current/tombstone state and are never
+claimed as event-time labels; missing labels expose stable IDs with a marker.
+Schema Save has atomic rule/actor/time/version audit only, without per-row
+history or recordVersion/updatedAt bumps. A lossy conversion's old row values
+cannot be recovered from record save history; preflight must state that.
 No auto purge or new retention days were selected; encrypted backup growth
-continues with changes. Until full source/API freeze, no history values go in
+continues with changes. Until the shared implementation lands, no history values go in
 the global authentication audit summary, logs, operation result or
 unprotected cold archive, and the history route is not implemented.
 
@@ -828,14 +835,14 @@ routes available until shared integration and acceptance are complete.
    branch has no ready HTTP route, persistent data grants, operation extension,
    query-context reuse or product migration. Its PG tests use temporary tables
    and test adapters; they do not prove runtime-role permission or live API.
-2. Write back the lead-selected quick-search DTO/scope/ASCII-fold rule before
-   search-control backend implementation. Confirm exact error registrations
-   and any current policy/schema change distinction relative to
-   QUERY_CHANGED/CONTEXT_EXPIRED.
-3. Complete the restricted history review for schema conversions, removed
-   fields, option labels and backup growth before old values are stored or
-   exposed. `data.history` is a separate default-deny action; no guessed
-   global audit summary, purge or new retention interval.
+2. Implement the ADR §11 frozen quick-search DTO/scope/ASCII-fold rule through
+   the shared OpenAPI owner and record SQL consumer. Register exact errors and
+   preserve old-query/P versus control-version semantics.
+3. Implement ADR §11 record save history and the schema Save audit distinction
+   with restricted storage/roles and the shared OpenAPI owner. `data.history`
+   remains separate and default-deny; lossy conversion preflight states the
+   unrecoverable old-row-values limit. No guessed global audit summary, purge
+   or new retention interval.
 4. Assign shared applications transaction lifecycle, apppolicy data.create
    and grant storage extension, Q36 query-context extraction, OpenAPI/errors,
    hot/cold migration numbers and roles to the V030-013 integration owner.

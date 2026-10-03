@@ -168,9 +168,9 @@ func TestRealPGRRRedisLifecycleAndReceipt(t *testing.T) {
 			_, err := canonicalPrefix(m.Criteria)
 			return m.View == "fixture" && err == nil && json.Unmarshal(m.Revision, &n) == nil && n > 0
 		},
-		Forward: func(previous, next json.RawMessage) bool {
+		Forward: func(view string, previous, next json.RawMessage) bool {
 			var a, b int64
-			return json.Unmarshal(previous, &a) == nil && json.Unmarshal(next, &b) == nil && a > 0 && b >= a
+			return view == "fixture" && json.Unmarshal(previous, &a) == nil && json.Unmarshal(next, &b) == nil && a > 0 && b >= a
 		},
 	}
 	store := NewStore(client, "q36test", name, policy)

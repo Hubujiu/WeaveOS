@@ -40,7 +40,7 @@ func NewQueryContextStore(client redis.UniversalClient, generation string) *Quer
 				ProtocolVersion: m.ProtocolVersion, Revisions: revision,
 			})
 		},
-		Forward: func(previous, next json.RawMessage) bool {
+		Forward: func(_ string, previous, next json.RawMessage) bool {
 			var old, now QueryRevisions
 			return json.Unmarshal(previous, &old) == nil && json.Unmarshal(next, &now) == nil &&
 				validQueryRevisions(old) && validQueryRevisions(now) &&

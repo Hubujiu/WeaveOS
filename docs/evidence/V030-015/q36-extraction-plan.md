@@ -1,12 +1,13 @@
 # V030-015 · Q36 neutral query-context extraction plan
 
-Status: **source review and interface proposal only**. Do not implement until
-the relevant Notion contract is frozen and the lead releases the change.
+Status: **frozen and released for the exact extraction scope** by V015 ADR
+§12, read back 2026-10-03 11:49:12 UTC. Implementation and real regression
+evidence are recorded separately; this plan is not product API acceptance.
 Reviewed the fixed V015 worktree at `1633361e69060011e25d780f39c0ec68dbab3512`
 against the live `personnel/query_context.go`, `query_engine.go`,
 `query_write_guard.go`, projection and HTTP/PG/Redis tests on 2026-10-03.
-The lead has reserved those three personnel source files, their corresponding
-Q36 tests and a new `services/bff/internal/querycontext/` package for V015.
+The lead assigned those three personnel source files, their corresponding
+Q36 tests and a new `services/bff/internal/querycontext/` package to V015.
 Other personnel files, especially source hooks, remain V013-owned. This plan
 does not authorize a runtime record route, history route, quick-search route,
 new benchmark matrix or shared migration edit.
@@ -143,7 +144,7 @@ refresh. Saved old filter/sort loss of full read coverage yields 403; an
 authorized but tombstoned saved field yields `QUERY_CHANGED`. Compact A
 remains isolated and unselected; the initial record adapter uses full P.
 
-## Change sequence after source freeze
+## Frozen implementation sequence
 
 1. Capture a real Redis pre-extraction compatibility fixture: prefix,
    serialized data/revision, 20+1 eviction, Session isolation, TTL and CAS.
