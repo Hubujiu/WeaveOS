@@ -209,3 +209,54 @@ test('Q36 B2 trusted select-all clicks while loading or empty cannot persist int
  await page.getByLabel('跳至页',{exact:true}).fill('2');await page.getByLabel('跳至页',{exact:true}).press('Enter');
  await expect(page.getByLabel('选择成员：next-page-member',{exact:true})).toBeVisible();await expect(table).toHaveAttribute('aria-busy','false');await expect(page.getByLabel('选择成员：next-page-member',{exact:true})).not.toBeChecked();await expect(all).not.toBeChecked();
 });
+
+test('Q36 B2 completed filter exit preserves a newer deliberate checkbox focus',async({page})=>{
+ await page.addInitScript(()=>{
+  Object.defineProperty(document,'startViewTransition',{value:undefined,configurable:true});
+  let release!:()=>void;
+  const gate=new Promise<void>(resolve=>{release=resolve;});
+  const state={captured:false,finished:false,release,events:[] as unknown[]};
+  Object.defineProperty(window,'__q36ExitFocus',{value:state});
+  const animate=Element.prototype.animate;
+  Element.prototype.animate=function(...args){
+   const motion=animate.apply(this,args);
+   const options=args[1];
+   if(!state.captured&&this.classList.contains('q36-filter-shell')&&typeof options==='object'&&options?.duration===220){
+    state.captured=true;
+    const finished=motion.finished;
+    finished.then(()=>{state.finished=true;},()=>{});
+    // Keep the real animation; explicitly order its completion notification
+    // after deliberate navigation, with no wall-clock delay or test retry.
+    Object.defineProperty(motion,'finished',{value:finished.then(()=>gate)});
+   }
+   return motion;
+  };
+  const focus=HTMLElement.prototype.focus;
+  HTMLElement.prototype.focus=function(...args){
+   state.events.push({type:'focus-call',target:this.getAttribute('aria-label'),previous:document.activeElement?.getAttribute('aria-label'),stack:new Error().stack});
+   return focus.apply(this,args);
+  };
+  for(const type of ['focusin','keydown','click'])document.addEventListener(type,event=>{
+   state.events.push({type,target:(event.target as Element).getAttribute('aria-label'),trusted:event.isTrusted,key:(event as KeyboardEvent).key});
+  },true);
+ });
+ await fixture(page);
+ await page.route('**/personnel/members/search',r=>r.fulfill({json:envelope(paging([member],r.request().postDataJSON()))}));
+ await admin(page);
+ const trigger=page.getByRole('button',{name:'自定义筛选',exact:true});
+ const panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});
+ await trigger.click();await expect(panel).toBeVisible();
+ await panel.getByRole('button',{name:'关闭筛选管理',exact:true}).click();await expect(panel).toBeHidden();
+ await expect.poll(()=>page.evaluate(()=>(window as unknown as {__q36ExitFocus:{finished:boolean}}).__q36ExitFocus.finished)).toBe(true);
+ const all=page.getByLabel('选择当前页成员',{exact:true});
+ await all.focus();await expect(all).toBeFocused();
+ await page.evaluate(async()=>{
+  (window as unknown as {__q36ExitFocus:{release:()=>void}}).__q36ExitFocus.release();
+  await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
+ });
+ await test.info().attach('exit-focus-events.json',{body:JSON.stringify(await page.evaluate(()=>(window as unknown as {__q36ExitFocus:{events:unknown[]}}).__q36ExitFocus.events),null,2),contentType:'application/json'});
+ await expect(all).toBeFocused();
+ await page.keyboard.press('Space');
+ await expect(all).toBeChecked();await expect(page.getByLabel('选择成员：q36-admin',{exact:true})).toBeChecked();
+ await expect(panel).toBeHidden();await expect(trigger).toHaveAttribute('aria-expanded','false');
+});
