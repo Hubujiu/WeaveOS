@@ -249,22 +249,22 @@ test('late preflight for an old view cannot open impact or write into the newly 
   const started=new Promise<void>(resolve=>{seenPreflight=resolve;});
   await page.route('**/definition/preflight',async route=>{
     seenPreflight();await gate;
-    return route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,dataRevision:0,dependencyRevision:0,
+    try{await route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,dataRevision:0,dependencyRevision:0,
       plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},
       impacts:[{fieldId:'field-old',kind:'column_removal',nonNullRows:1,optionId:null}],
       dependencies:[],blockingIssues:[],saveAllowed:true,
-      confirmation:{token:'old-view-token',expiresAt:'2099-01-01T00:00:00Z'}})});
+      confirmation:{token:'old-view-token',expiresAt:'2099-01-01T00:00:00Z'}})});}catch{/* scope change aborted the old preflight */}
   });
   await page.route(`**/forms/${nextViewId}/definition`,route=>route.fulfill({json:ok({...definition,form:{...form,id:nextViewId,name:'另一个视图'}})}));
   await page.goto(`/src/applications/forms/harness.html?mode=designer&appId=${appId}&viewId=${viewId}&switchViewId=${nextViewId}`);
   await page.getByRole('button',{name:'文本',exact:true}).click();
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await started;
+  const oldCancelled=page.waitForEvent('requestfailed',request=>request.url().includes(`/forms/${viewId}/definition/preflight`));
   await page.getByRole('button',{name:'切换视图'}).click();
   await expect(page.getByRole('region',{name:'表单画布'})).toContainText('另一个视图');
-  const oldReply=page.waitForResponse(response=>response.url().includes(`/forms/${viewId}/definition/preflight`));
+  await oldCancelled;
   release();
-  await oldReply;
   await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
