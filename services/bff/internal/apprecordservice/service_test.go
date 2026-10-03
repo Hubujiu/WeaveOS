@@ -16,11 +16,11 @@ import (
 )
 
 type recordFixture struct {
-	ctx                                            context.Context
-	owner, runtime                                 *pgxpool.Pool
-	actor, other, app, table, view, public, secret string
-	principal                                      session.Principal
-	service                                        *Service
+	ctx                                                       context.Context
+	owner, runtime                                            *pgxpool.Pool
+	actor, other, app, table, view, public, secret, reference string
+	principal                                                 session.Principal
+	service                                                   *Service
 }
 
 func newRecordFixture(t *testing.T) recordFixture {
@@ -57,13 +57,13 @@ func newRecordFixture(t *testing.T) recordFixture {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { client.Close() })
-	ids := make([]string, 9)
+	ids := make([]string, 10)
 	for i := range ids {
 		if err := owner.QueryRow(ctx, "SELECT gen_random_uuid()::text").Scan(&ids[i]); err != nil {
 			t.Fatal(err)
 		}
 	}
-	f := recordFixture{ctx: ctx, owner: owner, runtime: runtime, actor: ids[0], other: ids[1], app: ids[2], table: ids[3], view: ids[4], public: ids[5], secret: ids[6]}
+	f := recordFixture{ctx: ctx, owner: owner, runtime: runtime, actor: ids[0], other: ids[1], app: ids[2], table: ids[3], view: ids[4], public: ids[5], secret: ids[6], reference: ids[9]}
 	for _, u := range []string{f.actor, f.other} {
 		if _, err := owner.Exec(ctx, "INSERT INTO auth.users(id,account) VALUES($1,$2)", u, "v015-consumer-"+u); err != nil {
 			t.Fatal(err)
@@ -81,6 +81,7 @@ func newRecordFixture(t *testing.T) recordFixture {
 	fieldDefs := []map[string]any{
 		{"id": f.public, "name": "Public", "kind": "text", "required": false, "config": map[string]any{}, "presentation": map[string]any{"helpText": nil, "displayTimeZone": nil}},
 		{"id": f.secret, "name": "Secret", "kind": "text", "required": false, "config": map[string]any{}, "presentation": map[string]any{"helpText": nil, "displayTimeZone": nil}},
+		{"id": f.reference, "name": "Member", "kind": "member", "required": false, "config": map[string]any{}, "presentation": map[string]any{"helpText": nil, "displayTimeZone": nil}},
 	}
 	fieldsJSON, _ := json.Marshal(fieldDefs)
 	if _, err := owner.Exec(ctx, "INSERT INTO applications.logical_tables(id,app_id,name,position,schema_version,schema_ready,fields_json) VALUES($1,$2,'table',0,1,true,$3)", f.table, f.app, fieldsJSON); err != nil {
@@ -95,12 +96,16 @@ func newRecordFixture(t *testing.T) recordFixture {
 	if _, err := owner.Exec(ctx, "SELECT applications.apply_schema_change($1,$2,$3,'create_table',NULL,NULL)", f.other, f.app, f.table); err != nil {
 		t.Fatal(err)
 	}
-	for i, id := range []string{f.public, f.secret} {
+	for i, id := range []string{f.public, f.secret, f.reference} {
 		definition, _ := json.Marshal(fieldDefs[i])
 		if _, err := owner.Exec(ctx, "INSERT INTO applications.fields(id,app_id,table_id,definition) VALUES($1,$2,$3,$4)", id, f.app, f.table, definition); err != nil {
 			t.Fatal(err)
 		}
-		physical, _ := json.Marshal(map[string]any{"ID": id, "Type": "text", "Required": false})
+		typeName := "text"
+		if id == f.reference {
+			typeName = "uuid"
+		}
+		physical, _ := json.Marshal(map[string]any{"ID": id, "Type": typeName, "Required": false})
 		if _, err := owner.Exec(ctx, "SELECT applications.apply_schema_change($1,$2,$3,'add_column',NULL,$4)", f.other, f.app, f.table, physical); err != nil {
 			t.Fatalf("field %d: %v", i, err)
 		}
@@ -115,7 +120,7 @@ func newRecordFixture(t *testing.T) recordFixture {
 	for _, g := range []struct {
 		action, scope string
 		fields        []string
-	}{{"menu.enter", "all", nil}, {"data.read", "all", []string{f.public}}, {"data.read", "own", []string{f.secret}}} {
+	}{{"menu.enter", "all", nil}, {"data.read", "all", []string{f.public, f.reference}}, {"data.read", "own", []string{f.secret}}} {
 		var grant string
 		if err := owner.QueryRow(ctx, "INSERT INTO applications.grants(app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,'form',$3,$4,$5) RETURNING id::text", f.app, group, f.view, g.action, g.scope).Scan(&grant); err != nil {
 			t.Fatal(err)
@@ -127,8 +132,8 @@ func newRecordFixture(t *testing.T) recordFixture {
 		}
 	}
 	physical := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
-	cols := fmt.Sprintf("f_%s,f_%s", strings.ReplaceAll(f.public, "-", ""), strings.ReplaceAll(f.secret, "-", ""))
-	if _, err := owner.Exec(ctx, "INSERT INTO "+physical+"(id,created_by,"+cols+") VALUES($1,$2,'alpha','private alpha'),($3,$4,'beta','private beta')", ids[8], f.actor, ids[7], f.other); err != nil {
+	cols := fmt.Sprintf("f_%s,f_%s,f_%s", strings.ReplaceAll(f.public, "-", ""), strings.ReplaceAll(f.secret, "-", ""), strings.ReplaceAll(f.reference, "-", ""))
+	if _, err := owner.Exec(ctx, "INSERT INTO "+physical+"(id,created_by,"+cols+") VALUES($1,$2,'alpha','private alpha',$4),($3,$4,'beta','private beta',$4)", ids[8], f.actor, ids[7], f.other); err != nil {
 		t.Fatal(err)
 	}
 	f.principal = session.Principal{UserID: f.actor, SessionRef: ids[8], Record: session.Record{AuthVersion: "1"}}
@@ -163,6 +168,9 @@ func TestRestrictedRealRecordSearchMasksBeforeCountAndReusesContext(t *testing.T
 		} else {
 			t.Fatalf("unknown creator %+v", item)
 		}
+		if display, ok := item.ReferenceDisplays[f.reference][f.other]; !ok || display.Label != "v015-consumer-"+f.other || display.Deleted {
+			t.Fatalf("reference display missing %+v", item)
+		}
 	}
 	other, err := f.service.Search(f.ctx, f.principal, SearchRequest{AppID: f.app, ViewID: f.view, Page: 2, PageSize: 1, QueryVersion: got.QueryVersion})
 	if err != nil {
@@ -170,5 +178,10 @@ func TestRestrictedRealRecordSearchMasksBeforeCountAndReusesContext(t *testing.T
 	}
 	if other.Total != 2 || len(other.Items) != 1 || other.QueryVersion != got.QueryVersion {
 		t.Fatalf("second page %+v", other)
+	}
+	quick := json.RawMessage(`{"term":"BETA","fieldIds":["` + f.public + `"]}`)
+	filtered, err := f.service.Search(f.ctx, f.principal, SearchRequest{AppID: f.app, ViewID: f.view, Page: 1, PageSize: 1, QueryVersion: got.QueryVersion, QuickSearch: quick})
+	if err != nil || filtered.Total != 1 || len(filtered.Items) != 1 || filtered.Items[0].Values[f.public] != "beta" {
+		t.Fatalf("literal quick search %+v %v", filtered, err)
 	}
 }
