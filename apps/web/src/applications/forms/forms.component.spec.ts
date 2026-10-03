@@ -18,9 +18,9 @@ const structure:Structure = {appId,structureVersion:0,directories:[],tables:[tab
 const ok = (data: unknown) => ({code:'OK',message:'success',data,meta:{requestId:'test-request'}});
 
 type Seen = {method:string;path:string;body:Record<string,unknown>|null};
-async function fixture(page:Page, mode:'designer'|'structure'='designer') {
+async function fixture(page:Page, mode:'designer'|'structure'='designer', initialDefinition:Definition=definition) {
   const seen:Seen[]=[];
-  let currentDefinition=structuredClone(definition);
+  let currentDefinition=structuredClone(initialDefinition);
   let currentStructure=structuredClone(structure);
   let loseSaveResponse=false;
   let committedSave:Record<string,unknown>|null=null;
@@ -158,4 +158,38 @@ test('blocked dependencies show the affected resource and prevent PUT',async({pa
   await expect(page.getByRole('dialog').getByText('enabled_flow · flow-42')).toBeVisible();
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
   await page.screenshot({path:test.info().outputPath('designer-dependency-block.png'),fullPage:true});
+});
+
+test('used option deletion maps old option IDs before renewed preflight and confirmed Save',async({page})=>{
+  const fieldId='00000000-0000-4000-8000-000000000111';
+  const oldId='00000000-0000-4000-8000-000000000112';
+  const keepId='00000000-0000-4000-8000-000000000113';
+  const seeded:Definition={...definition,table:{...table,schemaVersion:1,schemaReady:true},form:{...form,viewVersion:1},
+    fields:[{id:fieldId,name:'审批结果',kind:'single_select',required:false,default:null,
+      config:{options:[{id:oldId,label:'旧选项'},{id:keepId,label:'保留选项'}]},
+      presentation:{helpText:null,displayTimeZone:null}}],
+    layout:[{id:'00000000-0000-4000-8000-000000000114',kind:'field',fieldId,span:12}]};
+  const state=await fixture(page,'designer',seeded);
+  await page.route('**/definition/preflight',route=>{
+    const body=route.request().postDataJSON() as {optionMappings:{fieldId:string;fromOptionId:string;toOptionId:string|null}[]};
+    const mapped=body.optionMappings.some(item=>item.fieldId===fieldId&&item.fromOptionId===oldId&&item.toOptionId===keepId);
+    return route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:1,viewVersion:1,dataRevision:2,dependencyRevision:1,
+      plan:{schemaChanges:[{kind:'change_config',fieldId,beforeKind:'single_select',afterKind:'single_select'}],metadataChanged:true,layoutChanged:false},
+      impacts:[{fieldId,kind:'option_mapping',nonNullRows:3,optionId:oldId}],dependencies:[],
+      blockingIssues:mapped?[]:[{code:'APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED',fieldIds:[fieldId]}],
+      saveAllowed:mapped,confirmation:mapped?{token:'confirmed-token',expiresAt:'2099-01-01T00:00:00Z'}:null})});
+  });
+  await page.getByRole('button',{name:'审批结果 单选'}).click();
+  await page.getByRole('button',{name:'删除选项 旧选项'}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('dialog')).toContainText('APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED');
+  await page.getByLabel('已用选项映射 旧选项').selectOption(keepId);
+  await page.getByRole('button',{name:'重新预检'}).click();
+  await expect(page.getByRole('button',{name:'确认保存'})).toBeEnabled();
+  await page.getByRole('button',{name:'确认保存'}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const saves=state.seen.filter(item=>item.method==='PUT');
+  expect(saves).toHaveLength(1);
+  expect(saves[0].body).toMatchObject({confirmationToken:'confirmed-token',
+    optionMappings:[{fieldId,fromOptionId:oldId,toOptionId:keepId}]});
 });
