@@ -16,6 +16,8 @@ browser117, and Firefox in the exact pinned CI Playwright image1. All successful
 controls observed click -> form submit -> real POST -> 201 then 409. These
 controls do not determine the remote failure cause. No same-head retry was
 performed. See baseline-diagnosis.json and the safe remote excerpt.
+The safe excerpt is curated and normalizes trailing log whitespace; the
+unaltered private product log is identified by its digest in baseline evidence.
 
 Permitted diagnostic edit: only WEB-15 in tests/acceptance/web.spec.ts, with
 real-time sanitized event phase/relative time/HTTP path without query/method/
