@@ -114,3 +114,30 @@ test('Root metadata-only view changes reload runtime without discarding query co
  await expect(page.getByRole('alert')).toHaveCount(0);
  await expect(table).toContainText('测试记录 1');
 });
+
+test('Root visible record selection works and sorting clears selected rows',async({page})=>{
+ await page.route('**'+path+'/runtime',route=>route.fulfill({status:200,json:envelope(runtime())}));
+ await page.route('**'+path+'/records/search',route=>route.fulfill({status:200,json:envelope(pageData(route.request().postDataJSON(),'selection-query'))}));
+ await open(page);const checkbox=page.getByRole('checkbox',{name:'选择记录：'+row(1).id,exact:true});
+ await expect(checkbox).toBeVisible();await checkbox.click();await expect(checkbox).toBeChecked();
+ await page.getByRole('table',{name:'记录'}).getByRole('button',{name:'排序 '+amount,exact:true}).click();
+ await page.getByRole('menuitem',{name:'升序',exact:true}).click();
+ await expect(checkbox).not.toBeChecked();
+});
+test('Root unconfigured schema gives an actionable configuration state without querying rows',async({page})=>{
+ let searches=0;
+ await page.route('**'+path+'/runtime',route=>route.fulfill({status:409,json:{code:'APPLICATION_SCHEMA_NOT_READY',data:null,meta:null}}));
+ await page.route('**'+path+'/records/search',route=>{searches++;return route.abort();});
+ await open(page);await expect(page.getByRole('alert')).toContainText('尚未配置');
+ expect(searches).toBe(0);
+});
+test('Root pagination remains inside the bounded application work area',async({page})=>{
+ await page.route('**'+path+'/runtime',route=>route.fulfill({status:200,json:envelope(runtime())}));
+ await page.route('**'+path+'/records/search',route=>route.fulfill({status:200,json:envelope(pageData(route.request().postDataJSON(),'bounded-query'))}));
+ await open(page);await expect(page.getByRole('table',{name:'记录'})).toContainText('测试记录 1');
+ await expect.poll(async()=>{
+  const button=await page.getByRole('button',{name:'跳转到指定页',exact:true}).boundingBox();
+  const area=await page.getByRole('main',{name:'记录测试工作区',exact:true}).boundingBox();
+  return !!button&&!!area&&button.y>=area.y&&button.y+button.height<=area.y+area.height;
+ }).toBe(true);
+});
