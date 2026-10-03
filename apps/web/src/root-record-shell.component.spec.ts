@@ -20,6 +20,7 @@ async function fixture(page:Page,options:{ordinary?:boolean;createOnly?:boolean;
   else if(path==='applications')data={items:[options.ordinary?{...app,ownerUserId:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'}:app]};
   else if(path==='applications/'+appId)data=options.ordinary?{...app,ownerUserId:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'}:app;
   else if(path==='applications/'+appId+'/access')data={appId,canEnter:true,policyRevision:1,menus:[{resourceKind:'application',resourceId:appId},{resourceKind:'form',resourceId:viewId}]};
+  else if(path===formPath+'/definition'&&!options.ordinary)data={appId,table:{id:appId,appId,name:'报销单',directoryId:null,position:0,schemaVersion:1,schemaReady:true},form:{id:viewId,appId,tableId:appId,name:'报销单',directoryId:null,position:0,viewVersion:1},fields:[],systemFields:[],layout:[],capabilities:{canManageDefinition:true}};
   else if(path===formPath+'/runtime')data=currentRuntime;
   else if(path===formPath+'/reference-candidates')return route.fulfill({status:200,json:{code:'OK',data:{items:[{id:candidateId,label:'普通成员',status:'active'}]},meta:{pagination:{nextPageToken:null,hasMore:false}}}});
   else if(path===formPath+'/records/search'){
@@ -121,4 +122,13 @@ test('Root ordinary record editor searches only field-scoped reference candidate
  expect(api.calls.some(c=>/\/(member|department)-candidates$/.test(c.path))).toBe(false);
  const write=api.calls.find(c=>c.path===formPath+'/records'&&c.method==='POST');
  expect(write!.body.values['66666666-6666-4666-8666-666666666666']).toBe('88888888-8888-4888-8888-888888888888');
+});
+
+test('Root owner returns from configuration to the runtime page that opened it',async({page})=>{
+ await fixture(page);await page.goto(routePath);await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();
+ const shell=await page.getByTestId('application-shell').elementHandle();
+ await page.getByRole('button',{name:'配置表单',exact:true}).click();await expect(page).toHaveURL(new RegExp(routePath+'/design$'));
+ await expect(page.getByRole('region',{name:'表单设计器'})).toBeVisible();
+ await page.getByRole('button',{name:'返回工作台',exact:true}).click();await expect(page).toHaveURL(new RegExp(routePath+'$'));
+ await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();expect(await shell!.evaluate(node=>node.isConnected)).toBe(true);
 });

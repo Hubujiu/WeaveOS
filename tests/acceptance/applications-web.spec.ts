@@ -228,8 +228,8 @@ test('V030-012 real HTTPS Shell persists a directory, form and saved designer fi
  const forms = savedStructure.data.forms as { id: string; name: string; directoryId: string | null }[];
  const form = forms.find(value => value.name === formName);
  expect(form?.directoryId).toBeTruthy();
- await page.getByRole('button', { name: '打开表单 ' + formName }).click();
- await expect(page).toHaveURL(new RegExp('/app/applications/' + app.id + '/forms/' + form!.id + '$'));
+ await page.getByRole('button', { name: '配置表单 ' + formName }).click();
+ await expect(page).toHaveURL(new RegExp('/app/applications/' + app.id + '/forms/' + form!.id + '/design));
  await expect(page.getByRole('region', { name: '表单设计器' })).toBeVisible();
  if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('form-designer-empty.png'), fullPage: true });
  await page.getByRole('button', { name: '文本', exact: true }).click();
@@ -364,4 +364,194 @@ test('V030-012 real B5: expected actor guard rejects cross-session reads, writes
   const after = await realApi(memberContext, f.userId, 'applications');
   expect(after.status).toBe(200); expect(after.data).toEqual(ordinary.data);
  } finally { await memberContext.close(); }
+});
+));
+ await expect(page.getByRole('region', { name: '表单设计器' })).toBeVisible();
+ if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('form-designer-empty.png'), fullPage: true });
+ await page.getByRole('button', { name: '文本', exact: true }).click();
+ await page.getByLabel('字段名称').fill('申请事项');
+ await page.getByRole('button', { name: '保存', exact: true }).click();
+ await expect(page.getByRole('status').filter({ hasText: '已保存' })).toBeVisible();
+ if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('form-designer-saved.png'), fullPage: true });
+ await page.reload();
+ await expect(page.getByRole('region', { name: '表单画布' })).toContainText('申请事项');
+ expect(writes.some(write => write.path.endsWith('/directories') && write.method === 'POST')).toBe(true);
+ expect(writes.some(write => write.path.endsWith('/forms') && write.method === 'POST')).toBe(true);
+ expect(writes.some(write => write.path.endsWith('/definition/preflight') && write.method === 'POST')).toBe(true);
+ expect(writes.some(write => write.path.endsWith('/definition') && write.method === 'PUT')).toBe(true);
+ expect(writes.every(write => write.actor === f.adminId)).toBe(true);
+});
+
+test('V030-012 real B5: create-only owner, same-app menu member and cross-app denial', async ({ page, browser }, info) => {
+ const f = fixture();
+ const suffix = `${info.project.name}-${Date.now()}`;
+ await login(page, f.admin);
+ const admin = page.context();
+ const create = async (name: string) => {
+  const result = await realApi(admin, f.adminId, 'applications', 'POST', { name, operationId: crypto.randomUUID() });
+  expect(result.status).toBe(201); expect(result.code).toBe('OK');
+  return result.data as { id: string; name: string; ownerUserId: string; policyRevision: number };
+ };
+ const appA = await create('授权应用 ' + suffix);
+ const appB = await create('隔离应用 ' + suffix);
+ expect(appA.ownerUserId).toBe(f.adminId); expect(appB.ownerUserId).toBe(f.adminId);
+
+ const identity = await realApi(admin, f.adminId, 'personnel/identities', 'POST', {
+  name: '应用创建者 ' + suffix, description: '', templateIds: [], permissionCodes: ['applications.create'],
+ });
+ expect(identity.status).toBe(201);
+ const identityId = identity.data.id as string;
+ const search = await realApi(admin, f.adminId, 'personnel/members/search', 'POST', { page: 1, pageSize: 20, search: f.resetTarget.account });
+ expect(search.status).toBe(200);
+ const member = await realApi(admin, f.adminId, 'personnel/members/' + f.resetTarget.id);
+ expect(member.status).toBe(200);
+ const assigned = await realApi(admin, f.adminId, 'personnel/members/' + f.resetTarget.id + '/identities', 'PUT', {
+  identityIds: [identityId], version: member.data.version, queryVersion: search.data.queryVersion,
+ });
+ expect(assigned.status).toBe(200);
+
+ const base = { baseURL: 'https://localhost:19443', ignoreHTTPSErrors: true, viewport: { width: 1920, height: 1080 } };
+ const creatorContext = await browser.newContext(base);
+ const memberContext = await browser.newContext(base);
+ try {
+  const creator = await creatorContext.newPage();
+  await login(creator, f.resetTarget);
+  await expect(creator.getByRole('button', { name: '设置', exact: true })).toBeHidden();
+  await creator.getByRole('button', { name: '打开应用中心', exact: true }).click();
+  await expect(creator.getByRole('button', { name: '新建应用', exact: true })).toBeVisible();
+  await expect(creator.getByRole('button', { name: appA.name, exact: true })).toHaveCount(0);
+  await creator.getByRole('button', { name: '新建应用', exact: true }).click();
+  const dialog = creator.getByRole('dialog', { name: '新建应用', exact: true });
+  const ownName = '创建者自有应用 ' + suffix;
+  await dialog.getByRole('textbox', { name: '应用名称', exact: true }).fill(ownName);
+  const created = creator.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/v1/applications');
+  await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+  const ownResponse = await created;
+  expect(ownResponse.status()).toBe(201);
+  const ownApp = (await ownResponse.json()).data as { id: string; ownerUserId: string };
+  expect(ownApp.ownerUserId).toBe(f.resetTarget.id);
+  expect((await realApi(creatorContext, f.resetTarget.id, 'applications/' + ownApp.id + '/permission-groups')).status).toBe(200);
+  expect((await realApi(creatorContext, f.resetTarget.id, 'applications/' + appA.id + '/permission-groups')).status).toBe(403);
+
+  const group = await realApi(admin, f.adminId, 'applications/' + appA.id + '/permission-groups', 'POST', {
+   name: '入口成员 ' + suffix, operationId: crypto.randomUUID(), expectedPolicyRevision: 1,
+  });
+  expect(group.status).toBe(201);
+  const groupId = group.data.id as string;
+  const members = await realApi(admin, f.adminId, 'applications/' + appA.id + '/permission-groups/' + groupId + '/members', 'PUT', {
+   memberIds: [f.userId], operationId: crypto.randomUUID(), expectedPolicyRevision: group.data.policyRevision,
+  });
+  expect(members.status).toBe(200);
+  const grant = { resourceKind: 'application', resourceId: appA.id, action: 'menu.enter', rowScope: 'all', fields: [] };
+  const grants = await realApi(admin, f.adminId, 'applications/' + appA.id + '/permission-groups/' + groupId + '/grants', 'PUT', {
+   grants: [grant], operationId: crypto.randomUUID(), expectedPolicyRevision: members.data.policyRevision,
+  });
+  expect(grants.status).toBe(200);
+
+  const memberPage = await memberContext.newPage();
+  await login(memberPage, f.user);
+  await expect(memberPage.getByRole('button', { name: '设置', exact: true })).toBeHidden();
+  await memberPage.getByRole('button', { name: '打开应用中心', exact: true }).click();
+  await expect(memberPage.getByRole('main').getByRole('button', { name: appA.name, exact: true })).toBeVisible();
+  await expect(memberPage.getByRole('main').getByRole('button', { name: appB.name, exact: true })).toHaveCount(0);
+  await memberPage.getByRole('main').getByRole('button', { name: appA.name, exact: true }).click();
+  await expect(memberPage.getByRole('heading', { name: appA.name, exact: true })).toBeVisible();
+  expect((await realApi(memberContext, f.userId, 'applications/' + appA.id + '/permission-groups')).status).toBe(403);
+  await memberPage.goto('/app/applications/' + appB.id);
+  await expect(memberPage.getByRole('alert')).toContainText('没有应用访问或管理权限');
+
+  const revoked = await realApi(admin, f.adminId, 'applications/' + appA.id + '/permission-groups/' + groupId + '/grants', 'PUT', {
+   grants: [], operationId: crypto.randomUUID(), expectedPolicyRevision: grants.data.policyRevision,
+  });
+  expect(revoked.status).toBe(200);
+  await memberPage.goto('/app/applications');
+  await memberPage.reload();
+  await expect(memberPage.getByRole('main').getByRole('button', { name: appA.name, exact: true })).toHaveCount(0);
+  await memberPage.goto('/app/applications/' + appA.id);
+  await expect(memberPage.getByRole('alert')).toContainText('没有应用访问或管理权限');
+ } finally { await creatorContext.close(); await memberContext.close(); }
+});
+
+test('V030-012 real B5: expected actor guard rejects cross-session reads, writes and operation lookup', async ({ page, browser }) => {
+ const f = fixture();
+ await login(page, f.admin);
+ const admin = page.context();
+ const operationId = crypto.randomUUID();
+ const created = await realApi(admin, f.adminId, 'applications', 'POST', { name: 'guard验证 ' + Date.now(), operationId });
+ expect(created.status).toBe(201);
+ const appId = created.data.id as string;
+ const memberContext = await browser.newContext({ baseURL: 'https://localhost:19443', ignoreHTTPSErrors: true });
+ try {
+  const member = await memberContext.newPage();
+  await login(member, f.user);
+  const ordinary = await realApi(memberContext, f.userId, 'applications');
+  expect(ordinary.status).toBe(200);
+  const wrongRead = await realApi(memberContext, f.adminId, 'applications');
+  expect(wrongRead.status).toBe(409); expect(wrongRead.code).toBe('AUTH_SESSION_CHANGED');
+  expect(JSON.stringify(wrongRead.data)).not.toContain(appId);
+  const wrongWrite = await realApi(memberContext, f.adminId, 'applications', 'POST', { name: '不得创建', operationId: crypto.randomUUID() });
+  expect(wrongWrite.status).toBe(409); expect(wrongWrite.code).toBe('AUTH_SESSION_CHANGED');
+  const wrongOperation = await realApi(memberContext, f.adminId, 'application-operations/' + operationId);
+  expect(wrongOperation.status).toBe(409); expect(wrongOperation.code).toBe('AUTH_SESSION_CHANGED');
+  const malformed = await memberContext.request.get('/api/v1/applications', { headers: { 'X-Expected-Actor-Id': 'not-a-uuid' } });
+  expect(malformed.status()).toBe(400); expect((await malformed.json()).code).toBe('COMMON_VALIDATION_FAILED');
+  const legacy = await memberContext.request.get('/api/v1/applications');
+  expect(legacy.status()).toBe(200);
+  const after = await realApi(memberContext, f.userId, 'applications');
+  expect(after.status).toBe(200); expect(after.data).toEqual(ordinary.data);
+ } finally { await memberContext.close(); }
+});
+
+
+test('Root real HTTPS full journey creates an application, saves a form, and creates and edits a persisted record',async({page},info)=>{
+ const f=fixture();await page.setViewportSize({width:1920,height:1080});await login(page,f.admin);
+ const appName='记录闭环 '+info.project.name+' '+Date.now(),formName='报销单 '+Date.now();
+ await page.getByRole('button',{name:'打开应用中心',exact:true}).click();
+ await page.getByRole('button',{name:'新建应用',exact:true}).click();
+ const createApp=page.getByRole('dialog',{name:'新建应用',exact:true});await createApp.getByLabel('应用名称',{exact:true}).fill(appName);
+ const appResponse=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/applications');
+ await createApp.getByRole('button',{name:'创建应用',exact:true}).click();const appWritten=await appResponse;expect(appWritten.status()).toBe(201);
+ const app=(await appWritten.json()).data as {id:string};await expect(createApp).toHaveCount(0);
+ await page.getByRole('main').getByRole('button',{name:appName,exact:true}).click();
+ const shell=await page.getByTestId('application-shell').elementHandle();
+ await page.getByRole('button',{name:'新建表单',exact:true}).click();await page.getByLabel('表单名称',{exact:true}).fill(formName);
+ const formResponse=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/applications/'+app.id+'/forms');
+ await page.getByRole('button',{name:'创建表单',exact:true}).click();const formWritten=await formResponse;expect(formWritten.status()).toBe(201);
+ const form=(await formWritten.json()).data.form as {id:string};await expect(page.getByRole('treeitem',{name:formName,exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'配置表单 '+formName,exact:true}).click();
+ await expect(page.getByRole('region',{name:'表单设计器'})).toBeVisible();
+ await page.getByRole('button',{name:'金额',exact:true}).click();await page.getByLabel('字段名称',{exact:true}).fill('报销金额');
+ await page.getByLabel('总精度',{exact:true}).fill('20');await page.getByLabel('小数位数',{exact:true}).fill('2');await page.getByLabel('处理位数',{exact:true}).fill('2');await page.getByLabel('舍入规则',{exact:true}).selectOption('HALF_UP');
+ await page.getByRole('button',{name:'文本',exact:true}).click();await page.getByLabel('字段名称',{exact:true}).fill('报销事由');
+ const definitionResponse=page.waitForResponse(r=>r.request().method()==='PUT'&&new URL(r.url()).pathname==='/api/v1/applications/'+app.id+'/forms/'+form.id+'/definition');
+ await page.getByRole('button',{name:'保存',exact:true}).click();expect((await definitionResponse).status()).toBe(200);
+ await expect(page.getByRole('status').filter({hasText:'已保存'})).toBeVisible();
+ await page.getByRole('button',{name:'返回工作台',exact:true}).click();
+ await page.getByRole('button',{name:'打开表单 '+formName,exact:true}).click();await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();
+ if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-empty-list.png'),fullPage:true});
+ const prefix='applications/'+app.id+'/forms/'+form.id;
+ const runtimeReply=await realApi(page.context(),f.adminId,prefix+'/runtime');expect(runtimeReply.status).toBe(200);
+ const fields=runtimeReply.data.fields as {id:string;name:string}[];const amount=fields.find(x=>x.name==='报销金额')!.id,title=fields.find(x=>x.name==='报销事由')!.id;
+ await page.getByRole('button',{name:'新建记录',exact:true}).click();const createRecord=page.getByRole('dialog',{name:'新建记录',exact:true});
+ await createRecord.getByLabel('报销金额',{exact:true}).fill('12.345');await createRecord.getByLabel('报销事由',{exact:true}).fill('真实差旅');
+ if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-create-input.png'),fullPage:true});
+ const recordResponse=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/'+prefix+'/records');
+ await createRecord.getByRole('button',{name:'保存记录',exact:true}).click();const recordWritten=await recordResponse;expect(recordWritten.status()).toBe(201);
+ const receipt=(await recordWritten.json()).data as {id:string;recordVersion:number};
+ await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
+ const detail=page.getByRole('dialog',{name:'记录详情',exact:true});await expect(detail.getByLabel('报销金额',{exact:true})).toHaveValue('12.35');
+ await expect(detail.getByLabel('报销事由',{exact:true})).toHaveValue('真实差旅');
+ const persisted=await realApi(page.context(),f.adminId,prefix+'/records/'+receipt.id);expect(persisted.status).toBe(200);
+ expect(persisted.data.values).toMatchObject({[amount]:'12.35',[title]:'真实差旅'});expect(persisted.data.recordVersion).toBe(receipt.recordVersion);
+ if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-confirmed-detail.png'),fullPage:true});
+ await detail.getByRole('button',{name:'编辑记录',exact:true}).click();await detail.getByLabel('报销金额',{exact:true}).fill('20.10');
+ const editedResponse=page.waitForResponse(r=>r.request().method()==='PATCH'&&new URL(r.url()).pathname==='/api/v1/'+prefix+'/records/'+receipt.id);
+ await detail.getByRole('button',{name:'保存记录',exact:true}).click();const edited=await editedResponse;expect(edited.status()).toBe(200);
+ const editBody=edited.request().postDataJSON();expect(editBody.expectedRecordVersion).toBe(receipt.recordVersion);expect(editBody.changes).toEqual({[amount]:'20.10'});
+ await expect(detail.getByLabel('报销金额',{exact:true})).not.toBeEditable();await expect(detail.getByLabel('报销金额',{exact:true})).toHaveValue('20.10');
+ if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-edited-detail.png'),fullPage:true});
+ expect(await shell!.evaluate(node=>node.isConnected)).toBe(true);
+ await page.reload();await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();
+ await page.getByRole('button',{name:'打开记录：报销金额 20.10',exact:true}).click();
+ await expect(page.getByRole('dialog',{name:'记录详情',exact:true}).getByLabel('报销事由',{exact:true})).toHaveValue('真实差旅');
 });

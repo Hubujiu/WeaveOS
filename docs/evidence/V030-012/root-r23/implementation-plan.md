@@ -10,6 +10,7 @@ Use the exact Root-provided R21 published commit plus this test package. R22 Rec
 - /.../forms/:viewId/design is the owner/Bootstrap design route. Validate canManage before mounting FormDesigner. Ordinary actors must not call definition or structure from a direct runtime route.
 - Add explicit owner '配置表单' control on runtime page; in the application directory use '打开表单 <name>' for records and '配置表单 <name>' for owner design. The latter callback is optional on ApplicationStructurePanel so standalone structure fixtures keep their old interface.
 - Root migrated the old form-shell regression to the explicit configuration action and /design URL; its leave/auth assertions remain unchanged.
+- Configuration return must honor its entry origin: opening configuration from the runtime page returns to that runtime page; opening it from the application directory returns to that directory. Store only a validated same-app return path in navigation state; a direct /design entry defaults to its runtime page. Do not silently force every exit to home or the directory.
 - Preserve the existing Shell DOM and original 56/176 chrome. Root's design exploration remains paused; no visual redesign here.
 
 ## RecordRoute coordinator
@@ -39,6 +40,6 @@ R22 owns RecordForm; do not edit it in parallel or add compatibility adapters. N
 Runtime list precheck adds one bounded page query before detail; no whole-result materialization. Parsing remains O(pageSize * visible fields), memory O(pageSize * visible fields). Do not claim OFFSET deep-page performance is solved.
 
 ## Test gates
-Root's eight new Shell tests: ordinary runtime route, create->normalized detail->edit, confirmed-but-read-failed, create-only, stale-query row open, dirty modal Escape/focus, ordinary forbidden design, ordinary field-scoped reference candidates. The existing eight form-shell regressions are migrated to explicit design routing.
+Root's nine new Shell tests: ordinary runtime route, create->normalized detail->edit, confirmed-but-read-failed, create-only, stale-query row open, dirty modal Escape/focus, ordinary forbidden design, ordinary field-scoped reference candidates, return-to-runtime configuration origin. The existing eight form-shell regressions are migrated to explicit design routing.
 Run RED against baseline and save actual failures. Implement route/read wiring; await the exact R22 commit before final complete GREEN. Final targeted tests also include root-workspace, root-editor and all records suites, then typecheck/build. Capture real Shell screenshots for list/create/detail/edit/error states in the pinned browser container. Preserve full outer commands, mounted logs, exit codes and PNGs.
 Return the smallest diff and results for Root review; no main merge or deployment.
