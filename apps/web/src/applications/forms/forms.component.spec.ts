@@ -341,3 +341,35 @@ test('structure write permission revocation disables further directory and form 
   await expect(page.getByRole('button',{name:'新建目录'})).toBeDisabled();
   await expect(page.getByRole('button',{name:'新建表单'})).toBeDisabled();
 });
+
+test('late directory create for an old app cannot replace the selected app tree',async({page})=>{
+  const nextAppId='00000000-0000-4000-8000-000000000130';
+  await fixture(page,'structure');
+  let release!:()=>void,started!:()=>void;
+  const gate=new Promise<void>(resolve=>{release=resolve;});
+  const requestStarted=new Promise<void>(resolve=>{started=resolve;});
+  let oldCommitted=false;
+  await page.route(`**/applications/${appId}/structure`,route=>route.fulfill({json:ok({
+    ...structure,structureVersion:oldCommitted?1:0,
+    directories:oldCommitted?[{id:folderId,appId,name:'旧应用目录',parentId:null,position:0}]:[],
+  })}));
+  await page.route(`**/applications/${appId}/directories`,async route=>{
+    started();await gate;oldCommitted=true;
+    return route.fulfill({status:201,json:ok({directory:{id:folderId,appId,name:'旧应用目录',parentId:null,position:0},structureVersion:1})});
+  });
+  await page.route(`**/applications/${nextAppId}/structure`,route=>route.fulfill({json:ok({
+    appId:nextAppId,structureVersion:0,directories:[],tables:[],forms:[],capabilities:{canManageDefinition:true},
+  })}));
+  await page.goto(`/src/applications/forms/harness.html?mode=structure&appId=${appId}&viewId=${viewId}&switchAppId=${nextAppId}`);
+  await page.getByRole('button',{name:'新建目录'}).click();
+  await page.getByLabel('目录名称').fill('旧应用目录');
+  await page.getByRole('button',{name:'创建目录'}).click();
+  await requestStarted;
+  await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchApp:(id:string)=>void}).__formsHarnessSwitchApp(id),nextAppId);
+  await expect(page.getByRole('button',{name:'新建目录'})).toBeEnabled();
+  const oldReply=page.waitForResponse(response=>response.url().includes(`/applications/${appId}/directories`));
+  release();await oldReply;
+  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+  await expect(page.getByRole('treeitem',{name:'旧应用目录'})).toHaveCount(0);
+  await expect(page.getByText('已保存', {exact:true})).toHaveCount(0);
+});

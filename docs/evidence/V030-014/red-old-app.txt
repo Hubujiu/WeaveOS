@@ -1,0 +1,41 @@
+[WebServer] (node:12913) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:12927) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:12960) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/forms/forms.component.spec.ts:345:1 › late directory create for an old app cannot replace the selected app tree (5.5s)
+
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:345:1 › late directory create for an old app cannot replace the selected app tree 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('treeitem', { name: '旧应用目录' })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('treeitem', { name: '旧应用目录' }) with timeout 5000ms
+      - waiting for getByRole('treeitem', { name: '旧应用目录' })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      371 |   release();await oldReply;
+      372 |   await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+    > 373 |   await expect(page.getByRole('treeitem',{name:'旧应用目录'})).toHaveCount(0);
+          |                                                           ^
+      374 |   await expect(page.getByText('已保存', {exact:true})).toHaveCount(0);
+      375 | });
+      376 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:373:59
+
+    Error Context: test-results/applications-forms-forms.c-6648f-place-the-selected-app-tree-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:345:1 › late directory create for an old app cannot replace the selected app tree 
