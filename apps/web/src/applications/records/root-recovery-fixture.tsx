@@ -20,8 +20,7 @@ const view:RuntimeView={
 };
 const confirmed=(operationId:string):SaveOutcome=>({kind:'confirmed',result:{operationId,id:recordId,recordVersion:1,schemaVersion:2,createdAt:'2026-10-03T09:00:00Z',updatedAt:'2026-10-03T09:00:00Z'}});
 createRoot(document.getElementById('root')!).render(<RecordForm
- view={view} identity={createNewRecordIdentity(actor,app,viewId)} mode="create"
- renderField={port=><label>{port.field.name}<input aria-label={port.field.name} value={typeof port.value==='string'?port.value:''} readOnly={port.readOnly} onChange={event=>port.onChange(event.target.value)}/></label>}
+ view={view} identity={createNewRecordIdentity(actor,app,viewId)} mode="create" authorityKey="root-authority-4"
  onSave={async command=>{events.saves.push(command);return scenario==='initial-failure'&&events.saves.length===1?{kind:'failed',message:'字段校验失败'}:scenario==='initial-failure'?confirmed(command.operationId):{kind:'unknown'};}}
  onRecover={async operationId=>{events.recoveries.push(operationId);if(events.recoveries.length===1){if(scenario==='throw')throw new Error('network unavailable');if(scenario==='malformed')return {kind:'confirmed',result:{operationId}};return {kind:'failed',message:'恢复接口暂不可用'};}return confirmed(operationId);}}
  onConfirmed={(result,identity)=>events.confirmations.push({result,identity})}
