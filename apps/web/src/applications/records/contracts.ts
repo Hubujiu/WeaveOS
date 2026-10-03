@@ -1,0 +1,42 @@
+// V030-017 consumption types from accepted V015 ADR §§8, 11, 14.
+// V013 owns the eventual HTTP/OpenAPI wire; these declarations do not imply
+// that a route exists or that a mutation has been confirmed.
+export type UUID=string;
+export type Version=number;
+export type Scope='none'|'own'|'all';
+export type FieldValue=string|boolean|string[]|null;
+export type Values=Record<UUID,FieldValue>;
+export type FieldKind='text'|'multiline'|'number'|'money'|'date'|'datetime'|'single_select'|'multi_select'|'boolean'|'member'|'department';
+export type RuntimeField={
+ id:UUID;name:string;kind:FieldKind;required:boolean;
+ presentation:{helpText:string|null;displayTimeZone:string|null};
+ input:{decimal?:{precision:number;scale:number;roundingPlaces:number;roundingMode:'HALF_UP'|'HALF_EVEN'|'TOWARD_ZERO'|'FLOOR'|'CEILING'};timePrecision?:'minute'|'second'|'millisecond';options?:{id:UUID;label:string}[];referenceKind?:'member'|'department'};
+ default?:FieldValue;
+ access:{read:Scope;create:boolean;edit:Scope;history:Scope};
+ query:{operators:('eq'|'neq'|'gt'|'gte'|'lt'|'lte')[];sortable:boolean;quickSearchable:boolean};
+};
+export type RuntimeLayoutNode={id:UUID;kind:'field';fieldId:UUID;span?:number}|{id:UUID;kind:'system_field';fieldId:string;span?:number}|{id:UUID;kind:'group';title:string;children:RuntimeLayoutNode[];span?:number}|{id:UUID;kind:'divider'};
+export type RuntimeView={
+ appId:UUID;tableId:UUID;viewId:UUID;schemaVersion:Version;viewVersion:Version;policyRevision:Version;
+ fields:RuntimeField[];layout:RuntimeLayoutNode[];
+ capabilities:{create:boolean;read:Scope;edit:Scope;history:Scope;search:boolean;draftCreate:boolean;draftEdit:boolean};
+};
+export type ReferenceDisplay={id:UUID;label:string;deleted:boolean};
+export type RecordItem={
+ id:UUID;appId:UUID;tableId:UUID;viewId:UUID;createdBy:UUID;createdAt:string;updatedAt:string;
+ recordVersion:Version;schemaVersion:Version;values:Values;
+ referenceDisplays:Record<UUID,Record<UUID,ReferenceDisplay>>;
+};
+export type MutationResult={operationId:UUID;id:UUID;recordVersion:Version;schemaVersion:Version;createdAt:string;updatedAt:string};
+export type DraftMutationResult={operationId:UUID;id:UUID;draftVersion:Version};
+export type DraftSummary={id:UUID;viewId:UUID;tableId:UUID;targetRecordId:UUID|null;schemaVersion:Version;baseRecordVersion:Version|null;draftVersion:Version;createdAt:string;updatedAt:string;hasConflicts:boolean};
+export type DraftConflict={fieldId:UUID|null;reason:'FIELD_REMOVED'|'FIELD_PERMISSION_REVOKED'|'SCHEMA_CHANGED'|'BASE_RECORD_CHANGED'};
+export type Draft=DraftSummary&{values:Values;conflicts:DraftConflict[]};
+export type HistoryValueLabel={label:string|null;deleted:boolean;labelUnavailable:boolean};
+export type HistoryChange={fieldId:UUID;fieldKind:string;before:FieldValue;after:FieldValue;fieldLabel:string;fieldDeleted:boolean;valueLabels:Record<UUID,HistoryValueLabel>};
+export type HistoryEvent={id:UUID;recordVersionBefore:Version;recordVersionAfter:Version;actorId:UUID;occurredAt:string;origin:'ordinary'|'task_save';changes:HistoryChange[]};
+
+// RED scaffolds. V012 validates HTTP status/envelope; these validate only the
+// minimal data object after that layer has accepted it.
+export function isMutationResult(_value:unknown,_operationId:UUID,_recordId?:UUID):_value is MutationResult{return false;}
+export function isDraftMutationResult(_value:unknown,_operationId:UUID,_draftId?:UUID):_value is DraftMutationResult{return false;}
