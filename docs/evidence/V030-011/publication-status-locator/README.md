@@ -27,3 +27,12 @@ No tracked compose/nginx/config/lock file changed. Isolated loopback resources
 remain retained for recovery, not production. See stack-safe.json.
 
 GREEN and exact-head checks will be appended after the two-locator correction.
+
+Actual gated GREEN09:22:56.517–09:23:22.559 UTC:3 pass0 fail0 skip.
+The run HEAD was RED evidence116b0e1 with only the two uncommitted locator edits;
+green-source-proof.json and locator-only.patch identify the executed bytes.
+The identical hooks/config keep background loading legitimate while both
+real template/identity POST201 + GET200 pass in all engines. All original member
+refresh/queryVersion/assignment/template-revocation/direct-denial assertions pass.
+No first(), arbitrary toast, changed timeout or production edit was introduced.
+Runtime complexity/storage behavior are unchanged; two constant DOM selectors.
