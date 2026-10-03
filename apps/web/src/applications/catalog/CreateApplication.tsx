@@ -5,13 +5,13 @@ import type { useApplicationOperation } from '../useApplicationOperation';
 import { clearRecovery, getRecovery, keepName } from '../recovery';
 
 export function CreateApplication({ actorId, close, onDirty, operation }: { actorId: string; close: () => void; onDirty: (dirty: boolean) => void; operation: ReturnType<typeof useApplicationOperation<Application>> }) {
- const [name, setName] = useState(() => typeof operation.packet?.body.name === 'string' ? operation.packet.body.name : getRecovery(actorId)?.name ?? '');
+ const [name, setName] = useState(() => typeof operation.packet?.body?.name === 'string' ? operation.packet.body.name : getRecovery(actorId)?.name ?? '');
  const [confirm, setConfirm] = useState(false);
  const preflight = operation.phase === 'preflight';
  const sentPending = operation.phase === 'pending';
  const busy = preflight || sentPending;
  const unconfirmed = operation.phase === 'unconfirmed';
- const displayedName = (busy || unconfirmed) && typeof operation.packet?.body.name === 'string' ? operation.packet.body.name : name;
+ const displayedName = (busy || unconfirmed) && typeof operation.packet?.body?.name === 'string' ? operation.packet.body.name : name;
  useEffect(() => { keepName(actorId, name); onDirty(name.length > 0 || unconfirmed); return () => onDirty(false); }, [actorId, name, onDirty, unconfirmed]);
  const requestClose = () => { if (sentPending) return; if (name.length || unconfirmed) setConfirm(true); else { operation.cancelPreflight(); clearRecovery(actorId); close(); } };
  return <><Modal title="新建应用" onClose={requestClose} busy={sentPending}>

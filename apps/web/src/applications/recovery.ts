@@ -1,6 +1,17 @@
 // Per-document recovery survives SPA auth-route unmounts, not a page refresh.
 // Keys are verified actor IDs; no other account may read a former actor's draft.
-export type ApplicationPacket = { actorId: string; path: string; method: 'POST' | 'PUT'; expectedStatus: 200 | 201; scope?: string; body: { operationId: string; [key: string]: unknown } };
+export type ApplicationPacket = {
+ actorId: string;
+ path: string;
+ method: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+ expectedStatus: 200 | 201 | 204;
+ scope?: string;
+ operationId?: string;
+ body?: { operationId?: string; [key: string]: unknown };
+ query?: { operationId: string; expectedDraftVersion?: number };
+ resource?: { kind: 'record' | 'draft'; appId: string; viewId: string; id?: string; creationNonce?: string };
+ context?: unknown;
+};
 type Recovery = { name: string; packet: ApplicationPacket | null; unknown: boolean; draft?: unknown };
 const byActor = new Map<string, Recovery>();
 const byScope = new Map<string, Recovery>();
@@ -58,7 +69,7 @@ export function keepPacket(packet: ApplicationPacket, unknown: boolean) {
  const current = map.get(key);
  const snapshot = deepFreeze(structuredClone(packet));
  map.set(key, {
-  name: typeof packet.body.name === 'string' ? packet.body.name : current?.name ?? '',
+  name: typeof packet.body?.name === 'string' ? packet.body.name : current?.name ?? '',
   packet: snapshot, unknown, draft: current?.draft,
  });
 }

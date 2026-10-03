@@ -1,0 +1,216 @@
+diff --git a/apps/web/src/applications/catalog/CreateApplication.tsx b/apps/web/src/applications/catalog/CreateApplication.tsx
+index 7914575..4e43041 100644
+--- a/apps/web/src/applications/catalog/CreateApplication.tsx
++++ b/apps/web/src/applications/catalog/CreateApplication.tsx
+@@ -5,13 +5,13 @@ import type { useApplicationOperation } from '../useApplicationOperation';
+ import { clearRecovery, getRecovery, keepName } from '../recovery';
+
+ export function CreateApplication({ actorId, close, onDirty, operation }: { actorId: string; close: () => void; onDirty: (dirty: boolean) => void; operation: ReturnType<typeof useApplicationOperation<Application>> }) {
+- const [name, setName] = useState(() => typeof operation.packet?.body.name === 'string' ? operation.packet.body.name : getRecovery(actorId)?.name ?? '');
++ const [name, setName] = useState(() => typeof operation.packet?.body?.name === 'string' ? operation.packet.body.name : getRecovery(actorId)?.name ?? '');
+  const [confirm, setConfirm] = useState(false);
+  const preflight = operation.phase === 'preflight';
+  const sentPending = operation.phase === 'pending';
+  const busy = preflight || sentPending;
+  const unconfirmed = operation.phase === 'unconfirmed';
+- const displayedName = (busy || unconfirmed) && typeof operation.packet?.body.name === 'string' ? operation.packet.body.name : name;
++ const displayedName = (busy || unconfirmed) && typeof operation.packet?.body?.name === 'string' ? operation.packet.body.name : name;
+  useEffect(() => { keepName(actorId, name); onDirty(name.length > 0 || unconfirmed); return () => onDirty(false); }, [actorId, name, onDirty, unconfirmed]);
+  const requestClose = () => { if (sentPending) return; if (name.length || unconfirmed) setConfirm(true); else { operation.cancelPreflight(); clearRecovery(actorId); close(); } };
+  return <><Modal title="新建应用" onClose={requestClose} busy={sentPending}>
+diff --git a/apps/web/src/applications/permissions/PermissionManager.tsx b/apps/web/src/applications/permissions/PermissionManager.tsx
+index e468720..f6eea35 100644
+--- a/apps/web/src/applications/permissions/PermissionManager.tsx
++++ b/apps/web/src/applications/permissions/PermissionManager.tsx
+@@ -48,7 +48,7 @@ export function PermissionManager({ actorId, appId, onDirty, onUnauthorized, onI
+  const [editorDirty, setEditorDirty] = useState('');
+  const [nextId, setNextId] = useState<string | null>(null);
+  const [create, setCreate] = useState(false);
+- const [newName, setNewName] = useState(() => { const recovery = getRecovery(actorId, appId + '/group/new'); return typeof recovery?.draft === 'string' ? recovery.draft : typeof recovery?.packet?.body.name === 'string' ? recovery.packet.body.name : ''; });
++ const [newName, setNewName] = useState(() => { const recovery = getRecovery(actorId, appId + '/group/new'); return typeof recovery?.draft === 'string' ? recovery.draft : typeof recovery?.packet?.body?.name === 'string' ? recovery.packet.body.name : ''; });
+  const [createError, setCreateError] = useState('');
+  const [createStatus, setCreateStatus] = useState('');
+  const nameInput = useRef<HTMLInputElement>(null);
+@@ -104,7 +104,7 @@ export function PermissionManager({ actorId, appId, onDirty, onUnauthorized, onI
+    </div>
+    <div className="definition-details app-group-details">{selected ? <GroupEditor key={appId + selected.id} actorId={actorId} appId={appId} group={selected} reloadList={reload} onDirty={setEditorDirty} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} /> : <p className="empty-state">选择权限组查看配置</p>}</div>
+   </div>}
+-  {create && <Modal title="新建权限组" onClose={() => { if (!createBusy && !newName.trim() && createOperation.phase !== 'unconfirmed') setCreate(false); else setNextId('__close__'); }} busy={createOperation.phase === 'pending'}><label>权限组名称<input ref={nameInput} autoFocus value={(createBusy || createOperation.phase === 'unconfirmed') && typeof createOperation.packet?.body.name === 'string' ? createOperation.packet.body.name : newName} disabled={createBusy || createOperation.phase === 'unconfirmed'} onChange={event => { setNewName(event.target.value); setCreateError(''); }} /></label>{createError && <p role="alert">{createError}</p>}{createOperation.message && <p role="alert">{createOperation.message}</p>}<div className="dialog-actions">{createOperation.phase === 'unconfirmed' ? <><button className="admin-button" onClick={createOperation.query}>核查操作</button><button className="admin-button primary" onClick={createOperation.retry}>使用同一操作重试</button></> : <><button className="admin-button" disabled={createOperation.phase === 'pending'} onClick={() => { if (newName.trim() || createBusy) setNextId('__close__'); else setCreate(false); }}>取消</button><button className="admin-button primary" disabled={createBusy} onClick={createGroup}>{createBusy ? '正在核验或创建…' : '创建权限组'}</button></>}</div></Modal>}
++  {create && <Modal title="新建权限组" onClose={() => { if (!createBusy && !newName.trim() && createOperation.phase !== 'unconfirmed') setCreate(false); else setNextId('__close__'); }} busy={createOperation.phase === 'pending'}><label>权限组名称<input ref={nameInput} autoFocus value={(createBusy || createOperation.phase === 'unconfirmed') && typeof createOperation.packet?.body?.name === 'string' ? createOperation.packet.body.name : newName} disabled={createBusy || createOperation.phase === 'unconfirmed'} onChange={event => { setNewName(event.target.value); setCreateError(''); }} /></label>{createError && <p role="alert">{createError}</p>}{createOperation.message && <p role="alert">{createOperation.message}</p>}<div className="dialog-actions">{createOperation.phase === 'unconfirmed' ? <><button className="admin-button" onClick={createOperation.query}>核查操作</button><button className="admin-button primary" onClick={createOperation.retry}>使用同一操作重试</button></> : <><button className="admin-button" disabled={createOperation.phase === 'pending'} onClick={() => { if (newName.trim() || createBusy) setNextId('__close__'); else setCreate(false); }}>取消</button><button className="admin-button primary" disabled={createBusy} onClick={createGroup}>{createBusy ? '正在核验或创建…' : '创建权限组'}</button></>}</div></Modal>}
+   {nextId !== null && <Modal title="有未保存的修改" onClose={() => setNextId(null)}><p>{editorDirty || newName.trim() ? '离开将丢失未保存的权限组更改；尚未发送的请求会取消。' : '尚未发送的请求会取消。'}{unknown && ' 已发送的权限组操作结果仍未确认，原操作会保留供核查。'}</p><div className="dialog-actions"><button className="admin-button" onClick={() => setNextId(null)}>继续编辑</button><button className="admin-button primary" onClick={() => { cancelUnsentPreflights(actorId); if (selectedId) clearScopedDrafts(actorId, appId + '/group/' + selectedId + '/'); clearScopedDraft(actorId, appId + '/group/new'); const destination = nextId; setNextId(null); setNewName(''); setEditorDirty(''); if (destination === '__close__') setCreate(false); else if (destination === '__create__') { setSelectedId(''); setCreate(true); } else { setSelectedId(destination); setCreate(false); } }}>放弃未保存并保留待核查操作</button></div></Modal>}
+  </section>;
+ }
+diff --git a/apps/web/src/applications/recovery.ts b/apps/web/src/applications/recovery.ts
+index cd519d2..3664793 100644
+--- a/apps/web/src/applications/recovery.ts
++++ b/apps/web/src/applications/recovery.ts
+@@ -1,6 +1,17 @@
+ // Per-document recovery survives SPA auth-route unmounts, not a page refresh.
+ // Keys are verified actor IDs; no other account may read a former actor's draft.
+-export type ApplicationPacket = { actorId: string; path: string; method: 'POST' | 'PUT'; expectedStatus: 200 | 201; scope?: string; body: { operationId: string; [key: string]: unknown } };
++export type ApplicationPacket = {
++ actorId: string;
++ path: string;
++ method: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
++ expectedStatus: 200 | 201 | 204;
++ scope?: string;
++ operationId?: string;
++ body?: { operationId?: string; [key: string]: unknown };
++ query?: { operationId: string; expectedDraftVersion?: number };
++ resource?: { kind: 'record' | 'draft'; appId: string; viewId: string; id?: string; creationNonce?: string };
++ context?: unknown;
++};
+ type Recovery = { name: string; packet: ApplicationPacket | null; unknown: boolean; draft?: unknown };
+ const byActor = new Map<string, Recovery>();
+ const byScope = new Map<string, Recovery>();
+@@ -58,7 +69,7 @@ export function keepPacket(packet: ApplicationPacket, unknown: boolean) {
+  const current = map.get(key);
+  const snapshot = deepFreeze(structuredClone(packet));
+  map.set(key, {
+-  name: typeof packet.body.name === 'string' ? packet.body.name : current?.name ?? '',
++  name: typeof packet.body?.name === 'string' ? packet.body.name : current?.name ?? '',
+   packet: snapshot, unknown, draft: current?.draft,
+  });
+ }
+diff --git a/apps/web/src/applications/types.ts b/apps/web/src/applications/types.ts
+index cd25f38..baa2bdc 100644
+--- a/apps/web/src/applications/types.ts
++++ b/apps/web/src/applications/types.ts
+@@ -6,7 +6,7 @@ export type ApplicationList = { items: Application[] };
+ export type PolicyResult = { id: string; policyRevision: number };
+ export type PermissionGroup = PolicyResult & { name: string; enabled: boolean };
+ export type MenuGrant = { resourceKind: 'application'; resourceId: string; action: 'menu.enter'; rowScope: 'all'; fields: [] };
+-export type ApplicationOperation<T> = { operationId: string; status: 'confirmed'; httpStatus: 200 | 201; location: string; result: T };
++export type ApplicationOperation<T> = { operationId: string; status: 'confirmed'; httpStatus: 200 | 201 | 204; location?: string | null; result: T };
+
+ // Future contracts supply personal pins and actual form tabs. This slice never
+ // persists them locally or synthesizes form entries.
+@@ -14,4 +14,3 @@ export type ApplicationTab = { application: Application; pinned: boolean };
+ export type PersonalNavigation = { userId: string; pinnedApplicationIds: readonly string[] };
+ export type FormTab = { id: string; label: string; dirty: boolean; content: ReactNode };
+ export type ApplicationFormSlots = { tabs: readonly FormTab[]; activeId?: string; select: (id: string) => void };
+-
+diff --git a/apps/web/src/applications/useApplicationOperation.ts b/apps/web/src/applications/useApplicationOperation.ts
+index 104e784..c13d04a 100644
+--- a/apps/web/src/applications/useApplicationOperation.ts
++++ b/apps/web/src/applications/useApplicationOperation.ts
+@@ -1,13 +1,64 @@
+ import { useEffect, useRef, useState } from 'react';
+ import { workspaceApi, WorkspaceError } from '../workspace-api';
+ import type { User } from '../workspace-types';
+-import { applicationApi, ApplicationError } from './api';
++import { applicationApi, applicationApiEnvelope, ApplicationError } from './api';
+ import { cancelUnsentPreflights, clearPacket, clearRecovery, getRecovery, keepPacket, registerUnsentPreflight, type ApplicationPacket } from './recovery';
+ import type { ApplicationOperation } from './types';
+
+ type State = { phase: 'idle' | 'preflight' | 'pending' | 'error' | 'unconfirmed'; message: string; packet: ApplicationPacket | null };
+
+-export function useApplicationOperation<T>(actorId: string, confirmed: (result: T) => void, unauthorized: () => void, identityMismatch: () => void, valid: (result: T) => boolean, scope?: string, onDefinitePolicyConflict?: () => void) {
++export type ApplicationMutationRequest = {
++ path: string;
++ method: 'POST' | 'PATCH' | 'DELETE';
++ expectedStatus: 200 | 201 | 204;
++ body?: Record<string, unknown>;
++ expectedDraftVersion?: number;
++ resource: NonNullable<ApplicationPacket['resource']>;
++};
++export type ScopedApplicationOperationOptions<T> = {
++ actorId: string;
++ scope?: string;
++ resource: NonNullable<ApplicationPacket['resource']>;
++ confirmed: (result: T | undefined) => void;
++ unauthorized: () => void;
++ identityMismatch: () => void;
++ valid?: (result: T, packet: ApplicationPacket) => boolean;
++};
++
++function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean {
++ if (!result || typeof result !== 'object' || Array.isArray(result) || !packet.resource) return false;
++ const receipt = result as Record<string, unknown>;
++ if (receipt.operationId !== packet.operationId || typeof receipt.id !== 'string' || !receipt.id) return false;
++ if (packet.resource.id && receipt.id !== packet.resource.id) return false;
++ const version = packet.resource.kind === 'draft' ? receipt.draftVersion : receipt.recordVersion;
++ if (!Number.isSafeInteger(version) || (version as number) < 1) return false;
++ if (packet.resource.kind === 'record') {
++  if (!Number.isSafeInteger(receipt.schemaVersion) || (receipt.schemaVersion as number) < 1) return false;
++  if (typeof receipt.createdAt !== 'string' || typeof receipt.updatedAt !== 'string') return false;
++ }
++ return true;
++}
++
++function validLocation(location: string | null | undefined, packet: ApplicationPacket, result: unknown): boolean {
++ if (typeof location !== 'string' || !result || typeof result !== 'object') return false;
++ const id = (result as { id?: unknown }).id;
++ if (typeof id !== 'string' || !id) return false;
++ const expected = '/api/v1/' + packet.path.split('?')[0].replace(/\/$/, '') + '/' + encodeURIComponent(id);
++ try {
++  const parsed = new URL(location, window.location.origin);
++  return parsed.origin === window.location.origin && parsed.pathname === expected && !parsed.search && !parsed.hash;
++ } catch { return false; }
++}
++
++export function useApplicationOperation<T>(options: ScopedApplicationOperationOptions<T>): ReturnType<typeof useOperation<T>>;
++export function useApplicationOperation<T>(actorId: string, confirmed: (result: T) => void, unauthorized: () => void, identityMismatch: () => void, valid: (result: T) => boolean, scope?: string, onDefinitePolicyConflict?: () => void): ReturnType<typeof useOperation<T>>;
++export function useApplicationOperation<T>(actorOrOptions: string | ScopedApplicationOperationOptions<T>, confirmed?: (result: T) => void, unauthorized?: () => void, identityMismatch?: () => void, valid?: (result: T) => boolean, scope?: string, onDefinitePolicyConflict?: () => void) {
++ const scoped = typeof actorOrOptions === 'string' ? null : actorOrOptions;
++ const scopedKey = scoped ? JSON.stringify([scoped.scope ?? '', scoped.resource]) : scope;
++ return useOperation<T>(scoped?.actorId ?? actorOrOptions as string, (scoped?.confirmed ?? confirmed!) as (result: T | undefined) => void, scoped?.unauthorized ?? unauthorized!, scoped?.identityMismatch ?? identityMismatch!, scoped ? (result, packet) => validScopedReceipt(result, packet) && (scoped.valid?.(result, packet) ?? true) : valid!, scopedKey, onDefinitePolicyConflict, scoped?.resource);
++}
++
++function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => void, unauthorized: () => void, identityMismatch: () => void, valid: (result: T, packet: ApplicationPacket) => boolean, scope?: string, onDefinitePolicyConflict?: () => void, scopedResource?: NonNullable<ApplicationPacket['resource']>) {
+  const [state, setState] = useState<State>(() => {
+   const previous = getRecovery(actorId, scope);
+   return previous?.unknown && previous.packet
+@@ -50,17 +101,23 @@ export function useApplicationOperation<T>(actorId: string, confirmed: (result:
+    }
+    // Once the request can leave this tab, a route unmount may hide its reply.
+    // Keep the original key conservatively until a valid confirmation arrives.
+-   if (unsent) { snapshot.current = packet; keepPacket(packet, true); }
++   if (unsent) { keepPacket(packet, true); snapshot.current = getRecovery(packet.actorId, packet.scope)!.packet; }
+    unregister();
+    setState({ phase: 'pending', message: '', packet });
+    sent = true;
+    let result: T;
++   let location: string | null | undefined;
+    if (query) {
+-    const operation = await applicationApi<ApplicationOperation<T>>(packet.actorId, 'application-operations/' + packet.body.operationId);
+-    if (operation.operationId !== packet.body.operationId || operation.status !== 'confirmed' || operation.httpStatus !== packet.expectedStatus) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
++    const operation = await applicationApi<ApplicationOperation<T>>(packet.actorId, 'application-operations/' + (packet.operationId ?? packet.body?.operationId));
++    if (operation.operationId !== (packet.operationId ?? packet.body?.operationId) || operation.status !== 'confirmed' || operation.httpStatus !== packet.expectedStatus) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
+     result = operation.result;
+-   } else result = await applicationApi<T>(packet.actorId, packet.path, packet.method, packet.body, undefined, packet.expectedStatus);
+-   if (!valid(result)) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
++    location = operation.location;
++   } else {
++    const reply = await applicationApiEnvelope<T>(packet.actorId, packet.path, packet.method, packet.body, undefined, packet.expectedStatus);
++    result = reply.data; location = reply.location;
++   }
++   if (!(packet.expectedStatus === 204 && !query) && !valid(result, packet)) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
++   if (scopedResource && packet.expectedStatus === 201 && !validLocation(location, packet, result)) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
+    if (token !== lifecycle.current) return;
+    snapshot.current = null; uncertain.current = false;
+    clearRecovery(packet.actorId, packet.scope);
+@@ -85,9 +142,21 @@ export function useApplicationOperation<T>(actorId: string, confirmed: (result:
+    if (!unknown && cause instanceof ApplicationError && cause.status === 409 && cause.code === 'APPLICATION_POLICY_CONFLICT') onDefinitePolicyConflict?.();
+   } finally { unregister(); if (token === lifecycle.current) inFlight.current = false; }
+  };
+- const start = (path: string, body: object, method: 'POST' | 'PUT' = 'POST', expectedStatus: 200 | 201 = method === 'POST' ? 201 : 200) => {
++ const start = (requestOrPath: string | ApplicationMutationRequest, body?: object, method: 'POST' | 'PUT' = 'POST', expectedStatus: 200 | 201 = method === 'POST' ? 201 : 200) => {
+   if (inFlight.current || uncertain.current) return;
+-  const packet: ApplicationPacket = { actorId, path, method, expectedStatus, scope, body: { ...body, operationId: crypto.randomUUID() } };
++  const operationId = crypto.randomUUID();
++  let packet: ApplicationPacket;
++  if (typeof requestOrPath === 'string') packet = { actorId, path: requestOrPath, method, expectedStatus, scope, operationId, body: { ...body, operationId } };
++  else {
++   const request = requestOrPath;
++   if (!scope || !scopedResource || JSON.stringify(request.resource) !== JSON.stringify(scopedResource)) throw new TypeError('Mutation resource does not match the mounted scope');
++   const base = 'applications/' + encodeURIComponent(request.resource.appId) + '/forms/' + encodeURIComponent(request.resource.viewId) + '/' + (request.resource.kind === 'draft' ? 'drafts' : 'records');
++   const expectedPath = request.method === 'POST' ? base : base + '/' + encodeURIComponent(request.resource.id ?? '');
++   if (request.path !== expectedPath || request.path.includes('?') || request.path.includes('#') || request.method === 'DELETE' && (request.resource.kind !== 'draft' || !Number.isSafeInteger(request.expectedDraftVersion) || (request.expectedDraftVersion as number) < 1) || request.method === 'POST' && (request.expectedStatus !== 201 || !request.resource.creationNonce) || request.method === 'PATCH' && request.expectedStatus !== 200 || request.method === 'DELETE' && request.expectedStatus !== 204 || request.body && Object.hasOwn(request.body, 'operationId')) throw new TypeError('Invalid scoped mutation packet');
++   const query = request.method === 'DELETE' ? { operationId, expectedDraftVersion: request.expectedDraftVersion } : undefined;
++   const path = query ? request.path + '?operationId=' + encodeURIComponent(operationId) + '&expectedDraftVersion=' + encodeURIComponent(String(request.expectedDraftVersion)) : request.path;
++   packet = { actorId, path, method: request.method, expectedStatus: request.expectedStatus, scope, operationId, query, resource: structuredClone(request.resource), body: request.method === 'DELETE' ? undefined : { ...structuredClone(request.body ?? {}), operationId } };
++  }
+   void perform(packet, false);
+  };
+  const query = () => { if (snapshot.current) void perform(snapshot.current, true); };
