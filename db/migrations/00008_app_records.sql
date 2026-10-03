@@ -101,7 +101,7 @@ ALTER TABLE applications.operations ADD CONSTRAINT ck_record_minimum_result CHEC
  AND jsonb_typeof(result_json->'draftVersion')='number',false) END);
 
 -- Real source hooks cover all SQL writers, with last labels retained on deletion.
-CREATE TABLE applications.member_sources(id uuid PRIMARY KEY,label varchar(100) NOT NULL,status varchar(16) NOT NULL CHECK(status IN ('active','disabled','deleted')));
+CREATE TABLE applications.member_sources(id uuid PRIMARY KEY,label varchar(254) NOT NULL,status varchar(16) NOT NULL CHECK(status IN ('active','disabled','deleted')));
 CREATE TABLE applications.department_sources(id uuid PRIMARY KEY,label varchar(100) NOT NULL,parent_id uuid,status varchar(16) NOT NULL CHECK(status IN ('active','deleted')));
 CREATE TABLE applications.member_department_sources(member_id uuid NOT NULL REFERENCES applications.member_sources(id),department_id uuid NOT NULL REFERENCES applications.department_sources(id),PRIMARY KEY(member_id,department_id));
 CREATE INDEX ix_source_department_members ON applications.member_department_sources(department_id,member_id);

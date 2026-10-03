@@ -212,3 +212,17 @@ Schema Save produces metadata rule audit only, no per-row save deltas/version
 increments. The frontend confirmation must explicitly state that lossy previous
 row values cannot be restored from record save history (ADR11.4); backend retains
 its frozen impact counts/kinds rather than inventing a new restoration API.
+
+## Account-source preservation correction (hot10)
+
+Existing accepted FR002/Q13 permits254 Unicode account characters. A real product
+CI registration test exposed the hot8 source label100 mismatch. Hot10 preserves
+full labels/tombstones on databases that applied earlier draft8. The still
+unmerged/unreleased hot8 draft seed is also corrected to254 so an existing hot7
+account of that length can upgrade through8; its original fixed46cf01b source
+remains recoverable. This supersedes earlier statements that draft8 bytes remain
+unchanged; released migrations1–6 and fixed dependency commit identities do not
+change. Consumers should take the updated source/migration checkpoint, without
+editing goose history. Upgrade7→10 and empty1→10 both passed in owned isolated
+PostgreSQL; full race/vet and279 governance/foundation/contract tests passed.
+No production role/schema/data action was performed.
