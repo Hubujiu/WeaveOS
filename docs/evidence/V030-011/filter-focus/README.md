@@ -78,7 +78,7 @@ Mixed initial lifecycle logs are retained, including their failures. They are
 not a substitute for the valid original target RED. After implementation began,
 a separately labelled baseline replay used the final test bytes against the old
 implementation: five duplicate-restoration failures and one pass over six
-ordinary-close cases. [baseline-red-replay.log](baseline-red-replay.log) is a
+ordinary-close cases. [baseline-red-replay.log.gz](baseline-red-replay.log.gz) is a
 replay, not a claim of pre-implementation execution. No history was reordered.
 
 ## Final checks
@@ -100,7 +100,7 @@ engines. Q36's nine inherited capability skips are unchanged.
 | Production build | — | — | — | 0 |
 | Repository/task structure checks and diff whitespace check | — | — | — | 0 |
 
-Raw list output is in `q36-final.log`. `q36-result-counts.json` explicitly records
+Raw command logs are losslessly gzip-compressed to retain reporter whitespace. Raw list output is in `q36-final.log.gz`. `q36-result-counts.json` explicitly records
 derived per-engine counts; it is not presented as an original JSON reporter
 artifact. Saved-filter raw JSON/list output and the other command logs are
 retained. The build has its inherited over-500-kB chunk warning.
