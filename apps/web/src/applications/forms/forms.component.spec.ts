@@ -7,6 +7,8 @@ const appId = '00000000-0000-4000-8000-000000000101';
 const tableId = '00000000-0000-4000-8000-000000000102';
 const viewId = '00000000-0000-4000-8000-000000000103';
 const folderId = '00000000-0000-4000-8000-000000000104';
+const createdTableId='00000000-0000-4000-8000-000000000105';
+const createdViewId='00000000-0000-4000-8000-000000000106';
 const table = {id:tableId,appId,name:'请假申请',directoryId:null,position:0,schemaVersion:0,schemaReady:false};
 const form = {id:viewId,appId,tableId,name:'请假申请',directoryId:null,position:0,viewVersion:0};
 const definition:Definition = {appId,table,form,fields:[],systemFields:[
@@ -52,11 +54,37 @@ async function fixture(page:Page, mode:'designer'|'structure'='designer', initia
     }
     if(path.endsWith('/directories')&&method==='POST'){
       const directory={id:folderId,appId,name:String(body?.name),parentId:(body?.parentId??null) as string|null,position:Number(body?.position)};
-      currentStructure={...currentStructure,structureVersion:1,directories:[directory]};
-      return route.fulfill({status:201,json:ok({directory,structureVersion:1})});
+      currentStructure={...currentStructure,structureVersion:currentStructure.structureVersion+1,directories:[...currentStructure.directories,directory]};
+      return route.fulfill({status:201,json:ok({directory,structureVersion:currentStructure.structureVersion})});
+    }
+    if(path.includes('/directories/')&&method==='PUT'){
+      const id=path.split('/').at(-1)!;
+      const directory={...currentStructure.directories.find(item=>item.id===id)!,name:String(body?.name),
+        parentId:(body?.parentId??null) as string|null,position:Number(body?.position)};
+      currentStructure={...currentStructure,structureVersion:currentStructure.structureVersion+1,
+        directories:currentStructure.directories.map(item=>item.id===id?directory:item)};
+      return route.fulfill({json:ok({directory,structureVersion:currentStructure.structureVersion})});
     }
     if(path.endsWith('/forms')&&method==='POST'){
-      return route.fulfill({status:201,json:ok({table,form,structureVersion:1})});
+      const source=body?.source as {kind:'new_table'|'existing_table';tableId?:string};
+      const nextTable=source.kind==='new_table'
+        ?{...table,id:createdTableId,name:String(body?.name),directoryId:(body?.directoryId??null) as string|null,position:Number(body?.position)}
+        :currentStructure.tables.find(item=>item.id===source.tableId)!;
+      const nextForm={...form,id:createdViewId,tableId:nextTable.id,name:String(body?.name),
+        directoryId:(body?.directoryId??null) as string|null,position:Number(body?.position)};
+      currentStructure={...currentStructure,structureVersion:currentStructure.structureVersion+1,
+        tables:source.kind==='new_table'?[...currentStructure.tables,nextTable]:currentStructure.tables,
+        forms:[...currentStructure.forms,nextForm]};
+      return route.fulfill({status:201,json:ok({table:nextTable,form:nextForm,structureVersion:currentStructure.structureVersion})});
+    }
+    if(path.includes('/forms/')&&method==='PUT'){
+      const id=path.split('/').at(-1)!;
+      const updated={...currentStructure.forms.find(item=>item.id===id)!,name:String(body?.name),
+        directoryId:(body?.directoryId??null) as string|null,position:Number(body?.position)};
+      currentStructure={...currentStructure,structureVersion:currentStructure.structureVersion+1,
+        forms:currentStructure.forms.map(item=>item.id===id?updated:item)};
+      return route.fulfill({json:ok({table:currentStructure.tables.find(item=>item.id===updated.tableId),form:updated,
+        structureVersion:currentStructure.structureVersion})});
     }
     return route.fulfill({status:404,json:{code:'APPLICATION_NOT_FOUND',message:'not found',data:null,meta:{requestId:'test-request'}}});
   });
@@ -123,14 +151,15 @@ test('directory creation and new form creation use coherent structure and one at
   await page.screenshot({path:test.info().outputPath('directory-tree.png'),fullPage:true});
   await page.getByRole('button',{name:'新建表单'}).click();
   await page.screenshot({path:test.info().outputPath('form-create.png'),fullPage:true});
-  await page.getByLabel('表单名称').fill('请假申请');
+  await page.getByLabel('表单名称').fill('差旅申请');
   await page.getByRole('button',{name:'创建表单',exact:true}).click();
+  await expect(page.getByRole('treeitem',{name:'差旅申请'})).toBeVisible();
   const creates=state.seen.filter(x=>x.method==='POST');
   expect(creates.map(x=>x.path)).toEqual([
     `/api/v1/applications/${appId}/directories`,
     `/api/v1/applications/${appId}/forms`,
   ]);
-  expect(creates[1].body).toMatchObject({name:'请假申请',source:{kind:'new_table'},expectedStructureVersion:1});
+  expect(creates[1].body).toMatchObject({name:'差旅申请',source:{kind:'new_table'},expectedStructureVersion:1});
 });
 
 test('impact dialog requires a live confirmation token before a schema write',async({page})=>{
@@ -400,4 +429,93 @@ test('removing an optional selected default option clears the invalid default be
   const savedField=(state.seen.find(item=>item.method==='PUT')?.body?.fields as Field[])[0];
   expect(savedField.default).toBeNull();
   expect(savedField.config).toMatchObject({options:[{id:keepId,label:'保留值'}]});
+});
+
+test('decimal controls keep exact text and signed rounding places on the definition wire',async({page})=>{
+  const state=await fixture(page);
+  await page.getByRole('button',{name:'金额',exact:true}).click();
+  await page.getByLabel('字段名称').fill('预算');
+  await page.getByLabel('总精度').fill('12');
+  await page.getByLabel('小数位数').fill('3');
+  await page.getByLabel('处理位数').fill('-2');
+  await page.getByLabel('舍入规则').selectOption('FLOOR');
+  await page.getByLabel('默认值').fill('-149');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const savedField=(state.seen.find(item=>item.method==='PUT')?.body?.fields as Field[])[0];
+  expect(savedField).toMatchObject({kind:'money',name:'预算',default:'-149',
+    config:{precision:12,scale:3,roundingPlaces:-2,roundingMode:'FLOOR'}});
+  expect(typeof savedField.default).toBe('string');
+});
+
+test('preview dialog restores trigger focus after fast close and under reduced motion',async({page})=>{
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await fixture(page);
+  const trigger=page.getByRole('button',{name:'预览',exact:true});
+  await trigger.focus();
+  await trigger.click();
+  await expect(page.getByRole('dialog',{name:'表单预览'})).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await trigger.click();
+  await page.getByRole('button',{name:'关闭弹窗'}).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test('existing-table form source creates another view without creating a table',async({page})=>{
+  const state=await fixture(page,'structure');
+  await page.getByRole('button',{name:'新建表单'}).click();
+  await page.getByLabel('表单名称').fill('第二视图');
+  await page.getByLabel('使用现有逻辑表').check();
+  await page.getByLabel('现有逻辑表',{exact:true}).selectOption(tableId);
+  await page.getByRole('button',{name:'创建表单'}).click();
+  await expect(page.getByRole('treeitem',{name:'第二视图'})).toBeVisible();
+  const writes=state.seen.filter(item=>item.method==='POST');
+  expect(writes).toHaveLength(1);
+  expect(writes[0].path).toBe(`/api/v1/applications/${appId}/forms`);
+  expect(writes[0].body).toMatchObject({source:{kind:'existing_table',tableId}});
+});
+
+test('directory rename and same-app move use current structure CAS while descendants are excluded',async({page})=>{
+  const childId='00000000-0000-4000-8000-000000000107';
+  const initial:Structure={...structure,structureVersion:2,directories:[
+    {id:folderId,appId,name:'父目录',parentId:null,position:0},
+    {id:childId,appId,name:'子目录',parentId:folderId,position:0},
+  ]};
+  const state=await fixture(page,'structure',definition,initial);
+  await page.getByRole('treeitem',{name:'子目录',exact:true}).getByRole('button').first().click();
+  const rename=page.getByRole('button',{name:'重命名目录'});
+  await rename.focus();await page.keyboard.press('Enter');
+  await page.getByLabel('目录名称').fill('已改名');
+  await page.getByRole('button',{name:'保存变更'}).click();
+  await expect(page.getByRole('treeitem',{name:'已改名',exact:true})).toBeVisible();
+  await page.getByRole('treeitem',{name:'父目录',exact:true}).getByRole('button').first().click();
+  await page.getByRole('button',{name:'移动目录',exact:true}).click();
+  await expect(page.getByLabel('所属目录').getByRole('option',{name:'已改名'})).toHaveCount(0);
+  await page.getByRole('button',{name:'取消'}).click();
+  await page.getByRole('treeitem',{name:'已改名',exact:true}).getByRole('button').first().click();
+  await page.getByRole('button',{name:'移动目录',exact:true}).click();
+  await page.getByLabel('所属目录').selectOption('');
+  await page.getByRole('button',{name:'保存变更'}).click();
+  const writes=state.seen.filter(item=>item.method==='PUT');
+  expect(writes).toHaveLength(2);
+  expect(writes[0].body).toMatchObject({name:'已改名',parentId:folderId,expectedStructureVersion:2});
+  expect(writes[1].body).toMatchObject({name:'已改名',parentId:null,expectedStructureVersion:3});
+  await expect(page.getByRole('treeitem',{name:'已改名',exact:true})).toBeVisible();
+});
+
+test('palette drag into a group preserves the chosen drop parent in saved layout',async({page})=>{
+  const state=await fixture(page);
+  await page.getByRole('button',{name:'分组',exact:true}).click();
+  await page.getByRole('button',{name:'文本',exact:true}).dragTo(
+    page.locator('.forms-nested-grid').first());
+  await expect(page.locator('.forms-nested-grid').first()).toContainText('新建文本');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const layout=state.seen.find(item=>item.method==='PUT')?.body?.layout as LayoutNode[];
+  expect(layout).toHaveLength(1);
+  expect(layout[0].kind).toBe('group');
+  if(layout[0].kind==='group')expect(layout[0].children).toMatchObject([{kind:'field',span:12}]);
 });

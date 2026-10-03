@@ -1,0 +1,41 @@
+[WebServer] (node:18077) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:18091) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:18120) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/forms/forms.component.spec.ts:509:1 › palette drag into a group preserves the chosen drop parent in saved layout (5.4s)
+
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:509:1 › palette drag into a group preserves the chosen drop parent in saved layout 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.forms-nested-grid').first()
+    Expected substring: "新建文本"
+    Received string:    "选择分组后从左侧添加字段"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('.forms-nested-grid').first() with timeout 5000ms
+      - waiting for locator('.forms-nested-grid').first()
+        14 × locator resolved to <div class="forms-canvas-grid forms-nested-grid">…</div>
+           - unexpected value "选择分组后从左侧添加字段"
+
+
+      512 |   await page.getByRole('button',{name:'文本',exact:true}).dragTo(
+      513 |     page.locator('.forms-nested-grid').first());
+    > 514 |   await expect(page.locator('.forms-nested-grid').first()).toContainText('新建文本');
+          |                                                            ^
+      515 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+      516 |   await expect(page.getByRole('status')).toContainText('已保存');
+      517 |   const layout=state.seen.find(item=>item.method==='PUT')?.body?.layout as LayoutNode[];
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:514:60
+
+    Error Context: test-results/forms.component-palette-dr-4e50b-drop-parent-in-saved-layout-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:509:1 › palette drag into a group preserves the chosen drop parent in saved layout 
