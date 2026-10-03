@@ -65,4 +65,3 @@ name 先 TrimSpace，长度 1–100 Unicode codepoints，遵现有 varchar 风�
 ### B5a.10 首段状态与继续执行
 已完成有限的 AccessForWrite 首段：local SHA a142d65f964458f02f89872504de8b8dc527c481；集成 baseline 08e8a97abc222ab3fd7fd99461d972b613950fa2，3 次普通 merge 无冲突。执行回报 453 个 BFF 测试事件、182 项治理、vet／build 通过；这是首段结果，完整应用 SQL／HTTP 尚未实现，不是 B5 完成。
 本节是主负责人已冻结的技术契约。回读后执行者继续本地与隔离实现，无需再等待上述 B5.4／B5.6／B5.8 技术选项；本轮 scope 外业务仍不得自选。新 PR／push、生产 DDL／授权、merge main／deploy 继续禁止；整页 PRD 待评审、ADR-009 拟议中，未用户验收。
-
