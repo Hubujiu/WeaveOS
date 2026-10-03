@@ -1,0 +1,60 @@
+[WebServer] (node:139951) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:139965) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:139994) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › apps/web/src/applications/forms/forms.renderer.spec.ts:5:1 › deleted reference remains visible as a disabled tombstone without enumeration (5.2s)
+(node:140070) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [chromium] › apps/web/src/applications/forms/forms.renderer.spec.ts:37:1 › record leave scopes retain another actual resource after one unregisters (211ms)
+
+
+  1) [chromium] › apps/web/src/applications/forms/forms.renderer.spec.ts:5:1 › deleted reference remains visible as a disabled tombstone without enumeration 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('已离职成员')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('已离职成员') with timeout 5000ms
+      - waiting for getByText('已离职成员')
+
+
+       6 |   await page.goto(url);
+       7 |   await page.getByRole('button',{name:'切换只读'}).click();
+    >  8 |   await expect(page.getByText('已离职成员')).toBeVisible();
+         |                                         ^
+       9 |   await expect(page.getByText('已删除')).toBeVisible();
+      10 |   await expect(page.getByRole('button',{name:'选择成员'})).toHaveCount(0);
+      11 |   expect(await page.evaluate(()=>(window as Window&{__referenceRequests?:unknown[]}).__referenceRequests?.length)).toBe(0);
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.renderer.spec.ts:8:41
+
+    Error Context: apps/web/test-results/forms.renderer-deleted-ref-84296-mbstone-without-enumeration-chromium/error-context.md
+
+  2) [chromium] › apps/web/src/applications/forms/forms.renderer.spec.ts:37:1 › record leave scopes retain another actual resource after one unregisters 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      37 | test('record leave scopes retain another actual resource after one unregisters',async({page})=>{
+      38 |   await page.goto(url);
+    > 39 |   expect(await page.evaluate(()=>(window as Window&{__scopeIsolation?:()=>boolean}).__scopeIsolation?.())).toBe(true);
+         |                                                                                                            ^
+      40 | });
+      41 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.renderer.spec.ts:39:108
+
+    Error Context: apps/web/test-results/forms.renderer-record-leav-5fffa-ource-after-one-unregisters-chromium/error-context.md
+
+  2 failed
+    [chromium] › apps/web/src/applications/forms/forms.renderer.spec.ts:5:1 › deleted reference remains visible as a disabled tombstone without enumeration 
+    [chromium] › apps/web/src/applications/forms/forms.renderer.spec.ts:37:1 › record leave scopes retain another actual resource after one unregisters 

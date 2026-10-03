@@ -5,12 +5,16 @@ import type {
 
 export type FieldValue = string | boolean | UUID[] | null;
 export type ReferenceOption = { id: UUID; label: string };
+// V017 test scaffold; behavior is implemented after the reference scenarios fail.
+export type ReferenceCandidatePage = {items:{id:UUID;label:string;status:'active';parentId?:UUID|null}[];nextPageToken:string|null};
 export type FieldRendererProps = {
   field: Field | FieldInput;
   value: FieldValue;
   onChange?: (value: FieldValue) => void;
   readOnly?: boolean;
   referenceOptions?: ReferenceOption[];
+  referenceDisplay?: {id:UUID;label:string;deleted:boolean}|null;
+  loadReferenceCandidates?: (request:{q:string;pageSize:number;pageToken:string|null},signal:AbortSignal)=>Promise<ReferenceCandidatePage>;
   idPrefix?: string;
 };
 
