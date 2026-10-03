@@ -24,7 +24,7 @@ for(const scenario of ['failed','throw','malformed']){
   await expect(page.getByRole('button',{name:'保存记录',exact:true})).toBeDisabled();
   await expect(page.getByRole('button',{name:'放弃填写',exact:true})).toBeDisabled();
   await expect(page.getByLabel('事由',{exact:true})).toHaveValue('报销测试');
-  await expect(page.getByLabel('事由',{exact:true})).toHaveAttribute('readonly','');
+  await expect(page.getByLabel('事由',{exact:true})).not.toBeEditable();
   await expect(page.getByRole('button',{name:'恢复保存结果',exact:true})).toBeEnabled();
   expect((await inspect(page)).confirmations).toHaveLength(0);
   await page.getByRole('button',{name:'恢复保存结果',exact:true}).click();
