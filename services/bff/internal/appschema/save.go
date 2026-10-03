@@ -83,7 +83,12 @@ func (e Executor) ApplyInTx(ctx context.Context, tx pgx.Tx, request Request) (Re
 			return Result{}, err
 		}
 		for _, change := range plan.Changes {
-			if err = executeChange(ctx, tx, qualified, change, backfills); err != nil {
+			if e.DDL != nil {
+				err = e.DDL.Change(ctx, tx, plan.TableID, change, backfills)
+			} else {
+				err = executeChange(ctx, tx, qualified, change, backfills)
+			}
+			if err != nil {
 				return Result{}, err
 			}
 		}
@@ -92,7 +97,12 @@ func (e Executor) ApplyInTx(ctx context.Context, tx pgx.Tx, request Request) (Re
 		for _, field := range plan.Fields {
 			defs = append(defs, columnDefinition(field, field.Required))
 		}
-		if _, err = tx.Exec(ctx, "CREATE TABLE "+qualified+" ("+strings.Join(defs, ",")+")"); err != nil {
+		if e.DDL != nil {
+			err = e.DDL.Create(ctx, tx, plan)
+		} else {
+			_, err = tx.Exec(ctx, "CREATE TABLE "+qualified+" ("+strings.Join(defs, ",")+")")
+		}
+		if err != nil {
 			return Result{}, err
 		}
 	}
@@ -190,6 +200,13 @@ func (e Executor) checkChanges(ctx context.Context, tx pgx.Tx, table string, p P
 	return nil
 }
 func literal(v Value) string {
+	if v.Type == UUIDArray {
+		parts := make([]string, len(v.UUIDs))
+		for i, id := range v.UUIDs {
+			parts[i] = "'" + id + "'::uuid"
+		}
+		return "ARRAY[" + strings.Join(parts, ",") + "]::uuid[]"
+	}
 	if v.Type == Boolean {
 		if v.Boolean {
 			return "true"
@@ -201,13 +218,16 @@ func literal(v Value) string {
 	return "E'" + strings.ReplaceAll(strings.ReplaceAll(v.Text, `\`, `\\`), "'", "''") + "'"
 }
 func valueArgument(v Value) any {
+	if v.Type == UUIDArray {
+		return v.UUIDs
+	}
 	if v.Type == Boolean {
 		return v.Boolean
 	}
 	return v.Text
 }
 func columnDefinition(field Field, required bool) string {
-	result := pgx.Identifier{physicalID("f_", field.ID)}.Sanitize() + " " + string(field.Type)
+	result := pgx.Identifier{physicalID("f_", field.ID)}.Sanitize() + " " + sqlType(field)
 	if field.Default != nil {
 		result += " DEFAULT " + literal(*field.Default)
 	}
@@ -241,7 +261,7 @@ func executeChange(ctx context.Context, tx pgx.Tx, table string, change Change, 
 		if err := exec(prefix + "ALTER COLUMN " + column + " DROP DEFAULT"); err != nil {
 			return err
 		}
-		return exec(prefix + "ALTER COLUMN " + column + " TYPE " + string(change.After.Type) + " USING " + column + "::" + string(change.After.Type))
+		return exec(prefix + "ALTER COLUMN " + column + " TYPE " + sqlType(*change.After) + " USING " + column + "::" + sqlType(*change.After))
 	case AlterDefault:
 		if change.After.Default == nil {
 			return exec(prefix + "ALTER COLUMN " + column + " DROP DEFAULT")
@@ -255,4 +275,11 @@ func executeChange(ctx context.Context, tx pgx.Tx, table string, change Change, 
 	default:
 		return ErrInvalid
 	}
+}
+
+func sqlType(f Field) string {
+	if f.Type == Numeric {
+		return fmt.Sprintf("numeric(%d,%d)", f.Precision, f.Scale)
+	}
+	return string(f.Type)
 }

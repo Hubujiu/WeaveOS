@@ -16,34 +16,34 @@ import (
 type Type string
 
 const (
-	Text    Type = "text"
-	Boolean Type = "boolean"
- Numeric Type = "numeric"
- Date Type = "date"
- Timestamp Type = "timestamptz"
- UUID Type = "uuid"
- UUIDArray Type = "uuid[]"
+	Text      Type = "text"
+	Boolean   Type = "boolean"
+	Numeric   Type = "numeric"
+	Date      Type = "date"
+	Timestamp Type = "timestamptz"
+	UUID      Type = "uuid"
+	UUIDArray Type = "uuid[]"
 )
 
 type Value struct {
 	Type    Type
 	Text    string
 	Boolean bool
- UUIDs []string
+	UUIDs   []string
 }
 
 type Field struct {
-	ID       string
-	Name     string
-	Type     Type
-	Required bool
- Precision int
- Scale int
- Kind string
- RoundingPlaces int
- RoundingMode string
- TimePrecision string
-	Default  *Value
+	ID             string
+	Name           string
+	Type           Type
+	Required       bool
+	Precision      int
+	Scale          int
+	Kind           string
+	RoundingPlaces int
+	RoundingMode   string
+	TimePrecision  string
+	Default        *Value
 }
 
 type Operation string
@@ -124,7 +124,12 @@ type Limits struct {
 	StatementTimeout time.Duration
 }
 
+type DDL interface {
+	Create(context.Context, pgx.Tx, Plan) error
+	Change(context.Context, pgx.Tx, string, Change, map[string]Value) error
+}
 type Executor struct {
+	DDL          DDL
 	DB           Beginner
 	Namespace    string // Explicit caller-owned PostgreSQL namespace, never a display name.
 	Metadata     Metadata

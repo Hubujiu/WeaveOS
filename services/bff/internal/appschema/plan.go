@@ -1,10 +1,12 @@
 package appschema
 
 import (
+	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
- "reflect"
 	"strings"
+	"time"
 )
 
 var internalID = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
@@ -36,7 +38,7 @@ func BuildPlan(tableID string, before, after []Field) (Plan, error) {
 		for _, changed := range []struct {
 			op  Operation
 			yes bool
-		}{{AlterType, previous.Type != field.Type}, {AlterDefault, !sameValue(previous.Default, field.Default)}, {AlterRequired, previous.Required != field.Required}} {
+		}{{AlterType, previous.Type != field.Type || previous.Precision != field.Precision || previous.Scale != field.Scale || previous.RoundingPlaces != field.RoundingPlaces || previous.RoundingMode != field.RoundingMode || previous.TimePrecision != field.TimePrecision}, {AlterDefault, !sameValue(previous.Default, field.Default)}, {AlterRequired, previous.Required != field.Required}} {
 			if changed.yes {
 				b, a := previous, field
 				p.Changes = append(p.Changes, Change{Operation: changed.op, Column: column, Before: &b, After: &a})
@@ -62,8 +64,11 @@ func validateFields(fields []Field) (map[string]Field, error) {
 		if _, exists := result[f.ID]; exists {
 			return nil, fmt.Errorf("%w: duplicate field ID", ErrInvalid)
 		}
-		if f.Type != Text && f.Type != Boolean {
+		if f.Type != Text && f.Type != Boolean && f.Type != Numeric && f.Type != Date && f.Type != Timestamp && f.Type != UUID && f.Type != UUIDArray {
 			return nil, ErrUnsupportedType
+		}
+		if f.Type == Numeric && (f.Precision < 1 || f.Precision > 38 || f.Scale < 0 || f.Scale > 18 || f.Scale > f.Precision) {
+			return nil, errors.Join(ErrInvalid, ErrUnsupportedType)
 		}
 		if f.Default != nil {
 			if err := validateValue(*f.Default, f.Type); err != nil {
@@ -89,6 +94,28 @@ func validateValue(v Value, typ Type) error {
 		if v.Text != "" {
 			return fmt.Errorf("%w: boolean value", ErrInvalid)
 		}
+	case Numeric:
+		if !regexp.MustCompile(`^-?(0|[1-9][0-9]*)(\.[0-9]+)?$`).MatchString(v.Text) {
+			return ErrInvalid
+		}
+	case Date:
+		if _, err := time.Parse("2006-01-02", v.Text); err != nil {
+			return ErrInvalid
+		}
+	case Timestamp:
+		if _, err := time.Parse(time.RFC3339Nano, v.Text); err != nil {
+			return ErrInvalid
+		}
+	case UUID:
+		if !internalID.MatchString(v.Text) {
+			return ErrInvalid
+		}
+	case UUIDArray:
+		for _, id := range v.UUIDs {
+			if !internalID.MatchString(id) {
+				return ErrInvalid
+			}
+		}
 	default:
 		return ErrUnsupportedType
 	}
@@ -98,5 +125,5 @@ func sameValue(a, b *Value) bool {
 	if a == nil || b == nil {
 		return a == b
 	}
-	return reflect.DeepEqual(a,b)
+	return reflect.DeepEqual(a, b)
 }
