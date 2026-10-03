@@ -36,7 +36,19 @@ export type HistoryValueLabel={label:string|null;deleted:boolean;labelUnavailabl
 export type HistoryChange={fieldId:UUID;fieldKind:string;before:FieldValue;after:FieldValue;fieldLabel:string;fieldDeleted:boolean;valueLabels:Record<UUID,HistoryValueLabel>};
 export type HistoryEvent={id:UUID;recordVersionBefore:Version;recordVersionAfter:Version;actorId:UUID;occurredAt:string;origin:'ordinary'|'task_save';changes:HistoryChange[]};
 
-// RED scaffolds. V012 validates HTTP status/envelope; these validate only the
-// minimal data object after that layer has accepted it.
-export function isMutationResult(_value:unknown,_operationId:UUID,_recordId?:UUID):_value is MutationResult{return false;}
-export function isDraftMutationResult(_value:unknown,_operationId:UUID,_draftId?:UUID):_value is DraftMutationResult{return false;}
+// V012 validates HTTP status/envelope; these validate only the minimal data
+// object after that layer has accepted it. Extra keys must not leak values.
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const object=(value:unknown):value is Record<string,unknown>=>typeof value==='object'&&value!==null&&!Array.isArray(value);
+const exact=(value:Record<string,unknown>,keys:readonly string[])=>Object.keys(value).length===keys.length&&keys.every(key=>Object.hasOwn(value,key));
+const version=(value:unknown):value is Version=>typeof value==='number'&&Number.isSafeInteger(value)&&value>=0;
+const timestamp=(value:unknown):value is string=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)&&Number.isFinite(Date.parse(value));
+export function isMutationResult(value:unknown,operationId:UUID,recordId?:UUID):value is MutationResult{
+ return object(value)&&exact(value,['operationId','id','recordVersion','schemaVersion','createdAt','updatedAt'])&&
+  value.operationId===operationId&&uuid.test(operationId)&&typeof value.id==='string'&&uuid.test(value.id)&&(!recordId||value.id===recordId)&&
+  version(value.recordVersion)&&version(value.schemaVersion)&&timestamp(value.createdAt)&&timestamp(value.updatedAt);
+}
+export function isDraftMutationResult(value:unknown,operationId:UUID,draftId?:UUID):value is DraftMutationResult{
+ return object(value)&&exact(value,['operationId','id','draftVersion'])&&
+  value.operationId===operationId&&uuid.test(operationId)&&typeof value.id==='string'&&uuid.test(value.id)&&(!draftId||value.id===draftId)&&version(value.draftVersion);
+}
