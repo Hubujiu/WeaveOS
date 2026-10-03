@@ -110,7 +110,7 @@ export function validateQueryFilter<V extends QueryView>(view: V, input: unknown
 // Runtime descriptors are supplied only from the authorized RuntimeView. This
 // editor guard does not grant access; the server rechecks every field/scope.
 export type ResourceFieldKind = 'text' | 'multiline' | 'number' | 'money' | 'date' | 'datetime' | 'single_select' | 'multi_select' | 'boolean' | 'member' | 'department';
-export type ResourceFilterField = { id: string; kind: ResourceFieldKind; operators: readonly ('eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte')[]; optionIds?: readonly string[] };
+export type ResourceFilterField = { id: string; label?: string; kind: ResourceFieldKind; operators: readonly ('eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte')[]; optionIds?: readonly string[]; choices?: readonly {value:string;label:string}[] };
 export type ResourceFilterCondition = {fieldId:string;operator:'eq'|'neq'|'gt'|'gte'|'lt'|'lte';value:string|boolean|string[]|null};
 export type ResourceFilterGroup = {operator:'and'|'or';children:(ResourceFilterGroup|ResourceFilterCondition)[]};
 export function validateResourceFilter(fields:readonly ResourceFilterField[],input:unknown):{filter?:ResourceFilterGroup;issues:FilterIssue[]} {

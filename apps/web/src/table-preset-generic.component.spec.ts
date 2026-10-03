@@ -1,5 +1,6 @@
 import {test,expect} from '@playwright/test';
 import {validateResourceFilter,type ResourceFilterField} from './QueryFilterState';
+import {blockFilter,presetBlocks,validateResourcePreset} from './TablePresetState';
 
 // V017 PRD §2 / V015 ADR §8.6, §11.2: dynamic field IDs keep the recursive
 // server AST, precise decimal text, NULL, false and option-set identity.
@@ -45,4 +46,22 @@ test('NULL, false and precise dates remain distinct, with server-safe depth limi
  expect(validateResourceFilter(available,{operator:'and',children:[{fieldId:date,operator:'gt',value:'2026-02-30'}]}).issues.length).toBeGreaterThan(0);
  const tooDeep={operator:'and',children:[{operator:'or',children:[{operator:'and',children:[{operator:'or',children:[{fieldId:title,operator:'eq',value:'x'}]}]}]}]};
  expect(validateResourceFilter(available,tooDeep).issues.length).toBeGreaterThan(0);
+});
+
+test('one editor serializes record fieldId without altering AND/OR grouping',()=>{
+ const saved={operator:'or',children:[
+  {operator:'and',children:[{fieldId:amount,operator:'gt',value:'12345678901234567890.123'}]},
+  {operator:'and',children:[{fieldId:title,operator:'eq',value:''}]},
+ ]};
+ const blocks=presetBlocks(saved,'fieldId');
+ expect(blocks.map(b=>b.rows.map(r=>r.field))).toEqual([[amount],[title]]);
+ expect(blockFilter(blocks,'fieldId')).toEqual(saved);
+});
+
+test('record preset validates authorized business visibility without discarding a hidden filter',()=>{
+ const filter={operator:'and',children:[{fieldId:amount,operator:'gt',value:'9007199254740993.01'}]};
+ const columns=[{id:amount,name:'金额'},{id:title,name:'标题'}];
+ expect(validateResourcePreset('  私人方案  ',filter,[amount],fields,columns)).toEqual({issues:[],name:'私人方案',filter});
+ expect(validateResourcePreset('私人方案',filter,[amount,title],fields,columns).issues).toContain('至少保留一个业务字段');
+ expect(validateResourcePreset('私人方案',filter,['removed-field'],fields,columns).issues.length).toBeGreaterThan(0);
 });
