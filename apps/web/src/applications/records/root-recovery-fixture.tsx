@@ -16,7 +16,7 @@ Object.assign(window,{__rootRecovery:events});
 const view:RuntimeView={
  appId:app,tableId:app,viewId,schemaVersion:2,viewVersion:3,policyRevision:4,
  fields:[{id:fieldId,name:'事由',kind:'text',required:false,presentation:{helpText:null,displayTimeZone:null},input:{},access:{read:'all',create:true,edit:'all',history:'none'},query:{operators:['eq','neq'],sortable:false,quickSearchable:false}}],
- layout:[],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}
+ layout:[{id:'aaaaaaaa-aaaa-4aaa-8aaa-000000000001',kind:'field',fieldId}],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}
 };
 const confirmed=(operationId:string):SaveOutcome=>({kind:'confirmed',result:{operationId,id:recordId,recordVersion:1,schemaVersion:2,createdAt:'2026-10-03T09:00:00Z',updatedAt:'2026-10-03T09:00:00Z'}});
 createRoot(document.getElementById('root')!).render(<RecordForm
