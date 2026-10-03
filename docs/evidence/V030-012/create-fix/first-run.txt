@@ -1,0 +1,78 @@
+[WebServer] (node:3358) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:3372) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 10 tests using 1 worker
+
+(node:3401) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/10] [chromium] › src/applications.component.spec.ts:32:1 › V030-012 Home opens the real application catalogue
+[2/10] [chromium] › src/applications.component.spec.ts:42:1 › V030-012 catalogue reads B5 without parameters and filters its authorized result
+[3/10] [chromium] › src/applications.component.spec.ts:60:1 › V030-012 live create capability opens a name-only real create flow
+[4/10] [chromium] › src/applications.component.spec.ts:71:1 › V030-012 opening an application rechecks access and presents its actual empty workspace
+[5/10] [chromium] › src/applications.component.spec.ts:91:1 › V030-012 create waits for server acknowledgement and sends only the frozen DTO
+[6/10] [chromium] › src/applications.component.spec.ts:115:1 › V030-012 unconfirmed create recovers its original operation and never treats 404 as rollback
+[7/10] [chromium] › src/applications.component.spec.ts:144:1 › V030-012 retry after lost response preserves the operation key and exact payload
+[8/10] [chromium] › src/applications.component.spec.ts:162:1 › V030-012 server denial is visible and never produces a success message
+[9/10] [chromium] › src/applications.component.spec.ts:174:1 › V030-012 dirty create cancel and Escape retain the name until explicit discard
+  1) [chromium] › src/applications.component.spec.ts:174:1 › V030-012 dirty create cancel and Escape retain the name until explicit discard 
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  getByRole('button', { name: '新建应用', exact: true })
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" getByRole('button', { name: '新建应用', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '新建应用', exact: true })
+        14 × locator resolved to <button class="admin-button primary">新建应用</button>
+           - unexpected value "inactive"
+
+
+      183 |  await guard.getByRole('button', { name: '放弃修改', exact: true }).click();
+      184 |  await expect(dialog).toHaveCount(0);
+    > 185 |  await expect(page.getByRole('button', { name: '新建应用', exact: true })).toBeFocused();
+          |                                                                        ^
+      186 | });
+      187 |
+      188 | test('V030-012 Home and application navigation retain one Shell and reauthorize repeated opens', async ({ page }) => {
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:185:72
+
+    Error Context: test-results/applications.component-V03-a19ac-name-until-explicit-discard-chromium/error-context.md
+
+
+(node:3602) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[10/10] [chromium] › src/applications.component.spec.ts:188:1 › V030-012 Home and application navigation retain one Shell and reauthorize repeated opens
+  2) [chromium] › src/applications.component.spec.ts:188:1 › V030-012 Home and application navigation retain one Shell and reauthorize repeated opens 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 6
+    Received: 12
+
+      201 |   expect(await shell!.evaluate(node => node.isConnected)).toBe(true);
+      202 |  }
+    > 203 |  expect(accesses).toBe(6);
+          |                   ^
+      204 | });
+      205 |
+      206 |
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:203:19
+
+    Error Context: test-results/applications.component-V03-65d74--reauthorize-repeated-opens-chromium/error-context.md
+
+
+  2 failed
+    [chromium] › src/applications.component.spec.ts:174:1 › V030-012 dirty create cancel and Escape retain the name until explicit discard 
+    [chromium] › src/applications.component.spec.ts:188:1 › V030-012 Home and application navigation retain one Shell and reauthorize repeated opens 
+  8 passed (23.1s)

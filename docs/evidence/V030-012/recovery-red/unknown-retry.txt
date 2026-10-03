@@ -1,0 +1,44 @@
+[WebServer] (node:13395) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:13433) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:13658) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › apps/web/src/applications.component.spec.ts:240:1 › V030-012 denial on same-key retry cannot erase an earlier unknown outcome
+  1) [chromium] › apps/web/src/applications.component.spec.ts:240:1 › V030-012 denial on same-key retry cannot erase an earlier unknown outcome 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+    Expected substring: "仍未确认"
+    Received string:    "没有应用访问或管理权限"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+        14 × locator resolved to <p role="alert">没有应用访问或管理权限</p>
+           - unexpected value "没有应用访问或管理权限"
+
+
+      250 |  await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
+      251 |  await expect(dialog.getByRole('alert')).toContainText('没有应用访问或管理权限');
+    > 252 |  await expect(dialog.getByRole('alert')).toContainText('仍未确认');
+          |                                          ^
+      253 |  await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toBeDisabled();
+      254 |  await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
+      255 |  await expect.poll(() => writes.length).toBe(3);
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:252:42
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-96096--an-earlier-unknown-outcome-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › apps/web/src/applications.component.spec.ts:240:1 › V030-012 denial on same-key retry cannot erase an earlier unknown outcome 

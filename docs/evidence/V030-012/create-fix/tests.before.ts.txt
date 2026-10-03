@@ -192,66 +192,14 @@ test('V030-012 Home and application navigation retain one Shell and reauthorize 
  await page.goto('/app/applications');
  const shell = await page.getByTestId('application-shell').elementHandle();
  for (let i = 0; i < 3; i++) {
-  let before = accesses;
-  await page.getByRole('main').getByRole('button', { name: application.name, exact: true }).click();
+  await page.getByRole('button', { name: application.name, exact: true }).click();
   await expect(page.getByRole('heading', { name: application.name, exact: true })).toBeVisible();
-  expect(accesses).toBeGreaterThan(before);
   await page.getByRole('navigation', { name: '全局应用标签', exact: true }).getByRole('button', { name: '首页', exact: true }).click();
-  before = accesses;
   await page.getByRole('navigation', { name: '全局应用标签', exact: true }).getByRole('button', { name: application.name, exact: true }).click();
   await expect(page.getByRole('heading', { name: application.name, exact: true })).toBeVisible();
-  expect(accesses).toBeGreaterThan(before);
   await page.getByRole('navigation', { name: '全局应用标签', exact: true }).getByRole('button', { name: '全部应用', exact: true }).click();
   expect(await shell!.evaluate(node => node.isConnected)).toBe(true);
  }
- expect(accesses).toBeGreaterThanOrEqual(6);
+ expect(accesses).toBe(6);
 });
 
-test('V030-012 leaving a dirty create restores its route on cancel and closes it on discard', async ({ page }) => {
- await fixture(page);
- await page.goto('/app');
- await page.getByRole('button', { name: '打开应用中心', exact: true }).click();
- await page.getByRole('button', { name: '新建应用', exact: true }).click();
- await page.getByRole('textbox', { name: '应用名称', exact: true }).fill('未保存的名称');
- await page.goBack();
- const guard = page.getByRole('dialog', { name: '有未保存的修改', exact: true });
- await expect(guard).toBeVisible();
- await guard.getByRole('button', { name: '继续编辑', exact: true }).click();
- await expect(page).toHaveURL(/\/app\/applications$/);
- await expect(page.getByRole('textbox', { name: '应用名称', exact: true })).toHaveValue('未保存的名称');
- await page.goBack();
- await guard.getByRole('button', { name: '放弃修改', exact: true }).click();
- await expect(page).toHaveURL(/\/app$/);
- await expect(page.getByRole('dialog', { name: '新建应用', exact: true })).toHaveCount(0);
-});
-
-test('V030-012 an operation query denial is visible while the original outcome remains unconfirmed', async ({ page }) => {
- await fixture(page);
- await page.route('**/api/v1/applications', route => route.fulfill(route.request().method() === 'GET' ? { json: { code: 'OK', data: { items: [] } } } : { status: 503, json: { code: 'APPLICATION_OPERATION_UNCONFIRMED' } }));
- await page.route('**/api/v1/application-operations/*', route => route.fulfill({ status: 403, json: { code: 'APPLICATION_FORBIDDEN' } }));
- const dialog = await creation(page);
- await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
- await dialog.getByRole('button', { name: '核查操作', exact: true }).click();
- await expect(dialog.getByRole('alert')).toContainText('没有应用访问或管理权限');
- await expect(dialog.getByRole('alert')).toContainText('仍未确认');
- await expect(dialog.getByRole('button', { name: '使用同一操作重试', exact: true })).toBeVisible();
-});
-
-test('V030-012 denial on same-key retry cannot erase an earlier unknown outcome', async ({ page }) => {
- await fixture(page);
- const writes: object[] = [];
- await page.route('**/api/v1/applications', async route => {
-  if (route.request().method() === 'GET') { await route.fulfill({ json: { code: 'OK', data: { items: [] } } }); return; }
-  writes.push(route.request().postDataJSON());
-  await route.fulfill(writes.length === 1 ? { status: 503, json: { code: 'APPLICATION_OPERATION_UNCONFIRMED' } } : { status: 403, json: { code: 'APPLICATION_FORBIDDEN' } });
- });
- const dialog = await creation(page);
- await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
- await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
- await expect(dialog.getByRole('alert')).toContainText('没有应用访问或管理权限');
- await expect(dialog.getByRole('alert')).toContainText('仍未确认');
- await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toBeDisabled();
- await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
- await expect.poll(() => writes.length).toBe(3);
- expect(writes[1]).toEqual(writes[0]); expect(writes[2]).toEqual(writes[0]);
-});
