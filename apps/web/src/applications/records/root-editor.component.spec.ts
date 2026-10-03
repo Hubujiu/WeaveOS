@@ -24,6 +24,8 @@ test('Root record form sends one canonical create and confirms only after the re
  expect(operationId).toMatch(/^[0-9a-f-]{36}$/i);expect(writes[0].actor).toBe(actor);expect(writes[0].method).toBe('POST');
  expect(body).toEqual({expectedSchemaVersion:2,queryVersion:'root-query-1',values:{[title]:'差旅报销',[amount]:'9007199254740993.01',[flag]:false}});
  expect((await events(page)).confirmations[0].identity).toMatchObject({kind:'record',recordId:record});
+ expect((await events(page)).confirmationGuardStatuses).toEqual([['clean']]);
+ expect(await page.evaluate(()=>(window as any).__rootGuardStatus())).toEqual(['clean']);
  await expect(page.getByRole('button',{name:'保存记录',exact:true})).toBeDisabled();
 });
 test('Root record form edits only changed fields with row and schema CAS',async({page})=>{
@@ -51,7 +53,7 @@ test('Root another actor cannot inherit an unknown record editor packet or input
  await page.getByRole('button',{name:'切换身份'}).click();await expect(page.getByLabel('事由',{exact:true})).toHaveValue('');
  await expect(page.getByRole('button',{name:'恢复保存结果',exact:true})).toHaveCount(0);expect(writes).toBe(1);
 });
-for(const code of ['APPLICATION_RECORD_CONFLICT','APPLICATION_SCHEMA_CONFLICT','APPLICATION_QUERY_CHANGED']){
+for(const code of ['APPLICATION_RECORD_CONFLICT','APPLICATION_SCHEMA_CONFLICT','APPLICATION_QUERY_CHANGED','APPLICATION_QUERY_CONTEXT_EXPIRED','APPLICATION_POLICY_CONFLICT']){
  test('Root '+code+' retains input and requires explicit refresh before another save',async({page})=>{
   let writes=0;await page.route('**'+base+'/'+record,route=>{writes++;return route.fulfill({status:409,json:{code,data:null}});});await open(page,'edit');
   await page.getByLabel('事由',{exact:true}).fill('保留修改');await page.getByRole('button',{name:'保存记录',exact:true}).click();
