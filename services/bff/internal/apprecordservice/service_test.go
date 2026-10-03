@@ -3,11 +3,13 @@ package apprecordservice
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"testing"
 
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
@@ -16,11 +18,11 @@ import (
 )
 
 type recordFixture struct {
-	ctx                                                       context.Context
-	owner, runtime                                            *pgxpool.Pool
-	actor, other, app, table, view, public, secret, reference string
-	principal                                                 session.Principal
-	service                                                   *Service
+	ctx                                                                               context.Context
+	owner, runtime                                                                    *pgxpool.Pool
+	actor, other, app, table, view, public, secret, reference, ownRecord, otherRecord string
+	principal                                                                         session.Principal
+	service                                                                           *Service
 }
 
 func newRecordFixture(t *testing.T) recordFixture {
@@ -63,7 +65,7 @@ func newRecordFixture(t *testing.T) recordFixture {
 			t.Fatal(err)
 		}
 	}
-	f := recordFixture{ctx: ctx, owner: owner, runtime: runtime, actor: ids[0], other: ids[1], app: ids[2], table: ids[3], view: ids[4], public: ids[5], secret: ids[6], reference: ids[9]}
+	f := recordFixture{ctx: ctx, owner: owner, runtime: runtime, actor: ids[0], other: ids[1], app: ids[2], table: ids[3], view: ids[4], public: ids[5], secret: ids[6], reference: ids[9], ownRecord: ids[8], otherRecord: ids[7]}
 	for _, u := range []string{f.actor, f.other} {
 		if _, err := owner.Exec(ctx, "INSERT INTO auth.users(id,account) VALUES($1,$2)", u, "v015-consumer-"+u); err != nil {
 			t.Fatal(err)
@@ -120,7 +122,7 @@ func newRecordFixture(t *testing.T) recordFixture {
 	for _, g := range []struct {
 		action, scope string
 		fields        []string
-	}{{"menu.enter", "all", nil}, {"data.read", "all", []string{f.public, f.reference}}, {"data.read", "own", []string{f.secret}}} {
+	}{{"menu.enter", "all", nil}, {"data.read", "all", []string{f.public, f.reference}}, {"data.read", "own", []string{f.secret}}, {"data.create", "all", []string{f.public}}, {"data.edit", "all", []string{f.public}}} {
 		var grant string
 		if err := owner.QueryRow(ctx, "INSERT INTO applications.grants(app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,'form',$3,$4,$5) RETURNING id::text", f.app, group, f.view, g.action, g.scope).Scan(&grant); err != nil {
 			t.Fatal(err)
@@ -137,11 +139,63 @@ func newRecordFixture(t *testing.T) recordFixture {
 		t.Fatal(err)
 	}
 	f.principal = session.Principal{UserID: f.actor, SessionRef: ids[8], Record: session.Record{AuthVersion: "1"}}
-	policy := querycontext.Policy{Validate: func(m querycontext.Metadata) bool {
-		return m.View != "" && json.Valid(m.Criteria) && json.Valid(m.Revision)
-	}, Forward: func(_ string, a, b json.RawMessage) bool { return json.Valid(a) && json.Valid(b) }}
-	f.service = &Service{Pool: runtime, Queries: querycontext.NewStore(client, "applications", "consumer-"+strings.ReplaceAll(f.app, "-", ""), policy)}
+	f.service = New(runtime, client, "consumer-"+strings.ReplaceAll(f.app, "-", ""))
 	return f
+}
+
+func TestRestrictedRecordCreateReplaysMinimumAndUsesControlledDML(t *testing.T) {
+	f := newRecordFixture(t)
+	var operation string
+	if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&operation); err != nil {
+		t.Fatal(err)
+	}
+	req := CreateRequest{AppID: f.app, ViewID: f.view, OperationID: operation, ExpectedSchemaVersion: 1, Values: map[string]any{f.public: "created"}}
+	meta := applications.Metadata{RequestID: "v015-restricted-create"}
+	got, err := f.service.Create(f.ctx, f.principal, req, meta)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID == "" || got.OperationID != operation || got.RecordVersion != 1 || got.SchemaVersion != 1 {
+		t.Fatalf("result %+v", got)
+	}
+	replay, err := f.service.Create(f.ctx, f.principal, req, meta)
+	if err != nil || replay != got {
+		t.Fatalf("same key replay %+v %v", replay, err)
+	}
+	var count int
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_write_audit WHERE app_id=$1 AND operation_id=$2", f.app, operation).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("audit count %d %v", count, err)
+	}
+	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM "+relation+" WHERE id=$1", got.ID).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("typed row count %d %v", count, err)
+	}
+}
+
+func TestRestrictedQueryOnlyObservableChangesInvalidate(t *testing.T) {
+	f := newRecordFixture(t)
+	filter := json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + f.public + `","operator":"eq","value":"alpha"}]}`)
+	request := SearchRequest{AppID: f.app, ViewID: f.view, Page: 1, PageSize: 1, Filter: filter}
+	first, err := f.service.Search(f.ctx, f.principal, request)
+	if err != nil || first.Total != 1 {
+		t.Fatalf("initial %+v %v", first, err)
+	}
+	request.QueryVersion = first.QueryVersion
+	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
+	column := pgx.Identifier{"f_" + strings.ReplaceAll(f.public, "-", "")}.Sanitize()
+	if _, err = f.owner.Exec(f.ctx, "UPDATE "+relation+" SET "+column+"='beta changed',record_version=record_version+1,updated_at=clock_timestamp() WHERE id=$1", f.otherRecord); err != nil {
+		t.Fatal(err)
+	}
+	same, err := f.service.Search(f.ctx, f.principal, request)
+	if err != nil || same.Total != 1 || same.QueryVersion != first.QueryVersion {
+		t.Fatalf("unrelated row forced refresh %+v %v", same, err)
+	}
+	if _, err = f.owner.Exec(f.ctx, "UPDATE auth.users SET account='renamed-reference-'||id::text WHERE id=$1", f.other); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.service.Search(f.ctx, f.principal, request); !errors.Is(err, querycontext.ErrChanged) {
+		t.Fatalf("visible reference rename must invalidate old P: %v", err)
+	}
 }
 
 func TestRestrictedRealRecordSearchMasksBeforeCountAndReusesContext(t *testing.T) {
