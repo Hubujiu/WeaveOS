@@ -459,6 +459,9 @@ func (s Store) UpdateInTx(ctx context.Context, tx pgx.Tx, access Access, id stri
 		if _, overlap := changes[field]; overlap {
 			return Draft{}, ErrInvalid
 		}
+		if _, present := d.payload[field]; !present {
+			return Draft{}, ErrInvalid
+		}
 		removed[field] = true
 	}
 	if len(changes) == 0 && len(removed) == 0 {

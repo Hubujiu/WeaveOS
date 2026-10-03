@@ -14,6 +14,25 @@ import (
 
 var ErrQueryBusy = errors.New("record query changed during write prevalidation")
 
+func (s *Service) replayAfterReadError(ctx context.Context, principal session.Principal, appID, viewID string, options applications.RecordWriteOptions, readErr error) (*applications.RecordWrite, *applications.Result, error) {
+	// No Claim is possible here. A confirmed original key may be recovered
+	// only after the live Session and operation fingerprint pass V013 checks.
+	write, err := (&applications.Application{Pool: s.Pool}).BeginRecordWrite(ctx, principal, appID, viewID, options)
+	if err != nil {
+		return nil, nil, err
+	}
+	replayed, err := write.Replay(ctx, options.OperationID, options.Kind, options.Fingerprint)
+	if err != nil {
+		_ = write.Rollback(context.Background())
+		return nil, nil, err
+	}
+	if replayed == nil {
+		_ = write.Rollback(context.Background())
+		return nil, nil, readErr
+	}
+	return write, replayed, nil
+}
+
 // The RR receipt is an interaction guard. It never supplies authorization to
 // the RC business transaction, which reacquires live grants and the table gate.
 func (s *Service) beginRecordMutation(ctx context.Context, principal session.Principal, appID, viewID, version string, options applications.RecordWriteOptions) (*applications.RecordWrite, *applications.Result, error) {
@@ -23,29 +42,14 @@ func (s *Service) beginRecordMutation(ctx context.Context, principal session.Pri
 			strategy := &recordStrategy{service: s, principal: principal, appID: appID, viewID: viewID}
 			read, receipt, err := querycontext.ValidateSavedRead(ctx, s.Queries, principal.SessionRef, version, strategy)
 			if err != nil {
-				// A confirmed original key remains recoverable even if its old
-				// list context has subsequently changed or expired.
-				write, beginErr := (&applications.Application{Pool: s.Pool}).BeginRecordWrite(ctx, principal, appID, viewID, options)
-				if beginErr != nil {
-					return nil, nil, beginErr
-				}
-				replayed, replayErr := write.Replay(ctx, options.OperationID, options.Kind, options.Fingerprint)
-				if replayErr != nil {
-					_ = write.Rollback(context.Background())
-					return nil, nil, replayErr
-				}
-				if replayed != nil {
-					return write, replayed, nil
-				}
-				_ = write.Rollback(context.Background())
-				return nil, nil, err
+				return s.replayAfterReadError(ctx, principal, appID, viewID, options, err)
 			}
 			if err = json.Unmarshal(receipt.Revision(), &verified); err != nil || !validRevisions(verified) {
 				_ = read.Rollback(context.Background())
 				return nil, nil, querycontext.ErrInvalid
 			}
 			if err = receipt.Commit(ctx, read); err != nil {
-				return nil, nil, err
+				return s.replayAfterReadError(ctx, principal, appID, viewID, options, err)
 			}
 		}
 		write, err := (&applications.Application{Pool: s.Pool}).BeginRecordWrite(ctx, principal, appID, viewID, options)

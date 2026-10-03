@@ -153,12 +153,19 @@ func fieldsInContext(facts applications.RecordContext) ([]appfields.Field, []str
 // All auth/users, department and membership source writers take that lock
 // before their source triggers, so active source facts cannot change until
 // this record transaction commits.
-func validateNewReferences(ctx context.Context, tx pgx.Tx, values map[string]any, fields []appfields.Field) error {
+func validateNewReferences(ctx context.Context, tx pgx.Tx, values map[string]any, fields []appfields.Field, applyDefaults bool) error {
 	for _, f := range fields {
 		if f.Kind != "member" && f.Kind != "department" {
 			continue
 		}
-		if value, ok := values[f.ID]; ok && value != nil {
+		value, supplied := values[f.ID]
+		if !supplied && applyDefaults && len(f.Default) > 0 && string(f.Default) != "null" {
+			if err := json.Unmarshal(f.Default, &value); err != nil {
+				return ErrUnavailable
+			}
+			supplied = true
+		}
+		if supplied && value != nil {
 			id, valid := value.(string)
 			if !valid || !appfields.ValidID(id) {
 				return applications.ErrResourceInvalid
@@ -195,7 +202,7 @@ func (s *Service) Create(ctx context.Context, principal session.Principal, req C
 		Authorize: func(c context.Context, tx pgx.Tx, facts applications.RecordContext) error {
 			var menu bool
 			policy, menu = policyFor(facts)
-			if !menu || !facts.SchemaReady {
+			if !menu {
 				return applications.ErrDenied
 			}
 			var ids []string
@@ -212,7 +219,10 @@ func (s *Service) Create(ctx context.Context, principal session.Principal, req C
 			if !policy.CanCreate(selected) {
 				return applications.ErrDenied
 			}
-			return validateNewReferences(c, tx, req.Values, fields)
+			if !facts.SchemaReady {
+				return &appstructure.Error{Code: "APPLICATION_SCHEMA_NOT_READY"}
+			}
+			return validateNewReferences(c, tx, req.Values, fields, true)
 		},
 	}
 	write, replayed, err := s.beginRecordMutation(ctx, principal, req.AppID, req.ViewID, req.QueryVersion, options)
@@ -442,7 +452,7 @@ func (s *Service) Edit(ctx context.Context, principal session.Principal, req Edi
 					return applications.ErrDenied
 				}
 			}
-			return validateNewReferences(c, tx, req.Changes, fields)
+			return validateNewReferences(c, tx, req.Changes, fields, false)
 		},
 	}
 	write, replayed, err := s.beginRecordMutation(ctx, principal, req.AppID, req.ViewID, req.QueryVersion, options)

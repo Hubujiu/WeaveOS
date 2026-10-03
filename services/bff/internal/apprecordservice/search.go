@@ -70,7 +70,12 @@ func (s *Service) Search(ctx context.Context, principal session.Principal, req S
 	if err != nil {
 		return SearchResult{}, err
 	}
+	var actual criteria
+	if json.Unmarshal(result.Criteria, &actual) != nil {
+		return SearchResult{}, ErrUnavailable
+	}
 	return SearchResult{Items: result.Items, Total: result.Total, QueryVersion: result.Version,
+		Page: req.Page, PageSize: req.PageSize, Sort: actual.Sort,
 		SchemaVersion: strategy.control.Schema, ViewVersion: strategy.control.View, PolicyRevision: strategy.control.Policy}, nil
 }
 
@@ -224,8 +229,28 @@ func (s *recordStrategy) canonical(raw json.RawMessage, saved bool) (json.RawMes
 		c.Sort, _ = json.Marshal(v)
 	}
 	if len(c.Quick) > 0 {
+		if saved {
+			var prior struct {
+				FieldIDs []string `json:"fieldIds"`
+			}
+			if json.Unmarshal(c.Quick, &prior) != nil {
+				return nil, appquery.ErrInvalid
+			}
+			known := make(map[string]bool, len(s.fields))
+			for _, field := range s.fields {
+				known[field.ID] = true
+			}
+			for _, id := range prior.FieldIDs {
+				if !known[id] {
+					return nil, querycontext.ErrChanged
+				}
+			}
+		}
 		quick, e := appquery.CompileQuickSearch(c.Quick, s.fields, s.policy, 1)
 		if e != nil {
+			if saved && errors.Is(e, appquery.ErrInvalid) {
+				return nil, querycontext.ErrChanged
+			}
 			return nil, e
 		}
 		c.Quick = quick.Canonical
@@ -266,13 +291,9 @@ func (s *recordStrategy) sql(c criteria) (appquery.SearchSQL, string, []any, err
 		predicate += " AND " + q.Predicate
 		args = append(args, q.Arguments...)
 	}
-	for _, id := range plan.Filter.ReferencedFields {
-		for _, field := range s.fields {
-			if field.ID == id && referenceRelation(field.Kind) != "" {
-				predicate += " AND EXISTS(SELECT 1 FROM " + referenceRelation(field.Kind) + " source WHERE source.id=" + referenceColumn(id) + ")"
-			}
-		}
-	}
+	// Typed UUID equality includes tombstones. Registry integrity is checked
+	// independently before Observe COUNT and during page hydration; adding an
+	// EXISTS here would hide missing sources before either check can see them.
 	return plan, predicate, args, nil
 }
 func (s *recordStrategy) selectSQL(raw json.RawMessage, full bool) (string, string, []any, error) {
@@ -336,6 +357,7 @@ func (s *recordStrategy) Page(ctx context.Context, tx pgx.Tx, raw json.RawMessag
 		if err = json.Unmarshal(raw, &item); err != nil {
 			return nil, err
 		}
+		item.AppID, item.TableID, item.ViewID, item.SchemaVersion = s.appID, s.tableID, s.viewID, s.control.Schema
 		items = append(items, item)
 	}
 	if err = rows.Err(); err != nil {

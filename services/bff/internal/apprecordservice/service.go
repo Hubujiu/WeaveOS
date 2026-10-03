@@ -81,18 +81,27 @@ type ReferenceDisplay struct {
 }
 type Record struct {
 	ID                string                                 `json:"id"`
+	AppID             string                                 `json:"appId"`
+	TableID           string                                 `json:"tableId"`
+	ViewID            string                                 `json:"viewId"`
 	CreatedBy         string                                 `json:"createdBy"`
 	CreatedAt         string                                 `json:"createdAt"`
 	UpdatedAt         string                                 `json:"updatedAt"`
 	RecordVersion     int64                                  `json:"recordVersion"`
+	SchemaVersion     int64                                  `json:"schemaVersion"`
 	Values            map[string]any                         `json:"values"`
 	ReferenceDisplays map[string]map[string]ReferenceDisplay `json:"referenceDisplays"`
 }
 type SearchResult struct {
-	Items                                      []Record
-	Total                                      int64
-	QueryVersion                               string
-	SchemaVersion, ViewVersion, PolicyRevision int64
+	Items          []Record        `json:"items"`
+	Total          int64           `json:"total"`
+	Page           int64           `json:"page"`
+	PageSize       int64           `json:"pageSize"`
+	Sort           json.RawMessage `json:"sort"`
+	QueryVersion   string          `json:"queryVersion"`
+	SchemaVersion  int64           `json:"schemaVersion"`
+	ViewVersion    int64           `json:"viewVersion"`
+	PolicyRevision int64           `json:"-"`
 }
 
 type CreateRequest struct {

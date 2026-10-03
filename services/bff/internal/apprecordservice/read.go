@@ -46,6 +46,7 @@ func (s *Service) GetRecord(ctx context.Context, principal session.Principal, ap
 	if err = json.Unmarshal(encoded, &item); err != nil {
 		return empty, err
 	}
+	item.AppID, item.TableID, item.ViewID, item.SchemaVersion = strategy.appID, strategy.tableID, strategy.viewID, strategy.control.Schema
 	items := []Record{item}
 	if err = strategy.hydrateReferences(ctx, tx, items); err != nil {
 		return empty, err

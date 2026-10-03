@@ -136,14 +136,24 @@ func (s *Service) UpdateDraft(ctx context.Context, principal session.Principal, 
 	if err != nil {
 		return empty, err
 	}
+	cleanup := len(req.Changes) == 0 && len(req.RemoveFieldIDs) > 0
 	current, owner, err := currentDraftBase(ctx, write.Tx(), facts.TableID, target)
 	if err != nil {
-		return empty, err
+		if !cleanup || !errors.Is(err, appdrafts.ErrBaseConflict) {
+			return empty, err
+		}
+		// The old target vanished. The Session owner may only remove existing
+		// draft keys; no old value is projected without a live target owner.
+		current, owner = nil, ""
 	}
-	if schema != facts.SchemaVersion || target != nil && (base == nil || current == nil || *base != *current) {
+	if (schema != facts.SchemaVersion || target != nil && (base == nil || current == nil || *base != *current)) && !cleanup {
 		return empty, appdrafts.ErrBaseConflict
 	}
 	access := draftAccess(facts, policy, fields, current, owner)
+	if cleanup && target != nil && owner == "" {
+		access.ResourceAllowed = true
+		access.Field = func(string) appdrafts.FieldStatus { return appdrafts.FieldStatus{} }
+	}
 	draft, err := draftStore().UpdateInTx(ctx, write.Tx(), access, req.DraftID, appdrafts.Update{ExpectedDraftVersion: req.ExpectedDraftVersion, Changes: req.Changes, RemoveFieldIDs: req.RemoveFieldIDs})
 	if err != nil {
 		return empty, err

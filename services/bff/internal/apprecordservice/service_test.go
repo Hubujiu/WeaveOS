@@ -13,6 +13,7 @@ import (
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appdrafts"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
@@ -29,6 +30,14 @@ type recordFixture struct {
 	actor, other, app, table, view, public, secret, reference, ownRecord, otherRecord string
 	principal                                                                         session.Principal
 	service                                                                           *Service
+}
+
+type failingAdvanceClient struct{ redis.UniversalClient }
+
+func (f failingAdvanceClient) HGet(ctx context.Context, key, field string) *redis.StringCmd {
+	cmd := redis.NewStringCmd(ctx)
+	cmd.SetErr(errors.New("injected Redis Advance failure"))
+	return cmd
 }
 
 func newRecordFixture(t *testing.T) recordFixture {
@@ -179,6 +188,44 @@ func TestRestrictedRecordCreateReplaysMinimumAndUsesControlledDML(t *testing.T) 
 	}
 }
 
+func TestRestrictedCreateNotReadyAfterLiveAuthorization(t *testing.T) {
+	t.Run("authorized", func(t *testing.T) {
+		f := newRecordFixture(t)
+		if _, err := f.owner.Exec(f.ctx, "UPDATE applications.logical_tables SET schema_ready=false WHERE app_id=$1 AND id=$2", f.app, f.table); err != nil {
+			t.Fatal(err)
+		}
+		var op string
+		if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+			t.Fatal(err)
+		}
+		_, err := f.service.Create(f.ctx, f.principal, CreateRequest{AppID: f.app, ViewID: f.view, OperationID: op, ExpectedSchemaVersion: 1, Values: map[string]any{f.public: "pending"}}, applications.Metadata{RequestID: "v015-not-ready"})
+		var code *appstructure.Error
+		if !errors.As(err, &code) || code.Code != "APPLICATION_SCHEMA_NOT_READY" {
+			t.Fatalf("authorized unsaved schema: %v", err)
+		}
+	})
+	t.Run("unauthorized", func(t *testing.T) {
+		f := newRecordFixture(t)
+		if _, err := f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.create')", f.app); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := f.owner.Exec(f.ctx, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.create'", f.app); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := f.owner.Exec(f.ctx, "UPDATE applications.logical_tables SET schema_ready=false WHERE app_id=$1 AND id=$2", f.app, f.table); err != nil {
+			t.Fatal(err)
+		}
+		var op string
+		if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+			t.Fatal(err)
+		}
+		_, err := f.service.Create(f.ctx, f.principal, CreateRequest{AppID: f.app, ViewID: f.view, OperationID: op, ExpectedSchemaVersion: 1, Values: map[string]any{f.public: "pending"}}, applications.Metadata{RequestID: "v015-not-ready-denied"})
+		if !errors.Is(err, applications.ErrDenied) {
+			t.Fatalf("unauthorized schema status leaked: %v", err)
+		}
+	})
+}
+
 func TestRestrictedEditCASAndPendingFence(t *testing.T) {
 	f := newRecordFixture(t)
 	var op string
@@ -293,6 +340,150 @@ func TestRestrictedReferenceWriteRequiresActiveAuthoritativeSource(t *testing.T)
 	}
 }
 
+func TestRestrictedOmittedReferenceDefaultMustStillBeActive(t *testing.T) {
+	f := newRecordFixture(t)
+	var source, op string
+	for _, target := range []*string{&source, &op} {
+		if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(target); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := f.owner.Exec(f.ctx, "INSERT INTO auth.users(id,account) VALUES($1,$2)", source, "default-source-"+source); err != nil {
+		t.Fatal(err)
+	}
+	tx, err := f.owner.Begin(f.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(f.ctx)
+	physical, _ := json.Marshal(map[string]any{"ID": f.reference, "Type": "uuid", "Default": map[string]any{"Text": source}})
+	if _, err = tx.Exec(f.ctx, "SELECT applications.apply_schema_change($1,$2,$3,'alter_default',NULL,$4::jsonb)", f.other, f.app, f.table, physical); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = tx.Exec(f.ctx, "UPDATE applications.fields SET definition=jsonb_set(definition,'{default}',to_jsonb($2::text)) WHERE app_id=$1 AND id=$3", f.app, source, f.reference); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = tx.Exec(f.ctx, "UPDATE applications.logical_tables SET fields_json=jsonb_set(fields_json,'{2,default}',to_jsonb($3::text)),schema_version=2 WHERE app_id=$1 AND id=$2", f.app, f.table, source); err != nil {
+		t.Fatal(err)
+	}
+	if err = tx.Commit(f.ctx); err != nil {
+		t.Fatal(err)
+	}
+	// The actor can create a row but cannot explicitly write the reference
+	// field; the server-side physical default must still be validated.
+	if _, err = f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND field_id=$2 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.create')", f.app, f.reference); err != nil {
+		t.Fatal(err)
+	}
+	active, err := f.service.Create(f.ctx, f.principal, CreateRequest{AppID: f.app, ViewID: f.view, OperationID: op, ExpectedSchemaVersion: 2, Values: map[string]any{}}, applications.Metadata{RequestID: "v015-active-default"})
+	if err != nil || active.RecordVersion != 1 {
+		t.Fatalf("active default failed %+v %v", active, err)
+	}
+	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
+	column := pgx.Identifier{"f_" + strings.ReplaceAll(f.reference, "-", "")}.Sanitize()
+	var actual string
+	if err = f.runtime.QueryRow(f.ctx, "SELECT "+column+"::text FROM "+relation+" WHERE id=$1", active.ID).Scan(&actual); err != nil || actual != source {
+		t.Fatalf("physical default missing %s %v", actual, err)
+	}
+	if _, err = f.owner.Exec(f.ctx, "UPDATE auth.users SET status='disabled' WHERE id=$1", source); err != nil {
+		t.Fatal(err)
+	}
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	var before int
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM "+relation).Scan(&before); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.service.Create(f.ctx, f.principal, CreateRequest{AppID: f.app, ViewID: f.view, OperationID: op, ExpectedSchemaVersion: 2, Values: map[string]any{}}, applications.Metadata{RequestID: "v015-disabled-default"}); !errors.Is(err, applications.ErrResourceInvalid) {
+		t.Fatalf("disabled default inserted: %v", err)
+	}
+	var after, audit, confirmed int
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM "+relation).Scan(&after); err != nil || after != before {
+		t.Fatalf("failed default changed records %d/%d %v", before, after, err)
+	}
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_write_audit WHERE app_id=$1", f.app).Scan(&audit); err != nil || audit != 1 {
+		t.Fatalf("failed default wrote audit %d %v", audit, err)
+	}
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2 AND result_json IS NOT NULL", f.actor, op).Scan(&confirmed); err != nil || confirmed != 0 {
+		t.Fatalf("failed default confirmed operation %d %v", confirmed, err)
+	}
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	kept, err := f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: active.ID, OperationID: op, ExpectedSchemaVersion: 2, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "updated"}}, applications.Metadata{RequestID: "v015-old-reference-kept"})
+	if err != nil || kept.RecordVersion != 2 {
+		t.Fatalf("unchanged old reference blocked %+v %v", kept, err)
+	}
+}
+
+func TestRestrictedDefaultReferenceSerializesWithSourceDisable(t *testing.T) {
+	f := newRecordFixture(t)
+	var source, op string
+	for _, target := range []*string{&source, &op} {
+		if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(target); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := f.owner.Exec(f.ctx, "INSERT INTO auth.users(id,account) VALUES($1,$2)", source, "racing-default-"+source); err != nil {
+		t.Fatal(err)
+	}
+	physical, _ := json.Marshal(map[string]any{"ID": f.reference, "Type": "uuid", "Default": map[string]any{"Text": source}})
+	tx, err := f.owner.Begin(f.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(f.ctx)
+	if _, err = tx.Exec(f.ctx, "SELECT applications.apply_schema_change($1,$2,$3,'alter_default',NULL,$4::jsonb)", f.other, f.app, f.table, physical); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = tx.Exec(f.ctx, "UPDATE applications.fields SET definition=jsonb_set(definition,'{default}',to_jsonb($2::text)) WHERE app_id=$1 AND id=$3", f.app, source, f.reference); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = tx.Exec(f.ctx, "UPDATE applications.logical_tables SET fields_json=jsonb_set(fields_json,'{2,default}',to_jsonb($3::text)),schema_version=2 WHERE app_id=$1 AND id=$2", f.app, f.table, source); err != nil {
+		t.Fatal(err)
+	}
+	if err = tx.Commit(f.ctx); err != nil {
+		t.Fatal(err)
+	}
+	// The real source trigger holds personnel revision locks until COMMIT.
+	sourceTx, err := f.owner.Begin(f.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sourceTx.Rollback(f.ctx)
+	if _, err = sourceTx.Exec(f.ctx, "UPDATE auth.users SET status='disabled' WHERE id=$1", source); err != nil {
+		t.Fatal(err)
+	}
+	result := make(chan error, 1)
+	go func() {
+		_, e := f.service.Create(f.ctx, f.principal, CreateRequest{AppID: f.app, ViewID: f.view, OperationID: op, ExpectedSchemaVersion: 2, Values: map[string]any{}}, applications.Metadata{RequestID: "v015-source-default-race"})
+		result <- e
+	}()
+	blocked := false
+	for i := 0; i < 50; i++ {
+		if err = f.owner.QueryRow(f.ctx, `SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' AND query LIKE '%personnel.lock_query_revisions()%')`).Scan(&blocked); err != nil {
+			t.Fatal(err)
+		}
+		if blocked {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if !blocked {
+		t.Fatal("record write never waited for the source revision lock")
+	}
+	if err = sourceTx.Commit(f.ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err = <-result; !errors.Is(err, applications.ErrResourceInvalid) {
+		t.Fatalf("write used pre-disable reference default after source COMMIT: %v", err)
+	}
+	var count int
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2", f.actor, op).Scan(&count); err != nil || count != 0 {
+		t.Fatalf("racing failed write claimed key %d %v", count, err)
+	}
+}
+
 func TestRestrictedDraftCreateIsExplicitAndDoesNotMutateRecord(t *testing.T) {
 	f := newRecordFixture(t)
 	var op string
@@ -380,6 +571,130 @@ func TestRestrictedDraftPatchNoopAndDiscardLedger(t *testing.T) {
 	}
 }
 
+func TestRestrictedDraftExplicitRemovalAfterSchemaAndBaseConflict(t *testing.T) {
+	f := newRecordFixture(t)
+	op := func() string {
+		t.Helper()
+		var id string
+		if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&id); err != nil {
+			t.Fatal(err)
+		}
+		return id
+	}
+	base := int64(1)
+	draft, err := f.service.CreateDraft(f.ctx, f.principal, DraftCreateRequest{AppID: f.app, ViewID: f.view, OperationID: op(), SchemaVersion: 1, TargetRecordID: &f.ownRecord, BaseRecordVersion: &base, Values: map[string]any{f.reference: f.other, f.public: "safe"}}, applications.Metadata{RequestID: "v015-conflict-create"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Fixture performs the physical drop and catalog update as one approved
+	// schema-change transaction, leaving the draft at its original binding.
+	tx, err := f.owner.Begin(f.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(f.ctx)
+	if _, err = tx.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND field_id=$2", f.app, f.reference); err != nil {
+		t.Fatal(err)
+	}
+	before, _ := json.Marshal(map[string]any{"ID": f.reference, "Type": "uuid"})
+	if _, err = tx.Exec(f.ctx, "SELECT applications.apply_schema_change($1,$2,$3,'drop_column',$4::jsonb,NULL)", f.other, f.app, f.table, before); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = tx.Exec(f.ctx, "UPDATE applications.fields SET removed=true WHERE app_id=$1 AND table_id=$2 AND id=$3", f.app, f.table, f.reference); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = tx.Exec(f.ctx, "UPDATE applications.logical_tables SET fields_json=fields_json - 2,schema_version=2 WHERE app_id=$1 AND id=$2", f.app, f.table); err != nil {
+		t.Fatal(err)
+	}
+	if err = tx.Commit(f.ctx); err != nil {
+		t.Fatal(err)
+	}
+	// The bound row has independently advanced, so both bindings conflict.
+	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
+	if _, err = f.owner.Exec(f.ctx, "UPDATE "+relation+" SET record_version=record_version+1 WHERE id=$1", f.ownRecord); err != nil {
+		t.Fatal(err)
+	}
+	read, err := f.service.GetDraft(f.ctx, f.principal, f.app, f.view, draft.ID)
+	if err != nil || !read.HasConflicts || read.SchemaVersion != 1 || read.BaseRecordVersion == nil || *read.BaseRecordVersion != 1 {
+		t.Fatalf("old binding lost %+v %v", read, err)
+	}
+	wantConflict := map[string]bool{"SCHEMA_CHANGED": false, "BASE_RECORD_CHANGED": false, "FIELD_REMOVED": false}
+	for _, conflict := range read.Conflicts {
+		if _, ok := wantConflict[conflict.Reason]; ok {
+			wantConflict[conflict.Reason] = true
+		}
+	}
+	for reason, found := range wantConflict {
+		if !found {
+			t.Fatalf("missing %s conflict %+v", reason, read.Conflicts)
+		}
+	}
+	if _, leaked := read.Values[f.reference]; leaked {
+		t.Fatalf("removed value leaked %+v", read)
+	}
+	if _, err = f.service.UpdateDraft(f.ctx, f.principal, DraftUpdateRequest{AppID: f.app, ViewID: f.view, DraftID: draft.ID, OperationID: op(), ExpectedDraftVersion: 1, Changes: map[string]any{f.public: "new"}}, applications.Metadata{RequestID: "v015-conflict-change"}); !errors.Is(err, appdrafts.ErrBaseConflict) {
+		t.Fatalf("stale binding accepted new value: %v", err)
+	}
+	key := op()
+	cleaned, err := f.service.UpdateDraft(f.ctx, f.principal, DraftUpdateRequest{AppID: f.app, ViewID: f.view, DraftID: draft.ID, OperationID: key, ExpectedDraftVersion: 1, Changes: map[string]any{}, RemoveFieldIDs: []string{f.reference}}, applications.Metadata{RequestID: "v015-conflict-remove"})
+	if err != nil || cleaned.DraftVersion != 2 || cleaned.SchemaVersion != 1 || !cleaned.HasConflicts || cleaned.BaseRecordVersion == nil || *cleaned.BaseRecordVersion != 1 {
+		t.Fatalf("explicit cleanup %+v %v", cleaned, err)
+	}
+	if _, leaked := cleaned.Values[f.reference]; leaked {
+		t.Fatalf("cleanup exposed removed value %+v", cleaned)
+	}
+	var payload []byte
+	if err = f.runtime.QueryRow(f.ctx, "SELECT values_json FROM applications.record_drafts WHERE id=$1", draft.ID).Scan(&payload); err != nil || strings.Contains(string(payload), f.reference) {
+		t.Fatalf("old key remains %s %v", payload, err)
+	}
+	var operations, audits int
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2 AND result_json IS NOT NULL", f.actor, key).Scan(&operations); err != nil || operations != 1 {
+		t.Fatalf("cleanup operation %d %v", operations, err)
+	}
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_write_audit WHERE app_id=$1", f.app).Scan(&audits); err != nil || audits != 0 {
+		t.Fatalf("cleanup wrote formal audit %d %v", audits, err)
+	}
+	missingKey := op()
+	if _, err = f.service.UpdateDraft(f.ctx, f.principal, DraftUpdateRequest{AppID: f.app, ViewID: f.view, DraftID: draft.ID, OperationID: missingKey, ExpectedDraftVersion: 2, RemoveFieldIDs: []string{f.reference}}, applications.Metadata{RequestID: "v015-nonexistent-remove"}); !errors.Is(err, appdrafts.ErrInvalid) {
+		t.Fatalf("removed a key absent from owner draft: %v", err)
+	}
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2", f.actor, missingKey).Scan(&operations); err != nil || operations != 0 {
+		t.Fatalf("missing-key cleanup confirmed %d %v", operations, err)
+	}
+}
+
+func TestRestrictedDraftExplicitRemovalAfterFieldGrantRevoke(t *testing.T) {
+	f := newRecordFixture(t)
+	var key string
+	if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&key); err != nil {
+		t.Fatal(err)
+	}
+	draft, err := f.service.CreateDraft(f.ctx, f.principal, DraftCreateRequest{AppID: f.app, ViewID: f.view, OperationID: key, SchemaVersion: 1, Values: map[string]any{f.public: "hidden"}}, applications.Metadata{RequestID: "v015-revoke-create"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND field_id=$2 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action IN ('data.create','data.edit'))", f.app, f.public); err != nil {
+		t.Fatal(err)
+	}
+	read, err := f.service.GetDraft(f.ctx, f.principal, f.app, f.view, draft.ID)
+	if err != nil || !read.HasConflicts {
+		t.Fatalf("revoked draft conflict %+v %v", read, err)
+	}
+	if len(read.Conflicts) != 1 || read.Conflicts[0].Reason != "FIELD_PERMISSION_REVOKED" {
+		t.Fatalf("revoked field conflict %+v", read.Conflicts)
+	}
+	if _, leaked := read.Values[f.public]; leaked {
+		t.Fatalf("revoked value leaked %+v", read)
+	}
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&key); err != nil {
+		t.Fatal(err)
+	}
+	cleaned, err := f.service.UpdateDraft(f.ctx, f.principal, DraftUpdateRequest{AppID: f.app, ViewID: f.view, DraftID: draft.ID, OperationID: key, ExpectedDraftVersion: 1, RemoveFieldIDs: []string{f.public}}, applications.Metadata{RequestID: "v015-revoke-remove"})
+	if err != nil || cleaned.DraftVersion != 2 || cleaned.HasConflicts || len(cleaned.Values) != 0 {
+		t.Fatalf("revoked key cleanup %+v %v", cleaned, err)
+	}
+}
+
 func TestRestrictedDraftReadOwnerCursorAndRecordDetail(t *testing.T) {
 	f := newRecordFixture(t)
 	var op string
@@ -405,6 +720,9 @@ func TestRestrictedDraftReadOwnerCursorAndRecordDetail(t *testing.T) {
 	record, err := f.service.GetRecord(f.ctx, f.principal, f.app, f.view, f.otherRecord)
 	if err != nil || record.Values[f.public] != "beta" {
 		t.Fatalf("record detail %+v %v", record, err)
+	}
+	if record.AppID != f.app || record.TableID != f.table || record.ViewID != f.view || record.SchemaVersion != 1 {
+		t.Fatalf("detail identity/control mismatch %+v", record)
 	}
 	if _, ok := record.Values[f.secret]; ok {
 		t.Fatalf("record detail leaked own-only field %+v", record)
@@ -460,6 +778,89 @@ func TestRestrictedQueryOnlyObservableChangesInvalidate(t *testing.T) {
 	}
 }
 
+func TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission(t *testing.T) {
+	t.Run("removed", func(t *testing.T) {
+		f := newRecordFixture(t)
+		quick := json.RawMessage(`{"term":"alpha","fieldIds":["` + f.public + `"]}`)
+		req := SearchRequest{AppID: f.app, ViewID: f.view, Page: 1, PageSize: 1, QuickSearch: quick}
+		first, err := f.service.Search(f.ctx, f.principal, req)
+		if err != nil || first.Total != 1 {
+			t.Fatalf("initial quick search %+v %v", first, err)
+		}
+		req.QueryVersion = first.QueryVersion
+		tx, err := f.owner.Begin(f.ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer tx.Rollback(f.ctx)
+		if _, err = tx.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND field_id=$2", f.app, f.public); err != nil {
+			t.Fatal(err)
+		}
+		before, _ := json.Marshal(map[string]any{"ID": f.public, "Type": "text"})
+		if _, err = tx.Exec(f.ctx, "SELECT applications.apply_schema_change($1,$2,$3,'drop_column',$4::jsonb,NULL)", f.other, f.app, f.table, before); err != nil {
+			t.Fatal(err)
+		}
+		if _, err = tx.Exec(f.ctx, "UPDATE applications.fields SET removed=true WHERE app_id=$1 AND table_id=$2 AND id=$3", f.app, f.table, f.public); err != nil {
+			t.Fatal(err)
+		}
+		if _, err = tx.Exec(f.ctx, "UPDATE applications.logical_tables SET fields_json=fields_json - 0,schema_version=2 WHERE app_id=$1 AND id=$2", f.app, f.table); err != nil {
+			t.Fatal(err)
+		}
+		if err = tx.Commit(f.ctx); err != nil {
+			t.Fatal(err)
+		}
+		if _, err = f.service.Search(f.ctx, f.principal, req); !errors.Is(err, querycontext.ErrChanged) {
+			t.Fatalf("removed saved quick field: %v", err)
+		}
+	})
+	t.Run("revoked", func(t *testing.T) {
+		f := newRecordFixture(t)
+		quick := json.RawMessage(`{"term":"alpha","fieldIds":["` + f.public + `"]}`)
+		req := SearchRequest{AppID: f.app, ViewID: f.view, Page: 1, PageSize: 1, QuickSearch: quick}
+		first, err := f.service.Search(f.ctx, f.principal, req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.QueryVersion = first.QueryVersion
+		if _, err = f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND field_id=$2 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.read' AND row_scope='all')", f.app, f.public); err != nil {
+			t.Fatal(err)
+		}
+		if _, err = f.service.Search(f.ctx, f.principal, req); !errors.Is(err, appquery.ErrForbidden) {
+			t.Fatalf("revoked saved quick field: %v", err)
+		}
+	})
+	t.Run("invalid incoming", func(t *testing.T) {
+		f := newRecordFixture(t)
+		if _, err := f.service.Search(f.ctx, f.principal, SearchRequest{AppID: f.app, ViewID: f.view, Page: 1, PageSize: 1, QuickSearch: json.RawMessage(`{"fieldIds":["` + f.public + `"]}`)}); !errors.Is(err, appquery.ErrInvalid) {
+			t.Fatalf("invalid incoming quick search: %v", err)
+		}
+	})
+}
+
+func TestRestrictedReferencePredicateMissingRegistryIsUnavailable(t *testing.T) {
+	f := newRecordFixture(t)
+	filter := json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + f.reference + `","operator":"eq","value":"` + f.other + `"}]}`)
+	req := SearchRequest{AppID: f.app, ViewID: f.view, Page: 1, PageSize: 2, Filter: filter}
+	if _, err := f.owner.Exec(f.ctx, "UPDATE applications.member_sources SET status='deleted' WHERE id=$1", f.other); err != nil {
+		t.Fatal(err)
+	}
+	tombstone, err := f.service.Search(f.ctx, f.principal, req)
+	if err != nil || tombstone.Total != 2 {
+		t.Fatalf("tombstone must remain searchable %+v %v", tombstone, err)
+	}
+	for _, row := range tombstone.Items {
+		if display, ok := row.ReferenceDisplays[f.reference][f.other]; !ok || !display.Deleted {
+			t.Fatalf("tombstone label missing %+v", row)
+		}
+	}
+	if _, err = f.owner.Exec(f.ctx, "DELETE FROM applications.member_sources WHERE id=$1", f.other); err != nil {
+		t.Fatal(err)
+	}
+	if result, err := f.service.Search(f.ctx, f.principal, req); !errors.Is(err, ErrUnavailable) {
+		t.Fatalf("missing source silently reduced COUNT to %d: %v", result.Total, err)
+	}
+}
+
 func TestRestrictedListWriteChecksSavedProjectionBeforeClaim(t *testing.T) {
 	f := newRecordFixture(t)
 	filter := json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + f.public + `","operator":"eq","value":"alpha"}]}`)
@@ -504,6 +905,62 @@ func TestRestrictedListWriteChecksSavedProjectionBeforeClaim(t *testing.T) {
 	}
 }
 
+func TestRestrictedAdvanceFailureOnlyReplaysConfirmedOriginalKey(t *testing.T) {
+	f := newRecordFixture(t)
+	filter := json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + f.public + `","operator":"eq","value":"alpha"}]}`)
+	first, err := f.service.Search(f.ctx, f.principal, SearchRequest{AppID: f.app, ViewID: f.view, Page: 1, PageSize: 1, Filter: filter})
+	if err != nil || first.Total != 1 {
+		t.Fatalf("baseline %+v %v", first, err)
+	}
+	var op string
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	confirmedReq := EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.otherRecord, OperationID: op, QueryVersion: first.QueryVersion, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "beta2"}}
+	confirmed, err := f.service.Edit(f.ctx, f.principal, confirmedReq, applications.Metadata{RequestID: "v015-confirmed-before-advance-fault"})
+	if err != nil || confirmed.RecordVersion != 2 {
+		t.Fatalf("confirmed setup %+v %v", confirmed, err)
+	}
+	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
+	column := pgx.Identifier{"f_" + strings.ReplaceAll(f.public, "-", "")}.Sanitize()
+	if _, err = f.owner.Exec(f.ctx, "UPDATE "+relation+" SET "+column+"='beta3',record_version=record_version+1 WHERE id=$1", f.otherRecord); err != nil {
+		t.Fatal(err)
+	}
+	opts, err := redis.ParseURL(os.Getenv("WEAVEOS_TEST_REDIS_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := redis.NewClient(opts)
+	t.Cleanup(func() { client.Close() })
+	fault := New(f.runtime, failingAdvanceClient{client}, "consumer-"+strings.ReplaceAll(f.app, "-", ""))
+	fault.Limits = f.service.Limits
+	replayed, err := fault.Edit(f.ctx, f.principal, confirmedReq, applications.Metadata{RequestID: "v015-confirmed-before-advance-fault"})
+	if err != nil || replayed != confirmed {
+		t.Fatalf("confirmed original key recovery %+v %v", replayed, err)
+	}
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	unconfirmedReq := EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.otherRecord, OperationID: op, QueryVersion: first.QueryVersion, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 3, Changes: map[string]any{f.public: "should-not-write"}}
+	if _, err = fault.Edit(f.ctx, f.principal, unconfirmedReq, applications.Metadata{RequestID: "v015-unconfirmed-advance-fault"}); err == nil || err.Error() != "injected Redis Advance failure" {
+		t.Fatalf("new business mutation after receipt failure: %v", err)
+	}
+	var count int
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2", f.actor, op).Scan(&count); err != nil || count != 0 {
+		t.Fatalf("unconfirmed key claimed %d %v", count, err)
+	}
+	var value string
+	if err = f.runtime.QueryRow(f.ctx, "SELECT "+column+" FROM "+relation+" WHERE id=$1", f.otherRecord).Scan(&value); err != nil || value != "beta3" {
+		t.Fatalf("unconfirmed mutation executed %q %v", value, err)
+	}
+	if _, err = f.owner.Exec(f.ctx, "UPDATE auth.users SET status='disabled' WHERE id=$1", f.actor); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = fault.Edit(f.ctx, f.principal, confirmedReq, applications.Metadata{RequestID: "v015-inactive-replay"}); !errors.Is(err, session.ErrUnauthorized) {
+		t.Fatalf("inactive Session recovered operation: %v", err)
+	}
+}
+
 func TestRestrictedRealRecordSearchMasksBeforeCountAndReusesContext(t *testing.T) {
 	f := newRecordFixture(t)
 	got, err := f.service.Search(f.ctx, f.principal, SearchRequest{AppID: f.app, ViewID: f.view, Page: 1, PageSize: 2})
@@ -513,7 +970,13 @@ func TestRestrictedRealRecordSearchMasksBeforeCountAndReusesContext(t *testing.T
 	if got.Total != 2 || len(got.Items) != 2 || got.QueryVersion == "" {
 		t.Fatalf("first page %+v", got)
 	}
+	if got.Page != 1 || got.PageSize != 2 || string(got.Sort) != "null" {
+		t.Fatalf("page controls %+v", got)
+	}
 	for _, item := range got.Items {
+		if item.AppID != f.app || item.TableID != f.table || item.ViewID != f.view || item.SchemaVersion != 1 {
+			t.Fatalf("page item identity/control mismatch %+v", item)
+		}
 		if item.CreatedBy == f.actor {
 			if item.Values[f.public] != "alpha" || item.Values[f.secret] != "private alpha" {
 				t.Fatalf("own row %+v", item)
