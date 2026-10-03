@@ -42,6 +42,11 @@ function fromDefinition(base:Definition):DefinitionInput {
   return {expectedSchemaVersion:base.table.schemaVersion,expectedViewVersion:base.form.viewVersion,
     fields:structuredClone(base.fields),layout:structuredClone(base.layout),optionMappings:[]};
 }
+function definitionDirty(base:Definition|null,draft:DefinitionInput|null):boolean {
+  return !!base&&!!draft&&(!base.table.schemaReady||
+    JSON.stringify(draft.fields)!==JSON.stringify(base.fields)||
+    JSON.stringify(draft.layout)!==JSON.stringify(base.layout)||draft.optionMappings.length>0);
+}
 function mapLayout(nodes:LayoutNodeInput[],fn:(node:LayoutNodeInput)=>LayoutNodeInput):LayoutNodeInput[]{
   return nodes.map(node=>fn(node.kind==='group'?{...node,children:mapLayout(node.children,fn)}:node));
 }
@@ -114,40 +119,54 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
   const [error,setError]=useState(restored?.phase==='saving'?'保存结果暂未确认，请查询原操作':restored?.error??''),
     [notice,setNotice]=useState(restored?.notice??''),[reload,setReload]=useState(0);
   const [permissionRevoked,setPermissionRevoked]=useState(restored?.permissionRevoked??false);
+  const [verified,setVerified]=useState(false),[verificationError,setVerificationError]=useState('');
   const requestKey=useRef(0);
   const alive=useRef(true);
   const scope=useRef(scopeKey);
+  const dirtyCallback=useRef(onDirtyChange);dirtyCallback.current=onDirtyChange;
   const reportAuth=(problem:unknown)=>{
     if(!(problem instanceof FormApiError))return;
+    if(problem.status===401||problem.status===403||problem.code==='AUTH_SESSION_CHANGED'){
+      setVerified(false);setVerificationError(formErrorText(problem));
+    }
     if(problem.status===401)onUnauthorized?.();
     else if(problem.code==='AUTH_SESSION_CHANGED')onIdentityMismatch?.();
   };
-  useEffect(()=>()=>{alive.current=false;requestKey.current++;},[]);
+  useEffect(()=>{alive.current=true;return()=>{alive.current=false;requestKey.current++;};},[]);
+  useEffect(()=>()=>{dirtyCallback.current?.(false);},[]);
   useLayoutEffect(()=>{draftMemory.set(scopeKey,{base,draft,phase,pending,permissionRevoked,error,notice,selected,group});},
     [scopeKey,base,draft,phase,pending,permissionRevoked,error,notice,selected,group]);
   useEffect(()=>{
-    if(reload===0&&draftMemory.get(scopeKey)?.base)return;
     const key=++requestKey.current,controller=new AbortController();
-    setPhase('loading');setBase(null);setDraft(null);setSelected(null);setGroup(null);
-    setPending(null);setImpact(null);setImpactStale(false);setImpactError('');setError('');setNotice('');setDialog(null);
-    setPermissionRevoked(false);
+    const preserve=!!base&&!!draft&&(definitionDirty(base,draft)||!!pending);
+    setVerified(false);setVerificationError('');
     void formApi.definition(appId,actorId,viewId,controller.signal).then(value=>{
       if(!alive.current||key!==requestKey.current)return;
-      setBase(value);setDraft(fromDefinition(value));setPhase('idle');
+      if(preserve&&!value.capabilities.canManageDefinition){
+        setPermissionRevoked(true);setVerificationError('没有表单配置权限，已隐藏原草稿与操作');return;
+      }
+      setPermissionRevoked(false);
+      if(preserve){
+        setError(pending?'保存结果暂未确认，请查询原操作或按原请求重试':'');
+        if(value.table.schemaVersion!==base.table.schemaVersion||value.form.viewVersion!==base.form.viewVersion)
+          setError('服务器配置版本已变化，原草稿仍保留；请核查原操作或手动决定是否放弃草稿');
+      }else{
+        setBase(value);setDraft(fromDefinition(value));setPhase('idle');setSelected(null);setGroup(null);
+        setPending(null);setImpact(null);setImpactStale(false);setImpactError('');setError('');setNotice('');setDialog(null);
+      }
+      setVerified(true);
     }).catch(problem=>{if(!alive.current||controller.signal.aborted||key!==requestKey.current)return;
       reportAuth(problem);
-      setError(formErrorText(problem));setPhase('idle');});
+      setVerificationError(formErrorText(problem));});
     return()=>{controller.abort();requestKey.current++;};
   },[appId,actorId,viewId,reload,scopeKey]);
-  const dirty=useMemo(()=>!!base&&!!draft&&(!base.table.schemaReady||
-    JSON.stringify(draft.fields)!==JSON.stringify(base.fields)||
-    JSON.stringify(draft.layout)!==JSON.stringify(base.layout)||draft.optionMappings.length>0),[base,draft]);
+  const dirty=useMemo(()=>definitionDirty(base,draft),[base,draft]);
   const uncertain=phase==='unconfirmed'||phase==='saving'&&!!pending;
   useEffect(()=>onDirtyChange?.(dirty||uncertain),[dirty,uncertain,onDirtyChange]);
   useEffect(()=>{if(!dirty&&!uncertain)return;const handler=(event:BeforeUnloadEvent)=>event.preventDefault();
     window.addEventListener('beforeunload',handler);return()=>window.removeEventListener('beforeunload',handler);},[dirty,uncertain]);
   const locked=phase==='preflight'||phase==='saving'||phase==='unconfirmed';
-  const editable=!!base?.capabilities.canManageDefinition&&!permissionRevoked&&!locked;
+  const editable=verified&&!!base?.capabilities.canManageDefinition&&!permissionRevoked&&!locked;
   const field=draft?.fields.find(item=>item.id===selected);
   const node=draft&&selected?findNode(draft.layout,selected):undefined;
   const fieldNode=draft&&field?findFieldNode(draft.layout,field.id):undefined;
@@ -223,14 +242,18 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
   };
   const accepted=(value:{definition:Definition})=>{setBase(value.definition);setDraft(fromDefinition(value.definition));
     setPending(null);setImpact(null);setImpactStale(false);setImpactError('');setDialog(null);setPhase('idle');setError('');setNotice('已保存');};
-  const commit=async(input:SaveWrite)=>{const current=scope.current;setPending(input);setPhase('saving');setDialog(null);setError('');
+  const commit=async(input:SaveWrite,wasUnknown=false)=>{const current=scope.current;
+    const cached=draftMemory.get(scopeKey);if(cached)draftMemory.set(scopeKey,{...cached,pending:input,phase:'saving'});
+    setPending(input);setPhase('saving');setDialog(null);setError('');
     try{const saved=await formApi.save(appId,actorId,base!.table.id,viewId,input);if(!alive.current||scope.current!==current)return;accepted(saved);}
     catch(problem){if(!alive.current||scope.current!==current)return;
       reportAuth(problem);
       if(unknownWrite(problem)){setPhase('unconfirmed');setError('保存结果暂未确认，请查询原操作或按原请求重试');}
+      else if(wasUnknown){setPhase('unconfirmed');setError(`原保存仍未确认：${formErrorText(problem)}`);
+        if(problem instanceof FormApiError&&problem.status===403)setPermissionRevoked(true);}
       else{setPhase('idle');setPending(null);setError(formErrorText(problem));
         if(problem instanceof FormApiError&&problem.status===403)setPermissionRevoked(true);
-        if(problem instanceof FormApiError&&problem.status===409)setDialog('conflict');}}
+        if(problem instanceof FormApiError&&problem.status===409&&problem.code!=='AUTH_SESSION_CHANGED')setDialog('conflict');}}
   };
   const save=async()=>{if(!draft||!editable)return;const current=scope.current;setPhase('preflight');setError('');setNotice('');
     try{const plan=await formApi.preflight(appId,actorId,base.table.id,viewId,draft);if(!alive.current||scope.current!==current)return;
@@ -255,6 +278,10 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
       setError(problem instanceof FormApiError&&problem.status===404?
       '暂未查到原操作；这不能证明保存已回滚，可按原请求重试':formErrorText(problem));}
   };
+  if(!verified)return <section className="forms-module forms-loading" role="status">
+    {verificationError?<><p role="alert">{verificationError}</p>
+      <button type="button" onClick={()=>{setVerificationError('');setReload(value=>value+1);}}>重试</button></>:
+      '正在验证表单访问权限…'}</section>;
   if(phase==='loading')return <section className="forms-module forms-loading" role="status">正在加载表单定义…</section>;
   if(!base||!draft)return <section className="forms-module forms-loading"><p role="alert">{error||'无法读取表单定义'}</p>
     <button type="button" onClick={()=>setReload(value=>value+1)}>重试</button></section>;
@@ -296,7 +323,7 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
       <div className="forms-toolbar-actions">
         {(phase==='preflight'||phase==='saving')&&<span role="status">{phase==='preflight'?'正在预检…':'正在保存…'}</span>}
         {phase==='unconfirmed'&&<><button type="button" onClick={()=>void checkOriginal()}>查询保存结果</button>
-          <button type="button" disabled={permissionRevoked} onClick={()=>pending&&void commit(pending)}>按原请求重试</button></>}
+          <button type="button" disabled={permissionRevoked} onClick={()=>pending&&void commit(pending,true)}>按原请求重试</button></>}
         <button type="button" onClick={()=>setDialog('preview')}>预览</button>
         <button type="button" className="forms-primary" disabled={!editable} onClick={()=>void save()}>保存</button>
       </div></div>
@@ -330,7 +357,8 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
             onChange={event=>{const kind=event.target.value as FieldKind;
               setDraft(previous=>previous?{...previous,fields:previous.fields.map(item=>item.id===field.id&&item.kind!==kind
                 ?{...makeField(kind),id:item.id,name:item.name,required:item.required,
-                  presentation:item.presentation,default:null}:item)}:previous);
+                  presentation:{...item.presentation,displayTimeZone:kind==='datetime'&&item.kind==='datetime'
+                    ?item.presentation.displayTimeZone:null},default:null}:item)}:previous);
               setNotice('');}}>
             {palette.filter(entry=>dataKind(entry.kind)).map(entry=><option key={entry.kind}
               value={entry.kind}>{entry.label}</option>)}</select></label>
@@ -430,13 +458,23 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
     {dialog==='dirty'&&<FormsDialog title={uncertain?'保存结果未确认':'结构或布局尚未保存'} onClose={()=>setDialog(null)}>
       <p>{uncertain?'离开前请查询原操作结果；当前草稿和原操作号将在此浏览器页面中保留。':'离开将放弃此处未保存的修改。'}</p><div className="forms-dialog-actions">
         <button type="button" data-forms-close>继续编辑</button>
-        <button type="button" className="forms-danger" onClick={()=>{setDialog(null);onBack?.();}}>
+        <button type="button" className="forms-danger" onClick={()=>{
+          setDialog(null);
+          if(!uncertain){const clean=fromDefinition(base),cached=draftMemory.get(scopeKey);
+            if(cached)draftMemory.set(scopeKey,{...cached,draft:clean,pending:null,phase:'idle',error:''});
+            setDraft(clean);setPending(null);setImpact(null);setError('');}
+          onBack?.();}}>
           {uncertain?'离开并保留待核查操作':'放弃修改并离开'}</button>
       </div></FormsDialog>}
     {dialog==='conflict'&&<FormsDialog title="配置版本已变化" onClose={()=>setDialog(null)}>
       <p>其他编辑者已修改此表单。当前输入仍保留，请核对服务器最新定义。</p>
       <div className="forms-dialog-actions"><button type="button" data-forms-close>继续查看我的输入</button>
-        <button type="button" onClick={()=>{setDialog(null);setReload(value=>value+1);}}>放弃草稿并加载最新版</button></div>
+        <button type="button" onClick={()=>{
+          draftMemory.delete(scopeKey);
+          setVerified(false);setBase(null);setDraft(null);setPhase('loading');
+          setPending(null);setImpact(null);setSelected(null);setGroup(null);
+          setError('');setNotice('');setDialog(null);setReload(value=>value+1);
+        }}>放弃草稿并加载最新版</button></div>
     </FormsDialog>}
   </section>;
 }

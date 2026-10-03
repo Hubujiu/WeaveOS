@@ -286,7 +286,7 @@ test('keyboard can move an existing field into a group with the same ordered 12-
   expect(layout[0]).toMatchObject({kind:'group',span:12,children:[{kind:'field',span:6}]});
 });
 
-test('permission revoked during Save keeps the draft but stops further configuration writes',async({page})=>{
+test('permission revoked during Save masks the retained draft until access is reverified',async({page})=>{
   const state=await fixture(page);
   let writes=0;
   await page.route('**/definition',route=>{if(route.request().method()!=='PUT')return route.fallback();writes++;
@@ -295,9 +295,11 @@ test('permission revoked during Save keeps the draft but stops further configura
   await page.getByLabel('字段名称').fill('保留草稿');
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('没有此应用的表单配置权限');
-  await expect(page.getByLabel('字段名称')).toHaveValue('保留草稿');
+  await expect(page.getByLabel('字段名称')).toHaveCount(0);
   await capture(page,test.info().outputPath('permission-revoked.png'));
-  await expect(page.getByRole('button',{name:'保存',exact:true})).toBeDisabled();
+  await page.unroute('**/definition');
+  await page.getByRole('button',{name:'重试'}).click();
+  await expect(page.getByLabel('字段名称')).toHaveValue('保留草稿');
   expect(writes).toBe(1);
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
 });
@@ -350,6 +352,14 @@ test('dirty exit and CAS conflict require an explicit decision while preserving 
   await expect(page.getByRole('dialog',{name:'配置版本已变化'})).toBeVisible();
   await expect(page.getByLabel('字段名称')).toHaveValue('并发中的草稿');
   await capture(page,test.info().outputPath('schema-conflict.png'));
+  await page.route(`**/forms/${viewId}/definition`,route=>route.request().method()==='GET'
+    ?route.fulfill({json:ok({...definition,table:{...table,schemaVersion:2,schemaReady:true},
+      form:{...form,viewVersion:2,name:'服务器新版'}})})
+    :route.fallback());
+  await page.getByRole('button',{name:'放弃草稿并加载最新版'}).click();
+  await expect(page.getByRole('heading',{name:'服务器新版'})).toBeVisible();
+  await expect(page.getByText('并发中的草稿')).toHaveCount(0);
+  await expect(page.getByText('未保存', {exact:true})).toHaveCount(0);
 });
 
 test('structure CAS conflict keeps the entered name and offers an explicit latest-version reload',async({page})=>{
@@ -365,9 +375,14 @@ test('structure CAS conflict keeps the entered name and offers an explicit lates
   await expect(page.getByLabel('目录名称')).toHaveValue('待核对目录');
   await expect(page.getByRole('button',{name:'放弃输入并加载最新版'})).toBeVisible();
   await capture(page,test.info().outputPath('structure-conflict.png'));
+  await page.route(`**/applications/${appId}/structure`,route=>route.fulfill({json:ok({...structure,
+    structureVersion:3,directories:[{id:folderId,appId,name:'服务器新版目录',parentId:null,position:0}]})}));
+  await page.getByRole('button',{name:'放弃输入并加载最新版'}).click();
+  await expect(page.getByRole('treeitem',{name:'服务器新版目录'})).toBeVisible();
+  await expect(page.getByText('待核对目录')).toHaveCount(0);
 });
 
-test('structure write permission revocation disables further directory and form mutations',async({page})=>{
+test('structure write permission revocation masks retained input until access is reverified',async({page})=>{
   await fixture(page,'structure');
   await page.route('**/directories',route=>route.request().method()==='POST'
     ?route.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',message:'forbidden',data:null,meta:{requestId:'denied'}}})
@@ -375,11 +390,11 @@ test('structure write permission revocation disables further directory and form 
   await page.getByRole('button',{name:'新建目录'}).click();
   await page.getByLabel('目录名称').fill('保留输入');
   await page.getByRole('button',{name:'创建目录'}).click();
-  await expect(page.getByRole('dialog')).toContainText('没有此应用的表单配置权限');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('alert')).toContainText('没有此应用的表单配置权限');
+  await page.unroute('**/directories');
+  await page.getByRole('button',{name:'重试'}).click();
   await expect(page.getByLabel('目录名称')).toHaveValue('保留输入');
-  await page.getByRole('button',{name:'取消'}).click();
-  await expect(page.getByRole('button',{name:'新建目录'})).toBeDisabled();
-  await expect(page.getByRole('button',{name:'新建表单'})).toBeDisabled();
 });
 
 test('late directory create for an old app cannot replace the selected app tree',async({page})=>{
@@ -647,13 +662,18 @@ test('401 and actor mismatch are handed to Shell without losing the designer dra
   await page.getByLabel('字段名称').fill('待恢复');
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('登录已失效');
-  await expect(page.getByLabel('字段名称')).toHaveValue('待恢复');
+  await expect(page.getByLabel('字段名称')).toHaveCount(0);
   expect(await page.evaluate(()=>(window as Window & {__formsHarnessAuthEvents?:string[]}).__formsHarnessAuthEvents)).toContain('401');
   await page.unroute('**/definition/preflight');
+  await page.getByRole('button',{name:'重试'}).click();
+  await expect(page.getByLabel('字段名称')).toHaveValue('待恢复');
   await page.route('**/definition/preflight',route=>route.fulfill({status:409,json:{code:'AUTH_SESSION_CHANGED',message:'',data:null,meta:{}}}));
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('当前账号已变化');
   expect(await page.evaluate(()=>(window as Window & {__formsHarnessAuthEvents?:string[]}).__formsHarnessAuthEvents)).toContain('AUTH_SESSION_CHANGED');
+  await expect(page.getByLabel('字段名称')).toHaveCount(0);
+  await page.unroute('**/definition/preflight');
+  await page.getByRole('button',{name:'重试'}).click();
   await expect(page.getByLabel('字段名称')).toHaveValue('待恢复');
 });
 
@@ -936,6 +956,24 @@ test('cached designer draft is masked when return GET is forbidden',async({page}
   expect(rechecks).toBeGreaterThan(0);
 });
 
+test('StrictMode auth-route unmount and same actor return reverify before restoring input',async({page})=>{
+  await fixture(page,'designer',definition,structure,true);
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('重新登录后恢复');
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(false));
+  await expect.poll(()=>page.evaluate(()=>(window as Window&{__formsStrictDirty?:boolean}).__formsStrictDirty)).toBe(false);
+  await page.route(`**/forms/${viewId}/definition`,route=>route.fulfill({status:401,
+    json:{code:'AUTH_REQUIRED',message:'',data:null,meta:{}}}));
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(true));
+  await expect(page.getByRole('alert')).toContainText('登录');
+  await expect(page.getByText('重新登录后恢复')).toHaveCount(0);
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(false));
+  await page.unroute(`**/forms/${viewId}/definition`);
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(true));
+  await expect(page.getByLabel('字段名称')).toHaveValue('重新登录后恢复');
+  await expect.poll(()=>page.evaluate(()=>(window as Window&{__formsStrictDirty?:boolean}).__formsStrictDirty)).toBe(true);
+});
+
 test('cached designer masks on auth version rejection and same actor reauth restores draft',async({page})=>{
   await fixture(page);
   await page.getByRole('button',{name:'文本',exact:true}).click();
@@ -952,6 +990,26 @@ test('cached designer masks on auth version rejection and same actor reauth rest
   await page.unroute(`**/forms/${viewId}/definition`);
   await page.getByRole('button',{name:'重试'}).click();
   await expect(page.getByLabel('字段名称')).toHaveValue('A 待恢复草稿');
+});
+
+test('cached designer masks a changed actor guard before showing any old field',async({page})=>{
+  await fixture(page);
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('A 受保护草稿');
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),
+    '00000000-0000-4000-8000-000000000337');
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await page.route(`**/forms/${viewId}/definition`,route=>route.fulfill({status:409,
+    json:{code:'AUTH_SESSION_CHANGED',message:'',data:null,meta:{}}}));
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),viewId);
+  await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+  await expect(page.getByRole('alert')).toContainText('当前账号已变化');
+  await expect(page.getByText('A 受保护草稿')).toHaveCount(0);
+  expect(await page.evaluate(()=>(window as Window&{__formsHarnessAuthEvents?:string[]}).__formsHarnessAuthEvents))
+    .toContain('AUTH_SESSION_CHANGED');
+  await page.unroute(`**/forms/${viewId}/definition`);
+  await page.getByRole('button',{name:'重试'}).click();
+  await expect(page.getByLabel('字段名称')).toHaveValue('A 受保护草稿');
 });
 
 test('cached designer masks server GET failure then preserves draft after retry',async({page})=>{
@@ -971,6 +1029,29 @@ test('cached designer masks server GET failure then preserves draft after retry'
   await expect(page.getByLabel('字段名称')).toHaveValue('未覆盖输入');
 });
 
+test('revalidated newer definition warns and keeps dirty versions without rebasing',async({page})=>{
+  const seeded:Definition={...definition,table:{...table,schemaReady:true,schemaVersion:1},
+    form:{...form,viewVersion:1}};
+  await fixture(page,'designer',seeded);
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('本地编辑');
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),
+    '00000000-0000-4000-8000-000000000338');
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await page.route(`**/forms/${viewId}/definition`,route=>route.fulfill({json:ok({...seeded,
+    table:{...seeded.table,schemaVersion:2},form:{...seeded.form,viewVersion:2,name:'服务器新版'},
+    fields:[],layout:[]})}));
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),viewId);
+  await expect(page.getByRole('alert')).toContainText('服务器配置版本已变化');
+  await expect(page.getByLabel('字段名称')).toHaveValue('本地编辑');
+  let proposal:{expectedSchemaVersion:number;expectedViewVersion:number}|null=null;
+  await page.route('**/definition/preflight',route=>{proposal=route.request().postDataJSON();
+    return route.fulfill({status:409,json:{code:'APPLICATION_SCHEMA_CONFLICT',message:'',data:null,meta:{}}});});
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('配置已被其他编辑者修改');
+  expect(proposal).toMatchObject({expectedSchemaVersion:1,expectedViewVersion:1});
+});
+
 test('cached structure dialog is masked after permission revocation',async({page})=>{
   await fixture(page,'structure');
   await page.getByRole('button',{name:'新建目录'}).click();
@@ -985,6 +1066,25 @@ test('cached structure dialog is masked after permission revocation',async({page
   await expect(page.getByRole('alert')).toContainText('没有此应用');
 });
 
+test('revalidated newer structure retains original name and CAS version',async({page})=>{
+  await fixture(page,'structure');
+  await page.getByRole('button',{name:'新建目录'}).click();
+  await page.getByLabel('目录名称').fill('本地目录');
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),
+    '00000000-0000-4000-8000-000000000339');
+  await page.route(`**/applications/${appId}/structure`,route=>route.fulfill({json:ok({...structure,
+    structureVersion:1,directories:[{id:folderId,appId,name:'服务器目录',parentId:null,position:0}]})}));
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),appId);
+  await expect(page.getByLabel('目录名称')).toHaveValue('本地目录');
+  await expect(page.getByRole('alert')).toContainText('目录版本已变化');
+  let version:number|null=null;
+  await page.route('**/directories',route=>{version=(route.request().postDataJSON() as {expectedStructureVersion:number}).expectedStructureVersion;
+    return route.fulfill({status:409,json:{code:'APPLICATION_STRUCTURE_CONFLICT',message:'',data:null,meta:{}}});});
+  await page.getByRole('button',{name:'创建目录',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('配置已被其他编辑者修改');
+  expect(version).toBe(0);
+});
+
 for(const scenario of [
   {status:401,code:'AUTH_REQUIRED'},
   {status:403,code:'APPLICATION_FORBIDDEN'},
@@ -997,16 +1097,23 @@ for(const scenario of [
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('结果暂未确认');
   const originalId=state.seen.find(item=>item.method==='PUT')?.body?.operationId;
+  const originalPacket=state.seen.find(item=>item.method==='PUT')?.body;
+  let retryPacket:Record<string,unknown>|null=null;
   await page.route('**/definition',route=>route.request().method()==='PUT'
-    ?route.fulfill({status:scenario.status,json:{code:scenario.code,message:'',data:null,meta:{}}})
+    ?(retryPacket=route.request().postDataJSON(),route.fulfill({status:scenario.status,
+      json:{code:scenario.code,message:'',data:null,meta:{}}}))
     :route.fulfill({json:ok(definition)}));
   await page.getByRole('button',{name:'按原请求重试'}).click();
-  await expect(page.getByRole('button',{name:'查询保存结果'})).toBeVisible();
-  await expect(page.getByLabel('字段名称')).toHaveValue('原请求字段');
+  await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+  await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('dialog',{name:'配置版本已变化'})).toHaveCount(0);
   await page.unroute('**/definition');
+  await page.getByRole('button',{name:'重试'}).click();
+  await expect(page.getByRole('button',{name:'查询保存结果'})).toBeVisible();
+  await expect(page.getByLabel('字段名称')).toHaveValue('原请求字段');
   await page.getByRole('button',{name:'查询保存结果'}).click();
   await expect(page.getByRole('status')).toContainText('已保存');
+  expect(retryPacket).toEqual(originalPacket);
   expect(state.seen.find(item=>item.path.includes('/application-operations/'))?.path).toContain(String(originalId));
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(1);
 });
@@ -1028,6 +1135,40 @@ test('StrictMode guard clears on unmount while retaining an unknown Save packet'
   await expect(page.getByRole('button',{name:'查询保存结果'})).toBeVisible();
 });
 
+test('StrictMode structure guard clears on unmount while retaining the unknown operation',async({page})=>{
+  await fixture(page,'structure',definition,structure,true);
+  await page.route('**/directories',route=>route.abort('failed'));
+  await page.getByRole('button',{name:'新建目录'}).click();
+  await page.getByLabel('目录名称').fill('稍后核查目录');
+  await page.getByRole('button',{name:'创建目录',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+  await expect.poll(()=>page.evaluate(()=>(window as Window&{__formsStrictDirty?:boolean}).__formsStrictDirty)).toBe(true);
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(false));
+  await expect.poll(()=>page.evaluate(()=>(window as Window&{__formsStrictDirty?:boolean}).__formsStrictDirty)).toBe(false);
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(true));
+  await expect(page.getByLabel('目录名称')).toHaveValue('稍后核查目录');
+  await expect(page.getByRole('button',{name:'查询原操作结果'})).toBeVisible();
+});
+
+test('unknown structure retry denial retains original directory request after revalidation',async({page})=>{
+  await fixture(page,'structure');
+  await page.route('**/directories',route=>route.abort('failed'));
+  await page.getByRole('button',{name:'新建目录'}).click();
+  await page.getByLabel('目录名称').fill('原目录请求');
+  await page.getByRole('button',{name:'创建目录',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+  await page.unroute('**/directories');
+  await page.route('**/directories',route=>route.fulfill({status:403,
+    json:{code:'APPLICATION_FORBIDDEN',message:'',data:null,meta:{}}}));
+  await page.getByRole('button',{name:'按原请求重试'}).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('alert')).toContainText('没有此应用');
+  await page.unroute('**/directories');
+  await page.getByRole('button',{name:'重试'}).click();
+  await expect(page.getByLabel('目录名称')).toHaveValue('原目录请求');
+  await expect(page.getByRole('button',{name:'查询原操作结果'})).toBeVisible();
+});
+
 test('slow preflight is abandoned on Back before PUT and guard teardown is explicit',async({page})=>{
   const state=await fixture(page,'designer',definition,structure,true);
   let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
@@ -1045,6 +1186,18 @@ test('slow preflight is abandoned on Back before PUT and guard teardown is expli
   release();await page.waitForTimeout(80);
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
   await expect.poll(()=>page.evaluate(()=>(window as Window&{__formsStrictDirty?:boolean}).__formsStrictDirty)).toBe(false);
+});
+
+test('explicit discard removes an ordinary draft while an unknown packet is never discarded implicitly',async({page})=>{
+  await fixture(page,'designer',definition,structure,true);
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('已放弃字段');
+  await page.getByRole('button',{name:'返回工作台'}).click();
+  await page.getByRole('button',{name:'放弃修改并离开'}).click();
+  await expect.poll(()=>page.evaluate(()=>(window as Window&{__formsStrictDirty?:boolean}).__formsStrictDirty)).toBe(false);
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(true));
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await expect(page.getByText('已放弃字段')).toHaveCount(0);
 });
 
 test('datetime to non-datetime conversion clears timezone in preflight DTO',async({page})=>{

@@ -34,44 +34,67 @@ function ApplicationStructureScope({appId,actorId,onOpenForm,onDirtyChange,onUna
     [pending,setPending]=useState<Pending|null>(restored?.pending??null);
   const [conflict,setConflict]=useState(restored?.conflict??false),
     [permissionRevoked,setPermissionRevoked]=useState(restored?.permissionRevoked??false);
+  const [verified,setVerified]=useState(false),[verificationError,setVerificationError]=useState('');
   const [reload,setReload]=useState(0),request=useRef(0),scope=useRef(scopeKey),alive=useRef(true);
+  const dirtyCallback=useRef(onDirtyChange);dirtyCallback.current=onDirtyChange;
   const reportAuth=(problem:unknown)=>{
     if(!(problem instanceof FormApiError))return;
+    if(problem.status===401||problem.status===403||problem.code==='AUTH_SESSION_CHANGED'){
+      setVerified(false);setVerificationError(formErrorText(problem));
+    }
     if(problem.status===401)onUnauthorized?.();
     else if(problem.code==='AUTH_SESSION_CHANGED')onIdentityMismatch?.();
   };
-  useEffect(()=>()=>{alive.current=false;request.current++;},[]);
+  useEffect(()=>{alive.current=true;return()=>{alive.current=false;request.current++;};},[]);
+  useEffect(()=>()=>{dirtyCallback.current?.(false);},[]);
   useLayoutEffect(()=>{structureMemory.set(scopeKey,{structure,selected,dialog,name,parentId,source,error,notice,
     unconfirmed,pending,conflict,permissionRevoked});},[scopeKey,structure,selected,dialog,name,parentId,source,
     error,notice,unconfirmed,pending,conflict,permissionRevoked]);
-  useEffect(()=>{if(reload===0&&structureMemory.get(scopeKey)?.structure)return;
-    const current=++request.current,controller=new AbortController();setStructure(null);setError('');
-    setConflict(false);setPermissionRevoked(false);setSelected(null);setDialog(null);setName('');
-    setNotice('');setPending(null);setBusy(false);setUnconfirmed(false);
-    void formApi.structure(appId,actorId,controller.signal).then(value=>{if(alive.current&&current===request.current)setStructure(value);})
+  useEffect(()=>{
+    const current=++request.current,controller=new AbortController();
+    const preserve=!!pending||!!dialog&&!!name.trim();
+    setVerified(false);setVerificationError('');
+    void formApi.structure(appId,actorId,controller.signal).then(value=>{if(!alive.current||current!==request.current)return;
+      if(preserve&&!value.capabilities.canManageDefinition){
+        setPermissionRevoked(true);setVerificationError('没有目录与表单配置权限，已隐藏原输入与操作');return;
+      }
+      setPermissionRevoked(false);
+      if(preserve){
+        setError(pending?'操作结果暂未确认，请查询原操作或按原请求重试':'');
+        if(structure&&value.structureVersion!==structure.structureVersion)
+          setError('目录版本已变化，原输入仍保留；请核查原操作或手动决定是否放弃输入');
+      }else{
+        setStructure(value);setSelected(null);setDialog(null);setName('');setNotice('');
+        setPending(null);setBusy(false);setUnconfirmed(false);setConflict(false);setError('');
+      }
+      setVerified(true);
+    })
       .catch(problem=>{if(alive.current&&!controller.signal.aborted&&current===request.current){
-        reportAuth(problem);setError(formErrorText(problem));}});
+        reportAuth(problem);setVerificationError(formErrorText(problem));}});
     return()=>{controller.abort();request.current++;};},[appId,actorId,reload,scopeKey]);
   useEffect(()=>onDirtyChange?.(!!pending||!!dialog&&!!name.trim()),[dialog,name,pending,onDirtyChange]);
   const folder=structure?.directories.find(item=>selected?.kind==='directory'&&item.id===selected.id);
   const form=structure?.forms.find(item=>selected?.kind==='form'&&item.id===selected.id);
-  const canEdit=!!structure?.capabilities.canManageDefinition&&!permissionRevoked;
+  const canEdit=verified&&!!structure?.capabilities.canManageDefinition&&!permissionRevoked;
   const dirs=[...(structure?.directories??[])].sort((a,b)=>a.position-b.position);
   const open=(kind:Exclude<Dialog,null>,item?:{id:UUID;name:string;parentId?:UUID|null})=>{
     if(!canEdit||pending)return;setDialog(kind);setError('');setNotice('');setUnconfirmed(false);setPending(null);setConflict(false);
     setName(kind==='renameDirectory'||kind==='moveDirectory'||kind==='editForm'?item?.name??'':'');
     setParentId(kind==='directory'?item?.id??null:item?.parentId??null);setSource({kind:'new_table'});
   };
-  const refresh=()=>formApi.structure(appId,actorId).then(value=>{if(alive.current&&scope.current===scopeKey)setStructure(value);});
-  const apply=async(work:Pending)=>{const current=scope.current;setPending(work);setBusy(true);setError('');
+  const refresh=()=>formApi.structure(appId,actorId).then(value=>{if(alive.current&&scope.current===scopeKey)setStructure(value);})
+    .catch(problem=>{reportAuth(problem);throw problem;});
+  const apply=async(work:Pending,wasUnknown=false)=>{const current=scope.current;
+    const cached=structureMemory.get(scopeKey);if(cached)structureMemory.set(scopeKey,{...cached,pending:work});
+    setPending(work);setBusy(true);setError('');
     try{await work.run();if(!alive.current||scope.current!==current)return;
       setPending(null);setUnconfirmed(false);setConflict(false);setDialog(null);setName('');setNotice('已保存');
       try{await refresh();}catch(problem){if(alive.current&&scope.current===current)setError(`更改已确认，目录刷新失败：${formErrorText(problem)}`);}}
     catch(problem){if(!alive.current||scope.current!==current)return;reportAuth(problem);
-      if(problem instanceof FormApiError&&(problem.status===0||problem.status===408||problem.status>=500||
+      if(wasUnknown||problem instanceof FormApiError&&(problem.status===0||problem.status===408||problem.status>=500||
         problem.code==='APPLICATION_OPERATION_UNCONFIRMED')){
-      setUnconfirmed(true);setError('操作结果暂未确认；请查询原操作或按原请求重试');
-      }else{setError(formErrorText(problem));
+      setUnconfirmed(true);setError(`操作结果暂未确认；${formErrorText(problem)}`);
+      }else{setPending(null);setUnconfirmed(false);setError(formErrorText(problem));
         if(problem instanceof FormApiError&&problem.status===403)setPermissionRevoked(true);
         if(problem instanceof FormApiError&&problem.code==='APPLICATION_STRUCTURE_CONFLICT')setConflict(true);}}
     finally{if(alive.current&&scope.current===current)setBusy(false);}
@@ -136,6 +159,10 @@ function ApplicationStructureScope({appId,actorId,onOpenForm,onDirtyChange,onUna
         <li role="treeitem" aria-label={item.name} key={item.id}><div className="forms-tree-row">逻辑表 {item.name}</div></li>)}
     </ul>;
   };
+  if(!verified)return <section className="forms-module forms-loading" role="status">
+    {verificationError?<><p role="alert">{verificationError}</p>
+      <button type="button" onClick={()=>{setVerificationError('');setReload(value=>value+1);}}>重试</button></>:
+      '正在验证应用目录访问权限…'}</section>;
   if(!structure)return <section className="forms-module forms-loading" role="status">{error?<><p role="alert">{error}</p><button type="button" onClick={()=>setReload(value=>value+1)}>重试</button></>:'正在加载应用目录…'}</section>;
   return <section className="forms-module" aria-label="目录与视图管理">
     <div className="forms-structure-head"><div><strong>应用目录与视图</strong><p className="forms-muted">管理目录、逻辑表和表单视图</p></div>
@@ -171,11 +198,14 @@ function ApplicationStructureScope({appId,actorId,onOpenForm,onDirtyChange,onUna
           {structure.tables.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select>}</fieldset>}
       {error&&<p className="forms-alert" role="alert">{error}</p>}
       {conflict&&<div className="forms-dialog-actions"><button type="button" onClick={()=>{
-        setDialog(null);setName('');setSelected(null);setReload(value=>value+1);
+        structureMemory.delete(scopeKey);
+        setVerified(false);setStructure(null);setDialog(null);setName('');setSelected(null);
+        setPending(null);setUnconfirmed(false);setConflict(false);setError('');setNotice('');
+        setReload(value=>value+1);
       }}>放弃输入并加载最新版</button></div>}
       {unconfirmed&&pending?<div className="forms-dialog-actions">
         <button type="button" disabled={busy} onClick={()=>void check()}>查询原操作结果</button>
-        <button type="button" disabled={busy} onClick={()=>void apply(pending)}>按原请求重试</button></div>:
+        <button type="button" disabled={busy} onClick={()=>void apply(pending,true)}>按原请求重试</button></div>:
       <div className="forms-dialog-actions"><button type="button" data-forms-close disabled={busy}>取消</button>
         <button type="button" className="forms-primary" disabled={busy||!canEdit||conflict} onClick={()=>void submit()}>{dialog==='directory'?'创建目录':dialog==='form'?'创建表单':'保存变更'}</button></div>}
       </FormsDialog>}

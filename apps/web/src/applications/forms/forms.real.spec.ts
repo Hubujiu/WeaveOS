@@ -10,6 +10,7 @@ const cookie=`__Host-session=${bridge.sid}; __Host-csrf=${bridge.csrf}`;
 const headers={'Origin':'https://weaveos.test','Cookie':cookie,'X-CSRF-Token':bridge.csrf,'Content-Type':'application/json'};
 async function realApi(page:Page){
   let loseNextDirectoryResponse=false;
+  const seen:{method:string;path:string;body:unknown;status:number}[]=[];
   await page.route('**/api/v1/**',async route=>{
     const request=route.request();
     const target=bridge.url+new URL(request.url()).pathname;
@@ -17,6 +18,8 @@ async function realApi(page:Page){
       'X-Expected-Actor-Id':request.headers()['x-expected-actor-id']??''},
       body:request.postData()??undefined});
     const responseBody=Buffer.from(await result.arrayBuffer());
+    seen.push({method:request.method(),path:new URL(target).pathname,
+      body:request.postData()?JSON.parse(request.postData()!):null,status:result.status});
     if(loseNextDirectoryResponse&&request.method()==='POST'&&target.endsWith('/directories')){
       loseNextDirectoryResponse=false;
       await route.abort('failed');
@@ -24,7 +27,7 @@ async function realApi(page:Page){
     }
     await route.fulfill({status:result.status,headers:{'Content-Type':'application/json'},body:responseBody});
   });
-  return {loseDirectoryResponse:()=>{loseNextDirectoryResponse=true;}};
+  return {loseDirectoryResponse:()=>{loseNextDirectoryResponse=true;},seen};
 }
 async function structure():Promise<Structure>{
   const response=await fetch(bridge.url+`/api/v1/applications/${bridge.appId}/structure`,{headers});
@@ -127,4 +130,30 @@ test('real concurrent structure write returns CAS conflict without discarding en
   await expect(page.getByLabel('目录名称')).toHaveValue(name);
   await expect(page.getByRole('button',{name:'放弃输入并加载最新版'})).toBeVisible();
   expect((await structure()).directories.filter(item=>item.name===name)).toHaveLength(0);
+});
+
+test('real V013 preflight accepts a datetime to text proposal with cleared display timezone',async({page},info)=>{
+  const proxy=await realApi(page);
+  const name=`时区转换-${info.project.name}-${Date.now()}`;
+  await page.goto(`/src/applications/forms/harness.html?mode=structure&appId=${bridge.appId}&actorId=${bridge.actorId}`);
+  await page.getByRole('button',{name:'新建表单'}).click();
+  await page.getByLabel('表单名称').fill(name);
+  await page.getByRole('button',{name:'创建表单',exact:true}).click();
+  await expect(page.getByRole('treeitem',{name})).toBeVisible();
+  const view=(await structure()).forms.find(item=>item.name===name)!;
+  await page.goto(`/src/applications/forms/harness.html?mode=designer&appId=${bridge.appId}&viewId=${view.id}&actorId=${bridge.actorId}`);
+  await page.getByRole('button',{name:'日期时间',exact:true}).click();
+  await page.getByLabel('字段名称').fill('发生时间');
+  await page.getByLabel('展示时区').fill('Asia/Shanghai');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  await page.getByRole('button',{name:'发生时间 日期时间'}).click();
+  await page.getByLabel('字段类型').selectOption('text');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect.poll(()=>proxy.seen.filter(item=>item.method==='POST'&&item.path.endsWith('/definition/preflight')).length).toBe(2);
+  const proposal=proxy.seen.filter(item=>item.method==='POST'&&item.path.endsWith('/definition/preflight')).at(-1)!;
+  const fields=(proposal.body as {fields:{kind:string;presentation:{helpText:string|null;displayTimeZone:string|null}}[]}).fields;
+  expect(fields[0]).toMatchObject({kind:'text',presentation:{displayTimeZone:null}});
+  expect(proposal.status).toBe(200);
+  await expect(page.getByRole('status')).toContainText('已保存');
 });
