@@ -1,0 +1,34 @@
+[WebServer] (node:4270) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:4284) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:4317) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/forms/forms.component.spec.ts:227:1 › keyboard can move an existing field into a group with the same ordered 12-column layout (30.0s)
+
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:227:1 › keyboard can move an existing field into a group with the same ordered 12-column layout 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.selectOption: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByLabel('所属分组')
+
+
+      231 |   await page.getByRole('button',{name:'分组',exact:true}).click();
+      232 |   await page.getByRole('button',{name:'申请人 文本'}).click();
+    > 233 |   await page.getByLabel('所属分组').selectOption({label:'新建分组'});
+          |                                 ^
+      234 |   await page.getByLabel('字段宽度').selectOption('6');
+      235 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+      236 |   await expect(page.getByRole('status')).toContainText('已保存');
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:233:33
+
+    Error Context: test-results/applications-forms-forms.c-20698-me-ordered-12-column-layout-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:227:1 › keyboard can move an existing field into a group with the same ordered 12-column layout 

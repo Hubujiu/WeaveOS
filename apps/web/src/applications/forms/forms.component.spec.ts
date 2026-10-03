@@ -223,3 +223,19 @@ test('late preflight for an old view cannot open impact or write into the newly 
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
 });
+
+test('keyboard can move an existing field into a group with the same ordered 12-column layout',async({page})=>{
+  const state=await fixture(page);
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('申请人');
+  await page.getByRole('button',{name:'分组',exact:true}).click();
+  await page.getByRole('button',{name:'申请人 文本'}).click();
+  await page.getByLabel('所属分组').selectOption({label:'新建分组'});
+  await page.getByLabel('字段宽度').selectOption('6');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const saved=state.seen.find(item=>item.method==='PUT')?.body;
+  const layout=saved?.layout as {kind:string;children?:{kind:string;fieldId?:string;span?:number}[]}[];
+  expect(layout).toHaveLength(1);
+  expect(layout[0]).toMatchObject({kind:'group',span:12,children:[{kind:'field',span:6}]});
+});
