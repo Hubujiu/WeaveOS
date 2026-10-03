@@ -2,9 +2,11 @@ import {StrictMode,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {ApplicationStructurePanel} from './ApplicationStructurePanel';
 import {FormDesigner} from './FormDesigner';
+import {exposeHarnessGuard,registerHarnessGuard} from './guardHarness';
 
 const query=new URLSearchParams(location.search);
 function StrictHarness(){
+  exposeHarnessGuard(window);
   const [mounted,setMounted]=useState(true);
   const [dirty,setDirty]=useState(false);
   const [appId,setAppId]=useState(query.get('appId')??'');
@@ -22,8 +24,9 @@ function StrictHarness(){
   controls.__formsStrictDirty=dirty;
   if(!mounted)return null;
   return query.get('mode')==='structure'?<ApplicationStructurePanel appId={appId} actorId={actorId}
-      onDirtyChange={setDirty}/>:
+      onDirtyChange={setDirty} registerLeaveGuard={registerHarnessGuard}/>:
     <FormDesigner appId={appId} viewId={viewId} actorId={actorId} onDirtyChange={setDirty}
+      registerLeaveGuard={registerHarnessGuard}
       onBack={query.get('back')==='none'?undefined:()=>setMounted(false)}/>;
 }
 createRoot(document.getElementById('root')!).render(<StrictMode><StrictHarness/></StrictMode>);

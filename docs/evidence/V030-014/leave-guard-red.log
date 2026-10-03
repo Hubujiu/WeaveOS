@@ -1,0 +1,179 @@
+[WebServer] (node:103183) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:103197) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 6 tests using 1 worker
+
+(node:103230) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/6] [chromium] › src/applications/forms/forms.component.spec.ts:1220:1 › external designer discard clears the scoped draft before delayed unmount
+[chromium] › src/applications/forms/forms.component.spec.ts:1220:1 › external designer discard clears the scoped draft before delayed unmount
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:1220:1 › external designer discard clears the scoped draft before delayed unmount
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "draft"
+    Received: null
+
+      1223 |   await page.getByRole('button',{name:'文本',exact:true}).click();
+      1224 |   await page.getByLabel('字段名称').fill('外部已放弃草稿');
+    > 1225 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('draft');
+           |                                                                                    ^
+      1226 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:true});
+      1227 |   await expect(page.getByText('外部已放弃草稿')).toHaveCount(0);
+      1228 |   await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(false));
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1225:84
+
+    Error Context: test-results/forms.component-external-d-67987-raft-before-delayed-unmount-chromium/error-context.md
+
+
+(node:103299) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/6] [chromium] › src/applications/forms/forms.component.spec.ts:1234:1 › external structure discard clears entered directory before route remount
+[chromium] › src/applications/forms/forms.component.spec.ts:1234:1 › external structure discard clears entered directory before route remount
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+
+  2) [chromium] › src/applications/forms/forms.component.spec.ts:1234:1 › external structure discard clears entered directory before route remount
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "draft"
+    Received: null
+
+      1236 |   await page.getByRole('button',{name:'新建目录'}).click();
+      1237 |   await page.getByLabel('目录名称').fill('外部已放弃目录');
+    > 1238 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('draft');
+           |                                                                                    ^
+      1239 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:true});
+      1240 |   await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(false));
+      1241 |   await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(true));
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1238:84
+
+    Error Context: test-results/forms.component-external-s-9e57d-ectory-before-route-remount-chromium/error-context.md
+
+
+(node:103370) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/6] [chromium] › src/applications/forms/forms.component.spec.ts:1247:1 › external preflight discard cancels PUT while route unmount is delayed
+[chromium] › src/applications/forms/forms.component.spec.ts:1247:1 › external preflight discard cancels PUT while route unmount is delayed
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+
+  3) [chromium] › src/applications/forms/forms.component.spec.ts:1247:1 › external preflight discard cancels PUT while route unmount is delayed
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "preflight"
+    Received: null
+
+      1256 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+      1257 |   await firstStarted;
+    > 1258 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('preflight');
+           |                                                                                    ^
+      1259 |   const failed=page.waitForEvent('requestfailed',request=>request.url().endsWith('/definition/preflight'));
+      1260 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:true});
+      1261 |   await failed;release();
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1258:84
+
+    Error Context: test-results/forms.component-external-p-1662f-le-route-unmount-is-delayed-chromium/error-context.md
+
+
+(node:103440) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[4/6] [chromium] › src/applications/forms/forms.component.spec.ts:1266:1 › external leave retains an already sent unknown Save and its original key
+[chromium] › src/applications/forms/forms.component.spec.ts:1266:1 › external leave retains an already sent unknown Save and its original key
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+
+  4) [chromium] › src/applications/forms/forms.component.spec.ts:1266:1 › external leave retains an already sent unknown Save and its original key
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "unknown"
+    Received: null
+
+      1272 |   await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+      1273 |   const original=state.seen.find(item=>item.method==='PUT')!.body!.operationId;
+    > 1274 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('unknown');
+           |                                                                                    ^
+      1275 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:false,status:'unknown'});
+      1276 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('unknown');
+      1277 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('retain_operation'))).toEqual({ok:true});
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1274:84
+
+    Error Context: test-results/forms.component-external-l-18a8f-n-Save-and-its-original-key-chromium/error-context.md
+
+
+(node:103510) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[5/6] [chromium] › src/applications/forms/forms.component.spec.ts:1286:1 › StrictMode old same-scope unsubscribe cannot clear the current controller
+[chromium] › src/applications/forms/forms.component.spec.ts:1286:1 › StrictMode old same-scope unsubscribe cannot clear the current controller
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+
+  5) [chromium] › src/applications/forms/forms.component.spec.ts:1286:1 › StrictMode old same-scope unsubscribe cannot clear the current controller
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Matcher error: received value must be a number or bigint
+
+    Received has value: null
+
+      1288 |   await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+      1289 |   const current=await page.evaluate(()=>(window as GuardControl).__formsGuardActiveId?.());
+    > 1290 |   expect(current).toBeGreaterThan(1);
+           |                   ^
+      1291 |   await page.evaluate(()=>(window as GuardControl).__formsGuardOldUnsubscribe?.());
+      1292 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardActiveId?.())).toBe(current);
+      1293 | });
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1290:19
+
+    Error Context: test-results/forms.component-StrictMode-a0b34-lear-the-current-controller-chromium/error-context.md
+
+
+(node:103581) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[6/6] [chromium] › src/applications/forms/forms.component.spec.ts:1295:1 › external leave rejects a decision made before draft becomes preflight
+[chromium] › src/applications/forms/forms.component.spec.ts:1295:1 › external leave rejects a decision made before draft becomes preflight
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+
+  6) [chromium] › src/applications/forms/forms.component.spec.ts:1295:1 › external leave rejects a decision made before draft becomes preflight
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "draft"
+    Received: null
+
+      1302 |       impacts:[],dependencies:[],blockingIssues:[],saveAllowed:true,confirmation:null})});}catch{/* aborted */}});
+      1303 |   await page.getByRole('button',{name:'文本',exact:true}).click();
+    > 1304 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('draft');
+           |                                                                                    ^
+      1305 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+      1306 |   await firstStarted;
+      1307 |   expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:false,status:'preflight'});
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1304:84
+
+    Error Context: test-results/forms.component-external-l-77704-ore-draft-becomes-preflight-chromium/error-context.md
+
+
+  6 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:1220:1 › external designer discard clears the scoped draft before delayed unmount
+    [chromium] › src/applications/forms/forms.component.spec.ts:1234:1 › external structure discard clears entered directory before route remount
+    [chromium] › src/applications/forms/forms.component.spec.ts:1247:1 › external preflight discard cancels PUT while route unmount is delayed
+    [chromium] › src/applications/forms/forms.component.spec.ts:1266:1 › external leave retains an already sent unknown Save and its original key
+    [chromium] › src/applications/forms/forms.component.spec.ts:1286:1 › StrictMode old same-scope unsubscribe cannot clear the current controller
+    [chromium] › src/applications/forms/forms.component.spec.ts:1295:1 › external leave rejects a decision made before draft becomes preflight

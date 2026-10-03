@@ -27,6 +27,13 @@ async function capture(page:Page,path:string){
 }
 
 type Seen = {method:string;path:string;body:Record<string,unknown>|null;expectedActor:string|null};
+type GuardControl=Window&{
+  __formsGuardStatus?:()=>string|null;
+  __formsGuardPrepare?:(decision:'discard'|'retain_operation')=>{ok:boolean;status?:string}|null;
+  __formsGuardActiveId?:()=>number|null;
+  __formsGuardOldUnsubscribe?:()=>void;
+  __formsStrictMount?:(value:boolean)=>void;
+};
 async function fixture(page:Page, mode:'designer'|'structure'='designer', initialDefinition:Definition=definition,
   initialStructure:Structure=structure,strict=false,back:'normal'|'none'='normal') {
   const seen:Seen[]=[];
@@ -1208,6 +1215,100 @@ test('discard cancels a gated preflight even when onBack is absent and the desig
   await page.waitForTimeout(100);
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
   await expect(page.getByText('已保存',{exact:true})).toHaveCount(0);
+});
+
+test('external designer discard clears the scoped draft before delayed unmount',async({page})=>{
+  const seeded:Definition={...definition,table:{...table,schemaReady:true}};
+  await fixture(page,'designer',seeded,structure,true,'none');
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('外部已放弃草稿');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('draft');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:true});
+  await expect(page.getByText('外部已放弃草稿')).toHaveCount(0);
+  await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(false));
+  await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(true));
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await expect(page.getByText('外部已放弃草稿')).toHaveCount(0);
+});
+
+test('external structure discard clears entered directory before route remount',async({page})=>{
+  await fixture(page,'structure',definition,structure,true);
+  await page.getByRole('button',{name:'新建目录'}).click();
+  await page.getByLabel('目录名称').fill('外部已放弃目录');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('draft');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:true});
+  await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(false));
+  await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(true));
+  await expect(page.getByRole('region',{name:'目录与视图管理'})).toBeVisible();
+  await expect(page.getByLabel('目录名称')).toHaveCount(0);
+  await expect(page.getByText('外部已放弃目录')).toHaveCount(0);
+});
+
+test('external preflight discard cancels PUT while route unmount is delayed',async({page})=>{
+  const state=await fixture(page,'designer',definition,structure,true,'none');
+  let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  let started!:()=>void;const firstStarted=new Promise<void>(resolve=>{started=resolve;});
+  await page.route('**/definition/preflight',async route=>{started();await gate;
+    try{await route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,
+      dataRevision:0,dependencyRevision:0,plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},
+      impacts:[],dependencies:[],blockingIssues:[],saveAllowed:true,confirmation:null})});}catch{/* aborted */}});
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await firstStarted;
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('preflight');
+  const failed=page.waitForEvent('requestfailed',request=>request.url().endsWith('/definition/preflight'));
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:true});
+  await failed;release();
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+});
+
+test('external leave retains an already sent unknown Save and its original key',async({page})=>{
+  const state=await fixture(page,'designer',definition,structure,true,'none');
+  state.loseSaveResponse();
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('外部保留原请求');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+  const original=state.seen.find(item=>item.method==='PUT')!.body!.operationId;
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('unknown');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:false,status:'unknown'});
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('unknown');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('retain_operation'))).toEqual({ok:true});
+  await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(false));
+  await page.evaluate(()=>(window as GuardControl).__formsStrictMount?.(true));
+  await expect(page.getByLabel('字段名称')).toHaveValue('外部保留原请求');
+  await page.getByRole('button',{name:'查询保存结果'}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  expect(state.seen.find(item=>item.path.includes('/application-operations/'))?.path).toContain(String(original));
+});
+
+test('StrictMode old same-scope unsubscribe cannot clear the current controller',async({page})=>{
+  await fixture(page,'designer',definition,structure,true);
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  const current=await page.evaluate(()=>(window as GuardControl).__formsGuardActiveId?.());
+  expect(current).toBeGreaterThan(1);
+  await page.evaluate(()=>(window as GuardControl).__formsGuardOldUnsubscribe?.());
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardActiveId?.())).toBe(current);
+});
+
+test('external leave rejects a decision made before draft becomes preflight',async({page})=>{
+  const state=await fixture(page,'designer',definition,structure,true,'none');
+  let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  let started!:()=>void;const firstStarted=new Promise<void>(resolve=>{started=resolve;});
+  await page.route('**/definition/preflight',async route=>{started();await gate;
+    try{await route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,
+      dataRevision:0,dependencyRevision:0,plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},
+      impacts:[],dependencies:[],blockingIssues:[],saveAllowed:true,confirmation:null})});}catch{/* aborted */}});
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('draft');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await firstStarted;
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:false,status:'preflight'});
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardStatus?.())).toBe('preflight');
+  expect(await page.evaluate(()=>(window as GuardControl).__formsGuardPrepare?.('discard'))).toEqual({ok:true});
+  release();
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
 });
 
 test('explicit discard removes an ordinary draft while an unknown packet is never discarded implicitly',async({page})=>{
