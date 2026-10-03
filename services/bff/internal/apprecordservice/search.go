@@ -36,7 +36,9 @@ type recordStrategy struct {
 	ownerID                string
 	policy                 appaccess.Policy
 	fields                 []appquery.Field
+	definitions            []appfields.Field
 	control                revisions
+	draft                  bool
 }
 
 func referenceRelation(kind appquery.FieldKind) string {
@@ -149,7 +151,7 @@ func (s *recordStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
 		}
 	}
 	s.policy = appaccess.Policy{ActorID: s.principal.UserID, AppID: s.appID, OwnerID: s.ownerID, ViewID: s.viewID, ResourceExists: true, BootstrapAdmin: bootstrap, Grants: grants}
-	if s.policy.VisibleScope() == appaccess.None {
+	if !s.draft && s.policy.VisibleScope() == appaccess.None {
 		return fail(applications.ErrDenied)
 	}
 	rows, e := tx.Query(ctx, "SELECT definition FROM applications.fields WHERE app_id=$1 AND table_id=$2 AND NOT removed ORDER BY id", s.appID, s.tableID)
@@ -166,6 +168,7 @@ func (s *recordStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
 			break
 		}
 		s.fields = append(s.fields, appquery.Field{ID: field.ID, Kind: appquery.FieldKind(field.Kind)})
+		s.definitions = append(s.definitions, field)
 	}
 	if e == nil {
 		e = rows.Err()
@@ -173,6 +176,18 @@ func (s *recordStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
 	rows.Close()
 	if e != nil {
 		return fail(e)
+	}
+	if s.draft && !s.policy.CanCreate(nil) {
+		allowed := false
+		for _, field := range s.fields {
+			if s.policy.FieldScope(appaccess.Edit, field.ID) != appaccess.None {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			return fail(applications.ErrDenied)
+		}
 	}
 	if e = tx.QueryRow(ctx, "SELECT revision FROM applications.reference_source_revision WHERE singleton").Scan(&s.control.Source); errors.Is(e, pgx.ErrNoRows) {
 		return fail(ErrUnavailable)
