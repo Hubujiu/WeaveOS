@@ -3,6 +3,12 @@ import {workspaceApi,WorkspaceError} from './workspace-api';
 import type {MemberSearchInput,EventSearchInput,QueryPage,QueryRange} from './query-contracts';
 
 type Result<Row> = QueryPage<Row> & {range?:QueryRange};
+type ResourcePage = {items:unknown[];total:number;page:number;pageSize:number;queryVersion:string};
+export function useResourceQuery<Page extends ResourcePage,Input extends object>(
+ _resourceKey:string,_parameters:Input,initialPage:Page,_transport:(body:Input&{queryVersion?:string},signal:AbortSignal)=>Promise<Page>,
+):{data:Page;loading:boolean;error:Error|null;refresh:()=>void;recheck:()=>void;reject:(error:Error)=>void;prepareChange:(input:Input)=>Promise<(()=>boolean)|null>;blocked:boolean}{
+ return {data:initialPage,loading:false,error:null,refresh(){},recheck(){},reject(){},async prepareChange(){return null;},blocked:true};
+}
 export function usePersonnelQuery<Row>(view:'members'|'events',parameters:MemberSearchInput|EventSearchInput){
  const [data,setData]=useState<Result<Row>>({items:[],total:0,page:1,pageSize:20,queryVersion:'',sort:null});
  const [loading,setLoading]=useState(true),[error,setError]=useState<WorkspaceError|null>(null),[epoch,setEpoch]=useState(0);

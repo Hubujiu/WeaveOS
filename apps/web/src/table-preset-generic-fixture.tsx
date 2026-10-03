@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {TablePresetManager,type ResourcePreset,type ResourcePresetRepository} from './TablePresetManager';
+import {useResourceQuery} from './usePersonnelQuery';
 
 const amount='11111111-1111-4111-8111-111111111111';
 const title='22222222-2222-4222-8222-222222222222';
@@ -21,4 +22,11 @@ function Fixture(){const [active,setActive]=useState<ResourcePreset|null>(null),
  const fields=[{id:amount,label:'金额',kind:'money' as const,operators:['eq','neq','gt','gte','lt','lte'] as const},{id:title,label:'标题',kind:'text' as const,operators:['eq','neq'] as const}],columns=[{id:amount,name:'金额'},{id:title,name:'标题'}];
  return <main><TablePresetManager view="resource" resource={{scopeKey:'actor-1:app-1:view-1',fields,columns,repository,refreshDescriptors:async()=>({fields,columns}),onApply:async preset=>{setActive(preset);setHidden(preset?.hiddenColumnIds??[]);return true;}}} active={active} hiddenColumnIds={hidden} onDirty={()=>{}} onUnauthorized={()=>{}}/><output aria-label="fixture-state">{JSON.stringify({active:active?.id??null,hidden,writes:state.writes})}</output></main>;
 }
-createRoot(document.getElementById('root')!).render(<Fixture/>);
+const queryRequests:{scope:string;body:unknown}[]=[];
+Object.assign(window,{__resourceQueryFixture:queryRequests});
+const emptyPage={items:[] as {id:string}[],total:0,page:1,pageSize:20,queryVersion:'',sort:null};
+function QueryFixture(){const [scope,setScope]=useState('actor-A:app-1:view-1'),[page,setPage]=useState(1),[filter,setFilter]=useState<string|null>(null);
+ const query=useResourceQuery(scope,{page,pageSize:20,filter},emptyPage,async body=>{queryRequests.push({scope,body});return {...emptyPage,items:[{id:scope}],total:50,page:body.page,queryVersion:'token-'+scope};});
+ return <section aria-label="query-fixture"><button onClick={()=>setPage(4)}>跳至第4页</button><button onClick={()=>{setFilter('金额大于10');setPage(1);}}>更改条件</button><button onClick={()=>{setPage(1);query.refresh();}}>显式刷新</button><button onClick={()=>{setScope('actor-B:app-1:view-1');setPage(1);}}>切换主体</button><output aria-label="query-state">{JSON.stringify({data:query.data,blocked:query.blocked})}</output></section>;
+}
+createRoot(document.getElementById('root')!).render(<><Fixture/><QueryFixture/></>);

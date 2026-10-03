@@ -92,3 +92,23 @@ test('resource editor saves fieldId and decimal text through injected repository
  expect(state.writes[0].input.filter).toEqual({operator:'and',children:[{fieldId:'11111111-1111-4111-8111-111111111111',operator:'gt',value:'9007199254740993.01'}]});
  expect(JSON.parse(await page.getByLabel('fixture-state').innerText()).active).toBeNull();
 });
+
+test('shared query lifecycle validates changed criteria with old token and clears it only on refresh or actor switch',async({page})=>{
+ await page.goto('/src/table-preset-generic-fixture.html');
+ const requests=()=>page.evaluate(()=>(window as typeof window & {__resourceQueryFixture:{scope:string;body:{page:number;queryVersion?:string;filter:string|null}}[]}).__resourceQueryFixture);
+ await expect.poll(async()=> (await requests()).length).toBe(1);
+ expect((await requests())[0].body.queryVersion).toBeUndefined();
+ await page.getByRole('button',{name:'跳至第4页'}).click();
+ await expect.poll(async()=> (await requests()).length).toBe(2);
+ expect((await requests())[1].body).toMatchObject({page:4,queryVersion:'token-actor-A:app-1:view-1'});
+ await page.getByRole('button',{name:'更改条件'}).click();
+ await expect.poll(async()=> (await requests()).length).toBe(3);
+ expect((await requests())[2].body).toMatchObject({page:1,filter:'金额大于10',queryVersion:'token-actor-A:app-1:view-1'});
+ await page.getByRole('button',{name:'显式刷新'}).click();
+ await expect.poll(async()=> (await requests()).length).toBe(4);
+ expect((await requests())[3].body.queryVersion).toBeUndefined();
+ await page.getByRole('button',{name:'切换主体'}).click();
+ await expect.poll(async()=> (await requests()).length).toBe(5);
+ expect((await requests())[4].scope).toBe('actor-B:app-1:view-1');
+ expect((await requests())[4].body.queryVersion).toBeUndefined();
+});
