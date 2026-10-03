@@ -312,3 +312,70 @@ added to the screenshot inventory: empty structure, saved directory, form
 creation dialog, empty designer, and saved field designer. All 37 PNGs match
 their recorded dimensions and SHA-256 digests; no login credential screen is
 stored. The screenshots are QA evidence, not app assets.
+
+## Permission policy CAS review after integration review
+
+The integration review found that a confirmed save in one permission-group
+section advanced the global policy revision while another dirty section kept
+its old revision. The old UI could send the second section's stale CAS, but
+offered no explicit recovery after the definite 409. A second case mixed the
+three independently fetched group, member, and grant responses even when their
+`policyRevision` values differed. Four new component scenarios reproduced the
+missing review flow before implementation (`preflight-red/permission-cas-review-red.txt`).
+
+The editor now blocks writes while it reads all three responses and accepts a
+baseline only when their global revisions agree. A skewed read leaves the
+draft untouched, blocks every save, and offers a finite reload. A definite 409
+loads a consistent current baseline and presents the server value alongside
+the local draft for the affected section. Explicit retry sends a fresh
+operation key with the reviewed revision; discard resets only that section.
+Dirty peers receive their own review after another section saves. Sent-unknown
+operations remain separate: rereads never create a new key or replace their
+immutable packet, and the same-key query/retry controls remain available.
+
+The focused Chromium review tests passed 5/5, including two dirty sections,
+external same-section edits, selected-section discard, repeated conflicts,
+and a deliberately skewed member GET (`permission-cas-screenshot-chromium.txt`
+contains a subsequent screenshot capture). The complete permission component
+matrix passed 120/120 across Chromium, Firefox, WebKit and reduced-motion
+variants (`permission-cas-review-full-browser.txt`). The real TLS B5 suite,
+extended with a second-client policy mutation between dirty menu and save,
+passed 36/36 across the same six projects (`permission-cas-real-full.txt`).
+Its concurrency case verifies the stale PUT returns 409, no grant is written
+before review, and the user's explicit retry commits the root-menu grant.
+The final source passed 36/36 focused CAS and sent-unknown cases across the six
+browser modes (`permission-cas-final-six-browser.txt`). After rebuilding the
+production bundle, the real B5 concurrency case passed 6/6
+(`permission-cas-real-final-six.txt`). Web and test TypeScript checks, Vite
+build, task structure validation, and `git diff --check` passed. The updated
+conflict screenshot and three new review/skew screenshots were visually
+inspected; all 40 PNG dimensions and SHA-256 digests match
+`screenshots/manifest.json`.
+
+A second snapshot review checked each group item's `policyRevision` against
+the list's global revision. The B5 configuration response derives both from
+the same application policy revision, so a mismatched item is not a valid
+baseline even if the separate members and grants GETs match the list. The
+new stale-item HTTP fixture failed before this check
+(`preflight-red/permission-group-item-skew-red.txt`) and passed after the
+editor and list reader reject it (`permission-group-item-skew-green.txt`).
+The rejection preserves the dirty menu and blocks any PUT until a consistent
+reload yields an explicit review.
+The permission fixture originally advanced its global revision on member and
+menu writes without advancing the included group item, unlike the reviewed B5
+configuration contract. After correcting that fixture, eight focused Chromium
+cases passed and the complete permission matrix passed 126/126 across six
+browser/motion projects (`permission-group-item-fixture-green.txt`,
+`permission-group-item-final-six-browser.txt`). The rebuilt frontend passed
+the real HTTPS B5 owner-save and concurrent-policy cases 12/12 across those
+projects (`permission-group-item-real-six.txt`); web/test TypeScript checks
+and Vite build passed.
+
+CI for previous head `8a961ac` passed governance, Go, and browser jobs, but
+the product job had two V014-owned form component failures among 369 passed
+and one skipped. The failed A→B→A test waits for an already-visible generic
+region before switching back, and the structure test likewise has no B-only
+render wait; both can skip the intermediate mount under CI scheduling. The
+same two unchanged V014 tests passed 6/6 in local Chromium repeats
+(`v014-ci-forms-repro.txt`). This is a reported integration gate, not an
+accepted product result; the forms owner must review it before CI can close.

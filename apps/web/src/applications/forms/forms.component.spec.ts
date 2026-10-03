@@ -618,25 +618,46 @@ test('no-op Save with unknown result blocks exit even when definition is not dir
 });
 
 test('A to B to A navigation ignores a late first-generation preflight',async({page})=>{
+  // Root: establish a real B mount before returning to A; seeing the generic
+  // field region alone does not prove that React committed the new resource.
   const nextViewId='00000000-0000-4000-8000-000000000160';
   const state=await fixture(page);
-  let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
-  let started!:()=>void;const startedPromise=new Promise<void>(resolve=>{started=resolve;});
+  await page.route(`**/forms/${nextViewId}/definition`,route=>route.fulfill({json:ok({
+    ...definition,form:{...form,id:nextViewId,name:'B 表单'},
+  })}));
+  let release!:()=>void;
+  const gate=new Promise<void>(resolve=>{release=resolve;});
+  let announceStarted!:()=>void;
+  const started=new Promise<void>(resolve=>{announceStarted=resolve;});
+  let announceSettled!:()=>void;
+  const settled=new Promise<void>(resolve=>{announceSettled=resolve;});
+  const wireSettled=Promise.race([
+    page.waitForEvent('requestfinished',{predicate:request=>request.method()==='POST'&&request.url().endsWith('/definition/preflight')}),
+    page.waitForEvent('requestfailed',{predicate:request=>request.method()==='POST'&&request.url().endsWith('/definition/preflight')}),
+  ]);
   await page.route('**/definition/preflight',async route=>{
-    started();await gate;
-    await route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,dataRevision:0,
-      dependencyRevision:0,plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},
-      impacts:[{fieldId:'old-field',kind:'column_removal',nonNullRows:1,optionId:null}],
-      dependencies:[],blockingIssues:[],saveAllowed:true,confirmation:{token:'old-token',expiresAt:'2099-01-01T00:00:00Z'}})});
+    announceStarted();await gate;
+    try {
+      await route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,dataRevision:0,
+        dependencyRevision:0,plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},
+        impacts:[{fieldId:'old-field',kind:'column_removal',nonNullRows:1,optionId:null}],
+        dependencies:[],blockingIssues:[],saveAllowed:true,confirmation:{token:'old-token',expiresAt:'2099-01-01T00:00:00Z'}})});
+    } catch(error) {
+      // An aborted old request is allowed. A non-aborted fulfillment failure
+      // is a fixture error and must fail the test rather than be swallowed.
+      if(!route.request().failure())throw error;
+    } finally { announceSettled(); }
   });
   await page.getByRole('button',{name:'文本',exact:true}).click();
   await page.getByRole('button',{name:'保存',exact:true}).click();
-  await startedPromise;
+  await started;
   await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),nextViewId);
-  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await expect(page.locator('.forms-toolbar-title strong')).toHaveText('B 表单');
   await page.evaluate((id:string)=>(window as Window & {__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),viewId);
-  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
-  release();await page.waitForTimeout(100);
+  await expect(page.locator('.forms-toolbar-title strong')).toHaveText('请假申请');
+  release();
+  await Promise.all([wireSettled,settled]);
+  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
   await expect(page.getByRole('dialog',{name:'保存预检：表单结构与布局'})).toHaveCount(0);
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
 });

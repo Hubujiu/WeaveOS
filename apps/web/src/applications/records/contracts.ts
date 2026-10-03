@@ -15,7 +15,7 @@ export type RuntimeField={
  access:{read:Scope;create:boolean;edit:Scope;history:Scope};
  query:{operators:('eq'|'neq'|'gt'|'gte'|'lt'|'lte')[];sortable:boolean;quickSearchable:boolean};
 };
-export type RuntimeLayoutNode={id:UUID;kind:'field';fieldId:UUID;span?:number}|{id:UUID;kind:'system_field';fieldId:string;span?:number}|{id:UUID;kind:'group';title:string;children:RuntimeLayoutNode[];span?:number}|{id:UUID;kind:'divider'};
+export type RuntimeLayoutNode={id:UUID;kind:'field';fieldId:UUID;span?:number}|{id:UUID;kind:'system_field';fieldId:string;span?:number}|{id:UUID;kind:'group';title:string;children:RuntimeLayoutNode[];span?:number}|{id:UUID;kind:'divider'}|{id:UUID;kind:'description';text:string};
 export type RuntimeView={
  appId:UUID;tableId:UUID;viewId:UUID;schemaVersion:Version;viewVersion:Version;policyRevision:Version;
  fields:RuntimeField[];layout:RuntimeLayoutNode[];

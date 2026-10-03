@@ -4,7 +4,13 @@ import type { LeaveController, LeaveDecision, LeaveScope, LeaveStatus, RegisterL
 export type { RegisterLeaveGuard } from '../forms';
 export type ActiveLeaveGuard = { scope: LeaveScope; status: LeaveStatus; controller: LeaveController };
 
-const scopeKey = (scope: LeaveScope) => JSON.stringify([scope.kind, scope.actorId, scope.appId, scope.viewId ?? '']);
+const scopeKey = (scope: LeaveScope) => {
+ const viewId = 'viewId' in scope ? scope.viewId ?? '' : '';
+ const key: unknown[] = [scope.kind, scope.actorId, scope.appId, viewId];
+ if (scope.kind === 'record') key.push(scope.recordId ? ['record', scope.recordId] : ['clientDraft', scope.clientDraftId]);
+ else if (scope.kind === 'draft') key.push(['draft', scope.draftId]);
+ return JSON.stringify(key);
+};
 
 export class LeaveGuards {
  private active = new Map<string, { scope: LeaveScope; controller: LeaveController }>();

@@ -42,9 +42,9 @@ test('V030-012 Shell opens the real structure and form view under one app tab', 
  await fixture(page);
  await page.goto('/app/applications/' + appId);
  await expect(page.getByRole('region', { name: '目录与视图管理' })).toBeVisible();
- await expect(page.getByRole('button', { name: '打开表单 请假申请' })).toBeVisible();
- await page.getByRole('button', { name: '打开表单 请假申请' }).click();
- await expect(page).toHaveURL(new RegExp('/app/applications/' + appId + '/forms/' + viewId + '$'));
+ await expect(page.getByRole('button', { name: '配置表单 请假申请' })).toBeVisible();
+ await page.getByRole('button', { name: '配置表单 请假申请' }).click();
+ await expect(page).toHaveURL(new RegExp('/app/applications/' + appId + '/forms/' + viewId + '/design$'));
  await expect(page.getByRole('region', { name: '表单设计器' })).toBeVisible();
  await expect(page.getByRole('tab', { name: '当前表单' })).toHaveAttribute('aria-selected', 'true');
  await expect(page.getByRole('button', { name: '关闭应用：' + application.name })).toHaveCount(1);
@@ -72,7 +72,7 @@ test('V030-012 external Back discard removes a structure draft before returning'
 test('V030-012 external Back discard removes a designer draft before returning', async ({ page }) => {
  const backend = await fixture(page);
  await page.goto('/app/applications/' + appId);
- await page.getByRole('button', { name: '打开表单 请假申请' }).click();
+ await page.getByRole('button', { name: '配置表单 请假申请' }).click();
  await page.getByRole('button', { name: '文本', exact: true }).click();
  await page.getByLabel('字段名称').fill('放弃的字段');
  await page.goBack();
@@ -80,7 +80,7 @@ test('V030-012 external Back discard removes a designer draft before returning',
  await expect(guard).toContainText('表单设计器草稿将丢失');
  await guard.getByRole('button', { name: '放弃修改' }).click();
  await expect(page).toHaveURL(new RegExp('/app/applications/' + appId + '$'));
- await page.getByRole('button', { name: '打开表单 请假申请' }).click();
+ await page.getByRole('button', { name: '配置表单 请假申请' }).click();
  await expect(page.getByRole('region', { name: '表单画布' })).not.toContainText('放弃的字段');
  expect(backend.writes).toEqual([]);
 });
@@ -88,7 +88,7 @@ test('V030-012 external Back discard removes a designer draft before returning',
 test('V030-012 closing the current app tab waits for form discard and clears only the unsent draft', async ({ page }) => {
  const backend = await fixture(page);
  await page.goto('/app/applications/' + appId);
- await page.getByRole('button', { name: '打开表单 请假申请' }).click();
+ await page.getByRole('button', { name: '配置表单 请假申请' }).click();
  await page.getByRole('button', { name: '文本', exact: true }).click();
  await page.getByLabel('字段名称').fill('关闭前字段');
  const close = page.getByRole('button', { name: '关闭应用：' + application.name });
@@ -96,14 +96,14 @@ test('V030-012 closing the current app tab waits for form discard and clears onl
  const guard = page.getByRole('dialog', { name: '有未保存的修改' });
  await expect(guard).toContainText('表单设计器草稿将丢失');
  await guard.getByRole('button', { name: '继续编辑' }).click();
- await expect(page).toHaveURL(new RegExp('/app/applications/' + appId + '/forms/' + viewId + '$'));
+ await expect(page).toHaveURL(new RegExp('/app/applications/' + appId + '/forms/' + viewId + '/design$'));
  await expect(close).toHaveCount(1);
  await close.click();
  await guard.getByRole('button', { name: '放弃修改' }).click();
  await expect(page).toHaveURL(/\/app\/applications$/);
  await expect(close).toHaveCount(0);
  await page.getByRole('main').getByRole('button', { name: application.name, exact: true }).click();
- await page.getByRole('button', { name: '打开表单 请假申请' }).click();
+ await page.getByRole('button', { name: '配置表单 请假申请' }).click();
  await expect(page.getByRole('region', { name: '表单画布' })).not.toContainText('关闭前字段');
  expect(backend.writes).toEqual([]);
 });
@@ -118,7 +118,7 @@ test('V030-012 closing the current app tab retains a sent unknown form operation
   return route.abort('failed');
  });
  await page.goto('/app/applications/' + appId);
- await page.getByRole('button', { name: '打开表单 请假申请' }).click();
+ await page.getByRole('button', { name: '配置表单 请假申请' }).click();
  await page.getByRole('button', { name: '文本', exact: true }).click();
  await page.getByRole('button', { name: '保存', exact: true }).click();
  await expect(page.getByRole('button', { name: '查询保存结果' })).toBeVisible();
@@ -131,7 +131,7 @@ test('V030-012 closing the current app tab retains a sent unknown form operation
  await expect(page).toHaveURL(/\/app\/applications$/);
  await expect(close).toHaveCount(0);
  await page.getByRole('main').getByRole('button', { name: application.name, exact: true }).click();
- await page.getByRole('button', { name: '打开表单 请假申请' }).click();
+ await page.getByRole('button', { name: '配置表单 请假申请' }).click();
  await expect(page.getByRole('button', { name: '查询保存结果' })).toBeVisible();
  expect(writes).toHaveLength(1);
  expect(typeof writes[0].operationId).toBe('string');
@@ -152,7 +152,7 @@ test('V030-012 Shell cancels a slow unsent form preflight before route leave', a
   return route.fulfill({ status: 503, json: { code: 'COMMON_SERVICE_UNAVAILABLE', data: null } });
  });
  await page.goto('/app/applications/' + appId);
- await page.getByRole('button', { name: '打开表单 请假申请' }).click();
+ await page.getByRole('button', { name: '配置表单 请假申请' }).click();
  await page.getByRole('button', { name: '文本', exact: true }).click();
  await page.getByRole('button', { name: '保存', exact: true }).click();
  await entered;
@@ -181,7 +181,7 @@ test('V030-012 Shell re-confirms a changed preflight outcome and retains the ori
   return route.abort('failed');
  });
  await page.goto('/app/applications/' + appId);
- await page.getByRole('button', { name: '打开表单 请假申请' }).click();
+ await page.getByRole('button', { name: '配置表单 请假申请' }).click();
  await page.getByRole('button', { name: '文本', exact: true }).click();
  await page.getByRole('button', { name: '保存', exact: true }).click();
  await entered;
@@ -192,11 +192,11 @@ test('V030-012 Shell re-confirms a changed preflight outcome and retains the ori
  await expect(page.getByRole('button', { name: '查询保存结果' })).toBeVisible();
  await guard.getByRole('button', { name: '放弃修改' }).click();
  await expect(guard).toContainText('状态已变化');
- await expect(page).toHaveURL(new RegExp('/app/applications/' + appId + '/forms/' + viewId + '$'));
+ await expect(page).toHaveURL(new RegExp('/app/applications/' + appId + '/forms/' + viewId + '/design$'));
  await expect(guard).toContainText('已发送的操作会保留原请求');
  await guard.getByRole('button', { name: '放弃修改' }).click();
  await expect(page).toHaveURL(new RegExp('/app/applications/' + appId + '$'));
- await page.getByRole('button', { name: '打开表单 请假申请' }).click();
+ await page.getByRole('button', { name: '配置表单 请假申请' }).click();
  await expect(page.getByRole('button', { name: '查询保存结果' })).toBeVisible();
  expect(writes).toHaveLength(1);
  expect(typeof writes[0].operationId).toBe('string');
@@ -212,7 +212,7 @@ test('V030-012 forced form 401 routes to login and restores only the same actor 
  });
  await page.route('**/api/v1/sessions', route => route.fulfill({ status: 200, json: ok(actor) }));
  await page.goto('/app/applications/' + appId);
- await page.getByRole('button', { name: '打开表单 请假申请' }).click();
+ await page.getByRole('button', { name: '配置表单 请假申请' }).click();
  await page.getByRole('button', { name: '文本', exact: true }).click();
  await page.getByLabel('字段名称').fill('复登保留字段');
  await page.getByRole('button', { name: '保存', exact: true }).click();
@@ -229,6 +229,6 @@ test('V030-012 forced form 401 routes to login and restores only the same actor 
  await expect(page).toHaveURL(/\/app$/);
  await page.getByRole('button', { name: '打开应用中心' }).click();
  await page.getByRole('main').getByRole('button', { name: application.name, exact: true }).click();
- await page.getByRole('button', { name: '打开表单 请假申请' }).click();
+ await page.getByRole('button', { name: '配置表单 请假申请' }).click();
  await expect(page.getByRole('region', { name: '表单画布' })).toContainText('复登保留字段');
 });

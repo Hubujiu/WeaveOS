@@ -148,6 +148,45 @@ test('V030-012 real B5: owner saves permission-group basics, members and root me
  } finally { await memberContext.close(); }
 });
 
+test('V030-012 real B5: concurrent policy change requires explicit menu review before grant write', async ({ page }, info) => {
+ const f = fixture();
+ await login(page, f.admin);
+ const created = await realApi(page.context(), f.adminId, 'applications', 'POST', { name: '并发授权核对 ' + info.project.name + ' ' + Date.now(), operationId: crypto.randomUUID() });
+ expect(created.status).toBe(201);
+ const app = created.data as { id: string; name: string };
+ const groupCreated = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups', 'POST', {
+  name: '初始权限组', expectedPolicyRevision: 1, operationId: crypto.randomUUID(),
+ });
+ expect(groupCreated.status).toBe(201);
+ const group = groupCreated.data as { id: string; policyRevision: number };
+ await page.goto('/app/applications/' + app.id);
+ await page.getByRole('button', { name: '权限管理', exact: true }).click();
+ await page.getByRole('button', { name: '初始权限组', exact: true }).click();
+ const menu = page.getByRole('heading', { name: '菜单', exact: true }).locator('..');
+ await menu.getByRole('checkbox', { name: '允许进入应用' }).check();
+ const peer = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups/' + group.id, 'PUT', {
+  name: '其他客户端已更新', enabled: true, expectedPolicyRevision: group.policyRevision, operationId: crypto.randomUUID(),
+ });
+ expect(peer.status).toBe(200);
+ const stale = page.waitForResponse(response => response.request().method() === 'PUT' && new URL(response.url()).pathname.endsWith('/grants'));
+ await menu.getByRole('button', { name: '保存菜单' }).click();
+ expect((await stale).status()).toBe(409);
+ await expect(menu.getByRole('group', { name: '菜单版本核对' })).toContainText('服务器当前：不允许进入应用');
+ await expect(menu.getByRole('group', { name: '菜单版本核对' })).toContainText('本地草稿：允许进入应用');
+ await expect(menu.getByRole('button', { name: '保存菜单' })).toBeDisabled();
+ const before = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups/' + group.id + '/grants');
+ expect(before.status).toBe(200);
+ expect(before.data.grants).toEqual([]);
+ await menu.getByRole('group', { name: '菜单版本核对' }).scrollIntoViewIfNeeded();
+ if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('permission-real-conflict-review.png'), fullPage: true });
+ const retried = page.waitForResponse(response => response.request().method() === 'PUT' && new URL(response.url()).pathname.endsWith('/grants'));
+ await menu.getByRole('button', { name: '基于最新版本重试保存' }).click();
+ expect((await retried).status()).toBe(200);
+ await expect(page.getByRole('status').filter({ hasText: '菜单已保存' })).toBeVisible();
+ const after = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups/' + group.id + '/grants');
+ expect(after.data.grants).toEqual([{ resourceKind: 'application', resourceId: app.id, action: 'menu.enter', rowScope: 'all', fields: [] }]);
+});
+
 test('V030-012 real HTTPS Shell persists a directory, form and saved designer field', async ({ page }, info) => {
  const f = fixture();
  await page.setViewportSize({ width: 1920, height: 1080 });
@@ -189,8 +228,8 @@ test('V030-012 real HTTPS Shell persists a directory, form and saved designer fi
  const forms = savedStructure.data.forms as { id: string; name: string; directoryId: string | null }[];
  const form = forms.find(value => value.name === formName);
  expect(form?.directoryId).toBeTruthy();
- await page.getByRole('button', { name: '打开表单 ' + formName }).click();
- await expect(page).toHaveURL(new RegExp('/app/applications/' + app.id + '/forms/' + form!.id + '$'));
+ await page.getByRole('button', { name: '配置表单 ' + formName }).click();
+ await expect(page).toHaveURL(new RegExp('/app/applications/' + app.id + '/forms/' + form!.id + '/design$'));
  await expect(page.getByRole('region', { name: '表单设计器' })).toBeVisible();
  if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('form-designer-empty.png'), fullPage: true });
  await page.getByRole('button', { name: '文本', exact: true }).click();
@@ -325,4 +364,58 @@ test('V030-012 real B5: expected actor guard rejects cross-session reads, writes
   const after = await realApi(memberContext, f.userId, 'applications');
   expect(after.status).toBe(200); expect(after.data).toEqual(ordinary.data);
  } finally { await memberContext.close(); }
+});
+
+
+test('Root real HTTPS full journey creates an application, saves a form, and creates and edits a persisted record',async({page},info)=>{
+ const f=fixture();await page.setViewportSize({width:1920,height:1080});await login(page,f.admin);
+ const appName='记录闭环 '+info.project.name+' '+Date.now(),formName='报销单 '+Date.now();
+ await page.getByRole('button',{name:'打开应用中心',exact:true}).click();
+ await page.getByRole('button',{name:'新建应用',exact:true}).click();
+ const createApp=page.getByRole('dialog',{name:'新建应用',exact:true});await createApp.getByLabel('应用名称',{exact:true}).fill(appName);
+ const appResponse=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/applications');
+ await createApp.getByRole('button',{name:'创建应用',exact:true}).click();const appWritten=await appResponse;expect(appWritten.status()).toBe(201);
+ const app=(await appWritten.json()).data as {id:string};await expect(createApp).toHaveCount(0);
+ await page.getByRole('main').getByRole('button',{name:appName,exact:true}).click();
+ const shell=await page.getByTestId('application-shell').elementHandle();
+ await page.getByRole('button',{name:'新建表单',exact:true}).click();await page.getByLabel('表单名称',{exact:true}).fill(formName);
+ const formResponse=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/applications/'+app.id+'/forms');
+ await page.getByRole('button',{name:'创建表单',exact:true}).click();const formWritten=await formResponse;expect(formWritten.status()).toBe(201);
+ const form=(await formWritten.json()).data.form as {id:string};await expect(page.getByRole('treeitem',{name:formName,exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'配置表单 '+formName,exact:true}).click();
+ await expect(page.getByRole('region',{name:'表单设计器'})).toBeVisible();
+ await page.getByRole('button',{name:'金额',exact:true}).click();await page.getByLabel('字段名称',{exact:true}).fill('报销金额');
+ await page.getByLabel('总精度',{exact:true}).fill('20');await page.getByLabel('小数位数',{exact:true}).fill('2');await page.getByLabel('处理位数',{exact:true}).fill('2');await page.getByLabel('舍入规则',{exact:true}).selectOption('HALF_UP');
+ await page.getByRole('button',{name:'文本',exact:true}).click();await page.getByLabel('字段名称',{exact:true}).fill('报销事由');
+ const definitionResponse=page.waitForResponse(r=>r.request().method()==='PUT'&&new URL(r.url()).pathname==='/api/v1/applications/'+app.id+'/forms/'+form.id+'/definition');
+ await page.getByRole('button',{name:'保存',exact:true}).click();expect((await definitionResponse).status()).toBe(200);
+ await expect(page.getByRole('status').filter({hasText:'已保存'})).toBeVisible();
+ await page.getByRole('button',{name:'返回工作台',exact:true}).click();
+ await page.getByRole('button',{name:'打开表单 '+formName,exact:true}).click();await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();
+ if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-empty-list.png'),fullPage:true});
+ const prefix='applications/'+app.id+'/forms/'+form.id;
+ const runtimeReply=await realApi(page.context(),f.adminId,prefix+'/runtime');expect(runtimeReply.status).toBe(200);
+ const fields=runtimeReply.data.fields as {id:string;name:string}[];const amount=fields.find(x=>x.name==='报销金额')!.id,title=fields.find(x=>x.name==='报销事由')!.id;
+ await page.getByRole('button',{name:'新建记录',exact:true}).click();const createRecord=page.getByRole('dialog',{name:'新建记录',exact:true});
+ await createRecord.getByLabel('报销金额',{exact:true}).fill('12.345');await createRecord.getByLabel('报销事由',{exact:true}).fill('真实差旅');
+ if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-create-input.png'),fullPage:true});
+ const recordResponse=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/'+prefix+'/records');
+ await createRecord.getByRole('button',{name:'保存记录',exact:true}).click();const recordWritten=await recordResponse;expect(recordWritten.status()).toBe(201);
+ const receipt=(await recordWritten.json()).data as {id:string;recordVersion:number};
+ await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
+ const detail=page.getByRole('dialog',{name:'记录详情',exact:true});await expect(detail.getByLabel('报销金额',{exact:true})).toHaveValue('12.35');
+ await expect(detail.getByLabel('报销事由',{exact:true})).toHaveValue('真实差旅');
+ const persisted=await realApi(page.context(),f.adminId,prefix+'/records/'+receipt.id);expect(persisted.status).toBe(200);
+ expect(persisted.data.values).toMatchObject({[amount]:'12.35',[title]:'真实差旅'});expect(persisted.data.recordVersion).toBe(receipt.recordVersion);
+ if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-confirmed-detail.png'),fullPage:true});
+ await detail.getByRole('button',{name:'编辑记录',exact:true}).click();await detail.getByLabel('报销金额',{exact:true}).fill('20.10');
+ const editedResponse=page.waitForResponse(r=>r.request().method()==='PATCH'&&new URL(r.url()).pathname==='/api/v1/'+prefix+'/records/'+receipt.id);
+ await detail.getByRole('button',{name:'保存记录',exact:true}).click();const edited=await editedResponse;expect(edited.status()).toBe(200);
+ const editBody=edited.request().postDataJSON();expect(editBody.expectedRecordVersion).toBe(receipt.recordVersion);expect(editBody.changes).toEqual({[amount]:'20.10'});
+ await expect(detail.getByLabel('报销金额',{exact:true})).not.toBeEditable();await expect(detail.getByLabel('报销金额',{exact:true})).toHaveValue('20.10');
+ if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-edited-detail.png'),fullPage:true});
+ expect(await shell!.evaluate(node=>node.isConnected)).toBe(true);
+ await page.reload();await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();
+ await page.getByRole('button',{name:'打开记录：报销金额 20.10',exact:true}).click();
+ await expect(page.getByRole('dialog',{name:'记录详情',exact:true}).getByLabel('报销事由',{exact:true})).toHaveValue('真实差旅');
 });
