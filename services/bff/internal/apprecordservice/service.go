@@ -97,6 +97,11 @@ type CreateRequest struct {
 	AppID, ViewID, OperationID string
 	ExpectedSchemaVersion      int64
 	Values                     map[string]any
+	DraftRef                   *DraftRef
+}
+type DraftRef struct {
+	ID           string `json:"id"`
+	DraftVersion int64  `json:"draftVersion"`
 }
 type EditRequest struct {
 	AppID, ViewID, RecordID, OperationID         string

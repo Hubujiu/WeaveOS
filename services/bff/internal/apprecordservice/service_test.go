@@ -264,6 +264,32 @@ func TestRestrictedDraftCreateIsExplicitAndDoesNotMutateRecord(t *testing.T) {
 	}
 }
 
+func TestRestrictedDraftSubmitConsumesWithRecordAndOperation(t *testing.T) {
+	f := newRecordFixture(t)
+	var op string
+	if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	draft, err := f.service.CreateDraft(f.ctx, f.principal, DraftCreateRequest{AppID: f.app, ViewID: f.view, OperationID: op, SchemaVersion: 1, Values: map[string]any{f.public: "ready"}}, applications.Metadata{RequestID: "v015-draft-submit"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	created, err := f.service.Create(f.ctx, f.principal, CreateRequest{AppID: f.app, ViewID: f.view, OperationID: op, ExpectedSchemaVersion: 1, Values: map[string]any{f.public: "ready"}, DraftRef: &DraftRef{ID: draft.ID, DraftVersion: draft.DraftVersion}}, applications.Metadata{RequestID: "v015-record-submit"})
+	if err != nil || created.RecordVersion != 1 {
+		t.Fatalf("submitted %+v %v", created, err)
+	}
+	var count int
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_drafts WHERE id=$1", draft.ID).Scan(&count); err != nil || count != 0 {
+		t.Fatalf("draft not consumed atomically %d %v", count, err)
+	}
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2 AND result_json IS NOT NULL", f.actor, op).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("operation not complete %d %v", count, err)
+	}
+}
+
 func TestRestrictedQueryOnlyObservableChangesInvalidate(t *testing.T) {
 	f := newRecordFixture(t)
 	filter := json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + f.public + `","operator":"eq","value":"alpha"}]}`)
