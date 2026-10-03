@@ -1,6 +1,7 @@
 # V030-013 product contract proposal
 
-Review status: **PROPOSED; HTTP wiring and frontend consumption are not released**.
+Review status: lead approved 2980b5e with the atomic-form-create and 12-column
+span amendments below. HTTP wiring waits only for the matching Notion readback.
 The V030-013 technical PLAN was read from PRD at
 2026-10-03T08:40:01.401Z and ADR009 at 2026-10-03T08:40:07.467Z; the
 two PLAN sections are byte-identical. This document supplies precise derived
@@ -67,7 +68,7 @@ sort by `(position,id)`, so ties do not create nondeterministic order.
 | POST `/tables` | Write + `{name,directoryId:UUID|null,position,expectedStructureVersion}` | TableResult / 201 + Location |
 | GET `/tables/{tableId}` | none | Table / 200 |
 | PUT `/tables/{tableId}` | Write + `{name,directoryId:UUID|null,position,expectedStructureVersion}` | TableResult / 200 |
-| POST `/forms` | Write + `{name,tableId:UUID,directoryId:UUID|null,position,expectedStructureVersion}` | FormResult / 201 + Location |
+| POST `/forms` | Write + `{name,source:FormSource,directoryId:UUID|null,position,expectedStructureVersion}` | FormResult / 201 + Location |
 | GET `/forms/{viewId}` | none | FormResult / 200 |
 | PUT `/forms/{viewId}` | Write + `{name,directoryId:UUID|null,position,expectedStructureVersion}` | FormResult / 200 |
 | GET `/forms/{viewId}/definition` | none | Definition / 200 |
@@ -78,7 +79,11 @@ sort by `(position,id)`, so ties do not create nondeterministic order.
 List/sibling collections come from the single coherent Structure response; this
 proposal does not add duplicate collection list APIs. A view's tableId is
 immutable. A second view is created with POST /forms pointing to the same table.
-Tables and forms have independent directory placement.
+Tables and forms have independent directory placement. new_table creates the
+same-name pending logical table and view atomically in the one operation/tx;
+existing_table creates just the view. Failure leaves neither half. POST /tables
+remains a separate explicit definition-management action, never a mandatory
+preliminary frontend call before creating a form.
 
 ```ts
 type Directory = { id:UUID; appId:UUID; name:string;
@@ -92,7 +97,8 @@ type Structure = { appId:UUID; structureVersion:number;
   capabilities:{canManageDefinition:boolean} };
 type DirectoryResult = { directory:Directory; structureVersion:number };
 type TableResult = { table:Table; structureVersion:number };
-type FormResult = { form:Form; structureVersion:number };
+type FormSource = {kind:"new_table"}|{kind:"existing_table";tableId:UUID};
+type FormResult = { table:Table; form:Form; structureVersion:number };
 type Definition = { appId:UUID; table:Table; form:Form;
   fields:Field[]; systemFields:SystemField[]; layout:LayoutNode[];
   capabilities:{canManageDefinition:boolean} };
@@ -187,12 +193,15 @@ Client fields cannot alias or rename them. Physical user columns are
 
 `LayoutNode` is a tagged union with stable `id`:
 
-- `{id,kind:"field",fieldId:UUID}`
-- `{id,kind:"system_field",fieldId:SystemFieldCode}`
-- `{id,kind:"group",title:string,children:LayoutNode[]}`
+- `{id,kind:"field",fieldId:UUID,span?:number}`
+- `{id,kind:"system_field",fieldId:SystemFieldCode,span?:number}`
+- `{id,kind:"group",title:string,children:LayoutNode[],span?:number}`
 - `{id,kind:"divider"}`
 - `{id,kind:"description",text:string}` (plain text)
 
+Each group uses a 12-column grid. field/system_field/group span is integer
+1–12, omitted span normalizes to 12. description/divider are always full row
+and reject span. Placement/width changes increment only viewVersion.
 Arrays define layout order. Each field appears at most once per view; referenced
 fields exist in that table. Missing editable fields are allowed, so views can
 show a subset without changing table data. Cycles/duplicate layout IDs fail
@@ -424,7 +433,8 @@ are not new tests or product acceptance.
 
 ## 9. Lead review items
 
-Freeze the methods/DTOs/errors/ports above before HTTP wiring. Specifically review:
+The lead froze the following choices and approved §7 shared scope, with the
+atomic creation and span amendments. Read back matching Notion before HTTP wiring:
 pending table/form creation with first-Save DDL; independent structureVersion CAS;
 roundingPlaces sign/defaults and storage-scale compatibility; UTC time truncation;
 other-view field removal guard; constant default-only old-row fill and explicit
