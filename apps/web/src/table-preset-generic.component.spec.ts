@@ -65,3 +65,30 @@ test('record preset validates authorized business visibility without discarding 
  expect(validateResourcePreset('私人方案',filter,[amount,title],fields,columns).issues).toContain('至少保留一个业务字段');
  expect(validateResourcePreset('私人方案',filter,['removed-field'],fields,columns).issues.length).toBeGreaterThan(0);
 });
+
+test('one manager loads scoped resource presets and redacts invalid definitions',async({page})=>{
+ await page.goto('/src/table-preset-generic-fixture.html');
+ await page.getByRole('button',{name:/^自定义筛选/}).click();
+ const panel=page.getByRole('dialog',{name:'管理自定义筛选'});
+ await expect(panel.getByText('已失效')).toBeVisible();
+ await expect(panel.getByText('字段权限已变化')).toBeVisible();
+ await expect(panel.getByRole('button',{name:'应用已失效'})).toBeDisabled();
+ await expect(panel).not.toContainText('11111111-1111-4111-8111-111111111111');
+});
+
+test('resource editor saves fieldId and decimal text through injected repository after confirmation',async({page})=>{
+ await page.goto('/src/table-preset-generic-fixture.html');
+ await page.getByRole('button',{name:/^自定义筛选/}).click();
+ await page.getByRole('button',{name:'新增筛选'}).click();
+ const dialog=page.getByRole('dialog',{name:'新增自定义筛选'});
+ await dialog.getByLabel('自定义筛选名称').fill('金额方案');
+ await dialog.getByRole('button',{name:'或条件'}).click();
+ await dialog.getByLabel('条件 1.1 字段').selectOption('11111111-1111-4111-8111-111111111111');
+ await dialog.getByLabel('条件 1.1 比较').selectOption('gt');
+ await dialog.getByLabel('条件 1.1 值').fill('9007199254740993.01');
+ await dialog.getByRole('button',{name:'确定'}).click();
+ await expect(page.getByLabel('fixture-state')).toContainText('9007199254740993.01');
+ const state=JSON.parse(await page.getByLabel('fixture-state').innerText());
+ expect(state.writes[0].input.filter).toEqual({operator:'and',children:[{fieldId:'11111111-1111-4111-8111-111111111111',operator:'gt',value:'9007199254740993.01'}]});
+ expect(state.active).toBeNull();
+});

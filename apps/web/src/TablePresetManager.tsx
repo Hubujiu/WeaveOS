@@ -3,12 +3,15 @@ import {Popover} from '@base-ui/react/popover';
 import {Funnel,X,Plus,ArrowLeft,ArrowRight} from '@phosphor-icons/react';
 import {workspaceApi,WorkspaceError} from './workspace-api';
 import {Modal} from './Modal';
-import {memberFilterFields,eventFilterFields,filterOperators,MAX_FILTER_LEAVES,type QueryView} from './QueryFilterState';
-import {blockFilter,presetBlocks,newPresetRow,validatePreset,editablePresetFilter,memberBusinessColumns,eventBusinessColumns,type TablePreset,type AppliedPreset,type PresetBlock,type PresetRow,type PresetOptions} from './TablePresetState';
+import {memberFilterFields,eventFilterFields,filterOperators,MAX_FILTER_LEAVES,type QueryView,type ResourceFilterField,type ResourceFilterGroup} from './QueryFilterState';
+import {blockFilter,presetBlocks,newPresetRow,validatePreset,editablePresetFilter,memberBusinessColumns,eventBusinessColumns,type TablePreset,type AppliedPreset,type PresetBlock,type PresetRow,type PresetOptions,type BusinessColumn} from './TablePresetState';
 import './query-filter.css';
 import './table-presets.css';
 
-type Props={view:QueryView;active:AppliedPreset|null;hiddenColumnIds:readonly string[];options?:PresetOptions;loadOptions:()=>Promise<PresetOptions>;onApply:(preset:TablePreset|null)=>Promise<boolean>;onDirty:(dirty:boolean)=>void;onUnauthorized:()=>void};
+export type ResourcePreset = {id:string;name:string;version:number;invalid?:boolean;reason?:string;filter?:ResourceFilterGroup|null;hiddenColumnIds?:string[]};
+export type ResourcePresetRepository = {list:()=>Promise<{items:ResourcePreset[]}>;read:(id:string)=>Promise<ResourcePreset>;save:(input:{name:string;filter:ResourceFilterGroup|null;hiddenColumnIds:string[]},existing?:{id:string;version:number})=>Promise<ResourcePreset>;remove:(id:string,version:number)=>Promise<void>};
+export type ResourceManagerConfig = {scopeKey:string;fields:readonly ResourceFilterField[];columns:readonly BusinessColumn[];repository:ResourcePresetRepository;onApply:(preset:ResourcePreset|null)=>Promise<boolean>};
+type Props={view:QueryView|'resource';resource?:ResourceManagerConfig;active:AppliedPreset|null;hiddenColumnIds:readonly string[];options?:PresetOptions;loadOptions:()=>Promise<PresetOptions>;onApply:(preset:TablePreset|null)=>Promise<boolean>;onDirty:(dirty:boolean)=>void;onUnauthorized:()=>void};
 type Edit={preset:TablePreset|null;name:string;blocks:PresetBlock[];hidden:string[];initial:string};
 const contentKey=(e:Pick<Edit,'name'|'blocks'|'hidden'>)=>JSON.stringify([e.name,blockFilter(e.blocks),e.hidden]);
 export function TablePresetManager({view,active,hiddenColumnIds,options={},loadOptions,onApply,onDirty,onUnauthorized}:Props){
@@ -94,15 +97,15 @@ export function TablePresetManager({view,active,hiddenColumnIds,options={},loadO
  function begin(preset:TablePreset|null){const next={preset,name:preset?.name??'',blocks:presetBlocks(preset?.filter),hidden:[...(preset?.hiddenColumnIds??hiddenColumnIds)],initial:''};next.initial=contentKey(next);setEdit(next);setConflict(false);setError('');setHiddenSearch('');setShownSearch('');}
  async function readEdit(item:TablePreset){if(busy)return;setBusy(true);setError('');try{const latest=await workspaceApi<TablePreset>('personnel/table-presets/'+item.id);if(!editablePresetFilter(latest.filter))throw new Error('方案包含当前编辑器无法表达的筛选树，已保留原条件；不能静默转换或保存。');begin(latest);}catch(e){failed(e);}finally{setBusy(false);}}
  function patchRow(blockId:string,rowId:string,patch:Partial<PresetRow>){setEdit(e=>e?{...e,blocks:e.blocks.map(b=>b.id===blockId?{...b,rows:b.rows.map(r=>r.id===rowId?{...r,...patch}:r)}:b)}:e);}
- function addBlock(){setEdit(e=>e?{...e,blocks:[...e.blocks,{id:crypto.randomUUID(),rows:[newPresetRow(view)]}]}:e);}
- async function save(){if(!edit||busy)return;setError('');const v=validatePreset(view,edit.name,blockFilter(edit.blocks),edit.hidden,options);if(v.issues.length){setError(v.issues.join('\n'));return;}setBusy(true);try{
+ function addBlock(){setEdit(e=>e?{...e,blocks:[...e.blocks,{id:crypto.randomUUID(),rows:[newPresetRow(view==='resource'?'members':view)]}]}:e);}
+ async function save(){if(!edit||busy)return;setError('');const v=validatePreset(view==='resource'?'members':view,edit.name,blockFilter(edit.blocks),edit.hidden,options);if(v.issues.length){setError(v.issues.join('\n'));return;}setBusy(true);try{
   const body={name:v.name,filter:v.filter,hiddenColumnIds:edit.hidden,schemaVersion:1};
   const stored=await workspaceApi<TablePreset>('personnel/table-presets'+(edit.preset?'/'+edit.preset.id:''),edit.preset?'PUT':'POST',edit.preset?{...body,version:edit.preset.version}:{...body,view});
   setItems(old=>[stored,...old.filter(p=>p.id!==stored.id)]);setEdit(null);setConflict(false);
  }catch(e){failed(e);}finally{setBusy(false);}}
  async function apply(item:TablePreset){if(busy)return;setBusy(true);setError('');try{
   const latest=await workspaceApi<TablePreset>('personnel/table-presets/'+item.id),freshOptions=await loadOptions();
-  const v=validatePreset(view,latest.name,latest.filter,latest.hiddenColumnIds,freshOptions);if(latest.view!==view||latest.schemaVersion!==1)throw new Error('方案所属表格或结构已失效，请重新加载后编辑');if(v.issues.length)throw new Error(v.issues.join('\n'));
+  const v=validatePreset(view==='resource'?'members':view,latest.name,latest.filter,latest.hiddenColumnIds,freshOptions);if(latest.view!==view||latest.schemaVersion!==1)throw new Error('方案所属表格或结构已失效，请重新加载后编辑');if(v.issues.length)throw new Error(v.issues.join('\n'));
   if(await applyCurrent.current(latest))setItems(old=>old.map(p=>p.id===latest.id?latest:p));
  }catch(e){failed(e);}finally{setBusy(false);}}
  async function confirm(){if(!confirmation||busy)return;const c=confirmation;if(c.kind==='leave'){setEdit(null);setConfirmation(null);setError('');if(!c.returnToManager)changeOpen(false);return;}if(c.kind==='reload'){setConfirmation(null);if(edit?.preset)await readEdit(edit.preset);return;}
@@ -133,7 +136,7 @@ export function TablePresetManager({view,active,hiddenColumnIds,options={},loadO
   <div className="preset-body">
    {error&&<div role="alert" className="preset-error">{error}</div>}
    {edit?<><label className="preset-name">自定义筛选名称 <span aria-hidden="true">*</span><input ref={nameControl} aria-label="自定义筛选名称" required placeholder="请输入自定义筛选名称" value={edit.name} onChange={e=>setEdit(old=>old?{...old,name:e.target.value}:old)}/></label><h3>配置筛选条件</h3>
-    {edit.blocks.map((b,bi)=><div key={b.id}>{bi>0&&<div className="preset-or"><span>或</span></div>}<fieldset className="preset-block" aria-label={`且条件组 ${bi+1}`}><legend>且条件</legend>{b.rows.map((r,ri)=>row(b,r,bi,ri))}<button type="button" className="preset-add" aria-label={`组 ${bi+1} 且条件`} disabled={leaves>=MAX_FILTER_LEAVES} onClick={()=>setEdit(e=>e?{...e,blocks:e.blocks.map(block=>block.id===b.id?{...block,rows:[...block.rows,newPresetRow(view)]}:block)}:e)}><Plus size={14}/>且条件</button></fieldset></div>)}
+    {edit.blocks.map((b,bi)=><div key={b.id}>{bi>0&&<div className="preset-or"><span>或</span></div>}<fieldset className="preset-block" aria-label={`且条件组 ${bi+1}`}><legend>且条件</legend>{b.rows.map((r,ri)=>row(b,r,bi,ri))}<button type="button" className="preset-add" aria-label={`组 ${bi+1} 且条件`} disabled={leaves>=MAX_FILTER_LEAVES} onClick={()=>setEdit(e=>e?{...e,blocks:e.blocks.map(block=>block.id===b.id?{...block,rows:[...block.rows,newPresetRow(view==='resource'?'members':view)]}:block)}:e)}><Plus size={14}/>且条件</button></fieldset></div>)}
     <button type="button" className="preset-add" aria-label="或条件" disabled={leaves>=MAX_FILTER_LEAVES} onClick={addBlock}><Plus size={14}/>或条件</button><h3>设置显隐字段</h3><div className="preset-visibility">{visibility(true)}{visibility(false)}</div><p className="preset-hint">隐藏字段仍参与筛选与排序。至少保留一个业务字段；选择、序号和操作列始终显示。</p>
     {conflict&&edit.preset&&<button type="button" onClick={()=>setConfirmation({kind:'reload'})}>重新加载最新方案</button>}
    </>:<><button ref={firstControl} type="button" className="preset-add preset-new" aria-label="新增筛选" disabled={busy||listLoading||items.length>=20} onClick={()=>begin(null)}><Plus size={16}/>新增筛选</button>
