@@ -132,7 +132,8 @@ constant old-row fill use exactly that normalized value.
 
 `presentation` is `{helpText:string|null,displayTimeZone:string|null}`;
 displayTimeZone is applicable only to datetime, uses a valid IANA timezone,
-and defaults to UTC in normalized metadata. It never changes the stored instant.
+and null/omission defaults to UTC in normalized metadata. For other kinds a
+nonempty displayTimeZone is rejected. It never changes the stored instant.
 
 | kind | config | Value on JSON wire | PG business column |
 | --- | --- | --- | --- |
@@ -161,7 +162,10 @@ type DecimalConfig = { precision:number; scale:number;
 
 Proposal normalization: precision defaults to 38; money scale defaults to 2,
 number scale to 0; roundingPlaces defaults to scale; roundingMode defaults to
-HALF_UP. Full stored/response config always includes all four keys. Validate
+HALF_UP. The config object is required. All four inner keys may be omitted on input;
+unknown keys and explicit null config values fail. Omitted roundingPlaces uses
+the normalized scale. Omitted defaults and explicit identical defaults produce
+the same normalized DTO/fingerprint. Full stored/response config always includes all four keys. Validate
 1 <= precision <= 38, 0 <= scale <= min(18,precision), -18 <= roundingPlaces <= 18
 and roundingPlaces <= scale. The last condition prevents a second unrequested
 rounding by PostgreSQL's storage scale. Positive places are decimal digits after
@@ -179,7 +183,7 @@ numeric(4,2) with 99.995 rounded to cents overflows to 100.00 and is rejected.
 
 Proposed datetime normalization floors the instant in UTC to the requested
 minute/second/millisecond boundary (including instants before 1970); it does not
-round across a future boundary. Default precision is second. A changed precision
+round across a future boundary. Omitted precision defaults to second; explicit null is rejected. A changed precision
 is a value transformation guarded like a type/config change, not just display.
 The exact behavior/default is for lead review; the PLAN does not specify it.
 
