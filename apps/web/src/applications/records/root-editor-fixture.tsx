@@ -27,7 +27,7 @@ function Fixture(){
  const identity=mode==='edit'?{kind:'record' as const,actorId:actor,appId,viewId,recordId}:{kind:'new' as const,actorId:actor,appId,viewId,clientDraftId};
  return <div className="workspace"><main className="app-content" style={{height:'100dvh'}}>
  <div><button onClick={()=>setMounted(v=>!v)}>切换挂载</button><button onClick={()=>setActor(other)}>切换身份</button><button onClick={()=>setView(v=>({...v,policyRevision:v.policyRevision+1,fields:v.fields.map(f=>f.id===title?{...f,access:{...f.access,read:'none',create:false,edit:'none'}}:f)}))}>撤销事由权限</button></div>
- {mounted&&<RecordForm key={actor} view={view} identity={identity} record={mode==='edit'?record:undefined} mode={mode} authorityKey={actor+':'+view.policyRevision} queryVersion="root-query-1"
+ {mounted&&<RecordForm view={view} identity={identity} record={mode==='edit'?record:undefined} mode={mode} authorityKey={actor+':'+view.policyRevision} queryVersion="root-query-1"
  registerLeaveGuard={(scope,controller)=>guards.register(scope,controller)}
  onUnauthorized={()=>{events.unauthorized++;}} onIdentityMismatch={()=>{events.identityMismatch++;}}
  onRefresh={()=>{events.refreshes++;}}
