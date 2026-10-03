@@ -34,4 +34,3 @@ ALTER TABLE archive.authentication_events ADD CONSTRAINT ck_archive_events_summa
  (event_type NOT IN ('personnel_changed','application_changed') AND object_type IS NULL AND object_id IS NULL AND change_summary IS NULL)
 ),false));
 -- No destructive Down: retain new application events on artifact rollback.
-
