@@ -77,10 +77,10 @@ does not define business JSONB storage.
 | GET /forms/{viewId}/records/{recordId} | none | Record/200 |
 | PATCH /forms/{viewId}/records/{recordId} | RecordEdit, application/json | MutationResult/200 |
 | POST /forms/{viewId}/records/search | RecordSearch | RecordPage/200 |
-| POST /forms/{viewId}/drafts | DraftCreate | DraftMutationResult/201 + Location |
+| POST /forms/{viewId}/drafts | DraftCreate | Draft/201 + Location |
 | GET /forms/{viewId}/drafts | pageSize,pageToken query | DraftSummary[]/200 + meta.pagination |
 | GET /forms/{viewId}/drafts/{draftId} | none | Draft/200 |
-| PATCH /forms/{viewId}/drafts/{draftId} | DraftUpdate, application/json | DraftMutationResult/200 |
+| PATCH /forms/{viewId}/drafts/{draftId} | DraftUpdate, application/json | Draft/200 |
 | DELETE /forms/{viewId}/drafts/{draftId} | operationId,expectedDraftVersion query | 204 |
 | GET /api/v1/application-operations/{operationId} | existing route | additive record/draft result kinds |
 
@@ -127,6 +127,7 @@ Proposed wire types, all shown keys required unless suffixed ?:
         "SCHEMA_CHANGED"|"BASE_RECORD_CHANGED"};
     type Draft = DraftSummary & {values:DraftValues;
       conflicts:DraftConflict[]};
+    // Internal durable operation confirmation only; draft HTTP writes return Draft.
     type DraftMutationResult = {operationId:UUID; draftId:UUID;
       draftVersion:Version; updatedAt:string};
     type DraftCreate = {operationId:UUID; targetRecordId:UUID|null;
@@ -454,8 +455,8 @@ changes under the same current authorization. Policy loss is an immediate
 authorization error, not permission to replay stale P. Context expiration is
 separate from QUERY_CHANGED. A changed matching row outside the current
 page is relevant; an unchanged/no-op write, an unrelated row, and an
-unreadable field outside P are not. The lead selected this projection boundary;
-formal Notion readback still gates code.
+unreadable field outside P are not. The lead selected this projection boundary
+in accepted ADR §8; shared Q36 extraction remains an integration dependency.
 
 Let N=table rows, M=matching authorized rows, F=fields/leaves evaluated,
 W=bytes of one projected row, p=page size, o=(page-1)*p, C=active contexts,
