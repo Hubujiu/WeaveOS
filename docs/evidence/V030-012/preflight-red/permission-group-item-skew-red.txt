@@ -1,0 +1,31 @@
+
+Running 1 test using 1 worker
+F
+
+  1) [chromium] › apps/web/src/applications.permissions.component.spec.ts:388:1 › V030-012 CAS review rejects a stale group item against its list revision
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('alert').filter({ hasText: '权限配置读取期间发生变化' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('alert').filter({ hasText: '权限配置读取期间发生变化' }) with timeout 5000ms
+      - waiting for getByRole('alert').filter({ hasText: '权限配置读取期间发生变化' })
+
+
+      404 |  });
+      405 |  await page.getByRole('button', { name: '重新加载配置' }).click();
+    > 406 |  await expect(page.getByRole('alert').filter({ hasText: '权限配置读取期间发生变化' })).toBeVisible();
+          |                                                                            ^
+      407 |  await expect(menu.getByRole('checkbox', { name: '允许进入应用' })).not.toBeChecked();
+      408 |  await expect(menu.getByRole('button', { name: '保存菜单' })).toBeDisabled();
+      409 |  expect(backend.writes).toHaveLength(0);
+        at /repo/apps/web/src/applications.permissions.component.spec.ts:406:76
+
+    Error Context: .work/v030012/group-item-red/applications.permissions.c-cd359-m-against-its-list-revision-chromium/error-context.md
+
+  1 failed
+    [chromium] › apps/web/src/applications.permissions.component.spec.ts:388:1 › V030-012 CAS review rejects a stale group item against its list revision

@@ -38,10 +38,10 @@ async function fixture(page: Page, options: { owner?: boolean; groups?: boolean 
    revision++; groups = groups.map(g => ({ ...g, name: body.name, enabled: body.enabled, policyRevision: revision })); data = groups[0];
   } else if (path === 'applications/' + app.id + '/permission-groups/' + groupId + '/members') {
    if (method === 'GET') data = { memberIds, members: memberIds.map((id: string) => ({ id, label: id === inactiveId ? '停用成员' : '活跃成员', status: id === inactiveId ? 'disabled' : 'active', selectable: id !== inactiveId })), policyRevision: revision };
-   else { memberIds = body.memberIds; revision++; data = { id: groupId, policyRevision: revision }; }
+   else { memberIds = body.memberIds; revision++; groups = groups.map(group => ({ ...group, policyRevision: revision })); data = { id: groupId, policyRevision: revision }; }
   } else if (path === 'applications/' + app.id + '/permission-groups/' + groupId + '/grants') {
    if (method === 'GET') data = { grants, policyRevision: revision };
-   else { grants = body.grants; revision++; data = { id: groupId, policyRevision: revision }; }
+   else { grants = body.grants; revision++; groups = groups.map(group => ({ ...group, policyRevision: revision })); data = { id: groupId, policyRevision: revision }; }
   } else if (path.startsWith('applications/' + app.id + '/member-candidates')) {
    const q = url.searchParams.get('q') || '';
    data = { items: q === '找不到' ? [] : [{ id: memberId, label: '活跃成员', status: 'active' }] };
@@ -383,6 +383,33 @@ test('V030-012 CAS review rejects a split policy snapshot before any grant write
  await expect(page.getByRole('status').filter({ hasText: '菜单已保存' })).toBeVisible();
  expect(backend.writes).toHaveLength(1);
  expect(backend.writes[0].body.expectedPolicyRevision).toBe(2);
+});
+
+test('V030-012 CAS review rejects a stale group item against its list revision', async ({ page }) => {
+ const backend = await fixture(page);
+ await page.goto('/app/applications/' + app.id);
+ await page.getByRole('button', { name: '权限管理' }).click();
+ await page.getByRole('button', { name: '业务管理员', exact: true }).click();
+ const menu = page.getByRole('heading', { name: '菜单', exact: true }).locator('..');
+ await menu.getByRole('checkbox', { name: '允许进入应用' }).uncheck();
+ backend.externalRevision();
+ let staleOnce = true;
+ await page.route('**/api/v1/applications/' + app.id + '/permission-groups', route => {
+  if (!staleOnce || route.request().method() !== 'GET') return route.fallback();
+  staleOnce = false;
+  return route.fulfill({ status: 200, json: { code: 'OK', data: {
+   policyRevision: 2,
+   items: [{ id: groupId, name: '业务管理员', enabled: true, policyRevision: 1 }],
+  } } });
+ });
+ await page.getByRole('button', { name: '重新加载配置' }).click();
+ await expect(page.getByRole('alert').filter({ hasText: '权限配置读取期间发生变化' })).toBeVisible();
+ await expect(menu.getByRole('checkbox', { name: '允许进入应用' })).not.toBeChecked();
+ await expect(menu.getByRole('button', { name: '保存菜单' })).toBeDisabled();
+ expect(backend.writes).toHaveLength(0);
+ await page.getByRole('button', { name: '重新加载配置' }).click();
+ await expect(menu.getByRole('group', { name: '菜单版本核对' })).toBeVisible();
+ expect(backend.writes).toHaveLength(0);
 });
 
 test('V030-012 Back discard cancels a gated group preflight before PUT', async ({ page }, info) => {

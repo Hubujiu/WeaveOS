@@ -33,6 +33,7 @@ const isRootGrant = (value: unknown, appId: string) => {
  return Object.keys(grant).length === 5 && grant.resourceKind === 'application' && grant.resourceId === appId && grant.action === 'menu.enter' && grant.rowScope === 'all' && Array.isArray(grant.fields) && grant.fields.length === 0;
 };
 const listValid = (value: GroupList) => !!value && Array.isArray(value.items) && validRevision(value.policyRevision) && value.items.every(group => uuid.test(group.id) && typeof group.name === 'string' && typeof group.enabled === 'boolean' && validRevision(group.policyRevision));
+const listRevisionConsistent = (value: GroupList) => value.items.every(group => group.policyRevision === value.policyRevision);
 const membersValid = (value: Members) => !!value && Array.isArray(value.memberIds) && Array.isArray(value.members) && validRevision(value.policyRevision) && value.memberIds.every(id => uuid.test(id)) && value.members.length === value.memberIds.length && value.members.every(member => value.memberIds.includes(member.id) && typeof member.label === 'string' && ['active', 'disabled'].includes(member.status) && typeof member.selectable === 'boolean');
 const grantsValid = (value: Grants) => !!value && Array.isArray(value.grants) && validRevision(value.policyRevision);
 const message = (cause: unknown) => cause instanceof Error ? cause.message : '服务暂时不可用，请稍后重试';
@@ -63,7 +64,7 @@ export function PermissionManager({ actorId, appId, onDirty, onUnauthorized, onI
   setLoading(true); setError('');
   try {
    const response = await applicationApi<GroupList>(actorId, path);
-   if (!listValid(response)) throw new Error('权限组响应无效，请重试');
+   if (!listValid(response) || !listRevisionConsistent(response)) throw new Error('权限组响应无效，请重试');
    if (sequence === current.current) setList(response);
   } catch (cause) { if (sequence === current.current) handleError(cause); }
   finally { if (sequence === current.current) setLoading(false); }
@@ -159,7 +160,7 @@ function GroupEditor({ actorId, appId, group, reloadList, onDirty, onUnauthorize
    ]);
    const latest = list.items?.find(value => value.id === group.id);
    if (!listValid(list) || !latest || !membersValid(memberResult) || !grantsValid(grantResult)) throw new Error('权限配置响应无效，请重试');
-   if (list.policyRevision !== memberResult.policyRevision || list.policyRevision !== grantResult.policyRevision) throw new Error('权限配置读取期间发生变化，请重新加载配置');
+   if (!listRevisionConsistent(list) || list.policyRevision !== memberResult.policyRevision || list.policyRevision !== grantResult.policyRevision) throw new Error('权限配置读取期间发生变化，请重新加载配置');
    if (token !== sequence.current) return;
    const current = drafts.current;
    const revision = list.policyRevision;

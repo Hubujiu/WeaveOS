@@ -351,3 +351,31 @@ build, task structure validation, and `git diff --check` passed. The updated
 conflict screenshot and three new review/skew screenshots were visually
 inspected; all 40 PNG dimensions and SHA-256 digests match
 `screenshots/manifest.json`.
+
+A second snapshot review checked each group item's `policyRevision` against
+the list's global revision. The B5 configuration response derives both from
+the same application policy revision, so a mismatched item is not a valid
+baseline even if the separate members and grants GETs match the list. The
+new stale-item HTTP fixture failed before this check
+(`preflight-red/permission-group-item-skew-red.txt`) and passed after the
+editor and list reader reject it (`permission-group-item-skew-green.txt`).
+The rejection preserves the dirty menu and blocks any PUT until a consistent
+reload yields an explicit review.
+The permission fixture originally advanced its global revision on member and
+menu writes without advancing the included group item, unlike the reviewed B5
+configuration contract. After correcting that fixture, eight focused Chromium
+cases passed and the complete permission matrix passed 126/126 across six
+browser/motion projects (`permission-group-item-fixture-green.txt`,
+`permission-group-item-final-six-browser.txt`). The rebuilt frontend passed
+the real HTTPS B5 owner-save and concurrent-policy cases 12/12 across those
+projects (`permission-group-item-real-six.txt`); web/test TypeScript checks
+and Vite build passed.
+
+CI for previous head `8a961ac` passed governance, Go, and browser jobs, but
+the product job had two V014-owned form component failures among 369 passed
+and one skipped. The failed A→B→A test waits for an already-visible generic
+region before switching back, and the structure test likewise has no B-only
+render wait; both can skip the intermediate mount under CI scheduling. The
+same two unchanged V014 tests passed 6/6 in local Chromium repeats
+(`v014-ci-forms-repro.txt`). This is a reported integration gate, not an
+accepted product result; the forms owner must review it before CI can close.
