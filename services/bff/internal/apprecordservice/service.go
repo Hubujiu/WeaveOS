@@ -107,6 +107,7 @@ type EditRequest struct {
 	AppID, ViewID, RecordID, OperationID         string
 	ExpectedSchemaVersion, ExpectedRecordVersion int64
 	Changes                                      map[string]any
+	DraftRef                                     *DraftRef
 }
 type DraftCreateRequest struct {
 	AppID, ViewID, OperationID string
@@ -114,6 +115,16 @@ type DraftCreateRequest struct {
 	TargetRecordID             *string
 	BaseRecordVersion          *int64
 	Values                     appdrafts.Values
+}
+type DraftUpdateRequest struct {
+	AppID, ViewID, DraftID, OperationID string
+	ExpectedDraftVersion                int64
+	Changes                             appdrafts.Values
+	RemoveFieldIDs                      []string
+}
+type DraftDiscardRequest struct {
+	AppID, ViewID, DraftID, OperationID string
+	ExpectedDraftVersion                int64
 }
 type MutationResult struct {
 	OperationID   string `json:"operationId"`

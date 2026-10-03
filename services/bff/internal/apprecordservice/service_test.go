@@ -290,6 +290,46 @@ func TestRestrictedDraftSubmitConsumesWithRecordAndOperation(t *testing.T) {
 	}
 }
 
+func TestRestrictedDraftPatchNoopAndDiscardLedger(t *testing.T) {
+	f := newRecordFixture(t)
+	var op string
+	if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	draft, err := f.service.CreateDraft(f.ctx, f.principal, DraftCreateRequest{AppID: f.app, ViewID: f.view, OperationID: op, SchemaVersion: 1, Values: map[string]any{f.public: "unfinished"}}, applications.Metadata{RequestID: "v015-draft-patch"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	updated, err := f.service.UpdateDraft(f.ctx, f.principal, DraftUpdateRequest{AppID: f.app, ViewID: f.view, DraftID: draft.ID, OperationID: op, ExpectedDraftVersion: 1, Changes: map[string]any{f.public: "ready"}}, applications.Metadata{RequestID: "v015-patch"})
+	if err != nil || updated.DraftVersion != 2 || updated.Values[f.public] != "ready" {
+		t.Fatalf("patch %+v %v", updated, err)
+	}
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	noop, err := f.service.UpdateDraft(f.ctx, f.principal, DraftUpdateRequest{AppID: f.app, ViewID: f.view, DraftID: draft.ID, OperationID: op, ExpectedDraftVersion: 2, Changes: map[string]any{}, RemoveFieldIDs: []string{}}, applications.Metadata{RequestID: "v015-noop"})
+	if err != nil || noop.DraftVersion != 2 {
+		t.Fatalf("no-op %+v %v", noop, err)
+	}
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	if err = f.service.DiscardDraft(f.ctx, f.principal, DraftDiscardRequest{AppID: f.app, ViewID: f.view, DraftID: draft.ID, OperationID: op, ExpectedDraftVersion: 2}, applications.Metadata{RequestID: "v015-discard"}); err != nil {
+		t.Fatal(err)
+	}
+	var count int
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_drafts WHERE id=$1", draft.ID).Scan(&count); err != nil || count != 0 {
+		t.Fatalf("draft remains %d %v", count, err)
+	}
+	var status int
+	if err = f.runtime.QueryRow(f.ctx, "SELECT http_status FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2", f.actor, op).Scan(&status); err != nil || status != 204 {
+		t.Fatalf("discard ledger %d %v", status, err)
+	}
+}
+
 func TestRestrictedQueryOnlyObservableChangesInvalidate(t *testing.T) {
 	f := newRecordFixture(t)
 	filter := json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + f.public + `","operator":"eq","value":"alpha"}]}`)

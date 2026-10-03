@@ -4,11 +4,13 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appaccess"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appdrafts"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords"
@@ -16,8 +18,6 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
 )
-
-type sourceGuard func(context.Context, pgx.Tx) error
 
 type controlledDML struct{ implementation appstructure.RecordDML }
 
@@ -81,7 +81,7 @@ func policyFor(facts applications.RecordContext) (appaccess.Policy, bool) {
 	return p, menu
 }
 
-func normalizeRecordValues(raw map[string]any, fields []appfields.Field) (map[string]any, error) {
+func normalizeRecordValues(raw map[string]any, fields []appfields.Field, requireComplete bool) (map[string]any, error) {
 	if raw == nil {
 		return nil, apprecords.ErrInvalid
 	}
@@ -98,7 +98,7 @@ func normalizeRecordValues(raw map[string]any, fields []appfields.Field) (map[st
 	for _, id := range ids {
 		f, ok := definitions[id]
 		if !ok {
-			return nil, apprecords.ErrInvalid
+			return nil, fmt.Errorf("unknown edit field %s: %w", id, apprecords.ErrInvalid)
 		}
 		encoded, e := json.Marshal(raw[id])
 		if e != nil {
@@ -115,6 +115,9 @@ func normalizeRecordValues(raw map[string]any, fields []appfields.Field) (map[st
 		values[id] = value
 	}
 	for _, f := range fields {
+		if !requireComplete {
+			continue
+		}
 		if f.Required {
 			if _, ok := values[f.ID]; !ok && (len(f.Default) == 0 || string(f.Default) == "null") {
 				return nil, apprecords.ErrInvalid
@@ -140,13 +143,32 @@ func fieldsInContext(facts applications.RecordContext) ([]appfields.Field, []str
 	}
 	return fields, ids, nil
 }
-func rejectUnlockedNewReferences(values map[string]any, fields []appfields.Field, guard sourceGuard) error {
+
+// BeginRecordWrite holds personnel.lock_query_revisions before this check.
+// All auth/users, department and membership source writers take that lock
+// before their source triggers, so active source facts cannot change until
+// this record transaction commits.
+func validateNewReferences(ctx context.Context, tx pgx.Tx, values map[string]any, fields []appfields.Field) error {
 	for _, f := range fields {
 		if f.Kind != "member" && f.Kind != "department" {
 			continue
 		}
-		if value, ok := values[f.ID]; ok && value != nil && guard == nil {
-			return ErrUnavailable
+		if value, ok := values[f.ID]; ok && value != nil {
+			id, valid := value.(string)
+			if !valid || !appfields.ValidID(id) {
+				return applications.ErrResourceInvalid
+			}
+			source := "applications.member_sources"
+			if f.Kind == "department" {
+				source = "applications.department_sources"
+			}
+			var active bool
+			if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM "+source+" WHERE id=$1 AND status='active')", id).Scan(&active); err != nil {
+				return ErrUnavailable
+			}
+			if !active {
+				return applications.ErrResourceInvalid
+			}
 		}
 	}
 	return nil
@@ -165,7 +187,7 @@ func (s *Service) Create(ctx context.Context, principal session.Principal, req C
 	var policy appaccess.Policy
 	var fields []appfields.Field
 	options := applications.RecordWriteOptions{LockTimeout: time.Second, StatementTimeout: 5 * time.Second, OperationID: req.OperationID, Kind: "record.create", Fingerprint: fingerprint,
-		Authorize: func(_ context.Context, _ pgx.Tx, facts applications.RecordContext) error {
+		Authorize: func(c context.Context, tx pgx.Tx, facts applications.RecordContext) error {
 			var menu bool
 			policy, menu = policyFor(facts)
 			if !menu || !facts.SchemaReady {
@@ -185,7 +207,7 @@ func (s *Service) Create(ctx context.Context, principal session.Principal, req C
 			if !policy.CanCreate(selected) {
 				return applications.ErrDenied
 			}
-			return rejectUnlockedNewReferences(req.Values, fields, nil)
+			return validateNewReferences(c, tx, req.Values, fields)
 		},
 	}
 	write, err := (&applications.Application{Pool: s.Pool}).BeginRecordWrite(ctx, principal, req.AppID, req.ViewID, options)
@@ -213,7 +235,7 @@ func (s *Service) Create(ctx context.Context, principal session.Principal, req C
 	if req.ExpectedSchemaVersion != facts.SchemaVersion {
 		return result, apprecords.ErrConflict
 	}
-	values, err := normalizeRecordValues(req.Values, fields)
+	values, err := normalizeRecordValues(req.Values, fields, true)
 	if err != nil {
 		return result, err
 	}
@@ -230,6 +252,12 @@ func (s *Service) Create(ctx context.Context, principal session.Principal, req C
 	if err != nil {
 		return result, err
 	}
+	if req.DraftRef != nil {
+		store := appdrafts.Store{Relation: pgx.Identifier{"applications", "record_drafts"}}
+		if err = store.ConsumeInTx(ctx, write.Tx(), draftAccess(facts, policy, fields, nil), req.DraftRef.ID, req.DraftRef.DraftVersion, nil, nil); err != nil {
+			return MutationResult{}, err
+		}
+	}
 	result = MutationResult{OperationID: stored.OperationID, ID: stored.ID, RecordVersion: stored.RecordVersion, SchemaVersion: stored.SchemaVersion, CreatedAt: stored.CreatedAt.UTC().Format(time.RFC3339Nano), UpdatedAt: stored.UpdatedAt.UTC().Format(time.RFC3339Nano)}
 	raw, _ := json.Marshal(result)
 	if err = write.Complete(ctx, req.OperationID, applications.Result{Status: 201, Location: "", Data: raw}); err != nil {
@@ -244,8 +272,228 @@ func (s *Service) Create(ctx context.Context, principal session.Principal, req C
 var _ apprecords.TypedDML = controlledDML{}
 var _ apprecords.Authorization = recordAuthorization{}
 var _ apprecords.Audit = recordAudit{}
-var _ = errors.Is
 
-func (s *Service) Edit(context.Context, session.Principal, EditRequest, applications.Metadata) (MutationResult, error) {
-	return MutationResult{}, ErrUnavailable
+func (s *Service) UpdateDraft(context.Context, session.Principal, DraftUpdateRequest, applications.Metadata) (appdrafts.Draft, error) {
+	return appdrafts.Draft{}, ErrUnavailable
+}
+func (s *Service) DiscardDraft(context.Context, session.Principal, DraftDiscardRequest, applications.Metadata) error {
+	return ErrUnavailable
+}
+
+func draftAccess(facts applications.RecordContext, policy appaccess.Policy, fields []appfields.Field, base *int64) appdrafts.Access {
+	known := map[string]appfields.Field{}
+	for _, f := range fields {
+		known[f.ID] = f
+	}
+	return appdrafts.Access{ActorID: facts.Actor.ID, AppID: facts.App.ID, TableID: facts.TableID, ViewID: facts.ViewID,
+		ResourceAllowed: policy.CanCreate(nil) || policy.CanEdit(facts.Actor.ID, nil), CurrentSchemaVersion: facts.SchemaVersion, CurrentBaseRecordVersion: base,
+		Field: func(id string) appdrafts.FieldStatus {
+			f, ok := known[id]
+			if !ok {
+				return appdrafts.FieldStatus{}
+			}
+			maxRunes := 1 << 20
+			maxItems := 1000
+			var config struct {
+				MaxLength *int  `json:"maxLength"`
+				Options   []any `json:"options"`
+			}
+			_ = json.Unmarshal(f.Config, &config)
+			if config.MaxLength != nil && *config.MaxLength > 0 {
+				maxRunes = *config.MaxLength
+			}
+			if len(config.Options) > 0 {
+				maxItems = len(config.Options)
+			}
+			return appdrafts.FieldStatus{Exists: true, Writable: policy.CanCreate([]string{id}) || policy.FieldScope(appaccess.Edit, id) != appaccess.None, Kind: f.Kind, MaxRunes: maxRunes, MaxItems: maxItems}
+		},
+	}
+}
+
+func (s *Service) CreateDraft(ctx context.Context, principal session.Principal, req DraftCreateRequest, metadata applications.Metadata) (appdrafts.Draft, error) {
+	var empty appdrafts.Draft
+	if s == nil || s.Pool == nil || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.OperationID) || req.SchemaVersion < 1 || req.Values == nil || metadata.RequestID == "" {
+		return empty, appdrafts.ErrInvalid
+	}
+	canonical, _ := json.Marshal(struct {
+		Kind, AppID, ViewID string
+		Body                DraftCreateRequest
+	}{"draft.create", req.AppID, req.ViewID, req})
+	fingerprint := sha256.Sum256(canonical)
+	var policy appaccess.Policy
+	var fields []appfields.Field
+	options := applications.RecordWriteOptions{LockTimeout: time.Second, StatementTimeout: 5 * time.Second, OperationID: req.OperationID, Kind: "draft.create", Fingerprint: fingerprint,
+		Authorize: func(_ context.Context, _ pgx.Tx, facts applications.RecordContext) error {
+			var menu bool
+			policy, menu = policyFor(facts)
+			if !menu {
+				return applications.ErrDenied
+			}
+			var err error
+			fields, _, err = fieldsInContext(facts)
+			if err != nil {
+				return err
+			}
+			if req.TargetRecordID == nil && !policy.CanCreate(nil) {
+				return applications.ErrDenied
+			}
+			if req.TargetRecordID != nil && policy.VisibleScope() == appaccess.None && !policy.CanEdit(facts.Actor.ID, nil) {
+				return applications.ErrDenied
+			}
+			return nil
+		},
+	}
+	write, err := (&applications.Application{Pool: s.Pool}).BeginRecordWrite(ctx, principal, req.AppID, req.ViewID, options)
+	if err != nil {
+		return empty, err
+	}
+	defer write.Rollback(context.Background())
+	replayed, err := write.Replay(ctx, req.OperationID, "draft.create", fingerprint)
+	if err != nil {
+		return empty, err
+	}
+	if replayed != nil {
+		if err = write.Commit(ctx); err != nil {
+			return empty, err
+		}
+		var minimum struct {
+			ID           string `json:"id"`
+			DraftVersion int64  `json:"draftVersion"`
+		}
+		if json.Unmarshal(replayed.Data, &minimum) != nil {
+			return empty, ErrUnavailable
+		}
+		return appdrafts.Draft{ID: minimum.ID, DraftVersion: minimum.DraftVersion}, nil
+	}
+	if err = write.Claim(ctx, req.OperationID, "draft.create", fingerprint); err != nil {
+		return empty, err
+	}
+	facts := write.Context()
+	if req.SchemaVersion != facts.SchemaVersion {
+		return empty, appdrafts.ErrBaseConflict
+	}
+	if err = (appstructure.RecordGate{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID}).LockTable(ctx, write.Tx(), facts.TableID, facts.SchemaVersion); err != nil {
+		return empty, err
+	}
+	var base *int64
+	if req.TargetRecordID != nil {
+		if !appfields.ValidID(*req.TargetRecordID) || req.BaseRecordVersion == nil {
+			return empty, appdrafts.ErrInvalid
+		}
+		relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(facts.TableID, "-", "")}.Sanitize()
+		var version int64
+		if err = write.Tx().QueryRow(ctx, "SELECT record_version FROM "+relation+" WHERE id=$1", *req.TargetRecordID).Scan(&version); err != nil {
+			return empty, err
+		}
+		base = &version
+		if version != *req.BaseRecordVersion {
+			return empty, appdrafts.ErrBaseConflict
+		}
+	}
+	access := draftAccess(facts, policy, fields, base)
+	var id string
+	if err = write.Tx().QueryRow(ctx, "SELECT gen_random_uuid()::text").Scan(&id); err != nil {
+		return empty, err
+	}
+	store := appdrafts.Store{Relation: pgx.Identifier{"applications", "record_drafts"}}
+	draft, err := store.CreateInTx(ctx, write.Tx(), access, appdrafts.Create{ID: id, TargetRecordID: req.TargetRecordID, SchemaVersion: req.SchemaVersion, BaseRecordVersion: req.BaseRecordVersion, Values: req.Values})
+	if err != nil {
+		return empty, err
+	}
+	raw, _ := json.Marshal(map[string]any{"operationId": req.OperationID, "id": draft.ID, "draftVersion": draft.DraftVersion})
+	if err = write.Complete(ctx, req.OperationID, applications.Result{Status: 201, Location: "", Data: raw}); err != nil {
+		return empty, err
+	}
+	if err = write.Commit(ctx); err != nil {
+		return empty, err
+	}
+	return draft, nil
+}
+
+func (s *Service) Edit(ctx context.Context, principal session.Principal, req EditRequest, metadata applications.Metadata) (MutationResult, error) {
+	var result MutationResult
+	if s == nil || s.Pool == nil || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.RecordID) || !appfields.ValidID(req.OperationID) || req.Changes == nil || req.ExpectedSchemaVersion < 1 || req.ExpectedRecordVersion < 1 || metadata.RequestID == "" {
+		return result, apprecords.ErrInvalid
+	}
+	canonical, _ := json.Marshal(struct {
+		Kind, AppID, ViewID string
+		Body                EditRequest
+	}{"record.edit", req.AppID, req.ViewID, req})
+	fingerprint := sha256.Sum256(canonical)
+	var policy appaccess.Policy
+	var fields []appfields.Field
+	options := applications.RecordWriteOptions{LockTimeout: time.Second, StatementTimeout: 5 * time.Second, OperationID: req.OperationID, Kind: "record.edit", Fingerprint: fingerprint,
+		Authorize: func(c context.Context, tx pgx.Tx, facts applications.RecordContext) error {
+			var menu bool
+			policy, menu = policyFor(facts)
+			if !menu {
+				return applications.ErrDenied
+			}
+			var err error
+			fields, _, err = fieldsInContext(facts)
+			if err != nil {
+				return err
+			}
+			for id := range req.Changes {
+				if policy.FieldScope(appaccess.Edit, id) == appaccess.None {
+					return applications.ErrDenied
+				}
+			}
+			return validateNewReferences(c, tx, req.Changes, fields)
+		},
+	}
+	write, err := (&applications.Application{Pool: s.Pool}).BeginRecordWrite(ctx, principal, req.AppID, req.ViewID, options)
+	if err != nil {
+		return result, err
+	}
+	defer write.Rollback(context.Background())
+	replayed, err := write.Replay(ctx, req.OperationID, "record.edit", fingerprint)
+	if err != nil {
+		return result, err
+	}
+	if replayed != nil {
+		if err = write.Commit(ctx); err != nil {
+			return result, err
+		}
+		if json.Unmarshal(replayed.Data, &result) != nil {
+			return MutationResult{}, ErrUnavailable
+		}
+		return result, nil
+	}
+	if err = write.Claim(ctx, req.OperationID, "record.edit", fingerprint); err != nil {
+		return result, err
+	}
+	facts := write.Context()
+	if req.ExpectedSchemaVersion != facts.SchemaVersion {
+		return result, apprecords.ErrConflict
+	}
+	values, err := normalizeRecordValues(req.Changes, fields, false)
+	if err != nil {
+		return result, fmt.Errorf("normalize edit: %w", err)
+	}
+	_, active, err := fieldsInContext(facts)
+	if err != nil {
+		return result, fmt.Errorf("apply edit: %w", err)
+	}
+	writer := apprecords.Writer{Gate: appstructure.RecordGate{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID}, Authorization: recordAuthorization{policy: policy}, Fence: appstructure.RecordFence{AppID: req.AppID, TableID: facts.TableID}, Audit: recordAudit{port: appstructure.RecordAudit{Context: facts, OperationID: req.OperationID, BeforeRecordVersion: req.ExpectedRecordVersion, Metadata: metadata}}, DML: controlledDML{}}
+	stored, err := writer.EditInTx(ctx, write.Tx(), apprecords.Table{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID, Namespace: "appdata", SchemaVersion: facts.SchemaVersion, Ready: facts.SchemaReady, ActiveFieldIDs: active}, apprecords.Edit{OperationID: req.OperationID, ID: req.RecordID, ActorID: facts.Actor.ID, ExpectedSchemaVersion: req.ExpectedSchemaVersion, ExpectedRecordVersion: req.ExpectedRecordVersion, Changes: values})
+	if err != nil {
+		return result, fmt.Errorf("apply edit: %w", err)
+	}
+	if req.DraftRef != nil {
+		store := appdrafts.Store{Relation: pgx.Identifier{"applications", "record_drafts"}}
+		base := req.ExpectedRecordVersion
+		if err = store.ConsumeInTx(ctx, write.Tx(), draftAccess(facts, policy, fields, &base), req.DraftRef.ID, req.DraftRef.DraftVersion, &req.RecordID, &base); err != nil {
+			return MutationResult{}, err
+		}
+	}
+	result = MutationResult{OperationID: stored.OperationID, ID: stored.ID, RecordVersion: stored.RecordVersion, SchemaVersion: stored.SchemaVersion, CreatedAt: stored.CreatedAt.UTC().Format(time.RFC3339Nano), UpdatedAt: stored.UpdatedAt.UTC().Format(time.RFC3339Nano)}
+	raw, _ := json.Marshal(result)
+	if err = write.Complete(ctx, req.OperationID, applications.Result{Status: 200, Location: "", Data: raw}); err != nil {
+		return MutationResult{}, err
+	}
+	if err = write.Commit(ctx); err != nil {
+		return MutationResult{}, err
+	}
+	return result, nil
 }
