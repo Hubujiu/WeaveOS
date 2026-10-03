@@ -10,7 +10,7 @@ type GuardWindow=Window&{
 const active=new Map<string,Entry>();
 const oldUnsubscribes:(()=>void)[]=[];
 let nextId=0;
-const key=(scope:LeaveScope)=>JSON.stringify([scope.kind,scope.actorId,scope.appId,scope.viewId??null]);
+const key=(scope:LeaveScope)=>JSON.stringify([scope.kind,scope.actorId,scope.appId,'viewId' in scope?scope.viewId:null]);
 const current=()=>[...active.values()].at(-1)??null;
 export const registerHarnessGuard:RegisterLeaveGuard=(scope,controller)=>{
   const entry={id:++nextId,scope,controller},id=key(scope);
