@@ -17,8 +17,9 @@ export function TablePresetManager({view,active,hiddenColumnIds,options={},loadO
  const [confirmation,setConfirmation]=useState<{kind:'cancel'|'delete'|'leave'|'reload';preset?:TablePreset;returnToManager?:boolean}|null>(null);
  const [reducedMotion,setReducedMotion]=useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches);
  const trigger=useRef<HTMLButtonElement>(null),firstControl=useRef<HTMLButtonElement>(null),nameControl=useRef<HTMLInputElement>(null),actions=useRef<Popover.Root.Actions|null>(null);
- const intent=useRef(false),everOpened=useRef(false),restoreTriggerFocus=useRef(true),generation=useRef(0),animation=useRef<Animation[]>([]),sharedGeneration=useRef(0),sharedFrame=useRef(0),sharedTimer=useRef(0),requests=useRef(0);
- const sharedVersion=sharedGeneration.current,panelId=useId(),sharedName=`q36-preset-shell-${panelId.replace(/[^a-zA-Z0-9_-]/g,'-')}`;
+ const intent=useRef(false),everOpened=useRef(false),generation=useRef(0),animation=useRef<Animation[]>([]),sharedGeneration=useRef(0),sharedFrame=useRef(0),sharedTimer=useRef(0),requests=useRef(0);
+ const focusLifecycle=useRef(0),closeFocus=useRef<{token:number;popup:HTMLDivElement|null}|null>(null);
+ const sharedVersion=sharedGeneration.current,focusVersion=focusLifecycle.current,panelId=useId(),sharedName=`q36-preset-shell-${panelId.replace(/[^a-zA-Z0-9_-]/g,'-')}`;
  const sharedMotion=!reducedMotion&&typeof document.startViewTransition==='function'&&navigator.vendor!=='Apple Computer, Inc.';
  const columns=view==='members'?memberBusinessColumns:eventBusinessColumns,fields=view==='members'?memberFilterFields:eventFilterFields;
  const [hiddenSearch,setHiddenSearch]=useState(''),[shownSearch,setShownSearch]=useState('');
@@ -29,40 +30,67 @@ export function TablePresetManager({view,active,hiddenColumnIds,options={},loadO
  function failed(e:unknown){if(e instanceof WorkspaceError&&e.status===401)onUnauthorized();setError(e instanceof Error?e.message:'服务暂时不可用，请稍后重试');if(e instanceof WorkspaceError&&e.code==='PERSONNEL_PRESET_CONFLICT')setConflict(true);}
  async function load(){const token=++requests.current;setListLoading(true);setError('');try{const result=await workspaceApi<{items:TablePreset[]}>('personnel/table-presets?view='+view);if(token===requests.current)setItems(result.items);}catch(e){if(token===requests.current)failed(e);}finally{if(token===requests.current)setListLoading(false);}}
  useEffect(()=>{if(open)void load();return()=>{requests.current++;};},[open,view]);
- function finishShared(version:number){
-  if(version!==sharedGeneration.current)return;clearTimeout(sharedTimer.current);document.documentElement.classList.remove('q36-filter-transition-active','q36-preset-transition-active');
-  if(!intent.current){setExpanded(false);setOpen(false);if(restoreTriggerFocus.current)trigger.current?.focus({preventScroll:true});}
+ function invalidateCloseFocus(){focusLifecycle.current++;closeFocus.current=null;}
+ function restoreCloseFocus(token:number,keyboard=false){
+  const pending=closeFocus.current,button=trigger.current;
+  if(!pending||pending.token!==token||token!==focusLifecycle.current||intent.current||!button?.isConnected)return;
+  const active=document.activeElement;
+  if(active&&active!==document.body&&active!==document.documentElement&&active!==button&&!pending.popup?.contains(active)){invalidateCloseFocus();return;}
+  // One close owns one restoration. Body focus caused by hiding/removing the
+  // popup still needs restoring, unless newer deliberate input revoked it.
+  closeFocus.current=null;
+  if(active!==button)button.focus({preventScroll:true,...(keyboard?{focusVisible:true}:{})});
  }
- function sharedComplete(version:number){
+ // Returning a target lets Base UI queue another focus transfer. Perform the
+ // restoration under the shared authority here, then suppress that extra move.
+ const finalFocus:Popover.Popup.Props['finalFocus']=closeType=>{restoreCloseFocus(focusLifecycle.current,closeType==='keyboard');return false;};
+ useLayoutEffect(()=>{
+  function newerInteraction(event:Event){
+   const pending=closeFocus.current;if(!pending)return;
+   if(event.type==='focusin'){
+    const target=event.target as Node|null;
+    if(target===document.body||target===document.documentElement||target===trigger.current||pending.popup?.contains(target))return;
+   }else if(event.type==='keydown'&&['Escape','Shift','Control','Alt','Meta'].includes((event as KeyboardEvent).key))return;
+   invalidateCloseFocus();
+  }
+  for(const type of ['focusin','pointerdown','keydown'])document.addEventListener(type,newerInteraction,true);
+  return()=>{for(const type of ['focusin','pointerdown','keydown'])document.removeEventListener(type,newerInteraction,true);};
+ },[]);
+ function finishShared(version:number,focusToken:number){
+  if(version!==sharedGeneration.current)return;clearTimeout(sharedTimer.current);document.documentElement.classList.remove('q36-filter-transition-active','q36-preset-transition-active');
+  if(!intent.current){setExpanded(false);setOpen(false);restoreCloseFocus(focusToken);}
+ }
+ function sharedComplete(version:number,focusToken:number){
   if(version!==sharedGeneration.current)return;requestAnimationFrame(()=>{if(version!==sharedGeneration.current)return;
    if(intent.current&&(document.activeElement===popup||!popup?.contains(document.activeElement)))firstControl.current?.focus({preventScroll:true});
    const motions=document.getAnimations().filter(a=>a.effect instanceof KeyframeEffect&&a.effect.pseudoElement?.startsWith('::view-transition'));
-   Promise.allSettled(motions.map(a=>a.finished)).then(()=>finishShared(version));
+   Promise.allSettled(motions.map(a=>a.finished)).then(()=>finishShared(version,focusToken));
   });
  }
  function changeOpen(next:boolean,restoreFocus=true){
-  intent.current=next;if(next)everOpened.current=true;else restoreTriggerFocus.current=restoreFocus;
+  if(next||next!==intent.current){invalidateCloseFocus();if(!next&&restoreFocus)closeFocus.current={token:focusLifecycle.current,popup};}else if(!restoreFocus)invalidateCloseFocus();
+  intent.current=next;if(next)everOpened.current=true;const focusToken=focusLifecycle.current;
   if(sharedMotion){const version=++sharedGeneration.current;cancelAnimationFrame(sharedFrame.current);clearTimeout(sharedTimer.current);
-   const exchange=()=>{if(version!==sharedGeneration.current||next!==intent.current)return;document.documentElement.style.setProperty('--q36-filter-shell-duration',next?'300ms':'220ms');document.documentElement.classList.add('q36-filter-transition-active','q36-preset-transition-active');sharedTimer.current=window.setTimeout(()=>finishShared(version),600);startTransition(()=>setExpanded(previous=>version===sharedGeneration.current&&next===intent.current?next:previous));};
+   const exchange=()=>{if(version!==sharedGeneration.current||next!==intent.current)return;document.documentElement.style.setProperty('--q36-filter-shell-duration',next?'300ms':'220ms');document.documentElement.classList.add('q36-filter-transition-active','q36-preset-transition-active');sharedTimer.current=window.setTimeout(()=>finishShared(version,focusToken),600);startTransition(()=>setExpanded(previous=>version===sharedGeneration.current&&next===intent.current?next:previous));};
    if(next){setOpen(true);sharedFrame.current=requestAnimationFrame(()=>{sharedFrame.current=requestAnimationFrame(exchange);});}
-   else if(expanded)exchange();else{setExpanded(false);setOpen(false);finishShared(version);}
+   else if(expanded)exchange();else{setExpanded(false);setOpen(false);finishShared(version,focusToken);}
   }else{setExpanded(next);setOpen(next);}
  }
  function requestClose(restore=true){if(busy||confirmation)return;if(dirty){setConfirmation({kind:'leave'});return;}setEdit(null);setError('');changeOpen(false,restore);}
  useLayoutEffect(()=>{const media=matchMedia('(prefers-reduced-motion: reduce)');const sync=()=>setReducedMotion(media.matches);media.addEventListener('change',sync);return()=>media.removeEventListener('change',sync);},[]);
  useLayoutEffect(()=>{
-  if(!popup||sharedMotion||!everOpened.current)return;const version=++generation.current;
+  if(!popup||sharedMotion||!everOpened.current)return;const version=++generation.current,focusToken=focusLifecycle.current;
   const frame=requestAnimationFrame(()=>{if(version!==generation.current)return;
    const shell=popup.querySelector<HTMLElement>('.q36-filter-shell'),content=popup.querySelector<HTMLElement>('.q36-filter-content'),previous=animation.current;
    const transform=shell?getComputedStyle(shell).transform:'none',opacity=content?getComputedStyle(content).opacity:'0';previous.forEach(a=>a.cancel());animation.current=[];
-   const complete=()=>{if(version===generation.current&&!intent.current){actions.current?.unmount();if(restoreTriggerFocus.current)trigger.current?.focus({preventScroll:true});}};
+   const complete=()=>{if(version===generation.current&&!intent.current){actions.current?.unmount();restoreCloseFocus(focusToken);}};
    if(reducedMotion||!shell?.animate){complete();return;}const from=trigger.current?.getBoundingClientRect(),to=popup.getBoundingClientRect();if(!from||!to.width||!to.height){complete();return;}
    const small=`translate(${from.left-to.left}px,${from.top-to.top}px) scale(${from.width/to.width},${from.height/to.height})`;
    const motion=shell.animate([{transform:previous.length?transform:open?small:'none'},{transform:open?'none':small}],{duration:open?300:220,easing:'cubic-bezier(.2,.8,.2,1)',fill:'both'});animation.current.push(motion);
    if(content)animation.current.push(content.animate([{opacity:previous.length?opacity:open?0:1},{opacity:open?1:0}],{duration:open?160:80,delay:open?100:0,fill:'both',easing:'ease-out'}));motion.finished.then(complete,()=>{});
   });return()=>{generation.current++;cancelAnimationFrame(frame);};
  },[open,popup,sharedMotion,reducedMotion]);
- useLayoutEffect(()=>()=>{requests.current++;generation.current++;sharedGeneration.current++;animation.current.forEach(a=>a.cancel());cancelAnimationFrame(sharedFrame.current);clearTimeout(sharedTimer.current);document.documentElement.classList.remove('q36-filter-transition-active','q36-preset-transition-active');},[]);
+ useLayoutEffect(()=>()=>{invalidateCloseFocus();requests.current++;generation.current++;sharedGeneration.current++;animation.current.forEach(a=>a.cancel());cancelAnimationFrame(sharedFrame.current);clearTimeout(sharedTimer.current);document.documentElement.classList.remove('q36-filter-transition-active','q36-preset-transition-active');},[]);
  function begin(preset:TablePreset|null){const next={preset,name:preset?.name??'',blocks:presetBlocks(preset?.filter),hidden:[...(preset?.hiddenColumnIds??hiddenColumnIds)],initial:''};next.initial=contentKey(next);setEdit(next);setConflict(false);setError('');setHiddenSearch('');setShownSearch('');}
  async function readEdit(item:TablePreset){if(busy)return;setBusy(true);setError('');try{const latest=await workspaceApi<TablePreset>('personnel/table-presets/'+item.id);if(!editablePresetFilter(latest.filter))throw new Error('方案包含当前编辑器无法表达的筛选树，已保留原条件；不能静默转换或保存。');begin(latest);}catch(e){failed(e);}finally{setBusy(false);}}
  function patchRow(blockId:string,rowId:string,patch:Partial<PresetRow>){setEdit(e=>e?{...e,blocks:e.blocks.map(b=>b.id===blockId?{...b,rows:b.rows.map(r=>r.id===rowId?{...r,...patch}:r)}:b)}:e);}
@@ -117,9 +145,9 @@ export function TablePresetManager({view,active,hiddenColumnIds,options={},loadO
  </div>;
  return <>
   <Popover.Root open={open} onOpenChange={(next,details)=>{const requested=details.reason==='trigger-press'?!intent.current:next;if(!requested){details.preventUnmountOnClose();requestClose(details.reason!=='outside-press');}else changeOpen(true);}} actionsRef={actions}>
-   <Popover.Trigger ref={trigger} className="q36-filter-trigger" aria-label={active?'自定义筛选，已应用':'自定义筛选'}><ViewTransition default="none" update={expanded?'q36-filter-trigger-out':'q36-filter-trigger-in'}><span className="q36-filter-trigger-content" style={{visibility:sharedMotion&&expanded?'hidden':undefined}}><Funnel size={16} weight={active?'fill':'regular'}/><span>自定义筛选</span>{active&&<span className="q36-filter-count">1</span>}</span></ViewTransition>{sharedMotion&&!expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={()=>sharedComplete(sharedVersion)} onEnter={()=>sharedComplete(sharedVersion)} onExit={()=>sharedComplete(sharedVersion)}><span className="q36-filter-trigger-frame" aria-hidden="true"/></ViewTransition>}</Popover.Trigger>
-   <Popover.Portal keepMounted><Popover.Positioner className="preset-positioner" side="bottom" align="start" collisionPadding={12}><Popover.Popup ref={setPopup} id={panelId} className={'preset-popup '+(edit?'preset-editor':'preset-manager')} aria-label={title} aria-hidden={sharedMotion?!expanded:!open} inert={sharedMotion?!expanded:!open} initialFocus={firstControl} finalFocus={trigger}>
-    {sharedMotion?expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={()=>sharedComplete(sharedVersion)} onEnter={()=>sharedComplete(sharedVersion)} onExit={()=>sharedComplete(sharedVersion)}><div className="q36-filter-shell" aria-hidden="true"/></ViewTransition>:<div className="q36-filter-shell" aria-hidden="true"/>}
+   <Popover.Trigger ref={trigger} className="q36-filter-trigger" aria-label={active?'自定义筛选，已应用':'自定义筛选'}><ViewTransition default="none" update={expanded?'q36-filter-trigger-out':'q36-filter-trigger-in'}><span className="q36-filter-trigger-content" style={{visibility:sharedMotion&&expanded?'hidden':undefined}}><Funnel size={16} weight={active?'fill':'regular'}/><span>自定义筛选</span>{active&&<span className="q36-filter-count">1</span>}</span></ViewTransition>{sharedMotion&&!expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={()=>sharedComplete(sharedVersion,focusVersion)} onEnter={()=>sharedComplete(sharedVersion,focusVersion)} onExit={()=>sharedComplete(sharedVersion,focusVersion)}><span className="q36-filter-trigger-frame" aria-hidden="true"/></ViewTransition>}</Popover.Trigger>
+   <Popover.Portal keepMounted><Popover.Positioner className="preset-positioner" side="bottom" align="start" collisionPadding={12}><Popover.Popup ref={setPopup} id={panelId} className={'preset-popup '+(edit?'preset-editor':'preset-manager')} aria-label={title} aria-hidden={sharedMotion?!expanded:!open} inert={sharedMotion?!expanded:!open} initialFocus={firstControl} finalFocus={finalFocus}>
+    {sharedMotion?expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={()=>sharedComplete(sharedVersion,focusVersion)} onEnter={()=>sharedComplete(sharedVersion,focusVersion)} onExit={()=>sharedComplete(sharedVersion,focusVersion)}><div className="q36-filter-shell" aria-hidden="true"/></ViewTransition>:<div className="q36-filter-shell" aria-hidden="true"/>}
     {sharedMotion?<ViewTransition default="none" update={expanded?'q36-filter-content-in':'q36-filter-content-out'}>{content}</ViewTransition>:content}
    </Popover.Popup></Popover.Positioner></Popover.Portal>
   </Popover.Root>
