@@ -93,3 +93,14 @@ test('Root layout span follows the declared integer range',()=>{
  expect(()=>parseView({...raw,layout:[{...raw.layout[0],span:1.5}]})).toThrow();
  expect(parseView({...raw,layout:[{...raw.layout[0],span:6}]}).layout[0]).toMatchObject({span:6});
 });
+
+test('Root ordinary runtime requires a ready schema and positive policy revision',()=>{
+ const raw=rawView();
+ expect(()=>parseView({...raw,schemaVersion:0})).toThrow();
+ expect(()=>parseView({...raw,policyRevision:0})).toThrow();
+});
+test('Root reference labels cannot bypass an own-field read restriction',()=>{
+ const raw=rawView(field('member',{referenceKind:'member'}));raw.fields[0].access.read='own';const view=parseView(raw);
+ const invalid={...row(null),createdBy:sourceId,values:{},referenceDisplays:{[fieldId]:{[sourceId]:{id:sourceId,label:'不可读取的标签',deleted:true}}}};
+ expect(()=>parseRecordItem(invalid,view,actor)).toThrow();
+});
