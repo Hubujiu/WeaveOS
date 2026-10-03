@@ -1,0 +1,152 @@
+[WebServer] (node:66100) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:66114) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 7 tests using 1 worker
+
+(node:66147) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/7] [chromium] › apps/web/src/applications.component.spec.ts:179:2 › V030-012 non-confirming create reply retains the original operation: 201 empty JSON
+  1) [chromium] › apps/web/src/applications.component.spec.ts:179:2 › V030-012 non-confirming create reply retains the original operation: 201 empty JSON
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+    Expected substring: "尚未确认"
+    Received string:    "服务暂时不可用，请稍后重试"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+        14 × locator resolved to <p role="alert">服务暂时不可用，请稍后重试</p>
+           - unexpected value "服务暂时不可用，请稍后重试"
+
+
+      187 |   const dialog = await creation(page);
+      188 |   await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+    > 189 |   await expect(dialog.getByRole('alert')).toContainText('尚未确认');
+          |                                           ^
+      190 |   await expect(dialog.getByRole('button', { name: '核查操作', exact: true })).toBeVisible();
+      191 |   await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
+      192 |   await expect.poll(() => writes.length).toBe(2);
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:189:43
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-f0bda-al-operation-201-empty-JSON-chromium/error-context.md
+
+
+(node:66227) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/7] [chromium] › apps/web/src/applications.component.spec.ts:179:2 › V030-012 non-confirming create reply retains the original operation: 201 error envelope
+  2) [chromium] › apps/web/src/applications.component.spec.ts:179:2 › V030-012 non-confirming create reply retains the original operation: 201 error envelope
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+    Expected substring: "尚未确认"
+    Received string:    "服务暂时不可用，请稍后重试"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+        14 × locator resolved to <p role="alert">服务暂时不可用，请稍后重试</p>
+           - unexpected value "服务暂时不可用，请稍后重试"
+
+
+      187 |   const dialog = await creation(page);
+      188 |   await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+    > 189 |   await expect(dialog.getByRole('alert')).toContainText('尚未确认');
+          |                                           ^
+      190 |   await expect(dialog.getByRole('button', { name: '核查操作', exact: true })).toBeVisible();
+      191 |   await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
+      192 |   await expect.poll(() => writes.length).toBe(2);
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:189:43
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-0f19c-peration-201-error-envelope-chromium/error-context.md
+
+
+(node:66311) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/7] [chromium] › apps/web/src/applications.component.spec.ts:179:2 › V030-012 non-confirming create reply retains the original operation: 201 missing data
+[4/7] [chromium] › apps/web/src/applications.component.spec.ts:179:2 › V030-012 non-confirming create reply retains the original operation: 201 malformed application
+[5/7] [chromium] › apps/web/src/applications.component.spec.ts:179:2 › V030-012 non-confirming create reply retains the original operation: 200 valid application body
+  3) [chromium] › apps/web/src/applications.component.spec.ts:179:2 › V030-012 non-confirming create reply retains the original operation: 200 valid application body
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+    Expected substring: "尚未确认"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+
+
+      187 |   const dialog = await creation(page);
+      188 |   await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+    > 189 |   await expect(dialog.getByRole('alert')).toContainText('尚未确认');
+          |                                           ^
+      190 |   await expect(dialog.getByRole('button', { name: '核查操作', exact: true })).toBeVisible();
+      191 |   await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
+      192 |   await expect.poll(() => writes.length).toBe(2);
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:189:43
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-0f98b--200-valid-application-body-chromium/error-context.md
+
+
+(node:66415) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[6/7] [chromium] › apps/web/src/applications.component.spec.ts:266:1 › V030-012 operation 401 keeps A draft and original key across SPA reauthentication
+  4) [chromium] › apps/web/src/applications.component.spec.ts:266:1 › V030-012 operation 401 keeps A draft and original key across SPA reauthentication
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true })
+    Expected: "新业务应用"
+    Received: ""
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveValue" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true })
+        14 × locator resolved to <input value="" required="" name="application-name"/>
+           - unexpected value ""
+
+
+      291 |  await page.getByRole('button', { name: '新建应用', exact: true }).click();
+      292 |  const restored = page.getByRole('dialog', { name: '新建应用', exact: true });
+    > 293 |  await expect(restored.getByRole('textbox', { name: '应用名称', exact: true })).toHaveValue('新业务应用');
+          |                                                                             ^
+      294 |  await expect(restored.getByRole('alert')).toContainText('尚未确认');
+      295 |  await restored.getByRole('button', { name: '核查操作', exact: true }).click();
+      296 |  await expect(restored).toHaveCount(0);
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:293:77
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-60317-across-SPA-reauthentication-chromium/error-context.md
+
+
+(node:66486) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[7/7] [chromium] › apps/web/src/applications.component.spec.ts:301:1 › V030-012 B login cannot see or replay A draft and unknown operation
+  4 failed
+    [chromium] › apps/web/src/applications.component.spec.ts:179:2 › V030-012 non-confirming create reply retains the original operation: 201 empty JSON
+    [chromium] › apps/web/src/applications.component.spec.ts:179:2 › V030-012 non-confirming create reply retains the original operation: 201 error envelope
+    [chromium] › apps/web/src/applications.component.spec.ts:179:2 › V030-012 non-confirming create reply retains the original operation: 200 valid application body
+    [chromium] › apps/web/src/applications.component.spec.ts:266:1 › V030-012 operation 401 keeps A draft and original key across SPA reauthentication
+  3 passed (35.7s)

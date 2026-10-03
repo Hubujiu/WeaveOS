@@ -1,0 +1,8 @@
+docker run --rm --init --shm-size=1g \
+ --mount type=bind,src=/tmp/V012-R20-source-20261003T191958Z-852594,dst=/repo \
+ --mount type=bind,src=/tmp/V012-R20-bin-root-spec/pnpm,dst=/r20-bin/pnpm,readonly \
+ --mount type=bind,src=/tmp/V012-R20BC-artifacts-green,dst=/artifacts \
+ -e CI=true -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright -e NODE_PATH=/repo/apps/web/node_modules:/repo/node_modules \
+ -e PATH=/r20-bin:/repo/apps/web/node_modules/.bin:/repo/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+ -w /repo/apps/web mcr.microsoft.com/playwright@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27 \
+ bash -euc 'pnpm exec vite --host 127.0.0.1 --port 4173 > /artifacts/vite-screenshot.log 2>&1 & vite_pid=$!; trap "kill $vite_pid 2>/dev/null || true" EXIT; node /artifacts/capture-record.cjs'

@@ -1,0 +1,98 @@
+
+Running 11 tests using 1 worker
+
+  ✓   1 [chromium] › src/root-record-shell.component.spec.ts:46:1 › Root Shell ordinary form route mounts records under the original persistent chrome (1.7s)
+  ✓   2 [chromium] › src/root-record-shell.component.spec.ts:56:1 › Root Shell create then read authoritative normalized data and edit a record (2.4s)
+  ✘   3 [chromium] › src/root-record-shell.component.spec.ts:79:1 › Root confirmed write with failed reread remains saved and cannot submit again (7.1s)
+  ✓   4 [chromium] › src/root-record-shell.component.spec.ts:90:1 › Root create-only actor confirms a receipt without an unauthorized detail or search read (1.7s)
+  ✓   5 [chromium] › src/root-record-shell.component.spec.ts:96:1 › Root opening an existing row validates the original query before reading detail (1.9s)
+  ✓   6 [chromium] › src/root-record-shell.component.spec.ts:103:1 › Root dirty record modal close requires an explicit discard and restores the origin focus (2.1s)
+  ✓   7 [chromium] › src/root-record-shell.component.spec.ts:111:1 › Root ordinary actor cannot load owner definition by entering the design URL (1.5s)
+  ✓   8 [chromium] › src/root-record-shell.component.spec.ts:118:1 › Root ordinary record editor searches only field-scoped reference candidates (2.1s)
+  ✓   9 [chromium] › src/root-record-shell.component.spec.ts:135:1 › Root owner returns from configuration to the runtime page that opened it (2.1s)
+  ✘  10 [chromium] › src/root-record-shell.component.spec.ts:144:1 › Root rejected create refresh discards only after confirmation and rebuilds page one (7.0s)
+  ✘  11 [chromium] › src/root-record-shell.component.spec.ts:157:1 › Root retry after rejected edit and failed refresh never invents a saved result (7.3s)
+
+
+  1) [chromium] › src/root-record-shell.component.spec.ts:79:1 › Root confirmed write with failed reread remains saved and cannot submit again 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('status').filter({ hasText: '正在读取记录' })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('status').filter({ hasText: '正在读取记录' }) with timeout 5000ms
+      - waiting for getByRole('status').filter({ hasText: '正在读取记录' })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      83 |  await expect(page.getByRole('alert')).toContainText('无法读取');
+      84 |  await expect(page.getByRole('button',{name:'重试读取记录',exact:true})).toBeVisible();
+    > 85 |  await expect(page.getByRole('status').filter({hasText:'正在读取记录'})).toHaveCount(0);
+         |                                                                    ^
+      86 |  await page.screenshot({path:test.info().outputPath('record-shell-read-error.png'),fullPage:true});
+      87 |  expect(api.calls.filter(c=>c.path===formPath+'/records'&&c.method==='POST')).toHaveLength(1);
+      88 |  await expect(page.getByRole('button',{name:'保存记录',exact:true})).toHaveCount(0);
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:85:68
+
+    Error Context: ../../../out/root-record-shell.componen-97803-ved-and-cannot-submit-again-chromium/error-context.md
+
+  2) [chromium] › src/root-record-shell.component.spec.ts:144:1 › Root rejected create refresh discards only after confirmation and rebuilds page one 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: '有未保存的修改', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: '有未保存的修改', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '有未保存的修改', exact: true })
+
+
+      146 |  const editor=page.getByRole('dialog',{name:'新建记录',exact:true});await editor.getByLabel('金额',{exact:true}).fill('7.00');await editor.getByRole('button',{name:'保存记录',exact:true}).click();
+      147 |  await expect(editor.getByRole('alert')).toContainText('刷新');const before=api.calls.filter(c=>c.path===formPath+'/records/search').length;
+    > 148 |  await editor.getByRole('button',{name:'刷新记录',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();
+          |                                                                                                                                                         ^
+      149 |  await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(editor.getByLabel('金额',{exact:true})).toHaveValue('7.00');
+      150 |  await editor.getByRole('button',{name:'刷新记录',exact:true}).click();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(editor).toHaveCount(0);
+      151 |  await expect.poll(()=>api.calls.filter(c=>c.path===formPath+'/records/search').length).toBeGreaterThan(before);
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:148:153
+
+    Error Context: ../../../out/root-record-shell.componen-ce620-ation-and-rebuilds-page-one-chromium/error-context.md
+
+  3) [chromium] › src/root-record-shell.component.spec.ts:157:1 › Root retry after rejected edit and failed refresh never invents a saved result 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('alert')
+    Expected substring: "无法读取"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('alert')
+
+
+      159 |  const detail=page.getByRole('dialog',{name:'记录详情',exact:true});await detail.getByRole('button',{name:'编辑记录',exact:true}).click();await detail.getByLabel('金额',{exact:true}).fill('20.00');await detail.getByRole('button',{name:'保存记录',exact:true}).click();
+      160 |  await expect(detail.getByRole('alert')).toContainText('刷新');await detail.getByRole('button',{name:'刷新记录',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();
+    > 161 |  await expect(page.getByRole('alert')).toContainText('无法读取');await expect(page.getByRole('status').filter({hasText:'正在读取记录'})).toHaveCount(0);await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toHaveCount(0);
+          |                                        ^
+      162 |  await page.getByRole('button',{name:'重试读取记录',exact:true}).click();await expect(detail.getByLabel('金额',{exact:true})).toHaveValue('18.00');
+      163 |  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toHaveCount(0);
+      164 |  expect(api.calls.filter(c=>c.path===formPath+'/records/'+recordId&&c.method==='PATCH')).toHaveLength(1);
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:161:40
+
+    Error Context: ../../../out/root-record-shell.componen-59bd3-ever-invents-a-saved-result-chromium/error-context.md
+
+  3 failed
+    [chromium] › src/root-record-shell.component.spec.ts:79:1 › Root confirmed write with failed reread remains saved and cannot submit again 
+    [chromium] › src/root-record-shell.component.spec.ts:144:1 › Root rejected create refresh discards only after confirmation and rebuilds page one 
+    [chromium] › src/root-record-shell.component.spec.ts:157:1 › Root retry after rejected edit and failed refresh never invents a saved result 
+  8 passed (44.5s)

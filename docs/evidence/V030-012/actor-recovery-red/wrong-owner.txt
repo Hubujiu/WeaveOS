@@ -1,0 +1,42 @@
+[WebServer] (node:80594) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:80655) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:80738) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › apps/web/src/applications.component.spec.ts:180:2 › V030-012 non-confirming create reply retains the original operation: 201 wrong owner
+  1) [chromium] › apps/web/src/applications.component.spec.ts:180:2 › V030-012 non-confirming create reply retains the original operation: 201 wrong owner
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+    Expected substring: "尚未确认"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+
+
+      188 |   const dialog = await creation(page);
+      189 |   await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+    > 190 |   await expect(dialog.getByRole('alert')).toContainText('尚未确认');
+          |                                           ^
+      191 |   await expect(dialog.getByRole('button', { name: '核查操作', exact: true })).toBeVisible();
+      192 |   await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
+      193 |   await expect.poll(() => writes.length).toBe(2);
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:190:43
+
+    Error Context: .work/v030012/wrong-owner-results/applications.component-V03-1b3ea-l-operation-201-wrong-owner-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › apps/web/src/applications.component.spec.ts:180:2 › V030-012 non-confirming create reply retains the original operation: 201 wrong owner

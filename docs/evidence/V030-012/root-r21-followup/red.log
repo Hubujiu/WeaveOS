@@ -1,0 +1,30 @@
+
+Running 14 tests using 1 worker
+·F············
+
+  1) [chromium] › src/applications/root-operation-guard.component.spec.ts:32:1 › Root leave guard distinguishes a sent write and clears only on confirmation 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Array [
+    -   null,
+    +   "write_in_flight",
+      ]
+
+      39 |  await expect.poll(async()=> (await events(page)).confirmed.length).toBe(1);
+      40 |  expect(await pending(page)).toBeNull();
+    > 41 |  expect((await events(page)).confirmedPending).toEqual([null]);
+         |                                                ^
+      42 | });
+      43 |
+      44 | for(const status of [408,500,504]){
+        at /repo/apps/web/src/applications/root-operation-guard.component.spec.ts:41:48
+
+    Error Context: ../../../artifacts/output/applications-root-operatio-94ed6-clears-only-on-confirmation-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/applications/root-operation-guard.component.spec.ts:32:1 › Root leave guard distinguishes a sent write and clears only on confirmation 
+  13 passed (7.0s)

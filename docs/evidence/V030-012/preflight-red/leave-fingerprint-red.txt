@@ -1,0 +1,35 @@
+✔ an old unsubscribe cannot clear a newer registration for the same scope (1.376635ms)
+✔ a changed status cannot be approved under an old discard decision (0.311285ms)
+✔ actor and view scopes stay isolated (0.216383ms)
+✖ changed draft content with the same status requires a new confirmation (0.952175ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 103.158867
+
+✖ failing tests:
+
+test at apps/web/src/applications/shell/leaveGuards.test.mjs:41:1
+✖ changed draft content with the same status requires a new confirmation (0.952175ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  true !== false
+
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications/shell/leaveGuards.test.mjs:51:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

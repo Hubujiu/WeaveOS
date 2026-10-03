@@ -1,0 +1,257 @@
+import { test, expect, type Page } from '@playwright/test';
+
+// Independent oracle: PRD V030-012.2/.3, AP-FR-10, B5a.4-7 and
+// original Home358:18205/catalog327:2132. Mock only the HTTP boundary.
+// These component fixtures are not real API acceptance.
+const user = { id: '00000000-0000-4000-8000-000000000001', account: 'slice-owner' };
+const application = {
+  id: '00000000-0000-4000-8000-000000000002',
+  name: '业务应用甲', ownerUserId: user.id, policyRevision: 1,
+};
+async function fixture(page: Page, create = true) {
+  await page.route('**/api/v1/**', async route => {
+    const url = new URL(route.request().url());
+    const path = url.pathname.slice('/api/v1/'.length);
+    const data = path === 'sessions/current' ? user
+      : path === 'me/access' ? {
+          user, bootstrapAdmin: false, personnelManage: false, identities: [],
+          permissions: create ? [{ code: 'applications.create', name: '应用管理', category: 'system', appId: null }] : [],
+          applications: [], // Deliberately empty old personnel catalogue.
+        }
+      : path === 'applications' ? { items: [application] }
+      : path === 'applications/' + application.id ? application
+      : path === 'applications/' + application.id + '/access' ? {
+          appId: application.id, canEnter: true, policyRevision: 1,
+          menus: [{ resourceKind: 'application', resourceId: application.id }],
+        }
+      : {};
+    await route.fulfill({ status: 200, json: { code: 'OK', message: 'success', data, meta: null } });
+  });
+}
+
+test('V030-012 Home opens the real application catalogue', async ({ page }) => {
+  await fixture(page);
+  await page.goto('/app');
+  await expect(page.getByText('WaveOS', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '打开应用中心', exact: true }).click();
+  await expect(page).toHaveURL(/\/app\/applications$/);
+  await expect(page.getByRole('heading', { name: '应用中心', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: application.name, exact: true })).toBeVisible();
+});
+
+test('V030-012 catalogue reads B5 without parameters and filters its authorized result', async ({ page }) => {
+  await fixture(page);
+  const urls: URL[] = [];
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname === '/api/v1/applications') urls.push(url);
+  });
+  await page.goto('/app/applications');
+  await expect(page.getByText('WaveOS', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '应用中心', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: application.name, exact: true })).toBeVisible();
+  expect(urls.length).toBeGreaterThan(0);
+  expect(urls.every(url => url.search === '')).toBe(true);
+  await page.getByRole('searchbox', { name: '搜索应用名称', exact: true }).fill('没有匹配项');
+  await expect(page.getByRole('button', { name: application.name, exact: true })).toHaveCount(0);
+  await expect(page.getByText('没有匹配的应用', { exact: true })).toBeVisible();
+});
+
+test('V030-012 live create capability opens a name-only real create flow', async ({ page }) => {
+  await fixture(page);
+  await page.goto('/app/applications');
+  await expect(page.getByText('WaveOS', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '新建应用', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '新建应用', exact: true });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: '创建应用', exact: true })).toBeVisible();
+});
+
+test('V030-012 opening an application rechecks access and presents its actual empty workspace', async ({ page }) => {
+  await fixture(page, false);
+  const accesses: string[] = [];
+  page.on('request', request => {
+    if (new URL(request.url()).pathname === '/api/v1/applications/' + application.id + '/access') accesses.push(request.url());
+  });
+  await page.goto('/app/applications/' + application.id);
+  await expect(page.getByText('WaveOS', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: application.name, exact: true })).toBeVisible();
+  await expect(page.getByText('尚未配置表单', { exact: true })).toBeVisible();
+  expect(accesses.length).toBeGreaterThan(0);
+});
+
+async function creation(page: Page) {
+ await page.goto('/app/applications');
+ await page.getByRole('button', { name: '新建应用', exact: true }).click();
+ await page.getByRole('textbox', { name: '应用名称', exact: true }).fill('新业务应用');
+ return page.getByRole('dialog', { name: '新建应用', exact: true });
+}
+
+test('V030-012 create waits for server acknowledgement and sends only the frozen DTO', async ({ page }) => {
+ await fixture(page);
+ let release!: () => void;
+ const gate = new Promise<void>(resolve => { release = resolve; });
+ const writes: { name: string; operationId: string }[] = [];
+ await page.route('**/api/v1/applications', async route => {
+  if (route.request().method() === 'GET') { await route.fulfill({ json: { code: 'OK', data: { items: [application] } } }); return; }
+  writes.push(route.request().postDataJSON());
+  await gate;
+  await route.fulfill({ status: 201, json: { code: 'OK', data: { ...application, name: '新业务应用' } } });
+ });
+ const dialog = await creation(page);
+ await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+ await expect.poll(() => writes.length).toBe(1);
+ expect(Object.keys(writes[0]).sort()).toEqual(['name', 'operationId']);
+ expect(writes[0].name).toBe('新业务应用');
+ expect(writes[0].operationId).toMatch(/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/);
+ await expect(dialog.getByRole('button', { name: '创建中…', exact: true })).toBeDisabled();
+ await expect(page.getByText('应用已创建', { exact: true })).toHaveCount(0);
+ release();
+ await expect(dialog).toHaveCount(0);
+ await expect(page.getByRole('status').filter({ hasText: '应用已创建' })).toBeVisible();
+});
+
+test('V030-012 unconfirmed create recovers its original operation and never treats 404 as rollback', async ({ page }) => {
+ await fixture(page);
+ const writes: object[] = [];
+ let queries = 0;
+ await page.route('**/api/v1/applications', async route => {
+  if (route.request().method() === 'GET') { await route.fulfill({ json: { code: 'OK', data: { items: [] } } }); return; }
+  writes.push(route.request().postDataJSON());
+  await route.fulfill({ status: 503, json: { code: 'APPLICATION_OPERATION_UNCONFIRMED', data: null } });
+ });
+ await page.route('**/api/v1/application-operations/*', async route => {
+  queries++;
+  expect(route.request().url().split('/').pop()).toBe((writes[0] as { operationId: string }).operationId);
+  await route.fulfill(queries === 1 ? { status: 404, json: { code: 'APPLICATION_NOT_FOUND', data: null } } : { json: {
+   code: 'OK', data: { operationId: (writes[0] as { operationId: string }).operationId, status: 'confirmed', httpStatus: 201, location: '/api/v1/applications/' + application.id, result: application },
+  } });
+ });
+ const dialog = await creation(page);
+ await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+ await expect(dialog.getByRole('alert')).toContainText('操作结果尚未确认');
+ await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toBeDisabled();
+ await dialog.getByRole('button', { name: '核查操作', exact: true }).click();
+ await expect(dialog.getByRole('alert')).toContainText('仍未确认');
+ await expect(dialog.getByRole('alert')).not.toContainText('已回滚');
+ await dialog.getByRole('button', { name: '核查操作', exact: true }).click();
+ await expect(dialog).toHaveCount(0);
+ await expect(page.getByRole('status').filter({ hasText: '应用已创建' })).toBeVisible();
+ expect(writes).toHaveLength(1);
+});
+
+test('V030-012 retry after lost response preserves the operation key and exact payload', async ({ page }) => {
+ await fixture(page);
+ const writes: object[] = [];
+ await page.route('**/api/v1/applications', async route => {
+  if (route.request().method() === 'GET') { await route.fulfill({ json: { code: 'OK', data: { items: [] } } }); return; }
+  writes.push(route.request().postDataJSON());
+  if (writes.length === 1) await route.abort('failed');
+  else await route.fulfill({ status: 201, json: { code: 'OK', data: application } });
+ });
+ const dialog = await creation(page);
+ await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+ await expect(dialog.getByRole('alert')).toContainText('操作结果尚未确认');
+ await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
+ await expect(dialog).toHaveCount(0);
+ expect(writes).toHaveLength(2);
+ expect(writes[1]).toEqual(writes[0]);
+});
+
+test('V030-012 server denial is visible and never produces a success message', async ({ page }) => {
+ await fixture(page);
+ await page.route('**/api/v1/applications', async route => {
+  await route.fulfill(route.request().method() === 'GET' ? { json: { code: 'OK', data: { items: [] } } } : { status: 403, json: { code: 'APPLICATION_FORBIDDEN', data: null } });
+ });
+ const dialog = await creation(page);
+ await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+ await expect(dialog.getByRole('alert')).toContainText('没有应用访问或管理权限');
+ await expect(page.getByText('应用已创建', { exact: true })).toHaveCount(0);
+ await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toHaveValue('新业务应用');
+});
+
+test('V030-012 dirty create cancel and Escape retain the name until explicit discard', async ({ page }) => {
+ await fixture(page);
+ const dialog = await creation(page);
+ await page.keyboard.press('Escape');
+ const guard = page.getByRole('dialog', { name: '有未保存的修改', exact: true });
+ await expect(guard).toBeVisible();
+ await guard.getByRole('button', { name: '继续编辑', exact: true }).click();
+ await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toHaveValue('新业务应用');
+ await dialog.getByRole('button', { name: '取消', exact: true }).click();
+ await guard.getByRole('button', { name: '放弃修改', exact: true }).click();
+ await expect(dialog).toHaveCount(0);
+ await expect(page.getByRole('button', { name: '新建应用', exact: true })).toBeFocused();
+});
+
+test('V030-012 Home and application navigation retain one Shell and reauthorize repeated opens', async ({ page }) => {
+ await fixture(page);
+ let accesses = 0;
+ page.on('request', request => { if (request.url().endsWith('/' + application.id + '/access')) accesses++; });
+ await page.goto('/app/applications');
+ const shell = await page.getByTestId('application-shell').elementHandle();
+ for (let i = 0; i < 3; i++) {
+  let before = accesses;
+  await page.getByRole('main').getByRole('button', { name: application.name, exact: true }).click();
+  await expect(page.getByRole('heading', { name: application.name, exact: true })).toBeVisible();
+  expect(accesses).toBeGreaterThan(before);
+  await page.getByRole('navigation', { name: '全局应用标签', exact: true }).getByRole('button', { name: '首页', exact: true }).click();
+  before = accesses;
+  await page.getByRole('navigation', { name: '全局应用标签', exact: true }).getByRole('button', { name: application.name, exact: true }).click();
+  await expect(page.getByRole('heading', { name: application.name, exact: true })).toBeVisible();
+  expect(accesses).toBeGreaterThan(before);
+  await page.getByRole('navigation', { name: '全局应用标签', exact: true }).getByRole('button', { name: '全部应用', exact: true }).click();
+  expect(await shell!.evaluate(node => node.isConnected)).toBe(true);
+ }
+ expect(accesses).toBeGreaterThanOrEqual(6);
+});
+
+test('V030-012 leaving a dirty create restores its route on cancel and closes it on discard', async ({ page }) => {
+ await fixture(page);
+ await page.goto('/app');
+ await page.getByRole('button', { name: '打开应用中心', exact: true }).click();
+ await page.getByRole('button', { name: '新建应用', exact: true }).click();
+ await page.getByRole('textbox', { name: '应用名称', exact: true }).fill('未保存的名称');
+ await page.goBack();
+ const guard = page.getByRole('dialog', { name: '有未保存的修改', exact: true });
+ await expect(guard).toBeVisible();
+ await guard.getByRole('button', { name: '继续编辑', exact: true }).click();
+ await expect(page).toHaveURL(/\/app\/applications$/);
+ await expect(page.getByRole('textbox', { name: '应用名称', exact: true })).toHaveValue('未保存的名称');
+ await page.goBack();
+ await guard.getByRole('button', { name: '放弃修改', exact: true }).click();
+ await expect(page).toHaveURL(/\/app$/);
+ await expect(page.getByRole('dialog', { name: '新建应用', exact: true })).toHaveCount(0);
+});
+
+test('V030-012 an operation query denial is visible while the original outcome remains unconfirmed', async ({ page }) => {
+ await fixture(page);
+ await page.route('**/api/v1/applications', route => route.fulfill(route.request().method() === 'GET' ? { json: { code: 'OK', data: { items: [] } } } : { status: 503, json: { code: 'APPLICATION_OPERATION_UNCONFIRMED' } }));
+ await page.route('**/api/v1/application-operations/*', route => route.fulfill({ status: 403, json: { code: 'APPLICATION_FORBIDDEN' } }));
+ const dialog = await creation(page);
+ await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+ await dialog.getByRole('button', { name: '核查操作', exact: true }).click();
+ await expect(dialog.getByRole('alert')).toContainText('没有应用访问或管理权限');
+ await expect(dialog.getByRole('alert')).toContainText('仍未确认');
+ await expect(dialog.getByRole('button', { name: '使用同一操作重试', exact: true })).toBeVisible();
+});
+
+test('V030-012 denial on same-key retry cannot erase an earlier unknown outcome', async ({ page }) => {
+ await fixture(page);
+ const writes: object[] = [];
+ await page.route('**/api/v1/applications', async route => {
+  if (route.request().method() === 'GET') { await route.fulfill({ json: { code: 'OK', data: { items: [] } } }); return; }
+  writes.push(route.request().postDataJSON());
+  await route.fulfill(writes.length === 1 ? { status: 503, json: { code: 'APPLICATION_OPERATION_UNCONFIRMED' } } : { status: 403, json: { code: 'APPLICATION_FORBIDDEN' } });
+ });
+ const dialog = await creation(page);
+ await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+ await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
+ await expect(dialog.getByRole('alert')).toContainText('没有应用访问或管理权限');
+ await expect(dialog.getByRole('alert')).toContainText('仍未确认');
+ await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toBeDisabled();
+ await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
+ await expect.poll(() => writes.length).toBe(3);
+ expect(writes[1]).toEqual(writes[0]); expect(writes[2]).toEqual(writes[0]);
+});

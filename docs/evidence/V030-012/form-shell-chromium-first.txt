@@ -1,0 +1,57 @@
+
+Running 3 tests using 1 worker
+·T·
+
+  1) [chromium] › apps/web/src/applications.form-shell.component.spec.ts:50:1 › V030-012 external tab discard removes a structure draft before returning
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '全部应用', exact: true }).first()
+        - locator resolved to <button class="app-global-tab">全部应用</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <dialog open="" class="forms-dialog" aria-labelledby="_r_1_" data-motion-ready="false">…</dialog> from <main aria-label="应用工作台" class="app-content">…</main> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        - waiting for element to be visible, enabled and stable
+        - element is visible, enabled and stable
+        - scrolling into view if needed
+        - done scrolling
+        - <dialog open="" class="forms-dialog" aria-labelledby="_r_1_" data-motion-ready="false">…</dialog> from <main aria-label="应用工作台" class="app-content">…</main> subtree intercepts pointer events
+      2 × retrying click action
+          - waiting 100ms
+          - waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <dialog open="" class="forms-dialog" aria-labelledby="_r_1_" data-motion-ready="true">…</dialog> from <main aria-label="应用工作台" class="app-content">…</main> subtree intercepts pointer events
+      53 × retrying click action
+           - waiting 500ms
+           - waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <dialog open="" class="forms-dialog" aria-labelledby="_r_1_" data-motion-ready="true">…</dialog> from <main aria-label="应用工作台" class="app-content">…</main> subtree intercepts pointer events
+      - retrying click action
+        - waiting 500ms
+
+
+      54 |  const dialog = page.getByRole('dialog', { name: '新建目录' });
+      55 |  await dialog.getByRole('textbox', { name: '目录名称' }).fill('放弃的目录');
+    > 56 |  await page.getByRole('button', { name: '全部应用', exact: true }).first().click();
+         |                                                                        ^
+      57 |  const guard = page.getByRole('dialog', { name: '有未保存的修改' });
+      58 |  await expect(guard).toContainText('应用目录草稿将丢失');
+      59 |  await guard.getByRole('button', { name: '放弃修改' }).click();
+        at /repo/apps/web/src/applications.form-shell.component.spec.ts:56:72
+
+    Error Context: .work/v030012/browser-results/applications.form-shell.co-85ebc-ture-draft-before-returning-chromium/error-context.md
+
+  1 failed
+    [chromium] › apps/web/src/applications.form-shell.component.spec.ts:50:1 › V030-012 external tab discard removes a structure draft before returning
+  2 passed (36.3s)

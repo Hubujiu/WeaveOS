@@ -1,0 +1,101 @@
+.app-shell { background:#f2f4f7; }
+.app-global-header.home-header { padding:0 26px;border-radius:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none; }
+.app-global-header img,.app-sidebar img,.app-tile img { display:block;flex:none;max-width:none; }
+.app-tabs { position:absolute;left:208px;right:164px;top:8px;display:flex;gap:8px;height:40px;overflow-x:auto;scrollbar-width:thin;align-items:center; }
+.app-global-tab { flex:none;min-width:120px;height:40px;padding:4px 12px;border:0;border-radius:8px;background:transparent;color:#5e6d83;white-space:nowrap;font-size:14px;font-weight:500;line-height:22px; }
+.app-global-tab[aria-current=page] { background:#eaf0fa;color:#365e94; }
+.app-home-tab { min-width:88px; }
+.app-tab-group { display:flex;align-items:center;flex:none;position:relative; }
+.app-tab-group .app-global-tab { padding-right:32px; }
+.app-close-tab { position:absolute;right:8px;top:10px;width:20px;height:20px;padding:0;border:0;background:transparent;color:#8490a2;font-size:14px;line-height:20px; }
+.app-shell .app-sidebar { padding:8px;gap:0;overflow-y:auto; }
+.app-sidebar-block { display:flex;flex-direction:column;gap:16px;width:160px;padding:16px 8px;flex:none; }
+.app-sidebar-item { display:flex;align-items:center;gap:12px;padding:12px 10px;border:0;border-radius:8px;height:48px;min-height:48px;width:144px;background:transparent;color:#5e6d83;font-size:14px;line-height:22px;font-weight:500;text-align:left; }
+.app-sidebar-item.selected { background:#eaf0fa;color:#102044; }
+.app-sidebar-note { margin:0;color:#5e6d83;font-size:12px;line-height:20px; }
+.app-sidebar .sidebar-caption { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%; }
+.app-sidebar-extension { padding:16px 8px; }
+.app-content { grid-column:2;grid-row:2;position:relative;z-index:1;min-width:0;min-height:0;overflow:auto;padding:32px 40px;display:flex;flex-direction:column;gap:24px; }
+.app-page-heading { min-height:80px;flex:none; }
+.app-page-heading h1 { margin:0;font-size:32px;line-height:46px;font-weight:700; }
+.app-page-heading p { margin:4px 0 0;font-size:14px;line-height:22px;color:#5e6d83; }
+.app-page-actions { display:flex;gap:12px;min-height:40px;flex:none; }
+.app-search-row { display:flex;align-items:center;gap:12px;flex:none; }
+.app-search-row input { height:40px;width:400px;max-width:100%;border:1px solid #e4e9f1;border-radius:8px;padding:12px;background:white;color:#102044;font-size:14px;line-height:22px;min-width:0; }
+.app-search-row input::placeholder { color:#8490a2; }
+.app-filter-label { font-size:14px;color:#5e6d83; }
+.app-surface { background:white;border:1px solid #e4e9f1;border-radius:12px;padding:24px;flex:none; }
+.app-surface h2 { margin:0;font-size:16px;font-weight:500;line-height:26px; }
+.app-home-section { min-height:416px;display:flex;flex-direction:column;gap:16px; }
+.app-catalog-section { min-height:244px;display:flex;flex-direction:column;gap:16px; }
+.app-card-grid { display:flex;gap:24px;flex-wrap:wrap; }
+.app-tile { display:flex;flex-direction:column;align-items:center;gap:8px;width:160px;min-height:144px;padding:8px;background:transparent;border:0;border-radius:12px;color:#102044; }
+.app-tile:hover { background:#f7f9fc; }
+.app-icon { display:block;width:48px;height:48px;background:#eaf0fa;border-radius:12px;padding:8px; }
+.app-tile-name { width:144px;overflow-wrap:anywhere;font-size:14px;font-weight:500;line-height:22px;text-align:center; }
+.app-tile-description { width:144px;font-size:12px;line-height:20px;color:#5e6d83;text-align:center; }
+.app-state { display:flex;flex-direction:column;align-items:flex-start;gap:16px;color:#5e6d83;font-size:14px;line-height:22px; }
+.app-state p,.app-state h3 { margin:0; }
+.app-state .admin-button { align-self:flex-start; }
+
+/* Ordinary record editor containment: nested form controls must stay inside
+   the responsive field grid without changing global application sizing. */
+.record-form,
+.record-form * { box-sizing:border-box; }
+.record-form { min-width:0; }
+.record-form-fields { min-width:0; }
+.record-form-fields > *,
+.record-form .forms-preview-group { min-width:0; }
+.record-form .forms-rendered-field,
+.record-form .forms-rendered-field input,
+.record-form .forms-rendered-field textarea,
+.record-form .forms-rendered-field select { min-width:0; max-width:100%; }
+.record-form-description { margin:0; color:var(--text-secondary); }
+.record-form footer { display:flex; flex-wrap:wrap; gap:var(--space-2); }
+.app-home-section .home-empty { margin:64px auto; }
+.app-workspace-title { margin:0;font-size:16px;line-height:26px;font-weight:500; }
+.app-workspace-heading { display:flex;align-items:center;justify-content:space-between;gap:16px; }
+.app-permission-manager { display:flex;flex-direction:column;gap:16px;min-height:540px; }
+.app-permission-heading { display:flex;align-items:flex-start;justify-content:space-between;gap:16px; }
+.app-permission-heading p { margin:4px 0 0;color:#5e6d83;font-size:12px;line-height:20px; }
+.app-permission-layout { display:flex;min-height:500px;border:1px solid #e4e9f1;border-radius:12px;overflow:hidden; }
+.app-group-list { background:#f7f9fc;border-right:1px solid #e4e9f1; }
+.app-group-details { gap:24px; }
+.app-group-details .config-section { padding-bottom:24px;border-bottom:1px solid #e4e9f1; }
+.app-group-details .config-section label:not(.template-choice) { display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:22px; }
+.app-member-selected { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border-radius:8px;background:#f7f9fc;font-size:14px; }
+.app-candidate-pages,.app-operation-controls { display:flex;align-items:center;gap:12px;flex-wrap:wrap; }
+.app-operation-controls p { flex-basis:100%;margin:0; }
+.app-conflict-review { display:flex;flex-direction:column;gap:8px;margin-top:12px;padding:16px;border:1px solid #d4deee;border-radius:8px;background:#f7f9fc;font-size:13px;line-height:21px;overflow-wrap:anywhere; }
+.app-conflict-review p { margin:0; }
+.app-conflict-actions { display:flex;gap:8px;flex-wrap:wrap;margin-top:4px; }
+.app-workspace-empty { min-height:600px; }
+.app-workspace-empty p { color:#5e6d83;font-size:14px;line-height:22px; }
+.app-form-tabs { display:flex;height:47px;gap:8px;border-bottom:1px solid #e4e9f1;overflow-x:auto;flex:none; }
+.app-form-tabs button { flex:none;border:0;background:none;color:#102044;height:47px;padding:12px 20px;font-size:14px;line-height:22px; }
+.app-form-tabs button[aria-selected=true] { border-bottom:2px solid #102044; }
+.app-create-form { display:flex;flex-direction:column;gap:24px; }
+.app-create-form label { display:flex;flex-direction:column;gap:8px;margin-top:16px;padding:12px 16px;border:1px solid #e4e9f1;border-radius:12px;font-size:14px;line-height:22px; }
+.app-create-form .dialog-actions { justify-content:flex-start; }
+@media(max-width:720px) {
+ .app-content { padding:24px; }
+ .app-tabs { left:200px;right:84px; }
+ .app-search-row { flex-wrap:wrap; }
+ .app-permission-layout { flex-direction:column; }
+ .app-group-list { width:100%;max-height:320px;border-right:0;border-bottom:1px solid #e4e9f1; }
+}
+@media(prefers-reduced-motion:reduce) { .app-shell *, .app-shell *::before,.app-shell *::after { scroll-behavior:auto; } }
+
+
+.personnel-dialog:has(.app-create-form) { width:640px;max-width:min(640px,calc(100vw - 32px));padding:32px;box-shadow:none; }
+.personnel-dialog:has(.app-create-form)::backdrop { background:rgba(16,32,68,.28);backdrop-filter:none; }
+.app-shell .personnel-dialog:not(:has(.app-create-form))::backdrop { background:rgba(16,32,68,.28);backdrop-filter:none; }
+.app-success { margin:0;padding:12px 16px;border:1px solid #d9e9e1;border-radius:8px;background:#f2f8f5;color:#2e735f;font-size:14px;line-height:22px; }
+
+.record-workspace { display:flex;flex:1;flex-direction:column;min-width:0;min-height:0;overflow:hidden;gap:0; }
+.record-workspace .record-table-frame { display:flex;flex:1;min-width:0;min-height:0;margin:0;padding:0;border:0;overflow:hidden; }
+.record-workspace .member-table.surface { flex:1;min-width:0;min-height:0;padding:0;border:0;border-radius:0; }
+.record-workspace .arca-source { flex:1;min-width:0;min-height:0;overflow:hidden; }
+.record-workspace .arca-source .personnel-source-table { height:100%; }
+.app-shell .record-route .record-form,.app-shell .record-route .record-form * { box-sizing:border-box; }
+.app-shell .record-route .record-form-fields,.app-shell .record-route .record-form-fields>div { min-width:0; }

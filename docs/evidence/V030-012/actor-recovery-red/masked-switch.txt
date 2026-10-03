@@ -1,0 +1,42 @@
+[WebServer] (node:101208) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:101222) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:101274) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › apps/web/src/applications.component.spec.ts:273:1 › V030-012 switching from a masked A view keeps recovery in the SPA auth flow
+  1) [chromium] › apps/web/src/applications.component.spec.ts:273:1 › V030-012 switching from a masked A view keeps recovery in the SPA auth flow
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /\/login$/
+    Received string:  "http://127.0.0.1:4176/app/applications"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 5000ms
+        12 × locator resolved to <html lang="zh-CN">…</html>
+           - unexpected value "http://127.0.0.1:4176/app/applications"
+
+
+      291 |  await expect(page.getByRole('alert').filter({ hasText: '登录身份已变化' })).toBeVisible();
+      292 |  await page.getByRole('button', { name: '载入当前账号', exact: true }).click();
+    > 293 |  await expect(page).toHaveURL(/\/login$/);
+          |                     ^
+      294 |  await otherTab.close();
+      295 | });
+      296 |
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:293:21
+
+    Error Context: .work/v030012/masked-switch-results/applications.component-V03-1faf3-covery-in-the-SPA-auth-flow-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › apps/web/src/applications.component.spec.ts:273:1 › V030-012 switching from a masked A view keeps recovery in the SPA auth flow

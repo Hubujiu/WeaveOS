@@ -1,0 +1,42 @@
+[WebServer] (node:56234) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:56248) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:56277) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › src/personnel.component.spec.ts:360:1 › R2 AC02 ordinary member Home has own identity/empty app state; direct admin denies
+  1) [chromium] › src/personnel.component.spec.ts:360:1 › R2 AC02 ordinary member Home has own identity/empty app state; direct admin denies 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('暂无可用应用', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('暂无可用应用', { exact: true }) with timeout 5000ms
+      - waiting for getByText('暂无可用应用', { exact: true })
+
+
+      359 | });
+      360 | test('R2 AC02 ordinary member Home has own identity/empty app state; direct admin denies',async({page})=>{
+    > 361 |  await fixture(page,false);await page.goto('/app');await expect(page.getByText('暂无可用应用',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'设置',exact:true})).toBeHidden();
+          |                                                                                                        ^
+      362 |  await page.goto('/app/admin');await expect(page.getByRole('alert')).toContainText('没有人员管理权限');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeHidden();
+      363 | });
+      364 | test('Q33 fixed sidebar retains selected tab and unsaved input across viewports; icons aligned',async({page})=>{
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/personnel.component.spec.ts:361:104
+
+    Error Context: test-results/personnel.component-R2-AC0-bbb51-p-state-direct-admin-denies-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › src/personnel.component.spec.ts:360:1 › R2 AC02 ordinary member Home has own identity/empty app state; direct admin denies 

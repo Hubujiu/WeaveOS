@@ -1,0 +1,1 @@
+docker run --rm --network none -v /tmp/V030-017-R22-pnpm10:/pnpm10:ro -v /tmp/V030-017-R22-bin:/r22-bin:ro -v "$PWD":/repo -w /repo/apps/web mcr.microsoft.com/playwright@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27 bash -euc 'export PATH=/r22-bin:$PATH; pnpm run typecheck && pnpm run build'

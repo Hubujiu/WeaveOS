@@ -1,0 +1,45 @@
+[WebServer] (node:10211) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:10225) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:10257) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/records/root-recovery.component.spec.ts:10:2 › Root unknown save survives failed recovery without a second write (5.5s)
+(node:10330) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  2 [chromium] › src/applications/records/root-recovery.component.spec.ts:10:2 › Root unknown save survives throw recovery without a second write (343ms)
+  ✓  3 [chromium] › src/applications/records/root-recovery.component.spec.ts:10:2 › Root unknown save survives malformed recovery without a second write (312ms)
+  ✓  4 [chromium] › src/applications/records/root-recovery.component.spec.ts:43:1 › Root definitive first-write rejection allows editing and a fresh submission (236ms)
+
+
+  1) [chromium] › src/applications/records/root-recovery.component.spec.ts:10:2 › Root unknown save survives failed recovery without a second write 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: getByRole('status')
+    Expected: "保存结果待确认"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" getByRole('status') with timeout 5000ms
+      - waiting for getByRole('status')
+
+
+      21 |   await expect.poll(async()=> (await inspect(page)).recoveries.length).toBe(1);
+      22 |   await expect(page.getByRole('alert')).toBeVisible();
+    > 23 |   await expect(page.getByRole('status')).toHaveText('保存结果待确认');
+         |                                          ^
+      24 |   await expect(page.getByRole('button',{name:'保存记录',exact:true})).toBeDisabled();
+      25 |   await expect(page.getByRole('button',{name:'放弃填写',exact:true})).toBeDisabled();
+      26 |   await expect(page.getByLabel('事由',{exact:true})).toHaveValue('报销测试');
+        at /workspace/WeaveOS-worktrees/V030-017-r09-check/apps/web/src/applications/records/root-recovery.component.spec.ts:23:42
+
+    Error Context: test-results/applications-records-root--9a444-very-without-a-second-write-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/applications/records/root-recovery.component.spec.ts:10:2 › Root unknown save survives failed recovery without a second write 
+  3 passed (8.5s)

@@ -1,0 +1,44 @@
+[WebServer] (node:108649) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:108663) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:108748) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › apps/web/src/applications.component.spec.ts:183:2 › V030-012 non-confirming create reply retains the original operation: 201 JSON null
+  1) [chromium] › apps/web/src/applications.component.spec.ts:183:2 › V030-012 non-confirming create reply retains the original operation: 201 JSON null
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+    Expected substring: "尚未确认"
+    Received string:    "Cannot read properties of null (reading 'code')"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+        13 × locator resolved to <p role="alert">Cannot read properties of null (reading 'code')</p>
+           - unexpected value "Cannot read properties of null (reading 'code')"
+
+
+      191 |   const dialog = await creation(page);
+      192 |   await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+    > 193 |   await expect(dialog.getByRole('alert')).toContainText('尚未确认');
+          |                                           ^
+      194 |   await expect(dialog.getByRole('button', { name: '核查操作', exact: true })).toBeVisible();
+      195 |   await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
+      196 |   await expect.poll(() => writes.length).toBe(2);
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:193:43
+
+    Error Context: .work/v030012/null-envelope-results/applications.component-V03-fdce7-nal-operation-201-JSON-null-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › apps/web/src/applications.component.spec.ts:183:2 › V030-012 non-confirming create reply retains the original operation: 201 JSON null

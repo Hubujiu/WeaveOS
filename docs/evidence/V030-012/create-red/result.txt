@@ -1,0 +1,134 @@
+[WebServer] (node:2427) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:2441) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 4 tests using 1 worker
+
+(node:2470) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/4] [chromium] › src/applications.component.spec.ts:91:1 › V030-012 create waits for server acknowledgement and sends only the frozen DTO
+  1) [chromium] › src/applications.component.spec.ts:91:1 › V030-012 create waits for server acknowledgement and sends only the frozen DTO 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 0
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      102 |  const dialog = await creation(page);
+      103 |  await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+    > 104 |  await expect.poll(() => writes.length).toBe(1);
+          |                                         ^
+      105 |  expect(Object.keys(writes[0]).sort()).toEqual(['name', 'operationId']);
+      106 |  expect(writes[0].name).toBe('新业务应用');
+      107 |  expect(writes[0].operationId).toMatch(/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/);
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:104:41
+
+    Error Context: test-results/applications.component-V03-73616-d-sends-only-the-frozen-DTO-chromium/error-context.md
+
+
+(node:2548) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/4] [chromium] › src/applications.component.spec.ts:115:1 › V030-012 unconfirmed create recovers its original operation and never treats 404 as rollback
+  2) [chromium] › src/applications.component.spec.ts:115:1 › V030-012 unconfirmed create recovers its original operation and never treats 404 as rollback 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+    Expected substring: "操作结果尚未确认"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+
+
+      131 |  const dialog = await creation(page);
+      132 |  await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+    > 133 |  await expect(dialog.getByRole('alert')).toContainText('操作结果尚未确认');
+          |                                          ^
+      134 |  await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toBeDisabled();
+      135 |  await dialog.getByRole('button', { name: '核查操作', exact: true }).click();
+      136 |  await expect(dialog.getByRole('alert')).toContainText('仍未确认');
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:133:42
+
+    Error Context: test-results/applications.component-V03-9caf2-ever-treats-404-as-rollback-chromium/error-context.md
+
+
+(node:2649) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/4] [chromium] › src/applications.component.spec.ts:144:1 › V030-012 retry after lost response preserves the operation key and exact payload
+  3) [chromium] › src/applications.component.spec.ts:144:1 › V030-012 retry after lost response preserves the operation key and exact payload 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+    Expected substring: "操作结果尚未确认"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+
+
+      153 |  const dialog = await creation(page);
+      154 |  await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+    > 155 |  await expect(dialog.getByRole('alert')).toContainText('操作结果尚未确认');
+          |                                          ^
+      156 |  await dialog.getByRole('button', { name: '使用同一操作重试', exact: true }).click();
+      157 |  await expect(dialog).toHaveCount(0);
+      158 |  expect(writes).toHaveLength(2);
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:155:42
+
+    Error Context: test-results/applications.component-V03-a0212-ation-key-and-exact-payload-chromium/error-context.md
+
+
+(node:2725) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[4/4] [chromium] › src/applications.component.spec.ts:162:1 › V030-012 server denial is visible and never produces a success message
+  4) [chromium] › src/applications.component.spec.ts:162:1 › V030-012 server denial is visible and never produces a success message 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+    Expected substring: "没有应用访问或管理权限"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+
+
+      167 |  const dialog = await creation(page);
+      168 |  await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+    > 169 |  await expect(dialog.getByRole('alert')).toContainText('没有应用访问或管理权限');
+          |                                          ^
+      170 |  await expect(page.getByText('应用已创建', { exact: true })).toHaveCount(0);
+      171 |  await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toHaveValue('新业务应用');
+      172 | });
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:169:42
+
+    Error Context: test-results/applications.component-V03-0cdbb--produces-a-success-message-chromium/error-context.md
+
+
+  4 failed
+    [chromium] › src/applications.component.spec.ts:91:1 › V030-012 create waits for server acknowledgement and sends only the frozen DTO 
+    [chromium] › src/applications.component.spec.ts:115:1 › V030-012 unconfirmed create recovers its original operation and never treats 404 as rollback 
+    [chromium] › src/applications.component.spec.ts:144:1 › V030-012 retry after lost response preserves the operation key and exact payload 
+    [chromium] › src/applications.component.spec.ts:162:1 › V030-012 server denial is visible and never produces a success message 
