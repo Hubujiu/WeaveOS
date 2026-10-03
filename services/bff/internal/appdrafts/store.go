@@ -37,6 +37,7 @@ type Access struct {
 	CurrentSchemaVersion            int64
 	CurrentBaseRecordVersion        *int64
 	Field                           func(string) FieldStatus
+	ForTarget                       func(*string, string) Access
 }
 type Draft struct {
 	ID                string     `json:"id"`
@@ -86,7 +87,11 @@ type Page struct {
 	NextToken string
 }
 type BaseLookup interface {
-	CurrentVersions(context.Context, pgx.Tx, []string) (map[string]*int64, error)
+	CurrentBases(context.Context, pgx.Tx, []string) (map[string]Base, error)
+}
+type Base struct {
+	Version *int64
+	OwnerID string
 }
 type cursor struct {
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -164,7 +169,7 @@ func (s Store) ListInTx(ctx context.Context, tx pgx.Tx, access Access, bases Bas
 			targets[*d.TargetRecordID] = true
 		}
 	}
-	versions := map[string]*int64{}
+	currentBases := map[string]Base{}
 	if len(targets) > 0 {
 		if bases == nil {
 			return Page{}, ErrUnavailable
@@ -174,18 +179,25 @@ func (s Store) ListInTx(ctx context.Context, tx pgx.Tx, access Access, bases Bas
 			ids = append(ids, id)
 		}
 		sort.Strings(ids)
-		versions, err = bases.CurrentVersions(ctx, tx, ids)
+		currentBases, err = bases.CurrentBases(ctx, tx, ids)
 		if err != nil {
 			return Page{}, err
 		}
-		if versions == nil {
+		if currentBases == nil {
 			return Page{}, ErrUnavailable
 		}
 	}
 	for _, d := range page {
 		current := access
+		base := Base{}
 		if d.TargetRecordID != nil {
-			current.CurrentBaseRecordVersion = versions[*d.TargetRecordID]
+			base = currentBases[*d.TargetRecordID]
+		}
+		if access.ForTarget != nil {
+			current = access.ForTarget(d.TargetRecordID, base.OwnerID)
+		}
+		if d.TargetRecordID != nil {
+			current.CurrentBaseRecordVersion = base.Version
 		} else {
 			current.CurrentBaseRecordVersion = nil
 		}

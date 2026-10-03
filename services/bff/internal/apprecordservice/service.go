@@ -9,6 +9,7 @@ import (
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appdrafts"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -19,6 +20,7 @@ var ErrUnavailable = errors.New("record service unavailable")
 type Service struct {
 	Pool    *pgxpool.Pool
 	Queries *querycontext.Store
+	Limits  appschema.Limits
 }
 
 func New(pool *pgxpool.Pool, client redis.UniversalClient, generation string) *Service {
@@ -95,6 +97,7 @@ type SearchResult struct {
 
 type CreateRequest struct {
 	AppID, ViewID, OperationID string
+	QueryVersion               string
 	ExpectedSchemaVersion      int64
 	Values                     map[string]any
 	DraftRef                   *DraftRef
@@ -105,6 +108,7 @@ type DraftRef struct {
 }
 type EditRequest struct {
 	AppID, ViewID, RecordID, OperationID         string
+	QueryVersion                                 string
 	ExpectedSchemaVersion, ExpectedRecordVersion int64
 	Changes                                      map[string]any
 	DraftRef                                     *DraftRef

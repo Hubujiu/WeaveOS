@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appaccess"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appdrafts"
@@ -18,9 +17,12 @@ import (
 )
 
 func (s *Service) beginDraftMutation(ctx context.Context, principal session.Principal, appID, viewID, operationID, kind string, hash [32]byte) (*applications.RecordWrite, appaccess.Policy, []appfields.Field, *applications.Result, error) {
+	if s == nil || s.Pool == nil || !validWriteLimits(s.Limits) {
+		return nil, appaccess.Policy{}, nil, nil, appdrafts.ErrInvalid
+	}
 	var policy appaccess.Policy
 	var fields []appfields.Field
-	options := applications.RecordWriteOptions{LockTimeout: time.Second, StatementTimeout: 5 * time.Second, OperationID: operationID, Kind: kind, Fingerprint: hash,
+	options := applications.RecordWriteOptions{LockTimeout: s.Limits.LockTimeout, StatementTimeout: s.Limits.StatementTimeout, OperationID: operationID, Kind: kind, Fingerprint: hash,
 		Authorize: func(_ context.Context, _ pgx.Tx, facts applications.RecordContext) error {
 			var menu bool
 			policy, menu = policyFor(facts)

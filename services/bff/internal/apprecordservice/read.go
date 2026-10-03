@@ -101,19 +101,19 @@ func (s *Service) GetDraft(ctx context.Context, p session.Principal, appID, view
 
 type draftBaseLookup struct{ tableID string }
 
-func (b draftBaseLookup) CurrentVersions(ctx context.Context, tx pgx.Tx, ids []string) (map[string]*int64, error) {
-	result := make(map[string]*int64, len(ids))
+func (b draftBaseLookup) CurrentBases(ctx context.Context, tx pgx.Tx, ids []string) (map[string]appdrafts.Base, error) {
+	result := make(map[string]appdrafts.Base, len(ids))
 	for _, id := range ids {
 		if !appfields.ValidID(id) {
 			return nil, appdrafts.ErrInvalid
 		}
-		result[id] = nil
+		result[id] = appdrafts.Base{}
 	}
 	if len(ids) == 0 {
 		return result, nil
 	}
 	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(b.tableID, "-", "")}.Sanitize()
-	rows, err := tx.Query(ctx, "SELECT id::text,record_version FROM "+relation+" WHERE id=ANY($1::uuid[])", ids)
+	rows, err := tx.Query(ctx, "SELECT id::text,record_version,created_by::text FROM "+relation+" WHERE id=ANY($1::uuid[])", ids)
 	if err != nil {
 		return nil, err
 	}
@@ -121,11 +121,12 @@ func (b draftBaseLookup) CurrentVersions(ctx context.Context, tx pgx.Tx, ids []s
 	for rows.Next() {
 		var id string
 		var version int64
-		if err = rows.Scan(&id, &version); err != nil {
+		var owner string
+		if err = rows.Scan(&id, &version, &owner); err != nil {
 			return nil, err
 		}
 		v := version
-		result[id] = &v
+		result[id] = appdrafts.Base{Version: &v, OwnerID: owner}
 	}
 	return result, rows.Err()
 }
@@ -137,6 +138,12 @@ func (s *Service) ListDrafts(ctx context.Context, p session.Principal, req Draft
 	}
 	defer tx.Rollback(context.Background())
 	access := draftAccess(facts, strategy.policy, strategy.definitions, nil, "")
+	access.ForTarget = func(target *string, owner string) appdrafts.Access {
+		if target == nil {
+			return draftAccess(facts, strategy.policy, strategy.definitions, nil, "")
+		}
+		return draftAccess(facts, strategy.policy, strategy.definitions, nil, owner)
+	}
 	if !access.ResourceAllowed {
 		for _, field := range strategy.definitions {
 			if strategy.policy.FieldScope(appaccess.Edit, field.ID) != appaccess.None {

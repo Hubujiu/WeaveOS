@@ -14,12 +14,17 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
 )
 
 type controlledDML struct{ implementation appstructure.RecordDML }
+
+func validWriteLimits(l appschema.Limits) bool {
+	return l.LockTimeout >= time.Millisecond && l.StatementTimeout >= time.Millisecond
+}
 
 func (d controlledDML) Insert(ctx context.Context, tx pgx.Tx, t apprecords.Table, in apprecords.Create, ids []string) (apprecords.StoredHeader, error) {
 	h, e := d.implementation.Insert(ctx, tx, appstructure.RecordTable(t), appstructure.RecordCreate(in), ids)
@@ -176,7 +181,7 @@ func validateNewReferences(ctx context.Context, tx pgx.Tx, values map[string]any
 
 func (s *Service) Create(ctx context.Context, principal session.Principal, req CreateRequest, metadata applications.Metadata) (MutationResult, error) {
 	var result MutationResult
-	if s == nil || s.Pool == nil || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.OperationID) || req.Values == nil || req.ExpectedSchemaVersion < 1 || metadata.RequestID == "" {
+	if s == nil || s.Pool == nil || !validWriteLimits(s.Limits) || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.OperationID) || req.Values == nil || req.ExpectedSchemaVersion < 1 || metadata.RequestID == "" {
 		return result, apprecords.ErrInvalid
 	}
 	canonical, _ := json.Marshal(struct {
@@ -186,7 +191,7 @@ func (s *Service) Create(ctx context.Context, principal session.Principal, req C
 	fingerprint := sha256.Sum256(canonical)
 	var policy appaccess.Policy
 	var fields []appfields.Field
-	options := applications.RecordWriteOptions{LockTimeout: time.Second, StatementTimeout: 5 * time.Second, OperationID: req.OperationID, Kind: "record.create", Fingerprint: fingerprint,
+	options := applications.RecordWriteOptions{LockTimeout: s.Limits.LockTimeout, StatementTimeout: s.Limits.StatementTimeout, OperationID: req.OperationID, Kind: "record.create", Fingerprint: fingerprint,
 		Authorize: func(c context.Context, tx pgx.Tx, facts applications.RecordContext) error {
 			var menu bool
 			policy, menu = policyFor(facts)
@@ -210,15 +215,11 @@ func (s *Service) Create(ctx context.Context, principal session.Principal, req C
 			return validateNewReferences(c, tx, req.Values, fields)
 		},
 	}
-	write, err := (&applications.Application{Pool: s.Pool}).BeginRecordWrite(ctx, principal, req.AppID, req.ViewID, options)
+	write, replayed, err := s.beginRecordMutation(ctx, principal, req.AppID, req.ViewID, req.QueryVersion, options)
 	if err != nil {
 		return result, err
 	}
 	defer write.Rollback(context.Background())
-	replayed, err := write.Replay(ctx, req.OperationID, "record.create", fingerprint)
-	if err != nil {
-		return result, err
-	}
 	if replayed != nil {
 		if err = write.Commit(ctx); err != nil {
 			return result, err
@@ -313,7 +314,7 @@ func draftAccess(facts applications.RecordContext, policy appaccess.Policy, fiel
 
 func (s *Service) CreateDraft(ctx context.Context, principal session.Principal, req DraftCreateRequest, metadata applications.Metadata) (appdrafts.Draft, error) {
 	var empty appdrafts.Draft
-	if s == nil || s.Pool == nil || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.OperationID) || req.SchemaVersion < 1 || req.Values == nil || metadata.RequestID == "" {
+	if s == nil || s.Pool == nil || !validWriteLimits(s.Limits) || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.OperationID) || req.SchemaVersion < 1 || req.Values == nil || metadata.RequestID == "" {
 		return empty, appdrafts.ErrInvalid
 	}
 	canonical, _ := json.Marshal(struct {
@@ -323,7 +324,7 @@ func (s *Service) CreateDraft(ctx context.Context, principal session.Principal, 
 	fingerprint := sha256.Sum256(canonical)
 	var policy appaccess.Policy
 	var fields []appfields.Field
-	options := applications.RecordWriteOptions{LockTimeout: time.Second, StatementTimeout: 5 * time.Second, OperationID: req.OperationID, Kind: "draft.create", Fingerprint: fingerprint,
+	options := applications.RecordWriteOptions{LockTimeout: s.Limits.LockTimeout, StatementTimeout: s.Limits.StatementTimeout, OperationID: req.OperationID, Kind: "draft.create", Fingerprint: fingerprint,
 		Authorize: func(_ context.Context, _ pgx.Tx, facts applications.RecordContext) error {
 			var menu bool
 			policy, menu = policyFor(facts)
@@ -414,7 +415,7 @@ func (s *Service) CreateDraft(ctx context.Context, principal session.Principal, 
 
 func (s *Service) Edit(ctx context.Context, principal session.Principal, req EditRequest, metadata applications.Metadata) (MutationResult, error) {
 	var result MutationResult
-	if s == nil || s.Pool == nil || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.RecordID) || !appfields.ValidID(req.OperationID) || req.Changes == nil || req.ExpectedSchemaVersion < 1 || req.ExpectedRecordVersion < 1 || metadata.RequestID == "" {
+	if s == nil || s.Pool == nil || !validWriteLimits(s.Limits) || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.RecordID) || !appfields.ValidID(req.OperationID) || req.Changes == nil || req.ExpectedSchemaVersion < 1 || req.ExpectedRecordVersion < 1 || metadata.RequestID == "" {
 		return result, apprecords.ErrInvalid
 	}
 	canonical, _ := json.Marshal(struct {
@@ -424,7 +425,7 @@ func (s *Service) Edit(ctx context.Context, principal session.Principal, req Edi
 	fingerprint := sha256.Sum256(canonical)
 	var policy appaccess.Policy
 	var fields []appfields.Field
-	options := applications.RecordWriteOptions{LockTimeout: time.Second, StatementTimeout: 5 * time.Second, OperationID: req.OperationID, Kind: "record.edit", Fingerprint: fingerprint,
+	options := applications.RecordWriteOptions{LockTimeout: s.Limits.LockTimeout, StatementTimeout: s.Limits.StatementTimeout, OperationID: req.OperationID, Kind: "record.edit", Fingerprint: fingerprint,
 		Authorize: func(c context.Context, tx pgx.Tx, facts applications.RecordContext) error {
 			var menu bool
 			policy, menu = policyFor(facts)
@@ -444,15 +445,11 @@ func (s *Service) Edit(ctx context.Context, principal session.Principal, req Edi
 			return validateNewReferences(c, tx, req.Changes, fields)
 		},
 	}
-	write, err := (&applications.Application{Pool: s.Pool}).BeginRecordWrite(ctx, principal, req.AppID, req.ViewID, options)
+	write, replayed, err := s.beginRecordMutation(ctx, principal, req.AppID, req.ViewID, req.QueryVersion, options)
 	if err != nil {
 		return result, err
 	}
 	defer write.Rollback(context.Background())
-	replayed, err := write.Replay(ctx, req.OperationID, "record.edit", fingerprint)
-	if err != nil {
-		return result, err
-	}
 	if replayed != nil {
 		if err = write.Commit(ctx); err != nil {
 			return result, err

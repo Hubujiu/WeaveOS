@@ -7,11 +7,14 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appdrafts"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
@@ -143,6 +146,7 @@ func newRecordFixture(t *testing.T) recordFixture {
 	}
 	f.principal = session.Principal{UserID: f.actor, SessionRef: ids[8], Record: session.Record{AuthVersion: "1"}}
 	f.service = New(runtime, client, "consumer-"+strings.ReplaceAll(f.app, "-", ""))
+	f.service.Limits = appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}
 	return f
 }
 
@@ -218,6 +222,51 @@ func TestRestrictedEditCASAndPendingFence(t *testing.T) {
 		if !errors.As(err, &code) || code.Code != "APPLICATION_RECORD_FENCED" {
 			t.Fatalf("fence: %v", err)
 		}
+	}
+}
+
+func TestRestrictedConcurrentEditsCommitOneVersionAndAudit(t *testing.T) {
+	f := newRecordFixture(t)
+	var keys [2]string
+	for i := range keys {
+		if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&keys[i]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var wg sync.WaitGroup
+	results := make(chan error, 2)
+	for i := range keys {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			_, err := f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: keys[i], ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: fmt.Sprintf("winner-%d", i)}}, applications.Metadata{RequestID: fmt.Sprintf("v015-concurrent-%d", i)})
+			results <- err
+		}(i)
+	}
+	wg.Wait()
+	close(results)
+	success, conflict := 0, 0
+	for err := range results {
+		switch {
+		case err == nil:
+			success++
+		case errors.Is(err, apprecords.ErrConflict):
+			conflict++
+		default:
+			t.Fatalf("concurrent edit error: %v", err)
+		}
+	}
+	if success != 1 || conflict != 1 {
+		t.Fatalf("expected one success and one CAS conflict; got %d/%d", success, conflict)
+	}
+	var version int64
+	var audits int
+	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
+	if err := f.runtime.QueryRow(f.ctx, "SELECT record_version FROM "+relation+" WHERE id=$1", f.ownRecord).Scan(&version); err != nil || version != 2 {
+		t.Fatalf("version %d %v", version, err)
+	}
+	if err := f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_write_audit WHERE app_id=$1", f.app).Scan(&audits); err != nil || audits != 1 {
+		t.Fatalf("audit count %d %v", audits, err)
 	}
 }
 
@@ -362,6 +411,29 @@ func TestRestrictedDraftReadOwnerCursorAndRecordDetail(t *testing.T) {
 	}
 }
 
+func TestRestrictedBoundDraftListUsesEditGrantForItsTarget(t *testing.T) {
+	f := newRecordFixture(t)
+	var op string
+	if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	base := int64(1)
+	draft, err := f.service.CreateDraft(f.ctx, f.principal, DraftCreateRequest{AppID: f.app, ViewID: f.view, OperationID: op, SchemaVersion: 1, TargetRecordID: &f.ownRecord, BaseRecordVersion: &base, Values: map[string]any{f.public: "next"}}, applications.Metadata{RequestID: "v015-bound-list"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.create')", f.app); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.owner.Exec(f.ctx, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.create'", f.app); err != nil {
+		t.Fatal(err)
+	}
+	page, err := f.service.ListDrafts(f.ctx, f.principal, DraftListRequest{AppID: f.app, ViewID: f.view, PageSize: 5})
+	if err != nil || len(page.Items) != 1 || page.Items[0].ID != draft.ID || page.Items[0].HasConflicts {
+		t.Fatalf("bound draft list %+v %v", page, err)
+	}
+}
+
 func TestRestrictedQueryOnlyObservableChangesInvalidate(t *testing.T) {
 	f := newRecordFixture(t)
 	filter := json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + f.public + `","operator":"eq","value":"alpha"}]}`)
@@ -385,6 +457,50 @@ func TestRestrictedQueryOnlyObservableChangesInvalidate(t *testing.T) {
 	}
 	if _, err = f.service.Search(f.ctx, f.principal, request); !errors.Is(err, querycontext.ErrChanged) {
 		t.Fatalf("visible reference rename must invalidate old P: %v", err)
+	}
+}
+
+func TestRestrictedListWriteChecksSavedProjectionBeforeClaim(t *testing.T) {
+	f := newRecordFixture(t)
+	filter := json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + f.public + `","operator":"eq","value":"alpha"}]}`)
+	initial, err := f.service.Search(f.ctx, f.principal, SearchRequest{AppID: f.app, ViewID: f.view, Page: 1, PageSize: 1, Filter: filter})
+	if err != nil || initial.Total != 1 {
+		t.Fatalf("initial %+v %v", initial, err)
+	}
+	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
+	column := pgx.Identifier{"f_" + strings.ReplaceAll(f.public, "-", "")}.Sanitize()
+	if _, err = f.owner.Exec(f.ctx, "UPDATE "+relation+" SET "+column+"='alpha',record_version=record_version+1 WHERE id=$1", f.otherRecord); err != nil {
+		t.Fatal(err)
+	}
+	var op string
+	if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	req := EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: op, QueryVersion: initial.QueryVersion, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "edited"}}
+	if _, err = f.service.Edit(f.ctx, f.principal, req, applications.Metadata{RequestID: "v015-list-change"}); !errors.Is(err, querycontext.ErrChanged) {
+		t.Fatalf("changed saved projection accepted: %v", err)
+	}
+	var count int
+	if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2", f.actor, op).Scan(&count); err != nil || count != 0 {
+		t.Fatalf("operation claimed after changed projection: %d %v", count, err)
+	}
+	var value string
+	if err = f.runtime.QueryRow(f.ctx, "SELECT "+column+" FROM "+relation+" WHERE id=$1", f.ownRecord).Scan(&value); err != nil || value != "alpha" {
+		t.Fatalf("record mutated after changed projection: %q %v", value, err)
+	}
+	// A different row can change while the saved authorized P stays equal.
+	if _, err = f.owner.Exec(f.ctx, "UPDATE "+relation+" SET "+column+"='beta',record_version=record_version+1 WHERE id=$1", f.otherRecord); err != nil {
+		t.Fatal(err)
+	}
+	changed, err := f.service.Edit(f.ctx, f.principal, req, applications.Metadata{RequestID: "v015-list-unchanged"})
+	if err != nil || changed.RecordVersion != 2 {
+		t.Fatalf("irrelevant revision blocked write %+v %v", changed, err)
+	}
+	// The original key recovers the confirmed result after its list token
+	// becomes stale due to the write itself.
+	replay, err := f.service.Edit(f.ctx, f.principal, req, applications.Metadata{RequestID: "v015-list-unchanged"})
+	if err != nil || replay != changed {
+		t.Fatalf("original key replay %+v %v", replay, err)
 	}
 }
 
