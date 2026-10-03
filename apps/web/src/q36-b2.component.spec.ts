@@ -289,7 +289,7 @@ async function holdFilterExit(page:Page,mode:'engine'|'fallback'='fallback'){
    return motions;
   };
   const timeout=window.setTimeout.bind(window);
-  window.setTimeout=((handler,delay,...args)=>{
+  window.setTimeout=((handler:TimerHandler,delay?:number,...args:unknown[])=>{
    if(typeof handler==='function'&&delay===600&&document.documentElement.classList.contains('q36-preset-transition-active')&&document.documentElement.style.getPropertyValue('--q36-filter-shell-duration')==='220ms'){
     state.captured=true;return timeout(()=>{state.finished=true;void gate.then(()=>handler(...args));},delay);
    }
@@ -311,6 +311,7 @@ for(const mode of ['engine','fallback','reduced'] as const)for(const close of ['
  await page.addInitScript(()=>{const state={calls:0};Object.defineProperty(window,'__q36NormalCloseFocus',{value:state});const focus=HTMLElement.prototype.focus;HTMLElement.prototype.focus=function(...args){if(this.classList.contains('q36-filter-trigger'))state.calls++;return focus.apply(this,args);};});
  await focusFixture(page);const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});
  await trigger.click();await expect(panel).toBeVisible();await expect(panel.getByRole('button',{name:'新增筛选',exact:true})).toBeEnabled();
+ await panel.getByRole('button',{name:'新增筛选',exact:true}).focus();await expect(panel.getByRole('button',{name:'新增筛选',exact:true})).toBeFocused();
  await page.evaluate(()=>(window as unknown as {__q36NormalCloseFocus:{calls:number}}).__q36NormalCloseFocus.calls=0);
  if(close==='button')await panel.getByRole('button',{name:'关闭筛选管理',exact:true}).click();else await page.keyboard.press('Escape');
  await expect(panel).toBeHidden();await expect(trigger).toBeFocused();
@@ -360,4 +361,16 @@ for(const mode of ['engine','fallback'] as const)test(`Q36 B2 ${mode} completion
  await releaseHeldExit(page);await expect(search).toBeFocused();
  expect(await page.evaluate(()=>(window as unknown as {__q36HeldFilterExit:ExitFocusState}).__q36HeldFilterExit.focusCalls)).not.toContain('自定义筛选');
  await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await expect(trigger).toBeVisible();await expect(trigger).toHaveAttribute('aria-expanded','false');
+});
+
+test.describe('Q36 B2 focus review evidence',()=>{
+ test('manager, editor and closed keyboard focus remain accessible',async({page,browserName},testInfo)=>{
+  await focusFixture(page);const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),manager=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});
+  async function settle(){await page.waitForFunction(()=>!document.documentElement.classList.contains('q36-preset-transition-active')&&document.getAnimations().every(a=>a.playState!=='running'||!(a.effect instanceof KeyframeEffect)||(!(a.effect.target as Element|null)?.classList?.contains('q36-filter-shell')&&!a.effect.pseudoElement?.startsWith('::view-transition'))));}
+  async function capture(name:string){await settle();const path=testInfo.outputPath(name);await page.screenshot({path});await testInfo.attach(name,{path,contentType:'image/png'});}
+  await trigger.click();await expect(manager).toBeVisible();const first=manager.getByRole('button',{name:'新增筛选',exact:true});await expect(first).toBeEnabled();await first.focus();await expect(first).toBeFocused();await capture(browserName+'-manager-focus.png');
+  await first.click();const editor=page.getByRole('dialog',{name:'新增自定义筛选',exact:true}),name=editor.getByLabel('自定义筛选名称',{exact:true});await expect(name).toBeFocused();await capture(browserName+'-editor-focus.png');
+  await page.keyboard.press('Escape');await expect(editor).toBeHidden();await expect(trigger).toBeFocused();await capture(browserName+'-closed-trigger-focus.png');
+  await trigger.click();await expect(manager).toBeVisible();await page.keyboard.press('Escape');const all=page.getByLabel('选择当前页成员',{exact:true});await all.focus();await settle();await expect(all).toBeFocused();await page.keyboard.press('Space');await expect(all).toBeChecked();await expect(manager).toBeHidden();await capture(browserName+'-checkbox-space-focus.png');
+ });
 });
