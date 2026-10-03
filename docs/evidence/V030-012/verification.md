@@ -3,14 +3,16 @@
 Source branch: `task/V030-012-original-app-shell`, initially based on verified
 PR26 head `9b89e8e928aedf30df235492fe89bc52021f6fe9`. Scope excludes
 editing PR26/PR21/main.
-The verified latest PR26 branch head
-`d7f70701db6475b8c8fcef858dbefa8f31797afe` was merged into only this
-V030-012 worktree, with no conflict. Stack diff is limited to V030-012 files
+PR26 branch head `d7f70701db6475b8c8fcef858dbefa8f31797afe`, then the
+later head `b4c0fb3927d71a44c9a299c9c0bc241d42663893`, were merged into
+only this V030-012 worktree without conflict. Stack diff is limited to V030-012 files
 and the authorized single personnel test fixture.
 At inspection, PR26's own GitHub `product` job was red on a pre-existing
 `tests/acceptance/web.spec.ts` response-wait timeout (116/117 browser cases
 passed). Its acceptance-test repair belongs to the separate PR26 owner; this
 slice does not modify that file or claim its CI is green.
+The separate owner later repaired PR26. All five listed checks at the current
+`b4c0fb3` head are now green; this V030-012 branch contains that exact base.
 All tests below exercised actual React/Vite code. HTTP boundary fixtures are
 identified separately from the isolated real B5 service.
 
@@ -153,8 +155,29 @@ locator race, selecting the old account-menu button while `/login` was still
 rendering. Changing the test locator to the login textbox resolved it.
 `actor-recovery-red/six-focused-final.txt` passed all 36 targeted cases across
 the six modes, including those five reruns, malformed JSON-null confirmation,
-and a me/access actor mismatch. The full inherited Chromium component suite
-is being rerun against the final source.
+and a me/access actor mismatch. The final stacked application suite then passed
+all `228/228` Chromium, Firefox, WebKit and reduced-motion cases; see
+`app-six-final-green.txt`.
+
+The full inherited Chromium component run reached 248/261 before a concurrent
+Docker writable layer ran out of space while Playwright attached a screenshot
+to an unrelated Q36 visual test. `full-component-final.txt` contains the exact
+`ENOSPC` trace; no product assertion failed before that point. The prior full
+run passed 253 with one skipped, and a sequential final run is pending. The
+first PR27 exact-head real matrix attempt hit the same Docker npm temporary
+space limit before test collection; its raw diagnostic is in
+`real-v013-e0f-environment-retry.txt`. After the other container exited, the
+available workspace disk rose from 3.4 GiB to 13 GiB. Both runs are being
+retried sequentially.
+
+The current PR27 exact head `e0f1820c1d9bf579b7039b0590632c79cf98be98`
+compiled with Go1.26 into SHA-256
+`0e07897527f66080851c52df3242e494bf5c87d04c9d232338c333dc72b7753d`.
+`real-v013-e0f-matrix-six.txt` then passed 18/18 real HTTPS cases with this
+binary, including actor mismatch 409, malformed actor 400, same-actor and
+legacy controls, role matrix, and root/member UI. This proves this frontend
+and candidate server behavior together; it does not override PR27's separate
+Go/governance CI failures or constitute a formal source merge.
 
 The read-only V030-014 mounting assessment at
 `cb08774ed00e715402e45c31228a508e86d93055` is in
