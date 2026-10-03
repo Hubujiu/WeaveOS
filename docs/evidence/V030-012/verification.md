@@ -59,8 +59,10 @@ identified separately from the isolated real B5 service.
 The earlier Figma handoff Library ZIP helper returned a transfer failure twice.
 Direct Figma contexts and screenshots supplied the original source. No bytes
 from that ZIP were claimed or used. A separate V030-012 review bundle containing
-the 13 screenshots and source evidence was saved to ChatGPT Library as
-`libfile_0302d213ca6481918f863a8a3a1f82f0`, version 0. Permission-group/
+the initial 13 screenshots and source evidence was saved to ChatGPT Library as
+`libfile_0302d213ca6481918f863a8a3a1f82f0`, version 0. The same Library
+identity is updated from the final stacked source; the delivery response
+records its resulting version. Permission-group/
 member/root-menu UI still needs the candidate-member endpoint and approved
 original-native composition from root.
 
