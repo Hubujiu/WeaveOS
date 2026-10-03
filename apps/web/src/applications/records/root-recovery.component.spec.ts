@@ -44,7 +44,7 @@ test('Root definitive first-write rejection allows editing and a fresh submissio
  await page.goto('/src/applications/records/root-recovery-fixture.html?scenario=initial-failure');
  await page.getByLabel('事由',{exact:true}).fill('初始值');
  await page.getByRole('button',{name:'保存记录',exact:true}).click();
- await expect(page.getByRole('alert')).toHaveText('字段校验失败');
+ await expect(page.getByRole('alert')).toHaveText('输入信息不合法，请检查后重试');
  await expect(page.getByRole('status')).toHaveCount(0);
  await expect(page.getByRole('button',{name:'保存记录',exact:true})).toBeEnabled();
  await expect(page.getByRole('button',{name:'恢复保存结果',exact:true})).toHaveCount(0);

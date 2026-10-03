@@ -1,5 +1,6 @@
 import {createRoot} from 'react-dom/client';
-import {RecordForm,type RecordSaveCommand,type SaveOutcome} from './RecordForm';
+import {RecordForm} from './RecordForm';
+import {installRootRecordTransport} from './root-record-transport';
 import {createNewRecordIdentity} from './recordState';
 import type {RuntimeView} from './contracts';
 
@@ -11,18 +12,19 @@ const viewId='33333333-3333-4333-8333-333333333333';
 const fieldId='44444444-4444-4444-8444-444444444444';
 const recordId='77777777-7777-4777-8777-777777777777';
 const scenario=new URLSearchParams(location.search).get('scenario')??'failed';
-const events={saves:[] as RecordSaveCommand[],recoveries:[] as string[],confirmations:[] as unknown[],discarded:0};
+const events={saves:[] as {operationId:string;values?:Record<string,unknown>}[],recoveries:[] as string[],confirmations:[] as unknown[],discarded:0};
 Object.assign(window,{__rootRecovery:events});
 const view:RuntimeView={
  appId:app,tableId:app,viewId,schemaVersion:2,viewVersion:3,policyRevision:4,
  fields:[{id:fieldId,name:'事由',kind:'text',required:false,presentation:{helpText:null,displayTimeZone:null},input:{},access:{read:'all',create:true,edit:'all',history:'none'},query:{operators:['eq','neq'],sortable:false,quickSearchable:false}}],
- layout:[],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}
+ layout:[{id:'aaaaaaaa-aaaa-4aaa-8aaa-000000000001',kind:'field',fieldId}],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}
 };
-const confirmed=(operationId:string):SaveOutcome=>({kind:'confirmed',result:{operationId,id:recordId,recordVersion:1,schemaVersion:2,createdAt:'2026-10-03T09:00:00Z',updatedAt:'2026-10-03T09:00:00Z'}});
+installRootRecordTransport(events,scenario,actor,recordId);
 createRoot(document.getElementById('root')!).render(<RecordForm
  view={view} identity={createNewRecordIdentity(actor,app,viewId)} mode="create" authorityKey="root-authority-4"
- onSave={async command=>{events.saves.push(command);return scenario==='initial-failure'&&events.saves.length===1?{kind:'failed',message:'字段校验失败'}:scenario==='initial-failure'?confirmed(command.operationId):{kind:'unknown'};}}
- onRecover={async operationId=>{events.recoveries.push(operationId);if(events.recoveries.length===1){if(scenario==='throw')throw new Error('network unavailable');if(scenario==='malformed')return {kind:'confirmed',result:{operationId}};return {kind:'failed',message:'恢复接口暂不可用'};}return confirmed(operationId);}}
+ onUnauthorized={()=>{throw new Error('unexpected authentication failure');}}
+ onIdentityMismatch={()=>{throw new Error('unexpected identity mismatch');}}
+ registerLeaveGuard={()=>()=>{}} onRefresh={()=>{}}
  onConfirmed={(result,identity)=>events.confirmations.push({result,identity})}
  onDirtyChange={()=>{}} onDiscard={()=>{events.discarded++;}}
 />);
