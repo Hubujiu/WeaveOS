@@ -64,3 +64,11 @@ registration contract, exact HTTP methods/DTO/errors/idempotency-result query,
 actual menu-resource persistence/registration source, and audit event/reason
 names. Owner transfer, group delete effects, member search, inherited resources,
 records/Flowable/reversal actions stay excluded. Full B5 acceptance remains open.
+
+## Publication source-hash record format
+
+[publication-secret-scan-recovery.md](publication-secret-scan-recovery.md)
+records the actual Gitleaks false-positive classification and lossless metadata
+conversion. `sourceHashes` uses explicit `{path, sha256}` records. Original raw
+JSON bytes are retained in `publication-hash-metadata-originals.tar.gz`; timestamps,
+commands, exit codes, all digest pairs and raw RED/GREEN test evidence are preserved.
