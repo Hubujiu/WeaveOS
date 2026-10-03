@@ -15,6 +15,7 @@ test('record form keeps precise and false values, excludes denied fields, and re
  expect(before).toHaveLength(1);
  expect(before[0].values).toEqual({'44444444-4444-4444-8444-444444444444':'9007199254740993.02','55555555-5555-4555-8555-555555555555':false});
  await page.getByRole('button',{name:'恢复保存结果'}).click();
+ await expect.poll(async()=>page.evaluate(()=>(window as any).__recordFormFixture.confirmations.length)).toBe(1);
  const after=await page.evaluate(()=>(window as typeof window&{__recordFormFixture:{saves:{operationId:string}[];recoveries:string[];confirmations:{identity:{recordId:string}}[]}}).__recordFormFixture);
  expect(after.recoveries).toEqual([before[0].operationId]);
  expect(after.confirmations[0].identity.recordId).toBe('77777777-7777-4777-8777-777777777777');
