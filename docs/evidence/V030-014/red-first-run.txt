@@ -1,0 +1,116 @@
+[WebServer] (node:1667) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:1681) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:1710) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/forms/forms.component.spec.ts:66:1 › original designer shows three panels and keyboard-added draft can preview without a write (5.2s)
+(node:1783) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [chromium] › src/applications/forms/forms.component.spec.ts:82:1 › save preflights and commits with both versions and stable IDs only after server success (30.0s)
+(node:1853) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 [chromium] › src/applications/forms/forms.component.spec.ts:97:1 › lost save response keeps the original operation and draft until recovery confirms it (30.0s)
+(node:1931) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  4 [chromium] › src/applications/forms/forms.component.spec.ts:113:1 › directory creation and new form creation use coherent structure and one atomic form POST (5.2s)
+
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:66:1 › original designer shows three panels and keyboard-added draft can preview without a write 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('region', { name: '字段面板' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('region', { name: '字段面板' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '字段面板' })
+
+
+      66 | test('original designer shows three panels and keyboard-added draft can preview without a write',async({page})=>{
+      67 |   const state=await fixture(page);
+    > 68 |   await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+         |                                                        ^
+      69 |   await expect(page.getByRole('region',{name:'表单画布'})).toBeVisible();
+      70 |   await expect(page.getByRole('region',{name:'字段属性'})).toBeVisible();
+      71 |   await page.getByRole('button',{name:'文本',exact:true}).focus();
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:68:56
+
+    Error Context: test-results/applications-forms-forms.c-67294-can-preview-without-a-write-chromium/error-context.md
+
+  2) [chromium] › src/applications/forms/forms.component.spec.ts:82:1 › save preflights and commits with both versions and stable IDs only after server success 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '文本', exact: true })
+
+
+      82 | test('save preflights and commits with both versions and stable IDs only after server success',async({page})=>{
+      83 |   const state=await fixture(page);
+    > 84 |   await page.getByRole('button',{name:'文本',exact:true}).click();
+         |                                                         ^
+      85 |   await page.getByLabel('字段名称').fill('申请人');
+      86 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+      87 |   await expect(page.getByRole('status')).toContainText('已保存');
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:84:57
+
+    Error Context: test-results/applications-forms-forms.c-82605-s-only-after-server-success-chromium/error-context.md
+
+  3) [chromium] › src/applications/forms/forms.component.spec.ts:97:1 › lost save response keeps the original operation and draft until recovery confirms it 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '文本', exact: true })
+
+
+       98 |   const state=await fixture(page);
+       99 |   state.loseSaveResponse();
+    > 100 |   await page.getByRole('button',{name:'文本',exact:true}).click();
+          |                                                         ^
+      101 |   await page.getByLabel('字段名称').fill('未确认字段');
+      102 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+      103 |   await expect(page.getByRole('alert')).toContainText('保存结果暂未确认');
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:100:57
+
+    Error Context: test-results/applications-forms-forms.c-9a225--until-recovery-confirms-it-chromium/error-context.md
+
+  4) [chromium] › src/applications/forms/forms.component.spec.ts:113:1 › directory creation and new form creation use coherent structure and one atomic form POST 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('tree', { name: '应用目录' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('tree', { name: '应用目录' }) with timeout 5000ms
+      - waiting for getByRole('tree', { name: '应用目录' })
+
+
+      113 | test('directory creation and new form creation use coherent structure and one atomic form POST',async({page})=>{
+      114 |   const state=await fixture(page,'structure');
+    > 115 |   await expect(page.getByRole('tree',{name:'应用目录'})).toBeVisible();
+          |                                                      ^
+      116 |   await page.getByRole('button',{name:'新建目录'}).click();
+      117 |   await page.getByLabel('目录名称').fill('请假');
+      118 |   await page.getByRole('button',{name:'创建目录',exact:true}).click();
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:115:54
+
+    Error Context: test-results/applications-forms-forms.c-d5ca7-re-and-one-atomic-form-POST-chromium/error-context.md
+
+  4 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:66:1 › original designer shows three panels and keyboard-added draft can preview without a write 
+    [chromium] › src/applications/forms/forms.component.spec.ts:82:1 › save preflights and commits with both versions and stable IDs only after server success 
+    [chromium] › src/applications/forms/forms.component.spec.ts:97:1 › lost save response keeps the original operation and draft until recovery confirms it 
+    [chromium] › src/applications/forms/forms.component.spec.ts:113:1 › directory creation and new form creation use coherent structure and one atomic form POST 
