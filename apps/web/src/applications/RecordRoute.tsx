@@ -137,7 +137,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
    {readError&&<><p role="alert">{readError}</p>{canRetryRead&&<button type="button" className="admin-button" onClick={()=>{const target=pendingRead!;setReadError('');if(target.view)void readRecord(target.view,target.recordId,target.queryVersion,target.identity,target.mode);else void refreshRead(target.identity,target.recordId,target.confirmedWrite);}}>重试读取记录</button>}</>}
    {editor?.mode==='read'&&<div className="record-route-actions">{editAllowed(editor)&&<button type="button" className="admin-button" onClick={()=>{setSaved(false);setEditor({...editor,mode:'edit',queryVersion:editor.queryVersion});}}>编辑记录</button>}</div>}
    {editor&&<RecordForm key={JSON.stringify([editor.identity,editor.mode,editor.view.policyRevision,editor.view.schemaVersion,editor.view.viewVersion,editor.record?.recordVersion??'new'])} view={editor.view} identity={editor.identity} record={editor.record} mode={editor.mode} authorityKey={`${editor.view.policyRevision}:${editor.view.schemaVersion}:${editor.view.viewVersion}:${editor.record?.recordVersion??'new'}`}
-    queryVersion={editor.queryVersion} loadCandidates={loadCandidates} onConfirmed={onConfirmed} onDirtyChange={onDirtyChange} onDiscard={closeEditor}
+    queryVersion={editor.queryVersion} loadCandidates={loadCandidates} onConfirmed={onConfirmed} onDirtyChange={onDirtyChange} onRequestDiscard={guardedClose} onDiscard={closeEditor}
     onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard}
     onRefresh={refreshEditor}/>}</Modal>}
  </section>;

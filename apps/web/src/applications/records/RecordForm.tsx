@@ -8,7 +8,16 @@ import {isMutationResult} from './contracts';
 import {confirmRecordIdentity,fieldRendererKey,type RecordEditorIdentity} from './recordState';
 import {projectRuntimeFields,requiresRuntimeReview,scopeAllows} from './runtimeModel';
 
-export type RecordFormProps={view:RuntimeView;identity:RecordEditorIdentity;record?:RecordItem;mode:'create'|'edit'|'read';authorityKey:string;queryVersion?:string;loadCandidates?:(field:RuntimeField,request:Parameters<LoadReferenceCandidates>[0],signal:AbortSignal)=>ReturnType<LoadReferenceCandidates>;onUnauthorized:()=>void;onIdentityMismatch:()=>void;registerLeaveGuard:RegisterLeaveGuard;onRefresh:()=>void;onConfirmed:(result:MutationResult,identity:RecordEditorIdentity)=>void;onDirtyChange:(dirty:boolean)=>void;onDiscard:()=>void};
+export type RecordFormProps={
+ view:RuntimeView;identity:RecordEditorIdentity;record?:RecordItem;mode:'create'|'edit'|'read';authorityKey:string;queryVersion?:string;
+ loadCandidates?:(field:RuntimeField,request:Parameters<LoadReferenceCandidates>[0],signal:AbortSignal)=>ReturnType<LoadReferenceCandidates>;
+ onUnauthorized:()=>void;onIdentityMismatch:()=>void;registerLeaveGuard:RegisterLeaveGuard;onRefresh:()=>void;
+ onConfirmed:(result:MutationResult,identity:RecordEditorIdentity)=>void;onDirtyChange:(dirty:boolean)=>void;
+ /** User intent from the footer; must request confirmation before discarding dirty input. */
+ onRequestDiscard:()=>void;
+ /** Cleanup callback invoked by LeaveController only after a confirmed discard. */
+ onDiscard:()=>void;
+};
 const systemFieldLabels=new Map<string,string>([['id','记录 ID'],['createdBy','创建人'],['createdAt','创建时间'],['updatedAt','更新时间'],['recordVersion','记录版本']]);
 function layoutSpan(span?:number):number{return typeof span==='number'&&Number.isInteger(span)&&span>=1&&span<=12?span:12;}
 function systemFieldValue(fieldId:string,record:RecordItem):string|undefined{switch(fieldId){case'id':return record.id;case'createdBy':return record.createdBy;case'createdAt':return record.createdAt;case'updatedAt':return record.updatedAt;case'recordVersion':return String(record.recordVersion);default:return undefined;}}
@@ -23,7 +32,7 @@ export function RecordForm(props:RecordFormProps){
 }
 
 function RecordFormScope(props:RecordFormProps){
- const {view,identity,record,mode,authorityKey,queryVersion,loadCandidates,onUnauthorized,onIdentityMismatch,registerLeaveGuard,onRefresh,onConfirmed,onDirtyChange,onDiscard}=props;
+ const {view,identity,record,mode,authorityKey,queryVersion,loadCandidates,onUnauthorized,onIdentityMismatch,registerLeaveGuard,onRefresh,onConfirmed,onDirtyChange,onRequestDiscard,onDiscard}=props;
  const saved=identity.kind==='record';
  const resource=useMemo(()=>identity.kind==='new'?{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,creationNonce:identity.clientDraftId}:identity.kind==='record'?{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,id:identity.recordId}:null,[identity]);
  const operationScope=identity.kind==='new'?`record-editor:${identity.appId}:${identity.viewId}:new:${identity.clientDraftId}`:identity.kind==='record'?`record-editor:${identity.appId}:${identity.viewId}:record:${identity.recordId}`:`record-editor:${identity.appId}:${identity.viewId}:draft:${identity.draftId}`;
@@ -109,6 +118,6 @@ function RecordFormScope(props:RecordFormProps){
   {conflict?<button type="button" className="admin-button" onClick={onRefresh}>刷新记录</button>:null}
   {needsReview&&!conflict?<button type="button" className="admin-button" onClick={onRefresh}>刷新记录</button>:null}
   <div className="record-form-fields forms-preview-grid">{view.layout.map(renderLayoutNode)}</div>
-  <footer><button type="button" className="admin-button" onClick={onDiscard} disabled={busy||unknown}>放弃填写</button><button type="button" className="admin-button" onClick={save} disabled={!canEdit||conflict||saved&&!dirty||!saved&&!view.capabilities.create||saved&&!canEditRecord}>保存记录</button></footer>
+  <footer><button type="button" className="admin-button" onClick={onRequestDiscard} disabled={busy||unknown}>放弃填写</button><button type="button" className="admin-button" onClick={save} disabled={!canEdit||conflict||saved&&!dirty||!saved&&!view.capabilities.create||saved&&!canEditRecord}>保存记录</button></footer>
  </section>;
 }
