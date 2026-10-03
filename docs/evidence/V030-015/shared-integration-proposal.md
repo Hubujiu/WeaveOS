@@ -249,14 +249,18 @@ full projection validation, page-only path, context eviction, and a write
 receipt. V015 currently provides only dynamic exact filter compiler and
 bounded streaming hash in `services/bff/internal/appquery`.
 
-**Shared owner edits needed before calling A implemented:**
+**Q36 extraction is now V015-owned for planning only; implementation waits for
+the Notion freeze and lead release.** Its precise source-derived interface,
+Redis compatibility and regression sequence are in
+[q36-extraction-plan.md](q36-extraction-plan.md). Other shared files remain
+with their named owners.
 
 | Exact path | Required change / ownership |
 | --- | --- |
-| `services/bff/internal/personnel/query_context.go` | Extract finite Redis Create/Load/Advance, per-Session LRU/TTL and CAS into a neutral backend (suggest `services/bff/internal/querycontext/`). Preserve existing personnel key format and limits through a wrapper; parameterize context kind, criteria validator and revision vector. V015 does not edit this personnel file. |
-| `services/bff/internal/personnel/query_engine.go` | Route personnel through the shared RR/revision/fingerprint/page lifecycle without changing existing HTTP behavior; expose a strategy interface for appquery's compiler, live policy and typed projection. V015 does not edit this file. |
-| `services/bff/internal/personnel/query_write_guard.go` | Expose a shared query receipt for list-origin writes: verify old context in RR, then recheck revisions in the new RC write tx before mutation. Limit retries to *pre-execution* validation. V015 does not edit this file. |
-| `services/bff/internal/personnel/query_context_test.go`, `query_projection_test.go`, `query_write_guard_test.go` and HTTP tests | Preserve Q36 context keys, changed/expired distinction, CAS and write behavior with real Redis/PG. Shared owner owns regression edits. |
+| `services/bff/internal/personnel/query_context.go` | V015 after freeze: extract finite Redis Create/Load/Advance, per-Session LRU/TTL and CAS into `services/bff/internal/querycontext/`. Preserve existing personnel key format and limits through a wrapper; parameterize domain validator and revision vector. |
+| `services/bff/internal/personnel/query_engine.go` | V015 after freeze: route personnel through the single shared RR/revision/fingerprint/page lifecycle without changing existing HTTP behavior; use a minimal strategy for appquery's compiler, live policy and typed projection. |
+| `services/bff/internal/personnel/query_write_guard.go` | V015 after freeze: expose the same lifecycle's read receipt for list-origin writes. Personnel retains its RC lock/authorization/retry order; V015 records uses its V013-owned business transaction port. |
+| `services/bff/internal/personnel/query_context_test.go`, `query_projection_test.go`, `query_write_guard_test.go` and Q36 HTTP regression tests | V015 regression scope after freeze; preserve existing keys, changed/expired distinction, CAS, RR and write behavior with real Redis/PG. Other personnel files/source hooks remain V013-owned. |
 | `services/bff/internal/applications/transactions.go`, `store.go`, `http.go`; `services/bff/cmd/bff/config.go` | Supply non-manager lifecycle, operation routing and real app HTTP composition. V013 owner controls these files. |
 | `db/migrations/00008_*.sql`, `infra/runtime/roles.sql`, `contracts/errors/codes.json`, `contracts/openapi/openapi.json` | One shared owner allocates schema/roles/error/API edits. V015 supplies delta only. |
 
@@ -273,8 +277,9 @@ not unchanged.
 For `POST /records/search`, load context metadata before PG RR, then in one
 RR snapshot revalidate Session, actual form/table, live policy, registry and
 source revisions; normalize criteria and check full field scope coverage.
-If an old token is supplied, validate its **saved old criteria first**, as
-Q36 does, even when the incoming criteria differ. If its observation
+If an old token is supplied, validate its **saved old criteria first** for
+records, even when the incoming criteria differ; the personnel strategy keeps
+its existing incoming-normalization error precedence. If its observation
 revisions differ, stream that old criteria's full projection and return
 `QUERY_CHANGED` only when digest/count differ; otherwise CAS-advance. If
 the old criteria can no longer compile because a field was tombstoned,
