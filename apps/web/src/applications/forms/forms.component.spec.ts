@@ -874,14 +874,19 @@ test('StrictMode designer ignores a late first setup response after the replayed
   await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
   const nextView='00000000-0000-4000-8000-000000000321';
   let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  let started!:()=>void;const firstStarted=new Promise<void>(resolve=>{started=resolve;});
   let count=0;
   await page.route(`**/forms/${nextView}/definition`,async route=>{
     const first=++count===1;
-    if(first)await gate;
+    if(first){started();await gate;}
     try{await route.fulfill({json:ok({...definition,form:{...form,id:nextView,name:first?'旧响应':'新响应'}})});}
     catch{ /* first StrictMode request was aborted by cleanup */ }
   });
   await page.evaluate((id:string)=>(window as Window&{__formsStrictView?:(value:string)=>void}).__formsStrictView?.(id),nextView);
+  await firstStarted;
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(false));
+  await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(true));
   await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
   await expect(page.locator('.forms-toolbar-title strong')).toHaveText('新响应');
   release();await page.waitForTimeout(50);
@@ -894,19 +899,167 @@ test('StrictMode structure ignores a late first setup response after the replaye
   await expect(page.getByRole('region',{name:'目录与视图管理'})).toBeVisible();
   const nextApp='00000000-0000-4000-8000-000000000322';
   let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  let started!:()=>void;const firstStarted=new Promise<void>(resolve=>{started=resolve;});
   let count=0;
   await page.route(`**/applications/${nextApp}/structure`,async route=>{
     const first=++count===1;
-    if(first)await gate;
+    if(first){started();await gate;}
     try{await route.fulfill({json:ok({...structure,appId:nextApp,forms:[],tables:[],directories:first?[]:
       [{...structure.directories[0],id:folderId,appId:nextApp,name:'新目录',parentId:null,position:0}]})});}
     catch{ /* first StrictMode request was aborted by cleanup */ }
   });
   await page.evaluate((id:string)=>(window as Window&{__formsStrictApp?:(value:string)=>void}).__formsStrictApp?.(id),nextApp);
+  await firstStarted;
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(false));
+  await expect(page.getByRole('region',{name:'目录与视图管理'})).toHaveCount(0);
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(true));
   await expect(page.getByRole('treeitem',{name:'新目录'})).toBeVisible();
   release();await page.waitForTimeout(50);
   await expect(page.getByRole('treeitem',{name:'新目录'})).toBeVisible();
   expect(count).toBeGreaterThanOrEqual(2);
+});
+
+test('cached designer draft is masked when return GET is forbidden',async({page})=>{
+  await fixture(page);
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('私有草稿');
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),
+    '00000000-0000-4000-8000-000000000331');
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  let rechecks=0;
+  await page.route(`**/forms/${viewId}/definition`,route=>{rechecks++;return route.fulfill({status:403,
+    json:{code:'APPLICATION_FORBIDDEN',message:'',data:null,meta:{}}});});
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),viewId);
+  await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+  await expect(page.getByRole('alert')).toContainText('没有此应用');
+  await expect(page.getByText('私有草稿')).toHaveCount(0);
+  expect(rechecks).toBeGreaterThan(0);
+});
+
+test('cached designer masks on auth version rejection and same actor reauth restores draft',async({page})=>{
+  await fixture(page);
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('A 待恢复草稿');
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),
+    '00000000-0000-4000-8000-000000000332');
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await page.route(`**/forms/${viewId}/definition`,route=>route.fulfill({status:401,
+    json:{code:'AUTH_REQUIRED',message:'',data:null,meta:{}}}));
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),viewId);
+  await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+  await expect(page.getByRole('alert')).toContainText('登录已失效');
+  expect(await page.evaluate(()=>(window as Window&{__formsHarnessAuthEvents?:string[]}).__formsHarnessAuthEvents)).toContain('401');
+  await page.unroute(`**/forms/${viewId}/definition`);
+  await page.getByRole('button',{name:'重试'}).click();
+  await expect(page.getByLabel('字段名称')).toHaveValue('A 待恢复草稿');
+});
+
+test('cached designer masks server GET failure then preserves draft after retry',async({page})=>{
+  await fixture(page);
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('未覆盖输入');
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),
+    '00000000-0000-4000-8000-000000000333');
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await page.route(`**/forms/${viewId}/definition`,route=>route.fulfill({status:503,
+    json:{code:'COMMON_SERVICE_UNAVAILABLE',message:'',data:null,meta:{}}}));
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),viewId);
+  await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+  await expect(page.getByRole('alert')).toContainText('服务暂时不可用');
+  await page.unroute(`**/forms/${viewId}/definition`);
+  await page.getByRole('button',{name:'重试'}).click();
+  await expect(page.getByLabel('字段名称')).toHaveValue('未覆盖输入');
+});
+
+test('cached structure dialog is masked after permission revocation',async({page})=>{
+  await fixture(page,'structure');
+  await page.getByRole('button',{name:'新建目录'}).click();
+  await page.getByLabel('目录名称').fill('私有目录名');
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),
+    '00000000-0000-4000-8000-000000000334');
+  await page.route(`**/applications/${appId}/structure`,route=>route.fulfill({status:403,
+    json:{code:'APPLICATION_FORBIDDEN',message:'',data:null,meta:{}}}));
+  await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),appId);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByText('私有目录名')).toHaveCount(0);
+  await expect(page.getByRole('alert')).toContainText('没有此应用');
+});
+
+for(const scenario of [
+  {status:401,code:'AUTH_REQUIRED'},
+  {status:403,code:'APPLICATION_FORBIDDEN'},
+  {status:409,code:'AUTH_SESSION_CHANGED'},
+])test(`unknown Save retry ${scenario.status} retains original operation for later confirmation`,async({page})=>{
+  const state=await fixture(page);
+  state.loseSaveResponse();
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('原请求字段');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+  const originalId=state.seen.find(item=>item.method==='PUT')?.body?.operationId;
+  await page.route('**/definition',route=>route.request().method()==='PUT'
+    ?route.fulfill({status:scenario.status,json:{code:scenario.code,message:'',data:null,meta:{}}})
+    :route.fulfill({json:ok(definition)}));
+  await page.getByRole('button',{name:'按原请求重试'}).click();
+  await expect(page.getByRole('button',{name:'查询保存结果'})).toBeVisible();
+  await expect(page.getByLabel('字段名称')).toHaveValue('原请求字段');
+  await expect(page.getByRole('dialog',{name:'配置版本已变化'})).toHaveCount(0);
+  await page.unroute('**/definition');
+  await page.getByRole('button',{name:'查询保存结果'}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  expect(state.seen.find(item=>item.path.includes('/application-operations/'))?.path).toContain(String(originalId));
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(1);
+});
+
+test('StrictMode guard clears on unmount while retaining an unknown Save packet',async({page})=>{
+  const state=await fixture(page,'designer',definition,structure,true);
+  state.loseSaveResponse();
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('稍后核查');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('结果暂未确认');
+  await expect.poll(()=>page.evaluate(()=>(window as Window&{__formsStrictDirty?:boolean}).__formsStrictDirty)).toBe(true);
+  await page.getByRole('button',{name:'返回工作台'}).click();
+  await page.getByRole('button',{name:'离开并保留待核查操作'}).click();
+  await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+  await expect.poll(()=>page.evaluate(()=>(window as Window&{__formsStrictDirty?:boolean}).__formsStrictDirty)).toBe(false);
+  await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(true));
+  await expect(page.getByLabel('字段名称')).toHaveValue('稍后核查');
+  await expect(page.getByRole('button',{name:'查询保存结果'})).toBeVisible();
+});
+
+test('slow preflight is abandoned on Back before PUT and guard teardown is explicit',async({page})=>{
+  const state=await fixture(page,'designer',definition,structure,true);
+  let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  let started!:()=>void;const firstStarted=new Promise<void>(resolve=>{started=resolve;});
+  await page.route('**/definition/preflight',async route=>{started();await gate;
+    try{await route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,
+      dataRevision:0,dependencyRevision:0,plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},
+      impacts:[],dependencies:[],blockingIssues:[],saveAllowed:true,confirmation:null})});}catch{/* unmounted */}});
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await firstStarted;
+  await page.getByRole('button',{name:'返回工作台'}).click();
+  await page.getByRole('button',{name:'放弃修改并离开'}).click();
+  await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+  release();await page.waitForTimeout(80);
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+  await expect.poll(()=>page.evaluate(()=>(window as Window&{__formsStrictDirty?:boolean}).__formsStrictDirty)).toBe(false);
+});
+
+test('datetime to non-datetime conversion clears timezone in preflight DTO',async({page})=>{
+  const fieldId='00000000-0000-4000-8000-000000000335';
+  const seeded:Definition={...definition,table:{...table,schemaReady:true,schemaVersion:1},
+    form:{...form,viewVersion:1},fields:[{id:fieldId,name:'发生时间',kind:'datetime',required:false,
+      default:null,config:{precision:'second'},presentation:{helpText:'提示',displayTimeZone:'Asia/Shanghai'}}],
+    layout:[{id:'00000000-0000-4000-8000-000000000336',kind:'field',fieldId,span:12}]};
+  const state=await fixture(page,'designer',seeded);
+  await page.getByRole('button',{name:'发生时间 日期时间'}).click();
+  await page.getByLabel('字段类型').selectOption('text');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  const preflight=state.seen.find(item=>item.path.endsWith('/definition/preflight'))?.body;
+  expect((preflight?.fields as Field[])[0]).toMatchObject({kind:'text',
+    presentation:{helpText:'提示',displayTimeZone:null}});
 });
 
 test('existing text field can request a guarded number type conversion',async({page})=>{

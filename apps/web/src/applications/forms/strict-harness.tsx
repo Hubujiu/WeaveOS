@@ -6,6 +6,7 @@ import {FormDesigner} from './FormDesigner';
 const query=new URLSearchParams(location.search);
 function StrictHarness(){
   const [mounted,setMounted]=useState(true);
+  const [dirty,setDirty]=useState(false);
   const [appId,setAppId]=useState(query.get('appId')??'');
   const [viewId,setViewId]=useState(query.get('viewId')??'');
   const actorId=query.get('actorId')??'';
@@ -13,12 +14,16 @@ function StrictHarness(){
     __formsStrictMount?:(value:boolean)=>void;
     __formsStrictApp?:(value:string)=>void;
     __formsStrictView?:(value:string)=>void;
+    __formsStrictDirty?:boolean;
   };
   controls.__formsStrictMount=setMounted;
   controls.__formsStrictApp=setAppId;
   controls.__formsStrictView=setViewId;
+  controls.__formsStrictDirty=dirty;
   if(!mounted)return null;
-  return query.get('mode')==='structure'?<ApplicationStructurePanel appId={appId} actorId={actorId}/>:
-    <FormDesigner appId={appId} viewId={viewId} actorId={actorId}/>;
+  return query.get('mode')==='structure'?<ApplicationStructurePanel appId={appId} actorId={actorId}
+      onDirtyChange={setDirty}/>:
+    <FormDesigner appId={appId} viewId={viewId} actorId={actorId} onDirtyChange={setDirty}
+      onBack={()=>setMounted(false)}/>;
 }
 createRoot(document.getElementById('root')!).render(<StrictMode><StrictHarness/></StrictMode>);

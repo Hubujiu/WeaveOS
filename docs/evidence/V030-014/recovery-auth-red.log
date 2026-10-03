@@ -1,0 +1,332 @@
+[WebServer] (node:66184) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:66198) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 10 tests using 1 worker
+
+(node:66231) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/10] [chromium] › src/applications/forms/forms.component.spec.ts:922:1 › cached designer draft is masked when return GET is forbidden
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:922:1 › cached designer draft is masked when return GET is forbidden 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('region', { name: '字段面板' })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('region', { name: '字段面板' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '字段面板' })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      931 |     json:{code:'APPLICATION_FORBIDDEN',message:'',data:null,meta:{}}});});
+      932 |   await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),viewId);
+    > 933 |   await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+          |                                                        ^
+      934 |   await expect(page.getByRole('alert')).toContainText('没有此应用');
+      935 |   await expect(page.getByText('私有草稿')).toHaveCount(0);
+      936 |   expect(rechecks).toBeGreaterThan(0);
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:933:56
+
+    Error Context: test-results/forms.component-cached-des-67b79-hen-return-GET-is-forbidden-chromium/error-context.md
+
+
+(node:66302) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/10] [chromium] › src/applications/forms/forms.component.spec.ts:939:1 › cached designer masks on auth version rejection and same actor reauth restores draft
+  2) [chromium] › src/applications/forms/forms.component.spec.ts:939:1 › cached designer masks on auth version rejection and same actor reauth restores draft 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('region', { name: '字段面板' })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('region', { name: '字段面板' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '字段面板' })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      947 |     json:{code:'AUTH_REQUIRED',message:'',data:null,meta:{}}}));
+      948 |   await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),viewId);
+    > 949 |   await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+          |                                                        ^
+      950 |   await expect(page.getByRole('alert')).toContainText('登录已失效');
+      951 |   expect(await page.evaluate(()=>(window as Window&{__formsHarnessAuthEvents?:string[]}).__formsHarnessAuthEvents)).toContain('401');
+      952 |   await page.unroute(`**/forms/${viewId}/definition`);
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:949:56
+
+    Error Context: test-results/forms.component-cached-des-901fc-actor-reauth-restores-draft-chromium/error-context.md
+
+
+(node:66371) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/10] [chromium] › src/applications/forms/forms.component.spec.ts:957:1 › cached designer masks server GET failure then preserves draft after retry
+  3) [chromium] › src/applications/forms/forms.component.spec.ts:957:1 › cached designer masks server GET failure then preserves draft after retry 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('region', { name: '字段面板' })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('region', { name: '字段面板' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '字段面板' })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      965 |     json:{code:'COMMON_SERVICE_UNAVAILABLE',message:'',data:null,meta:{}}}));
+      966 |   await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchView?:(id:string)=>void}).__formsHarnessSwitchView?.(id),viewId);
+    > 967 |   await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+          |                                                        ^
+      968 |   await expect(page.getByRole('alert')).toContainText('服务暂时不可用');
+      969 |   await page.unroute(`**/forms/${viewId}/definition`);
+      970 |   await page.getByRole('button',{name:'重试'}).click();
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:967:56
+
+    Error Context: test-results/forms.component-cached-des-1eddd-preserves-draft-after-retry-chromium/error-context.md
+
+
+(node:66441) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[4/10] [chromium] › src/applications/forms/forms.component.spec.ts:974:1 › cached structure dialog is masked after permission revocation
+  4) [chromium] › src/applications/forms/forms.component.spec.ts:974:1 › cached structure dialog is masked after permission revocation 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog') with timeout 5000ms
+      - waiting for getByRole('dialog')
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      981 |     json:{code:'APPLICATION_FORBIDDEN',message:'',data:null,meta:{}}}));
+      982 |   await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),appId);
+    > 983 |   await expect(page.getByRole('dialog')).toHaveCount(0);
+          |                                          ^
+      984 |   await expect(page.getByText('私有目录名')).toHaveCount(0);
+      985 |   await expect(page.getByRole('alert')).toContainText('没有此应用');
+      986 | });
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:983:42
+
+    Error Context: test-results/forms.component-cached-str-5cd38-after-permission-revocation-chromium/error-context.md
+
+
+(node:66511) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[5/10] [chromium] › src/applications/forms/forms.component.spec.ts:992:3 › unknown Save retry 401 retains original operation for later confirmation
+  5) [chromium] › src/applications/forms/forms.component.spec.ts:992:3 › unknown Save retry 401 retains original operation for later confirmation 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: '查询保存结果' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('button', { name: '查询保存结果' }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '查询保存结果' })
+
+
+      1002 |     :route.fulfill({json:ok(definition)}));
+      1003 |   await page.getByRole('button',{name:'按原请求重试'}).click();
+    > 1004 |   await expect(page.getByRole('button',{name:'查询保存结果'})).toBeVisible();
+           |                                                          ^
+      1005 |   await expect(page.getByLabel('字段名称')).toHaveValue('原请求字段');
+      1006 |   await expect(page.getByRole('dialog',{name:'配置版本已变化'})).toHaveCount(0);
+      1007 |   await page.unroute('**/definition');
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1004:58
+
+    Error Context: test-results/forms.component-unknown-Sa-90f9e-tion-for-later-confirmation-chromium/error-context.md
+
+
+(node:66581) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[6/10] [chromium] › src/applications/forms/forms.component.spec.ts:992:3 › unknown Save retry 403 retains original operation for later confirmation
+  6) [chromium] › src/applications/forms/forms.component.spec.ts:992:3 › unknown Save retry 403 retains original operation for later confirmation 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: '查询保存结果' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('button', { name: '查询保存结果' }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '查询保存结果' })
+
+
+      1002 |     :route.fulfill({json:ok(definition)}));
+      1003 |   await page.getByRole('button',{name:'按原请求重试'}).click();
+    > 1004 |   await expect(page.getByRole('button',{name:'查询保存结果'})).toBeVisible();
+           |                                                          ^
+      1005 |   await expect(page.getByLabel('字段名称')).toHaveValue('原请求字段');
+      1006 |   await expect(page.getByRole('dialog',{name:'配置版本已变化'})).toHaveCount(0);
+      1007 |   await page.unroute('**/definition');
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1004:58
+
+    Error Context: test-results/forms.component-unknown-Sa-47c4c-tion-for-later-confirmation-chromium/error-context.md
+
+
+(node:66659) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[7/10] [chromium] › src/applications/forms/forms.component.spec.ts:992:3 › unknown Save retry 409 retains original operation for later confirmation
+  7) [chromium] › src/applications/forms/forms.component.spec.ts:992:3 › unknown Save retry 409 retains original operation for later confirmation 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: '查询保存结果' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('button', { name: '查询保存结果' }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '查询保存结果' })
+
+
+      1002 |     :route.fulfill({json:ok(definition)}));
+      1003 |   await page.getByRole('button',{name:'按原请求重试'}).click();
+    > 1004 |   await expect(page.getByRole('button',{name:'查询保存结果'})).toBeVisible();
+           |                                                          ^
+      1005 |   await expect(page.getByLabel('字段名称')).toHaveValue('原请求字段');
+      1006 |   await expect(page.getByRole('dialog',{name:'配置版本已变化'})).toHaveCount(0);
+      1007 |   await page.unroute('**/definition');
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1004:58
+
+    Error Context: test-results/forms.component-unknown-Sa-10f20-tion-for-later-confirmation-chromium/error-context.md
+
+
+(node:66733) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[8/10] [chromium] › src/applications/forms/forms.component.spec.ts:1014:1 › StrictMode guard clears on unmount while retaining an unknown Save packet
+  8) [chromium] › src/applications/forms/forms.component.spec.ts:1014:1 › StrictMode guard clears on unmount while retaining an unknown Save packet 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      1023 |   await page.getByRole('button',{name:'离开并保留待核查操作'}).click();
+      1024 |   await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+    > 1025 |   await expect.poll(()=>page.evaluate(()=>(window as Window&{__formsStrictDirty?:boolean}).__formsStrictDirty)).toBe(false);
+           |                                                                                                                 ^
+      1026 |   await page.evaluate(()=>(window as Window&{__formsStrictMount?:(value:boolean)=>void}).__formsStrictMount?.(true));
+      1027 |   await expect(page.getByLabel('字段名称')).toHaveValue('稍后核查');
+      1028 |   await expect(page.getByRole('button',{name:'查询保存结果'})).toBeVisible();
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1025:113
+
+    Error Context: test-results/forms.component-StrictMode-e704e-ning-an-unknown-Save-packet-chromium/error-context.md
+
+
+(node:66803) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[9/10] [chromium] › src/applications/forms/forms.component.spec.ts:1031:1 › slow preflight is abandoned on Back before PUT and guard teardown is explicit
+  9) [chromium] › src/applications/forms/forms.component.spec.ts:1031:1 › slow preflight is abandoned on Back before PUT and guard teardown is explicit 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      1045 |   release();await page.waitForTimeout(80);
+      1046 |   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+    > 1047 |   await expect.poll(()=>page.evaluate(()=>(window as Window&{__formsStrictDirty?:boolean}).__formsStrictDirty)).toBe(false);
+           |                                                                                                                 ^
+      1048 | });
+      1049 |
+      1050 | test('datetime to non-datetime conversion clears timezone in preflight DTO',async({page})=>{
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1047:113
+
+    Error Context: test-results/forms.component-slow-prefl-739a2--guard-teardown-is-explicit-chromium/error-context.md
+
+
+(node:66874) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[10/10] [chromium] › src/applications/forms/forms.component.spec.ts:1050:1 › datetime to non-datetime conversion clears timezone in preflight DTO
+  10) [chromium] › src/applications/forms/forms.component.spec.ts:1050:1 › datetime to non-datetime conversion clears timezone in preflight DTO 
+
+    Error: expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "kind": "text",
+        "presentation": Object {
+    -     "displayTimeZone": null,
+    +     "displayTimeZone": "Asia/Shanghai",
+          "helpText": "提示",
+        },
+      }
+
+      1059 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+      1060 |   const preflight=state.seen.find(item=>item.path.endsWith('/definition/preflight'))?.body;
+    > 1061 |   expect((preflight?.fields as Field[])[0]).toMatchObject({kind:'text',
+           |                                             ^
+      1062 |     presentation:{helpText:'提示',displayTimeZone:null}});
+      1063 | });
+      1064 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1061:45
+
+    Error Context: test-results/forms.component-datetime-t-73713-s-timezone-in-preflight-DTO-chromium/error-context.md
+
+
+  10 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:922:1 › cached designer draft is masked when return GET is forbidden 
+    [chromium] › src/applications/forms/forms.component.spec.ts:939:1 › cached designer masks on auth version rejection and same actor reauth restores draft 
+    [chromium] › src/applications/forms/forms.component.spec.ts:957:1 › cached designer masks server GET failure then preserves draft after retry 
+    [chromium] › src/applications/forms/forms.component.spec.ts:974:1 › cached structure dialog is masked after permission revocation 
+    [chromium] › src/applications/forms/forms.component.spec.ts:992:3 › unknown Save retry 401 retains original operation for later confirmation 
+    [chromium] › src/applications/forms/forms.component.spec.ts:992:3 › unknown Save retry 403 retains original operation for later confirmation 
+    [chromium] › src/applications/forms/forms.component.spec.ts:992:3 › unknown Save retry 409 retains original operation for later confirmation 
+    [chromium] › src/applications/forms/forms.component.spec.ts:1014:1 › StrictMode guard clears on unmount while retaining an unknown Save packet 
+    [chromium] › src/applications/forms/forms.component.spec.ts:1031:1 › slow preflight is abandoned on Back before PUT and guard teardown is explicit 
+    [chromium] › src/applications/forms/forms.component.spec.ts:1050:1 › datetime to non-datetime conversion clears timezone in preflight DTO 
