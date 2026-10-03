@@ -193,3 +193,33 @@ test('used option deletion maps old option IDs before renewed preflight and conf
   expect(saves[0].body).toMatchObject({confirmationToken:'confirmed-token',
     optionMappings:[{fieldId,fromOptionId:oldId,toOptionId:keepId}]});
 });
+
+test('late preflight for an old view cannot open impact or write into the newly selected view',async({page})=>{
+  const nextViewId='00000000-0000-4000-8000-000000000120';
+  const state=await fixture(page);
+  let release!:()=>void;
+  const gate=new Promise<void>(resolve=>{release=resolve;});
+  let seenPreflight!:()=>void;
+  const started=new Promise<void>(resolve=>{seenPreflight=resolve;});
+  await page.route('**/definition/preflight',async route=>{
+    seenPreflight();await gate;
+    return route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,dataRevision:0,dependencyRevision:0,
+      plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},
+      impacts:[{fieldId:'field-old',kind:'column_removal',nonNullRows:1,optionId:null}],
+      dependencies:[],blockingIssues:[],saveAllowed:true,
+      confirmation:{token:'old-view-token',expiresAt:'2099-01-01T00:00:00Z'}})});
+  });
+  await page.route(`**/forms/${nextViewId}/definition`,route=>route.fulfill({json:ok({...definition,form:{...form,id:nextViewId,name:'另一个视图'}})}));
+  await page.goto(`/src/applications/forms/harness.html?mode=designer&appId=${appId}&viewId=${viewId}&switchViewId=${nextViewId}`);
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await started;
+  await page.getByRole('button',{name:'切换视图'}).click();
+  await expect(page.getByRole('region',{name:'表单画布'})).toContainText('另一个视图');
+  const oldReply=page.waitForResponse(response=>response.url().includes(`/forms/${viewId}/definition/preflight`));
+  release();
+  await oldReply;
+  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+});

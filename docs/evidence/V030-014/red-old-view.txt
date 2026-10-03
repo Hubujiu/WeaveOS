@@ -1,0 +1,41 @@
+[WebServer] (node:3898) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:3912) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:3941) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/forms/forms.component.spec.ts:197:1 › late preflight for an old view cannot open impact or write into the newly selected view (5.5s)
+
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:197:1 › late preflight for an old view cannot open impact or write into the newly selected view 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog') with timeout 5000ms
+      - waiting for getByRole('dialog')
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      221 |   await oldReply;
+      222 |   await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+    > 223 |   await expect(page.getByRole('dialog')).toHaveCount(0);
+          |                                          ^
+      224 |   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+      225 | });
+      226 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:223:42
+
+    Error Context: test-results/applications-forms-forms.c-a578e-nto-the-newly-selected-view-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:197:1 › late preflight for an old view cannot open impact or write into the newly selected view 
