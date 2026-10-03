@@ -27,6 +27,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.Personnel.ServeHTTP(w, r)
 		return
 	}
+	if s.Applications != nil && (r.URL.Path == "/api/v1/applications" || strings.HasPrefix(r.URL.Path, "/api/v1/applications/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-operations/")) {
+		s.Applications.ServeHTTP(w, r)
+		return
+	}
 	if r.URL.Path == "/api/v1/registrations" && r.Method == "POST" {
 		s.register(w, r)
 		return

@@ -22,6 +22,7 @@ type Service struct {
 	Logger               *slog.Logger
 	TrustedProxyHosts    []string
 	Personnel            http.Handler
+	Applications         http.Handler
 	InvitationAuthorizer func(context.Context, pgx.Tx, session.Principal) error
 	InvitationBegin      func(context.Context, session.Principal, string) (pgx.Tx, error)
 }
