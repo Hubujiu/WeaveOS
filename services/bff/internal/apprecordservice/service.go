@@ -126,6 +126,10 @@ type DraftDiscardRequest struct {
 	AppID, ViewID, DraftID, OperationID string
 	ExpectedDraftVersion                int64
 }
+type DraftListRequest struct {
+	AppID, ViewID, PageToken string
+	PageSize                 int
+}
 type MutationResult struct {
 	OperationID   string `json:"operationId"`
 	ID            string `json:"id"`

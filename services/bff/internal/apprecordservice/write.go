@@ -254,7 +254,7 @@ func (s *Service) Create(ctx context.Context, principal session.Principal, req C
 	}
 	if req.DraftRef != nil {
 		store := appdrafts.Store{Relation: pgx.Identifier{"applications", "record_drafts"}}
-		if err = store.ConsumeInTx(ctx, write.Tx(), draftAccess(facts, policy, fields, nil), req.DraftRef.ID, req.DraftRef.DraftVersion, nil, nil); err != nil {
+		if err = store.ConsumeInTx(ctx, write.Tx(), draftAccess(facts, policy, fields, nil, ""), req.DraftRef.ID, req.DraftRef.DraftVersion, nil, nil); err != nil {
 			return MutationResult{}, err
 		}
 	}
@@ -273,20 +273,17 @@ var _ apprecords.TypedDML = controlledDML{}
 var _ apprecords.Authorization = recordAuthorization{}
 var _ apprecords.Audit = recordAudit{}
 
-func (s *Service) UpdateDraft(context.Context, session.Principal, DraftUpdateRequest, applications.Metadata) (appdrafts.Draft, error) {
-	return appdrafts.Draft{}, ErrUnavailable
-}
-func (s *Service) DiscardDraft(context.Context, session.Principal, DraftDiscardRequest, applications.Metadata) error {
-	return ErrUnavailable
-}
-
-func draftAccess(facts applications.RecordContext, policy appaccess.Policy, fields []appfields.Field, base *int64) appdrafts.Access {
+func draftAccess(facts applications.RecordContext, policy appaccess.Policy, fields []appfields.Field, base *int64, targetOwner string) appdrafts.Access {
 	known := map[string]appfields.Field{}
 	for _, f := range fields {
 		known[f.ID] = f
 	}
+	allowed := policy.CanCreate(nil)
+	if targetOwner != "" {
+		allowed = policy.CanEdit(targetOwner, nil)
+	}
 	return appdrafts.Access{ActorID: facts.Actor.ID, AppID: facts.App.ID, TableID: facts.TableID, ViewID: facts.ViewID,
-		ResourceAllowed: policy.CanCreate(nil) || policy.CanEdit(facts.Actor.ID, nil), CurrentSchemaVersion: facts.SchemaVersion, CurrentBaseRecordVersion: base,
+		ResourceAllowed: allowed, CurrentSchemaVersion: facts.SchemaVersion, CurrentBaseRecordVersion: base,
 		Field: func(id string) appdrafts.FieldStatus {
 			f, ok := known[id]
 			if !ok {
@@ -305,7 +302,11 @@ func draftAccess(facts applications.RecordContext, policy appaccess.Policy, fiel
 			if len(config.Options) > 0 {
 				maxItems = len(config.Options)
 			}
-			return appdrafts.FieldStatus{Exists: true, Writable: policy.CanCreate([]string{id}) || policy.FieldScope(appaccess.Edit, id) != appaccess.None, Kind: f.Kind, MaxRunes: maxRunes, MaxItems: maxItems}
+			writable := policy.CanCreate([]string{id})
+			if targetOwner != "" {
+				writable = policy.CanEdit(targetOwner, []string{id})
+			}
+			return appdrafts.FieldStatus{Exists: true, Writable: writable, Kind: f.Kind, MaxRunes: maxRunes, MaxItems: maxItems}
 		},
 	}
 }
@@ -376,13 +377,14 @@ func (s *Service) CreateDraft(ctx context.Context, principal session.Principal, 
 		return empty, err
 	}
 	var base *int64
+	var targetOwner string
 	if req.TargetRecordID != nil {
 		if !appfields.ValidID(*req.TargetRecordID) || req.BaseRecordVersion == nil {
 			return empty, appdrafts.ErrInvalid
 		}
 		relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(facts.TableID, "-", "")}.Sanitize()
 		var version int64
-		if err = write.Tx().QueryRow(ctx, "SELECT record_version FROM "+relation+" WHERE id=$1", *req.TargetRecordID).Scan(&version); err != nil {
+		if err = write.Tx().QueryRow(ctx, "SELECT record_version,created_by::text FROM "+relation+" WHERE id=$1", *req.TargetRecordID).Scan(&version, &targetOwner); err != nil {
 			return empty, err
 		}
 		base = &version
@@ -390,7 +392,7 @@ func (s *Service) CreateDraft(ctx context.Context, principal session.Principal, 
 			return empty, appdrafts.ErrBaseConflict
 		}
 	}
-	access := draftAccess(facts, policy, fields, base)
+	access := draftAccess(facts, policy, fields, base, targetOwner)
 	var id string
 	if err = write.Tx().QueryRow(ctx, "SELECT gen_random_uuid()::text").Scan(&id); err != nil {
 		return empty, err
@@ -483,7 +485,12 @@ func (s *Service) Edit(ctx context.Context, principal session.Principal, req Edi
 	if req.DraftRef != nil {
 		store := appdrafts.Store{Relation: pgx.Identifier{"applications", "record_drafts"}}
 		base := req.ExpectedRecordVersion
-		if err = store.ConsumeInTx(ctx, write.Tx(), draftAccess(facts, policy, fields, &base), req.DraftRef.ID, req.DraftRef.DraftVersion, &req.RecordID, &base); err != nil {
+		relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(facts.TableID, "-", "")}.Sanitize()
+		var targetOwner string
+		if err = write.Tx().QueryRow(ctx, "SELECT created_by::text FROM "+relation+" WHERE id=$1", req.RecordID).Scan(&targetOwner); err != nil {
+			return MutationResult{}, err
+		}
+		if err = store.ConsumeInTx(ctx, write.Tx(), draftAccess(facts, policy, fields, &base, targetOwner), req.DraftRef.ID, req.DraftRef.DraftVersion, &req.RecordID, &base); err != nil {
 			return MutationResult{}, err
 		}
 	}

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appdrafts"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
@@ -327,6 +328,37 @@ func TestRestrictedDraftPatchNoopAndDiscardLedger(t *testing.T) {
 	var status int
 	if err = f.runtime.QueryRow(f.ctx, "SELECT http_status FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2", f.actor, op).Scan(&status); err != nil || status != 204 {
 		t.Fatalf("discard ledger %d %v", status, err)
+	}
+}
+
+func TestRestrictedDraftReadOwnerCursorAndRecordDetail(t *testing.T) {
+	f := newRecordFixture(t)
+	var op string
+	if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+		t.Fatal(err)
+	}
+	draft, err := f.service.CreateDraft(f.ctx, f.principal, DraftCreateRequest{AppID: f.app, ViewID: f.view, OperationID: op, SchemaVersion: 1, Values: map[string]any{f.public: "private draft"}}, applications.Metadata{RequestID: "v015-draft-read"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	read, err := f.service.GetDraft(f.ctx, f.principal, f.app, f.view, draft.ID)
+	if err != nil || read.Values[f.public] != "private draft" {
+		t.Fatalf("draft read %+v %v", read, err)
+	}
+	page, err := f.service.ListDrafts(f.ctx, f.principal, DraftListRequest{AppID: f.app, ViewID: f.view, PageSize: 1})
+	if err != nil || len(page.Items) != 1 || page.Items[0].ID != draft.ID {
+		t.Fatalf("draft list %+v %v", page, err)
+	}
+	other := session.Principal{UserID: f.other, SessionRef: f.other, Record: session.Record{AuthVersion: "1"}}
+	if _, err = f.service.GetDraft(f.ctx, other, f.app, f.view, draft.ID); !errors.Is(err, appdrafts.ErrMissing) {
+		t.Fatalf("owner read foreign draft: %v", err)
+	}
+	record, err := f.service.GetRecord(f.ctx, f.principal, f.app, f.view, f.otherRecord)
+	if err != nil || record.Values[f.public] != "beta" {
+		t.Fatalf("record detail %+v %v", record, err)
+	}
+	if _, ok := record.Values[f.secret]; ok {
+		t.Fatalf("record detail leaked own-only field %+v", record)
 	}
 }
 
