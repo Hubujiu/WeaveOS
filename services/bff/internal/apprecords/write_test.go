@@ -3,7 +3,9 @@ package apprecords
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
@@ -68,6 +70,53 @@ func (sqlAudit) Append(ctx context.Context, tx pgx.Tx, result MutationResult, ki
 	return err
 }
 
+// Owner-role PostgreSQL fixture only. The runtime V013 adapter must call a
+// reviewed controlled typed-DML capability and must not copy this direct SQL.
+type sqlFixtureTypedDML struct{}
+
+func fixtureTable(t Table) string {
+	return pgx.Identifier{t.Namespace, "t_" + strings.ReplaceAll(t.TableID, "-", "")}.Sanitize()
+}
+func fixtureColumn(id string) string {
+	return pgx.Identifier{"f_" + strings.ReplaceAll(id, "-", "")}.Sanitize()
+}
+func (sqlFixtureTypedDML) Insert(ctx context.Context, tx pgx.Tx, table Table, in Create, ids []string) (StoredHeader, error) {
+	cols := []string{"id", "created_by"}
+	args := []any{in.ID, in.ActorID}
+	for _, id := range ids {
+		cols = append(cols, fixtureColumn(id))
+		args = append(args, in.Values[id])
+	}
+	binds := make([]string, len(args))
+	for i := range binds {
+		binds[i] = fmt.Sprintf("$%d", i+1)
+	}
+	q := `INSERT INTO ` + fixtureTable(table) + `(` + strings.Join(cols, ",") + `) VALUES(` + strings.Join(binds, ",") + `) RETURNING id::text,created_by::text,record_version,created_at,updated_at`
+	var out StoredHeader
+	err := tx.QueryRow(ctx, q, args...).Scan(&out.ID, &out.CreatedBy, &out.RecordVersion, &out.CreatedAt, &out.UpdatedAt)
+	return out, err
+}
+func (sqlFixtureTypedDML) LockHeader(ctx context.Context, tx pgx.Tx, table Table, id string) (StoredHeader, error) {
+	var out StoredHeader
+	q := `SELECT id::text,created_by::text,record_version,created_at,updated_at FROM ` + fixtureTable(table) + ` WHERE id=$1 FOR UPDATE`
+	err := tx.QueryRow(ctx, q, id).Scan(&out.ID, &out.CreatedBy, &out.RecordVersion, &out.CreatedAt, &out.UpdatedAt)
+	return out, err
+}
+func (sqlFixtureTypedDML) UpdateCAS(ctx context.Context, tx pgx.Tx, table Table, in Edit, ids []string) (StoredHeader, error) {
+	sets := make([]string, 0, len(ids)+2)
+	args := make([]any, 0, len(ids)+2)
+	for _, id := range ids {
+		args = append(args, in.Changes[id])
+		sets = append(sets, fmt.Sprintf("%s=$%d", fixtureColumn(id), len(args)))
+	}
+	sets = append(sets, "record_version=record_version+1", "updated_at=now()")
+	args = append(args, in.ID, in.ExpectedRecordVersion)
+	q := `UPDATE ` + fixtureTable(table) + ` SET ` + strings.Join(sets, ",") + fmt.Sprintf(` WHERE id=$%d AND record_version=$%d RETURNING id::text,created_by::text,record_version,created_at,updated_at`, len(args)-1, len(args))
+	var out StoredHeader
+	err := tx.QueryRow(ctx, q, args...).Scan(&out.ID, &out.CreatedBy, &out.RecordVersion, &out.CreatedAt, &out.UpdatedAt)
+	return out, err
+}
+
 func TestTypedPGCreateEditCASFenceAndRollback(t *testing.T) {
 	dsn := os.Getenv("WEAVEOS_TEST_DATABASE_URL")
 	if dsn == "" {
@@ -99,6 +148,18 @@ func TestTypedPGCreateEditCASFenceAndRollback(t *testing.T) {
 	table := Table{AppID: appID, TableID: tableID, ViewID: viewID, Namespace: "pg_temp", SchemaVersion: 1, Ready: true, ActiveFieldIDs: []string{fieldID}}
 	op1 := "22222222-2222-4222-8222-222222222222"
 	op2 := "33333333-3333-4333-8333-333333333333"
+	// The runtime role cannot directly INSERT/UPDATE a typed business table.
+	// A missing controlled DML port must fail before touching any row.
+	withoutPort, err := db.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = w.CreateInTx(ctx, withoutPort, table, Create{OperationID: op1, ID: recordID, ActorID: actorID, ExpectedSchemaVersion: 1, Values: map[string]any{fieldID: "probe"}})
+	if !errors.Is(err, ErrUnavailable) {
+		t.Fatalf("missing controlled typed-DML port executed business write: %v", err)
+	}
+	_ = withoutPort.Rollback(ctx)
+	w.DML = sqlFixtureTypedDML{}
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)

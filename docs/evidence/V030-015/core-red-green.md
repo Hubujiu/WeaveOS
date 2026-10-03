@@ -88,6 +88,30 @@ million rows, C=1 took 3.24–3.56 s, C=20 took 45.3 s, C=200 at 10% selectivity
 took 63.6 s, and C=200 at 0.1% took 0.531 s. This is an explicit capacity
 finding for frozen algorithm A, not a product acceptance pass.
 
+## Follow-up controlled DML and compact-A experiment RED/GREEN
+
+After the lead requested a controlled typed-DML seam and an **unselected**
+compact-A experiment, new target tests were run RED before their behavior was
+implemented:
+
+| Target | Real observed RED, exit 1 | GREEN scope |
+| --- | --- | --- |
+| [typed-dml-port-red.txt](typed-dml-port-red.txt) | `TestTypedPGCreateEditCASFenceAndRollback`: missing port still executed a real PG business INSERT and returned nil | `Writer` now requires `TypedDML`; direct SQL exists only in owner-role test fixture; real CAS/fence/rollback/concurrency pass |
+| [compact-candidate-red.txt](compact-candidate-red.txt) | `TestCompactCandidateAgainstCompletePGOracle`: a visible text mutation changed the independent full P but stub compact signature did not | Test-only compact candidate detects all enumerated P changes under its stated version/schema/source invariants; deliberately unversioned writer shows false negative |
+| [compact-cache-red.txt](compact-cache-red.txt) | `TestCompactExperimentCacheScopeAndSingleFlight`: same canonical key recomputed 200 times | Test-only 32-entry, 5-second digest/count/revision cache isolates actor/mask/criteria/revision and runs one compute for 200 concurrent calls |
+
+The final isolated recheck at 2026-10-03 11:37 UTC ran `go test -race -count=1`
+on all four exclusive packages against local PostgreSQL 18.6; all four exited
+0. `go vet` for the same packages, `check-tasks`, `verify-repo`,
+`git diff --check` and `gofmt -l` also exited 0. These checks do not replace
+the unrun product gates below. The
+[compact-A report](compact-A-report.md) records real PG same-key/distinct-key
+costs and the proof obligations; the candidate is **not** installed in the
+Q36 lifecycle. The [quick-search PG probe](quick-search-cost.txt) confirms
+selected ASCII-only literal semantics in isolated SQL and shows the existing
+text BTree still produced a ~5-second Seq Scan over 1m rows. No runtime
+quick-search route/index or history exposure route was implemented.
+
 ## Unrun product gates and exact reasons
 
 - V030-013 now has hot7 typed tables, the field normalizer and manager
@@ -106,6 +130,9 @@ finding for frozen algorithm A, not a product acceptance pass.
   authorization, real Flowable fence, OpenAPI or cross-browser API. These are
   **NOT RUN**, not GREEN or silently skipped. The parent integration plan
   must supply the shared ports and run the full independent matrix.
-- Quick search and old/new business history are separate proposals awaiting
-  review. No application old/new values are written by this core; the current
+- At the original core checkpoint quick search and old/new business history
+  were separate proposals. The lead later selected quick-search matching and
+  a default-deny `data.history` direction, documented in the shared delta;
+  the routes remain unimplemented and history exposure needs further freeze.
+  No application old/new values are written by this core; the current
   `apprecords.Audit` port accepts only minimum summary metadata.

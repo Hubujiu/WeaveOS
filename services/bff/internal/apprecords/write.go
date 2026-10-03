@@ -6,10 +6,8 @@ package apprecords
 import (
 	"context"
 	"errors"
-	"fmt"
 	"regexp"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -64,65 +62,75 @@ type Fence interface {
 type Audit interface {
 	Append(context.Context, pgx.Tx, MutationResult, string, []string) error
 }
+
+// TypedDML is supplied by the reviewed V013 runtime capability. It derives
+// physical identifiers from registered metadata and only accepts canonical
+// field values. The owner-controlled adapter must not allow arbitrary SQL,
+// DDL or caller-selected system columns. No direct SQL fallback exists here.
+type TypedDML interface {
+	Insert(context.Context, pgx.Tx, Table, Create, []string) (StoredHeader, error)
+	LockHeader(context.Context, pgx.Tx, Table, string) (StoredHeader, error)
+	UpdateCAS(context.Context, pgx.Tx, Table, Edit, []string) (StoredHeader, error)
+}
+type StoredHeader struct {
+	ID, CreatedBy        string
+	RecordVersion        int64
+	CreatedAt, UpdatedAt time.Time
+}
 type Writer struct {
 	Gate          Gate
 	Authorization Authorization
 	Fence         Fence
 	Audit         Audit
+	DML           TypedDML
 }
 
-func (w Writer) table(table Table, expected int64) (string, map[string]string, error) {
+func (w Writer) table(table Table, expected int64) (map[string]bool, error) {
 	if !table.Ready {
-		return "", nil, ErrNotReady
+		return nil, ErrNotReady
 	}
 	if !uuid.MatchString(table.AppID) || !uuid.MatchString(table.TableID) || !uuid.MatchString(table.ViewID) || !namespace.MatchString(table.Namespace) || table.SchemaVersion < 1 || table.SchemaVersion > maxVersion || expected < 1 || expected > maxVersion {
-		return "", nil, ErrInvalid
+		return nil, ErrInvalid
 	}
 	if expected != table.SchemaVersion {
-		return "", nil, ErrConflict
+		return nil, ErrConflict
 	}
-	if w.Gate == nil || w.Authorization == nil || w.Fence == nil || w.Audit == nil {
-		return "", nil, ErrUnavailable
+	if w.Gate == nil || w.Authorization == nil || w.Fence == nil || w.Audit == nil || w.DML == nil {
+		return nil, ErrUnavailable
 	}
-	fields := make(map[string]string, len(table.ActiveFieldIDs))
+	fields := make(map[string]bool, len(table.ActiveFieldIDs))
 	for _, id := range table.ActiveFieldIDs {
-		if !uuid.MatchString(id) || fields[id] != "" {
-			return "", nil, ErrInvalid
+		if !uuid.MatchString(id) || fields[id] {
+			return nil, ErrInvalid
 		}
-		fields[id] = pgx.Identifier{"f_" + strings.ReplaceAll(id, "-", "")}.Sanitize()
+		fields[id] = true
 	}
-	return pgx.Identifier{table.Namespace, "t_" + strings.ReplaceAll(table.TableID, "-", "")}.Sanitize(), fields, nil
+	return fields, nil
 }
-func values(input map[string]any, active map[string]string) ([]string, []string, []any, error) {
+func values(input map[string]any, active map[string]bool) ([]string, error) {
 	ids := make([]string, 0, len(input))
 	for id := range input {
-		if active[id] == "" {
-			return nil, nil, nil, ErrInvalid
+		if !active[id] {
+			return nil, ErrInvalid
 		}
 		ids = append(ids, id)
 	}
 	sort.Strings(ids)
-	cols := make([]string, 0, len(ids))
-	args := make([]any, 0, len(ids))
-	for _, id := range ids {
-		cols = append(cols, active[id])
-		args = append(args, input[id])
-	}
-	return ids, cols, args, nil
+	return ids, nil
 }
 func validWrite(id, op, actor string) bool {
 	return uuid.MatchString(id) && uuid.MatchString(op) && uuid.MatchString(actor)
 }
 func (w Writer) CreateInTx(ctx context.Context, tx pgx.Tx, table Table, in Create) (MutationResult, error) {
 	var result MutationResult
-	name, fields, err := w.table(table, in.ExpectedSchemaVersion)
+	fields, err := w.table(table, in.ExpectedSchemaVersion)
 	if err != nil {
 		return result, err
 	}
 	if tx == nil || !validWrite(in.ID, in.OperationID, in.ActorID) || in.Values == nil {
 		return result, ErrInvalid
 	}
-	ids, cols, args, err := values(in.Values, fields)
+	ids, err := values(in.Values, fields)
 	if err != nil {
 		return result, err
 	}
@@ -132,17 +140,14 @@ func (w Writer) CreateInTx(ctx context.Context, tx pgx.Tx, table Table, in Creat
 	if err = w.Authorization.Check(ctx, tx, "data.create", in.ActorID, ids); err != nil {
 		return result, err
 	}
-	allCols := append([]string{"id", "created_by"}, cols...)
-	placeholders := make([]string, len(allCols))
-	for i := range placeholders {
-		placeholders[i] = fmt.Sprintf("$%d", i+1)
-	}
-	allArgs := append([]any{in.ID, in.ActorID}, args...)
-	query := `INSERT INTO ` + name + `(` + strings.Join(allCols, ",") + `) VALUES(` + strings.Join(placeholders, ",") + `) RETURNING id::text,record_version,created_at,updated_at`
-	err = tx.QueryRow(ctx, query, allArgs...).Scan(&result.ID, &result.RecordVersion, &result.CreatedAt, &result.UpdatedAt)
+	stored, err := w.DML.Insert(ctx, tx, table, in, ids)
 	if err != nil {
 		return MutationResult{}, err
 	}
+	if stored.ID != in.ID || stored.CreatedBy != in.ActorID {
+		return MutationResult{}, ErrUnavailable
+	}
+	result.ID, result.RecordVersion, result.CreatedAt, result.UpdatedAt = stored.ID, stored.RecordVersion, stored.CreatedAt, stored.UpdatedAt
 	if !version(result.RecordVersion) || result.CreatedAt.IsZero() || result.UpdatedAt.IsZero() {
 		return MutationResult{}, ErrUnavailable
 	}
@@ -157,28 +162,31 @@ func (w Writer) CreateInTx(ctx context.Context, tx pgx.Tx, table Table, in Creat
 // EditInTx takes the same physical table gate before row lock/CAS/fence.
 func (w Writer) EditInTx(ctx context.Context, tx pgx.Tx, table Table, in Edit) (MutationResult, error) {
 	var result MutationResult
-	name, fields, err := w.table(table, in.ExpectedSchemaVersion)
+	fields, err := w.table(table, in.ExpectedSchemaVersion)
 	if err != nil {
 		return result, err
 	}
 	if tx == nil || !validWrite(in.ID, in.OperationID, in.ActorID) || !version(in.ExpectedRecordVersion) || in.Changes == nil {
 		return result, ErrInvalid
 	}
-	ids, cols, args, err := values(in.Changes, fields)
+	ids, err := values(in.Changes, fields)
 	if err != nil {
 		return result, err
 	}
 	if err = w.Gate.LockTable(ctx, tx, table.TableID, table.SchemaVersion); err != nil {
 		return result, err
 	}
-	var createdBy string
-	err = tx.QueryRow(ctx, `SELECT created_by::text,record_version,created_at,updated_at FROM `+name+` WHERE id=$1 FOR UPDATE`, in.ID).Scan(&createdBy, &result.RecordVersion, &result.CreatedAt, &result.UpdatedAt)
+	stored, err := w.DML.LockHeader(ctx, tx, table, in.ID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return MutationResult{}, ErrMissing
 	}
 	if err != nil {
 		return MutationResult{}, err
 	}
+	if stored.ID != in.ID || !uuid.MatchString(stored.CreatedBy) || !version(stored.RecordVersion) || stored.CreatedAt.IsZero() || stored.UpdatedAt.IsZero() {
+		return MutationResult{}, ErrUnavailable
+	}
+	result.RecordVersion, result.CreatedAt, result.UpdatedAt = stored.RecordVersion, stored.CreatedAt, stored.UpdatedAt
 	if result.RecordVersion != in.ExpectedRecordVersion {
 		return MutationResult{}, ErrConflict
 	}
@@ -188,27 +196,25 @@ func (w Writer) EditInTx(ctx context.Context, tx pgx.Tx, table Table, in Edit) (
 	if err = w.Fence.Check(ctx, tx, table.TableID, in.ID, in.ExpectedRecordVersion); err != nil {
 		return MutationResult{}, err
 	}
-	if err = w.Authorization.Check(ctx, tx, "data.edit", createdBy, ids); err != nil {
+	if err = w.Authorization.Check(ctx, tx, "data.edit", stored.CreatedBy, ids); err != nil {
 		return MutationResult{}, err
 	}
 	result.ID = in.ID
 	result.OperationID = in.OperationID
 	result.SchemaVersion = table.SchemaVersion
 	if len(ids) > 0 {
-		sets := make([]string, 0, len(ids)+2)
-		for i, col := range cols {
-			sets = append(sets, fmt.Sprintf("%s=$%d", col, i+1))
-		}
-		sets = append(sets, "record_version=record_version+1", "updated_at=now()")
-		args = append(args, in.ID, in.ExpectedRecordVersion)
-		query := `UPDATE ` + name + ` SET ` + strings.Join(sets, ",") + fmt.Sprintf(` WHERE id=$%d AND record_version=$%d RETURNING record_version,updated_at`, len(args)-1, len(args))
-		err = tx.QueryRow(ctx, query, args...).Scan(&result.RecordVersion, &result.UpdatedAt)
+		updated, e := w.DML.UpdateCAS(ctx, tx, table, in, ids)
+		err = e
 		if errors.Is(err, pgx.ErrNoRows) {
 			return MutationResult{}, ErrConflict
 		}
 		if err != nil {
 			return MutationResult{}, err
 		}
+		if updated.ID != in.ID || updated.CreatedBy != stored.CreatedBy || updated.RecordVersion != stored.RecordVersion+1 || !updated.CreatedAt.Equal(stored.CreatedAt) || updated.UpdatedAt.IsZero() {
+			return MutationResult{}, ErrUnavailable
+		}
+		result.RecordVersion, result.UpdatedAt = updated.RecordVersion, updated.UpdatedAt
 	}
 	if err = w.Audit.Append(ctx, tx, result, "edit", ids); err != nil {
 		return MutationResult{}, err

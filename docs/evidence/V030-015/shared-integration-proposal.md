@@ -2,8 +2,11 @@
 
 Status: **reviewable proposal, not migrated or available through HTTP**.
 Authoritative behavior is the [frozen V030-015 ADR §8](https://app.notion.com/p/3ee2f5a9e6488163a144fba5f55e3c14).
-This delta was checked against V030-013 remote `4dcad40f09d5d20c2d2d9f97a12c7e41b4630bed`
-on 2026-10-03. V015 worktree remains based on the fixed PR26 head and
+This delta was rechecked against V030-013 remote
+`bf4956394581979f3371a8840a95f3c59166b801` on 2026-10-03. Its latest
+department-candidate/permission-matrix additions do not supply the V015
+non-manager write/grant/context ports below. V015 worktree remains based on
+the fixed PR26 head and
 does not modify V013-owned migration, role, OpenAPI, error, policy, personnel,
 application transaction or BFF files.
 
@@ -17,9 +20,9 @@ application transaction or BFF files.
   `applications.data_revision_changed` fires after each INSERT/UPDATE/DELETE.
 - The dynamic table creation arm in `applications.apply_schema_change`
   grants **SELECT only** to `auth_app`/`auth_backup`. `auth_app` has no
-  INSERT/UPDATE on business tables. V015's current `apprecords.Writer` uses
-  direct typed `INSERT`/`UPDATE` under caller-owned `pgx.Tx`; it passes local
-  PG owner fixture tests but cannot execute in the reviewed runtime role.
+  INSERT/UPDATE on business tables. V015's `apprecords.Writer` now requires a
+  `TypedDML` port. Its direct SQL adapter exists only in the PG owner test
+  fixture; no controlled runtime adapter exists yet for the reviewed role.
 - `appfields.NormalizeValue` normalizes complete values and defaults,
   including exact decimal rounding, UTC time precision and option ordering.
   It does not itself verify a member/department is active in an authoritative
@@ -81,58 +84,67 @@ business mutation; an executed or ambiguous COMMIT is never retried with a
 new operation key. On COMMIT response loss return
 `APPLICATION_OPERATION_UNCONFIRMED` plus the original key.
 
-### How the existing V015 Writer must adapt
+### V015 Writer controlled DML port, ready for owner adapter
 
-`services/bff/internal/apprecords/write.go` currently owns dynamic SQL
-`INSERT`/`UPDATE` for typed columns. Its `Gate.LockTable` contract already
-requires the V013 same-table gate and a schema version recheck; test fixtures
-use real PG locks. Its `Authorization` and `Fence` ports fail closed if absent,
-and the writer never begins/commits/rolls back. To run with `auth_app`, replace
-the direct SQL section with a **controlled typed DML port**; keep the caller
-transaction, CAS, fence, authorization and minimum result contract.
-
-Proposed port, subject to owner approval:
+`services/bff/internal/apprecords/write.go` now requires a `TypedDML` port;
+nil fails closed. It contains no direct `INSERT`/`UPDATE` fallback. Its
+`Gate.LockTable` requires the V013 same-table gate and schema recheck;
+`Authorization` and `Fence` still run before mutation. The writer owns no
+Begin/Commit/Rollback. Its PG owner-role **test fixture only** implements the
+port with direct SQL, preserving CAS and concurrency coverage until the V013
+owner supplies a controlled runtime adapter. The actual Go port is:
 
 ```go
 type TypedDML interface {
-  Insert(ctx context.Context, tx pgx.Tx, trusted Table, recordID, actorID string,
-    normalized map[string]appfields.Value) (StoredRecordHeader, error)
-  LockHeader(ctx context.Context, tx pgx.Tx, trusted Table, recordID string)
-    (StoredRecordHeader, error)
-  UpdateCAS(ctx context.Context, tx pgx.Tx, trusted Table, recordID string,
-    expectedRecordVersion int64, normalized map[string]appfields.Value)
-    (StoredRecordHeader, error)
+  Insert(context.Context, pgx.Tx, Table, Create, []string) (StoredHeader, error)
+  LockHeader(context.Context, pgx.Tx, Table, string) (StoredHeader, error)
+  UpdateCAS(context.Context, pgx.Tx, Table, Edit, []string) (StoredHeader, error)
+}
+type StoredHeader struct {
+  ID, CreatedBy string
+  RecordVersion int64
+  CreatedAt, UpdatedAt time.Time
 }
 ```
 
-`appfields.Value` above denotes the approved canonical/typed V013 value
-representation, not a request-supplied SQL expression. Exact Go type can be
-chosen by V013 owner. Field ID→physical identifier is derived only from live
-registry metadata. **Do not grant `auth_app` generic INSERT/UPDATE/DDL on
+`Create.Values` and `Edit.Changes` are provided only after the BFF uses V013's
+current field normalizer; the selected IDs are validated against trusted
+active metadata before this port. The owner adapter must revalidate canonical
+types/field IDs in its controlled database capability, derive physical
+identifiers only from live registry metadata, and ignore request-supplied
+namespace or SQL text. **Do not grant `auth_app` generic INSERT/UPDATE/DDL on
 `appdata`, generic SQL execution, or ownership of business tables.**
 
-Preferred database capability is an additive SECURITY DEFINER function (or
-finite generated per-table functions) restricted to `auth_app`, with fixed
-operation enum `insert/update`, actor/app/table/view/record/version IDs and a
-canonical field-ID value envelope. It cannot accept SQL fragments, physical
-table/column names, or arbitrary table IDs outside the registered app.
-**A caller-supplied actor ID or `SET LOCAL app.actor_id` is not proof of the
-Redis Session**: `auth_app` can spoof either in a direct SQL call. Before
-granting EXECUTE, the shared owner must supply a reviewed transaction-bound
-actor capability that the DB can verify but an arbitrary `auth_app` SQL caller
-cannot mint (for example, a short-lived HMAC assertion scoped to actor,
-authVersion, app/view/table, operation and transaction nonce, with the
-verification key inaccessible to `auth_app`). Key custody, replay scope,
-rotation and `pgcrypto` availability need explicit review. Under that proof,
-the function independently verifies form/table identity, active field
-IDs/types, table gate, current grants and fence before using internally
-quoted identifiers and typed binds. Its owner/search_path, EXECUTE grants
-and all error paths need hostile direct-call tests. Go-side normalization
-remains necessary for precise client errors; the DB function cannot trust
-Go-side authorization or validation as its sole defense against direct
-invocation. If this capability or duplicate normalization is not acceptable,
-the lead must choose another reviewed least-privilege boundary before V015
-direct DML runs as `auth_app`.
+The lead fixed the trust boundary on 2026-10-03: the Redis Session/BFF is
+responsible for end-user identity and authorization, and `auth_app` is a
+trusted service role. A database function using this shared role **does not
+prove which end user owns a Session**. No new HMAC actor assertion, key
+custody or rotation system is proposed. BFF must derive actor from the live
+Session, enforce CSRF, load complete current grants, fence and schema/record
+versions, and do those checks inside the same caller-owned transaction before
+invoking typed DML. Operation replay/unknown-result recovery remains at BFF.
+
+The preferred database capability is an additive SECURITY DEFINER function
+(or finite generated per-table functions) restricted to `auth_app`, with
+finite `lock_header/insert/update` operations and actor/app/table/view/record/version IDs
+plus a canonical field-ID value envelope from BFF. It must not accept SQL
+fragments or physical table/column names, grant arbitrary DDL, update system
+columns supplied by the caller, or reach tables outside the registered real
+app/table/view. It independently validates registered table and active field
+IDs/types, canonical values, immutable createdBy, recordVersion CAS and the
+same-table structure gate before internally quoting identifiers and binding
+typed values. `updatedAt` and `recordVersion` advance together for every
+actual business value mutation; schema conversion bumps schemaVersion.
+`LockHeader` must itself be a controlled capability: PostgreSQL `SELECT ...
+FOR UPDATE` needs write privilege, which the reviewed `auth_app` role does
+not have on dynamic business tables. Do not solve that by broad table UPDATE
+grants.
+The function's owner/search_path, EXECUTE grants and direct-call boundary
+tests must show no generic SQL or DDL path, no system-column bypass and no
+cross-table write. A direct SQL call under the trusted `auth_app` role can
+impersonate an actor argument; that is an explicit consequence of this trust
+boundary, not a claimed database Session proof. The BFF transaction is the
+enforcement point for live end-user grant, CSRF and pending-command fence.
 
 ## 3. Candidate hot8 migration and role changes (owner allocation required)
 
@@ -142,7 +154,8 @@ naming hot8. Do not alter historical hot7 bytes.
 1. Expand `applications.grants` finite CHECK to permit:
    `menu.enter` on existing real menu resources with `row_scope=all` and no
    fields; `data.create` only on `resource_kind='form'`, `row_scope=all`,
-   including an explicit empty field mask; `data.read`/`data.edit` only on
+   including an explicit empty field mask; `data.read`/`data.edit`/
+   `data.history` only on
    real form views with `row_scope IN ('all','own')`. Preserve one indivisible
    `(app_id,group_id,resource_kind,resource_id,action,row_scope)` tuple.
    No wildcard, subordinate, deny, inherited directory or cross-app tuple.
@@ -152,9 +165,10 @@ naming hot8. Do not alter historical hot7 bytes.
    equivalent locked validation that the grant is a data action on an actual
    form whose `table_id` equals this row and the field is not removed.
    Menu grants must have zero field rows. An active grant must not silently
-   survive a field tombstone as a phantom permission: coordinate definition
-   Save to block removal or atomically retire affected field grants and bump
-   `policy_revision`, pending lead choice. All grant changes use the existing
+   survive a field tombstone as a phantom permission: definition Save **blocks
+   and identifies dependent grant IDs** until an administrator explicitly
+   revokes them, per §8. `data.history` starts with no grants. All grant
+   changes use the existing
    app/policy lock and revision, including empty-mask create.
 3. Add `applications.record_drafts` keyed by UUID, with owner/app/table/view,
    nullable target/base pair, schema version, draft version, JSONB *incomplete*
@@ -293,41 +307,51 @@ server-side ordered JSONB row stream with bounded Go memory.
 become strategy inputs after extraction,
 not an independent personnel adapter or duplicate Redis engine.
 
-One projection detail needs lead confirmation before wire integration:
-`Record` exposes `recordVersion` and `updatedAt`, while ADR §8.1 explicitly
-names IDs/order/count/authorized field values/reference display for P. I
-recommend including observable system `recordVersion`/`updatedAt` in P so
-an off-page matching row cannot change a returned Record without changing
-queryVersion. Under that choice, a write only to a hidden business field may
-still be relevant because its version/time change is visible. If the lead
-intends such writes to leave the query context unchanged, it should explicitly
-freeze the narrower P and the Table's treatment of system metadata. The
-current hash primitive is input-agnostic and does not silently choose this.
+The lead confirmed that observable `Record` metadata, including
+`recordVersion` and `updatedAt`, belongs in P alongside ID/order/count,
+readable business fields and readable reference `(id,label,deleted)` display.
+Any version-changing edit to a matching row is therefore relevant even if
+only an unreadable business field changed. A nonmatching row or unrelated
+resource still must not force a **user-visible** refresh. Selected A may
+still need an expensive complete rehash after a same-table revision bump;
+that read cost is separately measured. `FingerprintRows` is input-agnostic;
+the final SQL strategy must include these system fields explicitly.
 
-## 5. Separate quick-search proposal for lead decision
+## 5. Lead-selected quick-search contract, pending source/API writeback
 
-Proposed additive `RecordSearch.quickSearch?: {text:string;fieldIds:UUID[]}`.
-Only explicit active text/multiline field IDs are searched, 1–20 unique IDs,
-same table/form; text is 1–160 Unicode scalar values after trimming outer
-Unicode whitespace, with NUL/unpaired UTF-16 rejected. Proposed matching is
-**case-sensitive literal substring of stored text** using parameterized
-`strpos(field, $term)>0`; `%`, `_`, `\\` and regex characters are literals.
-No implicit search over secret fields, reference labels, audit or all schema
-fields. Each selected field's read scope must cover every visible row or the
-whole request is 403 before evaluation. Results satisfy quick-search OR
-across selected fields AND the existing structured filter. Canonical sorted
-field IDs/text become part of query criteria/fingerprint; term or field set
-change creates a new context and page 1. No auto-complete or fuzzy ranking.
+Add `RecordSearch.quickSearch?: {term:string;fieldIds:UUID[]}`. Require 1–20
+distinct current `text`/`multiline` IDs on this form/table. Trim outer
+Unicode whitespace; then require 1–160 Unicode scalar values, valid Unicode
+and no NUL. Matching is a **literal substring with ASCII A–Z folded to a–z
+on both sides**. All other Unicode code points keep literal semantics; do
+not use database locale casefold or invent fuzzy ranking. A parameterized PG
+shape is `strpos(translate(r.f_<trusted_id>, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+'abcdefghijklmnopqrstuvwxyz'), translate($term, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+'abcdefghijklmnopqrstuvwxyz')) > 0`. `%`, `_` and backslash are ordinary
+characters, never LIKE patterns. NULL does not match.
 
-This proposal deliberately selects deterministic literal semantics; full
-scan may cost `O(N × selected text fields × term length)` without a reviewed
-index. A trigram/index or Unicode case-insensitive variant requires separate
-cost/locale/collation-version review. Lead must approve whether literal
-case-sensitive substring and explicit field list meet the Figma quick-search
-interaction, or choose a different precise rule. **No quick-search code or
-OpenAPI change is authorized by this proposal alone.**
+OR the selected fields, then AND the structured filter. Before SQL execution,
+each selected field's read scope must cover the entire visible row scope; any
+failure rejects the whole request with 403. Never search hidden fields,
+reference labels, audit, layout text, system fields or all schema fields by
+default. Canonical criteria sort field IDs and record the ASCII-folded term;
+changing either starts a new context and page 1. No implicit empty-term
+search is defined: reject an empty term, or omit `quickSearch` entirely.
+`strpos` can scan `O(N × selected text fields × term length)`; ordinary BTree
+does not make arbitrary contains search indexed. Measure EXPLAIN and write
+cost before choosing any specialized index. This is a lead-selected contract
+direction, not implemented SQL/OpenAPI yet.
 
-## 6. Separate old/new business history proposal for lead decision
+An [isolated PG18.6 probe](quick-search-cost.txt) with 1,000,002 text rows
+and a BTree on the text column measured about 5.0–5.3 seconds for each
+single-field count, whether `PREFIX` matched one million rows or `999999`
+matched one. EXPLAIN used Seq Scan in both cases. `%_\\` matched literally,
+and lowercase `éclair` did not match uppercase `Éclair`, while `ÉCLAIR` did.
+This one-run fixture is evidence **against assuming the existing BTree helps**;
+it is not a p95 SLA or approval for a trigram/index migration. Twenty OR
+fields and concurrent load remain unmeasured.
+
+## 6. Lead-selected history authorization direction; exposure still gated
 
 Keep minimum actor/app/table/record/version/operation/changed-field-ID audit
 with the record transaction. To satisfy the financial old/new example,
@@ -339,20 +363,144 @@ field ID, never in global personnel authentication audit, operation result,
 log or ordinary query context. One version-changing write, including future
 task Save, appends an event in the same transaction; no-op has no value delta.
 
-Proposed GET history requires current actual form existence and current row
-`data.read` (404 for unreadable row); each changed field is masked by the
-current complete read tuple. Hidden-only events are removed **before**
-LIMIT/cursor so actor/time/version do not reveal them. Mixed events expose
-only permitted field deltas. Cursor binds actor/Session/form/record and
-policy/schema revision. Historical source display is resolved from current
-registry/tombstone and must not imply immutable old labels.
+Add independent `data.history` complete grant tuples on the real form, default
+no grant; owner/Bootstrap retains full capability only for an existing real
+resource. A history read requires both current row `data.read` and a
+field-by-field intersection of current `data.read` and `data.history`
+row-scope/field masks. A caller without row read gets 404; a caller with no
+history action gets 403. Filter events with zero permitted deltas **before**
+LIMIT/cursor, not in the BFF after pagination. Mixed events reveal only
+permitted deltas plus that event's actor/time; hidden field IDs, counts and
+hidden-only event headers are absent. Cursor binds actor/Session/form/record,
+policy and schema revision. A task reference is emitted only if the current
+actor can access that actual task; otherwise omit task details entirely.
 
-Lead decisions required before implementation: `data.read` alone versus a
-new history action, exposure of actor/time on mixed events, retention and
-backup privacy policy, sensitive-field exclusions, and task reference
-visibility. No purge, archive deadline or old-value storage is inferred.
+`old_value` and `new_value` are canonical typed wire values (or JSON null),
+with `field_kind_at_write` retained on the restricted event delta. Option and
+reference values store stable IDs, not labels. If a label is needed at read,
+resolve current active/tombstone label; mark deleted as appropriate and never
+claim it is the historical label at event time. If an option has no retained
+label, return its stable ID with an unavailable-label marker, never guess a
+new option. A removed field's historical value is not made readable to an
+ordinary actor by an old grant: field deletion first requires explicit grant
+revocation, so current masks exclude it. Owner/Bootstrap rendering of a
+removed field would use the retained field tombstone and event-time kind;
+precise label and field-removal history presentation still need final review.
 
-## 7. Acceptance still required
+The events/values tables are separate from global authentication audit,
+operation receipts and ordinary logs. Backups use the existing encrypted
+backup controls and a minimum role; the global auth-audit reader gains no
+business-value access. With no automatic purge or new retention days, data,
+index, WAL and encrypted-backup growth is unbounded over time:
+`O(sum(changed canonical value bytes + per-delta/event overhead))`. No
+retention cap or cold archive is silently inferred. A V013 schema conversion
+that changes stored values but only advances schemaVersion is **not yet a
+per-record old/new event**. Before claiming complete business history or
+exposing a history API, the lead must decide whether to add atomic per-row
+conversion deltas/version bumps (potentially O(N) writes and WAL per schema
+Save) or explicitly limit history to record/task Save mutations. Also confirm
+removed-field presentation and option tombstone retention. The history route
+remains proposal-only until these are frozen and source/API writeback is done.
+
+## 7. Ordinary-user runtime form and reference-display contract
+
+V013's current definition read is owner-only. It cannot be the Table or
+V014 FieldRenderer data source for an ordinary actor. Proposed additional
+`GET /api/v1/applications/{appId}/forms/{viewId}/runtime` returns the
+following **sanitized runtime projection** under actual Session and form
+`menu.enter`, plus at least one current `data.read/create/edit` action. A
+create-only actor must be able to load a form; a menu-only actor gets 403.
+Owner/Bootstrap still needs the real resource to exist. This endpoint is a
+separate read of runtime metadata, not a loosening of the manager definition
+route.
+
+```ts
+type Scope = "none" | "own" | "all";
+type RuntimeField = {
+  id: UUID; name: string; kind: FieldKind; required: boolean;
+  presentation: {helpText: string | null; displayTimeZone: string | null};
+  // Curated input constraints only; no raw fields_json or dependency config.
+  input: {decimal?: {precision:number;scale:number;roundingPlaces:number;
+      roundingMode:string}; timePrecision?: "second" | "millisecond";
+    options?: {id:UUID;label:string}[];
+    referenceKind?: "member" | "department"};
+  default?: FieldValue; // only when this field is create-authorized
+  access: {read:Scope; create:boolean; edit:Scope};
+  query: {operators:("eq"|"neq"|"gt"|"gte"|"lt"|"lte")[];
+    sortable:boolean; quickSearchable:boolean};
+};
+type RuntimeView = {
+  appId:UUID; tableId:UUID; viewId:UUID;
+  schemaVersion:Version; viewVersion:Version; policyRevision:Version;
+  fields:RuntimeField[];
+  layout: LayoutNode[]; // V013 field/group/description/system_field shape
+  capabilities:{create:boolean; read:Scope; edit:Scope;
+    search:boolean; draftCreate:boolean; draftEdit:boolean};
+};
+type ReferenceDisplay = {id:UUID; label:string; deleted:boolean};
+type BusinessRecord = {
+  // Existing frozen id/app/table/view/system/version/values members remain.
+  referenceDisplays: {[fieldId:UUID]: {[sourceId:UUID]:ReferenceDisplay}};
+};
+```
+
+`fields` includes only the union of currently create/read/edit-authorized
+active fields. Its action scopes come from complete actual-form tuples, not
+mixed scope and field grants. Drop unauthorized field nodes from `layout`,
+then prune empty groups; only curated display-safe description/system nodes
+remain. Query operators, sortability and quick-searchability require
+read-scope coverage over every visible row, not merely a field's partial
+read grant. No field definition, default, options, reference candidates,
+owner-only workflow/DDL/dependency configuration or hidden field name for a
+field with no action permission crosses the response. `schemaReady=false`
+returns the frozen schema-not-ready conflict, not a fabricated empty form.
+Use `RuntimeField` and sanitized `layout` as V014 FieldRenderer props with
+the existing `values[fieldId]`, field errors and change callback; use
+`access` to choose view/create/edit state and query capability, rather than
+creating a parallel field renderer or trusting client permissions on submit.
+
+GET Record and each RecordPage item add `referenceDisplays` only for IDs in
+their **readable** `values` fields. Scalar member/department refs have one
+entry; any future multi-ref field uses the same fieldId→sourceId map. Fetch
+distinct page IDs in a batch after authorized COUNT/page, in the same RR
+snapshot; never return a whole personnel DTO or all candidate members.
+Deleted source IDs retain their stable UUID, last canonical label and
+`deleted=true`. Missing registry/tombstone data is unavailable/integrity
+failure, not an empty label. A reference predicate still joins registry
+before COUNT/LIMIT. The complete projection P includes exactly the same
+observable `(fieldId,sourceId,label,deleted)` values for every matching row;
+changing a visible label or deleted bit is relevant, while changing a source
+that no matching readable row references is not. This mapping also defines
+the compact-A source-digest experiment below.
+
+## 8. Field-removal dependency and lock order for V013 owner
+
+The lead selected **block then explicit revoke**: when a definition Save
+would tombstone field X, query current `grant_fields` for any data grant that
+references X and reject Save with only the related grant IDs/resources as
+authorization dependencies. An administrator explicitly revokes those
+grants through the normal policy transaction, then retries definition Save.
+Schema Save must never silently delete or narrow data grants. The dependency
+check runs under the same app/policy and logical-table locks as the mutation,
+so a concurrent grant replacement cannot add a grant between check and
+field tombstone.
+
+Canonical order for grant replacement, definition Save and record writes is
+PR21 personnel revision lock → required source locks (sorted) → app/policy
+row gate → logical-table row gate → grant/field rows → record/fence rows.
+V013's existing manager transaction begins with personnel revision lock,
+then app row gate; V015 ordinary writes must respect the same order. Grant
+replacement touching a field also takes that field's logical-table gate
+after the app gate. Field deletion checks grant dependencies under both
+gates, returns conflict, and makes **no** schema/policy/data revision change
+on rejection. Explicit revoke advances policyRevision; subsequent Save
+advances schemaVersion and preserves grant audit. Cross-regression must race
+Save-vs-grant-add, Save-vs-revoke, and record edit-vs-Save to prove no
+deadlock, phantom field permission or half-committed schema/grant state.
+An already removed field cannot be granted again; active grant-field
+validation locks the field registry and checks tombstone state.
+
+## 9. Acceptance still required
 
 V015 temporary-table tests and the core scale runs are not a live policy
 or real API proof. After the shared owner lands the above ports: migrate a
@@ -360,6 +508,9 @@ fresh isolated PG18.6 database; test as restricted `auth_app` and hostile
 direct calls to the controlled DML capability; real grant/revoke races;
 record/draft/operation/audit atomicity and unknown COMMIT; authoritative
 empty/pending fence; actual member multi-department source and tombstones;
-same-RR reference predicates; 10k/100k/1m × 1/20/200 context costs; HTTPS
+same-RR reference predicates and page display; RuntimeView ordinary
+menu/create/read/edit combinations; field removal vs grant-add/revoke races;
+history row/field intersection and before-LIMIT masking after its remaining
+exposure choices are frozen; 10k/100k/1m × 1/20/200 context costs; HTTPS
 Session/CSRF/OpenAPI; Chromium/Firefox/WebKit against the actual PG-backed
 Table flow. Do not mask a failing million-row case by enlarging timeout.

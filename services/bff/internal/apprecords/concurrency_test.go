@@ -94,7 +94,7 @@ func TestTwoRealPGConnectionsCompeteOnRecordVersion(t *testing.T) {
 	if _, err := owner.Exec(ctx, `INSERT INTO `+tableName+`(id,created_by,f_11111111111141118111111111111111) VALUES($1,$2,'before')`, recordID, actorID); err != nil {
 		t.Fatal(err)
 	}
-	w := Writer{Gate: concurrentGate{schema}, Authorization: allowField{}, Fence: concurrentFence{schema}, Audit: concurrentAudit{schema}}
+	w := Writer{Gate: concurrentGate{schema}, Authorization: allowField{}, Fence: concurrentFence{schema}, Audit: concurrentAudit{schema}, DML: sqlFixtureTypedDML{}}
 	meta := Table{AppID: appID, TableID: tableID, ViewID: viewID, Namespace: schema, SchemaVersion: 1, Ready: true, ActiveFieldIDs: []string{fieldID}}
 	start := make(chan struct{})
 	out := make(chan error, 2)

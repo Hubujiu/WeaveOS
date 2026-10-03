@@ -7,7 +7,10 @@ Source and branch provenance: [task record](../../tasks/V030-015.md).
 The V030-015 PRD and ADR §8 are the accepted source for record/query/draft
 semantics. V030-013's separate authoritative ADR freezes structure/field
 semantics; this document only extends those boundaries. The lead selected
-Candidate A. Quick search and business old/new history remain proposal only.
+Candidate A. The lead later selected the quick-search matching rule and
+independent history authorization direction; neither is an available API,
+and history exposure still has explicit decisions open in the
+[shared integration delta](shared-integration-proposal.md).
 
 ## 1. Actual code facts and integration gaps
 
@@ -138,6 +141,14 @@ Proposed wire types, all shown keys required unless suffixed ?:
     type DraftDeleteQuery = {operationId:UUID;
       expectedDraftVersion:Version};
 
+Ordinary users cannot call V013's owner-only definition read. The proposed
+`RuntimeView` DTO and additive `BusinessRecord.referenceDisplays` map are
+specified in the [shared integration delta](shared-integration-proposal.md#7-ordinary-user-runtime-form-and-reference-display-contract).
+They provide V014 FieldRenderer's permitted field/layout props and only the
+stable ID, label and deleted state for references in readable record values.
+The extra display values must be included in the same observable query P;
+these DTOs are not yet available through HTTP.
+
 Create is sparse: omitted fields use V030-013 normalized constant defaults;
 required fields must be non-null after defaults. Edit is an explicit changed-field
 map: omitted fields retain values, null clears an optional field, empty changes
@@ -239,28 +250,26 @@ V030-015 ADR §8.3 records **new limited ADR-002 exceptions** solely for
 record search. Draft GET remains
 cursor-paginated under the accepted default.
 
-### Quick-search proposal for a separate review
+### Lead-selected quick-search direction, pending source/API writeback
 
-The original table shows a search control, but its searchable fields and
-matching rule are not frozen. Proposed additive request member, **not
-selected for implementation until lead review**:
+The lead selected an additive request member on 2026-10-03; exact integration
+delta and costs are in [shared-integration-proposal.md](shared-integration-proposal.md#5-lead-selected-quick-search-contract-pending-sourceapi-writeback):
 
-    type QuickSearch = {term:string; fieldIds:UUID[];
-      match:"contains_literal"} | null;
+    type QuickSearch = {term:string; fieldIds:UUID[]} | null;
     type RecordSearch = {page:Version; pageSize:Version;
       filter:FilterGroup|null; sort:Sort; quickSearch?:QuickSearch;
       queryVersion?:string};
 
-The explicit fieldIds must be nonempty, distinct current text/multiline
+The explicit fieldIds must contain 1–20 distinct current text/multiline
 fields of this table. Each must be readable across the entire visible row
-scope. Match is an OR of literal case-sensitive substring tests over those
-fields, with term bound as data and LIKE metacharacters escaped. No implicit
-scan of every field, reference display, hidden column, system field, or
-unauthorized value. Empty term is equivalent to null/no condition. Literal
-contains can scan N rows; pg_trgm or another index is a separate measured
-migration choice. REVIEW: approve these exact scope/case rules or supply
-the intended Figma search semantics; until then there is no backend
-quick-search contract.
+scope. The term is 1–160 Unicode scalar values after outer Unicode trim.
+Match is an OR of literal substring tests with **ASCII A–Z only** folded on
+both sides; other Unicode stays literal. Parameterized `translate` plus
+`strpos` makes `%`, `_` and backslash ordinary characters and avoids
+database-locale casefold. The OR is ANDed with structured filter. No implicit
+scan of every field, reference display, hidden column, system field or
+unauthorized value. Empty term is invalid; omit quickSearch to disable it.
+Arbitrary contains may scan N rows; index strategy requires EXPLAIN.
 
 Proposed additive error mapping (names/statuses for review, not registered):
 
@@ -301,8 +310,10 @@ DENY. No subordinate, directory inheritance or cross-app grant merging.
 | --- | --- | --- | --- | --- |
 | Search/count/get | exact form, data.read | all OR createdBy=actor | all authorized table fields, regardless of view layout or hidden columns | live menu entry separately; schemaReady |
 | Filter/sort | exact form, data.read | entire visible all/own row scope | every referenced field grant must cover that whole scope or request 403 before reading its values | server authorization before filter, COUNT, LIMIT |
+| RuntimeView (additive proposal) | actual form menu.enter plus any data.read/create/edit | no record row | union of active fields permitted by at least one action; per-action scopes kept separate | sanitized layout/config only, no owner-only definition read |
 | Create | exact form, data.create | new createdBy=actor; all-only action grant | client fields in matching create mask; empty mask permits defaults-only | defaults/required/reference validation |
 | Edit | exact form, data.edit | all OR immutable createdBy=actor | every changed field in matching edit masks | recordVersion CAS and mandatory fence |
+| History read (not exposed yet) | exact form, data.read AND data.history | current row read and each history tuple's all/own scope | intersection of complete current read/history field masks; hidden-only events removed before LIMIT | default no history grant, current task access for task linkage |
 | Draft save/list/get | exact form and owner from Session | draft.owner_user_id=actor | save checks current create/edit mask; read omits now-inaccessible values without modifying stored draft | schema/base version, draft CAS/conflict state |
 | Approval-node Save later | same RecordWriter with separate task-scoped authorizer | actual task actor and task state verified by future flow contract | node-specific field whitelist, independent of ordinary data.edit | pending-command fence and CAS; no auto-complete |
 
@@ -447,15 +458,18 @@ missing guard is forbidden.
 Define one canonical complete authorized projection P for a query context:
 ordered matching record IDs (stable ID tie), COUNT, all currently authorized
 table field values for this concrete form independently of layout and
-hiddenColumnIds, and every observable reference display for matching rows.
+hiddenColumnIds, all observable system metadata including `recordVersion`
+and `updatedAt`, and every readable `(id,label,deleted)` reference display
+for matching rows.
 Its criteria include the actual app/table/view, normalized
 filter/sort and frozen date bounds; policy/schema versions and registry source
 revision are separate observed dependencies. A change is relevant iff P
 changes under the same current authorization. Policy loss is an immediate
 authorization error, not permission to replay stale P. Context expiration is
 separate from QUERY_CHANGED. A changed matching row outside the current
-page is relevant; an unchanged/no-op write, an unrelated row, and an
-unreadable field outside P are not. The lead selected this projection boundary
+page is relevant; an unchanged/no-op write and an unrelated row are not.
+An unreadable-field edit to a matching row is relevant when its observable
+recordVersion/updatedAt changes. The lead selected this projection boundary
 in accepted ADR §8; shared Q36 extraction remains an integration dependency.
 
 Let N=table rows, M=matching authorized rows, F=fields/leaves evaluated,
@@ -741,10 +755,12 @@ Proposed read route, not part of the current OpenAPI until freeze:
       origin:"ordinary"|"task_save"; changes:HistoryChange[]};
     // Response data.items:HistoryEvent[]; meta.pagination: ADR-002 cursor.
 
-Use the *current* actual form, row createdBy and current data.read grants
-to authorize the row and each field before projecting history. A caller
-without current row read gets 404. A change event with no currently
-readable changed fields is omitted before LIMIT and cursor advancement,
+Use the *current* actual form, row createdBy and both current `data.read` and
+independent `data.history` complete tuples to authorize each field before
+projecting history. `data.history` has no grants by default; owner/Bootstrap
+has full capability only for a real resource. A caller without current row
+read gets 404; no history action gets 403. A change event with no currently
+readable-and-history-authorized changed fields is omitted before LIMIT and cursor advancement,
 so actor/time/version cannot reveal a hidden-only edit. A mixed event
 returns only authorized field deltas; it never reports the count/IDs of
 hidden changes. Permission revocation takes effect on the next history
@@ -756,13 +772,19 @@ not an alternative authorization path. Source UUID values remain stable;
 display resolution at history-read time uses current registry/tombstone and
 must not pretend to be an immutable old-name snapshot.
 
-REVIEW before implementation: whether current data.read alone is the
-history read capability or whether a separate history action is needed;
-whether actor identity/time in mixed visible events is approved; the
-retention/archive/backup and sensitive-field policy; and whether task
-references may be returned at all. Until frozen, no history values go in
-the global authentication audit summary, logs, operations result or
-unprotected cold archive.
+The lead selected actor/time only for mixed events that contain at least one
+permitted delta, and task linkage only when the current actor can access that
+actual task. Current registry/tombstone labels explain stored option/ref
+IDs but are not event-time snapshots. Removed fields are inaccessible to
+ordinary grants after explicit revoke; event-time field kind remains stored.
+The precise owner/Bootstrap presentation of removed fields, schema conversion
+delta policy, option tombstone labels and exposure API remain for final
+review as detailed in the
+[shared integration delta](shared-integration-proposal.md#6-lead-selected-history-authorization-direction-exposure-still-gated).
+No auto purge or new retention days were selected; encrypted backup growth
+continues with changes. Until full source/API freeze, no history values go in
+the global authentication audit summary, logs, operation result or
+unprotected cold archive, and the history route is not implemented.
 
 ## 7. Independent RED/GREEN and scale acceptance after release
 
@@ -806,13 +828,14 @@ routes available until shared integration and acceptance are complete.
    branch has no ready HTTP route, persistent data grants, operation extension,
    query-context reuse or product migration. Its PG tests use temporary tables
    and test adapters; they do not prove runtime-role permission or live API.
-2. Review the separate quick-search DTO/scope/case proposal before any
+2. Write back the lead-selected quick-search DTO/scope/ASCII-fold rule before
    search-control backend implementation. Confirm exact error registrations
    and any current policy/schema change distinction relative to
    QUERY_CHANGED/CONTEXT_EXPIRED.
-3. Freeze the restricted record history old/new schema, current-grant
-   read rule, actor/time exposure and retention/archive/backup policy
-   before old values are stored or exposed. No guessed global audit summary.
+3. Complete the restricted history review for schema conversions, removed
+   fields, option labels and backup growth before old values are stored or
+   exposed. `data.history` is a separate default-deny action; no guessed
+   global audit summary, purge or new retention interval.
 4. Assign shared applications transaction lifecycle, apppolicy data.create
    and grant storage extension, Q36 query-context extraction, OpenAPI/errors,
    hot/cold migration numbers and roles to the V030-013 integration owner.
