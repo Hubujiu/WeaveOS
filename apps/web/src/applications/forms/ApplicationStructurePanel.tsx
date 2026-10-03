@@ -7,6 +7,7 @@ import {createLeaveController,type LeaveController,type LeaveGuardProps,type Lea
 import './forms.css';
 
 export type ApplicationStructureProps=LeaveGuardProps&{appId:string;actorId:string;onOpenForm?:(viewId:string)=>void;
+  onConfigureForm?:(viewId:string)=>void;
   onDirtyChange?:(dirty:boolean)=>void;onUnauthorized?:()=>void;onIdentityMismatch?:()=>void};
 type Selected={kind:'directory'|'form';id:UUID}|null;
 type Dialog='directory'|'renameDirectory'|'moveDirectory'|'form'|'editForm'|null;
@@ -23,7 +24,7 @@ export function ApplicationStructurePanel(props:ApplicationStructureProps){
   const scopeKey=JSON.stringify([props.actorId,props.appId]);
   return <ApplicationStructureScope key={scopeKey} {...props} scopeKey={scopeKey}/>;
 }
-function ApplicationStructureScope({appId,actorId,onOpenForm,onDirtyChange,onUnauthorized,onIdentityMismatch,registerLeaveGuard,
+function ApplicationStructureScope({appId,actorId,onOpenForm,onConfigureForm,onDirtyChange,onUnauthorized,onIdentityMismatch,registerLeaveGuard,
   scopeKey}:ApplicationStructureProps&{scopeKey:string}){
   const restored=structureMemory.get(scopeKey);
   const [structure,reactSetStructure]=useState<Structure|null>(restored?.structure??null),
@@ -189,7 +190,8 @@ function ApplicationStructureScope({appId,actorId,onOpenForm,onDirtyChange,onUna
       {structure.forms.filter(item=>item.directoryId===parent).sort((a,b)=>a.position-b.position).map(item=><li role="treeitem" aria-label={item.name} className="forms-tree-item" key={item.id}>
         <div className={`forms-tree-row${selected?.id===item.id?' active':''}`}>
           <button type="button" onClick={()=>setSelected({kind:'form',id:item.id})}>表单 {item.name}</button>
-          <button type="button" aria-label={`打开表单 ${item.name}`} onClick={()=>onOpenForm?.(item.id)}>打开</button>
+          <button type="button" aria-label={`打开表单 ${item.name}`} onClick={()=>onOpenForm?.(item.id)}>打开表单 {item.name}</button>
+          {canEdit&&onConfigureForm&&<button type="button" aria-label={`配置表单 ${item.name}`} onClick={()=>onConfigureForm(item.id)}>配置表单 {item.name}</button>}
         </div></li>)}
       {structure.tables.filter(item=>item.directoryId===parent&&!structure.forms.some(view=>view.tableId===item.id)).map(item=>
         <li role="treeitem" aria-label={item.name} key={item.id}><div className="forms-tree-row">逻辑表 {item.name}</div></li>)}
@@ -215,7 +217,8 @@ function ApplicationStructureScope({appId,actorId,onOpenForm,onDirtyChange,onUna
         <button type="button" onClick={()=>open('moveDirectory',folder)}>移动目录</button>
         <button type="button" onClick={()=>open('directory',folder)}>创建子目录</button></>}</>:
       form?<><h2>表单 · {form.name}</h2><p>逻辑表：{structure.tables.find(item=>item.id===form.tableId)?.name??form.tableId}</p>
-        <p>视图版本：{form.viewVersion}</p><button type="button" className="forms-primary" onClick={()=>onOpenForm?.(form.id)}>打开表单设计器</button>
+        <p>视图版本：{form.viewVersion}</p><button type="button" className="forms-primary" onClick={()=>onOpenForm?.(form.id)}>打开表单 {form.name}</button>
+        {canEdit&&onConfigureForm&&<button type="button" onClick={()=>onConfigureForm(form.id)}>配置表单 {form.name}</button>}
         {canEdit&&<button type="button" onClick={()=>open('editForm',{...form,parentId:form.directoryId})}>编辑表单名称与位置</button>}</>:
       <><h2>选择目录或视图</h2><p className="forms-muted">从左侧选择项目，查看详情并管理位置。</p></>}</section></div>
     {dialog&&<FormsDialog title={dialog==='directory'?'新建目录':dialog==='renameDirectory'?'重命名目录':dialog==='moveDirectory'?'移动目录':dialog==='form'?'新建表单':'编辑表单'}

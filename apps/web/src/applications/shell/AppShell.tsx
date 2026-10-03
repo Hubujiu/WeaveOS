@@ -22,9 +22,10 @@ const validCreatedApplication = (app: Application, actorId: string) => uuid.test
 export function AppShell({ user, access, logout, pending, error, onDirty, onPermissionDirty, onFormsDirty, registerLeaveGuard, requestSectionLeave, onAuthLost, onIdentityMismatch, suspended }: { user: User; access: Access; logout: () => void; pending: boolean; error: string; onDirty: (dirty: boolean) => void; onPermissionDirty: (dirty: boolean, summary: string) => void; onFormsDirty: (dirty: boolean) => void; registerLeaveGuard: RegisterLeaveGuard; requestSectionLeave: (action: () => void) => void; onAuthLost: () => void; onIdentityMismatch: () => void; suspended: boolean }) {
  const location = useLocation(); const navigate = useNavigate();
  const catalog = location.pathname === '/app/applications' || location.pathname === '/app/applications/';
- const appRoute = location.pathname.match(/^\/app\/applications\/([^/]+)(?:\/forms\/([^/]+))?\/?$/);
- const appId = appRoute?.[1];
- const viewId = appRoute?.[2];
+ const appRoute = location.pathname.match(/^\/app\/applications\/([^/]+)(?:\/forms\/([^/]+)(?:\/(design))?)?\/?$/);
+ const appId = appRoute?.[1]&&uuid.test(appRoute[1])?appRoute[1]:undefined;
+ const viewId = appId&&appRoute?.[2]&&uuid.test(appRoute[2])?appRoute[2]:undefined;
+ const configurationRoute = !!viewId&&appRoute?.[3] === 'design';
  const [tabs, setTabs] = useState<ApplicationTab[]>([]);
  const handledClose = useRef(new Set<string>());
  const [account, setAccount] = useState(false);
@@ -46,6 +47,20 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onPerm
  const operation = useApplicationOperation(user.id, confirmed, onUnauthorized, onIdentityMismatch, app => validCreatedApplication(app, user.id));
  const opened = useCallback((app: Application) => setTabs(items => items.some(v => v.application.id === app.id) ? items.map(v => v.application.id === app.id ? { ...v, application: app } : v) : [...items, { application: app, pinned: false }]), []);
  const open = (app: Application) => navigate('/app/applications/' + encodeURIComponent(app.id));
+ const configurationPath=(id:string,formId:string)=>'/app/applications/'+encodeURIComponent(id)+'/forms/'+encodeURIComponent(formId)+'/design';
+ const runtimeFormPath=(id:string,formId:string)=>'/app/applications/'+encodeURIComponent(id)+'/forms/'+encodeURIComponent(formId);
+ const openConfiguration=(formId:string,returnPath:string)=>{
+  if(!appId)return;
+  navigate(configurationPath(appId,formId),{state:{formConfigurationReturn:{appId,path:returnPath}}});
+ };
+ const configurationReturn=()=>{
+  if(!appId||!viewId)return '/app/applications';
+  const state=location.state as {formConfigurationReturn?:{appId?:unknown;path?:unknown}}|null;
+  const candidate=state?.formConfigurationReturn;
+  const directory='/app/applications/'+appId;
+  const runtime=runtimeFormPath(appId,viewId);
+  return candidate?.appId===appId&&([directory,directory+'/',runtime,runtime+'/'].includes(candidate.path as string))?candidate.path as string:runtime;
+ };
  const closeTab = (id: string) => {
   if (appId === id) navigate('/app/applications', { state: { closeApplication: { id, event: crypto.randomUUID() } } });
   else setTabs(items => items.filter(value => value.application.id !== id));
@@ -72,7 +87,7 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onPerm
   </nav>
   <main className="app-content" aria-label={catalog ? '应用中心' : appId ? '应用工作台' : '主页'}>
    {error && <p role="alert">{error}</p>}{catalog && success && <p className="app-success" role="status">{success}</p>}
-   {appId ? <ApplicationWorkspace actorId={user.id} appId={appId} viewId={viewId} bootstrapAdmin={access.bootstrapAdmin} opened={opened} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onPermissionDirty={onPermissionDirty} onFormsDirty={onFormsDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} openForm={id=>navigate('/app/applications/'+encodeURIComponent(appId)+'/forms/'+encodeURIComponent(id))} backToStructure={()=>navigate('/app/applications/'+encodeURIComponent(appId))} />
+   {appId ? <ApplicationWorkspace actorId={user.id} appId={appId} viewId={viewId} configurationRoute={configurationRoute} bootstrapAdmin={access.bootstrapAdmin} opened={opened} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onPermissionDirty={onPermissionDirty} onFormsDirty={onFormsDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} openForm={id=>navigate(runtimeFormPath(appId,id))} configureForm={id=>openConfiguration(id,location.pathname)} backFromConfiguration={()=>navigate(configurationReturn())} backToStructure={()=>navigate('/app/applications/'+encodeURIComponent(appId))} />
     : catalog ? <ApplicationCatalog applications={apps.items} loading={apps.loading} error={apps.error} retry={apps.reload} canCreate={canCreate} create={trigger => { createTrigger.current = trigger; setSuccess(''); setCreate(true); }} open={open} />
     : <><div className="app-page-heading"><h1>主页</h1><p>打开业务应用；已打开的应用显示在顶部标签中</p></div><section className="app-surface app-home-section"><h2>我的应用</h2>{apps.loading ? <p role="status">正在加载应用…</p> : apps.error ? <div className="app-state"><p role="alert">{apps.error}</p><button className="admin-button" onClick={apps.reload}>重试</button></div> : apps.items.length ? <ApplicationCards applications={apps.items} open={open} /> : <div className="home-empty"><h3>暂无可用应用</h3><p>获得应用访问权限后，将在这里显示。</p></div>}</section><div><button className="admin-button" onClick={() => navigate('/app/applications')}>打开应用中心</button></div></>}
   </main>
