@@ -44,3 +44,6 @@ product source edit, gave117 pass. `verification.json` identifies commands,
 timestamps, private log digests, and the local environment; it does not claim
 to resolve the earlier remote WEB-15 timeout. The pinned final-head scan and
 new remote CI run must be checked after publication.
+`prepublication-scan.json` records the pinned scanner's zero findings and
+actual PR26 task-scope pass on the executable/evidence commit. The following
+evidence-only commit is scanned again at its exact HEAD before publication.
