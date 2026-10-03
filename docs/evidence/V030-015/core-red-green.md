@@ -9,8 +9,9 @@ not the real app HTTP/API or full product acceptance.
 
 - Independent worktree `task/V030-015-records-query-drafts`; original PR26 base
   `9b89e8e928aedf30df235492fe89bc52021f6fe9`; prior proposal commit
-  `2da21b2a775071e760a03c6572b5ac712792a5d5`. V030-013 remote still
-  `269c77407375e8ff983861484a8548d03ba42a5a` at 2026-10-03 10:00 UTC.
+  `2da21b2a775071e760a03c6572b5ac712792a5d5`. V030-013 remote later
+  advanced to `4dcad40f09d5d20c2d2d9f97a12c7e41b4630bed`; V015 did not
+  merge it or edit its shared files.
 - Isolated local container `weaveos-v015-pg`, PostgreSQL `18.6
   (Debian 18.6-1.pgdg13+2)`, database `weaveos_v015`, trust auth only on local
   port 65432. Tests create temporary tables, no production data or migrations.
@@ -44,13 +45,13 @@ GOCACHE=/tmp/weaveos-v015-go-cache GOPATH=/workspace/.weaveos-tools/gopath \
 ./internal/appaccess ./internal/appquery ./internal/appdrafts ./internal/apprecords -count=1
 ```
 
-Final rerun exited 0 at 2026-10-03 approximately 10:14 UTC:
+Latest rerun exited 0 at 2026-10-03 approximately 10:55 UTC:
 
 ```text
-ok github.com/Hubujiu/WeaveOS/services/bff/internal/appaccess 1.014s
-ok github.com/Hubujiu/WeaveOS/services/bff/internal/appquery 1.052s
+ok github.com/Hubujiu/WeaveOS/services/bff/internal/appaccess 1.027s
+ok github.com/Hubujiu/WeaveOS/services/bff/internal/appquery 1.075s
 ok github.com/Hubujiu/WeaveOS/services/bff/internal/appdrafts 1.067s
-ok github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords 1.090s
+ok github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords 1.094s
 ```
 
 `go vet` on the same four packages exited 0. The test facts are narrow:
@@ -68,18 +69,38 @@ commits/version advances, the other returns conflict, and one audit row is
 committed. The gate fixture also rechecks current schemaVersion after locking;
 changing the schema row blocks a stale write. This concurrency assertion was
 added as verification after the basic write path GREEN; it is not represented
-as a new target RED.
+as a new target RED. Later `appquery` additions execute row and field masked
+SQL in real PG, check all/own COUNT bind alignment, reject an own-only field
+in an all-row filter/sort before executing SQL, guard safe arbitrary OFFSET,
+and measure streamed JSONB bytes. The first all+own COUNT assertion failed
+with a missing `$1` bind when the actor was used only in projection; separate
+COUNT/page bind vectors corrected it and the rerun above passed. These are
+core checks, not a live grant-loader or full Q36 integration claim.
+
+## Isolated scale core, including failed capacity cases
+
+[Scale report](scale-core-report.md) contains the reproducible harness,
+raw logs, EXPLAIN plans and timing/byte matrix. It ran real local PG18.6
+10k/100k/1m typed TEMP tables with C=1/20/200 sequential rehash probes.
+The unfiltered one-million-row C=200 case **timed out at the unchanged
+10-minute test deadline in both whole-matrix and isolated runs**. At one
+million rows, C=1 took 3.24–3.56 s, C=20 took 45.3 s, C=200 at 10% selectivity
+took 63.6 s, and C=200 at 0.1% took 0.531 s. This is an explicit capacity
+finding for frozen algorithm A, not a product acceptance pass.
 
 ## Unrun product gates and exact reasons
 
-- V030-013's fixed branch still has no released integrated form/table metadata,
-  full kind normalizer, schemaReady/table-gate port, persistent data grant
-  migration, operation kind extension, or BFF routes. PR26 has menu-only
-  grant constraints. Those shared files belong to its integration owner.
-- `appquery` has the typed compiler and streaming fingerprint primitive, but
-  no shared Q36 Redis context lifecycle, live COUNT/page executor, same-RR
-  reference resolution or policy revision handling. No 10k/100k/1m and
-  1/20/200-context capacity results exist; no timeout was enlarged.
+- V030-013 now has hot7 typed tables, the field normalizer and manager
+  definition lifecycle, but no V015 non-manager BeginRecordWrite, persistent
+  data grant migration, record/draft operation kinds, restricted typed DML
+  capability or BFF routes. PR26 has menu-only grant constraints. Shared
+  additions and precise path ownership are in
+  [shared integration proposal](shared-integration-proposal.md).
+- `appquery` has the typed compiler, permission-conditioned SQL fragments,
+  safe OFFSET and streaming fingerprint primitive, but no shared Q36 Redis
+  context lifecycle, live COUNT/page executor, same-RR reference resolution
+  or policy revision handling. Core-stage scale is measured above; no timeout
+  was enlarged. The required full-chain matrix remains NOT RUN.
 - The package tests do not exercise actual `auth_app` roles, Session, origin,
   CSRF, unknown COMMIT, shared operation replay, source hooks, task-scoped
   authorization, real Flowable fence, OpenAPI or cross-browser API. These are

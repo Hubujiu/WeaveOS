@@ -1,0 +1,249 @@
+=== RUN   TestCorePGScaleMatrix
+    scale_test.go:67: SEED n=10000 elapsed=162.494469ms
+    scale_test.go:100: REHASH n=10000 contexts=1 rows=10000 total=23.711958ms perContext=23.712036ms heapBefore=521776 heapAfter=2363808 totalAllocDelta=1842032 fingerprint=bee9630ca885b2c7650f4895e7da3d212526dd2219392e64502aceaaf80d74a3
+    scale_test.go:100: REHASH n=10000 contexts=20 rows=200000 total=415.966827ms perContext=20.798346ms heapBefore=2366192 heapAfter=1022840 totalAllocDelta=36826928 fingerprint=bee9630ca885b2c7650f4895e7da3d212526dd2219392e64502aceaaf80d74a3
+    scale_test.go:100: REHASH n=10000 contexts=200 rows=2000000 total=4.640004081s perContext=23.20002ms heapBefore=1026224 heapAfter=3544144 totalAllocDelta=368100304 fingerprint=bee9630ca885b2c7650f4895e7da3d212526dd2219392e64502aceaaf80d74a3
+    scale_test.go:112: COUNT n=10000 scope=all rows=10000 elapsed=972.368µs
+    scale_test.go:112: COUNT n=10000 scope=own rows=5000 elapsed=1.058513ms
+    scale_test.go:112: COUNT n=10000 scope=selective rows=100 elapsed=609.662µs
+    scale_test.go:133: PAGE n=10000 pageSize=20 offset=0 rows=20 elapsed=480.963µs
+    scale_test.go:133: PAGE n=10000 pageSize=20 offset=5000 rows=20 elapsed=1.545236ms
+    scale_test.go:133: PAGE n=10000 pageSize=100 offset=0 rows=100 elapsed=218.168µs
+    scale_test.go:133: PAGE n=10000 pageSize=100 offset=5000 rows=100 elapsed=1.682549ms
+    scale_test.go:158: FILTER_COUNT n=10000 leaves=one rows=100 elapsed=542.775µs
+    scale_test.go:158: FILTER_COUNT n=10000 leaves=twenty rows=200 elapsed=922.008µs
+    scale_test.go:164: EXPLAIN_PAGE n=10000 json=[
+          {
+            "Plan": {
+              "Node Type": "Limit",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 369.75,
+              "Total Cost": 377.14,
+              "Plan Rows": 100,
+              "Plan Width": 24,
+              "Actual Startup Time": 0.950,
+              "Actual Total Time": 0.972,
+              "Actual Rows": 100.00,
+              "Actual Loops": 1,
+              "Disabled": false,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 111,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Index Only Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Scan Direction": "Forward",
+                  "Index Name": "v015_scale_10000_created_at_id_idx",
+                  "Relation Name": "v015_scale_10000",
+                  "Alias": "v015_scale_10000",
+                  "Startup Cost": 0.29,
+                  "Total Cost": 739.22,
+                  "Plan Rows": 10000,
+                  "Plan Width": 24,
+                  "Actual Startup Time": 0.011,
+                  "Actual Total Time": 0.804,
+                  "Actual Rows": 5100.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Heap Fetches": 5100,
+                  "Index Searches": 1,
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 111,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.041,
+            "Triggers": [
+            ],
+            "Execution Time": 0.986
+          }
+        ]
+    scale_test.go:67: SEED n=100000 elapsed=810.09231ms
+    scale_test.go:100: REHASH n=100000 contexts=1 rows=100000 total=267.905108ms perContext=267.905198ms heapBefore=534344 heapAfter=1679080 totalAllocDelta=18401248 fingerprint=9c86ba69acc66f55481ee59f367f1d606a60d96f194e03322afbff4978d17d39
+    scale_test.go:100: REHASH n=100000 contexts=20 rows=2000000 total=5.008853191s perContext=250.442663ms heapBefore=1682464 heapAfter=2619928 totalAllocDelta=368018408 fingerprint=9c86ba69acc66f55481ee59f367f1d606a60d96f194e03322afbff4978d17d39
+    scale_test.go:100: REHASH n=100000 contexts=200 rows=20000000 total=1m2.899901414s perContext=314.499507ms heapBefore=2623344 heapAfter=723192 totalAllocDelta=3680133672 fingerprint=9c86ba69acc66f55481ee59f367f1d606a60d96f194e03322afbff4978d17d39
+    scale_test.go:112: COUNT n=100000 scope=all rows=100000 elapsed=11.923669ms
+    scale_test.go:112: COUNT n=100000 scope=own rows=50000 elapsed=11.842813ms
+    scale_test.go:112: COUNT n=100000 scope=selective rows=1000 elapsed=1.509832ms
+    scale_test.go:133: PAGE n=100000 pageSize=20 offset=0 rows=20 elapsed=1.524672ms
+    scale_test.go:133: PAGE n=100000 pageSize=20 offset=50000 rows=20 elapsed=16.266911ms
+    scale_test.go:133: PAGE n=100000 pageSize=100 offset=0 rows=100 elapsed=405.447µs
+    scale_test.go:133: PAGE n=100000 pageSize=100 offset=50000 rows=100 elapsed=15.187196ms
+    scale_test.go:158: FILTER_COUNT n=100000 leaves=one rows=1000 elapsed=1.245625ms
+    scale_test.go:158: FILTER_COUNT n=100000 leaves=twenty rows=2000 elapsed=1.855167ms
+    scale_test.go:164: EXPLAIN_PAGE n=100000 json=[
+          {
+            "Plan": {
+              "Node Type": "Limit",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 3641.51,
+              "Total Cost": 3648.79,
+              "Plan Rows": 100,
+              "Plan Width": 24,
+              "Actual Startup Time": 9.830,
+              "Actual Total Time": 9.847,
+              "Actual Rows": 100.00,
+              "Actual Loops": 1,
+              "Disabled": false,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 865,
+              "Local Read Blocks": 207,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Index Only Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Scan Direction": "Forward",
+                  "Index Name": "v015_scale_100000_created_at_id_idx",
+                  "Relation Name": "v015_scale_100000",
+                  "Alias": "v015_scale_100000",
+                  "Startup Cost": 0.42,
+                  "Total Cost": 7282.60,
+                  "Plan Rows": 100000,
+                  "Plan Width": 24,
+                  "Actual Startup Time": 0.024,
+                  "Actual Total Time": 7.849,
+                  "Actual Rows": 50100.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Heap Fetches": 50100,
+                  "Index Searches": 1,
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 865,
+                  "Local Read Blocks": 207,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.092,
+            "Triggers": [
+            ],
+            "Execution Time": 9.904
+          }
+        ]
+    scale_test.go:67: SEED n=1000000 elapsed=7.098382858s
+    scale_test.go:100: REHASH n=1000000 contexts=1 rows=1000000 total=3.563334297s perContext=3.563334377s heapBefore=840360 heapAfter=3026264 totalAllocDelta=196963712 fingerprint=2068648b3393a1209af38479f82c9d6c1ae8bdc81fcccd570f6c1d8e898fee04
+    scale_test.go:100: REHASH n=1000000 contexts=20 rows=20000000 total=45.308386337s perContext=2.26541932s heapBefore=3029680 heapAfter=3464744 totalAllocDelta=3939234672 fingerprint=2068648b3393a1209af38479f82c9d6c1ae8bdc81fcccd570f6c1d8e898fee04
+panic: test timed out after 10m0s
+	running tests:
+		TestCorePGScaleMatrix (10m0s)
+
+goroutine 34 [running]:
+testing.(*M).startAlarm.func1()
+	/workspace/.weaveos-tools/go/src/testing/testing.go:2959 +0x34a
+created by time.goFunc
+	/workspace/.weaveos-tools/go/src/time/sleep.go:182 +0x2d
+
+goroutine 1 [chan receive, 9 minutes]:
+testing.(*T).Run(0x3f62627b0248, {0x888a7d?, 0x3f62627bdaa0?}, 0xd9acd8)
+	/workspace/.weaveos-tools/go/src/testing/testing.go:2266 +0x4f2
+testing.runTests.func1(0x3f62627b0248)
+	/workspace/.weaveos-tools/go/src/testing/testing.go:2742 +0x37
+testing.tRunner(0x3f62627b0248, 0x3f62627bdbc8)
+	/workspace/.weaveos-tools/go/src/testing/testing.go:2193 +0xea
+testing.runTests({0x893ff1, 0x27}, {0x89b762, 0x39}, 0x3f626264c1c8, {0xe00a88, 0x4, 0x4}, {0xc2a854a7da82036e, 0x8bb2d82f65, ...})
+	/workspace/.weaveos-tools/go/src/testing/testing.go:2740 +0x510
+testing.(*M).Run(0x3f62626ea640)
+	/workspace/.weaveos-tools/go/src/testing/testing.go:2600 +0x6af
+main.main()
+	_testmain.go:52 +0x9b
+
+goroutine 8 [IO wait]:
+internal/poll.runtime_pollWait(0x7fd1a24a7600, 0x72)
+	/workspace/.weaveos-tools/go/src/runtime/netpoll.go:351 +0x85
+internal/poll.(*pollDesc).wait(0x3f6262792980?, 0x3f62627fe659?, 0x0)
+	/workspace/.weaveos-tools/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/workspace/.weaveos-tools/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0x3f6262792980, {0x3f62627fe659, 0x19a7, 0x19a7})
+	/workspace/.weaveos-tools/go/src/internal/poll/fd_unix.go:170 +0x2a8
+net.(*netFD).Read(0x3f6262792980, {0x3f62627fe659?, 0x4292ba?, 0x2000?})
+	/workspace/.weaveos-tools/go/src/net/fd_posix.go:68 +0x25
+net.(*conn).Read(0x3f626263c380, {0x3f62627fe659?, 0x7fd159185780?, 0x0?})
+	/workspace/.weaveos-tools/go/src/net/net.go:196 +0x45
+github.com/jackc/pgx/v5/pgconn/internal/bgreader.(*BGReader).Read(0x3f62626d2f40, {0x3f62627fe659, 0x19a7, 0x19a7})
+	/workspace/.weaveos-tools/gopath/pkg/mod/github.com/jackc/pgx/v5@v5.9.2/pgconn/internal/bgreader/bgreader.go:100 +0xcb
+io.ReadAtLeast({0xd93a20, 0x3f62626d2f40}, {0x3f62627fe659, 0x19a7, 0x19a7}, 0x56)
+	/workspace/.weaveos-tools/go/src/io/io.go:335 +0x83
+github.com/jackc/pgx/v5/pgproto3.(*chunkReader).Next(0x3f62627eb0e0, 0x97)
+	/workspace/.weaveos-tools/gopath/pkg/mod/github.com/jackc/pgx/v5@v5.9.2/pgproto3/chunkreader.go:80 +0x289
+github.com/jackc/pgx/v5/pgproto3.(*Frontend).Receive(0x3f626263bb08)
+	/workspace/.weaveos-tools/gopath/pkg/mod/github.com/jackc/pgx/v5@v5.9.2/pgproto3/frontend.go:328 +0x175
+github.com/jackc/pgx/v5/pgconn.(*PgConn).peekMessage(0x3f62627c5088)
+	/workspace/.weaveos-tools/gopath/pkg/mod/github.com/jackc/pgx/v5@v5.9.2/pgconn/pgconn.go:595 +0x155
+github.com/jackc/pgx/v5/pgconn.(*PgConn).receiveMessage(0x3f62627c5088)
+	/workspace/.weaveos-tools/gopath/pkg/mod/github.com/jackc/pgx/v5@v5.9.2/pgconn/pgconn.go:619 +0x26
+github.com/jackc/pgx/v5/pgconn.(*ResultReader).receiveMessage(0x3f62627c5138)
+	/workspace/.weaveos-tools/gopath/pkg/mod/github.com/jackc/pgx/v5@v5.9.2/pgconn/pgconn.go:1805 +0x37
+github.com/jackc/pgx/v5/pgconn.(*ResultReader).NextRow(0x3f62627c5138)
+	/workspace/.weaveos-tools/gopath/pkg/mod/github.com/jackc/pgx/v5@v5.9.2/pgconn/pgconn.go:1698 +0x3e
+github.com/jackc/pgx/v5.(*baseRows).Next(0x3f6262b10000)
+	/workspace/.weaveos-tools/gopath/pkg/mod/github.com/jackc/pgx/v5@v5.9.2/rows.go:225 +0x26
+github.com/Hubujiu/WeaveOS/services/bff/internal/appquery.FingerprintRows({0xd98ed0, 0xe2a700}, {0xd9aa00, 0x3f6262b10000})
+	/workspace/WeaveOS-worktrees/V030-015/services/bff/internal/appquery/projection.go:32 +0x208
+github.com/Hubujiu/WeaveOS/services/bff/internal/appquery.TestCorePGScaleMatrix(0x3f62627b0488)
+	/workspace/WeaveOS-worktrees/V030-015/services/bff/internal/appquery/scale_test.go:85 +0xc66
+testing.tRunner(0x3f62627b0488, 0xd9acd8)
+	/workspace/.weaveos-tools/go/src/testing/testing.go:2193 +0xea
+created by testing.(*T).Run in goroutine 1
+	/workspace/.weaveos-tools/go/src/testing/testing.go:2258 +0x4d4
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/appquery	600.031s
+FAIL

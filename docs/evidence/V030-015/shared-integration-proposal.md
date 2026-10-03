@@ -191,7 +191,8 @@ naming hot8. Do not alter historical hot7 bytes.
    `APPLICATION_RECORD_FENCED`; an available empty table proves no pending;
    missing/unavailable guard returns 503. Flow owner retains command-state
    authority; no automatic completion or retention policy is implied.
-7. Add narrow indexes after EXPLAIN: typed table `(created_by,id)` and
+7. Add narrow indexes after EXPLAIN: typed table
+   `(created_by,created_at DESC,id DESC)` and
    `(created_at DESC,id DESC)` where not already present; grant tuple and
    grant field lookup; draft owner cursor; fence unresolved lookup. Dynamic
    numeric/date/time/ref field indexes require workload evidence and DDL
@@ -280,8 +281,16 @@ before filter/COUNT/page. A changed policy that removes access rejects
 immediately; it does not compare or serialize an old field. `appquery.Compile`
 provides typed predicates and referenced field IDs;
 `appaccess.CoversRead` gates filter/sort before restricted predicates;
-`appquery.FingerprintRows` hashes a server-side ordered JSONB row stream with
-bounded Go memory. These primitives become strategy inputs after extraction,
+`appquery.CompileAccess` now produces the row predicate and permission-
+conditioned field JSONB projection: an own-only field is emitted only in
+the actor-created row, and unreadable keys never reach Go; a real PG test
+checks both all+own masks and own COUNT. `appquery.CompileSearch` combines
+this with typed filter/sort only after whole-visible-scope coverage succeeds;
+its RED/GREEN test rejects an own-only secret filter/sort across all rows.
+`appquery.FingerprintRows` hashes a
+server-side ordered JSONB row stream with bounded Go memory.
+`appquery.PageWindow` guards arbitrary OFFSET arithmetic. These primitives
+become strategy inputs after extraction,
 not an independent personnel adapter or duplicate Redis engine.
 
 One projection detail needs lead confirmation before wire integration:

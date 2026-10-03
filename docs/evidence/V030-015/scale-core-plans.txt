@@ -1,0 +1,280 @@
+=== RUN   TestCorePGScaleMatrix
+    scale_test.go:95: SEED n=10000 elapsed=135.996365ms relationAndIndexBytes=3080192
+    scale_test.go:146: REHASH n=10000 selectivity= contexts=1 rows=10000 bytesPerContext=1427794 total=31.955306ms perContext=31.955358ms heapBefore=524920 heapAfter=2365992 totalAllocDelta=1841072 fingerprint=bee9630ca885b2c7650f4895e7da3d212526dd2219392e64502aceaaf80d74a3
+    scale_test.go:147: REHASH_QUANTILES n=10000 contexts=1 p50=31.553997ms p95=31.553997ms p99=31.553997ms
+    scale_test.go:148: GO_RSS n=10000 contexts=1 maxRSSKiB=27628
+    scale_test.go:160: COUNT n=10000 scope=all rows=10000 elapsed=1.593572ms
+    scale_test.go:160: COUNT n=10000 scope=own rows=5000 elapsed=1.240325ms
+    scale_test.go:160: COUNT n=10000 scope=selective rows=100 elapsed=787.588µs
+    scale_test.go:181: PAGE n=10000 pageSize=20 offset=0 rows=20 elapsed=534.547µs
+    scale_test.go:181: PAGE n=10000 pageSize=20 offset=5000 rows=20 elapsed=1.968195ms
+    scale_test.go:181: PAGE n=10000 pageSize=100 offset=0 rows=100 elapsed=277.423µs
+    scale_test.go:181: PAGE n=10000 pageSize=100 offset=5000 rows=100 elapsed=1.684167ms
+    scale_test.go:206: FILTER_COUNT n=10000 leaves=one rows=100 elapsed=466.953µs
+    scale_test.go:206: FILTER_COUNT n=10000 leaves=twenty rows=200 elapsed=739.852µs
+    scale_test.go:212: EXPLAIN_PAGE n=10000 json=[
+          {
+            "Plan": {
+              "Node Type": "Limit",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 369.75,
+              "Total Cost": 377.14,
+              "Plan Rows": 100,
+              "Plan Width": 24,
+              "Actual Startup Time": 0.980,
+              "Actual Total Time": 1.002,
+              "Actual Rows": 100.00,
+              "Actual Loops": 1,
+              "Disabled": false,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 111,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Index Only Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Scan Direction": "Forward",
+                  "Index Name": "v015_scale_10000_created_at_id_idx",
+                  "Relation Name": "v015_scale_10000",
+                  "Alias": "v015_scale_10000",
+                  "Startup Cost": 0.29,
+                  "Total Cost": 739.22,
+                  "Plan Rows": 10000,
+                  "Plan Width": 24,
+                  "Actual Startup Time": 0.010,
+                  "Actual Total Time": 0.822,
+                  "Actual Rows": 5100.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Heap Fetches": 5100,
+                  "Index Searches": 1,
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 111,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.036,
+            "Triggers": [
+            ],
+            "Execution Time": 1.015
+          }
+        ]
+    scale_test.go:229: PLAN n=10000 kind=count executionMs=1.041 node=Aggregate localHit=164 localRead=0 tempRead=0 tempWritten=0
+    scale_test.go:229: PLAN n=10000 kind=full_projection executionMs=12.58 node=Index Scan localHit=215 localRead=0 tempRead=0 tempWritten=0
+    scale_test.go:95: SEED n=100000 elapsed=806.488282ms relationAndIndexBytes=29802496
+    scale_test.go:146: REHASH n=100000 selectivity= contexts=1 rows=100000 bytesPerContext=14377895 total=318.41934ms perContext=318.4194ms heapBefore=2520488 heapAfter=3514072 totalAllocDelta=18417440 fingerprint=9c86ba69acc66f55481ee59f367f1d606a60d96f194e03322afbff4978d17d39
+    scale_test.go:147: REHASH_QUANTILES n=100000 contexts=1 p50=318.261978ms p95=318.261978ms p99=318.261978ms
+    scale_test.go:148: GO_RSS n=100000 contexts=1 maxRSSKiB=27628
+    scale_test.go:160: COUNT n=100000 scope=all rows=100000 elapsed=14.240988ms
+    scale_test.go:160: COUNT n=100000 scope=own rows=50000 elapsed=12.004919ms
+    scale_test.go:160: COUNT n=100000 scope=selective rows=1000 elapsed=1.045248ms
+    scale_test.go:181: PAGE n=100000 pageSize=20 offset=0 rows=20 elapsed=660.438µs
+    scale_test.go:181: PAGE n=100000 pageSize=20 offset=50000 rows=20 elapsed=17.998926ms
+    scale_test.go:181: PAGE n=100000 pageSize=100 offset=0 rows=100 elapsed=770.039µs
+    scale_test.go:181: PAGE n=100000 pageSize=100 offset=50000 rows=100 elapsed=14.560717ms
+    scale_test.go:206: FILTER_COUNT n=100000 leaves=one rows=1000 elapsed=1.267891ms
+    scale_test.go:206: FILTER_COUNT n=100000 leaves=twenty rows=2000 elapsed=1.662041ms
+    scale_test.go:212: EXPLAIN_PAGE n=100000 json=[
+          {
+            "Plan": {
+              "Node Type": "Limit",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 3641.51,
+              "Total Cost": 3648.79,
+              "Plan Rows": 100,
+              "Plan Width": 24,
+              "Actual Startup Time": 10.521,
+              "Actual Total Time": 10.539,
+              "Actual Rows": 100.00,
+              "Actual Loops": 1,
+              "Disabled": false,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 813,
+              "Local Read Blocks": 259,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Index Only Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Scan Direction": "Forward",
+                  "Index Name": "v015_scale_100000_created_at_id_idx",
+                  "Relation Name": "v015_scale_100000",
+                  "Alias": "v015_scale_100000",
+                  "Startup Cost": 0.42,
+                  "Total Cost": 7282.60,
+                  "Plan Rows": 100000,
+                  "Plan Width": 24,
+                  "Actual Startup Time": 0.015,
+                  "Actual Total Time": 8.793,
+                  "Actual Rows": 50100.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Heap Fetches": 50100,
+                  "Index Searches": 1,
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 813,
+                  "Local Read Blocks": 259,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.051,
+            "Triggers": [
+            ],
+            "Execution Time": 10.557
+          }
+        ]
+    scale_test.go:229: PLAN n=100000 kind=count executionMs=15.487 node=Aggregate localHit=135 localRead=1505 tempRead=0 tempWritten=0
+    scale_test.go:229: PLAN n=100000 kind=full_projection executionMs=122.694 node=Index Scan localHit=784 localRead=1351 tempRead=0 tempWritten=0
+    scale_test.go:95: SEED n=1000000 elapsed=5.67237276s relationAndIndexBytes=296927232
+    scale_test.go:146: REHASH n=1000000 selectivity= contexts=1 rows=1000000 bytesPerContext=144778896 total=3.238274162s perContext=3.238274215s heapBefore=529280 heapAfter=1617016 totalAllocDelta=196962160 fingerprint=2068648b3393a1209af38479f82c9d6c1ae8bdc81fcccd570f6c1d8e898fee04
+    scale_test.go:147: REHASH_QUANTILES n=1000000 contexts=1 p50=3.237924606s p95=3.237924606s p99=3.237924606s
+    scale_test.go:148: GO_RSS n=1000000 contexts=1 maxRSSKiB=27628
+    scale_test.go:160: COUNT n=1000000 scope=all rows=1000000 elapsed=153.699781ms
+    scale_test.go:160: COUNT n=1000000 scope=own rows=500000 elapsed=97.584386ms
+    scale_test.go:160: COUNT n=1000000 scope=selective rows=10000 elapsed=6.715614ms
+    scale_test.go:181: PAGE n=1000000 pageSize=20 offset=0 rows=20 elapsed=842.376µs
+    scale_test.go:181: PAGE n=1000000 pageSize=20 offset=500000 rows=20 elapsed=200.490263ms
+    scale_test.go:181: PAGE n=1000000 pageSize=100 offset=0 rows=100 elapsed=718.323µs
+    scale_test.go:181: PAGE n=1000000 pageSize=100 offset=500000 rows=100 elapsed=178.010501ms
+    scale_test.go:206: FILTER_COUNT n=1000000 leaves=one rows=10000 elapsed=6.937599ms
+    scale_test.go:206: FILTER_COUNT n=1000000 leaves=twenty rows=20000 elapsed=8.999793ms
+    scale_test.go:212: EXPLAIN_PAGE n=1000000 json=[
+          {
+            "Plan": {
+              "Node Type": "Limit",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 36350.83,
+              "Total Cost": 36358.10,
+              "Plan Rows": 100,
+              "Plan Width": 24,
+              "Actual Startup Time": 127.171,
+              "Actual Total Time": 127.196,
+              "Actual Rows": 100.00,
+              "Actual Loops": 1,
+              "Disabled": false,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 63,
+              "Local Read Blocks": 10603,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Index Only Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Scan Direction": "Forward",
+                  "Index Name": "v015_scale_1000000_created_at_id_idx",
+                  "Relation Name": "v015_scale_1000000",
+                  "Alias": "v015_scale_1000000",
+                  "Startup Cost": 0.42,
+                  "Total Cost": 72701.24,
+                  "Plan Rows": 1000000,
+                  "Plan Width": 24,
+                  "Actual Startup Time": 0.028,
+                  "Actual Total Time": 108.404,
+                  "Actual Rows": 500100.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Heap Fetches": 500100,
+                  "Index Searches": 1,
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 63,
+                  "Local Read Blocks": 10603,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.067,
+            "Triggers": [
+            ],
+            "Execution Time": 127.216
+          }
+        ]
+    scale_test.go:229: PLAN n=1000000 kind=count executionMs=148.054 node=Aggregate localHit=0 localRead=16394 tempRead=0 tempWritten=0
+    scale_test.go:229: PLAN n=1000000 kind=full_projection executionMs=1314.095 node=Index Scan localHit=786 localRead=20537 tempRead=0 tempWritten=0
+--- PASS: TestCorePGScaleMatrix (12.72s)
+PASS
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appquery	12.724s
