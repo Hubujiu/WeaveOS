@@ -382,3 +382,22 @@ test('empty structure explains the next action to keyboard and screen reader use
   await expect(page.getByRole('button',{name:'新建表单'})).toBeEnabled();
   await page.screenshot({path:test.info().outputPath('structure-empty.png'),fullPage:true});
 });
+
+test('removing an optional selected default option clears the invalid default before Save',async({page})=>{
+  const fieldId='00000000-0000-4000-8000-000000000140';
+  const oldId='00000000-0000-4000-8000-000000000141';
+  const keepId='00000000-0000-4000-8000-000000000142';
+  const seeded:Definition={...definition,table:{...table,schemaVersion:1,schemaReady:true},form:{...form,viewVersion:1},
+    fields:[{id:fieldId,name:'选项字段',kind:'single_select',required:false,default:oldId,
+      config:{options:[{id:oldId,label:'旧默认值'},{id:keepId,label:'保留值'}]},
+      presentation:{helpText:null,displayTimeZone:null}}],
+    layout:[{id:'00000000-0000-4000-8000-000000000143',kind:'field',fieldId,span:12}]};
+  const state=await fixture(page,'designer',seeded);
+  await page.getByRole('button',{name:'选项字段 单选'}).click();
+  await page.getByRole('button',{name:'删除选项 旧默认值'}).click();
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('已保存');
+  const savedField=(state.seen.find(item=>item.method==='PUT')?.body?.fields as Field[])[0];
+  expect(savedField.default).toBeNull();
+  expect(savedField.config).toMatchObject({options:[{id:keepId,label:'保留值'}]});
+});

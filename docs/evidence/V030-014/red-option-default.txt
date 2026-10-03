@@ -1,0 +1,31 @@
+[WebServer] (node:13679) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:13693) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:13726) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › src/applications/forms/forms.component.spec.ts:386:1 › removing an optional selected default option clears the invalid default before Save (427ms)
+
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:386:1 › removing an optional selected default option clears the invalid default before Save 
+
+    Error: expect(received).toBeNull()
+
+    Received: "00000000-0000-4000-8000-000000000141"
+
+      399 |   await expect(page.getByRole('status')).toContainText('已保存');
+      400 |   const savedField=(state.seen.find(item=>item.method==='PUT')?.body?.fields as Field[])[0];
+    > 401 |   expect(savedField.default).toBeNull();
+          |                              ^
+      402 |   expect(savedField.config).toMatchObject({options:[{id:keepId,label:'保留值'}]});
+      403 | });
+      404 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:401:30
+
+    Error Context: test-results/applications-forms-forms.c-8a82f-invalid-default-before-Save-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:386:1 › removing an optional selected default option clears the invalid default before Save 
