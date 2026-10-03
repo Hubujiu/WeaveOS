@@ -211,6 +211,28 @@ func (a *Application) dependencies(c context.Context, tx pgx.Tx, d Definition, i
 	if e != nil {
 		return nil, e
 	}
+	if len(removed) > 0 {
+		rows, e = tx.Query(c, `SELECT gf.field_id::text,'data_grant',g.id::text FROM applications.grant_fields gf
+ JOIN applications.grants g ON g.app_id=gf.app_id AND g.id=gf.grant_id
+ WHERE gf.app_id=$1 AND gf.table_id=$2 AND gf.field_id=ANY($3::uuid[]) ORDER BY gf.field_id,g.id`, d.AppID, d.Table.ID, removed)
+		if e != nil {
+			return nil, e
+		}
+		for rows.Next() {
+			var v Dependency
+			if e = rows.Scan(&v.FieldID, &v.Kind, &v.ResourceID); e != nil {
+				break
+			}
+			out = append(out, v)
+		}
+		if e == nil {
+			e = rows.Err()
+		}
+		rows.Close()
+		if e != nil {
+			return nil, e
+		}
+	}
 	rows, e = tx.Query(c, "SELECT id::text,layout FROM applications.form_views WHERE app_id=$1 AND table_id=$2 AND id<>$3 ORDER BY id", d.AppID, d.Table.ID, d.Form.ID)
 	if e != nil {
 		return nil, e

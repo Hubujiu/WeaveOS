@@ -310,7 +310,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, ErrUnavailable, "")
 		return
 	}
-	if r.URL.RawQuery != "" && !strings.HasSuffix(r.URL.Path, "/member-candidates") && !strings.HasSuffix(r.URL.Path, "/department-candidates") {
+	if r.URL.RawQuery != "" && !strings.HasSuffix(r.URL.Path, "/member-candidates") && !strings.HasSuffix(r.URL.Path, "/department-candidates") && !strings.HasSuffix(r.URL.Path, "/history") {
 		fail(w, r, invalid(), "")
 		return
 	}
@@ -323,6 +323,14 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	app := parts[0]
 	if !appfields.ValidID(app) {
 		fail(w, r, invalid(), "")
+		return
+	}
+	if len(parts) == 6 && parts[1] == "forms" && parts[3] == "records" && parts[5] == "history" && r.Method == "GET" {
+		if !appfields.ValidID(parts[2]) || !appfields.ValidID(parts[4]) {
+			fail(w, r, invalid(), "")
+			return
+		}
+		s.history(w, r, p, app, parts[2], parts[4])
 		return
 	}
 	if len(parts) == 4 && parts[1] == "forms" && parts[3] == "runtime" && r.Method == "GET" {

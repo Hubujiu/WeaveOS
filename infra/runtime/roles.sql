@@ -66,6 +66,11 @@ GRANT UPDATE (result_json,http_status,location) ON applications.operations TO au
 REVOKE ALL ON FUNCTION applications.register_catalog_entry(uuid) FROM PUBLIC, auth_reader, auth_maintenance, auth_backup;
 GRANT EXECUTE ON FUNCTION applications.register_catalog_entry(uuid) TO auth_app;
 GRANT SELECT ON ALL TABLES IN SCHEMA applications TO auth_backup;
+
+-- Canonical record save deltas: trusted service append/read; no UPDATE/DELETE,
+-- no authentication-audit reader access and no automatic value-history purge.
+GRANT SELECT,INSERT ON applications.record_change_events,applications.record_change_values TO auth_app;
+GRANT SELECT ON applications.field_option_tombstones TO auth_app;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA applications TO auth_backup;
 
 -- V030-013 explicit definition capabilities. No schema CREATE/ownership granted.

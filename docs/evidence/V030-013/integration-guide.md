@@ -168,3 +168,47 @@ scope-covered query affordances and pruned layout/empty groups. Actual owner GET
 restricted-PG and canonical-minute/default checks. Ordinary HTTP permission
 matrix waits for the V015 resolver; projection tests are not that acceptance.
 Source read SQL/hydration remains V015-owned per ADR§13; no shared duplicate.
+
+## Same-Tx history wrapper and owner history HTTP (hot9)
+
+Use `appstructure.RecordHistoryDML{History:appstructure.RecordHistoryStore{},
+Origin:"ordinary"}` instead of the plain RecordDML adapter in the composition.
+Its exact Insert/LockHeader/UpdateCAS signatures and neutral structs are unchanged,
+so the existing V015 ordinary struct conversions still work. Insert captures
+all actual SQL field values, including omitted DB constant defaults, under the
+real table gate. Edit captures canonical selected old values under row/table
+locks and compares the real canonical mutation; no same-value delta/event.
+History writer absence fails closed. Native capability errors retain identity.
+No Begin/Commit in this wrapper: event/delta/record/draft consumption/minimum audit
+and operation belong to the caller's one transaction. Storage failure aborts it.
+`RecordHistoryWriter.Append(ctx,pgx.Tx,HistoryMutation)` is the neutral injection
+port; origin task_save and opaque task reference exist for future trusted task
+Save, without authorizing task endpoints/workflow behavior in this slice.
+
+Hot9 adds independent record_change_events/record_change_values and option-label
+tombstones. Event-time kind is immutable; field removal retains existing field
+metadata tombstone. Data-grant removal dependency kind is `data_grant`, with
+resourceId equal to actual persisted grant ID; explicit revoke is required, and
+mask mutations advance table dependency revision. Previous hot1–8 stay unchanged.
+
+GET `/forms/{viewId}/records/{recordId}/history` is wired through real Session,
+expected-actor, registered metadata and same readonly RR. The existing injected
+RecordAccess must include History and per-field History scopes, resolved by V015
+from current complete tuples. Current row read404; no current history403; selected
+field read AND history applied before LIMIT/cursor. Owner/Bootstrap has actual
+resource-bound removed-field access. Cursor uses existing configured Redis and
+namespace, binds actor+SessionRef+app/table/form/record+policy/schema+pageSize;
+opaque10-minute server cursor, no business values or credentials. Changed policy
+or schema requires a fresh cursor, after current permission checks. Actual owner
+HTTP/pagination/tombstone tests pass. Ordinary matrix awaits V015 policy consumer.
+
+Formal POST/PATCH record/search/draft HTTP remains the V015 service composition
+stage. Persisted hot8 draft minimum is exactly operationId/id/draftVersion (three
+keys); source13 accepts the fixed46cf01b guide. Worker integration must retain this
+shape or obtain a coordinated additive migration; full Draft values never enter
+operation results. Record minimum stays the exact six frozen keys.
+
+Schema Save produces metadata rule audit only, no per-row save deltas/version
+increments. The frontend confirmation must explicitly state that lossy previous
+row values cannot be restored from record save history (ADR11.4); backend retains
+its frozen impact counts/kinds rather than inventing a new restoration API.

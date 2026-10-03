@@ -37,4 +37,5 @@ test('runtime and history expose only frozen safe DTO and record errors',()=>{
  for(const code of ['APPLICATION_SCHEMA_NOT_READY','APPLICATION_RECORD_CONFLICT','APPLICATION_RECORD_FENCED','APPLICATION_QUERY_CHANGED','APPLICATION_QUERY_CONTEXT_EXPIRED','APPLICATION_DRAFT_CONFLICT','APPLICATION_DRAFT_BASE_CONFLICT'])assert.equal(codes[code]?.httpStatus,409,code);
  assert.equal(schema.ApplicationDataGrant.properties.resourceKind.const,'form');
  assert.ok(schema.ApplicationDataGrant.properties.action.enum.includes('data.history'));
+ assert.ok(schema.SchemaDependency.properties.kind.enum.includes('data_grant'),'field removal must report the actual grant dependency');
 });
