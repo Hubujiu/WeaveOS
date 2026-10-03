@@ -1,0 +1,20 @@
+--- a/services/bff/internal/apprecordservice/write.go
++++ b/services/bff/internal/apprecordservice/write.go
+@@ -188,7 +188,7 @@
+ 
+ func (s *Service) Create(ctx context.Context, principal session.Principal, req CreateRequest, metadata applications.Metadata) (MutationResult, error) {
+ 	var result MutationResult
+-	if s == nil || s.Pool == nil || !validWriteLimits(s.Limits) || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.OperationID) || req.Values == nil || req.ExpectedSchemaVersion < 1 || metadata.RequestID == "" {
++	if s == nil || s.Pool == nil || !validWriteLimits(s.Limits) || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.OperationID) || req.Values == nil || req.ExpectedSchemaVersion < 0 || metadata.RequestID == "" {
+ 		return result, apprecords.ErrInvalid
+ 	}
+ 	canonical, _ := json.Marshal(struct {
+@@ -425,7 +425,7 @@
+ 
+ func (s *Service) Edit(ctx context.Context, principal session.Principal, req EditRequest, metadata applications.Metadata) (MutationResult, error) {
+ 	var result MutationResult
+-	if s == nil || s.Pool == nil || !validWriteLimits(s.Limits) || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.RecordID) || !appfields.ValidID(req.OperationID) || req.Changes == nil || req.ExpectedSchemaVersion < 1 || req.ExpectedRecordVersion < 1 || metadata.RequestID == "" {
++	if s == nil || s.Pool == nil || !validWriteLimits(s.Limits) || !appfields.ValidID(req.AppID) || !appfields.ValidID(req.ViewID) || !appfields.ValidID(req.RecordID) || !appfields.ValidID(req.OperationID) || req.Changes == nil || req.ExpectedSchemaVersion < 0 || req.ExpectedRecordVersion < 1 || metadata.RequestID == "" {
+ 		return result, apprecords.ErrInvalid
+ 	}
+ 	canonical, _ := json.Marshal(struct {

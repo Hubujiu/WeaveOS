@@ -26,7 +26,8 @@ schema budgets for protected writes. No new identity credential or broad role.
 
 Boundary: private table presets are NOT available until lead reads back exact
 ADR14.4 proposal and implementation passes. Schema conflict error remains owner
-consumer defect (real HTTP RED retained); don't pretend every error is validated.
+consumer defect (real HTTP RED retained); initial schema0/not-ready likewise
+has a real verified-HTTPS400-versus409 RED. Don't claim every error is validated.
 Migration compatibility manifest scope registration remains pending. Actual
 b66 CI Go/governance passed; browser/Product failed at the exact missing migration
 registration contract, so their later checks did not execute. See
