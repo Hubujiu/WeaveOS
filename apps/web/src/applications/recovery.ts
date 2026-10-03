@@ -56,10 +56,19 @@ export function keepName(actorId: string, name: string) {
 export function keepPacket(packet: ApplicationPacket, unknown: boolean) {
  const map = recoveryMap(packet.scope), key = recoveryKey(packet.actorId, packet.scope);
  const current = map.get(key);
+ const snapshot = deepFreeze(structuredClone(packet));
  map.set(key, {
   name: typeof packet.body.name === 'string' ? packet.body.name : current?.name ?? '',
-  packet, unknown, draft: current?.draft,
+  packet: snapshot, unknown, draft: current?.draft,
  });
+}
+
+function deepFreeze<T>(value: T): T {
+ if (value && typeof value === 'object') {
+  for (const child of Object.values(value)) deepFreeze(child);
+  Object.freeze(value);
+ }
+ return value;
 }
 
 export function clearPacket(actorId: string, scope?: string) {

@@ -13,28 +13,44 @@ export class ApplicationError extends Error {
  }
 }
 
-export type ApplicationEnvelope<T> = { data: T; meta: { pagination?: { nextPageToken: string | null; hasMore: boolean } } | null };
+export type ApplicationEnvelope<T> = { data: T; meta: { pagination?: { nextPageToken: string | null; hasMore: boolean } } | null; location?: string | null };
 
-export async function applicationApiEnvelope<T>(actorId: string, path: string, method = 'GET', body?: object, signal?: AbortSignal, expectedStatus?: number): Promise<ApplicationEnvelope<T>> {
- const write = method !== 'GET';
+async function request<T>(actorId: string, path: string, method: string, body: object | undefined, signal: AbortSignal | undefined, expectedStatus: number | undefined, mutation: boolean): Promise<ApplicationEnvelope<T>> {
  const headers: Record<string, string> = { 'X-Expected-Actor-Id': actorId };
  if (body) headers['Content-Type'] = 'application/json';
- if (write) {
+ if (method !== 'GET') {
   const csrf = document.cookie.split(';').map(v => v.trim()).find(v => v.startsWith('__Host-csrf='));
   if (csrf) headers['X-CSRF-Token'] = csrf.slice('__Host-csrf='.length);
  }
  let response: Response;
  try { response = await fetch('/api/v1/' + path, { method, credentials: 'include', headers, body: body ? JSON.stringify(body) : undefined, signal }); }
- catch (cause) { if (signal?.aborted) throw cause; throw new ApplicationError(0, 'COMMON_SERVICE_UNAVAILABLE', write); }
+ catch (cause) { if (signal?.aborted) throw cause; throw new ApplicationError(0, 'COMMON_SERVICE_UNAVAILABLE', mutation); }
+ // Draft DELETE is an exact 204 with no envelope. A body, or a different
+ // successful status, must never be mistaken for a confirmed deletion.
+ if (expectedStatus === 204 && response.status === 204) {
+  if ((await response.text()) !== '') throw new ApplicationError(204, 'APPLICATION_OPERATION_UNCONFIRMED', mutation);
+  return { data: undefined as T, meta: null, location: response.headers.get('Location') };
+ }
  let raw: unknown;
  try { raw = await response.json(); }
- catch { throw new ApplicationError(response.status, 'COMMON_SERVICE_UNAVAILABLE', write); }
+ catch { throw new ApplicationError(response.status, 'COMMON_SERVICE_UNAVAILABLE', mutation); }
  const envelope = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as { code?: unknown; data?: T; meta?: ApplicationEnvelope<T>['meta'] } : null;
  const code = typeof envelope?.code === 'string' ? envelope.code : 'COMMON_SERVICE_UNAVAILABLE';
- if (!response.ok || code !== 'OK') throw new ApplicationError(response.status, code, write && (response.ok || code === 'APPLICATION_OPERATION_UNCONFIRMED'));
- if (expectedStatus !== undefined && response.status !== expectedStatus) throw new ApplicationError(response.status, 'APPLICATION_OPERATION_UNCONFIRMED', true);
- if (!envelope || !Object.hasOwn(envelope, 'data')) throw new ApplicationError(response.status, 'APPLICATION_OPERATION_UNCONFIRMED', write);
- return { data: envelope.data as T, meta: envelope.meta ?? null };
+ if (!response.ok || code !== 'OK') throw new ApplicationError(response.status, code, mutation && (response.ok || code === 'APPLICATION_OPERATION_UNCONFIRMED'));
+ if (expectedStatus !== undefined && response.status !== expectedStatus) throw new ApplicationError(response.status, 'APPLICATION_OPERATION_UNCONFIRMED', mutation);
+ if (!envelope || !Object.hasOwn(envelope, 'data')) throw new ApplicationError(response.status, 'APPLICATION_OPERATION_UNCONFIRMED', mutation);
+ return { data: envelope.data as T, meta: envelope.meta ?? null, location: response.headers.get('Location') };
+}
+
+export async function applicationApiEnvelope<T>(actorId: string, path: string, method = 'GET', body?: object, signal?: AbortSignal, expectedStatus?: number): Promise<ApplicationEnvelope<T>> {
+ return request(actorId, path, method, body, signal, expectedStatus, method !== 'GET');
+}
+
+// Search is a POST at the transport layer, but cannot create an operation.
+// Keep this entrypoint narrow so mutation callers cannot erase uncertainty.
+export async function applicationReadPost<T>(actorId: string, path: string, body: object, signal?: AbortSignal): Promise<T> {
+ if (!/^applications\/[^/?]+\/forms\/[^/?]+\/records\/search$/.test(path)) throw new TypeError('Read-only POST is restricted to record search');
+ return (await request<T>(actorId, path, 'POST', body, signal, 200, false)).data;
 }
 
 export async function applicationApi<T>(actorId: string, path: string, method = 'GET', body?: object, signal?: AbortSignal, expectedStatus?: number): Promise<T> {
