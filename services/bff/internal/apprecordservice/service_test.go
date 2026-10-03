@@ -256,6 +256,61 @@ func TestRestrictedReadAndEditNotReadyAfterLiveAuthorization(t *testing.T) {
 	}
 }
 
+func TestRestrictedEmptyEditRequiresActionAndActualRowScope(t *testing.T) {
+	t.Run("menu only not ready", func(t *testing.T) {
+		f := newRecordFixture(t)
+		if _, err := f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.edit')", f.app); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := f.owner.Exec(f.ctx, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.edit'", f.app); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := f.owner.Exec(f.ctx, "UPDATE applications.logical_tables SET schema_ready=false WHERE app_id=$1 AND id=$2", f.app, f.table); err != nil {
+			t.Fatal(err)
+		}
+		var op string
+		if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+			t.Fatal(err)
+		}
+		_, err := f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: op, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{}}, applications.Metadata{RequestID: "v015-menu-empty-not-ready"})
+		if !errors.Is(err, applications.ErrDenied) {
+			t.Fatalf("menu-only empty edit leaked readiness: %v", err)
+		}
+		if _, err = f.owner.Exec(f.ctx, "UPDATE applications.logical_tables SET schema_ready=true WHERE app_id=$1 AND id=$2", f.app, f.table); err != nil {
+			t.Fatal(err)
+		}
+		_, err = f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: op, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{}}, applications.Metadata{RequestID: "v015-menu-empty-ready"})
+		if !errors.Is(err, applications.ErrDenied) {
+			t.Fatalf("menu-only empty edit minted operation: %v", err)
+		}
+		var count int
+		if err = f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2", f.actor, op).Scan(&count); err != nil || count != 0 {
+			t.Fatalf("unauthorized empty edit claimed key %d %v", count, err)
+		}
+	})
+	t.Run("own scope other row", func(t *testing.T) {
+		f := newRecordFixture(t)
+		if _, err := f.owner.Exec(f.ctx, "UPDATE applications.grants SET row_scope='own' WHERE app_id=$1 AND action='data.edit'", f.app); err != nil {
+			t.Fatal(err)
+		}
+		var op string
+		if err := f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+			t.Fatal(err)
+		}
+		_, err := f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.otherRecord, OperationID: op, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{}}, applications.Metadata{RequestID: "v015-own-other-empty"})
+		if !errors.Is(err, applications.ErrDenied) {
+			t.Fatalf("own grant edited foreign row: %v", err)
+		}
+		if err = f.owner.QueryRow(f.ctx, "SELECT gen_random_uuid()::text").Scan(&op); err != nil {
+			t.Fatal(err)
+		}
+		own, err := f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: op, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{}}, applications.Metadata{RequestID: "v015-own-own-empty"})
+		if err != nil || own.RecordVersion != 1 {
+			t.Fatalf("own-scope empty edit failed %+v %v", own, err)
+		}
+	})
+}
+
 func TestRestrictedEditCASAndPendingFence(t *testing.T) {
 	f := newRecordFixture(t)
 	var op string

@@ -447,6 +447,11 @@ func (s *Service) Edit(ctx context.Context, principal session.Principal, req Edi
 			if err != nil {
 				return err
 			}
+			// Check the action even for an empty PATCH. The actual target's
+			// immutable createdBy is checked later under the row lock by Writer.
+			if !policy.CanEdit(facts.Actor.ID, nil) {
+				return applications.ErrDenied
+			}
 			for id := range req.Changes {
 				if policy.FieldScope(appaccess.Edit, id) == appaccess.None {
 					return applications.ErrDenied
