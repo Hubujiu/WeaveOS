@@ -7,3 +7,5 @@ REVOKE ALL ON ALL TABLES IN SCHEMA archive FROM auth_backup;
 GRANT USAGE ON SCHEMA archive, public TO auth_backup;
 GRANT SELECT ON ALL TABLES IN SCHEMA archive, public TO auth_backup;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA archive, public TO auth_backup;
+
+-- V030-013 audit constraint addition retains the existing archive reader/mover capability.

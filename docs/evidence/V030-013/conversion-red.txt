@@ -1,0 +1,15 @@
+=== RUN   TestNumericPolicyChangeKeepsConfiguredDefault
+    conversion_regression_test.go:3: same-type numeric policy lost configured physical default <nil> <nil>
+--- FAIL: TestNumericPolicyChangeKeepsConfiguredDefault (0.06s)
+=== RUN   TestExplicitZeroSpanAndUnknownMappingsReject
+    conversion_regression_test.go:4: want 400 COMMON_VALIDATION_FAILED got 200 {"code":"OK","message":"success","data":{"appliedPlan":{"schemaChanges":[{"kind":"add","fieldId":"2677c88f-9278-4138-b162-5252422288c3","beforeKind":null,"afterKind":"text"}],"metadataChanged":true,"layoutChanged":true},"definition":{"appId":"5277acaf-95c9-45e9-9c67-5f525f8bcf68","table":{"id":"e3c627b2-5572-4ca0-b3a8-0b8d2766a949","appId":"5277acaf-95c9-45e9-9c67-5f525f8bcf68","name":"表单","directoryId":null,"position":0,"schemaVersion":1,"schemaReady":true},"form":{"id":"b84646b9-b73c-4570-b6e1-8a7b3435d489","appId":"5277acaf-95c9-45e9-9c67-5f525f8bcf68","tableId":"e3c627b2-5572-4ca0-b3a8-0b8d2766a949","name":"表单","directoryId":null,"position":0,"viewVersion":1},"fields":[{"id":"2677c88f-9278-4138-b162-5252422288c3","name":"text","kind":"text","required":false,"default":null,"config":{"maxLength":null},"presentation":{"helpText":null,"displayTimeZone":null}}],"systemFields":[{"id":"id","kind":"uuid","readOnly":true},{"id":"createdBy","kind":"member","readOnly":true},{"id":"createdAt","kind":"datetime","readOnly":true},{"id":"updatedAt","kind":"datetime","readOnly":true},{"id":"recordVersion","kind":"number","readOnly":true}],"layout":[{"fieldId":"2677c88f-9278-4138-b162-5252422288c3","id":"9dda288d-026e-4771-8e3a-438c91cbdd18","kind":"field","span":12}],"capabilities":{"canManageDefinition":true}},"operationId":"d2804b24-9fce-4cef-9b73-996a927bfedc"},"meta":{"requestId":"c45b1444373c9f89feee6db78b582070"}}
+--- FAIL: TestExplicitZeroSpanAndUnknownMappingsReject (0.04s)
+=== RUN   TestTimestampToTextUsesCanonicalUTC
+    conversion_regression_test.go:5: scalar text serialization must remain canonical UTC 2000-02-29 01:02:03.123+00
+--- FAIL: TestTimestampToTextUsesCanonicalUTC (0.06s)
+=== RUN   TestRealRestrictedRoleCannotAlterDropOrExecuteViaPublic
+    conversion_regression_test.go:6: PUBLIC can call DDL 1 <nil>
+--- FAIL: TestRealRestrictedRoleCannotAlterDropOrExecuteViaPublic (0.04s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure	0.204s
+FAIL

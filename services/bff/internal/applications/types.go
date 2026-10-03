@@ -13,6 +13,8 @@ var ErrOperationConflict = errors.New("application operation conflict")
 var ErrUnconfirmed = errors.New("application operation outcome unconfirmed")
 var ErrResourceInvalid = errors.New("application resource invalid")
 var ErrInvalid = errors.New("invalid application request")
+var ErrExpectedActorInvalid = errors.New("invalid expected actor constraint")
+var ErrSessionChanged = errors.New("session actor does not match expected actor")
 
 type Application struct{ Pool *pgxpool.Pool }
 type App struct {
@@ -30,6 +32,12 @@ type Group struct {
 type Menu struct {
 	ResourceKind string `json:"resourceKind"`
 	ResourceID   string `json:"resourceId"`
+}
+type MemberDisplay struct {
+	ID         string `json:"id"`
+	Label      string `json:"label"`
+	Status     string `json:"status"`
+	Selectable bool   `json:"selectable"`
 }
 type Access struct {
 	AppID          string `json:"appId"`

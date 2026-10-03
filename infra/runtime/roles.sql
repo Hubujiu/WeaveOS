@@ -67,3 +67,26 @@ REVOKE ALL ON FUNCTION applications.register_catalog_entry(uuid) FROM PUBLIC, au
 GRANT EXECUTE ON FUNCTION applications.register_catalog_entry(uuid) TO auth_app;
 GRANT SELECT ON ALL TABLES IN SCHEMA applications TO auth_backup;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA applications TO auth_backup;
+
+-- V030-013 explicit definition capabilities. No schema CREATE/ownership granted.
+
+-- V015 finite typed DML and explicit draft/source/minimum-audit capabilities.
+-- auth_app is a trusted BFF service role, not an independent end-user Session.
+GRANT SELECT,INSERT,DELETE ON applications.record_drafts TO auth_app;
+GRANT UPDATE (values_json,draft_version,updated_at) ON applications.record_drafts TO auth_app;
+GRANT SELECT,INSERT ON applications.record_write_audit TO auth_app;
+GRANT SELECT ON applications.record_command_fences,applications.member_sources,
+ applications.department_sources,applications.member_department_sources,
+ applications.reference_source_revision TO auth_app;
+REVOKE ALL ON FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb) TO auth_app;
+
+GRANT UPDATE (structure_version) ON applications.apps TO auth_app;
+GRANT SELECT,INSERT,UPDATE ON applications.directories,applications.logical_tables,applications.fields,applications.form_views TO auth_app;
+GRANT SELECT,INSERT,UPDATE,DELETE ON applications.table_field_dependencies TO auth_app;
+GRANT USAGE ON SCHEMA appdata TO auth_app,auth_backup;
+REVOKE ALL ON FUNCTION applications.apply_schema_change(uuid,uuid,uuid,text,jsonb,jsonb),applications.apply_option_mapping(uuid,uuid,uuid,uuid,text,jsonb,jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION applications.apply_schema_change(uuid,uuid,uuid,text,jsonb,jsonb) TO auth_app;
+GRANT EXECUTE ON FUNCTION applications.apply_option_mapping(uuid,uuid,uuid,uuid,text,jsonb,jsonb) TO auth_app;
+GRANT SELECT ON ALL TABLES IN SCHEMA appdata TO auth_backup;
+GRANT SELECT ON ALL TABLES IN SCHEMA applications TO auth_backup;

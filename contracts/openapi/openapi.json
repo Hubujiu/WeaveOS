@@ -2948,7 +2948,11 @@
             "WebSession": []
           }
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Current authorized result",
@@ -2975,7 +2979,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -3042,6 +3053,21 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
           }
         }
       },
@@ -3057,6 +3083,9 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
           }
         ],
         "responses": {
@@ -3091,7 +3120,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -3145,7 +3181,7 @@
             }
           },
           "409": {
-            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT",
+            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT; AUTH_SESSION_CHANGED",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/RequestId"
@@ -3154,7 +3190,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActorChangedEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -3221,6 +3264,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
           }
         ],
         "responses": {
@@ -3249,7 +3295,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -3316,6 +3369,21 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
           }
         }
       }
@@ -3339,6 +3407,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
           }
         ],
         "responses": {
@@ -3367,7 +3438,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -3434,6 +3512,21 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
           }
         }
       }
@@ -3457,6 +3550,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
           }
         ],
         "responses": {
@@ -3485,7 +3581,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -3552,6 +3655,21 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
           }
         }
       },
@@ -3576,6 +3694,9 @@
           },
           {
             "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
           }
         ],
         "responses": {
@@ -3610,7 +3731,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -3664,7 +3792,7 @@
             }
           },
           "409": {
-            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT",
+            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT; AUTH_SESSION_CHANGED",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/RequestId"
@@ -3673,7 +3801,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActorChangedEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -3752,6 +3887,9 @@
           },
           {
             "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
           }
         ],
         "responses": {
@@ -3780,7 +3918,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -3834,7 +3979,7 @@
             }
           },
           "409": {
-            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT",
+            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT; AUTH_SESSION_CHANGED",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/RequestId"
@@ -3843,7 +3988,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActorChangedEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -3919,6 +4071,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
           }
         ],
         "responses": {
@@ -3947,7 +4102,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -4014,6 +4176,21 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
           }
         }
       },
@@ -4047,6 +4224,9 @@
           },
           {
             "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
           }
         ],
         "responses": {
@@ -4075,7 +4255,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -4129,7 +4316,7 @@
             }
           },
           "409": {
-            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT",
+            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT; AUTH_SESSION_CHANGED",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/RequestId"
@@ -4138,7 +4325,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActorChangedEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -4214,6 +4408,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
           }
         ],
         "responses": {
@@ -4242,7 +4439,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -4309,6 +4513,21 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
           }
         }
       },
@@ -4342,6 +4561,9 @@
           },
           {
             "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
           }
         ],
         "responses": {
@@ -4370,7 +4592,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -4424,7 +4653,7 @@
             }
           },
           "409": {
-            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT",
+            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT; AUTH_SESSION_CHANGED",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/RequestId"
@@ -4433,7 +4662,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActorChangedEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -4500,6 +4736,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
           }
         ],
         "responses": {
@@ -4528,7 +4767,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationEnvelope"
+                    }
+                  ]
                 }
               }
             }
@@ -4595,6 +4841,2450 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/structure": {
+      "get": {
+        "operationId": "getStructure",
+        "summary": "GET /structure",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/directories": {
+      "post": {
+        "operationId": "postDirectoryResultCreate",
+        "summary": "POST /directories",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Persisted same-app resource URL"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirectoryResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered definition/session error; no raw SQL or business values; AUTH_SESSION_CHANGED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DirectoryWrite"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/directories/{directoryId}": {
+      "get": {
+        "operationId": "getDirectoryResult",
+        "summary": "GET /directories/{directoryId}",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "directoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirectoryResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putDirectoryResultUpdate",
+        "summary": "PUT /directories/{directoryId}",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "directoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirectoryResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered definition/session error; no raw SQL or business values; AUTH_SESSION_CHANGED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DirectoryWrite"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/tables": {
+      "post": {
+        "operationId": "postTableResultCreate",
+        "summary": "POST /tables",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Persisted same-app resource URL"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered definition/session error; no raw SQL or business values; AUTH_SESSION_CHANGED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TableWrite"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/tables/{tableId}": {
+      "get": {
+        "operationId": "getLogicalTable",
+        "summary": "GET /tables/{tableId}",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "tableId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogicalTableEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putTableResultUpdate",
+        "summary": "PUT /tables/{tableId}",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "tableId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered definition/session error; no raw SQL or business values; AUTH_SESSION_CHANGED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TableWrite"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/forms": {
+      "post": {
+        "operationId": "postFormResultCreate",
+        "summary": "POST /forms",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Persisted same-app resource URL"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered definition/session error; no raw SQL or business values; AUTH_SESSION_CHANGED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}": {
+      "get": {
+        "operationId": "getFormResult",
+        "summary": "GET /forms/{viewId}",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putFormResultUpdate",
+        "summary": "PUT /forms/{viewId}",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered definition/session error; no raw SQL or business values; AUTH_SESSION_CHANGED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormWrite"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/definition": {
+      "get": {
+        "operationId": "getDefinition",
+        "summary": "GET /forms/{viewId}/definition",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putDefinitionSaveUpdate",
+        "summary": "PUT /forms/{viewId}/definition",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionSaveEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered definition/session error; no raw SQL or business values; AUTH_SESSION_CHANGED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinitionWrite"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/definition/preflight": {
+      "post": {
+        "operationId": "postPreflightPreflight",
+        "summary": "POST /forms/{viewId}/definition/preflight",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreflightEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered definition/session error; no raw SQL or business values; AUTH_SESSION_CHANGED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinitionInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/member-candidates": {
+      "get": {
+        "operationId": "listApplicationMemberCandidates",
+        "summary": "List active member candidates for application management",
+        "description": "Task ADR appendix A. Current fixed owner/Bootstrap only; minimum id/label/status. TrimSpace q, exact account prefix, stable account/id ordering. Opaque server-owned Redis cursor binds actor/app/normalized q and expires after10min; fresh page rechecks current Session and resource permission. Candidate read does not add membership or grant.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberCandidatesEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/department-candidates": {
+      "get": {
+        "operationId": "listApplicationDepartmentCandidates",
+        "summary": "List existing department candidates for application management",
+        "description": "Accepted task ADR appendix A.5. Actual owner/Bootstrap only; minimum id/label/parentId/status from existing personnel departments. TrimSpace q is exact name prefix; stable name/id keyset order. Opaque cursor binds actor/app/normalized q and candidate kind, expires after10min. Read never grants access; Save revalidates and locks actual sources. Ordinary record candidates remain a separate contract.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentCandidatesEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
           }
         }
       }
@@ -4650,6 +7340,9 @@
             "properties": {
               "requestId": {
                 "type": "string"
+              },
+              "pagination": {
+                "$ref": "#/components/schemas/CursorPagination"
               }
             },
             "additionalProperties": false
@@ -8124,7 +10817,8 @@
         "additionalProperties": false,
         "required": [
           "memberIds",
-          "policyRevision"
+          "policyRevision",
+          "members"
         ],
         "properties": {
           "memberIds": {
@@ -8138,6 +10832,12 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 9007199254740991
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationMemberDisplay"
+            }
           }
         }
       },
@@ -8201,6 +10901,18 @@
               },
               {
                 "$ref": "#/components/schemas/ApplicationPolicyResult"
+              },
+              {
+                "$ref": "#/components/schemas/DirectoryResult"
+              },
+              {
+                "$ref": "#/components/schemas/TableResult"
+              },
+              {
+                "$ref": "#/components/schemas/FormResult"
+              },
+              {
+                "$ref": "#/components/schemas/DefinitionSave"
               }
             ]
           }
@@ -8354,6 +11066,3336 @@
               },
               "data": {
                 "$ref": "#/components/schemas/ApplicationOperation"
+              }
+            }
+          }
+        ]
+      },
+      "Directory": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "appId",
+          "name",
+          "parentId",
+          "position"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "appId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        }
+      },
+      "LogicalTable": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "appId",
+          "name",
+          "directoryId",
+          "position",
+          "schemaVersion",
+          "schemaReady"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "appId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "directoryId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "schemaReady": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FormView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "appId",
+          "tableId",
+          "name",
+          "directoryId",
+          "position",
+          "viewVersion"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "appId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "tableId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "directoryId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "viewVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "DefinitionCapabilities": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "canManageDefinition"
+        ],
+        "properties": {
+          "canManageDefinition": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Structure": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "appId",
+          "structureVersion",
+          "directories",
+          "tables",
+          "forms",
+          "capabilities"
+        ],
+        "properties": {
+          "appId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "structureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "directories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Directory"
+            }
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LogicalTable"
+            }
+          },
+          "forms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormView"
+            }
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/DefinitionCapabilities"
+          }
+        }
+      },
+      "DirectoryResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "directory",
+          "structureVersion"
+        ],
+        "properties": {
+          "directory": {
+            "$ref": "#/components/schemas/Directory"
+          },
+          "structureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "TableResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "table",
+          "structureVersion"
+        ],
+        "properties": {
+          "table": {
+            "$ref": "#/components/schemas/LogicalTable"
+          },
+          "structureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "FormResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "table",
+          "form",
+          "structureVersion"
+        ],
+        "properties": {
+          "table": {
+            "$ref": "#/components/schemas/LogicalTable"
+          },
+          "form": {
+            "$ref": "#/components/schemas/FormView"
+          },
+          "structureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "FormSource": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "new_table"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "tableId"
+            ],
+            "properties": {
+              "kind": {
+                "const": "existing_table"
+              },
+              "tableId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              }
+            }
+          }
+        ]
+      },
+      "DirectoryWrite": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "name",
+          "parentId",
+          "position",
+          "expectedStructureVersion"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "expectedStructureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "TableWrite": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "name",
+          "directoryId",
+          "position",
+          "expectedStructureVersion"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "directoryId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "expectedStructureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "FormWrite": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "name",
+          "directoryId",
+          "position",
+          "expectedStructureVersion"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "directoryId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "expectedStructureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "FormCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "name",
+          "source",
+          "directoryId",
+          "position",
+          "expectedStructureVersion"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "source": {
+            "$ref": "#/components/schemas/FormSource"
+          },
+          "directoryId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "expectedStructureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "DecimalConfigInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "precision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 38,
+            "default": 38
+          },
+          "scale": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 18
+          },
+          "roundingPlaces": {
+            "type": "integer",
+            "minimum": -18,
+            "maximum": 18
+          },
+          "roundingMode": {
+            "type": "string",
+            "enum": [
+              "HALF_UP",
+              "HALF_EVEN",
+              "TOWARD_ZERO",
+              "FLOOR",
+              "CEILING"
+            ],
+            "default": "HALF_UP"
+          }
+        },
+        "description": "Only omission selects defaults: precision38, scale money2/number0, roundingPlaces=normalized scale, HALF_UP. scale<=precision and roundingPlaces<=scale. Null and unknown keys reject."
+      },
+      "DecimalConfig": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "precision",
+          "scale",
+          "roundingPlaces",
+          "roundingMode"
+        ],
+        "properties": {
+          "precision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 38,
+            "default": 38
+          },
+          "scale": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 18
+          },
+          "roundingPlaces": {
+            "type": "integer",
+            "minimum": -18,
+            "maximum": 18
+          },
+          "roundingMode": {
+            "type": "string",
+            "enum": [
+              "HALF_UP",
+              "HALF_EVEN",
+              "TOWARD_ZERO",
+              "FLOOR",
+              "CEILING"
+            ],
+            "default": "HALF_UP"
+          }
+        }
+      },
+      "FieldPresentationInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "helpText"
+        ],
+        "properties": {
+          "helpText": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "displayTimeZone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "datetime only; omitted/null normalizes to UTC; valid IANA zone"
+          }
+        }
+      },
+      "FieldPresentation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "helpText",
+          "displayTimeZone"
+        ],
+        "properties": {
+          "helpText": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "displayTimeZone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "datetime only; omitted/null normalizes to UTC; valid IANA zone"
+          }
+        }
+      },
+      "SelectOption": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        }
+      },
+      "FieldKind": {
+        "type": "string",
+        "enum": [
+          "text",
+          "multiline",
+          "number",
+          "money",
+          "date",
+          "datetime",
+          "single_select",
+          "multi_select",
+          "boolean",
+          "member",
+          "department"
+        ]
+      },
+      "FieldInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "text"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "maxLength"
+                ],
+                "properties": {
+                  "maxLength": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1
+                  }
+                }
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentationInput"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "multiline"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "maxLength"
+                ],
+                "properties": {
+                  "maxLength": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1
+                  }
+                }
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentationInput"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "number"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "$ref": "#/components/schemas/DecimalConfigInput"
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentationInput"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "money"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "$ref": "#/components/schemas/DecimalConfigInput"
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentationInput"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "date"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {}
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentationInput"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "datetime"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {
+                  "precision": {
+                    "type": "string",
+                    "enum": [
+                      "minute",
+                      "second",
+                      "millisecond"
+                    ],
+                    "default": "second"
+                  }
+                }
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentationInput"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "single_select"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "options"
+                ],
+                "properties": {
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/SelectOption"
+                    }
+                  }
+                }
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentationInput"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "multi_select"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "options"
+                ],
+                "properties": {
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/SelectOption"
+                    }
+                  }
+                }
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentationInput"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "boolean"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {}
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentationInput"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "member"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {}
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentationInput"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "department"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {}
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentationInput"
+              }
+            }
+          }
+        ],
+        "description": "Stable field UUID, exact constant defaults only; readonly system columns excluded. Numeric wire/default values are decimal strings. Business rows are typed PostgreSQL columns."
+      },
+      "Field": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "text"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "maxLength"
+                ],
+                "properties": {
+                  "maxLength": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1
+                  }
+                }
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentation"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "multiline"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "maxLength"
+                ],
+                "properties": {
+                  "maxLength": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1
+                  }
+                }
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentation"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "number"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "$ref": "#/components/schemas/DecimalConfig"
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentation"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "money"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "$ref": "#/components/schemas/DecimalConfig"
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentation"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "date"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {}
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentation"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "datetime"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "precision"
+                ],
+                "properties": {
+                  "precision": {
+                    "type": "string",
+                    "enum": [
+                      "minute",
+                      "second",
+                      "millisecond"
+                    ],
+                    "default": "second"
+                  }
+                }
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentation"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "single_select"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "options"
+                ],
+                "properties": {
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/SelectOption"
+                    }
+                  }
+                }
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentation"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "multi_select"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "options"
+                ],
+                "properties": {
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/SelectOption"
+                    }
+                  }
+                }
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentation"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "boolean"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {}
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentation"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "member"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {}
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentation"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "required",
+              "default",
+              "config",
+              "presentation"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "kind": {
+                "const": "department"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "config": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {}
+              },
+              "presentation": {
+                "$ref": "#/components/schemas/FieldPresentation"
+              }
+            }
+          }
+        ],
+        "description": "Stable field UUID, exact constant defaults only; readonly system columns excluded. Numeric wire/default values are decimal strings. Business rows are typed PostgreSQL columns."
+      },
+      "SystemField": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "readOnly"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "id",
+              "createdBy",
+              "createdAt",
+              "updatedAt",
+              "recordVersion"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "uuid",
+              "member",
+              "datetime",
+              "number"
+            ]
+          },
+          "readOnly": {
+            "const": true
+          }
+        }
+      },
+      "LayoutNodeInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "fieldId"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "kind": {
+                "const": "field"
+              },
+              "fieldId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "span": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12,
+                "default": 12
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "fieldId"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "kind": {
+                "const": "system_field"
+              },
+              "fieldId": {
+                "type": "string",
+                "enum": [
+                  "id",
+                  "createdBy",
+                  "createdAt",
+                  "updatedAt",
+                  "recordVersion"
+                ]
+              },
+              "span": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12,
+                "default": 12
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "title",
+              "children"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "kind": {
+                "const": "group"
+              },
+              "title": {
+                "type": "string"
+              },
+              "children": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/LayoutNodeInput"
+                }
+              },
+              "span": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12,
+                "default": 12
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "kind": {
+                "const": "divider"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "text"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "kind": {
+                "const": "description"
+              },
+              "text": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "Stable node IDs; arrays define order; each group has its own 12-column grid. Description/divider full width; no SQL columns."
+      },
+      "LayoutNode": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "fieldId",
+              "span"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "kind": {
+                "const": "field"
+              },
+              "fieldId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "span": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12,
+                "default": 12
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "fieldId",
+              "span"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "kind": {
+                "const": "system_field"
+              },
+              "fieldId": {
+                "type": "string",
+                "enum": [
+                  "id",
+                  "createdBy",
+                  "createdAt",
+                  "updatedAt",
+                  "recordVersion"
+                ]
+              },
+              "span": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12,
+                "default": 12
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "title",
+              "children",
+              "span"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "kind": {
+                "const": "group"
+              },
+              "title": {
+                "type": "string"
+              },
+              "children": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/LayoutNode"
+                }
+              },
+              "span": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12,
+                "default": 12
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "kind": {
+                "const": "divider"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "text"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "kind": {
+                "const": "description"
+              },
+              "text": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "Stable node IDs; arrays define order; each group has its own 12-column grid. Description/divider full width; no SQL columns."
+      },
+      "OptionMapping": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "fieldId",
+          "fromOptionId",
+          "toOptionId"
+        ],
+        "properties": {
+          "fieldId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "fromOptionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "toOptionId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          }
+        }
+      },
+      "DefinitionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedSchemaVersion",
+          "expectedViewVersion",
+          "fields",
+          "layout",
+          "optionMappings"
+        ],
+        "properties": {
+          "expectedSchemaVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "expectedViewVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldInput"
+            }
+          },
+          "layout": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LayoutNodeInput"
+            }
+          },
+          "optionMappings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OptionMapping"
+            }
+          }
+        }
+      },
+      "DefinitionWrite": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "expectedSchemaVersion",
+          "expectedViewVersion",
+          "fields",
+          "layout",
+          "optionMappings",
+          "confirmationToken"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "expectedSchemaVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "expectedViewVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldInput"
+            }
+          },
+          "layout": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LayoutNodeInput"
+            }
+          },
+          "optionMappings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OptionMapping"
+            }
+          },
+          "confirmationToken": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Definition": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "appId",
+          "table",
+          "form",
+          "fields",
+          "systemFields",
+          "layout",
+          "capabilities"
+        ],
+        "properties": {
+          "appId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "table": {
+            "$ref": "#/components/schemas/LogicalTable"
+          },
+          "form": {
+            "$ref": "#/components/schemas/FormView"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            }
+          },
+          "systemFields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SystemField"
+            }
+          },
+          "layout": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LayoutNode"
+            }
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/DefinitionCapabilities"
+          }
+        }
+      },
+      "SchemaChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "fieldId",
+          "beforeKind",
+          "afterKind"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "add",
+              "remove",
+              "change_type",
+              "change_config",
+              "change_default",
+              "change_required"
+            ]
+          },
+          "fieldId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "beforeKind": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FieldKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "afterKind": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FieldKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ChangePlan": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaChanges",
+          "metadataChanged",
+          "layoutChanged"
+        ],
+        "properties": {
+          "schemaChanges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaChange"
+            }
+          },
+          "metadataChanged": {
+            "type": "boolean"
+          },
+          "layoutChanged": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DefinitionSave": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "definition",
+          "appliedPlan"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "definition": {
+            "$ref": "#/components/schemas/Definition"
+          },
+          "appliedPlan": {
+            "$ref": "#/components/schemas/ChangePlan"
+          }
+        }
+      },
+      "SchemaDependency": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "fieldId",
+          "kind",
+          "resourceId"
+        ],
+        "properties": {
+          "fieldId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "enabled_flow",
+              "in_flight",
+              "view_layout"
+            ]
+          },
+          "resourceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          }
+        }
+      },
+      "SchemaImpact": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "fieldId",
+          "kind",
+          "nonNullRows",
+          "optionId"
+        ],
+        "properties": {
+          "fieldId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "column_removal",
+              "option_mapping"
+            ]
+          },
+          "nonNullRows": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "optionId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          }
+        }
+      },
+      "SchemaIssue": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "fieldIds"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "APPLICATION_SCHEMA_REQUIRED_BACKFILL",
+              "APPLICATION_SCHEMA_CONVERSION_FAILED",
+              "APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED"
+            ]
+          },
+          "fieldIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          }
+        }
+      },
+      "SchemaConfirmation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token",
+          "expiresAt"
+        ],
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Preflight": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "appId",
+          "tableId",
+          "viewId",
+          "schemaVersion",
+          "viewVersion",
+          "dataRevision",
+          "dependencyRevision",
+          "plan",
+          "impacts",
+          "dependencies",
+          "blockingIssues",
+          "saveAllowed",
+          "confirmation"
+        ],
+        "properties": {
+          "appId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "tableId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "viewId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "viewVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "dataRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "dependencyRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "plan": {
+            "$ref": "#/components/schemas/ChangePlan"
+          },
+          "impacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaImpact"
+            }
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaDependency"
+            }
+          },
+          "blockingIssues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaIssue"
+            }
+          },
+          "saveAllowed": {
+            "type": "boolean"
+          },
+          "confirmation": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SchemaConfirmation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "StructureEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/Structure"
+              }
+            }
+          }
+        ]
+      },
+      "DirectoryResultEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/DirectoryResult"
+              }
+            }
+          }
+        ]
+      },
+      "LogicalTableEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/LogicalTable"
+              }
+            }
+          }
+        ]
+      },
+      "TableResultEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/TableResult"
+              }
+            }
+          }
+        ]
+      },
+      "FormResultEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/FormResult"
+              }
+            }
+          }
+        ]
+      },
+      "DefinitionEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/Definition"
+              }
+            }
+          }
+        ]
+      },
+      "PreflightEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/Preflight"
+              }
+            }
+          }
+        ]
+      },
+      "DefinitionSaveEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/DefinitionSave"
+              }
+            }
+          }
+        ]
+      },
+      "SchemaDependencyErrorData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dependencies"
+        ],
+        "properties": {
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaDependency"
+            }
+          }
+        }
+      },
+      "SchemaImpactErrorData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "impacts"
+        ],
+        "properties": {
+          "impacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaImpact"
+            }
+          }
+        }
+      },
+      "SchemaFieldErrorData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "fieldIds"
+        ],
+        "properties": {
+          "fieldIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          }
+        }
+      },
+      "SchemaConfirmationStaleData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "expired",
+              "context_changed"
+            ]
+          }
+        }
+      },
+      "ApplicationUnconfirmedData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          }
+        }
+      },
+      "DefinitionErrorEnvelope": {
+        "oneOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "COMMON_VALIDATION_FAILED"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/ValidationErrorData"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_STRUCTURE_CONFLICT"
+                  },
+                  "data": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "currentStructureVersion"
+                    ],
+                    "properties": {
+                      "currentStructureVersion": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_SCHEMA_CONFLICT"
+                  },
+                  "data": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "currentSchemaVersion"
+                    ],
+                    "properties": {
+                      "currentSchemaVersion": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_VIEW_CONFLICT"
+                  },
+                  "data": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "currentViewVersion"
+                    ],
+                    "properties": {
+                      "currentViewVersion": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_SCHEMA_DEPENDENCY_BLOCKED"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/SchemaDependencyErrorData"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_SCHEMA_CONFIRMATION_REQUIRED"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/SchemaImpactErrorData"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_SCHEMA_CONFIRMATION_STALE"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/SchemaConfirmationStaleData"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_OPERATION_UNCONFIRMED"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/ApplicationUnconfirmedData"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_SCHEMA_REQUIRED_BACKFILL"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/SchemaFieldErrorData"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_SCHEMA_CONVERSION_FAILED"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/SchemaFieldErrorData"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/SchemaFieldErrorData"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorEnvelope"
+              },
+              {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "COMMON_INVALID_ARGUMENT",
+                      "COMMON_CSRF_REJECTED",
+                      "COMMON_UNSUPPORTED_MEDIA_TYPE",
+                      "AUTH_UNAUTHENTICATED",
+                      "APPLICATION_FORBIDDEN",
+                      "APPLICATION_NOT_FOUND",
+                      "APPLICATION_RESOURCE_INVALID",
+                      "APPLICATION_OPERATION_CONFLICT",
+                      "COMMON_SERVICE_UNAVAILABLE"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "$ref": "#/components/schemas/ActorChangedEnvelope"
+          }
+        ]
+      },
+      "MemberCandidate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active"
+            ]
+          }
+        }
+      },
+      "ApplicationMemberDisplay": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "status",
+          "selectable"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled"
+            ]
+          },
+          "selectable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CursorPagination": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "nextPageToken",
+          "hasMore"
+        ],
+        "properties": {
+          "nextPageToken": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MemberCandidates": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberCandidate"
+            }
+          }
+        }
+      },
+      "MemberCandidatesEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/MemberCandidates"
+              },
+              "meta": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requestId",
+                  "pagination"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "$ref": "#/components/schemas/CursorPagination"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "ActorChangedEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorEnvelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "AUTH_SESSION_CHANGED"
+              }
+            }
+          }
+        ]
+      },
+      "DepartmentCandidate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "parentId",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active"
+            ]
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "DepartmentCandidates": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DepartmentCandidate"
+            }
+          }
+        }
+      },
+      "DepartmentCandidatesEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/DepartmentCandidates"
+              },
+              "meta": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requestId",
+                  "pagination"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "$ref": "#/components/schemas/CursorPagination"
+                  }
+                }
               }
             }
           }
@@ -8600,6 +14642,17 @@
           "maxLength": 43
         },
         "name": "X-CSRF-Token"
+      },
+      "ExpectedActor": {
+        "in": "header",
+        "name": "X-Expected-Actor-Id",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "description": "Task ADR appendix B. New application clients must send the verified actor bound to view/operation. Only a negative constraint: real Session still supplies identity and permission; mismatch409 AUTH_SESSION_CHANGED before business read/write/claim/replay. Malformed400 COMMON_VALIDATION_FAILED. Absence preserves legacy compatibility."
       }
     }
   }

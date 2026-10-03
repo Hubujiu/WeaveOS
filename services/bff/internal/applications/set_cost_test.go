@@ -60,7 +60,7 @@ func resetScaleApps(t *testing.T, f *webFixture) {
 	_, err := f.owner.Exec(context.Background(), `DELETE FROM personnel.identity_permissions WHERE permission_code IN (SELECT 'app.'||id::text||'.access' FROM applications.apps);
  DELETE FROM personnel.template_permissions WHERE permission_code IN (SELECT 'app.'||id::text||'.access' FROM applications.apps);
  DELETE FROM personnel.permission_catalog WHERE app_id IN (SELECT id::text FROM applications.apps);
- TRUNCATE applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps`)
+ TRUNCATE applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps`)
 	if err != nil {
 		t.Fatal(err)
 	}
