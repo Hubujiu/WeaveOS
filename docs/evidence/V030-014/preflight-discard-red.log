@@ -1,0 +1,39 @@
+[WebServer] (node:85536) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:85550) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:85583) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › src/applications/forms/forms.component.spec.ts:1191:1 › discard cancels a gated preflight even when onBack is absent and the designer stays mounted
+[chromium] › src/applications/forms/forms.component.spec.ts:1191:1 › discard cancels a gated preflight even when onBack is absent and the designer stays mounted
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:1191:1 › discard cancels a gated preflight even when onBack is absent and the designer stays mounted
+
+    Error: expect(received).toHaveLength(expected)
+
+    Expected length: 0
+    Received length: 1
+    Received array:  [{"body": {"confirmationToken": null, "expectedSchemaVersion": 0, "expectedViewVersion": 0, "fields": [{"config": {"maxLength": null}, "default": null, "id": "c77dfc88-6c70-4d27-8236-fe3e410c6068", "kind": "text", "name": "已放弃的慢预检", "presentation": {"displayTimeZone": null, "helpText": null}, "required": false}], "layout": [{"fieldId": "c77dfc88-6c70-4d27-8236-fe3e410c6068", "id": "2544c54d-5f56-4873-aba8-d744446a3f66", "kind": "field", "span": 12}], "operationId": "f86a578d-ca98-4ea9-880a-e6fa159df755", "optionMappings": []}, "expectedActor": "00000000-0000-4000-8000-000000000181", "method": "PUT", "path": "/api/v1/applications/00000000-0000-4000-8000-000000000101/forms/00000000-0000-4000-8000-000000000103/definition"}]
+
+      1208 |   release();await (await preflightResponse).finished();
+      1209 |   await page.waitForTimeout(100);
+    > 1210 |   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+           |                                                        ^
+      1211 |   await expect(page.getByRole('status')).not.toContainText('已保存');
+      1212 | });
+      1213 |
+        at /workspace/WeaveOS-worktrees/V030-014/apps/web/src/applications/forms/forms.component.spec.ts:1210:56
+
+    Error Context: test-results/forms.component-discard-ca-18c05--the-designer-stays-mounted-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:1191:1 › discard cancels a gated preflight even when onBack is absent and the designer stays mounted

@@ -28,7 +28,7 @@ async function capture(page:Page,path:string){
 
 type Seen = {method:string;path:string;body:Record<string,unknown>|null;expectedActor:string|null};
 async function fixture(page:Page, mode:'designer'|'structure'='designer', initialDefinition:Definition=definition,
-  initialStructure:Structure=structure,strict=false) {
+  initialStructure:Structure=structure,strict=false,back:'normal'|'none'='normal') {
   const seen:Seen[]=[];
   let currentDefinition=structuredClone(initialDefinition);
   let currentStructure=structuredClone(initialStructure);
@@ -98,7 +98,7 @@ async function fixture(page:Page, mode:'designer'|'structure'='designer', initia
     }
     return route.fulfill({status:404,json:{code:'APPLICATION_NOT_FOUND',message:'not found',data:null,meta:{requestId:'test-request'}}});
   });
-  await page.goto(`/src/applications/forms/${strict?'strict-harness':'harness'}.html?mode=${mode}&appId=${appId}&viewId=${viewId}&actorId=${actorA}`);
+  await page.goto(`/src/applications/forms/${strict?'strict-harness':'harness'}.html?mode=${mode}&appId=${appId}&viewId=${viewId}&actorId=${actorA}&back=${back}`);
   return {seen,loseSaveResponse:()=>{loseSaveResponse=true;},getCommitted:()=>committedSave};
 }
 
@@ -1186,6 +1186,29 @@ test('slow preflight is abandoned on Back before PUT and guard teardown is expli
   release();await page.waitForTimeout(80);
   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
   await expect.poll(()=>page.evaluate(()=>(window as Window&{__formsStrictDirty?:boolean}).__formsStrictDirty)).toBe(false);
+});
+
+test('discard cancels a gated preflight even when onBack is absent and the designer stays mounted',async({page})=>{
+  const state=await fixture(page,'designer',definition,structure,true,'none');
+  let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  let started!:()=>void;const firstStarted=new Promise<void>(resolve=>{started=resolve;});
+  await page.route('**/definition/preflight',async route=>{started();await gate;
+    await route.fulfill({json:ok({appId,tableId,viewId,schemaVersion:0,viewVersion:0,
+      dataRevision:0,dependencyRevision:0,plan:{schemaChanges:[],metadataChanged:true,layoutChanged:true},
+      impacts:[],dependencies:[],blockingIssues:[],saveAllowed:true,confirmation:null})});});
+  await page.getByRole('button',{name:'文本',exact:true}).click();
+  await page.getByLabel('字段名称').fill('已放弃的慢预检');
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await firstStarted;
+  await page.getByRole('button',{name:'返回工作台'}).click();
+  await page.getByRole('button',{name:'放弃修改并离开'}).click();
+  await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+  await expect(page.getByText('已放弃的慢预检')).toHaveCount(0);
+  const preflightResponse=page.waitForResponse(response=>response.url().includes('/definition/preflight'));
+  release();await (await preflightResponse).finished();
+  await page.waitForTimeout(100);
+  expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+  await expect(page.getByRole('status')).not.toContainText('已保存');
 });
 
 test('explicit discard removes an ordinary draft while an unknown packet is never discarded implicitly',async({page})=>{

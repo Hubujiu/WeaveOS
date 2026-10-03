@@ -24,6 +24,6 @@ function StrictHarness(){
   return query.get('mode')==='structure'?<ApplicationStructurePanel appId={appId} actorId={actorId}
       onDirtyChange={setDirty}/>:
     <FormDesigner appId={appId} viewId={viewId} actorId={actorId} onDirtyChange={setDirty}
-      onBack={()=>setMounted(false)}/>;
+      onBack={query.get('back')==='none'?undefined:()=>setMounted(false)}/>;
 }
 createRoot(document.getElementById('root')!).render(<StrictMode><StrictHarness/></StrictMode>);
