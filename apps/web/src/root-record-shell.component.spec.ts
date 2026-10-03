@@ -177,7 +177,7 @@ test('Root shared record route fills its work area and keeps its legend visually
  await expect(page.getByRole('button',{name:'打开记录：金额 18.00',exact:true})).toBeVisible();
  const group=page.getByRole('group',{name:'记录操作',exact:true});await expect(group).toHaveAccessibleName('记录操作');
  const legend=await page.locator('.record-table-frame > legend').boundingBox();expect(legend).not.toBeNull();expect(legend!.width).toBeLessThanOrEqual(1);expect(legend!.height).toBeLessThanOrEqual(1);
- await expect.poll(async()=>{const area=await page.getByRole('main',{name:'应用工作台',exact:true}).boundingBox();const jump=await page.getByRole('button',{name:'跳转到指定页',exact:true}).boundingBox();if(!area||!jump)return false;const gap=area.y+area.height-jump.y-jump.height;return gap>=0&&gap<=80;}).toBe(true);
+ await expect.poll(async()=>{const area=await page.getByRole('main',{name:'应用工作台',exact:true}).boundingBox();const jump=await page.getByLabel('每页条数',{exact:true}).boundingBox();if(!area||!jump)return false;const gap=area.y+area.height-jump.y-jump.height;return gap>=0&&gap<=80;}).toBe(true);
  await page.screenshot({path:test.info().outputPath('record-shell-list.png'),fullPage:true});
 });
 test('Root record dialog separates fields from shared action buttons',async({page})=>{

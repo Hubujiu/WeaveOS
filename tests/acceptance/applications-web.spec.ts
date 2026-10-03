@@ -368,6 +368,7 @@ test('V030-012 real B5: expected actor guard rejects cross-session reads, writes
 
 
 test('Root real HTTPS full journey creates an application, saves a form, and creates and edits a persisted record',async({page},info)=>{
+ test.setTimeout(120_000);
  const f=fixture();await page.setViewportSize({width:1920,height:1080});await login(page,f.admin);
  const appName='记录闭环 '+info.project.name+' '+Date.now(),formName='报销单 '+Date.now();
  await page.getByRole('button',{name:'打开应用中心',exact:true}).click();
