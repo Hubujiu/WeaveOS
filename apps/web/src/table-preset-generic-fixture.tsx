@@ -10,6 +10,7 @@ const state:{items:ResourcePreset[];writes:unknown[]}={items:[
  {id,name:'已失效',version:2,invalid:true,reason:'字段权限已变化'},
  {id:invalidId,name:'可用方案',version:1,invalid:false,filter:{operator:'and',children:[{fieldId:amount,operator:'gt',value:'9007199254740993.01'}]},hiddenColumnIds:[amount]},
 ],writes:[]};
+Object.assign(window,{__resourcePresetFixture:state});
 const repository:ResourcePresetRepository={
  async list(){return {items:structuredClone(state.items)};},
  async read(presetId){return structuredClone(state.items.find(item=>item.id===presetId)!);},
@@ -17,6 +18,7 @@ const repository:ResourcePresetRepository={
  async remove(presetId){state.items=state.items.filter(item=>item.id!==presetId);},
 };
 function Fixture(){const [active,setActive]=useState<ResourcePreset|null>(null),[hidden,setHidden]=useState<string[]>([]);
- return <main><TablePresetManager view="resource" resource={{scopeKey:'actor-1:app-1:view-1',fields:[{id:amount,label:'金额',kind:'money',operators:['eq','neq','gt','gte','lt','lte']},{id:title,label:'标题',kind:'text',operators:['eq','neq']}],columns:[{id:amount,name:'金额'},{id:title,name:'标题'}],repository,onApply:async preset=>{setActive(preset);setHidden(preset?.hiddenColumnIds??[]);return true;}}} active={null} hiddenColumnIds={hidden} loadOptions={async()=>({})} onApply={async()=>false} onDirty={()=>{}} onUnauthorized={()=>{}}/><output aria-label="fixture-state">{JSON.stringify({active:active?.id??null,hidden,writes:state.writes})}</output></main>;
+ const fields=[{id:amount,label:'金额',kind:'money' as const,operators:['eq','neq','gt','gte','lt','lte'] as const},{id:title,label:'标题',kind:'text' as const,operators:['eq','neq'] as const}],columns=[{id:amount,name:'金额'},{id:title,name:'标题'}];
+ return <main><TablePresetManager view="resource" resource={{scopeKey:'actor-1:app-1:view-1',fields,columns,repository,refreshDescriptors:async()=>({fields,columns}),onApply:async preset=>{setActive(preset);setHidden(preset?.hiddenColumnIds??[]);return true;}}} active={active} hiddenColumnIds={hidden} onDirty={()=>{}} onUnauthorized={()=>{}}/><output aria-label="fixture-state">{JSON.stringify({active:active?.id??null,hidden,writes:state.writes})}</output></main>;
 }
 createRoot(document.getElementById('root')!).render(<Fixture/>);

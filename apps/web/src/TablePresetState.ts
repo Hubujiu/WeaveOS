@@ -1,4 +1,4 @@
-import {validateQueryFilter,type QueryView,type ResourceFilterField,type ResourceFilterGroup} from './QueryFilterState';
+import {validateQueryFilter,validateResourceFilter,type QueryView,type ResourceFilterField,type ResourceFilterGroup} from './QueryFilterState';
 import type {MemberFilterGroup,EventFilterGroup} from './query-contracts';
 
 export type PresetFilter=MemberFilterGroup|EventFilterGroup;
@@ -19,21 +19,30 @@ export function editablePresetFilter(filter:unknown):boolean{
  const and=(v:unknown)=>record(v)&&v.operator==='and'&&Array.isArray(v.children)&&v.children.length>0&&v.children.every(leaf);
  return and(filter)||(record(filter)&&filter.operator==='or'&&Array.isArray(filter.children)&&filter.children.length>0&&filter.children.every(and));
 }
-export function presetBlocks(filter:unknown,_key:'field'|'fieldId'='field'):PresetBlock[]{
+export function presetBlocks(filter:unknown,key:'field'|'fieldId'='field'):PresetBlock[]{
  if(!record(filter)||!Array.isArray(filter.children)||!filter.children.length)return [];
  const blocks=filter.operator==='and'?[filter]:filter.children;
- return blocks.map(block=>({id:crypto.randomUUID(),rows:record(block)&&Array.isArray(block.children)?block.children.map(row=>({id:crypto.randomUUID(),field:record(row)?String(row.field??''):'',operator:record(row)?String(row.operator??''):'',value:record(row)?row.value:undefined})):[]}));
+ return blocks.map(block=>({id:crypto.randomUUID(),rows:record(block)&&Array.isArray(block.children)?block.children.map(row=>({id:crypto.randomUUID(),field:record(row)?String(row[key]??''):'',operator:record(row)?String(row.operator??''):'',value:record(row)?row.value:undefined})):[]}));
 }
-export function blockFilter(blocks:PresetBlock[],_key:'field'|'fieldId'='field'):unknown{
+export function blockFilter(blocks:PresetBlock[],key:'field'|'fieldId'='field'):unknown{
  if(!blocks.length)return undefined;
- const groups=blocks.map(b=>({operator:'and',children:b.rows.map(({field,operator,value})=>({field,operator,value}))}));
+ const groups=blocks.map(b=>({operator:'and',children:b.rows.map(({field,operator,value})=>({[key]:field,operator,value}))}));
  return groups.length===1?groups[0]:{operator:'or',children:groups};
 }
-// V030-017 RED scaffold. The approved application preset wire is pending V013;
-// this local editor state never claims to be a persisted server DTO.
+// Application preset wire is pending V013. This validates editor state only;
+// the server remains authoritative for live schema, permission and CAS.
 export type ResourcePresetValidation={issues:string[];name:string;filter:ResourceFilterGroup|null};
-export function validateResourcePreset(_name:string,_filter:unknown,_hidden:readonly string[],_fields:readonly ResourceFilterField[],_columns:readonly BusinessColumn[]):ResourcePresetValidation{
- return {issues:[],name:'',filter:null};
+export function validateResourcePreset(name:string,filter:unknown,hidden:readonly string[],fields:readonly ResourceFilterField[],columns:readonly BusinessColumn[]):ResourcePresetValidation{
+ const issues:string[]=[],trimmed=name.trim();
+ if(!trimmed||[...trimmed].length>100)issues.push('自定义筛选名称须为 1–100 个字符');
+ if(/\p{Surrogate}/u.test(trimmed))issues.push('名称包含无效 Unicode 字符');
+ if(new Set(hidden).size!==hidden.length||hidden.some(id=>!columns.some(column=>column.id===id)))issues.push('存在已失效显隐字段，请编辑后再应用');
+ if(columns.length&&columns.every(column=>hidden.includes(column.id)))issues.push('至少保留一个业务字段');
+ const validation=validateResourceFilter(fields,filter);
+ for(const problem of validation.issues)issues.push(`条件 ${problem.path}：${problem.message}`);
+ const normalized=validation.filter??null;
+ if(new TextEncoder().encode(JSON.stringify({name:trimmed,filter:normalized,hiddenColumnIds:hidden})).byteLength>32768)issues.push('方案内容超过 32 KiB，请缩短内容');
+ return {issues,name:trimmed,filter:normalized};
 }
 export function validatePreset(view:QueryView,name:string,filter:unknown,hidden:readonly string[],options:PresetOptions={}){
  const issues:string[]=[];const trimmed=name.trim();

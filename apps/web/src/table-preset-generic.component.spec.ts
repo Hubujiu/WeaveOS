@@ -85,10 +85,10 @@ test('resource editor saves fieldId and decimal text through injected repository
  await dialog.getByRole('button',{name:'或条件'}).click();
  await dialog.getByLabel('条件 1.1 字段').selectOption('11111111-1111-4111-8111-111111111111');
  await dialog.getByLabel('条件 1.1 比较').selectOption('gt');
- await dialog.getByLabel('条件 1.1 值').fill('9007199254740993.01');
+ await dialog.getByLabel('条件 1.1 值',{exact:true}).fill('9007199254740993.01');
  await dialog.getByRole('button',{name:'确定'}).click();
- await expect(page.getByLabel('fixture-state')).toContainText('9007199254740993.01');
- const state=JSON.parse(await page.getByLabel('fixture-state').innerText());
+ await expect.poll(()=>page.evaluate(()=>(window as typeof window & {__resourcePresetFixture:{writes:unknown[]}}).__resourcePresetFixture.writes.length)).toBe(1);
+ const state=await page.evaluate(()=>(window as typeof window & {__resourcePresetFixture:{writes:{input:{filter:unknown}}[]}}).__resourcePresetFixture);
  expect(state.writes[0].input.filter).toEqual({operator:'and',children:[{fieldId:'11111111-1111-4111-8111-111111111111',operator:'gt',value:'9007199254740993.01'}]});
- expect(state.active).toBeNull();
+ expect(JSON.parse(await page.getByLabel('fixture-state').innerText()).active).toBeNull();
 });
