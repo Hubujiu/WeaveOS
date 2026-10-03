@@ -76,3 +76,27 @@ test('Root malformed read-only search response does not create unknown write sta
  },{actor,path});
  expect(result).toEqual({unknown:false});
 });
+
+for(const badPath of [
+ 'applications/22222222-2222-4222-8222-222222222222#fragment/forms/33333333-3333-4333-8333-333333333333/records/search',
+ 'applications/../forms/33333333-3333-4333-8333-333333333333/records/search',
+ 'applications/22222222-2222-4222-8222-222222222222/forms/%2e%2e/records/search',
+]){
+ test('Root read-only search rejects normalized path '+badPath,async({page})=>{
+  let requests=0;await page.route('**/api/v1/**',route=>{requests++;return route.abort();});
+  const result=await page.evaluate(async({actor,badPath})=>{
+   try{await (window as any).__rootApplicationBoundary.api.applicationReadPost(actor,badPath,{page:1,pageSize:20});return null;}
+   catch(error){return {typeError:error instanceof TypeError,message:(error as Error).message};}
+  },{actor,badPath});
+  expect(result).toEqual({typeError:true,message:'Read-only POST is restricted to record search'});
+  expect(requests).toBe(0);
+ });
+}
+test('Root read-only search HTTP 503 remains a read failure',async({page})=>{
+ await page.route('**/api/v1/**',route=>route.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null,meta:null}}));
+ const result=await page.evaluate(async({actor,path})=>{
+  try{await (window as any).__rootApplicationBoundary.api.applicationReadPost(actor,path+'/search',{page:1,pageSize:20});return null;}
+  catch(error){const e=error as any;return {status:e.status,unknown:e.unconfirmed};}
+ },{actor,path});
+ expect(result).toEqual({status:503,unknown:false});
+});

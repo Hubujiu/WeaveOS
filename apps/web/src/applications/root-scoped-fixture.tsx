@@ -11,7 +11,7 @@ const draftId='88888888-8888-4888-8888-888888888888';
 const mode=new URLSearchParams(location.search).get('mode')??'create';
 const resource=mode==='delete'?{kind:'draft' as const,appId,viewId,id:draftId}:mode==='edit'?{kind:'record' as const,appId,viewId,id:recordId}:{kind:'record' as const,appId,viewId,creationNonce:'99999999-9999-4999-8999-999999999999'};
 const path='applications/'+appId+'/forms/'+viewId+'/'+(mode==='delete'?'drafts/'+draftId:mode==='edit'?'records/'+recordId:'records');
-const events={confirmed:[] as unknown[],authLost:0,identityMismatch:0};
+const events={confirmed:[] as unknown[],authLost:0,identityMismatch:0,afterStartPending:[] as (string|null)[]};
 Object.assign(window,{__rootScopedOperation:events});
 function valid(result:unknown,packet:ApplicationPacket){
  if(!result||typeof result!=='object'||Array.isArray(result))return false;
@@ -28,18 +28,21 @@ function Fixture(){
  const operation=useApplicationOperation<unknown>({actorId,scope:'root-scoped',resource,
   confirmed:result=>events.confirmed.push({empty:result===undefined,result}),
   unauthorized:()=>{events.authLost++;},identityMismatch:()=>{events.identityMismatch++;},valid});
+ const observed=operation as typeof operation&{getPendingStatus?:()=>string|null;errorCode?:string};
+ const pending=()=>observed.getPendingStatus?observed.getPendingStatus():'missing';
+ Object.assign(window,{__rootPendingStatus:pending,__rootCancelPreflight:()=>{operation.cancelPreflight();return pending();}});
  const blocked=['preflight','pending','unconfirmed'].includes(operation.phase);
  return <main>
   <label>金额<input value={amount} onChange={event=>setAmount(event.target.value)} disabled={blocked}/></label>
-  <button disabled={blocked} onClick={()=>operation.start({path,resource,
+  <button disabled={blocked} onClick={()=>{operation.start({path,resource,
    method:mode==='delete'?'DELETE':mode==='edit'?'PATCH':'POST',
    expectedStatus:mode==='delete'?204:mode==='edit'?200:201,
-   ...(mode==='delete'?{expectedDraftVersion:2}:{body:mode==='edit'?{expectedSchemaVersion:1,expectedRecordVersion:1,changes:{amount}}:{expectedSchemaVersion:1,values:{amount}}})})}>保存</button>
+   ...(mode==='delete'?{expectedDraftVersion:2}:{body:mode==='edit'?{expectedSchemaVersion:1,expectedRecordVersion:1,changes:{amount}}:{expectedSchemaVersion:1,values:{amount}}})});events.afterStartPending.push(pending());}}>保存</button>
   <button disabled={operation.phase!=='unconfirmed'} onClick={operation.query}>核查原操作</button>
   <button disabled={operation.phase!=='unconfirmed'} onClick={operation.retry}>重试原操作</button>
   <output aria-label="操作阶段">{operation.phase}</output>
   <output aria-label="当前操作">{operation.packet?.operationId??''}</output>
-  <p>{operation.message}</p>
+  <output aria-label="错误代码">{observed.errorCode??''}</output><p>{operation.message}</p>
  </main>;
 }
 createRoot(document.getElementById('root')!).render(<Fixture/>);
