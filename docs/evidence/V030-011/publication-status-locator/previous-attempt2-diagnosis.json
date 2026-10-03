@@ -1,0 +1,44 @@
+{
+  "head": "9b89e8e928aedf30df235492fe89bc52021f6fe9",
+  "checkedAt": "2026-10-03T08:55:56.665642+00:00",
+  "runId": 37108687347,
+  "attempt": 2,
+  "jobId": 111164168012,
+  "failedStep": 8,
+  "case": "R3 real Root UI creates shared template/identity and assigns a new non-Root manager",
+  "failure": "tests/acceptance/web.spec.ts:388:411 global getByRole(status) matches loader span and saved p simultaneously",
+  "browserResults": {
+    "passed": 116,
+    "failed": 1,
+    "skipped": 0
+  },
+  "sameCodeAsGreen684": [
+    {
+      "path": "tests/acceptance/web.spec.ts",
+      "sha256": "79710533110c59e45442f9acff3b7c0e73e0052c178500484000110d9adf88b6"
+    },
+    {
+      "path": "apps/web/src/PersonnelAdmin.tsx",
+      "sha256": "0a6703c2d97674fe6f9a962c7bc8d955c0d8e3994b9f5d5fe80316545b9ae9d3"
+    }
+  ],
+  "sourceLoadingLine": 231,
+  "newFocusCausality": "error involves unchanged PersonnelAdmin span loader and workspace-status p; template-save action does not open filter manager; focus implementation not on this status-locator path",
+  "firstScaleFailure": "production inner queryDeadline10s; test context.Background; source unchanged; samehead Go and isolated target pass; attempt2 full Go/product acceptance passes",
+  "postFailureSkipped": [
+    "automatic deployment migrations",
+    "deployment packaging",
+    "tested OCI export"
+  ],
+  "retryCount": 1,
+  "noFurtherRerun": true,
+  "nextRootCoordination": {
+    "path": "tests/acceptance/web.spec.ts",
+    "lines": [
+      388,
+      389
+    ],
+    "proposal": "scope only two save-status locators to existing [role=status].workspace-status; preserve 已保存 expectation and all API/assignment/permission checks; no timeout/skip/assertion weakening or production edit"
+  },
+  "executor": "operational after transient disconnect; HEAD unchanged; tracked worktree clean"
+}

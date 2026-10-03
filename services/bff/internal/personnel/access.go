@@ -88,32 +88,7 @@ func (a *Application) AllowApplication(ctx context.Context, p session.Principal,
 // The authentication owner can call this inside its existing invitation transaction.
 // Personnel only reads/locks auth.users and owns its configuration, not credentials.
 func (a *Application) AuthorizeWrite(ctx context.Context, tx pgx.Tx, p session.Principal) error {
-	var status, snapshot string
-	if err := tx.QueryRow(ctx, "SELECT status,auth_version::text FROM auth.users WHERE id=$1 FOR SHARE", p.UserID).Scan(&status, &snapshot); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return session.ErrUnauthorized
-		}
-		return err
-	}
-	if !security.CurrentUserMatchesSession(p.Record.AuthVersion, status, parseVersion(snapshot)) {
-		return session.ErrUnauthorized
-	}
-	if _, err := tx.Exec(ctx, "INSERT INTO personnel.member_configuration(user_id) VALUES($1) ON CONFLICT DO NOTHING", p.UserID); err != nil {
-		return err
-	}
-	if _, err := tx.Exec(ctx, "SELECT user_id FROM personnel.member_configuration WHERE user_id=$1 FOR SHARE", p.UserID); err != nil {
-		return err
-	}
-	for _, sql := range []string{
-		"SELECT i.id FROM personnel.identities i JOIN personnel.member_identities m ON m.identity_id=i.id WHERE m.user_id=$1 ORDER BY i.id FOR SHARE OF i",
-		"SELECT t.id FROM personnel.permission_templates t WHERE EXISTS(SELECT 1 FROM personnel.identity_templates it JOIN personnel.member_identities m ON m.identity_id=it.identity_id WHERE it.template_id=t.id AND m.user_id=$1) ORDER BY t.id FOR SHARE OF t",
-		"SELECT personnel.lock_permission_catalog($1)",
-	} {
-		if _, err := tx.Exec(ctx, sql, p.UserID); err != nil {
-			return err
-		}
-	}
-	access, err := readAccess(ctx, tx, p)
+	access, err := a.AccessForWrite(ctx, tx, p)
 	if err != nil {
 		return err
 	}
@@ -121,6 +96,39 @@ func (a *Application) AuthorizeWrite(ctx context.Context, tx pgx.Tx, p session.P
 		return ErrDenied
 	}
 	return nil
+}
+
+// AccessForWrite returns live, dependency-protected access in the caller's
+// transaction. The caller must acquire PR21 query revision locks first, then
+// check its own domain capability against the returned trusted database facts.
+// This helper does not grant application management or require personnel.manage.
+func (a *Application) AccessForWrite(ctx context.Context, tx pgx.Tx, p session.Principal) (Access, error) {
+	var status, snapshot string
+	if err := tx.QueryRow(ctx, "SELECT status,auth_version::text FROM auth.users WHERE id=$1 FOR SHARE", p.UserID).Scan(&status, &snapshot); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Access{}, session.ErrUnauthorized
+		}
+		return Access{}, err
+	}
+	if !security.CurrentUserMatchesSession(p.Record.AuthVersion, status, parseVersion(snapshot)) {
+		return Access{}, session.ErrUnauthorized
+	}
+	if _, err := tx.Exec(ctx, "INSERT INTO personnel.member_configuration(user_id) VALUES($1) ON CONFLICT DO NOTHING", p.UserID); err != nil {
+		return Access{}, err
+	}
+	if _, err := tx.Exec(ctx, "SELECT user_id FROM personnel.member_configuration WHERE user_id=$1 FOR SHARE", p.UserID); err != nil {
+		return Access{}, err
+	}
+	for _, sql := range []string{
+		"SELECT i.id FROM personnel.identities i JOIN personnel.member_identities m ON m.identity_id=i.id WHERE m.user_id=$1 ORDER BY i.id FOR SHARE OF i",
+		"SELECT t.id FROM personnel.permission_templates t WHERE EXISTS(SELECT 1 FROM personnel.identity_templates it JOIN personnel.member_identities m ON m.identity_id=it.identity_id WHERE it.template_id=t.id AND m.user_id=$1) ORDER BY t.id FOR SHARE OF t",
+		"SELECT personnel.lock_permission_catalog($1)",
+	} {
+		if _, err := tx.Exec(ctx, sql, p.UserID); err != nil {
+			return Access{}, err
+		}
+	}
+	return readAccess(ctx, tx, p)
 }
 
 func parseVersion(value string) int64 { n, _ := strconv.ParseInt(value, 10, 64); return n }

@@ -51,3 +51,19 @@ GRANT EXECUTE ON FUNCTION personnel.lock_permission_catalog(uuid) TO auth_app;
 -- Revisions are read-only signals; only the fixed-order lock function is callable.
 GRANT SELECT ON personnel.query_revisions TO auth_app;
 GRANT EXECUTE ON FUNCTION personnel.lock_query_revisions() TO auth_app, auth_maintenance;
+
+-- B5a finite application policy. Runtime never owns catalog CRUD or owner transfer.
+REVOKE ALL ON SCHEMA applications FROM PUBLIC;
+REVOKE ALL ON ALL TABLES IN SCHEMA applications FROM PUBLIC, auth_app, auth_reader, auth_maintenance, auth_backup;
+GRANT USAGE ON SCHEMA applications TO auth_app, auth_backup;
+GRANT SELECT, INSERT ON applications.apps TO auth_app;
+GRANT UPDATE (policy_revision,updated_at) ON applications.apps TO auth_app;
+GRANT SELECT, INSERT ON applications.permission_groups TO auth_app;
+GRANT UPDATE (name,enabled,updated_at) ON applications.permission_groups TO auth_app;
+GRANT SELECT, INSERT, DELETE ON applications.group_members, applications.grants, applications.grant_fields TO auth_app;
+GRANT SELECT, INSERT ON applications.menu_resources, applications.operations TO auth_app;
+GRANT UPDATE (result_json,http_status,location) ON applications.operations TO auth_app;
+REVOKE ALL ON FUNCTION applications.register_catalog_entry(uuid) FROM PUBLIC, auth_reader, auth_maintenance, auth_backup;
+GRANT EXECUTE ON FUNCTION applications.register_catalog_entry(uuid) TO auth_app;
+GRANT SELECT ON ALL TABLES IN SCHEMA applications TO auth_backup;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA applications TO auth_backup;

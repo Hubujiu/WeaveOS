@@ -2937,6 +2937,1667 @@
           }
         }
       }
+    },
+    "/api/v1/applications": {
+      "get": {
+        "operationId": "listApplications",
+        "summary": "listApplications",
+        "description": "B5a frozen limited vertical slice. Live Session, current active account/auth_version; no query parameters. Application entry is fixed owner/Bootstrap or current same-app member plus enabled group menu.enter grant, with actual registered/enabled catalog and menu resource; no second central identity/template entry grant. Group configuration is fixed owner or Bootstrap only.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current authorized result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationListEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "COMMON_INVALID_ARGUMENT or APPLICATION_RESOURCE_INVALID",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_UNAUTHENTICATED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "COMMON_CSRF_REJECTED or APPLICATION_FORBIDDEN",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "APPLICATION_NOT_FOUND; operation absence does not prove rollback",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "APPLICATION_OPERATION_UNCONFIRMED if COMMIT acknowledgement is lost; otherwise COMMON_SERVICE_UNAVAILABLE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createApplication",
+        "summary": "createApplication",
+        "description": "B5a frozen limited vertical slice. Live Session, current active account/auth_version; no query parameters. Application entry is fixed owner/Bootstrap or current same-app member plus enabled group menu.enter grant, with actual registered/enabled catalog and menu resource; no second central identity/template entry grant. Group configuration is fixed owner or Bootstrap only. Writes require trusted Origin/CSRF and strict JSON with no duplicate/unknown fields at any nesting level, maximum 1 MiB. Every write binds actor+operationId to actual operation/method/route+normalized DTO, including original expectedPolicyRevision. Identical replay returns original result/status/Location without another revision or audit; conflicting reuse is 409. New policy writes CAS then increment policyRevision once, even identical replacements. Config, safe audit and operation result commit together. No success before COMMIT acknowledgement. Unconfirmed 503 requires querying/retrying the original key only; never automatically use a fresh key. Confirmed write remains successful if Session renewal fails; browser cookies are cleared. Requires live applications.create (personnel-managed direct/template capability) or Bootstrap; server UUID and trusted actor as immutable owner. Atomic app + revision1 + true application workspace menu + catalog + result + audit.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Committed resource, including identical original-key replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Canonical created resource; stable on original-key replay"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "COMMON_INVALID_ARGUMENT or APPLICATION_RESOURCE_INVALID",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_UNAUTHENTICATED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "COMMON_CSRF_REJECTED or APPLICATION_FORBIDDEN",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "APPLICATION_NOT_FOUND; operation absence does not prove rollback",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "COMMON_UNSUPPORTED_MEDIA_TYPE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "APPLICATION_OPERATION_UNCONFIRMED if COMMIT acknowledgement is lost; otherwise COMMON_SERVICE_UNAVAILABLE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationCreateRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}": {
+      "get": {
+        "operationId": "getApplication",
+        "summary": "getApplication",
+        "description": "B5a frozen limited vertical slice. Live Session, current active account/auth_version; no query parameters. Application entry is fixed owner/Bootstrap or current same-app member plus enabled group menu.enter grant, with actual registered/enabled catalog and menu resource; no second central identity/template entry grant. Group configuration is fixed owner or Bootstrap only.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "appId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "COMMON_INVALID_ARGUMENT or APPLICATION_RESOURCE_INVALID",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_UNAUTHENTICATED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "COMMON_CSRF_REJECTED or APPLICATION_FORBIDDEN",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "APPLICATION_NOT_FOUND; operation absence does not prove rollback",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "APPLICATION_OPERATION_UNCONFIRMED if COMMIT acknowledgement is lost; otherwise COMMON_SERVICE_UNAVAILABLE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/access": {
+      "get": {
+        "operationId": "getApplicationAccess",
+        "summary": "getApplicationAccess",
+        "description": "B5a frozen limited vertical slice. Live Session, current active account/auth_version; no query parameters. Application entry is fixed owner/Bootstrap or current same-app member plus enabled group menu.enter grant, with actual registered/enabled catalog and menu resource; no second central identity/template entry grant. Group configuration is fixed owner or Bootstrap only.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "appId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationAccessEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "COMMON_INVALID_ARGUMENT or APPLICATION_RESOURCE_INVALID",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_UNAUTHENTICATED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "COMMON_CSRF_REJECTED or APPLICATION_FORBIDDEN",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "APPLICATION_NOT_FOUND; operation absence does not prove rollback",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "APPLICATION_OPERATION_UNCONFIRMED if COMMIT acknowledgement is lost; otherwise COMMON_SERVICE_UNAVAILABLE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/permission-groups": {
+      "get": {
+        "operationId": "listApplicationGroups",
+        "summary": "listApplicationGroups",
+        "description": "B5a frozen limited vertical slice. Live Session, current active account/auth_version; no query parameters. Application entry is fixed owner/Bootstrap or current same-app member plus enabled group menu.enter grant, with actual registered/enabled catalog and menu resource; no second central identity/template entry grant. Group configuration is fixed owner or Bootstrap only.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "appId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationGroupListEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "COMMON_INVALID_ARGUMENT or APPLICATION_RESOURCE_INVALID",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_UNAUTHENTICATED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "COMMON_CSRF_REJECTED or APPLICATION_FORBIDDEN",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "APPLICATION_NOT_FOUND; operation absence does not prove rollback",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "APPLICATION_OPERATION_UNCONFIRMED if COMMIT acknowledgement is lost; otherwise COMMON_SERVICE_UNAVAILABLE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createApplicationGroup",
+        "summary": "createApplicationGroup",
+        "description": "B5a frozen limited vertical slice. Live Session, current active account/auth_version; no query parameters. Application entry is fixed owner/Bootstrap or current same-app member plus enabled group menu.enter grant, with actual registered/enabled catalog and menu resource; no second central identity/template entry grant. Group configuration is fixed owner or Bootstrap only. Writes require trusted Origin/CSRF and strict JSON with no duplicate/unknown fields at any nesting level, maximum 1 MiB. Every write binds actor+operationId to actual operation/method/route+normalized DTO, including original expectedPolicyRevision. Identical replay returns original result/status/Location without another revision or audit; conflicting reuse is 409. New policy writes CAS then increment policyRevision once, even identical replacements. Config, safe audit and operation result commit together. No success before COMMIT acknowledgement. Unconfirmed 503 requires querying/retrying the original key only; never automatically use a fresh key. Confirmed write remains successful if Session renewal fails; browser cookies are cleared.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "appId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Committed resource, including identical original-key replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Canonical created resource; stable on original-key replay"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationGroupEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "COMMON_INVALID_ARGUMENT or APPLICATION_RESOURCE_INVALID",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_UNAUTHENTICATED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "COMMON_CSRF_REJECTED or APPLICATION_FORBIDDEN",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "APPLICATION_NOT_FOUND; operation absence does not prove rollback",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "COMMON_UNSUPPORTED_MEDIA_TYPE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "APPLICATION_OPERATION_UNCONFIRMED if COMMIT acknowledgement is lost; otherwise COMMON_SERVICE_UNAVAILABLE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationGroupCreateRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/permission-groups/{groupId}": {
+      "put": {
+        "operationId": "updateApplicationGroup",
+        "summary": "updateApplicationGroup",
+        "description": "B5a frozen limited vertical slice. Live Session, current active account/auth_version; no query parameters. Application entry is fixed owner/Bootstrap or current same-app member plus enabled group menu.enter grant, with actual registered/enabled catalog and menu resource; no second central identity/template entry grant. Group configuration is fixed owner or Bootstrap only. Writes require trusted Origin/CSRF and strict JSON with no duplicate/unknown fields at any nesting level, maximum 1 MiB. Every write binds actor+operationId to actual operation/method/route+normalized DTO, including original expectedPolicyRevision. Identical replay returns original result/status/Location without another revision or audit; conflicting reuse is 409. New policy writes CAS then increment policyRevision once, even identical replacements. Config, safe audit and operation result commit together. No success before COMMIT acknowledgement. Unconfirmed 503 requires querying/retrying the original key only; never automatically use a fresh key. Confirmed write remains successful if Session renewal fails; browser cookies are cleared.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "appId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationGroupEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "COMMON_INVALID_ARGUMENT or APPLICATION_RESOURCE_INVALID",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_UNAUTHENTICATED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "COMMON_CSRF_REJECTED or APPLICATION_FORBIDDEN",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "APPLICATION_NOT_FOUND; operation absence does not prove rollback",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "COMMON_UNSUPPORTED_MEDIA_TYPE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "APPLICATION_OPERATION_UNCONFIRMED if COMMIT acknowledgement is lost; otherwise COMMON_SERVICE_UNAVAILABLE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationGroupUpdateRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/permission-groups/{groupId}/members": {
+      "get": {
+        "operationId": "getApplicationGroupMembers",
+        "summary": "getApplicationGroupMembers",
+        "description": "B5a frozen limited vertical slice. Live Session, current active account/auth_version; no query parameters. Application entry is fixed owner/Bootstrap or current same-app member plus enabled group menu.enter grant, with actual registered/enabled catalog and menu resource; no second central identity/template entry grant. Group configuration is fixed owner or Bootstrap only.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "appId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationMembersEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "COMMON_INVALID_ARGUMENT or APPLICATION_RESOURCE_INVALID",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_UNAUTHENTICATED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "COMMON_CSRF_REJECTED or APPLICATION_FORBIDDEN",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "APPLICATION_NOT_FOUND; operation absence does not prove rollback",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "APPLICATION_OPERATION_UNCONFIRMED if COMMIT acknowledgement is lost; otherwise COMMON_SERVICE_UNAVAILABLE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "replaceApplicationGroupMembers",
+        "summary": "replaceApplicationGroupMembers",
+        "description": "B5a frozen limited vertical slice. Live Session, current active account/auth_version; no query parameters. Application entry is fixed owner/Bootstrap or current same-app member plus enabled group menu.enter grant, with actual registered/enabled catalog and menu resource; no second central identity/template entry grant. Group configuration is fixed owner or Bootstrap only. Writes require trusted Origin/CSRF and strict JSON with no duplicate/unknown fields at any nesting level, maximum 1 MiB. Every write binds actor+operationId to actual operation/method/route+normalized DTO, including original expectedPolicyRevision. Identical replay returns original result/status/Location without another revision or audit; conflicting reuse is 409. New policy writes CAS then increment policyRevision once, even identical replacements. Config, safe audit and operation result commit together. No success before COMMIT acknowledgement. Unconfirmed 503 requires querying/retrying the original key only; never automatically use a fresh key. Confirmed write remains successful if Session renewal fails; browser cookies are cleared.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "appId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPolicyResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "COMMON_INVALID_ARGUMENT or APPLICATION_RESOURCE_INVALID",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_UNAUTHENTICATED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "COMMON_CSRF_REJECTED or APPLICATION_FORBIDDEN",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "APPLICATION_NOT_FOUND; operation absence does not prove rollback",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "COMMON_UNSUPPORTED_MEDIA_TYPE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "APPLICATION_OPERATION_UNCONFIRMED if COMMIT acknowledgement is lost; otherwise COMMON_SERVICE_UNAVAILABLE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationMembersReplaceRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/permission-groups/{groupId}/grants": {
+      "get": {
+        "operationId": "getApplicationGroupGrants",
+        "summary": "getApplicationGroupGrants",
+        "description": "B5a frozen limited vertical slice. Live Session, current active account/auth_version; no query parameters. Application entry is fixed owner/Bootstrap or current same-app member plus enabled group menu.enter grant, with actual registered/enabled catalog and menu resource; no second central identity/template entry grant. Group configuration is fixed owner or Bootstrap only.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "appId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationGrantsEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "COMMON_INVALID_ARGUMENT or APPLICATION_RESOURCE_INVALID",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_UNAUTHENTICATED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "COMMON_CSRF_REJECTED or APPLICATION_FORBIDDEN",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "APPLICATION_NOT_FOUND; operation absence does not prove rollback",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "APPLICATION_OPERATION_UNCONFIRMED if COMMIT acknowledgement is lost; otherwise COMMON_SERVICE_UNAVAILABLE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "replaceApplicationGroupGrants",
+        "summary": "replaceApplicationGroupGrants",
+        "description": "B5a frozen limited vertical slice. Live Session, current active account/auth_version; no query parameters. Application entry is fixed owner/Bootstrap or current same-app member plus enabled group menu.enter grant, with actual registered/enabled catalog and menu resource; no second central identity/template entry grant. Group configuration is fixed owner or Bootstrap only. Writes require trusted Origin/CSRF and strict JSON with no duplicate/unknown fields at any nesting level, maximum 1 MiB. Every write binds actor+operationId to actual operation/method/route+normalized DTO, including original expectedPolicyRevision. Identical replay returns original result/status/Location without another revision or audit; conflicting reuse is 409. New policy writes CAS then increment policyRevision once, even identical replacements. Config, safe audit and operation result commit together. No success before COMMIT acknowledgement. Unconfirmed 503 requires querying/retrying the original key only; never automatically use a fresh key. Confirmed write remains successful if Session renewal fails; browser cookies are cleared.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "appId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPolicyResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "COMMON_INVALID_ARGUMENT or APPLICATION_RESOURCE_INVALID",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_UNAUTHENTICATED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "COMMON_CSRF_REJECTED or APPLICATION_FORBIDDEN",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "APPLICATION_NOT_FOUND; operation absence does not prove rollback",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "APPLICATION_POLICY_CONFLICT or APPLICATION_OPERATION_CONFLICT",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "COMMON_UNSUPPORTED_MEDIA_TYPE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "APPLICATION_OPERATION_UNCONFIRMED if COMMIT acknowledgement is lost; otherwise COMMON_SERVICE_UNAVAILABLE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationGrantsReplaceRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application-operations/{operationId}": {
+      "get": {
+        "operationId": "getApplicationOperation",
+        "summary": "getApplicationOperation",
+        "description": "B5a frozen limited vertical slice. Live Session, current active account/auth_version; no query parameters. Application entry is fixed owner/Bootstrap or current same-app member plus enabled group menu.enter grant, with actual registered/enabled catalog and menu resource; no second central identity/template entry grant. Group configuration is fixed owner or Bootstrap only. Actor-isolated and current result readability is rechecked. 404 never proves rollback; retry only the original key. No retention job.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "operationId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationOperationEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "COMMON_INVALID_ARGUMENT or APPLICATION_RESOURCE_INVALID",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_UNAUTHENTICATED",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "COMMON_CSRF_REJECTED or APPLICATION_FORBIDDEN",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "APPLICATION_NOT_FOUND; operation absence does not prove rollback",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "APPLICATION_OPERATION_UNCONFIRMED if COMMIT acknowledgement is lost; otherwise COMMON_SERVICE_UNAVAILABLE",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6116,6 +7777,583 @@
               },
               "data": {
                 "type": "null"
+              }
+            }
+          }
+        ]
+      },
+      "ApplicationCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "operationId"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "TrimSpace normalization; 1–100 Unicode code points after trimming. Names need not be unique. NUL is invalid because PostgreSQL text cannot store it.",
+            "x-max-length-after-trim": 100,
+            "not": {
+              "pattern": "\\u0000"
+            }
+          },
+          "operationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ApplicationGroupCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "operationId",
+          "expectedPolicyRevision"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "TrimSpace normalization; 1–100 Unicode code points after trimming. Names need not be unique. NUL is invalid because PostgreSQL text cannot store it.",
+            "x-max-length-after-trim": 100,
+            "not": {
+              "pattern": "\\u0000"
+            }
+          },
+          "operationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedPolicyRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "ApplicationGroupUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "enabled",
+          "operationId",
+          "expectedPolicyRevision"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "TrimSpace normalization; 1–100 Unicode code points after trimming. Names need not be unique. NUL is invalid because PostgreSQL text cannot store it.",
+            "x-max-length-after-trim": 100,
+            "not": {
+              "pattern": "\\u0000"
+            }
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "operationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedPolicyRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "ApplicationMembersReplaceRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "memberIds",
+          "operationId",
+          "expectedPolicyRevision"
+        ],
+        "properties": {
+          "memberIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Required non-null list; [] clears. UUIDs must identify existing users; inactive users confer no access."
+          },
+          "operationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedPolicyRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "ApplicationMenuGrant": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resourceKind",
+          "resourceId",
+          "action",
+          "rowScope",
+          "fields"
+        ],
+        "properties": {
+          "resourceKind": {
+            "type": "string",
+            "const": "application"
+          },
+          "resourceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string",
+            "const": "menu.enter"
+          },
+          "rowScope": {
+            "type": "string",
+            "const": "all"
+          },
+          "fields": {
+            "type": "array",
+            "maxItems": 0,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "ApplicationGrantsReplaceRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "grants",
+          "operationId",
+          "expectedPolicyRevision"
+        ],
+        "properties": {
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationMenuGrant"
+            },
+            "description": "Required non-null full replacement. Only actual same-app workspace menu resources; no data grants or fields registry in B5a."
+          },
+          "operationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedPolicyRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "Application": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "ownerUserId",
+          "policyRevision"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ownerUserId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "policyRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "ApplicationGroup": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "enabled",
+          "policyRevision"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "policyRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "ApplicationPolicyResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "policyRevision"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "policyRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "ApplicationMenu": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resourceKind",
+          "resourceId"
+        ],
+        "properties": {
+          "resourceKind": {
+            "type": "string",
+            "const": "application"
+          },
+          "resourceId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ApplicationAccess": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "appId",
+          "policyRevision",
+          "canEnter",
+          "menus"
+        ],
+        "properties": {
+          "appId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "policyRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "canEnter": {
+            "type": "boolean",
+            "const": true
+          },
+          "menus": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationMenu"
+            },
+            "minItems": 1
+          }
+        }
+      },
+      "ApplicationList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Application"
+            }
+          }
+        }
+      },
+      "ApplicationGroupList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "policyRevision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationGroup"
+            }
+          },
+          "policyRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "ApplicationMembers": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "memberIds",
+          "policyRevision"
+        ],
+        "properties": {
+          "memberIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "policyRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "ApplicationGrants": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "grants",
+          "policyRevision"
+        ],
+        "properties": {
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationMenuGrant"
+            }
+          },
+          "policyRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "ApplicationOperation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "status",
+          "httpStatus",
+          "location",
+          "result"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "const": "confirmed"
+          },
+          "httpStatus": {
+            "type": "integer",
+            "enum": [
+              200,
+              201
+            ]
+          },
+          "location": {
+            "type": "string"
+          },
+          "result": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Application"
+              },
+              {
+                "$ref": "#/components/schemas/ApplicationGroup"
+              },
+              {
+                "$ref": "#/components/schemas/ApplicationPolicyResult"
+              }
+            ]
+          }
+        }
+      },
+      "ApplicationEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/Application"
+              }
+            }
+          }
+        ]
+      },
+      "ApplicationGroupEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ApplicationGroup"
+              }
+            }
+          }
+        ]
+      },
+      "ApplicationPolicyResultEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ApplicationPolicyResult"
+              }
+            }
+          }
+        ]
+      },
+      "ApplicationAccessEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ApplicationAccess"
+              }
+            }
+          }
+        ]
+      },
+      "ApplicationListEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ApplicationList"
+              }
+            }
+          }
+        ]
+      },
+      "ApplicationGroupListEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ApplicationGroupList"
+              }
+            }
+          }
+        ]
+      },
+      "ApplicationMembersEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ApplicationMembers"
+              }
+            }
+          }
+        ]
+      },
+      "ApplicationGrantsEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ApplicationGrants"
+              }
+            }
+          }
+        ]
+      },
+      "ApplicationOperationEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ApplicationOperation"
               }
             }
           }

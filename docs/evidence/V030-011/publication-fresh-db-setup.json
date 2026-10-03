@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-03T05:23:45.686097+00:00",
+  "container": "weaveos-v030-011-ci-fixture",
+  "preFixtureState": "weaveos_b5_ci_test|18.6 (Debian 18.6-1.pgdg13+2)|f|6",
+  "coldThenHotMigrations": [
+    {
+      "directory": "db/archive-migrations",
+      "exitCode": 0,
+      "output": "2026/10/03 05:23:45 OK   00001_archive.sql (5.12ms)\n2026/10/03 05:23:45 OK   00002_personnel_audit.sql (2.16ms)\n2026/10/03 05:23:45 OK   00003_apps_audit.sql (4.28ms)\n2026/10/03 05:23:45 goose: successfully migrated database to version: 3\n"
+    },
+    {
+      "directory": "db/migrations",
+      "exitCode": 0,
+      "output": "2026/10/03 05:23:45 OK   00001_auth.sql (14.73ms)\n2026/10/03 05:23:45 OK   00002_personnel.sql (20.28ms)\n2026/10/03 05:23:45 OK   00003_query_drafts.sql (5.64ms)\n2026/10/03 05:23:45 OK   00004_query_revision_writers.sql (4.19ms)\n2026/10/03 05:23:45 OK   00005_table_presets.sql (4.02ms)\n2026/10/03 05:23:45 OK   00006_apps_policy.sql (15.88ms)\n2026/10/03 05:23:45 goose: successfully migrated database to version: 6\n"
+    }
+  ],
+  "note": "fresh cluster has no auth_app before fixture; no reviewed roles applied by external runner; no production"
+}

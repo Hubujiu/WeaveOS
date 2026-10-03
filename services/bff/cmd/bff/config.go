@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/auth"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/personnel"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
@@ -69,6 +70,7 @@ func buildHandler(ctx context.Context, cfg config) (http.Handler, func(), error)
 	s := &auth.Service{Pool: pool, Sessions: sessions, Origin: cfg.Origin, AuditKeyID: cfg.AuditKeyID, AuditKey: cfg.AuditKey, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	people := &personnel.Application{Pool: pool, Queries: personnel.NewQueryContextStore(queryRedis, cfg.Generation)}
 	s.Personnel = &personnel.Service{Application: people, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
+	s.Applications = &applications.Service{Application: &applications.Application{Pool: pool}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	s.InvitationBegin = func(ctx context.Context, p session.Principal, version string) (pgx.Tx, error) {
 		tx, err := people.BeginQueryWrite(ctx, p, version)
 		for _, entry := range []struct {

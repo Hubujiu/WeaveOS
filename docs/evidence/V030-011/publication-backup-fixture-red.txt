@@ -1,0 +1,37 @@
+✔ real encrypted logical backup restores into an isolated empty database (355.37761ms)
+✔ missing source produces a failure and no successful backup file (81.908445ms)
+✔ wrong-key restore fails before any database mutation (177.743469ms)
+✖ restricted backup preserves migration ledger sequence and remains unable to advance it (873.594553ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1777.49867
+
+✖ failing tests:
+
+test at infra/runtime/backup.test.mjs:42:1
+✖ restricted backup preserves migration ledger sequence and remains unable to advance it (873.594553ms)
+  Error: Command failed: docker exec -i weaveos-v010-008-b5-backup-ci psql -X -v ON_ERROR_STOP=1 -U weaveos_b5_backup_test -d weaveos_backup_ledger_1791008993228
+  ERROR:  schema "applications" does not exist
+
+      at genericNodeError (node:internal/errors:985:15)
+      at wrappedFn (node:internal/errors:539:14)
+      at checkExecSyncError (node:child_process:925:11)
+      at execFileSync (node:child_process:961:15)
+      at sql (file:///workspace/WeaveOS-worktrees/V030-011/infra/runtime/backup.test.mjs:13:28)
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-011/infra/runtime/backup.test.mjs:54:2)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19) {
+    status: 3,
+    signal: null,
+    output: [ null, 'DO\nREVOKE\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\n', 'ERROR:  schema "applications" does not exist\n' ],
+    pid: 67937,
+    stdout: 'DO\nREVOKE\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\n',
+    stderr: 'ERROR:  schema "applications" does not exist\n'
+  }

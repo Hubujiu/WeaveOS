@@ -2,15 +2,30 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { parseTask, validateTask, taskIDFromBranch, taskIDFromFilename } from './task-policy.mjs';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const directory = new URL('../docs/tasks/', import.meta.url);
 const errors = [];
+// Root-approved PR21 auxiliary document. It is never a canonical task and
+// remains subject to its canonical owner's exact scope and reference.
+function approvedLegacyPlan(file) {
+  if (file !== 'V010-020-PLAN.md') return false;
+  try {
+    const bytes = readFileSync(new URL(file, directory));
+    if (createHash('sha256').update(bytes).digest('hex') !== '1342f819a09946377744acc13eb26cf2eccf1a1a17d51adf00efb72dbe8b0227') return false;
+    const canonical = readFileSync(new URL('V010-020.md', directory), 'utf8');
+    if (validateTask(canonical).length) return false;
+    const task = parseTask(canonical);
+    return task.id === 'V010-020' && task.allowedPaths.includes('docs/tasks/V010-020-PLAN.md')
+      && /\[[^\]\n]+\]\(V010-020-PLAN\.md\)/.test(canonical);
+  } catch { return false; }
+}
 // Version-looking documents must be checked or rejected, not silently skipped.
 // The shared parser accepts only the explicitly supported V010/V030 families.
 for (const file of readdirSync(directory).filter(name => /^[Vv][0-9]/.test(name) && name.endsWith('.md'))) {
   const id = taskIDFromFilename(file);
-  if (!id) { errors.push(`${file}: invalid task filename`); continue; }
+  if (!id) { if (!approvedLegacyPlan(file)) errors.push(`${file}: invalid task filename`); continue; }
   const text = readFileSync(new URL(file, directory), 'utf8');
   errors.push(...validateTask(text).map(error => `${file}: ${error}`));
   try { if (parseTask(text).id !== id) errors.push(`${file}: filename/identity mismatch`); } catch { /* reported above */ }
