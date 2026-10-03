@@ -27,6 +27,8 @@ export type RecordItem={
  recordVersion:Version;schemaVersion:Version;values:Values;
  referenceDisplays:Record<UUID,Record<UUID,ReferenceDisplay>>;
 };
+export type RecordSort={fieldId:UUID|'createdAt'|'updatedAt';direction:'asc'|'desc'}|null;
+export type RecordPage={items:RecordItem[];total:Version;page:Version;pageSize:Version;sort:RecordSort;queryVersion:string;schemaVersion:Version;viewVersion:Version};
 export type MutationResult={operationId:UUID;id:UUID;recordVersion:Version;schemaVersion:Version;createdAt:string;updatedAt:string};
 export type DraftMutationResult={operationId:UUID;id:UUID;draftVersion:Version};
 export type DraftSummary={id:UUID;viewId:UUID;tableId:UUID;targetRecordId:UUID|null;schemaVersion:Version;baseRecordVersion:Version|null;draftVersion:Version;createdAt:string;updatedAt:string;hasConflicts:boolean};
