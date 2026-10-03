@@ -1,0 +1,27 @@
+=== RUN   TestExactStoredDefaultsAndLayoutOnlyPreservesRows
+    behavior_test.go:16: product contract status want 200 got 503: {"code":"COMMON_SERVICE_UNAVAILABLE","message":"请求未完成","data":null,"meta":{"requestId":"8a3ddbaa30232926bbde57b5b58bf306"}}
+--- FAIL: TestExactStoredDefaultsAndLayoutOnlyPreservesRows (0.05s)
+=== RUN   TestNewReferenceDefaultNeedsActiveSource
+    behavior_test.go:18: want 503 COMMON_SERVICE_UNAVAILABLE got 200 {"code":"OK","message":"success","data":{"appliedPlan":{"schemaChanges":[{"kind":"add","fieldId":"00b2c4bc-2632-4c0f-9279-e54be70909a6","beforeKind":null,"afterKind":"member"}],"metadataChanged":true,"layoutChanged":false},"definition":{"appId":"cfe998d0-f266-4224-ad2c-7d78c92694ab","table":{"id":"dc5aae56-2bcf-4f84-843d-02a097df514c","appId":"cfe998d0-f266-4224-ad2c-7d78c92694ab","name":"表单","directoryId":null,"position":0,"schemaVersion":1,"schemaReady":true},"form":{"id":"bd16bac7-265e-442e-b571-ce8996e0c4fe","appId":"cfe998d0-f266-4224-ad2c-7d78c92694ab","tableId":"dc5aae56-2bcf-4f84-843d-02a097df514c","name":"表单","directoryId":null,"position":0,"viewVersion":1},"fields":[{"id":"00b2c4bc-2632-4c0f-9279-e54be70909a6","name":"member","kind":"member","required":false,"default":"41459a5f-78e6-4102-8b60-a0d103d98e9d","config":{},"presentation":{"helpText":null,"displayTimeZone":null}}],"systemFields":[{"id":"id","kind":"uuid","readOnly":true},{"id":"createdBy","kind":"member","readOnly":true},{"id":"createdAt","kind":"datetime","readOnly":true},{"id":"updatedAt","kind":"datetime","readOnly":true},{"id":"recordVersion","kind":"number","readOnly":true}],"layout":[],"capabilities":{"canManageDefinition":true}},"operationId":"4afe2bae-2b13-48b1-9b24-9afef4505bbd"},"meta":{"requestId":"2eff537c712096cdcd83c168ec898b08"}}
+--- FAIL: TestNewReferenceDefaultNeedsActiveSource (0.04s)
+=== RUN   TestNormalizedDefaultsReplaySameOperation
+    behavior_test.go:19: product contract status want 200 got 503: {"code":"COMMON_SERVICE_UNAVAILABLE","message":"请求未完成","data":null,"meta":{"requestId":"4ef967ae89d802720cc022c54e3d6814"}}
+--- FAIL: TestNormalizedDefaultsReplaySameOperation (0.04s)
+=== RUN   TestOptionsMappingChangesRealValuesAndPreflightIsReadOnly
+    behavior_test.go:23: product contract status want 200 got 503: {"code":"COMMON_SERVICE_UNAVAILABLE","message":"请求未完成","data":null,"meta":{"requestId":"5aa535b44e6219ca80459ccd5a55a439"}}
+--- FAIL: TestOptionsMappingChangesRealValuesAndPreflightIsReadOnly (0.04s)
+=== RUN   TestConfirmationSameCountChangeExpiryAndReplay
+    behavior_test.go:25: want 409 APPLICATION_SCHEMA_CONFIRMATION_STALE got 503 {"code":"COMMON_SERVICE_UNAVAILABLE","message":"请求未完成","data":null,"meta":{"requestId":"61c7df93bd70bc26b9f2930d6e6ea81b"}}
+--- FAIL: TestConfirmationSameCountChangeExpiryAndReplay (0.04s)
+=== RUN   TestRequiredAndConversionFailureRollBack
+    behavior_test.go:26: want 409 APPLICATION_SCHEMA_CONVERSION_FAILED got 503 {"code":"COMMON_SERVICE_UNAVAILABLE","message":"请求未完成","data":null,"meta":{"requestId":"3d13d0cf545abcc43fb667b2e20590cf"}}
+--- FAIL: TestRequiredAndConversionFailureRollBack (0.04s)
+=== RUN   TestRealPGStructureMigrationAndRestrictedDDL
+--- PASS: TestRealPGStructureMigrationAndRestrictedDDL (0.02s)
+=== RUN   TestAtomicFormCreateAndGridSave
+--- PASS: TestAtomicFormCreateAndGridSave (0.04s)
+=== RUN   TestOrdinaryRootMenuDoesNotGrantDefinition
+--- PASS: TestOrdinaryRootMenuDoesNotGrantDefinition (0.02s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure	0.349s
+FAIL

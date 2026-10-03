@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 type fixture struct {
@@ -74,7 +76,7 @@ func setup(t *testing.T) *fixture {
 		t.Fatal(e)
 	}
 	t.Cleanup(func() { store.Revoke(c, sid); store.Close() })
-	f := &fixture{p, r, &Service{Application: &Application{Pool: r, ConfirmationKey: []byte("isolated-ephemeral-test-key-32bytes"), ConfirmationKeyID: "test"}, Authenticator: session.Authenticator{Sessions: store, DB: r, Origin: "https://weaveos.test"}}, actor, app, sid, csrf, store}
+	f := &fixture{p, r, &Service{Application: &Application{Pool: r, ConfirmationKey: []byte("isolated-ephemeral-test-key-32bytes"), ConfirmationKeyID: "test", Limits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}, Dependencies: LocalRegistry{}}, Authenticator: session.Authenticator{Sessions: store, DB: r, Origin: "https://weaveos.test"}}, actor, app, sid, csrf, store}
 	return f
 }
 func uuid(t *testing.T, p *pgxpool.Pool) string {

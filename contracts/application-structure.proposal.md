@@ -1,4 +1,4 @@
-# V030-013 product contract proposal
+# V030-013 frozen product contract
 
 Review status: lead approved 2980b5e with the atomic-form-create and 12-column
 span amendments below. HTTP wiring waits only for the matching Notion readback.
@@ -24,7 +24,7 @@ All routes below are relative to `/api/v1/applications/{appId}` unless stated.
   duplicate display names remain permitted. SQL never uses display names.
 - Versions are JSON integers in the exact-safe range 0–9007199254740991.
   Policy revision retains B5's existing 1-based range. No overflow wraps.
-- `structureVersion` is a proposed independent app metadata CAS for directory,
+- `structureVersion` is an independent app metadata CAS for directory,
   table and form placement/name edits. It is not a policy, schema, view or record
   version. Fields/config and layout changes do not increment policy revision.
 - Current trusted Session/active account/auth_version is rechecked. Writes and
@@ -48,7 +48,7 @@ All routes below are relative to `/api/v1/applications/{appId}` unless stated.
   initial schemaVersion=0, viewVersion=0, fields=[], layout=[], schemaReady=false.
   First definition Save creates the one shared physical table and makes the form
   usable. No separate form publish operation is introduced.
-- No directory/table/form delete route is proposed: subtree deletion, restoration
+- No directory/table/form delete route is included: subtree deletion, restoration
   and retention semantics are not yet decided. Field removal remains part of Save
   with the approved impact/dependency guards. No new navigation persistence,
   flow action, notification or record CRUD route is added.
@@ -77,7 +77,7 @@ sort by `(position,id)`, so ties do not create nondeterministic order.
 | GET `/api/v1/application-operations/{operationId}` | none | Existing B5 Operation with additive structure result alternatives / 200 |
 
 List/sibling collections come from the single coherent Structure response; this
-proposal does not add duplicate collection list APIs. A view's tableId is
+contract does not add duplicate collection list APIs. A view's tableId is
 immutable. A second view is created with POST /forms pointing to the same table.
 Tables and forms have independent directory placement. new_table creates the
 same-name pending logical table and view atomically in the one operation/tx;
@@ -185,7 +185,7 @@ Proposed datetime normalization floors the instant in UTC to the requested
 minute/second/millisecond boundary (including instants before 1970); it does not
 round across a future boundary. Omitted precision defaults to second; explicit null is rejected. A changed precision
 is a value transformation guarded like a type/config change, not just display.
-The exact behavior/default is for lead review; the PLAN does not specify it.
+The task-specific accepted ADR freezes this behavior and default.
 
 SystemField codes are fixed `id`, `createdBy`, `createdAt`, `updatedAt`,
 `recordVersion`; response `{id:code,kind,readOnly:true}`. They are excluded from
@@ -252,7 +252,7 @@ without mapping blocks Save. Mapped destructive changes are included in impact
 confirmation. Multi->single rejects any old row with more than one distinct
 value **before** mappings; a mapping cannot disguise or bypass that rule.
 
-Confirmation proposal: opaque versioned HMAC-SHA256 token with a dedicated
+Confirmation contract: opaque versioned HMAC-SHA256 token with a dedicated
 server key and key ID; 10-minute expiry as an operational policy, returned as
 expiresAt so callers do not hard-code a duration. It is bound to actor/app/table,
 view, expected schema/view versions, data revision, dependency revision and
@@ -277,7 +277,7 @@ contain field IDs/reasons/counts only, no old sensitive values or raw PG errors.
 ## 5. Errors
 
 Existing B5/session/media errors retain their HTTP meanings. Shared codes below
-are proposed additive registrations; no production errors file is changed yet.
+are frozen additive registrations implemented within this task.
 
 | Code | HTTP | data |
 | --- | --- | --- |
@@ -365,7 +365,7 @@ actor/resource/policy and all metadata/impact facts; no read-side cache writes.
 App gate currently serializes same-app configuration; DDL blocks same-table
 reads/writes until commit. This is synchronous Save, not a low-downtime claim.
 
-Protected DDL proposal: `auth_app` gets no CREATE on appdata, no physical table
+Protected DDL contract: `auth_app` gets no CREATE on appdata, no physical table
 ownership and no generic EXECUTE-SQL function. Migration-owned, schema-qualified
 SECURITY DEFINER routines accept canonical table/field IDs, allowlisted operations
 and typed config/constants, construct identifiers internally and validate the
@@ -382,8 +382,8 @@ V030-013 exclusively owns new `services/bff/internal/appfields/`,
 `services/bff/internal/appschema/`, `contracts/application-structure*`,
 `docs/tasks/V030-013.md`, `docs/evidence/V030-013/`.
 
-The following shared-file registration is proposed for lead acknowledgement
-**before implementation**, distinct from ownership of PR26 CI repairs:
+The lead approved the following shared-file registration before implementation,
+distinct from ownership of PR26 CI repairs:
 
 - `services/bff/internal/applications/transactions.go` and directly related tests;
   `types.go`/`store.go`/`http.go` only for typed lifecycle, resource registration,
@@ -414,7 +414,7 @@ request only the PR25 B2 lifecycle sections in `.github/workflows/ci.yml`,
 `infra/acceptance/run.mjs` and `tests/foundation/b2-ci-database.test.mjs`
 (the exact path was verified from fixed PR25). This is not
 authority to change the ongoing PR26 CI repairs or original acceptance gates.
-No go.mod/go.sum/pnpm edits or dependency additions are proposed.
+No go.mod/go.sum/pnpm edits or dependency additions are authorized.
 
 ## 8. Required RED/GREEN matrix
 
@@ -432,8 +432,8 @@ No go.mod/go.sum/pnpm edits or dependency additions are proposed.
 | Existing contracts | OpenAPI3.2.1 schemas, statuses, Location, strict complete DTOs/null/empty semantics, Session/Origin/CSRF, B5/personnel/query/backup regressions, full same-head CI |
 
 Preparation TDD:N/A (documentation only). All implementation RED/GREEN above is
-**NOT RUN** at this checkpoint. Source/code inspection and old package evidence
-are not new tests or product acceptance.
+tracked in docs/tasks/V030-013.md and docs/evidence/V030-013/. Source/code
+inspection and old package evidence are not new tests or product acceptance.
 
 ## 9. Lead review items
 

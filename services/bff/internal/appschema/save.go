@@ -76,7 +76,12 @@ func (e Executor) ApplyInTx(ctx context.Context, tx pgx.Tx, request Request) (Re
 	if before.Exists && len(plan.Changes) > 0 {
 		// ALTER TABLE needs this lock for the supported operations. Taking it
 		// before inspecting data closes the confirmation/check-to-DDL window.
-		if _, err = tx.Exec(ctx, "LOCK TABLE "+qualified+" IN ACCESS EXCLUSIVE MODE"); err != nil {
+		if e.DDL != nil {
+			err = e.DDL.LockPhysical(ctx, tx, plan.TableID)
+		} else {
+			_, err = tx.Exec(ctx, "LOCK TABLE "+qualified+" IN ACCESS EXCLUSIVE MODE")
+		}
+		if err != nil {
 			return Result{}, err
 		}
 		if err = e.checkChanges(ctx, tx, qualified, plan, request.Confirmation, backfills); err != nil {

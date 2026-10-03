@@ -171,7 +171,7 @@ func structure(ctx context.Context, tx pgx.Tx, app App) (appmeta.Structure, []Me
 	if err := appmeta.ValidateStructure(s); err != nil {
 		return s, nil, err
 	}
-	rows, err := tx.Query(ctx, "SELECT resource_kind,resource_id::text FROM applications.menu_resources WHERE app_id=$1 ORDER BY resource_kind,resource_id", app.ID)
+	rows, err := tx.Query(ctx, "SELECT resource_kind,resource_id::text FROM applications.menu_resources WHERE app_id=$1 AND resource_kind='application' ORDER BY resource_kind,resource_id", app.ID)
 	if err != nil {
 		return s, nil, err
 	}

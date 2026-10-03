@@ -67,3 +67,13 @@ REVOKE ALL ON FUNCTION applications.register_catalog_entry(uuid) FROM PUBLIC, au
 GRANT EXECUTE ON FUNCTION applications.register_catalog_entry(uuid) TO auth_app;
 GRANT SELECT ON ALL TABLES IN SCHEMA applications TO auth_backup;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA applications TO auth_backup;
+
+-- V030-013 explicit definition capabilities. No schema CREATE/ownership granted.
+GRANT UPDATE (structure_version) ON applications.apps TO auth_app;
+GRANT SELECT,INSERT,UPDATE ON applications.directories,applications.logical_tables,applications.fields,applications.form_views TO auth_app;
+GRANT SELECT,INSERT,UPDATE,DELETE ON applications.table_field_dependencies TO auth_app;
+GRANT USAGE ON SCHEMA appdata TO auth_app,auth_backup;
+GRANT EXECUTE ON FUNCTION applications.apply_schema_change(uuid,uuid,uuid,text,jsonb,jsonb) TO auth_app;
+GRANT EXECUTE ON FUNCTION applications.apply_option_mapping(uuid,uuid,uuid,uuid,text,jsonb,jsonb) TO auth_app;
+GRANT SELECT ON ALL TABLES IN SCHEMA appdata TO auth_backup;
+GRANT SELECT ON ALL TABLES IN SCHEMA applications TO auth_backup;

@@ -125,6 +125,7 @@ type Limits struct {
 }
 
 type DDL interface {
+	LockPhysical(context.Context, pgx.Tx, string) error
 	Create(context.Context, pgx.Tx, Plan) error
 	Change(context.Context, pgx.Tx, string, Change, map[string]Value) error
 }
