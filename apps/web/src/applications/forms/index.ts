@@ -5,4 +5,6 @@ export type { FormDesignerProps } from './FormDesigner';
 export type {LeaveScope,LeaveStatus,LeaveDecision,LeaveResult,LeaveController,
   RegisterLeaveGuard,LeaveGuardProps} from './leaveGuard';
 export { FieldRenderer, FormPreview } from './FieldRenderer';
-export type { FieldRendererProps, FormPreviewProps, FieldValue, ReferenceOption } from './FieldRenderer';
+export type { FieldRendererProps, FormPreviewProps, FieldValue, DisplayField,
+  ReferenceOption, ReferenceDisplay, ReferenceCandidate, ReferenceCandidatePage,
+  LoadReferenceCandidates } from './FieldRenderer';
