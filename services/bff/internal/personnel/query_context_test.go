@@ -58,7 +58,7 @@ func TestQ36RealRedisOldNewContextBytesAndTokens(t *testing.T) {
 			}
 			return validQueryMetadata(QueryContext{View: m.View, Criteria: m.Criteria, Total: m.Total, Fingerprint: m.Fingerprint, ProtocolVersion: m.ProtocolVersion, Revisions: r})
 		},
-		Forward: func(_ string, old, next json.RawMessage) bool {
+		Forward: func(old, next json.RawMessage) bool {
 			var a, b QueryRevisions
 			return json.Unmarshal(old, &a) == nil && json.Unmarshal(next, &b) == nil && validQueryRevisions(a) && validQueryRevisions(b) && b.People >= a.People && b.Configuration >= a.Configuration && b.Activity >= a.Activity && (a.Activity != 0 || b.Activity == 0)
 		},
