@@ -5,7 +5,7 @@ import { applicationApi, applicationApiEnvelope, ApplicationError } from './api'
 import { cancelUnsentPreflights, clearPacket, clearRecovery, getRecovery, keepPacket, registerUnsentPreflight, type ApplicationPacket } from './recovery';
 import type { ApplicationOperation } from './types';
 
-type State = { phase: 'idle' | 'preflight' | 'pending' | 'error' | 'unconfirmed'; message: string; packet: ApplicationPacket | null };
+type State = { phase: 'idle' | 'preflight' | 'pending' | 'error' | 'unconfirmed'; message: string; packet: ApplicationPacket | null; errorCode?: string };
 
 export type ApplicationMutationRequest = {
  path: string;
@@ -68,20 +68,23 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
  const snapshot = useRef<ApplicationPacket | null>(getRecovery(actorId, scope)?.packet ?? null);
  const uncertain = useRef(Boolean(getRecovery(actorId, scope)?.unknown));
  const inFlight = useRef(false);
+ const preflight = useRef(false);
  const lifecycle = useRef(0);
  useEffect(() => () => { lifecycle.current++; }, []);
  const perform = async (packet: ApplicationPacket, query: boolean) => {
   if (inFlight.current) return;
-  const token = lifecycle.current;
+  const token = ++lifecycle.current;
   inFlight.current = true;
   let sent = false;
   const unsent = !query && !snapshot.current;
   let unregister = () => {};
   if (unsent) {
+   preflight.current = true;
    const cancel = () => {
     unregister();
     if (sent || token !== lifecycle.current) return;
     lifecycle.current++;
+    preflight.current = false;
     inFlight.current = false;
     setState({ phase: 'idle', message: '', packet: null });
    };
@@ -94,6 +97,7 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
    const current = await workspaceApi<User>('sessions/current');
    if (token !== lifecycle.current) return;
    if (current?.id !== packet.actorId || packet.actorId !== actorId) {
+    preflight.current = false;
     setState(snapshot.current || uncertain.current || query
      ? { phase: 'unconfirmed', message: '操作结果尚未确认，请核查原操作或使用同一操作重试', packet }
      : { phase: 'idle', message: '', packet: null });
@@ -103,6 +107,7 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
    // Keep the original key conservatively until a valid confirmation arrives.
    if (unsent) { keepPacket(packet, true); snapshot.current = getRecovery(packet.actorId, packet.scope)!.packet; }
    unregister();
+   preflight.current = false;
    setState({ phase: 'pending', message: '', packet });
    sent = true;
    let result: T;
@@ -125,20 +130,23 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
    confirmed(result);
   } catch (cause) {
    if (token !== lifecycle.current) return;
+   preflight.current = false;
    if (cause instanceof ApplicationError && cause.code === 'AUTH_SESSION_CHANGED') {
     if (sent) { snapshot.current = packet; uncertain.current = true; keepPacket(packet, true); }
     if (snapshot.current || uncertain.current || query) setState({ phase: 'unconfirmed', message: '操作结果尚未确认，请核查原操作或使用同一操作重试', packet });
     identityMismatch(); return;
    }
    const authLost = cause instanceof ApplicationError && cause.status === 401 || cause instanceof WorkspaceError && cause.status === 401;
-   const unknown = uncertain.current || query || sent && (authLost || cause instanceof ApplicationError && cause.unconfirmed);
+   const ambiguousHttp = cause instanceof ApplicationError && (cause.status === 408 || cause.status >= 500);
+   const unknown = uncertain.current || query || sent && (authLost || cause instanceof ApplicationError && (cause.unconfirmed || ambiguousHttp));
    if (unknown) { snapshot.current = packet; uncertain.current = true; keepPacket(packet, true); }
    else { snapshot.current = null; clearPacket(packet.actorId, packet.scope); }
+   inFlight.current = false;
    if (authLost) { unauthorized(); return; }
    const reason = cause instanceof Error ? cause.message : '服务暂时不可用，请稍后重试';
    const message = unknown && !(cause instanceof ApplicationError && cause.unconfirmed)
     ? reason + '。操作结果仍未确认，请稍后核查或使用同一操作重试。' : reason;
-   setState({ phase: unknown ? 'unconfirmed' : 'error', packet, message });
+   setState({ phase: unknown ? 'unconfirmed' : 'error', packet, message, ...(unknown || !(cause instanceof ApplicationError) ? {} : { errorCode: cause.code }) });
    if (!unknown && cause instanceof ApplicationError && cause.status === 409 && cause.code === 'APPLICATION_POLICY_CONFLICT') onDefinitePolicyConflict?.();
   } finally { unregister(); if (token === lifecycle.current) inFlight.current = false; }
  };
@@ -161,7 +169,13 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
  };
  const query = () => { if (snapshot.current) void perform(snapshot.current, true); };
  const retry = () => { if (snapshot.current) void perform(snapshot.current, false); };
- return { ...state, start, query, retry,
+ const getPendingStatus = (): 'preflight' | 'write_in_flight' | 'unknown' | null => {
+  if (uncertain.current) return 'unknown';
+  if (preflight.current) return 'preflight';
+  if (inFlight.current) return 'write_in_flight';
+  return snapshot.current ? 'unknown' : null;
+ };
+ return { ...state, start, query, retry, getPendingStatus,
   dismissError: () => setState(previous => previous.phase === 'error' ? { phase: 'idle', message: '', packet: null } : previous),
   cancelPreflight: () => cancelUnsentPreflights(actorId, scope) };
 }
