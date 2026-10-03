@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordhttp"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/auth"
@@ -90,7 +92,10 @@ func buildHandler(ctx context.Context, cfg config) (http.Handler, func(), error)
 	people := &personnel.Application{Pool: pool, Queries: personnel.NewQueryContextStore(queryRedis, cfg.Generation)}
 	s.Personnel = &personnel.Service{Application: people, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	apps := &applications.Service{Application: &applications.Application{Pool: pool}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
-	apps.Definitions = &appstructure.Service{Application: &appstructure.Application{Pool: pool, ConfirmationKey: cfg.DefinitionKey, ConfirmationKeyID: cfg.DefinitionKeyID, Limits: cfg.SchemaLimits, Dependencies: appstructure.LocalRegistry{}, References: appstructure.CurrentSources{}, CandidateRedis: queryRedis, CandidateNamespace: cfg.Generation}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
+	apps.Definitions = &appstructure.Service{Application: &appstructure.Application{Pool: pool, ConfirmationKey: cfg.DefinitionKey, ConfirmationKeyID: cfg.DefinitionKeyID, Limits: cfg.SchemaLimits, Dependencies: appstructure.LocalRegistry{}, References: appstructure.CurrentSources{}, CandidateRedis: queryRedis, CandidateNamespace: cfg.Generation, RecordAccess: apprecordhttp.ResolveAccess}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
+	records := apprecordservice.New(pool, queryRedis, cfg.Generation)
+	records.Limits = cfg.SchemaLimits
+	apps.Records = &apprecordhttp.Service{Records: records, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
 	s.Applications = apps
 	s.InvitationBegin = func(ctx context.Context, p session.Principal, version string) (pgx.Tx, error) {
 		tx, err := people.BeginQueryWrite(ctx, p, version)

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/jackc/pgx/v5"
 	"github.com/redis/go-redis/v9"
 	"net/http"
 	"net/url"
@@ -37,6 +38,8 @@ type candidateCursor struct {
 	Actor, App, Query, Account, ID string
 	Kind                           string
 	Expires                        int64
+	View, Field, Action, Record    string
+	PolicyRevision                 int64
 }
 
 func (a *Application) cursorKey(token string) string {
@@ -59,7 +62,7 @@ func (a *Application) loadCursor(c context.Context, token string, expected candi
 		return candidateCursor{}, ErrUnavailable
 	}
 	var cursor candidateCursor
-	if json.Unmarshal(data, &cursor) != nil || cursor.Expires <= a.now().Unix() || cursor.Actor != expected.Actor || cursor.App != expected.App || cursor.Query != expected.Query || cursor.Kind != expected.Kind {
+	if json.Unmarshal(data, &cursor) != nil || cursor.Expires <= a.now().Unix() || cursor.Actor != expected.Actor || cursor.App != expected.App || cursor.Query != expected.Query || cursor.Kind != expected.Kind || cursor.View != expected.View || cursor.Field != expected.Field || cursor.Action != expected.Action || cursor.Record != expected.Record || cursor.PolicyRevision != expected.PolicyRevision {
 		return candidateCursor{}, invalid()
 	}
 	return cursor, nil
@@ -116,12 +119,28 @@ func (s *Service) candidates(w http.ResponseWriter, r *http.Request, p session.P
 	}
 	defer tx.Rollback(context.Background())
 	cursor := candidateCursor{Actor: p.UserID, App: app, Query: q, Kind: kind}
+	items, page, e := s.Application.candidatePage(r.Context(), tx, cursor, size, query.Get("pageToken"))
+	if e == nil {
+		e = tx.Commit(r.Context())
+	}
+	if e == nil {
+		e = s.Authenticator.Renew(r.Context(), w, r, p)
+	}
+	if e != nil {
+		fail(w, r, e, "")
+		return
+	}
+	respond(w, r, 200, "OK", map[string]any{"items": items}, page)
+}
+
+func (a *Application) candidatePage(c context.Context, tx pgx.Tx, cursor candidateCursor, size int, token string) ([]any, Pagination, error) {
+	kind, q := cursor.Kind, cursor.Query
 	var afterAccount, afterID any
-	if token := query.Get("pageToken"); token != "" {
-		cursor, e = s.Application.loadCursor(r.Context(), token, cursor)
+	var e error
+	if token != "" {
+		cursor, e = a.loadCursor(c, token, cursor)
 		if e != nil {
-			fail(w, r, e, "")
-			return
+			return nil, Pagination{}, e
 		}
 		afterAccount, afterID = cursor.Account, cursor.ID
 	}
@@ -129,10 +148,9 @@ func (s *Service) candidates(w http.ResponseWriter, r *http.Request, p session.P
 	if kind == "department" {
 		sql = "SELECT id::text,name,status,parent_id::text FROM (SELECT id,name,parent_id,'active'::text AS status FROM personnel.departments) d WHERE starts_with(name,$1) AND ($2::text IS NULL OR (name,id)>($2,$3::uuid)) ORDER BY name,id LIMIT $4"
 	}
-	rows, e := tx.Query(r.Context(), sql, q, afterAccount, afterID, size+1)
+	rows, e := tx.Query(c, sql, q, afterAccount, afterID, size+1)
 	if e != nil {
-		fail(w, r, e, "")
-		return
+		return nil, Pagination{}, e
 	}
 	items := []any{}
 	for rows.Next() {
@@ -160,26 +178,17 @@ func (s *Service) candidates(w http.ResponseWriter, r *http.Request, p session.P
 	}
 	rows.Close()
 	if e != nil {
-		fail(w, r, e, "")
-		return
+		return nil, Pagination{}, e
 	}
 	page := Pagination{}
 	if len(items) > size {
 		items = items[:size]
-		token, e := s.Application.storeCursor(r.Context(), cursor)
+		token, e := a.storeCursor(c, cursor)
 		if e != nil {
-			fail(w, r, e, "")
-			return
+			return nil, Pagination{}, e
 		}
 		page.NextPageToken = &token
 		page.HasMore = true
 	}
-	if e = tx.Commit(r.Context()); e == nil {
-		e = s.Authenticator.Renew(r.Context(), w, r, p)
-	}
-	if e != nil {
-		fail(w, r, e, "")
-		return
-	}
-	respond(w, r, 200, "OK", map[string]any{"items": items}, page)
+	return items, page, nil
 }

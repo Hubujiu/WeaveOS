@@ -13,6 +13,7 @@ func TestHistoryHTTPRealOwnerCursorAndDeletedFieldTombstone(t *testing.T) {
 	f := setup(t)
 	view, table := newForm(t, f)
 	money := field(t, f, "money", nil, map[string]any{})
+	money["name"] = "当期金额"
 	data(t, f.call(t, "PUT", "/forms/"+view+"/definition", input(t, f, 0, 0, money)), 200)
 	opts, e := redis.ParseURL(os.Getenv("WEAVEOS_TEST_REDIS_URL"))
 	if e != nil {
@@ -53,6 +54,10 @@ func TestHistoryHTTPRealOwnerCursorAndDeletedFieldTombstone(t *testing.T) {
 	if len(items) != 1 || items[0].(map[string]any)["recordVersionAfter"] != float64(2) || strings.Contains(response.Body.String(), "opaqueTaskRef") {
 		t.Fatal("frozen history DTO", response.Body.String())
 	}
+	change := items[0].(map[string]any)["changes"].([]any)[0].(map[string]any)
+	if change["fieldLabel"] != "当期金额" || change["fieldDeleted"] != false || change["valueLabels"] == nil {
+		t.Fatalf("ADR14 allowed delta display missing %s", response.Body.String())
+	}
 	var env struct {
 		Meta struct{ Pagination Pagination }
 	}
@@ -80,6 +85,10 @@ func TestHistoryHTTPRealOwnerCursorAndDeletedFieldTombstone(t *testing.T) {
 	got := data(t, rootCall(t, f, "GET", path, nil, f.actor), 200)["items"].([]any)
 	if len(got) != 2 || got[0].(map[string]any)["changes"].([]any)[0].(map[string]any)["fieldKind"] != "money" {
 		t.Fatal("owner lost removed-field event-time type", got)
+	}
+	removed := got[0].(map[string]any)["changes"].([]any)[0].(map[string]any)
+	if removed["fieldLabel"] != "当期金额" || removed["fieldDeleted"] != true {
+		t.Fatal("ADR14 deleted field last label", removed)
 	}
 	var version int64
 	if e = f.owner.QueryRow(c, "SELECT record_version FROM "+tablePhysical(table)+" WHERE id=$1", id).Scan(&version); e != nil || version != 2 {

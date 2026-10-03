@@ -40,6 +40,51 @@ func recordOpID(t *testing.T, w *applications.RecordWrite) string {
 	}
 	return op
 }
+
+func TestPublishedRecordDMLIncludesRequiredSameTxHistory(t *testing.T) {
+	f := setup(t)
+	view, table := newForm(t, f)
+	text := field(t, f, "text", nil, map[string]any{"maxLength": nil})
+	data(t, f.call(t, "PUT", "/forms/"+view+"/definition", input(t, f, 0, 0, text)), 200)
+	w := historyCommand(t, f, view, "record.create")
+	op := recordOpID(t, w)
+	id := uuid(t, f.owner)
+	header, e := (RecordDML{}).Insert(context.Background(), w.Tx(), RecordTable{AppID: f.app, TableID: table, ViewID: view, SchemaVersion: 1, Ready: true}, RecordCreate{OperationID: op, ID: id, ActorID: f.actor, ExpectedSchemaVersion: 1, Values: map[string]any{text["id"].(string): "published typed value"}}, []string{text["id"].(string)})
+	if e != nil {
+		t.Fatal(e)
+	}
+	historyComplete(t, w, header, op, 201)
+	if e = w.Commit(context.Background()); e != nil {
+		t.Fatal(e)
+	}
+	var count int
+	if e = f.owner.QueryRow(context.Background(), "SELECT count(*) FROM applications.record_change_events WHERE record_id=$1 AND operation_id=$2", id, op).Scan(&count); e != nil || count != 1 {
+		t.Fatal("published DML must include same-Tx history", count, e)
+	}
+}
+
+func TestRequiredCreateHistoryBeforeIsAbsentNull(t *testing.T) {
+	f := setup(t)
+	view, table := newForm(t, f)
+	text := field(t, f, "text", "required constant", map[string]any{"maxLength": nil})
+	text["required"] = true
+	data(t, f.call(t, "PUT", "/forms/"+view+"/definition", input(t, f, 0, 0, text)), 200)
+	w := historyCommand(t, f, view, "record.create")
+	op := recordOpID(t, w)
+	id := uuid(t, f.owner)
+	header, e := (RecordHistoryDML{History: RecordHistoryStore{}}).Insert(context.Background(), w.Tx(), RecordTable{AppID: f.app, TableID: table, ViewID: view, SchemaVersion: 1, Ready: true}, RecordCreate{OperationID: op, ID: id, ActorID: f.actor, ExpectedSchemaVersion: 1, Values: map[string]any{}}, []string{})
+	if e != nil {
+		t.Fatal("required create's old absence is legal history null", e)
+	}
+	historyComplete(t, w, header, op, 201)
+	if e = w.Commit(context.Background()); e != nil {
+		t.Fatal(e)
+	}
+	var before, after json.RawMessage
+	if e = f.owner.QueryRow(context.Background(), "SELECT old_value,new_value FROM applications.record_change_values WHERE event_id=(SELECT id FROM applications.record_change_events WHERE record_id=$1) AND field_id=$2", id, text["id"]).Scan(&before, &after); e != nil || string(before) != "null" || string(after) != `"required constant"` {
+		t.Fatal("create history canonical absence/value", string(before), string(after), e)
+	}
+}
 func TestHistoryTypedWriteCanonicalRollbackNoopAndScopedPage(t *testing.T) {
 	f := setup(t)
 	view, table := newForm(t, f)

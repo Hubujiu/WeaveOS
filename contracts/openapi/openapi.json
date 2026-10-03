@@ -8145,7 +8145,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RecordDraftEnvelope"
+                  "$ref": "#/components/schemas/DraftMutationResultEnvelope"
                 }
               }
             }
@@ -8633,7 +8633,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RecordDraftEnvelope"
+                  "$ref": "#/components/schemas/DraftMutationResultEnvelope"
                 }
               }
             }
@@ -9083,6 +9083,210 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/reference-candidates": {
+      "get": {
+        "operationId": "applicationFieldReferenceCandidates",
+        "summary": "List minimal active reference candidates for the current field action",
+        "description": "Accepted V015 ADR14.2. Actual registered form/table/reference field, live menu and field create or actual-row field edit authority. Edit requires recordId; create forbids recordId. No parent inheritance. Opaque cursor binds actor/app/view/field/action/record/policy; labels are current, active source only. Save revalidates current source and permission.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "name": "fieldId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "create",
+                "edit"
+              ]
+            }
+          },
+          {
+            "name": "recordId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceCandidatesEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
                 }
               }
             }
@@ -17084,24 +17288,7 @@
             "$ref": "#/components/schemas/RecordFieldValue"
           },
           "access": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "read",
-              "create",
-              "edit"
-            ],
-            "properties": {
-              "read": {
-                "$ref": "#/components/schemas/RuntimeScope"
-              },
-              "create": {
-                "type": "boolean"
-              },
-              "edit": {
-                "$ref": "#/components/schemas/RuntimeScope"
-              }
-            }
+            "$ref": "#/components/schemas/RuntimeFieldAccess"
           },
           "query": {
             "type": "object",
@@ -17194,36 +17381,7 @@
             }
           },
           "capabilities": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "create",
-              "read",
-              "edit",
-              "search",
-              "draftCreate",
-              "draftEdit"
-            ],
-            "properties": {
-              "create": {
-                "type": "boolean"
-              },
-              "read": {
-                "$ref": "#/components/schemas/RuntimeScope"
-              },
-              "edit": {
-                "$ref": "#/components/schemas/RuntimeScope"
-              },
-              "search": {
-                "type": "boolean"
-              },
-              "draftCreate": {
-                "type": "boolean"
-              },
-              "draftEdit": {
-                "type": "boolean"
-              }
-            }
+            "$ref": "#/components/schemas/RuntimeCapabilities"
           }
         }
       },
@@ -17234,7 +17392,10 @@
           "fieldId",
           "fieldKind",
           "before",
-          "after"
+          "after",
+          "fieldLabel",
+          "fieldDeleted",
+          "valueLabels"
         ],
         "properties": {
           "fieldId": {
@@ -17250,6 +17411,23 @@
           },
           "after": {
             "$ref": "#/components/schemas/RecordFieldValue"
+          },
+          "fieldLabel": {
+            "type": "string"
+          },
+          "fieldDeleted": {
+            "type": "boolean"
+          },
+          "valueLabels": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/HistoryValueLabel"
+            }
           }
         }
       },
@@ -17718,6 +17896,174 @@
               },
               "data": {
                 "$ref": "#/components/schemas/RecordHistoryItems"
+              }
+            }
+          }
+        ]
+      },
+      "DraftMutationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "id",
+          "draftVersion"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "draftVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "DraftMutationResultEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/DraftMutationResult"
+              }
+            }
+          }
+        ]
+      },
+      "RuntimeFieldAccess": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "read",
+          "create",
+          "edit",
+          "history"
+        ],
+        "properties": {
+          "read": {
+            "$ref": "#/components/schemas/RuntimeScope"
+          },
+          "create": {
+            "type": "boolean"
+          },
+          "edit": {
+            "$ref": "#/components/schemas/RuntimeScope"
+          },
+          "history": {
+            "$ref": "#/components/schemas/RuntimeScope"
+          }
+        }
+      },
+      "RuntimeCapabilities": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "create",
+          "read",
+          "edit",
+          "search",
+          "draftCreate",
+          "draftEdit",
+          "history"
+        ],
+        "properties": {
+          "create": {
+            "type": "boolean"
+          },
+          "read": {
+            "$ref": "#/components/schemas/RuntimeScope"
+          },
+          "edit": {
+            "$ref": "#/components/schemas/RuntimeScope"
+          },
+          "search": {
+            "type": "boolean"
+          },
+          "draftCreate": {
+            "type": "boolean"
+          },
+          "draftEdit": {
+            "type": "boolean"
+          },
+          "history": {
+            "$ref": "#/components/schemas/RuntimeScope"
+          }
+        }
+      },
+      "HistoryValueLabel": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "label",
+          "deleted",
+          "labelUnavailable"
+        ],
+        "properties": {
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "labelUnavailable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ReferenceCandidateItems": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/MemberCandidate"
+                },
+                {
+                  "$ref": "#/components/schemas/DepartmentCandidate"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ReferenceCandidatesEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ReferenceCandidateItems"
               }
             }
           }

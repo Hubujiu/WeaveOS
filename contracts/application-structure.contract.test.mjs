@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
 const api=JSON.parse(readFileSync(new URL('./openapi/openapi.json',import.meta.url)));
@@ -20,6 +21,14 @@ test('frozen application definition methods expose actual complete DTOs',()=>{
  assert.ok(schemas.FormResult.required.includes('table'));
  assert.ok(schemas.LayoutNodeInput.oneOf.some(s=>s.properties?.span?.minimum===1&&s.properties.span.maximum===12));
  for(const name of ['Structure','Definition','Preflight','DefinitionSave','SchemaDependencyErrorData','SchemaImpactErrorData']) assert.ok(schemas[name]);
+});
+test('application candidate registers exact frozen incremental migration hashes',()=>{
+ const manifest=JSON.parse(readFileSync('infra/server/deploy/compatibility.json','utf8'));
+ assert.equal(manifest.backwardCompatible,true);
+ for(const path of ['archive-migrations/00004_app_structure_audit.sql','migrations/00007_app_structure.sql','migrations/00008_app_records.sql','migrations/00009_record_save_history.sql','migrations/00010_member_source_label_width.sql','migrations/00011_record_reference_defaults.sql']){
+  const expected=createHash('sha256').update(readFileSync('db/'+path,'utf8').replace(/\r\n/g,'\n')).digest('hex');
+  assert.equal(manifest.migrations.find(m=>m.path===path)?.sha256,expected,`unregistered reviewed source ${path}`);
+ }
 });
 test('frozen structure errors have stable status and recoverability',()=>{
  for(const code of ['APPLICATION_STRUCTURE_CONFLICT','APPLICATION_SCHEMA_CONFLICT','APPLICATION_VIEW_CONFLICT','APPLICATION_SCHEMA_DEPENDENCY_BLOCKED','APPLICATION_SCHEMA_REQUIRED_BACKFILL','APPLICATION_SCHEMA_CONVERSION_FAILED','APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED','APPLICATION_SCHEMA_CONFIRMATION_REQUIRED','APPLICATION_SCHEMA_CONFIRMATION_STALE']) assert.equal(codes[code]?.httpStatus,409,code);

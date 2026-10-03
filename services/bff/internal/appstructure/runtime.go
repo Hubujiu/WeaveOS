@@ -16,7 +16,7 @@ type FieldAccess struct {
 	Read    string `json:"read"`
 	Create  bool   `json:"create"`
 	Edit    string `json:"edit"`
-	History string `json:"-"`
+	History string `json:"history"`
 }
 type RecordAccess struct {
 	MenuEnter, Create   bool
@@ -49,6 +49,7 @@ type RuntimeCapabilities struct {
 	Create      bool   `json:"create"`
 	Read        string `json:"read"`
 	Edit        string `json:"edit"`
+	History     string `json:"history"`
 	Search      bool   `json:"search"`
 	DraftCreate bool   `json:"draftCreate"`
 	DraftEdit   bool   `json:"draftEdit"`
@@ -73,6 +74,12 @@ func ProjectRuntime(facts applications.RecordContext, access RecordAccess) (Runt
 	if !validScope(access.Read) || !validScope(access.Edit) {
 		return view, ErrUnavailable
 	}
+	if access.History == "" {
+		access.History = "none"
+	}
+	if !validScope(access.History) {
+		return view, ErrUnavailable
+	}
 	if !access.Create && access.Read == "none" && access.Edit == "none" {
 		return view, applications.ErrDenied
 	}
@@ -85,6 +92,11 @@ func ProjectRuntime(facts applications.RecordContext, access RecordAccess) (Runt
 		return view, ErrUnavailable
 	}
 	view = RuntimeView{AppID: facts.App.ID, TableID: facts.TableID, ViewID: facts.ViewID, SchemaVersion: facts.SchemaVersion, ViewVersion: facts.ViewVersion, PolicyRevision: facts.App.PolicyRevision, Fields: []RuntimeField{}, Layout: []appfields.LayoutNode{}, Capabilities: RuntimeCapabilities{Create: access.Create, Read: access.Read, Edit: access.Edit, Search: access.Read != "none", DraftCreate: access.Create, DraftEdit: access.Edit != "none"}}
+	view.Capabilities.History = intersectScope(access.Read, access.History)
+	ownerHistory := facts.Actor.BootstrapAdmin || appfields.ValidID(facts.Actor.ID) && facts.Actor.ID == facts.App.OwnerUserID
+	if !ownerHistory {
+		view.Capabilities.History = "none"
+	}
 	allowed := map[string]bool{}
 	for _, f := range fields {
 		mask, ok := access.Fields[f.ID]
@@ -93,6 +105,16 @@ func ProjectRuntime(facts applications.RecordContext, access RecordAccess) (Runt
 		}
 		if !validScope(mask.Read) || !validScope(mask.Edit) {
 			return RuntimeView{}, ErrUnavailable
+		}
+		if mask.History == "" {
+			mask.History = "none"
+		}
+		if !validScope(mask.History) {
+			return RuntimeView{}, ErrUnavailable
+		}
+		mask.History = intersectScope(mask.Read, mask.History)
+		if !ownerHistory && (mask.History == "all" || mask.History == "own" && view.Capabilities.History == "none") {
+			view.Capabilities.History = mask.History
 		}
 		if mask.Read == "none" && !mask.Create && mask.Edit == "none" {
 			continue
@@ -162,6 +184,16 @@ func ProjectRuntime(facts applications.RecordContext, access RecordAccess) (Runt
 	}
 	view.Layout = prune(layout)
 	return view, nil
+}
+
+func intersectScope(a, b string) string {
+	if a == "none" || b == "none" {
+		return "none"
+	}
+	if a == "own" || b == "own" {
+		return "own"
+	}
+	return "all"
 }
 func validScope(v string) bool           { return v == "none" || v == "own" || v == "all" }
 func scopeCovers(have, want string) bool { return have == "all" || have == "own" && want == "own" }

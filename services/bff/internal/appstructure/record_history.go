@@ -8,10 +8,18 @@ import (
 )
 
 type HistoryChange struct {
-	FieldID   string          `json:"fieldId"`
-	FieldKind string          `json:"fieldKind"`
-	Before    json.RawMessage `json:"before"`
-	After     json.RawMessage `json:"after"`
+	FieldID      string                       `json:"fieldId"`
+	FieldKind    string                       `json:"fieldKind"`
+	Before       json.RawMessage              `json:"before"`
+	After        json.RawMessage              `json:"after"`
+	FieldLabel   string                       `json:"fieldLabel"`
+	FieldDeleted bool                         `json:"fieldDeleted"`
+	ValueLabels  map[string]HistoryValueLabel `json:"valueLabels"`
+}
+type HistoryValueLabel struct {
+	Label            *string `json:"label"`
+	Deleted          bool    `json:"deleted"`
+	LabelUnavailable bool    `json:"labelUnavailable"`
 }
 type HistoryEvent struct {
 	ID                  string          `json:"id"`

@@ -23,14 +23,26 @@ type pgStrategy struct {
 	table, revision string
 	full, pages     int
 	denied          bool
+	commitHook      func(context.Context, pgx.Tx) error
 }
+
+type commitHookTx struct {
+	pgx.Tx
+	hook func(context.Context, pgx.Tx) error
+}
+
+func (t commitHookTx) Commit(ctx context.Context) error { return t.hook(ctx, t.Tx) }
 
 func (*pgStrategy) Resource() string { return "fixture" }
 func (s *pgStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
 	if s.denied {
 		return nil, errFixtureDenied
 	}
-	return s.db.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly})
+	tx, err := s.db.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly})
+	if err != nil || s.commitHook == nil {
+		return tx, err
+	}
+	return commitHookTx{Tx: tx, hook: s.commitHook}, nil
 }
 func canonicalPrefix(raw json.RawMessage) (json.RawMessage, error) {
 	var c struct {
@@ -244,5 +256,243 @@ func TestRealPGRRRedisLifecycleAndReceipt(t *testing.T) {
 	strategy.denied = false
 	if n, err := client.Exists(ctx, prefix+different.Version).Result(); err != nil || n != 1 {
 		t.Fatalf("new Redis context not committed: %d %v", n, err)
+	}
+}
+
+type faultFixture struct {
+	ctx        context.Context
+	db         *pgx.Conn
+	client     *redis.Client
+	store      *Store
+	strategy   *pgStrategy
+	sessionRef string
+	prefix     string
+	revision   string
+}
+
+func newFaultFixture(t *testing.T) faultFixture {
+	t.Helper()
+	ctx := context.Background()
+	dsn := os.Getenv("WEAVEOS_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Fatal("isolated PostgreSQL required")
+	}
+	db, err := pgx.Connect(ctx, dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	opts, err := redis.ParseURL(os.Getenv("WEAVEOS_TEST_REDIS_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := redis.NewClient(opts)
+	if err := client.Ping(ctx).Err(); err != nil {
+		t.Fatal(err)
+	}
+	name := fmt.Sprintf("v015_q36_fault_%d", time.Now().UnixNano())
+	table := pgx.Identifier{name}.Sanitize()
+	revision := pgx.Identifier{name + "_rev"}.Sanitize()
+	for _, sql := range []string{
+		"CREATE TABLE " + table + "(id integer PRIMARY KEY,txt text NOT NULL)",
+		"CREATE TABLE " + revision + "(rev bigint NOT NULL)",
+		"INSERT INTO " + table + " VALUES(1,'apple'),(2,'apricot')",
+		"INSERT INTO " + revision + " VALUES(1)",
+	} {
+		if _, err := db.Exec(ctx, sql); err != nil {
+			t.Fatal(err)
+		}
+	}
+	policy := Policy{
+		Validate: func(m Metadata) bool {
+			var n int64
+			_, err := canonicalPrefix(m.Criteria)
+			return m.View == "fixture" && err == nil && json.Unmarshal(m.Revision, &n) == nil && n > 0
+		},
+		Forward: func(view string, previous, next json.RawMessage) bool {
+			var a, b int64
+			return view == "fixture" && json.Unmarshal(previous, &a) == nil && json.Unmarshal(next, &b) == nil && a > 0 && b >= a
+		},
+	}
+	store := NewStore(client, "q36test", name, policy)
+	sessionRef := "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+	prefix, err := store.Prefix(sessionRef)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+table)
+		_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+revision)
+		_ = db.Close(ctx)
+		probe := redis.NewClient(opts)
+		keys, _ := probe.Keys(ctx, "ems:q36test:query:"+name+":*").Result()
+		if len(keys) > 0 {
+			_ = probe.Del(ctx, keys...).Err()
+		}
+		_ = probe.Close()
+		_ = client.Close()
+	})
+	return faultFixture{ctx: ctx, db: db, client: client, store: store,
+		strategy:   &pgStrategy{db: db, table: table, revision: revision},
+		sessionRef: sessionRef, prefix: prefix, revision: revision}
+}
+
+func (f faultFixture) revisionTo(t *testing.T, n int) {
+	t.Helper()
+	if _, err := f.db.Exec(f.ctx, "UPDATE "+f.revision+" SET rev=$1", n); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// The fault is injected only at the real PG transaction's Commit boundary.
+// Reads and observation use PostgreSQL; published state uses real Redis.
+func TestRealPGRRCommitFailureNeverPublishesRedis(t *testing.T) {
+	f := newFaultFixture(t)
+	criteria := json.RawMessage(`{"prefix":"a"}`)
+	commitError := errors.New("forced RR COMMIT acknowledgement failure")
+	for _, committed := range []bool{false, true} {
+		f.strategy.commitHook = func(ctx context.Context, tx pgx.Tx) error {
+			if committed {
+				if err := tx.Commit(ctx); err != nil {
+					return err
+				}
+			} else {
+				_ = tx.Rollback(ctx)
+			}
+			return commitError
+		}
+		if _, err := Execute(f.ctx, f.store, f.sessionRef, "", criteria, Page{1, 1}, f.strategy); !errors.Is(err, commitError) {
+			t.Fatalf("committed=%v new query reported success: %v", committed, err)
+		}
+		keys, err := f.client.Keys(f.ctx, f.prefix+"*").Result()
+		if err != nil || len(keys) != 0 {
+			t.Fatalf("committed=%v failed RR published a context: %v %v", committed, keys, err)
+		}
+	}
+	f.strategy.commitHook = nil
+	baseline, err := Execute(f.ctx, f.store, f.sessionRef, "", criteria, Page{1, 1}, f.strategy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.revisionTo(t, 2) // changes the control revision, not observable rows
+	for _, committed := range []bool{false, true} {
+		f.strategy.commitHook = func(ctx context.Context, tx pgx.Tx) error {
+			if committed {
+				if err := tx.Commit(ctx); err != nil {
+					return err
+				}
+			} else {
+				_ = tx.Rollback(ctx)
+			}
+			return commitError
+		}
+		if _, err := Execute(f.ctx, f.store, f.sessionRef, baseline.Version, criteria, Page{1, 1}, f.strategy); !errors.Is(err, commitError) {
+			t.Fatalf("committed=%v failed RR advanced context: %v", committed, err)
+		}
+		stored, err := f.store.Load(f.ctx, f.sessionRef, baseline.Version)
+		if err != nil || string(stored.Revision) != "1" {
+			t.Fatalf("committed=%v failed RR changed Redis revision: %+v %v", committed, stored, err)
+		}
+		tx, receipt, err := ValidateSavedRead(f.ctx, f.store, f.sessionRef, baseline.Version, f.strategy)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := receipt.Commit(f.ctx, tx); !errors.Is(err, commitError) {
+			t.Fatalf("committed=%v failed receipt reported success: %v", committed, err)
+		}
+		stored, err = f.store.Load(f.ctx, f.sessionRef, baseline.Version)
+		if err != nil || string(stored.Revision) != "1" {
+			t.Fatalf("committed=%v failed receipt changed Redis revision: %+v %v", committed, stored, err)
+		}
+	}
+}
+
+func TestRealPGRRConcurrentCASLossAndOtherRedisError(t *testing.T) {
+	f := newFaultFixture(t)
+	criteria := json.RawMessage(`{"prefix":"a"}`)
+	baseline, err := Execute(f.ctx, f.store, f.sessionRef, "", criteria, Page{1, 1}, f.strategy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved, err := f.store.Load(f.ctx, f.sessionRef, baseline.Version)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.revisionTo(t, 2)
+	f.strategy.commitHook = func(ctx context.Context, tx pgx.Tx) error {
+		if err := tx.Commit(ctx); err != nil {
+			return err
+		}
+		return f.store.Advance(ctx, f.sessionRef, baseline.Version, saved.Fingerprint, json.RawMessage(`1`), json.RawMessage(`2`))
+	}
+	got, err := Execute(f.ctx, f.store, f.sessionRef, baseline.Version, criteria, Page{1, 1}, f.strategy)
+	if err != nil || got.Version != baseline.Version || got.Total != baseline.Total {
+		t.Fatalf("verified RR must tolerate only CAS loss: %+v %v", got, err)
+	}
+	saved, err = f.store.Load(f.ctx, f.sessionRef, baseline.Version)
+	if err != nil || string(saved.Revision) != "2" {
+		t.Fatalf("concurrent CAS did not win: %+v %v", saved, err)
+	}
+	f.revisionTo(t, 3)
+	f.strategy.commitHook = func(ctx context.Context, tx pgx.Tx) error {
+		if err := tx.Commit(ctx); err != nil {
+			return err
+		}
+		return f.store.Advance(ctx, f.sessionRef, baseline.Version, saved.Fingerprint, json.RawMessage(`2`), json.RawMessage(`3`))
+	}
+	tx, receipt, err := ValidateSavedRead(f.ctx, f.store, f.sessionRef, baseline.Version, f.strategy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := receipt.Commit(f.ctx, tx); err != nil {
+		t.Fatalf("verified read receipt rejected concurrent CAS loss: %v", err)
+	}
+	saved, err = f.store.Load(f.ctx, f.sessionRef, baseline.Version)
+	if err != nil || string(saved.Revision) != "3" {
+		t.Fatalf("receipt concurrent CAS did not win: %+v %v", saved, err)
+	}
+	f.revisionTo(t, 4)
+	opts, err := redis.ParseURL(os.Getenv("WEAVEOS_TEST_REDIS_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	probe := redis.NewClient(opts)
+	defer probe.Close()
+	f.strategy.commitHook = func(ctx context.Context, tx pgx.Tx) error {
+		if err := tx.Commit(ctx); err != nil {
+			return err
+		}
+		return f.client.Close() // fail only the post-RR Redis Advance
+	}
+	if _, err := Execute(f.ctx, f.store, f.sessionRef, baseline.Version, criteria, Page{1, 1}, f.strategy); err == nil || errors.Is(err, ErrCAS) {
+		t.Fatalf("non-CAS Redis failure was suppressed: %v", err)
+	}
+	revision, err := probe.HGet(f.ctx, f.prefix+baseline.Version, "revision").Result()
+	if err != nil || revision != "3" {
+		t.Fatalf("failed Redis call unexpectedly advanced revision: %q %v", revision, err)
+	}
+
+	// A saved-read receipt has the same post-COMMIT error boundary.
+	g := newFaultFixture(t)
+	receiptBaseline, err := Execute(g.ctx, g.store, g.sessionRef, "", criteria, Page{1, 1}, g.strategy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	g.revisionTo(t, 2)
+	g.strategy.commitHook = func(ctx context.Context, tx pgx.Tx) error {
+		if err := tx.Commit(ctx); err != nil {
+			return err
+		}
+		return g.client.Close()
+	}
+	tx, receipt, err = ValidateSavedRead(g.ctx, g.store, g.sessionRef, receiptBaseline.Version, g.strategy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := receipt.Commit(g.ctx, tx); err == nil || errors.Is(err, ErrCAS) {
+		t.Fatalf("non-CAS receipt Redis failure was suppressed: %v", err)
+	}
+	receiptRevision, err := probe.HGet(g.ctx, g.prefix+receiptBaseline.Version, "revision").Result()
+	if err != nil || receiptRevision != "1" {
+		t.Fatalf("failed receipt Redis call unexpectedly advanced revision: %q %v", receiptRevision, err)
 	}
 }

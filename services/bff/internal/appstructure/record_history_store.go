@@ -41,7 +41,12 @@ func (RecordHistoryStore) Append(c context.Context, tx pgx.Tx, m HistoryMutation
 		if delta.FieldKind != f.Kind {
 			return applications.ErrResourceInvalid
 		}
-		for _, v := range []json.RawMessage{delta.Before, delta.After} {
+		for i, v := range []json.RawMessage{delta.Before, delta.After} {
+			if i == 0 && m.RecordVersionBefore == 0 && string(v) == "null" {
+				// Before creation there is no record; required applies to its
+				// resulting value, not to this history absence marker.
+				continue
+			}
 			canonical, e := appfields.NormalizeValue(f, v)
 			if e != nil || !jsonEqual(v, canonical) {
 				return applications.ErrResourceInvalid
@@ -87,7 +92,7 @@ func (RecordHistoryStore) Page(c context.Context, tx pgx.Tx, in HistoryRead) (Hi
 	rows, e := tx.Query(c, `SELECT e.id::text,e.record_version_before,e.record_version_after,e.actor_user_id::text,e.occurred_at,e.origin,delta.changes
  FROM applications.record_change_events e
  CROSS JOIN LATERAL (
- SELECT jsonb_agg(jsonb_build_object('fieldId',v.field_id,'fieldKind',v.field_kind,'before',v.old_value,'after',v.new_value) ORDER BY v.field_id) changes
+ SELECT jsonb_agg(jsonb_build_object('fieldId',v.field_id,'fieldKind',v.field_kind,'before',v.old_value,'after',v.new_value,'fieldLabel',f.definition->>'name','fieldDeleted',f.removed,'valueLabels','{}'::jsonb) ORDER BY v.field_id) changes
  FROM applications.record_change_values v JOIN applications.fields f ON f.app_id=v.app_id AND f.table_id=v.table_id AND f.id=v.field_id
  WHERE v.event_id=e.id AND ($4 OR NOT f.removed AND v.field_id=ANY($5::uuid[]))
  ) delta
@@ -110,9 +115,142 @@ func (RecordHistoryStore) Page(c context.Context, tx pgx.Tx, in HistoryRead) (Hi
 	if rows.Err() != nil {
 		return HistoryPage{}, ErrUnavailable
 	}
+	rows.Close()
 	if len(page.Items) > in.PageSize {
 		page.HasMore = true
 		page.Items = page.Items[:in.PageSize]
 	}
+	if e = historyLabels(c, tx, in.AppID, in.TableID, page.Items); e != nil {
+		return HistoryPage{}, e
+	}
 	return page, nil
+}
+
+// Labels are hydrated after permitted deltas and event pagination are fixed,
+// in the same read transaction. No hidden field or whole candidate set is read.
+func historyLabels(c context.Context, tx pgx.Tx, app, table string, events []HistoryEvent) error {
+	requested := map[string]map[string]bool{"member": {}, "department": {}, "option": {}}
+	fieldIDs := map[string]bool{}
+	idsFor := func(change HistoryChange) ([]string, error) {
+		ids := []string{}
+		for _, raw := range []json.RawMessage{change.Before, change.After} {
+			if string(raw) == "null" {
+				continue
+			}
+			if change.FieldKind == "multi_select" {
+				var list []string
+				if json.Unmarshal(raw, &list) != nil {
+					return nil, ErrUnavailable
+				}
+				ids = append(ids, list...)
+			} else {
+				var id string
+				if json.Unmarshal(raw, &id) != nil {
+					return nil, ErrUnavailable
+				}
+				ids = append(ids, id)
+			}
+		}
+		for _, id := range ids {
+			if !appfields.ValidID(id) {
+				return nil, ErrUnavailable
+			}
+		}
+		return ids, nil
+	}
+	kindFor := func(kind string) string {
+		if kind == "single_select" || kind == "multi_select" {
+			return "option"
+		}
+		if kind == "member" || kind == "department" {
+			return kind
+		}
+		return ""
+	}
+	for _, event := range events {
+		for _, change := range event.Changes {
+			kind := kindFor(change.FieldKind)
+			if kind == "" {
+				continue
+			}
+			ids, e := idsFor(change)
+			if e != nil {
+				return e
+			}
+			for _, id := range ids {
+				requested[kind][id] = true
+			}
+			if kind == "option" {
+				fieldIDs[change.FieldID] = true
+			}
+		}
+	}
+	labels := map[string]map[string]HistoryValueLabel{"member": {}, "department": {}, "option": {}}
+	keys := func(set map[string]bool) []string {
+		ids := []string{}
+		for id := range set {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	for _, kind := range []string{"member", "department", "option"} {
+		if len(requested[kind]) == 0 {
+			continue
+		}
+		var rows pgx.Rows
+		var e error
+		if kind == "option" {
+			rows, e = tx.Query(c, "SELECT field_id::text||':'||option_id::text,label,removed FROM applications.field_option_tombstones WHERE app_id=$1 AND table_id=$2 AND field_id=ANY($3::uuid[]) AND option_id=ANY($4::uuid[])", app, table, keys(fieldIDs), keys(requested[kind]))
+		} else {
+			source := "applications.member_sources"
+			if kind == "department" {
+				source = "applications.department_sources"
+			}
+			rows, e = tx.Query(c, "SELECT id::text,label,status='deleted' FROM "+source+" WHERE id=ANY($1::uuid[])", keys(requested[kind]))
+		}
+		if e != nil {
+			return ErrUnavailable
+		}
+		for rows.Next() {
+			var id, label string
+			var deleted bool
+			if rows.Scan(&id, &label, &deleted) != nil {
+				rows.Close()
+				return ErrUnavailable
+			}
+			copy := label
+			labels[kind][id] = HistoryValueLabel{Label: &copy, Deleted: deleted}
+		}
+		e = rows.Err()
+		rows.Close()
+		if e != nil {
+			return ErrUnavailable
+		}
+	}
+	for i := range events {
+		for j := range events[i].Changes {
+			change := &events[i].Changes[j]
+			change.ValueLabels = map[string]HistoryValueLabel{}
+			kind := kindFor(change.FieldKind)
+			if kind == "" {
+				continue
+			}
+			ids, e := idsFor(*change)
+			if e != nil {
+				return e
+			}
+			for _, id := range ids {
+				key := id
+				if kind == "option" {
+					key = change.FieldID + ":" + id
+				}
+				label, ok := labels[kind][key]
+				if !ok {
+					label = HistoryValueLabel{LabelUnavailable: true}
+				}
+				change.ValueLabels[id] = label
+			}
+		}
+	}
+	return nil
 }

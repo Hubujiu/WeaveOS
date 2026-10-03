@@ -22,6 +22,7 @@ type Service struct {
 	Logger            *slog.Logger
 	TrustedProxyHosts []string
 	Definitions       http.Handler
+	Records           http.Handler
 }
 
 func (s *Service) TrustedProxies() []string { return append([]string(nil), s.TrustedProxyHosts...) }
@@ -230,6 +231,14 @@ func (s *Service) write(w http.ResponseWriter, r *http.Request, p session.Princi
 	s.finish(w, r, p, result)
 }
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if s.Records != nil {
+		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
+		parts := strings.Split(path, "/")
+		if path != r.URL.Path && len(parts) >= 4 && parts[1] == "forms" && (parts[3] == "records" || parts[3] == "drafts") && !(len(parts) == 6 && parts[3] == "records" && parts[5] == "history") {
+			s.Records.ServeHTTP(w, r)
+			return
+		}
+	}
 	if s.Definitions != nil {
 		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
 		parts := strings.Split(path, "/")

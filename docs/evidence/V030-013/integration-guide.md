@@ -1,3 +1,37 @@
+# Current records HTTP / ADR14 checkpoint
+
+This branch's current checkpoint supersedes the older endpoint list below.
+PR27 remains draft, no whole-version acceptance, merge or deployment approval.
+Exact source SHA is the PR27 head accompanying this checkpoint; never infer
+availability from an older task guide hash.
+
+Available under the actual configured BFF:
+- owner/Bootstrap directory/table/form/definition/preflight/Save and definition
+  member/department candidates;
+- owner and ordinary real form runtime, record create/read/edit/search,
+  draft create/read/list/update/discard, record save history;
+- field/action-scoped ordinary active reference candidates.
+
+See contracts/openapi/openapi.json at that same SHA. Draft POST201/PATCH200 are
+normal/replay minimum {operationId,id,draftVersion}; DELETE204 is bodyless; GET
+reads actual currently authorized Draft. Read/search are readonly despite search
+POST needing existing Session/Origin/CSRF. Record mutation minimum6keys, operation
+recovery no business values. Reference candidates require actual field/action/
+record authority, current active source and bound opaque cursor; definition
+candidates are still manager-only. Use original operationId after unknown COMMIT.
+
+Apply cold1–4 and hot1–12 in isolated fixtures plus reviewed respective roles.
+Current config requires the existing explicit dedicated definition key and both
+schema budgets for protected writes. No new identity credential or broad role.
+
+Boundary: private table presets are NOT available until lead reads back exact
+ADR14.4 proposal and implementation passes. Schema conflict error remains owner
+consumer defect (real HTTP RED retained); don't pretend every error is validated.
+Migration compatibility manifest scope registration and new-head CI are pending.
+Capacity and V017 joint browser acceptance remain independent open gates.
+
+---
+
 # V030-013 available integration and isolated test configuration
 
 Current published API baseline: bf4956394581979f3371a8840a95f3c59166b801,

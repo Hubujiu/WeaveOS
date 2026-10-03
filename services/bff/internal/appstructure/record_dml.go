@@ -38,22 +38,35 @@ type StoredRecordHeader struct {
 }
 type RecordDML struct{}
 
+// Published writes always compose the real history port in the caller's tx.
+// The primitive capability stays private to this owner package.
+type nativeRecordDML struct{}
+
 func (d RecordDML) Insert(c context.Context, tx pgx.Tx, table RecordTable, in RecordCreate, selected []string) (StoredRecordHeader, error) {
+	return (RecordHistoryDML{History: RecordHistoryStore{}, Origin: "ordinary"}).Insert(c, tx, table, in, selected)
+}
+func (d RecordDML) LockHeader(c context.Context, tx pgx.Tx, table RecordTable, id string) (StoredRecordHeader, error) {
+	return (nativeRecordDML{}).LockHeader(c, tx, table, id)
+}
+func (d RecordDML) UpdateCAS(c context.Context, tx pgx.Tx, table RecordTable, in RecordEdit, selected []string) (StoredRecordHeader, error) {
+	return (RecordHistoryDML{History: RecordHistoryStore{}, Origin: "ordinary"}).UpdateCAS(c, tx, table, in, selected)
+}
+func (d nativeRecordDML) Insert(c context.Context, tx pgx.Tx, table RecordTable, in RecordCreate, selected []string) (StoredRecordHeader, error) {
 	if !appfields.ValidID(in.ActorID) || !appfields.ValidID(in.OperationID) {
 		return StoredRecordHeader{}, applications.ErrResourceInvalid
 	}
 	return d.call(c, tx, table, in.ID, in.ActorID, "insert", in.ExpectedSchemaVersion, 0, in.Values, selected)
 }
-func (d RecordDML) LockHeader(c context.Context, tx pgx.Tx, table RecordTable, id string) (StoredRecordHeader, error) {
+func (d nativeRecordDML) LockHeader(c context.Context, tx pgx.Tx, table RecordTable, id string) (StoredRecordHeader, error) {
 	return d.call(c, tx, table, id, "", "lock_header", table.SchemaVersion, 0, map[string]any{}, []string{})
 }
-func (d RecordDML) UpdateCAS(c context.Context, tx pgx.Tx, table RecordTable, in RecordEdit, selected []string) (StoredRecordHeader, error) {
+func (d nativeRecordDML) UpdateCAS(c context.Context, tx pgx.Tx, table RecordTable, in RecordEdit, selected []string) (StoredRecordHeader, error) {
 	if !appfields.ValidID(in.ActorID) || !appfields.ValidID(in.OperationID) || in.ExpectedRecordVersion < 1 || in.ExpectedRecordVersion > 9007199254740991 {
 		return StoredRecordHeader{}, applications.ErrResourceInvalid
 	}
 	return d.call(c, tx, table, in.ID, in.ActorID, "update", in.ExpectedSchemaVersion, in.ExpectedRecordVersion, in.Changes, selected)
 }
-func (RecordDML) call(c context.Context, tx pgx.Tx, table RecordTable, id, actor, kind string, schema, version int64, values map[string]any, selected []string) (StoredRecordHeader, error) {
+func (nativeRecordDML) call(c context.Context, tx pgx.Tx, table RecordTable, id, actor, kind string, schema, version int64, values map[string]any, selected []string) (StoredRecordHeader, error) {
 	var header StoredRecordHeader
 	if tx == nil {
 		return header, session.ErrUnavailable

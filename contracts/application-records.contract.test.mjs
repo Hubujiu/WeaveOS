@@ -4,6 +4,26 @@ import {test} from 'node:test';
 const api=JSON.parse(readFileSync(new URL('./openapi/openapi.json',import.meta.url)));
 const codes=JSON.parse(readFileSync(new URL('./errors/codes.json',import.meta.url)));
 const schema=api.components.schemas;
+test('ADR14 reference candidates bind field action record and live authority',()=>{
+ const op=api.paths['/api/v1/applications/{appId}/forms/{viewId}/reference-candidates']?.get;
+ assert.ok(op,'field-scoped active candidates route missing');
+ const query=op.parameters.filter(p=>p.in==='query');
+ assert.deepEqual(query.map(p=>p.name),['fieldId','action','recordId','q','pageSize','pageToken']);
+ assert.deepEqual(query.find(p=>p.name==='action').schema.enum,['create','edit']);
+ assert.equal(query.find(p=>p.name==='fieldId').required,true);
+ assert.equal(query.find(p=>p.name==='pageSize').schema.maximum,50);
+ assert.ok(op.parameters.some(p=>p.$ref==='#/components/parameters/ExpectedActor'));
+});
+test('ADR14 draft write minimum and history safe displays are explicit',()=>{
+ const base='/api/v1/applications/{appId}/forms/{viewId}';
+ assert.deepEqual(schema.DraftMutationResult?.required,['operationId','id','draftVersion']);
+ assert.equal(api.paths[base+'/drafts'].post.responses['201'].content['application/json'].schema.$ref,'#/components/schemas/DraftMutationResultEnvelope');
+ assert.equal(api.paths[base+'/drafts/{draftId}'].patch.responses['200'].content['application/json'].schema.$ref,'#/components/schemas/DraftMutationResultEnvelope');
+ assert.ok(schema.RuntimeFieldAccess.required.includes('history'));
+ assert.ok(schema.RuntimeCapabilities.required.includes('history'));
+ assert.ok(schema.RecordHistoryChange.required.includes('fieldKind'));
+ for(const field of ['fieldLabel','fieldDeleted','valueLabels'])assert.ok(schema.RecordHistoryChange.required.includes(field));
+});
 test('frozen record draft runtime and history methods are exact and actor guarded',()=>{
  const base='/api/v1/applications/{appId}/forms/{viewId}';
  for(const[suffix,methods]of Object.entries({'/runtime':['get'],'/records':['post'],'/records/{recordId}':['get','patch'],'/records/search':['post'],'/drafts':['get','post'],'/drafts/{draftId}':['get','patch','delete'],'/records/{recordId}/history':['get']})){

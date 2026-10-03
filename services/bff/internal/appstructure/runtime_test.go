@@ -123,3 +123,23 @@ func marshalRuntime(t *testing.T, v any) json.RawMessage {
 	}
 	return b
 }
+
+func TestRuntimeHistoryHintRequiresSameFieldReadHistoryIntersection(t *testing.T) {
+	readID, historyID := "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002"
+	fields := []appfields.Field{{ID: readID, Name: "readable", Kind: "text", Config: json.RawMessage(`{}`)}, {ID: historyID, Name: "history-only hidden", Kind: "text", Config: json.RawMessage(`{}`)}}
+	facts := applications.RecordContext{SchemaReady: true, Fields: marshalRuntime(t, fields), Layout: json.RawMessage(`[]`)}
+	access := RecordAccess{MenuEnter: true, Read: "all", Edit: "none", History: "all", Fields: map[string]FieldAccess{readID: {Read: "all", Edit: "none", History: "none"}, historyID: {Read: "none", Edit: "none", History: "all"}}}
+	v, e := ProjectRuntime(facts, access)
+	if e != nil {
+		t.Fatal(e)
+	}
+	raw := string(marshalRuntime(t, v))
+	if v.Capabilities.History != "none" || len(v.Fields) != 1 || strings.Contains(raw, "history-only hidden") {
+		t.Fatalf("different fields must not fabricate history capability: %s", raw)
+	}
+	access.Fields[readID] = FieldAccess{Read: "all", Edit: "none", History: "own"}
+	v, e = ProjectRuntime(facts, access)
+	if e != nil || v.Capabilities.History != "own" || v.Fields[0].Access.History != "own" {
+		t.Fatalf("exact same-field scope intersection %+v %v", v, e)
+	}
+}

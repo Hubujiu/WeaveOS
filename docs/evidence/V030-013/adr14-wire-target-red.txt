@@ -1,0 +1,12 @@
+--- FAIL: TestBFFCompositionExposesDefinitionWithSameSession (0.20s)
+    --- FAIL: TestBFFCompositionExposesDefinitionWithSameSession/draft_HTTP_remains_separate_from_records (0.01s)
+        definition_wiring_test.go:242: ADR14 normal draft write must exact minimum {"code":"OK","message":"success","data":{"id":"09e6e92c-68a0-4b17-89e5-2e42a1f2bfef","viewId":"c955cbe6-4e48-41e4-b5e3-39f87281f549","tableId":"df95dd8f-9f67-4b30-b8b0-60541721790f","targetRecordId":null,"schemaVersion":1,"baseRecordVersion":null,"draftVersion":1,"createdAt":"2026-10-03T14:53:48.239132Z","updatedAt":"2026-10-03T14:53:48.239132Z","hasConflicts":false,"values":{"ff36fd62-d73b-4be5-940f-541a5cbc9641":"unfinished"},"conflicts":[]},"meta":{"requestId":"8a148f5653854adf02f5efc886e37483"}}
+    --- FAIL: TestBFFCompositionExposesDefinitionWithSameSession/ordinary_runtime_uses_registered_form_tuple (0.01s)
+        definition_wiring_test.go:309: ADR14 runtime lacks read/history intersection {"code":"OK","message":"success","data":{"appId":"bb046e2e-2802-4acb-afb1-7d9144c3b278","tableId":"df95dd8f-9f67-4b30-b8b0-60541721790f","viewId":"c955cbe6-4e48-41e4-b5e3-39f87281f549","schemaVersion":1,"viewVersion":1,"policyRevision":1,"fields":[{"id":"ff36fd62-d73b-4be5-940f-541a5cbc9641","name":"标题","kind":"text","required":false,"presentation":{"helpText":null,"displayTimeZone":null},"input":{},"access":{"read":"own","create":false,"edit":"none"},"query":{"operators":["eq","neq"],"sortable":false,"quickSearchable":true}}],"layout":[],"capabilities":{"create":false,"read":"own","edit":"none","search":true,"draftCreate":false,"draftEdit":false}},"meta":{"requestId":"357142b6b57d38def51fe9b759bd57d5"}}
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/cmd/bff	0.221s
+--- FAIL: TestHistoryHTTPRealOwnerCursorAndDeletedFieldTombstone (0.12s)
+    record_history_http_test.go:58: ADR14 allowed delta display missing {"code":"OK","message":"success","data":{"items":[{"id":"fe12823b-fab4-49d0-a286-2586b5d1695f","recordVersionBefore":1,"recordVersionAfter":2,"actorId":"2b7e9ccc-616b-4cc2-8ea8-6b4cae81cd7f","occurredAt":"2026-10-03T14:53:50.502883Z","origin":"ordinary","changes":[{"fieldId":"0d9b80f3-63dc-4f85-9f69-a81cce9f1b78","fieldKind":"money","before":"1.00","after":"2.00"}]}]},"meta":{"pagination":{"nextPageToken":"C9LX2TrxMurXc3CGtJpHNE_Vqy64tj6nx3YAQfHiCCE","hasMore":true},"requestId":"9636c726f0594edae60b9484a5de2abc"}}
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure	0.152s
+FAIL

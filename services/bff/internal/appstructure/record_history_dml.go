@@ -22,7 +22,7 @@ func (d RecordHistoryDML) Insert(c context.Context, tx pgx.Tx, table RecordTable
 	if e != nil {
 		return StoredRecordHeader{}, e
 	}
-	header, e := (RecordDML{}).Insert(c, tx, table, in, ids)
+	header, e := (nativeRecordDML{}).Insert(c, tx, table, in, ids)
 	if e != nil {
 		return StoredRecordHeader{}, e
 	}
@@ -70,7 +70,7 @@ func (d RecordHistoryDML) UpdateCAS(c context.Context, tx pgx.Tx, table RecordTa
 	if d.History == nil {
 		return StoredRecordHeader{}, ErrUnavailable
 	}
-	old, e := (RecordDML{}).LockHeader(c, tx, table, in.ID)
+	old, e := (nativeRecordDML{}).LockHeader(c, tx, table, in.ID)
 	if e != nil {
 		return StoredRecordHeader{}, e
 	}
@@ -85,7 +85,7 @@ func (d RecordHistoryDML) UpdateCAS(c context.Context, tx pgx.Tx, table RecordTa
 	if e != nil {
 		return StoredRecordHeader{}, e
 	}
-	header, e := (RecordDML{}).UpdateCAS(c, tx, table, in, ids)
+	header, e := (nativeRecordDML{}).UpdateCAS(c, tx, table, in, ids)
 	if e != nil {
 		return StoredRecordHeader{}, e
 	}

@@ -145,3 +145,52 @@ func TestNativeReferenceGuardRequiresRealRegistryAndCounter(t *testing.T) {
 		})
 	}
 }
+
+func TestNativeGuardValidatesActualPostgreSQLReferenceDefault(t *testing.T) {
+	f := setup(t)
+	f.service.Application.References = CurrentSources{}
+	c := context.Background()
+	view, table := newForm(t, f)
+	ref := field(t, f, "member", f.actor, map[string]any{})
+	data(t, f.call(t, "PUT", "/forms/"+view+"/definition", input(t, f, 0, 0, ref)), 200)
+	var inactive string
+	if e := f.owner.QueryRow(c, "INSERT INTO auth.users(account,status) VALUES('physical-default-'||gen_random_uuid(),'disabled') RETURNING id::text").Scan(&inactive); e != nil {
+		t.Fatal(e)
+	}
+	// Owned fault injection: metadata still advertises an active default while
+	// the physical constant is inactive. The runtime role cannot alter this.
+	if _, e := f.owner.Exec(c, "ALTER TABLE "+tablePhysical(table)+" ALTER COLUMN "+columnPhysical(ref["id"].(string))+" SET DEFAULT '"+inactive+"'::uuid"); e != nil {
+		t.Fatal(e)
+	}
+	id := uuid(t, f.owner)
+	var raw []byte
+	e := f.runtime.QueryRow(c, "SELECT applications.apply_record_change($1,$2,$3,$4,$5,'insert',1,NULL,'{}'::jsonb)", f.app, view, table, id, f.actor).Scan(&raw)
+	var state *pgconn.PgError
+	if !errors.As(e, &state) || state.Code != "23514" {
+		t.Fatal("actual PostgreSQL default must be validated", e)
+	}
+	var count int
+	if e = f.owner.QueryRow(c, "SELECT count(*) FROM "+tablePhysical(table)+" WHERE id=$1", id).Scan(&count); e != nil || count != 0 {
+		t.Fatal("failed physical default left row", count, e)
+	}
+}
+
+func TestNativeNullableReferenceWithoutConstantCreatesNull(t *testing.T) {
+	f := setup(t)
+	c := context.Background()
+	view, table := newForm(t, f)
+	ref := field(t, f, "member", nil, map[string]any{})
+	data(t, f.call(t, "PUT", "/forms/"+view+"/definition", input(t, f, 0, 0, ref)), 200)
+	if _, e := f.owner.Exec(c, "UPDATE applications.fields SET definition=definition-'default' WHERE app_id=$1 AND table_id=$2 AND id=$3", f.app, table, ref["id"]); e != nil {
+		t.Fatal(e)
+	}
+	id := uuid(t, f.owner)
+	var raw []byte
+	if e := f.runtime.QueryRow(c, "SELECT applications.apply_record_change($1,$2,$3,$4,$5,'insert',1,NULL,'{}'::jsonb)", f.app, view, table, id, f.actor).Scan(&raw); e != nil {
+		t.Fatal("nullable physical absence is not a new reference", e)
+	}
+	var isNull bool
+	if e := f.runtime.QueryRow(c, "SELECT "+columnPhysical(ref["id"].(string))+" IS NULL FROM "+tablePhysical(table)+" WHERE id=$1", id).Scan(&isNull); e != nil || !isNull {
+		t.Fatal(isNull, e)
+	}
+}
