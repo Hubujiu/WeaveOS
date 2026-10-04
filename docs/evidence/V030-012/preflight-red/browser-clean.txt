@@ -1,0 +1,124 @@
+
+Running 4 tests using 1 worker
+
+[1/4] [chromium] › apps/web/src/applications.component.spec.ts:101:1 › V030-012 slow create preflight locks its name, ignores repeat clicks, and retains the matching unknown packet
+  1) [chromium] › apps/web/src/applications.component.spec.ts:101:1 › V030-012 slow create preflight locks its name, ignores repeat clicks, and retains the matching unknown packet
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator:  getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true })
+    Expected: disabled
+    Received: enabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true })
+        14 × locator resolved to <input required="" value="新业务应用" name="application-name"/>
+           - unexpected value "enabled"
+
+
+      119 |  await preflightStarted;
+      120 |  try {
+    > 121 |   await expect(input).toBeDisabled();
+          |                       ^
+      122 |   const renamed = await input.fill('改名后的应用', { timeout: 250 }).then(() => true, () => false);
+      123 |   expect(renamed).toBe(false);
+      124 |   await expect(input).toHaveValue('新业务应用');
+        at /repo/apps/web/src/applications.component.spec.ts:121:23
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-ca4be-the-matching-unknown-packet-chromium/error-context.md
+
+
+[2/4] [chromium] › apps/web/src/applications.component.spec.ts:138:1 › V030-012 preflight 401 keeps the unsent name without a write or unknown operation
+  2) [chromium] › apps/web/src/applications.component.spec.ts:138:1 › V030-012 preflight 401 keeps the unsent name without a write or unknown operation
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator:  getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true })
+    Expected: disabled
+    Received: enabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true })
+        14 × locator resolved to <input required="" value="新业务应用" name="application-name"/>
+           - unexpected value "enabled"
+
+
+      155 |  await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+      156 |  await started;
+    > 157 |  await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toBeDisabled();
+          |                                                                           ^
+      158 |  release();
+      159 |  await expect(page).toHaveURL(/\/login$/);
+      160 |  expect(writes).toBe(0);
+        at /repo/apps/web/src/applications.component.spec.ts:157:75
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-98850--write-or-unknown-operation-chromium/error-context.md
+
+
+[3/4] [chromium] › apps/web/src/applications.component.spec.ts:173:1 › V030-012 preflight actor mismatch masks the Shell before any create POST
+  3) [chromium] › apps/web/src/applications.component.spec.ts:173:1 › V030-012 preflight actor mismatch masks the Shell before any create POST
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator:  getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true })
+    Expected: disabled
+    Received: enabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true })
+        14 × locator resolved to <input required="" value="新业务应用" name="application-name"/>
+           - unexpected value "enabled"
+
+
+      189 |  await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+      190 |  await started;
+    > 191 |  await expect(dialog.getByRole('textbox', { name: '应用名称', exact: true })).toBeDisabled();
+          |                                                                           ^
+      192 |  release();
+      193 |  await expect(page.getByRole('alert').filter({ hasText: '登录身份已变化' })).toBeVisible();
+      194 |  await expect(page.getByTestId('application-shell')).toHaveCount(0);
+        at /repo/apps/web/src/applications.component.spec.ts:191:75
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-4b6f5-hell-before-any-create-POST-chromium/error-context.md
+
+
+[4/4] [chromium] › apps/web/src/applications.component.spec.ts:198:1 › V030-012 discarding a gated unsent create through Back prevents its later POST and success
+  4) [chromium] › apps/web/src/applications.component.spec.ts:198:1 › V030-012 discarding a gated unsent create through Back prevents its later POST and success
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true })
+    Expected: ""
+    Received: "放弃的应用"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveValue" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true })
+        14 × locator resolved to <input disabled required="" value="放弃的应用" name="application-name"/>
+           - unexpected value "放弃的应用"
+
+
+      228 |  await page.getByRole('button', { name: '打开应用中心', exact: true }).click();
+      229 |  await page.getByRole('button', { name: '新建应用', exact: true }).click();
+    > 230 |  await expect(page.getByRole('dialog', { name: '新建应用', exact: true }).getByRole('textbox', { name: '应用名称', exact: true })).toHaveValue('');
+          |                                                                                                                            ^
+      231 |  await expect(page.getByRole('status').filter({ hasText: '应用已创建' })).toHaveCount(0);
+      232 | });
+      233 |
+        at /repo/apps/web/src/applications.component.spec.ts:230:124
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-dc7ce--its-later-POST-and-success-chromium/error-context.md
+
+
+  4 failed
+    [chromium] › apps/web/src/applications.component.spec.ts:101:1 › V030-012 slow create preflight locks its name, ignores repeat clicks, and retains the matching unknown packet
+    [chromium] › apps/web/src/applications.component.spec.ts:138:1 › V030-012 preflight 401 keeps the unsent name without a write or unknown operation
+    [chromium] › apps/web/src/applications.component.spec.ts:173:1 › V030-012 preflight actor mismatch masks the Shell before any create POST
+    [chromium] › apps/web/src/applications.component.spec.ts:198:1 › V030-012 discarding a gated unsent create through Back prevents its later POST and success

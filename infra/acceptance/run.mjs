@@ -25,7 +25,7 @@ const password = randomBytes(32).toString('hex');
 const database = name => `postgres://weaveos_test:${password}@127.0.0.1:5432/${name}?sslmode=disable&connect_timeout=2`;
 const privateFile = (name, text) => writeFileSync(resolve(dir, name), text, { mode: 0o600, flag: 'wx' });
 privateFile('postgres.env', `POSTGRES_USER=weaveos_test\nPOSTGRES_PASSWORD=${password}\nPOSTGRES_DB=weaveos_ci_test\n`);
-privateFile('runtime.env', `WEAVEOS_DATABASE_URL=${database('weaveos_acceptance').replace('@127.0.0.1:', '@postgres:')}\nWEAVEOS_REDIS_URL=redis://redis:6379/0\nWEAVEOS_SESSION_GENERATION=${project}\nWEAVEOS_AUDIT_KEY_ID=test\nWEAVEOS_AUDIT_HMAC_KEY=${randomBytes(32).toString('base64')}\n`);
+privateFile('runtime.env', `WEAVEOS_DATABASE_URL=${database('weaveos_acceptance').replace('@127.0.0.1:', '@postgres:')}\nWEAVEOS_REDIS_URL=redis://redis:6379/0\nWEAVEOS_SESSION_GENERATION=${project}\nWEAVEOS_AUDIT_KEY_ID=test\nWEAVEOS_AUDIT_HMAC_KEY=${randomBytes(32).toString('base64')}\nWEAVEOS_DEFINITION_HMAC_KEY=${randomBytes(32).toString('base64')}\nWEAVEOS_DEFINITION_KEY_ID=test\nWEAVEOS_SCHEMA_LOCK_TIMEOUT_MS=1000\nWEAVEOS_SCHEMA_STATEMENT_TIMEOUT_MS=5000\n`);
 privateFile('seed.env', `WEAVEOS_TEST_DATABASE_URL=${database('weaveos_acceptance')}\nWEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/acceptance/fixtures.json\n`);
 const openssl = process.platform === 'win32' ? 'C:/Program Files/Git/usr/bin/openssl.exe' : 'openssl';
 call(openssl, ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '2', '-keyout', resolve(dir, 'tls/key.pem'), '-out', resolve(dir, 'tls/cert.pem'), '-subj', '/CN=localhost', '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1'], { stdio: 'pipe' });

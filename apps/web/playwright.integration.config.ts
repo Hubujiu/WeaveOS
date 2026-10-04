@@ -4,7 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
 const baseURL = process.env.WEAVEOS_WEB_URL;
 if (!baseURL?.startsWith('https://')) throw new Error('Real same-origin HTTPS URL required');
 export default defineConfig({
-  testDir: '../../tests/acceptance', testMatch: 'web.spec.ts',
+  testDir: '../../tests/acceptance', testMatch: ['web.spec.ts', 'applications-web.spec.ts'],
   workers: 1, retries: 0, forbidOnly: true,
   use: { baseURL, ignoreHTTPSErrors: true }, // Isolated, self-signed local test certificate only.
   projects: [

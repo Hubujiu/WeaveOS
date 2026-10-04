@@ -1,0 +1,25 @@
+import { useEffect, useState } from 'react';
+import { Modal } from '../../Modal';
+import type { Application } from '../types';
+import type { useApplicationOperation } from '../useApplicationOperation';
+import { clearRecovery, getRecovery, keepName } from '../recovery';
+
+export function CreateApplication({ actorId, close, onDirty, operation }: { actorId: string; close: () => void; onDirty: (dirty: boolean) => void; operation: ReturnType<typeof useApplicationOperation<Application>> }) {
+ const [name, setName] = useState(() => typeof operation.packet?.body?.name === 'string' ? operation.packet.body.name : getRecovery(actorId)?.name ?? '');
+ const [confirm, setConfirm] = useState(false);
+ const preflight = operation.phase === 'preflight';
+ const sentPending = operation.phase === 'pending';
+ const busy = preflight || sentPending;
+ const unconfirmed = operation.phase === 'unconfirmed';
+ const displayedName = (busy || unconfirmed) && typeof operation.packet?.body?.name === 'string' ? operation.packet.body.name : name;
+ useEffect(() => { keepName(actorId, name); onDirty(name.length > 0 || unconfirmed); return () => onDirty(false); }, [actorId, name, onDirty, unconfirmed]);
+ const requestClose = () => { if (sentPending) return; if (name.length || unconfirmed) setConfirm(true); else { operation.cancelPreflight(); clearRecovery(actorId); close(); } };
+ return <><Modal title="新建应用" onClose={requestClose} busy={sentPending}>
+  <form className="app-create-form" onSubmit={e => { e.preventDefault(); if (!busy && !unconfirmed) operation.start('applications', { name }); }}>
+   <label>应用名称<input autoFocus required name="application-name" value={displayedName} disabled={busy || unconfirmed} onChange={e => { if (busy || unconfirmed) return; setName(e.target.value); keepName(actorId, e.target.value); }} /></label>
+   {operation.message && <p role="alert">{operation.message}</p>}
+   {unconfirmed ? <div className="dialog-actions"><button type="button" className="admin-button" onClick={operation.query}>核查操作</button><button type="button" className="admin-button primary" onClick={operation.retry}>使用同一操作重试</button></div>
+    : <div className="dialog-actions"><button type="button" className="admin-button" disabled={sentPending} onClick={requestClose}>取消</button><button type="submit" className="admin-button primary" disabled={busy}>{preflight ? '正在核验账号…' : sentPending ? '创建中…' : '创建应用'}</button></div>}
+  </form>
+ </Modal>{confirm && <Modal title="有未保存的修改" onClose={() => setConfirm(false)}><p>{unconfirmed ? '创建结果尚未确认。关闭后仍可在新建应用中核查原操作。' : '关闭将丢失未保存的应用名称；尚未发送的创建请求会取消。'}</p><div className="dialog-actions"><button className="admin-button" onClick={() => setConfirm(false)}>继续编辑</button><button className="admin-button primary" onClick={() => { if (!unconfirmed) { operation.cancelPreflight(); clearRecovery(actorId); } close(); }}>{unconfirmed ? '关闭并保留待核查操作' : '放弃修改'}</button></div></Modal>}</>;
+}

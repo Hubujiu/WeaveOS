@@ -1,0 +1,261 @@
+
+Running 21 tests using 1 worker
+········FFF·FFFFFFF··
+
+  1) [chromium] › src/applications/root-boundary.component.spec.ts:85:2 › Root read-only search rejects normalized path applications/22222222-2222-4222-8222-222222222222#fragment/forms/33333333-3333-4333-8333-333333333333/records/search 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 2
+    + Received  + 2
+
+      Object {
+    -   "message": "Read-only POST is restricted to record search",
+    -   "typeError": true,
+    +   "message": "服务暂时不可用，请稍后重试",
+    +   "typeError": false,
+      }
+
+      89 |    catch(error){return {typeError:error instanceof TypeError,message:(error as Error).message};}
+      90 |   },{actor,badPath});
+    > 91 |   expect(result).toEqual({typeError:true,message:'Read-only POST is restricted to record search'});
+         |                  ^
+      92 |   expect(requests).toBe(0);
+      93 |  });
+      94 | }
+        at /repo/apps/web/src/applications/root-boundary.component.spec.ts:91:18
+
+    Error Context: ../../../artifacts/pw-output/applications-root-boundary-472c7-333333333333-records-search-chromium/error-context.md
+
+  2) [chromium] › src/applications/root-boundary.component.spec.ts:85:2 › Root read-only search rejects normalized path applications/../forms/33333333-3333-4333-8333-333333333333/records/search 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 2
+    + Received  + 2
+
+      Object {
+    -   "message": "Read-only POST is restricted to record search",
+    -   "typeError": true,
+    +   "message": "服务暂时不可用，请稍后重试",
+    +   "typeError": false,
+      }
+
+      89 |    catch(error){return {typeError:error instanceof TypeError,message:(error as Error).message};}
+      90 |   },{actor,badPath});
+    > 91 |   expect(result).toEqual({typeError:true,message:'Read-only POST is restricted to record search'});
+         |                  ^
+      92 |   expect(requests).toBe(0);
+      93 |  });
+      94 | }
+        at /repo/apps/web/src/applications/root-boundary.component.spec.ts:91:18
+
+    Error Context: ../../../artifacts/pw-output/applications-root-boundary-2790e-333333333333-records-search-chromium/error-context.md
+
+  3) [chromium] › src/applications/root-boundary.component.spec.ts:85:2 › Root read-only search rejects normalized path applications/22222222-2222-4222-8222-222222222222/forms/%2e%2e/records/search 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 2
+    + Received  + 2
+
+      Object {
+    -   "message": "Read-only POST is restricted to record search",
+    -   "typeError": true,
+    +   "message": "服务暂时不可用，请稍后重试",
+    +   "typeError": false,
+      }
+
+      89 |    catch(error){return {typeError:error instanceof TypeError,message:(error as Error).message};}
+      90 |   },{actor,badPath});
+    > 91 |   expect(result).toEqual({typeError:true,message:'Read-only POST is restricted to record search'});
+         |                  ^
+      92 |   expect(requests).toBe(0);
+      93 |  });
+      94 | }
+        at /repo/apps/web/src/applications/root-boundary.component.spec.ts:91:18
+
+    Error Context: ../../../artifacts/pw-output/applications-root-boundary-9b088--forms-2e-2e-records-search-chromium/error-context.md
+
+  4) [chromium] › src/applications/root-operation-guard.component.spec.ts:14:1 › Root leave guard sees preflight immediately and cancellation prevents the write 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Array [
+    -   "preflight",
+    +   "missing",
+      ]
+
+      22 |  try{
+      23 |   await page.getByRole('button',{name:'保存',exact:true}).click();await entered;
+    > 24 |   expect((await events(page)).afterStartPending).toEqual(['preflight']);
+         |                                                  ^
+      25 |   expect(await pending(page)).toBe('preflight');
+      26 |   expect(await page.evaluate(()=>(window as any).__rootCancelPreflight())).toBeNull();
+      27 |  }finally{release();await Promise.allSettled([wire,done]);}
+        at /repo/apps/web/src/applications/root-operation-guard.component.spec.ts:24:50
+
+    Error Context: ../../../artifacts/pw-output/applications-root-operatio-277a4-ellation-prevents-the-write-chromium/error-context.md
+
+  5) [chromium] › src/applications/root-operation-guard.component.spec.ts:32:1 › Root leave guard distinguishes a sent write and clears only on confirmation 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "write_in_flight"
+    Received: "missing"
+
+      35 |  await page.route('**'+path,async route=>{const op=route.request().postDataJSON().operationId;started();await gate;await route.fulfill({status:201,headers:{Location:path+'/'+recordId},json:envelope(receipt(op))});});
+      36 |  await open(page);
+    > 37 |  try{await page.getByRole('button',{name:'保存',exact:true}).click();await entered;expect(await pending(page)).toBe('write_in_flight');}
+         |                                                                                                              ^
+      38 |  finally{release();}
+      39 |  await expect.poll(async()=> (await events(page)).confirmed.length).toBe(1);
+      40 |  expect(await pending(page)).toBeNull();
+        at /repo/apps/web/src/applications/root-operation-guard.component.spec.ts:37:110
+
+    Error Context: ../../../artifacts/pw-output/applications-root-operatio-94ed6-clears-only-on-confirmation-chromium/error-context.md
+
+  6) [chromium] › src/applications/root-operation-guard.component.spec.ts:44:2 › Root ambiguous HTTP 408 keeps the original write pending 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByLabel('操作阶段')
+    Expected: "unconfirmed"
+    Received: "error"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveText" getByLabel('操作阶段') with timeout 5000ms
+      - waiting for getByLabel('操作阶段')
+        - locator resolved to <output aria-label="操作阶段">pending</output>
+        - unexpected value "pending"
+        13 × locator resolved to <output aria-label="操作阶段">error</output>
+           - unexpected value "error"
+
+
+      45 |   await page.route('**'+path,route=>route.fulfill({status,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null,meta:null}}));
+      46 |   await open(page);await page.getByRole('button',{name:'保存',exact:true}).click();
+    > 47 |   await expect(page.getByLabel('操作阶段')).toHaveText('unconfirmed');
+         |                                         ^
+      48 |   expect(await pending(page)).toBe('unknown');
+      49 |   await expect(page.getByRole('button',{name:'保存',exact:true})).toBeDisabled();
+      50 |   expect((await events(page)).confirmed).toEqual([]);
+        at /repo/apps/web/src/applications/root-operation-guard.component.spec.ts:47:41
+
+    Error Context: ../../../artifacts/pw-output/applications-root-operatio-12160--the-original-write-pending-chromium/error-context.md
+
+  7) [chromium] › src/applications/root-operation-guard.component.spec.ts:44:2 › Root ambiguous HTTP 500 keeps the original write pending 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByLabel('操作阶段')
+    Expected: "unconfirmed"
+    Received: "error"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveText" getByLabel('操作阶段') with timeout 5000ms
+      - waiting for getByLabel('操作阶段')
+        14 × locator resolved to <output aria-label="操作阶段">error</output>
+           - unexpected value "error"
+
+
+      45 |   await page.route('**'+path,route=>route.fulfill({status,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null,meta:null}}));
+      46 |   await open(page);await page.getByRole('button',{name:'保存',exact:true}).click();
+    > 47 |   await expect(page.getByLabel('操作阶段')).toHaveText('unconfirmed');
+         |                                         ^
+      48 |   expect(await pending(page)).toBe('unknown');
+      49 |   await expect(page.getByRole('button',{name:'保存',exact:true})).toBeDisabled();
+      50 |   expect((await events(page)).confirmed).toEqual([]);
+        at /repo/apps/web/src/applications/root-operation-guard.component.spec.ts:47:41
+
+    Error Context: ../../../artifacts/pw-output/applications-root-operatio-21b94--the-original-write-pending-chromium/error-context.md
+
+  8) [chromium] › src/applications/root-operation-guard.component.spec.ts:44:2 › Root ambiguous HTTP 504 keeps the original write pending 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByLabel('操作阶段')
+    Expected: "unconfirmed"
+    Received: "error"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveText" getByLabel('操作阶段') with timeout 5000ms
+      - waiting for getByLabel('操作阶段')
+        14 × locator resolved to <output aria-label="操作阶段">error</output>
+           - unexpected value "error"
+
+
+      45 |   await page.route('**'+path,route=>route.fulfill({status,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null,meta:null}}));
+      46 |   await open(page);await page.getByRole('button',{name:'保存',exact:true}).click();
+    > 47 |   await expect(page.getByLabel('操作阶段')).toHaveText('unconfirmed');
+         |                                         ^
+      48 |   expect(await pending(page)).toBe('unknown');
+      49 |   await expect(page.getByRole('button',{name:'保存',exact:true})).toBeDisabled();
+      50 |   expect((await events(page)).confirmed).toEqual([]);
+        at /repo/apps/web/src/applications/root-operation-guard.component.spec.ts:47:41
+
+    Error Context: ../../../artifacts/pw-output/applications-root-operatio-4adba--the-original-write-pending-chromium/error-context.md
+
+  9) [chromium] › src/applications/root-operation-guard.component.spec.ts:53:1 › Root definitive record conflict exposes a safe error code for refresh handling 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByLabel('错误代码')
+    Expected: "APPLICATION_RECORD_CONFLICT"
+    Received: ""
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveText" getByLabel('错误代码') with timeout 5000ms
+      - waiting for getByLabel('错误代码')
+        14 × locator resolved to <output aria-label="错误代码"></output>
+           - unexpected value ""
+
+
+      55 |  await open(page,'edit');await page.getByRole('button',{name:'保存',exact:true}).click();
+      56 |  await expect(page.getByLabel('操作阶段')).toHaveText('error');
+    > 57 |  await expect(page.getByLabel('错误代码')).toHaveText('APPLICATION_RECORD_CONFLICT');
+         |                                        ^
+      58 |  expect(await pending(page)).toBeNull();expect((await events(page)).confirmed).toEqual([]);
+      59 | });
+      60 |
+        at /repo/apps/web/src/applications/root-operation-guard.component.spec.ts:57:40
+
+    Error Context: ../../../artifacts/pw-output/applications-root-operatio-d9aa2-r-code-for-refresh-handling-chromium/error-context.md
+
+  10) [chromium] › src/applications/root-record-leave.component.spec.ts:7:1 › Root record drafts, saved records and persistent drafts have distinct leave scopes 
+
+    Error: expect(received).toHaveLength(expected)
+
+    Expected length: 4
+    Received length: 2
+    Received array:  [{"controller": {"getStatus": [Function getStatus], "prepareLeave": [Function prepareLeave]}, "scope": {"actorId": "11111111-1111-4111-8111-111111111111", "appId": "22222222-2222-4222-8222-222222222222", "kind": "record", "recordId": "44444444-4444-4444-8444-444444444444", "viewId": "33333333-3333-4333-8333-333333333333"}, "status": "draft"}, {"controller": {"getStatus": [Function getStatus], "prepareLeave": [Function prepareLeave]}, "scope": {"actorId": "11111111-1111-4111-8111-111111111111", "appId": "22222222-2222-4222-8222-222222222222", "draftId": "44444444-4444-4444-8444-444444444444", "kind": "draft", "viewId": "33333333-3333-4333-8333-333333333333"}, "status": "draft"}]
+
+      14 |  ];
+      15 |  scopes.forEach((scope,index)=>guards.register(scope,controller(String(index),calls)));
+    > 16 |  const snapshot=guards.snapshot(actorId);expect(snapshot).toHaveLength(4);
+         |                                                           ^
+      17 |  expect(guards.prepare(snapshot)).toEqual({ok:true});
+      18 |  expect(calls).toEqual(['0:discard','1:discard','2:discard','3:discard']);
+      19 | });
+        at /repo/apps/web/src/applications/root-record-leave.component.spec.ts:16:59
+
+    Error Context: ../../../artifacts/pw-output/applications-root-record-l-d9c0b--have-distinct-leave-scopes-chromium/error-context.md
+
+  10 failed
+    [chromium] › src/applications/root-boundary.component.spec.ts:85:2 › Root read-only search rejects normalized path applications/22222222-2222-4222-8222-222222222222#fragment/forms/33333333-3333-4333-8333-333333333333/records/search 
+    [chromium] › src/applications/root-boundary.component.spec.ts:85:2 › Root read-only search rejects normalized path applications/../forms/33333333-3333-4333-8333-333333333333/records/search 
+    [chromium] › src/applications/root-boundary.component.spec.ts:85:2 › Root read-only search rejects normalized path applications/22222222-2222-4222-8222-222222222222/forms/%2e%2e/records/search 
+    [chromium] › src/applications/root-operation-guard.component.spec.ts:14:1 › Root leave guard sees preflight immediately and cancellation prevents the write 
+    [chromium] › src/applications/root-operation-guard.component.spec.ts:32:1 › Root leave guard distinguishes a sent write and clears only on confirmation 
+    [chromium] › src/applications/root-operation-guard.component.spec.ts:44:2 › Root ambiguous HTTP 408 keeps the original write pending 
+    [chromium] › src/applications/root-operation-guard.component.spec.ts:44:2 › Root ambiguous HTTP 500 keeps the original write pending 
+    [chromium] › src/applications/root-operation-guard.component.spec.ts:44:2 › Root ambiguous HTTP 504 keeps the original write pending 
+    [chromium] › src/applications/root-operation-guard.component.spec.ts:53:1 › Root definitive record conflict exposes a safe error code for refresh handling 
+    [chromium] › src/applications/root-record-leave.component.spec.ts:7:1 › Root record drafts, saved records and persistent drafts have distinct leave scopes 
+  11 passed (28.5s)

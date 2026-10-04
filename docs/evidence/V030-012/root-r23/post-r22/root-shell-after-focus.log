@@ -1,0 +1,57 @@
+
+Running 9 tests using 1 worker
+
+  ✓  1 [chromium] › src/root-record-shell.component.spec.ts:44:1 › Root Shell ordinary form route mounts records under the original persistent chrome (1.9s)
+  ✘  2 [chromium] › src/root-record-shell.component.spec.ts:54:1 › Root Shell create then read authoritative normalized data and edit a record (3.1s)
+  ✓  3 [chromium] › src/root-record-shell.component.spec.ts:73:1 › Root confirmed write with failed reread remains saved and cannot submit again (2.1s)
+  ✓  4 [chromium] › src/root-record-shell.component.spec.ts:82:1 › Root create-only actor confirms a receipt without an unauthorized detail or search read (1.7s)
+  ✘  5 [chromium] › src/root-record-shell.component.spec.ts:88:1 › Root opening an existing row validates the original query before reading detail (30.0s)
+  ✓  6 [chromium] › src/root-record-shell.component.spec.ts:95:1 › Root dirty record modal close requires an explicit discard and restores the origin focus (2.2s)
+  ✓  7 [chromium] › src/root-record-shell.component.spec.ts:103:1 › Root ordinary actor cannot load owner definition by entering the design URL (1.5s)
+  ✓  8 [chromium] › src/root-record-shell.component.spec.ts:110:1 › Root ordinary record editor searches only field-scoped reference candidates (2.3s)
+  ✓  9 [chromium] › src/root-record-shell.component.spec.ts:127:1 › Root owner returns from configuration to the runtime page that opened it (1.9s)
+
+
+  1) [chromium] › src/root-record-shell.component.spec.ts:54:1 › Root Shell create then read authoritative normalized data and edit a record 
+
+    Error: expect(received).toHaveLength(expected)
+
+    Expected length: 2
+    Received length: 1
+    Received array:  [{"actor": "11111111-1111-4111-8111-111111111111", "body": {"expectedSchemaVersion": 1, "operationId": "5a095081-c638-40fc-9552-51bf27fbfe05", "queryVersion": "query-0", "values": {"44444444-4444-4444-8444-444444444444": "12.345"}}, "method": "POST", "path": "applications/22222222-2222-4222-8222-222222222222/forms/33333333-3333-4333-8333-333333333333/records"}]
+
+      64 |  await expect(detail.getByLabel('金额',{exact:true})).not.toBeEditable();await expect(detail.getByLabel('金额',{exact:true})).toHaveValue('20.10');
+      65 |  const writes=api.calls.filter(c=>c.path.startsWith(formPath+'/records')&&['POST','PATCH'].includes(c.method)&&!c.path.endsWith('/search'));
+    > 66 |  expect(writes).toHaveLength(2);expect(writes[0].body.values).toEqual({[fieldId]:'12.345'});
+         |                 ^
+      67 |  expect(writes[1].body).toMatchObject({expectedSchemaVersion:1,expectedRecordVersion:1,changes:{[fieldId]:'20.10'}});
+      68 |  expect(writes[1].body.operationId).not.toBe(writes[0].body.operationId);
+      69 |  expect(api.calls.filter(c=>c.path===formPath+'/records/'+recordId&&c.method==='GET').length).toBeGreaterThanOrEqual(2);
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:66:17
+
+    Error Context: ../../../out/root-record-shell.componen-470b5-ized-data-and-edit-a-record-chromium/error-context.md
+
+  2) [chromium] › src/root-record-shell.component.spec.ts:88:1 › Root opening an existing row validates the original query before reading detail 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '打开记录：金额 18.00', exact: true })
+
+
+      88 | test('Root opening an existing row validates the original query before reading detail',async({page})=>{
+      89 |  const api=await fixture(page,{ordinary:true,staleOpen:true});api.seed('18.00');await page.goto(routePath);
+    > 90 |  await page.getByRole('button',{name:'打开记录：金额 18.00',exact:true}).click();
+         |                                                                   ^
+      91 |  await expect(page.getByRole('alert')).toContainText('刷新');await expect(page.getByRole('dialog',{name:'记录详情',exact:true})).toHaveCount(0);
+      92 |  const searches=api.calls.filter(c=>c.path===formPath+'/records/search');expect(searches).toHaveLength(2);expect(searches[1].body.queryVersion).toBe('query-1');
+      93 |  expect(api.calls.filter(c=>c.path===formPath+'/records/'+recordId)).toEqual([]);
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:90:67
+
+    Error Context: ../../../out/root-record-shell.componen-50d82-query-before-reading-detail-chromium/error-context.md
+
+  2 failed
+    [chromium] › src/root-record-shell.component.spec.ts:54:1 › Root Shell create then read authoritative normalized data and edit a record 
+    [chromium] › src/root-record-shell.component.spec.ts:88:1 › Root opening an existing row validates the original query before reading detail 
+  7 passed (54.5s)

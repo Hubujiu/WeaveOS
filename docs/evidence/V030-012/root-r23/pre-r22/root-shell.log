@@ -1,0 +1,169 @@
+
+Running 9 tests using 1 worker
+
+  ✓  1 [chromium] › src/root-record-shell.component.spec.ts:44:1 › Root Shell ordinary form route mounts records under the original persistent chrome (1.8s)
+  ✘  2 [chromium] › src/root-record-shell.component.spec.ts:54:1 › Root Shell create then read authoritative normalized data and edit a record (7.3s)
+  ✘  3 [chromium] › src/root-record-shell.component.spec.ts:73:1 › Root confirmed write with failed reread remains saved and cannot submit again (7.3s)
+  ✘  4 [chromium] › src/root-record-shell.component.spec.ts:82:1 › Root create-only actor confirms a receipt without an unauthorized detail or search read (6.7s)
+  ✘  5 [chromium] › src/root-record-shell.component.spec.ts:88:1 › Root opening an existing row validates the original query before reading detail (30.0s)
+  ✘  6 [chromium] › src/root-record-shell.component.spec.ts:95:1 › Root dirty record modal close requires an explicit discard and restores the origin focus (7.1s)
+  ✓  7 [chromium] › src/root-record-shell.component.spec.ts:103:1 › Root ordinary actor cannot load owner definition by entering the design URL (1.6s)
+  ✘  8 [chromium] › src/root-record-shell.component.spec.ts:110:1 › Root ordinary record editor searches only field-scoped reference candidates (7.3s)
+  ✓  9 [chromium] › src/root-record-shell.component.spec.ts:127:1 › Root owner returns from configuration to the runtime page that opened it (2.0s)
+
+
+  1) [chromium] › src/root-record-shell.component.spec.ts:54:1 › Root Shell create then read authoritative normalized data and edit a record 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('status').filter({ hasText: '记录已保存' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('status').filter({ hasText: '记录已保存' }) with timeout 5000ms
+      - waiting for getByRole('status').filter({ hasText: '记录已保存' })
+
+
+      58 |  const create=page.getByRole('dialog',{name:'新建记录',exact:true});await expect(create).toBeVisible();
+      59 |  await create.getByLabel('金额',{exact:true}).fill('12.345');await create.getByRole('button',{name:'保存记录',exact:true}).click();
+    > 60 |  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
+         |                                                                   ^
+      61 |  const detail=page.getByRole('dialog',{name:'记录详情',exact:true});await expect(detail).toBeVisible();await expect(detail.getByLabel('金额',{exact:true})).toHaveValue('12.35');
+      62 |  await detail.getByRole('button',{name:'编辑记录',exact:true}).click();
+      63 |  await detail.getByLabel('金额',{exact:true}).fill('20.10');await detail.getByRole('button',{name:'保存记录',exact:true}).click();
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:60:67
+
+    Error Context: ../../../out/root-record-shell.componen-470b5-ized-data-and-edit-a-record-chromium/error-context.md
+
+  2) [chromium] › src/root-record-shell.component.spec.ts:73:1 › Root confirmed write with failed reread remains saved and cannot submit again 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('status').filter({ hasText: '记录已保存' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('status').filter({ hasText: '记录已保存' }) with timeout 5000ms
+      - waiting for getByRole('status').filter({ hasText: '记录已保存' })
+
+
+      74 |  const api=await fixture(page,{detailFailure:true});await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
+      75 |  const dialog=page.getByRole('dialog',{name:'新建记录',exact:true});await dialog.getByLabel('金额',{exact:true}).fill('12.00');await dialog.getByRole('button',{name:'保存记录',exact:true}).click();
+    > 76 |  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
+         |                                                                   ^
+      77 |  await expect(page.getByRole('alert')).toContainText('无法读取');
+      78 |  await expect(page.getByRole('button',{name:'重试读取记录',exact:true})).toBeVisible();
+      79 |  expect(api.calls.filter(c=>c.path===formPath+'/records'&&c.method==='POST')).toHaveLength(1);
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:76:67
+
+    Error Context: ../../../out/root-record-shell.componen-97803-ved-and-cannot-submit-again-chromium/error-context.md
+
+  3) [chromium] › src/root-record-shell.component.spec.ts:82:1 › Root create-only actor confirms a receipt without an unauthorized detail or search read 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('status').filter({ hasText: '记录已保存' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('status').filter({ hasText: '记录已保存' }) with timeout 5000ms
+      - waiting for getByRole('status').filter({ hasText: '记录已保存' })
+
+
+      83 |  const api=await fixture(page,{ordinary:true,createOnly:true});await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
+      84 |  const dialog=page.getByRole('dialog',{name:'新建记录',exact:true});await dialog.getByLabel('金额',{exact:true}).fill('12.00');await dialog.getByRole('button',{name:'保存记录',exact:true}).click();
+    > 85 |  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
+         |                                                                   ^
+      86 |  expect(api.calls.filter(c=>c.path===formPath+'/records/search'||c.path===formPath+'/records/'+recordId&&c.method==='GET')).toEqual([]);
+      87 | });
+      88 | test('Root opening an existing row validates the original query before reading detail',async({page})=>{
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:85:67
+
+    Error Context: ../../../out/root-record-shell.componen-3006f-rized-detail-or-search-read-chromium/error-context.md
+
+  4) [chromium] › src/root-record-shell.component.spec.ts:88:1 › Root opening an existing row validates the original query before reading detail 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '打开记录：金额 18.00', exact: true })
+
+
+      88 | test('Root opening an existing row validates the original query before reading detail',async({page})=>{
+      89 |  const api=await fixture(page,{ordinary:true,staleOpen:true});api.seed('18.00');await page.goto(routePath);
+    > 90 |  await page.getByRole('button',{name:'打开记录：金额 18.00',exact:true}).click();
+         |                                                                   ^
+      91 |  await expect(page.getByRole('alert')).toContainText('刷新');await expect(page.getByRole('dialog',{name:'记录详情',exact:true})).toHaveCount(0);
+      92 |  const searches=api.calls.filter(c=>c.path===formPath+'/records/search');expect(searches).toHaveLength(2);expect(searches[1].body.queryVersion).toBe('query-1');
+      93 |  expect(api.calls.filter(c=>c.path===formPath+'/records/'+recordId)).toEqual([]);
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:90:67
+
+    Error Context: ../../../out/root-record-shell.componen-50d82-query-before-reading-detail-chromium/error-context.md
+
+  5) [chromium] › src/root-record-shell.component.spec.ts:95:1 › Root dirty record modal close requires an explicit discard and restores the origin focus 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog', { name: '新建记录', exact: true })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog', { name: '新建记录', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建记录', exact: true })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+       98 |  const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'继续编辑',exact:true}).click();
+       99 |  await expect(editor.getByLabel('金额',{exact:true})).toHaveValue('7.00');await page.keyboard.press('Escape');await guard.getByRole('button',{name:'放弃修改',exact:true}).click();
+    > 100 |  await expect(editor).toHaveCount(0);await expect(trigger).toBeFocused();
+          |                       ^
+      101 | });
+      102 |
+      103 | test('Root ordinary actor cannot load owner definition by entering the design URL',async({page})=>{
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:100:23
+
+    Error Context: ../../../out/root-record-shell.componen-1459c-d-restores-the-origin-focus-chromium/error-context.md
+
+  6) [chromium] › src/root-record-shell.component.spec.ts:110:1 › Root ordinary record editor searches only field-scoped reference candidates 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('status').filter({ hasText: '记录已保存' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('status').filter({ hasText: '记录已保存' }) with timeout 5000ms
+      - waiting for getByRole('status').filter({ hasText: '记录已保存' })
+
+
+      115 |  await page.getByRole('searchbox',{name:'搜索成员',exact:true}).fill('普通');await page.getByRole('button',{name:'普通成员',exact:true}).click();
+      116 |  await expect(dialog.getByText('普通成员',{exact:true})).toBeVisible();await dialog.getByLabel('金额',{exact:true}).fill('9.00');await dialog.getByRole('button',{name:'保存记录',exact:true}).click();
+    > 117 |  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
+          |                                                                   ^
+      118 |  const q=candidateUrls.find(url=>url.searchParams.get('q')==='普通');expect(q).toBeDefined();
+      119 |  expect(q!.pathname).toBe('/api/v1/'+formPath+'/reference-candidates');
+      120 |  expect(q!.searchParams.get('fieldId')).toBe('66666666-6666-4666-8666-666666666666');
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:117:67
+
+    Error Context: ../../../out/root-record-shell.componen-7a300-scoped-reference-candidates-chromium/error-context.md
+
+  6 failed
+    [chromium] › src/root-record-shell.component.spec.ts:54:1 › Root Shell create then read authoritative normalized data and edit a record 
+    [chromium] › src/root-record-shell.component.spec.ts:73:1 › Root confirmed write with failed reread remains saved and cannot submit again 
+    [chromium] › src/root-record-shell.component.spec.ts:82:1 › Root create-only actor confirms a receipt without an unauthorized detail or search read 
+    [chromium] › src/root-record-shell.component.spec.ts:88:1 › Root opening an existing row validates the original query before reading detail 
+    [chromium] › src/root-record-shell.component.spec.ts:95:1 › Root dirty record modal close requires an explicit discard and restores the origin focus 
+    [chromium] › src/root-record-shell.component.spec.ts:110:1 › Root ordinary record editor searches only field-scoped reference candidates 
+  3 passed (1.3m)

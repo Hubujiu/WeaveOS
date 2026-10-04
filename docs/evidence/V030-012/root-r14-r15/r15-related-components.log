@@ -1,0 +1,35 @@
+
+Running 157 tests using 1 worker
+···························F····················································
+·············································································
+
+  1) [chromium] › src/applications/forms/forms.component.spec.ts:620:1 › A to B to A navigation ignores a late first-generation preflight
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog', { name: '保存预检：表单结构与布局' })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog', { name: '保存预检：表单结构与布局' }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '保存预检：表单结构与布局' })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      638 |   await expect(page.getByRole('region',{name:'字段面板'})).toBeVisible();
+      639 |   release();await page.waitForTimeout(100);
+    > 640 |   await expect(page.getByRole('dialog',{name:'保存预检：表单结构与布局'})).toHaveCount(0);
+          |                                                                ^
+      641 |   expect(state.seen.filter(item=>item.method==='PUT')).toHaveLength(0);
+      642 | });
+      643 |
+        at /repo/apps/web/src/applications/forms/forms.component.spec.ts:640:64
+
+    Error Context: test-results/applications-forms-forms.c-edc34--first-generation-preflight-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/applications/forms/forms.component.spec.ts:620:1 › A to B to A navigation ignores a late first-generation preflight
+  156 passed (3.2m)

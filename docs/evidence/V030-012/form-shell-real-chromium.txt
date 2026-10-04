@@ -1,0 +1,31 @@
+
+Running 1 test using 1 worker
+F
+
+  1) [chromium] › tests/acceptance/applications-web.spec.ts:148:5 › V030-012 real HTTPS Shell persists a directory, form and saved designer field
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('region', { name: '目录与视图管理' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('region', { name: '目录与视图管理' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '目录与视图管理' })
+
+
+      164 |  });
+      165 |  await page.goto('/app/applications/' + app.id);
+    > 166 |  await expect(page.getByRole('region', { name: '目录与视图管理' })).toBeVisible();
+          |                                                              ^
+      167 |  if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('form-structure-empty.png'), fullPage: true });
+      168 |  await page.getByRole('button', { name: '新建目录' }).click();
+      169 |  await page.getByLabel('目录名称').fill(folderName);
+        at /repo/tests/acceptance/applications-web.spec.ts:166:62
+
+    Error Context: .work/v030012/browser-results/applications-web-V030-012--34174-rm-and-saved-designer-field-chromium/error-context.md
+
+  1 failed
+    [chromium] › tests/acceptance/applications-web.spec.ts:148:5 › V030-012 real HTTPS Shell persists a directory, form and saved designer field

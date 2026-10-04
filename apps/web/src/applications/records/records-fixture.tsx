@@ -1,0 +1,16 @@
+import {useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {RecordsPanel} from './RecordsPanel';
+import type {RecordItem,RecordPage,RecordSort,RuntimeField,RuntimeView} from './contracts';
+
+const actor='11111111-1111-4111-8111-111111111111',other='22222222-2222-4222-8222-222222222222',app='33333333-3333-4333-8333-333333333333',viewId='44444444-4444-4444-8444-444444444444';
+const amount='55555555-5555-4555-8555-555555555555',title='66666666-6666-4666-8666-666666666666',secret='77777777-7777-4777-8777-777777777777',reference='88888888-8888-4888-8888-888888888888',source='99999999-9999-4999-8999-999999999999';
+const field=(id:string,name:string,kind:RuntimeField['kind'],read:'own'|'all'):RuntimeField=>({id,name,kind,required:false,presentation:{helpText:null,displayTimeZone:null},input:{referenceKind:kind==='member'?'member':undefined},access:{read,create:true,edit:'own',history:'none'},query:{operators:['eq','neq',...(kind==='money'?['gt','gte','lt','lte'] as const:[])],sortable:kind==='money',quickSearchable:kind==='text'}});
+const view:RuntimeView={appId:app,tableId:app,viewId,schemaVersion:2,viewVersion:3,policyRevision:4,fields:[field(amount,'金额','money','all'),field(title,'标题','text','all'),field(secret,'本人备注','text','own'),field(reference,'申请人','member','all')],layout:[],capabilities:{create:true,read:'all',edit:'own',history:'none',search:true,draftCreate:true,draftEdit:true}};
+const item=(id:string,owner:string,values:RecordItem['values']):RecordItem=>({id,appId:app,tableId:app,viewId,createdBy:owner,createdAt:'2026-10-03T09:00:00Z',updatedAt:'2026-10-03T09:00:00Z',recordVersion:1,schemaVersion:2,values,referenceDisplays:{}});
+const rows=[item('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',other,{[amount]:'10.02',[title]:'先返回',[secret]:'不可见',[reference]:source}),item('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',actor,{[amount]:'2.001',[title]:'后返回',[secret]:'本人内容',[reference]:source})];
+const actions:{sorts:RecordSort[];pages:number[];opens:string[]}={sorts:[],pages:[],opens:[]};Object.assign(window,{__recordsFixture:actions});
+function Fixture(){const [page,setPage]=useState<RecordPage>({items:rows,total:200,page:4,pageSize:20,sort:null,queryVersion:'old-token',schemaVersion:2,viewVersion:3}),[hidden,setHidden]=useState<string[]>([]),[widths,setWidths]=useState<Record<string,number>>({}),[order,setOrder]=useState<string[]>([]),[selected,setSelected]=useState<string[]>([]);
+ return <main><button onClick={()=>setHidden([amount])}>隐藏金额</button><button onClick={()=>setPage(old=>({...old,items:[],page:99}))}>跳至空深页</button><RecordsPanel view={view} actorId={actor} page={page} loading={false} error={null} hiddenColumnIds={hidden} columnWidths={widths} columnOrder={order} selectedRowIds={selected} onSelectionChange={setSelected} onPageChange={value=>{actions.pages.push(value);setPage(old=>({...old,page:value}));}} onPageSizeChange={size=>setPage(old=>({...old,pageSize:size,page:1}))} onSortChange={sort=>{actions.sorts.push(sort);setPage(old=>({...old,sort}));}} onColumnWidthsChange={setWidths} onColumnOrderChange={setOrder} onOpenRecord={record=>{actions.opens.push(record.id);}}/><output aria-label="records-state">{JSON.stringify({page:page.page,selected,hidden})}</output></main>;
+}
+createRoot(document.getElementById('root')!).render(<Fixture/>);

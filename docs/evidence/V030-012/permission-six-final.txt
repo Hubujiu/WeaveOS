@@ -1,0 +1,63 @@
+
+Running 84 tests using 1 worker
+·····F·············F····························································
+····
+
+  1) [chromium] › apps/web/src/applications.permissions.component.spec.ts:141:1 › V030-012 permission management remains keyboard reachable with reduced motion
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  getByRole('dialog', { name: '新建权限组' }).getByRole('textbox', { name: '权限组名称' })
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" getByRole('dialog', { name: '新建权限组' }).getByRole('textbox', { name: '权限组名称' }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建权限组' }).getByRole('textbox', { name: '权限组名称' })
+        14 × locator resolved to <input value=""/>
+           - unexpected value "inactive"
+
+
+      149 |  await create.focus(); await page.keyboard.press('Enter');
+      150 |  const dialog = page.getByRole('dialog', { name: '新建权限组' });
+    > 151 |  await expect(dialog.getByRole('textbox', { name: '权限组名称' })).toBeFocused();
+          |                                                               ^
+      152 |  await dialog.getByRole('textbox', { name: '权限组名称' }).fill('键盘草稿');
+      153 |  await page.keyboard.press('Escape');
+      154 |  const guard = page.getByRole('dialog', { name: '有未保存的修改' });
+        at /repo/apps/web/src/applications.permissions.component.spec.ts:151:63
+
+    Error Context: .work/v030012/browser-results/applications.permissions.c-2791c-achable-with-reduced-motion-chromium/error-context.md
+
+  2) [chromium-reduced] › apps/web/src/applications.permissions.component.spec.ts:141:1 › V030-012 permission management remains keyboard reachable with reduced motion
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  getByRole('dialog', { name: '新建权限组' }).getByRole('textbox', { name: '权限组名称' })
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" getByRole('dialog', { name: '新建权限组' }).getByRole('textbox', { name: '权限组名称' }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建权限组' }).getByRole('textbox', { name: '权限组名称' })
+        14 × locator resolved to <input value=""/>
+           - unexpected value "inactive"
+
+
+      149 |  await create.focus(); await page.keyboard.press('Enter');
+      150 |  const dialog = page.getByRole('dialog', { name: '新建权限组' });
+    > 151 |  await expect(dialog.getByRole('textbox', { name: '权限组名称' })).toBeFocused();
+          |                                                               ^
+      152 |  await dialog.getByRole('textbox', { name: '权限组名称' }).fill('键盘草稿');
+      153 |  await page.keyboard.press('Escape');
+      154 |  const guard = page.getByRole('dialog', { name: '有未保存的修改' });
+        at /repo/apps/web/src/applications.permissions.component.spec.ts:151:63
+
+    Error Context: .work/v030012/browser-results/applications.permissions.c-2791c-achable-with-reduced-motion-chromium-reduced/error-context.md
+
+  2 failed
+    [chromium] › apps/web/src/applications.permissions.component.spec.ts:141:1 › V030-012 permission management remains keyboard reachable with reduced motion
+    [chromium-reduced] › apps/web/src/applications.permissions.component.spec.ts:141:1 › V030-012 permission management remains keyboard reachable with reduced motion
+  82 passed (3.1m)

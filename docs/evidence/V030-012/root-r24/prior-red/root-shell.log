@@ -1,0 +1,85 @@
+
+Running 14 tests using 1 worker
+
+  ✓   1 [chromium] › src/root-record-shell.component.spec.ts:46:1 › Root Shell ordinary form route mounts records under the original persistent chrome (1.7s)
+  ✓   2 [chromium] › src/root-record-shell.component.spec.ts:56:1 › Root Shell create then read authoritative normalized data and edit a record (2.6s)
+  ✓   3 [chromium] › src/root-record-shell.component.spec.ts:79:1 › Root confirmed write with failed reread remains saved and cannot submit again (2.1s)
+  ✓   4 [chromium] › src/root-record-shell.component.spec.ts:90:1 › Root create-only actor confirms a receipt without an unauthorized detail or search read (1.6s)
+  ✓   5 [chromium] › src/root-record-shell.component.spec.ts:96:1 › Root opening an existing row validates the original query before reading detail (1.7s)
+  ✓   6 [chromium] › src/root-record-shell.component.spec.ts:103:1 › Root dirty record modal close requires an explicit discard and restores the origin focus (2.1s)
+  ✓   7 [chromium] › src/root-record-shell.component.spec.ts:111:1 › Root ordinary actor cannot load owner definition by entering the design URL (1.5s)
+  ✓   8 [chromium] › src/root-record-shell.component.spec.ts:118:1 › Root ordinary record editor searches only field-scoped reference candidates (2.2s)
+  ✓   9 [chromium] › src/root-record-shell.component.spec.ts:135:1 › Root owner returns from configuration to the runtime page that opened it (1.9s)
+  ✓  10 [chromium] › src/root-record-shell.component.spec.ts:144:1 › Root rejected create refresh discards only after confirmation and rebuilds page one (2.4s)
+  ✓  11 [chromium] › src/root-record-shell.component.spec.ts:157:1 › Root retry after rejected edit and failed refresh never invents a saved result (2.4s)
+  ✘  12 [chromium] › src/root-record-shell.component.spec.ts:167:1 › Root footer discard confirms before dropping dirty record input (7.0s)
+  ✘  13 [chromium] › src/root-record-shell.component.spec.ts:175:1 › Root shared record route fills its work area and keeps its legend visually hidden (1.9s)
+  ✘  14 [chromium] › src/root-record-shell.component.spec.ts:183:1 › Root record dialog separates fields from shared action buttons (1.9s)
+
+
+  1) [chromium] › src/root-record-shell.component.spec.ts:167:1 › Root footer discard confirms before dropping dirty record input 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: '有未保存的修改', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: '有未保存的修改', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '有未保存的修改', exact: true })
+
+
+      168 |  const api=await fixture(page);await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
+      169 |  const editor=page.getByRole('dialog',{name:'新建记录',exact:true});await editor.getByLabel('金额',{exact:true}).fill('7.00');
+    > 170 |  await editor.getByRole('button',{name:'放弃填写',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();
+          |                                                                                                                                                         ^
+      171 |  await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(editor.getByLabel('金额',{exact:true})).toHaveValue('7.00');
+      172 |  await editor.getByRole('button',{name:'放弃填写',exact:true}).click();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(editor).toHaveCount(0);
+      173 |  expect(api.calls.filter(c=>c.path===formPath+'/records'&&c.method==='POST')).toEqual([]);
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:170:153
+
+    Error Context: ../../../out/root-record-shell.componen-f5756-dropping-dirty-record-input-chromium/error-context.md
+
+  2) [chromium] › src/root-record-shell.component.spec.ts:175:1 › Root shared record route fills its work area and keeps its legend visually hidden 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 1
+    Received:    68
+
+      177 |  await expect(page.getByRole('button',{name:'打开记录：金额 18.00',exact:true})).toBeVisible();
+      178 |  const group=page.getByRole('group',{name:'记录操作',exact:true});await expect(group).toHaveAccessibleName('记录操作');
+    > 179 |  const legend=await page.locator('.record-table-frame > legend').boundingBox();expect(legend).not.toBeNull();expect(legend!.width).toBeLessThanOrEqual(1);expect(legend!.height).toBeLessThanOrEqual(1);
+          |                                                                                                                                    ^
+      180 |  await expect.poll(async()=>{const area=await page.getByRole('main',{name:'应用工作台',exact:true}).boundingBox();const jump=await page.getByRole('button',{name:'跳转到指定页',exact:true}).boundingBox();if(!area||!jump)return false;const gap=area.y+area.height-jump.y-jump.height;return gap>=0&&gap<=80;}).toBe(true);
+      181 |  await page.screenshot({path:test.info().outputPath('record-shell-list.png'),fullPage:true});
+      182 | });
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:179:132
+
+    Error Context: ../../../out/root-record-shell.componen-79d3a--its-legend-visually-hidden-chromium/error-context.md
+
+  3) [chromium] › src/root-record-shell.component.spec.ts:183:1 › Root record dialog separates fields from shared action buttons 
+
+    Error: expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 12
+    Received:    0
+
+      185 |  const dialog=page.getByRole('dialog',{name:'新建记录',exact:true});await expect(dialog.getByLabel('金额',{exact:true})).toBeVisible();
+      186 |  const field=await dialog.locator('.record-form-fields').boundingBox(),footer=await dialog.locator('.record-form footer').boundingBox();
+    > 187 |  expect(field).not.toBeNull();expect(footer).not.toBeNull();expect(footer!.y-field!.y-field!.height).toBeGreaterThanOrEqual(12);
+          |                                                                                                      ^
+      188 |  const cancel=await dialog.getByRole('button',{name:'放弃填写',exact:true}).boundingBox(),save=await dialog.getByRole('button',{name:'保存记录',exact:true}).boundingBox();
+      189 |  expect(cancel).not.toBeNull();expect(save).not.toBeNull();expect(save!.x-cancel!.x-cancel!.width).toBeGreaterThanOrEqual(7.5);
+      190 | });
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:187:102
+
+    Error Context: ../../../out/root-record-shell.componen-3c7b4--from-shared-action-buttons-chromium/error-context.md
+
+  3 failed
+    [chromium] › src/root-record-shell.component.spec.ts:167:1 › Root footer discard confirms before dropping dirty record input 
+    [chromium] › src/root-record-shell.component.spec.ts:175:1 › Root shared record route fills its work area and keeps its legend visually hidden 
+    [chromium] › src/root-record-shell.component.spec.ts:183:1 › Root record dialog separates fields from shared action buttons 
+  11 passed (40.9s)

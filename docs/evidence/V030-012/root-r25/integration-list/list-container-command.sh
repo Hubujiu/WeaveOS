@@ -1,0 +1,11 @@
+#!/bin/sh
+docker run --rm \
+  -v "$PWD:/repo" \
+  -v /tmp/V012-R23-followup-deps/apps/web/node_modules:/repo/apps/web/node_modules \
+  -v /tmp/V012-R23-followup-deps/node_modules:/repo/node_modules \
+  -v /tmp/V012-R20-bin-root-spec:/r20-bin:ro \
+  -w /repo/apps/web \
+  -e WEAVEOS_WEB_URL=https://localhost:19443 \
+  -e PATH=/r20-bin:/repo/apps/web/node_modules/.bin:/repo/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+  mcr.microsoft.com/playwright@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27 \
+  sh -lc 'pnpm exec playwright test --config playwright.integration.config.ts --list'

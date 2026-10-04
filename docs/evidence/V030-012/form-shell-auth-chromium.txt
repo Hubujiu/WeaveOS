@@ -1,0 +1,32 @@
+
+Running 1 test using 1 worker
+F
+
+  1) [chromium] › apps/web/src/applications.form-shell.component.spec.ts:153:1 › V030-012 forced form 401 routes to login and restores only the same actor draft
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('region', { name: '表单画布' })
+    Expected substring: "复登保留字段"
+    Received string:    "请假申请拖拽或用键盘添加字段，保存后才会生效从左侧选择字段，或拖入这里开始设计表单"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('region', { name: '表单画布' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '表单画布' })
+        13 × locator resolved to <section role="region" aria-label="表单画布" class="forms-panel forms-canvas">…</section>
+           - unexpected value "请假申请拖拽或用键盘添加字段，保存后才会生效从左侧选择字段，或拖入这里开始设计表单"
+
+
+      177 |  await expect(page).toHaveURL(/\/app$/);
+      178 |  await page.goto('/app/applications/' + appId + '/forms/' + viewId);
+    > 179 |  await expect(page.getByRole('region', { name: '表单画布' })).toContainText('复登保留字段');
+          |                                                           ^
+      180 | });
+      181 |
+        at /repo/apps/web/src/applications.form-shell.component.spec.ts:179:59
+
+    Error Context: .work/v030012/browser-results/applications.form-shell.co-e749a-s-only-the-same-actor-draft-chromium/error-context.md
+
+  1 failed
+    [chromium] › apps/web/src/applications.form-shell.component.spec.ts:153:1 › V030-012 forced form 401 routes to login and restores only the same actor draft

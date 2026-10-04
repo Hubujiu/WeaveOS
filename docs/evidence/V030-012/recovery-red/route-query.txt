@@ -1,0 +1,78 @@
+[WebServer] (node:11943) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:12004) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 2 tests using 1 worker
+
+(node:12033) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/2] [chromium] › apps/web/src/applications.component.spec.ts:210:1 › V030-012 leaving a dirty create restores its route on cancel and closes it on discard
+  1) [chromium] › apps/web/src/applications.component.spec.ts:210:1 › V030-012 leaving a dirty create restores its route on cancel and closes it on discard 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog', { name: '新建应用', exact: true })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog', { name: '新建应用', exact: true }) with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      223 |  await guard.getByRole('button', { name: '放弃修改', exact: true }).click();
+      224 |  await expect(page).toHaveURL(/\/app$/);
+    > 225 |  await expect(page.getByRole('dialog', { name: '新建应用', exact: true })).toHaveCount(0);
+          |                                                                        ^
+      226 | });
+      227 |
+      228 | test('V030-012 an operation query denial is visible while the original outcome remains unconfirmed', async ({ page }) => {
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:225:72
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-7ee3e-el-and-closes-it-on-discard-chromium/error-context.md
+
+
+(node:12312) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/2] [chromium] › apps/web/src/applications.component.spec.ts:228:1 › V030-012 an operation query denial is visible while the original outcome remains unconfirmed
+  2) [chromium] › apps/web/src/applications.component.spec.ts:228:1 › V030-012 an operation query denial is visible while the original outcome remains unconfirmed 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+    Expected substring: "没有应用访问或管理权限"
+    Received string:    "操作结果仍未确认，请稍后核查或使用同一操作重试。"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+        13 × locator resolved to <p role="alert">操作结果仍未确认，请稍后核查或使用同一操作重试。</p>
+           - unexpected value "操作结果仍未确认，请稍后核查或使用同一操作重试。"
+
+
+      233 |  await dialog.getByRole('button', { name: '创建应用', exact: true }).click();
+      234 |  await dialog.getByRole('button', { name: '核查操作', exact: true }).click();
+    > 235 |  await expect(dialog.getByRole('alert')).toContainText('没有应用访问或管理权限');
+          |                                          ^
+      236 |  await expect(dialog.getByRole('alert')).toContainText('仍未确认');
+      237 |  await expect(dialog.getByRole('button', { name: '使用同一操作重试', exact: true })).toBeVisible();
+      238 | });
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:235:42
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-cfc32-outcome-remains-unconfirmed-chromium/error-context.md
+
+
+  2 failed
+    [chromium] › apps/web/src/applications.component.spec.ts:210:1 › V030-012 leaving a dirty create restores its route on cancel and closes it on discard 
+    [chromium] › apps/web/src/applications.component.spec.ts:228:1 › V030-012 an operation query denial is visible while the original outcome remains unconfirmed 

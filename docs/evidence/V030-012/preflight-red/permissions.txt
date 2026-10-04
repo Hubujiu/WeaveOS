@@ -1,0 +1,26 @@
+
+Running 1 test using 1 worker
+T
+
+  1) [chromium] › apps/web/src/applications.permissions.component.spec.ts:50:1 › V030-012 owner manages a real group with three independent server saves
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '权限管理', exact: true })
+
+
+      51 |  const backend = await fixture(page);
+      52 |  await page.goto('/app/applications/' + app.id);
+    > 53 |  await page.getByRole('button', { name: '权限管理', exact: true }).click();
+         |                                                                ^
+      54 |  await expect(page.getByRole('button', { name: '业务管理员', exact: true })).toBeVisible();
+      55 |  await page.getByRole('button', { name: '业务管理员', exact: true }).click();
+      56 |  await expect(page.getByRole('textbox', { name: '权限组名称', exact: true })).toHaveValue('业务管理员');
+        at /repo/apps/web/src/applications.permissions.component.spec.ts:53:64
+
+    Error Context: .work/v030012/browser-results/applications.permissions.c-870e9-ee-independent-server-saves-chromium/error-context.md
+
+  1 failed
+    [chromium] › apps/web/src/applications.permissions.component.spec.ts:50:1 › V030-012 owner manages a real group with three independent server saves

@@ -1,0 +1,508 @@
+
+Running 29 tests using 1 worker
+FFFFFFF·FFFFFFFFFFFF·TT···FFF
+
+  1) [chromium] › src/applications/root-record-read-contract.component.spec.ts:12:2 › Root read contract keeps scalar member references including tombstones 
+
+    Error: 记录响应格式不正确
+
+       at applications/recordReadContracts.ts:8
+
+       6 | const version=(v:unknown):v is number=>Number.isSafeInteger(v)&&typeof v==='number'&&v>=0;
+       7 | const timestamp=(v:unknown):v is string=>text(v)&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?(?:Z|[+-]\d\d:\d\d)$/.test(v)&&Number.isFinite(Date.parse(v));
+    >  8 | const fail=():never=>{throw new Error('记录响应格式不正确');};
+         |                             ^
+       9 | const scopes:Scope[]=['none','own','all'];
+      10 | const kinds:FieldKind[]=['text','multiline','number','money','date','datetime','single_select','multi_select','boolean','member','department'];
+      11 |
+        at fail (/repo/apps/web/src/applications/recordReadContracts.ts:8:29)
+        at parseRecordItem (/repo/apps/web/src/applications/recordReadContracts.ts:52:179)
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:15:10
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-9d6ce-rences-including-tombstones-chromium/error-context.md
+
+  2) [chromium] › src/applications/root-record-read-contract.component.spec.ts:12:2 › Root read contract keeps scalar department references including tombstones 
+
+    Error: 记录响应格式不正确
+
+       at applications/recordReadContracts.ts:8
+
+       6 | const version=(v:unknown):v is number=>Number.isSafeInteger(v)&&typeof v==='number'&&v>=0;
+       7 | const timestamp=(v:unknown):v is string=>text(v)&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?(?:Z|[+-]\d\d:\d\d)$/.test(v)&&Number.isFinite(Date.parse(v));
+    >  8 | const fail=():never=>{throw new Error('记录响应格式不正确');};
+         |                             ^
+       9 | const scopes:Scope[]=['none','own','all'];
+      10 | const kinds:FieldKind[]=['text','multiline','number','money','date','datetime','single_select','multi_select','boolean','member','department'];
+      11 |
+        at fail (/repo/apps/web/src/applications/recordReadContracts.ts:8:29)
+        at parseRecordItem (/repo/apps/web/src/applications/recordReadContracts.ts:52:179)
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:15:10
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-61236-rences-including-tombstones-chromium/error-context.md
+
+  3) [chromium] › src/applications/root-record-read-contract.component.spec.ts:20:1 › Root runtime accepts rounding at the hundreds place without float conversion 
+
+    Error: 记录响应格式不正确
+
+       at applications/recordReadContracts.ts:8
+
+       6 | const version=(v:unknown):v is number=>Number.isSafeInteger(v)&&typeof v==='number'&&v>=0;
+       7 | const timestamp=(v:unknown):v is string=>text(v)&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?(?:Z|[+-]\d\d:\d\d)$/.test(v)&&Number.isFinite(Date.parse(v));
+    >  8 | const fail=():never=>{throw new Error('记录响应格式不正确');};
+         |                             ^
+       9 | const scopes:Scope[]=['none','own','all'];
+      10 | const kinds:FieldKind[]=['text','multiline','number','money','date','datetime','single_select','multi_select','boolean','member','department'];
+      11 |
+        at fail (/repo/apps/web/src/applications/recordReadContracts.ts:8:29)
+        at map (/repo/apps/web/src/applications/recordReadContracts.ts:19:245)
+        at parseRuntimeView (/repo/apps/web/src/applications/recordReadContracts.ts:14:41)
+        at parseView (/repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:8:32)
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:22:13
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-211c6-ce-without-float-conversion-chromium/error-context.md
+
+  4) [chromium] › src/applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":0,"scale":0,"roundingPlaces":0} 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+      33 | ]){
+      34 |  test('Root rejects invalid decimal configuration '+JSON.stringify(decimal),()=>{
+    > 35 |   expect(()=>parseView(rawView(field('money',{decimal:{...decimal,roundingMode:'HALF_UP'}})))).toThrow();
+         |                                                                                                ^
+      36 |  });
+      37 | }
+      38 |
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:35:96
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-1564c-0-scale-0-roundingPlaces-0--chromium/error-context.md
+
+  5) [chromium] › src/applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":39,"scale":2,"roundingPlaces":2} 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+      33 | ]){
+      34 |  test('Root rejects invalid decimal configuration '+JSON.stringify(decimal),()=>{
+    > 35 |   expect(()=>parseView(rawView(field('money',{decimal:{...decimal,roundingMode:'HALF_UP'}})))).toThrow();
+         |                                                                                                ^
+      36 |  });
+      37 | }
+      38 |
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:35:96
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-27348-9-scale-2-roundingPlaces-2--chromium/error-context.md
+
+  6) [chromium] › src/applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":20,"scale":19,"roundingPlaces":2} 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+      33 | ]){
+      34 |  test('Root rejects invalid decimal configuration '+JSON.stringify(decimal),()=>{
+    > 35 |   expect(()=>parseView(rawView(field('money',{decimal:{...decimal,roundingMode:'HALF_UP'}})))).toThrow();
+         |                                                                                                ^
+      36 |  });
+      37 | }
+      38 |
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:35:96
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-cbbde--scale-19-roundingPlaces-2--chromium/error-context.md
+
+  7) [chromium] › src/applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":2,"scale":3,"roundingPlaces":2} 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+      33 | ]){
+      34 |  test('Root rejects invalid decimal configuration '+JSON.stringify(decimal),()=>{
+    > 35 |   expect(()=>parseView(rawView(field('money',{decimal:{...decimal,roundingMode:'HALF_UP'}})))).toThrow();
+         |                                                                                                ^
+      36 |  });
+      37 | }
+      38 |
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:35:96
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-9fd28-2-scale-3-roundingPlaces-2--chromium/error-context.md
+
+  8) [chromium] › src/applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":20,"scale":2,"roundingPlaces":3} 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+      33 | ]){
+      34 |  test('Root rejects invalid decimal configuration '+JSON.stringify(decimal),()=>{
+    > 35 |   expect(()=>parseView(rawView(field('money',{decimal:{...decimal,roundingMode:'HALF_UP'}})))).toThrow();
+         |                                                                                                ^
+      36 |  });
+      37 | }
+      38 |
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:35:96
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-176f6-0-scale-2-roundingPlaces-3--chromium/error-context.md
+
+  9) [chromium] › src/applications/root-record-read-contract.component.spec.ts:39:1 › Root record read-none and own-row policies cannot be widened by field access 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+      39 | test('Root record read-none and own-row policies cannot be widened by field access',()=>{
+      40 |  const view=parseView(rawView());
+    > 41 |  expect(()=>parseRecordItem(row('value'),{...view,capabilities:{...view.capabilities,read:'none'}},actor)).toThrow();
+         |                                                                                                            ^
+      42 |  expect(()=>parseRecordItem({...row('value'),createdBy:sourceId},{...view,capabilities:{...view.capabilities,read:'own'}},actor)).toThrow();
+      43 | });
+      44 | test('Root own-field value is rejected when the record belongs to somebody else',()=>{
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:41:108
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-6e630--be-widened-by-field-access-chromium/error-context.md
+
+  10) [chromium] › src/applications/root-record-read-contract.component.spec.ts:44:1 › Root own-field value is rejected when the record belongs to somebody else 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+      45 |  const raw=rawView();raw.fields[0].access.read='own';const view=parseView(raw);
+      46 |  expect(parseRecordItem(row('本人值'),view,actor).values[fieldId]).toBe('本人值');
+    > 47 |  expect(()=>parseRecordItem({...row('不属于本人的值'),createdBy:sourceId},view,actor)).toThrow();
+         |                                                                                 ^
+      48 | });
+      49 | test('Root persisted records require positive record and schema versions',()=>{
+      50 |  const view=parseView(rawView());
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:47:81
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-898aa-rd-belongs-to-somebody-else-chromium/error-context.md
+
+  11) [chromium] › src/applications/root-record-read-contract.component.spec.ts:49:1 › Root persisted records require positive record and schema versions 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+      49 | test('Root persisted records require positive record and schema versions',()=>{
+      50 |  const view=parseView(rawView());
+    > 51 |  expect(()=>parseRecordItem({...row('x'),recordVersion:0},view,actor)).toThrow();
+         |                                                                        ^
+      52 |  const unready={...view,schemaVersion:0};
+      53 |  expect(()=>parseRecordItem({...row('x'),schemaVersion:0},unready,actor)).toThrow();
+      54 | });
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:51:72
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-28b46--record-and-schema-versions-chromium/error-context.md
+
+  12) [chromium] › src/applications/root-record-read-contract.component.spec.ts:56:1 › Root supports system timestamp sort and ignores JSON object key order 
+
+    Error: 记录响应格式不正确
+
+       at applications/recordReadContracts.ts:8
+
+       6 | const version=(v:unknown):v is number=>Number.isSafeInteger(v)&&typeof v==='number'&&v>=0;
+       7 | const timestamp=(v:unknown):v is string=>text(v)&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?(?:Z|[+-]\d\d:\d\d)$/.test(v)&&Number.isFinite(Date.parse(v));
+    >  8 | const fail=():never=>{throw new Error('记录响应格式不正确');};
+         |                             ^
+       9 | const scopes:Scope[]=['none','own','all'];
+      10 | const kinds:FieldKind[]=['text','multiline','number','money','date','datetime','single_select','multi_select','boolean','member','department'];
+      11 |
+        at fail (/repo/apps/web/src/applications/recordReadContracts.ts:8:29)
+        at parseRecordPage (/repo/apps/web/src/applications/recordReadContracts.ts:58:148)
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:59:9
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-88316-nores-JSON-object-key-order-chromium/error-context.md
+
+  13) [chromium] › src/applications/root-record-read-contract.component.spec.ts:65:1 › Root rejects duplicate row IDs and oversized pages 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+      65 | test('Root rejects duplicate row IDs and oversized pages',()=>{
+      66 |  const view=parseView(rawView());
+    > 67 |  expect(()=>parseRecordPage(page([row('x'),row('y')]),view,actor,{page:1,pageSize:20,sort:null})).toThrow();
+         |                                                                                                   ^
+      68 |  const oversized={...page([row('x')]),pageSize:101};
+      69 |  expect(()=>parseRecordPage(oversized,view,actor,{page:1,pageSize:101,sort:null})).toThrow();
+      70 |  const excess={...page([row('x'),{...row('y'),id:sourceId}]),pageSize:1};
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:67:99
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-6c592-row-IDs-and-oversized-pages-chromium/error-context.md
+
+  14) [chromium] › src/applications/root-record-read-contract.component.spec.ts:74:1 › Root preserves description layout and canonical UUIDs without inventing version restrictions 
+
+    Error: 记录响应格式不正确
+
+       at applications/recordReadContracts.ts:8
+
+       6 | const version=(v:unknown):v is number=>Number.isSafeInteger(v)&&typeof v==='number'&&v>=0;
+       7 | const timestamp=(v:unknown):v is string=>text(v)&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?(?:Z|[+-]\d\d:\d\d)$/.test(v)&&Number.isFinite(Date.parse(v));
+    >  8 | const fail=():never=>{throw new Error('记录响应格式不正确');};
+         |                             ^
+       9 | const scopes:Scope[]=['none','own','all'];
+      10 | const kinds:FieldKind[]=['text','multiline','number','money','date','datetime','single_select','multi_select','boolean','member','department'];
+      11 |
+        at fail (/repo/apps/web/src/applications/recordReadContracts.ts:8:29)
+        at map (/repo/apps/web/src/applications/recordReadContracts.ts:15:355)
+        at parseRuntimeView (/repo/apps/web/src/applications/recordReadContracts.ts:14:41)
+        at parseView (/repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:8:32)
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:79:9
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-106f0-enting-version-restrictions-chromium/error-context.md
+
+  15) [chromium] › src/applications/root-record-read-contract.component.spec.ts:81:1 › Root calendar dates reject impossible days and retain leap days 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+      82 |  const view=parseView(rawView(field('date')));
+      83 |  expect(parseRecordItem(row('2024-02-29'),view,actor).values[fieldId]).toBe('2024-02-29');
+    > 84 |  expect(()=>parseRecordItem(row('2026-02-31'),view,actor)).toThrow();
+         |                                                            ^
+      85 | });
+      86 | test('Root query operators must be literal strings rather than coercible arrays',()=>{
+      87 |  const raw=rawView();const malformed={...raw,fields:[{...raw.fields[0],query:{...raw.fields[0].query,operators:[['eq']]}}]};
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:84:60
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-4c8a8-e-days-and-retain-leap-days-chromium/error-context.md
+
+  16) [chromium] › src/applications/root-record-read-contract.component.spec.ts:86:1 › Root query operators must be literal strings rather than coercible arrays 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+      86 | test('Root query operators must be literal strings rather than coercible arrays',()=>{
+      87 |  const raw=rawView();const malformed={...raw,fields:[{...raw.fields[0],query:{...raw.fields[0].query,operators:[['eq']]}}]};
+    > 88 |  expect(()=>parseView(malformed)).toThrow();
+         |                                   ^
+      89 | });
+      90 | test('Root layout span follows the declared integer range',()=>{
+      91 |  const raw=rawView();
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:88:35
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-2bc3a-ather-than-coercible-arrays-chromium/error-context.md
+
+  17) [chromium] › src/applications/root-record-read-contract.component.spec.ts:90:1 › Root layout span follows the declared integer range 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+      90 | test('Root layout span follows the declared integer range',()=>{
+      91 |  const raw=rawView();
+    > 92 |  expect(()=>parseView({...raw,layout:[{...raw.layout[0],span:13}]})).toThrow();
+         |                                                                      ^
+      93 |  expect(()=>parseView({...raw,layout:[{...raw.layout[0],span:1.5}]})).toThrow();
+      94 |  expect(parseView({...raw,layout:[{...raw.layout[0],span:6}]}).layout[0]).toMatchObject({span:6});
+      95 | });
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:92:70
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-48d4d--the-declared-integer-range-chromium/error-context.md
+
+  18) [chromium] › src/applications/root-record-read-contract.component.spec.ts:97:1 › Root ordinary runtime requires a ready schema and positive policy revision 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+       97 | test('Root ordinary runtime requires a ready schema and positive policy revision',()=>{
+       98 |  const raw=rawView();
+    >  99 |  expect(()=>parseView({...raw,schemaVersion:0})).toThrow();
+          |                                                  ^
+      100 |  expect(()=>parseView({...raw,policyRevision:0})).toThrow();
+      101 | });
+      102 | test('Root reference labels cannot bypass an own-field read restriction',()=>{
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:99:50
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-abd05-nd-positive-policy-revision-chromium/error-context.md
+
+  19) [chromium] › src/applications/root-record-read-contract.component.spec.ts:102:1 › Root reference labels cannot bypass an own-field read restriction 
+
+    Error: expect(received).toThrow()
+
+    Received function did not throw
+
+      103 |  const raw=rawView(field('member',{referenceKind:'member'}));raw.fields[0].access.read='own';const view=parseView(raw);
+      104 |  const invalid={...row(null),createdBy:sourceId,values:{},referenceDisplays:{[fieldId]:{[sourceId]:{id:sourceId,label:'不可读取的标签',deleted:true}}}};
+    > 105 |  expect(()=>parseRecordItem(invalid,view,actor)).toThrow();
+          |                                                  ^
+      106 | });
+      107 |
+        at /repo/apps/web/src/applications/root-record-read-contract.component.spec.ts:105:50
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-r-4403a--own-field-read-restriction-chromium/error-context.md
+
+  20) [chromium] › src/applications/root-record-workspace.component.spec.ts:35:1 › Root page jump retains old query and explicit refresh returns to page one without it 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '跳转到指定页', exact: true })
+        - locator resolved to <button tabindex="0" type="submit" data-slot="button" aria-label="跳转到指定页" class="group/button inline-flex shrink-0 items-center justify-center border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destruct…>…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is not stable
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is not stable
+        - retrying click action
+          - waiting 100ms
+        53 × waiting for element to be visible, enabled and stable
+           - element is not stable
+         - retrying click action
+           - waiting 500ms
+
+
+      41 |  });
+      42 |  await open(page);await expect(page.getByRole('table',{name:'记录'})).toContainText('测试记录 1');
+    > 43 |  await page.getByLabel('跳至页',{exact:true}).fill('2');await page.getByRole('button',{name:'跳转到指定页',exact:true}).click();
+         |                                                                                                                ^
+      44 |  await expect(page.getByRole('table',{name:'记录'})).toContainText('测试记录 21');
+      45 |  expect(queries[1]).toMatchObject({page:2,queryVersion:'query-1'});
+      46 |  await page.getByRole('button',{name:'刷新',exact:true}).click();
+        at /repo/apps/web/src/applications/root-record-workspace.component.spec.ts:43:112
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-w-02bca-urns-to-page-one-without-it-chromium/error-context.md
+
+  21) [chromium] › src/applications/root-record-workspace.component.spec.ts:52:1 › Root changed query preserves existing rows until the user explicitly refreshes 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '跳转到指定页', exact: true })
+        - locator resolved to <button tabindex="0" type="submit" data-slot="button" aria-label="跳转到指定页" class="group/button inline-flex shrink-0 items-center justify-center border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destruct…>…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is not stable
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is not stable
+        - retrying click action
+          - waiting 100ms
+        53 × waiting for element to be visible, enabled and stable
+           - element is not stable
+         - retrying click action
+           - waiting 500ms
+
+
+      59 |  });
+      60 |  await open(page);await expect(page.getByRole('table',{name:'记录'})).toContainText('测试记录 1');
+    > 61 |  await page.getByLabel('跳至页',{exact:true}).fill('2');await page.getByRole('button',{name:'跳转到指定页',exact:true}).click();
+         |                                                                                                                ^
+      62 |  await expect(page.getByRole('alert')).toContainText('刷新');
+      63 |  await expect(page.getByRole('table',{name:'记录'})).toContainText('测试记录 1');
+      64 |  expect(queries).toHaveLength(2);
+        at /repo/apps/web/src/applications/root-record-workspace.component.spec.ts:61:112
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-w-4c784-e-user-explicitly-refreshes-chromium/error-context.md
+
+  22) [chromium] › src/applications/root-record-workspace.component.spec.ts:118:1 › Root visible record selection works and sorting clears selected rows 
+
+    Error: expect(locator).toBeChecked() failed
+
+    Locator:  getByRole('checkbox', { name: '选择记录：77777777-7777-4777-8777-000000000001', exact: true })
+    Expected: checked
+    Received: unchecked
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeChecked" getByRole('checkbox', { name: '选择记录：77777777-7777-4777-8777-000000000001', exact: true }) with timeout 5000ms
+      - waiting for getByRole('checkbox', { name: '选择记录：77777777-7777-4777-8777-000000000001', exact: true })
+        14 × locator resolved to <button id="_r_3_" tabindex="0" type="button" role="checkbox" aria-checked="false" data-state="unchecked" aria-label="选择记录：77777777-7777-4777-8777-000000000001" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 border-muted-foreground/50 bg-background hover:border-muted…></button>
+           - unexpected value "unchecked"
+
+
+      120 |  await page.route('**'+path+'/records/search',route=>route.fulfill({status:200,json:envelope(pageData(route.request().postDataJSON(),'selection-query'))}));
+      121 |  await open(page);const checkbox=page.getByRole('checkbox',{name:'选择记录：'+row(1).id,exact:true});
+    > 122 |  await expect(checkbox).toBeVisible();await checkbox.click();await expect(checkbox).toBeChecked();
+          |                                                                                     ^
+      123 |  await page.getByRole('table',{name:'记录'}).getByRole('button',{name:'排序 '+amount,exact:true}).click();
+      124 |  await page.getByRole('menuitem',{name:'升序',exact:true}).click();
+      125 |  await expect(checkbox).not.toBeChecked();
+        at /repo/apps/web/src/applications/root-record-workspace.component.spec.ts:122:85
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-w-49e38-orting-clears-selected-rows-chromium/error-context.md
+
+  23) [chromium] › src/applications/root-record-workspace.component.spec.ts:127:1 › Root unconfigured schema gives an actionable configuration state without querying rows 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('alert')
+    Expected substring: "尚未配置"
+    Received string:    "无法读取记录，请重试"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('alert')
+        14 × locator resolved to <p role="alert">无法读取记录，请重试</p>
+           - unexpected value "无法读取记录，请重试"
+
+
+      129 |  await page.route('**'+path+'/runtime',route=>route.fulfill({status:409,json:{code:'APPLICATION_SCHEMA_NOT_READY',data:null,meta:null}}));
+      130 |  await page.route('**'+path+'/records/search',route=>{searches++;return route.abort();});
+    > 131 |  await open(page);await expect(page.getByRole('alert')).toContainText('尚未配置');
+          |                                                         ^
+      132 |  expect(searches).toBe(0);
+      133 | });
+      134 | test('Root pagination remains inside the bounded application work area',async({page})=>{
+        at /repo/apps/web/src/applications/root-record-workspace.component.spec.ts:131:57
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-w-b6bf2-state-without-querying-rows-chromium/error-context.md
+
+  24) [chromium] › src/applications/root-record-workspace.component.spec.ts:134:1 › Root pagination remains inside the bounded application work area 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      140 |   const area=await page.getByRole('main',{name:'记录测试工作区',exact:true}).boundingBox();
+      141 |   return !!button&&!!area&&button.y>=area.y&&button.y+button.height<=area.y+area.height;
+    > 142 |  }).toBe(true);
+          |     ^
+      143 | });
+      144 |
+        at /repo/apps/web/src/applications/root-record-workspace.component.spec.ts:142:5
+
+    Error Context: ../../../artifacts/pw-output-rerun/applications-root-record-w-c693b-unded-application-work-area-chromium/error-context.md
+
+  24 failed
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:12:2 › Root read contract keeps scalar member references including tombstones 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:12:2 › Root read contract keeps scalar department references including tombstones 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:20:1 › Root runtime accepts rounding at the hundreds place without float conversion 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":0,"scale":0,"roundingPlaces":0} 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":39,"scale":2,"roundingPlaces":2} 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":20,"scale":19,"roundingPlaces":2} 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":2,"scale":3,"roundingPlaces":2} 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":20,"scale":2,"roundingPlaces":3} 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:39:1 › Root record read-none and own-row policies cannot be widened by field access 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:44:1 › Root own-field value is rejected when the record belongs to somebody else 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:49:1 › Root persisted records require positive record and schema versions 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:56:1 › Root supports system timestamp sort and ignores JSON object key order 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:65:1 › Root rejects duplicate row IDs and oversized pages 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:74:1 › Root preserves description layout and canonical UUIDs without inventing version restrictions 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:81:1 › Root calendar dates reject impossible days and retain leap days 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:86:1 › Root query operators must be literal strings rather than coercible arrays 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:90:1 › Root layout span follows the declared integer range 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:97:1 › Root ordinary runtime requires a ready schema and positive policy revision 
+    [chromium] › src/applications/root-record-read-contract.component.spec.ts:102:1 › Root reference labels cannot bypass an own-field read restriction 
+    [chromium] › src/applications/root-record-workspace.component.spec.ts:35:1 › Root page jump retains old query and explicit refresh returns to page one without it 
+    [chromium] › src/applications/root-record-workspace.component.spec.ts:52:1 › Root changed query preserves existing rows until the user explicitly refreshes 
+    [chromium] › src/applications/root-record-workspace.component.spec.ts:118:1 › Root visible record selection works and sorting clears selected rows 
+    [chromium] › src/applications/root-record-workspace.component.spec.ts:127:1 › Root unconfigured schema gives an actionable configuration state without querying rows 
+    [chromium] › src/applications/root-record-workspace.component.spec.ts:134:1 › Root pagination remains inside the bounded application work area 
+  5 passed (1.6m)

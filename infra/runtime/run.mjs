@@ -28,7 +28,7 @@ const redis=`redis://:${redisPassword}@redis:6379/0`;
 const file=(name,bytes)=>privateFile(resolve(dir,name),bytes);
 file('postgres.env',`POSTGRES_USER=weaveos_owner\nPOSTGRES_PASSWORD=${ownerPassword}\nPOSTGRES_DB=weaveos_runtime\n`);
 file('redis.env',`REDISCLI_AUTH=${redisPassword}\n`);file('redis.conf',`requirepass ${redisPassword}\n`);
-file('runtime.env',`WEAVEOS_DATABASE_URL=${pg('weaveos_runtime_app',appPassword,'weaveos_runtime')}\nWEAVEOS_REDIS_URL=${redis}\nWEAVEOS_SESSION_GENERATION=${generation}\nWEAVEOS_AUDIT_KEY_ID=local\nWEAVEOS_AUDIT_HMAC_KEY=${randomBytes(32).toString('base64')}\n`);
+file('runtime.env',`WEAVEOS_DATABASE_URL=${pg('weaveos_runtime_app',appPassword,'weaveos_runtime')}\nWEAVEOS_REDIS_URL=${redis}\nWEAVEOS_SESSION_GENERATION=${generation}\nWEAVEOS_AUDIT_KEY_ID=local\nWEAVEOS_AUDIT_HMAC_KEY=${randomBytes(32).toString('base64')}\nWEAVEOS_DEFINITION_HMAC_KEY=${randomBytes(32).toString('base64')}\nWEAVEOS_DEFINITION_KEY_ID=test\nWEAVEOS_SCHEMA_LOCK_TIMEOUT_MS=1000\nWEAVEOS_SCHEMA_STATEMENT_TIMEOUT_MS=5000\n`);
 file('reader.env',`WEAVEOS_AUDIT_READ_DATABASE_URL=${pg('weaveos_runtime_reader',readerPassword,'weaveos_runtime')}\nWEAVEOS_REDIS_URL=${redis}\nWEAVEOS_SESSION_GENERATION=${generation}\n`);
 file('maintenance.env',`WEAVEOS_AUDIT_LIVE_DATABASE_URL=${pg('weaveos_runtime_maintenance',maintenancePassword,'weaveos_runtime')}\nWEAVEOS_AUDIT_COLD_DATABASE_URL=${pg('weaveos_runtime_maintenance',maintenancePassword,'weaveos_cold_archive')}\n`);
 file('secrets/backup.key',randomBytes(32));

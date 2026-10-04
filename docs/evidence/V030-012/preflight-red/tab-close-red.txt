@@ -1,0 +1,31 @@
+
+Running 1 test using 1 worker
+F
+
+  1) [chromium] › apps/web/src/applications.permissions.component.spec.ts:89:1 › V030-012 canceling a dirty current-tab close keeps the tab and its permission draft
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: '关闭应用：审批应用' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('button', { name: '关闭应用：审批应用' }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '关闭应用：审批应用' })
+
+
+       98 |  await guard.getByRole('button', { name: '继续编辑' }).click();
+       99 |  await expect(page).toHaveURL(new RegExp('/app/applications/' + app.id + '$'));
+    > 100 |  await expect(page.getByRole('button', { name: '关闭应用：' + app.name })).toBeVisible();
+          |                                                                       ^
+      101 |  await expect(page.getByRole('textbox', { name: '权限组名称' })).toHaveValue('尚未保存的组名');
+      102 | });
+      103 |
+        at /repo/apps/web/src/applications.permissions.component.spec.ts:100:71
+
+    Error Context: .work/v030012/browser-results/applications.permissions.c-834ab-ab-and-its-permission-draft-chromium/error-context.md
+
+  1 failed
+    [chromium] › apps/web/src/applications.permissions.component.spec.ts:89:1 › V030-012 canceling a dirty current-tab close keeps the tab and its permission draft

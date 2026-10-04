@@ -1,0 +1,206 @@
+diff --git a/apps/web/src/applications/RecordWorkspace.tsx b/apps/web/src/applications/RecordWorkspace.tsx
+index 978e9cf..3ce7d24 100644
+--- a/apps/web/src/applications/RecordWorkspace.tsx
++++ b/apps/web/src/applications/RecordWorkspace.tsx
+@@ -1,9 +1,79 @@
+-import type {RecordItem,RuntimeView} from './records/contracts';
++import {useCallback,useEffect,useRef,useState} from 'react';
++import {applicationApi,applicationReadPost,ApplicationError} from './api';
++import {RecordsPanel} from './records/RecordsPanel';
++import type {RecordItem,RecordPage,RecordSort,RuntimeView} from './records/contracts';
++import {parseRecordPage,parseRuntimeView} from './recordReadContracts';
++import {useResourceQuery} from '../usePersonnelQuery';
++
+ export type RecordWorkspaceProps={
+  actorId:string;appId:string;viewId:string;
+  onCreate:(view:RuntimeView,queryVersion?:string)=>void;
+  onOpenRecord:(view:RuntimeView,record:RecordItem,queryVersion:string)=>void;
+  onUnauthorized:()=>void;onIdentityMismatch:()=>void;
+ };
+-// Root-authored declaration-only TDD entrypoint. No product behavior yet.
+-export function RecordWorkspace(_props:RecordWorkspaceProps){return null;}
++type RuntimeState={scope:string;generation:number;view:RuntimeView|null;error:string|null;errorCode:string|null;loading:boolean};
++const EMPTY_PAGE:RecordPage={items:[],total:0,page:1,pageSize:20,sort:null,queryVersion:'',schemaVersion:0,viewVersion:0};
++const genericError='无法读取记录，请重试';
++
++export function RecordWorkspace(props:RecordWorkspaceProps){
++ const {actorId,appId,viewId}=props;
++ const scope=JSON.stringify([actorId,appId,viewId]);
++ const active=useRef(scope);active.current=scope;
++ const generation=useRef(0),[reload,setReload]=useState(0);
++ const [state,setState]=useState<RuntimeState>({scope,generation:0,view:null,error:null,errorCode:null,loading:true});
++ const report=useCallback((error:unknown,expected:string)=>{
++  if(active.current!==expected)return;
++  if(error instanceof ApplicationError&&error.status===401)props.onUnauthorized();
++  else if(error instanceof ApplicationError&&error.code==='AUTH_SESSION_CHANGED')props.onIdentityMismatch();
++ },[props.onUnauthorized,props.onIdentityMismatch]);
++ useEffect(()=>{
++  const current=++generation.current,controller=new AbortController();
++  setState({scope,generation:current,view:null,error:null,errorCode:null,loading:true});
++  applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/runtime`,'GET',undefined,controller.signal)
++   .then(raw=>{const view=parseRuntimeView(raw,{appId,viewId});if(!controller.signal.aborted&&active.current===scope&&generation.current===current)setState({scope,generation:current,view,error:null,errorCode:null,loading:false});})
++   .catch(error=>{if(controller.signal.aborted||active.current!==scope||generation.current!==current)return;report(error,scope);setState({scope,generation:current,view:null,error:genericError,errorCode:error instanceof ApplicationError?error.code:null,loading:false});});
++  return()=>{controller.abort();};
++ },[actorId,appId,viewId,scope,reload,report]);
++ const current=state.scope===scope?state:null;
++ const refresh=()=>{setState(old=>old.scope===scope?{...old,view:null,error:null,errorCode:null,loading:true}:old);setReload(value=>value+1);};
++ if(!current||current.loading)return <section className="record-workspace" aria-label="记录列表"><p role="status">正在读取记录…</p></section>;
++ if(!current.view)return <section className="record-workspace" aria-label="记录列表"><p role="alert">{current.errorCode==='APPLICATION_SCHEMA_NOT_READY'?'表单尚未配置，请先完成表单配置。':current.error??genericError}</p><button className="admin-button" type="button" onClick={refresh}>重试</button></section>;
++ const view=current.view;
++ const createOnly=view.capabilities.create&&view.capabilities.read==='none'&&!view.capabilities.search;
++ if(createOnly)return <section className="record-workspace" aria-label="记录列表"><button className="admin-button" type="button" onClick={()=>props.onCreate(view)}>新建记录</button></section>;
++ if(view.capabilities.read==='none'||!view.capabilities.search)return <section className="record-workspace" aria-label="记录列表"><p>当前视图没有可读取的记录</p>{view.capabilities.create&&<button className="admin-button" type="button" onClick={()=>props.onCreate(view)}>新建记录</button>}</section>;
++ const updateRuntime=(next:RuntimeView)=>setState(old=>old.scope===scope&&old.generation===generation.current?{...old,view:next}:old);
++ return <RecordQuery key={`${scope}:${reload}`} {...props} scope={scope} view={view} onRefresh={refresh} onRuntimeUpdate={updateRuntime}/>;
++}
++
++function RecordQuery(props:RecordWorkspaceProps&{scope:string;view:RuntimeView;onRefresh:()=>void;onRuntimeUpdate:(view:RuntimeView)=>void}){
++ const {actorId,appId,viewId,view,scope}=props;
++ const [parameters,setParameters]=useState({page:1,pageSize:20,filter:null as null,sort:null as RecordSort});
++ const [selectedRowIds,setSelectedRowIds]=useState<string[]>([]);
++ const [columnWidths,setColumnWidths]=useState<Record<string,number>>({});
++ const [columnOrder,setColumnOrder]=useState<string[]>([]);
++ const active=useRef(scope);active.current=scope;
++ const viewRef=useRef(view);viewRef.current=view;
++ const runtimeBusy=useRef(false);
++ const fetchRuntime=useCallback(async(signal:AbortSignal)=>{
++  if(runtimeBusy.current)throw new Error(genericError);
++  runtimeBusy.current=true;
++  try{return parseRuntimeView(await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/runtime`,'GET',undefined,signal),{appId,viewId});}
++  finally{runtimeBusy.current=false;}
++ },[actorId,appId,viewId]);
++ const transport=useCallback(async(body:{page:number;pageSize:number;filter:null;sort:RecordSort;queryVersion?:string},signal:AbortSignal)=>{
++  let raw=await applicationReadPost<unknown>(actorId,`applications/${appId}/forms/${viewId}/records/search`,body,signal);
++  const versionMismatch=!!raw&&typeof raw==='object'&&('schemaVersion'in raw)&&('viewVersion'in raw)&&((raw as any).schemaVersion!==viewRef.current.schemaVersion||(raw as any).viewVersion!==viewRef.current.viewVersion);
++  if(versionMismatch){const fresh=await fetchRuntime(signal);if(active.current!==scope||signal.aborted)throw new Error(genericError);viewRef.current=fresh;props.onRuntimeUpdate(fresh);if(!raw||typeof raw!=='object'||(raw as any).schemaVersion!==fresh.schemaVersion||(raw as any).viewVersion!==fresh.viewVersion)throw new Error(genericError);}
++  return parseRecordPage(raw,viewRef.current,actorId,body);
++ },[actorId,appId,viewId,scope,fetchRuntime,props.onRuntimeUpdate]);
++ const normalize=(error:unknown)=>error instanceof ApplicationError?error:new Error(genericError);
++ const query=useResourceQuery<RecordPage,typeof parameters,Error>(scope,parameters,{...EMPTY_PAGE,page:parameters.page,pageSize:parameters.pageSize},transport,normalize);
++ useEffect(()=>{if(query.error instanceof ApplicationError&&query.error.status===401)props.onUnauthorized();else if(query.error instanceof ApplicationError&&query.error.code==='AUTH_SESSION_CHANGED')props.onIdentityMismatch();},[query.error,props.onUnauthorized,props.onIdentityMismatch]);
++ const message=query.error instanceof ApplicationError&&(query.error.code==='APPLICATION_QUERY_CHANGED'||query.error.code==='APPLICATION_QUERY_CONTEXT_EXPIRED')?'记录上下文已变化，请刷新后重试':query.error?.message??null;
++ const disabled=!!query.error||query.loading;
++ return <section className="record-workspace" aria-label="记录工作区">
++  <div className="table-toolbar"><button className="admin-button" type="button" onClick={props.onRefresh}>刷新</button>{view.capabilities.create&&<button className="admin-button" type="button" disabled={disabled} onClick={()=>props.onCreate(view,query.data.queryVersion||undefined)}>新建记录</button>}</div>
++  <fieldset className="record-table-frame" disabled={disabled}><legend className="sr-only">记录操作</legend><RecordsPanel view={viewRef.current} actorId={actorId} page={query.data} loading={query.loading} error={message} hiddenColumnIds={[]} columnWidths={columnWidths} columnOrder={columnOrder} selectedRowIds={selectedRowIds} onSelectionChange={setSelectedRowIds} onPageChange={page=>setParameters(current=>({...current,page}))} onPageSizeChange={pageSize=>{setSelectedRowIds([]);setParameters(current=>({...current,page:1,pageSize}));}} onSortChange={sort=>{setSelectedRowIds([]);setParameters(current=>({...current,page:1,sort}));}} onColumnWidthsChange={setColumnWidths} onColumnOrderChange={setColumnOrder} onOpenRecord={record=>{if(!disabled)props.onOpenRecord(viewRef.current,record,query.data.queryVersion);}}/></fieldset>
++ </section>;
++}
+diff --git a/apps/web/src/applications/applications.css b/apps/web/src/applications/applications.css
+index 63186d4..00ef0a8 100644
+--- a/apps/web/src/applications/applications.css
++++ b/apps/web/src/applications/applications.css
+@@ -76,3 +76,9 @@
+ .personnel-dialog:has(.app-create-form)::backdrop { background:rgba(16,32,68,.28);backdrop-filter:none; }
+ .app-shell .personnel-dialog:not(:has(.app-create-form))::backdrop { background:rgba(16,32,68,.28);backdrop-filter:none; }
+ .app-success { margin:0;padding:12px 16px;border:1px solid #d9e9e1;border-radius:8px;background:#f2f8f5;color:#2e735f;font-size:14px;line-height:22px; }
++
++.record-workspace { display:flex;flex:1;flex-direction:column;min-width:0;min-height:0;overflow:hidden;gap:0; }
++.record-workspace .record-table-frame { display:flex;flex:1;min-width:0;min-height:0;margin:0;padding:0;border:0;overflow:hidden; }
++.record-workspace .member-table.surface { flex:1;min-width:0;min-height:0;padding:0;border:0;border-radius:0; }
++.record-workspace .arca-source { flex:1;min-width:0;min-height:0;overflow:hidden; }
++.record-workspace .arca-source .personnel-source-table { height:100%; }
+diff --git a/apps/web/src/applications/recordReadContracts.ts b/apps/web/src/applications/recordReadContracts.ts
+new file mode 100644
+index 0000000..472ac84
+--- /dev/null
++++ b/apps/web/src/applications/recordReadContracts.ts
+@@ -0,0 +1,86 @@
++import type {FieldKind,RecordItem,RecordPage,RecordSort,RuntimeField,RuntimeLayoutNode,RuntimeView,Scope,UUID} from './records/contracts';
++
++const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
++const object=(v:unknown):v is Record<string,any>=>!!v&&typeof v==='object'&&!Array.isArray(v);
++const text=(v:unknown):v is string=>typeof v==='string';
++const version=(v:unknown):v is number=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=0;
++const positiveVersion=(v:unknown):v is number=>version(v)&&v>=1;
++const timestamp=(v:unknown):v is string=>text(v)&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?(?:Z|[+-]\d\d:\d\d)$/.test(v)&&Number.isFinite(Date.parse(v));
++const fail=():never=>{throw new Error('记录响应格式不正确');};
++const scopes:Scope[]=['none','own','all'];
++const kinds:FieldKind[]=['text','multiline','number','money','date','datetime','single_select','multi_select','boolean','member','department'];
++const decimalModes=['HALF_UP','HALF_EVEN','TOWARD_ZERO','FLOOR','CEILING'];
++
++export function parseRuntimeView(raw:unknown,scope:{appId:string;viewId:string}):RuntimeView{
++ if(!object(raw)||!uuid.test(scope.appId)||!uuid.test(scope.viewId)||raw.appId!==scope.appId||raw.viewId!==scope.viewId||!uuid.test(raw.tableId)||!positiveVersion(raw.schemaVersion)||!version(raw.viewVersion)||!positiveVersion(raw.policyRevision)||!Array.isArray(raw.fields)||!Array.isArray(raw.layout)||!object(raw.capabilities))return fail();
++ const fields:RuntimeField[]=raw.fields.map((f:unknown)=>{
++  if(!object(f)||!uuid.test(f.id)||!text(f.name)||!f.name.trim()||!kinds.includes(f.kind)||typeof f.required!=='boolean'||!object(f.presentation)||!(f.presentation.helpText===null||text(f.presentation.helpText))||!(f.presentation.displayTimeZone===null||text(f.presentation.displayTimeZone))||!object(f.input)||!object(f.access)||!object(f.query))return fail();
++  if(!scopes.includes(f.access.read)||typeof f.access.create!=='boolean'||!scopes.includes(f.access.edit)||!scopes.includes(f.access.history)||!Array.isArray(f.query.operators)||!f.query.operators.every((op:unknown)=>text(op)&&['eq','neq','gt','gte','lt','lte'].includes(op))||typeof f.query.sortable!=='boolean'||typeof f.query.quickSearchable!=='boolean')return fail();
++  if(f.input.options!==undefined&&(!Array.isArray(f.input.options)||!f.input.options.every((option:unknown)=>object(option)&&uuid.test(option.id)&&text(option.label))))return fail();
++  if(f.default!==undefined&&!validValue(f.kind,f.default))return fail();
++  if(f.input.decimal!==undefined){const d=f.input.decimal;if(!object(d)||!Number.isInteger(d.precision)||d.precision<1||d.precision>38||!Number.isInteger(d.scale)||d.scale<0||d.scale>18||d.scale>d.precision||!Number.isInteger(d.roundingPlaces)||d.roundingPlaces< -18||d.roundingPlaces>18||d.roundingPlaces>d.scale||!decimalModes.includes(d.roundingMode))return fail();}
++  if(f.input.timePrecision!==undefined&&!['minute','second','millisecond'].includes(f.input.timePrecision))return fail();
++  if(f.input.referenceKind!==undefined&&!['member','department'].includes(f.input.referenceKind))return fail();
++  return f as RuntimeField;
++ });
++ if(new Set(fields.map(f=>f.id)).size!==fields.length)return fail();
++ const ids=new Set(fields.map(f=>f.id));
++ const layout=(nodes:unknown[]):RuntimeLayoutNode[]=>nodes.map((n:unknown)=>{
++  if(!object(n)||!uuid.test(n.id)||!validSpan(n.span))return fail();
++  if(n.kind==='field'){if(!uuid.test(n.fieldId)||!ids.has(n.fieldId))return fail();return n as RuntimeLayoutNode;}
++  if(n.kind==='system_field'){if(!text(n.fieldId))return fail();return n as RuntimeLayoutNode;}
++  if(n.kind==='description'){if(!text(n.text))return fail();return n as RuntimeLayoutNode;}
++  if(n.kind==='divider')return n as RuntimeLayoutNode;
++  if(n.kind==='group'&&text(n.title)&&Array.isArray(n.children))return {...n,children:layout(n.children)} as RuntimeLayoutNode;
++  return fail();
++ });
++ const c=raw.capabilities;if(typeof c.create!=='boolean'||!scopes.includes(c.read)||!scopes.includes(c.edit)||!scopes.includes(c.history)||typeof c.search!=='boolean'||typeof c.draftCreate!=='boolean'||typeof c.draftEdit!=='boolean')return fail();
++ return {...raw,fields,layout:layout(raw.layout)} as RuntimeView;
++}
++function validSpan(value:unknown):boolean{return value===undefined||Number.isInteger(value)&&typeof value==='number'&&value>=1&&value<=12;}
++function calendarDate(value:unknown):value is string{
++ if(!text(value))return false;const m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(value);if(!m)return false;
++ const year=Number(m[1]),month=Number(m[2]),day=Number(m[3]);const date=new Date(Date.UTC(year,month-1,day));
++ return date.getUTCFullYear()===year&&date.getUTCMonth()===month-1&&date.getUTCDate()===day;
++}
++function validValue(kind:FieldKind,value:unknown):boolean{
++ if(value===null)return true;
++ if(kind==='boolean')return typeof value==='boolean';
++ if(kind==='multi_select')return Array.isArray(value)&&value.every(v=>text(v)&&uuid.test(v));
++ if(kind==='member'||kind==='department')return text(value)&&uuid.test(value);
++ if(kind==='single_select')return text(value)&&uuid.test(value);
++ if(!text(value))return false;
++ if(kind==='number'||kind==='money')return /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value);
++ if(kind==='date')return calendarDate(value);
++ if(kind==='datetime')return timestamp(value);
++ return true;
++}
++function canReadField(field:RuntimeField,createdBy:string,actorId:string):boolean{return field.access.read==='all'||field.access.read==='own'&&createdBy===actorId;}
++export function parseRecordItem(raw:unknown,view:RuntimeView,actorId:string):RecordItem{
++ if(!object(raw)||!uuid.test(actorId)||!uuid.test(raw.id)||raw.appId!==view.appId||raw.tableId!==view.tableId||raw.viewId!==view.viewId||!uuid.test(raw.createdBy)||!timestamp(raw.createdAt)||!timestamp(raw.updatedAt)||!positiveVersion(raw.recordVersion)||!positiveVersion(raw.schemaVersion)||raw.schemaVersion!==view.schemaVersion||!object(raw.values)||!object(raw.referenceDisplays))return fail();
++ if(view.capabilities.read==='none'||view.capabilities.read==='own'&&raw.createdBy!==actorId)return fail();
++ const fieldMap=new Map(view.fields.map(field=>[field.id,field]));
++ for(const [id,value] of Object.entries(raw.values)){const field=fieldMap.get(id);if(!field||!canReadField(field,raw.createdBy,actorId)||!validValue(field.kind,value))return fail();}
++ for(const [fieldId,displays] of Object.entries(raw.referenceDisplays)){
++  const field=fieldMap.get(fieldId);if(!field||!['member','department'].includes(field.kind)||!canReadField(field,raw.createdBy,actorId)||!object(displays))return fail();
++  for(const [id,d] of Object.entries(displays))if(!uuid.test(id)||!object(d)||d.id!==id||!text(d.label)||typeof d.deleted!=='boolean')return fail();
++ }
++ return raw as RecordItem;
++}
++export function parseRecordPage(raw:unknown,view:RuntimeView,actorId:string,request:{page:number;pageSize:number;sort:RecordSort}):RecordPage{
++ if(!object(raw)||!Array.isArray(raw.items)||!version(raw.total)||raw.page!==request.page||raw.pageSize!==request.pageSize||!version(raw.page)||raw.page<1||!Number.isInteger(raw.pageSize)||raw.pageSize<1||raw.pageSize>100||raw.items.length>raw.pageSize||typeof raw.queryVersion!=='string'||!raw.queryVersion||raw.queryVersion.length>512||raw.schemaVersion!==view.schemaVersion||raw.viewVersion!==view.viewVersion)return fail();
++ const sort=parseSort(raw.sort,view);if(!sameSort(sort,request.sort))return fail();
++ const items=raw.items.map(item=>parseRecordItem(item,view,actorId));
++ if(new Set(items.map(item=>item.id)).size!==items.length)return fail();
++ return {...raw,items,sort} as RecordPage;
++}
++function parseSort(raw:unknown,view:RuntimeView):RecordSort{
++ if(raw===null)return null;
++ if(!object(raw)||!['asc','desc'].includes(raw.direction))return fail();
++ if(raw.fieldId==='createdAt'||raw.fieldId==='updatedAt')return {fieldId:raw.fieldId,direction:raw.direction};
++ if(!uuid.test(raw.fieldId))return fail();
++ const field=view.fields.find(candidate=>candidate.id===raw.fieldId);
++ if(!field||!field.query.sortable||field.access.read==='none')return fail();
++ return {fieldId:raw.fieldId,direction:raw.direction};
++}
++function sameSort(a:RecordSort,b:RecordSort):boolean{return a===null||b===null?a===b:a.fieldId===b.fieldId&&a.direction===b.direction;}
+diff --git a/apps/web/src/applications/records/contracts.ts b/apps/web/src/applications/records/contracts.ts
+index 5a78756..3356378 100644
+--- a/apps/web/src/applications/records/contracts.ts
++++ b/apps/web/src/applications/records/contracts.ts
+@@ -15,7 +15,7 @@ export type RuntimeField={
+  access:{read:Scope;create:boolean;edit:Scope;history:Scope};
+  query:{operators:('eq'|'neq'|'gt'|'gte'|'lt'|'lte')[];sortable:boolean;quickSearchable:boolean};
+ };
+-export type RuntimeLayoutNode={id:UUID;kind:'field';fieldId:UUID;span?:number}|{id:UUID;kind:'system_field';fieldId:string;span?:number}|{id:UUID;kind:'group';title:string;children:RuntimeLayoutNode[];span?:number}|{id:UUID;kind:'divider'};
++export type RuntimeLayoutNode={id:UUID;kind:'field';fieldId:UUID;span?:number}|{id:UUID;kind:'system_field';fieldId:string;span?:number}|{id:UUID;kind:'group';title:string;children:RuntimeLayoutNode[];span?:number}|{id:UUID;kind:'divider'}|{id:UUID;kind:'description';text:string};
+ export type RuntimeView={
+  appId:UUID;tableId:UUID;viewId:UUID;schemaVersion:Version;viewVersion:Version;policyRevision:Version;
+  fields:RuntimeField[];layout:RuntimeLayoutNode[];

@@ -1,0 +1,25 @@
+
+Running 1 test using 1 worker
+
+[1/1] [chromium] › tests/acceptance/applications-web.spec.ts:181:5 › V030-012 real B5: expected actor guard rejects cross-session reads, writes and operation lookup
+  1) [chromium] › tests/acceptance/applications-web.spec.ts:181:5 › V030-012 real B5: expected actor guard rejects cross-session reads, writes and operation lookup
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 409
+    Received: 200
+
+      194 |   expect(ordinary.status).toBe(200);
+      195 |   const wrongRead = await realApi(memberContext, f.adminId, 'applications');
+    > 196 |   expect(wrongRead.status).toBe(409); expect(wrongRead.code).toBe('AUTH_SESSION_CHANGED');
+          |                            ^
+      197 |   expect(JSON.stringify(wrongRead.data)).not.toContain(appId);
+      198 |   const wrongWrite = await realApi(memberContext, f.adminId, 'applications', 'POST', { name: '不得创建', operationId: crypto.randomUUID() });
+      199 |   expect(wrongWrite.status).toBe(409); expect(wrongWrite.code).toBe('AUTH_SESSION_CHANGED');
+        at /repo/tests/acceptance/applications-web.spec.ts:196:28
+
+    Error Context: .work/v030012/browser-results/applications-web-V030-012--651e0-writes-and-operation-lookup-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › tests/acceptance/applications-web.spec.ts:181:5 › V030-012 real B5: expected actor guard rejects cross-session reads, writes and operation lookup

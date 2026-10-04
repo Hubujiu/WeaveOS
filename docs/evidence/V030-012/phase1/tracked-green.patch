@@ -1,0 +1,80 @@
+diff --git a/apps/web/src/Workspace.tsx b/apps/web/src/Workspace.tsx
+index be7371d..4ded641 100644
+--- a/apps/web/src/Workspace.tsx
++++ b/apps/web/src/Workspace.tsx
+@@ -4,9 +4,7 @@ import { workspaceApi, WorkspaceError } from './workspace-api';
+ import type { Access, User } from './workspace-types';
+ import { PersonnelAdmin } from './PersonnelAdmin';
+ import { Modal } from './Modal';
+-import brand from './assets/home-brand.svg';
+-import settings from './assets/home-settings.svg';
+-import avatar from './assets/home-avatar.svg';
++import { AppShell } from './applications/shell/AppShell';
+ import './workspace.css';
+ 
+ export function Workspace({user,logout,pending,error}:{user:User;logout:()=>void;pending:boolean;error:string}){
+@@ -21,13 +19,7 @@ export function Workspace({user,logout,pending,error}:{user:User;logout:()=>void
+  useEffect(()=>{if(!admin)updateDirty(false);},[admin,updateDirty]);
+  if(!access)return <div className="workspace"><div className="workspace-loading">{failure?<><p role="alert">{failure}</p><button className="admin-button" onClick={()=>setRetry(v=>v+1)}>重试</button><button className="admin-button" onClick={()=>setMenu(!menu)}>账号</button>{menu&&<><p>{user.account}</p><button className="admin-button" disabled={pending} onClick={logout}>退出登录</button></>}</>:<p role="status">正在加载主页…</p>}</div></div>;
+  return <div className="workspace">
+-  {admin?(access.personnelManage?<PersonnelAdmin access={access} onDirty={updateDirty} onExit={()=>navigate('/app')} onUnauthorized={()=>{updateDirty(false);navigate('/login',{replace:true});}}/>:<main className="workspace-loading"><p role="alert">没有人员管理权限</p><button className="admin-button" onClick={()=>navigate('/app')}>返回主页</button></main>):<>
+-   <header className="home-header">
+-    <div className="brand-identity"><img src={brand} width="44" height="32" alt=""/><span>WaveOS</span></div><div className="home-actions">{access.personnelManage&&<button className="home-icon-button" aria-label="设置" onClick={()=>navigate('/app/admin')}><img src={settings} width="24" height="24" alt=""/></button>}<button className="account-button" aria-label="账号" aria-expanded={menu} onClick={()=>setMenu(!menu)}><img src={avatar} width="24" height="24" alt=""/></button></div>
+-   </header>
+-   {menu&&<section className="account-menu" aria-label="账号信息"><strong>{user.account}</strong><p>{access.bootstrapAdmin?'Bootstrap Admin':access.identities.length?access.identities.map(v=>v.name).join('、'):'尚未分配身份'}</p>{access.permissions.map(p=><div key={p.code}><span>{p.name}</span>{p.sources?.map((s,i)=><small key={i}>{s.identityName}{s.templateName?' · '+s.templateName:' · 直接权限'}</small>)}</div>)}<button className="admin-button" disabled={pending} onClick={logout}>退出登录</button></section>}
+-   <main className="home-content" aria-label="主页">{error&&<p role="alert">{error}</p>}{access.applications.length?<section className="application-grid">{access.applications.map(app=><a className="application-card" key={app.code} href={'/app/applications/'+encodeURIComponent(app.appId!)}>{app.name}</a>)}</section>:<div className="home-empty"><h1>暂无可用应用</h1><p>{access.bootstrapAdmin?'接入业务应用后，将在这里显示。':'获得应用访问权限后，将在这里显示。'}</p></div>}</main>
+-  </>}
++  {admin?(access.personnelManage?<PersonnelAdmin access={access} onDirty={updateDirty} onExit={()=>navigate('/app')} onUnauthorized={()=>{updateDirty(false);navigate('/login',{replace:true});}}/>:<main className="workspace-loading"><p role="alert">没有人员管理权限</p><button className="admin-button" onClick={()=>navigate('/app')}>返回主页</button></main>):<AppShell user={user} access={access} logout={logout} pending={pending} error={error} onDirty={updateDirty}/>}
+   {blocker.state==='blocked'&&<Modal title="有未保存的修改" onClose={()=>blocker.reset()}><p>离开将丢失未保存的配置。</p><div className="dialog-actions"><button className="admin-button" onClick={()=>blocker.reset()}>继续编辑</button><button className="admin-button primary" onClick={()=>{updateDirty(false);blocker.proceed();}}>放弃修改</button></div></Modal>}
+  </div>;
+ }
+diff --git a/docs/tasks/V030-012.md b/docs/tasks/V030-012.md
+index 7cd977e..fad30e6 100644
+--- a/docs/tasks/V030-012.md
++++ b/docs/tasks/V030-012.md
+@@ -1,7 +1,7 @@
+ # V030-012 · Original AppShell and real applications frontend
+ 
+ <!-- task-meta
+-{"id":"V030-012","title":"Original AppShell and real applications frontend","branch":"task/V030-012-original-app-shell","worktree":"../WeaveOS-worktrees/V030-012","pr":null,"owner":"delegated frontend executor for root thread 01a0f09b-427c-7647-a153-af5e012f8017","dependsOn":[],"allowedPaths":["apps/web/src/applications/","apps/web/src/applications.component.spec.ts","apps/web/src/Workspace.tsx","apps/web/src/main.tsx","tests/acceptance/applications-web.spec.ts","docs/tasks/V030-012.md","docs/evidence/V030-012/"],"deliveryState":"blocked"}
++{"id":"V030-012","title":"Original AppShell and real applications frontend","branch":"task/V030-012-original-app-shell","worktree":"../WeaveOS-worktrees/V030-012","pr":null,"owner":"delegated frontend executor for root thread 01a0f09b-427c-7647-a153-af5e012f8017","dependsOn":[],"allowedPaths":["apps/web/src/applications/","apps/web/src/applications.component.spec.ts","apps/web/src/Workspace.tsx","apps/web/src/main.tsx","tests/acceptance/applications-web.spec.ts","docs/tasks/V030-012.md","docs/evidence/V030-012/"],"deliveryState":"in_progress"}
+ -->
+ 
+ ## Scope
+@@ -66,7 +66,7 @@ Notion router/testing, V030-011 task; project/PRD/architecture Notion entrances.
+ 
+ - [x] Verify integration head; create independent branch/worktree; record sole routing ownership.
+ - [x] Read frozen limited source PLAN and inventory actual components/routes/B5 DTOs.
+-- [ ] Verify required readable Library handoff bytes and identity; preserve exact static assets.
++- [x] Verify authorized direct Figma context/screenshots and exact exported static assets; ZIP failed and is superseded as a required input.
+ - [x] Preserve actual behavior RED source, command, exit and failed assertion before implementation.
+ - [ ] Wire Home/catalog/create/access/workspace and owner/Bootstrap group/member/root-menu management.
+ - [ ] Confirm original-key recovery, CAS/conflict/retry/401/403 and no premature success.
+@@ -111,7 +111,13 @@ Blocking materialization: first preparation and one bounded fresh retry both
+ returned the exact error "library file transfer failed: download failed".
+ The sole materialization helper is present in consumer workspace; no ZIP bytes.
+ No alternative download route attempted; no private signed URL in evidence.
+-Design implementation is stopped pending restoration of this required input.
++Root subsequently authorized direct original Figma retrieval instead of the
++convenience ZIP. Full original contexts/screenshots verified for Home, catalog,
++create, personnel108:151 and global nav358:17927. Shell asset URLs also hit
++proxy403 after approved escalation. Read-only Figma SVG_STRING node exports
++resolved all six needed original assets without modifying Figma or SVG bytes;
++source node IDs/dimensions/hashes are in evidence/assets.json. ZIP failure
++remains historical and no longer blocks this bounded entry flow.
+ 
+ Other gaps for root:
+ - B5 has no candidate-member search. Existing members response contains UUIDs;
+@@ -143,8 +149,8 @@ Root must resolve missing handoff bytes or explicitly authorize a source
+ alternative; candidate member UI and missing administration frame need bounded
+ coordination, not a new backend invented in this task.
+ 
+-Next: root restores the exact required handoff or explicitly authorizes a
+-source alternative. After verified readable bytes and approved administration
+-composition/member-selection decision, continue tests-first implementation.
+-RED evidence is already preserved; do not recast this checkpoint as a delivered UI.
++Next: implement source-grounded catalog/create/workspace against the frozen B5
++API. Root explicitly permits permission visual composition/member selection
++to wait for the next candidate endpoint. No UUID-only selector or fake
++unsupported controls count as finished. RED source is already preserved.
+ 

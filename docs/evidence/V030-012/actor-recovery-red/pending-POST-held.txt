@@ -1,0 +1,42 @@
+[WebServer] (node:91518) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:91598) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:91730) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › apps/web/src/applications.component.spec.ts:366:1 › V030-012 a pending POST interrupted by forced login resumes as unknown under the same actor
+  1) [chromium] › apps/web/src/applications.component.spec.ts:366:1 › V030-012 a pending POST interrupted by forced login resumes as unknown under the same actor
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+    Expected substring: "尚未确认"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('dialog', { name: '新建应用', exact: true }).getByRole('alert')
+
+
+      401 |   const restored = page.getByRole('dialog', { name: '新建应用', exact: true });
+      402 |   await expect(restored.getByRole('textbox', { name: '应用名称', exact: true })).toHaveValue('飞行中的应用');
+    > 403 |   await expect(restored.getByRole('alert')).toContainText('尚未确认');
+          |                                             ^
+      404 |   await restored.getByRole('button', { name: '核查操作', exact: true }).click();
+      405 |   await expect(restored).toHaveCount(0);
+      406 |   expect(writes).toHaveLength(1);
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:403:45
+
+    Error Context: .work/v030012/pending-post-results/applications.component-V03-1c716-nknown-under-the-same-actor-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › apps/web/src/applications.component.spec.ts:366:1 › V030-012 a pending POST interrupted by forced login resumes as unknown under the same actor

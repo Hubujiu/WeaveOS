@@ -1,0 +1,35 @@
+
+Running 9 tests using 1 worker
+F
+Testing stopped early after 1 maximum allowed failures.
+
+
+  1) [chromium] › src/root-record-shell.component.spec.ts:44:1 › Root Shell ordinary form route mounts records under the original persistent chrome 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('region', { name: '记录工作区' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('region', { name: '记录工作区' }) with timeout 5000ms
+      - waiting for getByRole('region', { name: '记录工作区' })
+
+
+      44 | test('Root Shell ordinary form route mounts records under the original persistent chrome',async({page})=>{
+      45 |  const api=await fixture(page,{ordinary:true});await page.goto(routePath);
+    > 46 |  await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();
+         |                                                        ^
+      47 |  await expect(page.getByTestId('application-shell')).toHaveCount(1);
+      48 |  await expect(page.getByRole('navigation',{name:'全局应用标签'})).toBeVisible();
+      49 |  await expect(page.getByRole('navigation',{name:'应用导航'})).toBeVisible();
+        at /repo/apps/web/src/root-record-shell.component.spec.ts:46:56
+
+    Error Context: ../../../artifacts/output/root-record-shell.componen-50dc0--original-persistent-chrome-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/root-record-shell.component.spec.ts:44:1 › Root Shell ordinary form route mounts records under the original persistent chrome 
+  8 did not run
+  1 error was not a part of any test, see above for details

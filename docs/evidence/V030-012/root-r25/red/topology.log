@@ -1,0 +1,51 @@
+✔ ADR-003/004: isolated PG18/Redis8.2 and ingress preserve service boundaries (2.135132ms)
+✔ Product CI executes migration, HTTPS real API and three browsers; final release remains gated (0.380637ms)
+✔ ADR-004: ingress overwrites forwarded identity, disables shared auth cache and separates API from SPA (0.429772ms)
+✔ Browser container uses init to reap children and explicit isolated shared memory (0.407788ms)
+✔ Private container-produced fixture is assigned to the authorized host runner without world-readable permissions (0.505603ms)
+✔ Expanded acceptance evidence reports the actual complete HTTP and browser results (0.839867ms)
+✔ Product runner executes all 19 storage cases and real observer qualifications (0.563929ms)
+✖ Root R25 acceptance runtime injects dedicated definition key and explicit schema budgets before startup (14.961358ms)
+✖ Root R25 immutable-runtime simulation supplies the same explicit definition configuration (0.671505ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 7
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 124.097576
+
+✖ failing tests:
+
+test at tests/acceptance/topology.test.mjs:52:1
+✖ Root R25 acceptance runtime injects dedicated definition key and explicit schema budgets before startup (14.961358ms)
+  AssertionError [ERR_ASSERTION]: dedicated 32-byte definition key required; value withheld
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-012-review-publish/tests/acceptance/topology.test.mjs:76:14)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/acceptance/topology.test.mjs:89:1
+✖ Root R25 immutable-runtime simulation supplies the same explicit definition configuration (0.671505ms)
+  AssertionError [ERR_ASSERTION]: WEAVEOS_DEFINITION_HMAC_KEY must be in the private runtime environment
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-012-review-publish/tests/acceptance/topology.test.mjs:94:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -1,0 +1,42 @@
+[WebServer] (node:63180) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:63194) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:63242) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › apps/web/src/applications.component.spec.ts:60:1 › V030-012 catalog trailing slash survives direct entry and refresh
+  1) [chromium] › apps/web/src/applications.component.spec.ts:60:1 › V030-012 catalog trailing slash survives direct entry and refresh
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: '应用中心', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: '应用中心', exact: true }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: '应用中心', exact: true })
+
+
+      61 |   await fixture(page);
+      62 |   await page.goto('/app/applications/');
+    > 63 |   await expect(page.getByRole('heading', { name: '应用中心', exact: true })).toBeVisible();
+         |                                                                          ^
+      64 |   await expect(page.getByRole('button', { name: application.name, exact: true })).toBeVisible();
+      65 |   await page.reload();
+      66 |   await expect(page.getByRole('heading', { name: '应用中心', exact: true })).toBeVisible();
+        at /workspace/WeaveOS-worktrees/V030-012/apps/web/src/applications.component.spec.ts:63:74
+
+    Error Context: .work/v030012/browser-results/applications.component-V03-dd41a-es-direct-entry-and-refresh-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › apps/web/src/applications.component.spec.ts:60:1 › V030-012 catalog trailing slash survives direct entry and refresh

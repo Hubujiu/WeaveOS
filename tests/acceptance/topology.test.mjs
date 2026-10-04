@@ -48,3 +48,51 @@ test('Product runner executes all 19 storage cases and real observer qualificati
   assert.match(runner, /storageCases:\s*19/);
   assert.ok(runner.includes('WEAVEOS_ACCEPTANCE_OBSERVER'));
 });
+
+test('Root R25 acceptance runtime injects dedicated definition key and explicit schema budgets before startup', async () => {
+  const { runAcceptance } = await import('../../infra/acceptance/run.mjs');
+  const { mkdtempSync, rmSync, statSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const keys = [];
+  for (let run = 0; run < 2; run++) {
+    const directory = mkdtempSync(join(tmpdir(), 'weaveos-root-r25-'));
+    const stop = new Error('Root test stops before TLS generation and Docker startup');
+    let calls = 0;
+    try {
+      await assert.rejects(runAcceptance({ directory, execute(command, args) {
+        calls++;
+        assert.ok(/openssl(?:\.exe)?$/.test(command), 'first external action must be TLS setup');
+        assert.equal(args[0], 'req');
+        throw stop;
+      }}), error => error === stop);
+      assert.equal(calls, 1, 'no actual services started');
+      const file = join(directory, 'runtime.env');
+      const values = Object.fromEntries(readFileSync(file, 'utf8').trim().split(/\r?\n/).map(line => {
+        const index = line.indexOf('=');
+        return [line.slice(0, index), line.slice(index + 1)];
+      }));
+      const key = values.WEAVEOS_DEFINITION_HMAC_KEY;
+      assert.ok(typeof key === 'string' && Buffer.from(key, 'base64').length === 32, 'dedicated 32-byte definition key required; value withheld');
+      assert.ok(Buffer.from(key, 'base64').toString('base64') === key, 'canonical base64 definition key required');
+      assert.ok(key !== values.WEAVEOS_AUDIT_HMAC_KEY, 'definition key must not reuse audit key');
+      assert.match(values.WEAVEOS_DEFINITION_KEY_ID ?? '', /^[A-Za-z0-9_-]{1,16}$/);
+      assert.equal(values.WEAVEOS_SCHEMA_LOCK_TIMEOUT_MS, '1000');
+      assert.equal(values.WEAVEOS_SCHEMA_STATEMENT_TIMEOUT_MS, '5000');
+      if (process.platform !== 'win32') assert.equal(statSync(file).mode & 0o777, 0o600);
+      keys.push(key);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  }
+  assert.ok(keys[0] !== keys[1], 'independent isolated runs must generate separate definition keys');
+});
+
+test('Root R25 immutable-runtime simulation supplies the same explicit definition configuration', () => {
+  const runner = readFileSync(new URL('../../infra/runtime/run.mjs', import.meta.url), 'utf8');
+  const runtime = runner.match(/file\('runtime\.env',([\s\S]*?)\);/);
+  assert.ok(runtime, 'existing private runtime env writer required');
+  for (const key of ['WEAVEOS_DEFINITION_HMAC_KEY', 'WEAVEOS_DEFINITION_KEY_ID', 'WEAVEOS_SCHEMA_LOCK_TIMEOUT_MS', 'WEAVEOS_SCHEMA_STATEMENT_TIMEOUT_MS']) {
+    assert.ok(runtime[1].includes(key + '='), key + ' must be in the private runtime environment');
+  }
+  assert.match(runtime[1], /WEAVEOS_SCHEMA_LOCK_TIMEOUT_MS=1000/);
+  assert.match(runtime[1], /WEAVEOS_SCHEMA_STATEMENT_TIMEOUT_MS=5000/);
+});
