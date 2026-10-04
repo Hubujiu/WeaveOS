@@ -23,6 +23,7 @@ type Service struct {
 	TrustedProxyHosts []string
 	Definitions       http.Handler
 	Records           http.Handler
+	Workflows         http.Handler
 }
 
 func (s *Service) TrustedProxies() []string { return append([]string(nil), s.TrustedProxyHosts...) }
