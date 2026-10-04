@@ -1,0 +1,7 @@
+## P2d 后端表结构保存接入真实流程兼容门禁（Root冻结，2026-10-04 12:58 UTC）
+依赖P2c实际GREEN。沿用FLOW-03/04/05，修改现有appstructure的真实preflight与Save，不新增用户操作或前端。
+现有Preflight增加workflowConflicts数组，元素以camelCase输出flowId、version、nodeId、fieldId、reason，空时[]。使用当前事务对proposed字段集合调用workflowcatalog.CheckCompatibilityInTx。已有table_field_dependencies及其他视图布局、删除数据确认、映射、schemaVersion/viewVersion检查不删除、不削弱。
+preflight正常返回200，但若存在真实流程不兼容则saveAllowed=false，不签发删除确认令牌。Save在当前BeginManagerWrite的app门禁内、任何mapping/DDL/metadata修改前重新查询；不信任之前preflight。冲突409 APPLICATION_SCHEMA_WORKFLOW_INCOMPATIBLE，data.conflicts包含准确flow/version/node/field/reason。此代码优先于数据删除确认检查，确认删除不能绕过流程约束。
+精确允许不影响节点执行的字段重命名、text→multiline等仍可执行eq的修改；由现有字段类型／转换规则决定物理转换能否完成。新表创建和没有流程的旧路径必须仍正常工作。当前候选未发布或无在途的disabled历史不阻止Save；current enabled/closing及真实在途旧版本必须阻止不兼容变更。
+preflight只读同一RR快照；Save与流程Enable/Confirm/Reserve共享app→table门禁，不在preflight取写锁，不在网络调用期间持锁。Root真实HTTP+PG测试验证schema存储、物理列、操作幂等账本与事务原子性。接口文档同步新增只读诊断字段/错误码，契约维持OpenAPI3.2.1，不改外壳/前端。
+仅允许services/bff/internal/appstructure/models.go、preflight.go、schema.go及必要新workflow_dependencies.go、相关已读取OpenAPI契约、V018任务/证据；Root独立测试为root_workflow_schema_test.go，执行者不改逻辑。全部现有appstructure/apprecordservice回归必须保留，不能为新门禁删除原legacy依赖测试。
