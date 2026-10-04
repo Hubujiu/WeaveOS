@@ -1,3 +1,5 @@
+> 此为66e2f1e整合阶段记录；Root后续身份边界审查修复的当前结果见identity-boundary-validation.md。
+
 # V030-020 P2d整合后的验证
 
 2026-10-04，merge提交d570556的第二父提交精确为b9f4579c2b7ec0c3d38f963d910a5f1c7adcd26f。P2d生产源码及Root schema测试与该提交逐字节相同；共享OpenAPI冲突只合并两侧新增schema。全部244个两侧契约变更叶值及全部错误登记均保留，见merged-contract-preservation.txt。P2d README顶部已更新当前结果，初始无效HTTP400准备失败仍完整保留并标记resolved。

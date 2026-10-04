@@ -298,11 +298,6 @@ func decodeGraph(raw []byte) (flowgraph.Graph, error) {
 			if json.Unmarshal(nodeObject["approval"], &a) != nil || a.AssigneeIDs == nil || a.EditableFieldIDs == nil {
 				return flowgraph.Graph{}, errInvalid
 			}
-			for _, id := range a.AssigneeIDs {
-				if !validID(id) {
-					return flowgraph.Graph{}, errInvalid
-				}
-			}
 			nodes[i] = flowgraph.Node{ID: node.ID, Kind: node.Kind, Approval: &flowgraph.Approval{Mode: a.Mode, AssigneeIDs: a.AssigneeIDs, EditableFieldIDs: a.EditableFieldIDs}}
 		case "condition":
 			if len(bytes.TrimSpace(nodeObject["condition"])) == 0 {

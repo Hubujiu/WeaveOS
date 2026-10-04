@@ -20,3 +20,7 @@
 ## 后续
 
 已通过d570556整合精确V018 P2d checkpoint `b9f4579c2b7ec0c3d38f963d910a5f1c7adcd26f`，保留两侧OpenAPI/errors及`workflowConflicts/409`，更新P2d README顶部当前状态并保留历史失败原文。整合后适用检查已全部通过，详情见merged-validation.md。已推送任务分支并创建draft PR #31（https://github.com/Hubujiu/WeaveOS/pull/31），任务PR字段已登记；下一步核对最终head CI并交Root审查。不合入main、不部署。本包不代表完整审批后端或Flowable回执接线。
+
+## 当前Root身份边界修复
+
+Root新增3b87fd2测试已接入并有效RED。decodeGraph新增5行canonical assigneeId前置检查后16专项和全Go/契约回归通过，详见identity-boundary-validation.md。新Root测试仅gofmt，授权查询不改；等待同PR新head CI与Root复核。
