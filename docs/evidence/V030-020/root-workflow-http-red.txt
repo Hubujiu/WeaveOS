@@ -1,0 +1,32 @@
+--- FAIL: TestRootWorkflowHTTPPersistAndReadCanonicalDefinition (0.07s)
+    root_workflow_http_test.go:99: product contract status want 201 got 503: workflow HTTP not implemented
+--- FAIL: TestRootWorkflowHTTPReplayIsAtomicAndPayloadBound (0.07s)
+    root_workflow_http_test.go:110: product contract status want 201 got 503: workflow HTTP not implemented
+--- FAIL: TestRootWorkflowHTTPRequiresRealSessionCSRFAndExpectedActor (0.06s)
+    root_workflow_http_test.go:123: want 401 AUTH_UNAUTHENTICATED got 503 workflow HTTP not implemented
+--- FAIL: TestRootWorkflowHTTPOrdinaryDataAccessDoesNotGrantManagement (0.07s)
+    root_workflow_http_test.go:130: want 403 APPLICATION_FORBIDDEN got 503 workflow HTTP not implemented
+--- FAIL: TestRootWorkflowHTTPRejectsCandidateWithoutExistingPermission (0.06s)
+    root_workflow_http_test.go:135: want 403 WORKFLOW_APPROVER_FORBIDDEN got 503 workflow HTTP not implemented
+--- FAIL: TestRootWorkflowHTTPOwnScopeCandidateAndRevocationRechecked (0.07s)
+    root_workflow_http_test.go:140: product contract status want 201 got 503: workflow HTTP not implemented
+--- FAIL: TestRootWorkflowHTTPEnableRequiresConfirmedDeployment (0.07s)
+    root_workflow_http_test.go:148: product contract status want 201 got 503: workflow HTTP not implemented
+--- FAIL: TestRootWorkflowHTTPCloseReportsClosingWithAcceptedInstance (0.06s)
+    root_workflow_http_test.go:157: product contract status want 201 got 503: workflow HTTP not implemented
+--- FAIL: TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic (0.16s)
+    --- FAIL: TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic/schema (0.05s)
+        root_workflow_http_test.go:170: want 409 WORKFLOW_CONFLICT got 503 workflow HTTP not implemented
+    --- FAIL: TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic/revision (0.06s)
+        root_workflow_http_test.go:170: want 409 WORKFLOW_CONFLICT got 503 workflow HTTP not implemented
+    --- FAIL: TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic/graph (0.05s)
+        root_workflow_http_test.go:170: want 400 COMMON_INVALID_ARGUMENT got 503 workflow HTTP not implemented
+--- FAIL: TestRootWorkflowHTTPClosedJSONAndNoClientDeploymentProof (0.06s)
+    root_workflow_http_test.go:182: want 400 COMMON_INVALID_ARGUMENT got 503 workflow HTTP not implemented
+--- FAIL: TestRootWorkflowHTTPRevokedAccountCannotReplayOrRead (0.05s)
+    root_workflow_http_test.go:189: product contract status want 201 got 503: workflow HTTP not implemented
+--- FAIL: TestRootWorkflowHTTPHostRoutesBeforeGenericForms (0.06s)
+    root_workflow_http_test.go:198: product contract status want 201 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"e0d32806f949497365d61e4c09c6f2c9"}}
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure	0.868s
+FAIL

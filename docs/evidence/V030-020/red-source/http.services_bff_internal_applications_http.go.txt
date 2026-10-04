@@ -232,14 +232,6 @@ func (s *Service) write(w http.ResponseWriter, r *http.Request, p session.Princi
 	s.finish(w, r, p, result)
 }
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if s.Workflows != nil {
-		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
-		parts := strings.Split(path, "/")
-		if path != r.URL.Path && len(parts) >= 4 && parts[1] == "forms" && parts[3] == "workflows" {
-			s.Workflows.ServeHTTP(w, r)
-			return
-		}
-	}
 	if s.Records != nil {
 		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
 		parts := strings.Split(path, "/")

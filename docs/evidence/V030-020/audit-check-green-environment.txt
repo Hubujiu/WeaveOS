@@ -1,0 +1,9 @@
+Go: go1.27.1
+Goose: v3.28.0
+PostgreSQL: 18.6 (Debian 18.6-1.pgdg13+2); isolated hot DB weaveos_workflow_final_test at migrations 1–16 and distinct cold DB weaveos_workflow_archive_test at archive migrations 1–5.
+Redis: 8.2.10 in isolated task container, DB 15.
+Final 13-test HTTP run: root-workflow-http-green.txt, exit 0, one package pass.
+Root HTTP audit exact test RED before implementation: audit-http-red.txt and its .exit-code; source hash at audit-red-test-sources.sha256.
+Root hot/cold audit tests RED before implementation: audit-hot-cold-red.txt and its .exit-code; source hash at audit-red-test-sources.sha256.
+Archive copy/conflict test: audit-archive-green.txt and .exit-code (passed independently; exact Root source uses explicit event ID).
+Legacy audit regression (16 existing tests, excluding the new fixture-blocked test): audit-regression-green.txt and .exit-code (passed).
