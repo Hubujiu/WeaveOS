@@ -1,0 +1,9 @@
+## P2b：正式命令表与现有记录保护的同事务接线（Root冻结，2026-10-04 08:04 UTC）
+目标是在真实应用schema中持久化已验证的Ledger，不再依赖TEMP命令表。此包仍不是Flowable RPC或完整审批接口；后续HTTP不能绕过活Session、行/字段授权、实际任务和版本检查。
+新增migration 00014_workflow_command_ledger.sql，建立applications.workflow_commands与workflow_dispatch，结构与已验证Ledger合同一致：command_id uuid PK；command_json jsonb NOT NULL CHECK jsonb_typeof='object'；command_hash bytea NOT NULL且32bytes；state pending/success/no_effect；receipt_json jsonb nullable且非空为object；created_at timestamptz NOT NULL DEFAULT now()；pending当且仅当receipt_json为空。commands的command_id须等于command_json的CommandID（缺key也拒绝）。dispatch command_id PK/FK commands ON DELETE RESTRICT，created_at default now，增加(created_at,command_id)索引用于后续有界扫描。这里JSON为命令metadata，不替代原生业务记录表。
+roles.sql：auth_app对commands SELECT/INSERT及列级UPDATE(state,receipt_json)，不得DELETE/TRUNCATE或更新command_id/json/hash/created_at；dispatch SELECT/INSERT/DELETE，不授UPDATE/TRUNCATE。auth_backup SELECT两表，auth_reader/auth_maintenance无新增权限；PUBLIC无授权。不得改既有应用权限或命令内容校验。更新固定roleHash与migration兼容SHA，原1–13不动。
+Down仅在两表均空时允许；否则SQLSTATE55000拒绝以保留去重证据。不得自动删历史使回退成功。
+测试由Root亲写，复用真实recordFixture与Ledger{Namespace:"applications"}：Acquire+Accept同事务提交/回滚；Apply的callback Release与终态同事务，callback后注入失败必须完整回滚；成功后重复Apply不得再次callback；runtime不得修改命令身份或删除历史，backup仅SELECT。旧Root33与14用例保留。
+每次测试随机command IDs，fixture只用于隔离DB，不连接真实部署。接收者身份校验/RecordContext策略还在后续正式API合同；不能因该内部组合成功就声称终端用户权限已校验。
+Root同时更新既有备份fixture至migration14（保留全部断言），避免再次遗漏真实migration清单。实现者不得修改Root测试。执行先记录真实缺正式表的RED作为migration缺口证据，不冒充缺依赖/编译失败；迁移后全GREEN、完整相关回归、干净集群迁移、非空Down拒绝、roles权限及备份验证，再推送。
+复杂度沿用PK O(log C)、记录table/row锁索引O(log T+log R)，每命令常量条目；恢复待发扫描索引O(log U+B)，内存O(B)。真实回调执行时间另计。
