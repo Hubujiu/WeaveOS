@@ -1,0 +1,31 @@
+--- FAIL: TestRootLedgerAcceptAndExactReplay (0.01s)
+    ledger_test.go:50: accept {Command:{ProtocolVersion:0 CommandID: AppID: TableID: RecordID: InstanceID: TaskID: ActorID: Action: RecordVersion:0 FenceEpoch:0 TaskEpoch:0 ExpectedSequence:0 PayloadHash:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]} State: Receipt:<nil>} root RED-only ledger declaration
+--- FAIL: TestRootLedgerConflictDoesNotOverwrite (0.01s)
+    ledger_test.go:56: accept {Command:{ProtocolVersion:0 CommandID: AppID: TableID: RecordID: InstanceID: TaskID: ActorID: Action: RecordVersion:0 FenceEpoch:0 TaskEpoch:0 ExpectedSequence:0 PayloadHash:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]} State: Receipt:<nil>} root RED-only ledger declaration
+--- FAIL: TestRootLedgerCallerRollbackRemovesCommandAndDispatch (0.01s)
+    ledger_test.go:62: root RED-only ledger declaration
+--- FAIL: TestRootLedgerApplyAndDuplicateAreAtomic (0.01s)
+    ledger_test.go:73: accept {Command:{ProtocolVersion:0 CommandID: AppID: TableID: RecordID: InstanceID: TaskID: ActorID: Action: RecordVersion:0 FenceEpoch:0 TaskEpoch:0 ExpectedSequence:0 PayloadHash:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]} State: Receipt:<nil>} root RED-only ledger declaration
+--- FAIL: TestRootLedgerOuterRollbackPreservesFenceAndPending (0.01s)
+    ledger_test.go:83: accept {Command:{ProtocolVersion:0 CommandID: AppID: TableID: RecordID: InstanceID: TaskID: ActorID: Action: RecordVersion:0 FenceEpoch:0 TaskEpoch:0 ExpectedSequence:0 PayloadHash:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]} State: Receipt:<nil>} root RED-only ledger declaration
+--- FAIL: TestRootLedgerProjectionFailureCannotFinalize (0.01s)
+    ledger_test.go:89: accept {Command:{ProtocolVersion:0 CommandID: AppID: TableID: RecordID: InstanceID: TaskID: ActorID: Action: RecordVersion:0 FenceEpoch:0 TaskEpoch:0 ExpectedSequence:0 PayloadHash:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]} State: Receipt:<nil>} root RED-only ledger declaration
+--- FAIL: TestRootLedgerUnknownWrongAndOutOfOrderNeverProduceEffects (0.00s)
+    ledger_test.go:96: accept {Command:{ProtocolVersion:0 CommandID: AppID: TableID: RecordID: InstanceID: TaskID: ActorID: Action: RecordVersion:0 FenceEpoch:0 TaskEpoch:0 ExpectedSequence:0 PayloadHash:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]} State: Receipt:<nil>} root RED-only ledger declaration
+--- FAIL: TestRootLedgerDurableNoEffectOnly (0.00s)
+    ledger_test.go:104: accept {Command:{ProtocolVersion:0 CommandID: AppID: TableID: RecordID: InstanceID: TaskID: ActorID: Action: RecordVersion:0 FenceEpoch:0 TaskEpoch:0 ExpectedSequence:0 PayloadHash:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]} State: Receipt:<nil>} root RED-only ledger declaration
+--- FAIL: TestRootLedgerMissingIsNotNoEffect (0.00s)
+    ledger_test.go:110: missing get: root RED-only ledger declaration
+--- FAIL: TestRootLedgerInvalidEnvelopeHasNoWrites (0.01s)
+    ledger_test.go:116: invalid accepted: root RED-only ledger declaration
+--- FAIL: TestRootLedgerMissingEffectCannotFinalize (0.00s)
+    ledger_test.go:119: accept {Command:{ProtocolVersion:0 CommandID: AppID: TableID: RecordID: InstanceID: TaskID: ActorID: Action: RecordVersion:0 FenceEpoch:0 TaskEpoch:0 ExpectedSequence:0 PayloadHash:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]} State: Receipt:<nil>} root RED-only ledger declaration
+--- FAIL: TestRootLedgerReconnectReadsOriginalDurableResult (0.01s)
+    ledger_test.go:133: root RED-only ledger declaration
+--- FAIL: TestRootLedgerInvalidPortsFailBeforeWrites (0.00s)
+    ledger_test.go:143: nil tx: root RED-only ledger declaration
+--- FAIL: TestRootLedgerCorruptStoredCommandFailsClosed (0.00s)
+    ledger_test.go:148: accept {Command:{ProtocolVersion:0 CommandID: AppID: TableID: RecordID: InstanceID: TaskID: ActorID: Action: RecordVersion:0 FenceEpoch:0 TaskEpoch:0 ExpectedSequence:0 PayloadHash:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]} State: Receipt:<nil>} root RED-only ledger declaration
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands	0.097s
+FAIL
