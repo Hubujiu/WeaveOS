@@ -1,0 +1,40 @@
+const fs=require('fs');
+const ts=require('/workspace/WeaveOS-worktrees/V030-023/node_modules/typescript');
+const {chromium}=require('/workspace/WeaveOS-worktrees/V030-023/node_modules/@playwright/test');
+const fixtureSource=ts.transpileModule(fs.readFileSync('/tmp/v023-fixture.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;
+const capture=`
+(async()=>{
+ const browser=await chromium.launch();
+ const out='/workspace/WeaveOS-worktrees/V030-023/docs/evidence/V030-023/screenshots';
+ for(const [width,height] of [[1440,1000],[1280,800],[390,844]]){
+  const page=await browser.newPage({viewport:{width,height},reducedMotion:'reduce'});
+  await fixture(page);await page.goto('http://127.0.0.1:4176'+routePath+'/design');
+  const palette=page.getByRole('region',{name:'字段面板'});
+  for(const [kind,name] of [['文本','申请事项'],['日期','申请日期'],['金额','报销金额'],['多行文本','备注']]){
+   await palette.getByRole('button',{name:kind,exact:true}).click();
+   await page.getByLabel('字段名称',{exact:true}).fill(name);
+  }
+  await page.getByRole('region',{name:'表单画布'}).scrollIntoViewIfNeeded();
+  if(width>700)await page.locator('.app-content').evaluate(el=>{el.scrollTop=0});
+  await page.screenshot({path:out+'/designer-filled-'+width+'.png',fullPage:true});
+  await page.getByRole('button',{name:'预览',exact:true}).click();
+  await page.getByRole('dialog',{name:'表单预览',exact:true}).waitFor();
+  await page.screenshot({path:out+'/preview-'+width+'.png',fullPage:true});
+  await page.keyboard.press('Escape');
+  await page.getByRole('dialog').waitFor({state:'detached'});
+  await page.getByRole('button',{name:'返回工作台',exact:true}).click();
+  await page.getByRole('dialog').waitFor();
+  await page.screenshot({path:out+'/confirmation-'+width+'.png',fullPage:true});
+  await page.keyboard.press('Escape');await page.getByRole('dialog').waitFor({state:'detached'});
+  await palette.getByRole('button',{name:'金额',exact:true}).click();
+  await page.getByLabel('字段名称',{exact:true}).fill('配置金额');
+  await page.getByRole('region',{name:'字段属性'}).scrollIntoViewIfNeeded();
+  await page.screenshot({path:out+'/field-settings-'+width+'.png',fullPage:true});
+  await page.getByRole('button',{name:'保存',exact:true}).click();
+  await page.getByRole('alert').waitFor();await page.getByRole('alert').scrollIntoViewIfNeeded();
+  await page.screenshot({path:out+'/error-'+width+'.png',fullPage:true});
+  await page.close();
+ }
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});`;
+eval(fixtureSource+capture);

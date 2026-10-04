@@ -37,3 +37,7 @@
 最新尺寸、后台动画与Arca原版表格：[V010-020](V010-020.md)，依赖已验收019；task/V010-020-admin-shell / ../WeaveOS-worktrees/V010-020，[PR21](https://github.com/Hubujiu/WeaveOS/pull/21)。固定56顶栏/176侧栏与全视口材质、Q32六处Select/四页签Pill；Q35身份复用模板卡片+详情，成员/操作记录直接消费固定22模块Arca源码/完整样式Motion，启用当前页排序/拖列/列宽/真实服务端页大小，少零数据空网格填满/分页贴底。Notion/Figma已同步重读，严格多阶段真实RED→GREEN；最终143完整组件/54源三引擎、类型构建/132治理/官方依赖audit通过，永久原字节/哈希/必要补丁及截图在q35。ready可审阅；提交后的实际HEAD归档安全与五项CI另按PR实时核对，不冒充accepted/合并/部署。root代码唯一写者，子Agent只读复审与独立项目Figma同步。
 
 受控部署 P1：[V030-022](V030-022.md)，Root 合同 737daa4、未合 V020 基线 d99b8eb；[draft PR32](https://github.com/Hubujiu/WeaveOS/pull/32) base 为 task/V030-020-workflow-http。实际 RED／GREEN 与未改旧 proof 回归见任务证据，待 Root 验收，不代表 P2 或整版完成。
+
+新风格表单设计器：[V030-023](V030-023.md)，Root设计/测试/验收；基于 `c935510` 叠在 `task/V030-021-monochrome`，[draft PR34](https://github.com/Hubujiu/WeaveOS/pull/34)。限现有设计器及共享字段/弹窗视觉，不改业务/API/Shell，不合main或部署；实际证据与验收状态见任务文档。
+
+已验前后端独立整合：[V030-024](V030-024.md)，Root冻结精确后端 `24d07a5` 与前端 `3900bca`，独立 `task/V030-024-integrate-verified` 叠在 V022；仅任务索引冲突，保留原侧 blob 与完整历史，联合验证后交 Root 审查，不合 main 或部署。

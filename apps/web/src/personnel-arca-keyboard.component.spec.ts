@@ -55,5 +55,5 @@ test('Q35 original base foreground and smoothing are scoped to the table', async
   if (await page.evaluate(() => CSS.supports('-webkit-font-smoothing', 'antialiased'))) {
     expect(await table.evaluate(n => getComputedStyle(n).getPropertyValue('-webkit-font-smoothing'))).toBe('antialiased');
   }
-  await expect(page.locator('.personnel-page-heading')).toHaveCSS('color', 'rgb(16, 32, 68)');
+  await expect(page.locator('.personnel-page-heading')).toHaveCSS('color', 'rgb(37, 37, 37)');
 });
