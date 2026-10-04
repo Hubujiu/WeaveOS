@@ -29,8 +29,21 @@ Validation/hash/XML walk uses O(B) time and memory for UTF-8 byte count B, bound
 
 ## Limitations and handoff
 
-Root's 15-test suite directly exercises the minimal generated process and eight unsafe/boundary XML cases; the old nine graph cases verify Flowable execution of compiler-generated approval/routing XML through the unchanged prototype. They do not independently exercise every branch of the new allowlist. No additional tests were written by the implementation executor; Root retains test design/acceptance ownership.
+The original validation limitation, subsequently addressed by Root supplement 8793ecc below: Root's 15-test suite directly exercises the minimal generated process and eight unsafe/boundary XML cases; the old nine graph cases verify Flowable execution of compiler-generated approval/routing XML through the unchanged prototype. They do not independently exercise every branch of the new allowlist. No additional tests were written by the implementation executor; Root retains test design/acceptance ownership.
 
 Returned receipts inside a surrounding REQUIRED transaction are provisional until that outer transaction commits. Lookup absence never proves failure. Database serialization/deadlock/connection errors propagate and roll back rather than inventing success; callers must preserve the original identity for retry. P2 durable cross-service intent, gRPC/BFF publishing, authentication/authorization, production migrations/roles and production runtime budgets remain out of scope. Draft saves do not publish.
 
 The new Java module has **no CI gate**. Existing CI status cannot prove this suite executed. Root review is pending; no main merge or deployment. All synthetic containers/networks from these runs were checked absent after cleanup. Worktree, caches and evidence retained for review/reproduction.
+
+
+## Root supplement 8793ecc — 2026-10-04
+
+Fast-forwarded to `8793ecc848d386676e6e7d1212b2b3d90d6fb2c2`, which adds Root-authored registry-path approval and tampering tests plus byte-identical copies of the already verified Go compiler fixtures. Production implementation, SQL fixture, runner and old proof stayed unchanged. Evidence is under `supplement-8793ecc/`.
+
+- First actual run of new cases: `bash services/workflow-engine/run-tests.sh '-Dtest=RootDeploymentRegistryTest#actualGoCompilerApprovalGraphPassesRegistryAndRuns+generatedApprovalGraphRejectsExecutableExtensionAndExpressionTampering' test`. Exit 0, **3/3**, no failures/errors/skips, 18:50:36 UTC. All/any XML passed the actual registry allowlist, engine tasks completed to the expected routed end, durable deployment replay was checked, and seven expression/extension mutations were rejected without storage effects. These supplemental cases first passed on the existing implementation; **no new RED is claimed**.
+- Full suite: `bash services/workflow-engine/run-tests.sh test`. Exit 0, **18/18**, no failures/errors/skips, 18:51:16 UTC. Suite 13.75 s, Maven 15.970 s.
+- Original regression: `bash /tmp/v022-regression/run-proof.sh test`. Exit 0, **24/24**, no failures/errors/skips, 18:51:20 UTC. Suite components 13.67 s + 4.167 s, Maven 20.248 s. This and the full 18-test run used separate synthetic databases/networks concurrently, so durations include resource contention and cannot be compared as a performance regression.
+- Exact logs, exit files, original Surefire XML reports, Root test snapshot, source hashes/equivalence proofs retained. New compiler fixtures are byte-identical to unchanged old proof fixtures. All current Java/test/resources and all tracked old proof files match Root `8793ecc` bytes, and the disposable old-proof execution copy matches too. Existing implementation SHA256 manifest still passes.
+- No implementation defect was found; **no production/test/fixture changes were made by the executor**. Subsequent commit only records documentation/evidence. All run-specific containers and networks were checked absent. No new module CI gate, no P2 work, main merge or deployment. Freeze pushed head pending Root review.
+
+This supplement resolves the original missing positive compiler-approval coverage through the new registry. It does not claim exhaustive branch coverage or a production resource/latency budget. Original 15-test resource sampling remains labeled as that earlier run.
