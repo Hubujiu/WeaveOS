@@ -19,4 +19,4 @@
 
 ## 后续
 
-仍需整合精确V018 P2d checkpoint `b9f4579c2b7ec0c3d38f963d910a5f1c7adcd26f`，保留两侧OpenAPI/errors及`workflowConflicts/409`，更新P2d README顶部当前状态并保留历史失败原文。整合后重跑适用检查，推送分支，创建以`task/V030-018-approval-commands`为base的draft PR并更新任务PR字段，交Root审查。不合入main、不部署。本包不代表完整审批后端或Flowable回执接线。
+已通过d570556整合精确V018 P2d checkpoint `b9f4579c2b7ec0c3d38f963d910a5f1c7adcd26f`，保留两侧OpenAPI/errors及`workflowConflicts/409`，更新P2d README顶部当前状态并保留历史失败原文。整合后适用检查已全部通过，详情见merged-validation.md。下一步推送分支，创建以`task/V030-018-approval-commands`为base的draft PR并更新任务PR字段，交Root审查。不合入main、不部署。本包不代表完整审批后端或Flowable回执接线。

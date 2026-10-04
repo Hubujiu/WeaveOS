@@ -1,3 +1,5 @@
+> 此为dbd0cda整合前检查点记录；当前整合后结果见merged-validation.md。
+
 # V030-020 最终本地回归检查点
 
 日期：2026-10-04。当前执行工作树 `/workspace/WeaveOS-worktrees/V030-020`，分支 `task/V030-020-workflow-http`。Go 命令在 `golang:1.27.1` 容器执行；真实集成测试使用专用 PostgreSQL 18.6、Redis 8.2.10 与独立 appschema Unix-socket PostgreSQL fixture。凭据留在私有 `.work/v030-020`。
