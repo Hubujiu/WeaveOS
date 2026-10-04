@@ -1,0 +1,92 @@
+ test-redis Pulling 
+ redis Pulling 
+ test-redis Pulled 
+ redis Pulled 
+ Network weaveos-v010-007-1791152046051_default  Creating
+ Network weaveos-v010-007-1791152046051_default  Created
+ Volume weaveos-v010-007-1791152046051_pg  Creating
+ Volume weaveos-v010-007-1791152046051_pg  Created
+ Container weaveos-v010-007-1791152046051-redis-1  Creating
+ Container weaveos-v010-007-1791152046051-postgres-1  Creating
+ Container weaveos-v010-007-1791152046051-redis-1  Created
+ Container weaveos-v010-007-1791152046051-postgres-1  Created
+ Container weaveos-v010-007-1791152046051-test-redis-1  Creating
+ Container weaveos-v010-007-1791152046051-test-redis-1  Created
+ Container weaveos-v010-007-1791152046051-postgres-1  Starting
+ Container weaveos-v010-007-1791152046051-redis-1  Starting
+ Container weaveos-v010-007-1791152046051-postgres-1  Started
+ Container weaveos-v010-007-1791152046051-test-redis-1  Starting
+ Container weaveos-v010-007-1791152046051-redis-1  Started
+ Container weaveos-v010-007-1791152046051-test-redis-1  Started
+ Container weaveos-v010-007-1791152046051-redis-1  Waiting
+ Container weaveos-v010-007-1791152046051-test-redis-1  Waiting
+ Container weaveos-v010-007-1791152046051-postgres-1  Waiting
+ Container weaveos-v010-007-1791152046051-postgres-1  Healthy
+ Container weaveos-v010-007-1791152046051-redis-1  Healthy
+ Container weaveos-v010-007-1791152046051-test-redis-1  Healthy
+Unable to find image 'golang:1.25.7' locally
+1.25.7: Pulling from library/golang
+866771c43bf5: Pulling fs layer
+ed881fbf1b07: Pulling fs layer
+9da421ddeb65: Pulling fs layer
+697bdc10f841: Pulling fs layer
+0fdf71b47847: Pulling fs layer
+5ec41210057e: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+0fdf71b47847: Waiting
+4f4fb700ef54: Waiting
+5ec41210057e: Waiting
+697bdc10f841: Waiting
+ed881fbf1b07: Verifying Checksum
+ed881fbf1b07: Download complete
+866771c43bf5: Verifying Checksum
+866771c43bf5: Download complete
+866771c43bf5: Pull complete
+9da421ddeb65: Verifying Checksum
+9da421ddeb65: Download complete
+0fdf71b47847: Verifying Checksum
+0fdf71b47847: Download complete
+5ec41210057e: Verifying Checksum
+5ec41210057e: Download complete
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
+697bdc10f841: Verifying Checksum
+697bdc10f841: Download complete
+ed881fbf1b07: Pull complete
+9da421ddeb65: Pull complete
+697bdc10f841: Pull complete
+0fdf71b47847: Pull complete
+5ec41210057e: Pull complete
+4f4fb700ef54: Pull complete
+Digest: sha256:5a79b94c34c299ac0361fbb7c7fca6dc552e166b42341050323fa3ab137d7be9
+Status: Downloaded newer image for golang:1.25.7
+go: downloading go1.26.0 (linux/amd64)
+go: download go1.26.0: golang.org/toolchain@v0.0.1-go1.26.0.linux-amd64: Get "https://proxy.golang.org/golang.org/toolchain/@v/v0.0.1-go1.26.0.linux-amd64.zip": tls: failed to verify certificate: x509: certificate signed by unknown authority
+ Container weaveos-v010-007-1791152046051-test-redis-1  Stopping
+ Container weaveos-v010-007-1791152046051-redis-1  Stopping
+ Container weaveos-v010-007-1791152046051-test-redis-1  Stopped
+ Container weaveos-v010-007-1791152046051-postgres-1  Stopping
+ Container weaveos-v010-007-1791152046051-redis-1  Stopped
+ Container weaveos-v010-007-1791152046051-postgres-1  Stopped
+node:internal/errors:985
+  const err = new Error(message);
+              ^
+
+Error: Command failed: docker run --rm --network container:cdebf6ae7e0077c5a01fa69c3332f23d69ed705824202b1a1b0e814147563091 --mount type=bind,src=/workspace/WeaveOS-worktrees/V030-024/,dst=/repo --mount type=bind,src=/tmp/weaveos-b2-ci-Wmj8AW/socket,dst=/tmp/weaveos-b2-ci-Wmj8AW/socket,readonly --mount type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod --mount type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build --env-file /workspace/WeaveOS-worktrees/V030-024/.work/acceptance/test.env -e GOTOOLCHAIN=auto -e GOFLAGS=-buildvcs=false -e GOBIN=/repo/.work/acceptance/tools -w /repo/services/bff golang:1.25.7 sh -ec go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:942:11)
+    at execFileSync (node:child_process:978:15)
+    at call (file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:21:47)
+    at go (file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:35:46)
+    at runAcceptance (file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:45:3)
+    at async file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:180:8 {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 22534,
+  stdout: null,
+  stderr: null
+}
+
+Node.js v24.19.0

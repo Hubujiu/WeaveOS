@@ -4,6 +4,7 @@ import { formApi, formErrorText, FormApiError, immutablePacket, validSaveResult,
 import type { Definition, DefinitionInput, FieldInput, FieldKind, LayoutNodeInput, Preflight, UUID } from './contracts';
 import { FieldRenderer, FormPreview } from './FieldRenderer';
 import { FormsDialog } from './FormsDialog';
+import { FileText, ChartColumn, Clock, SquareCheck, UsersRound, LayoutGrid } from 'lucide-react';
 import {createLeaveController,type LeaveController,type LeaveGuardProps,type LeaveStatus} from './leaveGuard';
 import './forms.css';
 
@@ -362,17 +363,18 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
       </div>}
     </div>;
   };
-  return <section className="forms-module" aria-label="表单设计器">
+  return <section className="forms-module forms-designer" aria-label="表单设计器">
     <div className="forms-toolbar"><div className="forms-toolbar-title">
       <button type="button" className="forms-link" onClick={openLeave}>返回工作台</button>
-      <strong>{base.form.name}</strong>{dirty&&<span className="forms-unsaved">未保存</span>}</div>
+      <div className="forms-designer-title"><span>表单设计</span><strong>{base.form.name}</strong></div>{dirty&&<span className="forms-unsaved">未保存</span>}</div>
       <div className="forms-toolbar-actions">
         {(phase==='preflight'||phase==='saving')&&<span role="status">{phase==='preflight'?'正在预检…':'正在保存…'}</span>}
         {phase==='unconfirmed'&&<><button type="button" onClick={()=>void checkOriginal()}>查询保存结果</button>
           <button type="button" disabled={permissionRevoked} onClick={()=>pending&&void commit(pending,true)}>按原请求重试</button></>}
-        <button type="button" onClick={()=>setDialog('preview')}>预览</button>
         <button type="button" className="forms-primary" disabled={!editable} onClick={()=>void save()}>保存</button>
       </div></div>
+    <div className="forms-designer-navigation"><span className="forms-designer-current">设计</span>
+      <button type="button" onClick={()=>setDialog('preview')}>预览</button></div>
     {error&&<p className="forms-alert" role="alert">{error}</p>}
     {notice&&<p className="forms-success" role="status">{notice}</p>}
     {(!base.capabilities.canManageDefinition||permissionRevoked)&&!error&&<p className="forms-alert" role="alert">没有表单配置权限，当前仅可查看</p>}
@@ -380,7 +382,14 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
       <section className="forms-panel forms-palette" role="region" aria-label="字段面板"><h2>字段面板</h2>
         <div>{palette.map(entry=><button type="button" key={entry.kind} disabled={!editable}
           draggable={editable} onDragStart={event=>event.dataTransfer.setData('application/x-weaveos-form',JSON.stringify({kind:'palette',value:entry.kind}))}
-          onClick={()=>addKind(entry.kind)}>{entry.label}</button>)}</div>
+          onClick={()=>addKind(entry.kind)}>{(() => {
+            const Icon=entry.kind==='number'||entry.kind==='money'?ChartColumn:
+              entry.kind==='date'||entry.kind==='datetime'?Clock:
+              entry.kind==='single_select'||entry.kind==='multi_select'||entry.kind==='boolean'?SquareCheck:
+              entry.kind==='member'||entry.kind==='department'?UsersRound:
+              entry.kind==='group'||entry.kind==='system_field'?LayoutGrid:FileText;
+            return <Icon size={16} strokeWidth={1.5} aria-hidden="true"/>;
+          })()}{entry.label}</button>)}</div>
         {!!unplacedFields.length&&<><h3>已有字段</h3><div>{unplacedFields.map(item=><button type="button"
           key={item.id} aria-label={`将已有字段加入布局 ${item.name}`} disabled={!editable} draggable={editable}
           onDragStart={event=>event.dataTransfer.setData('application/x-weaveos-form',

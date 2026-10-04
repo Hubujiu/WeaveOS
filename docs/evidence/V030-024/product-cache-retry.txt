@@ -1,0 +1,51 @@
+ Network weaveos-v010-007-1791152375110_default  Creating
+ Network weaveos-v010-007-1791152375110_default  Created
+ Volume weaveos-v010-007-1791152375110_pg  Creating
+ Volume weaveos-v010-007-1791152375110_pg  Created
+ Container weaveos-v010-007-1791152375110-redis-1  Creating
+ Container weaveos-v010-007-1791152375110-postgres-1  Creating
+ Container weaveos-v010-007-1791152375110-redis-1  Created
+ Container weaveos-v010-007-1791152375110-postgres-1  Created
+ Container weaveos-v010-007-1791152375110-test-redis-1  Creating
+ Container weaveos-v010-007-1791152375110-test-redis-1  Created
+ Container weaveos-v010-007-1791152375110-redis-1  Starting
+ Container weaveos-v010-007-1791152375110-postgres-1  Starting
+ Container weaveos-v010-007-1791152375110-postgres-1  Started
+ Container weaveos-v010-007-1791152375110-test-redis-1  Starting
+ Container weaveos-v010-007-1791152375110-redis-1  Started
+ Container weaveos-v010-007-1791152375110-test-redis-1  Started
+ Container weaveos-v010-007-1791152375110-postgres-1  Waiting
+ Container weaveos-v010-007-1791152375110-redis-1  Waiting
+ Container weaveos-v010-007-1791152375110-test-redis-1  Waiting
+ Container weaveos-v010-007-1791152375110-postgres-1  Healthy
+ Container weaveos-v010-007-1791152375110-redis-1  Healthy
+ Container weaveos-v010-007-1791152375110-test-redis-1  Healthy
+go: github.com/pressly/goose/v3/cmd/goose@v3.28.0: github.com/pressly/goose/v3/cmd/goose@v3.28.0: Get "https://proxy.golang.org/github.com/pressly/goose/v3/cmd/goose/@v/v3.28.0.info": tls: failed to verify certificate: x509: certificate signed by unknown authority
+ Container weaveos-v010-007-1791152375110-redis-1  Stopping
+ Container weaveos-v010-007-1791152375110-test-redis-1  Stopping
+ Container weaveos-v010-007-1791152375110-test-redis-1  Stopped
+ Container weaveos-v010-007-1791152375110-postgres-1  Stopping
+ Container weaveos-v010-007-1791152375110-redis-1  Stopped
+ Container weaveos-v010-007-1791152375110-postgres-1  Stopped
+node:internal/errors:985
+  const err = new Error(message);
+              ^
+
+Error: Command failed: docker run --rm --network container:5579da8c1b6c741553890fd8c917167d02b42416d7ed21f54b3aa8f4b9aee042 --mount type=bind,src=/workspace/WeaveOS-worktrees/V030-024/,dst=/repo --mount type=bind,src=/tmp/weaveos-b2-ci-OKSvwR/socket,dst=/tmp/weaveos-b2-ci-OKSvwR/socket,readonly --mount type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod --mount type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build --env-file /workspace/WeaveOS-worktrees/V030-024/.work/acceptance/test.env -e GOTOOLCHAIN=auto -e GOFLAGS=-buildvcs=false -e GOBIN=/repo/.work/acceptance/tools -w /repo/services/bff golang:1.25.7 sh -ec go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:942:11)
+    at execFileSync (node:child_process:978:15)
+    at call (file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:21:47)
+    at go (file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:35:46)
+    at runAcceptance (file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:45:3)
+    at async file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:180:8 {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 33296,
+  stdout: null,
+  stderr: null
+}
+
+Node.js v24.19.0

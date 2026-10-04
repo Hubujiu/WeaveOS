@@ -725,16 +725,14 @@ test('V030-012 confirmed create notice stays in the catalogue after opening the 
  await expect(page.getByRole('status').filter({ hasText: '应用已创建' })).toHaveCount(0);
 });
 
-test('V030-012 original Home keeps the 56/176 shell and native sidebar item geometry', async ({ page }) => {
- await fixture(page);
- await page.setViewportSize({ width: 1920, height: 1080 });
- await page.goto('/app');
- await expect(page.getByText('WaveOS', { exact: true })).toBeVisible();
- const rect = async (selector: string) => page.locator(selector).boundingBox();
- expect(await rect('.app-global-header')).toMatchObject({ x: 0, y: 0, height: 56 });
- expect(await rect('.app-sidebar')).toMatchObject({ x: 0, y: 56, width: 176 });
- expect(await rect('.app-sidebar .sidebar-caption')).toMatchObject({ x: 16, y: 80 });
- expect(await rect('.app-sidebar-item.selected')).toMatchObject({ x: 16, y: 116, width: 144, height: 48 });
- expect(await rect('.app-content')).toMatchObject({ x: 176, y: 56 });
- expect(await rect('.app-page-heading')).toMatchObject({ x: 216, y: 88, height: 80 });
+test('Root Mono application Home uses the approved shared full-bleed desktop shell', async ({ page }) => {
+ await fixture(page);await page.setViewportSize({width:1920,height:1080});await page.goto('/app');
+ await expect(page.getByTestId('workspace-shell')).toHaveCount(1);
+ await expect(page.getByText('WaveOS',{exact:true})).toBeVisible();
+ expect(await page.getByTestId('workspace-rail').boundingBox()).toMatchObject({x:0,y:0,width:78,height:1080});
+ expect(await page.getByTestId('workspace-surface').boundingBox()).toMatchObject({x:78,y:0,width:1842,height:1080});
+ expect(await page.getByRole('navigation',{name:'应用导航'}).boundingBox()).toMatchObject({x:78,y:0,width:190});
+ expect(await page.locator('.mono-top').boundingBox()).toMatchObject({x:268,y:0,height:64});
+ expect(await page.getByTestId('workspace-content-well').boundingBox()).toMatchObject({x:268,y:64});
+ await expect(page.getByRole('heading',{name:'主页',exact:true})).toBeVisible();
 });
