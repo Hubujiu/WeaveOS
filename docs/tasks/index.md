@@ -35,3 +35,5 @@
 本轮完整接入：[V010-019](V010-019.md)，依赖已验收018；task/V010-019-complete-app / ../WeaveOS-worktrees/V010-019。用户要求补齐最新登录注册、Home导航与已批准人员管理R3；Q24确认按Figma原版复刻，组件优化后置。单Agent。
 
 最新尺寸、后台动画与Arca原版表格：[V010-020](V010-020.md)，依赖已验收019；task/V010-020-admin-shell / ../WeaveOS-worktrees/V010-020，[PR21](https://github.com/Hubujiu/WeaveOS/pull/21)。固定56顶栏/176侧栏与全视口材质、Q32六处Select/四页签Pill；Q35身份复用模板卡片+详情，成员/操作记录直接消费固定22模块Arca源码/完整样式Motion，启用当前页排序/拖列/列宽/真实服务端页大小，少零数据空网格填满/分页贴底。Notion/Figma已同步重读，严格多阶段真实RED→GREEN；最终143完整组件/54源三引擎、类型构建/132治理/官方依赖audit通过，永久原字节/哈希/必要补丁及截图在q35。ready可审阅；提交后的实际HEAD归档安全与五项CI另按PR实时核对，不冒充accepted/合并/部署。root代码唯一写者，子Agent只读复审与独立项目Figma同步。
+
+受控部署 P1：[V030-022](V030-022.md)，Root 合同 737daa4、未合 V020 基线 d99b8eb；[draft PR32](https://github.com/Hubujiu/WeaveOS/pull/32) base 为 task/V030-020-workflow-http。实际 RED／GREEN 与未改旧 proof 回归见任务证据，待 Root 验收，不代表 P2 或整版完成。
