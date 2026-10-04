@@ -95,3 +95,7 @@ GRANT EXECUTE ON FUNCTION applications.apply_schema_change(uuid,uuid,uuid,text,j
 GRANT EXECUTE ON FUNCTION applications.apply_option_mapping(uuid,uuid,uuid,uuid,text,jsonb,jsonb) TO auth_app;
 GRANT SELECT ON ALL TABLES IN SCHEMA appdata TO auth_backup;
 GRANT SELECT ON ALL TABLES IN SCHEMA applications TO auth_backup;
+
+-- V030-018 P2a: finite authority over a record command fence only.
+GRANT EXECUTE ON FUNCTION applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint) TO auth_app;
+GRANT EXECUTE ON FUNCTION applications.release_record_command_fence(uuid,uuid,uuid,uuid,bigint,bigint) TO auth_app;

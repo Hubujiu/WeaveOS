@@ -1,0 +1,29 @@
+--- FAIL: TestRootCommandFenceMetadataExists (0.03s)
+    root_command_fence_test.go:53: durable epoch metadata count0 err<nil>
+--- FAIL: TestRootCommandFenceAcquireReplayAndRelease (0.03s)
+    root_command_fence_test.go:71: real controlled acquire must return positive durable epoch: 0 <nil>
+--- FAIL: TestRootCommandFenceOtherCommandCannotReplace (0.03s)
+    root_command_fence_test.go:82: real controlled acquire must return positive durable epoch: 0 <nil>
+--- FAIL: TestRootCommandFenceOldTokenCannotReleaseNewOccupant (0.03s)
+    root_command_fence_test.go:94: real controlled acquire must return positive durable epoch: 0 <nil>
+--- FAIL: TestRootCommandFenceAcquireCallerRollback (0.03s)
+    root_command_fence_test.go:117: acquire 0 <nil>
+--- FAIL: TestRootCommandFenceReleaseCallerRollback (0.02s)
+    root_command_fence_test.go:127: real controlled acquire must return positive durable epoch: 0 <nil>
+--- FAIL: TestRootCommandFenceStaleVersionsAndForeignResources (0.03s)
+    root_command_fence_test.go:158: SQLSTATE want40001 got<nil>
+--- FAIL: TestRootCommandFenceNullAndZeroInputsFailClosed (0.03s)
+    root_command_fence_test.go:170: SQLSTATE want23514 got<nil>
+--- FAIL: TestRootCommandFenceBlocksRealEditButNotOtherRecord (0.03s)
+    root_command_fence_test.go:191: real controlled acquire must return positive durable epoch: 0 <nil>
+--- FAIL: TestRootCommandFenceSchemaChangeRollsBackDDL (0.02s)
+    root_command_fence_test.go:215: real controlled acquire must return positive durable epoch: 0 <nil>
+--- FAIL: TestRootCommandFenceReleaseRequiresPositiveExactToken (0.03s)
+    root_command_fence_test.go:262: real controlled acquire must return positive durable epoch: 0 <nil>
+--- FAIL: TestRootCommandFenceCounterExhaustionDoesNotWrap (0.02s)
+    root_command_fence_test.go:275: persistent epoch sequence absent: <nil>
+--- FAIL: TestRootCommandFenceDoesNotBlockViewOnlyLayout (0.02s)
+    root_command_fence_test.go:299: real controlled acquire must return positive durable epoch: 0 <nil>
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice	0.379s
+FAIL
