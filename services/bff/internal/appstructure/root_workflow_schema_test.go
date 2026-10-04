@@ -26,7 +26,7 @@ func rootWorkflowSchemaSetup(t *testing.T) rootWorkflowSchemaFixture {
  return s
 }
 func(s rootWorkflowSchemaFixture) fieldValue(kind,name string) map[string]any {
- return map[string]any{"id":s.field,"name":name,"kind":kind,"required":false,"default":nil,"config":map[string]any{},"presentation":map[string]any{"helpText":nil,"displayTimeZone":nil}}
+ return map[string]any{"id":s.field,"name":name,"kind":kind,"required":false,"default":nil,"config":map[string]any{"maxLength":nil},"presentation":map[string]any{"helpText":nil,"displayTimeZone":nil}}
 }
 func(s rootWorkflowSchemaFixture) body(t *testing.T,fields []any) map[string]any {
  return map[string]any{"operationId":uuid(t,s.f.owner),"expectedSchemaVersion":1,"expectedViewVersion":1,"fields":fields,"layout":[]any{},"optionMappings":[]any{},"confirmationToken":nil}
