@@ -12,3 +12,5 @@
 所有数据库均为合成隔离数据，凭据与加密backup测试产物只留在私有.work。没有合入main或部署。本包交付管理HTTP和schema兼容接线；实际Flowable受控部署/RPC和审批推进仍由后续包交付。
 
 Draft PR #31：https://github.com/Hubujiu/WeaveOS/pull/31，base task/V030-018-approval-commands，head task/V030-020-workflow-http。任务元数据同步PR编号；最终远端SHA及CI结果由该PR/GitHub Actions核验。
+
+Recoverable Root RED source snapshots are preserved in red-source/ with their SHA-256 manifest. They were copied byte-for-byte from the verified original commits on 2026-10-04; original RED execution times remain in the original logs. These .txt snapshots add no tests or changed assertions.
