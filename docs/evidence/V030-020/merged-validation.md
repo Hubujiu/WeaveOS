@@ -10,3 +10,5 @@
 - 专用network-none PostgreSQL18.6备份容器执行backup.test，4/4通过，见merged-backup.txt。首次readiness命中初始化临时PG而失败的原日志保留为merged-backup-initialization-failure.txt；等待最终PG启动后重跑通过，测试与断言不改。专用backup容器已停止并删除。
 
 所有数据库均为合成隔离数据，凭据与加密backup测试产物只留在私有.work。没有合入main或部署。本包交付管理HTTP和schema兼容接线；实际Flowable受控部署/RPC和审批推进仍由后续包交付。
+
+Draft PR #31：https://github.com/Hubujiu/WeaveOS/pull/31，base task/V030-018-approval-commands，head task/V030-020-workflow-http。任务元数据同步PR编号；最终远端SHA及CI结果由该PR/GitHub Actions核验。
