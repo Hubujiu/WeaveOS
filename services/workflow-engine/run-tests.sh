@@ -5,7 +5,7 @@ proof_name="weaveos-v022-$(date +%s)-$$"
 proof_network="${proof_name}-network"
 proof_db="${proof_name}-postgres"
 proof_maven_image='mirror.gcr.io/library/maven@sha256:fa7aa19829157d299ff05f631b51697a388dcd2f6955e84249ecc652015f217b'
-proof_pg_image='mirror.gcr.io/library/postgres@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722'
+proof_pg_image='docker.io/library/postgres@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722'
 mkdir -p "$proof_dir/.work/m2"
 cleanup() {
   docker rm -f "${proof_name}-maven" >/dev/null 2>&1 || true
