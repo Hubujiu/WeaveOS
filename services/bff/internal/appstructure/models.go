@@ -137,18 +137,26 @@ type Confirmation struct {
 	Token     string `json:"token"`
 	ExpiresAt string `json:"expiresAt"`
 }
+type WorkflowConflict struct {
+	FlowID  string `json:"flowId"`
+	Version int64  `json:"version"`
+	NodeID  string `json:"nodeId"`
+	FieldID string `json:"fieldId"`
+	Reason  string `json:"reason"`
+}
 type Preflight struct {
-	AppID              string        `json:"appId"`
-	TableID            string        `json:"tableId"`
-	ViewID             string        `json:"viewId"`
-	SchemaVersion      int64         `json:"schemaVersion"`
-	ViewVersion        int64         `json:"viewVersion"`
-	DataRevision       int64         `json:"dataRevision"`
-	DependencyRevision int64         `json:"dependencyRevision"`
-	Plan               ChangePlan    `json:"plan"`
-	Impacts            []Impact      `json:"impacts"`
-	Dependencies       []Dependency  `json:"dependencies"`
-	BlockingIssues     []Issue       `json:"blockingIssues"`
-	SaveAllowed        bool          `json:"saveAllowed"`
-	Confirmation       *Confirmation `json:"confirmation"`
+	AppID              string             `json:"appId"`
+	TableID            string             `json:"tableId"`
+	ViewID             string             `json:"viewId"`
+	SchemaVersion      int64              `json:"schemaVersion"`
+	ViewVersion        int64              `json:"viewVersion"`
+	DataRevision       int64              `json:"dataRevision"`
+	DependencyRevision int64              `json:"dependencyRevision"`
+	Plan               ChangePlan         `json:"plan"`
+	Impacts            []Impact           `json:"impacts"`
+	Dependencies       []Dependency       `json:"dependencies"`
+	BlockingIssues     []Issue            `json:"blockingIssues"`
+	WorkflowConflicts  []WorkflowConflict `json:"workflowConflicts"`
+	SaveAllowed        bool               `json:"saveAllowed"`
+	Confirmation       *Confirmation      `json:"confirmation"`
 }

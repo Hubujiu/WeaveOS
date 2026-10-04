@@ -1,0 +1,3 @@
+Fixture: fresh PostgreSQL 18.6 Docker container, container name weaveos-v010-018-backup-red-PQ4m7C; POSTGRES_USER=weaveos_owner. The four existing infra/runtime/backup.test.mjs tests completed 4/4 pass, 0 failures, exit 0.
+
+The expected sequence-privilege RED did not reproduce. infra/runtime/roles.sql:74 already grants SELECT on ALL SEQUENCES in schema applications to auth_backup. The fixture applies migration 13 and then roles.sql, so the new record_command_fence_epoch_seq receives SELECT before pg_dump. This outcome establishes successful backup/restore under the current grants; it does not establish a need for a new grant or a narrow privilege contract. No roles.sql or roleHash change was made.

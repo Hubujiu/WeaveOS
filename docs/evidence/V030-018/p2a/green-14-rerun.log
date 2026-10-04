@@ -1,0 +1,13 @@
+--- FAIL: TestRootCommandFenceAcquireReplayAndRelease (0.03s)
+    root_command_fence_test.go:76: release=false wanttrue errERROR: column reference "fence_epoch" is ambiguous (SQLSTATE 42702)
+--- FAIL: TestRootCommandFenceOldTokenCannotReleaseNewOccupant (0.03s)
+    root_command_fence_test.go:95: release=false wanttrue errERROR: column reference "fence_epoch" is ambiguous (SQLSTATE 42702)
+--- FAIL: TestRootCommandFenceReleaseCallerRollback (0.03s)
+    root_command_fence_test.go:136: release false ERROR: column reference "fence_epoch" is ambiguous (SQLSTATE 42702)
+--- FAIL: TestRootCommandFenceBlocksRealEditButNotOtherRecord (0.05s)
+    root_command_fence_test.go:206: release=false wanttrue errERROR: column reference "fence_epoch" is ambiguous (SQLSTATE 42702)
+--- FAIL: TestRootCommandFenceReleaseRequiresPositiveExactToken (0.03s)
+    root_command_fence_test.go:263: release=false wantfalse errERROR: column reference "fence_epoch" is ambiguous (SQLSTATE 42702)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice	0.471s
+FAIL

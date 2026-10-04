@@ -1,0 +1,1338 @@
+diff internal/apprecordservice/root_workflow_catalog_scale_test.go.orig internal/apprecordservice/root_workflow_catalog_scale_test.go
+--- internal/apprecordservice/root_workflow_catalog_scale_test.go.orig
++++ internal/apprecordservice/root_workflow_catalog_scale_test.go
+@@ -1,74 +1,120 @@
+ package apprecordservice
+
+ import (
+- "context"
+- "encoding/json"
+- "strings"
+- "sync"
+- "testing"
+- "time"
+-
+- "github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
+- "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
+- "github.com/jackc/pgx/v5"
+- "github.com/jackc/pgx/v5/pgxpool"
++	"context"
++	"encoding/json"
++	"strings"
++	"sync"
++	"testing"
++	"time"
++
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
++	"github.com/jackc/pgx/v5"
++	"github.com/jackc/pgx/v5/pgxpool"
+ )
+
+ type rootCatalogQueryCapture struct {
+- mu sync.Mutex
+- sql string
+- args []any
+-}
+-func(c *rootCatalogQueryCapture) TraceQueryStart(ctx context.Context,_ *pgx.Conn,d pgx.TraceQueryStartData)context.Context{
+- if strings.Contains(d.SQL,"workflow_versions")&&strings.Contains(d.SQL,"workflow_instances"){
+-  c.mu.Lock();c.sql=d.SQL;c.args=append([]any(nil),d.Args...);c.mu.Unlock()
+- }
+- return ctx
+-}
+-func(*rootCatalogQueryCapture) TraceQueryEnd(context.Context,*pgx.Conn,pgx.TraceQueryEndData){}
+-func rootCatalogExaminedRows(v any)float64{
+- switch x:=v.(type){
+- case []any:
+-  var n float64;for _,e:=range x{n+=rootCatalogExaminedRows(e)};return n
+- case map[string]any:
+-  loops,_:=x["Actual Loops"].(float64);if loops==0{loops=1}
+-  rows,_:=x["Actual Rows"].(float64)
+-  filtered,_:=x["Rows Removed by Filter"].(float64)
+-  joined,_:=x["Rows Removed by Join Filter"].(float64)
+-  n:=(rows+filtered+joined)*loops
+-  for k,e:=range x{if k=="Plans"||k=="Plan"{n+=rootCatalogExaminedRows(e)}}
+-  return n
+- }
+- return 0
+-}
+-func TestRootCatalogCompatibilityDoesNotScanArchivedVersions(t *testing.T){
+- f:=newRecordFixture(t);h:=rootCatalogReady(t,f,rootCatalogGraph(t,f,true))
+- // One live version, 4,999 immutable retired versions. No business-row growth.
+- _,e:=f.owner.Exec(f.ctx,`INSERT INTO applications.workflow_versions
++	mu   sync.Mutex
++	sql  string
++	args []any
++}
++
++func (c *rootCatalogQueryCapture) TraceQueryStart(ctx context.Context, _ *pgx.Conn, d pgx.TraceQueryStartData) context.Context {
++	if strings.Contains(d.SQL, "workflow_versions") && strings.Contains(d.SQL, "workflow_instances") {
++		c.mu.Lock()
++		c.sql = d.SQL
++		c.args = append([]any(nil), d.Args...)
++		c.mu.Unlock()
++	}
++	return ctx
++}
++func (*rootCatalogQueryCapture) TraceQueryEnd(context.Context, *pgx.Conn, pgx.TraceQueryEndData) {}
++func rootCatalogExaminedRows(v any) float64 {
++	switch x := v.(type) {
++	case []any:
++		var n float64
++		for _, e := range x {
++			n += rootCatalogExaminedRows(e)
++		}
++		return n
++	case map[string]any:
++		loops, _ := x["Actual Loops"].(float64)
++		if loops == 0 {
++			loops = 1
++		}
++		rows, _ := x["Actual Rows"].(float64)
++		filtered, _ := x["Rows Removed by Filter"].(float64)
++		joined, _ := x["Rows Removed by Join Filter"].(float64)
++		n := (rows + filtered + joined) * loops
++		for k, e := range x {
++			if k == "Plans" || k == "Plan" {
++				n += rootCatalogExaminedRows(e)
++			}
++		}
++		return n
++	}
++	return 0
++}
++func TestRootCatalogCompatibilityDoesNotScanArchivedVersions(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootCatalogReady(t, f, rootCatalogGraph(t, f, true))
++	// One live version, 4,999 immutable retired versions. No business-row growth.
++	_, e := f.owner.Exec(f.ctx, `INSERT INTO applications.workflow_versions
+   (app_id,flow_id,version,version_id,schema_version,graph_json,bpmn_xml,allow_withdraw,created_by)
+   SELECT app_id,flow_id,n,gen_random_uuid(),schema_version,graph_json,bpmn_xml,allow_withdraw,created_by
+   FROM applications.workflow_versions CROSS JOIN generate_series(2,5000) n
+-  WHERE app_id=$1 AND flow_id=$2 AND version=1`,f.app,h.FlowID)
+- if e!=nil{t.Fatal(e)}
+- if _,e=f.owner.Exec(f.ctx,"INSERT INTO applications.workflow_deployments(app_id,flow_id,version,deployment_id) VALUES($1,$2,5000,'scale-latest')",f.app,h.FlowID);e!=nil{t.Fatal(e)}
+- if _,e=f.owner.Exec(f.ctx,"UPDATE applications.workflow_definitions SET current_version=5000,candidate_version=5000 WHERE app_id=$1 AND id=$2",f.app,h.FlowID);e!=nil{t.Fatal(e)}
+- if _,e=f.owner.Exec(f.ctx,"ANALYZE applications.workflow_definitions; ANALYZE applications.workflow_versions; ANALYZE applications.workflow_instances");e!=nil{t.Fatal(e)}
+- capture:=&rootCatalogQueryCapture{}
+- cfg:=f.runtime.Config();cfg.ConnConfig.Tracer=capture
+- p,e:=pgxpool.NewWithConfig(f.ctx,cfg);if e!=nil{t.Fatal(e)};defer p.Close()
+- tx,e:=p.Begin(f.ctx);if e!=nil{t.Fatal(e)};defer tx.Rollback(f.ctx)
+- start:=time.Now()
+- got,e:=(workflowcatalog.Catalog{}).CheckCompatibilityInTx(f.ctx,tx,f.app,f.table,rootCatalogFields(f,appquery.Text)[1:])
+- elapsed:=time.Since(start)
+- if e!=nil||len(got)!=1||got[0].Version!=5000{t.Fatalf("live dependency %+v %v",got,e)}
+- capture.mu.Lock();sql,args:=capture.sql,append([]any(nil),capture.args...);capture.mu.Unlock()
+- if sql==""{t.Fatal("did not observe actual catalog compatibility database query")}
+- // EXPLAIN the exact production query and actual bind parameters, not a
+- // lookalike query authored solely for this test.
+- var raw []byte
+- if e=tx.QueryRow(f.ctx,"EXPLAIN (ANALYZE,FORMAT JSON) "+sql,args...).Scan(&raw);e!=nil{t.Fatal(e)}
+- var plan any;if e=json.Unmarshal(raw,&plan);e!=nil{t.Fatal(e)}
+- examined:=rootCatalogExaminedRows(plan)
+- t.Logf("catalog actual query: retired=4999 live=1 elapsed=%s aggregate_plan_rows=%g plan=%s",elapsed,examined,raw)
+- if examined>256{t.Fatalf("compatibility traversed archived history: plan work=%g for one live version; expected indexed live-key lookup independent of 4999 retired versions",examined)}
++  WHERE app_id=$1 AND flow_id=$2 AND version=1`, f.app, h.FlowID)
++	if e != nil {
++		t.Fatal(e)
++	}
++	if _, e = f.owner.Exec(f.ctx, "INSERT INTO applications.workflow_deployments(app_id,flow_id,version,deployment_id) VALUES($1,$2,5000,'scale-latest')", f.app, h.FlowID); e != nil {
++		t.Fatal(e)
++	}
++	if _, e = f.owner.Exec(f.ctx, "UPDATE applications.workflow_definitions SET current_version=5000,candidate_version=5000 WHERE app_id=$1 AND id=$2", f.app, h.FlowID); e != nil {
++		t.Fatal(e)
++	}
++	if _, e = f.owner.Exec(f.ctx, "ANALYZE applications.workflow_definitions; ANALYZE applications.workflow_versions; ANALYZE applications.workflow_instances"); e != nil {
++		t.Fatal(e)
++	}
++	capture := &rootCatalogQueryCapture{}
++	cfg := f.runtime.Config()
++	cfg.ConnConfig.Tracer = capture
++	p, e := pgxpool.NewWithConfig(f.ctx, cfg)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer p.Close()
++	tx, e := p.Begin(f.ctx)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer tx.Rollback(f.ctx)
++	start := time.Now()
++	got, e := (workflowcatalog.Catalog{}).CheckCompatibilityInTx(f.ctx, tx, f.app, f.table, rootCatalogFields(f, appquery.Text)[1:])
++	elapsed := time.Since(start)
++	if e != nil || len(got) != 1 || got[0].Version != 5000 {
++		t.Fatalf("live dependency %+v %v", got, e)
++	}
++	capture.mu.Lock()
++	sql, args := capture.sql, append([]any(nil), capture.args...)
++	capture.mu.Unlock()
++	if sql == "" {
++		t.Fatal("did not observe actual catalog compatibility database query")
++	}
++	// EXPLAIN the exact production query and actual bind parameters, not a
++	// lookalike query authored solely for this test.
++	var raw []byte
++	if e = tx.QueryRow(f.ctx, "EXPLAIN (ANALYZE,FORMAT JSON) "+sql, args...).Scan(&raw); e != nil {
++		t.Fatal(e)
++	}
++	var plan any
++	if e = json.Unmarshal(raw, &plan); e != nil {
++		t.Fatal(e)
++	}
++	examined := rootCatalogExaminedRows(plan)
++	t.Logf("catalog actual query: retired=4999 live=1 elapsed=%s aggregate_plan_rows=%g plan=%s", elapsed, examined, raw)
++	if examined > 256 {
++		t.Fatalf("compatibility traversed archived history: plan work=%g for one live version; expected indexed live-key lookup independent of 4999 retired versions", examined)
++	}
+ }
+diff internal/apprecordservice/root_workflow_catalog_test.go.orig internal/apprecordservice/root_workflow_catalog_test.go
+--- internal/apprecordservice/root_workflow_catalog_test.go.orig
++++ internal/apprecordservice/root_workflow_catalog_test.go
+@@ -1,255 +1,516 @@
+ package apprecordservice
+
+ import (
+- "encoding/json"
+- "errors"
+- "sync"
+- "testing"
+-
+- "github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
+- "github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
+- "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
+- "github.com/jackc/pgx/v5"
++	"encoding/json"
++	"errors"
++	"sync"
++	"testing"
++
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
++	"github.com/jackc/pgx/v5"
+ )
+
+ func rootCatalogGraph(t *testing.T, f recordFixture, editable bool) flowgraph.Graph {
+- t.Helper()
+- start,approve,end:=recordOperationID(t,f),recordOperationID(t,f),recordOperationID(t,f)
+- fields:=[]string{}
+- if editable {fields=append(fields,f.public)}
+- return flowgraph.Graph{Version:1,Nodes:[]flowgraph.Node{
+-  {ID:start,Kind:"start"},
+-  {ID:approve,Kind:"approval",Approval:&flowgraph.Approval{Mode:"all",AssigneeIDs:[]string{f.actor},EditableFieldIDs:fields}},
+-  {ID:end,Kind:"end"},
+- },Edges:[]flowgraph.Edge{{From:start,To:approve},{From:approve,To:end}}}
+-}
+-func rootCatalogCondition(t *testing.T,f recordFixture) flowgraph.Graph {
+- g:=rootCatalogGraph(t,f,true)
+- cond,otherEnd:=recordOperationID(t,f),recordOperationID(t,f)
+- raw,_:=json.Marshal(map[string]any{"operator":"and","children":[]any{map[string]any{"fieldId":f.public,"operator":"eq","value":"alpha"}}})
+- g.Nodes=append(g.Nodes,flowgraph.Node{ID:cond,Kind:"condition",Condition:raw},flowgraph.Node{ID:otherEnd,Kind:"end"})
+- g.Edges[1].To=cond
+- g.Edges=append(g.Edges,flowgraph.Edge{From:cond,To:g.Nodes[2].ID,Branch:"true"},flowgraph.Edge{From:cond,To:otherEnd,Branch:"false"})
+- return g
+-}
+-func rootCatalogTx(t *testing.T,f recordFixture,fn func(pgx.Tx) error) {
+- t.Helper()
+- tx,e:=f.runtime.Begin(f.ctx);if e!=nil{t.Fatal(e)}
+- defer tx.Rollback(f.ctx)
+- if e=fn(tx);e!=nil{t.Fatal(e)}
+- if e=tx.Commit(f.ctx);e!=nil{t.Fatal(e)}
+-}
+-func rootCatalogInput(f recordFixture,id string,rev int64,g flowgraph.Graph) workflowcatalog.VersionInput {
+- return workflowcatalog.VersionInput{AppID:f.app,TableID:f.table,ViewID:f.view,FlowID:id,ActorID:f.other,Name:"Expense",ExpectedRevision:rev,ExpectedSchemaVersion:1,Graph:g,AllowWithdraw:true}
+-}
+-func rootCatalogPut(t *testing.T,f recordFixture,id string,rev int64,g flowgraph.Graph) workflowcatalog.Head {
+- t.Helper();var h workflowcatalog.Head
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{var e error;h,e=(workflowcatalog.Catalog{}).PutVersionInTx(f.ctx,tx,rootCatalogInput(f,id,rev,g));return e})
+- return h
+-}
+-func rootCatalogDeploy(t *testing.T,f recordFixture,h workflowcatalog.Head) workflowcatalog.Head {
+- t.Helper();var out workflowcatalog.Head
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{var e error;out,e=(workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx,tx,f.app,h.FlowID,h.CandidateVersion,"engine-"+recordOperationID(t,f));return e})
+- return out
+-}
+-func rootCatalogEnable(t *testing.T,f recordFixture,h workflowcatalog.Head) workflowcatalog.Head {
+- t.Helper();var out workflowcatalog.Head
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{var e error;out,e=(workflowcatalog.Catalog{}).EnableInTx(f.ctx,tx,f.app,h.FlowID,h.Revision);return e})
+- return out
+-}
+-func rootCatalogReady(t *testing.T,f recordFixture,g flowgraph.Graph) workflowcatalog.Head {
+- t.Helper();return rootCatalogEnable(t,f,rootCatalogDeploy(t,f,rootCatalogPut(t,f,recordOperationID(t,f),0,g)))
+-}
+-func rootCatalogReserveInput(t *testing.T,f recordFixture,h workflowcatalog.Head) workflowcatalog.ReserveInput {
+- t.Helper();return workflowcatalog.ReserveInput{AppID:f.app,FlowID:h.FlowID,InstanceID:recordOperationID(t,f),RecordID:f.ownRecord,ActorID:f.actor,ExpectedRevision:h.Revision,ExpectedSchemaVersion:1,ExpectedRecordVersion:1}
+-}
+-func rootCatalogReserve(t *testing.T,f recordFixture,in workflowcatalog.ReserveInput) workflowcatalog.Instance {
+- t.Helper();var out workflowcatalog.Instance
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{var e error;out,e=(workflowcatalog.Catalog{}).ReserveInTx(f.ctx,tx,in);return e})
+- return out
+-}
+-func rootCatalogWantError(t *testing.T,f recordFixture,want error,fn func(pgx.Tx)error){
+- t.Helper();tx,e:=f.runtime.Begin(f.ctx);if e!=nil{t.Fatal(e)};defer tx.Rollback(f.ctx)
+- if e=fn(tx);!errors.Is(e,want){t.Fatalf("want %v got %v",want,e)}
+-}
+-func TestRootCatalogVersionIsDurableAndCallerRollback(t *testing.T){
+- f:=newRecordFixture(t);g:=rootCatalogGraph(t,f,true);id:=recordOperationID(t,f)
+- h:=rootCatalogPut(t,f,id,0,g)
+- if h.FlowID!=id||h.Revision!=1||h.CurrentVersion!=0||h.CandidateVersion!=1||h.State!="disabled"{t.Fatalf("new head %+v",h)}
+- var raw []byte;var bpmn string;var allowed bool
+- if e:=f.runtime.QueryRow(f.ctx,"SELECT graph_json,bpmn_xml,allow_withdraw FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2 AND version=1",f.app,id).Scan(&raw,&bpmn,&allowed);e!=nil{t.Fatal(e)}
+- var saved flowgraph.Graph
+- if json.Unmarshal(raw,&saved)!=nil||len(saved.Nodes)!=3||saved.Nodes[1].ID!=g.Nodes[1].ID||bpmn==""||!allowed{t.Fatalf("missing immutable version %s",raw)}
+- tx,e:=f.runtime.Begin(f.ctx);if e!=nil{t.Fatal(e)};defer tx.Rollback(f.ctx)
+- rollbackID:=recordOperationID(t,f)
+- if _,e=(workflowcatalog.Catalog{}).PutVersionInTx(f.ctx,tx,rootCatalogInput(f,rollbackID,0,g));e!=nil{t.Fatal(e)}
+- if e=tx.Rollback(f.ctx);e!=nil{t.Fatal(e)}
+- rootCatalogWantError(t,f,workflowcatalog.ErrMissing,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).GetInTx(f.ctx,tx,f.app,rollbackID);return e})
+-}
+-func TestRootCatalogUndeployedCannotEnableOrStart(t *testing.T){
+- f:=newRecordFixture(t);h:=rootCatalogPut(t,f,recordOperationID(t,f),0,rootCatalogGraph(t,f,true))
+- rootCatalogWantError(t,f,workflowcatalog.ErrNotReady,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).EnableInTx(f.ctx,tx,f.app,h.FlowID,h.Revision);return e})
+- in:=rootCatalogReserveInput(t,f,h)
+- rootCatalogWantError(t,f,workflowcatalog.ErrNotReady,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).ReserveInTx(f.ctx,tx,in);return e})
+-}
+-func TestRootCatalogDeploymentReceiptIdempotentAndBound(t *testing.T){
+- f:=newRecordFixture(t);h:=rootCatalogPut(t,f,recordOperationID(t,f),0,rootCatalogGraph(t,f,false));var a,b workflowcatalog.Head
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{var e error;a,e=(workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx,tx,f.app,h.FlowID,1,"deployment-one");return e})
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{var e error;b,e=(workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx,tx,f.app,h.FlowID,1,"deployment-one");return e})
+- if a!=b||a.CurrentVersion!=1||a.Revision!=2{t.Fatalf("receipt replay changed state %+v %+v",a,b)}
+- rootCatalogWantError(t,f,workflowcatalog.ErrConflict,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx,tx,f.app,h.FlowID,1,"different");return e})
+-}
+-func TestRootCatalogOldDeploymentCannotReplaceNewCandidate(t *testing.T){
+- f:=newRecordFixture(t);g:=rootCatalogGraph(t,f,false);h:=rootCatalogPut(t,f,recordOperationID(t,f),0,g)
+- h=rootCatalogPut(t,f,h.FlowID,h.Revision,g)
+- var old workflowcatalog.Head
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{var e error;old,e=(workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx,tx,f.app,h.FlowID,1,"old");return e})
+- if old.CurrentVersion!=0||old.CandidateVersion!=2{t.Fatalf("late deployment activated wrong version %+v",old)}
+- newer:=rootCatalogDeploy(t,f,old)
+- if newer.CurrentVersion!=2{t.Fatalf("new candidate not activated %+v",newer)}
+-}
+-func TestRootCatalogInstancesKeepStructureWhileNextUsesConfirmedVersion(t *testing.T){
+- f:=newRecordFixture(t);g:=rootCatalogGraph(t,f,true);h:=rootCatalogReady(t,f,g)
+- in:=rootCatalogReserveInput(t,f,h);first:=rootCatalogReserve(t,f,in)
+- if first.DefinitionVersion!=1||first.State!="starting"||first.RecordID!=f.ownRecord||first.Sequence!=0{t.Fatalf("first %+v",first)}
+- next:=rootCatalogPut(t,f,h.FlowID,h.Revision,rootCatalogGraph(t,f,false))
+- during:=rootCatalogReserve(t,f,rootCatalogReserveInput(t,f,next))
+- if during.DefinitionVersion!=1{t.Fatalf("unconfirmed candidate exposed %+v",during)}
+- next=rootCatalogDeploy(t,f,next)
+- second:=rootCatalogReserve(t,f,rootCatalogReserveInput(t,f,next))
+- if second.DefinitionVersion!=2{t.Fatalf("new instance did not bind latest confirmed structure %+v",second)}
+- replay:=rootCatalogReserve(t,f,in)
+- if replay!=first{t.Fatalf("instance replay changed binding %+v %+v",first,replay)}
+- var count int
+- if e:=f.owner.QueryRow(f.ctx,"SELECT count(*) FROM applications.workflow_instances WHERE id=$1 AND definition_version=1",first.ID).Scan(&count);e!=nil||count!=1{t.Fatalf("old binding count=%d err=%v",count,e)}
+-}
+-func TestRootCatalogCloseWaitsForAcceptedStartAndRejectsNewStart(t *testing.T){
+- f:=newRecordFixture(t);h:=rootCatalogReady(t,f,rootCatalogGraph(t,f,false));inst:=rootCatalogReserve(t,f,rootCatalogReserveInput(t,f,h))
+- var closing workflowcatalog.Head
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{var e error;closing,e=(workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx,tx,f.app,h.FlowID,h.Revision);return e})
+- if closing.State!="closing"{t.Fatalf("starting intent omitted from drain %+v",closing)}
+- rootCatalogWantError(t,f,workflowcatalog.ErrClosing,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).ReserveInTx(f.ctx,tx,rootCatalogReserveInput(t,f,closing));return e})
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{got,e:=(workflowcatalog.Catalog{}).FinalizeCloseInTx(f.ctx,tx,f.app,h.FlowID,closing.Revision);if e==nil&&got!=closing{t.Fatalf("premature close %+v",got)};return e})
+- // Owner simulates a CONFIRMED application projection, not a network timeout.
+- if _,e:=f.owner.Exec(f.ctx,"UPDATE applications.workflow_instances SET state='completed',sequence=1 WHERE id=$1",inst.ID);e!=nil{t.Fatal(e)}
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{got,e:=(workflowcatalog.Catalog{}).FinalizeCloseInTx(f.ctx,tx,f.app,h.FlowID,closing.Revision);if e==nil&&(got.State!="disabled"||got.Revision!=closing.Revision+1){t.Fatalf("not drained %+v",got)};return e})
+-}
+-func TestRootCatalogCloseWithoutInstancesAndLateCloseCAS(t *testing.T){
+- f:=newRecordFixture(t);h:=rootCatalogReady(t,f,rootCatalogGraph(t,f,false));var closed workflowcatalog.Head
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{var e error;closed,e=(workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx,tx,f.app,h.FlowID,h.Revision);return e})
+- if closed.State!="disabled"{t.Fatalf("empty close %+v",closed)}
+- h=rootCatalogEnable(t,f,closed)
+- rootCatalogReserve(t,f,rootCatalogReserveInput(t,f,h))
+- var closing workflowcatalog.Head
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{var e error;closing,e=(workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx,tx,f.app,h.FlowID,h.Revision);return e})
+- opened:=rootCatalogEnable(t,f,closing)
+- if opened.State!="enabled"||opened.Revision<=closing.Revision{t.Fatal("reopen must supersede close revision")}
+- rootCatalogWantError(t,f,workflowcatalog.ErrConflict,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).FinalizeCloseInTx(f.ctx,tx,f.app,h.FlowID,closing.Revision);return e})
+-}
+-func TestRootCatalogIndependentFlowsSameRecord(t *testing.T){
+- f:=newRecordFixture(t);a:=rootCatalogReady(t,f,rootCatalogGraph(t,f,false));b:=rootCatalogReady(t,f,rootCatalogGraph(t,f,false))
+- ia:=rootCatalogReserve(t,f,rootCatalogReserveInput(t,f,a));ib:=rootCatalogReserve(t,f,rootCatalogReserveInput(t,f,b))
+- if ia.ID==ib.ID||ia.FlowID==ib.FlowID||ia.RecordID!=ib.RecordID{t.Fatal("parallel flows not independent")}
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx,tx,f.app,a.FlowID,a.Revision);return e})
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{got,e:=(workflowcatalog.Catalog{}).GetInTx(f.ctx,tx,f.app,b.FlowID);if e==nil&&got.State!="enabled"{t.Fatal("A close changed B")};return e})
+-}
+-func TestRootCatalogCASAndResourceScope(t *testing.T){
+- f:=newRecordFixture(t);g:=rootCatalogGraph(t,f,false);h:=rootCatalogReady(t,f,g)
+- for _,change:=range []func(*workflowcatalog.VersionInput){
+-  func(in *workflowcatalog.VersionInput){in.ExpectedRevision--},
+-  func(in *workflowcatalog.VersionInput){in.ExpectedSchemaVersion=2},
+- }{
+-  in:=rootCatalogInput(f,h.FlowID,h.Revision,g);change(&in)
+-  rootCatalogWantError(t,f,workflowcatalog.ErrConflict,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).PutVersionInTx(f.ctx,tx,in);return e})
+- }
+- foreign:=newRecordFixture(t)
+- bad:=rootCatalogInput(f,recordOperationID(t,f),0,g);bad.ViewID=foreign.view
+- rootCatalogWantError(t,f,workflowcatalog.ErrMissing,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).PutVersionInTx(f.ctx,tx,bad);return e})
+- rootCatalogWantError(t,f,workflowcatalog.ErrMissing,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).GetInTx(f.ctx,tx,foreign.app,h.FlowID);return e})
+- for _,change:=range []func(*workflowcatalog.ReserveInput){
+-  func(in *workflowcatalog.ReserveInput){in.ExpectedRecordVersion=2},
+-  func(in *workflowcatalog.ReserveInput){in.ExpectedSchemaVersion=2},
+-  func(in *workflowcatalog.ReserveInput){in.ExpectedRevision--},
+- }{
+-  in:=rootCatalogReserveInput(t,f,h);change(&in)
+-  rootCatalogWantError(t,f,workflowcatalog.ErrConflict,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).ReserveInTx(f.ctx,tx,in);return e})
+- }
+-}
+-func TestRootCatalogInvalidGraphHasNoPersistentVersion(t *testing.T){
+- f:=newRecordFixture(t);id:=recordOperationID(t,f);g:=rootCatalogGraph(t,f,false);g.Edges=nil
+- rootCatalogWantError(t,f,workflowcatalog.ErrInvalid,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).PutVersionInTx(f.ctx,tx,rootCatalogInput(f,id,0,g));return e})
+- rootCatalogWantError(t,f,workflowcatalog.ErrMissing,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).GetInTx(f.ctx,tx,f.app,id);return e})
+-}
+-func rootCatalogFields(f recordFixture,kind appquery.FieldKind) []appquery.Field {
+- return []appquery.Field{{ID:f.public,Kind:kind},{ID:f.secret,Kind:appquery.Text},{ID:f.reference,Kind:appquery.Member}}
+-}
+-func rootCatalogConflicts(t *testing.T,f recordFixture,fields []appquery.Field) []workflowcatalog.Conflict {
+- t.Helper();var out []workflowcatalog.Conflict
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{var e error;out,e=(workflowcatalog.Catalog{}).CheckCompatibilityInTx(f.ctx,tx,f.app,f.table,fields);return e})
+- return out
+-}
+-func TestRootCatalogCompatibilityIsPrecise(t *testing.T){
+- f:=newRecordFixture(t);g:=rootCatalogCondition(t,f);h:=rootCatalogReady(t,f,g)
+- if got:=rootCatalogConflicts(t,f,rootCatalogFields(f,appquery.Multiline));len(got)!=0{t.Fatalf("compatible text equality blocked %+v",got)}
+- conflicts:=rootCatalogConflicts(t,f,rootCatalogFields(f,appquery.Boolean))
+- found:=false
+- for _,c:=range conflicts {if c.FlowID==h.FlowID&&c.Version==1&&c.NodeID==g.Nodes[3].ID&&c.FieldID==f.public&&c.Reason!=""{found=true}}
+- if !found{t.Fatalf("missing precise incompatible condition %+v",conflicts)}
+- removed:=rootCatalogFields(f,appquery.Text)[1:]
+- conflicts=rootCatalogConflicts(t,f,removed);seen:=map[string]bool{}
+- for _,c:=range conflicts{if c.FlowID==h.FlowID&&c.FieldID==f.public{seen[c.NodeID]=true}}
+- if !seen[g.Nodes[1].ID]||!seen[g.Nodes[3].ID]{t.Fatalf("missing editable/condition dependencies %+v",conflicts)}
+-}
+-func TestRootCatalogOldInFlightVersionBlocksUntilTerminal(t *testing.T){
+- f:=newRecordFixture(t);h:=rootCatalogReady(t,f,rootCatalogGraph(t,f,true));i:=rootCatalogReserve(t,f,rootCatalogReserveInput(t,f,h))
+- h=rootCatalogPut(t,f,h.FlowID,h.Revision,rootCatalogGraph(t,f,false));h=rootCatalogDeploy(t,f,h)
+- fields:=rootCatalogFields(f,appquery.Text)[1:]
+- if got:=rootCatalogConflicts(t,f,fields);len(got)==0||got[0].Version!=1{t.Fatalf("lost in-flight old dependency %+v",got)}
+- if _,e:=f.owner.Exec(f.ctx,"UPDATE applications.workflow_instances SET state='completed',sequence=1 WHERE id=$1",i.ID);e!=nil{t.Fatal(e)}
+- if got:=rootCatalogConflicts(t,f,fields);len(got)!=0{t.Fatalf("terminal history blocks forever %+v",got)}
+-}
+-func TestRootCatalogDisabledHistoryDoesNotBlockSchema(t *testing.T){
+- f:=newRecordFixture(t);h:=rootCatalogReady(t,f,rootCatalogGraph(t,f,true))
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx,tx,f.app,h.FlowID,h.Revision);return e})
+- if got:=rootCatalogConflicts(t,f,rootCatalogFields(f,appquery.Text)[1:]);len(got)!=0{t.Fatalf("unused disabled history blocks %+v",got)}
+-}
+-func TestRootCatalogDeploymentRechecksChangedSchema(t *testing.T){
+- f:=newRecordFixture(t);h:=rootCatalogPut(t,f,recordOperationID(t,f),0,rootCatalogCondition(t,f))
+- // A schema Save can occur while a candidate has not been enabled or deployed.
+- var fields []map[string]any
+- var raw []byte
+- if e:=f.owner.QueryRow(f.ctx,"SELECT fields_json FROM applications.logical_tables WHERE id=$1",f.table).Scan(&raw);e!=nil{t.Fatal(e)}
+- if e:=json.Unmarshal(raw,&fields);e!=nil{t.Fatal(e)}
+- fields=fields[1:];raw,_=json.Marshal(fields)
+- if _,e:=f.owner.Exec(f.ctx,"UPDATE applications.logical_tables SET fields_json=$2,schema_version=2 WHERE id=$1",f.table,raw);e!=nil{t.Fatal(e)}
+- rootCatalogWantError(t,f,workflowcatalog.ErrConflict,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx,tx,f.app,h.FlowID,1,"too-late");return e})
+- rootCatalogTx(t,f,func(tx pgx.Tx)error{got,e:=(workflowcatalog.Catalog{}).GetInTx(f.ctx,tx,f.app,h.FlowID);if e==nil&&got.CurrentVersion!=0{t.Fatal("incompatible deployment became current")};return e})
+-}
+-func TestRootCatalogConcurrentVersionCAS(t *testing.T){
+- f:=newRecordFixture(t);g:=rootCatalogGraph(t,f,false);h:=rootCatalogPut(t,f,recordOperationID(t,f),0,g)
+- var wg sync.WaitGroup;gate:=make(chan struct{});results:=make(chan error,2)
+- for j:=0;j<2;j++{wg.Add(1);go func(){defer wg.Done();<-gate
+-  tx,e:=f.runtime.Begin(f.ctx);if e!=nil{results<-e;return};defer tx.Rollback(f.ctx)
+-  _,e=(workflowcatalog.Catalog{}).PutVersionInTx(f.ctx,tx,rootCatalogInput(f,h.FlowID,h.Revision,g))
+-  if e==nil{e=tx.Commit(f.ctx)};results<-e
+- }()}
+- close(gate);wg.Wait();close(results);ok,conflict:=0,0
+- for e:=range results{if e==nil{ok++}else if errors.Is(e,workflowcatalog.ErrConflict){conflict++}else{t.Fatal(e)}}
+- if ok!=1||conflict!=1{t.Fatalf("concurrent publishers success=%d conflict=%d",ok,conflict)}
+-}
+-func TestRootCatalogImmutableVersionsAndMinimumRoles(t *testing.T){
+- f:=newRecordFixture(t);h:=rootCatalogReady(t,f,rootCatalogGraph(t,f,false))
+- for _,q:=range []string{
+- "UPDATE applications.workflow_versions SET graph_json=graph_json WHERE flow_id=$1",
+- "UPDATE applications.workflow_versions SET bpmn_xml=bpmn_xml WHERE flow_id=$1",
+- "DELETE FROM applications.workflow_versions WHERE flow_id=$1",
+- "DELETE FROM applications.workflow_deployments WHERE flow_id=$1",
+- "UPDATE applications.workflow_deployments SET deployment_id=deployment_id WHERE flow_id=$1",
+- "UPDATE applications.workflow_definitions SET table_id=table_id WHERE id=$1",
+- }{_,e:=f.runtime.Exec(f.ctx,q,h.FlowID);rootSQLState(t,e,"42501")}
+- for _,name:=range []string{"workflow_definitions","workflow_versions","workflow_deployments","workflow_instances"}{
+-  var backup,reader,maint,trunc bool
+-  e:=f.owner.QueryRow(f.ctx,"SELECT has_table_privilege('auth_backup',$1,'SELECT'),has_table_privilege('auth_reader',$1,'SELECT'),has_table_privilege('auth_maintenance',$1,'SELECT'),has_table_privilege('auth_app',$1,'TRUNCATE')","applications."+name).Scan(&backup,&reader,&maint,&trunc)
+-  if e!=nil||!backup||reader||maint||trunc{t.Fatalf("%s least privilege %v/%v/%v/%v err=%v",name,backup,reader,maint,trunc,e)}
+- }
++	t.Helper()
++	start, approve, end := recordOperationID(t, f), recordOperationID(t, f), recordOperationID(t, f)
++	fields := []string{}
++	if editable {
++		fields = append(fields, f.public)
++	}
++	return flowgraph.Graph{Version: 1, Nodes: []flowgraph.Node{
++		{ID: start, Kind: "start"},
++		{ID: approve, Kind: "approval", Approval: &flowgraph.Approval{Mode: "all", AssigneeIDs: []string{f.actor}, EditableFieldIDs: fields}},
++		{ID: end, Kind: "end"},
++	}, Edges: []flowgraph.Edge{{From: start, To: approve}, {From: approve, To: end}}}
++}
++func rootCatalogCondition(t *testing.T, f recordFixture) flowgraph.Graph {
++	g := rootCatalogGraph(t, f, true)
++	cond, otherEnd := recordOperationID(t, f), recordOperationID(t, f)
++	raw, _ := json.Marshal(map[string]any{"operator": "and", "children": []any{map[string]any{"fieldId": f.public, "operator": "eq", "value": "alpha"}}})
++	g.Nodes = append(g.Nodes, flowgraph.Node{ID: cond, Kind: "condition", Condition: raw}, flowgraph.Node{ID: otherEnd, Kind: "end"})
++	g.Edges[1].To = cond
++	g.Edges = append(g.Edges, flowgraph.Edge{From: cond, To: g.Nodes[2].ID, Branch: "true"}, flowgraph.Edge{From: cond, To: otherEnd, Branch: "false"})
++	return g
++}
++func rootCatalogTx(t *testing.T, f recordFixture, fn func(pgx.Tx) error) {
++	t.Helper()
++	tx, e := f.runtime.Begin(f.ctx)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer tx.Rollback(f.ctx)
++	if e = fn(tx); e != nil {
++		t.Fatal(e)
++	}
++	if e = tx.Commit(f.ctx); e != nil {
++		t.Fatal(e)
++	}
++}
++func rootCatalogInput(f recordFixture, id string, rev int64, g flowgraph.Graph) workflowcatalog.VersionInput {
++	return workflowcatalog.VersionInput{AppID: f.app, TableID: f.table, ViewID: f.view, FlowID: id, ActorID: f.other, Name: "Expense", ExpectedRevision: rev, ExpectedSchemaVersion: 1, Graph: g, AllowWithdraw: true}
++}
++func rootCatalogPut(t *testing.T, f recordFixture, id string, rev int64, g flowgraph.Graph) workflowcatalog.Head {
++	t.Helper()
++	var h workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var e error
++		h, e = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, rootCatalogInput(f, id, rev, g))
++		return e
++	})
++	return h
++}
++func rootCatalogDeploy(t *testing.T, f recordFixture, h workflowcatalog.Head) workflowcatalog.Head {
++	t.Helper()
++	var out workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var e error
++		out, e = (workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx, tx, f.app, h.FlowID, h.CandidateVersion, "engine-"+recordOperationID(t, f))
++		return e
++	})
++	return out
++}
++func rootCatalogEnable(t *testing.T, f recordFixture, h workflowcatalog.Head) workflowcatalog.Head {
++	t.Helper()
++	var out workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var e error
++		out, e = (workflowcatalog.Catalog{}).EnableInTx(f.ctx, tx, f.app, h.FlowID, h.Revision)
++		return e
++	})
++	return out
++}
++func rootCatalogReady(t *testing.T, f recordFixture, g flowgraph.Graph) workflowcatalog.Head {
++	t.Helper()
++	return rootCatalogEnable(t, f, rootCatalogDeploy(t, f, rootCatalogPut(t, f, recordOperationID(t, f), 0, g)))
++}
++func rootCatalogReserveInput(t *testing.T, f recordFixture, h workflowcatalog.Head) workflowcatalog.ReserveInput {
++	t.Helper()
++	return workflowcatalog.ReserveInput{AppID: f.app, FlowID: h.FlowID, InstanceID: recordOperationID(t, f), RecordID: f.ownRecord, ActorID: f.actor, ExpectedRevision: h.Revision, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1}
++}
++func rootCatalogReserve(t *testing.T, f recordFixture, in workflowcatalog.ReserveInput) workflowcatalog.Instance {
++	t.Helper()
++	var out workflowcatalog.Instance
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var e error
++		out, e = (workflowcatalog.Catalog{}).ReserveInTx(f.ctx, tx, in)
++		return e
++	})
++	return out
++}
++func rootCatalogWantError(t *testing.T, f recordFixture, want error, fn func(pgx.Tx) error) {
++	t.Helper()
++	tx, e := f.runtime.Begin(f.ctx)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer tx.Rollback(f.ctx)
++	if e = fn(tx); !errors.Is(e, want) {
++		t.Fatalf("want %v got %v", want, e)
++	}
++}
++func TestRootCatalogVersionIsDurableAndCallerRollback(t *testing.T) {
++	f := newRecordFixture(t)
++	g := rootCatalogGraph(t, f, true)
++	id := recordOperationID(t, f)
++	h := rootCatalogPut(t, f, id, 0, g)
++	if h.FlowID != id || h.Revision != 1 || h.CurrentVersion != 0 || h.CandidateVersion != 1 || h.State != "disabled" {
++		t.Fatalf("new head %+v", h)
++	}
++	var raw []byte
++	var bpmn string
++	var allowed bool
++	if e := f.runtime.QueryRow(f.ctx, "SELECT graph_json,bpmn_xml,allow_withdraw FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2 AND version=1", f.app, id).Scan(&raw, &bpmn, &allowed); e != nil {
++		t.Fatal(e)
++	}
++	var saved flowgraph.Graph
++	if json.Unmarshal(raw, &saved) != nil || len(saved.Nodes) != 3 || saved.Nodes[1].ID != g.Nodes[1].ID || bpmn == "" || !allowed {
++		t.Fatalf("missing immutable version %s", raw)
++	}
++	tx, e := f.runtime.Begin(f.ctx)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer tx.Rollback(f.ctx)
++	rollbackID := recordOperationID(t, f)
++	if _, e = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, rootCatalogInput(f, rollbackID, 0, g)); e != nil {
++		t.Fatal(e)
++	}
++	if e = tx.Rollback(f.ctx); e != nil {
++		t.Fatal(e)
++	}
++	rootCatalogWantError(t, f, workflowcatalog.ErrMissing, func(tx pgx.Tx) error {
++		_, e := (workflowcatalog.Catalog{}).GetInTx(f.ctx, tx, f.app, rollbackID)
++		return e
++	})
++}
++func TestRootCatalogUndeployedCannotEnableOrStart(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootCatalogPut(t, f, recordOperationID(t, f), 0, rootCatalogGraph(t, f, true))
++	rootCatalogWantError(t, f, workflowcatalog.ErrNotReady, func(tx pgx.Tx) error {
++		_, e := (workflowcatalog.Catalog{}).EnableInTx(f.ctx, tx, f.app, h.FlowID, h.Revision)
++		return e
++	})
++	in := rootCatalogReserveInput(t, f, h)
++	rootCatalogWantError(t, f, workflowcatalog.ErrNotReady, func(tx pgx.Tx) error { _, e := (workflowcatalog.Catalog{}).ReserveInTx(f.ctx, tx, in); return e })
++}
++func TestRootCatalogDeploymentReceiptIdempotentAndBound(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootCatalogPut(t, f, recordOperationID(t, f), 0, rootCatalogGraph(t, f, false))
++	var a, b workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var e error
++		a, e = (workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx, tx, f.app, h.FlowID, 1, "deployment-one")
++		return e
++	})
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var e error
++		b, e = (workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx, tx, f.app, h.FlowID, 1, "deployment-one")
++		return e
++	})
++	if a != b || a.CurrentVersion != 1 || a.Revision != 2 {
++		t.Fatalf("receipt replay changed state %+v %+v", a, b)
++	}
++	rootCatalogWantError(t, f, workflowcatalog.ErrConflict, func(tx pgx.Tx) error {
++		_, e := (workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx, tx, f.app, h.FlowID, 1, "different")
++		return e
++	})
++}
++func TestRootCatalogOldDeploymentCannotReplaceNewCandidate(t *testing.T) {
++	f := newRecordFixture(t)
++	g := rootCatalogGraph(t, f, false)
++	h := rootCatalogPut(t, f, recordOperationID(t, f), 0, g)
++	h = rootCatalogPut(t, f, h.FlowID, h.Revision, g)
++	var old workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var e error
++		old, e = (workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx, tx, f.app, h.FlowID, 1, "old")
++		return e
++	})
++	if old.CurrentVersion != 0 || old.CandidateVersion != 2 {
++		t.Fatalf("late deployment activated wrong version %+v", old)
++	}
++	newer := rootCatalogDeploy(t, f, old)
++	if newer.CurrentVersion != 2 {
++		t.Fatalf("new candidate not activated %+v", newer)
++	}
++}
++func TestRootCatalogInstancesKeepStructureWhileNextUsesConfirmedVersion(t *testing.T) {
++	f := newRecordFixture(t)
++	g := rootCatalogGraph(t, f, true)
++	h := rootCatalogReady(t, f, g)
++	in := rootCatalogReserveInput(t, f, h)
++	first := rootCatalogReserve(t, f, in)
++	if first.DefinitionVersion != 1 || first.State != "starting" || first.RecordID != f.ownRecord || first.Sequence != 0 {
++		t.Fatalf("first %+v", first)
++	}
++	next := rootCatalogPut(t, f, h.FlowID, h.Revision, rootCatalogGraph(t, f, false))
++	during := rootCatalogReserve(t, f, rootCatalogReserveInput(t, f, next))
++	if during.DefinitionVersion != 1 {
++		t.Fatalf("unconfirmed candidate exposed %+v", during)
++	}
++	next = rootCatalogDeploy(t, f, next)
++	second := rootCatalogReserve(t, f, rootCatalogReserveInput(t, f, next))
++	if second.DefinitionVersion != 2 {
++		t.Fatalf("new instance did not bind latest confirmed structure %+v", second)
++	}
++	replay := rootCatalogReserve(t, f, in)
++	if replay != first {
++		t.Fatalf("instance replay changed binding %+v %+v", first, replay)
++	}
++	var count int
++	if e := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_instances WHERE id=$1 AND definition_version=1", first.ID).Scan(&count); e != nil || count != 1 {
++		t.Fatalf("old binding count=%d err=%v", count, e)
++	}
++}
++func TestRootCatalogCloseWaitsForAcceptedStartAndRejectsNewStart(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
++	inst := rootCatalogReserve(t, f, rootCatalogReserveInput(t, f, h))
++	var closing workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var e error
++		closing, e = (workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx, tx, f.app, h.FlowID, h.Revision)
++		return e
++	})
++	if closing.State != "closing" {
++		t.Fatalf("starting intent omitted from drain %+v", closing)
++	}
++	rootCatalogWantError(t, f, workflowcatalog.ErrClosing, func(tx pgx.Tx) error {
++		_, e := (workflowcatalog.Catalog{}).ReserveInTx(f.ctx, tx, rootCatalogReserveInput(t, f, closing))
++		return e
++	})
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		got, e := (workflowcatalog.Catalog{}).FinalizeCloseInTx(f.ctx, tx, f.app, h.FlowID, closing.Revision)
++		if e == nil && got != closing {
++			t.Fatalf("premature close %+v", got)
++		}
++		return e
++	})
++	// Owner simulates a CONFIRMED application projection, not a network timeout.
++	if _, e := f.owner.Exec(f.ctx, "UPDATE applications.workflow_instances SET state='completed',sequence=1 WHERE id=$1", inst.ID); e != nil {
++		t.Fatal(e)
++	}
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		got, e := (workflowcatalog.Catalog{}).FinalizeCloseInTx(f.ctx, tx, f.app, h.FlowID, closing.Revision)
++		if e == nil && (got.State != "disabled" || got.Revision != closing.Revision+1) {
++			t.Fatalf("not drained %+v", got)
++		}
++		return e
++	})
++}
++func TestRootCatalogCloseWithoutInstancesAndLateCloseCAS(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
++	var closed workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var e error
++		closed, e = (workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx, tx, f.app, h.FlowID, h.Revision)
++		return e
++	})
++	if closed.State != "disabled" {
++		t.Fatalf("empty close %+v", closed)
++	}
++	h = rootCatalogEnable(t, f, closed)
++	rootCatalogReserve(t, f, rootCatalogReserveInput(t, f, h))
++	var closing workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var e error
++		closing, e = (workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx, tx, f.app, h.FlowID, h.Revision)
++		return e
++	})
++	opened := rootCatalogEnable(t, f, closing)
++	if opened.State != "enabled" || opened.Revision <= closing.Revision {
++		t.Fatal("reopen must supersede close revision")
++	}
++	rootCatalogWantError(t, f, workflowcatalog.ErrConflict, func(tx pgx.Tx) error {
++		_, e := (workflowcatalog.Catalog{}).FinalizeCloseInTx(f.ctx, tx, f.app, h.FlowID, closing.Revision)
++		return e
++	})
++}
++func TestRootCatalogIndependentFlowsSameRecord(t *testing.T) {
++	f := newRecordFixture(t)
++	a := rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
++	b := rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
++	ia := rootCatalogReserve(t, f, rootCatalogReserveInput(t, f, a))
++	ib := rootCatalogReserve(t, f, rootCatalogReserveInput(t, f, b))
++	if ia.ID == ib.ID || ia.FlowID == ib.FlowID || ia.RecordID != ib.RecordID {
++		t.Fatal("parallel flows not independent")
++	}
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		_, e := (workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx, tx, f.app, a.FlowID, a.Revision)
++		return e
++	})
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		got, e := (workflowcatalog.Catalog{}).GetInTx(f.ctx, tx, f.app, b.FlowID)
++		if e == nil && got.State != "enabled" {
++			t.Fatal("A close changed B")
++		}
++		return e
++	})
++}
++func TestRootCatalogCASAndResourceScope(t *testing.T) {
++	f := newRecordFixture(t)
++	g := rootCatalogGraph(t, f, false)
++	h := rootCatalogReady(t, f, g)
++	for _, change := range []func(*workflowcatalog.VersionInput){
++		func(in *workflowcatalog.VersionInput) { in.ExpectedRevision-- },
++		func(in *workflowcatalog.VersionInput) { in.ExpectedSchemaVersion = 2 },
++	} {
++		in := rootCatalogInput(f, h.FlowID, h.Revision, g)
++		change(&in)
++		rootCatalogWantError(t, f, workflowcatalog.ErrConflict, func(tx pgx.Tx) error { _, e := (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in); return e })
++	}
++	foreign := newRecordFixture(t)
++	bad := rootCatalogInput(f, recordOperationID(t, f), 0, g)
++	bad.ViewID = foreign.view
++	rootCatalogWantError(t, f, workflowcatalog.ErrMissing, func(tx pgx.Tx) error { _, e := (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, bad); return e })
++	rootCatalogWantError(t, f, workflowcatalog.ErrMissing, func(tx pgx.Tx) error {
++		_, e := (workflowcatalog.Catalog{}).GetInTx(f.ctx, tx, foreign.app, h.FlowID)
++		return e
++	})
++	for _, change := range []func(*workflowcatalog.ReserveInput){
++		func(in *workflowcatalog.ReserveInput) { in.ExpectedRecordVersion = 2 },
++		func(in *workflowcatalog.ReserveInput) { in.ExpectedSchemaVersion = 2 },
++		func(in *workflowcatalog.ReserveInput) { in.ExpectedRevision-- },
++	} {
++		in := rootCatalogReserveInput(t, f, h)
++		change(&in)
++		rootCatalogWantError(t, f, workflowcatalog.ErrConflict, func(tx pgx.Tx) error { _, e := (workflowcatalog.Catalog{}).ReserveInTx(f.ctx, tx, in); return e })
++	}
++}
++func TestRootCatalogInvalidGraphHasNoPersistentVersion(t *testing.T) {
++	f := newRecordFixture(t)
++	id := recordOperationID(t, f)
++	g := rootCatalogGraph(t, f, false)
++	g.Edges = nil
++	rootCatalogWantError(t, f, workflowcatalog.ErrInvalid, func(tx pgx.Tx) error {
++		_, e := (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, rootCatalogInput(f, id, 0, g))
++		return e
++	})
++	rootCatalogWantError(t, f, workflowcatalog.ErrMissing, func(tx pgx.Tx) error { _, e := (workflowcatalog.Catalog{}).GetInTx(f.ctx, tx, f.app, id); return e })
++}
++func rootCatalogFields(f recordFixture, kind appquery.FieldKind) []appquery.Field {
++	return []appquery.Field{{ID: f.public, Kind: kind}, {ID: f.secret, Kind: appquery.Text}, {ID: f.reference, Kind: appquery.Member}}
++}
++func rootCatalogConflicts(t *testing.T, f recordFixture, fields []appquery.Field) []workflowcatalog.Conflict {
++	t.Helper()
++	var out []workflowcatalog.Conflict
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var e error
++		out, e = (workflowcatalog.Catalog{}).CheckCompatibilityInTx(f.ctx, tx, f.app, f.table, fields)
++		return e
++	})
++	return out
++}
++func TestRootCatalogCompatibilityIsPrecise(t *testing.T) {
++	f := newRecordFixture(t)
++	g := rootCatalogCondition(t, f)
++	h := rootCatalogReady(t, f, g)
++	if got := rootCatalogConflicts(t, f, rootCatalogFields(f, appquery.Multiline)); len(got) != 0 {
++		t.Fatalf("compatible text equality blocked %+v", got)
++	}
++	conflicts := rootCatalogConflicts(t, f, rootCatalogFields(f, appquery.Boolean))
++	found := false
++	for _, c := range conflicts {
++		if c.FlowID == h.FlowID && c.Version == 1 && c.NodeID == g.Nodes[3].ID && c.FieldID == f.public && c.Reason != "" {
++			found = true
++		}
++	}
++	if !found {
++		t.Fatalf("missing precise incompatible condition %+v", conflicts)
++	}
++	removed := rootCatalogFields(f, appquery.Text)[1:]
++	conflicts = rootCatalogConflicts(t, f, removed)
++	seen := map[string]bool{}
++	for _, c := range conflicts {
++		if c.FlowID == h.FlowID && c.FieldID == f.public {
++			seen[c.NodeID] = true
++		}
++	}
++	if !seen[g.Nodes[1].ID] || !seen[g.Nodes[3].ID] {
++		t.Fatalf("missing editable/condition dependencies %+v", conflicts)
++	}
++}
++func TestRootCatalogOldInFlightVersionBlocksUntilTerminal(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootCatalogReady(t, f, rootCatalogGraph(t, f, true))
++	i := rootCatalogReserve(t, f, rootCatalogReserveInput(t, f, h))
++	h = rootCatalogPut(t, f, h.FlowID, h.Revision, rootCatalogGraph(t, f, false))
++	h = rootCatalogDeploy(t, f, h)
++	fields := rootCatalogFields(f, appquery.Text)[1:]
++	if got := rootCatalogConflicts(t, f, fields); len(got) == 0 || got[0].Version != 1 {
++		t.Fatalf("lost in-flight old dependency %+v", got)
++	}
++	if _, e := f.owner.Exec(f.ctx, "UPDATE applications.workflow_instances SET state='completed',sequence=1 WHERE id=$1", i.ID); e != nil {
++		t.Fatal(e)
++	}
++	if got := rootCatalogConflicts(t, f, fields); len(got) != 0 {
++		t.Fatalf("terminal history blocks forever %+v", got)
++	}
++}
++func TestRootCatalogDisabledHistoryDoesNotBlockSchema(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootCatalogReady(t, f, rootCatalogGraph(t, f, true))
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		_, e := (workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx, tx, f.app, h.FlowID, h.Revision)
++		return e
++	})
++	if got := rootCatalogConflicts(t, f, rootCatalogFields(f, appquery.Text)[1:]); len(got) != 0 {
++		t.Fatalf("unused disabled history blocks %+v", got)
++	}
++}
++func TestRootCatalogDeploymentRechecksChangedSchema(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootCatalogPut(t, f, recordOperationID(t, f), 0, rootCatalogCondition(t, f))
++	// A schema Save can occur while a candidate has not been enabled or deployed.
++	var fields []map[string]any
++	var raw []byte
++	if e := f.owner.QueryRow(f.ctx, "SELECT fields_json FROM applications.logical_tables WHERE id=$1", f.table).Scan(&raw); e != nil {
++		t.Fatal(e)
++	}
++	if e := json.Unmarshal(raw, &fields); e != nil {
++		t.Fatal(e)
++	}
++	fields = fields[1:]
++	raw, _ = json.Marshal(fields)
++	if _, e := f.owner.Exec(f.ctx, "UPDATE applications.logical_tables SET fields_json=$2,schema_version=2 WHERE id=$1", f.table, raw); e != nil {
++		t.Fatal(e)
++	}
++	rootCatalogWantError(t, f, workflowcatalog.ErrConflict, func(tx pgx.Tx) error {
++		_, e := (workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx, tx, f.app, h.FlowID, 1, "too-late")
++		return e
++	})
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		got, e := (workflowcatalog.Catalog{}).GetInTx(f.ctx, tx, f.app, h.FlowID)
++		if e == nil && got.CurrentVersion != 0 {
++			t.Fatal("incompatible deployment became current")
++		}
++		return e
++	})
++}
++func TestRootCatalogConcurrentVersionCAS(t *testing.T) {
++	f := newRecordFixture(t)
++	g := rootCatalogGraph(t, f, false)
++	h := rootCatalogPut(t, f, recordOperationID(t, f), 0, g)
++	var wg sync.WaitGroup
++	gate := make(chan struct{})
++	results := make(chan error, 2)
++	for j := 0; j < 2; j++ {
++		wg.Add(1)
++		go func() {
++			defer wg.Done()
++			<-gate
++			tx, e := f.runtime.Begin(f.ctx)
++			if e != nil {
++				results <- e
++				return
++			}
++			defer tx.Rollback(f.ctx)
++			_, e = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, rootCatalogInput(f, h.FlowID, h.Revision, g))
++			if e == nil {
++				e = tx.Commit(f.ctx)
++			}
++			results <- e
++		}()
++	}
++	close(gate)
++	wg.Wait()
++	close(results)
++	ok, conflict := 0, 0
++	for e := range results {
++		if e == nil {
++			ok++
++		} else if errors.Is(e, workflowcatalog.ErrConflict) {
++			conflict++
++		} else {
++			t.Fatal(e)
++		}
++	}
++	if ok != 1 || conflict != 1 {
++		t.Fatalf("concurrent publishers success=%d conflict=%d", ok, conflict)
++	}
++}
++func TestRootCatalogImmutableVersionsAndMinimumRoles(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
++	for _, q := range []string{
++		"UPDATE applications.workflow_versions SET graph_json=graph_json WHERE flow_id=$1",
++		"UPDATE applications.workflow_versions SET bpmn_xml=bpmn_xml WHERE flow_id=$1",
++		"DELETE FROM applications.workflow_versions WHERE flow_id=$1",
++		"DELETE FROM applications.workflow_deployments WHERE flow_id=$1",
++		"UPDATE applications.workflow_deployments SET deployment_id=deployment_id WHERE flow_id=$1",
++		"UPDATE applications.workflow_definitions SET table_id=table_id WHERE id=$1",
++	} {
++		_, e := f.runtime.Exec(f.ctx, q, h.FlowID)
++		rootSQLState(t, e, "42501")
++	}
++	for _, name := range []string{"workflow_definitions", "workflow_versions", "workflow_deployments", "workflow_instances"} {
++		var backup, reader, maint, trunc bool
++		e := f.owner.QueryRow(f.ctx, "SELECT has_table_privilege('auth_backup',$1,'SELECT'),has_table_privilege('auth_reader',$1,'SELECT'),has_table_privilege('auth_maintenance',$1,'SELECT'),has_table_privilege('auth_app',$1,'TRUNCATE')", "applications."+name).Scan(&backup, &reader, &maint, &trunc)
++		if e != nil || !backup || reader || maint || trunc {
++			t.Fatalf("%s least privilege %v/%v/%v/%v err=%v", name, backup, reader, maint, trunc, e)
++		}
++	}
+ }
+diff internal/appstructure/root_workflow_schema_test.go.orig internal/appstructure/root_workflow_schema_test.go
+--- internal/appstructure/root_workflow_schema_test.go.orig
++++ internal/appstructure/root_workflow_schema_test.go
+@@ -1,127 +1,259 @@
+ package appstructure
+
+ import (
+- "context"
+- "encoding/json"
+- "net/http/httptest"
+- "strings"
+- "testing"
+- "time"
+-
+- "github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
+- "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
+- "github.com/jackc/pgx/v5"
++	"context"
++	"encoding/json"
++	"net/http/httptest"
++	"strings"
++	"testing"
++	"time"
++
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
++	"github.com/jackc/pgx/v5"
+ )
+
+ type rootWorkflowSchemaFixture struct {
+- f *fixture
+- table,view,field string
+-}
++	f                  *fixture
++	table, view, field string
++}
++
+ func rootWorkflowSchemaSetup(t *testing.T) rootWorkflowSchemaFixture {
+- t.Helper();f:=setup(t)
+- out:=data(t,f.call(t,"POST","/forms",map[string]any{"operationId":uuid(t,f.owner),"name":"Approval form","source":map[string]any{"kind":"new_table"},"directoryId":nil,"position":0,"expectedStructureVersion":0}),201)
+- s:=rootWorkflowSchemaFixture{f:f,table:out["table"].(map[string]any)["id"].(string),view:out["form"].(map[string]any)["id"].(string),field:uuid(t,f.owner)}
+- body:=s.body(t,[]any{s.fieldValue("text","Original")});body["expectedSchemaVersion"]=0;body["expectedViewVersion"]=0
+- data(t,f.call(t,"PUT","/forms/"+s.view+"/definition",body),200)
+- return s
+-}
+-func(s rootWorkflowSchemaFixture) fieldValue(kind,name string) map[string]any {
+- return map[string]any{"id":s.field,"name":name,"kind":kind,"required":false,"default":nil,"config":map[string]any{"maxLength":nil},"presentation":map[string]any{"helpText":nil,"displayTimeZone":nil}}
+-}
+-func(s rootWorkflowSchemaFixture) body(t *testing.T,fields []any) map[string]any {
+- return map[string]any{"operationId":uuid(t,s.f.owner),"expectedSchemaVersion":1,"expectedViewVersion":1,"fields":fields,"layout":[]any{},"optionMappings":[]any{},"confirmationToken":nil}
+-}
+-func(s rootWorkflowSchemaFixture) graph(t *testing.T,dependent bool) flowgraph.Graph {
+- start,node,end:=uuid(t,s.f.owner),uuid(t,s.f.owner),uuid(t,s.f.owner)
+- fields:=[]string{};if dependent{fields=append(fields,s.field)}
+- return flowgraph.Graph{Version:1,Nodes:[]flowgraph.Node{{ID:start,Kind:"start"},{ID:node,Kind:"approval",Approval:&flowgraph.Approval{Mode:"all",AssigneeIDs:[]string{s.f.actor},EditableFieldIDs:fields}},{ID:end,Kind:"end"}},Edges:[]flowgraph.Edge{{From:start,To:node},{From:node,To:end}}}
+-}
+-func(s rootWorkflowSchemaFixture) tx(t *testing.T,fn func(pgx.Tx)error){
+- t.Helper();c:=context.Background();tx,e:=s.f.runtime.Begin(c);if e!=nil{t.Fatal(e)};defer tx.Rollback(c)
+- if e=fn(tx);e!=nil{t.Fatal(e)};if e=tx.Commit(c);e!=nil{t.Fatal(e)}
+-}
+-func(s rootWorkflowSchemaFixture) version(t *testing.T,id string,rev int64,dependent bool) workflowcatalog.Head {
+- t.Helper();g:=s.graph(t,dependent);var h workflowcatalog.Head;c:=context.Background()
+- s.tx(t,func(tx pgx.Tx)error{var e error;h,e=(workflowcatalog.Catalog{}).PutVersionInTx(c,tx,workflowcatalog.VersionInput{AppID:s.f.app,TableID:s.table,ViewID:s.view,FlowID:id,ActorID:s.f.actor,Name:"Review",ExpectedRevision:rev,ExpectedSchemaVersion:1,Graph:g});return e})
+- s.tx(t,func(tx pgx.Tx)error{var e error;h,e=(workflowcatalog.Catalog{}).ConfirmDeploymentInTx(c,tx,s.f.app,h.FlowID,h.CandidateVersion,"deployment-"+uuid(t,s.f.owner));return e})
+- return h
+-}
+-func(s rootWorkflowSchemaFixture) enable(t *testing.T,h workflowcatalog.Head) workflowcatalog.Head {
+- t.Helper();s.tx(t,func(tx pgx.Tx)error{var e error;h,e=(workflowcatalog.Catalog{}).EnableInTx(context.Background(),tx,s.f.app,h.FlowID,h.Revision);return e});return h
+-}
+-func(s rootWorkflowSchemaFixture) flow(t *testing.T) workflowcatalog.Head{
+- return s.enable(t,s.version(t,uuid(t,s.f.owner),0,true))
+-}
+-func rootWorkflowConflict(t *testing.T,w *httptest.ResponseRecorder,flow,field string){
+- t.Helper();var env struct{Code string;Data struct{Conflicts []struct{FlowID string;Version int64;NodeID,FieldID,Reason string}}}
+- if w.Code!=409||json.Unmarshal(w.Body.Bytes(),&env)!=nil||env.Code!="APPLICATION_SCHEMA_WORKFLOW_INCOMPATIBLE"{t.Fatalf("wanted workflow compatibility conflict: %d %s",w.Code,w.Body.String())}
+- found:=false
+- for _,c:=range env.Data.Conflicts{if c.FlowID==flow&&c.FieldID==field&&c.Version==1&&c.NodeID!=""&&c.Reason!=""{found=true}}
+- if !found{t.Fatalf("missing scoped diagnostic %s",w.Body.String())}
+-}
+-func TestRootWorkflowSchemaSaveRejectsAndRollsBackAllChanges(t *testing.T){
+- s:=rootWorkflowSchemaSetup(t);h:=s.flow(t);newField:=s.fieldValue("text","Other");newID:=uuid(t,s.f.owner);newField["id"]=newID
+- body:=s.body(t,[]any{newField})
+- rootWorkflowConflict(t,s.f.call(t,"PUT","/forms/"+s.view+"/definition",body),h.FlowID,s.field)
+- c:=context.Background();var revision int64;var original,added bool;var operations int
+- if e:=s.f.owner.QueryRow(c,"SELECT schema_version FROM applications.logical_tables WHERE id=$1",s.table).Scan(&revision);e!=nil{t.Fatal(e)}
+- q:="SELECT EXISTS(SELECT 1 FROM pg_attribute WHERE attrelid=to_regclass($1) AND attname=$2 AND NOT attisdropped)"
+- physical:="appdata.t_"+strings.ReplaceAll(s.table,"-","")
+- if e:=s.f.owner.QueryRow(c,q,physical,"f_"+strings.ReplaceAll(s.field,"-","")).Scan(&original);e!=nil{t.Fatal(e)}
+- if e:=s.f.owner.QueryRow(c,q,physical,"f_"+strings.ReplaceAll(newID,"-","")).Scan(&added);e!=nil{t.Fatal(e)}
+- if e:=s.f.owner.QueryRow(c,"SELECT count(*) FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2",s.f.actor,body["operationId"]).Scan(&operations);e!=nil{t.Fatal(e)}
+- if revision!=1||!original||added||operations!=0{t.Fatalf("partial save rev=%d old=%v new=%v operation=%d",revision,original,added,operations)}
+-}
+-func TestRootWorkflowSchemaPreflightReportsConflictWithoutConfirmation(t *testing.T){
+- s:=rootWorkflowSchemaSetup(t);s.flow(t);body:=s.body(t,[]any{});delete(body,"operationId");delete(body,"confirmationToken")
+- out:=data(t,s.f.call(t,"POST","/forms/"+s.view+"/definition/preflight",body),200)
+- if out["saveAllowed"]!=false||out["confirmation"]!=nil{t.Fatalf("preflight must refuse save/token %+v",out)}
+- conflicts,ok:=out["workflowConflicts"].([]any)
+- if !ok||len(conflicts)==0{t.Fatalf("missing workflow diagnostics %+v",out)}
+-}
+-func TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind(t *testing.T){
+- for _,kind:=range []string{"text","multiline"}{t.Run(kind,func(t *testing.T){
+-  s:=rootWorkflowSchemaSetup(t);s.flow(t)
+-  out:=data(t,s.f.call(t,"PUT","/forms/"+s.view+"/definition",s.body(t,[]any{s.fieldValue(kind,"Renamed")})),200)
+-  if out["definition"].(map[string]any)["table"].(map[string]any)["schemaVersion"]!=float64(2){t.Fatalf("compatible change not committed %+v",out)}
+- })}
+-}
+-func TestRootWorkflowSchemaRechecksAfterPreviouslyAllowedPreflight(t *testing.T){
+- s:=rootWorkflowSchemaSetup(t);h:=s.version(t,uuid(t,s.f.owner),0,true)
+- body:=s.body(t,[]any{});pre:=map[string]any{};for k,v:=range body{if k!="operationId"&&k!="confirmationToken"{pre[k]=v}}
+- out:=data(t,s.f.call(t,"POST","/forms/"+s.view+"/definition/preflight",pre),200)
+- if out["saveAllowed"]!=true{t.Fatalf("disabled unused definition blocked %+v",out)}
+- h=s.enable(t,h)
+- rootWorkflowConflict(t,s.f.call(t,"PUT","/forms/"+s.view+"/definition",body),h.FlowID,s.field)
+-}
+-func TestRootWorkflowSchemaClosedUnusedHistoryAllowsRemoval(t *testing.T){
+- s:=rootWorkflowSchemaSetup(t);h:=s.flow(t)
+- s.tx(t,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).RequestCloseInTx(context.Background(),tx,s.f.app,h.FlowID,h.Revision);return e})
+- data(t,s.f.call(t,"PUT","/forms/"+s.view+"/definition",s.body(t,[]any{})),200)
+-}
+-func TestRootWorkflowSchemaInFlightOldDefinitionStillProtectsField(t *testing.T){
+- s:=rootWorkflowSchemaSetup(t);h:=s.flow(t);c:=context.Background();record:=uuid(t,s.f.owner)
+- physical:=pgx.Identifier{"appdata","t_"+strings.ReplaceAll(s.table,"-","")}.Sanitize()
+- if _,e:=s.f.owner.Exec(c,"INSERT INTO "+physical+"(id,created_by) VALUES($1,$2)",record,s.f.actor);e!=nil{t.Fatal(e)}
+- s.tx(t,func(tx pgx.Tx)error{_,e:=(workflowcatalog.Catalog{}).ReserveInTx(c,tx,workflowcatalog.ReserveInput{AppID:s.f.app,FlowID:h.FlowID,InstanceID:uuid(t,s.f.owner),RecordID:record,ActorID:s.f.actor,ExpectedRevision:h.Revision,ExpectedSchemaVersion:1,ExpectedRecordVersion:1});return e})
+- s.version(t,h.FlowID,h.Revision,false)
+- rootWorkflowConflict(t,s.f.call(t,"PUT","/forms/"+s.view+"/definition",s.body(t,[]any{})),h.FlowID,s.field)
+-}
+-func TestRootWorkflowSchemaSaveSerializesWithEnable(t *testing.T){
+- s:=rootWorkflowSchemaSetup(t);h:=s.version(t,uuid(t,s.f.owner),0,true)
+- ctx,cancel:=context.WithTimeout(context.Background(),15*time.Second);defer cancel()
+- tx,e:=s.f.runtime.Begin(ctx);if e!=nil{t.Fatal(e)};defer tx.Rollback(context.Background())
+- var pid int
+- if e=tx.QueryRow(ctx,"SELECT pg_backend_pid()").Scan(&pid);e!=nil{t.Fatal(e)}
+- if _,e=(workflowcatalog.Catalog{}).EnableInTx(ctx,tx,s.f.app,h.FlowID,h.Revision);e!=nil{t.Fatal(e)}
+- body:=s.body(t,[]any{});reply:=make(chan *httptest.ResponseRecorder,1)
+- go func(){reply<-s.f.call(t,"PUT","/forms/"+s.view+"/definition",body)}()
+- blocked:=false
+- for !blocked{
+-  select{case w:=<-reply:t.Fatalf("schema Save escaped uncommitted enable: %d %s",w.Code,w.Body.String());case <-ctx.Done():t.Fatal("Save did not reach real app gate lock");default:}
+-  if e=s.f.owner.QueryRow(ctx,"SELECT EXISTS(SELECT 1 FROM pg_stat_activity a WHERE $1=ANY(pg_blocking_pids(a.pid)))",pid).Scan(&blocked);e!=nil{t.Fatal(e)}
+-  if !blocked{time.Sleep(5*time.Millisecond)}
+- }
+- if e=tx.Commit(ctx);e!=nil{t.Fatal(e)}
+- select{case w:=<-reply:rootWorkflowConflict(t,w,h.FlowID,s.field);case <-ctx.Done():t.Fatal("Save failed to resume after enable commit")}
++	t.Helper()
++	f := setup(t)
++	out := data(t, f.call(t, "POST", "/forms", map[string]any{"operationId": uuid(t, f.owner), "name": "Approval form", "source": map[string]any{"kind": "new_table"}, "directoryId": nil, "position": 0, "expectedStructureVersion": 0}), 201)
++	s := rootWorkflowSchemaFixture{f: f, table: out["table"].(map[string]any)["id"].(string), view: out["form"].(map[string]any)["id"].(string), field: uuid(t, f.owner)}
++	body := s.body(t, []any{s.fieldValue("text", "Original")})
++	body["expectedSchemaVersion"] = 0
++	body["expectedViewVersion"] = 0
++	data(t, f.call(t, "PUT", "/forms/"+s.view+"/definition", body), 200)
++	return s
++}
++func (s rootWorkflowSchemaFixture) fieldValue(kind, name string) map[string]any {
++	return map[string]any{"id": s.field, "name": name, "kind": kind, "required": false, "default": nil, "config": map[string]any{"maxLength": nil}, "presentation": map[string]any{"helpText": nil, "displayTimeZone": nil}}
++}
++func (s rootWorkflowSchemaFixture) body(t *testing.T, fields []any) map[string]any {
++	return map[string]any{"operationId": uuid(t, s.f.owner), "expectedSchemaVersion": 1, "expectedViewVersion": 1, "fields": fields, "layout": []any{}, "optionMappings": []any{}, "confirmationToken": nil}
++}
++func (s rootWorkflowSchemaFixture) graph(t *testing.T, dependent bool) flowgraph.Graph {
++	start, node, end := uuid(t, s.f.owner), uuid(t, s.f.owner), uuid(t, s.f.owner)
++	fields := []string{}
++	if dependent {
++		fields = append(fields, s.field)
++	}
++	return flowgraph.Graph{Version: 1, Nodes: []flowgraph.Node{{ID: start, Kind: "start"}, {ID: node, Kind: "approval", Approval: &flowgraph.Approval{Mode: "all", AssigneeIDs: []string{s.f.actor}, EditableFieldIDs: fields}}, {ID: end, Kind: "end"}}, Edges: []flowgraph.Edge{{From: start, To: node}, {From: node, To: end}}}
++}
++func (s rootWorkflowSchemaFixture) tx(t *testing.T, fn func(pgx.Tx) error) {
++	t.Helper()
++	c := context.Background()
++	tx, e := s.f.runtime.Begin(c)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer tx.Rollback(c)
++	if e = fn(tx); e != nil {
++		t.Fatal(e)
++	}
++	if e = tx.Commit(c); e != nil {
++		t.Fatal(e)
++	}
++}
++func (s rootWorkflowSchemaFixture) version(t *testing.T, id string, rev int64, dependent bool) workflowcatalog.Head {
++	t.Helper()
++	g := s.graph(t, dependent)
++	var h workflowcatalog.Head
++	c := context.Background()
++	s.tx(t, func(tx pgx.Tx) error {
++		var e error
++		h, e = (workflowcatalog.Catalog{}).PutVersionInTx(c, tx, workflowcatalog.VersionInput{AppID: s.f.app, TableID: s.table, ViewID: s.view, FlowID: id, ActorID: s.f.actor, Name: "Review", ExpectedRevision: rev, ExpectedSchemaVersion: 1, Graph: g})
++		return e
++	})
++	s.tx(t, func(tx pgx.Tx) error {
++		var e error
++		h, e = (workflowcatalog.Catalog{}).ConfirmDeploymentInTx(c, tx, s.f.app, h.FlowID, h.CandidateVersion, "deployment-"+uuid(t, s.f.owner))
++		return e
++	})
++	return h
++}
++func (s rootWorkflowSchemaFixture) enable(t *testing.T, h workflowcatalog.Head) workflowcatalog.Head {
++	t.Helper()
++	s.tx(t, func(tx pgx.Tx) error {
++		var e error
++		h, e = (workflowcatalog.Catalog{}).EnableInTx(context.Background(), tx, s.f.app, h.FlowID, h.Revision)
++		return e
++	})
++	return h
++}
++func (s rootWorkflowSchemaFixture) flow(t *testing.T) workflowcatalog.Head {
++	return s.enable(t, s.version(t, uuid(t, s.f.owner), 0, true))
++}
++func rootWorkflowConflict(t *testing.T, w *httptest.ResponseRecorder, flow, field string) {
++	t.Helper()
++	var env struct {
++		Code string
++		Data struct {
++			Conflicts []struct {
++				FlowID                  string
++				Version                 int64
++				NodeID, FieldID, Reason string
++			}
++		}
++	}
++	if w.Code != 409 || json.Unmarshal(w.Body.Bytes(), &env) != nil || env.Code != "APPLICATION_SCHEMA_WORKFLOW_INCOMPATIBLE" {
++		t.Fatalf("wanted workflow compatibility conflict: %d %s", w.Code, w.Body.String())
++	}
++	found := false
++	for _, c := range env.Data.Conflicts {
++		if c.FlowID == flow && c.FieldID == field && c.Version == 1 && c.NodeID != "" && c.Reason != "" {
++			found = true
++		}
++	}
++	if !found {
++		t.Fatalf("missing scoped diagnostic %s", w.Body.String())
++	}
++}
++func TestRootWorkflowSchemaSaveRejectsAndRollsBackAllChanges(t *testing.T) {
++	s := rootWorkflowSchemaSetup(t)
++	h := s.flow(t)
++	newField := s.fieldValue("text", "Other")
++	newID := uuid(t, s.f.owner)
++	newField["id"] = newID
++	body := s.body(t, []any{newField})
++	rootWorkflowConflict(t, s.f.call(t, "PUT", "/forms/"+s.view+"/definition", body), h.FlowID, s.field)
++	c := context.Background()
++	var revision int64
++	var original, added bool
++	var operations int
++	if e := s.f.owner.QueryRow(c, "SELECT schema_version FROM applications.logical_tables WHERE id=$1", s.table).Scan(&revision); e != nil {
++		t.Fatal(e)
++	}
++	q := "SELECT EXISTS(SELECT 1 FROM pg_attribute WHERE attrelid=to_regclass($1) AND attname=$2 AND NOT attisdropped)"
++	physical := "appdata.t_" + strings.ReplaceAll(s.table, "-", "")
++	if e := s.f.owner.QueryRow(c, q, physical, "f_"+strings.ReplaceAll(s.field, "-", "")).Scan(&original); e != nil {
++		t.Fatal(e)
++	}
++	if e := s.f.owner.QueryRow(c, q, physical, "f_"+strings.ReplaceAll(newID, "-", "")).Scan(&added); e != nil {
++		t.Fatal(e)
++	}
++	if e := s.f.owner.QueryRow(c, "SELECT count(*) FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2", s.f.actor, body["operationId"]).Scan(&operations); e != nil {
++		t.Fatal(e)
++	}
++	if revision != 1 || !original || added || operations != 0 {
++		t.Fatalf("partial save rev=%d old=%v new=%v operation=%d", revision, original, added, operations)
++	}
++}
++func TestRootWorkflowSchemaPreflightReportsConflictWithoutConfirmation(t *testing.T) {
++	s := rootWorkflowSchemaSetup(t)
++	s.flow(t)
++	body := s.body(t, []any{})
++	delete(body, "operationId")
++	delete(body, "confirmationToken")
++	out := data(t, s.f.call(t, "POST", "/forms/"+s.view+"/definition/preflight", body), 200)
++	if out["saveAllowed"] != false || out["confirmation"] != nil {
++		t.Fatalf("preflight must refuse save/token %+v", out)
++	}
++	conflicts, ok := out["workflowConflicts"].([]any)
++	if !ok || len(conflicts) == 0 {
++		t.Fatalf("missing workflow diagnostics %+v", out)
++	}
++}
++func TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind(t *testing.T) {
++	for _, kind := range []string{"text", "multiline"} {
++		t.Run(kind, func(t *testing.T) {
++			s := rootWorkflowSchemaSetup(t)
++			s.flow(t)
++			out := data(t, s.f.call(t, "PUT", "/forms/"+s.view+"/definition", s.body(t, []any{s.fieldValue(kind, "Renamed")})), 200)
++			if out["definition"].(map[string]any)["table"].(map[string]any)["schemaVersion"] != float64(2) {
++				t.Fatalf("compatible change not committed %+v", out)
++			}
++		})
++	}
++}
++func TestRootWorkflowSchemaRechecksAfterPreviouslyAllowedPreflight(t *testing.T) {
++	s := rootWorkflowSchemaSetup(t)
++	h := s.version(t, uuid(t, s.f.owner), 0, true)
++	body := s.body(t, []any{})
++	pre := map[string]any{}
++	for k, v := range body {
++		if k != "operationId" && k != "confirmationToken" {
++			pre[k] = v
++		}
++	}
++	out := data(t, s.f.call(t, "POST", "/forms/"+s.view+"/definition/preflight", pre), 200)
++	if out["saveAllowed"] != true {
++		t.Fatalf("disabled unused definition blocked %+v", out)
++	}
++	h = s.enable(t, h)
++	rootWorkflowConflict(t, s.f.call(t, "PUT", "/forms/"+s.view+"/definition", body), h.FlowID, s.field)
++}
++func TestRootWorkflowSchemaClosedUnusedHistoryAllowsRemoval(t *testing.T) {
++	s := rootWorkflowSchemaSetup(t)
++	h := s.flow(t)
++	s.tx(t, func(tx pgx.Tx) error {
++		_, e := (workflowcatalog.Catalog{}).RequestCloseInTx(context.Background(), tx, s.f.app, h.FlowID, h.Revision)
++		return e
++	})
++	data(t, s.f.call(t, "PUT", "/forms/"+s.view+"/definition", s.body(t, []any{})), 200)
++}
++func TestRootWorkflowSchemaInFlightOldDefinitionStillProtectsField(t *testing.T) {
++	s := rootWorkflowSchemaSetup(t)
++	h := s.flow(t)
++	c := context.Background()
++	record := uuid(t, s.f.owner)
++	physical := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(s.table, "-", "")}.Sanitize()
++	if _, e := s.f.owner.Exec(c, "INSERT INTO "+physical+"(id,created_by) VALUES($1,$2)", record, s.f.actor); e != nil {
++		t.Fatal(e)
++	}
++	s.tx(t, func(tx pgx.Tx) error {
++		_, e := (workflowcatalog.Catalog{}).ReserveInTx(c, tx, workflowcatalog.ReserveInput{AppID: s.f.app, FlowID: h.FlowID, InstanceID: uuid(t, s.f.owner), RecordID: record, ActorID: s.f.actor, ExpectedRevision: h.Revision, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1})
++		return e
++	})
++	s.version(t, h.FlowID, h.Revision, false)
++	rootWorkflowConflict(t, s.f.call(t, "PUT", "/forms/"+s.view+"/definition", s.body(t, []any{})), h.FlowID, s.field)
++}
++func TestRootWorkflowSchemaSaveSerializesWithEnable(t *testing.T) {
++	s := rootWorkflowSchemaSetup(t)
++	h := s.version(t, uuid(t, s.f.owner), 0, true)
++	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
++	defer cancel()
++	tx, e := s.f.runtime.Begin(ctx)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer tx.Rollback(context.Background())
++	var pid int
++	if e = tx.QueryRow(ctx, "SELECT pg_backend_pid()").Scan(&pid); e != nil {
++		t.Fatal(e)
++	}
++	if _, e = (workflowcatalog.Catalog{}).EnableInTx(ctx, tx, s.f.app, h.FlowID, h.Revision); e != nil {
++		t.Fatal(e)
++	}
++	body := s.body(t, []any{})
++	reply := make(chan *httptest.ResponseRecorder, 1)
++	go func() { reply <- s.f.call(t, "PUT", "/forms/"+s.view+"/definition", body) }()
++	blocked := false
++	for !blocked {
++		select {
++		case w := <-reply:
++			t.Fatalf("schema Save escaped uncommitted enable: %d %s", w.Code, w.Body.String())
++		case <-ctx.Done():
++			t.Fatal("Save did not reach real app gate lock")
++		default:
++		}
++		if e = s.f.owner.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_stat_activity a WHERE $1=ANY(pg_blocking_pids(a.pid)))", pid).Scan(&blocked); e != nil {
++			t.Fatal(e)
++		}
++		if !blocked {
++			time.Sleep(5 * time.Millisecond)
++		}
++	}
++	if e = tx.Commit(ctx); e != nil {
++		t.Fatal(e)
++	}
++	select {
++	case w := <-reply:
++		rootWorkflowConflict(t, w, h.FlowID, s.field)
++	case <-ctx.Done():
++		t.Fatal("Save failed to resume after enable commit")
++	}
+ }

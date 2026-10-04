@@ -1,0 +1,3 @@
+# Corrected P2d test run: container CA setup failure
+
+The first attempt after cherry-picking Root's `maxLength: nil` fixture correction did not reach compilation or tests. The temporary Go 1.27.1 container could not verify `proxy.golang.org` because it did not trust the host's environment proxy CA (`x509: certificate signed by unknown authority`). The raw output and exit code are preserved here. This is an environment preparation failure, not a business RED. The next attempt mounts a combined CA bundle read-only and records the actual test result in `corrected-red-output.txt` / `corrected-red-exit.txt`.

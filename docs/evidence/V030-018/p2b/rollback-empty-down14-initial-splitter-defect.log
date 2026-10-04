@@ -1,0 +1,6 @@
+2026/10/04 08:48:31 goose run: ERROR 00014_workflow_command_ledger.sql: failed to run SQL migration: failed to execute SQL query "DO $$\nBEGIN\n    IF EXISTS (SELECT 1 FROM applications.workflow_commands LIMIT 1)\n       OR EXISTS (SELECT 1 FROM applications.workflow_dispatch LIMIT 1) THEN\n        RAISE EXCEPTION 'cannot remove workflow command ledger while history exists'\n            USING ERRCODE = '55000';": ERROR: unterminated dollar-quoted string at or near "$$
+BEGIN
+    IF EXISTS (SELECT 1 FROM applications.workflow_commands LIMIT 1)
+       OR EXISTS (SELECT 1 FROM applications.workflow_dispatch LIMIT 1) THEN
+        RAISE EXCEPTION 'cannot remove workflow command ledger while history exists'
+            USING ERRCODE = '55000';" (SQLSTATE 42601)

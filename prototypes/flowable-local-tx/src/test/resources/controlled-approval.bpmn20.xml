@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="https://weaveos.invalid/b3-fixture">
+  <process id="controlledApproval" name="B3 controlled fixture" isExecutable="true">
+    <startEvent id="start"/>
+    <sequenceFlow id="toApproval" sourceRef="start" targetRef="approval"/>
+    <userTask id="approval" name="Fixture approval"/>
+    <sequenceFlow id="toCondition" sourceRef="approval" targetRef="condition"/>
+    <exclusiveGateway id="condition" default="directEnd"/>
+    <sequenceFlow id="needsReview" sourceRef="condition" targetRef="review">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${needsReview}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="directEnd" sourceRef="condition" targetRef="end"/>
+    <userTask id="review" name="Fixture review"/>
+    <sequenceFlow id="reviewEnd" sourceRef="review" targetRef="end"/>
+    <endEvent id="end"/>
+  </process>
+</definitions>

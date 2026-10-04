@@ -332,6 +332,9 @@ func (a *Application) save(c context.Context, tx pgx.Tx, p session.Principal, ap
 		issue := pre.BlockingIssues[0]
 		return applications.Result{}, &Error{issue.Code, map[string]any{"fieldIds": issue.FieldIDs}}
 	}
+	if len(pre.WorkflowConflicts) > 0 {
+		return applications.Result{}, &Error{"APPLICATION_SCHEMA_WORKFLOW_INCOMPATIBLE", map[string]any{"conflicts": pre.WorkflowConflicts}}
+	}
 	if len(pre.Impacts) > 0 {
 		if in.ConfirmationToken == nil {
 			return applications.Result{}, &Error{"APPLICATION_SCHEMA_CONFIRMATION_REQUIRED", map[string]any{"impacts": pre.Impacts}}

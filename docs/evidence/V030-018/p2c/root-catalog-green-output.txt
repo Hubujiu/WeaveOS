@@ -1,0 +1,291 @@
+=== RUN   TestRootCatalogCompatibilityDoesNotScanArchivedVersions
+    root_workflow_catalog_scale_test.go:72: catalog actual query: retired=4999 live=1 elapsed=3.520618ms aggregate_plan_rows=8 plan=[
+          {
+            "Plan": {
+              "Node Type": "Sort",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 17.73,
+              "Total Cost": 17.73,
+              "Plan Rows": 1,
+              "Plan Width": 808,
+              "Actual Startup Time": 0.026,
+              "Actual Total Time": 0.027,
+              "Actual Rows": 1.00,
+              "Actual Loops": 1,
+              "Disabled": false,
+              "Sort Key": ["((d.id)::text)", "v.version"],
+              "Sort Method": "quicksort",
+              "Sort Space Used": 25,
+              "Sort Space Type": "Memory",
+              "Shared Hit Blocks": 4,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Nested Loop",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 1.34,
+                  "Total Cost": 17.72,
+                  "Plan Rows": 1,
+                  "Plan Width": 808,
+                  "Actual Startup Time": 0.020,
+                  "Actual Total Time": 0.021,
+                  "Actual Rows": 1.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Inner Unique": true,
+                  "Shared Hit Blocks": 4,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Unique",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 1.05,
+                      "Total Cost": 1.07,
+                      "Plan Rows": 2,
+                      "Plan Width": 40,
+                      "Actual Startup Time": 0.011,
+                      "Actual Total Time": 0.012,
+                      "Actual Rows": 1.00,
+                      "Actual Loops": 1,
+                      "Disabled": false,
+                      "Shared Hit Blocks": 1,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Sort",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 1.05,
+                          "Total Cost": 1.06,
+                          "Plan Rows": 2,
+                          "Plan Width": 40,
+                          "Actual Startup Time": 0.011,
+                          "Actual Total Time": 0.012,
+                          "Actual Rows": 1.00,
+                          "Actual Loops": 1,
+                          "Disabled": false,
+                          "Sort Key": ["d.app_id", "d.id", "d.current_version"],
+                          "Sort Method": "quicksort",
+                          "Sort Space Used": 25,
+                          "Sort Space Type": "Memory",
+                          "Shared Hit Blocks": 1,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Append",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Startup Cost": 0.00,
+                              "Total Cost": 1.04,
+                              "Plan Rows": 2,
+                              "Plan Width": 40,
+                              "Actual Startup Time": 0.006,
+                              "Actual Total Time": 0.008,
+                              "Actual Rows": 1.00,
+                              "Actual Loops": 1,
+                              "Disabled": false,
+                              "Shared Hit Blocks": 1,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0,
+                              "Subplans Removed": 0,
+                              "Plans": [
+                                {
+                                  "Node Type": "Seq Scan",
+                                  "Parent Relationship": "Member",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Relation Name": "workflow_definitions",
+                                  "Alias": "d",
+                                  "Startup Cost": 0.00,
+                                  "Total Cost": 1.03,
+                                  "Plan Rows": 1,
+                                  "Plan Width": 40,
+                                  "Actual Startup Time": 0.005,
+                                  "Actual Total Time": 0.006,
+                                  "Actual Rows": 1.00,
+                                  "Actual Loops": 1,
+                                  "Disabled": false,
+                                  "Filter": "(((state)::text = ANY ('{enabled,closing}'::text[])) AND (app_id = 'b84164b4-9dc8-4d48-8c28-6ea8a4d5df67'::uuid) AND (table_id = '4f75b123-236b-47c3-8571-ec8321cb9071'::uuid))",
+                                  "Rows Removed by Filter": 1,
+                                  "Shared Hit Blocks": 1,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0
+                                },
+                                {
+                                  "Node Type": "Seq Scan",
+                                  "Parent Relationship": "Member",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Relation Name": "workflow_instances",
+                                  "Alias": "i",
+                                  "Startup Cost": 0.00,
+                                  "Total Cost": 0.00,
+                                  "Plan Rows": 1,
+                                  "Plan Width": 40,
+                                  "Actual Startup Time": 0.001,
+                                  "Actual Total Time": 0.001,
+                                  "Actual Rows": 0.00,
+                                  "Actual Loops": 1,
+                                  "Disabled": false,
+                                  "Filter": "(((state)::text = ANY ('{starting,active}'::text[])) AND (app_id = 'b84164b4-9dc8-4d48-8c28-6ea8a4d5df67'::uuid) AND (table_id = '4f75b123-236b-47c3-8571-ec8321cb9071'::uuid))",
+                                  "Rows Removed by Filter": 0,
+                                  "Shared Hit Blocks": 0,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "Node Type": "Index Scan",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Scan Direction": "Forward",
+                      "Index Name": "workflow_versions_pkey",
+                      "Relation Name": "workflow_versions",
+                      "Alias": "v",
+                      "Startup Cost": 0.29,
+                      "Total Cost": 8.31,
+                      "Plan Rows": 1,
+                      "Plan Width": 808,
+                      "Actual Startup Time": 0.007,
+                      "Actual Total Time": 0.007,
+                      "Actual Rows": 1.00,
+                      "Actual Loops": 1,
+                      "Disabled": false,
+                      "Index Cond": "((app_id = d.app_id) AND (flow_id = d.id) AND (version = d.current_version))",
+                      "Rows Removed by Index Recheck": 0,
+                      "Index Searches": 1,
+                      "Shared Hit Blocks": 3,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 3,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.208,
+            "Triggers": [
+            ],
+            "Execution Time": 0.047
+          }
+        ]
+--- PASS: TestRootCatalogCompatibilityDoesNotScanArchivedVersions (0.25s)
+=== RUN   TestRootCatalogVersionIsDurableAndCallerRollback
+--- PASS: TestRootCatalogVersionIsDurableAndCallerRollback (0.07s)
+=== RUN   TestRootCatalogUndeployedCannotEnableOrStart
+--- PASS: TestRootCatalogUndeployedCannotEnableOrStart (0.07s)
+=== RUN   TestRootCatalogDeploymentReceiptIdempotentAndBound
+--- PASS: TestRootCatalogDeploymentReceiptIdempotentAndBound (0.06s)
+=== RUN   TestRootCatalogOldDeploymentCannotReplaceNewCandidate
+--- PASS: TestRootCatalogOldDeploymentCannotReplaceNewCandidate (0.07s)
+=== RUN   TestRootCatalogInstancesKeepStructureWhileNextUsesConfirmedVersion
+--- PASS: TestRootCatalogInstancesKeepStructureWhileNextUsesConfirmedVersion (0.08s)
+=== RUN   TestRootCatalogCloseWaitsForAcceptedStartAndRejectsNewStart
+--- PASS: TestRootCatalogCloseWaitsForAcceptedStartAndRejectsNewStart (0.07s)
+=== RUN   TestRootCatalogCloseWithoutInstancesAndLateCloseCAS
+--- PASS: TestRootCatalogCloseWithoutInstancesAndLateCloseCAS (0.07s)
+=== RUN   TestRootCatalogIndependentFlowsSameRecord
+--- PASS: TestRootCatalogIndependentFlowsSameRecord (0.07s)
+=== RUN   TestRootCatalogCASAndResourceScope
+--- PASS: TestRootCatalogCASAndResourceScope (0.11s)
+=== RUN   TestRootCatalogInvalidGraphHasNoPersistentVersion
+--- PASS: TestRootCatalogInvalidGraphHasNoPersistentVersion (0.05s)
+=== RUN   TestRootCatalogCompatibilityIsPrecise
+--- PASS: TestRootCatalogCompatibilityIsPrecise (0.08s)
+=== RUN   TestRootCatalogOldInFlightVersionBlocksUntilTerminal
+--- PASS: TestRootCatalogOldInFlightVersionBlocksUntilTerminal (0.08s)
+=== RUN   TestRootCatalogDisabledHistoryDoesNotBlockSchema
+--- PASS: TestRootCatalogDisabledHistoryDoesNotBlockSchema (0.07s)
+=== RUN   TestRootCatalogDeploymentRechecksChangedSchema
+--- PASS: TestRootCatalogDeploymentRechecksChangedSchema (0.07s)
+=== RUN   TestRootCatalogConcurrentVersionCAS
+--- PASS: TestRootCatalogConcurrentVersionCAS (0.09s)
+=== RUN   TestRootCatalogImmutableVersionsAndMinimumRoles
+--- PASS: TestRootCatalogImmutableVersionsAndMinimumRoles (0.08s)
+PASS
+ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice	2.468s

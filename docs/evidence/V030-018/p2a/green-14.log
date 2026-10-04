@@ -1,0 +1,23 @@
+--- FAIL: TestRootCommandFenceAcquireReplayAndRelease (0.03s)
+    root_command_fence_test.go:71: real controlled acquire must return positive durable epoch: 0 ERROR: operator does not exist: name <> bigint (SQLSTATE 42883)
+--- FAIL: TestRootCommandFenceOtherCommandCannotReplace (0.03s)
+    root_command_fence_test.go:82: real controlled acquire must return positive durable epoch: 0 ERROR: operator does not exist: name <> bigint (SQLSTATE 42883)
+--- FAIL: TestRootCommandFenceOldTokenCannotReleaseNewOccupant (0.03s)
+    root_command_fence_test.go:94: real controlled acquire must return positive durable epoch: 0 ERROR: operator does not exist: name <> bigint (SQLSTATE 42883)
+--- FAIL: TestRootCommandFenceAcquireCallerRollback (0.03s)
+    root_command_fence_test.go:117: acquire 0 ERROR: operator does not exist: name <> bigint (SQLSTATE 42883)
+--- FAIL: TestRootCommandFenceReleaseCallerRollback (0.03s)
+    root_command_fence_test.go:127: real controlled acquire must return positive durable epoch: 0 ERROR: operator does not exist: name <> bigint (SQLSTATE 42883)
+--- FAIL: TestRootCommandFenceStaleVersionsAndForeignResources (0.03s)
+    root_command_fence_test.go:158: SQLSTATE want40001 gotERROR: operator does not exist: name <> bigint (SQLSTATE 42883)
+--- FAIL: TestRootCommandFenceBlocksRealEditButNotOtherRecord (0.03s)
+    root_command_fence_test.go:191: real controlled acquire must return positive durable epoch: 0 ERROR: operator does not exist: name <> bigint (SQLSTATE 42883)
+--- FAIL: TestRootCommandFenceSchemaChangeRollsBackDDL (0.03s)
+    root_command_fence_test.go:215: real controlled acquire must return positive durable epoch: 0 ERROR: operator does not exist: name <> bigint (SQLSTATE 42883)
+--- FAIL: TestRootCommandFenceReleaseRequiresPositiveExactToken (0.03s)
+    root_command_fence_test.go:262: real controlled acquire must return positive durable epoch: 0 ERROR: operator does not exist: name <> bigint (SQLSTATE 42883)
+--- FAIL: TestRootCommandFenceDoesNotBlockViewOnlyLayout (0.03s)
+    root_command_fence_test.go:299: real controlled acquire must return positive durable epoch: 0 ERROR: operator does not exist: name <> bigint (SQLSTATE 42883)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice	0.416s
+FAIL

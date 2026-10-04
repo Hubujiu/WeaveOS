@@ -95,3 +95,29 @@ GRANT EXECUTE ON FUNCTION applications.apply_schema_change(uuid,uuid,uuid,text,j
 GRANT EXECUTE ON FUNCTION applications.apply_option_mapping(uuid,uuid,uuid,uuid,text,jsonb,jsonb) TO auth_app;
 GRANT SELECT ON ALL TABLES IN SCHEMA appdata TO auth_backup;
 GRANT SELECT ON ALL TABLES IN SCHEMA applications TO auth_backup;
+
+-- V030-018 P2a: finite authority over a record command fence only.
+GRANT EXECUTE ON FUNCTION applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint) TO auth_app;
+GRANT EXECUTE ON FUNCTION applications.release_record_command_fence(uuid,uuid,uuid,uuid,bigint,bigint) TO auth_app;
+
+-- V030-018 P2b: durable command identity/history is append-only except for
+-- the two state columns advanced by the trusted ledger in its caller tx.
+REVOKE ALL ON applications.workflow_commands,applications.workflow_dispatch
+ FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+GRANT SELECT,INSERT ON applications.workflow_commands TO auth_app;
+GRANT UPDATE (state,receipt_json) ON applications.workflow_commands TO auth_app;
+GRANT SELECT,INSERT,DELETE ON applications.workflow_dispatch TO auth_app;
+GRANT SELECT ON applications.workflow_commands,applications.workflow_dispatch TO auth_backup;
+
+-- V030-018 P2c workflow catalog: immutable version and deployment history;
+-- mutable lifecycle columns are limited to the trusted application runtime.
+REVOKE ALL ON applications.workflow_definitions,applications.workflow_versions,
+ applications.workflow_deployments,applications.workflow_instances
+ FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+GRANT SELECT,INSERT ON applications.workflow_definitions,applications.workflow_versions,
+ applications.workflow_deployments,applications.workflow_instances TO auth_app;
+GRANT UPDATE (name,revision,state,current_version,candidate_version,updated_at)
+ ON applications.workflow_definitions TO auth_app;
+GRANT UPDATE (state,sequence,updated_at) ON applications.workflow_instances TO auth_app;
+GRANT SELECT ON applications.workflow_definitions,applications.workflow_versions,
+ applications.workflow_deployments,applications.workflow_instances TO auth_backup;
