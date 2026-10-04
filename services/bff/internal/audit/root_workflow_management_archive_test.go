@@ -19,7 +19,7 @@ func TestRootWorkflowManagementHotColdConstraintsPreserveSafeShape(t *testing.T)
  for _,target:=range []struct{pool *pgxpool.Pool;table string}{{hot,"auth.authentication_events"},{cold,"archive.authentication_events"}}{
   insert:=func(summary map[string]any,reason,object string)error{
    raw,_:=json.Marshal(summary)
-   _,e:=target.pool.Exec(ctx,"INSERT INTO "+target.table+"(event_type,outcome,actor_user_id,reason_code,request_id,object_type,object_id,change_summary) VALUES('application_structure_changed','success',$1,$2,'workflow-shape',$3,'20000000-0000-4000-8000-000000000003',$4::jsonb)",actor,reason,object,raw)
+   _,e:=target.pool.Exec(ctx,"INSERT INTO "+target.table+"(id,occurred_at,event_type,outcome,actor_user_id,reason_code,request_id,object_type,object_id,change_summary) VALUES(gen_random_uuid(),'2026-10-04T00:00:00Z','application_structure_changed','success',$1,$2,'workflow-shape',$3,'20000000-0000-4000-8000-000000000003',$4::jsonb)",actor,reason,object,raw)
    return e
   }
   if e:=insert(rootWorkflowManagementSummary(),"WORKFLOW_DEFINITION_SAVE","form");e!=nil{t.Fatalf("%s rejected valid management metadata: %v",target.table,e)}
