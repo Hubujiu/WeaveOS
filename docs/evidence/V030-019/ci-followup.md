@@ -22,7 +22,9 @@
 - `node scripts/check-tasks.mjs` — `Task documents and current PR scope are structurally valid.`; exit `0`.
 - `node scripts/verify-repo.mjs` — `Repository structure checks passed (not a business/TDD/Notion verification).`; exit `0`.
 - `git diff --check` — exit `0`.
-- These local results were obtained before committing the repair. PR #29 CI rerun on the repair commit is pending.
+- These local results were obtained before committing the repair. Repair commit `d9204a8602ca1a466f30339a5e5e1ecedc7f0dea` was pushed to the same task branch.
+- On that exact HEAD, CI run `37178156912` completed the `governance` job successfully, including both `node scripts/verify-repo.mjs` and `node scripts/check-tasks.mjs` (job `111365070049`, exit `0`). Its `go` job also completed successfully, including the composite format/static/race/build gate (job `111365070150`, exit `0`).
+- The separate CI `browser` job and product acceptance run `37178156904` were still in progress when this evidence was updated; they are broader checks outside this documentation/format repair.
 
 ## Full-repository formatting inventory
 
