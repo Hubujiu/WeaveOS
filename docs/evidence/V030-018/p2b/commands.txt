@@ -1,0 +1,35 @@
+All databases and Redis below are disposable task fixtures. PostgreSQL containers use the fixed local image `postgres:18.6`, `--network none`, no TCP listener, and task-specific Unix sockets. Redis uses the cached fixed image digest recorded in README.md and loopback port 16379.
+
+RED (after migrations 1–13, then roles.sql; before migration14):
+  goose -dir db/migrations postgres 'host=/tmp/v030-018-p2b-pg/socket user=postgres dbname=v018_p2b sslmode=disable' up
+  docker exec -i v030-018-p2b-pg psql -X -U postgres -d v018_p2b -v ON_ERROR_STOP=1 < infra/runtime/roles.sql
+  cd services/bff
+  PATH=/workspace/.weaveos-tools/go/bin:/workspace/.weaveos-tools/gopath/bin:$PATH GOROOT=/workspace/.weaveos-tools/go GOPATH=/workspace/.weaveos-tools/gopath GOMODCACHE=/workspace/.weaveos-tools/go-mod GOCACHE=/workspace/.weaveos-tools/go-cache WEAVEOS_TEST_DATABASE_URL='host=/tmp/v030-018-p2b-pg/socket user=postgres dbname=v018_p2b sslmode=disable' WEAVEOS_TEST_REDIS_URL='redis://127.0.0.1:16379/0' go test -run '^TestRootFormalLedger' ./internal/apprecordservice
+
+Fresh migration order (cluster started with zero auth_% roles):
+  goose -dir db/migrations postgres 'host=/tmp/v030-018-p2b-fresh-pg/socket user=postgres dbname=v018_p2b_fresh sslmode=disable' up
+  docker exec -i v030-018-p2b-fresh-pg psql -X -U postgres -d v018_p2b_fresh -v ON_ERROR_STOP=1 < infra/runtime/roles.sql
+  goose -dir db/archive-migrations postgres 'host=/tmp/v030-018-p2b-fresh-pg/socket user=postgres dbname=v018_p2b_cold sslmode=disable' up
+  docker exec -i v030-018-p2b-fresh-pg psql -X -U postgres -d v018_p2b_cold -v ON_ERROR_STOP=1 < infra/runtime/cold-roles.sql
+
+Root GREEN (from services/bff):
+  PATH=/workspace/.weaveos-tools/go/bin:/workspace/.weaveos-tools/gopath/bin:$PATH GOROOT=/workspace/.weaveos-tools/go GOPATH=/workspace/.weaveos-tools/gopath GOMODCACHE=/workspace/.weaveos-tools/go-mod GOCACHE=/workspace/.weaveos-tools/go-cache WEAVEOS_TEST_DATABASE_URL='host=/tmp/v030-018-p2b-fresh-pg/socket user=postgres dbname=v018_p2b_fresh sslmode=disable' WEAVEOS_TEST_REDIS_URL='redis://127.0.0.1:16379/0' go test -count=1 -run '^TestRootFormalLedger' ./internal/apprecordservice
+
+Race regressions (same environment variables as Root GREEN, from services/bff):
+  go test -race -count=1 ./internal/apprecordservice
+  WEAVEOS_TEST_ARCHIVE_DATABASE_URL='host=/tmp/v030-018-p2b-fresh-pg/socket user=postgres dbname=v018_p2b_cold sslmode=disable' go test -race -count=1 ./internal/appstructure
+  go test -race -count=1 ./internal/flowcommands
+
+Other checks (from repository root):
+  WEAVEOS_BACKUP_TEST_CONTAINER=weaveos-v010-v030018-p2b-backup WEAVEOS_BACKUP_TEST_USER=weaveos_owner node --test infra/runtime/backup.test.mjs
+  WEAVEOS_TEST_GOOSE=/workspace/.weaveos-tools/gopath/bin/goose node --test infra/server/deploy/personnel-upgrade.test.mjs
+  goose -dir db/migrations postgres 'host=/tmp/v030-018-p2b-fresh-pg/socket user=postgres dbname=v018_p2b_empty sslmode=disable' down
+  goose -dir db/migrations postgres 'host=/tmp/v030-018-p2b-fresh-pg/socket user=postgres dbname=v018_p2b_empty sslmode=disable' up
+  goose -dir db/migrations postgres 'host=/tmp/v030-018-p2b-fresh-pg/socket user=postgres dbname=v018_p2b_fresh sslmode=disable' down
+  go vet ./internal/apprecordservice ./internal/appstructure ./internal/flowcommands
+  node scripts/check-tasks.mjs
+  node scripts/verify-repo.mjs
+  gofmt -l services/bff/internal/apprecordservice/root_formal_ledger_test.go
+  git diff --check
+
+The formal test, rollback, SQL privilege and repository-command outputs are in the matching `.log`, `.txt`, `.diff`, and `.exit-code` files in this directory.

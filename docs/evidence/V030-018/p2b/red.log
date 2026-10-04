@@ -1,0 +1,17 @@
+--- FAIL: TestRootFormalLedgerTablesExist (0.04s)
+    root_formal_ledger_test.go:39: formal durable ledger tables=0 err=<nil>
+--- FAIL: TestRootFormalLedgerAcceptAndFenceCommitTogether (0.05s)
+    root_formal_ledger_test.go:42: accept {Command:{ProtocolVersion:0 CommandID: AppID: TableID: RecordID: InstanceID: TaskID: ActorID: Action: RecordVersion:0 FenceEpoch:0 TaskEpoch:0 ExpectedSequence:0 PayloadHash:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]} State: Receipt:<nil>} ERROR: relation "applications.workflow_commands" does not exist (SQLSTATE 42P01)
+--- FAIL: TestRootFormalLedgerAcceptAndFenceRollbackTogether (0.05s)
+    root_formal_ledger_test.go:54: ERROR: relation "applications.workflow_commands" does not exist (SQLSTATE 42P01)
+--- FAIL: TestRootFormalLedgerApplyReleaseAtomicAndReplay (0.04s)
+    root_formal_ledger_test.go:59: accept {Command:{ProtocolVersion:0 CommandID: AppID: TableID: RecordID: InstanceID: TaskID: ActorID: Action: RecordVersion:0 FenceEpoch:0 TaskEpoch:0 ExpectedSequence:0 PayloadHash:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]} State: Receipt:<nil>} ERROR: relation "applications.workflow_commands" does not exist (SQLSTATE 42P01)
+--- FAIL: TestRootFormalLedgerRuntimeCannotRewriteIdentityOrDeleteHistory (0.04s)
+    root_formal_ledger_test.go:93: accept {Command:{ProtocolVersion:0 CommandID: AppID: TableID: RecordID: InstanceID: TaskID: ActorID: Action: RecordVersion:0 FenceEpoch:0 TaskEpoch:0 ExpectedSequence:0 PayloadHash:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]} State: Receipt:<nil>} ERROR: relation "applications.workflow_commands" does not exist (SQLSTATE 42P01)
+--- FAIL: TestRootFormalLedgerDatabaseConstraints (0.04s)
+    root_formal_ledger_test.go:115: SQLSTATE want23514 gotERROR: relation "applications.workflow_commands" does not exist (SQLSTATE 42P01)
+--- FAIL: TestRootFormalLedgerCurrentRolesLeastPrivilege (0.04s)
+    root_formal_ledger_test.go:130: auth_app workflow_commands SELECT=false wanttrue errERROR: relation "applications.workflow_commands" does not exist (SQLSTATE 42P01)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice	0.305s
+FAIL

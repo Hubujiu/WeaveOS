@@ -99,3 +99,12 @@ GRANT SELECT ON ALL TABLES IN SCHEMA applications TO auth_backup;
 -- V030-018 P2a: finite authority over a record command fence only.
 GRANT EXECUTE ON FUNCTION applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint) TO auth_app;
 GRANT EXECUTE ON FUNCTION applications.release_record_command_fence(uuid,uuid,uuid,uuid,bigint,bigint) TO auth_app;
+
+-- V030-018 P2b: durable command identity/history is append-only except for
+-- the two state columns advanced by the trusted ledger in its caller tx.
+REVOKE ALL ON applications.workflow_commands,applications.workflow_dispatch
+ FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+GRANT SELECT,INSERT ON applications.workflow_commands TO auth_app;
+GRANT UPDATE (state,receipt_json) ON applications.workflow_commands TO auth_app;
+GRANT SELECT,INSERT,DELETE ON applications.workflow_dispatch TO auth_app;
+GRANT SELECT ON applications.workflow_commands,applications.workflow_dispatch TO auth_backup;

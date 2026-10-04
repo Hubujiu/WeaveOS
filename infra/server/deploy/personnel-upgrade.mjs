@@ -1,7 +1,7 @@
 // Administrator-installed module and role policy, never release-uploaded code.
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-const roleHash='aa9e8266dd63033c5174a662781588d3b92c91033ca13e31c0df55d7bbca9c71';
+const roleHash='e70f025c573045b0dbf65a041da0cc2b7d8414cca612bba431563fa6237bd795';
 export function validateInstalledPersonnelRoles(sql){
  if(typeof sql!=='string'||createHash('sha256').update(sql.replace(/\r\n/g,'\n')).digest('hex')!==roleHash)throw Error('Installed personnel role policy differs from reviewed source');
 }
