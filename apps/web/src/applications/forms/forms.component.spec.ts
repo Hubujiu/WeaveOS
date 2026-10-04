@@ -1085,6 +1085,9 @@ test('cached structure dialog is masked after permission revocation',async({page
   await page.getByRole('button',{name:'新建目录'}).click();
   await page.getByLabel('目录名称').fill('私有目录名');
   // Observe the intermediate application before returning; setState alone is not a commit barrier.
+  await page.route('**/applications/00000000-0000-4000-8000-000000000334/structure',route=>route.fulfill({json:ok({
+    appId:'00000000-0000-4000-8000-000000000334',structureVersion:0,directories:[],tables:[],forms:[],capabilities:{canManageDefinition:true},
+  })}));
   const otherLoaded=page.waitForResponse(response=>response.url().endsWith('/applications/00000000-0000-4000-8000-000000000334/structure')&&response.request().method()==='GET');
   await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),
     '00000000-0000-4000-8000-000000000334');
@@ -1106,6 +1109,9 @@ test('revalidated newer structure retains original name and CAS version',async({
   await page.getByRole('button',{name:'新建目录'}).click();
   await page.getByLabel('目录名称').fill('本地目录');
   // Observe the intermediate application before returning; setState alone is not a commit barrier.
+  await page.route('**/applications/00000000-0000-4000-8000-000000000339/structure',route=>route.fulfill({json:ok({
+    appId:'00000000-0000-4000-8000-000000000339',structureVersion:0,directories:[],tables:[],forms:[],capabilities:{canManageDefinition:true},
+  })}));
   const otherLoaded=page.waitForResponse(response=>response.url().endsWith('/applications/00000000-0000-4000-8000-000000000339/structure')&&response.request().method()==='GET');
   await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),
     '00000000-0000-4000-8000-000000000339');
