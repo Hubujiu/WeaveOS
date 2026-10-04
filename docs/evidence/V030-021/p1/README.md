@@ -16,3 +16,8 @@ Known independent-oracle conflicts reported to Root, tests unchanged: personnel.
 RED completed: exit 1, 7 failures on missing persistent Shell, 1 existing record authoritative-save case passed. GREEN after Shell composition: 8/8, exit 0, green.log. Intermediate green-initial.log retains the three background cascade failures (5 passed) before specificity was corrected.
 
 Typecheck and build exit 0; retained advisory for the existing large JS chunk. Initial screenshots use the unmodified Root and personnel fixtures via capture.mjs, at 1440x1000, 1280x800 and 390x844 (reduced motion). They are interim visual evidence; old control color and icon/brand review remains open. No real HTTPS integration executed in this UI fixture environment.
+
+
+Review checkpoint after Root-owned a0bca100 (cherry-picked as 5da84cc): original complete run at f1b0603 ended exit 1 with 464 passed / 29 failed / 1 existing skipped. See components.log and components-failures.md. Root tests remain byte-identical. Brand remains WaveOS by Root instruction. Current neutral-control CSS leaves Arca Table source untouched. Typecheck/build pass again; components-migrated.log is in progress.
+
+12 refreshed review PNGs in screenshots/ use settled font/animation capture, with SHA256SUMS. Sizes: 1440x1000,1280x800,390x844 (reduced motion). Legacy icons are unresolved, so these are not final visual approval. Library upload attempted through current helper, failed before upload with `hosted apps tools/list request failed with HTTP status 401`; no Library file IDs were created. Parent may retrieve PNGs from this task branch while arranging an available delivery route.

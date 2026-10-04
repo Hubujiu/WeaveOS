@@ -70,6 +70,29 @@
 .monochrome-workspace button:not(:where(.arca-source, .arca-source *)):focus-visible,.monochrome-workspace input:not(:where(.arca-source, .arca-source *)):focus-visible,.monochrome-workspace select:not(:where(.arca-source, .arca-source *)):focus-visible { outline:2px solid var(--mono-ink);outline-offset:3px; }
 .mono-shell .account-menu { position:fixed;top:auto;right:auto;left:70px;bottom:20px;max-height:calc(100dvh - 40px);overflow:auto;border-color:var(--mono-line);color:var(--mono-ink);box-shadow:0 8px 30px #00000014; }
 .mono-shell .account-menu p,.mono-shell .account-menu small { color:var(--mono-secondary); }
+/* Neutralize the existing business controls without styling inside the source Table. */
+.mono-shell .admin-action.save { background:var(--mono-selected); }
+.mono-shell .admin-action img,.mono-shell .admin-search>img { filter:grayscale(1); }
+.mono-shell .department-row { color:var(--mono-secondary); }
+.mono-shell .department-row.selected,.mono-shell .definition-item.selected { background:var(--mono-selected);color:var(--mono-ink); }
+.mono-shell .badge,.mono-shell .member-avatar { background:var(--mono-well);color:var(--mono-secondary); }
+.mono-shell .definition-item,.mono-shell .member-name strong,.mono-shell .admin-search input,.mono-shell .table-toolbar select { color:var(--mono-ink); }
+.mono-shell .definition-item span,.mono-shell .definition-item small,.mono-shell .query-refresh-row,.mono-shell .table-toolbar>span,.mono-shell .table-footer,.mono-shell .activity-note,.mono-shell .event-time-filter { color:var(--mono-secondary); }
+.mono-shell .admin-search,.mono-shell .table-toolbar select,.mono-shell .event-time-filter input { border-color:var(--mono-line); }
+.mono-shell .q36-filter-trigger { color:var(--mono-ink);border-color:var(--mono-line);background:var(--mono-surface); }
+.mono-shell .q36-filter-trigger-frame { border-color:var(--mono-line); }
+.mono-shell .definition-details input:not([type=checkbox]),.monochrome-workspace .personnel-dialog input:not([type=checkbox]),.monochrome-workspace .personnel-dialog select { border-color:var(--mono-line);color:var(--mono-ink); }
+.monochrome-workspace .personnel-dialog { color:var(--mono-ink);border-color:var(--mono-line);box-shadow:0 20px 80px #00000022; }
+.monochrome-workspace .personnel-dialog::backdrop { background:#00000040; }
+.monochrome-workspace .personnel-dialog>p { color:var(--mono-secondary); }
+.mono-shell .workspace-status { background:var(--mono-selected);color:var(--mono-ink); }
+.mono-shell .forms-module { --forms-ink:var(--mono-ink);--forms-muted:var(--mono-secondary);--forms-line:var(--mono-line);--forms-blue:var(--mono-ink);--forms-pale:var(--mono-selected);background:var(--mono-well); }
+.mono-shell .forms-module :focus-visible { outline-color:var(--mono-ink); }
+.mono-shell .forms-canvas-node.selected { border-color:var(--mono-secondary);box-shadow:0 0 0 2px var(--mono-selected); }
+.mono-shell .forms-palette button:hover { border-color:var(--mono-muted);background:var(--mono-well); }
+.mono-shell .forms-rendered-field .forms-field-label,.mono-shell .forms-rendered-field small,.mono-shell .forms-rendered-field :disabled { color:var(--mono-secondary); }
+.mono-shell .forms-rendered-field input:not([type=checkbox]),.mono-shell .forms-rendered-field select,.mono-shell .forms-rendered-field textarea,.mono-shell .forms-reference-value,.mono-shell .forms-reference-selector>button,.mono-shell .forms-reference-candidates button { border-color:var(--mono-line);color:var(--mono-ink); }
+.mono-shell .forms-canvas-control input:not([type=checkbox]),.mono-shell .forms-canvas-control select,.mono-shell .forms-canvas-control textarea,.mono-shell .forms-preview { background:var(--mono-well); }
 /* A content fade never unmounts or translates the persistent Shell. */
 .mono-shell .app-content> :not(dialog) { animation:mono-content-in 160ms ease-out; }
 @keyframes mono-content-in { from { opacity:.65; } to { opacity:1; } }
