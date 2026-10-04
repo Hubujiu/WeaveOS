@@ -20,6 +20,22 @@ async function fixture(page:Page,manage=true) {
  });
 }
 async function admin(page:Page){await fixture(page);await page.goto('/app/admin');await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();}
+
+// V030-021 Root oracle: user-approved monochrome full-bleed surface supersedes
+// Q31/Q33 L-material and fixed 176/56 geometry; business assertions stay intact.
+async function assertMonochromeLayout(page:Page) {
+ const viewport=page.viewportSize()!;
+ await expect(page.getByTestId('workspace-shell')).toHaveCount(1);
+ const surface=page.getByTestId('workspace-surface'),rail=page.getByTestId('workspace-rail');
+ await expect(surface).toHaveCSS('background-color','rgb(255, 255, 255)');
+ const box=(await surface.boundingBox())!,railBox=(await rail.boundingBox())!;
+ expect(box.y).toBeCloseTo(0,0);expect(box.x+box.width).toBeCloseTo(viewport.width,0);expect(box.y+box.height).toBeCloseTo(viewport.height,0);
+ expect(box.x).toBeCloseTo(railBox.width,0);expect(railBox.x).toBe(0);
+ if(viewport.width>=1000){expect(railBox.width).toBe(78);await expect(page.getByRole('navigation',{name:'应用导航'})).toHaveCSS('width','190px');await expect(page.locator('.mono-top')).toHaveCSS('height','64px');}
+ const menu=page.getByRole('button',{name:'人员管理',exact:true});await menu.scrollIntoViewIfNeeded();await expect(menu).toBeVisible();await expect(menu).toBeInViewport();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+}
+
 async function chooseOption(page:Page,label:string,option:string){await page.getByRole('combobox',{name:label,exact:true}).click();await page.getByRole('option',{name:option,exact:true}).click();}
 
 // Q35 supersedes identity/max360/native selection under synced R3 5.8; fixed
@@ -102,24 +118,17 @@ test('Q34 reverse keyboard navigation keeps row actions below the sticky header'
 });
 
 // Q33 oracle: user removal + synced R3 5.3–5.5 and Figma Admin 108:151.
-// Fixed 176px sidebar on every viewport; no collapse entry or hidden navigation.
-for(const width of [2504,1920,900,390,320])test('Q33 sidebar stays expanded with no collapse control at '+width,async({page})=>{
- await page.setViewportSize({width,height:844});await admin(page);
- await expect.soft(page.getByRole('button',{name:/收起侧栏|展开侧栏/})).toHaveCount(0);
- await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width','176px');
- await expect.soft(page.locator('.admin-header')).toHaveCSS('height','56px');
- await expect.soft(page.locator('.personnel-nav-label')).toBeVisible();await expect.soft(page.locator('.personnel-nav-label')).toHaveCSS('opacity','1');
- await expect.soft(page.locator('.sidebar-caption').first()).toBeVisible();
- const menu=(await page.getByRole('button',{name:'人员管理',exact:true}).boundingBox())!;
- expect.soft({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:16,y:116,width:144,height:48});
- expect.soft(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+// Superseded by V030-021: shared full-bleed desktop surface, reachable compact navigation.
+for(const width of [2504,1920,900,390,320])test('Root Mono personnel keeps reachable navigation and full-bleed surface at '+width,async({page})=>{
+ await page.setViewportSize({width,height:844});await admin(page);await assertMonochromeLayout(page);
+ await expect(page.getByRole('button',{name:/收起侧栏|展开侧栏/})).toHaveCount(0);
 });
 
 test('Q33 crossing responsive breakpoints preserves navigation, dirty input and explicit leave protection',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill('固定侧栏保留草稿');
  let writes=0;page.on('request',r=>{if(r.url().includes('/api/v1/')&&!['GET','HEAD'].includes(r.method())&&!r.url().endsWith('/search'))writes++;});
  for(const width of [390,320,900,1920]){
-  await page.setViewportSize({width,height:844});await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width','176px');
+  await page.setViewportSize({width,height:844});await assertMonochromeLayout(page);
   await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('固定侧栏保留草稿');await expect(page.getByRole('tab',{name:'身份',exact:true})).toHaveAttribute('aria-selected','true');
   await expect(page.getByRole('button',{name:'保存',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'退出',exact:true})).toBeVisible();
  }
@@ -129,13 +138,13 @@ test('Q33 crossing responsive breakpoints preserves navigation, dirty input and 
 
 for(const width of [390,320])test('Q33 fixed sidebar retains narrow keyboard tabs and real content scrolling at '+width,async({page})=>{
  await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width,height:600});await admin(page);
- await expect.soft(page.locator('.admin-sidebar')).toHaveCSS('width','176px');
+ await assertMonochromeLayout(page);
  const tabs=page.getByRole('tablist'),first=page.getByRole('tab',{name:'成员与部门',exact:true});await first.focus();await first.press('End');await page.keyboard.press('Enter');
  const last=page.getByRole('tab',{name:'操作记录',exact:true});await expect(last).toHaveAttribute('aria-selected','true');
  const bar=(await tabs.boundingBox())!,button=(await last.boundingBox())!;expect(button.x).toBeGreaterThanOrEqual(bar.x);expect(button.x+button.width).toBeLessThanOrEqual(bar.x+bar.width+1);
  expect(await tabs.evaluate(n=>n.scrollHeight===n.clientHeight)).toBe(true);
  await first.focus();await first.press('Enter');const search=page.getByLabel('搜索成员',{exact:true});await search.scrollIntoViewIfNeeded();await search.fill('固定布局');await expect(search).toHaveValue('固定布局');
- expect(await page.locator('.personnel-content').evaluate(n=>n.scrollTop)).toBeGreaterThan(0);
+ await expect(search).toBeInViewport();
  const table=page.locator('.table-scroll');await table.evaluate(n=>{n.scrollLeft=n.scrollWidth;});expect(await table.evaluate(n=>n.scrollLeft)).toBeGreaterThan(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
@@ -189,7 +198,7 @@ test('Q32 long action menu stays in the viewport and keyboard chooses the final 
 
 test('Q32 pill indicator slides between tabs only after unsaved changes are resolved',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);
- const indicator=page.locator('.personnel-tab-indicator');await expect(indicator).toHaveCount(1);await expect(indicator).toHaveCSS('background-color','rgb(23, 23, 23)');await expect(indicator).toHaveCSS('height','32px');
+ const indicator=page.locator('.personnel-tab-indicator');await expect(indicator).toHaveCount(1);await expect(indicator).toHaveCSS('background-color','rgb(239, 239, 239)');await expect(indicator).toHaveCSS('height','32px');
  await expect(page.getByRole('tablist')).toHaveCSS('height','48px');for(const tab of await page.getByRole('tab').all())await expect(tab).toHaveCSS('height','32px');
  const initial=(await indicator.boundingBox())!.x;
  const positions=await page.evaluate(async()=>{const el=document.querySelector('.personnel-tab-indicator')!;const samples:number[]=[];const done=new Promise<number[]>(resolve=>{const start=performance.now();function sample(){samples.push(el.getBoundingClientRect().x);if(performance.now()-start<900)requestAnimationFrame(sample);else resolve(samples);}requestAnimationFrame(sample);});(document.querySelectorAll('[role=tab]')[1] as HTMLElement).click();return done;});
@@ -264,25 +273,16 @@ test('Q32 upward menus animate the corners adjacent to their trigger',async({pag
 });
 
 // and moves both sidebar menus to y116; supersedes Q29/Q30 old top/menu geometry. Network fixtures isolate the real rendered components.
-test('Q31 Home navigation stays 56px with no collapse control and retains account actions',async({page})=>{
- await page.setViewportSize({width:1920,height:1080});await fixture(page);await page.goto('/app');
- await expect.soft(page.locator('.home-header')).toHaveCSS('height','56px');
- for(const selector of ['.home-icon-button','.account-button']){const box=(await page.locator(selector).boundingBox())!;expect.soft(box.y).toBeGreaterThanOrEqual(0);expect.soft(box.y+box.height).toBeLessThanOrEqual(56);}
- await page.getByRole('button',{name:'账号',exact:true}).click();expect.soft((await page.locator('.account-menu').boundingBox())!.y).toBe(66);
- await expect.soft(page.getByRole('button',{name:/收起顶栏|展开顶栏/})).toHaveCount(0);await expect(page.locator('.account-menu')).toBeVisible();await expect(page.locator('.home-header')).toHaveCSS('height','56px');
+test('Root Mono Home keeps account control in the rail and a stable top bar',async({page})=>{
+ await page.setViewportSize({width:1920,height:1080});await fixture(page);await page.goto('/app');await assertMonochromeLayout(page);
+ const account=page.getByRole('button',{name:'账号',exact:true});await expect(account).toHaveCount(1);await expect(account).toBeInViewport();
+ await account.click();await expect(page.locator('.account-menu')).toBeVisible();await expect(page.locator('.account-menu')).toBeInViewport();
+ await expect(page.locator('.mono-top')).toHaveCSS('height','64px');
 });
 
-test('Q33 admin uses fixed 56px top and 176px sidebar geometry across resize',async({page})=>{
- await page.setViewportSize({width:1920,height:1080});await page.emulateMedia({reducedMotion:'reduce'});await admin(page);
- for(const width of [1920,1440,390]){
-  await page.setViewportSize({width,height:1080});
-  await expect(page.getByRole('button',{name:/收起顶栏|展开顶栏|收起侧栏|展开侧栏/})).toHaveCount(0);await expect(page.getByRole('button',{name:'退出',exact:true})).toBeVisible();
-  if(width>900)await expect(page.getByText('管理后台',{exact:true})).toBeVisible();
-  await expect(page.locator('.admin-sidebar')).toHaveCSS('width','176px');await expect(page.locator('.admin-header')).toHaveCSS('height','56px');
-  const content=(await page.locator('.personnel-content').boundingBox())!;expect({x:content.x,y:content.y,width:content.width,height:content.height}).toEqual({x:176,y:56,width:width-176,height:1024});
-  const menu=(await page.locator('.personnel-nav').boundingBox())!;expect({x:menu.x,y:menu.y,width:menu.width,height:menu.height}).toEqual({x:16,y:116,width:144,height:48});
-  const icon=(await page.locator('.personnel-nav-icon').boundingBox())!;expect({x:icon.x,y:icon.y,width:icon.width,height:icon.height}).toEqual({x:26,y:130,width:20,height:20});
- }
+test('Root Mono admin retains actions within shared full-bleed chrome across resize',async({page})=>{
+ await page.emulateMedia({reducedMotion:'reduce'});await admin(page);
+ for(const width of [1920,1440,390]){await page.setViewportSize({width,height:1080});await assertMonochromeLayout(page);await expect(page.getByRole('button',{name:'退出',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'人员管理',exact:true})).toBeVisible();}
 });
 
 // Q33 supersedes the historical folding oracle. The visible L material still
@@ -311,39 +311,23 @@ test('Q31 real member overflow remains scrollable while the tab strip has no ver
  await page.setViewportSize({width:390,height:844});await table.evaluate(n=>{n.scrollLeft=n.scrollWidth;});expect(await table.evaluate(n=>n.scrollLeft)).toBeGreaterThan(0);
 });
 
-async function materialAlpha(page:Page) {
- return page.locator('.admin-material').evaluate(async(node)=>{
-  const box=node.getBoundingClientRect();const canvas=document.createElement('canvas');canvas.width=innerWidth;canvas.height=innerHeight;
-  const context=canvas.getContext('2d')!;let source:HTMLImageElement;
-  if(node instanceof HTMLImageElement)source=node;else{source=new Image();source.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(node));await source.decode();}
-  context.drawImage(source,box.x,box.y,box.width,box.height);
-  return [[innerWidth-12,12],[12,innerHeight-12]].map(([x,y])=>context.getImageData(x,y,1,1).data[3]);
- });
-}
-for(const viewport of [{width:2504,height:1355},{width:1440,height:900},{width:390,height:844}])test('Q33 material fills viewport '+viewport.width+'x'+viewport.height+' with a fixed sidebar and after resize',async({page})=>{
- await page.setViewportSize(viewport);await admin(page);await page.emulateMedia({reducedMotion:'reduce'});
- // 0.76 fill plus the original translucent shadow; require real coverage.
- await expect.poll(async()=> (await materialAlpha(page)).every(a=>a>=190&&a<=200)).toBe(true);
- await expect(page.locator('.admin-sidebar')).toHaveCSS('width','176px');
- if(viewport.width===2504)await page.screenshot({path:test.info().outputPath('large-fixed-'+test.info().project.name+'.png')});
- await page.setViewportSize({width:viewport.width+173,height:viewport.height+129});await expect.poll(async()=> (await materialAlpha(page)).every(a=>a>=190&&a<=200)).toBe(true);
- await expect(page.locator('.admin-sidebar')).toHaveCSS('width','176px');
+
+for(const viewport of [{width:2504,height:1355},{width:1440,height:900},{width:390,height:844}])test('Root Mono white surface fills viewport '+viewport.width+'x'+viewport.height+' after resize',async({page})=>{
+ await page.setViewportSize(viewport);await admin(page);await page.emulateMedia({reducedMotion:'reduce'});await assertMonochromeLayout(page);
+ await page.setViewportSize({width:viewport.width+173,height:viewport.height+129});await assertMonochromeLayout(page);
 });
 
-test('Q33 hover retains fixed navigation width and icon centerline on every frame',async({page})=>{
- await page.setViewportSize({width:1920,height:1080});await admin(page);await page.locator('.personnel-nav').hover();
- const frames=await page.evaluate(async()=>{
-  const samples:{x:number;y:number;width:number;opacity:string;filter:string}[]=[];
-  for(let i=0;i<12;i++){await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const icon=document.querySelector('.personnel-nav-icon')!.getBoundingClientRect();const label=getComputedStyle(document.querySelector('.personnel-nav-label')!);samples.push({x:icon.x,y:icon.y,width:document.querySelector('.personnel-nav')!.getBoundingClientRect().width,opacity:label.opacity,filter:label.filter});}return samples;
- });
- for(const frame of frames){expect(frame.x).toBe(26);expect(frame.y).toBe(130);expect(frame.width).toBe(144);expect(frame.opacity).toBe('1');expect(frame.filter).toBe('none');}
- await expect(page.getByRole('button',{name:/收起侧栏|展开侧栏/})).toHaveCount(0);
+test('Root Mono hover preserves navigation geometry without moving the label',async({page})=>{
+ await page.setViewportSize({width:1920,height:1080});await admin(page);
+ const menu=page.getByRole('button',{name:'人员管理',exact:true});const before=await menu.boundingBox();await menu.hover();
+ for(let i=0;i<8;i++){await page.evaluate(()=>new Promise<void>(r=>requestAnimationFrame(()=>r())));expect(await menu.boundingBox()).toEqual(before);}
+ await expect(menu).toBeVisible();await assertMonochromeLayout(page);
 });
 test('Q33 reduced motion and repeated resize keep navigation geometry and unsaved edit',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill('保留输入');
  for(const reducedMotion of ['reduce','no-preference'] as const){
   await page.emulateMedia({reducedMotion});
-  for(const width of [390,1000,320,1920]){await page.setViewportSize({width,height:844});await expect(page.locator('.personnel-nav')).toHaveCSS('width','144px');await expect(page.locator('.admin-sidebar')).toHaveCSS('width','176px');expect((await page.locator('.personnel-nav-icon').boundingBox())!.y).toBe(130);await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('保留输入');}
+  for(const width of [390,1000,320,1920]){await page.setViewportSize({width,height:844});await assertMonochromeLayout(page);await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('保留输入');}
  }
 });
 test('R3 login enters Home with settings and account navigation; admin exit retains Session',async({page})=>{
@@ -351,7 +335,7 @@ test('R3 login enters Home with settings and account navigation; admin exit reta
  await page.route('**/api/v1/sessions/current',async route=>{if(route.request().method()==='DELETE') logouts++;await route.fulfill({status:200,json:q36FixtureEnvelope(user,route.request())});});
  await page.goto('/login');await page.getByLabel('账号',{exact:true}).fill(user.account);await page.getByLabel('密码',{exact:true}).fill('Synthetic@123');await page.getByRole('button',{name:'登录',exact:true}).click();
  await expect(page).toHaveURL(/\/app$/);await expect(page.getByRole('button',{name:'设置',exact:true})).toBeVisible();
- await expect(page.locator('.home-header')).toHaveCSS('height','56px');
+ await expect(page.locator('.mono-top')).toHaveCSS('height','64px');
  await page.getByRole('button',{name:'设置',exact:true}).click();await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'退出',exact:true}).click();await expect(page).toHaveURL(/\/app$/);expect(logouts).toBe(0);
  await page.getByRole('button',{name:'账号',exact:true}).click();await expect(page.getByText(user.account,{exact:true})).toBeVisible();
@@ -365,9 +349,9 @@ test('Q33 fixed sidebar retains selected tab and unsaved input across viewports;
  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'身份',exact:true}).click();await page.getByRole('button',{name:'企业管理员',exact:true}).click();await page.getByLabel('身份名称',{exact:true}).fill('尚未保存');
  for(const width of [1920,1440,390]){
   await page.setViewportSize({width,height:1080});await expect(page.getByRole('button',{name:'保存',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'退出',exact:true})).toBeVisible();
-  await expect(page.locator('.admin-sidebar')).toHaveCSS('width','176px');await expect(page.locator('.admin-header')).toHaveCSS('height','56px');
+  await assertMonochromeLayout(page);
   await expect(page.getByLabel('身份名称',{exact:true})).toHaveValue('尚未保存');await expect(page.getByRole('tab',{name:'身份',exact:true})).toHaveAttribute('aria-selected','true');
-  for(const sel of ['.admin-settings-icon','.personnel-nav-icon']){const b=(await page.locator(sel).boundingBox())!;expect(b.x+b.width/2).toBeCloseTo(36,0);}
+  const rail=(await page.getByTestId('workspace-rail').boundingBox())!;for(const icon of await page.getByTestId('workspace-rail').locator('img').all()){const b=(await icon.boundingBox())!;expect(b.x+b.width/2).toBeCloseTo(rail.x+rail.width/2,0);}
  }
 });
 test('R3 identity separates direct/template sources and confirms impact before versioned save',async({page})=>{
@@ -407,7 +391,7 @@ test('R3 invitation is deliberate one-time result; activity has true empty state
  await page.getByRole('button',{name:'邀请成员',exact:true}).click();expect(created).toBe(0);await page.getByRole('button',{name:'生成邀请码',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).toHaveValue('synthetic-component-fixture');expect(created).toBe(1);await page.getByRole('button',{name:'关闭',exact:true}).click();await page.getByRole('tab',{name:'操作记录',exact:true}).click();await expect(page.getByText('暂无操作记录',{exact:true})).toBeVisible();await expect(page.getByText('周涵',{exact:true})).toBeHidden();
 });
 test('R3 reduced motion and compact layouts retain keyboard-reachable navigation',async({page})=>{
- await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:390,height:844});await admin(page);await expect(page.locator('.admin-sidebar')).toHaveCSS('transition-duration','0s');await page.getByRole('tab',{name:'身份',exact:true}).focus();await page.keyboard.press('Enter');await expect(page.getByRole('tab',{name:'身份',exact:true})).toHaveAttribute('aria-selected','true');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:390,height:844});await admin(page);await expect(page.getByRole('navigation',{name:'应用导航'})).toHaveCSS('transition-duration','0s');await page.getByRole('tab',{name:'身份',exact:true}).focus();await page.keyboard.press('Enter');await expect(page.getByRole('tab',{name:'身份',exact:true})).toHaveAttribute('aria-selected','true');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 
 test('R3 browser back with dirty configuration prompts, cancel preserves inputs',async({page})=>{
@@ -562,14 +546,12 @@ for(const mode of ['department','member','groups'] as const)test('R3 unsaved '+m
  await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toContainText('未保存');await page.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('dialog')).toBeHidden();
 });
 
-test('Q33 shell retains responsive L material geometry with one fixed sidebar',async({page})=>{
- await page.setViewportSize({width:1920,height:1080});await admin(page);
+test('Root Mono shell retains white surface and inset content well at large sizes',async({page})=>{
+ await admin(page);
  for(const viewport of [{width:1920,height:1080},{width:2504,height:1355}]){
-  await page.setViewportSize(viewport);const material=page.locator('.admin-material');await expect.poll(async()=> (await materialAlpha(page)).every(a=>a>=190&&a<=200)).toBe(true);
-  await expect(material).toHaveCSS('top','0px');await expect(material).toHaveCSS('left','0px');
-  await expect(page.locator('.admin-sidebar')).toHaveCSS('width','176px');await expect(page.locator('.admin-header')).toHaveCSS('height','56px');
-  const dimensions=(await material.boundingBox())!;expect({width:dimensions.width,height:dimensions.height}).toEqual(viewport);
-  await page.screenshot({path:test.info().outputPath('visual-admin-fixed-'+viewport.width+'-'+test.info().project.name+'.png')});
+  await page.setViewportSize(viewport);await assertMonochromeLayout(page);
+  await expect(page.getByTestId('workspace-content-well')).toHaveCSS('background-color','rgb(245, 245, 245)');
+  await page.screenshot({path:test.info().outputPath('visual-admin-monochrome-'+viewport.width+'.png')});
  }
 });
 
@@ -586,8 +568,9 @@ test('Figma original checkbox uses the original check SVG, 20px surface and 6px 
  expect(await box.evaluate((node,source)=>{const url=getComputedStyle(node).backgroundImage.slice(5,-2);const raw=url.startsWith('data:image/svg+xml;base64,')?atob(url.split(',')[1]):decodeURIComponent(url.slice(url.indexOf(',')+1));const canonical=(svg:string)=>new XMLSerializer().serializeToString(new DOMParser().parseFromString(svg.replace(/>\s+</g,'><').trim(),'image/svg+xml'));return canonical(raw)===canonical(source);},original)).toBe(true);
  await box.uncheck();await expect(box).toHaveCSS('background-image','none');
 });
-test('Figma shell original translucent material has no extra white foreground layers',async({page})=>{
- await admin(page);await expect(page.locator('.admin-header')).toHaveCSS('background-color','rgba(0, 0, 0, 0)');await expect(page.locator('.admin-sidebar')).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
+test('Root Mono shell has the approved white foreground and pale neutral background',async({page})=>{
+ await admin(page);await expect(page.getByTestId('workspace-surface')).toHaveCSS('background-color','rgb(255, 255, 255)');
+ await expect(page.getByTestId('workspace-shell')).toHaveCSS('background-color','rgb(250, 250, 250)');
 });
 test('R3 activity presents readable action, target and safe changes rather than raw protocol JSON',async({page})=>{
  await fixture(page);const event={id:'00000000-0000-4000-8000-000000000020',occurredAt:'2026-09-30T00:00:00Z',actorAccount:'synthetic-operator',action:'DEPARTMENT_UPDATED',objectType:'department',objectId:department.id,summary:{before:{name:'研发部',parentId:department.id},after:{name:'研发中心',parentId:department.id}},outcome:'success'};
@@ -595,13 +578,8 @@ test('R3 activity presents readable action, target and safe changes rather than 
  const row=page.getByRole('row').filter({hasText:'synthetic-operator'});await expect(row).toContainText('重命名部门');await expect(row).toContainText('研发中心');await expect(row).toContainText('研发部 → 研发中心');await expect(row).not.toContainText('DEPARTMENT_UPDATED');await expect(row).not.toContainText('parentId');
  const filtered=page.waitForRequest(request=>fixtureRequestURL(request).searchParams.get('action')==='MEMBER_IDENTITIES_UPDATED');await chooseOption(page,'操作类型','分配身份');expect(fixtureRequestURL(await filtered).searchParams.get('action')).toBe('MEMBER_IDENTITIES_UPDATED');
 });
-test('Q33 fixed sidebar retains viewport origin and the 144 by 48 menu target after resize',async({page})=>{
- await page.setViewportSize({width:1920,height:1080});await admin(page);
- for(const width of [390,1920]){
-  await page.setViewportSize({width,height:1080});await expect(page.locator('.admin-material')).toHaveCSS('left','0px');await expect(page.locator('.admin-material')).toHaveCSS('top','0px');
-  const menu=page.getByRole('button',{name:'人员管理',exact:true});await expect(menu).toHaveCSS('width','144px');await expect(menu).toHaveCSS('height','48px');expect((await menu.boundingBox())!.y).toBe(116);
-  await expect(page.locator('.admin-header')).toHaveCSS('height','56px');
- }
+test('Root Mono personnel navigation stays reachable at viewport edges after resize',async({page})=>{
+ await admin(page);for(const width of [390,1920]){await page.setViewportSize({width,height:1080});await assertMonochromeLayout(page);}
 });
 test('Q34 member table keeps confirmed column geometry and page selection never sends a write',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);const th=page.locator('.member-table th');
@@ -609,11 +587,11 @@ test('Q34 member table keeps confirmed column geometry and page selection never 
  let writes=0;page.on('request',request=>{if(request.url().includes('/api/v1/')&&!['GET','HEAD'].includes(request.method())&&!request.url().endsWith('/search'))writes++;});
  const select=page.getByLabel('选择成员：'+user.account,{exact:true});await select.check();await expect(page.getByLabel('选择当前页成员',{exact:true})).toBeChecked();await page.getByLabel('选择当前页成员',{exact:true}).uncheck();await expect(select).not.toBeChecked();expect(writes).toBe(0);
 });
-test('Q33 narrow menu retains its expanded 144 by 48 target and y116 position',async({page})=>{
- await page.setViewportSize({width:320,height:844});await admin(page);const menu=page.getByRole('button',{name:'人员管理',exact:true});await expect(menu).toHaveCSS('width','144px');const box=(await menu.boundingBox())!;expect({width:box.width,height:box.height,y:box.y}).toEqual({width:144,height:48,y:116});
+test('Root Mono narrow personnel navigation remains reachable',async({page})=>{
+ await page.setViewportSize({width:320,height:844});await admin(page);await assertMonochromeLayout(page);
 });
-test('Q33 fixed top retains the viewport origin after narrow re-entry',async({page})=>{
- await page.setViewportSize({width:1920,height:1080});await admin(page);await page.setViewportSize({width:390,height:844});await page.reload();await expect(page.locator('.admin-material')).toHaveCSS('top','0px');await expect(page.locator('.admin-sidebar')).toHaveCSS('width','176px');
+test('Root Mono surface retains viewport edges after narrow re-entry',async({page})=>{
+ await page.setViewportSize({width:1920,height:1080});await admin(page);await page.setViewportSize({width:390,height:844});await page.reload();await assertMonochromeLayout(page);
 });
 
 for(const [tab,label] of [['身份','新建身份'],['权限模板','新建权限模板']] as const){
@@ -632,7 +610,7 @@ test('Figma final activity action filter belongs in the section heading',async({
  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();await expect(page.locator('.section-heading').getByLabel('操作类型',{exact:true})).toBeVisible();await expect(page.getByLabel('操作类型',{exact:true})).toHaveCSS('height','38px');
 });
 test('Figma final activity time range retains the right toolbar inset',async({page})=>{
- await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();const b=await page.locator('.event-time-filter summary').boundingBox();expect(b!.x+b!.width).toBeCloseTo(1863,0);
+ await page.setViewportSize({width:1920,height:1080});await admin(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();const b=await page.locator('.event-time-filter summary').boundingBox();const toolbar=(await page.locator('.activity-table .table-toolbar').boundingBox())!;expect(b!.x).toBeGreaterThanOrEqual(toolbar.x);expect(b!.x+b!.width).toBeLessThanOrEqual(toolbar.x+toolbar.width);
 });
 test('Figma final definition footer retains its source separation line',async({page})=>{
  await admin(page);await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByRole('button',{name:'企业管理',exact:true}).click();await expect(page.locator('.definition-footer')).toHaveCSS('border-top-width','1px');
