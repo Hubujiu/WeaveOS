@@ -232,3 +232,53 @@ test('V030-012 forced form 401 routes to login and restores only the same actor 
  await page.getByRole('button', { name: '配置表单 请假申请' }).click();
  await expect(page.getByRole('region', { name: '表单画布' })).toContainText('复登保留字段');
 });
+
+for (const width of [1280, 1920]) {
+ test('Root R26 nested long form actions stay inside the tree and remain clickable at ' + width, async ({page}, info) => {
+  await page.setViewportSize({width,height:1080});
+  await fixture(page);
+  const parent='00000000-0000-4000-8000-000000000191', child='00000000-0000-4000-8000-000000000192';
+  const longName='审批视图 '+ 'A'.repeat(90);
+  const nested={...structure,directories:[
+   {id:parent,appId,name:'业务目录',parentId:null,position:0},
+   {id:child,appId,name:'财务分组',parentId:parent,position:0},
+  ],tables:[{...table,name:longName,directoryId:child}],forms:[{...form,name:longName,directoryId:child}]};
+  await page.route('**/api/v1/applications/'+appId+'/structure',route=>route.fulfill({json:ok(nested)}));
+  await page.goto('/app/applications/'+appId);
+  const tree=page.locator('.forms-structure-tree');
+  const row=tree.getByRole('treeitem',{name:longName,exact:true}).locator('.forms-tree-row');
+  await expect(row).toBeVisible();
+  const actions=row.getByRole('button');
+  await expect(actions).toHaveCount(3);
+  for(let i=0;i<3;i++){
+   const action=actions.nth(i);
+   await action.scrollIntoViewIfNeeded();
+   await expect.poll(()=>action.evaluate(node=>{
+    const panel=node.closest('.forms-structure-tree');
+    if(!panel)return false;
+    const a=node.getBoundingClientRect(),p=panel.getBoundingClientRect();
+    const hit=document.elementFromPoint(a.x+a.width/2,a.y+a.height/2);
+    return a.width>=24&&a.height>=24&&a.left>=p.left&&a.right<=p.right&&!!hit&&node.contains(hit);
+   }),{message:'Every tree action must fit its panel and receive normal pointer input'}).toBe(true);
+  }
+  await page.screenshot({path:info.outputPath('nested-form-tree-'+width+'.png'),fullPage:true});
+  await row.getByRole('button',{name:'配置表单 '+longName,exact:true}).click();
+  await expect(page).toHaveURL(new RegExp('/forms/'+viewId+'/design$'));
+  await expect(page.getByRole('region',{name:'表单设计器',exact:true})).toBeVisible();
+ });
+}
+test('Root R26 money configuration exposes a unique rounding control and preserves its selected rule',async({page})=>{
+ await fixture(page);
+ await page.goto('/app/applications/'+appId+'/forms/'+viewId+'/design');
+ await page.getByRole('button',{name:'金额',exact:true}).click();
+ await page.getByLabel('字段名称',{exact:true}).fill('报销金额');
+ await page.getByLabel('总精度',{exact:true}).fill('20');
+ await page.getByLabel('小数位数',{exact:true}).fill('2');
+ await page.getByLabel('处理位数',{exact:true}).fill('2');
+ const rounding=page.getByRole('combobox',{name:/^舍入规则/});
+ await expect(rounding).toHaveCount(1);
+ await rounding.selectOption('HALF_EVEN');await expect(rounding).toHaveValue('HALF_EVEN');
+ await rounding.selectOption('HALF_UP');await expect(rounding).toHaveValue('HALF_UP');
+ await expect(page.getByLabel('总精度',{exact:true})).toHaveValue('20');
+ await expect(page.getByLabel('处理位数',{exact:true})).toHaveValue('2');
+});

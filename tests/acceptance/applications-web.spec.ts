@@ -406,7 +406,7 @@ test('Root real HTTPS full journey creates an application, saves a form, and cre
  await page.getByRole('button',{name:'配置表单 '+formName,exact:true}).click();
  await expect(page.getByRole('region',{name:'表单设计器'})).toBeVisible();
  await page.getByRole('button',{name:'金额',exact:true}).click();await page.getByLabel('字段名称',{exact:true}).fill('报销金额');
- await page.getByLabel('总精度',{exact:true}).fill('20');await page.getByLabel('小数位数',{exact:true}).fill('2');await page.getByLabel('处理位数',{exact:true}).fill('2');await page.getByLabel('舍入规则',{exact:true}).selectOption('HALF_UP');
+ await page.getByLabel('总精度',{exact:true}).fill('20');await page.getByLabel('小数位数',{exact:true}).fill('2');await page.getByLabel('处理位数',{exact:true}).fill('2');const rounding=page.getByRole('combobox',{name:/^舍入规则/});await expect(rounding).toHaveCount(1);await rounding.selectOption('HALF_UP');await expect(rounding).toHaveValue('HALF_UP');
  await page.getByRole('button',{name:'文本',exact:true}).click();await page.getByLabel('字段名称',{exact:true}).fill('报销事由');
  const definitionResponse=page.waitForResponse(r=>r.request().method()==='PUT'&&new URL(r.url()).pathname==='/api/v1/applications/'+app.id+'/forms/'+form.id+'/definition');
  await page.getByRole('button',{name:'保存',exact:true}).click();expect((await definitionResponse).status()).toBe(200);
