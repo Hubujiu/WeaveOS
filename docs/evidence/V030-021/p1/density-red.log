@@ -1,0 +1,35 @@
+[WebServer] (node:20827) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:20841) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+(node:20874) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] [chromium] › apps/web/src/personnel.component.spec.ts:628:1 › Root Mono personnel desktop keeps the primary table in the first working area
+  1) [chromium] › apps/web/src/personnel.component.spec.ts:628:1 › Root Mono personnel desktop keeps the primary table in the first working area 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 150
+    Received:    151
+
+      629 |  await page.setViewportSize({width:1440,height:1000});await admin(page);
+      630 |  const title=page.getByRole('heading',{name:'人员管理',exact:true});
+    > 631 |  await expect(title).toBeVisible();expect((await title.boundingBox())!.y).toBeLessThanOrEqual(150);
+          |                                                                           ^
+      632 |  const header=page.locator('.member-table').getByRole('table').locator('thead');
+      633 |  await expect(header).toBeVisible();expect((await header.boundingBox())!.y).toBeLessThanOrEqual(350);
+      634 |  for(const name of ['新建部门','邀请成员','刷新查询','退出'])await expect(page.getByRole('button',{name,exact:true})).toBeVisible();
+        at /workspace/WeaveOS-worktrees/V030-021/apps/web/src/personnel.component.spec.ts:631:75
+
+    Error Context: apps/web/test-results/personnel.component-Root-M-44ef2-e-in-the-first-working-area-chromium/error-context.md
+
+
+  1 failed
+    [chromium] › apps/web/src/personnel.component.spec.ts:628:1 › Root Mono personnel desktop keeps the primary table in the first working area 
