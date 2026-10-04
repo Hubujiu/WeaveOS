@@ -19,6 +19,7 @@ for(const [width,height] of [[1440,1000],[1280,800],[390,844]]){
   await page.getByTestId('workspace-shell').waitFor();
   await page.locator(name==='admin'?'.personnel-source-table':name==='records'?'.record-workspace':'.app-card-grid').waitFor();
   await page.evaluate(()=>document.fonts.ready);
+  await page.evaluate(()=>Promise.all(document.getAnimations().filter(animation=>animation.effect?.getTiming().iterations!==Infinity).map(animation=>animation.finished.catch(()=>{}))));
   await page.screenshot({path:resolve(out,`${name}-${width}.png`),fullPage:true});
   measurements.push({name,width,height,...await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,viewport:innerWidth,images:[...document.images].map(n=>({src:n.getAttribute('src'),loaded:n.complete&&n.naturalWidth>0,width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height}))}))});
   await page.close();
