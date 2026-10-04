@@ -622,3 +622,16 @@ test('Figma final identity without applications keeps its footer in the original
 test('Q34 successful activity uses Arca body typography and retains the result meaning',async({page})=>{
  await admin(page);await page.route('**/api/v1/personnel/events/search',route=>route.fulfill({json:q36FixtureEnvelope(list([{id:user.id,occurredAt:'2026-09-30T05:00:00Z',actorAccount:user.account,action:'TEMPLATE_UPDATED',objectType:'template',objectId:template.id,summary:{before:{name:'旧名称'},after:{name:template.name}},outcome:'success'}]),route.request())}));await page.getByRole('tab',{name:'操作记录',exact:true}).click();await page.getByLabel('搜索操作记录').fill('模板');const result=page.locator('.activity-table tbody tr[data-row-id] td').last();await expect(result).toHaveText('已完成');await expect(result).toHaveCSS('color','oklch(0.145 0 0)');await expect(result).toHaveCSS('font-size','14px');await expect(result).toHaveCSS('line-height','20px');
 });
+
+
+// Frozen Figma 485:3621: title/tabs and one content toolbar, not stacked legacy chrome.
+test('Root Mono personnel desktop keeps the primary table in the first working area',async({page})=>{
+ await page.setViewportSize({width:1440,height:1000});await admin(page);
+ const title=page.getByRole('heading',{name:'人员管理',exact:true});
+ await expect(title).toBeVisible();expect((await title.boundingBox())!.y).toBeLessThanOrEqual(150);
+ const header=page.locator('.member-table').getByRole('table').locator('thead');
+ await expect(header).toBeVisible();expect((await header.boundingBox())!.y).toBeLessThanOrEqual(350);
+ for(const name of ['新建部门','邀请成员','刷新查询','退出'])await expect(page.getByRole('button',{name,exact:true})).toBeVisible();
+ await expect(page.getByRole('tab',{name:'成员与部门',exact:true})).toHaveAttribute('aria-selected','true');
+ await page.screenshot({path:test.info().outputPath('monochrome-admin-primary-density.png'),fullPage:true});
+});
