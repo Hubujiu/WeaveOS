@@ -53,8 +53,13 @@
 .mono-shell .personnel-tools { display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap; }
 .mono-shell .personnel-tools .admin-corner { display:none; }
 .mono-shell .personnel-tools .admin-actions { margin-left:auto;flex-wrap:wrap; }
-.mono-shell .personnel-content { display:flex;flex:1;min-width:0;min-height:0;padding:0;gap:20px;overflow:visible; }
-.mono-shell .personnel-panel { gap:20px; }
+.mono-content-well>.app-content:has(>.personnel-page) { overflow:hidden; }
+.mono-shell .personnel-content { display:flex;flex:1;min-width:0;min-height:0;padding:0;gap:16px;overflow:auto; }
+.mono-shell .personnel-tools,.mono-shell .personnel-view-controls { flex:none; }
+.mono-shell .personnel-view-controls { display:flex;align-items:center;justify-content:space-between;gap:16px; }
+.mono-shell .personnel-view-controls .personnel-tabs { min-width:0;max-width:100%; }
+.mono-shell .personnel-view-controls .query-refresh-row { flex:none;margin:0; }
+.mono-shell .personnel-panel { gap:16px; }
 .mono-shell .personnel-workspace { gap:20px; }
 .mono-shell .department-panel { width:220px; }
 .mono-shell .surface { background:var(--mono-surface);border-color:var(--mono-line); }
@@ -79,7 +84,7 @@
 .mono-shell .definition-item,.mono-shell .member-name strong,.mono-shell .admin-search input,.mono-shell .table-toolbar select { color:var(--mono-ink); }
 .mono-shell .definition-item span,.mono-shell .definition-item small,.mono-shell .query-refresh-row,.mono-shell .table-toolbar>span,.mono-shell .table-footer,.mono-shell .activity-note,.mono-shell .event-time-filter { color:var(--mono-secondary); }
 .mono-shell .admin-search,.mono-shell .table-toolbar select,.mono-shell .event-time-filter input { border-color:var(--mono-line); }
-.mono-shell .q36-filter-trigger { color:var(--mono-ink);border-color:var(--mono-line);background:var(--mono-surface); }
+.mono-shell .q36-filter-trigger { height:40px;min-height:40px;padding:8px 16px;border-radius:8px;font-family:inherit;font-size:14px;line-height:22px;font-weight:500;color:var(--mono-ink);border-color:var(--mono-line);background:var(--mono-surface); }
 .mono-shell .q36-filter-trigger-frame { border-color:var(--mono-line); }
 .mono-shell .definition-details input:not([type=checkbox]),.monochrome-workspace .personnel-dialog input:not([type=checkbox]),.monochrome-workspace .personnel-dialog select { border-color:var(--mono-line);color:var(--mono-ink); }
 .monochrome-workspace .personnel-dialog { color:var(--mono-ink);border-color:var(--mono-line);box-shadow:0 20px 80px #00000022; }
@@ -101,7 +106,8 @@
  .mono-content-well>.app-content { padding:20px; }
  .mono-shell .personnel-workspace { flex-direction:column; }
  .mono-shell .department-panel { width:100%;max-height:220px; }
- .mono-shell .personnel-content,.mono-shell .personnel-page,.mono-shell .personnel-panel { flex:none;min-height:0; }
+ .mono-shell .personnel-panel { flex:none;min-height:0; }
+ .mono-shell .personnel-view-controls { flex-wrap:wrap; }
  .mono-shell .record-workspace { min-height:360px; }
 }
 @media(max-width:600px) {
