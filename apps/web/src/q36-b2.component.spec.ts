@@ -125,7 +125,8 @@ test('Q36 B2 definition explicitly saves durable draft and restores original ver
  await page.setViewportSize({width:390,height:844});
  const resolve=page.getByRole('button',{name:'保留当前输入，使用最新对象版本',exact:true});await resolve.scrollIntoViewIfNeeded();
  const box=(await resolve.boundingBox())!;
- expect(box.x).toBeGreaterThanOrEqual(176);expect(box.x+box.width).toBeLessThanOrEqual(390);
+ const well=(await page.getByTestId('workspace-content-well').boundingBox())!;
+ expect(box.x).toBeGreaterThanOrEqual(well.x);expect(box.x+box.width).toBeLessThanOrEqual(well.x+well.width);await expect(resolve).toBeInViewport();
 });
 
 test('Q36 B2 explicit member draft does not save automatically or bypass query guard',async({page})=>{
