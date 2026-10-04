@@ -35,4 +35,15 @@ Implementation is present in `services/bff/internal/flowgraph/graph.go` (SHA-256
 - The test file remains unchanged after the pre-RED gofmt snapshot: SHA-256 `b6009a70e1bbe9e3f737fed674c28bbd8148e60d1042866a055ca2b5b1ada4b7`.
 - Static check: `GOCACHE=/tmp/v030-019-go-build-cache GOMODCACHE=/workspace/.weaveos-tools/go-mod /workspace/.weaveos-tools/go/bin/go vet ./internal/flowgraph` exited `0`.
 - Diff check: `git diff --check` exited `0`.
-- Full GREEN remains blocked until Root corrects the nil-preserving test clone (without weakening its assertion) and the full race command passes. No test logic was changed in this worktree.
+- This was the first implementation attempt, before Root corrected the test snapshot helper; the subsequent valid RED replay and GREEN after that correction are recorded below.
+
+## Root test correction and valid RED replay
+
+- Root changed the test clone to preserve nil `json.RawMessage` values using field-wise `slices.Clone`, and added a pre-call equality assertion. Business assertions were retained; see `docs/evidence/V030-019/root-clone-correction.md` and commit `a1684f0d1a21d99a6bc64cd254128f53b8814f69`.
+- Mechanical formatting only: `graph_test.go` SHA-256 before/after gofmt: `441cc9e6e478f25d3197fcfce247617759da131eb58b97c3a54b93c378434b15` → `ba729753eb8e479385011a247c392fd6002d79b362c2766b0fd6a0da151de842`.
+- In `/tmp/v030-019-red-replay`, commit `0aac9a38576a28c97cd5f8d01e7c05cd411a50a8` provided the original `graph.go` placeholder; the corrected `graph_test.go` above was copied in. This is a corrected RED replay, not a backdated first run.
+- Command, from the replay tree's `services/bff`: `GOCACHE=/tmp/v030-019-go-build-cache GOMODCACHE=/workspace/.weaveos-tools/go-mod /workspace/.weaveos-tools/go/bin/go test ./internal/flowgraph`
+- Exit code: `1`; all 12 graph test functions fail on placeholder behavior after successful compilation. Test SHA-256: `ba729753eb8e479385011a247c392fd6002d79b362c2766b0fd6a0da151de842`.
+- On the actual implementation at `0baeaf31120672c6513a205eca83b3742cf414e5`, the 12 graph tests passed with race detection:
+  `GOCACHE=/tmp/v030-019-go-build-cache GOMODCACHE=/workspace/.weaveos-tools/go-mod /workspace/.weaveos-tools/go/bin/go test -race ./internal/flowgraph -run '^TestRoot(ValidGraphAndDependencies|AllAnyAndMinimalGraph|GraphIdentityAndKindsFailClosed|EdgesAndBinaryBranches|ReachableCycleRejected|DisconnectedNodesRejected|ApprovalConfiguration|UnifiedConditionsRejectInvalidTypes|NestedAndOrAndExactDecimal|FieldContextAlwaysValidated|DeterministicAndNoInputMutation|ResourceLimits)$'`
+- Exit code: `0`.

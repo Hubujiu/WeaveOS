@@ -194,7 +194,9 @@ func TestRootFieldContextAlwaysValidated(t *testing.T) {
 func TestRootDeterministicAndNoInputMutation(t *testing.T) {
 	g := graph()
 	before := clone(g)
-	if !reflect.DeepEqual(g, before) { t.Fatal("test snapshot changed the graph before validation") }
+	if !reflect.DeepEqual(g, before) {
+		t.Fatal("test snapshot changed the graph before validation")
+	}
 	fs := fields()
 	want, e := Validate(g, fs)
 	if e != nil {
