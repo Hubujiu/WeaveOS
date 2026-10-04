@@ -1,0 +1,3 @@
+Non-RED runner setup failure (transcribed from tool output; an independent raw log was not retained before the subsequent run overwrote the output file):
+
+The scale test's first attempt against the fresh scale database failed at fixture construction with `ERROR: permission denied for schema applications (SQLSTATE 42501)`. Inspection showed the role installer had been invoked with a container-local relative path (`infra/runtime/roles.sql`), so psql reported `No such file or directory` and auth_app lacked USAGE on applications. This is setup failure, not target behavior RED. The roles file was then sent to container psql over stdin; exit 0 and has_schema_privilege(auth_app, applications, USAGE)=true. The retry passed.

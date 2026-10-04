@@ -411,14 +411,19 @@ func (Catalog) CheckCompatibilityInTx(ctx context.Context, tx pgx.Tx, appID, tab
 	if !exists {
 		return nil, ErrMissing
 	}
-	rows, err := tx.Query(ctx, `SELECT DISTINCT d.id::text,v.version,v.graph_json
-		FROM applications.workflow_definitions d
-		JOIN applications.workflow_versions v ON v.app_id=d.app_id AND v.flow_id=d.id
-		WHERE d.app_id=$1 AND d.table_id=$2 AND (
-			(d.state IN ('enabled','closing') AND d.current_version=v.version)
-			OR EXISTS (SELECT 1 FROM applications.workflow_instances i
-				WHERE i.app_id=d.app_id AND i.flow_id=d.id AND i.table_id=d.table_id
-				AND i.definition_version=v.version AND i.state IN ('starting','active')))
+	rows, err := tx.Query(ctx, `WITH live_versions AS (
+			SELECT d.app_id,d.id AS flow_id,d.current_version AS version
+			FROM applications.workflow_definitions d
+			WHERE d.app_id=$1 AND d.table_id=$2 AND d.state IN ('enabled','closing')
+			UNION
+			SELECT i.app_id,i.flow_id,i.definition_version AS version
+			FROM applications.workflow_instances i
+			WHERE i.app_id=$1 AND i.table_id=$2 AND i.state IN ('starting','active')
+		)
+		SELECT live.flow_id::text,v.version,v.graph_json
+		FROM live_versions live
+		JOIN applications.workflow_versions v
+			ON v.app_id=live.app_id AND v.flow_id=live.flow_id AND v.version=live.version
 		ORDER BY 1,2`, appID, tableID)
 	if err != nil {
 		return nil, mapDBError(err)

@@ -1,0 +1,197 @@
+docker run postgres:18.6; fresh cluster starts with zero auth_* roles
+601c72619df1dfa540413a865eb94c87ea1a856f53d39b27754a3144f823dd74
+roles-before-migration|0
+2026/10/04 14:06:06 OK   00001_archive.sql (3.48ms)
+2026/10/04 14:06:06 OK   00002_personnel_audit.sql (2.21ms)
+2026/10/04 14:06:06 OK   00003_apps_audit.sql (3.25ms)
+2026/10/04 14:06:06 OK   00004_app_structure_audit.sql (4.39ms)
+2026/10/04 14:06:06 goose: successfully migrated database to version: 4
+2026/10/04 14:06:06 OK   00001_auth.sql (14.33ms)
+2026/10/04 14:06:06 OK   00002_personnel.sql (20.88ms)
+2026/10/04 14:06:06 OK   00003_query_drafts.sql (5.77ms)
+2026/10/04 14:06:06 OK   00004_query_revision_writers.sql (4.15ms)
+2026/10/04 14:06:06 OK   00005_table_presets.sql (4.9ms)
+2026/10/04 14:06:06 OK   00006_apps_policy.sql (16.84ms)
+2026/10/04 14:06:06 OK   00007_app_structure.sql (20.03ms)
+2026/10/04 14:06:06 OK   00008_app_records.sql (21.78ms)
+2026/10/04 14:06:06 OK   00009_record_save_history.sql (10.78ms)
+2026/10/04 14:06:06 OK   00010_member_source_label_width.sql (1.67ms)
+2026/10/04 14:06:06 OK   00011_record_reference_defaults.sql (3.06ms)
+2026/10/04 14:06:06 OK   00012_actual_reference_defaults.sql (2.02ms)
+2026/10/04 14:06:06 OK   00013_record_command_fence.sql (5.17ms)
+2026/10/04 14:06:06 OK   00014_workflow_command_ledger.sql (3.69ms)
+2026/10/04 14:06:06 OK   00015_workflow_catalog.sql (11.2ms)
+2026/10/04 14:06:06 goose: successfully migrated database to version: 15
+DO
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+GRANT
+GRANT
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+roles-after-install|4
+runtime-select|t
+backup-select|t
+public-select|f
+2026/10/04 14:06:06 OK   00015_workflow_catalog.sql (7.89ms)
+empty-down-removed-table|t
+2026/10/04 14:06:06 OK   00015_workflow_catalog.sql (13.01ms)
+2026/10/04 14:06:06 goose: successfully migrated database to version: 15
+DO
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+GRANT
+GRANT
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+2026/10/04 14:06:07 goose run: ERROR 00015_workflow_catalog.sql: failed to run SQL migration: failed to execute SQL query "DO $$\nBEGIN\n LOCK TABLE applications.workflow_definitions IN ACCESS EXCLUSIVE MODE;\n LOCK TABLE applications.workflow_versions IN ACCESS EXCLUSIVE MODE;\n LOCK TABLE applications.workflow_deployments IN ACCESS EXCLUSIVE MODE;\n LOCK TABLE applications.workflow_instances IN ACCESS EXCLUSIVE MODE;\n IF EXISTS (SELECT 1 FROM applications.workflow_definitions LIMIT 1)\n OR EXISTS (SELECT 1 FROM applications.workflow_versions LIMIT 1)\n OR EXISTS (SELECT 1 FROM applications.workflow_deployments LIMIT 1)\n OR EXISTS (SELECT 1 FROM applications.workflow_instances LIMIT 1) THEN\n  RAISE EXCEPTION 'workflow catalog contains durable state; Down is refused' USING ERRCODE='55000';\n END IF;\n DROP TABLE applications.workflow_instances;\n DROP TABLE applications.workflow_deployments;\n DROP TABLE applications.workflow_versions;\n DROP TABLE applications.workflow_definitions;\nEND $$;": ERROR: workflow catalog contains durable state; Down is refused (SQLSTATE 55000)
+nonempty Down refused as expected
+nonempty-down-retained-version|15
+nonempty-down-retained-row|1

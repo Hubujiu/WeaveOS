@@ -1,0 +1,2 @@
+ix_workflow_definitions_scope:CREATE INDEX ix_workflow_definitions_scope ON applications.workflow_definitions USING btree (app_id, table_id, id)
+ix_workflow_instances_schema:CREATE INDEX ix_workflow_instances_schema ON applications.workflow_instances USING btree (app_id, table_id, flow_id, definition_version) WHERE ((state)::text = ANY ((ARRAY['starting'::character varying, 'active'::character varying])::text[]))

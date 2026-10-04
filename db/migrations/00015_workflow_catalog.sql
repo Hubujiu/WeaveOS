@@ -60,9 +60,10 @@ CREATE TABLE applications.workflow_instances (
  FOREIGN KEY (app_id,flow_id,table_id,view_id) REFERENCES applications.workflow_definitions(app_id,id,table_id,view_id) ON DELETE RESTRICT
 );
 
+CREATE INDEX ix_workflow_definitions_scope ON applications.workflow_definitions(app_id,table_id,id);
 CREATE INDEX ix_workflow_instances_drain ON applications.workflow_instances(app_id,flow_id,id)
  WHERE state IN ('starting','active');
-CREATE INDEX ix_workflow_instances_schema ON applications.workflow_instances(app_id,table_id,definition_version)
+CREATE INDEX ix_workflow_instances_schema ON applications.workflow_instances(app_id,table_id,flow_id,definition_version)
  WHERE state IN ('starting','active');
 
 -- No catalog table is granted to PUBLIC here. roles.sql installs the explicit

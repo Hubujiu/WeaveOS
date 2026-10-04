@@ -17,4 +17,14 @@ Command: `go test -race -count=1 -run '^TestRootCatalog' ./internal/apprecordser
 
 `red-command.txt`, `red-output.txt`, and `red-exit.txt` contain the exact command record, raw output and exit code. A first setup attempt omitted `WEAVEOS_TEST_REDIS_URL` and failed during fixture construction; it is retained as `setup-attempt-* (raw output compressed as `setup-attempt-output.txt.gz`)` and explicitly does not count as RED.
 
-The next authorized step is implementation of the frozen P2c catalog and migration 15 only. The Root tests, migrations 1–14, and out-of-scope BFF/UI files remain untouched.
+## Performance gate: effective RED and GREEN
+
+Root added `services/bff/internal/apprecordservice/root_workflow_catalog_scale_test.go` in commit `13d85cde1ba34cb24f03b623cecdfb3fadc3176`. Its SHA-256 remained `5fa0b6be82c72624c9d07526b25b553d2eb48c90ce7b942b658eb90f110ba12b` before RED, after RED, and after GREEN.
+
+On the migrated isolated PostgreSQL 18.6 fixture, the unchanged production query first failed the actual-plan bound: for 4,999 retired immutable versions and one live version, PostgreSQL sequentially scanned all 5,000 `workflow_versions` rows, filtered 4,999, and the test measured aggregate plan work 10,004 against a limit of 256. `scale-command.txt`, `scale-output.txt`, and `scale-exit.txt` preserve this valid RED.
+
+The query now UNIONs keys for current enabled/closing versions and starting/active instance versions, then joins those keys to `workflow_versions` by its primary key. Migration 15 adds `ix_workflow_definitions_scope(app_id,table_id,id)` and adds `flow_id` to the partial instance compatibility index prefix. The Root test was not edited. The same test now passes; its logged actual plan has aggregate work 8 for 4,999 retired plus one live version (about 3.52 ms). Full 17-case catalog GREEN, final-source backend race, vet, backup, upgrade, and fresh migration/down/up outputs are recorded in adjacent `root-catalog-green-*`, `final-*`, and `migration-final-*` files. The final migration SHA-256 is `5056a36d4f9ed64fdd98432f231ec67012cde693439ac75139e595b51f0911fc` and is pinned in the compatibility manifest.
+
+The first scale-test retry against a new database was a fixture setup error because the role SQL path was container-local and `auth_app` lacked schema USAGE. `scale-runner-setup-note.txt` labels that failure as transcribed/non-RED; roles.sql was subsequently piped into psql, its privilege was verified, and the retry passed. The actual RED evidence is the preceding performance failure, not this setup issue.
+
+P2c remains limited to the durable workflow catalog and its schema compatibility query. Manager/session authorization, appstructure Save/preflight, and HTTP are the next independently tested P2d segment; passing this catalog gate does not claim those are implemented or accepted.
