@@ -1,0 +1,45 @@
+  1) [webkit] › apps/web/src/q36-b2.component.spec.ts:39:1 › Q36 B2 real member page uses POST typed filter and old context without text sorting 
+2026-10-04T21:08:31.9485859Z 
+2026-10-04T21:08:31.9486046Z     Test timeout of 15000ms exceeded.
+2026-10-04T21:08:31.9486223Z 
+2026-10-04T21:08:31.9486479Z     Error: locator.click: Test timeout of 15000ms exceeded.
+2026-10-04T21:08:31.9486810Z     Call log:
+2026-10-04T21:08:31.9487861Z       - waiting for getByRole('dialog', { name: '新增自定义筛选', exact: true }).getByRole('button', { name: '或条件', exact: true })
+2026-10-04T21:08:31.9488954Z         - locator resolved to <button type="button" aria-label="或条件" class="preset-add">…</button>
+2026-10-04T21:08:31.9489484Z       - attempting click action
+2026-10-04T21:08:31.9489906Z         - waiting for element to be visible, enabled and stable
+2026-10-04T21:08:31.9490141Z 
+2026-10-04T21:08:31.9490150Z 
+2026-10-04T21:08:31.9490700Z       29 |  const panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});await expect(panel).toBeVisible();
+2026-10-04T21:08:31.9491760Z       30 |  await panel.getByRole('button',{name:'新增筛选',exact:true}).click();const editor=page.getByRole('dialog',{name:'新增自定义筛选',exact:true});
+2026-10-04T21:08:31.9493442Z     > 31 |  await editor.getByLabel('自定义筛选名称',{exact:true}).fill('Q36 回归方案');await editor.getByRole('button',{name:'或条件',exact:true}).click();await editor.getByLabel('条件 1.1 值',{exact:true}).fill('q36-admin');await editor.getByRole('button',{name:'确定',exact:true}).click();
+2026-10-04T21:08:31.9494782Z          |                                                                                                                            ^
+2026-10-04T21:08:31.9495467Z       32 |  await panel.getByRole('button',{name:'应用Q36 回归方案',exact:true}).click();
+2026-10-04T21:08:31.9496737Z       33 |  if(wait){await expect(panel.getByRole('button',{name:'关闭筛选管理',exact:true})).toBeEnabled();await panel.getByRole('button',{name:'关闭筛选管理',exact:true}).click();await expect(panel).toBeHidden();}
+2026-10-04T21:08:31.9497431Z       34 | }
+2026-10-04T21:08:31.9498045Z         at condition (/home/runner/work/WeaveOS/WeaveOS/apps/web/src/q36-b2.component.spec.ts:31:124)
+2026-10-04T21:08:31.9499123Z         at /home/runner/work/WeaveOS/WeaveOS/apps/web/src/q36-b2.component.spec.ts:44:2
+2026-10-04T21:08:31.9499504Z 
+2026-10-04T21:08:31.9500228Z     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+2026-10-04T21:08:31.9501557Z     test-results/q36-components/q36-b2.component-Q36-B2-re-a93b7-ontext-without-text-sorting-webkit/test-failed-1.png
+2026-10-04T21:08:31.9503011Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+2026-10-04T21:08:31.9503467Z 
+2026-10-04T21:08:31.9504266Z     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+2026-10-04T21:08:31.9505197Z     test-results/q36-components/q36-b2.component-Q36-B2-re-a93b7-ontext-without-text-sorting-webkit/video.webm
+2026-10-04T21:08:31.9506032Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+2026-10-04T21:08:31.9506492Z 
+2026-10-04T21:08:31.9507074Z     Error Context: test-results/q36-components/q36-b2.component-Q36-B2-re-a93b7-ontext-without-text-sorting-webkit/error-context.md
+2026-10-04T21:08:31.9507554Z 
+2026-10-04T21:08:31.9508012Z     attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+2026-10-04T21:08:31.9509598Z     test-results/q36-components/q36-b2.component-Q36-B2-re-a93b7-ontext-without-text-sorting-webkit/trace.zip
+2026-10-04T21:08:31.9510265Z     Usage:
+2026-10-04T21:08:31.9510384Z 
+2026-10-04T21:08:31.9511275Z         pnpm exec playwright show-trace test-results/q36-components/q36-b2.component-Q36-B2-re-a93b7-ontext-without-text-sorting-webkit/trace.zip
+2026-10-04T21:08:31.9511787Z 
+2026-10-04T21:08:31.9512246Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+2026-10-04T21:08:31.9512504Z 
+2026-10-04T21:08:31.9512591Z   1 failed
+2026-10-04T21:08:31.9513382Z     [webkit] › apps/web/src/q36-b2.component.spec.ts:39:1 › Q36 B2 real member page uses POST typed filter and old context without text sorting 
+2026-10-04T21:08:31.9513970Z   9 skipped
+2026-10-04T21:08:31.9514180Z   158 passed (11.7m)
+2026-10-04T21:08:31.9674982Z 
