@@ -1,0 +1,14 @@
+# P1 execution evidence
+
+Base: 819aab8a25fa90790dedd092fdb04efda348dc81 (Root tests), parent db475e0dc00e2ac7c18fc5023cbc9039300711ac.
+Worktree: /workspace/WeaveOS-worktrees/V030-021, branch task/V030-021-monochrome.
+
+Read current PRD/ADR/business baseline and Figma 481:1729, 481:1839, 483:1921, 483:2332, 485:3621 via design context plus screenshots. Existing shared Table and business-operation primitives are preserved. Sample tasks/statistics/people in Figma are not production data. Component source instructions and approved Tabs/Button registry read; existing business composition is retained, no upstream component copies changed.
+
+Environment: Node and pnpm supplied by executor (pnpm 11.19.0; repository declares 10.28.2). Frozen-lockfile install with scripts disabled; no lockfile change. Default pnpm home was unavailable, so installation used XDG_DATA_HOME=/tmp/weaveos-pnpm, PNPM_HOME=/tmp/weaveos-pnpm/bin, --store-dir /tmp/weaveos-pnpm/store. Chromium installed into /tmp/weaveos-browsers.
+
+RED command (before production edits):
+`PLAYWRIGHT_BROWSERS_PATH=/tmp/weaveos-browsers pnpm exec playwright test -c apps/web/playwright.component.config.ts root-monochrome-shell --reporter=line`
+Original test hash: root-test.sha256. Raw output: red.log.
+
+Known independent-oracle conflicts reported to Root, tests unchanged: personnel.component.spec.ts old 176px sidebar / 56px header / original AdminMaterial / fixed x16 y116 menu assertions; applications.component.spec.ts WaveOS brand versus new WeaveOS Figma. Root owns any expectation updates.
