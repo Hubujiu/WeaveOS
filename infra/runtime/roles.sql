@@ -108,3 +108,16 @@ GRANT SELECT,INSERT ON applications.workflow_commands TO auth_app;
 GRANT UPDATE (state,receipt_json) ON applications.workflow_commands TO auth_app;
 GRANT SELECT,INSERT,DELETE ON applications.workflow_dispatch TO auth_app;
 GRANT SELECT ON applications.workflow_commands,applications.workflow_dispatch TO auth_backup;
+
+-- V030-018 P2c workflow catalog: immutable version and deployment history;
+-- mutable lifecycle columns are limited to the trusted application runtime.
+REVOKE ALL ON applications.workflow_definitions,applications.workflow_versions,
+ applications.workflow_deployments,applications.workflow_instances
+ FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+GRANT SELECT,INSERT ON applications.workflow_definitions,applications.workflow_versions,
+ applications.workflow_deployments,applications.workflow_instances TO auth_app;
+GRANT UPDATE (name,revision,state,current_version,candidate_version,updated_at)
+ ON applications.workflow_definitions TO auth_app;
+GRANT UPDATE (state,sequence,updated_at) ON applications.workflow_instances TO auth_app;
+GRANT SELECT ON applications.workflow_definitions,applications.workflow_versions,
+ applications.workflow_deployments,applications.workflow_instances TO auth_backup;
