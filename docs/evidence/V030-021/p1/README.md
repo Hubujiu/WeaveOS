@@ -1,5 +1,12 @@
 # P1 execution evidence
 
+## Final local candidate — PR33
+
+All source below is historical unless superseded here. Production remains f518200; final Root oracle source is b5f7ecc. Final component run: **494 passed / 1 existing skipped (495 total), exit0, 12.3m**, components-final.log. Last outside-pointer correction: outside-target-green.log, 2/2. Typecheck/build/governance93 and repository/task checks pass. Final screenshots/SHA refreshed; Root already reviewed the production layout. PR33 base is verified PR28 head task/V030-012-original-app-shell.
+
+The two last failures were an old outside-click target inside the centered panel, not lost focus behavior. Root b5f7ecc selects the actual refresh button and adds an explicit outside-panel assertion; close/focus/Escape/Tab checks remain. No production change was retained for this issue. root-current-tests.sha256 verifies current Root test files; earlier hashes identify their historical versions. Freeze after this evidence commit; remote CI status belongs to the PR check page/Root record, with no repeated status-only commits.
+
+
 Base: 819aab8a25fa90790dedd092fdb04efda348dc81 (Root tests), parent db475e0dc00e2ac7c18fc5023cbc9039300711ac.
 Worktree: /workspace/WeaveOS-worktrees/V030-021, branch task/V030-021-monochrome.
 
