@@ -1,0 +1,56 @@
+ Network weaveos-v010-007-1791153306455_default  Creating
+ Network weaveos-v010-007-1791153306455_default  Created
+ Volume weaveos-v010-007-1791153306455_pg  Creating
+ Volume weaveos-v010-007-1791153306455_pg  Created
+ Container weaveos-v010-007-1791153306455-redis-1  Creating
+ Container weaveos-v010-007-1791153306455-postgres-1  Creating
+ Container weaveos-v010-007-1791153306455-redis-1  Created
+ Container weaveos-v010-007-1791153306455-postgres-1  Created
+ Container weaveos-v010-007-1791153306455-test-redis-1  Creating
+ Container weaveos-v010-007-1791153306455-test-redis-1  Created
+ Container weaveos-v010-007-1791153306455-postgres-1  Starting
+ Container weaveos-v010-007-1791153306455-redis-1  Starting
+ Container weaveos-v010-007-1791153306455-redis-1  Started
+ Container weaveos-v010-007-1791153306455-postgres-1  Started
+ Container weaveos-v010-007-1791153306455-test-redis-1  Starting
+ Container weaveos-v010-007-1791153306455-test-redis-1  Started
+ Container weaveos-v010-007-1791153306455-redis-1  Waiting
+ Container weaveos-v010-007-1791153306455-test-redis-1  Waiting
+ Container weaveos-v010-007-1791153306455-postgres-1  Waiting
+ Container weaveos-v010-007-1791153306455-postgres-1  Healthy
+ Container weaveos-v010-007-1791153306455-redis-1  Healthy
+ Container weaveos-v010-007-1791153306455-test-redis-1  Healthy
+[V024 environment] Go uses read-only existing public CA bundle; TLS verification enabled
+[V024 environment] Reuse existing Go1.27.1 SDK and caches to avoid duplicate disk use
+docker: Error response from daemon: no space left on device
+
+Run 'docker run --help' for more information
+ Container weaveos-v010-007-1791153306455-redis-1  Stopping
+ Container weaveos-v010-007-1791153306455-test-redis-1  Stopping
+ Container weaveos-v010-007-1791153306455-test-redis-1  Stopped
+ Container weaveos-v010-007-1791153306455-postgres-1  Stopping
+ Container weaveos-v010-007-1791153306455-redis-1  Stopped
+ Container weaveos-v010-007-1791153306455-postgres-1  Stopped
+node:internal/errors:985
+  const err = new Error(message);
+              ^
+
+Error: Command failed: docker run --mount type=bind,src=/etc/ssl/certs/ca-certificates.crt,dst=/etc/ssl/certs/ca-certificates.crt,readonly --mount type=bind,src=/workspace/.weaveos-tools/go,dst=/v024-go,readonly -e PATH=/v024-go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin --rm --network container:8bbfd8e7c1278f3f05d07d82b902d013aedba282abd8ff03dd96cf4983bf043d --mount type=bind,src=/workspace/WeaveOS-worktrees/V030-024/,dst=/repo --mount type=bind,src=/tmp/weaveos-b2-ci-fUP4o4/socket,dst=/tmp/weaveos-b2-ci-fUP4o4/socket,readonly --mount type=bind,src=/workspace/.weaveos-tools/go-mod,dst=/go/pkg/mod --mount type=bind,src=/workspace/.weaveos-tools/go-cache,dst=/root/.cache/go-build --env-file /workspace/WeaveOS-worktrees/V030-024/.work/acceptance/test.env -e GOTOOLCHAIN=auto -e GOFLAGS=-buildvcs=false -e GOBIN=/repo/.work/acceptance/tools -w /repo/services/bff golang:1.25.7 sh -ec go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:942:11)
+    at Object.execFileSync (node:child_process:978:15)
+    at childProcess.execFileSync (file:///workspace/WeaveOS-worktrees/V030-024/docs/evidence/V030-024/local-environment-runner.mjs:28:19)
+    at call (file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:21:47)
+    at go (file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:35:46)
+    at runAcceptance (file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:45:3)
+    at async file:///workspace/WeaveOS-worktrees/V030-024/docs/evidence/V030-024/local-environment-runner.mjs:32:102 {
+  status: 125,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 69089,
+  stdout: null,
+  stderr: null
+}
+
+Node.js v24.19.0

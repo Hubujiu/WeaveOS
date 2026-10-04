@@ -1,0 +1,45 @@
+ Network weaveos-v010-007-1791152718241_default  Creating
+ Network weaveos-v010-007-1791152718241_default  Created
+ Volume weaveos-v010-007-1791152718241_pg  Creating
+ Volume weaveos-v010-007-1791152718241_pg  Created
+ Container weaveos-v010-007-1791152718241-postgres-1  Creating
+ Container weaveos-v010-007-1791152718241-redis-1  Creating
+ Container weaveos-v010-007-1791152718241-redis-1  Created
+ Container weaveos-v010-007-1791152718241-postgres-1  Created
+ Container weaveos-v010-007-1791152718241-test-redis-1  Creating
+ Container weaveos-v010-007-1791152718241-test-redis-1  Created
+ Container weaveos-v010-007-1791152718241-postgres-1  Starting
+ Container weaveos-v010-007-1791152718241-redis-1  Starting
+ Container weaveos-v010-007-1791152718241-postgres-1  Started
+ Container weaveos-v010-007-1791152718241-test-redis-1  Starting
+ Container weaveos-v010-007-1791152718241-redis-1  Started
+Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: can't get final child's PID from pipe: EOF: unknown
+ Container weaveos-v010-007-1791152718241-redis-1  Stopping
+ Container weaveos-v010-007-1791152718241-test-redis-1  Stopping
+ Container weaveos-v010-007-1791152718241-test-redis-1  Stopped
+ Container weaveos-v010-007-1791152718241-postgres-1  Stopping
+ Container weaveos-v010-007-1791152718241-postgres-1  Stopped
+ Container weaveos-v010-007-1791152718241-redis-1  Stopped
+node:internal/errors:985
+  const err = new Error(message);
+              ^
+
+Error: Command failed: docker compose -p weaveos-v010-007-1791152718241 -f /workspace/WeaveOS-worktrees/V030-024/infra/acceptance/compose.json up -d --wait postgres redis test-redis
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:942:11)
+    at Object.execFileSync (node:child_process:978:15)
+    at childProcess.execFileSync (file:///workspace/WeaveOS-worktrees/V030-024/docs/evidence/V030-024/local-environment-runner.mjs:23:19)
+    at call (file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:21:47)
+    at compose (file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:22:30)
+    at runAcceptance (file:///workspace/WeaveOS-worktrees/V030-024/infra/acceptance/run.mjs:42:3)
+    at async file:///workspace/WeaveOS-worktrees/V030-024/docs/evidence/V030-024/local-environment-runner.mjs:27:102 {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 45315,
+  stdout: null,
+  stderr: null
+}
+
+Node.js v24.19.0

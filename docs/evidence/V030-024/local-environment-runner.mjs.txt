@@ -1,0 +1,34 @@
+// Local dependency preparation adapter only; no test, browser isolation, or assertion changes.
+// Original scripts/images/fixtures execute normally. TLS verification remains enabled.
+import childProcess from 'node:child_process';
+import {syncBuiltinESMExports} from 'node:module';
+import {resolve} from 'node:path';
+const root=process.cwd(), original=childProcess.execFileSync;
+childProcess.execFileSync=function(command,args,options){
+  if(command==='docker'&&args[0]==='run'){
+    const go=args.some(a=>typeof a==='string'&&a.startsWith('golang:'));
+    const npm=args.some(a=>typeof a==='string'&&a.includes('npm install --global pnpm@10.28.2'));
+    if(go||npm){
+      const extra=[];
+      if(go){extra.push('--mount','type=bind,src=/etc/ssl/certs/ca-certificates.crt,dst=/etc/ssl/certs/ca-certificates.crt,readonly');process.stdout.write('[V024 environment] Go uses read-only existing public CA bundle; TLS verification enabled\n');}
+      if(npm){
+        if(original('docker',['ps','--filter','name=^weaveos-v024-offline-forms$','--format','{{.Names}}'],{encoding:'utf8'}).trim()){
+          process.stdout.write('[V024 environment] Serialize VFS browser containers until separate forms suite exits\n');
+          original('bash',['-c','while docker ps --filter "name=^weaveos-v024-offline-forms$" --format "{{.Names}}" | rg -q .; do sleep 2; done'],{stdio:'inherit'});
+        }
+        extra.push('--mount',`type=bind,src=${root}/.work/npm-cache,dst=/root/.npm`,'--mount',`type=bind,src=${root}/.work/pnpm-store,dst=/repo/.work/pnpm-store`,'-e','npm_config_offline=true');process.stdout.write('[V024 environment] Locked npm/pnpm dependencies use prefilled local cache; browser defaults unchanged\n');}
+      if(go){
+        args=args.map(a=>a==='type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod'?'type=bind,src=/workspace/.weaveos-tools/go-mod,dst=/go/pkg/mod':a==='type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build'?'type=bind,src=/workspace/.weaveos-tools/go-cache,dst=/root/.cache/go-build':a);
+        extra.push('--mount','type=bind,src=/workspace/.weaveos-tools/go,dst=/v024-go,readonly','-e','PATH=/v024-go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin');
+        process.stdout.write('[V024 environment] Reuse existing Go1.27.1 SDK and caches to avoid duplicate disk use\n');
+      }
+      args=[args[0],...extra,...args.slice(1)];
+    }
+  }
+  return original.call(childProcess,command,args,options);
+};
+syncBuiltinESMExports();
+const mode=process.argv[2];
+if(mode==='acceptance'){const {runAcceptance}=await import(resolve(root,'infra/acceptance/run.mjs'));await runAcceptance();}
+else if(mode==='runtime')await import(resolve(root,'infra/runtime/run.mjs'));
+else throw new Error('Expected acceptance or runtime');
