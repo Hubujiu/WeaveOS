@@ -54,6 +54,8 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  sql(live,readFileSync('db/migrations/00010_member_source_label_width.sql','utf8').split('-- +goose Down')[0]);
  sql(live,readFileSync('db/migrations/00011_record_reference_defaults.sql','utf8').split('-- +goose Down')[0]);
  sql(live,readFileSync('db/migrations/00012_actual_reference_defaults.sql','utf8').split('-- +goose Down')[0]);
+ sql(live,readFileSync('db/migrations/00013_record_command_fence.sql','utf8').split('-- +goose Down')[0]);
+ sql(live,"SELECT setval('applications.record_command_fence_epoch_seq',41,true);");
  sql(live,`INSERT INTO auth.users(id,account) VALUES('77777777-7777-4777-8777-777777777777','preset-backup-synthetic');
  INSERT INTO personnel.table_presets(id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at)
  VALUES('88888888-8888-4888-8888-888888888888','77777777-7777-4777-8777-777777777777','members','持久方案😀',20,'{"children":[{"field":"account","operator":"eq","value":"A"}],"operator":"and"}','["identities"]',1,7,'2026-10-01T00:00:00Z','2026-10-02T00:00:00Z');`);
@@ -64,6 +66,9 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  backupDatabase({...options,user:'weaveos_backup_probe',database:live,backupFile:encrypted});
  restoreDatabase({...options,database:restored,backupFile:encrypted});
  assert.ok(sql(restored,"SELECT nextval('public.goose_db_version_id_seq')=3 AS original_sequence;").includes('t'),'restored sequence must continue after original ledger rows');
+ assert.ok(sql(restored,"SELECT nextval('applications.record_command_fence_epoch_seq')=42 AS original_fence_epoch;").includes('t'),'restored fence epoch must not reuse previously allocated numbers');
+ assert.throws(()=>sql(live,"SET ROLE weaveos_backup_probe; SELECT nextval('applications.record_command_fence_epoch_seq');"),'backup role must not allocate fence epochs');
+ assert.throws(()=>sql(live,"SET ROLE weaveos_backup_probe; SELECT setval('applications.record_command_fence_epoch_seq',1,true);"),'backup role must not reset fence epochs');
  const presetColumns="id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at";
  assert.equal(sql(restored,'SELECT '+presetColumns+' FROM personnel.table_presets;'),sql(live,'SELECT '+presetColumns+' FROM personnel.table_presets;'),'restricted backup must preserve complete named configuration, Unicode, AST, ownership, slot, CAS and timestamps');
  assert.ok(sql(restored,"SELECT name='持久方案😀' AND slot=20 AND version=7 AS preset_content FROM personnel.table_presets WHERE id='88888888-8888-4888-8888-888888888888';").includes('t'),'synthetic independent preset survives encrypted backup/restore');
