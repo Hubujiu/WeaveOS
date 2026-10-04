@@ -1,0 +1,84 @@
+[WebServer] (node:17894) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:17915) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 12 tests using 1 worker
+
+(node:18004) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+  ✘   1 [chromium] › apps/web/src/applications/forms/forms.real.spec.ts:37:1 › real API and PG18 persist created directory, atomic form, field layout and decimal config (12.0s)
+(node:18521) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+  ✓   2 [chromium] › apps/web/src/applications/forms/forms.real.spec.ts:95:1 › real operation recovery confirms a committed directory after its response is lost (1.3s)
+  ✓   3 [chromium] › apps/web/src/applications/forms/forms.real.spec.ts:116:1 › real concurrent structure write returns CAS conflict without discarding entered name (706ms)
+  ✘   4 [chromium] › apps/web/src/applications/forms/forms.real.spec.ts:135:1 › real V013 preflight accepts a datetime to text proposal with cleared display timezone (11.1s)
+Testing stopped early after 2 maximum allowed failures.
+
+
+  1) [chromium] › apps/web/src/applications/forms/forms.real.spec.ts:37:1 › real API and PG18 persist created directory, atomic form, field layout and decimal config 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('status')
+    Expected substring: "已保存"
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('status') with timeout 10000ms
+      - waiting for getByRole('status')
+        - locator resolved to <span role="status">正在预检…</span>
+        - unexpected value "正在预检…"
+        - locator resolved to <span role="status">正在保存…</span>
+        - unexpected value "正在保存…"
+
+
+      66 |   await page.getByLabel('默认值').fill('-149');
+      67 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+    > 68 |   await expect(page.getByRole('status')).toContainText('已保存');
+         |                                          ^
+      69 |   await page.screenshot({path:info.outputPath('real-saved-designer.png'),fullPage:true});
+      70 |   await page.reload();
+      71 |   await expect(page.getByRole('button',{name:'精确预算 金额'})).toBeVisible();
+        at /workspace/WeaveOS-worktrees/V030-023/apps/web/src/applications/forms/forms.real.spec.ts:68:42
+
+    Error Context: ../../../tmp/v023-real-results/forms.real-real-API-and-PG-9ed87-d-layout-and-decimal-config-chromium/error-context.md
+
+  2) [chromium] › apps/web/src/applications/forms/forms.real.spec.ts:135:1 › real V013 preflight accepts a datetime to text proposal with cleared display timezone 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('status')
+    Expected substring: "已保存"
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('status') with timeout 10000ms
+      - waiting for getByRole('status')
+        - locator resolved to <span role="status">正在预检…</span>
+        - unexpected value "正在预检…"
+        - locator resolved to <span role="status">正在保存…</span>
+        - unexpected value "正在保存…"
+
+
+      147 |   await page.getByLabel('展示时区').fill('Asia/Shanghai');
+      148 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+    > 149 |   await expect(page.getByRole('status')).toContainText('已保存');
+          |                                          ^
+      150 |   await page.getByRole('button',{name:'发生时间 日期时间'}).click();
+      151 |   await page.getByLabel('字段类型').selectOption('text');
+      152 |   await page.getByRole('button',{name:'保存',exact:true}).click();
+        at /workspace/WeaveOS-worktrees/V030-023/apps/web/src/applications/forms/forms.real.spec.ts:149:42
+
+    Error Context: ../../../tmp/v023-real-results/forms.real-real-V013-prefl-95c18-th-cleared-display-timezone-chromium/error-context.md
+
+  2 failed
+    [chromium] › apps/web/src/applications/forms/forms.real.spec.ts:37:1 › real API and PG18 persist created directory, atomic form, field layout and decimal config 
+    [chromium] › apps/web/src/applications/forms/forms.real.spec.ts:135:1 › real V013 preflight accepts a datetime to text proposal with cleared display timezone 
+  8 did not run
+  2 passed (27.5s)
+  1 error was not a part of any test, see above for details

@@ -8,13 +8,14 @@ const capture=`
  const out='/workspace/WeaveOS-worktrees/V030-023/docs/evidence/V030-023/screenshots';
  for(const [width,height] of [[1440,1000],[1280,800],[390,844]]){
   const page=await browser.newPage({viewport:{width,height},reducedMotion:'reduce'});
-  await fixture(page);await page.goto('http://127.0.0.1:4173'+routePath+'/design');
+  await fixture(page);await page.goto('http://127.0.0.1:4176'+routePath+'/design');
   const palette=page.getByRole('region',{name:'字段面板'});
   for(const [kind,name] of [['文本','申请事项'],['日期','申请日期'],['金额','报销金额'],['多行文本','备注']]){
    await palette.getByRole('button',{name:kind,exact:true}).click();
    await page.getByLabel('字段名称',{exact:true}).fill(name);
   }
   await page.getByRole('region',{name:'表单画布'}).scrollIntoViewIfNeeded();
+  if(width>700)await page.locator('.app-content').evaluate(el=>{el.scrollTop=0});
   await page.screenshot({path:out+'/designer-filled-'+width+'.png',fullPage:true});
   await page.getByRole('button',{name:'预览',exact:true}).click();
   await page.getByRole('dialog',{name:'表单预览',exact:true}).waitFor();
