@@ -125,7 +125,8 @@ test('Q36 B2 definition explicitly saves durable draft and restores original ver
  await page.setViewportSize({width:390,height:844});
  const resolve=page.getByRole('button',{name:'保留当前输入，使用最新对象版本',exact:true});await resolve.scrollIntoViewIfNeeded();
  const box=(await resolve.boundingBox())!;
- expect(box.x).toBeGreaterThanOrEqual(176);expect(box.x+box.width).toBeLessThanOrEqual(390);
+ const well=(await page.getByTestId('workspace-content-well').boundingBox())!;
+ expect(box.x).toBeGreaterThanOrEqual(well.x);expect(box.x+box.width).toBeLessThanOrEqual(well.x+well.width);await expect(resolve).toBeInViewport();
 });
 
 test('Q36 B2 explicit member draft does not save automatically or bypass query guard',async({page})=>{
@@ -347,8 +348,13 @@ for(const mode of ['engine','fallback'] as const)test(`Q36 B2 ${mode} stale exit
 
 for(const mode of ['engine','fallback'] as const)test(`Q36 B2 ${mode} outside pointer and keyboard navigation keep their new focus`,async({page})=>{
  if(mode==='fallback')await page.addInitScript(()=>Object.defineProperty(document,'startViewTransition',{value:undefined,configurable:true}));await focusFixture(page);
- const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true}),search=page.getByLabel('选择当前页成员',{exact:true});
- await trigger.click();await expect(panel).toBeVisible();await search.click();await expect(panel).toBeHidden();await expect(search).toBeFocused();
+ const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true}),search=page.getByRole('button',{name:'刷新查询',exact:true});
+ await trigger.click();await expect(panel).toBeVisible();
+ // The new centered panel covers the table-header checkbox. Use a real outside control.
+ const outsideBox=await search.boundingBox(),panelBox=await panel.boundingBox();expect(outsideBox).not.toBeNull();expect(panelBox).not.toBeNull();
+ const outsideX=outsideBox!.x+outsideBox!.width/2,outsideY=outsideBox!.y+outsideBox!.height/2;
+ expect(outsideX<panelBox!.x||outsideX>panelBox!.x+panelBox!.width||outsideY<panelBox!.y||outsideY>panelBox!.y+panelBox!.height).toBe(true);
+ await search.click();await expect(panel).toBeHidden();await expect(search).toBeFocused();
  await page.waitForFunction(()=>!document.documentElement.classList.contains('q36-preset-transition-active')&&document.getAnimations().every(a=>a.playState!=='running'||!(a.effect instanceof KeyframeEffect)||(!(a.effect.target as Element|null)?.classList?.contains('q36-filter-shell')&&!a.effect.pseudoElement?.startsWith('::view-transition'))));
  await expect(search).toBeFocused();await trigger.click();await expect(panel).toBeVisible();await page.keyboard.press('Escape');await expect(trigger).toBeFocused();await page.keyboard.press('Tab');await expect(trigger).not.toBeFocused();
 });
