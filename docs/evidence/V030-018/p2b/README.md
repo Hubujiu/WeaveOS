@@ -6,7 +6,7 @@ Baseline: task branch `task/V030-018-approval-commands`, initial HEAD `2ca3fa4cd
 
 Root's seven tests use `newRecordFixture`, real PostgreSQL 18.6, Redis, the existing record fence functions and `Ledger{Namespace:"applications"}`. The only test-file change was mechanical `gofmt`: the formatted worktree file is byte-for-byte equal to `gofmt` applied to the original file at baseline. Original SHA256: `abfe1c91453d7bd612535bff7c4dc53865f91d5632b93aefbd102a4382393b4e`; normalized SHA256 before/after: `b1c33b4f7043939b9d726154f51fe2c9e55a3b281ccddb79a88b6a9dc0175c7b`. See `root-test-raw-baseline.sha256`, `root-test-gofmt-equivalence.sha256`, and the empty `root-test-gofmt-check.diff`.
 
-On a disposable PostgreSQL 18.6 cluster with `--network none`, the Root tests were run after goose migrations 1–13 and `roles.sql`, before migration 14. All seven reached behavior assertions and failed on the absent formal ledger tables (`42P01 relation "applications.workflow_commands" does not exist`); process exit code was 1. Raw output and code are `red.log` and `red.exit-code`. This is the intended schema-gap RED, not a compile or environment failure.
+On a disposable PostgreSQL 18.6 cluster with `--network none`, the Root tests were run after goose migrations 1–13 and `roles.sql`, before migration 14. Seven tests failed at runtime with exit code 1: one metadata assertion observed `formal durable ledger tables=0 err=<nil>`, and six SQL operations failed with SQLSTATE `42P01` because `applications.workflow_commands` did not exist. Raw output and code are `red.log` and `red.exit-code`. This is the intended schema-gap RED, not a compile or environment failure.
 
 ## Implementation
 
@@ -24,7 +24,7 @@ The initial empty-Down check exposed a goose parser boundary issue (`42601 unter
 - Root's seven formal-ledger tests: GREEN, `go test -count=1 -run '^TestRootFormalLedger' ./internal/apprecordservice`.
 - Full apprecordservice race regression (including the existing 14 fence tests): GREEN.
 - appstructure race regression: GREEN.
-- flowcommands race regression (33 top-level tests): GREEN.
+- flowcommands race regression (34 top-level tests): GREEN.
 - `node --test infra/runtime/backup.test.mjs`: 4/4 GREEN on a disposable PostgreSQL 18.6 container.
 - `WEAVEOS_TEST_GOOSE=/workspace/.weaveos-tools/gopath/bin/goose node --test infra/server/deploy/personnel-upgrade.test.mjs`: 4/4 GREEN, including cold-first migrations and role pin validation.
 - Empty ledger: goose Down 14 then Up 14 GREEN. Populated ledger (6 command rows): Down refused with SQLSTATE `55000`; goose version remained 14.
@@ -32,3 +32,8 @@ The initial empty-Down check exposed a goose parser boundary issue (`42601 unter
 - `go vet` for apprecordservice, appstructure and flowcommands; `scripts/check-tasks.mjs`; `scripts/verify-repo.mjs`; gofmt and diff checks passed. `hash-verification.log` checks every registered migration hash and the exact roles pin; migrations 1–13 match their pre-existing hashes.
 
 Raw commands, logs, exit codes, and SHA checks are retained alongside this summary. Temporary test clusters used synthetic fixtures only. This package does not add or claim Flowable RPC/HTTP, actor/record authorization policy, terminal approval, or frontend behavior.
+
+
+## Migration Down concurrency repair
+
+Root added `root_migration_down_test.go` at commit `4daa218ec0944cc3aec47569d78f425bcfa71e7f`. The test executes the migration in an isolated schema and uses two real PostgreSQL connections. On the pre-fix Down it produced a valid RED: after observing the actual lock wait and committing the competing accepted command, Down returned nil and the assertion failed (`down-race-red.log`). The repair takes ACCESS EXCLUSIVE locks on both ledger tables before checking either table, in the same goose transaction. The test then passes with SQLSTATE `55000` while preserving the inserted history (`down-race-green.log`). The entire 34-test `flowcommands` package passed under `-race`; Root's seven apprecordservice tests passed again against migrations 1–14 plus roles. Final-source empty Down→Up succeeded and populated Down returned 55000 while the goose version stayed 14. The test source received mechanical gofmt only; its formatted bytes equal gofmt of Root's committed test source.

@@ -33,3 +33,14 @@ Other checks (from repository root):
   git diff --check
 
 The formal test, rollback, SQL privilege and repository-command outputs are in the matching `.log`, `.txt`, `.diff`, and `.exit-code` files in this directory.
+
+
+Root migration-Down race regression (before/after lock repair, from services/bff):
+  WEAVEOS_TEST_DATABASE_URL="host=/tmp/v030-018-p2b-race/socket user=postgres dbname=postgres sslmode=disable" go test -count=1 -run '^TestRootFormalMigrationDownSeesConcurrentAcceptedHistory$' ./internal/flowcommands
+  WEAVEOS_TEST_DATABASE_URL="host=/tmp/v030-018-p2b-race/socket user=postgres dbname=postgres sslmode=disable" go test -race -count=1 ./internal/flowcommands
+
+Final P2b table regression on migrations 1–14 and roles.sql (from services/bff):
+  WEAVEOS_TEST_DATABASE_URL="host=/tmp/v030-018-p2b-race/socket user=postgres dbname=v018_p2b_final sslmode=disable" WEAVEOS_TEST_REDIS_URL="redis://127.0.0.1:16379/0" go test -count=1 -run '^TestRootFormalLedger' ./internal/apprecordservice
+  goose -dir db/migrations postgres "host=/tmp/v030-018-p2b-race/socket user=postgres dbname=v018_p2b_empty_race sslmode=disable" down
+  goose -dir db/migrations postgres "host=/tmp/v030-018-p2b-race/socket user=postgres dbname=v018_p2b_empty_race sslmode=disable" up
+  goose -dir db/migrations postgres "host=/tmp/v030-018-p2b-race/socket user=postgres dbname=v018_p2b_final sslmode=disable" down

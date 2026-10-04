@@ -37,6 +37,8 @@ CREATE INDEX workflow_dispatch_created_at_command_id_idx
     ON applications.workflow_dispatch (created_at, command_id);
 
 -- +goose Down
+LOCK TABLE applications.workflow_commands, applications.workflow_dispatch
+    IN ACCESS EXCLUSIVE MODE;
 -- +goose StatementBegin
 DO $$
 BEGIN
