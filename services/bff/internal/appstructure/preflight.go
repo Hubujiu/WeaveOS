@@ -104,7 +104,7 @@ func (a *Application) inspect(c context.Context, tx pgx.Tx, p session.Principal,
 	}
 	plan := planFor(d, in)
 	data, dep, e := revisions(c, tx, d.Table.ID)
-	out := Preflight{AppID: d.AppID, TableID: d.Table.ID, ViewID: d.Form.ID, SchemaVersion: d.Table.SchemaVersion, ViewVersion: d.Form.ViewVersion, DataRevision: data, DependencyRevision: dep, Plan: plan, Impacts: []Impact{}, Dependencies: []Dependency{}, BlockingIssues: []Issue{}, SaveAllowed: true}
+	out := Preflight{AppID: d.AppID, TableID: d.Table.ID, ViewID: d.Form.ID, SchemaVersion: d.Table.SchemaVersion, ViewVersion: d.Form.ViewVersion, DataRevision: data, DependencyRevision: dep, Plan: plan, Impacts: []Impact{}, Dependencies: []Dependency{}, BlockingIssues: []Issue{}, WorkflowConflicts: []WorkflowConflict{}, SaveAllowed: true}
 	if e != nil {
 		return out, e
 	}
@@ -117,6 +117,10 @@ func (a *Application) inspect(c context.Context, tx pgx.Tx, p session.Principal,
 	newFields := map[string]appfields.Field{}
 	for _, f := range in.Fields {
 		newFields[f.ID] = f
+	}
+	out.WorkflowConflicts, e = checkWorkflowCompatibility(c, tx, d.AppID, d.Table.ID, in.Fields)
+	if e != nil {
+		return out, e
 	}
 	protected := []string{}
 	removed := []string{}
@@ -248,7 +252,7 @@ func (a *Application) inspect(c context.Context, tx pgx.Tx, p session.Principal,
 			out.Impacts = append(out.Impacts, Impact{old.ID, "option_mapping", count, &x})
 		}
 	}
-	out.SaveAllowed = len(out.Dependencies) == 0 && len(out.BlockingIssues) == 0
+	out.SaveAllowed = len(out.Dependencies) == 0 && len(out.BlockingIssues) == 0 && len(out.WorkflowConflicts) == 0
 	if sign && out.SaveAllowed && len(out.Impacts) > 0 {
 		out.Confirmation, e = a.confirmation(c, tx, p, d, in)
 	}

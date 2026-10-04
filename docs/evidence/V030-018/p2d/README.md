@@ -1,0 +1,13 @@
+# P2d current result
+
+The initial HTTP 400 fixture failure below was resolved by Root fixture correction `ac4edc4`. The corrected fixture produced valid behavior RED (`corrected-red-summary.md`, `corrected-red-output.txt`), then all seven `TestRootWorkflowSchema*` cases passed (`green-root-workflow-schema-output.txt`). Implementation checkpoint `b9f4579c2b7ec0c3d38f963d910a5f1c7adcd26f` is now integrated into V030-020; merged-source regression is recorded under `docs/evidence/V030-020/`. The original preparation failure is retained below for traceability.
+
+## Historical initial preparation result (resolved)
+
+# P2d schema compatibility gate: runner result
+
+Root test commit `fc38ef47d263bd587725729e7425ef3bda7ddfb2` (parent `4d3d78026b3d451aec4ff002a7f9a5d1b24524b3`) was cherry-picked locally as `9499c33`, after task-path registration commit `c7de1a1`. The Root test source SHA-256 before and after the run is `6e1dd498387525c2ea3b5794f17bc07f689a9fac994b358b203bb362fb4280dc`.
+
+The unchanged seven top-level `TestRootWorkflowSchema*` cases were attempted against isolated PostgreSQL 18.6 after migrations 1–15 and `roles.sql`, plus the isolated Redis fixture. They all returned HTTP 400 `COMMON_VALIDATION_FAILED` from the common `rootWorkflowSchemaSetup` schema-definition request, before creating/using workflow dependencies or reaching the P2d compatibility assertions. The exact command, output and exit code 1 are in `red-command.txt`, `red-output.txt` and `red-exit.txt`.
+
+This is not a valid P2d behavior RED. The setup helper's text field sends `config: {}`. Existing `appfields.NormalizeFields` requires a `maxLength` key for `text` and `multiline`; `appfields/regression_test.go` explicitly asserts that `{}` is invalid. The current failure is therefore explained by the pre-existing request contract, not missing workflow compatibility behavior. No Root test or production source was edited in response. P2d implementation is blocked pending Root's corrected test fixture/commit and a valid RED run.

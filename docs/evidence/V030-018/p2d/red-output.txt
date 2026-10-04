@@ -1,0 +1,20 @@
+--- FAIL: TestRootWorkflowSchemaSaveRejectsAndRollsBackAllChanges (0.09s)
+    root_workflow_schema_test.go:63: product contract status want 200 got 400: {"code":"COMMON_VALIDATION_FAILED","message":"请求未完成","data":{"violations":[{"code":"VALIDATION_INVALID","field":"definition","location":"body","message":"定义或配置不合法"}]},"meta":{"requestId":"7be4a33e9eb7d5cab15ebbb38f1ff3b4"}}
+--- FAIL: TestRootWorkflowSchemaPreflightReportsConflictWithoutConfirmation (0.07s)
+    root_workflow_schema_test.go:76: product contract status want 200 got 400: {"code":"COMMON_VALIDATION_FAILED","message":"请求未完成","data":{"violations":[{"code":"VALIDATION_INVALID","field":"definition","location":"body","message":"定义或配置不合法"}]},"meta":{"requestId":"5ebe6c573563312bbfb4308f670961b7"}}
+--- FAIL: TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind (0.15s)
+    --- FAIL: TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind/text (0.07s)
+        root_workflow_schema_test.go:84: product contract status want 200 got 400: {"code":"COMMON_VALIDATION_FAILED","message":"请求未完成","data":{"violations":[{"code":"VALIDATION_INVALID","field":"definition","location":"body","message":"定义或配置不合法"}]},"meta":{"requestId":"bcb038a262759351154b23408aa6d0cf"}}
+    --- FAIL: TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind/multiline (0.08s)
+        root_workflow_schema_test.go:84: product contract status want 200 got 400: {"code":"COMMON_VALIDATION_FAILED","message":"请求未完成","data":{"violations":[{"code":"VALIDATION_INVALID","field":"definition","location":"body","message":"定义或配置不合法"}]},"meta":{"requestId":"f8685de9ac530dd3ac5da46e80e70c0a"}}
+--- FAIL: TestRootWorkflowSchemaRechecksAfterPreviouslyAllowedPreflight (0.08s)
+    root_workflow_schema_test.go:90: product contract status want 200 got 400: {"code":"COMMON_VALIDATION_FAILED","message":"请求未完成","data":{"violations":[{"code":"VALIDATION_INVALID","field":"definition","location":"body","message":"定义或配置不合法"}]},"meta":{"requestId":"40420c6ce2e6d9c793373a65a47d0815"}}
+--- FAIL: TestRootWorkflowSchemaClosedUnusedHistoryAllowsRemoval (0.07s)
+    root_workflow_schema_test.go:98: product contract status want 200 got 400: {"code":"COMMON_VALIDATION_FAILED","message":"请求未完成","data":{"violations":[{"code":"VALIDATION_INVALID","field":"definition","location":"body","message":"定义或配置不合法"}]},"meta":{"requestId":"8fa6226b3507d5213a80ca2ca46ac805"}}
+--- FAIL: TestRootWorkflowSchemaInFlightOldDefinitionStillProtectsField (0.09s)
+    root_workflow_schema_test.go:103: product contract status want 200 got 400: {"code":"COMMON_VALIDATION_FAILED","message":"请求未完成","data":{"violations":[{"code":"VALIDATION_INVALID","field":"definition","location":"body","message":"定义或配置不合法"}]},"meta":{"requestId":"8638e97fbfd396b817fa92ad960c5d14"}}
+--- FAIL: TestRootWorkflowSchemaSaveSerializesWithEnable (0.08s)
+    root_workflow_schema_test.go:111: product contract status want 200 got 400: {"code":"COMMON_VALIDATION_FAILED","message":"请求未完成","data":{"violations":[{"code":"VALIDATION_INVALID","field":"definition","location":"body","message":"定义或配置不合法"}]},"meta":{"requestId":"73c6ab7b0d4d1baed32798f697187b1e"}}
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure	0.645s
+FAIL

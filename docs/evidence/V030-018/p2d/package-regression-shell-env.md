@@ -1,0 +1,1 @@
+The first package-regression wrapper used `sh -lc`; the login shell removed the golang image's Go tool path (`go: not found`, exit 127). It did not execute tests and is an environment preparation failure. The rerun uses the image's non-login shell.

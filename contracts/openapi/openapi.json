@@ -6733,7 +6733,7 @@
             }
           },
           "409": {
-            "description": "Registered definition/session error; no raw SQL or business values; AUTH_SESSION_CHANGED",
+            "description": "Definition save conflict, including APPLICATION_SCHEMA_WORKFLOW_INCOMPATIBLE when the proposed schema breaks a field used by an enabled, closing, starting, or active workflow version; data.conflicts identifies the flow, pinned version, node, field, and reason.",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/RequestId"
@@ -6794,7 +6794,7 @@
       "post": {
         "operationId": "postPreflightPreflight",
         "summary": "POST /forms/{viewId}/definition/preflight",
-        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR. Save uses one transaction for protected typed DDL, metadata/layout/audit/operation; uncertain commit keeps original operationId. Ordinary root menu grants no definition access.",
+        "description": "Frozen V030-013 task ADR. Current active owner/Bootstrap only; same-app registered resources, no query parameters, strict complete JSON, 1MiB. Metadata creation has versions0 and no DDL. Preflight is read-only RR and returns workflowConflicts for enabled/closing definitions and starting/active pinned versions. Save rechecks compatibility under the BeginManagerWrite application gate before mappings, DDL or metadata changes; incompatible saves return 409 APPLICATION_SCHEMA_WORKFLOW_INCOMPATIBLE.",
         "security": [
           {
             "WebSession": []
@@ -6830,7 +6830,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Committed result",
+            "description": "Read-only definition impact and workflow compatibility diagnostics.",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/RequestId"
@@ -16385,6 +16385,7 @@
           "impacts",
           "dependencies",
           "blockingIssues",
+          "workflowConflicts",
           "saveAllowed",
           "confirmation"
         ],
@@ -16457,6 +16458,12 @@
                 "type": "null"
               }
             ]
+          },
+          "workflowConflicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaWorkflowConflict"
+            }
           }
         }
       },
@@ -16909,6 +16916,24 @@
                   },
                   "data": {
                     "$ref": "#/components/schemas/SchemaFieldErrorData"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_SCHEMA_WORKFLOW_INCOMPATIBLE"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/SchemaWorkflowIncompatibleErrorData"
                   }
                 }
               }
@@ -19088,6 +19113,63 @@
             }
           }
         ]
+      },
+      "SchemaWorkflowConflict": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "flowId",
+          "version",
+          "nodeId",
+          "fieldId",
+          "reason"
+        ],
+        "properties": {
+          "flowId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "nodeId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "fieldId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "editable_field_removed",
+              "condition_field_removed",
+              "condition_type_incompatible"
+            ]
+          }
+        }
+      },
+      "SchemaWorkflowIncompatibleErrorData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "conflicts"
+        ],
+        "properties": {
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaWorkflowConflict"
+            }
+          }
+        },
+        "description": "The proposed schema is incompatible with at least one enabled, closing, starting, or active workflow version."
       }
     },
     "responses": {
