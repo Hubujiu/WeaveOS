@@ -11,9 +11,12 @@ export function FormsDialog({title,onClose,children,busy=false}:{
   const heading=useId();
   useEffect(()=>{
     const origin=document.activeElement instanceof HTMLElement?document.activeElement:null;
-    dialog.current?.showModal();
-    if(dialog.current)animation.current=dialogMotion(dialog.current,origin,()=>onCloseRef.current());
-    return()=>{animation.current?.dispose();animation.current=null;dialog.current?.close();if(origin?.isConnected)origin.focus();};
+    const element=dialog.current;
+    element?.showModal();
+    if(element)animation.current=dialogMotion(element,origin,()=>onCloseRef.current());
+    // Passive cleanup runs after React detaches refs. Close the captured top-layer
+    // element before restoring focus, including quick-close and unmount paths.
+    return()=>{animation.current?.dispose();animation.current=null;element?.close();if(origin?.isConnected)origin.focus();};
   },[]);
   const close=()=>{if(!busy)animation.current?.close();};
   return <dialog ref={dialog} className="forms-dialog" aria-labelledby={heading}
