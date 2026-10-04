@@ -193,11 +193,27 @@ END $$;
 -- +goose StatementEnd
 
 REVOKE ALL ON SEQUENCE applications.record_command_fence_epoch_seq
- FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+ FROM PUBLIC;
 REVOKE ALL ON FUNCTION applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint)
- FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+ FROM PUBLIC;
 REVOKE ALL ON FUNCTION applications.release_record_command_fence(uuid,uuid,uuid,uuid,bigint,bigint)
- FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+ FROM PUBLIC;
+
+-- New clusters apply migrations before the separately installed runtime roles.
+-- Revoke from each restricted role when it already exists; never create roles here.
+-- +goose StatementBegin
+DO $$
+DECLARE principal text;
+BEGIN
+ FOREACH principal IN ARRAY ARRAY['auth_app','auth_reader','auth_maintenance','auth_backup'] LOOP
+  IF EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname=principal) THEN
+   EXECUTE format('REVOKE ALL ON SEQUENCE applications.record_command_fence_epoch_seq FROM %I',principal);
+   EXECUTE format('REVOKE ALL ON FUNCTION applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint) FROM %I',principal);
+   EXECUTE format('REVOKE ALL ON FUNCTION applications.release_record_command_fence(uuid,uuid,uuid,uuid,bigint,bigint) FROM %I',principal);
+  END IF;
+ END LOOP;
+END $$;
+-- +goose StatementEnd
 
 -- +goose StatementBegin
 CREATE FUNCTION applications.block_active_workflow_command_schema_change() RETURNS trigger
