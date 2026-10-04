@@ -1,38 +1,12 @@
 -- +goose Up
-ALTER TABLE applications.operations
-    DROP CONSTRAINT ck_operation_kind,
-    ADD CONSTRAINT ck_operation_kind CHECK (operation_kind IN (
-        'application.create',
-        'group.create',
-        'group.update',
-        'members.replace',
-        'grants.replace',
-        'directory.create',
-        'directory.update',
-        'table.create',
-        'table.update',
-        'form.create',
-        'form.update',
-        'definition.save',
-        'record.create',
-        'record.edit',
-        'draft.create',
-        'draft.update',
-        'draft.discard',
-        'workflow.definition.save',
-        'workflow.enable',
-        'workflow.close'
-    ));
+-- V030-020 cold-first audit expansion. Keep the complete V030-013 legacy
+-- personnel/application expression, plus the old structural shape, and add
+-- only the three exact workflow management actions.
+ALTER TABLE archive.authentication_events
+    DROP CONSTRAINT ck_archive_events_summary;
 
-
--- Keep the complete pre-workflow application/personnel event expression and
--- replace only the V030-013 structural-audit branch with its old and new
--- finite alternatives. This is an explicit frozen CHECK, not pg_get_expr SQL.
-ALTER TABLE auth.authentication_events
-    DROP CONSTRAINT ck_auth_events_summary;
-
-ALTER TABLE auth.authentication_events
-    ADD CONSTRAINT ck_auth_events_summary CHECK (
+ALTER TABLE archive.authentication_events
+    ADD CONSTRAINT ck_archive_events_summary CHECK (
         (
             event_type <> 'application_structure_changed'
             AND COALESCE((
@@ -109,51 +83,22 @@ ALTER TABLE auth.authentication_events
     );
 
 -- +goose Down
-LOCK TABLE applications.operations IN ACCESS EXCLUSIVE MODE;
-LOCK TABLE auth.authentication_events IN ACCESS EXCLUSIVE MODE;
+LOCK TABLE archive.authentication_events IN ACCESS EXCLUSIVE MODE;
 -- +goose StatementBegin
 DO $$
 BEGIN
-    IF EXISTS (
-        SELECT 1 FROM applications.operations
-        WHERE operation_kind IN ('workflow.definition.save', 'workflow.enable', 'workflow.close')
-    ) OR EXISTS (
-        SELECT 1 FROM auth.authentication_events
-        WHERE reason_code IN ('WORKFLOW_DEFINITION_SAVE', 'WORKFLOW_ENABLE', 'WORKFLOW_CLOSE')
-    ) THEN
-        RAISE EXCEPTION 'cannot remove workflow management operation kinds or audit checks while history exists'
+    IF EXISTS (SELECT 1 FROM archive.authentication_events WHERE reason_code IN ('WORKFLOW_DEFINITION_SAVE','WORKFLOW_ENABLE','WORKFLOW_CLOSE')) THEN
+        RAISE EXCEPTION 'cannot remove workflow archive audit constraint while workflow history exists'
             USING ERRCODE = '55000';
     END IF;
 END;
 $$;
 -- +goose StatementEnd
 
-ALTER TABLE applications.operations
-    DROP CONSTRAINT ck_operation_kind,
-    ADD CONSTRAINT ck_operation_kind CHECK (operation_kind IN (
-        'application.create',
-        'group.create',
-        'group.update',
-        'members.replace',
-        'grants.replace',
-        'directory.create',
-        'directory.update',
-        'table.create',
-        'table.update',
-        'form.create',
-        'form.update',
-        'definition.save',
-        'record.create',
-        'record.edit',
-        'draft.create',
-        'draft.update',
-        'draft.discard'
-    ));
-
-ALTER TABLE auth.authentication_events
-    DROP CONSTRAINT ck_auth_events_summary;
-ALTER TABLE auth.authentication_events
-    ADD CONSTRAINT ck_auth_events_summary CHECK (
+ALTER TABLE archive.authentication_events
+    DROP CONSTRAINT ck_archive_events_summary;
+ALTER TABLE archive.authentication_events
+    ADD CONSTRAINT ck_archive_events_summary CHECK (
         (event_type <> 'application_structure_changed' AND COALESCE((
             (event_type='personnel_changed' AND object_type IS NOT NULL AND object_id IS NOT NULL AND change_summary IS NOT NULL
                 AND object_type IN ('department','member','identity','template') AND jsonb_typeof(change_summary)='object')

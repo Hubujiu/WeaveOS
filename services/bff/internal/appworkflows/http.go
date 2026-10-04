@@ -681,20 +681,26 @@ func (s *Service) mutate(w http.ResponseWriter, r *http.Request, p session.Princ
 }
 
 func insertAudit(ctx context.Context, tx pgx.Tx, p session.Principal, appID, viewID, flowID, operationID, action string, head workflowcatalog.Head) error {
-	var schemaVersion int64
-	if err := tx.QueryRow(ctx, `SELECT schema_version FROM applications.workflow_versions
-		WHERE app_id=$1 AND flow_id=$2 AND version=$3`, appID, flowID, head.CandidateVersion).Scan(&schemaVersion); err != nil {
-		return err
+	changeAction, reasonCode := "", ""
+	switch action {
+	case "save":
+		changeAction, reasonCode = "workflow.definition.save", "WORKFLOW_DEFINITION_SAVE"
+	case "enable":
+		changeAction, reasonCode = "workflow.enable", "WORKFLOW_ENABLE"
+	case "close":
+		changeAction, reasonCode = "workflow.close", "WORKFLOW_CLOSE"
+	default:
+		return errInvalid
 	}
-	summary, err := json.Marshal(map[string]any{"appId": appID, "operationId": operationID, "structureVersion": head.Revision,
-		"schemaVersion": schemaVersion, "viewVersion": head.CandidateVersion, "changeCount": 1})
+	summary, err := json.Marshal(map[string]any{"appId": appID, "flowId": flowID, "operationId": operationID,
+		"revision": head.Revision, "state": head.State, "action": changeAction})
 	if err != nil {
 		return err
 	}
 	metadata := httpserver.Metadata(ctx)
 	_, err = tx.Exec(ctx, `INSERT INTO auth.authentication_events(event_type,outcome,actor_user_id,session_ref,reason_code,request_id,
 		object_type,object_id,change_summary) VALUES('application_structure_changed','success',$1,NULLIF($2,'')::uuid,$3,$4,'form',$5,$6)`,
-		p.UserID, p.SessionRef, "WORKFLOW_"+strings.ToUpper(action), metadata.RequestID, viewID, summary)
+		p.UserID, p.SessionRef, reasonCode, metadata.RequestID, viewID, summary)
 	return err
 }
 

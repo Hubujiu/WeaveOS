@@ -1,9 +1,9 @@
-# V030-020 审计合同冲突记录
+# V030-020 审计合同缺口与修复记录
 
-检查时间：2026-10-04 UTC。运行环境为隔离 PostgreSQL 18.6、Redis 8.2.10；迁移 1–16 已应用。具体镜像标签、Go/Goose版本与专项初始 RED 结果见 `root-workflow-http-red-*`。
+初始专项实现按ADR字段写入`application_structure_changed`时，被已发布hot00007 `ck_auth_events_summary`以SQLSTATE `23514`拒绝。该诊断保留在`audit-check-rejection.txt`，不改写历史hot1–15/cold1–4。
 
-冻结的 V030-020 ADR 要求 `application_structure_changed` 的 `change_summary` 含 `appId,flowId,operationId,revision,state,action`。已发布 `db/migrations/00007_app_structure.sql`（SHA-256 `080b6daf0aacf0763d54dfadcbcffc2135486835700895b08010c77cb5d12531`）定义 `ck_auth_events_summary`，要求该事件键集合精确为 `appId,operationId,structureVersion,schemaVersion,viewVersion,changeCount`。直接以 ADR 字段插入真实 PostgreSQL 被 CHECK 拒绝，SQLSTATE `23514`。迁移合同同时限定 00016 只扩展 `ck_operation_kind` 并保留其他 CHECK。
+Root于2026-10-04更新Notion ADR并提交`719fe9a2b7a178efb6dc416daf2f9dafb726a76f`。保留六个ADR字段；hot00016、cold00005分别增加有限workflow action审计分支，保留旧人员、应用与结构审计CHECK语义。reason_code与action/state一一绑定；完整合同见`audit-contract-addendum.md`。
 
-将审计降为 00007 的六个既有键后，`TestRootWorkflowHTTP` 12 项全部通过；但此临时写法没有 ADR 要求的 `flowId,revision,state,action`，因此只证明 HTTP 行为通过，不计作合同 GREEN。当前实现不得将此结果表述成审计合同已满足。等待 Root 对迁移 00016 能否扩展 `ck_auth_events_summary`，或正式豁免 ADR 字段要求作出裁定。
+Root又提交`f0438bf8dae0fd0cace4814bde6f274f11c92a4b`修正冷库测试fixture，为合成归档行提供id和occurred_at，未改变断言或数据库定义。原23502仅是setup失败，保留作历史记录，不作为有效RED。
 
-被测 Root 测试文件 SHA-256：`ed98bd4398ba20bfd12b7ad0f117995c6220e831e9f3f83ac83dbb53d4e059f3`；未修改。初始真实 RED 已保存在 `root-workflow-http-red.txt` 及其源码 SHA/基线文件中。
+修复后最终专项：13项`TestRootWorkflowHTTP`、Root热冷CHECK、Root归档复制/冲突保留，全部通过；报告与source SHA见同目录`root-workflow-http-green*`、`audit-hot-cold-green*`和`audit-archive-green*`。
