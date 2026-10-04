@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
 	"reflect"
+	"slices"
 	"testing"
 )
 
@@ -24,7 +25,21 @@ func graph() Graph {
 		{ID: rid(4), Kind: "end"}, {ID: rid(5), Kind: "end"}},
 		Edges: []Edge{{rid(1), rid(2), ""}, {rid(2), rid(3), ""}, {rid(3), rid(4), "true"}, {rid(3), rid(5), "false"}}}
 }
-func clone(g Graph) Graph { b, _ := json.Marshal(g); var v Graph; _ = json.Unmarshal(b, &v); return v }
+func clone(g Graph) Graph {
+	out := g
+	out.Nodes = slices.Clone(g.Nodes)
+	out.Edges = slices.Clone(g.Edges)
+	for i := range out.Nodes {
+		out.Nodes[i].Condition = slices.Clone(g.Nodes[i].Condition)
+		if source := g.Nodes[i].Approval; source != nil {
+			value := *source
+			value.AssigneeIDs = slices.Clone(source.AssigneeIDs)
+			value.EditableFieldIDs = slices.Clone(source.EditableFieldIDs)
+			out.Nodes[i].Approval = &value
+		}
+	}
+	return out
+}
 func assertOrder(t *testing.T, g Graph, v Validated) {
 	t.Helper()
 	if len(v.Order) != len(g.Nodes) {
@@ -179,6 +194,7 @@ func TestRootFieldContextAlwaysValidated(t *testing.T) {
 func TestRootDeterministicAndNoInputMutation(t *testing.T) {
 	g := graph()
 	before := clone(g)
+	if !reflect.DeepEqual(g, before) { t.Fatal("test snapshot changed the graph before validation") }
 	fs := fields()
 	want, e := Validate(g, fs)
 	if e != nil {
