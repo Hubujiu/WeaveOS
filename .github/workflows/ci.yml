@@ -136,3 +136,32 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 14
+  workflow-engine:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Root-owned report gate acceptance
+        run: |
+          mkdir -p services/workflow-engine/ci-logs
+          python3 services/workflow-engine/ci_gate_tests.py 2>&1 | tee services/workflow-engine/ci-logs/gate-tests.txt
+      - name: Prepare locked offline Java dependencies
+        run: bash services/workflow-engine/prepare-build.sh 2>&1 | tee services/workflow-engine/ci-logs/prepare.txt
+      - name: Clean verify against dedicated internal PostgreSQL
+        run: bash services/workflow-engine/run-tests.sh clean verify 2>&1 | tee services/workflow-engine/ci-logs/verify.txt
+      - name: Require all 18 Root-owned cases without skips
+        run: python3 services/workflow-engine/ci_gate.py services/workflow-engine/target/surefire-reports services/workflow-engine/expected-tests.json 2>&1 | tee services/workflow-engine/ci-logs/report-gate.txt
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: workflow-engine-${{ github.run_id }}
+          path: |
+            services/workflow-engine/target/surefire-reports/
+            services/workflow-engine/ci-logs/
+          if-no-files-found: warn
+          retention-days: 14
