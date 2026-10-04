@@ -29,6 +29,23 @@ async function realApi(context: BrowserContext, actorId: string, path: string, m
  return { status: response.status(), code: envelope.code as string, data: envelope.data as Record<string, unknown> };
 }
 
+// Each permission-mutating browser case owns fresh real users. Never reuse the
+// password-reset target or grant access to the baseline unprivileged fixture.
+async function isolatedMember(context: BrowserContext, adminId: string): Promise<Credentials & { id: string }> {
+ const account = 'app-case-' + crypto.randomUUID();
+ const password = 'Synthetic@123';
+ const invitation = await realApi(context, adminId, 'invitations', 'POST', {});
+ expect(invitation.status).toBe(201);
+ expect(typeof invitation.data.invitationCode).toBe('string');
+ const registered = await realApi(context, adminId, 'registrations', 'POST', {
+  account, password, invitationCode: invitation.data.invitationCode,
+ });
+ expect(registered.status).toBe(201);
+ expect(registered.data.account).toBe(account);
+ expect(registered.data.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+ return { account, password, id: registered.data.id as string };
+}
+
 test('V030-012 real B5: root creates, reopens and member without a grant is denied', async ({ page, browser }, info) => {
  const f = fixture();
  await page.setViewportSize({ width: 1920, height: 1080 });
@@ -97,6 +114,7 @@ test('V030-012 real B5: owner saves permission-group basics, members and root me
  const f = fixture();
  await page.setViewportSize({ width: 1920, height: 1080 });
  await login(page, f.admin);
+ const ownMember = await isolatedMember(page.context(), f.adminId);
  const appResult = await realApi(page.context(), f.adminId, 'applications', 'POST', { name: '真实权限界面 ' + info.project.name + ' ' + Date.now(), operationId: crypto.randomUUID() });
  expect(appResult.status).toBe(201);
  const app = appResult.data as { id: string; name: string; policyRevision: number };
@@ -119,22 +137,22 @@ test('V030-012 real B5: owner saves permission-group basics, members and root me
  await page.getByRole('textbox', { name: '权限组名称', exact: true }).fill('真实权限组更新');
  await page.getByRole('button', { name: '保存基本信息', exact: true }).click();
  await expect(page.getByRole('status').filter({ hasText: '基本信息已保存' })).toBeVisible();
- await page.getByRole('textbox', { name: '按账号前缀搜索', exact: true }).fill(f.user.account);
- await expect(page.getByRole('checkbox', { name: f.user.account, exact: true })).toBeVisible();
+ await page.getByRole('textbox', { name: '按账号前缀搜索', exact: true }).fill(ownMember.account);
+ await expect(page.getByRole('checkbox', { name: ownMember.account, exact: true })).toBeVisible();
  if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('permission-candidate.png') });
- await page.getByRole('checkbox', { name: f.user.account, exact: true }).check();
+ await page.getByRole('checkbox', { name: ownMember.account, exact: true }).check();
  await page.getByRole('button', { name: '保存成员', exact: true }).click();
  await expect(page.getByRole('status').filter({ hasText: '成员已保存' })).toBeVisible();
  const groups = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups');
  const group = (groups.data.items as { id: string; name: string }[]).find(value => value.name === '真实权限组更新');
  expect(group).toBeTruthy();
  const members = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups/' + group!.id + '/members');
- expect(members.data.memberIds).toContain(f.userId);
+ expect(members.data.memberIds).toContain(ownMember.id);
  const memberContext = await browser.newContext({ baseURL: 'https://localhost:19443', ignoreHTTPSErrors: true });
  try {
   const memberPage = await memberContext.newPage();
-  await login(memberPage, f.user);
-  const beforeGrant = await realApi(memberContext, f.userId, 'applications/' + app.id + '/access');
+  await login(memberPage, ownMember);
+  const beforeGrant = await realApi(memberContext, ownMember.id, 'applications/' + app.id + '/access');
   expect(beforeGrant.status).toBe(403);
   await page.getByRole('checkbox', { name: '允许进入应用', exact: true }).check();
   if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('permission-menu-dirty.png') });
@@ -143,7 +161,7 @@ test('V030-012 real B5: owner saves permission-group basics, members and root me
   if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('permission-menu-saved.png') });
   const grant = await realApi(page.context(), f.adminId, 'applications/' + app.id + '/permission-groups/' + group!.id + '/grants');
   expect(grant.data.grants).toEqual([{ resourceKind: 'application', resourceId: app.id, action: 'menu.enter', rowScope: 'all', fields: [] }]);
-  const afterGrant = await realApi(memberContext, f.userId, 'applications/' + app.id + '/access');
+  const afterGrant = await realApi(memberContext, ownMember.id, 'applications/' + app.id + '/access');
   expect(afterGrant.status).toBe(200);
  } finally { await memberContext.close(); }
 });
@@ -251,6 +269,8 @@ test('V030-012 real B5: create-only owner, same-app menu member and cross-app de
  const suffix = `${info.project.name}-${Date.now()}`;
  await login(page, f.admin);
  const admin = page.context();
+ const ownCreator = await isolatedMember(admin, f.adminId);
+ const ownMember = await isolatedMember(admin, f.adminId);
  const create = async (name: string) => {
   const result = await realApi(admin, f.adminId, 'applications', 'POST', { name, operationId: crypto.randomUUID() });
   expect(result.status).toBe(201); expect(result.code).toBe('OK');
@@ -265,11 +285,11 @@ test('V030-012 real B5: create-only owner, same-app menu member and cross-app de
  });
  expect(identity.status).toBe(201);
  const identityId = identity.data.id as string;
- const search = await realApi(admin, f.adminId, 'personnel/members/search', 'POST', { page: 1, pageSize: 20, search: f.resetTarget.account });
+ const search = await realApi(admin, f.adminId, 'personnel/members/search', 'POST', { page: 1, pageSize: 20, search: ownCreator.account });
  expect(search.status).toBe(200);
- const member = await realApi(admin, f.adminId, 'personnel/members/' + f.resetTarget.id);
+ const member = await realApi(admin, f.adminId, 'personnel/members/' + ownCreator.id);
  expect(member.status).toBe(200);
- const assigned = await realApi(admin, f.adminId, 'personnel/members/' + f.resetTarget.id + '/identities', 'PUT', {
+ const assigned = await realApi(admin, f.adminId, 'personnel/members/' + ownCreator.id + '/identities', 'PUT', {
   identityIds: [identityId], version: member.data.version, queryVersion: search.data.queryVersion,
  });
  expect(assigned.status).toBe(200);
@@ -279,7 +299,7 @@ test('V030-012 real B5: create-only owner, same-app menu member and cross-app de
  const memberContext = await browser.newContext(base);
  try {
   const creator = await creatorContext.newPage();
-  await login(creator, f.resetTarget);
+  await login(creator, ownCreator);
   await expect(creator.getByRole('button', { name: '设置', exact: true })).toBeHidden();
   await creator.getByRole('button', { name: '打开应用中心', exact: true }).click();
   await expect(creator.getByRole('button', { name: '新建应用', exact: true })).toBeVisible();
@@ -293,9 +313,9 @@ test('V030-012 real B5: create-only owner, same-app menu member and cross-app de
   const ownResponse = await created;
   expect(ownResponse.status()).toBe(201);
   const ownApp = (await ownResponse.json()).data as { id: string; ownerUserId: string };
-  expect(ownApp.ownerUserId).toBe(f.resetTarget.id);
-  expect((await realApi(creatorContext, f.resetTarget.id, 'applications/' + ownApp.id + '/permission-groups')).status).toBe(200);
-  expect((await realApi(creatorContext, f.resetTarget.id, 'applications/' + appA.id + '/permission-groups')).status).toBe(403);
+  expect(ownApp.ownerUserId).toBe(ownCreator.id);
+  expect((await realApi(creatorContext, ownCreator.id, 'applications/' + ownApp.id + '/permission-groups')).status).toBe(200);
+  expect((await realApi(creatorContext, ownCreator.id, 'applications/' + appA.id + '/permission-groups')).status).toBe(403);
 
   const group = await realApi(admin, f.adminId, 'applications/' + appA.id + '/permission-groups', 'POST', {
    name: '入口成员 ' + suffix, operationId: crypto.randomUUID(), expectedPolicyRevision: 1,
@@ -303,7 +323,7 @@ test('V030-012 real B5: create-only owner, same-app menu member and cross-app de
   expect(group.status).toBe(201);
   const groupId = group.data.id as string;
   const members = await realApi(admin, f.adminId, 'applications/' + appA.id + '/permission-groups/' + groupId + '/members', 'PUT', {
-   memberIds: [f.userId], operationId: crypto.randomUUID(), expectedPolicyRevision: group.data.policyRevision,
+   memberIds: [ownMember.id], operationId: crypto.randomUUID(), expectedPolicyRevision: group.data.policyRevision,
   });
   expect(members.status).toBe(200);
   const grant = { resourceKind: 'application', resourceId: appA.id, action: 'menu.enter', rowScope: 'all', fields: [] };
@@ -313,14 +333,14 @@ test('V030-012 real B5: create-only owner, same-app menu member and cross-app de
   expect(grants.status).toBe(200);
 
   const memberPage = await memberContext.newPage();
-  await login(memberPage, f.user);
+  await login(memberPage, ownMember);
   await expect(memberPage.getByRole('button', { name: '设置', exact: true })).toBeHidden();
   await memberPage.getByRole('button', { name: '打开应用中心', exact: true }).click();
   await expect(memberPage.getByRole('main').getByRole('button', { name: appA.name, exact: true })).toBeVisible();
   await expect(memberPage.getByRole('main').getByRole('button', { name: appB.name, exact: true })).toHaveCount(0);
   await memberPage.getByRole('main').getByRole('button', { name: appA.name, exact: true }).click();
   await expect(memberPage.getByRole('heading', { name: appA.name, exact: true })).toBeVisible();
-  expect((await realApi(memberContext, f.userId, 'applications/' + appA.id + '/permission-groups')).status).toBe(403);
+  expect((await realApi(memberContext, ownMember.id, 'applications/' + appA.id + '/permission-groups')).status).toBe(403);
   await memberPage.goto('/app/applications/' + appB.id);
   await expect(memberPage.getByRole('alert')).toContainText('没有应用访问或管理权限');
 
