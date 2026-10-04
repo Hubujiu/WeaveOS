@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="org.weaveos.workflow.RootDeploymentRegistryTest" time="6.075" tests="15" errors="10" skipped="0" failures="5">
+  <properties>
+    <property name="java.specification.version" value="17"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.class.path" value="/proof/target/test-classes:/proof/target/classes:/m2/org/flowable/flowable-spring/8.0.0/flowable-spring-8.0.0.jar:/m2/org/flowable/flowable-engine/8.0.0/flowable-engine-8.0.0.jar:/m2/org/flowable/flowable-bpmn-converter/8.0.0/flowable-bpmn-converter-8.0.0.jar:/m2/org/flowable/flowable-bpmn-model/8.0.0/flowable-bpmn-model-8.0.0.jar:/m2/org/flowable/flowable-process-validation/8.0.0/flowable-process-validation-8.0.0.jar:/m2/org/flowable/flowable-image-generator/8.0.0/flowable-image-generator-8.0.0.jar:/m2/org/flowable/flowable-engine-common-api/8.0.0/flowable-engine-common-api-8.0.0.jar:/m2/org/flowable/flowable-engine-common/8.0.0/flowable-engine-common-8.0.0.jar:/m2/org/flowable/flowable-variable-service-api/8.0.0/flowable-variable-service-api-8.0.0.jar:/m2/org/flowable/flowable-event-registry-api/8.0.0/flowable-event-registry-api-8.0.0.jar:/m2/tools/jackson/core/jackson-databind/3.0.4/jackson-databind-3.0.4.jar:/m2/tools/jackson/core/jackson-core/3.0.4/jackson-core-3.0.4.jar:/m2/org/flowable/flowable-variable-service/8.0.0/flowable-variable-service-8.0.0.jar:/m2/org/flowable/flowable-identitylink-service/8.0.0/flowable-identitylink-service-8.0.0.jar:/m2/org/flowable/flowable-identitylink-service-api/8.0.0/flowable-identitylink-service-api-8.0.0.jar:/m2/org/flowable/flowable-entitylink-service/8.0.0/flowable-entitylink-service-8.0.0.jar:/m2/org/flowable/flowable-entitylink-service-api/8.0.0/flowable-entitylink-service-api-8.0.0.jar:/m2/org/flowable/flowable-event-registry/8.0.0/flowable-event-registry-8.0.0.jar:/m2/org/flowable/flowable-event-registry-model/8.0.0/flowable-event-registry-model-8.0.0.jar:/m2/org/flowable/flowable-event-registry-json-converter/8.0.0/flowable-event-registry-json-converter-8.0.0.jar:/m2/org/flowable/flowable-eventsubscription-service-api/8.0.0/flowable-eventsubscription-service-api-8.0.0.jar:/m2/commons-io/commons-io/2.21.0/commons-io-2.21.0.jar:/m2/com/fasterxml/uuid/java-uuid-generator/5.1.0/java-uuid-generator-5.1.0.jar:/m2/org/flowable/flowable-event-registry-configurator/8.0.0/flowable-event-registry-configurator-8.0.0.jar:/m2/org/flowable/flowable-eventsubscription-service/8.0.0/flowable-eventsubscription-service-8.0.0.jar:/m2/org/flowable/flowable-task-service/8.0.0/flowable-task-service-8.0.0.jar:/m2/org/flowable/flowable-task-service-api/8.0.0/flowable-task-service-api-8.0.0.jar:/m2/org/flowable/flowable-job-service/8.0.0/flowable-job-service-8.0.0.jar:/m2/org/flowable/flowable-job-service-api/8.0.0/flowable-job-service-api-8.0.0.jar:/m2/org/flowable/flowable-batch-service/8.0.0/flowable-batch-service-8.0.0.jar:/m2/org/flowable/flowable-batch-service-api/8.0.0/flowable-batch-service-api-8.0.0.jar:/m2/org/flowable/flowable-idm-api/8.0.0/flowable-idm-api-8.0.0.jar:/m2/org/flowable/flowable-idm-engine/8.0.0/flowable-idm-engine-8.0.0.jar:/m2/commons-codec/commons-codec/1.19.0/commons-codec-1.19.0.jar:/m2/org/flowable/flowable-idm-engine-configurator/8.0.0/flowable-idm-engine-configurator-8.0.0.jar:/m2/org/flowable/flowable-cmmn-api/8.0.0/flowable-cmmn-api-8.0.0.jar:/m2/org/flowable/flowable-cmmn-model/8.0.0/flowable-cmmn-model-8.0.0.jar:/m2/org/flowable/flowable-dmn-api/8.0.0/flowable-dmn-api-8.0.0.jar:/m2/org/flowable/flowable-dmn-model/8.0.0/flowable-dmn-model-8.0.0.jar:/m2/org/flowable/flowable-form-model/8.0.0/flowable-form-model-8.0.0.jar:/m2/org/flowable/flowable-form-api/8.0.0/flowable-form-api-8.0.0.jar:/m2/com/fasterxml/jackson/core/jackson-annotations/2.20/jackson-annotations-2.20.jar:/m2/org/flowable/flowable-content-api/8.0.0/flowable-content-api-8.0.0.jar:/m2/org/flowable/flowable-http-common/8.0.0/flowable-http-common-8.0.0.jar:/m2/org/flowable/flowable-mail/8.0.0/flowable-mail-8.0.0.jar:/m2/org/eclipse/angus/angus-mail/2.0.5/angus-mail-2.0.5.jar:/m2/jakarta/activation/jakarta.activation-api/2.1.4/jakarta.activation-api-2.1.4.jar:/m2/jakarta/mail/jakarta.mail-api/2.1.5/jakarta.mail-api-2.1.5.jar:/m2/org/eclipse/angus/angus-activation/2.0.3/angus-activation-2.0.3.jar:/m2/org/mybatis/mybatis/3.5.19/mybatis-3.5.19.jar:/m2/org/springframework/spring-beans/7.0.3/spring-beans-7.0.3.jar:/m2/joda-time/joda-time/2.14.0/joda-time-2.14.0.jar:/m2/org/flowable/flowable-spring-common/8.0.0/flowable-spring-common-8.0.0.jar:/m2/org/flowable/flowable-job-spring-service/8.0.0/flowable-job-spring-service-8.0.0.jar:/m2/org/flowable/flowable-event-registry-spring-configurator/8.0.0/flowable-event-registry-spring-configurator-8.0.0.jar:/m2/org/flowable/flowable-event-registry-spring/8.0.0/flowable-event-registry-spring-8.0.0.jar:/m2/org/springframework/spring-context/7.0.3/spring-context-7.0.3.jar:/m2/org/springframework/spring-aop/7.0.3/spring-aop-7.0.3.jar:/m2/org/springframework/spring-core/7.0.3/spring-core-7.0.3.jar:/m2/commons-logging/commons-logging/1.3.5/commons-logging-1.3.5.jar:/m2/org/springframework/spring-expression/7.0.3/spring-expression-7.0.3.jar:/m2/io/micrometer/micrometer-observation/1.16.2/micrometer-observation-1.16.2.jar:/m2/io/micrometer/micrometer-commons/1.16.2/micrometer-commons-1.16.2.jar:/m2/org/springframework/spring-jdbc/7.0.3/spring-jdbc-7.0.3.jar:/m2/org/springframework/spring-tx/7.0.3/spring-tx-7.0.3.jar:/m2/org/apache/commons/commons-lang3/3.19.0/commons-lang3-3.19.0.jar:/m2/org/springframework/spring-orm/7.0.3/spring-orm-7.0.3.jar:/m2/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.jar:/m2/org/slf4j/jcl-over-slf4j/2.0.17/jcl-over-slf4j-2.0.17.jar:/m2/org/springframework/boot/spring-boot-starter/4.0.2/spring-boot-starter-4.0.2.jar:/m2/org/springframework/boot/spring-boot-starter-logging/4.0.2/spring-boot-starter-logging-4.0.2.jar:/m2/ch/qos/logback/logback-classic/1.5.25/logback-classic-1.5.25.jar:/m2/ch/qos/logback/logback-core/1.5.25/logback-core-1.5.25.jar:/m2/org/apache/logging/log4j/log4j-to-slf4j/2.25.3/log4j-to-slf4j-2.25.3.jar:/m2/org/apache/logging/log4j/log4j-api/2.25.3/log4j-api-2.25.3.jar:/m2/org/slf4j/jul-to-slf4j/2.0.17/jul-to-slf4j-2.0.17.jar:/m2/org/springframework/boot/spring-boot-autoconfigure/4.0.2/spring-boot-autoconfigure-4.0.2.jar:/m2/org/springframework/boot/spring-boot/4.0.2/spring-boot-4.0.2.jar:/m2/jakarta/annotation/jakarta.annotation-api/3.0.0/jakarta.annotation-api-3.0.0.jar:/m2/org/yaml/snakeyaml/2.5/snakeyaml-2.5.jar:/m2/org/postgresql/postgresql/42.7.9/postgresql-42.7.9.jar:/m2/org/checkerframework/checker-qual/3.52.0/checker-qual-3.52.0.jar:/m2/org/junit/jupiter/junit-jupiter/6.0.2/junit-jupiter-6.0.2.jar:/m2/org/junit/jupiter/junit-jupiter-api/6.0.2/junit-jupiter-api-6.0.2.jar:/m2/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/m2/org/junit/platform/junit-platform-commons/6.0.2/junit-platform-commons-6.0.2.jar:/m2/org/junit/jupiter/junit-jupiter-params/6.0.2/junit-jupiter-params-6.0.2.jar:/m2/org/junit/jupiter/junit-jupiter-engine/6.0.2/junit-jupiter-engine-6.0.2.jar:/m2/org/junit/platform/junit-platform-launcher/6.0.2/junit-platform-launcher-6.0.2.jar:/m2/org/junit/platform/junit-platform-engine/6.0.2/junit-platform-engine-6.0.2.jar:/m2/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/m2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar:"/>
+    <property name="java.vm.vendor" value="Eclipse Adoptium"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.vendor.url" value="https://adoptium.net/"/>
+    <property name="user.timezone" value="Etc/UTC"/>
+    <property name="os.name" value="Linux"/>
+    <property name="java.vm.specification.version" value="17"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="user.country" value="US"/>
+    <property name="sun.boot.library.path" value="/opt/java/openjdk/lib"/>
+    <property name="sun.java.command" value="/proof/target/surefire/surefirebooter-20261004183842178_3.jar /proof/target/surefire 2026-10-04T18-38-42_127-jvmRun1 surefire-20261004183842178_1tmp surefire_0-20261004183842178_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="/proof/target/test-classes:/proof/target/classes:/m2/org/flowable/flowable-spring/8.0.0/flowable-spring-8.0.0.jar:/m2/org/flowable/flowable-engine/8.0.0/flowable-engine-8.0.0.jar:/m2/org/flowable/flowable-bpmn-converter/8.0.0/flowable-bpmn-converter-8.0.0.jar:/m2/org/flowable/flowable-bpmn-model/8.0.0/flowable-bpmn-model-8.0.0.jar:/m2/org/flowable/flowable-process-validation/8.0.0/flowable-process-validation-8.0.0.jar:/m2/org/flowable/flowable-image-generator/8.0.0/flowable-image-generator-8.0.0.jar:/m2/org/flowable/flowable-engine-common-api/8.0.0/flowable-engine-common-api-8.0.0.jar:/m2/org/flowable/flowable-engine-common/8.0.0/flowable-engine-common-8.0.0.jar:/m2/org/flowable/flowable-variable-service-api/8.0.0/flowable-variable-service-api-8.0.0.jar:/m2/org/flowable/flowable-event-registry-api/8.0.0/flowable-event-registry-api-8.0.0.jar:/m2/tools/jackson/core/jackson-databind/3.0.4/jackson-databind-3.0.4.jar:/m2/tools/jackson/core/jackson-core/3.0.4/jackson-core-3.0.4.jar:/m2/org/flowable/flowable-variable-service/8.0.0/flowable-variable-service-8.0.0.jar:/m2/org/flowable/flowable-identitylink-service/8.0.0/flowable-identitylink-service-8.0.0.jar:/m2/org/flowable/flowable-identitylink-service-api/8.0.0/flowable-identitylink-service-api-8.0.0.jar:/m2/org/flowable/flowable-entitylink-service/8.0.0/flowable-entitylink-service-8.0.0.jar:/m2/org/flowable/flowable-entitylink-service-api/8.0.0/flowable-entitylink-service-api-8.0.0.jar:/m2/org/flowable/flowable-event-registry/8.0.0/flowable-event-registry-8.0.0.jar:/m2/org/flowable/flowable-event-registry-model/8.0.0/flowable-event-registry-model-8.0.0.jar:/m2/org/flowable/flowable-event-registry-json-converter/8.0.0/flowable-event-registry-json-converter-8.0.0.jar:/m2/org/flowable/flowable-eventsubscription-service-api/8.0.0/flowable-eventsubscription-service-api-8.0.0.jar:/m2/commons-io/commons-io/2.21.0/commons-io-2.21.0.jar:/m2/com/fasterxml/uuid/java-uuid-generator/5.1.0/java-uuid-generator-5.1.0.jar:/m2/org/flowable/flowable-event-registry-configurator/8.0.0/flowable-event-registry-configurator-8.0.0.jar:/m2/org/flowable/flowable-eventsubscription-service/8.0.0/flowable-eventsubscription-service-8.0.0.jar:/m2/org/flowable/flowable-task-service/8.0.0/flowable-task-service-8.0.0.jar:/m2/org/flowable/flowable-task-service-api/8.0.0/flowable-task-service-api-8.0.0.jar:/m2/org/flowable/flowable-job-service/8.0.0/flowable-job-service-8.0.0.jar:/m2/org/flowable/flowable-job-service-api/8.0.0/flowable-job-service-api-8.0.0.jar:/m2/org/flowable/flowable-batch-service/8.0.0/flowable-batch-service-8.0.0.jar:/m2/org/flowable/flowable-batch-service-api/8.0.0/flowable-batch-service-api-8.0.0.jar:/m2/org/flowable/flowable-idm-api/8.0.0/flowable-idm-api-8.0.0.jar:/m2/org/flowable/flowable-idm-engine/8.0.0/flowable-idm-engine-8.0.0.jar:/m2/commons-codec/commons-codec/1.19.0/commons-codec-1.19.0.jar:/m2/org/flowable/flowable-idm-engine-configurator/8.0.0/flowable-idm-engine-configurator-8.0.0.jar:/m2/org/flowable/flowable-cmmn-api/8.0.0/flowable-cmmn-api-8.0.0.jar:/m2/org/flowable/flowable-cmmn-model/8.0.0/flowable-cmmn-model-8.0.0.jar:/m2/org/flowable/flowable-dmn-api/8.0.0/flowable-dmn-api-8.0.0.jar:/m2/org/flowable/flowable-dmn-model/8.0.0/flowable-dmn-model-8.0.0.jar:/m2/org/flowable/flowable-form-model/8.0.0/flowable-form-model-8.0.0.jar:/m2/org/flowable/flowable-form-api/8.0.0/flowable-form-api-8.0.0.jar:/m2/com/fasterxml/jackson/core/jackson-annotations/2.20/jackson-annotations-2.20.jar:/m2/org/flowable/flowable-content-api/8.0.0/flowable-content-api-8.0.0.jar:/m2/org/flowable/flowable-http-common/8.0.0/flowable-http-common-8.0.0.jar:/m2/org/flowable/flowable-mail/8.0.0/flowable-mail-8.0.0.jar:/m2/org/eclipse/angus/angus-mail/2.0.5/angus-mail-2.0.5.jar:/m2/jakarta/activation/jakarta.activation-api/2.1.4/jakarta.activation-api-2.1.4.jar:/m2/jakarta/mail/jakarta.mail-api/2.1.5/jakarta.mail-api-2.1.5.jar:/m2/org/eclipse/angus/angus-activation/2.0.3/angus-activation-2.0.3.jar:/m2/org/mybatis/mybatis/3.5.19/mybatis-3.5.19.jar:/m2/org/springframework/spring-beans/7.0.3/spring-beans-7.0.3.jar:/m2/joda-time/joda-time/2.14.0/joda-time-2.14.0.jar:/m2/org/flowable/flowable-spring-common/8.0.0/flowable-spring-common-8.0.0.jar:/m2/org/flowable/flowable-job-spring-service/8.0.0/flowable-job-spring-service-8.0.0.jar:/m2/org/flowable/flowable-event-registry-spring-configurator/8.0.0/flowable-event-registry-spring-configurator-8.0.0.jar:/m2/org/flowable/flowable-event-registry-spring/8.0.0/flowable-event-registry-spring-8.0.0.jar:/m2/org/springframework/spring-context/7.0.3/spring-context-7.0.3.jar:/m2/org/springframework/spring-aop/7.0.3/spring-aop-7.0.3.jar:/m2/org/springframework/spring-core/7.0.3/spring-core-7.0.3.jar:/m2/commons-logging/commons-logging/1.3.5/commons-logging-1.3.5.jar:/m2/org/springframework/spring-expression/7.0.3/spring-expression-7.0.3.jar:/m2/io/micrometer/micrometer-observation/1.16.2/micrometer-observation-1.16.2.jar:/m2/io/micrometer/micrometer-commons/1.16.2/micrometer-commons-1.16.2.jar:/m2/org/springframework/spring-jdbc/7.0.3/spring-jdbc-7.0.3.jar:/m2/org/springframework/spring-tx/7.0.3/spring-tx-7.0.3.jar:/m2/org/apache/commons/commons-lang3/3.19.0/commons-lang3-3.19.0.jar:/m2/org/springframework/spring-orm/7.0.3/spring-orm-7.0.3.jar:/m2/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.jar:/m2/org/slf4j/jcl-over-slf4j/2.0.17/jcl-over-slf4j-2.0.17.jar:/m2/org/springframework/boot/spring-boot-starter/4.0.2/spring-boot-starter-4.0.2.jar:/m2/org/springframework/boot/spring-boot-starter-logging/4.0.2/spring-boot-starter-logging-4.0.2.jar:/m2/ch/qos/logback/logback-classic/1.5.25/logback-classic-1.5.25.jar:/m2/ch/qos/logback/logback-core/1.5.25/logback-core-1.5.25.jar:/m2/org/apache/logging/log4j/log4j-to-slf4j/2.25.3/log4j-to-slf4j-2.25.3.jar:/m2/org/apache/logging/log4j/log4j-api/2.25.3/log4j-api-2.25.3.jar:/m2/org/slf4j/jul-to-slf4j/2.0.17/jul-to-slf4j-2.0.17.jar:/m2/org/springframework/boot/spring-boot-autoconfigure/4.0.2/spring-boot-autoconfigure-4.0.2.jar:/m2/org/springframework/boot/spring-boot/4.0.2/spring-boot-4.0.2.jar:/m2/jakarta/annotation/jakarta.annotation-api/3.0.0/jakarta.annotation-api-3.0.0.jar:/m2/org/yaml/snakeyaml/2.5/snakeyaml-2.5.jar:/m2/org/postgresql/postgresql/42.7.9/postgresql-42.7.9.jar:/m2/org/checkerframework/checker-qual/3.52.0/checker-qual-3.52.0.jar:/m2/org/junit/jupiter/junit-jupiter/6.0.2/junit-jupiter-6.0.2.jar:/m2/org/junit/jupiter/junit-jupiter-api/6.0.2/junit-jupiter-api-6.0.2.jar:/m2/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/m2/org/junit/platform/junit-platform-commons/6.0.2/junit-platform-commons-6.0.2.jar:/m2/org/junit/jupiter/junit-jupiter-params/6.0.2/junit-jupiter-params-6.0.2.jar:/m2/org/junit/jupiter/junit-jupiter-engine/6.0.2/junit-jupiter-engine-6.0.2.jar:/m2/org/junit/platform/junit-platform-launcher/6.0.2/junit-platform-launcher-6.0.2.jar:/m2/org/junit/platform/junit-platform-engine/6.0.2/junit-platform-engine-6.0.2.jar:/m2/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/m2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/tmp"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2025-10-21"/>
+    <property name="java.home" value="/opt/java/openjdk"/>
+    <property name="file.separator" value="/"/>
+    <property name="basedir" value="/proof"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="surefire.real.class.path" value="/proof/target/surefire/surefirebooter-20261004183842178_3.jar"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="17.0.17+10"/>
+    <property name="user.name" value="ubuntu"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="6.18.44"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="java.vendor.version" value="Temurin-17.0.17+10"/>
+    <property name="localRepository" value="/m2"/>
+    <property name="java.vendor.url.bug" value="https://github.com/adoptium/adoptium-support/issues"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="java.version" value="17.0.17"/>
+    <property name="user.dir" value="/proof"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="native.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib"/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="java.vendor" value="Eclipse Adoptium"/>
+    <property name="java.vm.version" value="17.0.17+10"/>
+    <property name="java.specification.maintenance.version" value="1"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="maven.repo.local" value="/m2"/>
+    <property name="java.class.version" value="61.0"/>
+  </properties>
+  <testcase name="sameVersionIdentityRejectsDifferentXmlBytes" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="1.41">
+    <error message="V030-022 P1 not implemented" type="java.lang.IllegalStateException"><![CDATA[java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:16)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.sameVersionIdentityRejectsDifferentXmlBytes(RootDeploymentRegistryTest.java:76)
+]]></error>
+    <system-out><![CDATA[18:38:43.853 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:43.855 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:43.855 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:43.856 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@6aa7b67f
+18:38:43.856 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:43.856 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:43.856 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:43.882 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:43.933 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:43.980 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:43.992 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:44.025 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="responseLostAfterCommitThenEngineReopenedReplaysDurableReceipt" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.451">
+    <error message="V030-022 P1 not implemented" type="java.lang.IllegalStateException"><![CDATA[java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:16)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.responseLostAfterCommitThenEngineReopenedReplaysDurableReceipt(RootDeploymentRegistryTest.java:102)
+]]></error>
+    <system-out><![CDATA[18:38:44.388 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:44.388 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:44.388 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:44.388 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@66223d94
+18:38:44.388 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:44.388 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:44.388 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:44.397 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:44.446 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:44.484 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:44.495 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:44.503 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="confirmedReceiptBindsExactContextHashAndActualEngineDefinition" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.389">
+    <error message="V030-022 P1 not implemented" type="java.lang.IllegalStateException"><![CDATA[java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:16)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.confirmedReceiptBindsExactContextHashAndActualEngineDefinition(RootDeploymentRegistryTest.java:70)
+]]></error>
+    <system-out><![CDATA[18:38:44.787 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:44.787 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:44.787 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:44.787 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@56846330
+18:38:44.788 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:44.788 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:44.788 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:44.798 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:44.843 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:44.876 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:44.886 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:44.894 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="invalidIdentitiesAndVersionBoundsNeverTouchEitherStore" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.418">
+    <failure message="Unexpected exception type thrown, expected: &lt;org.weaveos.workflow.DeploymentRegistry.InvalidDeployment&gt; but was: &lt;java.lang.IllegalStateException&gt;" type="org.opentest4j.AssertionFailedError"><![CDATA[org.opentest4j.AssertionFailedError: Unexpected exception type thrown, expected: <org.weaveos.workflow.DeploymentRegistry.InvalidDeployment> but was: <java.lang.IllegalStateException>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:68)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3223)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.invalidIdentitiesAndVersionBoundsNeverTouchEitherStore(RootDeploymentRegistryTest.java:113)
+Caused by: java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:16)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.lambda$invalidIdentitiesAndVersionBoundsNeverTouchEitherStore$6(RootDeploymentRegistryTest.java:113)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:54)
+	... 3 more
+]]></failure>
+    <system-out><![CDATA[18:38:45.147 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:45.147 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:45.147 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:45.147 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@66bf40e5
+18:38:45.147 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:45.147 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:45.147 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:45.156 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:45.217 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:45.256 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:45.267 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:45.276 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="absentLookupIsEmptyAndHasNoWriteSideEffect" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.372">
+    <error message="V030-022 P1 not implemented" type="java.lang.IllegalStateException"><![CDATA[java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.lookup(DeploymentRegistry.java:18)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.absentLookupIsEmptyAndHasNoWriteSideEffect(RootDeploymentRegistryTest.java:106)
+]]></error>
+    <system-out><![CDATA[18:38:45.600 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:45.601 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:45.601 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:45.601 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@4b8137c5
+18:38:45.601 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:45.601 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:45.601 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:45.608 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:45.644 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:45.673 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:45.682 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:45.689 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="differentApplicationMayReuseFlowIdAndVersionNumber" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.294">
+    <error message="V030-022 P1 not implemented" type="java.lang.IllegalStateException"><![CDATA[java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:16)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.differentApplicationMayReuseFlowIdAndVersionNumber(RootDeploymentRegistryTest.java:135)
+]]></error>
+    <system-out><![CDATA[18:38:45.889 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:45.890 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:45.890 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:45.890 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@71e7adbb
+18:38:45.890 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:45.890 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:45.890 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:45.899 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:45.937 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:45.969 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:45.979 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:45.986 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="sameVersionIdentityCannotChangeApplicationOrFlowOrNumber" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.32">
+    <error message="V030-022 P1 not implemented" type="java.lang.IllegalStateException"><![CDATA[java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:16)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.sameVersionIdentityCannotChangeApplicationOrFlowOrNumber(RootDeploymentRegistryTest.java:81)
+]]></error>
+    <system-out><![CDATA[18:38:46.209 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:46.210 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:46.210 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:46.210 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@3e546734
+18:38:46.210 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:46.210 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:46.210 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:46.218 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:46.257 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:46.287 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:46.295 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:46.302 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="duplicateReplaysOriginalReceiptWithoutRedeploying" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.308">
+    <error message="V030-022 P1 not implemented" type="java.lang.IllegalStateException"><![CDATA[java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:16)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.duplicateReplaysOriginalReceiptWithoutRedeploying(RootDeploymentRegistryTest.java:73)
+]]></error>
+    <system-out><![CDATA[18:38:46.511 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:46.511 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:46.511 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:46.511 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@5d508d22
+18:38:46.511 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:46.511 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:46.511 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:46.519 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:46.558 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:46.591 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:46.599 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:46.606 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="joinsOuterRequiredTransactionWithoutLeavingAnEngineDeployment" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.324">
+    <error message="V030-022 P1 not implemented" type="java.lang.IllegalStateException"><![CDATA[java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:16)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.lambda$joinsOuterRequiredTransactionWithoutLeavingAnEngineDeployment$5(RootDeploymentRegistryTest.java:98)
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68)
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:137)
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.joinsOuterRequiredTransactionWithoutLeavingAnEngineDeployment(RootDeploymentRegistryTest.java:98)
+]]></error>
+    <system-out><![CDATA[18:38:46.838 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:46.838 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:46.838 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:46.838 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@740fefc6
+18:38:46.838 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:46.838 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:46.838 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:46.847 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:46.887 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:46.916 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:46.925 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:46.931 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="unsafeOrUnboundXmlIsRejectedBeforeAnyDeployment" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.305">
+    <failure message="Unexpected exception type thrown, expected: &lt;org.weaveos.workflow.DeploymentRegistry.InvalidDeployment&gt; but was: &lt;java.lang.IllegalStateException&gt;" type="org.opentest4j.AssertionFailedError"><![CDATA[org.opentest4j.AssertionFailedError: Unexpected exception type thrown, expected: <org.weaveos.workflow.DeploymentRegistry.InvalidDeployment> but was: <java.lang.IllegalStateException>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:68)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3223)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.unsafeOrUnboundXmlIsRejectedBeforeAnyDeployment(RootDeploymentRegistryTest.java:124)
+Caused by: java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:16)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.lambda$unsafeOrUnboundXmlIsRejectedBeforeAnyDeployment$7(RootDeploymentRegistryTest.java:124)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:54)
+	... 3 more
+]]></failure>
+    <system-out><![CDATA[18:38:47.137 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:47.137 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:47.137 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:47.137 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@45a1d057
+18:38:47.137 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:47.137 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:47.137 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:47.145 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:47.190 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:47.223 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:47.233 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:47.241 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="oneLogicalVersionCannotBindTwoVersionIdentities" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.284">
+    <error message="V030-022 P1 not implemented" type="java.lang.IllegalStateException"><![CDATA[java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:16)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.oneLogicalVersionCannotBindTwoVersionIdentities(RootDeploymentRegistryTest.java:89)
+]]></error>
+    <system-out><![CDATA[18:38:47.429 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:47.430 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:47.430 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:47.430 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@437bd805
+18:38:47.430 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:47.430 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:47.430 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:47.438 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:47.478 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:47.507 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:47.515 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:47.522 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="concurrentSameRequestCommitsOneDeployment" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.292">
+    <error message="java.lang.IllegalStateException: V030-022 P1 not implemented" type="java.util.concurrent.ExecutionException"><![CDATA[java.util.concurrent.ExecutionException: java.lang.IllegalStateException: V030-022 P1 not implemented
+	at java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+	at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.concurrentSameRequestCommitsOneDeployment(RootDeploymentRegistryTest.java:130)
+Caused by: java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:16)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.lambda$concurrentSameRequestCommitsOneDeployment$8(RootDeploymentRegistryTest.java:128)
+]]></error>
+    <system-out><![CDATA[18:38:47.719 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:47.719 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:47.719 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:47.719 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@6c3f1658
+18:38:47.719 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:47.719 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:47.719 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:47.727 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:47.770 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:47.804 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:47.814 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:47.821 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="everyPrecommitFailureRollsBackRegistryAndFlowable(Stage)[1]" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.3">
+    <failure message="Unexpected exception type thrown, expected: &lt;org.weaveos.workflow.RootDeploymentRegistryTest.InjectedFailure&gt; but was: &lt;java.lang.IllegalStateException&gt;" type="org.opentest4j.AssertionFailedError"><![CDATA[org.opentest4j.AssertionFailedError: Unexpected exception type thrown, expected: <org.weaveos.workflow.RootDeploymentRegistryTest.InjectedFailure> but was: <java.lang.IllegalStateException>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:68)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3223)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.everyPrecommitFailureRollsBackRegistryAndFlowable(RootDeploymentRegistryTest.java:95)
+Caused by: java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.lambda$everyPrecommitFailureRollsBackRegistryAndFlowable$4(RootDeploymentRegistryTest.java:95)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:54)
+	... 3 more
+]]></failure>
+    <system-out><![CDATA[18:38:48.031 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:48.031 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:48.031 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:48.031 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@1efac5b9
+18:38:48.031 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:48.031 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:48.032 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:48.041 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:48.091 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:48.124 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:48.132 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:48.139 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="everyPrecommitFailureRollsBackRegistryAndFlowable(Stage)[2]" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.275">
+    <failure message="Unexpected exception type thrown, expected: &lt;org.weaveos.workflow.RootDeploymentRegistryTest.InjectedFailure&gt; but was: &lt;java.lang.IllegalStateException&gt;" type="org.opentest4j.AssertionFailedError"><![CDATA[org.opentest4j.AssertionFailedError: Unexpected exception type thrown, expected: <org.weaveos.workflow.RootDeploymentRegistryTest.InjectedFailure> but was: <java.lang.IllegalStateException>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:68)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3223)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.everyPrecommitFailureRollsBackRegistryAndFlowable(RootDeploymentRegistryTest.java:95)
+Caused by: java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.lambda$everyPrecommitFailureRollsBackRegistryAndFlowable$4(RootDeploymentRegistryTest.java:95)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:54)
+	... 3 more
+]]></failure>
+    <system-out><![CDATA[18:38:48.321 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:48.321 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:48.321 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:48.321 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@3887c7d7
+18:38:48.321 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:48.321 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:48.321 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:48.329 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:48.371 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:48.406 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:48.418 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:48.425 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+  <testcase name="everyPrecommitFailureRollsBackRegistryAndFlowable(Stage)[3]" classname="org.weaveos.workflow.RootDeploymentRegistryTest" time="0.27">
+    <failure message="Unexpected exception type thrown, expected: &lt;org.weaveos.workflow.RootDeploymentRegistryTest.InjectedFailure&gt; but was: &lt;java.lang.IllegalStateException&gt;" type="org.opentest4j.AssertionFailedError"><![CDATA[org.opentest4j.AssertionFailedError: Unexpected exception type thrown, expected: <org.weaveos.workflow.RootDeploymentRegistryTest.InjectedFailure> but was: <java.lang.IllegalStateException>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:68)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3223)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.everyPrecommitFailureRollsBackRegistryAndFlowable(RootDeploymentRegistryTest.java:95)
+Caused by: java.lang.IllegalStateException: V030-022 P1 not implemented
+	at org.weaveos.workflow.DeploymentRegistry.deploy(DeploymentRegistry.java:17)
+	at org.weaveos.workflow.RootDeploymentRegistryTest.lambda$everyPrecommitFailureRollsBackRegistryAndFlowable$4(RootDeploymentRegistryTest.java:95)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:54)
+	... 3 more
+]]></failure>
+    <system-out><![CDATA[18:38:48.595 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+18:38:48.595 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+18:38:48.595 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:48.595 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@64f4f12
+18:38:48.595 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+18:38:48.595 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+18:38:48.595 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+18:38:48.603 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+18:38:48.643 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+18:38:48.677 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+18:38:48.688 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+18:38:48.698 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+]]></system-out>
+  </testcase>
+</testsuite>
