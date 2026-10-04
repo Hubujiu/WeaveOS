@@ -1084,11 +1084,18 @@ test('cached structure dialog is masked after permission revocation',async({page
   await fixture(page,'structure');
   await page.getByRole('button',{name:'新建目录'}).click();
   await page.getByLabel('目录名称').fill('私有目录名');
+  // Observe the intermediate application before returning; setState alone is not a commit barrier.
+  const otherLoaded=page.waitForResponse(response=>response.url().endsWith('/applications/00000000-0000-4000-8000-000000000334/structure')&&response.request().method()==='GET');
   await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),
     '00000000-0000-4000-8000-000000000334');
+  expect((await otherLoaded).status()).toBe(200);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'新建目录',exact:true})).toBeEnabled();
   await page.route(`**/applications/${appId}/structure`,route=>route.fulfill({status:403,
     json:{code:'APPLICATION_FORBIDDEN',message:'',data:null,meta:{}}}));
+  const revalidated=page.waitForResponse(response=>response.url().endsWith('/applications/'+appId+'/structure')&&response.request().method()==='GET');
   await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),appId);
+  expect((await revalidated).status()).toBe(403);
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByText('私有目录名')).toHaveCount(0);
   await expect(page.getByRole('alert')).toContainText('没有此应用');
@@ -1098,11 +1105,18 @@ test('revalidated newer structure retains original name and CAS version',async({
   await fixture(page,'structure');
   await page.getByRole('button',{name:'新建目录'}).click();
   await page.getByLabel('目录名称').fill('本地目录');
+  // Observe the intermediate application before returning; setState alone is not a commit barrier.
+  const otherLoaded=page.waitForResponse(response=>response.url().endsWith('/applications/00000000-0000-4000-8000-000000000339/structure')&&response.request().method()==='GET');
   await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),
     '00000000-0000-4000-8000-000000000339');
+  expect((await otherLoaded).status()).toBe(200);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'新建目录',exact:true})).toBeEnabled();
   await page.route(`**/applications/${appId}/structure`,route=>route.fulfill({json:ok({...structure,
     structureVersion:1,directories:[{id:folderId,appId,name:'服务器目录',parentId:null,position:0}]})}));
+  const revalidated=page.waitForResponse(response=>response.url().endsWith('/applications/'+appId+'/structure')&&response.request().method()==='GET');
   await page.evaluate((id:string)=>(window as Window&{__formsHarnessSwitchApp?:(id:string)=>void}).__formsHarnessSwitchApp?.(id),appId);
+  expect((await revalidated).status()).toBe(200);
   await expect(page.getByLabel('目录名称')).toHaveValue('本地目录');
   await expect(page.getByRole('alert')).toContainText('目录版本已变化');
   let version:number|null=null;
