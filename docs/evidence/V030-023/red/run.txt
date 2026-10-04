@@ -1,0 +1,89 @@
+[WebServer] (node:895) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:920) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:969) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:50:2 › Root Mono designer fits three white cards inside persistent shell 1440 (1.6s)
+(node:1054) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:50:2 › Root Mono designer fits three white cards inside persistent shell 1280 (1.5s)
+(node:1127) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:69:1 › Root Mono designer retains palette, neutral selection and preview source focus (6.8s)
+(node:1229) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  4 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:82:1 › Root Mono designer narrow reduced-motion remains editable without page overflow (1.6s)
+
+
+  1) [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:50:2 › Root Mono designer fits three white cards inside persistent shell 1440 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 1
+    Received:    28
+
+      54 |   const boxes=await Promise.all([palette,canvas,properties].map(el=>el.boundingBox()));const [p,c,a]=boxes.map(b=>b!);
+      55 |   const well=(await page.getByTestId('workspace-content-well').boundingBox())!;
+    > 56 |   expect(Math.abs(p.width-196)).toBeLessThanOrEqual(1);expect(Math.abs(a.width-336)).toBeLessThanOrEqual(1);
+         |                                 ^
+      57 |   expect(Math.abs(p.y-c.y)).toBeLessThanOrEqual(1);expect(Math.abs(a.y-c.y)).toBeLessThanOrEqual(1);
+      58 |   expect(Math.abs(c.x-p.x-p.width-16)).toBeLessThanOrEqual(1);expect(Math.abs(a.x-c.x-c.width-16)).toBeLessThanOrEqual(1);
+      59 |   expect(p.x).toBeGreaterThanOrEqual(well.x);expect(a.x+a.width).toBeLessThanOrEqual(well.x+well.width);expect(c.width).toBeGreaterThanOrEqual(300);
+        at /workspace/WeaveOS-worktrees/V030-023/apps/web/src/root-monochrome-designer.component.spec.ts:56:33
+
+    Error Context: apps/web/test-results/root-monochrome-designer.c-1355a-nside-persistent-shell-1440-chromium/error-context.md
+
+  2) [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:50:2 › Root Mono designer fits three white cards inside persistent shell 1280 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 1
+    Received:    28
+
+      54 |   const boxes=await Promise.all([palette,canvas,properties].map(el=>el.boundingBox()));const [p,c,a]=boxes.map(b=>b!);
+      55 |   const well=(await page.getByTestId('workspace-content-well').boundingBox())!;
+    > 56 |   expect(Math.abs(p.width-196)).toBeLessThanOrEqual(1);expect(Math.abs(a.width-336)).toBeLessThanOrEqual(1);
+         |                                 ^
+      57 |   expect(Math.abs(p.y-c.y)).toBeLessThanOrEqual(1);expect(Math.abs(a.y-c.y)).toBeLessThanOrEqual(1);
+      58 |   expect(Math.abs(c.x-p.x-p.width-16)).toBeLessThanOrEqual(1);expect(Math.abs(a.x-c.x-c.width-16)).toBeLessThanOrEqual(1);
+      59 |   expect(p.x).toBeGreaterThanOrEqual(well.x);expect(a.x+a.width).toBeLessThanOrEqual(well.x+well.width);expect(c.width).toBeGreaterThanOrEqual(300);
+        at /workspace/WeaveOS-worktrees/V030-023/apps/web/src/root-monochrome-designer.component.spec.ts:56:33
+
+    Error Context: apps/web/test-results/root-monochrome-designer.c-14de2-nside-persistent-shell-1280-chromium/error-context.md
+
+  3) [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:69:1 › Root Mono designer retains palette, neutral selection and preview source focus 
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  getByRole('button', { name: '预览', exact: true })
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" getByRole('button', { name: '预览', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: '预览', exact: true })
+        14 × locator resolved to <button type="button">预览</button>
+           - unexpected value "inactive"
+
+
+      77 |  const preview=page.getByRole('button',{name:'预览',exact:true});await expect(preview).toHaveCount(1);await preview.click();
+      78 |  const modal=page.getByRole('dialog',{name:'表单预览',exact:true});await expect(modal).toBeVisible();await expect(modal.getByText('保留业务字段',{exact:true})).toBeVisible();
+    > 79 |  await page.keyboard.press('Escape');await expect(modal).toBeHidden();await expect(preview).toBeFocused();await expect(page.getByLabel('字段名称',{exact:true})).toHaveValue('保留业务字段');
+         |                                                                                             ^
+      80 |  expect(api.calls.filter(c=>c.method!=='GET')).toHaveLength(0);
+      81 | });
+      82 | test('Root Mono designer narrow reduced-motion remains editable without page overflow',async({page})=>{
+        at /workspace/WeaveOS-worktrees/V030-023/apps/web/src/root-monochrome-designer.component.spec.ts:79:93
+
+    Error Context: apps/web/test-results/root-monochrome-designer.c-952c6-on-and-preview-source-focus-chromium/error-context.md
+
+  3 failed
+    [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:50:2 › Root Mono designer fits three white cards inside persistent shell 1440 
+    [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:50:2 › Root Mono designer fits three white cards inside persistent shell 1280 
+    [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:69:1 › Root Mono designer retains palette, neutral selection and preview source focus 
+  1 passed (15.0s)
