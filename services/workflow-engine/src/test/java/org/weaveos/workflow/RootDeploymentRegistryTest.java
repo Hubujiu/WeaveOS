@@ -136,5 +136,45 @@ class RootDeploymentRegistryTest {
   var q=new Request("10000000-0000-4000-8000-000000000002",FLOW,id,1,xml(id));var second=registry.deploy(q);verify(second,q);
   assertNotEquals(first.engineDeploymentId(),second.engineDeploymentId());assertEquals(2,count());assertEquals(2,deployments());
  }
+
+ String compiledFixture(String mode)throws Exception{
+  try(var in=getClass().getResourceAsStream("/compiler/generated-"+mode+".bpmn20.xml")){
+   assertNotNull(in);return new String(in.readAllBytes(),StandardCharsets.UTF_8);
+  }
+ }
+ @ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(strings={"all","any"})
+ void actualGoCompilerApprovalGraphPassesRegistryAndRuns(String mode)throws Exception{
+  String id="00000063-0000-4000-8000-000000000063";
+  var q=new Request(APP,FLOW,id,1,compiledFixture(mode));var receipt=registry.deploy(q);verify(receipt,q);
+  var vars=new java.util.HashMap<String,Object>();
+  vars.put("a_00000002000040008000000000000002",List.of(APP,FLOW));
+  vars.put("wf_rejected",false);vars.put("route_00000003000040008000000000000003",true);
+  String process=engine.getRuntimeService().startProcessInstanceById(receipt.processDefinitionId(),vars).getId();
+  var tasks=engine.getTaskService().createTaskQuery().processInstanceId(process);
+  assertEquals(2,tasks.count());
+  var first=engine.getTaskService().createTaskQuery().processInstanceId(process).taskAssignee(APP).singleResult();assertNotNull(first);
+  engine.getTaskService().complete(first.getId(),java.util.Map.of("wf_rejected",false));
+  if(mode.equals("all")){
+   assertEquals(1,engine.getTaskService().createTaskQuery().processInstanceId(process).count());
+   var last=engine.getTaskService().createTaskQuery().processInstanceId(process).singleResult();
+   assertEquals(FLOW,last.getAssignee());engine.getTaskService().complete(last.getId(),java.util.Map.of("wf_rejected",false));
+  }
+  assertEquals(0,engine.getTaskService().createTaskQuery().processInstanceId(process).count());
+  assertEquals(0,engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(process).count());
+  assertEquals(1,engine.getHistoryService().createHistoricActivityInstanceQuery().processInstanceId(process).activityId("n_00000004000040008000000000000004").finished().count());
+  assertEquals(receipt,registry.deploy(q));assertEquals(1,deployments());
+ }
+ @Test void generatedApprovalGraphRejectsExecutableExtensionAndExpressionTampering()throws Exception{
+  String source=compiledFixture("all"),id="00000063-0000-4000-8000-000000000063";
+  var cases=List.of(
+   source.replace("flowable:assignee=\"\u0024{approver}\"","flowable:assignee=\"\u0024{attacker}\""),
+   source.replace("flowable:elementVariable=\"approver\"","flowable:elementVariable=\"other\""),
+   source.replace("isSequential=\"false\"","isSequential=\"true\""),
+   source.replace("wf_rejected || nrOfCompletedInstances == nrOfInstances","true"),
+   source.replace("route_00000003000040008000000000000003 == true","arbitrary()"),
+   source.replace("<startEvent","<startEvent flowable:async=\"true\""),
+   source.replace("</process>","<extensionElements><flowable:executionListener event=\"start\" class=\"Untrusted\"/></extensionElements></process>"));
+  for(var xml:cases){assertNotEquals(source,xml);assertThrows(InvalidDeployment.class,()->registry.deploy(new Request(APP,FLOW,id,1,xml)));assertEmpty();}
+ }
  static final class InjectedFailure extends RuntimeException{}
 }
