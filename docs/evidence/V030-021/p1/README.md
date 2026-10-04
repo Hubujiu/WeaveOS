@@ -12,3 +12,7 @@ RED command (before production edits):
 Original test hash: root-test.sha256. Raw output: red.log.
 
 Known independent-oracle conflicts reported to Root, tests unchanged: personnel.component.spec.ts old 176px sidebar / 56px header / original AdminMaterial / fixed x16 y116 menu assertions; applications.component.spec.ts WaveOS brand versus new WeaveOS Figma. Root owns any expectation updates.
+
+RED completed: exit 1, 7 failures on missing persistent Shell, 1 existing record authoritative-save case passed. GREEN after Shell composition: 8/8, exit 0, green.log. Intermediate green-initial.log retains the three background cascade failures (5 passed) before specificity was corrected.
+
+Typecheck and build exit 0; retained advisory for the existing large JS chunk. Initial screenshots use the unmodified Root and personnel fixtures via capture.mjs, at 1440x1000, 1280x800 and 390x844 (reduced motion). They are interim visual evidence; old control color and icon/brand review remains open. No real HTTPS integration executed in this UI fixture environment.

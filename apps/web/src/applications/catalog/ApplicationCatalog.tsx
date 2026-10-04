@@ -12,7 +12,7 @@ export function ApplicationCatalog({ applications, loading, error, retry, canCre
  const [search, setSearch] = useState('');
  const matches = applications.filter(app => app.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
  return <>
-  <div className="app-page-heading"><h1>应用中心</h1><p>打开业务应用或新建空白应用</p></div>
+  <div className="app-page-heading"><h1>应用中心</h1></div>
   <div className="app-page-actions">{canCreate && <button className="admin-button primary" onClick={e => create(e.currentTarget)}>新建应用</button>}</div>
   <div className="app-search-row"><input type="search" aria-label="搜索应用名称" placeholder="搜索应用名称" value={search} onChange={e => setSearch(e.target.value)} /><span className="app-filter-label" aria-label="当前显示范围">全部应用</span></div>
   {loading ? <section className="app-surface app-state" role="status">正在加载应用…</section>
