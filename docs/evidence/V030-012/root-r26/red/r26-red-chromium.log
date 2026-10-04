@@ -1,0 +1,58 @@
+
+Running 3 tests using 1 worker
+FF·
+
+  1) [chromium] › apps/web/src/applications.form-shell.component.spec.ts:237:2 › Root R26 nested long form actions stay inside the tree and remain clickable at 1280
+
+    Error: Every tree action must fit its panel and receive normal pointer input
+
+    Every tree action must fit its panel and receive normal pointer input
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      260 |     const hit=document.elementFromPoint(a.x+a.width/2,a.y+a.height/2);
+      261 |     return a.width>=24&&a.height>=24&&a.left>=p.left&&a.right<=p.right&&!!hit&&node.contains(hit);
+    > 262 |    }),{message:'Every tree action must fit its panel and receive normal pointer input'}).toBe(true);
+          |                                                                                          ^
+      263 |   }
+      264 |   await page.screenshot({path:info.outputPath('nested-form-tree-'+width+'.png'),fullPage:true});
+      265 |   await row.getByRole('button',{name:'配置表单 '+longName,exact:true}).click();
+        at /repo/apps/web/src/applications.form-shell.component.spec.ts:262:90
+
+    Error Context: ../out/applications.form-shell.co-22ffe-nd-remain-clickable-at-1280-chromium/error-context.md
+
+  2) [chromium] › apps/web/src/applications.form-shell.component.spec.ts:237:2 › Root R26 nested long form actions stay inside the tree and remain clickable at 1920
+
+    Error: Every tree action must fit its panel and receive normal pointer input
+
+    Every tree action must fit its panel and receive normal pointer input
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      260 |     const hit=document.elementFromPoint(a.x+a.width/2,a.y+a.height/2);
+      261 |     return a.width>=24&&a.height>=24&&a.left>=p.left&&a.right<=p.right&&!!hit&&node.contains(hit);
+    > 262 |    }),{message:'Every tree action must fit its panel and receive normal pointer input'}).toBe(true);
+          |                                                                                          ^
+      263 |   }
+      264 |   await page.screenshot({path:info.outputPath('nested-form-tree-'+width+'.png'),fullPage:true});
+      265 |   await row.getByRole('button',{name:'配置表单 '+longName,exact:true}).click();
+        at /repo/apps/web/src/applications.form-shell.component.spec.ts:262:90
+
+    Error Context: ../out/applications.form-shell.co-06e8e-nd-remain-clickable-at-1920-chromium/error-context.md
+
+  2 failed
+    [chromium] › apps/web/src/applications.form-shell.component.spec.ts:237:2 › Root R26 nested long form actions stay inside the tree and remain clickable at 1280
+    [chromium] › apps/web/src/applications.form-shell.component.spec.ts:237:2 › Root R26 nested long form actions stay inside the tree and remain clickable at 1920
+  1 passed (22.6s)

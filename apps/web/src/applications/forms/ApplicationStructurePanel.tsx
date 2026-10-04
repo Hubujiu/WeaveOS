@@ -184,17 +184,17 @@ function ApplicationStructureScope({appId,actorId,onOpenForm,onConfigureForm,onD
     return <ul className="forms-tree-list" role={parent===null?'tree':'group'} aria-label={parent===null?'应用目录':undefined}>
       {dirs.filter(item=>item.parentId===parent&&!seen.has(item.id)).map(item=><li role="treeitem" aria-label={item.name} aria-expanded="true" className="forms-tree-item" key={item.id}>
         <div className={`forms-tree-row${selected?.id===item.id?' active':''}`}>
-          <button type="button" onClick={()=>setSelected({kind:'directory',id:item.id})}>目录 {item.name}</button>
+          <button type="button" onClick={()=>setSelected({kind:'directory',id:item.id})}><span className="forms-tree-prefix">目录</span><span className="forms-tree-name" title={item.name}>{item.name}</span></button>
           {canEdit&&<button type="button" aria-label={`移动目录 ${item.name}`} onClick={()=>{setSelected({kind:'directory',id:item.id});open('moveDirectory',item);}}>移动</button>}
         </div>{tree(item.id,new Set([...seen,item.id]))}</li>)}
       {structure.forms.filter(item=>item.directoryId===parent).sort((a,b)=>a.position-b.position).map(item=><li role="treeitem" aria-label={item.name} className="forms-tree-item" key={item.id}>
         <div className={`forms-tree-row${selected?.id===item.id?' active':''}`}>
-          <button type="button" onClick={()=>setSelected({kind:'form',id:item.id})}>表单 {item.name}</button>
-          <button type="button" aria-label={`打开表单 ${item.name}`} onClick={()=>onOpenForm?.(item.id)}>打开表单 {item.name}</button>
-          {canEdit&&onConfigureForm&&<button type="button" aria-label={`配置表单 ${item.name}`} onClick={()=>onConfigureForm(item.id)}>配置表单 {item.name}</button>}
+          <button type="button" onClick={()=>setSelected({kind:'form',id:item.id})}><span className="forms-tree-prefix">表单</span><span className="forms-tree-name" title={item.name}>{item.name}</span></button>
+          <button type="button" aria-label={`打开表单 ${item.name}`} onClick={()=>onOpenForm?.(item.id)}>打开</button>
+          {canEdit&&onConfigureForm&&<button type="button" aria-label={`配置表单 ${item.name}`} onClick={()=>onConfigureForm(item.id)}>配置</button>}
         </div></li>)}
       {structure.tables.filter(item=>item.directoryId===parent&&!structure.forms.some(view=>view.tableId===item.id)).map(item=>
-        <li role="treeitem" aria-label={item.name} key={item.id}><div className="forms-tree-row">逻辑表 {item.name}</div></li>)}
+        <li role="treeitem" aria-label={item.name} key={item.id}><div className="forms-tree-row"><span className="forms-tree-prefix">逻辑表</span><span className="forms-tree-name" title={item.name}>{item.name}</span></div></li>)}
     </ul>;
   };
   if(!verified)return <section className="forms-module forms-loading" role="status">
