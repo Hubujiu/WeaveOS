@@ -9,6 +9,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appworkflows"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/auth"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/personnel"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
@@ -93,6 +94,7 @@ func buildHandler(ctx context.Context, cfg config) (http.Handler, func(), error)
 	s.Personnel = &personnel.Service{Application: people, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	apps := &applications.Service{Application: &applications.Application{Pool: pool}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	apps.Definitions = &appstructure.Service{Application: &appstructure.Application{Pool: pool, ConfirmationKey: cfg.DefinitionKey, ConfirmationKeyID: cfg.DefinitionKeyID, Limits: cfg.SchemaLimits, Dependencies: appstructure.LocalRegistry{}, References: appstructure.CurrentSources{}, CandidateRedis: queryRedis, CandidateNamespace: cfg.Generation, RecordAccess: apprecordhttp.ResolveAccess}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
+	apps.Workflows = &appworkflows.Service{Application: &appworkflows.Application{Pool: pool, Limits: cfg.SchemaLimits}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
 	records := apprecordservice.New(pool, queryRedis, cfg.Generation)
 	records.Limits = cfg.SchemaLimits
 	apps.Records = &apprecordhttp.Service{Records: records, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}

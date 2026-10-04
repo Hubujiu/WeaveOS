@@ -1,0 +1,5 @@
+V030-020 original audit-CHECK failure, preserved from the initial specialized-test execution transcript (do not replace with the later legacy-summary run):
+
+ERROR: new row for relation "authentication_events" violates check constraint "ck_auth_events_summary" (SQLSTATE 23514)
+
+Context: `application_structure_changed` was being inserted with the ADR-required `appId,flowId,operationId,revision,state,action` fields. Published migration 00007 requires the precise legacy set `appId,operationId,structureVersion,schemaVersion,viewVersion,changeCount`. No repeat of the Root HTTP suite was used to reconstruct this diagnostic. The separately preserved initial placeholder RED is `root-workflow-http-red.txt`; the intervening invalid-input attempt is `../../.work/v030-020/workflow-http-green-attempt.txt` and is retained unchanged.
