@@ -17,7 +17,7 @@ try{
   if(extra>0)await page.setViewportSize({width:1440,height:960+extra+12});
   const metrics=await page.evaluate(()=>({horizontal:document.documentElement.scrollWidth>innerWidth,bodyOverflow:!!document.querySelector('.body')&&document.querySelector('.body').scrollWidth>document.querySelector('.body').clientWidth+1,main:document.querySelector('.main')?.getBoundingClientRect().toJSON(),mainRadius:document.querySelector('.main')?getComputedStyle(document.querySelector('.main')).borderTopLeftRadius:null,visibleText:document.body.innerText.length}));
   assert.equal(metrics.horizontal,false,id+' document overflow');assert.equal(metrics.bodyOverflow,false,id+' content overflow');assert.ok(metrics.visibleText>80,id+' empty');
-  if(metrics.main){assert.equal(metrics.main.right,1440);assert.equal(metrics.main.top,0);assert.equal(metrics.main.bottom,page.viewportSize().height);assert.equal(metrics.mainRadius,'18px');}
+  if(metrics.main){assert.equal(metrics.main.right,1440);assert.equal(metrics.main.top,0);assert.equal(metrics.main.bottom,page.viewportSize().height);assert.equal(metrics.mainRadius,'18px');assert.ok(await page.locator('.profile').evaluate(e=>e.getBoundingClientRect().bottom<=innerHeight),id+' account menu clipped');}
   const filename=String(i+1).padStart(2,'0')+'-'+id+'.png';await page.screenshot({path:out+'/'+filename});results.push({id,title,filename,metrics});
  }
  await page.setViewportSize({width:1440,height:960});
