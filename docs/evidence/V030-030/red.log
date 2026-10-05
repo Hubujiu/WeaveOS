@@ -1,0 +1,73 @@
+postgres (PostgreSQL) 18.6 (Debian 18.6-1.pgdg13+2)
+fixture published ports={}
+fixture network internal=true
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< org.weaveos:workflow-engine >---------------------
+[INFO] Building WeaveOS controlled workflow engine core 0.3.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ workflow-engine ---
+[INFO] skip non existing resourceDirectory /proof/src/main/resources
+[INFO] skip non existing resourceDirectory /proof/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ workflow-engine ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ workflow-engine ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ workflow-engine ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ workflow-engine ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running org.weaveos.workflow.RootCommandEnvelopeTest
+[ERROR] Tests run: 8, Failures: 0, Errors: 3, Skipped: 0, Time elapsed: 0.068 s <<< FAILURE! -- in org.weaveos.workflow.RootCommandEnvelopeTest
+[ERROR] org.weaveos.workflow.RootCommandEnvelopeTest.exactGoGoldenHeadersBytesAndHashes -- Time elapsed: 0.023 s <<< ERROR!
+java.lang.IllegalArgumentException: not implemented
+	at org.weaveos.workflow.CommandEnvelope.decode(CommandEnvelope.java:6)
+	at org.weaveos.workflow.RootCommandEnvelopeTest.exactGoGoldenHeadersBytesAndHashes(RootCommandEnvelopeTest.java:36)
+
+[ERROR] org.weaveos.workflow.RootCommandEnvelopeTest.validatesExactSafeIntegerBounds -- Time elapsed: 0.009 s <<< ERROR!
+java.lang.IllegalArgumentException: not implemented
+	at org.weaveos.workflow.CommandEnvelope.decode(CommandEnvelope.java:6)
+	at org.weaveos.workflow.RootCommandEnvelopeTest.validatesExactSafeIntegerBounds(RootCommandEnvelopeTest.java:63)
+
+[ERROR] org.weaveos.workflow.RootCommandEnvelopeTest.callerCannotMutateAcceptedIdentityOrReturnedArrays -- Time elapsed: 0.002 s <<< ERROR!
+java.lang.IllegalArgumentException: not implemented
+	at org.weaveos.workflow.CommandEnvelope.decode(CommandEnvelope.java:6)
+	at org.weaveos.workflow.RootCommandEnvelopeTest.callerCannotMutateAcceptedIdentityOrReturnedArrays(RootCommandEnvelopeTest.java:76)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Errors: 
+[ERROR]   RootCommandEnvelopeTest.callerCannotMutateAcceptedIdentityOrReturnedArrays:76 » IllegalArgument not implemented
+[ERROR]   RootCommandEnvelopeTest.exactGoGoldenHeadersBytesAndHashes:36 » IllegalArgument not implemented
+[ERROR]   RootCommandEnvelopeTest.validatesExactSafeIntegerBounds:63 » IllegalArgument not implemented
+[INFO] 
+[ERROR] Tests run: 8, Failures: 0, Errors: 3, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.431 s
+[INFO] Finished at: 2026-10-05T05:40:49Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.4:test (default-test) on project workflow-engine: 
+[ERROR] 
+[ERROR] See /proof/.work/v030-030-red for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
