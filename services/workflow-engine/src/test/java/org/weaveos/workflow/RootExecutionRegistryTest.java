@@ -409,5 +409,41 @@ class RootExecutionRegistryTest {
   var otherSource=new DriverManagerDataSource(url+"?currentSchema="+schema,"b3_fixture","b3_fixture_only");
   assertThrows(IllegalArgumentException.class,()->new ExecutionRegistry(new JdbcTemplate(otherSource),tm,engine));
  }
+
+ @Test void internalCancellationDoesNotDependOnLiveGraphNodeContext()throws Exception{
+  deploy("all");var c=new Command();
+  c.payload=payload(true,true,Map.of(id(999),List.of(id(8))),Map.of(id(998),true));
+  var cancelled=registry.establishNoEffect(c.request());verify(c,cancelled,"no_effect");
+  assertEquals("cancelled",cancelled.result().reason());
+  assertEquals(cancelled,registry.execute(c.request()));
+  assertEquals(0,count("wf_execution_instances"));assertEquals(0,count("wf_execution_tasks"));
+  assertEquals(0,engine.getHistoryService().createHistoricProcessInstanceQuery().count());
+ }
+ @Test void identityFailuresPrecedeContextualNodeValidation()throws Exception{
+  deploy("all");var c=new Command();var first=registry.execute(c.request());
+  var wrongScope=action(c,"agree",first,actor(first,8),id(8));wrongScope.strings[1]=id(999);
+  wrongScope.payload=payload(false,false,Map.of(),Map.of(id(998),true));
+  noEffect(wrongScope,"scope_mismatch");
+  var duplicate=c.copy();duplicate.strings[0]=UUID.randomUUID().toString();
+  duplicate.payload=payload(true,true,Map.of(id(999),List.of(id(8))),Map.of());
+  noEffect(duplicate,"instance_exists");
+  var wrongDeployment=new Command();wrongDeployment.strings[1]=id(999);
+  wrongDeployment.payload=payload(true,true,Map.of(id(999),List.of(id(8))),Map.of());
+  noEffect(wrongDeployment,"deployment_mismatch");
+  active(first,2,Set.of(id(8),id(9)),1);assertEquals(1,count("wf_execution_instances"));
+ }
+ @Test void durableResultCodecPreservesBoundedUtf8OpaqueIds()throws Exception{
+  var expected=new Result(id(107),"process-α","active","",1,1,
+   List.of(new Task(id(201),id(2),id(8),"task-β",1)));
+  byte[] canonical=resultBytes(expected);
+  assertArrayEquals(canonical,ExecutionCodec.encode(expected));
+  assertEquals(expected,ExecutionCodec.decodeResult(canonical));
+  byte[] invalid=canonical.clone();
+  int opaqueStart=8+4+36+4;
+  invalid[opaqueStart]=(byte)0xff;
+  assertThrows(IllegalStateException.class,()->ExecutionCodec.decodeResult(invalid));
+  var control=new Result(id(107),"process\n","active","",1,1,expected.tasks());
+  assertThrows(IllegalStateException.class,()->ExecutionCodec.decodeResult(resultBytes(control)));
+ }
  static final class InjectedFailure extends RuntimeException{}
 }

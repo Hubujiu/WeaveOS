@@ -35,8 +35,8 @@ class RootExecutionGateTest(unittest.TestCase):
         self.write()
         return gate.validate(self.path, self.manifest)
 
-    def test_exact_33_and_5_pass(self):
-        self.assertEqual(38, self.check())
+    def test_exact_36_and_5_pass(self):
+        self.assertEqual(41, self.check())
 
     def test_no_reports_fails(self):
         with self.assertRaises(gate.GateError):
@@ -64,7 +64,7 @@ class RootExecutionGateTest(unittest.TestCase):
 
     def test_missing_case_fails(self):
         self.roots[0].remove(self.roots[0][0])
-        self.roots[0].set("tests", "32")
+        self.roots[0].set("tests", "35")
         with self.assertRaises(gate.GateError):
             self.check()
 
@@ -131,7 +131,7 @@ class RootExecutionGateTest(unittest.TestCase):
         with self.assertRaises(gate.GateError):
             gate.validate(self.path, self.manifest)
 
-    def test_manifest_must_have_exact_two_distinct_classes_and_33_5_cases(self):
+    def test_manifest_must_have_exact_two_distinct_classes_and_36_5_cases(self):
         self.write()
         bads = [None, {}, {"suites": []}]
         for mutation in ("duplicate_class", "duplicate_case", "drop_case", "rename_class"):
