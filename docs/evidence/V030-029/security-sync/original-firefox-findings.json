@@ -1,0 +1,45 @@
+{
+  "head": "80e4151150b01563acb32bd532f8e8702375ab63",
+  "run": 37264265995,
+  "job": 111617642384,
+  "test": "R3 real Root UI creates shared template/identity and assigns a new non-Root manager",
+  "outcomes": {
+    "chromium": "passed",
+    "firefox": "failed",
+    "webkit": "passed",
+    "suite": "137 passed, 1 failed"
+  },
+  "firefoxStartedUtc": "2026-10-05T05:02:40.7673704Z",
+  "failureReportedUtc": "2026-10-05T05:03:11.3926074Z",
+  "timeoutMeaning": "30000ms overall test timeout, not measured POST response latency",
+  "predicate": "pathname /api/v1/personnel/members/search + POST + falsy request body queryVersion",
+  "listenerOrdering": "waitForResponse registered before click in lines470-471",
+  "artifact": {
+    "id": 11326492156,
+    "size": 232,
+    "files": [
+      "result.json"
+    ],
+    "trace": "not available",
+    "error-context": "path printed in log, file not uploaded",
+    "browser.json": "not uploaded"
+  },
+  "sourceFacts": [
+    "refresh clears version, aborts prior controller and increments query epoch",
+    "tab switch to members rechecks current query with retained version",
+    "transport uses fetch with AbortSignal",
+    "refresh button disabled while pending"
+  ],
+  "unknowns": [
+    "whether refresh click completed",
+    "whether expected POST was sent",
+    "request payload/queryVersion in Firefox",
+    "whether request aborted",
+    "server response timing/status",
+    "page/overlay state at failure"
+  ],
+  "rootCause": "undetermined from surviving evidence",
+  "changes": "none; no test/timeout/retry/frontend/dependency changes; worktree clean",
+  "rawLog": "/tmp/v030-029-readonly-diagnosis/product-all.log",
+  "rawLogSha256": "648c9ae88ccee853fd10fcfaa80d3593aab9428eda1d8d11831489867153a927"
+}
