@@ -43,3 +43,5 @@
 已验前后端独立整合：[V030-024](V030-024.md)，Root冻结精确后端 `24d07a5` 与前端 `3900bca`，独立 `task/V030-024-integrate-verified`，[draft PR35](https://github.com/Hubujiu/WeaveOS/pull/35) 叠在 V022；仅任务索引冲突，保留原侧 blob 与完整历史，联合验证后交 Root 审查，不合 main 或部署。
 
 部署RPC：[V030-026](V030-026.md)，task/V030-026-deployment-rpc / ../WeaveOS-worktrees/V030-026；基线为独立整合候选21a7912，Root合同与测试，执行者仅实现部署通信，无main合并/部署。
+
+显式发布与可靠恢复：[V030-027](V030-027.md)，task/V030-027-publication / ../WeaveOS-worktrees/V030-027；叠在冻结 V026，Root合同与19项真实存储/HTTP测试，执行者实现持久发布编排。后台同请求重试和最终权限/结构/关闭复查已明确确认；生产配置、main合并与部署另行授权。
