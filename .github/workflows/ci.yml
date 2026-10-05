@@ -264,3 +264,40 @@ jobs:
             services/workflow-engine/execution-rpc-ci-logs/
           if-no-files-found: warn
           retention-days: 14
+
+  workflow-recovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - name: Root-owned recovery report gate tests
+        run: python3 services/workflow-engine/recovery_ci_gate_tests.py
+      - name: Prepare locked Java and migration tools
+        run: |
+          bash services/workflow-engine/prepare-build.sh
+          go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
+      - name: Real durable worker and separate application-engine database interop
+        env:
+          WEAVEOS_RECOVERY_JSON_REPORT: services/workflow-engine/recovery-ci-reports/interop.jsonl
+        run: WEAVEOS_RECOVERY_GOOSE="$(go env GOPATH)/bin/goose" node services/workflow-engine/run-recovery-interop.mjs
+      - name: Require all three real worker cases without skips
+        run: python3 services/workflow-engine/recovery_ci_gate.py services/workflow-engine/recovery-ci-reports/interop.jsonl
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: workflow-recovery-${{ github.run_id }}
+          path: services/workflow-engine/recovery-ci-reports/interop.jsonl
+          if-no-files-found: warn
+          retention-days: 14

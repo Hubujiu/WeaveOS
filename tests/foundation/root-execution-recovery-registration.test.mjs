@@ -1,10 +1,12 @@
-// Root-authored V033 registration contract; no production deployment.
+// Root-owned recovery registration; no production upgrade is executed.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {validateInstalledPersonnelRoles} from '../../infra/server/deploy/personnel-upgrade.mjs';
-const manifest=JSON.parse(readFileSync(new URL('../../infra/server/deploy/compatibility.json',import.meta.url),'utf8'));
+const read=p=>readFileSync(new URL('../../'+p,import.meta.url));
+const hash=b=>createHash('sha256').update(b).digest('hex');
+const manifest=JSON.parse(read('infra/server/deploy/compatibility.json'));
 const prior=[
   {
     "path": "migrations/00001_auth.sql",
@@ -97,25 +99,37 @@ const prior=[
   {
     "path": "migrations/00017_workflow_publications.sql",
     "sha256": "26dc61e4b3811862b66fd5db5ad0bff872e20284c83159744c3eb280486eb4fb"
+  },
+  {
+    "path": "migrations/00018_workflow_execution_projection.sql",
+    "sha256": "70b73412bccd5b95ede435f8c1142496dd0c4c53e60163e15a9591b784527f6b"
   }
 ];
-const path='migrations/00018_workflow_execution_projection.sql';
-const expected='70b73412bccd5b95ede435f8c1142496dd0c4c53e60163e15a9591b784527f6b';
-test('Root V033: hot18 has one exact reviewed registration after publication migrations',()=>{
- const found=manifest.migrations.filter(x=>x.path===path);assert.deepEqual(found,[{path,sha256:expected}]);
- const paths=manifest.migrations.map(x=>x.path);assert.ok(paths.indexOf(path)>paths.indexOf('migrations/00017_workflow_publications.sql'));
- assert.ok(paths.indexOf(path)>paths.indexOf('archive-migrations/00006_workflow_publication_audit.sql'));
- const sql=readFileSync(new URL('../../db/'+path,import.meta.url));assert.equal(createHash('sha256').update(sql).digest('hex'),expected);
+const path='migrations/00019_workflow_execution_recovery.sql';
+const expected='c7fc65a5b0437e73245490804237fe3189428a33e4329f40c16b45aa9e2d3d34';
+test('Root V035: exactly one reviewed recovery migration follows hot18',()=>{
+ assert.deepEqual(manifest.migrations.filter(x=>x.path===path),[{path,sha256:expected}]);
+ const paths=manifest.migrations.map(x=>x.path);
+ assert.ok(paths.indexOf(path)>paths.indexOf('migrations/00018_workflow_execution_projection.sql'));
+ assert.equal(hash(read('db/'+path)),expected);
 });
-test('Root V033: all previous migration identities remain unchanged',()=>{
- for(const before of prior)assert.deepEqual(manifest.migrations.filter(x=>x.path===before.path),[before]);
+test('Root V035: every prior migration identity and actual source is preserved',()=>{
+ for(const old of prior){
+  assert.deepEqual(manifest.migrations.filter(x=>x.path===old.path),[old]);
+  assert.equal(hash(read('db/'+old.path)),old.sha256);
+ }
 });
-test('Root V033: reviewed least-privilege role source is accepted exactly',()=>{
- const sql=readFileSync(new URL('../../infra/runtime/roles.sql',import.meta.url),'utf8');
- assert.equal(createHash('sha256').update(sql).digest('hex'),'c2e23f9d85d51ff626eeba6ea7c5ddbdccb4becc564b4021d50578e27c45a0cf');
- assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql));assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql.replace(/\n/g,'\r\n')));
+test('Root V035: reviewed scheduler-only role source is admitted exactly',()=>{
+ const sql=read('infra/runtime/roles.sql').toString('utf8');
+ assert.equal(hash(sql),'c2e23f9d85d51ff626eeba6ea7c5ddbdccb4becc564b4021d50578e27c45a0cf');
+ assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql));
+ assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql.replace(/\n/g,'\r\n')));
 });
-test('Root V033: role policy still rejects unreviewed extra privileges',()=>{
- const sql=readFileSync(new URL('../../infra/runtime/roles.sql',import.meta.url),'utf8');
- assert.throws(()=>validateInstalledPersonnelRoles(sql+'\nGRANT UPDATE ON applications.workflow_execution_events TO auth_app;\n'));
+test('Root V035: accepted payload and identity cannot gain unreviewed mutation grants',()=>{
+ const sql=read('infra/runtime/roles.sql').toString('utf8');
+ for(const extra of [
+  'GRANT UPDATE(execution_payload) ON applications.workflow_commands TO auth_app;',
+  'GRANT UPDATE(protocol_version) ON applications.workflow_dispatch TO auth_app;',
+  'GRANT UPDATE ON applications.workflow_dispatch TO auth_backup;'
+ ]) assert.throws(()=>validateInstalledPersonnelRoles(sql+'\n'+extra+'\n'));
 });

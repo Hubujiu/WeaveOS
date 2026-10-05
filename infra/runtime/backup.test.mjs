@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { backupDatabase, restoreDatabase, privateFile } from './backup.mjs';
 const container=process.env.WEAVEOS_BACKUP_TEST_CONTAINER;
@@ -60,16 +60,41 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  sql(live,readFileSync('db/migrations/00016_workflow_management_operations.sql','utf8').split('-- +goose Down')[0]);
  sql(live,readFileSync('db/migrations/00017_workflow_publications.sql','utf8').split('-- +goose Down')[0]);
  sql(live,readFileSync('db/migrations/00018_workflow_execution_projection.sql','utf8').split('-- +goose Down')[0]);
+ sql(live,readFileSync('db/migrations/00019_workflow_execution_recovery.sql','utf8').split('-- +goose Down')[0]);
  sql(live,"SELECT setval('applications.record_command_fence_epoch_seq',41,true);");
  sql(live,`INSERT INTO auth.users(id,account) VALUES('77777777-7777-4777-8777-777777777777','preset-backup-synthetic');
  INSERT INTO personnel.table_presets(id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at)
  VALUES('88888888-8888-4888-8888-888888888888','77777777-7777-4777-8777-777777777777','members','持久方案😀',20,'{"children":[{"field":"account","operator":"eq","value":"A"}],"operator":"and"}','["identities"]',1,7,'2026-10-01T00:00:00Z','2026-10-02T00:00:00Z');`);
+ // Synthetic valid protocol metadata tests persistence, not user authorization.
+ const recoveryID=n=>n.toString(16).padStart(8,'0')+'-0000-4000-8000-'+n.toString(16).padStart(12,'0');
+ const payload=Buffer.from('5756465041590001'+'01'.repeat(32)+'0000000000','hex');
+ const command={ProtocolVersion:2,CommandID:recoveryID(901),AppID:recoveryID(902),TableID:recoveryID(903),RecordID:recoveryID(904),InstanceID:recoveryID(905),TaskID:'',ActorID:'77777777-7777-4777-8777-777777777777',Action:'withdraw',RecordVersion:3,FenceEpoch:41,TaskEpoch:0,ExpectedSequence:7,PayloadHash:[...createHash('sha256').update(payload).digest()],ViewID:recoveryID(906),FlowID:recoveryID(907),VersionID:recoveryID(908),TargetNodeID:'',DefinitionVersion:2,SchemaVersion:4};
+ const envelope=[Buffer.from('575646434d440002','hex')];
+ for(const key of ['CommandID','AppID','TableID','ViewID','RecordID','FlowID','VersionID','InstanceID','TaskID','ActorID','Action','TargetNodeID']){
+  const value=Buffer.from(command[key],'utf8'),length=Buffer.alloc(4);length.writeUInt32BE(value.length);envelope.push(length,value);
+ }
+ for(const key of ['DefinitionVersion','SchemaVersion','RecordVersion','FenceEpoch','TaskEpoch','ExpectedSequence']){
+  const value=Buffer.alloc(8);value.writeBigUInt64BE(BigInt(command[key]));envelope.push(value);
+ }
+ envelope.push(Buffer.from(command.PayloadHash));
+ const commandHash=createHash('sha256').update(Buffer.concat(envelope)).digest('hex');
+ sql(live,`INSERT INTO applications.workflow_commands(command_id,command_json,command_hash,state,execution_payload)
+ VALUES('${command.CommandID}',$fixture$${JSON.stringify(command)}$fixture$::jsonb,decode('${commandHash}','hex'),'pending',decode('${payload.toString('hex')}','hex'));
+ INSERT INTO applications.workflow_dispatch(command_id,protocol_version,next_attempt_at,attempts,lease_token,lease_until,last_error)
+ VALUES('${command.CommandID}',2,'2026-10-05T17:00:45Z',3,'${recoveryID(909)}','2026-10-05T17:00:45Z','DEPENDENCY_UNAVAILABLE');`);
  sql(live,"CREATE TABLE public.goose_db_version(id serial PRIMARY KEY,version_id bigint); INSERT INTO public.goose_db_version(version_id) VALUES(0),(1);");
  sql(live,readFileSync('infra/runtime/roles.sql','utf8'));
  sql('postgres',"DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='weaveos_backup_probe') THEN CREATE ROLE weaveos_backup_probe LOGIN; END IF; END $$; GRANT auth_backup TO weaveos_backup_probe;");
  const encrypted=resolve(dir,'ledger.enc');
  backupDatabase({...options,user:'weaveos_backup_probe',database:live,backupFile:encrypted});
  restoreDatabase({...options,database:restored,backupFile:encrypted});
+ const recoveryColumns="c.command_id,c.command_json,encode(c.command_hash,'hex'),c.state,c.receipt_json,c.created_at,encode(c.execution_payload,'hex'),d.protocol_version,d.created_at,d.next_attempt_at,d.attempts,d.lease_token,d.lease_until,d.last_error";
+ const recoveryQuery='SELECT '+recoveryColumns+' FROM applications.workflow_commands c JOIN applications.workflow_dispatch d USING(command_id);';
+ const recovered=sql(restored,recoveryQuery);
+ assert.equal(recovered,sql(live,recoveryQuery),'backup must preserve original accepted payload, identity, result state and pending retry metadata exactly');
+ assert.ok(recovered.includes(payload.toString('hex'))&&recovered.includes(commandHash)&&recovered.includes(command.CommandID),'independent original wire evidence must actually be present after restore');
+ assert.throws(()=>sql(live,"SET ROLE weaveos_backup_probe; UPDATE applications.workflow_commands SET execution_payload=NULL;"),'backup must not rewrite accepted execution inputs');
+ assert.throws(()=>sql(live,"SET ROLE weaveos_backup_probe; UPDATE applications.workflow_dispatch SET attempts=0;"),'backup must not alter retry or lease metadata');
  assert.ok(sql(restored,"SELECT nextval('public.goose_db_version_id_seq')=3 AS original_sequence;").includes('t'),'restored sequence must continue after original ledger rows');
  assert.ok(sql(restored,"SELECT nextval('applications.record_command_fence_epoch_seq')=42 AS original_fence_epoch;").includes('t'),'restored fence epoch must not reuse previously allocated numbers');
  assert.throws(()=>sql(live,"SET ROLE weaveos_backup_probe; SELECT nextval('applications.record_command_fence_epoch_seq');"),'backup role must not allocate fence epochs');

@@ -1,6 +1,7 @@
 package flowcommands
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/json"
@@ -21,6 +22,10 @@ type Entry struct {
 type Ledger struct{ Namespace string }
 
 func (ledger Ledger) AcceptInTx(ctx context.Context, tx pgx.Tx, command Command) (Entry, error) {
+	return ledger.acceptInTx(ctx, tx, command, nil)
+}
+
+func (ledger Ledger) acceptInTx(ctx context.Context, tx pgx.Tx, command Command, executionPayload []byte) (Entry, error) {
 	if !ledger.validPort(ctx, tx) {
 		return Entry{}, ErrInvalid
 	}
@@ -38,12 +43,23 @@ func (ledger Ledger) AcceptInTx(ctx context.Context, tx pgx.Tx, command Command)
 		INSERT INTO %s (command_id, command_json, command_hash, state, receipt_json)
 		VALUES ($1, $2, $3, 'pending', NULL)
 		ON CONFLICT (command_id) DO NOTHING`, commandsTable)
-	tag, err := tx.Exec(ctx, query, command.CommandID, string(commandJSON), commandHash[:])
+	args := []any{command.CommandID, string(commandJSON), commandHash[:]}
+	if executionPayload != nil {
+		query = fmt.Sprintf(`
+			INSERT INTO %s (command_id, command_json, command_hash, state, receipt_json, execution_payload)
+			VALUES ($1, $2, $3, 'pending', NULL, $4)
+			ON CONFLICT (command_id) DO NOTHING`, commandsTable)
+		args = append(args, executionPayload)
+	}
+	tag, err := tx.Exec(ctx, query, args...)
 	if err != nil {
 		return Entry{}, err
 	}
 	if tag.RowsAffected() == 1 {
 		query = fmt.Sprintf(`INSERT INTO %s (command_id) VALUES ($1)`, dispatchTable)
+		if executionPayload != nil {
+			query = fmt.Sprintf(`INSERT INTO %s (command_id, protocol_version) VALUES ($1, 2)`, dispatchTable)
+		}
 		if _, err := tx.Exec(ctx, query, command.CommandID); err != nil {
 			return Entry{}, err
 		}
@@ -59,6 +75,15 @@ func (ledger Ledger) AcceptInTx(ctx context.Context, tx pgx.Tx, command Command)
 	}
 	if existing.Command != command || !hashesEqual(storedHash, commandHash) {
 		return Entry{}, ErrConflict
+	}
+	if executionPayload != nil {
+		storedPayload, err := ledger.executionPayloadBytesInTx(ctx, tx, command)
+		if err != nil {
+			return Entry{}, err
+		}
+		if !bytes.Equal(storedPayload, executionPayload) {
+			return Entry{}, ErrConflict
+		}
 	}
 	return existing, nil
 }
