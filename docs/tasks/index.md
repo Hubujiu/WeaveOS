@@ -48,4 +48,4 @@ Java 审批命令身份 A 段：[V030-030](V030-030.md)，task/V030-030-engine-e
 
 审批命令版本与历史兼容：[V030-029](V030-029.md)，task/V030-029-command-v2 / ../WeaveOS-worktrees/V030-029；从已验证V026 a093af1独立创建，Root06ead合同与12项测试，[draft PR39](https://github.com/Hubujiu/WeaveOS/pull/39)，云环境真实RED/GREEN已保存，12新测试／46全包／21正式Ledger-fence通过；仅协议切片，非全链路完成。
 
-Go执行负载与结果验证：[V030-031](V030-031.md)，task/V030-031-execution-codecs / ../WeaveOS-worktrees/V030-031；Root合同/15测试/8固定向量，独立基线530d877；仅有界codec，云端RED/GREEN及基准已保存，待Root源码审查和最终CI，不代表完整审批或全链路完成。
+Go执行负载与结果验证：[V030-031](V030-031.md)，task/V030-031-execution-codecs / ../WeaveOS-worktrees/V030-031；Root合同/15测试/8固定向量，[draft PR41](https://github.com/Hubujiu/WeaveOS/pull/41)，独立基线530d877；仅有界codec，云端RED/GREEN及基准已保存，待Root源码审查和最终CI，不代表完整审批或全链路完成。
