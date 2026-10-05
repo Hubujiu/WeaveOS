@@ -1,0 +1,155 @@
+commit f869911ce4516a2b84e270ff62d70fbc6f64fd04
+Author:     Hubujiu <xiaoyuliu599@gmail.com>
+AuthorDate: Sun Oct 4 22:36:03 2026 -0700
+Commit:     Hubujiu <xiaoyuliu599@gmail.com>
+CommitDate: Sun Oct 4 22:36:03 2026 -0700
+
+    test(workflow): define Java command envelope parity and hostile-input bounds
+
+diff --git a/docs/tasks/V030-030.md b/docs/tasks/V030-030.md
+new file mode 100644
+index 0000000..324c971
+--- /dev/null
++++ b/docs/tasks/V030-030.md
+@@ -0,0 +1,20 @@
++# V030-030 · 正式引擎审批执行与跨语言身份
++
++<!-- task-meta
++{"id":"V030-030","title":"正式引擎审批执行与跨语言身份","branch":"task/V030-030-engine-execution","worktree":"../WeaveOS-worktrees/V030-030","pr":null,"owner":"Root合同测试验收；GPT-6.1-sol实现","dependsOn":[],"allowedPaths":["services/workflow-engine/src/main/java/org/weaveos/workflow/CommandEnvelope.java","services/workflow-engine/src/test/java/org/weaveos/workflow/RootCommandEnvelopeTest.java","docs/tasks/V030-030.md","docs/tasks/index.md","docs/evidence/V030-030/"],"deliveryState":"in_progress"}
++-->
++
++## Sources
++- PRD https://app.notion.com/p/3f02f5a9e648816ab0eded06d3d54d1c
++- ADR https://app.notion.com/p/3f02f5a9e6488128a8d7c1566a268475
++- v2 contract https://app.notion.com/p/3f02f5a9e64881d28678e87a1ecd64ad
++- FLOW baseline https://app.notion.com/p/3ef2f5a9e648817586caebb69f4b56fe
++
++## Stage A only currently authorized
++Base V029 80e4151150b01563acb32bd532f8e8702375ab63, whose protocol source Root reviewed and46Go tests passed; full productCI has unrelated Firefox refresh failure, not an all-green baseline. Preserve that fact. V027/security exact advisory patch remains independently owned; no duplicate dependency/gate edits. Frontend paused. Do not merge main, deploy, modify production credentials/network or assume mTLS permission.
++
++Root provides CommandEnvelope behaviorless declarations and eight Java tests with fixed five v2 vectors plus old v1 bytes. Before implementing, run these compile-clean against stub and preserve actualRED and sourcehashes. Existing fixed golden byte/hash literals came from independent Python framing of V029, not Java implementation. Tests are Root-authored, worker may only implement CommandEnvelope.java. No new dependencies/POM/proto/DDL/server/HTTP changes.
++
++Read full ADR: final immutable class decode(byte[]) accepts only canonical v2 at most538bytes. Fixed8byteprefix, bounded12string fields then6uint64BE then32rawhash. All identity/action/integer requirements equal Go v2; reject oldv1/unknown/truncated/trailing/huge lengths/malformed text/zero UUID/hash, no rawinput leaks. Check lengths before allocation. Getters and copies immutable; fingerprint SHA256 exact bytes. Runtime authorization and engine effects are not part of this parser.
++
++Run Root8 JUnit cases plus existing deployment18/RPC9 and relevant oldproof regression using locked existing Java/Maven/PG tools. Report actual timing and theoretical bound separately. No claims of full approval execution or cross-service readiness from parser GREEN. Update task index/evidence; push authorized checkpoint/draftPR base task/V030-029-command-v2 as appropriate, preserving independent small changes. Existing CI gates must not be weakened or expected manifests silently expanded; precise new gate is Root-owned. Report stageA useful results as soon as available. StageB requires new Root Request/Payload/Receipt/DDL and real Flowable tests before implementation; do not guess APIs or business semantics. Root will continue that contract; stageA is not overall completion.
+diff --git a/services/workflow-engine/src/main/java/org/weaveos/workflow/CommandEnvelope.java b/services/workflow-engine/src/main/java/org/weaveos/workflow/CommandEnvelope.java
+new file mode 100644
+index 0000000..a82755d
+--- /dev/null
++++ b/services/workflow-engine/src/main/java/org/weaveos/workflow/CommandEnvelope.java
+@@ -0,0 +1,29 @@
++package org.weaveos.workflow;
++
++/** Declaration only for Root-first behavior tests. */
++public final class CommandEnvelope {
++ private CommandEnvelope() {}
++ public static CommandEnvelope decode(byte[] bytes) { throw new IllegalArgumentException("not implemented"); }
++ public int protocolVersion() { return 0; }
++ public String commandId() { return null; }
++ public String appId() { return null; }
++ public String tableId() { return null; }
++ public String viewId() { return null; }
++ public String recordId() { return null; }
++ public String flowId() { return null; }
++ public String versionId() { return null; }
++ public String instanceId() { return null; }
++ public String taskId() { return null; }
++ public String actorId() { return null; }
++ public String action() { return null; }
++ public String targetNodeId() { return null; }
++ public long definitionVersion() { return 0; }
++ public long schemaVersion() { return 0; }
++ public long recordVersion() { return 0; }
++ public long fenceEpoch() { return 0; }
++ public long taskEpoch() { return 0; }
++ public long expectedSequence() { return 0; }
++ public byte[] payloadHash() { return null; }
++ public byte[] canonicalBytes() { return null; }
++ public byte[] fingerprint() { return null; }
++}
+diff --git a/services/workflow-engine/src/test/java/org/weaveos/workflow/RootCommandEnvelopeTest.java b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootCommandEnvelopeTest.java
+new file mode 100644
+index 0000000..5a6f0ba
+--- /dev/null
++++ b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootCommandEnvelopeTest.java
+@@ -0,0 +1,80 @@
++package org.weaveos.workflow;
++
++import static org.junit.jupiter.api.Assertions.*;
++import java.io.ByteArrayOutputStream;
++import java.io.DataOutputStream;
++import java.nio.ByteBuffer;
++import java.nio.charset.StandardCharsets;
++import java.util.Arrays;
++import java.util.HexFormat;
++import java.util.List;
++import org.junit.jupiter.api.Test;
++
++/** Root-authored fixtures, independently framed from the frozen Go v2 contract. */
++class RootCommandEnvelopeTest {
++ record Vector(String name,String hex,String hash,String[] fields,long[] integers) {}
++ static final List<Vector> VECTORS=List.of(
++new Vector("v2_agree","575646434d4400020000002431303030303030302d303030302d343030302d383030302d3030303030303030303030310000002432303030303030302d303030302d343030302d383030302d3030303030303030303030320000002433303030303030302d303030302d343030302d383030302d3030303030303030303030330000002438313030303030302d303030302d343030302d383030302d3030303030303030303030380000002434303030303030302d303030302d343030302d383030302d3030303030303030303030340000002438323030303030302d303030302d343030302d383030302d3030303030303030303030390000002438333030303030302d303030302d343030302d383030302d3030303030303030303031300000002435303030303030302d303030302d343030302d383030302d3030303030303030303030350000002436303030303030302d303030302d343030302d383030302d3030303030303030303030360000002437303030303030302d303030302d343030302d383030302d303030303030303030303037000000056167726565000000000000000000000003000000000000000400000000000000080000000000000009000000000000000a000000000000000b0100000000000000000000000000000000000000000000000000000000000000","92ec6c6284f8fdc4e2fe21c4c27279b7a6e1ca1f3c2c5969a21ce06e468e648d",new String[]{"10000000-0000-4000-8000-000000000001","20000000-0000-4000-8000-000000000002","30000000-0000-4000-8000-000000000003","81000000-0000-4000-8000-000000000008","40000000-0000-4000-8000-000000000004","82000000-0000-4000-8000-000000000009","83000000-0000-4000-8000-000000000010","50000000-0000-4000-8000-000000000005","60000000-0000-4000-8000-000000000006","70000000-0000-4000-8000-000000000007","agree",""},new long[]{3L,4L,8L,9L,10L,11L}),
++new Vector("v2_reject","575646434d4400020000002431303030303030302d303030302d343030302d383030302d3030303030303030303030310000002432303030303030302d303030302d343030302d383030302d3030303030303030303030320000002433303030303030302d303030302d343030302d383030302d3030303030303030303030330000002438313030303030302d303030302d343030302d383030302d3030303030303030303030380000002434303030303030302d303030302d343030302d383030302d3030303030303030303030340000002438323030303030302d303030302d343030302d383030302d3030303030303030303030390000002438333030303030302d303030302d343030302d383030302d3030303030303030303031300000002435303030303030302d303030302d343030302d383030302d3030303030303030303030350000002436303030303030302d303030302d343030302d383030302d3030303030303030303030360000002437303030303030302d303030302d343030302d383030302d3030303030303030303030370000000672656a656374000000000000000000000003000000000000000400000000000000080000000000000009000000000000000a000000000000000b0100000000000000000000000000000000000000000000000000000000000000","1cf7cf6efb4722279971a5efbec0cb293c0ca7292e5df388359a15ad25fbb718",new String[]{"10000000-0000-4000-8000-000000000001","20000000-0000-4000-8000-000000000002","30000000-0000-4000-8000-000000000003","81000000-0000-4000-8000-000000000008","40000000-0000-4000-8000-000000000004","82000000-0000-4000-8000-000000000009","83000000-0000-4000-8000-000000000010","50000000-0000-4000-8000-000000000005","60000000-0000-4000-8000-000000000006","70000000-0000-4000-8000-000000000007","reject",""},new long[]{3L,4L,8L,9L,10L,11L}),
++new Vector("v2_start","575646434d4400020000002431303030303030302d303030302d343030302d383030302d3030303030303030303030310000002432303030303030302d303030302d343030302d383030302d3030303030303030303030320000002433303030303030302d303030302d343030302d383030302d3030303030303030303030330000002438313030303030302d303030302d343030302d383030302d3030303030303030303030380000002434303030303030302d303030302d343030302d383030302d3030303030303030303030340000002438323030303030302d303030302d343030302d383030302d3030303030303030303030390000002438333030303030302d303030302d343030302d383030302d3030303030303030303031300000002435303030303030302d303030302d343030302d383030302d303030303030303030303035000000000000002437303030303030302d303030302d343030302d383030302d303030303030303030303037000000057374617274000000000000000000000003000000000000000400000000000000080000000000000009000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000","410152b86ab7afb08bb3c6084a7178a5b99233700b6cbf27075bb04b92a43363",new String[]{"10000000-0000-4000-8000-000000000001","20000000-0000-4000-8000-000000000002","30000000-0000-4000-8000-000000000003","81000000-0000-4000-8000-000000000008","40000000-0000-4000-8000-000000000004","82000000-0000-4000-8000-000000000009","83000000-0000-4000-8000-000000000010","50000000-0000-4000-8000-000000000005","","70000000-0000-4000-8000-000000000007","start",""},new long[]{3L,4L,8L,9L,0L,0L}),
++new Vector("v2_withdraw","575646434d4400020000002431303030303030302d303030302d343030302d383030302d3030303030303030303030310000002432303030303030302d303030302d343030302d383030302d3030303030303030303030320000002433303030303030302d303030302d343030302d383030302d3030303030303030303030330000002438313030303030302d303030302d343030302d383030302d3030303030303030303030380000002434303030303030302d303030302d343030302d383030302d3030303030303030303030340000002438323030303030302d303030302d343030302d383030302d3030303030303030303030390000002438333030303030302d303030302d343030302d383030302d3030303030303030303031300000002435303030303030302d303030302d343030302d383030302d303030303030303030303035000000000000002437303030303030302d303030302d343030302d383030302d3030303030303030303030370000000877697468647261770000000000000000000000030000000000000004000000000000000800000000000000090000000000000000000000000000000b0100000000000000000000000000000000000000000000000000000000000000","8b1758059bce1ceb3d8f3dd1eb9a93be14d4469b1b9b7621cc99e5df8ad6fbe0",new String[]{"10000000-0000-4000-8000-000000000001","20000000-0000-4000-8000-000000000002","30000000-0000-4000-8000-000000000003","81000000-0000-4000-8000-000000000008","40000000-0000-4000-8000-000000000004","82000000-0000-4000-8000-000000000009","83000000-0000-4000-8000-000000000010","50000000-0000-4000-8000-000000000005","","70000000-0000-4000-8000-000000000007","withdraw",""},new long[]{3L,4L,8L,9L,0L,11L}),
++new Vector("v2_return","575646434d4400020000002431303030303030302d303030302d343030302d383030302d3030303030303030303030310000002432303030303030302d303030302d343030302d383030302d3030303030303030303030320000002433303030303030302d303030302d343030302d383030302d3030303030303030303030330000002438313030303030302d303030302d343030302d383030302d3030303030303030303030380000002434303030303030302d303030302d343030302d383030302d3030303030303030303030340000002438323030303030302d303030302d343030302d383030302d3030303030303030303030390000002438333030303030302d303030302d343030302d383030302d3030303030303030303031300000002435303030303030302d303030302d343030302d383030302d3030303030303030303030350000002436303030303030302d303030302d343030302d383030302d3030303030303030303030360000002437303030303030302d303030302d343030302d383030302d3030303030303030303030370000000672657475726e0000002462626262626262622d626262622d346262622d386262622d6262626262626262626262620000000000000003000000000000000400000000000000080000000000000009000000000000000a000000000000000b0100000000000000000000000000000000000000000000000000000000000000","eb0770f0fce74bfa42040f43ab124d39192995ab4fcb66a155cae2d7febc2479",new String[]{"10000000-0000-4000-8000-000000000001","20000000-0000-4000-8000-000000000002","30000000-0000-4000-8000-000000000003","81000000-0000-4000-8000-000000000008","40000000-0000-4000-8000-000000000004","82000000-0000-4000-8000-000000000009","83000000-0000-4000-8000-000000000010","50000000-0000-4000-8000-000000000005","60000000-0000-4000-8000-000000000006","70000000-0000-4000-8000-000000000007","return","bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"},new long[]{3L,4L,8L,9L,10L,11L}));
++ static final String LEGACY="7b2250726f746f636f6c56657273696f6e223a312c22436f6d6d616e644944223a2231303030303030302d303030302d343030302d383030302d303030303030303030303031222c224170704944223a2232303030303030302d303030302d343030302d383030302d303030303030303030303032222c225461626c654944223a2233303030303030302d303030302d343030302d383030302d303030303030303030303033222c225265636f72644944223a2234303030303030302d303030302d343030302d383030302d303030303030303030303034222c22496e7374616e63654944223a2235303030303030302d303030302d343030302d383030302d303030303030303030303035222c225461736b4944223a2236303030303030302d303030302d343030302d383030302d303030303030303030303036222c224163746f724944223a2237303030303030302d303030302d343030302d383030302d303030303030303030303037222c22416374696f6e223a226167726565222c225265636f726456657273696f6e223a382c2246656e636545706f6368223a392c225461736b45706f6368223a31302c22457870656374656453657175656e6365223a31312c225061796c6f616448617368223a5b312c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d7d";
++ static byte[] bytes(Vector v){return HexFormat.of().parseHex(v.hex());}
++ static byte[] framed(String[] fields,long[] integers,byte[] hash)throws Exception{
++  var out=new ByteArrayOutputStream();var d=new DataOutputStream(out);
++  d.write(new byte[]{0x57,0x56,0x46,0x43,0x4d,0x44,0,2});
++  for(String s:fields){byte[] b=s.getBytes(StandardCharsets.UTF_8);d.writeInt(b.length);d.write(b);}
++  for(long n:integers)d.writeLong(n);d.write(hash);return out.toByteArray();
++ }
++ static byte[] payload(){byte[] b=new byte[32];b[0]=1;return b;}
++ static String[] fields(CommandEnvelope c){return new String[]{c.commandId(),c.appId(),c.tableId(),c.viewId(),c.recordId(),c.flowId(),c.versionId(),c.instanceId(),c.taskId(),c.actorId(),c.action(),c.targetNodeId()};}
++ static long[] integers(CommandEnvelope c){return new long[]{c.definitionVersion(),c.schemaVersion(),c.recordVersion(),c.fenceEpoch(),c.taskEpoch(),c.expectedSequence()};}
++ static void invalid(byte[] b){assertThrows(IllegalArgumentException.class,()->CommandEnvelope.decode(b));}
++ @Test void exactGoGoldenHeadersBytesAndHashes(){
++  assertEquals(5,VECTORS.size());
++  for(Vector v:VECTORS){var c=CommandEnvelope.decode(bytes(v));assertEquals(2,c.protocolVersion(),v.name());assertArrayEquals(v.fields(),fields(c),v.name());assertArrayEquals(v.integers(),integers(c),v.name());assertArrayEquals(payload(),c.payloadHash());assertArrayEquals(bytes(v),c.canonicalBytes());assertEquals(v.hash(),HexFormat.of().formatHex(c.fingerprint()));}
++ }
++ @Test void rejectsLegacyUnknownPrefixNullAndOversize(){
++  invalid(null);invalid(new byte[0]);invalid(new byte[539]);invalid(HexFormat.of().parseHex(LEGACY));
++  for(int index=0;index<8;index++){byte[] b=bytes(VECTORS.get(0));b[index]^=0x7f;invalid(b);}
++ }
++ @Test void rejectsEveryTruncationAndTrailingData(){
++  byte[] b=bytes(VECTORS.get(4));assertEquals(538,b.length);
++  for(int length=0;length<b.length;length++)invalid(Arrays.copyOf(b,length));
++  invalid(Arrays.copyOf(b,b.length+1));
++  byte[] shorter=bytes(VECTORS.get(0));invalid(Arrays.copyOf(shorter,shorter.length+1));
++ }
++ @Test void rejectsOversizedLengthAndNonCanonicalText(){
++  for(int n:new int[]{-1,Integer.MAX_VALUE,0,35,37}){byte[] b=bytes(VECTORS.get(0));ByteBuffer.wrap(b,8,4).putInt(n);invalid(b);}
++  byte[] b=bytes(VECTORS.get(0));b[12]=(byte)0xff;invalid(b);
++ }
++ @Test void validatesAllUuidBindingsAndNonzeroHash()throws Exception{
++  var v=VECTORS.get(4);
++  for(int index:new int[]{0,1,2,3,4,5,6,7,8,9,11})for(String bad:new String[]{"","00000000-0000-0000-0000-000000000000","BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB"," "+v.fields()[index]}){
++   String[] f=v.fields().clone();f[index]=bad;invalid(framed(f,v.integers(),payload()));
++  }
++  invalid(framed(v.fields(),v.integers(),new byte[32]));
++ }
++ @Test void validatesExactSafeIntegerBounds()throws Exception{
++  var v=VECTORS.get(0);
++  for(int index=0;index<6;index++)for(long bad:new long[]{-1,Long.MIN_VALUE,Long.MAX_VALUE,9007199254740992L}){long[] n=v.integers().clone();n[index]=bad;invalid(framed(v.fields(),n,payload()));}
++  for(int index=0;index<5;index++){long[] n=v.integers().clone();n[index]=0;invalid(framed(v.fields(),n,payload()));}
++  long[] high=new long[6];Arrays.fill(high,9007199254740991L);assertArrayEquals(high,integers(CommandEnvelope.decode(framed(v.fields(),high,payload()))));
++  long[] zeroSequence=v.integers().clone();zeroSequence[5]=0;assertEquals(0,CommandEnvelope.decode(framed(v.fields(),zeroSequence,payload())).expectedSequence());
++ }
++ @Test void validatesActionSpecificTaskAndTargetIdentity()throws Exception{
++  for(Vector v:VECTORS){String action=v.fields()[10];boolean instance=action.equals("start")||action.equals("withdraw");
++   String[] f=v.fields().clone();f[8]=instance?VECTORS.get(0).fields()[8]:"";invalid(framed(f,v.integers(),payload()));
++   long[] n=v.integers().clone();n[4]=instance?1:0;invalid(framed(v.fields(),n,payload()));
++   f=v.fields().clone();f[11]=action.equals("return")?"":VECTORS.get(4).fields()[11];invalid(framed(f,v.integers(),payload()));
++  }
++  var start=VECTORS.get(2);long[] n=start.integers().clone();n[5]=1;invalid(framed(start.fields(),n,payload()));
++  for(String action:new String[]{"","complete","reapprove","return ","START"}){var v=VECTORS.get(0);String[] f=v.fields().clone();f[10]=action;invalid(framed(f,v.integers(),payload()));}
++ }
++ @Test void callerCannotMutateAcceptedIdentityOrReturnedArrays(){
++  var v=VECTORS.get(0);byte[] input=bytes(v);var c=CommandEnvelope.decode(input);input[0]=0;
++  byte[] encoded=c.canonicalBytes();encoded[0]=0;byte[] hash=c.fingerprint();hash[0]^=0x7f;byte[] p=c.payloadHash();p[0]=0;
++  assertArrayEquals(bytes(v),c.canonicalBytes());assertEquals(v.hash(),HexFormat.of().formatHex(c.fingerprint()));assertArrayEquals(payload(),c.payloadHash());
++ }
++}
