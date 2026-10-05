@@ -137,7 +137,7 @@ test('Root owner returns from configuration to the runtime page that opened it',
  const shell=await page.getByTestId('application-shell').elementHandle();
  await page.getByRole('button',{name:'配置表单',exact:true}).click();await expect(page).toHaveURL(new RegExp(routePath+'/design$'));
  await expect(page.getByRole('region',{name:'表单设计器'})).toBeVisible();
- await page.getByRole('button',{name:'返回工作台',exact:true}).click();await expect(page).toHaveURL(new RegExp(routePath+'$'));
+ await page.locator('.mono-top').getByRole('button',{name:'退出',exact:true}).click();await expect(page).toHaveURL(new RegExp(routePath+'$'));
  await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();expect(await shell!.evaluate(node=>node.isConnected)).toBe(true);
 });
 

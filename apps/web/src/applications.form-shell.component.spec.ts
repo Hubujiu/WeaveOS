@@ -46,7 +46,8 @@ test('V030-012 Shell opens the real structure and form view under one app tab', 
  await page.getByRole('button', { name: '配置表单 请假申请' }).click();
  await expect(page).toHaveURL(new RegExp('/app/applications/' + appId + '/forms/' + viewId + '/design$'));
  await expect(page.getByRole('region', { name: '表单设计器' })).toBeVisible();
- await expect(page.getByRole('tab', { name: '当前表单' })).toHaveAttribute('aria-selected', 'true');
+ await expect(page.locator('.mono-top').getByText(form.name, { exact: true })).toBeVisible();
+ await expect(page.locator('.mono-top').getByRole('button', { name: '退出', exact: true })).toBeVisible();
  await expect(page.getByRole('button', { name: '关闭应用：' + application.name })).toHaveCount(1);
 });
 
