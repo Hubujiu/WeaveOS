@@ -23,6 +23,8 @@ jobs:
         with:
           node-version-file: .node-version
       - run: node --test tests/governance/*.test.mjs tests/foundation/*.test.mjs
+      - name: Exact reviewed advisory classification regression
+        run: node --test infra/runtime/advisory-review.test.mjs
       - run: node scripts/verify-repo.mjs
       - run: node scripts/check-tasks.mjs
       - name: Preserve source Git objects, not local configuration or credentials
