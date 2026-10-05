@@ -1,0 +1,336 @@
+diff --git a/services/bff/internal/workflowrpc/execution_client.go b/services/bff/internal/workflowrpc/execution_client.go
+index a011ec3..27fc07c 100644
+--- a/services/bff/internal/workflowrpc/execution_client.go
++++ b/services/bff/internal/workflowrpc/execution_client.go
+@@ -2,30 +2,163 @@ package workflowrpc
+ 
+ import (
+ 	"context"
++	"crypto/sha256"
+ 	"errors"
++	"reflect"
++	"time"
++
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
++	pb "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc/pb"
+ 	"google.golang.org/grpc"
+-	"time"
++	"google.golang.org/protobuf/proto"
+ )
+ 
+-// Root declaration only. Tests must compile and expose missing behavior.
+-var errExecutionUnimplemented = errors.New("execution RPC is not implemented")
++const executionRequestLimit = 270336
++const executionLookupLimit = 1024
++const executionReceiptLimit = 66560
++
++var errExecutionReceipt = errors.New("unbound execution RPC result")
+ 
+ type ExecutionConfirmed struct {
+ 	Receipt flowcommands.Receipt
+ 	Result  flowcommands.ExecutionResult
+ }
+-type ExecutionClient struct{}
+ 
++// The caller owns the connection, credentials and disabling transport retries.
++// Each operation issues one RPC and preserves uncertain transport failures.
++type ExecutionClient struct {
++	service pb.ExecutionServiceClient
++	timeout time.Duration
++}
++
++func executionNil(value any) bool {
++	if value == nil {
++		return true
++	}
++	v := reflect.ValueOf(value)
++	switch v.Kind() {
++	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
++		return v.IsNil()
++	}
++	return false
++}
+ func NewExecutionClient(conn grpc.ClientConnInterface, timeout time.Duration) (*ExecutionClient, error) {
+-	return nil, errExecutionUnimplemented
++	if executionNil(conn) || timeout <= 0 || timeout > 30*time.Second {
++		return nil, flowcommands.ErrInvalid
++	}
++	return &ExecutionClient{service: pb.NewExecutionServiceClient(conn), timeout: timeout}, nil
+ }
+-func (c *ExecutionClient) Execute(ctx context.Context, command flowcommands.Command, payload flowcommands.ExecutionPayload) (*ExecutionConfirmed, error) {
+-	return nil, errExecutionUnimplemented
++func (c *ExecutionClient) valid(ctx context.Context) bool {
++	return c != nil && !executionNil(c.service) && !executionNil(ctx) && c.timeout > 0 && c.timeout <= 30*time.Second
+ }
+-func (c *ExecutionClient) Lookup(ctx context.Context, command flowcommands.Command) (*ExecutionConfirmed, bool, error) {
+-	return nil, false, errExecutionUnimplemented
++func executionCommand(command flowcommands.Command) ([]byte, error) {
++	if command.ProtocolVersion != 2 {
++		return nil, flowcommands.ErrInvalid
++	}
++	body, err := flowcommands.CanonicalBytes(command)
++	if err != nil {
++		return nil, err
++	}
++	if len(body) == 0 || len(body) > 538 {
++		return nil, flowcommands.ErrInvalid
++	}
++	return body, nil
++}
++func executionRequest(command flowcommands.Command, payload flowcommands.ExecutionPayload) (*pb.ExecutionRequest, error) {
++	envelope, err := executionCommand(command)
++	if err != nil {
++		return nil, err
++	}
++	body, err := flowcommands.EncodeExecutionPayload(command.Action, payload)
++	if err != nil {
++		return nil, err
++	}
++	if len(body) > 262144 || sha256.Sum256(body) != command.PayloadHash {
++		return nil, flowcommands.ErrInvalid
++	}
++	request := &pb.ExecutionRequest{CommandEnvelope: envelope, Payload: body}
++	if proto.Size(request) > executionRequestLimit {
++		return nil, flowcommands.ErrInvalid
++	}
++	return request, nil
++}
++func executionConfirmed(command flowcommands.Command, wire *pb.ExecutionReceipt) (*ExecutionConfirmed, error) {
++	if wire == nil || proto.Size(wire) > executionReceiptLimit || len(wire.CommandHash) != 32 || len(wire.ResultHash) != 32 || wire.Sequence > uint64(maxVersion) || len(wire.ResultBytes) > 65536 {
++		return nil, errExecutionReceipt
++	}
++	receipt := flowcommands.Receipt{CommandID: wire.CommandId, Outcome: wire.Outcome, Sequence: int64(wire.Sequence), ProofID: wire.ProofId}
++	copy(receipt.CommandHash[:], wire.CommandHash)
++	copy(receipt.ResultHash[:], wire.ResultHash)
++	result, err := flowcommands.DecodeExecutionResult(command, receipt, wire.ResultBytes)
++	if err != nil {
++		return nil, err
++	}
++	return &ExecutionConfirmed{Receipt: receipt, Result: result}, nil
++}
++func (c *ExecutionClient) Execute(ctx context.Context, command flowcommands.Command, payload flowcommands.ExecutionPayload) (*ExecutionConfirmed, error) {
++	return c.execute(ctx, command, payload, false)
+ }
+ func (c *ExecutionClient) EstablishNoEffect(ctx context.Context, command flowcommands.Command, payload flowcommands.ExecutionPayload) (*ExecutionConfirmed, error) {
+-	return nil, errExecutionUnimplemented
++	return c.execute(ctx, command, payload, true)
++}
++func (c *ExecutionClient) execute(ctx context.Context, command flowcommands.Command, payload flowcommands.ExecutionPayload, cancelExecution bool) (*ExecutionConfirmed, error) {
++	if !c.valid(ctx) {
++		return nil, flowcommands.ErrInvalid
++	}
++	request, err := executionRequest(command, payload)
++	if err != nil {
++		return nil, err
++	}
++	call, cancel := context.WithTimeout(ctx, c.timeout)
++	defer cancel()
++	var response *pb.ExecutionReceipt
++	options := []grpc.CallOption{grpc.MaxCallSendMsgSize(executionRequestLimit), grpc.MaxCallRecvMsgSize(executionReceiptLimit)}
++	if cancelExecution {
++		response, err = c.service.EstablishNoEffect(call, request, options...)
++	} else {
++		response, err = c.service.Execute(call, request, options...)
++	}
++	if err != nil {
++		return nil, err
++	}
++	return executionConfirmed(command, response)
++}
++func (c *ExecutionClient) Lookup(ctx context.Context, command flowcommands.Command) (*ExecutionConfirmed, bool, error) {
++	if !c.valid(ctx) {
++		return nil, false, flowcommands.ErrInvalid
++	}
++	envelope, err := executionCommand(command)
++	if err != nil {
++		return nil, false, err
++	}
++	hash := sha256.Sum256(envelope)
++	request := &pb.ExecutionLookupRequest{CommandId: command.CommandID, CommandHash: hash[:]}
++	if proto.Size(request) > executionLookupLimit {
++		return nil, false, flowcommands.ErrInvalid
++	}
++	call, cancel := context.WithTimeout(ctx, c.timeout)
++	defer cancel()
++	response, err := c.service.Lookup(call, request, grpc.MaxCallSendMsgSize(executionLookupLimit), grpc.MaxCallRecvMsgSize(executionReceiptLimit))
++	if err != nil {
++		return nil, false, err
++	}
++	if response == nil || proto.Size(response) > executionReceiptLimit {
++		return nil, false, errExecutionReceipt
++	}
++	switch result := response.Result.(type) {
++	case *pb.ExecutionLookupResponse_Confirmed:
++		if result == nil {
++			return nil, false, errExecutionReceipt
++		}
++		confirmed, err := executionConfirmed(command, result.Confirmed)
++		if err != nil {
++			return nil, false, err
++		}
++		return confirmed, true, nil
++	case *pb.ExecutionLookupResponse_NotObserved:
++		if result != nil && result.NotObserved != nil {
++			return nil, false, nil
++		}
++	}
++	return nil, false, errExecutionReceipt
+ }
+diff --git a/services/workflow-engine/execution_rpc_ci_gate.py b/services/workflow-engine/execution_rpc_ci_gate.py
+index 9e5ccfa..b3a5cb3 100644
+--- a/services/workflow-engine/execution_rpc_ci_gate.py
++++ b/services/workflow-engine/execution_rpc_ci_gate.py
+@@ -1,8 +1,47 @@
+-"""Root declaration: execution RPC report validation not implemented yet."""
++"""Require frozen Root execution RPC cases and genuine successful report lifecycles."""
++import argparse
++import importlib.util
++import json
++from pathlib import Path
+ import sys
+-class GateError(Exception):
+- pass
++
++_spec = importlib.util.spec_from_file_location("execution_legacy_rpc_gate", Path(__file__).with_name("rpc_ci_gate.py"))
++_legacy = importlib.util.module_from_spec(_spec)
++_spec.loader.exec_module(_legacy)
++GateError = _legacy.GateError
++
++# Frozen independently from the supplied manifest.
++_EXPECTED = {'classname': 'org.weaveos.workflow.RootExecutionGrpcIT', 'tests': ['executeReturnsCommittedBoundReceipt', 'duplicateExecutionReplaysExactReceipt', 'conflictingCommandCannotReuseIdentity', 'missingLookupIsExplicitAndDoesNotCancel', 'lookupRejectsDifferentFingerprint', 'cancellationFirstDurablyPreventsExecution', 'executionFirstCannotBecomeCancelled', 'invalidRequestsNeverWriteLedger', 'databaseFailureRollsBackAndHidesPrivateDetails', 'everyMethodRejectsProvisionalOuterTransaction', 'lostReplyThenServiceRestartRecoversCommittedReceipt'], 'go_package': 'github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc', 'go_unit_tests': ['TestRootExecutionClientConstructorBounds', 'TestRootExecutionClientSendsCanonicalBoundBytes', 'TestRootExecutionClientRejectsInputsBeforeRPC', 'TestRootExecutionClientNilReceiverReturnsError', 'TestRootExecutionClientRejectsDamagedReceipts', 'TestRootExecutionClientLookupStatesAndBinding', 'TestRootExecutionClientCancellationMayRecoverSuccess', 'TestRootExecutionClientTransportErrorsStayUnknown', 'TestRootExecutionClientDeadlineAndParentCancellation', 'TestRootExecutionClientDoesNotMutateCallerInput'], 'go_interop_tests': ['TestRootGoJavaPostgresExecutionLifecycleInterop', 'TestRootGoJavaPostgresExecutionCancellationInterop', 'TestRootGoJavaPostgresExecutionReturnAndWithdrawInterop']}
++
+ def validate(report_dir, manifest, unit_json, interop_json):
+- raise GateError("execution RPC report gate unimplemented")
+-if __name__ == '__main__':
+- sys.exit(1)
++    if not isinstance(manifest, dict) or set(manifest) != set(_EXPECTED):
++        raise GateError("invalid execution RPC manifest")
++    for key, expected in _EXPECTED.items():
++        actual = manifest[key]
++        if isinstance(expected, list):
++            if not isinstance(actual, list) or any(not isinstance(n, str) for n in actual) or len(actual) != len(expected) or set(actual) != set(expected):
++                raise GateError("execution RPC case identities must remain frozen")
++        elif actual != expected:
++            raise GateError("execution RPC suite and package must remain frozen")
++    _legacy._java(report_dir, _EXPECTED["classname"], _EXPECTED["tests"])
++    _legacy._go(unit_json, _EXPECTED["go_package"], _EXPECTED["go_unit_tests"])
++    _legacy._go(interop_json, _EXPECTED["go_package"], _EXPECTED["go_interop_tests"])
++    return 24
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("report_dir", type=Path)
++    parser.add_argument("manifest", type=Path)
++    parser.add_argument("unit_json", type=Path)
++    parser.add_argument("interop_json", type=Path)
++    args = parser.parse_args()
++    try:
++        count = validate(args.report_dir, json.loads(args.manifest.read_text(encoding="utf-8")), args.unit_json, args.interop_json)
++    except (GateError, OSError, UnicodeError, json.JSONDecodeError) as error:
++        print(f"execution-rpc report gate rejected: {error}", file=sys.stderr)
++        return 1
++    print(f"execution-rpc report gate passed: {count} exact cases, no failures/errors/skips")
++    return 0
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionGrpcService.java b/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionGrpcService.java
+index 2590c5a..aa0866d 100644
+--- a/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionGrpcService.java
++++ b/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionGrpcService.java
+@@ -1,6 +1,92 @@
+ package org.weaveos.workflow;
+ 
+-/** Root declaration only, intentionally inherits UNIMPLEMENTED responses. */
+-public final class ExecutionGrpcService extends org.weaveos.workflow.v1.ExecutionServiceGrpc.ExecutionServiceImplBase {
+- public ExecutionGrpcService(ExecutionRegistry registry) { java.util.Objects.requireNonNull(registry); }
++import com.google.protobuf.ByteString;
++import io.grpc.Status;
++import io.grpc.stub.StreamObserver;
++import java.util.Arrays;
++import java.util.HexFormat;
++import java.util.Objects;
++import org.springframework.transaction.support.TransactionSynchronizationManager;
++import org.weaveos.workflow.v1.*;
++
++/** Execution transport only; the caller owns authentication and server lifecycle. */
++public final class ExecutionGrpcService extends ExecutionServiceGrpc.ExecutionServiceImplBase {
++    private static final int REQUEST_LIMIT = 270336;
++    private static final int LOOKUP_LIMIT = 1024;
++    private static final int RECEIPT_LIMIT = 66560;
++    private final ExecutionRegistry registry;
++
++    public ExecutionGrpcService(ExecutionRegistry registry) { this.registry = Objects.requireNonNull(registry); }
++
++    @Override public void execute(ExecutionRequest request, StreamObserver<ExecutionReceipt> output) {
++        execute(request, output, false);
++    }
++    @Override public void establishNoEffect(ExecutionRequest request, StreamObserver<ExecutionReceipt> output) {
++        execute(request, output, true);
++    }
++    private void execute(ExecutionRequest request, StreamObserver<ExecutionReceipt> output, boolean cancel) {
++        if (outsideTransaction(output)) return;
++        ExecutionReceipt response;
++        try {
++            if (request == null || request.getSerializedSize() > REQUEST_LIMIT
++                || request.getCommandEnvelope().isEmpty() || request.getCommandEnvelope().size() > 538
++                || request.getPayload().isEmpty() || request.getPayload().size() > 262144)
++                throw new ExecutionRegistry.InvalidCommand();
++            var input = new ExecutionRegistry.Request(request.getCommandEnvelope().toByteArray(), request.getPayload().toByteArray());
++            // Registry validates exact command/payload framing before entering its own transaction.
++            response = wire(cancel ? registry.establishNoEffect(input) : registry.execute(input));
++        } catch (ExecutionRegistry.InvalidCommand invalid) {
++            fail(output, Status.INVALID_ARGUMENT, "invalid execution request"); return;
++        } catch (ExecutionRegistry.CommandConflict conflict) {
++            fail(output, Status.ALREADY_EXISTS, "execution identity conflict"); return;
++        } catch (RuntimeException unexpected) {
++            fail(output, Status.UNAVAILABLE, "execution result unavailable"); return;
++        }
++        // Registry has committed. A delivery error cannot roll back or reclassify that result.
++        output.onNext(response); output.onCompleted();
++    }
++    @Override public void lookup(ExecutionLookupRequest request, StreamObserver<ExecutionLookupResponse> output) {
++        if (outsideTransaction(output)) return;
++        ExecutionLookupResponse response;
++        try {
++            if (request == null || request.getSerializedSize() > LOOKUP_LIMIT || request.getCommandHash().size() != 32)
++                throw new ExecutionRegistry.InvalidCommand();
++            ExecutionCodec.uuid(request.getCommandId());
++            var found = registry.lookup(request.getCommandId(), ExecutionCodec.hex(request.getCommandHash().toByteArray()));
++            response = found.isPresent()
++                ? ExecutionLookupResponse.newBuilder().setConfirmed(wire(found.get())).build()
++                : ExecutionLookupResponse.newBuilder().setNotObserved(NotObserved.getDefaultInstance()).build();
++            if (response.getSerializedSize() > RECEIPT_LIMIT) throw new IllegalStateException("oversized receipt");
++        } catch (ExecutionRegistry.InvalidCommand invalid) {
++            fail(output, Status.INVALID_ARGUMENT, "invalid execution lookup"); return;
++        } catch (ExecutionRegistry.CommandConflict conflict) {
++            fail(output, Status.FAILED_PRECONDITION, "execution identity conflict"); return;
++        } catch (RuntimeException unexpected) {
++            fail(output, Status.UNAVAILABLE, "execution result unavailable"); return;
++        }
++        output.onNext(response); output.onCompleted();
++    }
++    private static boolean outsideTransaction(StreamObserver<?> output) {
++        if (!TransactionSynchronizationManager.isActualTransactionActive()) return false;
++        fail(output, Status.FAILED_PRECONDITION, "execution RPC requires its own commit boundary"); return true;
++    }
++    private static byte[] hash(String value) {
++        if (value == null || !value.matches("[0-9a-f]{64}")) throw new IllegalStateException("invalid durable hash");
++        return HexFormat.of().parseHex(value);
++    }
++    private static ExecutionReceipt wire(ExecutionRegistry.Receipt receipt) {
++        byte[] bytes = ExecutionCodec.encode(receipt.result());
++        byte[] resultHash = hash(receipt.resultHash());
++        if (!Arrays.equals(ExecutionCodec.hash(bytes), resultHash)) throw new IllegalStateException("durable result mismatch");
++        if (receipt.sequence() < 0 || receipt.sequence() > ExecutionCodec.MAX) throw new IllegalStateException("invalid durable sequence");
++        var response = ExecutionReceipt.newBuilder().setCommandId(receipt.commandId())
++            .setCommandHash(ByteString.copyFrom(hash(receipt.commandHash()))).setOutcome(receipt.outcome())
++            .setSequence(receipt.sequence()).setProofId(receipt.proofId())
++            .setResultHash(ByteString.copyFrom(resultHash)).setResultBytes(ByteString.copyFrom(bytes)).build();
++        if (response.getSerializedSize() > RECEIPT_LIMIT) throw new IllegalStateException("oversized receipt");
++        return response;
++    }
++    private static void fail(StreamObserver<?> output, Status status, String description) {
++        output.onError(status.withDescription(description).asRuntimeException());
++    }
+ }

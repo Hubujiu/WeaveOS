@@ -1,0 +1,102 @@
+-------------------------------------------------------------------------------
+Test set: org.weaveos.workflow.RootExecutionGrpcIT
+-------------------------------------------------------------------------------
+Tests run: 11, Failures: 4, Errors: 7, Skipped: 0, Time elapsed: 6.169 s <<< FAILURE! -- in org.weaveos.workflow.RootExecutionGrpcIT
+org.weaveos.workflow.RootExecutionGrpcIT.lostReplyThenServiceRestartRecoversCommittedReceipt -- Time elapsed: 1.877 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <UNAVAILABLE> but was: <UNIMPLEMENTED>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:184)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:179)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1188)
+	at org.weaveos.workflow.RootExecutionGrpcIT.status(RootExecutionGrpcIT.java:43)
+	at org.weaveos.workflow.RootExecutionGrpcIT.lostReplyThenServiceRestartRecoversCommittedReceipt(RootExecutionGrpcIT.java:138)
+
+org.weaveos.workflow.RootExecutionGrpcIT.executeReturnsCommittedBoundReceipt -- Time elapsed: 0.516 s <<< ERROR!
+io.grpc.StatusRuntimeException: UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/Execute is unimplemented
+	at io.grpc.stub.ClientCalls.toStatusRuntimeException(ClientCalls.java:368)
+	at io.grpc.stub.ClientCalls.getUnchecked(ClientCalls.java:349)
+	at io.grpc.stub.ClientCalls.blockingUnaryCall(ClientCalls.java:174)
+	at org.weaveos.workflow.v1.ExecutionServiceGrpc$ExecutionServiceBlockingStub.execute(ExecutionServiceGrpc.java:302)
+	at org.weaveos.workflow.RootExecutionGrpcIT.executeReturnsCommittedBoundReceipt(RootExecutionGrpcIT.java:59)
+
+org.weaveos.workflow.RootExecutionGrpcIT.lookupRejectsDifferentFingerprint -- Time elapsed: 0.520 s <<< ERROR!
+io.grpc.StatusRuntimeException: UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/Execute is unimplemented
+	at io.grpc.stub.ClientCalls.toStatusRuntimeException(ClientCalls.java:368)
+	at io.grpc.stub.ClientCalls.getUnchecked(ClientCalls.java:349)
+	at io.grpc.stub.ClientCalls.blockingUnaryCall(ClientCalls.java:174)
+	at org.weaveos.workflow.v1.ExecutionServiceGrpc$ExecutionServiceBlockingStub.execute(ExecutionServiceGrpc.java:302)
+	at org.weaveos.workflow.RootExecutionGrpcIT.lookupRejectsDifferentFingerprint(RootExecutionGrpcIT.java:79)
+
+org.weaveos.workflow.RootExecutionGrpcIT.conflictingCommandCannotReuseIdentity -- Time elapsed: 0.437 s <<< ERROR!
+io.grpc.StatusRuntimeException: UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/Execute is unimplemented
+	at io.grpc.stub.ClientCalls.toStatusRuntimeException(ClientCalls.java:368)
+	at io.grpc.stub.ClientCalls.getUnchecked(ClientCalls.java:349)
+	at io.grpc.stub.ClientCalls.blockingUnaryCall(ClientCalls.java:174)
+	at org.weaveos.workflow.v1.ExecutionServiceGrpc$ExecutionServiceBlockingStub.execute(ExecutionServiceGrpc.java:302)
+	at org.weaveos.workflow.RootExecutionGrpcIT.conflictingCommandCannotReuseIdentity(RootExecutionGrpcIT.java:69)
+
+org.weaveos.workflow.RootExecutionGrpcIT.databaseFailureRollsBackAndHidesPrivateDetails -- Time elapsed: 0.418 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <UNAVAILABLE> but was: <UNIMPLEMENTED>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:184)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:179)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1188)
+	at org.weaveos.workflow.RootExecutionGrpcIT.databaseFailureRollsBackAndHidesPrivateDetails(RootExecutionGrpcIT.java:104)
+
+org.weaveos.workflow.RootExecutionGrpcIT.executionFirstCannotBecomeCancelled -- Time elapsed: 0.430 s <<< ERROR!
+io.grpc.StatusRuntimeException: UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/Execute is unimplemented
+	at io.grpc.stub.ClientCalls.toStatusRuntimeException(ClientCalls.java:368)
+	at io.grpc.stub.ClientCalls.getUnchecked(ClientCalls.java:349)
+	at io.grpc.stub.ClientCalls.blockingUnaryCall(ClientCalls.java:174)
+	at org.weaveos.workflow.v1.ExecutionServiceGrpc$ExecutionServiceBlockingStub.execute(ExecutionServiceGrpc.java:302)
+	at org.weaveos.workflow.RootExecutionGrpcIT.executionFirstCannotBecomeCancelled(RootExecutionGrpcIT.java:89)
+
+org.weaveos.workflow.RootExecutionGrpcIT.cancellationFirstDurablyPreventsExecution -- Time elapsed: 0.375 s <<< ERROR!
+io.grpc.StatusRuntimeException: UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/EstablishNoEffect is unimplemented
+	at io.grpc.stub.ClientCalls.toStatusRuntimeException(ClientCalls.java:368)
+	at io.grpc.stub.ClientCalls.getUnchecked(ClientCalls.java:349)
+	at io.grpc.stub.ClientCalls.blockingUnaryCall(ClientCalls.java:174)
+	at org.weaveos.workflow.v1.ExecutionServiceGrpc$ExecutionServiceBlockingStub.establishNoEffect(ExecutionServiceGrpc.java:316)
+	at org.weaveos.workflow.RootExecutionGrpcIT.cancellationFirstDurablyPreventsExecution(RootExecutionGrpcIT.java:84)
+
+org.weaveos.workflow.RootExecutionGrpcIT.everyMethodRejectsProvisionalOuterTransaction -- Time elapsed: 0.393 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <FAILED_PRECONDITION> but was: <UNIMPLEMENTED>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:184)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:179)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1188)
+	at org.weaveos.workflow.RootExecutionGrpcIT.everyMethodRejectsProvisionalOuterTransaction(RootExecutionGrpcIT.java:120)
+
+org.weaveos.workflow.RootExecutionGrpcIT.missingLookupIsExplicitAndDoesNotCancel -- Time elapsed: 0.413 s <<< ERROR!
+io.grpc.StatusRuntimeException: UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/Lookup is unimplemented
+	at io.grpc.stub.ClientCalls.toStatusRuntimeException(ClientCalls.java:368)
+	at io.grpc.stub.ClientCalls.getUnchecked(ClientCalls.java:349)
+	at io.grpc.stub.ClientCalls.blockingUnaryCall(ClientCalls.java:174)
+	at org.weaveos.workflow.v1.ExecutionServiceGrpc$ExecutionServiceBlockingStub.lookup(ExecutionServiceGrpc.java:309)
+	at org.weaveos.workflow.RootExecutionGrpcIT.missingLookupIsExplicitAndDoesNotCancel(RootExecutionGrpcIT.java:74)
+
+org.weaveos.workflow.RootExecutionGrpcIT.duplicateExecutionReplaysExactReceipt -- Time elapsed: 0.373 s <<< ERROR!
+io.grpc.StatusRuntimeException: UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/Execute is unimplemented
+	at io.grpc.stub.ClientCalls.toStatusRuntimeException(ClientCalls.java:368)
+	at io.grpc.stub.ClientCalls.getUnchecked(ClientCalls.java:349)
+	at io.grpc.stub.ClientCalls.blockingUnaryCall(ClientCalls.java:174)
+	at org.weaveos.workflow.v1.ExecutionServiceGrpc$ExecutionServiceBlockingStub.execute(ExecutionServiceGrpc.java:302)
+	at org.weaveos.workflow.RootExecutionGrpcIT.duplicateExecutionReplaysExactReceipt(RootExecutionGrpcIT.java:65)
+
+org.weaveos.workflow.RootExecutionGrpcIT.invalidRequestsNeverWriteLedger -- Time elapsed: 0.381 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <INVALID_ARGUMENT> but was: <UNIMPLEMENTED>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:184)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:179)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1188)
+	at org.weaveos.workflow.RootExecutionGrpcIT.status(RootExecutionGrpcIT.java:43)
+	at org.weaveos.workflow.RootExecutionGrpcIT.invalidRequestsNeverWriteLedger(RootExecutionGrpcIT.java:96)
+

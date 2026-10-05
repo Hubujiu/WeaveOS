@@ -1,0 +1,12 @@
+All shell commands executed in /workspace/WeaveOS-worktrees/V030-032 unless specified.
+Go SDK=/workspace/.weaveos-tools/go/bin/go; WEAVEOS_RPC_GO=same; GOTOOLCHAIN=local; GOPATH=/workspace/.weaveos-tools/gopath; GOMODCACHE=/workspace/.weaveos-tools/go-mod; GOCACHE=/workspace/.weaveos-tools/go-cache.
+Preparation: bash services/workflow-engine/prepare-build.sh
+Generation (twice): env WEAVEOS_RPC_GO=<Go SDK> GOPATH=<above> GOMODCACHE=<above> GOCACHE=<above> bash services/workflow-engine/generate-proto.sh
+Explicit git add of only the 12 new Execution generated bindings between generation runs.
+Go compile only: go test -race -run '^$' ./internal/workflowrpc (cwd services/bff)
+Java compile only: JAVA_HOME=services/workflow-engine/.work/toolchain/jdk services/workflow-engine/.work/toolchain/maven/bin/mvn -B -ntp -o -s services/workflow-engine/maven-settings.xml -f services/workflow-engine/pom.xml -Dmaven.repo.local=<absolute services/workflow-engine/.work/m2> test-compile
+Go RED: go -C services/bff test -race -count=1 -json -run '^TestRootExecutionClient' ./internal/workflowrpc
+Java RED: bash services/workflow-engine/run-tests.sh clean -Dtest=RootExecutionGrpcIT -Dworkflow.reports=target/execution-rpc-red-reports test
+Interop RED: env WEAVEOS_RPC_JSON_REPORT=<absolute docs/evidence/V030-032/execution-rpc-red/interop-red.jsonl> WEAVEOS_RPC_GO=<Go SDK> GOPATH=<above> GOMODCACHE=<above> GOCACHE=<above> bash services/workflow-engine/run-execution-rpc-interop.sh
+Gate RED: python3 services/workflow-engine/execution_rpc_ci_gate_tests.py
+XML/JSON files are actual originals; counts in case-results.json are derived summaries only.

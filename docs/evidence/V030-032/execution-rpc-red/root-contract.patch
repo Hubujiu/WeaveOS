@@ -1,0 +1,871 @@
+From fd269704c2bdb7ccee3bb7b8fee9cca95ebe51ab Mon Sep 17 00:00:00 2001
+From: Hubujiu <xiaoyuliu599@gmail.com>
+Date: Mon, 5 Oct 2026 03:04:43 -0700
+Subject: [PATCH] test(V030-032): freeze execution RPC contract and Root
+ acceptance RED
+
+---
+ .github/workflows/ci.yml                      |  43 +++++
+ .../proto/weaveos/workflow/v1/execution.proto |  34 ++++
+ .../internal/workflowrpc/execution_client.go  |  21 +++
+ .../execution_interop_root_test.go            |  81 ++++++++
+ .../workflowrpc/root_execution_client_test.go | 176 ++++++++++++++++++
+ .../workflow-engine/execution_rpc_ci_gate.py  |   8 +
+ .../execution_rpc_ci_gate_tests.py            |  98 ++++++++++
+ .../expected-execution-rpc-tests.json         |  34 ++++
+ services/workflow-engine/generate-proto.sh    |   9 +-
+ services/workflow-engine/pom.xml              |   2 +-
+ .../run-execution-rpc-interop.sh              |  67 +++++++
+ .../workflow/ExecutionGrpcService.java        |   6 +
+ .../weaveos/workflow/RootExecutionGrpcIT.java | 143 ++++++++++++++
+ .../workflow/RootExecutionRpcFixtureMain.java |  17 ++
+ 14 files changed, 737 insertions(+), 2 deletions(-)
+ create mode 100644 contracts/proto/weaveos/workflow/v1/execution.proto
+ create mode 100644 services/bff/internal/workflowrpc/execution_client.go
+ create mode 100644 services/bff/internal/workflowrpc/execution_interop_root_test.go
+ create mode 100644 services/bff/internal/workflowrpc/root_execution_client_test.go
+ create mode 100644 services/workflow-engine/execution_rpc_ci_gate.py
+ create mode 100644 services/workflow-engine/execution_rpc_ci_gate_tests.py
+ create mode 100644 services/workflow-engine/expected-execution-rpc-tests.json
+ create mode 100755 services/workflow-engine/run-execution-rpc-interop.sh
+ create mode 100644 services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionGrpcService.java
+ create mode 100644 services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionGrpcIT.java
+ create mode 100644 services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRpcFixtureMain.java
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 91402d4..bcf5ab3 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -221,3 +221,46 @@ jobs:
+           if-no-files-found: warn
+           retention-days: 14
+ 
++  execution-rpc:
++    runs-on: ubuntu-24.04
++    timeout-minutes: 35
++    defaults:
++      run:
++        shell: bash
++    steps:
++      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
++        with:
++          persist-credentials: false
++      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
++        with:
++          go-version-file: .go-version
++          cache: false
++      - name: Root-owned execution RPC gate tests
++        run: |
++          mkdir -p services/workflow-engine/execution-rpc-ci-logs
++          python3 services/workflow-engine/execution_rpc_ci_gate_tests.py 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/gate-tests.txt
++      - name: Prepare locked dependencies
++        run: bash services/workflow-engine/prepare-build.sh 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/prepare.txt
++      - name: Verify both proto generation outputs
++        run: bash services/workflow-engine/generate-proto.sh 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/regenerate.txt
++      - name: Root Go execution client tests
++        run: |
++          set -o pipefail
++          go -C services/bff test -race -count=1 -json -run '^TestRootExecutionClient' ./internal/workflowrpc | tee services/workflow-engine/execution-rpc-ci-logs/unit.jsonl
++      - name: Real Java execution RPC on isolated PostgreSQL
++        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootExecutionGrpcIT -Dworkflow.reports=target/execution-rpc-ci-reports test 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/java.txt
++      - name: Real Go Java Flowable execution interop
++        env:
++          WEAVEOS_RPC_JSON_REPORT: services/workflow-engine/execution-rpc-ci-logs/interop.jsonl
++        run: bash services/workflow-engine/run-execution-rpc-interop.sh 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/interop.txt
++      - name: Require exact 11 Java and 10 Go unit and 3 real interop cases
++        run: python3 services/workflow-engine/execution_rpc_ci_gate.py services/workflow-engine/target/execution-rpc-ci-reports services/workflow-engine/expected-execution-rpc-tests.json services/workflow-engine/execution-rpc-ci-logs/unit.jsonl services/workflow-engine/execution-rpc-ci-logs/interop.jsonl 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/report-gate.txt
++      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
++        if: always()
++        with:
++          name: execution-rpc-${{ github.run_id }}
++          path: |
++            services/workflow-engine/target/execution-rpc-ci-reports/
++            services/workflow-engine/execution-rpc-ci-logs/
++          if-no-files-found: warn
++          retention-days: 14
+diff --git a/contracts/proto/weaveos/workflow/v1/execution.proto b/contracts/proto/weaveos/workflow/v1/execution.proto
+new file mode 100644
+index 0000000..1065b30
+--- /dev/null
++++ b/contracts/proto/weaveos/workflow/v1/execution.proto
+@@ -0,0 +1,34 @@
++syntax = "proto3";
++package weaveos.workflow.v1;
++import "weaveos/workflow/v1/deployment.proto";
++option java_package = "org.weaveos.workflow.v1";
++option java_multiple_files = true;
++option go_package = "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc/pb";
++service ExecutionService {
++ rpc Execute(ExecutionRequest) returns (ExecutionReceipt);
++ rpc Lookup(ExecutionLookupRequest) returns (ExecutionLookupResponse);
++ rpc EstablishNoEffect(ExecutionRequest) returns (ExecutionReceipt);
++}
++message ExecutionRequest {
++ bytes command_envelope = 1;
++ bytes payload = 2;
++}
++message ExecutionReceipt {
++ string command_id = 1;
++ bytes command_hash = 2;
++ string outcome = 3;
++ uint64 sequence = 4;
++ string proof_id = 5;
++ bytes result_hash = 6;
++ bytes result_bytes = 7;
++}
++message ExecutionLookupRequest {
++ string command_id = 1;
++ bytes command_hash = 2;
++}
++message ExecutionLookupResponse {
++ oneof result {
++  ExecutionReceipt confirmed = 1;
++  NotObserved not_observed = 2;
++ }
++}
+diff --git a/services/bff/internal/workflowrpc/execution_client.go b/services/bff/internal/workflowrpc/execution_client.go
+new file mode 100644
+index 0000000..2d121c3
+--- /dev/null
++++ b/services/bff/internal/workflowrpc/execution_client.go
+@@ -0,0 +1,21 @@
++package workflowrpc
++
++import (
++ "context"
++ "errors"
++ "time"
++ "github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
++ "google.golang.org/grpc"
++)
++
++// Root declaration only. Tests must compile and expose missing behavior.
++var errExecutionUnimplemented = errors.New("execution RPC is not implemented")
++type ExecutionConfirmed struct {
++ Receipt flowcommands.Receipt
++ Result flowcommands.ExecutionResult
++}
++type ExecutionClient struct{}
++func NewExecutionClient(conn grpc.ClientConnInterface, timeout time.Duration)(*ExecutionClient,error){return nil,errExecutionUnimplemented}
++func(c *ExecutionClient)Execute(ctx context.Context, command flowcommands.Command, payload flowcommands.ExecutionPayload)(*ExecutionConfirmed,error){return nil,errExecutionUnimplemented}
++func(c *ExecutionClient)Lookup(ctx context.Context, command flowcommands.Command)(*ExecutionConfirmed,bool,error){return nil,false,errExecutionUnimplemented}
++func(c *ExecutionClient)EstablishNoEffect(ctx context.Context, command flowcommands.Command, payload flowcommands.ExecutionPayload)(*ExecutionConfirmed,error){return nil,errExecutionUnimplemented}
+diff --git a/services/bff/internal/workflowrpc/execution_interop_root_test.go b/services/bff/internal/workflowrpc/execution_interop_root_test.go
+new file mode 100644
+index 0000000..4a6bd6d
+--- /dev/null
++++ b/services/bff/internal/workflowrpc/execution_interop_root_test.go
+@@ -0,0 +1,81 @@
++//go:build workflowrpc_integration
++
++package workflowrpc
++
++import (
++ "context"
++ "crypto/sha256"
++ "net"
++ "os"
++ "reflect"
++ "testing"
++ "time"
++ fc "github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
++ fg "github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
++ pb "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc/pb"
++ "google.golang.org/grpc"
++ "google.golang.org/grpc/credentials/insecure"
++)
++
++func rootRealExecution(t *testing.T)(*ExecutionClient,fc.Command,fc.ExecutionPayload){
++ t.Helper();target:=os.Getenv("WEAVEOS_RPC_TEST_TARGET");host,_,e:=net.SplitHostPort(target)
++ if e!=nil||host!="b3-workflow"{t.Fatal("only the dedicated unexposed b3-workflow fixture is allowed")}
++ conn,e:=grpc.NewClient(target,grpc.WithTransportCredentials(insecure.NewCredentials()),grpc.WithDisableRetry());if e!=nil{t.Fatal(e)};t.Cleanup(func(){conn.Close()})
++ deploy,e:=NewClient(conn,15*time.Second);if e!=nil{t.Fatal(e)}
++ c,p:=rootExecutionInput()
++ graph:=fg.Graph{Version:1,Nodes:[]fg.Node{
++  {ID:rootExecutionID(1),Kind:"start"},
++  {ID:rootExecutionID(2),Kind:"approval",Approval:&fg.Approval{Mode:"all",AssigneeIDs:[]string{rootExecutionID(8),rootExecutionID(9)}}},
++  {ID:rootExecutionID(3),Kind:"approval",Approval:&fg.Approval{Mode:"all",AssigneeIDs:[]string{rootExecutionID(10),rootExecutionID(11),rootExecutionID(12)}}},
++  {ID:rootExecutionID(4),Kind:"end"},
++ },Edges:[]fg.Edge{{From:rootExecutionID(1),To:rootExecutionID(2)},{From:rootExecutionID(2),To:rootExecutionID(3)},{From:rootExecutionID(3),To:rootExecutionID(4)}}}
++ raw,e:=fg.CompileBPMN(graph,nil,c.VersionID);if e!=nil{t.Fatal(e)}
++ if _,e=deploy.Deploy(context.Background(),&pb.DeployRequest{AppId:c.AppID,FlowId:c.FlowID,VersionId:c.VersionID,Version:1,BpmnXml:raw});e!=nil{t.Fatal(e)}
++ client,e:=NewExecutionClient(conn,15*time.Second);if e!=nil{t.Fatal(e)};return client,c,p
++}
++func rootAction(c fc.Command,r *ExecutionConfirmed,id int,action string,task *fc.ExecutionTask)(fc.Command,fc.ExecutionPayload){
++ c.CommandID=rootExecutionID(id);c.Action=action;c.ExpectedSequence=r.Receipt.Sequence;c.FenceEpoch++
++ c.TaskID="";c.TaskEpoch=0;c.TargetNodeID=""
++ if task!=nil{c.TaskID=task.ID;c.TaskEpoch=task.ActivationEpoch;c.ActorID=task.AssigneeID}else{c.ActorID=rootExecutionID(106)}
++ p:=fc.ExecutionPayload{EvidenceHash:sha256.Sum256([]byte("root-interop-evidence")),Routes:map[string]bool{}}
++ b,e:=fc.EncodeExecutionPayload(action,p);if e!=nil{panic(e)};c.PayloadHash=sha256.Sum256(b);return c,p
++}
++func rootLookupMatches(t *testing.T,client *ExecutionClient,c fc.Command,want *ExecutionConfirmed){
++ t.Helper();got,found,e:=client.Lookup(context.Background(),c)
++ if e!=nil||!found||!reflect.DeepEqual(got,want){t.Fatalf("durable lookup differs: %v %v",found,e)}
++}
++func TestRootGoJavaPostgresExecutionLifecycleInterop(t *testing.T){
++ started:=time.Now();client,c,p:=rootRealExecution(t);ctx:=context.Background()
++ if r,found,e:=client.Lookup(ctx,c);e!=nil||found||r!=nil{t.Fatalf("initial lookup: %v",e)}
++ r,e:=client.Execute(ctx,c,p);if e!=nil{t.Fatal(e)}
++ if r.Result.State!="active"||len(r.Result.Tasks)!=2||r.Receipt.Sequence!=1{t.Fatal("start did not activate real first node")}
++ rootLookupMatches(t,client,c,r)
++ again,e:=client.Execute(ctx,c,p);if e!=nil||!reflect.DeepEqual(r,again){t.Fatal("start replay changed facts")}
++ for i:=0;i<5;i++{
++  if len(r.Result.Tasks)==0{t.Fatal("completed before all required approvals")}
++  c,p=rootAction(c,r,210+i,"agree",&r.Result.Tasks[0]);if i==1{c.RecordVersion=2}
++  r,e=client.Execute(ctx,c,p);if e!=nil{t.Fatal(e)};rootLookupMatches(t,client,c,r)
++  expected:=[]int{1,3,2,1,0}[i];if len(r.Result.Tasks)!=expected{t.Fatalf("approval %d tasks=%d want=%d",i,len(r.Result.Tasks),expected)}
++  if r.Result.RecordVersion!=c.RecordVersion{t.Fatal("latest record version lost")}
++ }
++ if r.Result.State!="completed"||r.Receipt.Sequence!=6{t.Fatal("real flow did not complete")}
++ t.Logf("isolated deployment/start/replay/5 approvals/lookups elapsed=%s",time.Since(started))
++}
++func TestRootGoJavaPostgresExecutionCancellationInterop(t *testing.T){
++ client,c,p:=rootRealExecution(t);c.CommandID=rootExecutionID(301);c.InstanceID=rootExecutionID(302)
++ ctx:=context.Background();r,e:=client.EstablishNoEffect(ctx,c,p);if e!=nil{t.Fatal(e)}
++ if r.Receipt.Outcome!="no_effect"||r.Result.State!="unchanged"||r.Result.Reason!="cancelled"{t.Fatal("cancellation not proven")}
++ rootLookupMatches(t,client,c,r);again,e:=client.Execute(ctx,c,p);if e!=nil||!reflect.DeepEqual(r,again){t.Fatal("cancelled command was executed")}
++}
++func TestRootGoJavaPostgresExecutionReturnAndWithdrawInterop(t *testing.T){
++ client,c,p:=rootRealExecution(t);c.CommandID=rootExecutionID(401);c.InstanceID=rootExecutionID(402);ctx:=context.Background()
++ r,e:=client.Execute(ctx,c,p);if e!=nil{t.Fatal(e)}
++ old:=append([]fc.ExecutionTask(nil),r.Result.Tasks...)
++ c,p=rootAction(c,r,403,"return",&r.Result.Tasks[0]);c.TargetNodeID=rootExecutionID(2)
++ r,e=client.Execute(ctx,c,p);if e!=nil{t.Fatal(e)}
++ if len(r.Result.Tasks)!=2||r.Result.Tasks[0].ActivationEpoch<=old[0].ActivationEpoch{t.Fatal("return did not reactivate")}
++ for _,a:=range old{for _,b:=range r.Result.Tasks{if a.ID==b.ID{t.Fatal("old task reused")}}}
++ rootLookupMatches(t,client,c,r)
++ c,p=rootAction(c,r,404,"withdraw",nil);r,e=client.Execute(ctx,c,p);if e!=nil{t.Fatal(e)}
++ if r.Result.State!="withdrawn"||len(r.Result.Tasks)!=0{t.Fatal("withdraw not confirmed")};rootLookupMatches(t,client,c,r)
++}
+diff --git a/services/bff/internal/workflowrpc/root_execution_client_test.go b/services/bff/internal/workflowrpc/root_execution_client_test.go
+new file mode 100644
+index 0000000..dcf69cf
+--- /dev/null
++++ b/services/bff/internal/workflowrpc/root_execution_client_test.go
+@@ -0,0 +1,176 @@
++package workflowrpc
++
++import (
++ "bytes"
++ "context"
++ "crypto/sha256"
++ "encoding/binary"
++ "fmt"
++ "reflect"
++ "testing"
++ "time"
++ fc "github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
++ pb "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc/pb"
++ "google.golang.org/grpc"
++ "google.golang.org/grpc/codes"
++ "google.golang.org/grpc/status"
++ "google.golang.org/protobuf/proto"
++)
++
++type rootExecutionConn struct {
++ calls int
++ method string
++ request proto.Message
++ handle func(context.Context,string,proto.Message,proto.Message) error
++}
++func(c *rootExecutionConn)Invoke(ctx context.Context,method string,in,out any,opts ...grpc.CallOption)error{
++ c.calls++;c.method=method;c.request=proto.Clone(in.(proto.Message))
++ return c.handle(ctx,method,in.(proto.Message),out.(proto.Message))
++}
++func(c *rootExecutionConn)NewStream(context.Context,*grpc.StreamDesc,string,...grpc.CallOption)(grpc.ClientStream,error){panic("unary RPC only")}
++func rootExecutionID(n int)string{return fmt.Sprintf("%08x-0000-4000-8000-%012x",n,n)}
++func rootExecutionInput()(fc.Command,fc.ExecutionPayload){
++ p:=fc.ExecutionPayload{EvidenceHash:sha256.Sum256([]byte("root-evidence")),Start:&fc.ExecutionStart{AllowWithdraw:true,Approvers:map[string][]string{rootExecutionID(2):{rootExecutionID(8),rootExecutionID(9)},rootExecutionID(3):{rootExecutionID(10),rootExecutionID(11),rootExecutionID(12)}}},Routes:map[string]bool{}}
++ b,e:=fc.EncodeExecutionPayload("start",p);if e!=nil{panic(e)}
++ c:=fc.Command{ProtocolVersion:2,CommandID:rootExecutionID(201),AppID:rootExecutionID(101),TableID:rootExecutionID(103),ViewID:rootExecutionID(104),RecordID:rootExecutionID(105),FlowID:rootExecutionID(102),VersionID:rootExecutionID(100),InstanceID:rootExecutionID(202),ActorID:rootExecutionID(106),Action:"start",DefinitionVersion:1,SchemaVersion:1,RecordVersion:1,FenceEpoch:1,PayloadHash:sha256.Sum256(b)}
++ return c,p
++}
++// Independent fixture encoder, never the implementation's result encoder.
++func rootExecutionBody(c fc.Command,outcome string)[]byte{
++ b:=[]byte{'W','V','F','R','S','L',0,1}
++ text:=func(s string){b=binary.BigEndian.AppendUint32(b,uint32(len(s)));b=append(b,s...)}
++ text(c.InstanceID)
++ if outcome=="success"{text("engine-process-一");text("active");text("")}else{text("");text("unchanged");text("cancelled")}
++ b=binary.BigEndian.AppendUint64(b,uint64(c.SchemaVersion));b=binary.BigEndian.AppendUint64(b,uint64(c.RecordVersion))
++ if outcome=="success"{
++  b=binary.BigEndian.AppendUint32(b,1);text(rootExecutionID(203));text(rootExecutionID(2));text(rootExecutionID(8));text("engine-task-一");b=binary.BigEndian.AppendUint64(b,1)
++ }else{b=binary.BigEndian.AppendUint32(b,0)}
++ return b
++}
++func rootExecutionReceipt(c fc.Command,outcome string)*pb.ExecutionReceipt{
++ b:=rootExecutionBody(c,outcome);rh:=sha256.Sum256(b);ch,e:=fc.Fingerprint(c);if e!=nil{panic(e)};seq:=c.ExpectedSequence;if outcome=="success"{seq++}
++ return &pb.ExecutionReceipt{CommandId:c.CommandID,CommandHash:ch[:],Outcome:outcome,Sequence:uint64(seq),ProofId:rootExecutionID(204),ResultHash:rh[:],ResultBytes:b}
++}
++func rootExecutionClient(t *testing.T,conn *rootExecutionConn)*ExecutionClient{
++ t.Helper();c,e:=NewExecutionClient(conn,time.Second);if e!=nil||c==nil{t.Fatalf("constructor: %v",e)};return c
++}
++func rootExecutionSuccess(c fc.Command)*rootExecutionConn{
++ return &rootExecutionConn{handle:func(ctx context.Context,m string,in,out proto.Message)error{proto.Merge(out,rootExecutionReceipt(c,"success"));return nil}}
++}
++func TestRootExecutionClientConstructorBounds(t *testing.T){
++ var typedNil *rootExecutionConn
++ for _,x:=range []struct{conn grpc.ClientConnInterface;d time.Duration}{{nil,time.Second},{typedNil,time.Second},{&rootExecutionConn{},0},{&rootExecutionConn{},-1},{&rootExecutionConn{},31*time.Second}}{
++  if c,e:=NewExecutionClient(x.conn,x.d);e==nil||c!=nil{t.Fatal("invalid constructor accepted")}
++ }
++ if c,e:=NewExecutionClient(&rootExecutionConn{},30*time.Second);e!=nil||c==nil{t.Fatalf("upper limit rejected: %v",e)}
++}
++func TestRootExecutionClientSendsCanonicalBoundBytes(t *testing.T){
++ c,p:=rootExecutionInput();conn:=rootExecutionSuccess(c);client:=rootExecutionClient(t,conn)
++ r,e:=client.Execute(context.Background(),c,p);if e!=nil||r==nil{t.Fatalf("execute: %v",e)}
++ if conn.calls!=1||conn.method!="/weaveos.workflow.v1.ExecutionService/Execute"{t.Fatal("wrong method or call count")}
++ q,ok:=conn.request.(*pb.ExecutionRequest);if !ok{t.Fatal("wrong request type")}
++ cb,_:=fc.CanonicalBytes(c);payload,_:=fc.EncodeExecutionPayload(c.Action,p)
++ if !bytes.Equal(q.CommandEnvelope,cb)||!bytes.Equal(q.Payload,payload){t.Fatal("noncanonical bytes")}
++ ch,_:=fc.Fingerprint(c)
++ if r.Receipt.CommandHash!=ch||r.Receipt.Outcome!="success"||r.Result.InstanceID!=c.InstanceID||r.Result.State!="active"||len(r.Result.Tasks)!=1||r.Result.Tasks[0].EngineTaskID!="engine-task-一"{t.Fatal("incorrect result")}
++}
++func TestRootExecutionClientRejectsInputsBeforeRPC(t *testing.T){
++ c,p:=rootExecutionInput();conn:=rootExecutionSuccess(c);client:=rootExecutionClient(t,conn)
++ bad:=c;bad.ProtocolVersion=1
++ wrongHash:=c;wrongHash.PayloadHash=sha256.Sum256([]byte("wrong"))
++ wrongID:=c;wrongID.CommandID="BAD"
++ for _,q:=range []fc.Command{bad,wrongHash,wrongID}{
++  if r,e:=client.Execute(context.Background(),q,p);e==nil||r!=nil{t.Fatal("invalid execute accepted")}
++  if r,e:=client.EstablishNoEffect(context.Background(),q,p);e==nil||r!=nil{t.Fatal("invalid cancellation accepted")}
++ }
++ if r,e:=client.Execute(nil,c,p);e==nil||r!=nil{t.Fatal("nil context accepted")}
++ if r,found,e:=client.Lookup(nil,c);e==nil||found||r!=nil{t.Fatal("nil lookup context accepted")}
++ if r,e:=client.Execute(context.Background(),c,fc.ExecutionPayload{});e==nil||r!=nil{t.Fatal("invalid payload accepted")}
++ if conn.calls!=0{t.Fatal("invalid input reached transport")}
++}
++func TestRootExecutionClientNilReceiverReturnsError(t *testing.T){
++ c,p:=rootExecutionInput();var client *ExecutionClient
++ if r,e:=client.Execute(context.Background(),c,p);e==nil||r!=nil{t.Fatal("nil execute")}
++ if r,found,e:=client.Lookup(context.Background(),c);e==nil||r!=nil||found{t.Fatal("nil lookup")}
++ if r,e:=client.EstablishNoEffect(context.Background(),c,p);e==nil||r!=nil{t.Fatal("nil cancel")}
++}
++func TestRootExecutionClientRejectsDamagedReceipts(t *testing.T){
++ c,p:=rootExecutionInput()
++ mutations:=[]func(*pb.ExecutionReceipt){
++  func(r *pb.ExecutionReceipt){r.CommandId=rootExecutionID(999)},
++  func(r *pb.ExecutionReceipt){r.CommandHash=[]byte{1}},
++  func(r *pb.ExecutionReceipt){r.CommandHash=make([]byte,32)},
++  func(r *pb.ExecutionReceipt){r.ResultHash=make([]byte,31)},
++  func(r *pb.ExecutionReceipt){r.ResultHash=make([]byte,32)},
++  func(r *pb.ExecutionReceipt){r.Sequence=0},
++  func(r *pb.ExecutionReceipt){r.Sequence=^uint64(0)},
++  func(r *pb.ExecutionReceipt){r.ProofId="bad"},
++  func(r *pb.ExecutionReceipt){r.Outcome="pending"},
++  func(r *pb.ExecutionReceipt){r.Outcome="no_effect"},
++  func(r *pb.ExecutionReceipt){other:=c;other.InstanceID=rootExecutionID(999);r.ResultBytes=rootExecutionBody(other,"success");h:=sha256.Sum256(r.ResultBytes);r.ResultHash=h[:]},
++  func(r *pb.ExecutionReceipt){other:=c;other.RecordVersion++;r.ResultBytes=rootExecutionBody(other,"success");h:=sha256.Sum256(r.ResultBytes);r.ResultHash=h[:]},
++  func(r *pb.ExecutionReceipt){r.ResultBytes=make([]byte,65537);h:=sha256.Sum256(r.ResultBytes);r.ResultHash=h[:]},
++  func(r *pb.ExecutionReceipt){r.ProtoReflect().SetUnknown(append([]byte{0xa2,0x06,0x80,0x80,0x08},make([]byte,131072)...))},
++ }
++ for i,mutate:=range mutations{t.Run(fmt.Sprint(i),func(t *testing.T){
++  conn:=&rootExecutionConn{handle:func(ctx context.Context,m string,in,out proto.Message)error{r:=rootExecutionReceipt(c,"success");mutate(r);proto.Merge(out,r);return nil}}
++  client:=rootExecutionClient(t,conn);if r,e:=client.Execute(context.Background(),c,p);e==nil||r!=nil{t.Fatal("damaged receipt accepted")}
++ })}
++}
++func TestRootExecutionClientLookupStatesAndBinding(t *testing.T){
++ c,_:=rootExecutionInput()
++ for _,kind:=range []string{"absent","confirmed","empty","wrong"}{t.Run(kind,func(t *testing.T){
++  conn:=&rootExecutionConn{handle:func(ctx context.Context,m string,in,out proto.Message)error{
++   q:=in.(*pb.ExecutionLookupRequest);h,_:=fc.Fingerprint(c)
++   if q.CommandId!=c.CommandID||!bytes.Equal(q.CommandHash,h[:]){t.Fatal("lookup identity mismatch")}
++   r:=out.(*pb.ExecutionLookupResponse)
++   if kind=="absent"{r.Result=&pb.ExecutionLookupResponse_NotObserved{NotObserved:&pb.NotObserved{}}}
++   if kind=="confirmed"||kind=="wrong"{v:=rootExecutionReceipt(c,"success");if kind=="wrong"{v.CommandId=rootExecutionID(999)};r.Result=&pb.ExecutionLookupResponse_Confirmed{Confirmed:v}}
++   return nil
++  }}
++  client:=rootExecutionClient(t,conn);r,found,e:=client.Lookup(context.Background(),c)
++  switch kind{case "absent":if e!=nil||r!=nil||found{t.Fatal("not observed became confirmed")};case "confirmed":if e!=nil||r==nil||!found{t.Fatal("confirmed lookup rejected")};default:if e==nil||r!=nil||found{t.Fatal("malformed lookup accepted")}}
++  if conn.calls!=1||conn.method!="/weaveos.workflow.v1.ExecutionService/Lookup"{t.Fatal("lookup transport count")}
++ })}
++}
++func TestRootExecutionClientCancellationMayRecoverSuccess(t *testing.T){
++ c,p:=rootExecutionInput()
++ for _,outcome:=range []string{"success","no_effect"}{t.Run(outcome,func(t *testing.T){
++  conn:=&rootExecutionConn{handle:func(ctx context.Context,m string,in,out proto.Message)error{proto.Merge(out,rootExecutionReceipt(c,outcome));return nil}}
++  client:=rootExecutionClient(t,conn);r,e:=client.EstablishNoEffect(context.Background(),c,p)
++  if e!=nil||r==nil||r.Receipt.Outcome!=outcome{t.Fatalf("arbitration result lost: %v",e)}
++  if conn.calls!=1||conn.method!="/weaveos.workflow.v1.ExecutionService/EstablishNoEffect"{t.Fatal("wrong cancellation method")}
++ })}
++}
++func TestRootExecutionClientTransportErrorsStayUnknown(t *testing.T){
++ c,p:=rootExecutionInput()
++ for _,code:=range []codes.Code{codes.Unavailable,codes.DeadlineExceeded,codes.Canceled}{
++  for _,method:=range []string{"execute","lookup","cancel"}{t.Run(fmt.Sprint(code,method),func(t *testing.T){
++   conn:=&rootExecutionConn{handle:func(context.Context,string,proto.Message,proto.Message)error{return status.Error(code,"synthetic")}}
++   client:=rootExecutionClient(t,conn);var r *ExecutionConfirmed;var e error;var found bool
++   switch method{case "execute":r,e=client.Execute(context.Background(),c,p);case "lookup":r,found,e=client.Lookup(context.Background(),c);case "cancel":r,e=client.EstablishNoEffect(context.Background(),c,p)}
++   if status.Code(e)!=code||r!=nil||found||conn.calls!=1{t.Fatal("transport error was retried or reclassified")}
++  })}
++ }
++}
++func TestRootExecutionClientDeadlineAndParentCancellation(t *testing.T){
++ c,p:=rootExecutionInput();parent,cancel:=context.WithTimeout(context.Background(),150*time.Millisecond);defer cancel()
++ conn:=&rootExecutionConn{handle:func(ctx context.Context,m string,in,out proto.Message)error{
++  d,ok:=ctx.Deadline();pd,_:=parent.Deadline();if !ok||d.After(pd){t.Fatal("parent deadline lost")}
++  <-ctx.Done();return status.FromContextError(ctx.Err()).Err()
++ }}
++ client:=rootExecutionClient(t,conn);cancel()
++ r,e:=client.Execute(parent,c,p);if e==nil||r!=nil{t.Fatal("cancelled caller succeeded")}
++ if conn.calls>1{t.Fatal("unexpected retry")}
++ conn2:=&rootExecutionConn{handle:func(ctx context.Context,m string,in,out proto.Message)error{
++  d,ok:=ctx.Deadline();if !ok||time.Until(d)>120*time.Millisecond{t.Fatal("client deadline missing")};<-ctx.Done();return status.FromContextError(ctx.Err()).Err()
++ }}
++ short,e:=NewExecutionClient(conn2,50*time.Millisecond);if e!=nil{t.Fatal(e)}
++ if r,e:=short.Execute(context.Background(),c,p);e==nil||r!=nil{t.Fatal("timeout became success")}
++}
++func TestRootExecutionClientDoesNotMutateCallerInput(t *testing.T){
++ c,p:=rootExecutionInput();p.Start.Approvers[rootExecutionID(2)]=[]string{rootExecutionID(9),rootExecutionID(8)}
++ before:=append([]string(nil),p.Start.Approvers[rootExecutionID(2)]...);conn:=rootExecutionSuccess(c);client:=rootExecutionClient(t,conn)
++ if _,e:=client.Execute(context.Background(),c,p);e!=nil{t.Fatal(e)}
++ if !reflect.DeepEqual(before,p.Start.Approvers[rootExecutionID(2)]){t.Fatal("caller roster mutated")}
++}
+diff --git a/services/workflow-engine/execution_rpc_ci_gate.py b/services/workflow-engine/execution_rpc_ci_gate.py
+new file mode 100644
+index 0000000..9e5ccfa
+--- /dev/null
++++ b/services/workflow-engine/execution_rpc_ci_gate.py
+@@ -0,0 +1,8 @@
++"""Root declaration: execution RPC report validation not implemented yet."""
++import sys
++class GateError(Exception):
++ pass
++def validate(report_dir, manifest, unit_json, interop_json):
++ raise GateError("execution RPC report gate unimplemented")
++if __name__ == '__main__':
++ sys.exit(1)
+diff --git a/services/workflow-engine/execution_rpc_ci_gate_tests.py b/services/workflow-engine/execution_rpc_ci_gate_tests.py
+new file mode 100644
+index 0000000..fc96290
+--- /dev/null
++++ b/services/workflow-engine/execution_rpc_ci_gate_tests.py
+@@ -0,0 +1,98 @@
++"""Root-owned acceptance of exact execution RPC evidence, synthetic inputs only."""
++import copy
++import importlib.util
++import json
++from pathlib import Path
++import tempfile
++import unittest
++import xml.etree.ElementTree as ET
++BASE=Path(__file__).resolve().parent
++spec=importlib.util.spec_from_file_location('exec_rpc_gate',BASE/'execution_rpc_ci_gate.py')
++gate=importlib.util.module_from_spec(spec);spec.loader.exec_module(gate)
++class RootExecutionRpcGateTest(unittest.TestCase):
++ def setUp(self):
++  self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup);self.path=Path(self.temp.name)
++  self.manifest=json.loads((BASE/'expected-execution-rpc-tests.json').read_text())
++  self.root=ET.Element('testsuite',name=self.manifest['classname'],tests='11',failures='0',errors='0',skipped='0')
++  for name in self.manifest['tests']: ET.SubElement(self.root,'testcase',name=name,classname=self.manifest['classname'])
++  self.report=self.path/('TEST-'+self.manifest['classname']+'.xml')
++  self.unit=self.path/'unit.jsonl';self.interop=self.path/'interop.jsonl';self.write_java()
++  self.unit_events=self.events(self.manifest['go_unit_tests']);self.interop_events=self.events(self.manifest['go_interop_tests']);self.write_go()
++ def events(self,names):
++  p=self.manifest['go_package'];out=[{'Action':'start','Package':p}]
++  for n in names:out.extend([{'Action':'run','Package':p,'Test':n},{'Action':'pass','Package':p,'Test':n}])
++  return out+[{'Action':'pass','Package':p}]
++ def write_java(self):ET.ElementTree(self.root).write(self.report)
++ def write_go(self):
++  for path,events in ((self.unit,self.unit_events),(self.interop,self.interop_events)):path.write_text(''.join(json.dumps(e)+'\n' for e in events))
++ def check(self):return gate.validate(self.path,self.manifest,self.unit,self.interop)
++ def test_exact_twenty_four_cases_pass(self):self.assertEqual(24,self.check())
++ def test_missing_each_report_fails(self):
++  for p in (self.report,self.unit,self.interop):
++   saved=p.read_bytes();p.unlink()
++   with self.assertRaises(gate.GateError):self.check()
++   p.write_bytes(saved)
++ def test_java_missing_case_fails(self):
++  self.root.remove(self.root[0]);self.root.set('tests','10');self.write_java()
++  with self.assertRaises(gate.GateError):self.check()
++ def test_java_replaced_case_fails(self):
++  self.root[0].set('name','unexpected');self.write_java()
++  with self.assertRaises(gate.GateError):self.check()
++ def test_java_skip_failure_error_cannot_hide(self):
++  for tag in ('skipped','failure','error'):
++   child=ET.SubElement(self.root[0],tag);self.write_java()
++   with self.assertRaises(gate.GateError):self.check()
++   self.root[0].remove(child)
++ def test_java_counts_cannot_lie(self):
++  self.root.set('failures','1');self.write_java()
++  with self.assertRaises(gate.GateError):self.check()
++ def test_java_extra_suite_fails(self):
++  (self.path/'TEST-unexpected.xml').write_text('<testsuite/>')
++  with self.assertRaises(gate.GateError):self.check()
++ def test_java_doctype_fails(self):
++  self.report.write_text('<!DOCTYPE testsuite [<!ENTITY x "bad">]>'+self.report.read_text())
++  with self.assertRaises(gate.GateError):self.check()
++ def test_each_go_report_requires_all_cases(self):
++  for events in (self.unit_events,self.interop_events):
++   saved=copy.deepcopy(events);del events[1:3];self.write_go()
++   with self.assertRaises(gate.GateError):self.check()
++   events[:]=saved
++ def test_each_go_report_requires_completion(self):
++  for events in (self.unit_events,self.interop_events):
++   last=events.pop();self.write_go()
++   with self.assertRaises(gate.GateError):self.check()
++   events.append(last)
++ def test_go_failure_or_skip_fails(self):
++  for events in (self.unit_events,self.interop_events):
++   for action in ('fail','skip'):
++    events[2]['Action']=action;self.write_go()
++    with self.assertRaises(gate.GateError):self.check()
++   events[2]['Action']='pass'
++ def test_go_duplicate_terminal_fails(self):
++  self.unit_events.insert(3,copy.deepcopy(self.unit_events[2]));self.write_go()
++  with self.assertRaises(gate.GateError):self.check()
++ def test_go_wrong_package_fails(self):
++  self.interop_events[2]['Package']='wrong';self.write_go()
++  with self.assertRaises(gate.GateError):self.check()
++ def test_renaming_expected_case_and_report_together_fails(self):
++  initial_manifest=copy.deepcopy(self.manifest);initial_root=copy.deepcopy(self.root)
++  initial_unit=copy.deepcopy(self.unit_events);initial_interop=copy.deepcopy(self.interop_events)
++  for key in ('tests','go_unit_tests','go_interop_tests'):
++   self.manifest=copy.deepcopy(initial_manifest);self.root=copy.deepcopy(initial_root)
++   self.unit_events=copy.deepcopy(initial_unit);self.interop_events=copy.deepcopy(initial_interop)
++   self.manifest[key][0]='TestRootFakeCase'
++   if key=='tests':self.root[0].set('name','TestRootFakeCase')
++   else:
++    events=self.unit_events if key=='go_unit_tests' else self.interop_events
++    events[1]['Test']='TestRootFakeCase';events[2]['Test']='TestRootFakeCase'
++   self.write_java();self.write_go()
++   with self.assertRaises(gate.GateError):self.check()
++ def test_no_optional_skip_or_empty_manifest(self):
++  for manifest in ({},dict(self.manifest,tests=[]),dict(self.manifest,go_unit_tests=[]),dict(self.manifest,go_interop_tests=[])):
++   with self.assertRaises(gate.GateError):gate.validate(self.path,manifest,self.unit,self.interop)
++ def test_malformed_json_and_xml_fail(self):
++  for path,bad in ((self.unit,'{bad'),(self.interop,'{bad'),(self.report,'<bad')):
++   saved=path.read_text();path.write_text(bad)
++   with self.assertRaises(gate.GateError):self.check()
++   path.write_text(saved)
++if __name__=='__main__':unittest.main()
+diff --git a/services/workflow-engine/expected-execution-rpc-tests.json b/services/workflow-engine/expected-execution-rpc-tests.json
+new file mode 100644
+index 0000000..9629dd9
+--- /dev/null
++++ b/services/workflow-engine/expected-execution-rpc-tests.json
+@@ -0,0 +1,34 @@
++{
++  "classname": "org.weaveos.workflow.RootExecutionGrpcIT",
++  "tests": [
++    "executeReturnsCommittedBoundReceipt",
++    "duplicateExecutionReplaysExactReceipt",
++    "conflictingCommandCannotReuseIdentity",
++    "missingLookupIsExplicitAndDoesNotCancel",
++    "lookupRejectsDifferentFingerprint",
++    "cancellationFirstDurablyPreventsExecution",
++    "executionFirstCannotBecomeCancelled",
++    "invalidRequestsNeverWriteLedger",
++    "databaseFailureRollsBackAndHidesPrivateDetails",
++    "everyMethodRejectsProvisionalOuterTransaction",
++    "lostReplyThenServiceRestartRecoversCommittedReceipt"
++  ],
++  "go_package": "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc",
++  "go_unit_tests": [
++    "TestRootExecutionClientConstructorBounds",
++    "TestRootExecutionClientSendsCanonicalBoundBytes",
++    "TestRootExecutionClientRejectsInputsBeforeRPC",
++    "TestRootExecutionClientNilReceiverReturnsError",
++    "TestRootExecutionClientRejectsDamagedReceipts",
++    "TestRootExecutionClientLookupStatesAndBinding",
++    "TestRootExecutionClientCancellationMayRecoverSuccess",
++    "TestRootExecutionClientTransportErrorsStayUnknown",
++    "TestRootExecutionClientDeadlineAndParentCancellation",
++    "TestRootExecutionClientDoesNotMutateCallerInput"
++  ],
++  "go_interop_tests": [
++    "TestRootGoJavaPostgresExecutionLifecycleInterop",
++    "TestRootGoJavaPostgresExecutionCancellationInterop",
++    "TestRootGoJavaPostgresExecutionReturnAndWithdrawInterop"
++  ]
++}
+diff --git a/services/workflow-engine/generate-proto.sh b/services/workflow-engine/generate-proto.sh
+index 75724c5..1376e7b 100755
+--- a/services/workflow-engine/generate-proto.sh
++++ b/services/workflow-engine/generate-proto.sh
+@@ -20,6 +20,13 @@ chmod +x "$rpc_protoc"
+ PATH="$rpc_dir/.work/bin:$PATH" "$rpc_protoc" -I "$rpc_root/contracts/proto" \
+   --go_out="$rpc_root/services/bff" --go_opt=module=github.com/Hubujiu/WeaveOS/services/bff \
+   --go-grpc_out="$rpc_root/services/bff" --go-grpc_opt=module=github.com/Hubujiu/WeaveOS/services/bff \
+-  "$rpc_root/contracts/proto/weaveos/workflow/v1/deployment.proto"
++  "$rpc_root/contracts/proto/weaveos/workflow/v1/deployment.proto" \
++  "$rpc_root/contracts/proto/weaveos/workflow/v1/execution.proto"
+ # CI runs this after checkout; generated files must be the exact checked-in artifacts.
+ git -C "$rpc_root" diff --exit-code -- services/bff/internal/workflowrpc/pb/ services/workflow-engine/src/main/java/org/weaveos/workflow/v1/
++
++# Newly generated, untracked bindings must not escape the reproducibility gate.
++if [[ -n "$(git -C "$rpc_root" ls-files --others --exclude-standard -- services/bff/internal/workflowrpc/pb/ services/workflow-engine/src/main/java/org/weaveos/workflow/v1/)" ]]; then
++  echo "untracked generated RPC bindings" >&2
++  exit 1
++fi
+diff --git a/services/workflow-engine/pom.xml b/services/workflow-engine/pom.xml
+index 8e0614c..70b0710 100644
+--- a/services/workflow-engine/pom.xml
++++ b/services/workflow-engine/pom.xml
+@@ -20,7 +20,7 @@
+   <build><plugins>
+     <plugin><groupId>org.xolstice.maven.plugins</groupId><artifactId>protobuf-maven-plugin</artifactId><version>0.6.1</version><configuration>
+       <protoSourceRoot>${project.basedir}/../../contracts/proto</protoSourceRoot>
+-      <includes><include>weaveos/workflow/v1/deployment.proto</include></includes>
++      <includes><include>weaveos/workflow/v1/deployment.proto</include><include>weaveos/workflow/v1/execution.proto</include></includes>
+       <outputDirectory>${project.basedir}/src/main/java</outputDirectory><clearOutputDirectory>false</clearOutputDirectory>
+       <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:linux-x86_64</protocArtifact>
+       <pluginId>grpc-java</pluginId><pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:linux-x86_64</pluginArtifact>
+diff --git a/services/workflow-engine/run-execution-rpc-interop.sh b/services/workflow-engine/run-execution-rpc-interop.sh
+new file mode 100755
+index 0000000..cd7b44c
+--- /dev/null
++++ b/services/workflow-engine/run-execution-rpc-interop.sh
+@@ -0,0 +1,67 @@
++#!/usr/bin/env bash
++set -euo pipefail
++rpc_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
++rpc_root=$(cd "$rpc_dir/../.." && pwd)
++rpc_go=${WEAVEOS_RPC_GO:-go}
++test "$($rpc_go version | cut -d ' ' -f 3)" = go1.27.1
++rpc_name="weaveos-v032-$(date +%s)-$$"
++rpc_network="${rpc_name}-network"
++rpc_pg="${rpc_name}-postgres"
++rpc_java="${rpc_name}-java"
++rpc_maven_image='mirror.gcr.io/library/maven@sha256:fa7aa19829157d299ff05f631b51697a388dcd2f6955e84249ecc652015f217b'
++rpc_pg_image='docker.io/library/postgres@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722'
++mkdir -p "$rpc_dir/.work"
++cleanup() {
++  if docker inspect "$rpc_java" >/dev/null 2>&1; then
++    docker stop --time 15 "$rpc_java" >/dev/null 2>&1 || true
++    docker logs "$rpc_java" 2>&1 || true
++    docker rm "$rpc_java" >/dev/null 2>&1 || true
++  fi
++  docker rm -f -v "$rpc_pg" >/dev/null 2>&1 || true
++  docker network rm "$rpc_network" >/dev/null 2>&1 || true
++}
++trap cleanup EXIT
++# Compile the existing tagged Root test to a static Linux executable with the locked Go SDK.
++# No host RPC connection is made; execution below is inside the private fixture network.
++CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOTOOLCHAIN=local "$rpc_go" -C "$rpc_root/services/bff" test \
++  -tags workflowrpc_integration -c -o "$rpc_dir/.work/execution-interop.test" ./internal/workflowrpc
++docker network create --internal --label weaveos.package=V030-032 "$rpc_network" >/dev/null
++docker run -d --name "$rpc_pg" --label weaveos.package=V030-032 --network "$rpc_network" --network-alias b3-postgres \
++  -e POSTGRES_DB=b3_flowable_fixture -e POSTGRES_USER=b3_fixture -e POSTGRES_PASSWORD=b3_fixture_only \
++  --tmpfs /var/lib/postgresql:rw "$rpc_pg_image" >/dev/null
++for rpc_attempt in {1..60}; do
++  if docker exec "$rpc_pg" pg_isready -U b3_fixture -d b3_flowable_fixture >/dev/null 2>&1; then break; fi
++  if [[ "$rpc_attempt" == 60 ]]; then docker logs "$rpc_pg"; exit 1; fi
++  sleep 1
++done
++docker network inspect --format 'fixture network internal={{.Internal}}' "$rpc_network"
++docker inspect --format 'fixture published ports={{json .HostConfig.PortBindings}}' "$rpc_pg"
++docker run --rm --user "$(id -u):$(id -g)" --network "$rpc_network" --label weaveos.package=V030-032 \
++  -v "$rpc_dir:/proof" -v "$rpc_dir/.work/m2:/m2" -w /proof --entrypoint mvn "$rpc_maven_image" \
++  -B -ntp -o -s maven-settings.xml -Duser.home=/tmp -Dmaven.repo.local=/m2 test-compile \
++  org.apache.maven.plugins:maven-dependency-plugin:3.9.0:build-classpath -Dmdep.outputFile=.work/rpc-classpath -Dmdep.includeScope=test
++docker run -d --name "$rpc_java" --user "$(id -u):$(id -g)" --network "$rpc_network" --network-alias b3-workflow \
++  --label weaveos.package=V030-032 -v "$rpc_dir:/proof" -v "$rpc_dir/.work/m2:/m2:ro" -w /proof \
++  -e B3_TEST_JDBC_URL=jdbc:postgresql://b3-postgres:5432/b3_flowable_fixture --entrypoint sh "$rpc_maven_image" \
++  -ec 'exec java -cp "target/classes:target/test-classes:$(cat .work/rpc-classpath)" org.weaveos.workflow.RootExecutionRpcFixtureMain' >/dev/null
++for rpc_attempt in {1..60}; do
++  if docker exec "$rpc_java" test -f /tmp/weaveos-rpc-ready; then break; fi
++  if [[ "$rpc_attempt" == 60 ]]; then docker logs "$rpc_java"; exit 1; fi
++  sleep 1
++done
++rpc_port=$(docker exec "$rpc_java" cat /tmp/weaveos-rpc-ready)
++[[ "$rpc_port" =~ ^[0-9]+$ ]]
++docker inspect --format 'fixture published ports={{json .HostConfig.PortBindings}}' "$rpc_java"
++rpc_execute() {
++  docker exec -e NO_PROXY=b3-workflow,b3-postgres,127.0.0.1,localhost -e no_proxy=b3-workflow,b3-postgres,127.0.0.1,localhost \
++    -e WEAVEOS_RPC_TEST_TARGET="b3-workflow:$rpc_port" "$rpc_java" \
++    /proof/.work/execution-interop.test -test.v=test2json -test.run '^TestRootGoJavaPostgresExecution.*Interop$' -test.timeout=90s
++}
++if [[ -n "${WEAVEOS_RPC_JSON_REPORT:-}" ]]; then
++  mkdir -p -- "$(dirname -- "$WEAVEOS_RPC_JSON_REPORT")"
++  # Only genuine test binary stdout enters test2json. Maven/fixture logs stay outside.
++  # set -o pipefail preserves failure of the original test, converter or report writer.
++  rpc_execute | "$rpc_go" tool test2json -t -p github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc | tee "$WEAVEOS_RPC_JSON_REPORT"
++else
++  rpc_execute
++fi
+diff --git a/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionGrpcService.java b/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionGrpcService.java
+new file mode 100644
+index 0000000..2590c5a
+--- /dev/null
++++ b/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionGrpcService.java
+@@ -0,0 +1,6 @@
++package org.weaveos.workflow;
++
++/** Root declaration only, intentionally inherits UNIMPLEMENTED responses. */
++public final class ExecutionGrpcService extends org.weaveos.workflow.v1.ExecutionServiceGrpc.ExecutionServiceImplBase {
++ public ExecutionGrpcService(ExecutionRegistry registry) { java.util.Objects.requireNonNull(registry); }
++}
+diff --git a/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionGrpcIT.java b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionGrpcIT.java
+new file mode 100644
+index 0000000..a09728a
+--- /dev/null
++++ b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionGrpcIT.java
+@@ -0,0 +1,143 @@
++package org.weaveos.workflow;
++
++import static org.junit.jupiter.api.Assertions.*;
++import com.google.protobuf.ByteString;
++import io.grpc.Status;
++import io.grpc.stub.StreamObserver;
++import java.util.*;
++import java.util.concurrent.TimeUnit;
++import org.junit.jupiter.api.*;
++import org.springframework.transaction.support.TransactionTemplate;
++import org.weaveos.workflow.v1.*;
++
++/** Root-owned transport behavior, reusing the real isolated engine fixture. */
++class RootExecutionGrpcIT {
++ final RootExecutionRegistryTest f = new RootExecutionRegistryTest();
++ io.grpc.Server server;
++ io.grpc.ManagedChannel channel;
++ ExecutionServiceGrpc.ExecutionServiceBlockingStub stub;
++ @BeforeEach void setup() throws Exception {
++  f.setup(); f.deploy("all"); start(new ExecutionGrpcService(f.registry));
++ }
++ void start(io.grpc.BindableService service) throws Exception {
++  server=io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder.forPort(0)
++   .maxInboundMessageSize(300000).addService(service).build().start();
++  channel=io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder.forAddress("127.0.0.1",server.getPort())
++   .usePlaintext().disableRetry().build();
++  stub=ExecutionServiceGrpc.newBlockingStub(channel).withDeadlineAfter(15,TimeUnit.SECONDS);
++ }
++ void stop() throws Exception {
++  if(channel!=null){channel.shutdownNow();channel.awaitTermination(10,TimeUnit.SECONDS);channel=null;}
++  if(server!=null){server.shutdownNow();server.awaitTermination(10,TimeUnit.SECONDS);server=null;}
++ }
++ @AfterEach void cleanup() throws Exception {try{stop();}finally{f.cleanup();}}
++ static ExecutionRequest wire(RootExecutionRegistryTest.Command c){
++  return ExecutionRequest.newBuilder().setCommandEnvelope(ByteString.copyFrom(c.bytes()))
++   .setPayload(ByteString.copyFrom(c.payload)).build();
++ }
++ static ExecutionLookupRequest query(RootExecutionRegistryTest.Command c){
++  return ExecutionLookupRequest.newBuilder().setCommandId(c.strings[0])
++   .setCommandHash(ByteString.copyFrom(RootExecutionRegistryTest.hash(c.bytes()))).build();
++ }
++ void status(Status.Code code,org.junit.jupiter.api.function.Executable action){
++  var e=assertThrows(io.grpc.StatusRuntimeException.class,action);assertEquals(code,e.getStatus().getCode());
++ }
++ long commands(){return f.jdbc.queryForObject("SELECT count(*) FROM wf_execution_commands",Long.class);}
++ long processes(){return f.engine.getRuntimeService().createProcessInstanceQuery().count();}
++ void verify(ExecutionReceipt r,RootExecutionRegistryTest.Command c,String outcome) {
++  assertEquals(c.strings[0],r.getCommandId());
++  assertEquals(ByteString.copyFrom(RootExecutionRegistryTest.hash(c.bytes())),r.getCommandHash());
++  assertEquals(outcome,r.getOutcome());assertEquals(c.numbers[5]+(outcome.equals("success")?1:0),r.getSequence());
++  assertDoesNotThrow(()->UUID.fromString(r.getProofId()));assertNotEquals("00000000-0000-0000-0000-000000000000",r.getProofId());
++  assertEquals(ByteString.copyFrom(RootExecutionRegistryTest.hash(r.getResultBytes().toByteArray())),r.getResultHash());
++  assertFalse(r.getResultBytes().isEmpty());
++  var durable=f.jdbc.queryForMap("SELECT * FROM wf_execution_commands WHERE command_id=?::uuid",c.strings[0]);
++  assertArrayEquals((byte[])durable.get("result_bytes"),r.getResultBytes().toByteArray());
++  assertEquals(durable.get("proof_id").toString(),r.getProofId());
++ }
++ @Test void executeReturnsCommittedBoundReceipt() {
++  var c=new RootExecutionRegistryTest.Command();var r=stub.execute(wire(c));verify(r,c,"success");
++  assertEquals(1,commands());assertEquals(1,processes());
++  assertEquals(1L,f.admin.queryForObject("SELECT count(*) FROM "+f.schema+".wf_execution_commands WHERE outcome='success'",Long.class));
++  var found=stub.lookup(query(c));assertEquals(ExecutionLookupResponse.ResultCase.CONFIRMED,found.getResultCase());assertEquals(r,found.getConfirmed());
++ }
++ @Test void duplicateExecutionReplaysExactReceipt() {
++  var c=new RootExecutionRegistryTest.Command();var a=stub.execute(wire(c));assertEquals(a,stub.execute(wire(c)));
++  assertEquals(1,commands());assertEquals(1,processes());
++ }
++ @Test void conflictingCommandCannotReuseIdentity() {
++  var c=new RootExecutionRegistryTest.Command();stub.execute(wire(c));c.numbers[2]++;
++  status(Status.Code.ALREADY_EXISTS,()->stub.execute(wire(c)));
++  status(Status.Code.ALREADY_EXISTS,()->stub.establishNoEffect(wire(c)));assertEquals(1,commands());assertEquals(1,processes());
++ }
++ @Test void missingLookupIsExplicitAndDoesNotCancel() {
++  var c=new RootExecutionRegistryTest.Command();var r=stub.lookup(query(c));
++  assertEquals(ExecutionLookupResponse.ResultCase.NOT_OBSERVED,r.getResultCase());assertEquals(0,commands());
++  verify(stub.execute(wire(c)),c,"success");assertEquals(1,processes());
++ }
++ @Test void lookupRejectsDifferentFingerprint() {
++  var c=new RootExecutionRegistryTest.Command();stub.execute(wire(c));
++  var q=query(c).toBuilder().setCommandHash(ByteString.copyFrom(new byte[32])).build();
++  status(Status.Code.FAILED_PRECONDITION,()->stub.lookup(q));assertEquals(1,commands());
++ }
++ @Test void cancellationFirstDurablyPreventsExecution() {
++  var c=new RootExecutionRegistryTest.Command();var r=stub.establishNoEffect(wire(c));verify(r,c,"no_effect");
++  assertEquals(r,stub.execute(wire(c)));assertEquals(r,stub.establishNoEffect(wire(c)));assertEquals(r,stub.lookup(query(c)).getConfirmed());
++  assertEquals(0,processes());assertEquals(1,commands());
++ }
++ @Test void executionFirstCannotBecomeCancelled() {
++  var c=new RootExecutionRegistryTest.Command();var r=stub.execute(wire(c));
++  assertEquals(r,stub.establishNoEffect(wire(c)));assertEquals("success",r.getOutcome());assertEquals(1,processes());
++ }
++ @Test void invalidRequestsNeverWriteLedger() {
++  var c=new RootExecutionRegistryTest.Command();var q=wire(c);
++  var invalid=List.of(ExecutionRequest.getDefaultInstance(),q.toBuilder().setCommandEnvelope(ByteString.copyFrom(new byte[539])).build(),
++   q.toBuilder().setPayload(ByteString.copyFrom(new byte[262145])).build(),q.toBuilder().setPayload(ByteString.copyFrom(new byte[50])).build());
++  for(var bad:invalid){status(Status.Code.INVALID_ARGUMENT,()->stub.execute(bad));status(Status.Code.INVALID_ARGUMENT,()->stub.establishNoEffect(bad));}
++  for(var bad:List.of(ExecutionLookupRequest.getDefaultInstance(),query(c).toBuilder().setCommandHash(ByteString.copyFrom(new byte[31])).build(),
++    query(c).toBuilder().setCommandId("bad").build()))status(Status.Code.INVALID_ARGUMENT,()->stub.lookup(bad));
++  assertEquals(0,commands());assertEquals(0,processes());
++ }
++ @Test void databaseFailureRollsBackAndHidesPrivateDetails() {
++  f.jdbc.execute("ALTER TABLE wf_execution_commands ADD CONSTRAINT private_rpc_constraint CHECK(outcome <> 'success')");
++  var e=assertThrows(io.grpc.StatusRuntimeException.class,()->stub.execute(wire(new RootExecutionRegistryTest.Command())));
++  assertEquals(Status.Code.UNAVAILABLE,e.getStatus().getCode());
++  for(var secret:List.of("private_rpc_constraint","INSERT","b3_fixture_only"))assertFalse(e.getMessage().contains(secret));
++  assertEquals(0,commands());assertEquals(0,processes());
++ }
++ @Test void everyMethodRejectsProvisionalOuterTransaction() {
++  var c=new RootExecutionRegistryTest.Command();var service=new ExecutionGrpcService(f.registry);
++  for(int method=0;method<3;method++){
++   var values=new ArrayList<Object>();var errors=new ArrayList<Throwable>();var completed=new java.util.concurrent.atomic.AtomicBoolean();
++   int which=method;
++   new TransactionTemplate(f.tm).executeWithoutResult(tx->{
++    if(which==1)service.lookup(query(c),observer(values,errors,completed));
++    else if(which==0)service.execute(wire(c),observer(values,errors,completed));
++    else service.establishNoEffect(wire(c),observer(values,errors,completed));
++    tx.setRollbackOnly();
++   });
++   assertTrue(values.isEmpty());assertFalse(completed.get());assertEquals(1,errors.size());
++   assertEquals(Status.Code.FAILED_PRECONDITION,Status.fromThrowable(errors.get(0)).getCode());
++  }
++  assertEquals(0,commands());assertEquals(0,processes());
++ }
++ static <T> StreamObserver<T> observer(List<Object> values,List<Throwable> errors,java.util.concurrent.atomic.AtomicBoolean completed){
++  return new StreamObserver<>(){public void onNext(T r){values.add(r);}public void onError(Throwable t){errors.add(t);}public void onCompleted(){completed.set(true);}};
++ }
++ @Test void lostReplyThenServiceRestartRecoversCommittedReceipt() throws Exception {
++  stop();var delegate=new ExecutionGrpcService(f.registry);
++  start(new ExecutionServiceGrpc.ExecutionServiceImplBase(){
++   @Override public void execute(ExecutionRequest q,StreamObserver<ExecutionReceipt> out){
++    delegate.execute(q,new StreamObserver<>(){
++     public void onNext(ExecutionReceipt r){}
++     public void onError(Throwable t){out.onError(t);}
++     public void onCompleted(){out.onError(Status.UNAVAILABLE.withDescription("synthetic reply loss").asRuntimeException());}
++    });
++   }
++  });
++  var c=new RootExecutionRegistryTest.Command();status(Status.Code.UNAVAILABLE,()->stub.execute(wire(c)));assertEquals(1,commands());
++  stop();f.engine.close();f.engine=null;f.open();start(new ExecutionGrpcService(f.registry));
++  var r=stub.lookup(query(c));assertEquals(ExecutionLookupResponse.ResultCase.CONFIRMED,r.getResultCase());verify(r.getConfirmed(),c,"success");
++  assertEquals(r.getConfirmed(),stub.execute(wire(c)));assertEquals(1,commands());assertEquals(1,processes());
++ }
++}
+diff --git a/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRpcFixtureMain.java b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRpcFixtureMain.java
+new file mode 100644
+index 0000000..2fea1d7
+--- /dev/null
++++ b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRpcFixtureMain.java
+@@ -0,0 +1,17 @@
++package org.weaveos.workflow;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.util.concurrent.CountDownLatch;
++/** Dedicated synthetic transport fixture. Not a production bootstrap. */
++public final class RootExecutionRpcFixtureMain {
++ public static void main(String[] args)throws Exception{
++  var f=new RootExecutionRegistryTest();f.setup();
++  var server=io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder.forPort(0)
++   .maxInboundMessageSize(1024*1024+16384)
++   .addService(new DeploymentGrpcService(f.deployments))
++   .addService(new ExecutionGrpcService(f.registry)).build().start();
++  Runtime.getRuntime().addShutdownHook(new Thread(()->{server.shutdownNow();try{server.awaitTermination(10,java.util.concurrent.TimeUnit.SECONDS);}catch(InterruptedException e){Thread.currentThread().interrupt();}f.cleanup();}));
++  Files.writeString(Path.of("/tmp/weaveos-rpc-ready"),Integer.toString(server.getPort()));
++  new CountDownLatch(1).await();
++ }
++}
+-- 
+2.52.0
+

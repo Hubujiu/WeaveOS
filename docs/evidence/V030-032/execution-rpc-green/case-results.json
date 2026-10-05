@@ -1,0 +1,902 @@
+{
+  "RED_parent": "58e60a6c2b755bb0fef763d6ae214c2744e574f7",
+  "implementation_files": [
+    "services/bff/internal/workflowrpc/execution_client.go",
+    "services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionGrpcService.java",
+    "services/workflow-engine/execution_rpc_ci_gate.py"
+  ],
+  "exits": {
+    "deployment-gate": 0,
+    "envelope-gate": 0,
+    "execution-registry-gate": 0,
+    "flowcommands-fixture-compile": 0,
+    "flowcommands-fixture-environment-failure": 1,
+    "flowcommands-fixture": 0,
+    "gate-tests": 0,
+    "generate-reproduce": 0,
+    "go-build": 0,
+    "go-regression": 1,
+    "go-unit": 0,
+    "go-vet": 0,
+    "governance": 0,
+    "interop": 0,
+    "java-regression": 0,
+    "java": 0,
+    "legacy-interop": 0,
+    "legacy-rpc-gate": 0,
+    "report-gate": 0,
+    "repo-check": 0,
+    "task-check": 0
+  },
+  "new_java": {
+    "name": "org.weaveos.workflow.RootExecutionGrpcIT",
+    "tests": "11",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "7.012"
+  },
+  "new_go": {
+    "top_level_counts": {
+      "pass": 10,
+      "fail": 0,
+      "skip": 0
+    },
+    "case_results": [
+      {
+        "name": "TestRootExecutionClientConstructorBounds",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientSendsCanonicalBoundBytes",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientRejectsInputsBeforeRPC",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientNilReceiverReturnsError",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientRejectsDamagedReceipts",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientLookupStatesAndBinding",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientCancellationMayRecoverSuccess",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientTransportErrorsStayUnknown",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientDeadlineAndParentCancellation",
+        "status": "pass",
+        "seconds": 0.05
+      },
+      {
+        "name": "TestRootExecutionClientDoesNotMutateCallerInput",
+        "status": "pass",
+        "seconds": 0
+      }
+    ]
+  },
+  "new_interop": {
+    "top_level_counts": {
+      "pass": 3,
+      "fail": 0,
+      "skip": 0
+    },
+    "case_results": [
+      {
+        "name": "TestRootGoJavaPostgresExecutionLifecycleInterop",
+        "status": "pass",
+        "seconds": 0.91
+      },
+      {
+        "name": "TestRootGoJavaPostgresExecutionCancellationInterop",
+        "status": "pass",
+        "seconds": 0.06
+      },
+      {
+        "name": "TestRootGoJavaPostgresExecutionReturnAndWithdrawInterop",
+        "status": "pass",
+        "seconds": 0.26
+      }
+    ]
+  },
+  "java_regression": [
+    {
+      "name": "org.weaveos.workflow.RootCommandEnvelopeTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.016"
+    },
+    {
+      "name": "org.weaveos.workflow.RootDeploymentGrpcIT",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "3.679"
+    },
+    {
+      "name": "org.weaveos.workflow.RootDeploymentRegistryTest",
+      "tests": "18",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "7.029"
+    },
+    {
+      "name": "org.weaveos.workflow.RootExecutionRegistryTest",
+      "tests": "36",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "14.039"
+    },
+    {
+      "name": "org.weaveos.workflow.RootReturnCompatibilityTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "5.69"
+    }
+  ],
+  "flowcommands_full_fixture": {
+    "top_level_counts": {
+      "pass": 61,
+      "fail": 0,
+      "skip": 0
+    },
+    "case_results": [
+      {
+        "name": "TestRootLedgerConcurrentIdenticalAcceptance",
+        "status": "pass",
+        "seconds": 0.09
+      },
+      {
+        "name": "TestRootLedgerConcurrentConflictingPayloadHasOneWinner",
+        "status": "pass",
+        "seconds": 0.09
+      },
+      {
+        "name": "TestRootLedgerConcurrentResultAppliesExactlyOnce",
+        "status": "pass",
+        "seconds": 0.08
+      },
+      {
+        "name": "TestRootLedgerLostAcceptCommitAckRetainsOriginalPending",
+        "status": "pass",
+        "seconds": 0.03
+      },
+      {
+        "name": "TestRootLedgerLostApplyCommitAckRecoversSuccessWithoutReplayEffects",
+        "status": "pass",
+        "seconds": 0.03
+      },
+      {
+        "name": "TestRootLedgerAcceptAndExactReplay",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootLedgerConflictDoesNotOverwrite",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootLedgerCallerRollbackRemovesCommandAndDispatch",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootLedgerDispatchFailureCannotCommitPartialAcceptance",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootLedgerApplyAndDuplicateAreAtomic",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootLedgerOuterRollbackPreservesFenceAndPending",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootLedgerProjectionFailureCannotFinalize",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootLedgerUnknownWrongAndOutOfOrderNeverProduceEffects",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootLedgerDurableNoEffectOnly",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootLedgerMissingIsNotNoEffect",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootLedgerInvalidEnvelopeHasNoWrites",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootLedgerMissingEffectCannotFinalize",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootLedgerReconnectReadsOriginalDurableResult",
+        "status": "pass",
+        "seconds": 0.03
+      },
+      {
+        "name": "TestRootLedgerInvalidPortsFailBeforeWrites",
+        "status": "pass",
+        "seconds": 0.01
+      },
+      {
+        "name": "TestRootLedgerCorruptStoredCommandFailsClosed",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootFingerprintGoldenAndDeterministic",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootEverySemanticCommandFieldIsBound",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootInvalidCommandsFailClosed",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootSupportedActionsAndStartIdentity",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootSuccessAndNoEffectPlans",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootResultIdentityAndPayloadMustMatch",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootUnknownIsNeverAResult",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootProofAndResultHashRequired",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootSequenceCannotSkipOrRewind",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExactAppliedReplaySurvivesLaterInstanceProgress",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootAppliedResultCannotBeRewritten",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootSequenceUpperBound",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootInvalidCommandCannotBeRescuedByReceipt",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionPayloadMatchesIndependentGoldenBytes",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionPayloadCanonicalizesWithoutMutatingCaller",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionPayloadRejectsInvalidActionConfigurationAndIdentities",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionPayloadAllowsAllKnownNonstartActionsAndEmptyGraph",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionPayloadUpperBoundsRemainWithinProtocolLimit",
+        "status": "pass",
+        "seconds": 0.01
+      },
+      {
+        "name": "TestRootExecutionResultDecodesEveryFixedGoldenState",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultValidatesExistingReceiptBindingsAndSequence",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultRejectsEvenAValidLegacyV1Command",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultRejectsEveryTruncationTailPrefixAndOversize",
+        "status": "pass",
+        "seconds": 0.01
+      },
+      {
+        "name": "TestRootExecutionResultRejectsInvalidTaskSetsAndStateShape",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultRejectsLengthBombsBeforeAllocation",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultRequiresOutcomeAndStateAgreement",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultAllowsOnlyFrozenNoEffectReasons",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultDoesNotAliasInputOrOtherDecodeResults",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultBoundsTaskCount",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2LedgerRoundTripAndExactTerminalReplay",
+        "status": "pass",
+        "seconds": 0.03
+      },
+      {
+        "name": "TestRootV2LedgerBindingConflictKeepsOriginal",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootV2LedgerProjectionFailureRollsBack",
+        "status": "pass",
+        "seconds": 0.02
+      },
+      {
+        "name": "TestRootFormalMigrationDownSeesConcurrentAcceptedHistory",
+        "status": "pass",
+        "seconds": 0.03
+      },
+      {
+        "name": "TestRootV2CanonicalGoldenVectors",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2EveryBindingChangesFingerprint",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2StrictIdentityAndIntegerBounds",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2ActionSpecificIdentities",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV1RejectsV2BindingsWithoutReinterpretingHistory",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2ReceiptBindingAndMonotonicReplay",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2CanonicalBytesHaveIndependentOwnership",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2JSONStorageRoundTripPreservesIdentity",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2UnknownProtocolCannotDowngrade",
+        "status": "pass",
+        "seconds": 0
+      }
+    ]
+  },
+  "legacy_interop": {
+    "top_level_counts": {
+      "pass": 1,
+      "fail": 0,
+      "skip": 0
+    },
+    "case_results": [
+      {
+        "name": "TestRootGoJavaPostgresDeploymentInterop",
+        "status": "pass",
+        "seconds": 0.36
+      }
+    ]
+  },
+  "initial_go_regression": {
+    "top_level_counts": {
+      "pass": 54,
+      "fail": 24,
+      "skip": 0
+    },
+    "case_results": [
+      {
+        "name": "TestRootLedgerConcurrentIdenticalAcceptance",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerConcurrentConflictingPayloadHasOneWinner",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerConcurrentResultAppliesExactlyOnce",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerLostAcceptCommitAckRetainsOriginalPending",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerLostApplyCommitAckRecoversSuccessWithoutReplayEffects",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerAcceptAndExactReplay",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerConflictDoesNotOverwrite",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerCallerRollbackRemovesCommandAndDispatch",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerDispatchFailureCannotCommitPartialAcceptance",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerApplyAndDuplicateAreAtomic",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerOuterRollbackPreservesFenceAndPending",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerProjectionFailureCannotFinalize",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerUnknownWrongAndOutOfOrderNeverProduceEffects",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerDurableNoEffectOnly",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerMissingIsNotNoEffect",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerInvalidEnvelopeHasNoWrites",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerMissingEffectCannotFinalize",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerReconnectReadsOriginalDurableResult",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerInvalidPortsFailBeforeWrites",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLedgerCorruptStoredCommandFailsClosed",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootFingerprintGoldenAndDeterministic",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExactDeploymentReceipt",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootEverySemanticCommandFieldIsBound",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootRejectsUnboundDeploymentReceipts",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootInvalidInputsNeverInvokeNetwork",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootInvalidCommandsFailClosed",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootLookupDistinguishesConfirmedUnobservedAndMalformed",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootTransportErrorsPreserveUnknownWithoutRetry",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootSupportedActionsAndStartIdentity",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootSuccessAndNoEffectPlans",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootResultIdentityAndPayloadMustMatch",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootUnknownIsNeverAResult",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootProofAndResultHashRequired",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootSequenceCannotSkipOrRewind",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExactAppliedReplaySurvivesLaterInstanceProgress",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootAppliedResultCannotBeRewritten",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootSequenceUpperBound",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootInvalidCommandCannotBeRescuedByReceipt",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionPayloadMatchesIndependentGoldenBytes",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionPayloadCanonicalizesWithoutMutatingCaller",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionPayloadRejectsInvalidActionConfigurationAndIdentities",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionPayloadAllowsAllKnownNonstartActionsAndEmptyGraph",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionPayloadUpperBoundsRemainWithinProtocolLimit",
+        "status": "pass",
+        "seconds": 0.01
+      },
+      {
+        "name": "TestRootExecutionResultDecodesEveryFixedGoldenState",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultValidatesExistingReceiptBindingsAndSequence",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultRejectsEvenAValidLegacyV1Command",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultRejectsEveryTruncationTailPrefixAndOversize",
+        "status": "pass",
+        "seconds": 0.01
+      },
+      {
+        "name": "TestRootExecutionResultRejectsInvalidTaskSetsAndStateShape",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultRejectsLengthBombsBeforeAllocation",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultRequiresOutcomeAndStateAgreement",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultAllowsOnlyFrozenNoEffectReasons",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultDoesNotAliasInputOrOtherDecodeResults",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionResultBoundsTaskCount",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2LedgerRoundTripAndExactTerminalReplay",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2LedgerBindingConflictKeepsOriginal",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2LedgerProjectionFailureRollsBack",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootFormalMigrationDownSeesConcurrentAcceptedHistory",
+        "status": "fail",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2CanonicalGoldenVectors",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2EveryBindingChangesFingerprint",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2StrictIdentityAndIntegerBounds",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2ActionSpecificIdentities",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV1RejectsV2BindingsWithoutReinterpretingHistory",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2ReceiptBindingAndMonotonicReplay",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2CanonicalBytesHaveIndependentOwnership",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2JSONStorageRoundTripPreservesIdentity",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootV2UnknownProtocolCannotDowngrade",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootDeadlineIsBoundedByParentAndClient",
+        "status": "pass",
+        "seconds": 0.12
+      },
+      {
+        "name": "TestRootConstructorRejectsUnboundedConfiguration",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientConstructorBounds",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientSendsCanonicalBoundBytes",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientRejectsInputsBeforeRPC",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientNilReceiverReturnsError",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientRejectsDamagedReceipts",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientLookupStatesAndBinding",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientCancellationMayRecoverSuccess",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientTransportErrorsStayUnknown",
+        "status": "pass",
+        "seconds": 0
+      },
+      {
+        "name": "TestRootExecutionClientDeadlineAndParentCancellation",
+        "status": "pass",
+        "seconds": 0.05
+      },
+      {
+        "name": "TestRootExecutionClientDoesNotMutateCallerInput",
+        "status": "pass",
+        "seconds": 0
+      }
+    ]
+  },
+  "go_workflowrpc_regression": {
+    "pass": 17,
+    "fail": 0,
+    "skip": 0
+  },
+  "initial_failures": "go-regression 24 storage cases lacked required WEAVEOS_TEST_DATABASE_URL; first fixture runner converter lacked writable GOCACHE. Both preserved as environment failures, never business RED; complete full fixture rerun passed.",
+  "root_review": "PENDING",
+  "remote_ci": "NOT RUN",
+  "push": "NOT PERFORMED",
+  "PR": "NONE",
+  "production_changes": "NONE"
+}

@@ -1,0 +1,25 @@
+cwd=/workspace/WeaveOS-worktrees/V030-032
+Locked Go=/workspace/.weaveos-tools/go/bin/go; GOPATH=/workspace/.weaveos-tools/gopath; GOMODCACHE=/workspace/.weaveos-tools/go-mod; GOCACHE=/workspace/.weaveos-tools/go-cache; GOTOOLCHAIN=local; WEAVEOS_RPC_GO=locked Go.
+python3 services/workflow-engine/execution_rpc_ci_gate_tests.py
+<Go> -C services/bff test -race -count=1 -json -run '^TestRootExecutionClient' ./internal/workflowrpc
+bash services/workflow-engine/run-tests.sh clean -Dtest=RootExecutionGrpcIT -Dworkflow.reports=target/execution-rpc-green-reports test
+<Go> -C services/bff test -race -count=1 -json ./internal/flowcommands ./internal/workflowrpc [initial fixture missing; original failure preserved]
+WEAVEOS_RPC_JSON_REPORT=<absolute evidence/interop.jsonl> bash services/workflow-engine/run-execution-rpc-interop.sh
+<Go> -C services/bff vet ./...
+<Go> -C services/bff build ./...
+node --test tests/governance/*.test.mjs tests/foundation/*.test.mjs
+python3 services/workflow-engine/execution_rpc_ci_gate.py <evidence/java-reports> services/workflow-engine/expected-execution-rpc-tests.json <evidence/go-unit.jsonl> <evidence/interop.jsonl>
+bash services/workflow-engine/run-tests.sh -Dtest=RootExecutionRegistryTest,RootReturnCompatibilityTest,RootDeploymentGrpcIT,RootDeploymentRegistryTest,RootCommandEnvelopeTest -Dworkflow.reports=target/execution-rpc-regression-reports test
+WEAVEOS_RPC_JSON_REPORT=<absolute evidence/legacy-interop.jsonl> bash services/workflow-engine/run-rpc-interop.sh
+CGO_ENABLED=1 GOOS=linux GOARCH=amd64 <Go> -C services/bff test -race -c -o <absolute services/workflow-engine/.work/flowcommands-regression.test> ./internal/flowcommands
+bash /tmp/v032-flow-regression.sh [converter initially lacked GOCACHE, environment failure preserved]
+env GOCACHE=/workspace/.weaveos-tools/go-cache GOPATH=/workspace/.weaveos-tools/gopath GOTOOLCHAIN=local bash /tmp/v032-flow-regression.sh [complete fixture run; exact runner source included as flowcommands-fixture-runner.sh]
+bash services/workflow-engine/generate-proto.sh [with locked Go vars above]
+python3 services/workflow-engine/rpc_ci_gate.py <evidence/legacy-rpc-reports> services/workflow-engine/expected-rpc-tests.json <evidence/legacy-interop.jsonl>
+python3 services/workflow-engine/execution_ci_gate.py <evidence/execution-registry-reports> services/workflow-engine/expected-execution-tests.json
+python3 services/workflow-engine/ci_gate.py <evidence/deployment-reports> services/workflow-engine/expected-tests.json
+python3 services/workflow-engine/envelope_ci_gate.py <evidence/envelope-reports> services/workflow-engine/expected-envelope-tests.json
+node scripts/verify-repo.mjs
+node scripts/check-tasks.mjs
+
+XML report files in isolated gate directories are byte-for-byte copies of actual original reports; no XML/JSON rewriting. JSON case-results summaries are derived and never submitted in place of real runner reports.
