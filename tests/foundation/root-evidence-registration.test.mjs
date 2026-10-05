@@ -1,4 +1,4 @@
-// Root-owned recovery registration; no production upgrade is executed.
+// Root-owned immutable-evidence migration registration. No production upgrade.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -103,33 +103,37 @@ const prior=[
   {
     "path": "migrations/00018_workflow_execution_projection.sql",
     "sha256": "70b73412bccd5b95ede435f8c1142496dd0c4c53e60163e15a9591b784527f6b"
+  },
+  {
+    "path": "migrations/00019_workflow_execution_recovery.sql",
+    "sha256": "c7fc65a5b0437e73245490804237fe3189428a33e4329f40c16b45aa9e2d3d34"
   }
 ];
-const path='migrations/00019_workflow_execution_recovery.sql';
-const expected='c7fc65a5b0437e73245490804237fe3189428a33e4329f40c16b45aa9e2d3d34';
-test('Root V035: exactly one reviewed recovery migration follows hot18',()=>{
+const path='migrations/00020_workflow_evidence.sql';
+const expected='6699d65269ddbeeddc429486038865e09b35a857b407639487ade4aaaf8cb4d9';
+test('Root V036: one reviewed evidence migration follows recovery hot19',()=>{
  assert.deepEqual(manifest.migrations.filter(x=>x.path===path),[{path,sha256:expected}]);
- const paths=manifest.migrations.map(x=>x.path);
- assert.ok(paths.indexOf(path)>paths.indexOf('migrations/00018_workflow_execution_projection.sql'));
+ const paths=manifest.migrations.map(x=>x.path);assert.ok(paths.indexOf(path)>paths.indexOf('migrations/00019_workflow_execution_recovery.sql'));
  assert.equal(hash(read('db/'+path)),expected);
 });
-test('Root V035: every prior migration identity and actual source is preserved',()=>{
- for(const old of prior){
-  assert.deepEqual(manifest.migrations.filter(x=>x.path===old.path),[old]);
-  assert.equal(hash(read('db/'+old.path)),old.sha256);
+test('Root V036: every older migration identity and source remains unchanged',()=>{
+ for(const old of prior){assert.deepEqual(manifest.migrations.filter(x=>x.path===old.path),[old]);assert.equal(hash(read('db/'+old.path)),old.sha256);}
+});
+test('Root V036: only reviewed append-only evidence roles are admitted',()=>{
+ const sql=read('infra/runtime/roles.sql').toString('utf8');assert.equal(hash(sql),'0c274ae29afbe2a5c802491328358992abeb1361c56e6d6222265873e46c2e6c');
+ assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql));assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql.replace(/\n/g,'\r\n')));
+ for(const extra of ['GRANT UPDATE ON applications.workflow_evidence_blobs TO auth_app;','GRANT DELETE ON applications.workflow_evidence_documents TO auth_backup;','GRANT SELECT ON applications.workflow_evidence_members TO auth_reader;'])assert.throws(()=>validateInstalledPersonnelRoles(sql+'\n'+extra+'\n'));
+});
+test('Root V036: encrypted backup fixture includes evidence migration and original wire vectors',()=>{
+ const source=read('infra/runtime/backup.test.mjs').toString('utf8');
+ assert.ok(source.includes("readFileSync('db/migrations/00020_workflow_evidence.sql'"));
+ assert.ok(source.includes('root-evidence-vectors.json'));
+ for(const table of ['workflow_evidence_blobs','workflow_evidence_documents','workflow_evidence_members'])assert.ok(source.includes('INSERT INTO applications.'+table));
+});
+test('Root V036: legacy fixture resets enumerate evidence dependencies without CASCADE',()=>{
+ for(const path of ['services/bff/internal/applications/set_cost_test.go','services/bff/internal/audit/maintenance_test.go']){
+  const source=read(path).toString('utf8');const lines=source.split('\n').filter(x=>x.includes('TRUNCATE applications.'));assert.equal(lines.length,1);
+  for(const table of ['workflow_evidence_members','workflow_evidence_documents','workflow_evidence_blobs'])assert.ok(lines[0].includes('applications.'+table));
+  assert.ok(!/\bCASCADE\b/i.test(lines[0]));
  }
-});
-test('Root V035: reviewed scheduler-only role source is admitted exactly',()=>{
- const sql=read('infra/runtime/roles.sql').toString('utf8');
- assert.equal(hash(sql),'0c274ae29afbe2a5c802491328358992abeb1361c56e6d6222265873e46c2e6c');
- assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql));
- assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql.replace(/\n/g,'\r\n')));
-});
-test('Root V035: accepted payload and identity cannot gain unreviewed mutation grants',()=>{
- const sql=read('infra/runtime/roles.sql').toString('utf8');
- for(const extra of [
-  'GRANT UPDATE(execution_payload) ON applications.workflow_commands TO auth_app;',
-  'GRANT UPDATE(protocol_version) ON applications.workflow_dispatch TO auth_app;',
-  'GRANT UPDATE ON applications.workflow_dispatch TO auth_backup;'
- ]) assert.throws(()=>validateInstalledPersonnelRoles(sql+'\n'+extra+'\n'));
 });

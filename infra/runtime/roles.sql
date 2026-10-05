@@ -138,3 +138,8 @@ GRANT SELECT ON applications.workflow_execution_events,applications.workflow_tas
 
 -- V030-035: scheduler leases never grant mutation of accepted payload or identity.
 GRANT UPDATE(next_attempt_at,attempts,lease_token,lease_until,last_error) ON applications.workflow_dispatch TO auth_app;
+
+-- V030-036: historical approval evidence is append-only to the runtime.
+REVOKE ALL ON applications.workflow_evidence_blobs,applications.workflow_evidence_documents,applications.workflow_evidence_members FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+GRANT SELECT,INSERT ON applications.workflow_evidence_blobs,applications.workflow_evidence_documents,applications.workflow_evidence_members TO auth_app;
+GRANT SELECT ON applications.workflow_evidence_blobs,applications.workflow_evidence_documents,applications.workflow_evidence_members TO auth_backup;

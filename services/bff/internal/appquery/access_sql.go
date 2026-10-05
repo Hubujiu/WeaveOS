@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appaccess"
-	"github.com/jackc/pgx/v5"
 )
 
 var ErrForbidden = errors.New("record query field or row forbidden")
@@ -76,13 +75,9 @@ func CompileAccess(policy appaccess.Policy, fields []Field, firstParameter int) 
 		if scope == appaccess.None {
 			continue
 		}
-		column := "r." + pgx.Identifier{"f_" + strings.ReplaceAll(field.ID, "-", "")}.Sanitize()
-		value := column
-		switch field.Kind {
-		case Number, Money, Date, SingleSelect, Member, Department:
-			value = column + "::text"
-		case Datetime:
-			value = "to_char(" + column + ` AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`
+		value, err := StoredValueSQL(field)
+		if err != nil {
+			return result, err
 		}
 		cell := fmt.Sprintf("jsonb_build_object('%s',%s)", field.ID, value)
 		if scope == appaccess.Own {
