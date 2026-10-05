@@ -155,15 +155,22 @@ jobs:
       - name: Prepare locked offline Java dependencies
         run: bash services/workflow-engine/prepare-build.sh 2>&1 | tee services/workflow-engine/ci-logs/prepare.txt
       - name: Clean verify against dedicated internal PostgreSQL
-        run: bash services/workflow-engine/run-tests.sh clean verify 2>&1 | tee services/workflow-engine/ci-logs/verify.txt
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootDeploymentRegistryTest verify 2>&1 | tee services/workflow-engine/ci-logs/verify.txt
       - name: Require all 18 Root-owned cases without skips
         run: python3 services/workflow-engine/ci_gate.py services/workflow-engine/target/surefire-reports services/workflow-engine/expected-tests.json 2>&1 | tee services/workflow-engine/ci-logs/report-gate.txt
+      - name: Root-owned envelope report gate acceptance
+        run: python3 services/workflow-engine/envelope_ci_gate_tests.py 2>&1 | tee services/workflow-engine/ci-logs/envelope-gate-tests.txt
+      - name: Exact Java command envelope compatibility cases
+        run: bash services/workflow-engine/run-tests.sh -Dtest=RootCommandEnvelopeTest -Dworkflow.reports=target/envelope-ci-reports test 2>&1 | tee services/workflow-engine/ci-logs/envelope-tests.txt
+      - name: Require all eight envelope cases without skips
+        run: python3 services/workflow-engine/envelope_ci_gate.py services/workflow-engine/target/envelope-ci-reports services/workflow-engine/expected-envelope-tests.json 2>&1 | tee services/workflow-engine/ci-logs/envelope-report-gate.txt
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: always()
         with:
           name: workflow-engine-${{ github.run_id }}
           path: |
             services/workflow-engine/target/surefire-reports/
+            services/workflow-engine/target/envelope-ci-reports/
             services/workflow-engine/ci-logs/
           if-no-files-found: warn
           retention-days: 14
