@@ -20,6 +20,13 @@ chmod +x "$rpc_protoc"
 PATH="$rpc_dir/.work/bin:$PATH" "$rpc_protoc" -I "$rpc_root/contracts/proto" \
   --go_out="$rpc_root/services/bff" --go_opt=module=github.com/Hubujiu/WeaveOS/services/bff \
   --go-grpc_out="$rpc_root/services/bff" --go-grpc_opt=module=github.com/Hubujiu/WeaveOS/services/bff \
-  "$rpc_root/contracts/proto/weaveos/workflow/v1/deployment.proto"
+  "$rpc_root/contracts/proto/weaveos/workflow/v1/deployment.proto" \
+  "$rpc_root/contracts/proto/weaveos/workflow/v1/execution.proto"
 # CI runs this after checkout; generated files must be the exact checked-in artifacts.
 git -C "$rpc_root" diff --exit-code -- services/bff/internal/workflowrpc/pb/ services/workflow-engine/src/main/java/org/weaveos/workflow/v1/
+
+# Newly generated, untracked bindings must not escape the reproducibility gate.
+if [[ -n "$(git -C "$rpc_root" ls-files --others --exclude-standard -- services/bff/internal/workflowrpc/pb/ services/workflow-engine/src/main/java/org/weaveos/workflow/v1/)" ]]; then
+  echo "untracked generated RPC bindings" >&2
+  exit 1
+fi

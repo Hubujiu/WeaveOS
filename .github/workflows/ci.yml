@@ -221,3 +221,46 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  execution-rpc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Root-owned execution RPC gate tests
+        run: |
+          mkdir -p services/workflow-engine/execution-rpc-ci-logs
+          python3 services/workflow-engine/execution_rpc_ci_gate_tests.py 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/gate-tests.txt
+      - name: Prepare locked dependencies
+        run: bash services/workflow-engine/prepare-build.sh 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/prepare.txt
+      - name: Verify both proto generation outputs
+        run: bash services/workflow-engine/generate-proto.sh 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/regenerate.txt
+      - name: Root Go execution client tests
+        run: |
+          set -o pipefail
+          go -C services/bff test -race -count=1 -json -run '^TestRootExecutionClient' ./internal/workflowrpc | tee services/workflow-engine/execution-rpc-ci-logs/unit.jsonl
+      - name: Real Java execution RPC on isolated PostgreSQL
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootExecutionGrpcIT -Dworkflow.reports=target/execution-rpc-ci-reports test 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/java.txt
+      - name: Real Go Java Flowable execution interop
+        env:
+          WEAVEOS_RPC_JSON_REPORT: services/workflow-engine/execution-rpc-ci-logs/interop.jsonl
+        run: bash services/workflow-engine/run-execution-rpc-interop.sh 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/interop.txt
+      - name: Require exact 11 Java and 10 Go unit and 3 real interop cases
+        run: python3 services/workflow-engine/execution_rpc_ci_gate.py services/workflow-engine/target/execution-rpc-ci-reports services/workflow-engine/expected-execution-rpc-tests.json services/workflow-engine/execution-rpc-ci-logs/unit.jsonl services/workflow-engine/execution-rpc-ci-logs/interop.jsonl 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/report-gate.txt
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: execution-rpc-${{ github.run_id }}
+          path: |
+            services/workflow-engine/target/execution-rpc-ci-reports/
+            services/workflow-engine/execution-rpc-ci-logs/
+          if-no-files-found: warn
+          retention-days: 14

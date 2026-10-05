@@ -1,0 +1,34 @@
+{
+  "classname": "org.weaveos.workflow.RootExecutionGrpcIT",
+  "tests": [
+    "executeReturnsCommittedBoundReceipt",
+    "duplicateExecutionReplaysExactReceipt",
+    "conflictingCommandCannotReuseIdentity",
+    "missingLookupIsExplicitAndDoesNotCancel",
+    "lookupRejectsDifferentFingerprint",
+    "cancellationFirstDurablyPreventsExecution",
+    "executionFirstCannotBecomeCancelled",
+    "invalidRequestsNeverWriteLedger",
+    "databaseFailureRollsBackAndHidesPrivateDetails",
+    "everyMethodRejectsProvisionalOuterTransaction",
+    "lostReplyThenServiceRestartRecoversCommittedReceipt"
+  ],
+  "go_package": "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc",
+  "go_unit_tests": [
+    "TestRootExecutionClientConstructorBounds",
+    "TestRootExecutionClientSendsCanonicalBoundBytes",
+    "TestRootExecutionClientRejectsInputsBeforeRPC",
+    "TestRootExecutionClientNilReceiverReturnsError",
+    "TestRootExecutionClientRejectsDamagedReceipts",
+    "TestRootExecutionClientLookupStatesAndBinding",
+    "TestRootExecutionClientCancellationMayRecoverSuccess",
+    "TestRootExecutionClientTransportErrorsStayUnknown",
+    "TestRootExecutionClientDeadlineAndParentCancellation",
+    "TestRootExecutionClientDoesNotMutateCallerInput"
+  ],
+  "go_interop_tests": [
+    "TestRootGoJavaPostgresExecutionLifecycleInterop",
+    "TestRootGoJavaPostgresExecutionCancellationInterop",
+    "TestRootGoJavaPostgresExecutionReturnAndWithdrawInterop"
+  ]
+}
