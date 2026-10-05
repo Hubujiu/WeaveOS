@@ -411,7 +411,7 @@ test('Root real HTTPS full journey creates an application, saves a form, and cre
  const definitionResponse=page.waitForResponse(r=>r.request().method()==='PUT'&&new URL(r.url()).pathname==='/api/v1/applications/'+app.id+'/forms/'+form.id+'/definition');
  await page.getByRole('button',{name:'保存',exact:true}).click();expect((await definitionResponse).status()).toBe(200);
  await expect(page.getByRole('status').filter({hasText:'已保存'})).toBeVisible();
- await page.getByRole('button',{name:'返回工作台',exact:true}).click();
+ await page.locator('.mono-top').getByRole('button',{name:'退出',exact:true}).click();
  await page.getByRole('button',{name:'打开表单 '+formName,exact:true}).click();await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();
  if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-empty-list.png'),fullPage:true});
  const prefix='applications/'+app.id+'/forms/'+form.id;
