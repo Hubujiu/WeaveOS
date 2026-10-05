@@ -62,3 +62,4 @@ Go执行负载与结果验证：[V030-031](V030-031.md)，task/V030-031-executio
 
 显式发布与可靠恢复：[V030-027](V030-027.md)，draft [PR#38](https://github.com/Hubujiu/WeaveOS/pull/38)，task/V030-027-publication / ../WeaveOS-worktrees/V030-027；叠在冻结 V026，Root合同与19项真实存储/HTTP测试，执行者实现持久发布编排。后台同请求重试和最终权限/结构/关闭复查已明确确认；生产配置、main合并与部署另行授权。
 业务执行结果原子投影：[V030-033](V030-033.md)，task/V030-033-execution-projection；整合执行RPC与显式发布，Root亲写契约/测试并负责debug，执行者只按指令实现；最终head远端CI待核验，无main合并或部署。
+执行回执原始证据接线：[V030-034](V030-034.md)。
