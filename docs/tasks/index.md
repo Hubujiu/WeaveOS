@@ -51,3 +51,5 @@ Java 审批命令身份 A 段：[V030-030](V030-030.md)，task/V030-030-engine-e
 V030-030 B 段独立合同 RED：`task/V030-030-engine-actions` / `../WeaveOS-worktrees/V030-030-engine-actions`，Root权威测试提交66b8862；test-compile exit0，真实Java33 RED（5failures/27errors/0skip，exit1），Python16 RED（15拒绝通过/1占位错误，exit1）。[原始证据](../evidence/V030-030/execution-registry-red/README.md)。未实施，等待Root审查；无全CI/push/PR/部署，A530与兼容性5保留。
 
 V030-030 B 段受权实现待Root复核：`task/V030-030-engine-actions`，冻结Root33+兼容5真实GREEN、独立gate16/38通过，旧部署18/解析8/RPC9/互操作1与governance240通过。[实现证据与边界](../evidence/V030-030/execution-registry-green/README.md)。完整head CI等源码复核后运行；SQL仍为隔离测试fixture，未接HTTP/bootstrap，不宣告全链路交付。
+
+V030-030 Root复核修复：补测4086e897的3新例先实际RED，再修取消/身份判定先后与严格UTF8；最终36+兼容5及gate16/41全绿，旧18/8/9+互操作1/governance240重跑通过。[修复证据](../evidence/V030-030/execution-review-fix/README.md)。等待Root复核后完整远端CI，无main/部署或产品HTTP交付。

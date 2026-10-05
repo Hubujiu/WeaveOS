@@ -79,22 +79,19 @@ public final class ExecutionRegistry {
                 if(!Arrays.equals(request.commandBytes,(byte[])row.get("command_bytes"))||!Arrays.equals(request.payloadBytes,(byte[])row.get("payload_bytes")))throw new CommandConflict();
                 return receipt(row);
             }
-            probe.accept(Stage.AFTER_LEDGER);
-            // Recovery arbitration depends only on the exact command, never on live business context.
-            if(cancelled)return finish(c,"no_effect",unchanged(c,"cancelled"),probe);
-            if(c.expectedSequence()==ExecutionCodec.MAX)throw new InvalidCommand();
             var instances=jdbc.queryForList("SELECT * FROM wf_execution_instances WHERE instance_id=?::uuid FOR UPDATE",c.instanceId());
             Map<String,Object> instance=instances.isEmpty()?null:instances.get(0);
-            if(c.action().equals("start")){
-                if(instance!=null)return finish(c,"no_effect",unchanged(c,"instance_exists"),probe);
-                var rows=jdbc.queryForList("SELECT * FROM wf_deployments WHERE version_id=?::uuid AND status='confirmed'",c.versionId());
-                return start(c,payload,request.payloadBytes,instance,rows.isEmpty()?null:rows.get(0),probe);
-            }
+            String version=instance==null?c.versionId():text(instance,"version_id");
+            var deployments=jdbc.queryForList("SELECT * FROM wf_deployments WHERE version_id=?::uuid AND status='confirmed'",version);
+            Map<String,Object> deployment=deployments.isEmpty()?null:deployments.get(0);
+            if(deployment!=null)validateNodes(payload,text(deployment,"process_definition_id"));
+            probe.accept(Stage.AFTER_LEDGER);
+            if(cancelled)return finish(c,"no_effect",unchanged(c,"cancelled"),probe);
+            if(c.expectedSequence()==ExecutionCodec.MAX)throw new InvalidCommand();
+            if(c.action().equals("start"))return start(c,payload,request.payloadBytes,instance,deployment,probe);
             String reason=check(c,instance);
             if(reason!=null)return finish(c,"no_effect",unchanged(c,reason),probe);
-            var deployments=jdbc.queryForList("SELECT * FROM wf_deployments WHERE version_id=?::uuid AND status='confirmed'",text(instance,"version_id"));
-            if(deployments.isEmpty())throw new IllegalStateException("pinned deployment missing");
-            validateNodes(payload,text(deployments.get(0),"process_definition_id"));
+            if(deployment==null)throw new IllegalStateException("pinned deployment missing");
             Map<String,Object> task=null;
             if(!c.action().equals("withdraw")){
                 var rows=jdbc.queryForList("SELECT * FROM wf_execution_tasks WHERE task_id=?::uuid AND instance_id=?::uuid",c.taskId(),c.instanceId());
@@ -160,7 +157,6 @@ public final class ExecutionRegistry {
         if(instance!=null)return finish(c,"no_effect",unchanged(c,"instance_exists"),probe);
         if(deployment==null)return finish(c,"no_effect",unchanged(c,"deployment_missing"),probe);
         if(!text(deployment,"app_id").equals(c.appId())||!text(deployment,"flow_id").equals(c.flowId())||number(deployment,"version")!=c.definitionVersion())return finish(c,"no_effect",unchanged(c,"deployment_mismatch"),probe);
-        validateNodes(payload,text(deployment,"process_definition_id"));
         int inserted=jdbc.update("""
             INSERT INTO wf_execution_instances(instance_id,app_id,table_id,view_id,record_id,flow_id,version_id,definition_version,
                 initiator_id,start_payload_bytes,allow_withdraw,state,sequence,fence_epoch,schema_version,record_version)

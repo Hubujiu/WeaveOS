@@ -1,0 +1,125 @@
+diff --git a/services/workflow-engine/execution_ci_gate.py b/services/workflow-engine/execution_ci_gate.py
+index b7914b0..5e5b02f 100644
+--- a/services/workflow-engine/execution_ci_gate.py
++++ b/services/workflow-engine/execution_ci_gate.py
+@@ -30,6 +30,7 @@ _EXPECTED = {
+         "concurrentExecutionAndCancellationHaveOneDurableOutcome",
+         "conditionsUseTheLatestCommandRoutesRatherThanTheStartValues",
+         "duplicatesReplayOriginalReceiptAfterProgressAndEngineRestart",
++        "durableResultCodecPreservesBoundedUtf8OpaqueIds",
+         "eachSuccessRecordsLatestVersionsWithoutChangingThePinnedDefinition",
+         "everyPrecommitApprovalFailureRestoresOriginalTasksAndLedger(Stage)[1]",
+         "everyPrecommitApprovalFailureRestoresOriginalTasksAndLedger(Stage)[2]",
+@@ -38,6 +39,8 @@ _EXPECTED = {
+         "everyPrecommitStartFailureRollsBackEngineLedgerAndTasks(Stage)[2]",
+         "everyPrecommitStartFailureRollsBackEngineLedgerAndTasks(Stage)[3]",
+         "historicalApproverMayReturnOnlyToTheirOwnVisitedApprovalNode",
++        "identityFailuresPrecedeContextualNodeValidation",
++        "internalCancellationDoesNotDependOnLiveGraphNodeContext",
+         "malformedPayloadOrHashMismatchCannotWriteAnything",
+         "missingLookupNeverCreatesAReceiptOrCancellationProof",
+         "noApprovalGraphCanCommitAnImmediatelyCompletedInstance",
+@@ -70,7 +73,7 @@ _EXPECTED = {
+ 
+ def validate(report_dir, manifest):
+     if not isinstance(manifest, dict) or manifest != _EXPECTED:
+-        raise GateError("manifest must match the fixed 33+5 case contract")
++        raise GateError("manifest must match the fixed 36+5 case contract")
+     suites = manifest["suites"]
+     try:
+         reports = list(Path(report_dir).glob("TEST-*.xml"))
+diff --git a/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionCodec.java b/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionCodec.java
+index 54b615e..4900c6a 100644
+--- a/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionCodec.java
++++ b/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionCodec.java
+@@ -4,7 +4,10 @@ import java.io.ByteArrayOutputStream;
+ import java.io.DataOutputStream;
+ import java.io.IOException;
+ import java.nio.ByteBuffer;
++import java.nio.CharBuffer;
+ import java.nio.charset.StandardCharsets;
++import java.nio.charset.CharacterCodingException;
++import java.nio.charset.CodingErrorAction;
+ import java.security.MessageDigest;
+ import java.security.NoSuchAlgorithmException;
+ import java.util.*;
+@@ -64,10 +67,15 @@ final class ExecutionCodec {
+             text(out,result.instanceId());text(out,result.engineProcessId());text(out,result.state());text(out,result.reason());
+             out.writeLong(result.schemaVersion());out.writeLong(result.recordVersion());out.writeInt(result.tasks().size());
+             for(Task t:result.tasks()){text(out,t.id());text(out,t.nodeId());text(out,t.assigneeId());text(out,t.engineTaskId());out.writeLong(t.activationEpoch());}
+-            byte[] bytes=buffer.toByteArray();if(bytes.length>65536)throw new IllegalStateException("result too large");return bytes;
+-        }catch(IOException impossible){throw new IllegalStateException(impossible);}
++            byte[] bytes=buffer.toByteArray();if(bytes.length>65536)throw new IllegalStateException("result too large");decodeResult(bytes);return bytes;
++        }catch(IOException invalidText){throw new IllegalStateException("invalid durable execution result text");}
++    }
++    private static void text(DataOutputStream out,String s)throws IOException{
++        ByteBuffer encoded=StandardCharsets.UTF_8.newEncoder()
++            .onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT)
++            .encode(CharBuffer.wrap(s));
++        byte[] bytes=new byte[encoded.remaining()];encoded.get(bytes);out.writeInt(bytes.length);out.write(bytes);
+     }
+-    private static void text(DataOutputStream out,String s)throws IOException{byte[] bytes=s.getBytes(StandardCharsets.UTF_8);out.writeInt(bytes.length);out.write(bytes);}
+     static Result decodeResult(byte[] bytes){
+         try{
+             if(bytes==null || bytes.length>65536)throw new InvalidCommand();
+@@ -88,7 +96,16 @@ final class ExecutionCodec {
+         void prefix(byte[] prefix){if(!Arrays.equals(bytes(prefix.length),prefix))throw new InvalidCommand();}
+         int count(int max){require(4);long n=Integer.toUnsignedLong(b.getInt());if(n>max)throw new InvalidCommand();return (int)n;}
+         boolean flag(){require(1);byte v=b.get();if(v!=0&&v!=1)throw new InvalidCommand();return v==1;}
+-        String text(int max){int n=count(max);byte[] bytes=bytes(n);for(byte v:bytes)if(v<32||v>126)throw new InvalidCommand();return new String(bytes,StandardCharsets.US_ASCII);}
++        String text(int max){
++            int n=count(max);byte[] bytes=bytes(n);
++            try{
++                String text=StandardCharsets.UTF_8.newDecoder()
++                    .onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT)
++                    .decode(ByteBuffer.wrap(bytes)).toString();
++                if(text.codePoints().anyMatch(Character::isISOControl))throw new InvalidCommand();
++                return text;
++            }catch(CharacterCodingException malformed){throw new InvalidCommand();}
++        }
+         String uuid(){String s=text(36);ExecutionCodec.uuid(s);return s;}
+         long number(){require(8);long n=b.getLong();if(n<0||n>MAX)throw new InvalidCommand();return n;}
+         void end(){if(b.hasRemaining())throw new InvalidCommand();}
+diff --git a/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionRegistry.java b/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionRegistry.java
+index a44a3c7..ddd689e 100644
+--- a/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionRegistry.java
++++ b/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionRegistry.java
+@@ -79,19 +79,22 @@ public final class ExecutionRegistry {
+                 if(!Arrays.equals(request.commandBytes,(byte[])row.get("command_bytes"))||!Arrays.equals(request.payloadBytes,(byte[])row.get("payload_bytes")))throw new CommandConflict();
+                 return receipt(row);
+             }
+-            var instances=jdbc.queryForList("SELECT * FROM wf_execution_instances WHERE instance_id=?::uuid FOR UPDATE",c.instanceId());
+-            Map<String,Object> instance=instances.isEmpty()?null:instances.get(0);
+-            String version=instance==null?c.versionId():text(instance,"version_id");
+-            var deployments=jdbc.queryForList("SELECT * FROM wf_deployments WHERE version_id=?::uuid AND status='confirmed'",version);
+-            Map<String,Object> deployment=deployments.isEmpty()?null:deployments.get(0);
+-            if(deployment!=null)validateNodes(payload,text(deployment,"process_definition_id"));
+             probe.accept(Stage.AFTER_LEDGER);
++            // Recovery arbitration depends only on the exact command, never on live business context.
+             if(cancelled)return finish(c,"no_effect",unchanged(c,"cancelled"),probe);
+             if(c.expectedSequence()==ExecutionCodec.MAX)throw new InvalidCommand();
+-            if(c.action().equals("start"))return start(c,payload,request.payloadBytes,instance,deployment,probe);
++            var instances=jdbc.queryForList("SELECT * FROM wf_execution_instances WHERE instance_id=?::uuid FOR UPDATE",c.instanceId());
++            Map<String,Object> instance=instances.isEmpty()?null:instances.get(0);
++            if(c.action().equals("start")){
++                if(instance!=null)return finish(c,"no_effect",unchanged(c,"instance_exists"),probe);
++                var rows=jdbc.queryForList("SELECT * FROM wf_deployments WHERE version_id=?::uuid AND status='confirmed'",c.versionId());
++                return start(c,payload,request.payloadBytes,instance,rows.isEmpty()?null:rows.get(0),probe);
++            }
+             String reason=check(c,instance);
+             if(reason!=null)return finish(c,"no_effect",unchanged(c,reason),probe);
+-            if(deployment==null)throw new IllegalStateException("pinned deployment missing");
++            var deployments=jdbc.queryForList("SELECT * FROM wf_deployments WHERE version_id=?::uuid AND status='confirmed'",text(instance,"version_id"));
++            if(deployments.isEmpty())throw new IllegalStateException("pinned deployment missing");
++            validateNodes(payload,text(deployments.get(0),"process_definition_id"));
+             Map<String,Object> task=null;
+             if(!c.action().equals("withdraw")){
+                 var rows=jdbc.queryForList("SELECT * FROM wf_execution_tasks WHERE task_id=?::uuid AND instance_id=?::uuid",c.taskId(),c.instanceId());
+@@ -157,6 +160,7 @@ public final class ExecutionRegistry {
+         if(instance!=null)return finish(c,"no_effect",unchanged(c,"instance_exists"),probe);
+         if(deployment==null)return finish(c,"no_effect",unchanged(c,"deployment_missing"),probe);
+         if(!text(deployment,"app_id").equals(c.appId())||!text(deployment,"flow_id").equals(c.flowId())||number(deployment,"version")!=c.definitionVersion())return finish(c,"no_effect",unchanged(c,"deployment_mismatch"),probe);
++        validateNodes(payload,text(deployment,"process_definition_id"));
+         int inserted=jdbc.update("""
+             INSERT INTO wf_execution_instances(instance_id,app_id,table_id,view_id,record_id,flow_id,version_id,definition_version,
+                 initiator_id,start_payload_bytes,allow_withdraw,state,sequence,fence_epoch,schema_version,record_version)

@@ -4,10 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.CodingErrorAction;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -67,15 +64,10 @@ final class ExecutionCodec {
             text(out,result.instanceId());text(out,result.engineProcessId());text(out,result.state());text(out,result.reason());
             out.writeLong(result.schemaVersion());out.writeLong(result.recordVersion());out.writeInt(result.tasks().size());
             for(Task t:result.tasks()){text(out,t.id());text(out,t.nodeId());text(out,t.assigneeId());text(out,t.engineTaskId());out.writeLong(t.activationEpoch());}
-            byte[] bytes=buffer.toByteArray();if(bytes.length>65536)throw new IllegalStateException("result too large");decodeResult(bytes);return bytes;
-        }catch(IOException invalidText){throw new IllegalStateException("invalid durable execution result text");}
+            byte[] bytes=buffer.toByteArray();if(bytes.length>65536)throw new IllegalStateException("result too large");return bytes;
+        }catch(IOException impossible){throw new IllegalStateException(impossible);}
     }
-    private static void text(DataOutputStream out,String s)throws IOException{
-        ByteBuffer encoded=StandardCharsets.UTF_8.newEncoder()
-            .onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT)
-            .encode(CharBuffer.wrap(s));
-        byte[] bytes=new byte[encoded.remaining()];encoded.get(bytes);out.writeInt(bytes.length);out.write(bytes);
-    }
+    private static void text(DataOutputStream out,String s)throws IOException{byte[] bytes=s.getBytes(StandardCharsets.UTF_8);out.writeInt(bytes.length);out.write(bytes);}
     static Result decodeResult(byte[] bytes){
         try{
             if(bytes==null || bytes.length>65536)throw new InvalidCommand();
@@ -96,16 +88,7 @@ final class ExecutionCodec {
         void prefix(byte[] prefix){if(!Arrays.equals(bytes(prefix.length),prefix))throw new InvalidCommand();}
         int count(int max){require(4);long n=Integer.toUnsignedLong(b.getInt());if(n>max)throw new InvalidCommand();return (int)n;}
         boolean flag(){require(1);byte v=b.get();if(v!=0&&v!=1)throw new InvalidCommand();return v==1;}
-        String text(int max){
-            int n=count(max);byte[] bytes=bytes(n);
-            try{
-                String text=StandardCharsets.UTF_8.newDecoder()
-                    .onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT)
-                    .decode(ByteBuffer.wrap(bytes)).toString();
-                if(text.codePoints().anyMatch(Character::isISOControl))throw new InvalidCommand();
-                return text;
-            }catch(CharacterCodingException malformed){throw new InvalidCommand();}
-        }
+        String text(int max){int n=count(max);byte[] bytes=bytes(n);for(byte v:bytes)if(v<32||v>126)throw new InvalidCommand();return new String(bytes,StandardCharsets.US_ASCII);}
         String uuid(){String s=text(36);ExecutionCodec.uuid(s);return s;}
         long number(){require(8);long n=b.getLong();if(n<0||n>MAX)throw new InvalidCommand();return n;}
         void end(){if(b.hasRemaining())throw new InvalidCommand();}

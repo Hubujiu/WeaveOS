@@ -30,7 +30,6 @@ _EXPECTED = {
         "concurrentExecutionAndCancellationHaveOneDurableOutcome",
         "conditionsUseTheLatestCommandRoutesRatherThanTheStartValues",
         "duplicatesReplayOriginalReceiptAfterProgressAndEngineRestart",
-        "durableResultCodecPreservesBoundedUtf8OpaqueIds",
         "eachSuccessRecordsLatestVersionsWithoutChangingThePinnedDefinition",
         "everyPrecommitApprovalFailureRestoresOriginalTasksAndLedger(Stage)[1]",
         "everyPrecommitApprovalFailureRestoresOriginalTasksAndLedger(Stage)[2]",
@@ -39,8 +38,6 @@ _EXPECTED = {
         "everyPrecommitStartFailureRollsBackEngineLedgerAndTasks(Stage)[2]",
         "everyPrecommitStartFailureRollsBackEngineLedgerAndTasks(Stage)[3]",
         "historicalApproverMayReturnOnlyToTheirOwnVisitedApprovalNode",
-        "identityFailuresPrecedeContextualNodeValidation",
-        "internalCancellationDoesNotDependOnLiveGraphNodeContext",
         "malformedPayloadOrHashMismatchCannotWriteAnything",
         "missingLookupNeverCreatesAReceiptOrCancellationProof",
         "noApprovalGraphCanCommitAnImmediatelyCompletedInstance",
@@ -73,7 +70,7 @@ _EXPECTED = {
 
 def validate(report_dir, manifest):
     if not isinstance(manifest, dict) or manifest != _EXPECTED:
-        raise GateError("manifest must match the fixed 36+5 case contract")
+        raise GateError("manifest must match the fixed 33+5 case contract")
     suites = manifest["suites"]
     try:
         reports = list(Path(report_dir).glob("TEST-*.xml"))

@@ -1,0 +1,126 @@
+commit 4086e8978db50957fcb0c43a46af6c538603fbde
+Author:     Hubujiu <xiaoyuliu599@gmail.com>
+AuthorDate: Mon Oct 5 01:37:12 2026 -0700
+Commit:     Hubujiu <xiaoyuliu599@gmail.com>
+CommitDate: Mon Oct 5 01:37:12 2026 -0700
+
+    test(workflow): require recovery ordering and canonical UTF-8 replay
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 1d896a2..91402d4 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -168,7 +168,7 @@ jobs:
+         run: python3 services/workflow-engine/execution_ci_gate_tests.py 2>&1 | tee services/workflow-engine/ci-logs/execution-gate-tests.txt
+       - name: Exact execution and return compatibility cases
+         run: bash services/workflow-engine/run-tests.sh -Dtest=RootExecutionRegistryTest,RootReturnCompatibilityTest -Dworkflow.reports=target/execution-ci-reports test 2>&1 | tee services/workflow-engine/ci-logs/execution-tests.txt
+-      - name: Require all 33 execution and five return cases without skips
++      - name: Require all 36 execution and five return cases without skips
+         run: python3 services/workflow-engine/execution_ci_gate.py services/workflow-engine/target/execution-ci-reports services/workflow-engine/expected-execution-tests.json 2>&1 | tee services/workflow-engine/ci-logs/execution-report-gate.txt
+       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+         if: always()
+@@ -220,3 +220,4 @@ jobs:
+             services/workflow-engine/rpc-ci-logs/
+           if-no-files-found: warn
+           retention-days: 14
++
+diff --git a/services/workflow-engine/execution_ci_gate_tests.py b/services/workflow-engine/execution_ci_gate_tests.py
+index 952279b..6a0ab64 100644
+--- a/services/workflow-engine/execution_ci_gate_tests.py
++++ b/services/workflow-engine/execution_ci_gate_tests.py
+@@ -35,8 +35,8 @@ class RootExecutionGateTest(unittest.TestCase):
+         self.write()
+         return gate.validate(self.path, self.manifest)
+ 
+-    def test_exact_33_and_5_pass(self):
+-        self.assertEqual(38, self.check())
++    def test_exact_36_and_5_pass(self):
++        self.assertEqual(41, self.check())
+ 
+     def test_no_reports_fails(self):
+         with self.assertRaises(gate.GateError):
+@@ -64,7 +64,7 @@ class RootExecutionGateTest(unittest.TestCase):
+ 
+     def test_missing_case_fails(self):
+         self.roots[0].remove(self.roots[0][0])
+-        self.roots[0].set("tests", "32")
++        self.roots[0].set("tests", "35")
+         with self.assertRaises(gate.GateError):
+             self.check()
+ 
+@@ -131,7 +131,7 @@ class RootExecutionGateTest(unittest.TestCase):
+         with self.assertRaises(gate.GateError):
+             gate.validate(self.path, self.manifest)
+ 
+-    def test_manifest_must_have_exact_two_distinct_classes_and_33_5_cases(self):
++    def test_manifest_must_have_exact_two_distinct_classes_and_36_5_cases(self):
+         self.write()
+         bads = [None, {}, {"suites": []}]
+         for mutation in ("duplicate_class", "duplicate_case", "drop_case", "rename_class"):
+diff --git a/services/workflow-engine/expected-execution-tests.json b/services/workflow-engine/expected-execution-tests.json
+index d091159..e20e913 100644
+--- a/services/workflow-engine/expected-execution-tests.json
++++ b/services/workflow-engine/expected-execution-tests.json
+@@ -13,6 +13,7 @@
+         "concurrentExecutionAndCancellationHaveOneDurableOutcome",
+         "conditionsUseTheLatestCommandRoutesRatherThanTheStartValues",
+         "duplicatesReplayOriginalReceiptAfterProgressAndEngineRestart",
++        "durableResultCodecPreservesBoundedUtf8OpaqueIds",
+         "eachSuccessRecordsLatestVersionsWithoutChangingThePinnedDefinition",
+         "everyPrecommitApprovalFailureRestoresOriginalTasksAndLedger(Stage)[1]",
+         "everyPrecommitApprovalFailureRestoresOriginalTasksAndLedger(Stage)[2]",
+@@ -21,6 +22,8 @@
+         "everyPrecommitStartFailureRollsBackEngineLedgerAndTasks(Stage)[2]",
+         "everyPrecommitStartFailureRollsBackEngineLedgerAndTasks(Stage)[3]",
+         "historicalApproverMayReturnOnlyToTheirOwnVisitedApprovalNode",
++        "identityFailuresPrecedeContextualNodeValidation",
++        "internalCancellationDoesNotDependOnLiveGraphNodeContext",
+         "malformedPayloadOrHashMismatchCannotWriteAnything",
+         "missingLookupNeverCreatesAReceiptOrCancellationProof",
+         "noApprovalGraphCanCommitAnImmediatelyCompletedInstance",
+diff --git a/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRegistryTest.java b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRegistryTest.java
+index 8b5cf32..e305e7c 100644
+--- a/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRegistryTest.java
++++ b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRegistryTest.java
+@@ -409,5 +409,41 @@ class RootExecutionRegistryTest {
+   var otherSource=new DriverManagerDataSource(url+"?currentSchema="+schema,"b3_fixture","b3_fixture_only");
+   assertThrows(IllegalArgumentException.class,()->new ExecutionRegistry(new JdbcTemplate(otherSource),tm,engine));
+  }
++
++ @Test void internalCancellationDoesNotDependOnLiveGraphNodeContext()throws Exception{
++  deploy("all");var c=new Command();
++  c.payload=payload(true,true,Map.of(id(999),List.of(id(8))),Map.of(id(998),true));
++  var cancelled=registry.establishNoEffect(c.request());verify(c,cancelled,"no_effect");
++  assertEquals("cancelled",cancelled.result().reason());
++  assertEquals(cancelled,registry.execute(c.request()));
++  assertEquals(0,count("wf_execution_instances"));assertEquals(0,count("wf_execution_tasks"));
++  assertEquals(0,engine.getHistoryService().createHistoricProcessInstanceQuery().count());
++ }
++ @Test void identityFailuresPrecedeContextualNodeValidation()throws Exception{
++  deploy("all");var c=new Command();var first=registry.execute(c.request());
++  var wrongScope=action(c,"agree",first,actor(first,8),id(8));wrongScope.strings[1]=id(999);
++  wrongScope.payload=payload(false,false,Map.of(),Map.of(id(998),true));
++  noEffect(wrongScope,"scope_mismatch");
++  var duplicate=c.copy();duplicate.strings[0]=UUID.randomUUID().toString();
++  duplicate.payload=payload(true,true,Map.of(id(999),List.of(id(8))),Map.of());
++  noEffect(duplicate,"instance_exists");
++  var wrongDeployment=new Command();wrongDeployment.strings[1]=id(999);
++  wrongDeployment.payload=payload(true,true,Map.of(id(999),List.of(id(8))),Map.of());
++  noEffect(wrongDeployment,"deployment_mismatch");
++  active(first,2,Set.of(id(8),id(9)),1);assertEquals(1,count("wf_execution_instances"));
++ }
++ @Test void durableResultCodecPreservesBoundedUtf8OpaqueIds()throws Exception{
++  var expected=new Result(id(107),"process-α","active","",1,1,
++   List.of(new Task(id(201),id(2),id(8),"task-β",1)));
++  byte[] canonical=resultBytes(expected);
++  assertArrayEquals(canonical,ExecutionCodec.encode(expected));
++  assertEquals(expected,ExecutionCodec.decodeResult(canonical));
++  byte[] invalid=canonical.clone();
++  int opaqueStart=8+4+36+4;
++  invalid[opaqueStart]=(byte)0xff;
++  assertThrows(IllegalStateException.class,()->ExecutionCodec.decodeResult(invalid));
++  var control=new Result(id(107),"process\n","active","",1,1,expected.tasks());
++  assertThrows(IllegalStateException.class,()->ExecutionCodec.decodeResult(resultBytes(control)));
++ }
+  static final class InjectedFailure extends RuntimeException{}
+ }
