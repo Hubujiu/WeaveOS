@@ -17,7 +17,9 @@ try{
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  await page.screenshot({path:out+'/sidebar-open.png'});
  await page.getByRole('button',{name:'收起侧边栏',exact:true}).click();
- await page.waitForFunction(()=>document.querySelector('.sidebar').getBoundingClientRect().width===0);
+ await page.waitForFunction(()=>document.querySelector('.sidebar').getBoundingClientRect().width===64);
+ assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.nav-label')).display),'none');
+ assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.main')).borderTopLeftRadius),'18px');
  await page.screenshot({path:out+'/sidebar-closed.png'});
  await page.getByRole('button',{name:'展开侧边栏',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('.sidebar').getBoundingClientRect().width===236);
@@ -31,7 +33,7 @@ try{
  assert.equal(await page.locator('dialog').isVisible(),false);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  assert.deepEqual(errors,[]);
- const result={browser:browser.version(),viewport:{width:1440,height:960},deviceScaleFactor:2,rows:10,searchRows:2,collapse:true,expand:true,dialog:true,horizontalOverflow:false,pageErrors:errors};
+ const result={browser:browser.version(),viewport:{width:1440,height:960},deviceScaleFactor:2,rows:10,searchRows:2,collapse:true,collapsedSidebarWidth:64,mainLeftCornerRadius:18,expand:true,dialog:true,horizontalOverflow:false,pageErrors:errors};
  await writeFile(out+'/checks.json',JSON.stringify(result,null,2));
  console.log(JSON.stringify(result));
 } finally{await browser.close()}
