@@ -2,7 +2,6 @@ package flowcommands
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"errors"
 )
 
@@ -20,8 +19,8 @@ type Command struct {
 	CommandID, AppID, TableID, RecordID, InstanceID, TaskID, ActorID, Action string
 	RecordVersion, FenceEpoch, TaskEpoch, ExpectedSequence                   int64
 	PayloadHash                                                              [32]byte
-	ViewID, FlowID, VersionID, TargetNodeID string `json:",omitempty"`
-	DefinitionVersion, SchemaVersion int64 `json:",omitempty"`
+	ViewID, FlowID, VersionID, TargetNodeID                                  string `json:",omitempty"`
+	DefinitionVersion, SchemaVersion                                         int64  `json:",omitempty"`
 }
 
 type Receipt struct {
@@ -41,11 +40,7 @@ type ApplyPlan struct {
 }
 
 func Fingerprint(command Command) ([32]byte, error) {
-	if !validCommand(command) {
-		return [32]byte{}, ErrInvalid
-	}
-
-	encoded, err := json.Marshal(command)
+	encoded, err := CanonicalBytes(command)
 	if err != nil {
 		return [32]byte{}, ErrInvalid
 	}
@@ -85,7 +80,7 @@ func PlanReceipt(command Command, receipt Receipt, currentSequence int64, previo
 }
 
 func validCommand(command Command) bool {
-	if command.ProtocolVersion != 1 ||
+	if (command.ProtocolVersion != 1 && command.ProtocolVersion != 2) ||
 		!isCanonicalNonzeroUUID(command.CommandID) ||
 		!isCanonicalNonzeroUUID(command.AppID) ||
 		!isCanonicalNonzeroUUID(command.TableID) ||
@@ -99,12 +94,47 @@ func validCommand(command Command) bool {
 		return false
 	}
 
+	if command.ProtocolVersion == 2 {
+		return validV2Command(command)
+	}
+	if command.ViewID != "" || command.FlowID != "" || command.VersionID != "" ||
+		command.TargetNodeID != "" || command.DefinitionVersion != 0 || command.SchemaVersion != 0 {
+		return false
+	}
+
 	switch command.Action {
 	case "start":
 		return command.TaskID == "" && command.TaskEpoch == 0
 	case "agree", "reject", "withdraw":
 		return isCanonicalNonzeroUUID(command.TaskID) &&
 			command.TaskEpoch >= 1 && command.TaskEpoch <= maxSafeInteger
+	default:
+		return false
+	}
+}
+
+func validV2Command(command Command) bool {
+	if !isCanonicalNonzeroUUID(command.ViewID) ||
+		!isCanonicalNonzeroUUID(command.FlowID) ||
+		!isCanonicalNonzeroUUID(command.VersionID) ||
+		command.DefinitionVersion < 1 || command.DefinitionVersion > maxSafeInteger ||
+		command.SchemaVersion < 1 || command.SchemaVersion > maxSafeInteger {
+		return false
+	}
+
+	switch command.Action {
+	case "start":
+		return command.TaskID == "" && command.TaskEpoch == 0 &&
+			command.TargetNodeID == "" && command.ExpectedSequence == 0
+	case "withdraw":
+		return command.TaskID == "" && command.TaskEpoch == 0 && command.TargetNodeID == ""
+	case "agree", "reject":
+		return isCanonicalNonzeroUUID(command.TaskID) &&
+			command.TaskEpoch >= 1 && command.TaskEpoch <= maxSafeInteger && command.TargetNodeID == ""
+	case "return":
+		return isCanonicalNonzeroUUID(command.TaskID) &&
+			command.TaskEpoch >= 1 && command.TaskEpoch <= maxSafeInteger &&
+			isCanonicalNonzeroUUID(command.TargetNodeID)
 	default:
 		return false
 	}
@@ -162,7 +192,3 @@ func isCanonicalNonzeroUUID(value string) bool {
 	}
 	return nonzero
 }
-
-// CanonicalBytes declaration only; Root tests must observe behavior RED before implementation.
-func CanonicalBytes(command Command) ([]byte,error) { return nil,ErrInvalid }
-
