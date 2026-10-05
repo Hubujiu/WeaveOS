@@ -1,0 +1,52 @@
+{
+  "suites": [
+    {
+      "classname": "org.weaveos.workflow.RootExecutionRegistryTest",
+      "tests": [
+        "allScopeBindingsAreCheckedBeforeAnyAction",
+        "approvalModesTrackPartialCompletionAndInvalidateCancelledPeers(String)[1]",
+        "approvalModesTrackPartialCompletionAndInvalidateCancelledPeers(String)[2]",
+        "cancellationAfterExecutionCanOnlyReplayTheSuccessfulReceipt",
+        "cancellationBeforeExecutionPermanentlyBlocksThatExactCommand",
+        "concurrentDifferentCommandsOnTheSameSequenceApplyOnlyOne",
+        "concurrentDuplicatesCommitOneEngineInstance",
+        "concurrentExecutionAndCancellationHaveOneDurableOutcome",
+        "conditionsUseTheLatestCommandRoutesRatherThanTheStartValues",
+        "duplicatesReplayOriginalReceiptAfterProgressAndEngineRestart",
+        "eachSuccessRecordsLatestVersionsWithoutChangingThePinnedDefinition",
+        "everyPrecommitApprovalFailureRestoresOriginalTasksAndLedger(Stage)[1]",
+        "everyPrecommitApprovalFailureRestoresOriginalTasksAndLedger(Stage)[2]",
+        "everyPrecommitApprovalFailureRestoresOriginalTasksAndLedger(Stage)[3]",
+        "everyPrecommitStartFailureRollsBackEngineLedgerAndTasks(Stage)[1]",
+        "everyPrecommitStartFailureRollsBackEngineLedgerAndTasks(Stage)[2]",
+        "everyPrecommitStartFailureRollsBackEngineLedgerAndTasks(Stage)[3]",
+        "historicalApproverMayReturnOnlyToTheirOwnVisitedApprovalNode",
+        "malformedPayloadOrHashMismatchCannotWriteAnything",
+        "missingLookupNeverCreatesAReceiptOrCancellationProof",
+        "noApprovalGraphCanCommitAnImmediatelyCompletedInstance",
+        "outerRequiredRollbackNeverLeavesCommittedEngineOrReceipt",
+        "registryRejectsWiringThatCouldCommitEngineAndLedgerSeparately",
+        "rejectionEndsOnlyItsOwnInstance",
+        "requestOwnsInputArraysAndReturnedTaskCollectionIsImmutable",
+        "returnReactivatesVisitedNodeWithNewIdentitiesAndInvalidatesOldTasks",
+        "sameCommandIdWithDifferentValidPayloadIsAConflict",
+        "startCreatesDurableExactBindingsAndFullTaskMapping",
+        "startIdentityAndDeploymentBindingsAreNotImplicitlyReused",
+        "taskActorEpochAndCurrentVersionsAreChecked",
+        "terminalInstanceRejectsNewCommandsButReplaysOldOnes",
+        "unvisitedTargetIsRejectedWithoutMovingRuntime",
+        "withdrawalRequiresOriginalInitiatorAndEnabledConfiguration"
+      ]
+    },
+    {
+      "classname": "org.weaveos.workflow.RootReturnCompatibilityTest",
+      "tests": [
+        "returnFromSecondMiRecreatesVisitedRosterAndResetsCounters(String)[1]",
+        "returnFromSecondMiRecreatesVisitedRosterAndResetsCounters(String)[2]",
+        "returnToCurrentPartiallyCompletedNodeStartsANewActivation",
+        "rollbackAfterMovementRestoresExactPriorMiTasks",
+        "withdrawalRollsBackThenRemovesAllRuntimeTasksButRetainsHistory"
+      ]
+    }
+  ]
+}

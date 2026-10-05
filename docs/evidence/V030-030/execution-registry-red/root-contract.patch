@@ -1,0 +1,1013 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 2f921e4..1d896a2 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -164,6 +164,12 @@ jobs:
+         run: bash services/workflow-engine/run-tests.sh -Dtest=RootCommandEnvelopeTest -Dworkflow.reports=target/envelope-ci-reports test 2>&1 | tee services/workflow-engine/ci-logs/envelope-tests.txt
+       - name: Require all eight envelope cases without skips
+         run: python3 services/workflow-engine/envelope_ci_gate.py services/workflow-engine/target/envelope-ci-reports services/workflow-engine/expected-envelope-tests.json 2>&1 | tee services/workflow-engine/ci-logs/envelope-report-gate.txt
++      - name: Root-owned execution report gate acceptance
++        run: python3 services/workflow-engine/execution_ci_gate_tests.py 2>&1 | tee services/workflow-engine/ci-logs/execution-gate-tests.txt
++      - name: Exact execution and return compatibility cases
++        run: bash services/workflow-engine/run-tests.sh -Dtest=RootExecutionRegistryTest,RootReturnCompatibilityTest -Dworkflow.reports=target/execution-ci-reports test 2>&1 | tee services/workflow-engine/ci-logs/execution-tests.txt
++      - name: Require all 33 execution and five return cases without skips
++        run: python3 services/workflow-engine/execution_ci_gate.py services/workflow-engine/target/execution-ci-reports services/workflow-engine/expected-execution-tests.json 2>&1 | tee services/workflow-engine/ci-logs/execution-report-gate.txt
+       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+         if: always()
+         with:
+@@ -171,6 +177,7 @@ jobs:
+           path: |
+             services/workflow-engine/target/surefire-reports/
+             services/workflow-engine/target/envelope-ci-reports/
++            services/workflow-engine/target/execution-ci-reports/
+             services/workflow-engine/ci-logs/
+           if-no-files-found: warn
+           retention-days: 14
+diff --git a/services/bff/internal/flowgraph/root_return_export_test.go b/services/bff/internal/flowgraph/root_return_export_test.go
+new file mode 100644
+index 0000000..626a42a
+--- /dev/null
++++ b/services/bff/internal/flowgraph/root_return_export_test.go
+@@ -0,0 +1,31 @@
++package flowgraph
++
++import (
++ "encoding/xml"
++ "os"
++ "path/filepath"
++ "testing"
++)
++
++// This exports the existing production compiler output for the independent
++// Flowable compatibility experiment. It does not implement return behavior.
++func TestRootExportReturnCompatibilityFixtures(t *testing.T) {
++ for _, mode := range []string{"all", "any"} {
++  g := Graph{Version: 1, Nodes: []Node{
++   {ID: rid(1), Kind: "start"},
++   {ID: rid(2), Kind: "approval", Approval: &Approval{Mode: "all", AssigneeIDs: []string{rid(8),rid(9)}}},
++   {ID: rid(3), Kind: "approval", Approval: &Approval{Mode: mode, AssigneeIDs: []string{rid(10),rid(11),rid(12)}}},
++   {ID: rid(4), Kind: "end"},
++  }, Edges: []Edge{{rid(1),rid(2),""},{rid(2),rid(3),""},{rid(3),rid(4),""}}}
++  raw, err := CompileBPMN(g, nil, rid(100))
++  if err != nil { t.Fatal(err) }
++  var doc rootXML
++  if err = xml.Unmarshal(raw, &doc); err != nil { t.Fatal(err) }
++  if len(doc.names("userTask")) != 2 { t.Fatal("expected exactly two approval nodes") }
++  if dir := os.Getenv("WEAVEOS_RETURN_BPMN_OUTPUT"); dir != "" {
++   if !filepath.IsAbs(dir) { t.Fatal("artifact directory must be absolute") }
++   if err = os.MkdirAll(dir,0755); err != nil { t.Fatal(err) }
++   if err = os.WriteFile(filepath.Join(dir,"return-"+mode+".bpmn20.xml"),raw,0644); err != nil { t.Fatal(err) }
++  }
++ }
++}
+diff --git a/services/workflow-engine/execution_ci_gate.py b/services/workflow-engine/execution_ci_gate.py
+new file mode 100644
+index 0000000..0441f26
+--- /dev/null
++++ b/services/workflow-engine/execution_ci_gate.py
+@@ -0,0 +1,9 @@
++"""Strict two-suite execution report gate; Root declaration before implementation."""
++class GateError(Exception):
++    pass
++
++def validate(report_dir, manifest):
++    raise GateError("not implemented")
++
++if __name__ == "__main__":
++    raise SystemExit("execution report gate is not implemented")
+diff --git a/services/workflow-engine/execution_ci_gate_tests.py b/services/workflow-engine/execution_ci_gate_tests.py
+new file mode 100644
+index 0000000..952279b
+--- /dev/null
++++ b/services/workflow-engine/execution_ci_gate_tests.py
+@@ -0,0 +1,153 @@
++"""Root-owned synthetic report tests. No network or real databases."""
++import copy
++import importlib.util
++import json
++from pathlib import Path
++import tempfile
++import unittest
++import xml.etree.ElementTree as ET
++
++BASE = Path(__file__).resolve().parent
++spec = importlib.util.spec_from_file_location("gate", BASE / "execution_ci_gate.py")
++gate = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(gate)
++
++class RootExecutionGateTest(unittest.TestCase):
++    def setUp(self):
++        self.tmp = tempfile.TemporaryDirectory()
++        self.addCleanup(self.tmp.cleanup)
++        self.path = Path(self.tmp.name)
++        self.manifest = json.loads((BASE / "expected-execution-tests.json").read_text())
++        self.roots = []
++        for suite in self.manifest["suites"]:
++            root = ET.Element("testsuite", name=suite["classname"], tests=str(len(suite["tests"])),
++                              failures="0", errors="0", skipped="0")
++            for name in suite["tests"]:
++                ET.SubElement(root, "testcase", name=name, classname=suite["classname"])
++            self.roots.append(root)
++
++    def write(self):
++        for i, root in enumerate(self.roots):
++            filename = "TEST-" + self.manifest["suites"][i]["classname"] + ".xml"
++            ET.ElementTree(root).write(self.path / filename)
++
++    def check(self):
++        self.write()
++        return gate.validate(self.path, self.manifest)
++
++    def test_exact_33_and_5_pass(self):
++        self.assertEqual(38, self.check())
++
++    def test_no_reports_fails(self):
++        with self.assertRaises(gate.GateError):
++            gate.validate(self.path, self.manifest)
++
++    def test_missing_either_suite_fails(self):
++        for i in range(2):
++            self.write()
++            (self.path / ("TEST-" + self.manifest["suites"][i]["classname"] + ".xml")).unlink()
++            with self.assertRaises(gate.GateError):
++                gate.validate(self.path, self.manifest)
++
++    def test_extra_report_fails(self):
++        self.write()
++        (self.path / "TEST-unexpected.xml").write_text("<testsuite/>")
++        with self.assertRaises(gate.GateError):
++            gate.validate(self.path, self.manifest)
++
++    def test_wrong_report_filename_fails(self):
++        self.write()
++        first = next(self.path.glob("TEST-*.xml"))
++        first.rename(self.path / "TEST-renamed.xml")
++        with self.assertRaises(gate.GateError):
++            gate.validate(self.path, self.manifest)
++
++    def test_missing_case_fails(self):
++        self.roots[0].remove(self.roots[0][0])
++        self.roots[0].set("tests", "32")
++        with self.assertRaises(gate.GateError):
++            self.check()
++
++    def test_duplicate_replacement_case_fails(self):
++        self.roots[0][1].set("name", self.roots[0][0].get("name"))
++        with self.assertRaises(gate.GateError):
++            self.check()
++
++    def test_case_class_mismatch_fails(self):
++        self.roots[1][0].set("classname", self.manifest["suites"][0]["classname"])
++        with self.assertRaises(gate.GateError):
++            self.check()
++
++    def test_extra_case_fails(self):
++        ET.SubElement(self.roots[0], "testcase", name="unexpected", classname=self.roots[0].get("name"))
++        self.roots[0].set("tests", "34")
++        with self.assertRaises(gate.GateError):
++            self.check()
++
++    def test_failure_error_skip_cannot_hide_behind_zero_summary(self):
++        for root in self.roots:
++            for tag in ("failure", "error", "skipped"):
++                child = ET.SubElement(root[0], tag)
++                with self.assertRaises(gate.GateError):
++                    self.check()
++                root[0].remove(child)
++
++    def test_summary_counts_are_strict(self):
++        for key, value in (("tests", "32"), ("tests", "-1"), ("tests", "38"),
++                           ("tests", "bad"), ("errors", "1"), ("failures", "1"), ("skipped", "1")):
++            before = self.roots[0].get(key)
++            self.roots[0].set(key, value)
++            with self.assertRaises(gate.GateError):
++                self.check()
++            self.roots[0].set(key, before)
++
++    def test_nested_case_fails(self):
++        case = self.roots[0][0]
++        self.roots[0].remove(case)
++        ET.SubElement(self.roots[0], "wrapper").append(case)
++        with self.assertRaises(gate.GateError):
++            self.check()
++
++    def test_wrong_suite_root_and_name_fail(self):
++        before = self.roots[0].get("name")
++        self.roots[0].set("name", "other")
++        with self.assertRaises(gate.GateError):
++            self.check()
++        self.roots[0].set("name", before)
++        self.roots[0].tag = "testsuites"
++        with self.assertRaises(gate.GateError):
++            self.check()
++
++    def test_malformed_report_fails(self):
++        self.write()
++        next(self.path.glob("TEST-*.xml")).write_text("<broken")
++        with self.assertRaises(gate.GateError):
++            gate.validate(self.path, self.manifest)
++
++    def test_doctype_is_rejected(self):
++        self.write()
++        first = next(self.path.glob("TEST-*.xml"))
++        first.write_text('<!DOCTYPE testsuite [<!ENTITY x "bad">]>' + first.read_text())
++        with self.assertRaises(gate.GateError):
++            gate.validate(self.path, self.manifest)
++
++    def test_manifest_must_have_exact_two_distinct_classes_and_33_5_cases(self):
++        self.write()
++        bads = [None, {}, {"suites": []}]
++        for mutation in ("duplicate_class", "duplicate_case", "drop_case", "rename_class"):
++            bad = copy.deepcopy(self.manifest)
++            if mutation == "duplicate_class":
++                bad["suites"][1]["classname"] = bad["suites"][0]["classname"]
++            elif mutation == "duplicate_case":
++                bad["suites"][0]["tests"][1] = bad["suites"][0]["tests"][0]
++            elif mutation == "drop_case":
++                bad["suites"][0]["tests"].pop()
++            else:
++                bad["suites"][0]["classname"] = "Unexpected"
++            bads.append(bad)
++        for bad in bads:
++            with self.assertRaises(gate.GateError):
++                gate.validate(self.path, bad)
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/services/workflow-engine/expected-execution-tests.json b/services/workflow-engine/expected-execution-tests.json
+new file mode 100644
+index 0000000..d091159
+--- /dev/null
++++ b/services/workflow-engine/expected-execution-tests.json
+@@ -0,0 +1,52 @@
++{
++  "suites": [
++    {
++      "classname": "org.weaveos.workflow.RootExecutionRegistryTest",
++      "tests": [
++        "allScopeBindingsAreCheckedBeforeAnyAction",
++        "approvalModesTrackPartialCompletionAndInvalidateCancelledPeers(String)[1]",
++        "approvalModesTrackPartialCompletionAndInvalidateCancelledPeers(String)[2]",
++        "cancellationAfterExecutionCanOnlyReplayTheSuccessfulReceipt",
++        "cancellationBeforeExecutionPermanentlyBlocksThatExactCommand",
++        "concurrentDifferentCommandsOnTheSameSequenceApplyOnlyOne",
++        "concurrentDuplicatesCommitOneEngineInstance",
++        "concurrentExecutionAndCancellationHaveOneDurableOutcome",
++        "conditionsUseTheLatestCommandRoutesRatherThanTheStartValues",
++        "duplicatesReplayOriginalReceiptAfterProgressAndEngineRestart",
++        "eachSuccessRecordsLatestVersionsWithoutChangingThePinnedDefinition",
++        "everyPrecommitApprovalFailureRestoresOriginalTasksAndLedger(Stage)[1]",
++        "everyPrecommitApprovalFailureRestoresOriginalTasksAndLedger(Stage)[2]",
++        "everyPrecommitApprovalFailureRestoresOriginalTasksAndLedger(Stage)[3]",
++        "everyPrecommitStartFailureRollsBackEngineLedgerAndTasks(Stage)[1]",
++        "everyPrecommitStartFailureRollsBackEngineLedgerAndTasks(Stage)[2]",
++        "everyPrecommitStartFailureRollsBackEngineLedgerAndTasks(Stage)[3]",
++        "historicalApproverMayReturnOnlyToTheirOwnVisitedApprovalNode",
++        "malformedPayloadOrHashMismatchCannotWriteAnything",
++        "missingLookupNeverCreatesAReceiptOrCancellationProof",
++        "noApprovalGraphCanCommitAnImmediatelyCompletedInstance",
++        "outerRequiredRollbackNeverLeavesCommittedEngineOrReceipt",
++        "registryRejectsWiringThatCouldCommitEngineAndLedgerSeparately",
++        "rejectionEndsOnlyItsOwnInstance",
++        "requestOwnsInputArraysAndReturnedTaskCollectionIsImmutable",
++        "returnReactivatesVisitedNodeWithNewIdentitiesAndInvalidatesOldTasks",
++        "sameCommandIdWithDifferentValidPayloadIsAConflict",
++        "startCreatesDurableExactBindingsAndFullTaskMapping",
++        "startIdentityAndDeploymentBindingsAreNotImplicitlyReused",
++        "taskActorEpochAndCurrentVersionsAreChecked",
++        "terminalInstanceRejectsNewCommandsButReplaysOldOnes",
++        "unvisitedTargetIsRejectedWithoutMovingRuntime",
++        "withdrawalRequiresOriginalInitiatorAndEnabledConfiguration"
++      ]
++    },
++    {
++      "classname": "org.weaveos.workflow.RootReturnCompatibilityTest",
++      "tests": [
++        "returnFromSecondMiRecreatesVisitedRosterAndResetsCounters(String)[1]",
++        "returnFromSecondMiRecreatesVisitedRosterAndResetsCounters(String)[2]",
++        "returnToCurrentPartiallyCompletedNodeStartsANewActivation",
++        "rollbackAfterMovementRestoresExactPriorMiTasks",
++        "withdrawalRollsBackThenRemovesAllRuntimeTasksButRetainsHistory"
++      ]
++    }
++  ]
++}
+diff --git a/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionRegistry.java b/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionRegistry.java
+new file mode 100644
+index 0000000..5b2bc37
+--- /dev/null
++++ b/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionRegistry.java
+@@ -0,0 +1,30 @@
++package org.weaveos.workflow;
++
++import java.util.List;
++import java.util.Optional;
++import java.util.function.Consumer;
++import org.flowable.engine.ProcessEngine;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.transaction.PlatformTransactionManager;
++
++/** Root declaration draft. No execution behavior has been implemented or authorized here. */
++public final class ExecutionRegistry {
++    public record Request(byte[] commandBytes, byte[] payloadBytes) {}
++    public record Task(String id, String nodeId, String assigneeId, String engineTaskId, long activationEpoch) {}
++    public record Result(String instanceId, String engineProcessId, String state, String reason,
++                         long schemaVersion, long recordVersion, List<Task> tasks) {}
++    public record Receipt(String commandId, String commandHash, String outcome, long sequence,
++                          String proofId, String resultHash, Result result) {}
++    public enum Stage { AFTER_LEDGER, AFTER_ENGINE, AFTER_RECEIPT }
++    public static final class InvalidCommand extends IllegalArgumentException {
++        public InvalidCommand() { super("invalid execution command"); }
++    }
++    public static final class CommandConflict extends RuntimeException {
++        public CommandConflict() { super("execution command identity conflict"); }
++    }
++    public ExecutionRegistry(JdbcTemplate jdbc, PlatformTransactionManager manager, ProcessEngine engine) {}
++    public Receipt execute(Request request) { throw new UnsupportedOperationException("not implemented"); }
++    public Receipt execute(Request request, Consumer<Stage> probe) { throw new UnsupportedOperationException("not implemented"); }
++    public Optional<Receipt> lookup(String commandId, String commandHash) { return Optional.empty(); }
++    public Receipt establishNoEffect(Request request) { throw new UnsupportedOperationException("not implemented"); }
++}
+diff --git a/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRegistryTest.java b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRegistryTest.java
+new file mode 100644
+index 0000000..8b5cf32
+--- /dev/null
++++ b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRegistryTest.java
+@@ -0,0 +1,413 @@
++package org.weaveos.workflow;
++
++import static org.junit.jupiter.api.Assertions.*;
++import java.io.ByteArrayOutputStream;
++import java.io.DataOutputStream;
++import java.nio.charset.StandardCharsets;
++import java.security.MessageDigest;
++import java.util.*;
++import java.util.concurrent.*;
++import javax.sql.DataSource;
++import org.flowable.engine.ProcessEngine;
++import org.flowable.engine.ProcessEngineConfiguration;
++import org.flowable.spring.SpringProcessEngineConfiguration;
++import org.junit.jupiter.api.*;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.EnumSource;
++import org.junit.jupiter.params.provider.ValueSource;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.jdbc.datasource.DriverManagerDataSource;
++import org.springframework.jdbc.datasource.DataSourceTransactionManager;
++import org.springframework.transaction.support.TransactionTemplate;
++import org.weaveos.workflow.ExecutionRegistry.*;
++
++/** Root-owned behavior contract. All database records and actors are synthetic. */
++class RootExecutionRegistryTest {
++ static String id(int n){return String.format("%08x-0000-4000-8000-%012x",n,n);}
++ static final String APP=id(101),FLOW=id(102),TABLE=id(103),VIEW=id(104),RECORD=id(105),VERSION=id(100),INITIATOR=id(106);
++ static final long MAX=9007199254740991L;
++ JdbcTemplate admin,jdbc; DataSource ds; DataSourceTransactionManager tm;
++ ProcessEngine engine; DeploymentRegistry deployments; ExecutionRegistry registry;
++ String schema,url;
++ @BeforeEach void setup() throws Exception {
++  url=System.getenv("B3_TEST_JDBC_URL");
++  assertEquals("jdbc:postgresql://b3-postgres:5432/b3_flowable_fixture",url);
++  admin=new JdbcTemplate(new DriverManagerDataSource(url,"b3_fixture","b3_fixture_only"));
++  schema="v030_exec_"+UUID.randomUUID().toString().replace("-","");
++  admin.execute("CREATE SCHEMA "+schema);open();
++  for(String resource:List.of("/deployment-registry-fixture.sql","/execution-registry-fixture.sql")){
++   try(var in=getClass().getResourceAsStream(resource)){
++    assertNotNull(in);jdbc.execute(new String(in.readAllBytes(),StandardCharsets.UTF_8));
++   }
++  }
++ }
++ void open(){
++  ds=new DriverManagerDataSource(url+"?currentSchema="+schema,"b3_fixture","b3_fixture_only");
++  tm=new DataSourceTransactionManager(ds);jdbc=new JdbcTemplate(ds);
++  var c=new SpringProcessEngineConfiguration();c.setDataSource(ds);c.setTransactionManager(tm);
++  c.setDatabaseSchema(schema);c.setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_TRUE);
++  c.setAsyncExecutorActivate(false);c.setDisableIdmEngine(true);c.setDisableEventRegistry(true);
++  engine=c.buildProcessEngine();deployments=new DeploymentRegistry(jdbc,tm,engine);
++  registry=new ExecutionRegistry(jdbc,tm,engine);
++ }
++ @AfterEach void cleanup(){
++  if(engine!=null)engine.close();
++  if(admin!=null&&schema!=null)admin.execute("DROP SCHEMA "+schema+" CASCADE");
++ }
++ void deploy(String mode) throws Exception {
++  try(var in=getClass().getResourceAsStream("/return-compatibility/return-"+mode+".bpmn20.xml")){
++   assertNotNull(in);deployments.deploy(new DeploymentRegistry.Request(APP,FLOW,VERSION,1,new String(in.readAllBytes(),StandardCharsets.UTF_8)));
++  }
++ }
++ static byte[] hash(byte[] b){
++  try{return MessageDigest.getInstance("SHA-256").digest(b);}catch(Exception e){throw new AssertionError(e);}
++ }
++ static String hex(byte[] b){return HexFormat.of().formatHex(b);}
++ static void text(DataOutputStream out,String s)throws Exception{
++  byte[] b=s.getBytes(StandardCharsets.UTF_8);out.writeInt(b.length);out.write(b);
++ }
++ static byte[] payload(boolean start,boolean withdraw,Map<String,List<String>> roster,Map<String,Boolean> routes){
++  try{
++   var buffer=new ByteArrayOutputStream();var out=new DataOutputStream(buffer);
++   out.write(new byte[]{87,86,70,80,65,89,0,1});out.write(hash("root-audit-evidence".getBytes(StandardCharsets.UTF_8)));
++   out.writeBoolean(start);
++   if(start){
++    out.writeBoolean(withdraw);out.writeInt(roster.size());
++    for(var entry:new TreeMap<>(roster).entrySet()){
++     text(out,entry.getKey());out.writeInt(entry.getValue().size());
++     for(String actor:entry.getValue())text(out,actor);
++    }
++   }
++   out.writeInt(routes.size());
++   for(var entry:new TreeMap<>(routes).entrySet()){text(out,entry.getKey());out.writeBoolean(entry.getValue());}
++   return buffer.toByteArray();
++  }catch(Exception e){throw new AssertionError(e);}
++ }
++ static byte[] startPayload(boolean allow){
++  return payload(true,allow,Map.of(id(2),List.of(id(8),id(9)),id(3),List.of(id(10),id(11),id(12))),Map.of());
++ }
++ static byte[] actionPayload(){return payload(false,false,Map.of(),Map.of());}
++ static class Command {
++  String[] strings={UUID.randomUUID().toString(),APP,TABLE,VIEW,RECORD,FLOW,VERSION,UUID.randomUUID().toString(),"",INITIATOR,"start",""};
++  long[] numbers={1,1,1,1,0,0};
++  byte[] payload=startPayload(true);
++  byte[] bytes(){
++   try{
++    var buffer=new ByteArrayOutputStream();var out=new DataOutputStream(buffer);
++    out.write(new byte[]{87,86,70,67,77,68,0,2});
++    for(String s:strings)text(out,s);
++    for(long n:numbers)out.writeLong(n);
++    out.write(hash(payload));return buffer.toByteArray();
++   }catch(Exception e){throw new AssertionError(e);}
++  }
++  Request request(){return new Request(bytes(),payload);}
++  String commandId(){return strings[0];}
++  String instanceId(){return strings[7];}
++  Command copy(){
++   var c=new Command();c.strings=strings.clone();c.numbers=numbers.clone();c.payload=payload.clone();return c;
++  }
++ }
++ static Command action(Command initial,String kind,Receipt prior,Task task,String actor){
++  var c=initial.copy();c.strings[0]=UUID.randomUUID().toString();c.strings[10]=kind;
++  c.strings[8]=task==null?"":task.id();c.strings[9]=actor;c.strings[11]="";
++  c.numbers[3]=prior.sequence()+1;c.numbers[4]=task==null?0:task.activationEpoch();c.numbers[5]=prior.sequence();
++  c.numbers[1]=prior.result().schemaVersion();c.numbers[2]=prior.result().recordVersion();
++  c.payload=actionPayload();return c;
++ }
++ static Task actor(Receipt r,int n){
++  return r.result().tasks().stream().filter(t->t.assigneeId().equals(id(n))).findFirst().orElseThrow();
++ }
++ static byte[] resultBytes(Result r){
++  try{
++   var buffer=new ByteArrayOutputStream();var out=new DataOutputStream(buffer);
++   out.write(new byte[]{87,86,70,82,83,76,0,1});
++   text(out,r.instanceId());text(out,r.engineProcessId());text(out,r.state());text(out,r.reason());
++   out.writeLong(r.schemaVersion());out.writeLong(r.recordVersion());out.writeInt(r.tasks().size());
++   for(var t:r.tasks().stream().sorted(Comparator.comparing(Task::id)).toList()){
++    text(out,t.id());text(out,t.nodeId());text(out,t.assigneeId());text(out,t.engineTaskId());out.writeLong(t.activationEpoch());
++   }
++   return buffer.toByteArray();
++  }catch(Exception e){throw new AssertionError(e);}
++ }
++ void verify(Command c,Receipt r,String outcome){
++  assertEquals(c.commandId(),r.commandId());assertEquals(hex(hash(c.bytes())),r.commandHash());
++  assertEquals(outcome,r.outcome());assertEquals(c.numbers[5]+(outcome.equals("success")?1:0),r.sequence());
++  assertEquals(c.instanceId(),r.result().instanceId());
++  assertEquals(c.numbers[1],r.result().schemaVersion());assertEquals(c.numbers[2],r.result().recordVersion());
++  assertEquals(UUID.fromString(r.proofId()).toString(),r.proofId());assertNotEquals(new UUID(0,0).toString(),r.proofId());
++  assertEquals(hex(hash(resultBytes(r.result()))),r.resultHash());
++  assertArrayEquals(resultBytes(r.result()),jdbc.queryForObject("SELECT result_bytes FROM wf_execution_commands WHERE command_id=?::uuid",byte[].class,c.commandId()));
++  assertEquals(r,registry.lookup(c.commandId(),r.commandHash()).orElseThrow());
++  assertEquals(r.result().tasks().stream().map(Task::id).sorted().toList(),r.result().tasks().stream().map(Task::id).toList());
++ }
++ void noEffect(Command c,String reason){
++  var r=registry.execute(c.request());verify(c,r,"no_effect");
++  assertEquals("unchanged",r.result().state());assertEquals(reason,r.result().reason());
++  assertEquals("",r.result().engineProcessId());assertEquals(List.of(),r.result().tasks());
++ }
++ void active(Receipt r,int node,Set<String> actors,long epoch){
++  assertEquals("active",r.result().state());assertEquals("",r.result().reason());
++  assertEquals(actors,r.result().tasks().stream().map(Task::assigneeId).collect(java.util.stream.Collectors.toSet()));
++  assertEquals(actors.size(),r.result().tasks().size());
++  for(var t:r.result().tasks()){
++   assertEquals(id(node),t.nodeId());assertEquals(epoch,t.activationEpoch());
++   assertEquals(UUID.fromString(t.id()).toString(),t.id());
++   var real=engine.getTaskService().createTaskQuery().taskId(t.engineTaskId()).singleResult();
++   assertNotNull(real);assertEquals(t.assigneeId(),real.getAssignee());
++   assertEquals(r.result().engineProcessId(),real.getProcessInstanceId());
++  }
++ }
++ long count(String table){return jdbc.queryForObject("SELECT count(*) FROM "+table,Long.class);}
++ void emptyExecution(){
++  assertEquals(0,count("wf_execution_commands"));assertEquals(0,count("wf_execution_instances"));
++  assertEquals(0,count("wf_execution_tasks"));assertEquals(0,count("wf_execution_visits"));
++  assertEquals(0,engine.getRuntimeService().createProcessInstanceQuery().count());
++  assertEquals(0,engine.getHistoryService().createHistoricProcessInstanceQuery().count());
++ }
++ Receipt agree(Command initial,Receipt prior,int actor){
++  var c=action(initial,"agree",prior,actor(prior,actor),id(actor));var r=registry.execute(c.request());verify(c,r,"success");return r;
++ }
++ Receipt second(Command c,Receipt first){return agree(c,agree(c,first,8),9);}
++
++ @Test void startCreatesDurableExactBindingsAndFullTaskMapping()throws Exception{
++  deploy("all");var c=new Command();var r=registry.execute(c.request());verify(c,r,"success");
++  active(r,2,Set.of(id(8),id(9)),1);assertEquals(1,count("wf_execution_instances"));
++  assertEquals(2,count("wf_execution_tasks"));assertEquals(1,count("wf_execution_visits"));
++  assertEquals(VERSION,jdbc.queryForObject("SELECT version_id::text FROM wf_execution_instances",String.class));
++  assertEquals(INITIATOR,jdbc.queryForObject("SELECT initiator_id::text FROM wf_execution_instances",String.class));
++  assertArrayEquals(c.payload,jdbc.queryForObject("SELECT start_payload_bytes FROM wf_execution_instances",byte[].class));
++ }
++ @ParameterizedTest @ValueSource(strings={"all","any"})
++ void approvalModesTrackPartialCompletionAndInvalidateCancelledPeers(String mode)throws Exception{
++  deploy(mode);var c=new Command();var first=registry.execute(c.request());
++  var one=agree(c,first,8);active(one,2,Set.of(id(9)),1);
++  var next=agree(c,one,9);active(next,3,Set.of(id(10),id(11),id(12)),2);
++  var r=agree(c,next,10);
++  if(mode.equals("all")){active(r,3,Set.of(id(11),id(12)),2);r=agree(c,r,11);r=agree(c,r,12);}
++  assertEquals("completed",r.result().state());assertTrue(r.result().tasks().isEmpty());
++  assertEquals(0,engine.getRuntimeService().createProcessInstanceQuery().count());
++  long invalidated=jdbc.queryForObject("SELECT count(*) FROM wf_execution_tasks WHERE state='invalidated'",Long.class);
++  assertEquals(mode.equals("any")?2:0,invalidated);
++ }
++ @Test void rejectionEndsOnlyItsOwnInstance()throws Exception{
++  deploy("all");var a=new Command();var b=new Command();b.strings[4]=id(199);
++  var ar=registry.execute(a.request());var br=registry.execute(b.request());
++  var reject=action(a,"reject",ar,actor(ar,8),id(8));var result=registry.execute(reject.request());verify(reject,result,"success");
++  assertEquals("rejected",result.result().state());assertTrue(result.result().tasks().isEmpty());
++  active(br,2,Set.of(id(8),id(9)),1);assertEquals(1,engine.getRuntimeService().createProcessInstanceQuery().count());
++  assertEquals(1,engine.getHistoryService().createHistoricActivityInstanceQuery()
++   .processInstanceId(ar.result().engineProcessId()).activityId("reject_end").finished().count());
++ }
++ @Test void withdrawalRequiresOriginalInitiatorAndEnabledConfiguration()throws Exception{
++  deploy("all");var c=new Command();var r=registry.execute(c.request());
++  noEffect(action(c,"withdraw",r,null,id(8)),"actor_mismatch");
++  var withdraw=action(c,"withdraw",r,null,INITIATOR);var end=registry.execute(withdraw.request());verify(withdraw,end,"success");
++  assertEquals("withdrawn",end.result().state());assertEquals(0,engine.getRuntimeService().createProcessInstanceQuery().count());
++  assertNotNull(engine.getHistoryService().createHistoricProcessInstanceQuery().processInstanceId(r.result().engineProcessId()).singleResult().getEndTime());
++  var d=new Command();d.payload=startPayload(false);var dr=registry.execute(d.request());
++  noEffect(action(d,"withdraw",dr,null,INITIATOR),"withdrawal_forbidden");active(dr,2,Set.of(id(8),id(9)),1);
++ }
++ @Test void eachSuccessRecordsLatestVersionsWithoutChangingThePinnedDefinition()throws Exception{
++  deploy("all");var c=new Command();var first=registry.execute(c.request());
++  var edit=action(c,"agree",first,actor(first,8),id(8));edit.numbers[1]=2;edit.numbers[2]=7;
++  var second=registry.execute(edit.request());verify(edit,second,"success");
++  assertEquals(1,first.result().recordVersion());assertEquals(7,second.result().recordVersion());
++  var third=agree(c,second,9);assertEquals(7,third.result().recordVersion());assertEquals(2,third.result().schemaVersion());
++  assertEquals(VERSION,jdbc.queryForObject("SELECT version_id::text FROM wf_execution_instances",String.class));
++  assertEquals(first,registry.lookup(c.commandId(),first.commandHash()).orElseThrow());
++ }
++ @Test void returnReactivatesVisitedNodeWithNewIdentitiesAndInvalidatesOldTasks()throws Exception{
++  deploy("all");var c=new Command();var first=registry.execute(c.request());var next=second(c,first);
++  var back=action(c,"return",next,actor(next,10),id(10));back.strings[11]=id(2);
++  var returned=registry.execute(back.request());verify(back,returned,"success");active(returned,2,Set.of(id(8),id(9)),3);
++  Set<String> old=new HashSet<>();first.result().tasks().forEach(t->old.add(t.id()));next.result().tasks().forEach(t->old.add(t.id()));
++  assertTrue(returned.result().tasks().stream().noneMatch(t->old.contains(t.id())));
++  noEffect(action(c,"agree",returned,actor(next,11),id(11)),"task_inactive");
++  assertEquals(3,jdbc.queryForObject("SELECT count(*) FROM wf_execution_tasks WHERE state='invalidated'",Long.class));
++  var again=second(c,returned);active(again,3,Set.of(id(10),id(11),id(12)),4);
++ }
++ @Test void historicalApproverMayReturnOnlyToTheirOwnVisitedApprovalNode()throws Exception{
++  deploy("all");var c=new Command();var first=registry.execute(c.request());var next=second(c,first);
++  var wrong=action(c,"return",next,actor(first,8),id(8));wrong.strings[11]=id(3);noEffect(wrong,"return_target_forbidden");
++  var own=action(c,"return",next,actor(first,8),id(8));own.strings[11]=id(2);
++  var r=registry.execute(own.request());verify(own,r,"success");active(r,2,Set.of(id(8),id(9)),3);
++ }
++ @Test void unvisitedTargetIsRejectedWithoutMovingRuntime()throws Exception{
++  deploy("all");var c=new Command();var first=registry.execute(c.request());
++  var back=action(c,"return",first,actor(first,8),id(8));back.strings[11]=id(3);
++  noEffect(back,"return_target_unvisited");active(first,2,Set.of(id(8),id(9)),1);
++ }
++ @Test void duplicatesReplayOriginalReceiptAfterProgressAndEngineRestart()throws Exception{
++  deploy("all");var c=new Command();var first=registry.execute(c.request());second(c,first);
++  engine.close();engine=null;open();
++  assertEquals(first,registry.execute(c.request()));assertEquals(first,registry.lookup(c.commandId(),first.commandHash()).orElseThrow());
++  assertEquals(1,engine.getRuntimeService().createProcessInstanceQuery().count());
++  assertEquals(3,count("wf_execution_commands"));
++ }
++ @Test void sameCommandIdWithDifferentValidPayloadIsAConflict()throws Exception{
++  deploy("all");var c=new Command();var first=registry.execute(c.request());
++  var changed=c.copy();changed.payload=startPayload(false);
++  assertThrows(CommandConflict.class,()->registry.execute(changed.request()));
++  assertEquals(first,registry.execute(c.request()));assertEquals(1,count("wf_execution_commands"));
++  assertThrows(CommandConflict.class,()->registry.lookup(c.commandId(),"f".repeat(64)));
++ }
++ @Test void missingLookupNeverCreatesAReceiptOrCancellationProof(){
++  var c=new Command();assertTrue(registry.lookup(c.commandId(),hex(hash(c.bytes()))).isEmpty());emptyExecution();
++ }
++ @Test void cancellationBeforeExecutionPermanentlyBlocksThatExactCommand()throws Exception{
++  deploy("all");var c=new Command();var cancelled=registry.establishNoEffect(c.request());verify(c,cancelled,"no_effect");
++  assertEquals("cancelled",cancelled.result().reason());assertEquals("unchanged",cancelled.result().state());
++  assertEquals(cancelled,registry.execute(c.request()));assertEquals(cancelled,registry.establishNoEffect(c.request()));
++  assertEquals(0,count("wf_execution_instances"));assertEquals(0,engine.getHistoryService().createHistoricProcessInstanceQuery().count());
++ }
++ @Test void cancellationAfterExecutionCanOnlyReplayTheSuccessfulReceipt()throws Exception{
++  deploy("all");var c=new Command();var first=registry.execute(c.request());
++  assertEquals(first,registry.establishNoEffect(c.request()));assertEquals(first,registry.execute(c.request()));
++ }
++ @Test void concurrentDuplicatesCommitOneEngineInstance()throws Exception{
++  deploy("all");var c=new Command();var results=race(()->registry.execute(c.request()),()->registry.execute(c.request()));
++  assertEquals(results.get(0),results.get(1));assertEquals(1,count("wf_execution_commands"));assertEquals(1,count("wf_execution_instances"));
++  assertEquals(1,engine.getRuntimeService().createProcessInstanceQuery().count());
++ }
++ @Test void concurrentExecutionAndCancellationHaveOneDurableOutcome()throws Exception{
++  deploy("all");var c=new Command();var results=race(()->registry.execute(c.request()),()->registry.establishNoEffect(c.request()));
++  assertEquals(results.get(0),results.get(1));var r=results.get(0);verify(c,r,r.outcome());
++  long expected=r.outcome().equals("success")?1:0;
++  assertEquals(expected,count("wf_execution_instances"));assertEquals(expected,engine.getHistoryService().createHistoricProcessInstanceQuery().count());
++ }
++ @Test void concurrentDifferentCommandsOnTheSameSequenceApplyOnlyOne()throws Exception{
++  deploy("all");var c=new Command();var first=registry.execute(c.request());
++  var a=action(c,"agree",first,actor(first,8),id(8));var b=action(c,"agree",first,actor(first,9),id(9));
++  var r=race(()->registry.execute(a.request()),()->registry.execute(b.request()));
++  assertEquals(1,r.stream().filter(x->x.outcome().equals("success")).count());
++  assertEquals(1,r.stream().filter(x->x.outcome().equals("no_effect")&&x.result().reason().equals("stale_sequence")).count());
++  assertEquals(1,engine.getTaskService().createTaskQuery().count());
++ }
++ static <T> List<T> race(Callable<T> a,Callable<T> b)throws Exception{
++  var pool=Executors.newFixedThreadPool(2);var ready=new CountDownLatch(2);var start=new CountDownLatch(1);
++  try{
++   var fa=pool.submit(()->{ready.countDown();start.await();return a.call();});
++   var fb=pool.submit(()->{ready.countDown();start.await();return b.call();});
++   assertTrue(ready.await(10,TimeUnit.SECONDS));start.countDown();return List.of(fa.get(30,TimeUnit.SECONDS),fb.get(30,TimeUnit.SECONDS));
++  }finally{start.countDown();pool.shutdownNow();assertTrue(pool.awaitTermination(10,TimeUnit.SECONDS));}
++ }
++ @ParameterizedTest @EnumSource(Stage.class)
++ void everyPrecommitStartFailureRollsBackEngineLedgerAndTasks(Stage point)throws Exception{
++  deploy("all");var c=new Command();
++  assertThrows(InjectedFailure.class,()->registry.execute(c.request(),s->{if(s==point)throw new InjectedFailure();}));
++  emptyExecution();verify(c,registry.execute(c.request()),"success");
++ }
++ @ParameterizedTest @EnumSource(Stage.class)
++ void everyPrecommitApprovalFailureRestoresOriginalTasksAndLedger(Stage point)throws Exception{
++  deploy("all");var c=new Command();var first=registry.execute(c.request());
++  var a=action(c,"agree",first,actor(first,8),id(8));
++  assertThrows(InjectedFailure.class,()->registry.execute(a.request(),s->{if(s==point)throw new InjectedFailure();}));
++  assertEquals(1,count("wf_execution_commands"));active(first,2,Set.of(id(8),id(9)),1);
++  assertTrue(registry.lookup(a.commandId(),hex(hash(a.bytes()))).isEmpty());
++  verify(a,registry.execute(a.request()),"success");
++ }
++ @Test void outerRequiredRollbackNeverLeavesCommittedEngineOrReceipt()throws Exception{
++  deploy("all");var c=new Command();
++  new TransactionTemplate(tm).executeWithoutResult(tx->{registry.execute(c.request());tx.setRollbackOnly();});
++  emptyExecution();
++ }
++ @Test void allScopeBindingsAreCheckedBeforeAnyAction()throws Exception{
++  deploy("all");var c=new Command();var first=registry.execute(c.request());
++  for(int field:new int[]{1,2,3,4,5,6}){
++   var bad=action(c,"agree",first,actor(first,8),id(8));bad.strings[field]=id(999);
++   noEffect(bad,"scope_mismatch");
++  }
++  var bad=action(c,"agree",first,actor(first,8),id(8));bad.numbers[0]=2;noEffect(bad,"scope_mismatch");
++  active(first,2,Set.of(id(8),id(9)),1);
++ }
++ @Test void taskActorEpochAndCurrentVersionsAreChecked()throws Exception{
++  deploy("all");var c=new Command();var first=registry.execute(c.request());
++  var actor=action(c,"agree",first,actor(first,8),id(9));noEffect(actor,"actor_mismatch");
++  var epoch=action(c,"agree",first,actor(first,8),id(8));epoch.numbers[4]++;noEffect(epoch,"task_epoch_mismatch");
++  var fence=action(c,"agree",first,actor(first,8),id(8));fence.numbers[3]=1;noEffect(fence,"stale_fence");
++  var seq=action(c,"agree",first,actor(first,8),id(8));seq.numbers[5]=0;noEffect(seq,"stale_sequence");
++  var update=action(c,"agree",first,actor(first,8),id(8));update.numbers[1]=2;update.numbers[2]=4;
++  var current=registry.execute(update.request());
++  var staleRecord=action(c,"agree",current,actor(current,9),id(9));staleRecord.numbers[2]=3;noEffect(staleRecord,"stale_record_version");
++  var staleSchema=action(c,"agree",current,actor(current,9),id(9));staleSchema.numbers[1]=1;noEffect(staleSchema,"stale_schema_version");
++  active(current,2,Set.of(id(9)),1);
++ }
++ @Test void terminalInstanceRejectsNewCommandsButReplaysOldOnes()throws Exception{
++  deploy("any");var c=new Command();var first=registry.execute(c.request());var next=second(c,first);var end=agree(c,next,10);
++  noEffect(action(c,"agree",end,actor(next,11),id(11)),"terminal_instance");
++  assertEquals(first,registry.execute(c.request()));
++ }
++ @Test void startIdentityAndDeploymentBindingsAreNotImplicitlyReused()throws Exception{
++  deploy("all");var c=new Command();var first=registry.execute(c.request());
++  var duplicate=c.copy();duplicate.strings[0]=UUID.randomUUID().toString();noEffect(duplicate,"instance_exists");
++  var missing=new Command();missing.strings[6]=id(901);noEffect(missing,"deployment_missing");
++  var mismatch=new Command();mismatch.strings[1]=id(902);noEffect(mismatch,"deployment_mismatch");
++  active(first,2,Set.of(id(8),id(9)),1);
++ }
++ @Test void malformedPayloadOrHashMismatchCannotWriteAnything()throws Exception{
++  deploy("all");var valid=new Command();byte[] bytes=valid.bytes();byte[] changed=valid.payload.clone();changed[10]^=1;
++  assertThrows(InvalidCommand.class,()->registry.execute(new Request(bytes,changed)));
++  var cases=new ArrayList<byte[]>();
++  cases.add(new byte[0]);cases.add(new byte[262145]);cases.add(Arrays.copyOf(valid.payload,valid.payload.length-1));
++  var trailing=Arrays.copyOf(valid.payload,valid.payload.length+1);cases.add(trailing);
++  var wrongPrefix=valid.payload.clone();wrongPrefix[0]^=1;cases.add(wrongPrefix);
++  var zeroEvidence=valid.payload.clone();Arrays.fill(zeroEvidence,8,40,(byte)0);cases.add(zeroEvidence);
++  var badFlag=valid.payload.clone();badFlag[40]=2;cases.add(badFlag);
++  var badWithdraw=valid.payload.clone();badWithdraw[41]=2;cases.add(badWithdraw);
++  var hugeCount=valid.payload.clone();Arrays.fill(hugeCount,42,46,(byte)0xff);cases.add(hugeCount);
++  var malformedUuid=valid.payload.clone();malformedUuid[50]=(byte)0xff;cases.add(malformedUuid);
++  var duplicateNode=valid.payload.clone();System.arraycopy(duplicateNode,50,duplicateNode,174,36);cases.add(duplicateNode);
++  cases.add(payload(false,false,Map.of(),Map.of()));
++  cases.add(payload(true,true,Map.of(id(2),List.of(id(9),id(8)),id(3),List.of(id(10),id(11),id(12))),Map.of()));
++  cases.add(payload(true,true,Map.of(id(2),List.of(id(8),id(8)),id(3),List.of(id(10),id(11),id(12))),Map.of()));
++  cases.add(payload(true,true,Map.of(id(2),List.of(id(8))),Map.of()));
++  cases.add(payload(true,true,Map.of(id(2),List.of(id(8),id(9)),id(3),List.of(id(10),id(11),id(12))),Map.of(id(999),true)));
++  for(byte[] p:cases){var bad=new Command();bad.payload=p;assertThrows(InvalidCommand.class,()->registry.execute(bad.request()));emptyExecution();}
++ }
++ @Test void requestOwnsInputArraysAndReturnedTaskCollectionIsImmutable()throws Exception{
++  deploy("all");var c=new Command();byte[] command=c.bytes(),body=c.payload.clone();var request=new Request(command,body);
++  Arrays.fill(command,(byte)0);Arrays.fill(body,(byte)0);
++  byte[] returnedCommand=request.commandBytes(),returnedPayload=request.payloadBytes();
++  Arrays.fill(returnedCommand,(byte)0);Arrays.fill(returnedPayload,(byte)0);
++  var r=registry.execute(request);verify(c,r,"success");
++  assertThrows(UnsupportedOperationException.class,()->r.result().tasks().clear());
++  assertEquals(r,registry.execute(c.request()));
++ }
++
++ @Test void conditionsUseTheLatestCommandRoutesRatherThanTheStartValues()throws Exception{
++  String version=id(99);
++  try(var in=getClass().getResourceAsStream("/compiler/generated-all.bpmn20.xml")){
++   assertNotNull(in);deployments.deploy(new DeploymentRegistry.Request(APP,FLOW,version,1,new String(in.readAllBytes(),StandardCharsets.UTF_8)));
++  }
++  var c=new Command();c.strings[6]=version;
++  c.payload=payload(true,true,Map.of(id(2),List.of(id(8),id(9))),Map.of(id(3),true));
++  var first=registry.execute(c.request());
++  var a=action(c,"agree",first,actor(first,8),id(8));
++  a.payload=payload(false,false,Map.of(),Map.of(id(3),true));
++  var partial=registry.execute(a.request());
++  var b=action(c,"agree",partial,actor(partial,9),id(9));
++  b.numbers[2]=2;b.payload=payload(false,false,Map.of(),Map.of(id(3),false));
++  var end=registry.execute(b.request());verify(b,end,"success");assertEquals("completed",end.result().state());
++  assertEquals(1,engine.getHistoryService().createHistoricActivityInstanceQuery()
++   .processInstanceId(end.result().engineProcessId()).activityId("n_"+id(5).replace("-","")).finished().count());
++  assertEquals(0,engine.getHistoryService().createHistoricActivityInstanceQuery()
++   .processInstanceId(end.result().engineProcessId()).activityId("n_"+id(4).replace("-","")).finished().count());
++ }
++ @Test void noApprovalGraphCanCommitAnImmediatelyCompletedInstance()throws Exception{
++  String xml=RootDeploymentRegistryTest.xml(VERSION);
++  deployments.deploy(new DeploymentRegistry.Request(APP,FLOW,VERSION,1,xml));
++  var c=new Command();c.payload=payload(true,true,Map.of(),Map.of());
++  var end=registry.execute(c.request());verify(c,end,"success");
++  assertEquals("completed",end.result().state());assertTrue(end.result().tasks().isEmpty());
++  assertEquals(1,count("wf_execution_instances"));assertEquals(0,count("wf_execution_tasks"));
++  assertEquals(0,engine.getRuntimeService().createProcessInstanceQuery().count());
++  assertEquals(1,engine.getHistoryService().createHistoricProcessInstanceQuery().count());
++ }
++ @Test void registryRejectsWiringThatCouldCommitEngineAndLedgerSeparately(){
++  var other=new DataSourceTransactionManager(ds);
++  assertThrows(IllegalArgumentException.class,()->new ExecutionRegistry(jdbc,other,engine));
++  var otherSource=new DriverManagerDataSource(url+"?currentSchema="+schema,"b3_fixture","b3_fixture_only");
++  assertThrows(IllegalArgumentException.class,()->new ExecutionRegistry(new JdbcTemplate(otherSource),tm,engine));
++ }
++ static final class InjectedFailure extends RuntimeException{}
++}
+diff --git a/services/workflow-engine/src/test/java/org/weaveos/workflow/RootReturnCompatibilityTest.java b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootReturnCompatibilityTest.java
+new file mode 100644
+index 0000000..62272f0
+--- /dev/null
++++ b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootReturnCompatibilityTest.java
+@@ -0,0 +1,156 @@
++package org.weaveos.workflow;
++
++import static org.junit.jupiter.api.Assertions.*;
++import java.nio.charset.StandardCharsets;
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++import java.util.UUID;
++import org.flowable.common.engine.api.FlowableObjectNotFoundException;
++import org.flowable.engine.ProcessEngine;
++import org.flowable.engine.ProcessEngineConfiguration;
++import org.flowable.spring.SpringProcessEngineConfiguration;
++import org.flowable.task.api.Task;
++import org.junit.jupiter.api.AfterEach;
++import org.junit.jupiter.api.BeforeEach;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.ValueSource;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.jdbc.datasource.DriverManagerDataSource;
++import org.springframework.jdbc.datasource.DataSourceTransactionManager;
++import org.springframework.transaction.support.TransactionTemplate;
++
++/**
++ * Root-authored engine compatibility experiment, not a product execution port.
++ * All rows/processes are synthetic and confined to this test's random schema.
++ */
++class RootReturnCompatibilityTest {
++ static String id(int n) { return String.format("%08x-0000-4000-8000-%012x",n,n); }
++ static String node(int n) { return "n_"+id(n).replace("-",""); }
++ static String roster(int n) { return "a_"+id(n).replace("-",""); }
++ static final String VERSION=id(100);
++ JdbcTemplate admin,jdbc; DataSourceTransactionManager tm;
++ ProcessEngine engine; DeploymentRegistry registry; String schema,process;
++ @BeforeEach void setup() throws Exception {
++  String url=System.getenv("B3_TEST_JDBC_URL");
++  assertEquals("jdbc:postgresql://b3-postgres:5432/b3_flowable_fixture",url,
++   "Only the dedicated unexposed synthetic database may run these tests");
++  admin=new JdbcTemplate(new DriverManagerDataSource(url,"b3_fixture","b3_fixture_only"));
++  schema="v030_return_"+UUID.randomUUID().toString().replace("-","");
++  admin.execute("CREATE SCHEMA "+schema);
++  var ds=new DriverManagerDataSource(url+"?currentSchema="+schema,"b3_fixture","b3_fixture_only");
++  tm=new DataSourceTransactionManager(ds);jdbc=new JdbcTemplate(ds);
++  var c=new SpringProcessEngineConfiguration();c.setDataSource(ds);c.setTransactionManager(tm);
++  c.setDatabaseSchema(schema);c.setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_TRUE);
++  c.setAsyncExecutorActivate(false);c.setDisableIdmEngine(true);c.setDisableEventRegistry(true);
++  engine=c.buildProcessEngine();registry=new DeploymentRegistry(jdbc,tm,engine);
++  try(var in=getClass().getResourceAsStream("/deployment-registry-fixture.sql")){
++   assertNotNull(in);jdbc.execute(new String(in.readAllBytes(),StandardCharsets.UTF_8));
++  }
++ }
++ @AfterEach void cleanup(){
++  if(engine!=null)engine.close();
++  if(admin!=null&&schema!=null)admin.execute("DROP SCHEMA "+schema+" CASCADE");
++ }
++ void start(String mode) throws Exception {
++  String xml;
++  try(var in=getClass().getResourceAsStream("/return-compatibility/return-"+mode+".bpmn20.xml")){
++   assertNotNull(in,"must be generated by the actual Go compiler");
++   xml=new String(in.readAllBytes(),StandardCharsets.UTF_8);
++  }
++  var receipt=registry.deploy(new DeploymentRegistry.Request(id(101),id(102),VERSION,1,xml));
++  var vars=new HashMap<String,Object>();
++  vars.put(roster(2),List.of(id(8),id(9)));
++  vars.put(roster(3),List.of(id(10),id(11),id(12)));
++  vars.put("wf_rejected",false);
++  process=engine.getRuntimeService().startProcessInstanceById(receipt.processDefinitionId(),vars).getId();
++  assertTasks(2,Set.of(id(8),id(9)));
++ }
++ List<Task> tasks(){return engine.getTaskService().createTaskQuery().processInstanceId(process).list();}
++ List<String> ids(List<Task> tasks){return tasks.stream().map(Task::getId).sorted().toList();}
++ Task assigned(String actor){return tasks().stream().filter(t->t.getAssignee().equals(actor)).findFirst().orElseThrow();}
++ void complete(String actor){engine.getTaskService().complete(assigned(actor).getId(),Map.of("wf_rejected",false));}
++ void reachSecond(){complete(id(8));assertEquals(1,tasks().size());complete(id(9));assertTasks(3,Set.of(id(10),id(11),id(12)));}
++ void assertTasks(int n,Set<String> actors){
++  var ts=tasks();assertEquals(actors.size(),ts.size());
++  assertEquals(actors,new HashSet<>(ts.stream().map(Task::getAssignee).toList()));
++  assertTrue(ts.stream().allMatch(t->node(n).equals(t.getTaskDefinitionKey())));
++  assertEquals(ts.size(),new HashSet<>(ids(ts)).size());
++ }
++ void assertFreshFirstCounters(){
++  assertTasks(2,Set.of(id(8),id(9)));
++  var runtime=engine.getRuntimeService();
++  for(var task:tasks()){
++   assertEquals(2,((Number)runtime.getVariable(task.getExecutionId(),"nrOfInstances")).intValue());
++   assertEquals(2,((Number)runtime.getVariable(task.getExecutionId(),"nrOfActiveInstances")).intValue());
++   assertEquals(0,((Number)runtime.getVariable(task.getExecutionId(),"nrOfCompletedInstances")).intValue());
++   assertEquals(task.getAssignee(),runtime.getVariable(task.getExecutionId(),"approver"));
++  }
++ }
++ void returnToFirst(){
++  new TransactionTemplate(tm).executeWithoutResult(tx->engine.getRuntimeService()
++   .createChangeActivityStateBuilder().processInstanceId(process)
++   .moveActivityIdTo(node(3),node(2)).changeState());
++ }
++ @ParameterizedTest @ValueSource(strings={"all","any"})
++ void returnFromSecondMiRecreatesVisitedRosterAndResetsCounters(String mode) throws Exception {
++  start(mode);List<String> originalFirst=ids(tasks());reachSecond();List<String> originalSecond=ids(tasks());
++  if(mode.equals("all")){complete(id(10));assertEquals(2,tasks().size());}
++  returnToFirst();assertFreshFirstCounters();
++  Set<String> obsolete=new HashSet<>(originalFirst);obsolete.addAll(originalSecond);
++  assertTrue(tasks().stream().noneMatch(t->obsolete.contains(t.getId())));
++  for(String old:originalSecond){
++   assertNull(engine.getTaskService().createTaskQuery().taskId(old).singleResult());
++   assertThrows(FlowableObjectNotFoundException.class,()->engine.getTaskService().complete(old));
++  }
++  complete(id(8));assertTasks(2,Set.of(id(9)));
++  assertEquals(1,((Number)engine.getRuntimeService().getVariable(assigned(id(9)).getExecutionId(),"nrOfCompletedInstances")).intValue());
++  complete(id(9));assertTasks(3,Set.of(id(10),id(11),id(12)));
++  assertTrue(tasks().stream().noneMatch(t->originalSecond.contains(t.getId())));
++  assertEquals(4,engine.getHistoryService().createHistoricTaskInstanceQuery().processInstanceId(process)
++   .taskDefinitionKey(node(2)).finished().count());
++  complete(id(10));
++  if(mode.equals("all")){assertTasks(3,Set.of(id(11),id(12)));complete(id(11));complete(id(12));}
++  assertEquals(0,tasks().size());
++  assertEquals(0,engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(process).count());
++ }
++ @Test void returnToCurrentPartiallyCompletedNodeStartsANewActivation() throws Exception {
++  start("all");List<String> old=ids(tasks());complete(id(8));assertTasks(2,Set.of(id(9)));
++  new TransactionTemplate(tm).executeWithoutResult(tx->engine.getRuntimeService()
++   .createChangeActivityStateBuilder().processInstanceId(process)
++   .moveActivityIdTo(node(2),node(2)).changeState());
++  assertFreshFirstCounters();assertTrue(tasks().stream().noneMatch(t->old.contains(t.getId())));
++  complete(id(8));assertTasks(2,Set.of(id(9)));complete(id(9));assertTasks(3,Set.of(id(10),id(11),id(12)));
++ }
++ @Test void rollbackAfterMovementRestoresExactPriorMiTasks() throws Exception {
++  start("all");reachSecond();complete(id(10));List<String> before=ids(tasks());
++  long historicalBefore=engine.getHistoryService().createHistoricTaskInstanceQuery().processInstanceId(process).count();
++  assertThrows(InjectedFailure.class,()->new TransactionTemplate(tm).executeWithoutResult(tx->{
++   engine.getRuntimeService().createChangeActivityStateBuilder().processInstanceId(process)
++    .moveActivityIdTo(node(3),node(2)).changeState();
++   assertFreshFirstCounters();throw new InjectedFailure();
++  }));
++  assertEquals(before,ids(tasks()));assertTasks(3,Set.of(id(11),id(12)));
++  assertEquals(historicalBefore,engine.getHistoryService().createHistoricTaskInstanceQuery().processInstanceId(process).count());
++  complete(id(11));assertTasks(3,Set.of(id(12)));complete(id(12));assertEquals(0,tasks().size());
++ }
++ @Test void withdrawalRollsBackThenRemovesAllRuntimeTasksButRetainsHistory() throws Exception {
++  start("all");reachSecond();complete(id(10));List<String> before=ids(tasks());
++  assertThrows(InjectedFailure.class,()->new TransactionTemplate(tm).executeWithoutResult(tx->{
++   engine.getRuntimeService().deleteProcessInstance(process,"root-fixture-withdraw");
++   assertEquals(0,tasks().size());throw new InjectedFailure();
++  }));
++  assertEquals(before,ids(tasks()));
++  new TransactionTemplate(tm).executeWithoutResult(tx->engine.getRuntimeService().deleteProcessInstance(process,"root-fixture-withdraw"));
++  assertEquals(0,tasks().size());
++  assertEquals(0,engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(process).count());
++  var historic=engine.getHistoryService().createHistoricProcessInstanceQuery().processInstanceId(process).singleResult();
++  assertNotNull(historic);assertNotNull(historic.getEndTime());assertEquals("root-fixture-withdraw",historic.getDeleteReason());
++  assertEquals(5,engine.getHistoryService().createHistoricTaskInstanceQuery().processInstanceId(process).count());
++ }
++ static final class InjectedFailure extends RuntimeException{}
++}
+diff --git a/services/workflow-engine/src/test/resources/execution-registry-fixture.sql b/services/workflow-engine/src/test/resources/execution-registry-fixture.sql
+new file mode 100644
+index 0000000..90ffad6
+--- /dev/null
++++ b/services/workflow-engine/src/test/resources/execution-registry-fixture.sql
+@@ -0,0 +1,80 @@
++-- Root draft schema contract for isolated execution tests; not a production migration.
++CREATE TABLE wf_execution_commands (
++ command_id uuid PRIMARY KEY,
++ instance_id uuid NOT NULL,
++ command_hash text NOT NULL CHECK(command_hash ~ '^[0-9a-f]{64}$'),
++ command_bytes bytea NOT NULL CHECK(octet_length(command_bytes) BETWEEN 1 AND 538),
++ payload_hash text NOT NULL CHECK(payload_hash ~ '^[0-9a-f]{64}$'),
++ payload_bytes bytea NOT NULL CHECK(octet_length(payload_bytes) BETWEEN 1 AND 262144),
++ outcome text NOT NULL DEFAULT 'pending' CHECK(outcome IN ('pending','success','no_effect')),
++ result_sequence bigint CHECK(result_sequence BETWEEN 0 AND 9007199254740991),
++ proof_id uuid,
++ result_hash text CHECK(result_hash ~ '^[0-9a-f]{64}$'),
++ result_bytes bytea CHECK(octet_length(result_bytes) BETWEEN 1 AND 65536),
++ created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
++ CHECK((outcome='pending' AND result_sequence IS NULL AND proof_id IS NULL AND result_hash IS NULL AND result_bytes IS NULL)
++    OR(outcome IN ('success','no_effect') AND result_sequence IS NOT NULL AND proof_id IS NOT NULL AND result_hash IS NOT NULL AND result_bytes IS NOT NULL))
++);
++CREATE INDEX ix_wf_execution_commands_instance ON wf_execution_commands(instance_id,created_at,command_id);
++CREATE TABLE wf_execution_instances (
++ instance_id uuid PRIMARY KEY,
++ app_id uuid NOT NULL, table_id uuid NOT NULL, view_id uuid NOT NULL,
++ record_id uuid NOT NULL, flow_id uuid NOT NULL,
++ version_id uuid NOT NULL REFERENCES wf_deployments(version_id) ON DELETE RESTRICT,
++ definition_version bigint NOT NULL CHECK(definition_version BETWEEN 1 AND 9007199254740991),
++ initiator_id uuid NOT NULL,
++ start_payload_bytes bytea NOT NULL CHECK(octet_length(start_payload_bytes) BETWEEN 1 AND 262144),
++ allow_withdraw boolean NOT NULL,
++ engine_process_id text UNIQUE CHECK(length(engine_process_id) BETWEEN 1 AND 200),
++ state text NOT NULL CHECK(state IN ('starting','active','completed','rejected','withdrawn')),
++ sequence bigint NOT NULL CHECK(sequence BETWEEN 0 AND 9007199254740991),
++ fence_epoch bigint NOT NULL CHECK(fence_epoch BETWEEN 1 AND 9007199254740991),
++ schema_version bigint NOT NULL CHECK(schema_version BETWEEN 1 AND 9007199254740991),
++ record_version bigint NOT NULL CHECK(record_version BETWEEN 1 AND 9007199254740991),
++ activation_epoch bigint NOT NULL DEFAULT 0 CHECK(activation_epoch BETWEEN 0 AND 9007199254740991),
++ created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
++ updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
++ CHECK((state='starting' AND sequence=0 AND engine_process_id IS NULL)
++    OR(state<>'starting' AND sequence>0 AND engine_process_id IS NOT NULL))
++);
++CREATE TABLE wf_execution_tasks (
++ task_id uuid PRIMARY KEY,
++ instance_id uuid NOT NULL REFERENCES wf_execution_instances(instance_id) ON DELETE RESTRICT,
++ engine_task_id text NOT NULL UNIQUE CHECK(length(engine_task_id) BETWEEN 1 AND 200),
++ node_id uuid NOT NULL,
++ activation_epoch bigint NOT NULL CHECK(activation_epoch BETWEEN 1 AND 9007199254740991),
++ assignee_id uuid NOT NULL,
++ state text NOT NULL CHECK(state IN ('active','completed','invalidated')),
++ decision text CHECK(decision IN ('agree','reject')),
++ CHECK((state='completed')=(decision IS NOT NULL))
++);
++CREATE INDEX ix_wf_execution_tasks_active ON wf_execution_tasks(instance_id,state,task_id);
++CREATE TABLE wf_execution_visits (
++ instance_id uuid NOT NULL REFERENCES wf_execution_instances(instance_id) ON DELETE RESTRICT,
++ node_id uuid NOT NULL,
++ activation_epoch bigint NOT NULL CHECK(activation_epoch BETWEEN 1 AND 9007199254740991),
++ PRIMARY KEY(instance_id,node_id,activation_epoch),
++ UNIQUE(instance_id,activation_epoch)
++);
++CREATE FUNCTION wf_execution_result_required() RETURNS trigger LANGUAGE plpgsql AS $$
++DECLARE pending boolean;
++BEGIN
++ EXECUTE format('SELECT EXISTS(SELECT 1 FROM %I.wf_execution_commands WHERE command_id=$1 AND outcome=''pending'')',TG_TABLE_SCHEMA)
++ INTO pending USING NEW.command_id;
++ IF pending THEN RAISE EXCEPTION 'execution command requires a durable result' USING ERRCODE='23514'; END IF;
++ RETURN NULL;
++END;
++$$;
++CREATE CONSTRAINT TRIGGER wf_execution_result_required AFTER INSERT OR UPDATE ON wf_execution_commands
++ DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION wf_execution_result_required();
++CREATE FUNCTION wf_execution_instance_confirmed() RETURNS trigger LANGUAGE plpgsql AS $$
++DECLARE pending boolean;
++BEGIN
++ EXECUTE format('SELECT EXISTS(SELECT 1 FROM %I.wf_execution_instances WHERE instance_id=$1 AND state=''starting'')',TG_TABLE_SCHEMA)
++ INTO pending USING NEW.instance_id;
++ IF pending THEN RAISE EXCEPTION 'engine instance may not commit provisional state' USING ERRCODE='23514'; END IF;
++ RETURN NULL;
++END;
++$$;
++CREATE CONSTRAINT TRIGGER wf_execution_instance_confirmed AFTER INSERT OR UPDATE ON wf_execution_instances
++ DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION wf_execution_instance_confirmed();
+diff --git a/services/workflow-engine/src/test/resources/return-compatibility/return-all.bpmn20.xml b/services/workflow-engine/src/test/resources/return-compatibility/return-all.bpmn20.xml
+new file mode 100644
+index 0000000..09492a1
+--- /dev/null
++++ b/services/workflow-engine/src/test/resources/return-compatibility/return-all.bpmn20.xml
+@@ -0,0 +1 @@
++<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:flowable="http://flowable.org/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="urn:weaveos:workflow"><process id="p_00000064000040008000000000000064" isExecutable="true"><startEvent id="n_00000001000040008000000000000001"></startEvent><userTask id="n_00000002000040008000000000000002" flowable:assignee="${approver}"><multiInstanceLoopCharacteristics isSequential="false" flowable:collection="a_00000002000040008000000000000002" flowable:elementVariable="approver"><completionCondition xsi:type="bpmn:tFormalExpression">${wf_rejected || nrOfCompletedInstances == nrOfInstances}</completionCondition></multiInstanceLoopCharacteristics></userTask><exclusiveGateway id="g_00000002000040008000000000000002" default="e_1"></exclusiveGateway><userTask id="n_00000003000040008000000000000003" flowable:assignee="${approver}"><multiInstanceLoopCharacteristics isSequential="false" flowable:collection="a_00000003000040008000000000000003" flowable:elementVariable="approver"><completionCondition xsi:type="bpmn:tFormalExpression">${wf_rejected || nrOfCompletedInstances == nrOfInstances}</completionCondition></multiInstanceLoopCharacteristics></userTask><exclusiveGateway id="g_00000003000040008000000000000003" default="e_2"></exclusiveGateway><endEvent id="n_00000004000040008000000000000004"></endEvent><endEvent id="reject_end"></endEvent><sequenceFlow id="e_0" sourceRef="n_00000001000040008000000000000001" targetRef="n_00000002000040008000000000000002"></sequenceFlow><sequenceFlow id="e_1" sourceRef="g_00000002000040008000000000000002" targetRef="n_00000003000040008000000000000003"></sequenceFlow><sequenceFlow id="e_2" sourceRef="g_00000003000040008000000000000003" targetRef="n_00000004000040008000000000000004"></sequenceFlow><sequenceFlow id="u_00000002000040008000000000000002" sourceRef="n_00000002000040008000000000000002" targetRef="g_00000002000040008000000000000002"></sequenceFlow><sequenceFlow id="r_00000002000040008000000000000002" sourceRef="g_00000002000040008000000000000002" targetRef="reject_end"><conditionExpression xsi:type="bpmn:tFormalExpression">${wf_rejected == true}</conditionExpression></sequenceFlow><sequenceFlow id="u_00000003000040008000000000000003" sourceRef="n_00000003000040008000000000000003" targetRef="g_00000003000040008000000000000003"></sequenceFlow><sequenceFlow id="r_00000003000040008000000000000003" sourceRef="g_00000003000040008000000000000003" targetRef="reject_end"><conditionExpression xsi:type="bpmn:tFormalExpression">${wf_rejected == true}</conditionExpression></sequenceFlow></process></definitions>
+\ No newline at end of file
+diff --git a/services/workflow-engine/src/test/resources/return-compatibility/return-any.bpmn20.xml b/services/workflow-engine/src/test/resources/return-compatibility/return-any.bpmn20.xml
+new file mode 100644
+index 0000000..bdfe38f
+--- /dev/null
++++ b/services/workflow-engine/src/test/resources/return-compatibility/return-any.bpmn20.xml
+@@ -0,0 +1 @@
++<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:flowable="http://flowable.org/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="urn:weaveos:workflow"><process id="p_00000064000040008000000000000064" isExecutable="true"><startEvent id="n_00000001000040008000000000000001"></startEvent><userTask id="n_00000002000040008000000000000002" flowable:assignee="${approver}"><multiInstanceLoopCharacteristics isSequential="false" flowable:collection="a_00000002000040008000000000000002" flowable:elementVariable="approver"><completionCondition xsi:type="bpmn:tFormalExpression">${wf_rejected || nrOfCompletedInstances == nrOfInstances}</completionCondition></multiInstanceLoopCharacteristics></userTask><exclusiveGateway id="g_00000002000040008000000000000002" default="e_1"></exclusiveGateway><userTask id="n_00000003000040008000000000000003" flowable:assignee="${approver}"><multiInstanceLoopCharacteristics isSequential="false" flowable:collection="a_00000003000040008000000000000003" flowable:elementVariable="approver"><completionCondition xsi:type="bpmn:tFormalExpression">${nrOfCompletedInstances &gt; 0}</completionCondition></multiInstanceLoopCharacteristics></userTask><exclusiveGateway id="g_00000003000040008000000000000003" default="e_2"></exclusiveGateway><endEvent id="n_00000004000040008000000000000004"></endEvent><endEvent id="reject_end"></endEvent><sequenceFlow id="e_0" sourceRef="n_00000001000040008000000000000001" targetRef="n_00000002000040008000000000000002"></sequenceFlow><sequenceFlow id="e_1" sourceRef="g_00000002000040008000000000000002" targetRef="n_00000003000040008000000000000003"></sequenceFlow><sequenceFlow id="e_2" sourceRef="g_00000003000040008000000000000003" targetRef="n_00000004000040008000000000000004"></sequenceFlow><sequenceFlow id="u_00000002000040008000000000000002" sourceRef="n_00000002000040008000000000000002" targetRef="g_00000002000040008000000000000002"></sequenceFlow><sequenceFlow id="r_00000002000040008000000000000002" sourceRef="g_00000002000040008000000000000002" targetRef="reject_end"><conditionExpression xsi:type="bpmn:tFormalExpression">${wf_rejected == true}</conditionExpression></sequenceFlow><sequenceFlow id="u_00000003000040008000000000000003" sourceRef="n_00000003000040008000000000000003" targetRef="g_00000003000040008000000000000003"></sequenceFlow><sequenceFlow id="r_00000003000040008000000000000003" sourceRef="g_00000003000040008000000000000003" targetRef="reject_end"><conditionExpression xsi:type="bpmn:tFormalExpression">${wf_rejected == true}</conditionExpression></sequenceFlow></process></definitions>
+\ No newline at end of file

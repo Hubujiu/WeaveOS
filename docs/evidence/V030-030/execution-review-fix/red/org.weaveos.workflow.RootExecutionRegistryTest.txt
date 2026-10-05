@@ -1,0 +1,29 @@
+-------------------------------------------------------------------------------
+Test set: org.weaveos.workflow.RootExecutionRegistryTest
+-------------------------------------------------------------------------------
+Tests run: 3, Failures: 0, Errors: 3, Skipped: 0, Time elapsed: 3.074 s <<< FAILURE! -- in org.weaveos.workflow.RootExecutionRegistryTest
+org.weaveos.workflow.RootExecutionRegistryTest.durableResultCodecPreservesBoundedUtf8OpaqueIds -- Time elapsed: 1.557 s <<< ERROR!
+java.lang.IllegalStateException: invalid durable execution result
+	at org.weaveos.workflow.ExecutionCodec.decodeResult(ExecutionCodec.java:82)
+	at org.weaveos.workflow.RootExecutionRegistryTest.durableResultCodecPreservesBoundedUtf8OpaqueIds(RootExecutionRegistryTest.java:440)
+
+org.weaveos.workflow.RootExecutionRegistryTest.identityFailuresPrecedeContextualNodeValidation -- Time elapsed: 0.876 s <<< ERROR!
+org.weaveos.workflow.ExecutionRegistry$InvalidCommand: invalid execution command
+	at org.weaveos.workflow.ExecutionRegistry.validateNodes(ExecutionRegistry.java:142)
+	at org.weaveos.workflow.ExecutionRegistry.lambda$run$3(ExecutionRegistry.java:87)
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:137)
+	at org.weaveos.workflow.ExecutionRegistry.run(ExecutionRegistry.java:72)
+	at org.weaveos.workflow.ExecutionRegistry.execute(ExecutionRegistry.java:56)
+	at org.weaveos.workflow.ExecutionRegistry.execute(ExecutionRegistry.java:55)
+	at org.weaveos.workflow.RootExecutionRegistryTest.noEffect(RootExecutionRegistryTest.java:144)
+	at org.weaveos.workflow.RootExecutionRegistryTest.identityFailuresPrecedeContextualNodeValidation(RootExecutionRegistryTest.java:426)
+
+org.weaveos.workflow.RootExecutionRegistryTest.internalCancellationDoesNotDependOnLiveGraphNodeContext -- Time elapsed: 0.615 s <<< ERROR!
+org.weaveos.workflow.ExecutionRegistry$InvalidCommand: invalid execution command
+	at org.weaveos.workflow.ExecutionRegistry.validateNodes(ExecutionRegistry.java:142)
+	at org.weaveos.workflow.ExecutionRegistry.lambda$run$3(ExecutionRegistry.java:87)
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:137)
+	at org.weaveos.workflow.ExecutionRegistry.run(ExecutionRegistry.java:72)
+	at org.weaveos.workflow.ExecutionRegistry.establishNoEffect(ExecutionRegistry.java:57)
+	at org.weaveos.workflow.RootExecutionRegistryTest.internalCancellationDoesNotDependOnLiveGraphNodeContext(RootExecutionRegistryTest.java:416)
+

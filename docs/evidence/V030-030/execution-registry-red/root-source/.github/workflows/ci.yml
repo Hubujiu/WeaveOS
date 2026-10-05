@@ -168,7 +168,7 @@ jobs:
         run: python3 services/workflow-engine/execution_ci_gate_tests.py 2>&1 | tee services/workflow-engine/ci-logs/execution-gate-tests.txt
       - name: Exact execution and return compatibility cases
         run: bash services/workflow-engine/run-tests.sh -Dtest=RootExecutionRegistryTest,RootReturnCompatibilityTest -Dworkflow.reports=target/execution-ci-reports test 2>&1 | tee services/workflow-engine/ci-logs/execution-tests.txt
-      - name: Require all 36 execution and five return cases without skips
+      - name: Require all 33 execution and five return cases without skips
         run: python3 services/workflow-engine/execution_ci_gate.py services/workflow-engine/target/execution-ci-reports services/workflow-engine/expected-execution-tests.json 2>&1 | tee services/workflow-engine/ci-logs/execution-report-gate.txt
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: always()
@@ -220,4 +220,3 @@ jobs:
             services/workflow-engine/rpc-ci-logs/
           if-no-files-found: warn
           retention-days: 14
-
