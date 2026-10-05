@@ -27,6 +27,7 @@ import (
 type Application struct {
 	Pool   *pgxpool.Pool
 	Limits appschema.Limits
+	DeploymentClient DeploymentClient
 }
 
 type Service struct {
