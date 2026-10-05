@@ -20,6 +20,8 @@ type Command struct {
 	CommandID, AppID, TableID, RecordID, InstanceID, TaskID, ActorID, Action string
 	RecordVersion, FenceEpoch, TaskEpoch, ExpectedSequence                   int64
 	PayloadHash                                                              [32]byte
+	ViewID, FlowID, VersionID, TargetNodeID string `json:",omitempty"`
+	DefinitionVersion, SchemaVersion int64 `json:",omitempty"`
 }
 
 type Receipt struct {
@@ -160,3 +162,7 @@ func isCanonicalNonzeroUUID(value string) bool {
 	}
 	return nonzero
 }
+
+// CanonicalBytes declaration only; Root tests must observe behavior RED before implementation.
+func CanonicalBytes(command Command) ([]byte,error) { return nil,ErrInvalid }
+
