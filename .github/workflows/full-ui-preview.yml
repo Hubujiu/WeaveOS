@@ -1,0 +1,35 @@
+name: Full UI HTML preview
+on:
+  push:
+    branches: [task/UI-032-full-preview]
+    paths:
+      - 'prototypes/full-ui/**'
+      - '.github/workflows/full-ui-preview.yml'
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - name: Install locked rendering dependencies
+        run: |
+          npm install --global pnpm@10.28.2 --ignore-scripts
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm exec playwright install --with-deps firefox
+          sudo apt-get install -y fonts-noto-cjk
+      - name: Root full interface render and interaction checks
+        run: node prototypes/full-ui/render-ci.mjs
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: full-ui-html-preview
+          path: prototypes/full-ui/output/
+          if-no-files-found: error
+          retention-days: 7
