@@ -52,6 +52,16 @@ done
 rpc_port=$(docker exec "$rpc_java" cat /tmp/weaveos-rpc-ready)
 [[ "$rpc_port" =~ ^[0-9]+$ ]]
 docker inspect --format 'fixture published ports={{json .HostConfig.PortBindings}}' "$rpc_java"
-docker exec -e NO_PROXY=b3-workflow,b3-postgres,127.0.0.1,localhost -e no_proxy=b3-workflow,b3-postgres,127.0.0.1,localhost \
-  -e WEAVEOS_RPC_TEST_TARGET="b3-workflow:$rpc_port" "$rpc_java" \
-  /proof/.work/interop.test -test.v -test.run '^TestRootGoJavaPostgresDeploymentInterop$' -test.timeout=90s
+rpc_execute() {
+  docker exec -e NO_PROXY=b3-workflow,b3-postgres,127.0.0.1,localhost -e no_proxy=b3-workflow,b3-postgres,127.0.0.1,localhost \
+    -e WEAVEOS_RPC_TEST_TARGET="b3-workflow:$rpc_port" "$rpc_java" \
+    /proof/.work/interop.test -test.v=test2json -test.run '^TestRootGoJavaPostgresDeploymentInterop$' -test.timeout=90s
+}
+if [[ -n "${WEAVEOS_RPC_JSON_REPORT:-}" ]]; then
+  mkdir -p -- "$(dirname -- "$WEAVEOS_RPC_JSON_REPORT")"
+  # Only genuine test binary stdout enters test2json. Maven/fixture logs stay outside.
+  # set -o pipefail preserves failure of the original test, converter or report writer.
+  rpc_execute | "$rpc_go" tool test2json -t -p github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc | tee "$WEAVEOS_RPC_JSON_REPORT"
+else
+  rpc_execute
+fi
