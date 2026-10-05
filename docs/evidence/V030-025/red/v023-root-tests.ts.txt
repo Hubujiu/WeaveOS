@@ -45,36 +45,25 @@ async function fixture(page:Page,options:{ordinary?:boolean;createOnly?:boolean;
 }
 
 
-// Root-owned V030-025 oracle: user-requested contextual editor, Figma 498:9471.
-// Supersedes V023 three-card geometry only; behavior expectations remain.
+// Root-owned V030-023 oracle: approved Figma 483:2951, preserving real designer behavior.
 for(const [width,height] of [[1440,1000],[1280,800]]){
- test('Root focused designer uses shell sidebars and a clean central canvas '+width,async({page})=>{
+ test('Root Mono designer fits three white cards inside persistent shell '+width,async({page})=>{
   await page.setViewportSize({width,height});await fixture(page);await page.goto(routePath+'/design');
   const palette=page.getByRole('region',{name:'字段面板'}),canvas=page.getByRole('region',{name:'表单画布'}),properties=page.getByRole('region',{name:'字段属性'});
   for(const el of [palette,canvas,properties])await expect(el).toBeVisible();
-  const [p,c,a]=await Promise.all([palette,canvas,properties].map(async el=>(await el.boundingBox())!));
-  const rail=(await page.getByTestId('workspace-rail').boundingBox())!;
-  const top=page.locator('.mono-top');const t=(await top.boundingBox())!;
-  expect(Math.abs(rail.width-78)).toBeLessThanOrEqual(1);
-  expect(Math.abs(p.x-78)).toBeLessThanOrEqual(1);expect(Math.abs(p.width-190)).toBeLessThanOrEqual(1);
-  expect(Math.abs(a.width-332)).toBeLessThanOrEqual(1);expect(Math.abs(a.x+a.width-width)).toBeLessThanOrEqual(1);
-  expect(Math.abs(t.y)).toBeLessThanOrEqual(1);expect(Math.abs(t.height-64)).toBeLessThanOrEqual(1);
-  expect(p.y).toBeGreaterThanOrEqual(64);expect(p.y).toBeLessThanOrEqual(96);
-  expect(a.y).toBeGreaterThanOrEqual(64);expect(a.y).toBeLessThanOrEqual(96);
-  expect(c.x).toBeGreaterThanOrEqual(p.x+p.width+24);expect(c.x+c.width).toBeLessThanOrEqual(a.x-24);
-  expect(c.y).toBeGreaterThanOrEqual(88);expect(c.y).toBeLessThanOrEqual(104);expect(c.width).toBeGreaterThanOrEqual(500);
-  for(const name of ['保存','退出','预览']){
-   const action=page.getByRole('button',{name,exact:true});await expect(action).toHaveCount(1);await expect(top.getByRole('button',{name,exact:true})).toBeVisible();
-   const b=(await action.boundingBox())!;expect(b.y).toBeGreaterThanOrEqual(t.y);expect(b.y+b.height).toBeLessThanOrEqual(64);expect(b.x).toBeGreaterThan(width-380);
+  const boxes=await Promise.all([palette,canvas,properties].map(el=>el.boundingBox()));const [p,c,a]=boxes.map(b=>b!);
+  const well=(await page.getByTestId('workspace-content-well').boundingBox())!;
+  expect(Math.abs(p.width-196)).toBeLessThanOrEqual(1);expect(Math.abs(a.width-336)).toBeLessThanOrEqual(1);
+  expect(Math.abs(p.y-c.y)).toBeLessThanOrEqual(1);expect(Math.abs(a.y-c.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(c.x-p.x-p.width-16)).toBeLessThanOrEqual(1);expect(Math.abs(a.x-c.x-c.width-16)).toBeLessThanOrEqual(1);
+  expect(p.x).toBeGreaterThanOrEqual(well.x);expect(a.x+a.width).toBeLessThanOrEqual(well.x+well.width);expect(c.width).toBeGreaterThanOrEqual(300);
+  for(const el of [palette,canvas,properties]){
+   const style=await el.evaluate(n=>({background:getComputedStyle(n).backgroundColor,radius:parseFloat(getComputedStyle(n).borderTopLeftRadius)}));
+   expect(style.background).toBe('rgb(255, 255, 255)');expect(style.radius).toBe(16);
   }
-  await expect(canvas.getByRole('heading')).toHaveCount(0);
-  await expect(page.getByText('拖拽或用键盘添加字段，保存后才会生效',{exact:true})).toHaveCount(0);
-  await expect(page.locator('.forms-designer-navigation')).toHaveCount(0);
-  const styles=await Promise.all([palette,canvas,properties].map(el=>el.evaluate(n=>getComputedStyle(n).backgroundColor)));
-  expect(styles).toEqual(['rgb(255, 255, 255)','rgb(255, 255, 255)','rgb(255, 255, 255)']);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await expect(page.getByTestId('workspace-shell')).toHaveCount(1);
-  await page.screenshot({path:test.info().outputPath('focused-designer-'+width+'.png'),fullPage:true});
+  await page.screenshot({path:test.info().outputPath('designer-'+width+'.png'),fullPage:true});
  });
 }
 test('Root Mono designer retains palette, neutral selection and preview source focus',async({page})=>{
@@ -97,38 +86,4 @@ test('Root Mono designer narrow reduced-motion remains editable without page ove
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.getByRole('button',{name:'预览',exact:true}).click();await expect(page.getByRole('dialog',{name:'表单预览',exact:true})).toBeVisible();
  await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toHaveCount(0);await expect(name).toHaveValue('小屏仍可编辑');
-});
-
-test('Root focused designer exit keeps unsaved edits until explicit discard',async({page})=>{
- await page.setViewportSize({width:1440,height:1000});const api=await fixture(page);await page.goto(routePath+'/design');
- await page.getByRole('region',{name:'字段面板'}).getByRole('button',{name:'文本',exact:true}).click();
- await page.getByLabel('字段名称',{exact:true}).fill('退出前的草稿');
- await page.locator('.mono-top').getByRole('button',{name:'退出',exact:true}).click();
- const dialog=page.getByRole('dialog',{name:'结构或布局尚未保存',exact:true});await expect(dialog).toBeVisible();
- await dialog.getByRole('button',{name:'继续编辑',exact:true}).click();
- await expect(dialog).toBeHidden();await expect(page.getByLabel('字段名称',{exact:true})).toHaveValue('退出前的草稿');
- await page.locator('.mono-top').getByRole('button',{name:'退出',exact:true}).click();
- await dialog.getByRole('button',{name:'放弃修改并离开',exact:true}).click();
- await expect(page).toHaveURL(new RegExp(routePath+'$'));await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
- await expect(page.getByRole('navigation',{name:'应用导航',exact:true})).toBeVisible();
- await expect(page.getByTestId('workspace-shell')).toHaveCount(1);
- expect(api.calls.filter(c=>c.method!=='GET'&&!(c.method==='POST'&&c.path===formPath+'/records/search'))).toHaveLength(0);
-});
-test('Root focused designer header save waits for preflight and preserves edit on rejection',async({page})=>{
- await page.setViewportSize({width:1440,height:1000});await fixture(page);
- let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});let seen=0;
- await page.route('**/api/v1/'+formPath+'/definition/preflight',async route=>{seen++;await gate;await route.fulfill({status:400,json:{code:'INVALID_INPUT',data:null}});});
- await page.goto(routePath+'/design');
- await page.getByRole('region',{name:'字段面板'}).getByRole('button',{name:'文本',exact:true}).click();
- await page.getByLabel('字段名称',{exact:true}).fill('等待确认的字段');
- await page.locator('.mono-top').getByRole('button',{name:'保存',exact:true}).click();
- try{
-  await expect.poll(()=>seen).toBe(1);
-  await expect(page.getByText('正在预检…',{exact:true})).toBeVisible();
-  await expect(page.locator('.mono-top').getByRole('button',{name:'保存',exact:true})).toBeDisabled();
-  await expect(page.getByText('已保存',{exact:true})).toHaveCount(0);
- }finally{release();}
- await expect(page.getByRole('alert')).toContainText('输入不符合字段或布局规则');
- await expect(page.getByLabel('字段名称',{exact:true})).toHaveValue('等待确认的字段');
- await expect(page.locator('.mono-top').getByRole('button',{name:'保存',exact:true})).toBeEnabled();
 });

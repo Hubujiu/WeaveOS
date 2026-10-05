@@ -88,3 +88,45 @@
 /* Override the legacy workspace checkbox chrome only inside these controls. */
 .workspace :is(.forms-designer,.forms-dialog,.forms-rendered-field) input[type=checkbox] { width:16px;height:16px;min-height:0;padding:0;border-color:var(--forms-line);border-radius:4px; }
 .workspace :is(.forms-designer,.forms-dialog,.forms-rendered-field) input[type=checkbox]:checked { background-color:var(--forms-ink);border-color:var(--forms-ink); }
+
+/* Portal content retains the designer's controls and state, with Shell-scoped tokens. */
+.mono-designer-shell .forms-panel { box-sizing:border-box;color:var(--forms-ink);background:#fff; }
+.mono-designer-shell .forms-palette { width:100%;min-height:100%;padding:12px 16px 16px;border:0;border-radius:0;overflow:visible; }
+.mono-designer-shell .forms-palette>div { grid-template-columns:minmax(0,1fr);gap:4px; }
+.mono-designer-shell .forms-palette h2 { font-size:16px;font-weight:500;margin-bottom:12px; }
+.mono-designer-shell .forms-palette button { display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:6px 12px;border:0;border-radius:8px;background:#fff;color:var(--forms-ink);text-align:left;font:inherit; }
+.mono-designer-shell .forms-palette button svg { flex:none; }
+.mono-designer-shell .forms-palette button:hover { background:var(--forms-pale); }
+.mono-designer-shell .forms-properties { width:100%;min-height:100%;padding:32px 24px 24px;border:0;border-radius:0;overflow-wrap:anywhere; }
+.mono-designer-shell .forms-properties label { color:var(--forms-muted);font-size:12px;gap:8px;margin:16px 0; }
+.mono-designer-shell .forms-properties input,.mono-designer-shell .forms-properties select,.mono-designer-shell .forms-properties textarea { box-sizing:border-box;min-width:0;max-width:100%;min-height:42px;padding:10px 12px;border-color:var(--forms-line);border-radius:8px;color:var(--forms-ink);font-size:14px; }
+.mono-designer-shell .forms-properties input[type=checkbox] { width:16px;height:16px;min-height:0;padding:0;border-color:var(--forms-line);border-radius:4px;accent-color:var(--forms-ink); }
+.mono-designer-shell .forms-properties input[type=checkbox]:checked { background-color:var(--forms-ink);border-color:var(--forms-ink); }
+.mono-designer-shell .forms-danger { color:var(--forms-ink)!important; }
+.mono-designer-shell .forms-option-row>input { flex:1;min-width:0; }
+.mono-designer-shell .forms-properties h2 { font-size:16px;font-weight:500; }
+.mono-designer-shell .forms-properties :focus-visible,.mono-designer-shell .forms-palette :focus-visible { outline:2px solid var(--forms-ink);outline-offset:3px; }
+.forms-designer-focused { padding:0;min-height:0;width:100%;background:transparent; }
+.forms-designer-focused .forms-canvas { min-height:calc(100dvh - 128px);padding:32px;background:#fff;border-radius:16px; }
+.forms-designer-focused .forms-canvas-grid { gap:24px; }
+.forms-designer-focused .forms-canvas-node { border-color:transparent;padding:0; }
+.forms-designer-focused .forms-canvas-node.selected { padding:12px;background:var(--forms-pale);box-shadow:none; }
+.forms-designer-focused .forms-canvas-control .forms-field-label { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
+.forms-focused-context { min-width:0;gap:8px;color:var(--mono-secondary);font-size:14px; }
+.forms-focused-context strong { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400; }
+.forms-focused-actions { display:flex;align-items:center;gap:8px; }
+.forms-focused-actions button { min-height:40px;width:80px;border:1px solid var(--forms-line);border-radius:8px;background:#fff;color:var(--forms-ink);padding:8px;font:inherit; }
+.forms-focused-actions button:first-child { border-color:transparent; }
+.forms-focused-actions .forms-primary { width:96px;background:var(--forms-ink);color:#fff; }
+.forms-focused-actions button:disabled { opacity:.5;cursor:not-allowed; }
+.forms-operation-actions { display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px; }
+@media(max-width:1000px) {
+ .mono-designer-shell .forms-palette { min-height:0; }
+ .mono-designer-shell .forms-palette>div { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .mono-designer-shell .forms-properties { min-height:0;padding:24px 16px; }
+ .forms-designer-focused .forms-canvas { min-height:320px;padding:16px; }
+ .forms-focused-actions { flex-wrap:wrap; }
+ .forms-focused-actions button { width:64px; }
+ .forms-focused-actions .forms-primary { width:72px; }
+ .forms-focused-context { font-size:12px; }
+}

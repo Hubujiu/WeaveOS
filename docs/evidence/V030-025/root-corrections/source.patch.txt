@@ -1,0 +1,66 @@
+commit e44de4ee8bab8576cccd0d798990e50330b4a2b8
+Author: Hubujiu <xiaoyuliu599@gmail.com>
+Date:   Sun Oct 4 19:37:09 2026 -0700
+
+    test(V030-025): preserve read-only return queries and new editor navigation oracle
+
+diff --git a/apps/web/src/applications.form-shell.component.spec.ts b/apps/web/src/applications.form-shell.component.spec.ts
+index 4c50766..1f1f994 100644
+--- a/apps/web/src/applications.form-shell.component.spec.ts
++++ b/apps/web/src/applications.form-shell.component.spec.ts
+@@ -46,7 +46,8 @@ test('V030-012 Shell opens the real structure and form view under one app tab',
+  await page.getByRole('button', { name: '配置表单 请假申请' }).click();
+  await expect(page).toHaveURL(new RegExp('/app/applications/' + appId + '/forms/' + viewId + '/design$'));
+  await expect(page.getByRole('region', { name: '表单设计器' })).toBeVisible();
+- await expect(page.getByRole('tab', { name: '当前表单' })).toHaveAttribute('aria-selected', 'true');
++ await expect(page.locator('.mono-top').getByText(form.name, { exact: true })).toBeVisible();
++ await expect(page.locator('.mono-top').getByRole('button', { name: '退出', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '关闭应用：' + application.name })).toHaveCount(1);
+ });
+ 
+diff --git a/apps/web/src/root-monochrome-designer.component.spec.ts b/apps/web/src/root-monochrome-designer.component.spec.ts
+index 00c403a..9467750 100644
+--- a/apps/web/src/root-monochrome-designer.component.spec.ts
++++ b/apps/web/src/root-monochrome-designer.component.spec.ts
+@@ -112,7 +112,7 @@ test('Root focused designer exit keeps unsaved edits until explicit discard',asy
+  await expect(page).toHaveURL(new RegExp(routePath+'$'));await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
+  await expect(page.getByRole('navigation',{name:'应用导航',exact:true})).toBeVisible();
+  await expect(page.getByTestId('workspace-shell')).toHaveCount(1);
+- expect(api.calls.filter(c=>c.method!=='GET')).toHaveLength(0);
++ expect(api.calls.filter(c=>c.method!=='GET'&&!(c.method==='POST'&&c.path===formPath+'/records/search'))).toHaveLength(0);
+ });
+ test('Root focused designer header save waits for preflight and preserves edit on rejection',async({page})=>{
+  await page.setViewportSize({width:1440,height:1000});await fixture(page);
+diff --git a/apps/web/src/root-record-shell.component.spec.ts b/apps/web/src/root-record-shell.component.spec.ts
+index d59ce95..cdde2e9 100644
+--- a/apps/web/src/root-record-shell.component.spec.ts
++++ b/apps/web/src/root-record-shell.component.spec.ts
+@@ -137,7 +137,7 @@ test('Root owner returns from configuration to the runtime page that opened it',
+  const shell=await page.getByTestId('application-shell').elementHandle();
+  await page.getByRole('button',{name:'配置表单',exact:true}).click();await expect(page).toHaveURL(new RegExp(routePath+'/design$'));
+  await expect(page.getByRole('region',{name:'表单设计器'})).toBeVisible();
+- await page.getByRole('button',{name:'返回工作台',exact:true}).click();await expect(page).toHaveURL(new RegExp(routePath+'$'));
++ await page.locator('.mono-top').getByRole('button',{name:'退出',exact:true}).click();await expect(page).toHaveURL(new RegExp(routePath+'$'));
+  await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();expect(await shell!.evaluate(node=>node.isConnected)).toBe(true);
+ });
+ 
+diff --git a/docs/tasks/V030-025.md b/docs/tasks/V030-025.md
+index 28f481f..65419fc 100644
+--- a/docs/tasks/V030-025.md
++++ b/docs/tasks/V030-025.md
+@@ -1,7 +1,7 @@
+ # V030-025 · 表单设计器专注编辑布局
+ 
+ <!-- task-meta
+-{"id":"V030-025","title":"表单设计器专注编辑布局","branch":"task/V030-025-focused-designer","worktree":"../WeaveOS-worktrees/V030-025","pr":null,"owner":"Root设计测试验收；GPT-6.1-sol实现","dependsOn":[],"allowedPaths":["apps/web/src/root-monochrome-designer.component.spec.ts","apps/web/src/WorkspaceShell.tsx","apps/web/src/applications/shell/AppShell.tsx","apps/web/src/applications/shell/DesignerSlots.tsx","apps/web/src/applications/ApplicationWorkspace.tsx","apps/web/src/applications/forms/FormDesigner.tsx","apps/web/src/applications/forms/forms.css","apps/web/src/applications/applications.css","apps/web/src/monochrome.css","docs/tasks/V030-025.md","docs/tasks/index.md","docs/evidence/V030-025/"],"deliveryState":"in_progress"}
++{"id":"V030-025","title":"表单设计器专注编辑布局","branch":"task/V030-025-focused-designer","worktree":"../WeaveOS-worktrees/V030-025","pr":null,"owner":"Root设计测试验收；GPT-6.1-sol实现","dependsOn":[],"allowedPaths":["apps/web/src/root-record-shell.component.spec.ts","apps/web/src/applications.form-shell.component.spec.ts","apps/web/src/root-monochrome-designer.component.spec.ts","apps/web/src/WorkspaceShell.tsx","apps/web/src/applications/shell/AppShell.tsx","apps/web/src/applications/shell/DesignerSlots.tsx","apps/web/src/applications/ApplicationWorkspace.tsx","apps/web/src/applications/forms/FormDesigner.tsx","apps/web/src/applications/forms/forms.css","apps/web/src/applications/applications.css","apps/web/src/monochrome.css","docs/tasks/V030-025.md","docs/tasks/index.md","docs/evidence/V030-025/"],"deliveryState":"in_progress"}
+ -->
+ 
+ ## Sources
+@@ -30,3 +30,6 @@ Exit invokes existing designer leave path and returns to recorded entry route. P
+ 
+ ## Next command
+ Run Root tests with the repository's default pinned Playwright runtime; report RED before implementation. No sandbox or security overrides. Preserve evidence under docs/evidence/V030-025. Scope gaps/test fixture issues return to Root.
++
++## Root test corrections — 2026-10-05
++The new dirty-exit test must permit exactly POST on the current form's /records/search after returning to the runtime page: it is a read-only query and not a write. All other non-GET calls remain forbidden. Existing return-navigation test now clicks the explicitly requested top-bar Exit instead of removed Return-to-workspace label; source-route and persistent-shell assertions remain. Existing form-shell test replaces removed Current form tab with actual form name and Exit in top context. These are independently grounded in the new user layout, not permission or behavior relaxations.

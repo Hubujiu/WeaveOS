@@ -112,7 +112,7 @@ test('Root focused designer exit keeps unsaved edits until explicit discard',asy
  await expect(page).toHaveURL(new RegExp(routePath+'$'));await expect(page.getByRole('region',{name:'字段面板'})).toHaveCount(0);
  await expect(page.getByRole('navigation',{name:'应用导航',exact:true})).toBeVisible();
  await expect(page.getByTestId('workspace-shell')).toHaveCount(1);
- expect(api.calls.filter(c=>c.method!=='GET'&&!(c.method==='POST'&&c.path===formPath+'/records/search'))).toHaveLength(0);
+ expect(api.calls.filter(c=>c.method!=='GET')).toHaveLength(0);
 });
 test('Root focused designer header save waits for preflight and preserves edit on rejection',async({page})=>{
  await page.setViewportSize({width:1440,height:1000});await fixture(page);

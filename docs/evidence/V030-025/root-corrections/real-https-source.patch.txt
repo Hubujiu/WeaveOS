@@ -1,0 +1,39 @@
+commit b098f107bf537737fa3ff373671acab3e645bebd
+Author: Hubujiu <xiaoyuliu599@gmail.com>
+Date:   Sun Oct 4 20:37:50 2026 -0700
+
+    test(V030-025): follow approved header exit in real HTTPS journey
+
+diff --git a/docs/tasks/V030-025.md b/docs/tasks/V030-025.md
+index 82b8b38..e54f2a9 100644
+--- a/docs/tasks/V030-025.md
++++ b/docs/tasks/V030-025.md
+@@ -1,7 +1,7 @@
+ # V030-025 · 表单设计器专注编辑布局
+ 
+ <!-- task-meta
+-{"id":"V030-025","title":"表单设计器专注编辑布局","branch":"task/V030-025-focused-designer","worktree":"../WeaveOS-worktrees/V030-025","pr":36,"owner":"Root设计测试验收；GPT-6.1-sol实现","dependsOn":[],"allowedPaths":["apps/web/src/root-record-shell.component.spec.ts","apps/web/src/applications.form-shell.component.spec.ts","apps/web/src/root-monochrome-designer.component.spec.ts","apps/web/src/WorkspaceShell.tsx","apps/web/src/applications/shell/AppShell.tsx","apps/web/src/applications/shell/DesignerSlots.tsx","apps/web/src/applications/ApplicationWorkspace.tsx","apps/web/src/applications/forms/FormDesigner.tsx","apps/web/src/applications/forms/forms.css","apps/web/src/applications/applications.css","apps/web/src/monochrome.css","docs/tasks/V030-025.md","docs/tasks/index.md","docs/evidence/V030-025/"],"deliveryState":"in_progress"}
++{"id":"V030-025","title":"表单设计器专注编辑布局","branch":"task/V030-025-focused-designer","worktree":"../WeaveOS-worktrees/V030-025","pr":36,"owner":"Root设计测试验收；GPT-6.1-sol实现","dependsOn":[],"allowedPaths":["tests/acceptance/applications-web.spec.ts","apps/web/src/root-record-shell.component.spec.ts","apps/web/src/applications.form-shell.component.spec.ts","apps/web/src/root-monochrome-designer.component.spec.ts","apps/web/src/WorkspaceShell.tsx","apps/web/src/applications/shell/AppShell.tsx","apps/web/src/applications/shell/DesignerSlots.tsx","apps/web/src/applications/ApplicationWorkspace.tsx","apps/web/src/applications/forms/FormDesigner.tsx","apps/web/src/applications/forms/forms.css","apps/web/src/applications/applications.css","apps/web/src/monochrome.css","docs/tasks/V030-025.md","docs/tasks/index.md","docs/evidence/V030-025/"],"deliveryState":"in_progress"}
+ -->
+ 
+ ## Sources
+@@ -51,3 +51,6 @@ Root e44de4ee authored exactly three independent test-oracle corrections, cherry
+ 
+ ### Frozen delivery evidence
+ Final source under test f2dbd966735c503ce299eca59212af62a7b15927: Root6/6 PASS; all forms234/234 PASS across Chromium/Firefox/WebKit (3.6m); complete original default1worker config500PASS/1existingSKIP/0FAIL (13.4m), exit0. Typecheck/build PASS;240governance/foundation PASS; task/repository checks PASS. All501 cases run with no test timeout/selector/security changes. Logs and runtime/source/results manifest in docs/evidence/V030-025.15 screenshots and hashes committed; Library upload succeeded. Original4worker partial conflicts retained as history, not final failures. Worker assertion changes0; Root source corrections e44de4e independently reviewed. CI checked after this final evidence commit; visual/source acceptance remains Root-owned, task not accepted, main/deployment untouched.
++
++### Root real-service navigation oracle correction
++Exact f8b8a575 product job111596833132 reached the real HTTPS journey and failed in all three browsers at applications-web.spec.ts414 waiting for removed Return-to-workspace. Source user request explicitly relocated/renamed this action to top-bar Exit. Root changes only this selector; all real save/HTTP200/record create/edit/persisted-value/source-route/Shell assertions remain unchanged. Keep original failed job log. No production code or timeout change. Full corrected final-head product CI still required; do not claim readiness from earlier component results.
+diff --git a/tests/acceptance/applications-web.spec.ts b/tests/acceptance/applications-web.spec.ts
+index 067f41d..46c0acf 100644
+--- a/tests/acceptance/applications-web.spec.ts
++++ b/tests/acceptance/applications-web.spec.ts
+@@ -411,7 +411,7 @@ test('Root real HTTPS full journey creates an application, saves a form, and cre
+  const definitionResponse=page.waitForResponse(r=>r.request().method()==='PUT'&&new URL(r.url()).pathname==='/api/v1/applications/'+app.id+'/forms/'+form.id+'/definition');
+  await page.getByRole('button',{name:'保存',exact:true}).click();expect((await definitionResponse).status()).toBe(200);
+  await expect(page.getByRole('status').filter({hasText:'已保存'})).toBeVisible();
+- await page.getByRole('button',{name:'返回工作台',exact:true}).click();
++ await page.locator('.mono-top').getByRole('button',{name:'退出',exact:true}).click();
+  await page.getByRole('button',{name:'打开表单 '+formName,exact:true}).click();await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();
+  if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-empty-list.png'),fullPage:true});
+  const prefix='applications/'+app.id+'/forms/'+form.id;
