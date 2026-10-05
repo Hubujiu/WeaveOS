@@ -60,6 +60,44 @@ type Conflict struct {
 	Version                         int64
 }
 
+// PublicationVersion is a locked catalog snapshot, never a public DTO. A zero
+// requested version selects the current candidate. The caller owns the tx.
+type PublicationVersion struct {
+	Head                      Head
+	CloseEpoch, SchemaVersion int64
+	Version, VersionSchema    int64
+	VersionID, BPMN           string
+	Graph                     flowgraph.Graph
+	Compatible                bool
+}
+
+func (Catalog) PublicationVersionInTx(ctx context.Context, tx pgx.Tx, appID, flowID string, version int64) (PublicationVersion, error) {
+	h, resources, err := lockFlow(ctx, tx, appID, flowID, false)
+	if err != nil {
+		return PublicationVersion{}, err
+	}
+	if version == 0 {
+		version = h.CandidateVersion
+	}
+	v := PublicationVersion{Head: h, SchemaVersion: resources.schemaVersion, Version: version}
+	var raw []byte
+	if err = tx.QueryRow(ctx, `SELECT close_epoch FROM applications.workflow_definitions WHERE app_id=$1 AND id=$2`, appID, flowID).Scan(&v.CloseEpoch); err != nil {
+		return v, err
+	}
+	if err = tx.QueryRow(ctx, `SELECT version_id::text,schema_version,bpmn_xml,graph_json FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2 AND version=$3`, appID, flowID, version).Scan(&v.VersionID, &v.VersionSchema, &v.BPMN, &raw); err != nil {
+		return v, mapDBError(err)
+	}
+	v.Graph, err = decodeGraph(raw)
+	if err != nil {
+		return v, ErrNotReady
+	}
+	if resources.ready {
+		_, validation := flowgraph.Validate(v.Graph, resources.fields)
+		v.Compatible = validation == nil
+	}
+	return v, nil
+}
+
 type resourceSnapshot struct {
 	fields        []appquery.Field
 	schemaVersion int64
@@ -281,7 +319,7 @@ func (Catalog) RequestCloseInTx(ctx context.Context, tx pgx.Tx, appID, flowID st
 		return Head{}, ErrConflict
 	}
 	_, err = tx.Exec(ctx, `UPDATE applications.workflow_definitions SET state=$3,revision=revision+1,
-		updated_at=clock_timestamp() WHERE app_id=$1 AND id=$2`, appID, flowID, state)
+		close_epoch=close_epoch+1,updated_at=clock_timestamp() WHERE app_id=$1 AND id=$2`, appID, flowID, state)
 	if err != nil {
 		return Head{}, mapDBError(err)
 	}

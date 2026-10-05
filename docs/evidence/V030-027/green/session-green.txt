@@ -1,0 +1,33 @@
+=== RUN   TestRedisTransportHonorsCallerDeadline
+--- PASS: TestRedisTransportHonorsCallerDeadline (0.15s)
+=== RUN   TestSessionDialFailureDoesNotRetryAuthenticationTransport
+redis: 2026/10/05 04:03:56 pool.go:762: redis: connection pool: failed to dial after 1 attempts: dial tcp 127.0.0.1:42297: connect: connection refused
+--- PASS: TestSessionDialFailureDoesNotRetryAuthenticationTransport (0.00s)
+=== RUN   TestLifecycleUsesRealRedisAndClosesClient
+--- PASS: TestLifecycleUsesRealRedisAndClosesClient (0.00s)
+=== RUN   TestAuthenticationChecksRealCurrentUserAndBoundWrites
+    authenticate_test.go:32: test Redis must be local: "weaveos-v027-redis:6379"
+--- FAIL: TestAuthenticationChecksRealCurrentUserAndBoundWrites (0.02s)
+=== RUN   TestUninitializedSessionStoreFailsClosed
+--- PASS: TestUninitializedSessionStoreFailsClosed (0.00s)
+=== RUN   TestHostCookiesAndClearing
+--- PASS: TestHostCookiesAndClearing (0.00s)
+=== RUN   TestCreateLoadUsesApprovedRedisShapeAndOneHourTTL
+    store_test.go:135: test Redis must be local: "weaveos-v027-redis:6379"
+--- FAIL: TestCreateLoadUsesApprovedRedisShapeAndOneHourTTL (0.00s)
+=== RUN   TestTouchSlidesTTLButNeverRevivesRevokedSession
+    store_test.go:176: test Redis must be local: "weaveos-v027-redis:6379"
+--- FAIL: TestTouchSlidesTTLButNeverRevivesRevokedSession (0.00s)
+=== RUN   TestConcurrentTouchAndRevokeCannotResurrectSession
+    store_test.go:212: test Redis must be local: "weaveos-v027-redis:6379"
+--- FAIL: TestConcurrentTouchAndRevokeCannotResurrectSession (0.00s)
+=== RUN   TestLoadRejectsTrailingJSONDocument
+    store_test.go:248: test Redis must be local: "weaveos-v027-redis:6379"
+--- FAIL: TestLoadRejectsTrailingJSONDocument (0.00s)
+=== RUN   TestTouchRefusesCorruptedTimestampsWithoutRenewingTTL
+    store_test.go:268: test Redis must be local: "weaveos-v027-redis:6379"
+--- FAIL: TestTouchRefusesCorruptedTimestampsWithoutRenewingTTL (0.00s)
+=== RUN   TestLoadAndTouchRejectOverlongTTL
+    store_test.go:308: test Redis must be local: "weaveos-v027-redis:6379"
+--- FAIL: TestLoadAndTouchRejectOverlongTTL (0.00s)
+FAIL

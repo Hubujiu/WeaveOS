@@ -1,6 +1,6 @@
 {
   "backwardCompatible": true,
-  "source": "ADR-004 Q18, ADR-006 R3/Q25, ADR-007 Q36 query drafts/revision writers and accepted ADR-008 A1/A7 personal table presets. The administrator-installed fixed receiver/role policy must be upgraded together before migration promotion. Cold before hot; published migrations unchanged; compatible expansion and artifact rollback retain auth/personnel data and personal presets. B5a frozen limited applications expansion: cold00003 before hot00006; exact reviewed role pin; no production authorization. Accepted V030-013 structure/fields and V030-015 ADR11/13 shared expansion: cold00004 before hot00007-00012; typed records and save history, authoritative254 labels and actual active new-reference defaults. Accepted V030-018 P2a record-command fence expansion: hot00013 only; exact reviewed role pin; Down refuses after epoch use. P2b formal workflow command ledger: hot00014 after hot00013; exact reviewed role pin; Down refuses when durable ledger history exists; no production authorization. V030-018 P2c formal workflow catalog: hot00015 adds immutable definition versions/deployment receipts, bounded instance lifecycle and a guarded nonempty Down; exact reviewed runtime role pin. V030-020 P2e adds hot00016 workflow management operation kinds after hot00015; exact reviewed runtime role pin; Down refuses once workflow-management operation history exists. V030-020 cold00005 extends archive workflow-management audit checks before hot00016; hot00016 adds the exact workflow audit branch and operation kinds; both Downs refuse after matching durable history, and preserve all pre-existing checks and records.",
+  "source": "ADR-004 Q18, ADR-006 R3/Q25, ADR-007 Q36 query drafts/revision writers and accepted ADR-008 A1/A7 personal table presets. The administrator-installed fixed receiver/role policy must be upgraded together before migration promotion. Cold before hot; published migrations unchanged; compatible expansion and artifact rollback retain auth/personnel data and personal presets. B5a frozen limited applications expansion: cold00003 before hot00006; exact reviewed role pin; no production authorization. Accepted V030-013 structure/fields and V030-015 ADR11/13 shared expansion: cold00004 before hot00007-00012; typed records and save history, authoritative254 labels and actual active new-reference defaults. Accepted V030-018 P2a record-command fence expansion: hot00013 only; exact reviewed role pin; Down refuses after epoch use. P2b formal workflow command ledger: hot00014 after hot00013; exact reviewed role pin; Down refuses when durable ledger history exists; no production authorization. V030-018 P2c formal workflow catalog: hot00015 adds immutable definition versions/deployment receipts, bounded instance lifecycle and a guarded nonempty Down; exact reviewed runtime role pin. V030-020 P2e adds hot00016 workflow management operation kinds after hot00015; exact reviewed runtime role pin; Down refuses once workflow-management operation history exists. V030-020 cold00005 extends archive workflow-management audit checks before hot00016; hot00016 adds the exact workflow audit branch and operation kinds; both Downs refuse after matching durable history, and preserve all pre-existing checks and records. Accepted V030-027 reliable explicit publication: cold00006 before hot00017; finite immutable identity and full receipt history, leased dispatch, exact reviewed runtime role pin; Downs refuse durable publication or closing history. Source registration only; no production authorization.",
   "migrations": [
     {
       "path": "migrations/00001_auth.sql",
@@ -85,6 +85,14 @@
     {
       "path": "migrations/00016_workflow_management_operations.sql",
       "sha256": "f68d650947d665a7ccb905cd5c7d0d85dfe15b4dcc501c00066cd38c00b71929"
+    },
+    {
+      "path": "archive-migrations/00006_workflow_publication_audit.sql",
+      "sha256": "71f6539e37b16b9baba3531449faa7fc694de713282b097c56e472e6d470005c"
+    },
+    {
+      "path": "migrations/00017_workflow_publications.sql",
+      "sha256": "26dc61e4b3811862b66fd5db5ad0bff872e20284c83159744c3eb280486eb4fb"
     }
   ],
   "config": {
