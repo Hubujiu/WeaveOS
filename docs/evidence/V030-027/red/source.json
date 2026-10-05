@@ -1,0 +1,43 @@
+{
+  "root_commit": "b0351c5ae3a60fe568185ae48551c65dd35f8367",
+  "parent": "a093af1eec8ef8c2273953594ed229aaa36d85e1",
+  "observed_at": "2026-10-05T03:39:42.212898+00:00",
+  "files": [
+    {
+      "path": "services/bff/internal/appstructure/root_publication_http_test.go",
+      "sha256": "0dd616330e900dc43569d40586b203c844724a1776c9d1486b11dbfb21042222"
+    },
+    {
+      "path": "contracts/workflow-publication.test.mjs",
+      "sha256": "95efa7da067400457b307eed57b59b5807bc5323e3944eebc61393cb38d3e401"
+    },
+    {
+      "path": "services/bff/internal/appworkflows/publication.go",
+      "sha256": "1a44bf752008b3e7104c0baf45721cc8118797dcb9242951b28a9bd4a76f602d"
+    },
+    {
+      "path": "services/bff/internal/appworkflows/http.go",
+      "sha256": "2b5e12624674f098a3938a62b554f84cfd7cb4f87b86aa616a2fcbbe0c7706b7"
+    }
+  ],
+  "commands": [
+    "GOTOOLCHAIN=local GOPATH=/tmp/v026-prep/gopath GOCACHE=/tmp/v026-prep/gocache /tmp/v026-prep/go/bin/go test -c -o /tmp/v027-prep/appstructure.test ./internal/appstructure",
+    "docker exec -w /repo/services/bff/internal/appstructure weaveos-v027-runner /evidence/appstructure.test -test.v -test.count=1 -test.run ^TestRootPublication",
+    "node --test contracts/workflow-publication.test.mjs"
+  ],
+  "results": {
+    "compile": 0,
+    "publication": {
+      "executed": 15,
+      "fail": 14,
+      "pass": 1,
+      "skip": 0,
+      "exit": 1
+    },
+    "contracts": {
+      "executed": 3,
+      "fail": 3,
+      "exit": 1
+    }
+  }
+}
