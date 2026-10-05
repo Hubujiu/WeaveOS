@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
@@ -595,5 +596,59 @@ func TestRootProjectionRuntimeEventsAreAppendOnly(t *testing.T) {
 	var yes bool
 	if e := f.runtime.QueryRow(f.ctx, "SELECT has_column_privilege(current_user,'applications.workflow_tasks','assignee_id','UPDATE')").Scan(&yes); e != nil || yes {
 		t.Fatalf("task identity mutable: %v", e)
+	}
+}
+
+func TestRootProjectionAssigneeMustBelongToVersionNode(t *testing.T) {
+	f := rootProjectionFixture(t)
+	c, p := f.accept(t, "start", "", "", 0, 0)
+	// f.other exists but is not assigned to this version's first approval node.
+	r, b := f.receipt(t, c, "active", "", f.task(t, f.first, f.other, 1))
+	tx, e := f.runtime.Begin(f.ctx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer tx.Rollback(f.ctx)
+	if _, e = (workflowprojection.Store{}).ApplyInTx(f.ctx, tx, c, p, r, b); !errors.Is(e, workflowprojection.ErrConflict) {
+		t.Fatalf("foreign node assignee accepted: %v", e)
+	}
+	if e = tx.Commit(f.ctx); e != nil {
+		t.Fatal(e)
+	}
+	f.state(t, "starting", 0, 0, 0, 0)
+	f.ledger(t, c, "pending", 1, 1)
+}
+func TestRootProjectionForeignInstanceDoesNotAcquireItsLock(t *testing.T) {
+	f := rootProjectionFixture(t)
+	other := rootProjectionFixture(t)
+	blocker, e := other.runtime.Begin(other.ctx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer blocker.Rollback(other.ctx)
+	var id string
+	if e = blocker.QueryRow(other.ctx, "SELECT id::text FROM applications.workflow_instances WHERE app_id=$1 AND id=$2 FOR UPDATE", other.app, other.instance.ID).Scan(&id); e != nil {
+		t.Fatal(e)
+	}
+	c, p := f.accept(t, "start", "", "", 0, 0)
+	c.InstanceID = other.instance.ID
+	r, b := f.receipt(t, c, "active", "", f.task(t, f.first, f.actor, 1))
+	ctx, cancel := context.WithTimeout(f.ctx, 2*time.Second)
+	defer cancel()
+	tx, e := f.runtime.Begin(ctx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer tx.Rollback(context.Background())
+	if _, e = (workflowprojection.Store{}).ApplyInTx(ctx, tx, c, p, r, b); !errors.Is(e, workflowprojection.ErrConflict) {
+		t.Fatalf("cross-app lookup must reject without waiting on foreign row: %v", e)
+	}
+}
+func TestRootProjectionVisitedNodeHasScopedIndex(t *testing.T) {
+	f := rootProjectionFixture(t)
+	var yes bool
+	e := f.owner.QueryRow(f.ctx, `SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='applications' AND c.relname='workflow_tasks' AND i.indisvalid AND i.indpred IS NULL AND (SELECT array_agg(a.attname::text ORDER BY k.ord) FROM unnest(i.indkey::smallint[]) WITH ORDINALITY k(attnum,ord) JOIN pg_attribute a ON a.attrelid=c.oid AND a.attnum=k.attnum)=ARRAY['app_id','instance_id','node_id']::text[])`).Scan(&yes)
+	if e != nil || !yes {
+		t.Fatalf("visited-node lookup lacks bounded scoped index: %v", e)
 	}
 }

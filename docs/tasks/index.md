@@ -61,3 +61,4 @@ Go执行负载与结果验证：[V030-031](V030-031.md)，task/V030-031-executio
 执行RPC：[V030-032](V030-032.md)，task/V030-032-execution-rpc / ../WeaveOS-worktrees/V030-032；精确JavaB b6b10080 + Go codec888ac429，[Draft PR43](https://github.com/Hubujiu/WeaveOS/pull/43) base为JavaB。Root亲写合同/测试并已核验真实RED、三文件源码及本地GREEN；冻结测试/契约保持不变，等待最终固定head全部8项远端CI。未整合V027运行接线，无main合并/部署。
 
 显式发布与可靠恢复：[V030-027](V030-027.md)，draft [PR#38](https://github.com/Hubujiu/WeaveOS/pull/38)，task/V030-027-publication / ../WeaveOS-worktrees/V030-027；叠在冻结 V026，Root合同与19项真实存储/HTTP测试，执行者实现持久发布编排。后台同请求重试和最终权限/结构/关闭复查已明确确认；生产配置、main合并与部署另行授权。
+业务执行结果原子投影：[V030-033](V030-033.md)，task/V030-033-execution-projection；整合执行RPC与显式发布，Root亲写契约/测试并负责debug，执行者只按指令实现；最终head远端CI待核验，无main合并或部署。

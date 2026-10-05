@@ -49,6 +49,7 @@ CREATE TABLE applications.workflow_tasks (
 CREATE INDEX ix_workflow_tasks_active_instance ON applications.workflow_tasks(app_id,instance_id,id) WHERE closed_command_id IS NULL;
 CREATE INDEX ix_workflow_tasks_inbox ON applications.workflow_tasks(app_id,assignee_id,created_at,id) WHERE closed_command_id IS NULL;
 CREATE INDEX ix_workflow_tasks_activation ON applications.workflow_tasks(app_id,instance_id,activation_epoch DESC,id);
+CREATE INDEX ix_workflow_tasks_visited ON applications.workflow_tasks(app_id,instance_id,node_id);
 REVOKE ALL ON applications.workflow_execution_events,applications.workflow_tasks FROM PUBLIC;
 
 -- +goose Down
