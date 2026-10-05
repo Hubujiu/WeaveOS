@@ -20,9 +20,18 @@ try{
  await page.waitForFunction(()=>document.querySelector('.sidebar').getBoundingClientRect().width===64);
  assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.nav-label')).display),'none');
  assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.main')).borderTopLeftRadius),'18px');
+ await page.mouse.move(700,100);
+ await page.waitForFunction(()=>getComputedStyle(document.querySelector('.expand-glyph')).opacity==='0');
+ assert.equal(await page.locator('.top #openSidebar').count(),0);
+ assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.brand-toggle .logo')).opacity),'1');
  await page.screenshot({path:out+'/sidebar-closed.png'});
+ await page.getByRole('button',{name:'展开侧边栏',exact:true}).hover();
+ await page.waitForFunction(()=>getComputedStyle(document.querySelector('.expand-glyph')).opacity==='1'&&getComputedStyle(document.querySelector('.brand-toggle .logo')).opacity==='0');
+ await page.screenshot({path:out+'/sidebar-hover.png'});
+ await page.screenshot({path:out+'/logo-hover-detail.png',clip:{x:0,y:0,width:420,height:180}});
  await page.getByRole('button',{name:'展开侧边栏',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('.sidebar').getBoundingClientRect().width===236);
+ assert.equal(await page.evaluate(()=>document.querySelector('.sidebar').scrollLeft),0);
  await page.getByRole('textbox',{name:'搜索记录',exact:true}).fill('梁宇凡');
  assert.equal(await page.locator('tbody tr').count(),2);
  await page.getByRole('textbox',{name:'搜索记录',exact:true}).fill('');
@@ -33,7 +42,7 @@ try{
  assert.equal(await page.locator('dialog').isVisible(),false);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  assert.deepEqual(errors,[]);
- const result={browser:browser.version(),viewport:{width:1440,height:960},deviceScaleFactor:2,rows:10,searchRows:2,collapse:true,collapsedSidebarWidth:64,mainLeftCornerRadius:18,expand:true,dialog:true,horizontalOverflow:false,pageErrors:errors};
+ const result={browser:browser.version(),viewport:{width:1440,height:960},deviceScaleFactor:2,rows:10,searchRows:2,collapse:true,logoDefault:true,logoHoverExpand:true,noHeaderExpandButton:true,collapsedSidebarWidth:64,mainLeftCornerRadius:18,expand:true,dialog:true,horizontalOverflow:false,pageErrors:errors};
  await writeFile(out+'/checks.json',JSON.stringify(result,null,2));
  console.log(JSON.stringify(result));
 } finally{await browser.close()}
