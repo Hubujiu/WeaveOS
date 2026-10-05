@@ -1,0 +1,51 @@
+=== RUN   TestRootPublicationSchemaAndRestrictedRoles
+    root_publication_http_test.go:75: missing required durable relation workflow_publications
+--- FAIL: TestRootPublicationSchemaAndRestrictedRoles (0.06s)
+=== RUN   TestRootPublicationAcceptsDurablyWithoutPublishingOnSave
+    root_publication_http_test.go:86: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"e503bd962071f19a663f0115551dafe5"}}
+--- FAIL: TestRootPublicationAcceptsDurablyWithoutPublishingOnSave (0.06s)
+=== RUN   TestRootPublicationReplayAndFingerprint
+    root_publication_http_test.go:94: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"38fe1116a5e6bf792acd70ac1cc249a4"}}
+--- FAIL: TestRootPublicationReplayAndFingerprint (0.06s)
+=== RUN   TestRootPublicationRPCDoesNotHoldApplicationOrFlowLocks
+    root_publication_http_test.go:101: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"fa3453bc03c5e5814a0d9e64713529e9"}}
+--- FAIL: TestRootPublicationRPCDoesNotHoldApplicationOrFlowLocks (0.06s)
+=== RUN   TestRootPublicationLostResponseRecoversSameIntent
+    root_publication_http_test.go:112: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"7f91a6d05659119db55eb08fc57dc2aa"}}
+--- FAIL: TestRootPublicationLostResponseRecoversSameIntent (0.06s)
+=== RUN   TestRootPublicationNewCandidateCannotBeOverwrittenByLateReceipt
+    root_publication_http_test.go:120: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"302500c822132443f31ca02ea6ae7245"}}
+--- FAIL: TestRootPublicationNewCandidateCannotBeOverwrittenByLateReceipt (0.06s)
+=== RUN   TestRootPublicationSchemaChangeBlocksActivationPermanently
+    root_publication_http_test.go:126: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"20c36200a943ee3403e7ce0879fbcc8b"}}
+--- FAIL: TestRootPublicationSchemaChangeBlocksActivationPermanently (0.06s)
+=== RUN   TestRootPublicationCloseEpochRejectsLateReceipt
+    root_publication_http_test.go:133: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"a02786fbe5cc2acfc11b23409829ba7c"}}
+--- FAIL: TestRootPublicationCloseEpochRejectsLateReceipt (0.06s)
+=== RUN   TestRootPublicationRequiresSessionCsrfAndExactActor
+--- PASS: TestRootPublicationRequiresSessionCsrfAndExactActor (0.06s)
+=== RUN   TestRootPublicationStrictPayloadRejectsExtraAndDuplicateKeys
+    root_publication_http_test.go:152: want 400 COMMON_INVALID_ARGUMENT got 404 {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"db9f7bebc508c08260b4bd532dc7669e"}}
+--- FAIL: TestRootPublicationStrictPayloadRejectsExtraAndDuplicateKeys (0.06s)
+=== RUN   TestRootPublicationAuthorityReturnRequiresFreshExplicitIntent
+    root_publication_http_test.go:158: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"8a915a79d912f74b0275340c4d72ed44"}}
+--- FAIL: TestRootPublicationAuthorityReturnRequiresFreshExplicitIntent (0.06s)
+=== RUN   TestRootPublicationBadReceiptNeverAdvancesVersion
+    root_publication_http_test.go:171: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"e4d1ef0c461cc16fdd7feca4d3a99131"}}
+--- FAIL: TestRootPublicationBadReceiptNeverAdvancesVersion (0.07s)
+=== RUN   TestRootPublicationExpiredLeaseCannotDoubleConfirm
+    root_publication_http_test.go:176: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"a265c9f0d25f55e2b91b9898d6c56266"}}
+--- FAIL: TestRootPublicationExpiredLeaseCannotDoubleConfirm (0.07s)
+=== RUN   TestRootPublicationAuditFailureRollsBackActivationAndRecovers
+    root_publication_http_test.go:187: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"cd039ea2537a3ec4c757664a14e18f8b"}}
+--- FAIL: TestRootPublicationAuditFailureRollsBackActivationAndRecovers (0.06s)
+=== RUN   TestRootPublicationBackgroundLoopRetriesWithoutBrowserResubmission
+    root_publication_http_test.go:203: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"18d68dbb801fbb45ac438a425914fc29"}}
+--- FAIL: TestRootPublicationBackgroundLoopRetriesWithoutBrowserResubmission (0.06s)
+=== RUN   TestRootPublicationAuditUsesExactIdentityAndFiniteStates
+    root_publication_http_test.go:218: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"2812abf759c1c1608c4eea301d19d455"}}
+--- FAIL: TestRootPublicationAuditUsesExactIdentityAndFiniteStates (0.06s)
+=== RUN   TestRootPublicationMigrationDownRefusesDurableHistory
+    root_publication_http_test.go:230: product contract status want 202 got 404: {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"3d3ccfff07d297667d69f34bacbc0824"}}
+--- FAIL: TestRootPublicationMigrationDownRefusesDurableHistory (0.06s)
+FAIL

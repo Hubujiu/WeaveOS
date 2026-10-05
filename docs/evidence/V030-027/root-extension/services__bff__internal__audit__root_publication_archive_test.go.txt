@@ -26,24 +26,17 @@ func TestRootPublicationHotColdConstraintsPreserveSafeShape(t *testing.T) {
 	}{{hot, "auth.authentication_events"}, {cold, "archive.authentication_events"}} {
 		insert := func(summary map[string]any, reason, object string) error {
 			raw, _ := json.Marshal(summary)
-			outcome := "success"
-			if summary["status"] == "blocked" {
-				outcome = "failure"
-			}
+			outcome := "success"; if summary["status"] == "blocked" { outcome = "failure" }
 			_, e := target.pool.Exec(ctx, "INSERT INTO "+target.table+"(id,occurred_at,event_type,outcome,actor_user_id,reason_code,request_id,object_type,object_id,change_summary) VALUES(gen_random_uuid(),'2026-10-04T00:00:00Z','application_structure_changed',$5,$1,$2,'workflow-shape',$3,'20000000-0000-4000-8000-000000000003',$4::jsonb)", actor, reason, object, raw, outcome)
 			return e
 		}
 		if e := insert(rootPublicationSummary(), "WORKFLOW_PUBLICATION_REQUESTED", "form"); e != nil {
 			t.Fatalf("%s rejected valid management metadata: %v", target.table, e)
 		}
-		for _, pair := range [][2]string{{"confirmed", "WORKFLOW_PUBLICATION_CONFIRMED"}, {"superseded", "WORKFLOW_PUBLICATION_SUPERSEDED"}, {"blocked", "WORKFLOW_PUBLICATION_BLOCKED"}} {
-			m := rootPublicationSummary()
-			m["status"] = pair[0]
-			m["action"] = "workflow.publish." + pair[0]
-			if e := insert(m, pair[1], "form"); e != nil {
-				t.Fatalf("%s rejected legitimate publication terminal %s: %v", target.table, pair[0], e)
-			}
-		}
+		for _, pair := range [][2]string{{"confirmed","WORKFLOW_PUBLICATION_CONFIRMED"},{"superseded","WORKFLOW_PUBLICATION_SUPERSEDED"},{"blocked","WORKFLOW_PUBLICATION_BLOCKED"}} {
+   m:=rootPublicationSummary(); m["status"]=pair[0];m["action"]="workflow.publish."+pair[0]
+   if e:=insert(m,pair[1],"form");e!=nil{t.Fatalf("%s rejected legitimate publication terminal %s: %v",target.table,pair[0],e)}
+  }
 		for name, mutate := range map[string]func(map[string]any){
 			"extra":                  func(m map[string]any) { m["secret"] = "must-not-archive" },
 			"missing":                func(m map[string]any) { delete(m, "flowId") },
