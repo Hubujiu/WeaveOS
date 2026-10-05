@@ -1,0 +1,93 @@
+=== RUN   TestB5RejectsCaseFoldedGrantFields
+=== RUN   TestB5RejectsCaseFoldedGrantFields/uppercase
+=== RUN   TestB5RejectsCaseFoldedGrantFields/alias
+--- PASS: TestB5RejectsCaseFoldedGrantFields (0.18s)
+    --- PASS: TestB5RejectsCaseFoldedGrantFields/uppercase (0.10s)
+    --- PASS: TestB5RejectsCaseFoldedGrantFields/alias (0.08s)
+=== RUN   TestB5CommitPgErrorAfterSuccessIsUnconfirmed
+=== RUN   TestB5CommitPgErrorAfterSuccessIsUnconfirmed/40003/create
+=== RUN   TestB5CommitPgErrorAfterSuccessIsUnconfirmed/40003/policy
+=== RUN   TestB5CommitPgErrorAfterSuccessIsUnconfirmed/23514/create
+=== RUN   TestB5CommitPgErrorAfterSuccessIsUnconfirmed/23514/policy
+--- PASS: TestB5CommitPgErrorAfterSuccessIsUnconfirmed (0.48s)
+    --- PASS: TestB5CommitPgErrorAfterSuccessIsUnconfirmed/40003/create (0.09s)
+    --- PASS: TestB5CommitPgErrorAfterSuccessIsUnconfirmed/40003/policy (0.15s)
+    --- PASS: TestB5CommitPgErrorAfterSuccessIsUnconfirmed/23514/create (0.09s)
+    --- PASS: TestB5CommitPgErrorAfterSuccessIsUnconfirmed/23514/policy (0.14s)
+=== RUN   TestB5UnconfirmedRetainsInternalPgErrorCause
+--- PASS: TestB5UnconfirmedRetainsInternalPgErrorCause (0.07s)
+=== RUN   TestB5ExplicitCommitRollbackIsDefinite
+--- PASS: TestB5ExplicitCommitRollbackIsDefinite (0.07s)
+=== RUN   TestB5UnknownCommitOriginalKeyRecovery
+--- PASS: TestB5UnknownCommitOriginalKeyRecovery (0.11s)
+=== RUN   TestB5CommittedWriteSurvivesRenewalRevocation
+--- PASS: TestB5CommittedWriteSurvivesRenewalRevocation (0.07s)
+=== RUN   TestB5AuditFailureRollsBackEntireCreate
+--- PASS: TestB5AuditFailureRollsBackEntireCreate (0.08s)
+=== RUN   TestB5ConcurrentCASAndIdenticalOperation
+--- PASS: TestB5ConcurrentCASAndIdenticalOperation (0.14s)
+=== RUN   TestB5SafeRevisionRequestBoundary
+--- PASS: TestB5SafeRevisionRequestBoundary (0.08s)
+=== RUN   TestB5NULNameIsInvalidAndLeavesNoOperation
+--- PASS: TestB5NULNameIsInvalidAndLeavesNoOperation (0.03s)
+=== RUN   TestB5FrozenSchemaAndCapability
+--- PASS: TestB5FrozenSchemaAndCapability (0.03s)
+=== RUN   TestB5CreateAtomicAndActorScopedOperation
+--- PASS: TestB5CreateAtomicAndActorScopedOperation (0.10s)
+=== RUN   TestB5OwnerMembersMenuAndRevoke
+--- PASS: TestB5OwnerMembersMenuAndRevoke (0.19s)
+=== RUN   TestB5EveryWriteReplayAndConflict
+--- PASS: TestB5EveryWriteReplayAndConflict (0.31s)
+=== RUN   TestB5SessionCSRFAndClosedPayload
+--- PASS: TestB5SessionCSRFAndClosedPayload (0.03s)
+=== RUN   TestB5CreateCapabilityDoesNotGrantOtherApp
+--- PASS: TestB5CreateCapabilityDoesNotGrantOtherApp (0.13s)
+=== RUN   TestB5RevokeFirstPreventsWaitingCreate
+=== RUN   TestB5RevokeFirstPreventsWaitingCreate/capability
+=== RUN   TestB5RevokeFirstPreventsWaitingCreate/account
+--- PASS: TestB5RevokeFirstPreventsWaitingCreate (0.11s)
+    --- PASS: TestB5RevokeFirstPreventsWaitingCreate/capability (0.06s)
+    --- PASS: TestB5RevokeFirstPreventsWaitingCreate/account (0.05s)
+=== RUN   TestB5WriteFirstProtectedUntilCommitThenRevoke
+--- PASS: TestB5WriteFirstProtectedUntilCommitThenRevoke (0.08s)
+=== RUN   TestB5CreateCapabilityViaPersonnelTemplate
+--- PASS: TestB5CreateCapabilityViaPersonnelTemplate (0.06s)
+=== RUN   TestB5ResourceOwnershipClosedGrantAndConfigurationReads
+--- PASS: TestB5ResourceOwnershipClosedGrantAndConfigurationReads (0.33s)
+=== RUN   TestB5SQLSameAppForeignKeysFixedOwnerAndCatalogPrivilege
+--- PASS: TestB5SQLSameAppForeignKeysFixedOwnerAndCatalogPrivilege (0.14s)
+=== RUN   TestB5OperationsRejectNullConfirmedStatus
+--- PASS: TestB5OperationsRejectNullConfirmedStatus (0.06s)
+=== RUN   TestB5ListHasTwoDataStatementsAtControlledScale
+=== RUN   TestB5ListHasTwoDataStatementsAtControlledScale/0
+    set_cost_test.go:139: B5_COST {"dataStatementCounts":[2,2,2,2,2],"kind":"list","latencyMs":[4.241,1.316,2.552,0.873,0.811],"medianMs":1.316,"scope":"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded","size":0}
+=== RUN   TestB5ListHasTwoDataStatementsAtControlledScale/10
+    set_cost_test.go:139: B5_COST {"dataStatementCounts":[2,2,2,2,2],"kind":"list","latencyMs":[4.407,1.257,0.979,0.98,0.89],"medianMs":0.98,"scope":"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded","size":10}
+=== RUN   TestB5ListHasTwoDataStatementsAtControlledScale/100
+    set_cost_test.go:139: B5_COST {"dataStatementCounts":[2,2,2,2,2],"kind":"list","latencyMs":[4.878,1.668,1.714,1.446,1.378],"medianMs":1.668,"scope":"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded","size":100}
+=== RUN   TestB5ListHasTwoDataStatementsAtControlledScale/1000
+    set_cost_test.go:139: B5_COST {"dataStatementCounts":[2,2,2,2,2],"kind":"list","latencyMs":[9.495,7.235,6.562,6.074,6.247],"medianMs":6.562,"scope":"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded","size":1000}
+--- PASS: TestB5ListHasTwoDataStatementsAtControlledScale (0.47s)
+    --- PASS: TestB5ListHasTwoDataStatementsAtControlledScale/0 (0.07s)
+    --- PASS: TestB5ListHasTwoDataStatementsAtControlledScale/10 (0.07s)
+    --- PASS: TestB5ListHasTwoDataStatementsAtControlledScale/100 (0.09s)
+    --- PASS: TestB5ListHasTwoDataStatementsAtControlledScale/1000 (0.24s)
+=== RUN   TestB5MemberReplacementHasConstantStatementsAtThousandMembers
+    set_cost_test.go:201: B5_COST {"dataStatementCounts":[19,19,19],"kind":"members.replace","latencyMs":[16.943,6.552,6.608],"medianMs":6.608,"scope":"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded","size":10}
+    set_cost_test.go:201: B5_COST {"dataStatementCounts":[19,19,19],"kind":"members.replace","latencyMs":[9.079,9.641,10.167],"medianMs":9.641,"scope":"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded","size":100}
+    set_cost_test.go:201: B5_COST {"dataStatementCounts":[19,19,19],"kind":"members.replace","latencyMs":[31.019,30.485,30.622],"medianMs":30.622,"scope":"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded","size":1000}
+--- PASS: TestB5MemberReplacementHasConstantStatementsAtThousandMembers (0.34s)
+=== RUN   TestB5GrantValidationIsOneCompleteTupleSetQuery
+--- PASS: TestB5GrantValidationIsOneCompleteTupleSetQuery (0.09s)
+=== RUN   TestB5SetListUsesCompleteCurrentAuthorizationFacts
+--- PASS: TestB5SetListUsesCompleteCurrentAuthorizationFacts (0.14s)
+=== RUN   TestB5SetListRetainsOneRRRevisionAndPolicySnapshot
+--- PASS: TestB5SetListRetainsOneRRRevisionAndPolicySnapshot (0.06s)
+=== RUN   TestB5SetMemberReplacementRejectsMissingUserAtomically
+--- PASS: TestB5SetMemberReplacementRejectsMissingUserAtomically (0.23s)
+=== RUN   TestB5GrantSetCostNormalizationAndAtomicReplacement
+    set_semantics_test.go:203: B5_COST {"dataStatementCounts":[20],"kind":"grants.replace.submitted","latencyMs":[53.368],"medianMs":53.368,"scope":"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded","size":1000}
+    set_semantics_test.go:203: B5_COST {"dataStatementCounts":[20],"kind":"grants.replace.submitted","latencyMs":[11.406],"medianMs":11.406,"scope":"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded","size":1}
+    set_semantics_test.go:203: B5_COST {"dataStatementCounts":[20],"kind":"grants.replace.submitted","latencyMs":[12.249],"medianMs":12.249,"scope":"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded","size":0}
+--- PASS: TestB5GrantSetCostNormalizationAndAtomicReplacement (0.12s)
+PASS

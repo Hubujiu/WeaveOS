@@ -25,8 +25,9 @@ import (
 )
 
 type Application struct {
-	Pool   *pgxpool.Pool
-	Limits appschema.Limits
+	Pool             *pgxpool.Pool
+	Limits           appschema.Limits
+	DeploymentClient DeploymentClient
 }
 
 type Service struct {
@@ -403,7 +404,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
 	parts := strings.Split(path, "/")
-	if path == r.URL.Path || len(parts) != 6 || parts[1] != "forms" || parts[3] != "workflows" {
+	if path == r.URL.Path || (len(parts) != 6 && len(parts) != 7) || parts[1] != "forms" || parts[3] != "workflows" {
 		writeEnvelope(w, r, http.StatusNotFound, "API_NOT_FOUND", nil)
 		return
 	}
@@ -417,6 +418,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch {
+	case r.Method == http.MethodGet && len(parts) == 7 && action == "publications":
+		s.publicationStatus(w, r, p, appID, viewID, flowID, parts[6])
+	case len(parts) != 6:
+		writeEnvelope(w, r, http.StatusNotFound, "API_NOT_FOUND", nil)
+	case r.Method == http.MethodPost && action == "publish":
+		s.publish(w, r, p, appID, viewID, flowID)
 	case r.Method == http.MethodGet && action == "definition":
 		s.getDefinition(w, r, p, appID, viewID, flowID)
 	case r.Method == http.MethodPut && action == "definition":
@@ -742,7 +749,7 @@ func authorizeAssignees(ctx context.Context, tx pgx.Tx, appID, viewID string, gr
 	for id := range assignees {
 		ids = append(ids, id)
 	}
-	rows, err := tx.Query(ctx, "SELECT id::text,status,is_bootstrap_admin FROM auth.users WHERE id=ANY($1::uuid[]) ORDER BY id", ids)
+	rows, err := tx.Query(ctx, "SELECT id::text,status,is_bootstrap_admin FROM auth.users WHERE id=ANY($1::uuid[]) ORDER BY id FOR SHARE", ids)
 	if err != nil {
 		return err
 	}

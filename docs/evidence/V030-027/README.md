@@ -1,0 +1,21 @@
+# V030-027 actual evidence
+
+Root owns all oracles. The original b0351c5 tests were compiled before implementation, then executed against a private real PG18/Redis fixture:15 executed,14 assertion failures,1 pre-existing authentication rejection passed; OpenAPI3 failed. `red/` retains source, stubs, hashes, exits and logs. Missing tables were asserted through to_regclass, not treated as fixture errors.
+
+Root1ffe added17 HTTP plus2 audit cases. `root-extension/` explicitly records chronology: migration drafts existed but were not applied when the new audit oracle arrived; its legitimate metadata failed old constraints23514. The later17 baseline replay used a previously compiled stub binary and unchanged old schema. It is not claimed as a pre-draft run.
+
+`implementation-checkpoint/` keeps the first16/17 run, shared global queue contamination and unchanged isolated worker pass. Root9987/f96 supplied only owned synthetic cleanup fixes; production global dispatch and all assertions remained unchanged. `green/source-equivalence.json` proves exact Root source or deterministic gofmt equivalence and unchanged V026 engine/RPC/proto/compiler/old proof trees.
+
+`green/` retains corrected17 HTTP race GREEN;2 audit race cases and3 OpenAPI cases passed. `final-checkpoint/` retains complete existing97 appstructure,20 audit (includes the2 new cases),29 applications,62 recordservice and12 Session top-level race results. A shared database archival conflict is retained; the97 rerun passes against a new cold6/hot17 pair. Session's initial private DNS guard rejection is preserved; loopback rerun uses the dedicated Redis network namespace without public ports. Build and final-source vet pass. Rounded summed test durations are costs of these synthetic checks, not request latency or production sizing.
+
+Fixture: locked existing Go1.27.1, PG18.6 and Redis8.2.10 images; internal `weaveos-v027-private` network, empty PortBindings, Privileged=false. No host network, new permissions, production credentials or database used. Compile uses `/tmp/v026-prep/go/bin/go` with existing isolated GOPATH/GOCACHE; test binaries execute in private runner with real database/Redis URLs. Root tests and all logs remain recoverable here.
+
+Draft PR38 targets V026. Final all-green CI is blocked by unapproved source paths: exact role digest registry, new migration compatibility registry, and Root's backup fixture migration list. Existing288 contract/governance check reports287 pass/1 stale-role-pin failure. No test or old assertion was weakened. PR creation does not mean acceptance. Separate V026 real-RPC proof is unchanged; these V027 fake-peer tests prove orchestration only, not the full backend business action chain or production worker wiring.
+
+`SHA256SUMS` covers all other evidence files. Request future verification by regenerating hashes and matching Root source/gofmt snapshots, then rerunning unchanged tests on fresh isolated fixtures. No main merge/deployment is authorized.
+
+## Root registration resolution
+
+Rootf663f478 supplies exact migration hashes/role pin and one backup fixture migration line, with allowedPaths extended. Cherry-pick9aed90e preserves exact Root fixture source. `root-registration/independent-digests.json` records independently recomputed matches and cold-before-hot ordering. Unchanged288 contract/governance,17 HTTP race,3 OpenAPI,20 audit race (2new) and4 real encrypted backup/restore cases all pass. The earlier blocked scope/role failure above is historical evidence, not a remaining registry blocker. Final CI is observed on PR38 at the final pushed head; PR description/live checks hold that result without a subsequent status-only source commit.
+
+Disk recovery: a new backup PG anonymous volume exhausted available disk before any backup test ran. ENOSPC prevented sandbox startup; automatic-review-approved cleanup removed task-only temporary files and the new unused container/volume. No system permission configuration or other task resources changed. The unchanged backup fixture then ran on the existing private task PG, temporarily renamed for its legacy container guard. Its4 tests passed; backup keys/artifacts remain private ignored scratch, never committed.

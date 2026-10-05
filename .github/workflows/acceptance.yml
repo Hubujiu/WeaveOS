@@ -43,7 +43,7 @@ jobs:
         # Runner executes playwright test tests/acceptance using its HTTPS config.
         run: node infra/acceptance/run.mjs
       - name: Runtime configuration, crypto, failure handling and dependency security
-        run: node --test infra/runtime/rollback-security.test.mjs infra/runtime/artifacts.test.mjs infra/runtime/storage-version.test.mjs infra/runtime/config.test.mjs infra/runtime/backup-crypto.test.mjs infra/runtime/recovery.test.mjs infra/runtime/monitor.test.mjs infra/runtime/cli.test.mjs infra/runtime/security.test.mjs
+        run: node --test infra/runtime/rollback-security.test.mjs infra/runtime/artifacts.test.mjs infra/runtime/storage-version.test.mjs infra/runtime/config.test.mjs infra/runtime/backup-crypto.test.mjs infra/runtime/recovery.test.mjs infra/runtime/monitor.test.mjs infra/runtime/cli.test.mjs infra/runtime/advisory-review.test.mjs infra/runtime/security.test.mjs
       - name: Build once and verify immutable runtime, restore, rollback and browsers
         run: node infra/runtime/run.mjs
       - name: Automatic deployment migrations with isolated real PostgreSQL
