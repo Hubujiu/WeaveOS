@@ -32,9 +32,10 @@ type Reference struct {
 	Deleted bool   `json:"deleted"`
 }
 type Field struct {
-	Definition appfields.Field `json:"definition"`
-	Value      json.RawMessage `json:"value"`
-	Reference  *Reference      `json:"reference"`
+	Definition     appfields.Field `json:"definition"`
+	Value          json.RawMessage `json:"value"`
+	Reference      *Reference      `json:"reference"`
+	OptionDisplays []Reference     `json:"optionDisplays,omitempty"`
 }
 type Header struct {
 	AppID         string `json:"appId"`
@@ -393,6 +394,9 @@ func physicalValue(kind string, value any) (any, error) {
 }
 
 func normalizedField(input Field) (Field, error) {
+	if len(input.OptionDisplays) > MaxFieldBytes/36 {
+		return Field{}, ErrTooLarge
+	}
 	direct := []string{input.Definition.ID, input.Definition.Name, input.Definition.Kind}
 	if input.Definition.Presentation.HelpText != nil {
 		direct = append(direct, *input.Definition.Presentation.HelpText)
@@ -402,6 +406,9 @@ func normalizedField(input Field) (Field, error) {
 	}
 	if input.Reference != nil {
 		direct = append(direct, input.Reference.ID, input.Reference.Label)
+	}
+	for _, display := range input.OptionDisplays {
+		direct = append(direct, display.ID, display.Label)
 	}
 	if err := directStrings(direct, MaxFieldBytes); err != nil {
 		return Field{}, err
@@ -469,6 +476,50 @@ func normalizedField(input Field) (Field, error) {
 	out.Value, err = json.Marshal(value)
 	if err != nil {
 		return Field{}, ErrInvalid
+	}
+	if len(input.OptionDisplays) != 0 {
+		if (definition.Kind != "single_select" && definition.Kind != "multi_select") || value == nil {
+			return Field{}, ErrInvalid
+		}
+		selected := map[string]bool{}
+		if definition.Kind == "single_select" {
+			selected[value.(string)] = true
+		} else {
+			for _, id := range value.([]any) {
+				selected[id.(string)] = true
+			}
+		}
+		var config struct {
+			Options []appfields.Option `json:"options"`
+		}
+		if err := strictDecode(definition.Config, &config); err != nil {
+			return Field{}, err
+		}
+		active := map[string]string{}
+		for _, option := range config.Options {
+			active[option.ID] = option.Label
+		}
+		seen := map[string]bool{}
+		displays := make([]Reference, len(input.OptionDisplays))
+		for i, display := range input.OptionDisplays {
+			if !validID(display.ID) || !selected[display.ID] || seen[display.ID] || strings.TrimSpace(display.Label) == "" {
+				return Field{}, ErrInvalid
+			}
+			if label, ok := active[display.ID]; ok {
+				if display.Deleted || display.Label != label {
+					return Field{}, ErrInvalid
+				}
+			} else if !display.Deleted {
+				return Field{}, ErrInvalid
+			}
+			seen[display.ID] = true
+			displays[i] = display
+		}
+		if len(seen) != len(selected) {
+			return Field{}, ErrInvalid
+		}
+		sort.Slice(displays, func(i, j int) bool { return displays[i].ID < displays[j].ID })
+		out.OptionDisplays = displays
 	}
 	if (definition.Kind == "member" || definition.Kind == "department") && value != nil {
 		reference := input.Reference
