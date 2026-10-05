@@ -47,3 +47,5 @@ Java 审批命令身份 A 段：[V030-030](V030-030.md)，task/V030-030-engine-e
 部署RPC：[V030-026](V030-026.md)，task/V030-026-deployment-rpc / ../WeaveOS-worktrees/V030-026；基线为独立整合候选21a7912，Root合同与测试，执行者仅实现部署通信，无main合并/部署。
 
 审批命令版本与历史兼容：[V030-029](V030-029.md)，task/V030-029-command-v2 / ../WeaveOS-worktrees/V030-029；从已验证V026 a093af1独立创建，Root06ead合同与12项测试，[draft PR39](https://github.com/Hubujiu/WeaveOS/pull/39)，云环境真实RED/GREEN已保存，12新测试／46全包／21正式Ledger-fence通过；仅协议切片，非全链路完成。
+
+V030-030 B 段独立合同 RED：`task/V030-030-engine-actions` / `../WeaveOS-worktrees/V030-030-engine-actions`，Root权威测试提交66b8862；test-compile exit0，真实Java33 RED（5failures/27errors/0skip，exit1），Python16 RED（15拒绝通过/1占位错误，exit1）。[原始证据](../evidence/V030-030/execution-registry-red/README.md)。未实施，等待Root审查；无全CI/push/PR/部署，A530与兼容性5保留。
