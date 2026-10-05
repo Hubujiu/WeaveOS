@@ -135,3 +135,6 @@ GRANT SELECT,INSERT ON applications.workflow_execution_events,applications.workf
 GRANT UPDATE(closed_command_id) ON applications.workflow_tasks TO auth_app;
 GRANT UPDATE(engine_process_id) ON applications.workflow_instances TO auth_app;
 GRANT SELECT ON applications.workflow_execution_events,applications.workflow_tasks TO auth_backup;
+
+-- V030-035: scheduler leases never grant mutation of accepted payload or identity.
+GRANT UPDATE(next_attempt_at,attempts,lease_token,lease_until,last_error) ON applications.workflow_dispatch TO auth_app;
