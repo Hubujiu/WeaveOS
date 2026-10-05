@@ -165,3 +165,42 @@ jobs:
             services/workflow-engine/ci-logs/
           if-no-files-found: warn
           retention-days: 14
+  workflow-rpc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Root-owned RPC report gate acceptance
+        run: |
+          mkdir -p services/workflow-engine/rpc-ci-logs
+          python3 services/workflow-engine/rpc_ci_gate_tests.py 2>&1 | tee services/workflow-engine/rpc-ci-logs/gate-tests.txt
+      - name: Prepare locked RPC dependencies
+        run: bash services/workflow-engine/prepare-build.sh 2>&1 | tee services/workflow-engine/rpc-ci-logs/prepare.txt
+      - name: Regenerate the single proto and require exact checked-in artifacts
+        run: bash services/workflow-engine/generate-proto.sh 2>&1 | tee services/workflow-engine/rpc-ci-logs/regenerate.txt
+      - name: Real Java RPC tests on dedicated internal PostgreSQL
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootDeploymentGrpcIT -Dworkflow.reports=target/rpc-ci-reports test 2>&1 | tee services/workflow-engine/rpc-ci-logs/java.txt
+      - name: Real Go Java Flowable PostgreSQL interop
+        env:
+          WEAVEOS_RPC_JSON_REPORT: services/workflow-engine/rpc-ci-logs/interop.jsonl
+        run: bash services/workflow-engine/run-rpc-interop.sh 2>&1 | tee services/workflow-engine/rpc-ci-logs/interop.txt
+      - name: Require all nine Java cases and genuine Go interop completion
+        run: python3 services/workflow-engine/rpc_ci_gate.py services/workflow-engine/target/rpc-ci-reports services/workflow-engine/expected-rpc-tests.json services/workflow-engine/rpc-ci-logs/interop.jsonl 2>&1 | tee services/workflow-engine/rpc-ci-logs/report-gate.txt
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: workflow-rpc-${{ github.run_id }}
+          path: |
+            services/workflow-engine/target/rpc-ci-reports/
+            services/workflow-engine/rpc-ci-logs/
+          if-no-files-found: warn
+          retention-days: 14
