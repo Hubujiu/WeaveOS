@@ -1,0 +1,47 @@
+fixture network internal=true
+fixture published ports={}
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< org.weaveos:workflow-engine >---------------------
+[INFO] Building WeaveOS controlled workflow engine core 0.3.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ workflow-engine ---
+[INFO] skip non existing resourceDirectory /proof/src/main/resources
+[INFO] skip non existing resourceDirectory /proof/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ workflow-engine ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ workflow-engine ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ workflow-engine ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- dependency:3.9.0:build-classpath (default-cli) @ workflow-engine ---
+[INFO] Wrote classpath file '/proof/.work/rpc-classpath'.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.114 s
+[INFO] Finished at: 2026-10-05T02:37:54Z
+[INFO] ------------------------------------------------------------------------
+fixture published ports={}
+=== RUN   TestRootGoJavaPostgresDeploymentInterop
+    client_interop_root_test.go:41: initial result <nil> rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing: dial tcp 172.31.9.125:8080: connect: network is unreachable"
+--- FAIL: TestRootGoJavaPostgresDeploymentInterop (0.00s)
+FAIL
+02:37:58.240 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+02:37:58.242 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+02:37:58.243 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+02:37:58.244 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@314ed053
+02:37:58.244 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+02:37:58.244 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+02:37:58.244 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+02:37:58.275 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+02:37:58.330 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+02:37:58.372 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+02:37:58.385 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+02:37:58.424 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0

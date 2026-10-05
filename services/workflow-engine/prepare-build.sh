@@ -41,7 +41,7 @@ JAVA_HOME="$proof_dir/.work/toolchain/jdk" "$proof_dir/.work/toolchain/maven/bin
   -Dmaven.repo.local="$proof_dir/.work/m2" "${proof_java_options[@]}" \
   dependency:go-offline
 cat > "$proof_dir/.work/provider-pom.xml" <<'XML'
-<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion><groupId>org.weaveos.proof</groupId><artifactId>test-provider-prefetch</artifactId><version>1</version><dependencies><dependency><groupId>org.apache.maven.surefire</groupId><artifactId>surefire-junit-platform</artifactId><version>3.5.4</version></dependency><dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-launcher</artifactId><version>1.12.1</version></dependency></dependencies></project>
+<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion><groupId>org.weaveos.proof</groupId><artifactId>test-provider-prefetch</artifactId><version>1</version><dependencies><dependency><groupId>org.apache.maven.surefire</groupId><artifactId>surefire-junit-platform</artifactId><version>3.5.4</version></dependency><dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-launcher</artifactId><version>1.12.1</version></dependency><dependency><groupId>com.google.protobuf</groupId><artifactId>protoc</artifactId><version>3.25.9</version><type>exe</type><classifier>linux-x86_64</classifier></dependency><dependency><groupId>io.grpc</groupId><artifactId>protoc-gen-grpc-java</artifactId><version>1.84.0</version><type>exe</type><classifier>linux-x86_64</classifier></dependency></dependencies></project>
 XML
 JAVA_HOME="$proof_dir/.work/toolchain/jdk" "$proof_dir/.work/toolchain/maven/bin/mvn" \
   -B -ntp -s "$proof_dir/.work/settings.xml" -f "$proof_dir/.work/provider-pom.xml" \
