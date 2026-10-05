@@ -73,6 +73,21 @@ func rootPublicationSetup(t *testing.T) rootPublicationFixture {
 	t.Helper()
 	s := rootWorkflowManagementSetup(t)
 	flow := uuid(t, s.f.owner)
+	// Every test owns a new application. Remove only its unfinished synthetic queue
+	// entries on teardown so a later global worker cannot consume a previous test's intent.
+	t.Cleanup(func() {
+		var exists bool
+		ctx := context.Background()
+		if e := s.f.owner.QueryRow(ctx, "SELECT to_regclass('applications.workflow_publications') IS NOT NULL").Scan(&exists); e != nil {
+			t.Error(e)
+			return
+		}
+		if exists {
+			if _, e := s.f.owner.Exec(ctx, "DELETE FROM applications.workflow_publications WHERE app_id=$1 AND actor_user_id=$2 AND status IN ('pending','unknown')", s.f.app, s.f.actor); e != nil {
+				t.Error(e)
+			}
+		}
+	})
 	data(t, rootWorkflowHTTPCall(t, s, flow, "PUT", "definition", rootWorkflowHTTPBody(t, s, s.f.actor)), 201)
 	peer := &rootPublicationPeer{receipts: map[string]*pb.DeploymentReceipt{}}
 	app := &appworkflows.Application{Pool: s.f.runtime, Limits: s.f.service.Application.Limits, DeploymentClient: peer}
