@@ -1,0 +1,167 @@
+{
+  "root_head": "fd269704c2bdb7ccee3bb7b8fee9cca95ebe51ab",
+  "root_parent": "07de75ff256f3e78bf04b5730433bfb94778534f",
+  "prepare_exit": 0,
+  "generation_initial_exit": 1,
+  "generation_initial_classification": "NOT BUSINESS RED: only untracked generated bindings",
+  "generation_reproduce_exit": 0,
+  "deployment_generated_artifacts": "unchanged from exact Root head",
+  "root_sources": "11/14 exact bytes; 3 Go files exact gofmt(original), no semantic edits",
+  "compile": {
+    "go_exit": 0,
+    "java_exit": 0,
+    "interop": "script Go static test binary and Java test-compile successful before actual test execution"
+  },
+  "go_unit": {
+    "exit": 1,
+    "cases": [
+      {
+        "name": "TestRootExecutionClientConstructorBounds",
+        "status": "fail",
+        "elapsed": 0
+      },
+      {
+        "name": "TestRootExecutionClientSendsCanonicalBoundBytes",
+        "status": "fail",
+        "elapsed": 0
+      },
+      {
+        "name": "TestRootExecutionClientRejectsInputsBeforeRPC",
+        "status": "fail",
+        "elapsed": 0
+      },
+      {
+        "name": "TestRootExecutionClientNilReceiverReturnsError",
+        "status": "pass",
+        "elapsed": 0
+      },
+      {
+        "name": "TestRootExecutionClientRejectsDamagedReceipts",
+        "status": "fail",
+        "elapsed": 0
+      },
+      {
+        "name": "TestRootExecutionClientLookupStatesAndBinding",
+        "status": "fail",
+        "elapsed": 0
+      },
+      {
+        "name": "TestRootExecutionClientCancellationMayRecoverSuccess",
+        "status": "fail",
+        "elapsed": 0
+      },
+      {
+        "name": "TestRootExecutionClientTransportErrorsStayUnknown",
+        "status": "fail",
+        "elapsed": 0
+      },
+      {
+        "name": "TestRootExecutionClientDeadlineAndParentCancellation",
+        "status": "fail",
+        "elapsed": 0
+      },
+      {
+        "name": "TestRootExecutionClientDoesNotMutateCallerInput",
+        "status": "fail",
+        "elapsed": 0
+      }
+    ]
+  },
+  "java": {
+    "exit": 1,
+    "tests": "11",
+    "failures": "4",
+    "errors": "7",
+    "skipped": "0",
+    "seconds": "6.169",
+    "cases": [
+      {
+        "name": "lostReplyThenServiceRestartRecoversCommittedReceipt",
+        "status": "failure",
+        "reason": "expected: <UNAVAILABLE> but was: <UNIMPLEMENTED>"
+      },
+      {
+        "name": "executeReturnsCommittedBoundReceipt",
+        "status": "error",
+        "reason": "UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/Execute is unimplemented"
+      },
+      {
+        "name": "lookupRejectsDifferentFingerprint",
+        "status": "error",
+        "reason": "UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/Execute is unimplemented"
+      },
+      {
+        "name": "conflictingCommandCannotReuseIdentity",
+        "status": "error",
+        "reason": "UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/Execute is unimplemented"
+      },
+      {
+        "name": "databaseFailureRollsBackAndHidesPrivateDetails",
+        "status": "failure",
+        "reason": "expected: <UNAVAILABLE> but was: <UNIMPLEMENTED>"
+      },
+      {
+        "name": "executionFirstCannotBecomeCancelled",
+        "status": "error",
+        "reason": "UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/Execute is unimplemented"
+      },
+      {
+        "name": "cancellationFirstDurablyPreventsExecution",
+        "status": "error",
+        "reason": "UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/EstablishNoEffect is unimplemented"
+      },
+      {
+        "name": "everyMethodRejectsProvisionalOuterTransaction",
+        "status": "failure",
+        "reason": "expected: <FAILED_PRECONDITION> but was: <UNIMPLEMENTED>"
+      },
+      {
+        "name": "missingLookupIsExplicitAndDoesNotCancel",
+        "status": "error",
+        "reason": "UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/Lookup is unimplemented"
+      },
+      {
+        "name": "duplicateExecutionReplaysExactReceipt",
+        "status": "error",
+        "reason": "UNIMPLEMENTED: Method weaveos.workflow.v1.ExecutionService/Execute is unimplemented"
+      },
+      {
+        "name": "invalidRequestsNeverWriteLedger",
+        "status": "failure",
+        "reason": "expected: <INVALID_ARGUMENT> but was: <UNIMPLEMENTED>"
+      }
+    ]
+  },
+  "interop": {
+    "exit": 1,
+    "cases": [
+      {
+        "name": "TestRootGoJavaPostgresExecutionLifecycleInterop",
+        "status": "fail",
+        "elapsed": 0.37
+      },
+      {
+        "name": "TestRootGoJavaPostgresExecutionCancellationInterop",
+        "status": "fail",
+        "elapsed": 0.02
+      },
+      {
+        "name": "TestRootGoJavaPostgresExecutionReturnAndWithdrawInterop",
+        "status": "fail",
+        "elapsed": 0.02
+      }
+    ],
+    "scope_limit": "Real private PG/Flowable/Java server and Go test binary started; tests perform existing deployment RPC then stop at unimplemented Go ExecutionClient constructor. New execution RPC itself not reached."
+  },
+  "gate": {
+    "exit": 1,
+    "run": 16,
+    "pass": 15,
+    "errors": 1,
+    "skipped": 0,
+    "reason": "positive exact-24-case acceptance encounters GateError: execution RPC report gate unimplemented"
+  },
+  "implementation": "NOT STARTED",
+  "push": "NOT PERFORMED",
+  "production_changes": "NONE"
+}

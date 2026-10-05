@@ -1,0 +1,266 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  governance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - run: node --test tests/governance/*.test.mjs tests/foundation/*.test.mjs
+      - name: Exact reviewed advisory classification regression
+        run: node --test infra/runtime/advisory-review.test.mjs
+      - run: node scripts/verify-repo.mjs
+      - run: node scripts/check-tasks.mjs
+      - name: Preserve source Git objects, not local configuration or credentials
+        run: |
+          mkdir -p .work
+          git bundle create .work/source.bundle --all
+          sha256sum .work/source.bundle > .work/source.bundle.sha256
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: source-bundle-${{ github.run_id }}
+          path: |
+            .work/source.bundle
+            .work/source.bundle.sha256
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+  go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
+        env:
+          POSTGRES_USER: weaveos_test
+          POSTGRES_PASSWORD: isolated-ci-only
+          POSTGRES_DB: weaveos_ci_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U weaveos_test -d weaveos_ci_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:8.2.10@sha256:164c759a0c342ee69d08fc99219382b0fd682181465c0df2e0e6911f4c85d73c
+        ports: [6379:6379]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      WEAVEOS_TEST_DATABASE_URL: postgres://weaveos_test:isolated-ci-only@127.0.0.1:5432/weaveos_ci_test?sslmode=disable
+      WEAVEOS_TEST_ARCHIVE_DATABASE_URL: postgres://weaveos_test:isolated-ci-only@127.0.0.1:5432/weaveos_ci_archive_test?sslmode=disable
+      WEAVEOS_TEST_REDIS_URL: redis://127.0.0.1:6379/15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Migrate isolated PostgreSQL for real storage tests
+        run: |
+          go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
+          PGPASSWORD=isolated-ci-only createdb -h 127.0.0.1 -U weaveos_test weaveos_ci_archive_test
+          "$(go env GOPATH)/bin/goose" -dir db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up
+          "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up
+      - name: Prepare dedicated B2 PostgreSQL private socket fixture
+        run: node infra/acceptance/run.mjs b2-fixture-start "$GITHUB_ENV" "$RUNNER_TEMP/weaveos-b2-ci.json"
+      - name: Format, static checks, race tests and build
+        working-directory: services/bff
+        run: |
+          test -z "$(gofmt -l .)"
+          go vet ./...
+          go test -race -p 1 -count=1 -coverprofile=coverage.out ./...
+          go build ./cmd/bff
+      - name: Clean only this job's dedicated B2 fixture
+        if: always()
+        run: node infra/acceptance/run.mjs b2-fixture-stop "$RUNNER_TEMP/weaveos-b2-ci.json"
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: go-coverage-${{ github.run_id }}
+          path: services/bff/coverage.out
+          retention-days: 14
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Frozen dependencies
+        run: |
+          npm install --global pnpm@10.28.2 --ignore-scripts
+          pnpm install --frozen-lockfile --ignore-scripts
+      - name: Authentication OpenAPI 3.2.1 contract
+        run: |
+          node --test contracts/*.test.mjs
+          pnpm exec redocly lint contracts/openapi/openapi.json
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - name: Q36 pure filters and B1 B2 component regressions
+        run: |
+          node apps/web/src/q36-front-filter.test.mjs
+          pnpm exec playwright test --config docs/evidence/V010-020/q36-b2/components.config.ts 'q36-front-|q36-b2\.component' --output test-results/q36-components
+      - name: Saved filter manager browser regressions
+        run: pnpm exec playwright test --config docs/evidence/V010-020/filter-manager/frontend/components.config.ts --output test-results/filter-manager
+      - name: Real browser to Go BFF smoke
+        run: pnpm exec playwright test tests/e2e
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: browser-smoke-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+  workflow-engine:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Root-owned report gate acceptance
+        run: |
+          mkdir -p services/workflow-engine/ci-logs
+          python3 services/workflow-engine/ci_gate_tests.py 2>&1 | tee services/workflow-engine/ci-logs/gate-tests.txt
+      - name: Prepare locked offline Java dependencies
+        run: bash services/workflow-engine/prepare-build.sh 2>&1 | tee services/workflow-engine/ci-logs/prepare.txt
+      - name: Clean verify against dedicated internal PostgreSQL
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootDeploymentRegistryTest verify 2>&1 | tee services/workflow-engine/ci-logs/verify.txt
+      - name: Require all 18 Root-owned cases without skips
+        run: python3 services/workflow-engine/ci_gate.py services/workflow-engine/target/surefire-reports services/workflow-engine/expected-tests.json 2>&1 | tee services/workflow-engine/ci-logs/report-gate.txt
+      - name: Root-owned envelope report gate acceptance
+        run: python3 services/workflow-engine/envelope_ci_gate_tests.py 2>&1 | tee services/workflow-engine/ci-logs/envelope-gate-tests.txt
+      - name: Exact Java command envelope compatibility cases
+        run: bash services/workflow-engine/run-tests.sh -Dtest=RootCommandEnvelopeTest -Dworkflow.reports=target/envelope-ci-reports test 2>&1 | tee services/workflow-engine/ci-logs/envelope-tests.txt
+      - name: Require all eight envelope cases without skips
+        run: python3 services/workflow-engine/envelope_ci_gate.py services/workflow-engine/target/envelope-ci-reports services/workflow-engine/expected-envelope-tests.json 2>&1 | tee services/workflow-engine/ci-logs/envelope-report-gate.txt
+      - name: Root-owned execution report gate acceptance
+        run: python3 services/workflow-engine/execution_ci_gate_tests.py 2>&1 | tee services/workflow-engine/ci-logs/execution-gate-tests.txt
+      - name: Exact execution and return compatibility cases
+        run: bash services/workflow-engine/run-tests.sh -Dtest=RootExecutionRegistryTest,RootReturnCompatibilityTest -Dworkflow.reports=target/execution-ci-reports test 2>&1 | tee services/workflow-engine/ci-logs/execution-tests.txt
+      - name: Require all 36 execution and five return cases without skips
+        run: python3 services/workflow-engine/execution_ci_gate.py services/workflow-engine/target/execution-ci-reports services/workflow-engine/expected-execution-tests.json 2>&1 | tee services/workflow-engine/ci-logs/execution-report-gate.txt
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: workflow-engine-${{ github.run_id }}
+          path: |
+            services/workflow-engine/target/surefire-reports/
+            services/workflow-engine/target/envelope-ci-reports/
+            services/workflow-engine/target/execution-ci-reports/
+            services/workflow-engine/ci-logs/
+          if-no-files-found: warn
+          retention-days: 14
+  workflow-rpc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Root-owned RPC report gate acceptance
+        run: |
+          mkdir -p services/workflow-engine/rpc-ci-logs
+          python3 services/workflow-engine/rpc_ci_gate_tests.py 2>&1 | tee services/workflow-engine/rpc-ci-logs/gate-tests.txt
+      - name: Prepare locked RPC dependencies
+        run: bash services/workflow-engine/prepare-build.sh 2>&1 | tee services/workflow-engine/rpc-ci-logs/prepare.txt
+      - name: Regenerate the single proto and require exact checked-in artifacts
+        run: bash services/workflow-engine/generate-proto.sh 2>&1 | tee services/workflow-engine/rpc-ci-logs/regenerate.txt
+      - name: Real Java RPC tests on dedicated internal PostgreSQL
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootDeploymentGrpcIT -Dworkflow.reports=target/rpc-ci-reports test 2>&1 | tee services/workflow-engine/rpc-ci-logs/java.txt
+      - name: Real Go Java Flowable PostgreSQL interop
+        env:
+          WEAVEOS_RPC_JSON_REPORT: services/workflow-engine/rpc-ci-logs/interop.jsonl
+        run: bash services/workflow-engine/run-rpc-interop.sh 2>&1 | tee services/workflow-engine/rpc-ci-logs/interop.txt
+      - name: Require all nine Java cases and genuine Go interop completion
+        run: python3 services/workflow-engine/rpc_ci_gate.py services/workflow-engine/target/rpc-ci-reports services/workflow-engine/expected-rpc-tests.json services/workflow-engine/rpc-ci-logs/interop.jsonl 2>&1 | tee services/workflow-engine/rpc-ci-logs/report-gate.txt
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: workflow-rpc-${{ github.run_id }}
+          path: |
+            services/workflow-engine/target/rpc-ci-reports/
+            services/workflow-engine/rpc-ci-logs/
+          if-no-files-found: warn
+          retention-days: 14
+
+  execution-rpc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Root-owned execution RPC gate tests
+        run: |
+          mkdir -p services/workflow-engine/execution-rpc-ci-logs
+          python3 services/workflow-engine/execution_rpc_ci_gate_tests.py 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/gate-tests.txt
+      - name: Prepare locked dependencies
+        run: bash services/workflow-engine/prepare-build.sh 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/prepare.txt
+      - name: Verify both proto generation outputs
+        run: bash services/workflow-engine/generate-proto.sh 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/regenerate.txt
+      - name: Root Go execution client tests
+        run: |
+          set -o pipefail
+          go -C services/bff test -race -count=1 -json -run '^TestRootExecutionClient' ./internal/workflowrpc | tee services/workflow-engine/execution-rpc-ci-logs/unit.jsonl
+      - name: Real Java execution RPC on isolated PostgreSQL
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootExecutionGrpcIT -Dworkflow.reports=target/execution-rpc-ci-reports test 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/java.txt
+      - name: Real Go Java Flowable execution interop
+        env:
+          WEAVEOS_RPC_JSON_REPORT: services/workflow-engine/execution-rpc-ci-logs/interop.jsonl
+        run: bash services/workflow-engine/run-execution-rpc-interop.sh 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/interop.txt
+      - name: Require exact 11 Java and 10 Go unit and 3 real interop cases
+        run: python3 services/workflow-engine/execution_rpc_ci_gate.py services/workflow-engine/target/execution-rpc-ci-reports services/workflow-engine/expected-execution-rpc-tests.json services/workflow-engine/execution-rpc-ci-logs/unit.jsonl services/workflow-engine/execution-rpc-ci-logs/interop.jsonl 2>&1 | tee services/workflow-engine/execution-rpc-ci-logs/report-gate.txt
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: execution-rpc-${{ github.run_id }}
+          path: |
+            services/workflow-engine/target/execution-rpc-ci-reports/
+            services/workflow-engine/execution-rpc-ci-logs/
+          if-no-files-found: warn
+          retention-days: 14
