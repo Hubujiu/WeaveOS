@@ -41,3 +41,5 @@
 新风格表单设计器：[V030-023](V030-023.md)，Root设计/测试/验收；基于 `c935510` 叠在 `task/V030-021-monochrome`，[draft PR34](https://github.com/Hubujiu/WeaveOS/pull/34)。限现有设计器及共享字段/弹窗视觉，不改业务/API/Shell，不合main或部署；实际证据与验收状态见任务文档。
 
 已验前后端独立整合：[V030-024](V030-024.md)，Root冻结精确后端 `24d07a5` 与前端 `3900bca`，独立 `task/V030-024-integrate-verified`，[draft PR35](https://github.com/Hubujiu/WeaveOS/pull/35) 叠在 V022；仅任务索引冲突，保留原侧 blob 与完整历史，联合验证后交 Root 审查，不合 main 或部署。
+
+部署RPC：[V030-026](V030-026.md)，task/V030-026-deployment-rpc / ../WeaveOS-worktrees/V030-026；基线为独立整合候选21a7912，Root合同与测试，执行者仅实现部署通信，无main合并/部署。

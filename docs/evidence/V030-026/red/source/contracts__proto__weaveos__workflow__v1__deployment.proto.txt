@@ -1,0 +1,40 @@
+syntax = "proto3";
+package weaveos.workflow.v1;
+option java_package = "org.weaveos.workflow.v1";
+option java_multiple_files = true;
+option go_package = "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc/pb";
+service DeploymentService {
+ rpc Deploy(DeployRequest) returns (DeploymentReceipt);
+ rpc Lookup(LookupRequest) returns (LookupResponse);
+}
+message DeployRequest {
+ string app_id = 1;
+ string flow_id = 2;
+ string version_id = 3;
+ uint64 version = 4;
+ bytes bpmn_xml = 5;
+}
+message DeploymentReceipt {
+ string app_id = 1;
+ string flow_id = 2;
+ string version_id = 3;
+ uint64 version = 4;
+ string bpmn_sha256 = 5;
+ string engine_deployment_id = 6;
+ string process_definition_id = 7;
+}
+message LookupRequest {
+ string app_id = 1;
+ string flow_id = 2;
+ string version_id = 3;
+ uint64 version = 4;
+ string bpmn_sha256 = 5;
+}
+// NotObserved is not a failure/no-effect verdict; a concurrent operation may commit later.
+message NotObserved {}
+message LookupResponse {
+ oneof result {
+  DeploymentReceipt confirmed = 1;
+  NotObserved not_observed = 2;
+ }
+}
