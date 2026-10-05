@@ -1,3 +1,5 @@
+import {createHash} from 'node:crypto';
+import {unresolvedAdvisories} from './advisory-review.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import {spawnSync} from 'node:child_process';import {resolve} from 'node:path';
 import {mkdirSync} from 'node:fs';
 test('Go source and dependencies have no reachable published vulnerabilities',()=>{
@@ -23,8 +25,26 @@ test('required Go modules have no fixable advisories and unsafe OpenPGP is absen
  // ADR003/004 require known-vulnerability disposition. GO-2026-5932 has no
  // fixed release: an unused, unmaintained OpenPGP package shares x/crypto with
  // Argon2. Verify it is absent from ALL built application dependency graphs.
- assert.deepEqual(ids.filter(id=>id!=='GO-2026-5932'),[],'all fixable module advisories must be removed');
+ let reviewedEvidence;
+ if(ids.includes('GO-2026-6443')){
+  // Root-approved review is tied to actual selected bytes and this run's behavioral evidence.
+  const inspect=(args)=>spawnSync('docker',['run','--rm','--mount',`type=bind,src=${resolve('.')},dst=/repo,readonly`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build','-e','GOFLAGS=-buildvcs=false','-w','/repo/services/bff','golang:1.27.1@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244',...args],{encoding:'utf8',timeout:180000,maxBuffer:8*1024*1024});
+  const selected=inspect(['go','list','-m','-json','google.golang.org/grpc']);
+  assert.equal(selected.status,0,'selected gRPC module must be inspectable');
+  let module;assert.doesNotThrow(()=>{module=JSON.parse(selected.stdout)},'module metadata must be valid JSON');
+  assert.equal(typeof module.Dir,'string','selected module cache path required');
+  // No shell evaluation: inspect the exact module directory reported by the Go tool.
+  const transport=inspect(['cat',module.Dir+'/internal/transport/http2_server.go']);
+  assert.equal(transport.status,0,'selected transport source must be readable');
+  const regression=inspect(['go','test','-json','-count=1','-run','^TestRootGRPCMissingAuthorityRejected$','./internal/securityreview']);
+  assert.equal(regression.status,0,regression.stdout+regression.stderr);
+  let events;assert.doesNotThrow(()=>{events=regression.stdout.split(/\r?\n/).filter(Boolean).map(line=>JSON.parse(line))},'real regression must return test JSON');
+  const name='TestRootGRPCMissingAuthorityRejected',pkg='github.com/Hubujiu/WeaveOS/services/bff/internal/securityreview';
+  reviewedEvidence={modulePath:module.Path,version:module.Version,sum:module.Sum,goModSum:module.GoModSum,replacement:module.Replace!=null,transportSHA256:createHash('sha256').update(transport.stdout).digest('hex'),regression:{exitCode:regression.status,passed:events.filter(e=>e.Action==='pass'&&e.Test===name&&e.Package===pkg).length,failed:events.filter(e=>e.Action==='fail').length,skipped:events.filter(e=>e.Action==='skip').length}};
+ }
+ assert.deepEqual(unresolvedAdvisories(ids,reviewedEvidence).filter(id=>id!=='GO-2026-5932'),[],'all unresolved fixable module advisories must be removed');
  const deps=spawnSync('docker',['run','--rm','--mount',`type=bind,src=${resolve('.')},dst=/repo,readonly`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','-e','GOFLAGS=-buildvcs=false','-w','/repo/services/bff','golang:1.27.1','go','list','-deps','./...'],{encoding:'utf8',timeout:180000});
  assert.equal(deps.status,0,'entire application dependency graph must load');
  assert.equal(deps.stdout.split('\n').some(p=>p==='golang.org/x/crypto/openpgp'||p.startsWith('golang.org/x/crypto/openpgp/')),false,'unsupported OpenPGP must never be linked');
 });
+
