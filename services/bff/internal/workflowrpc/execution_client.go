@@ -20,8 +20,9 @@ const executionReceiptLimit = 66560
 var errExecutionReceipt = errors.New("unbound execution RPC result")
 
 type ExecutionConfirmed struct {
-	Receipt flowcommands.Receipt
-	Result  flowcommands.ExecutionResult
+	Receipt     flowcommands.Receipt
+	Result      flowcommands.ExecutionResult
+	ResultBytes []byte
 }
 
 // The caller owns the connection, credentials and disabling transport retries.
@@ -93,7 +94,7 @@ func executionConfirmed(command flowcommands.Command, wire *pb.ExecutionReceipt)
 	if err != nil {
 		return nil, err
 	}
-	return &ExecutionConfirmed{Receipt: receipt, Result: result}, nil
+	return &ExecutionConfirmed{Receipt: receipt, Result: result, ResultBytes: append([]byte(nil), wire.ResultBytes...)}, nil
 }
 func (c *ExecutionClient) Execute(ctx context.Context, command flowcommands.Command, payload flowcommands.ExecutionPayload) (*ExecutionConfirmed, error) {
 	return c.execute(ctx, command, payload, false)
