@@ -1,0 +1,520 @@
+diff --git a/services/bff/internal/flowcommands/protocol.go b/services/bff/internal/flowcommands/protocol.go
+index 1a10381..cdd0a5a 100644
+--- a/services/bff/internal/flowcommands/protocol.go
++++ b/services/bff/internal/flowcommands/protocol.go
+@@ -20,6 +20,8 @@ type Command struct {
+ 	CommandID, AppID, TableID, RecordID, InstanceID, TaskID, ActorID, Action string
+ 	RecordVersion, FenceEpoch, TaskEpoch, ExpectedSequence                   int64
+ 	PayloadHash                                                              [32]byte
++	ViewID, FlowID, VersionID, TargetNodeID string `json:",omitempty"`
++	DefinitionVersion, SchemaVersion int64 `json:",omitempty"`
+ }
+ 
+ type Receipt struct {
+@@ -160,3 +162,7 @@ func isCanonicalNonzeroUUID(value string) bool {
+ 	}
+ 	return nonzero
+ }
++
++// CanonicalBytes declaration only; Root tests must observe behavior RED before implementation.
++func CanonicalBytes(command Command) ([]byte,error) { return nil,ErrInvalid }
++
+diff --git a/services/bff/internal/flowcommands/root_ledger_v2_test.go b/services/bff/internal/flowcommands/root_ledger_v2_test.go
+new file mode 100644
+index 0000000..29834c6
+--- /dev/null
++++ b/services/bff/internal/flowcommands/root_ledger_v2_test.go
+@@ -0,0 +1,27 @@
++package flowcommands
++
++import (
++ "errors"
++ "testing"
++)
++
++// Real PostgreSQL and the same Ledger port; these are not engine execution proofs.
++func TestRootV2LedgerRoundTripAndExactTerminalReplay(t *testing.T){
++ f:=rootLedgerFixture(t);c:=rootV2Command();f.accept(t,c)
++ tx:=f.begin(t);got,e:=f.ledger.GetInTx(f.ctx,tx,c.CommandID);if e!=nil||got.Command!=c||got.State!="pending"{t.Fatalf("durable v2 identity %+v %v",got,e)};_ =tx.Rollback(f.ctx)
++ calls:=0;r:=rootReceipt(t,c);tx=f.begin(t);out,e:=f.ledger.ApplyInTx(f.ctx,tx,c,r,11,f.apply(c,&calls,false));if e!=nil||out.State!="success"{t.Fatalf("apply %+v %v",out,e)};if e=tx.Commit(f.ctx);e!=nil{t.Fatal(e)}
++ tx=f.begin(t);again,e:=f.ledger.ApplyInTx(f.ctx,tx,c,r,50,f.apply(c,&calls,false));if e!=nil||again.Receipt==nil||*again.Receipt!=r{t.Fatalf("replay %+v %v",again,e)};if e=tx.Commit(f.ctx);e!=nil{t.Fatal(e)}
++ if calls!=1{t.Fatal("duplicate applied effects")};f.counts(t,1,0,1,12,false)
++}
++func TestRootV2LedgerBindingConflictKeepsOriginal(t *testing.T){
++ f:=rootLedgerFixture(t);c:=rootV2Command();f.accept(t,c)
++ for _,edit:=range []func(*Command){func(c *Command){c.FlowID=otherID},func(c *Command){c.SchemaVersion++},func(c *Command){c.DefinitionVersion++},func(c *Command){c.Action="return";c.TargetNodeID=otherID}}{
++  bad:=c;edit(&bad);tx:=f.begin(t);if _,e:=f.ledger.AcceptInTx(f.ctx,tx,bad);!errors.Is(e,ErrConflict){t.Fatalf("identity collision accepted %v",e)};_ =tx.Rollback(f.ctx)
++ }
++ tx:=f.begin(t);got,e:=f.ledger.GetInTx(f.ctx,tx,c.CommandID);if e!=nil||got.Command!=c{t.Fatal("original v2 command overwritten")};_ =tx.Rollback(f.ctx);f.counts(t,1,1,0,11,true)
++}
++func TestRootV2LedgerProjectionFailureRollsBack(t *testing.T){
++ f:=rootLedgerFixture(t);c:=rootV2Command();f.accept(t,c);r:=rootReceipt(t,c);calls:=0
++ tx:=f.begin(t);if _,e:=f.ledger.ApplyInTx(f.ctx,tx,c,r,11,f.apply(c,&calls,true));e==nil{t.Fatal("projection fault hidden")};if e:=tx.Rollback(f.ctx);e!=nil{t.Fatal(e)};f.counts(t,1,1,0,11,true)
++ tx=f.begin(t);got,e:=f.ledger.GetInTx(f.ctx,tx,c.CommandID);if e!=nil||got.State!="pending"||got.Receipt!=nil{t.Fatal("failed projection finalized command")};_ =tx.Rollback(f.ctx)
++}
+diff --git a/services/bff/internal/flowcommands/root_protocol_v2_test.go b/services/bff/internal/flowcommands/root_protocol_v2_test.go
+new file mode 100644
+index 0000000..910845a
+--- /dev/null
++++ b/services/bff/internal/flowcommands/root_protocol_v2_test.go
+@@ -0,0 +1,98 @@
++package flowcommands
++
++import (
++ "bytes"
++ "crypto/sha256"
++ "encoding/hex"
++ "encoding/json"
++ "errors"
++ "fmt"
++ "os"
++ "testing"
++)
++
++func rootV2Command() Command {
++ c:=rootCommand(); c.ProtocolVersion=2
++ c.ViewID="81000000-0000-4000-8000-000000000008"
++ c.FlowID="82000000-0000-4000-8000-000000000009"
++ c.VersionID="83000000-0000-4000-8000-000000000010"
++ c.DefinitionVersion=3; c.SchemaVersion=4
++ return c
++}
++func TestRootV2CanonicalGoldenVectors(t *testing.T){
++ raw,e:=os.ReadFile("testdata/root-command-vectors.json");if e!=nil{t.Fatal(e)}
++ var cases []struct{Name string;Command Command;CanonicalHex string;SHA256 string}
++ if e=json.Unmarshal(raw,&cases);e!=nil{t.Fatal(e)}
++ if len(cases)!=6{t.Fatalf("expected fixed six vectors, got %d",len(cases))}
++ for _,v:=range cases{t.Run(v.Name,func(t *testing.T){
++  got,e:=CanonicalBytes(v.Command);if e!=nil{t.Fatal(e)}
++  if hex.EncodeToString(got)!=v.CanonicalHex{t.Fatalf("canonical bytes differ: %x",got)}
++  hash,e:=Fingerprint(v.Command);if e!=nil||hex.EncodeToString(hash[:])!=v.SHA256{t.Fatalf("fingerprint %x %v",hash,e)}
++  if sha256.Sum256(got)!=hash{t.Fatal("fingerprint is not canonical byte hash")}
++ })}
++}
++func TestRootV2EveryBindingChangesFingerprint(t *testing.T){
++ base:=rootV2Command();original,e:=Fingerprint(base);if e!=nil{t.Fatal(e)}
++ edits:=[]func(*Command){
++ func(c *Command){c.CommandID=otherID},func(c *Command){c.AppID=otherID},func(c *Command){c.TableID=otherID},
++ func(c *Command){c.ViewID=otherID},func(c *Command){c.RecordID=otherID},func(c *Command){c.FlowID=otherID},
++ func(c *Command){c.VersionID=otherID},func(c *Command){c.InstanceID=otherID},func(c *Command){c.TaskID=otherID},
++ func(c *Command){c.ActorID=otherID},func(c *Command){c.Action="reject"},func(c *Command){c.DefinitionVersion++},
++ func(c *Command){c.SchemaVersion++},func(c *Command){c.RecordVersion++},func(c *Command){c.FenceEpoch++},
++ func(c *Command){c.TaskEpoch++},func(c *Command){c.ExpectedSequence++},func(c *Command){c.PayloadHash[31]=3},
++ }
++ for i,edit:=range edits{t.Run(fmt.Sprint(i),func(t *testing.T){c:=base;edit(&c);h,e:=Fingerprint(c);if e!=nil||h==original{t.Fatalf("binding missing %v",e)}})}
++ a:=base;a.Action="return";a.TargetNodeID=otherID;b:=a;b.TargetNodeID=base.FlowID
++ ah,ae:=Fingerprint(a);bh,be:=Fingerprint(b);if ae!=nil||be!=nil||ah==bh{t.Fatal("return target not bound")}
++}
++func TestRootV2StrictIdentityAndIntegerBounds(t *testing.T){
++ edits:=[]func(*Command){
++ func(c *Command){c.ViewID=""},func(c *Command){c.FlowID="00000000-0000-0000-0000-000000000000"},
++ func(c *Command){c.VersionID="BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB"},func(c *Command){c.ViewID=" "+otherID},
++ func(c *Command){c.DefinitionVersion=0},func(c *Command){c.DefinitionVersion=9007199254740992},
++ func(c *Command){c.SchemaVersion=-1},func(c *Command){c.SchemaVersion=9007199254740992},
++ func(c *Command){c.RecordVersion=0},func(c *Command){c.FenceEpoch=0},func(c *Command){c.TaskEpoch=9007199254740992},
++ func(c *Command){c.ExpectedSequence=-1},func(c *Command){c.ExpectedSequence=9007199254740992},
++ func(c *Command){c.PayloadHash=[32]byte{}},func(c *Command){c.AppID=""},func(c *Command){c.ActorID=""},
++ func(c *Command){c.CommandID=""},func(c *Command){c.TableID=""},func(c *Command){c.RecordID=""},func(c *Command){c.InstanceID=""},
++ }
++ for i,edit:=range edits{t.Run(fmt.Sprint(i),func(t *testing.T){c:=rootV2Command();edit(&c);rootV2Invalid(t,c)})}
++ c:=rootV2Command();c.DefinitionVersion=9007199254740991;c.SchemaVersion=9007199254740991;c.RecordVersion=9007199254740991;c.FenceEpoch=9007199254740991;c.TaskEpoch=9007199254740991;c.ExpectedSequence=9007199254740991
++ if _,e:=Fingerprint(c);e!=nil{t.Fatalf("maximum safe integers should remain exact: %v",e)}
++}
++func rootV2Invalid(t *testing.T,c Command){t.Helper();b,e:=CanonicalBytes(c);if !errors.Is(e,ErrInvalid)||len(b)!=0{t.Fatalf("invalid bytes accepted %x %v",b,e)};h,e:=Fingerprint(c);if !errors.Is(e,ErrInvalid)||h!=([32]byte{}){t.Fatalf("invalid hash accepted %x %v",h,e)}}
++func TestRootV2ActionSpecificIdentities(t *testing.T){
++ for _,action:=range []string{"agree","reject","start","withdraw","return"}{t.Run(action,func(t *testing.T){
++  c:=rootV2Command();c.Action=action
++  if action=="start"||action=="withdraw"{c.TaskID="";c.TaskEpoch=0};if action=="start"{c.ExpectedSequence=0};if action=="return"{c.TargetNodeID=otherID}
++  if _,e:=Fingerprint(c);e!=nil{t.Fatal(e)}
++  bad:=c;if action=="start"||action=="withdraw"{bad.TaskID=otherID}else{bad.TaskID=""};rootV2Invalid(t,bad)
++  bad=c;if action=="start"||action=="withdraw"{bad.TaskEpoch=1}else{bad.TaskEpoch=0};rootV2Invalid(t,bad)
++  bad=c;if action=="return"{bad.TargetNodeID=""}else{bad.TargetNodeID=otherID};rootV2Invalid(t,bad)
++ })}
++ c:=rootV2Command();c.Action="start";c.TaskID="";c.TaskEpoch=0;c.ExpectedSequence=1;rootV2Invalid(t,c)
++ for _,action:=range []string{"","complete","reapprove","return ","START"}{c:=rootV2Command();c.Action=action;rootV2Invalid(t,c)}
++}
++func TestRootV1RejectsV2BindingsWithoutReinterpretingHistory(t *testing.T){
++ c:=rootCommand();b,e:=CanonicalBytes(c);if e!=nil{t.Fatal(e)};old,e:=json.Marshal(c);if e!=nil||!bytes.Equal(b,old){t.Fatal("legacy canonical JSON changed")}
++ for _,needle:=range [][]byte{[]byte("ViewID"),[]byte("FlowID"),[]byte("VersionID"),[]byte("TargetNodeID"),[]byte("SchemaVersion"),[]byte("DefinitionVersion")}{if bytes.Contains(b,needle){t.Fatalf("new zero field leaked into legacy bytes: %s",needle)}}
++ edits:=[]func(*Command){func(c *Command){c.ViewID=otherID},func(c *Command){c.FlowID=otherID},func(c *Command){c.VersionID=otherID},func(c *Command){c.TargetNodeID=otherID},func(c *Command){c.DefinitionVersion=1},func(c *Command){c.SchemaVersion=1}}
++ for i,edit:=range edits{t.Run(fmt.Sprint(i),func(t *testing.T){bad:=c;edit(&bad);rootV2Invalid(t,bad)})}
++}
++func TestRootV2ReceiptBindingAndMonotonicReplay(t *testing.T){
++ c:=rootV2Command();r:=rootReceipt(t,c)
++ p,e:=PlanReceipt(c,r,11,nil);if e!=nil||p!=(ApplyPlan{Outcome:"success",Sequence:12}){t.Fatalf("%+v %v",p,e)}
++ p,e=PlanReceipt(c,r,50,&r);if e!=nil||!p.Duplicate||p.Sequence!=12{t.Fatalf("replay %+v %v",p,e)}
++ for _,change:=range []func(*Command){func(c *Command){c.FlowID=otherID},func(c *Command){c.VersionID=otherID},func(c *Command){c.SchemaVersion++},func(c *Command){c.ViewID=otherID}}{changed:=c;change(&changed);if _,e=PlanReceipt(changed,r,11,nil);!errors.Is(e,ErrConflict){t.Fatalf("cross-context receipt accepted %v",e)}}
++ for _,status:=range []string{"unknown","pending","timeout","failed"}{bad:=r;bad.Outcome=status;if _,e=PlanReceipt(c,bad,11,nil);!errors.Is(e,ErrInvalid){t.Fatalf("uncertain receipt accepted %v",e)}}
++ r.Outcome="no_effect";r.Sequence=11;p,e=PlanReceipt(c,r,11,nil);if e!=nil||p.Sequence!=11||p.Outcome!="no_effect"{t.Fatal("no-effect sequence changed")}
++}
++func TestRootV2CanonicalBytesHaveIndependentOwnership(t *testing.T){
++ c:=rootV2Command();a,e:=CanonicalBytes(c);if e!=nil{t.Fatal(e)};want:=append([]byte(nil),a...);a[0]^=0xff
++ b,e:=CanonicalBytes(c);if e!=nil||!bytes.Equal(b,want){t.Fatal("caller mutation corrupted later encoding")}
++ h,e:=Fingerprint(c);if e!=nil||h!=sha256.Sum256(want){t.Fatal("caller mutation corrupted identity")}
++}
++func TestRootV2JSONStorageRoundTripPreservesIdentity(t *testing.T){
++ for _,version:=range []int{1,2}{c:=rootCommand();if version==2{c=rootV2Command();c.Action="return";c.TargetNodeID=otherID};raw,e:=json.Marshal(c);if e!=nil{t.Fatal(e)};var got Command;if e=json.Unmarshal(raw,&got);e!=nil||got!=c{t.Fatal("storage round trip changed command")};a,ae:=Fingerprint(c);b,be:=Fingerprint(got);if ae!=nil||be!=nil||a!=b{t.Fatal("stored identity not reproducible")}}
++}
++func TestRootV2UnknownProtocolCannotDowngrade(t *testing.T){for _,v:=range []int{-1,0,3,999}{c:=rootV2Command();c.ProtocolVersion=v;rootV2Invalid(t,c)}}
+diff --git a/services/bff/internal/flowcommands/testdata/root-command-vectors.json b/services/bff/internal/flowcommands/testdata/root-command-vectors.json
+new file mode 100644
+index 0000000..23bdab2
+--- /dev/null
++++ b/services/bff/internal/flowcommands/testdata/root-command-vectors.json
+@@ -0,0 +1,356 @@
++[
++  {
++    "Name": "legacy_v1",
++    "Command": {
++      "ProtocolVersion": 1,
++      "CommandID": "10000000-0000-4000-8000-000000000001",
++      "AppID": "20000000-0000-4000-8000-000000000002",
++      "TableID": "30000000-0000-4000-8000-000000000003",
++      "RecordID": "40000000-0000-4000-8000-000000000004",
++      "InstanceID": "50000000-0000-4000-8000-000000000005",
++      "TaskID": "60000000-0000-4000-8000-000000000006",
++      "ActorID": "70000000-0000-4000-8000-000000000007",
++      "Action": "agree",
++      "RecordVersion": 8,
++      "FenceEpoch": 9,
++      "TaskEpoch": 10,
++      "ExpectedSequence": 11,
++      "PayloadHash": [
++        1,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0
++      ]
++    },
++    "CanonicalHex": "7b2250726f746f636f6c56657273696f6e223a312c22436f6d6d616e644944223a2231303030303030302d303030302d343030302d383030302d303030303030303030303031222c224170704944223a2232303030303030302d303030302d343030302d383030302d303030303030303030303032222c225461626c654944223a2233303030303030302d303030302d343030302d383030302d303030303030303030303033222c225265636f72644944223a2234303030303030302d303030302d343030302d383030302d303030303030303030303034222c22496e7374616e63654944223a2235303030303030302d303030302d343030302d383030302d303030303030303030303035222c225461736b4944223a2236303030303030302d303030302d343030302d383030302d303030303030303030303036222c224163746f724944223a2237303030303030302d303030302d343030302d383030302d303030303030303030303037222c22416374696f6e223a226167726565222c225265636f726456657273696f6e223a382c2246656e636545706f6368223a392c225461736b45706f6368223a31302c22457870656374656453657175656e6365223a31312c225061796c6f616448617368223a5b312c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c302c305d7d",
++    "SHA256": "3ca1c7c41e606f5a099fe9c4fc35c882663b7838d6f4b469b0bb780c438c4414"
++  },
++  {
++    "Name": "v2_agree",
++    "Command": {
++      "ProtocolVersion": 2,
++      "CommandID": "10000000-0000-4000-8000-000000000001",
++      "AppID": "20000000-0000-4000-8000-000000000002",
++      "TableID": "30000000-0000-4000-8000-000000000003",
++      "RecordID": "40000000-0000-4000-8000-000000000004",
++      "InstanceID": "50000000-0000-4000-8000-000000000005",
++      "TaskID": "60000000-0000-4000-8000-000000000006",
++      "ActorID": "70000000-0000-4000-8000-000000000007",
++      "Action": "agree",
++      "RecordVersion": 8,
++      "FenceEpoch": 9,
++      "TaskEpoch": 10,
++      "ExpectedSequence": 11,
++      "PayloadHash": [
++        1,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0
++      ],
++      "ViewID": "81000000-0000-4000-8000-000000000008",
++      "FlowID": "82000000-0000-4000-8000-000000000009",
++      "VersionID": "83000000-0000-4000-8000-000000000010",
++      "DefinitionVersion": 3,
++      "SchemaVersion": 4,
++      "TargetNodeID": ""
++    },
++    "CanonicalHex": "575646434d4400020000002431303030303030302d303030302d343030302d383030302d3030303030303030303030310000002432303030303030302d303030302d343030302d383030302d3030303030303030303030320000002433303030303030302d303030302d343030302d383030302d3030303030303030303030330000002438313030303030302d303030302d343030302d383030302d3030303030303030303030380000002434303030303030302d303030302d343030302d383030302d3030303030303030303030340000002438323030303030302d303030302d343030302d383030302d3030303030303030303030390000002438333030303030302d303030302d343030302d383030302d3030303030303030303031300000002435303030303030302d303030302d343030302d383030302d3030303030303030303030350000002436303030303030302d303030302d343030302d383030302d3030303030303030303030360000002437303030303030302d303030302d343030302d383030302d303030303030303030303037000000056167726565000000000000000000000003000000000000000400000000000000080000000000000009000000000000000a000000000000000b0100000000000000000000000000000000000000000000000000000000000000",
++    "SHA256": "92ec6c6284f8fdc4e2fe21c4c27279b7a6e1ca1f3c2c5969a21ce06e468e648d"
++  },
++  {
++    "Name": "v2_reject",
++    "Command": {
++      "ProtocolVersion": 2,
++      "CommandID": "10000000-0000-4000-8000-000000000001",
++      "AppID": "20000000-0000-4000-8000-000000000002",
++      "TableID": "30000000-0000-4000-8000-000000000003",
++      "RecordID": "40000000-0000-4000-8000-000000000004",
++      "InstanceID": "50000000-0000-4000-8000-000000000005",
++      "TaskID": "60000000-0000-4000-8000-000000000006",
++      "ActorID": "70000000-0000-4000-8000-000000000007",
++      "Action": "reject",
++      "RecordVersion": 8,
++      "FenceEpoch": 9,
++      "TaskEpoch": 10,
++      "ExpectedSequence": 11,
++      "PayloadHash": [
++        1,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0
++      ],
++      "ViewID": "81000000-0000-4000-8000-000000000008",
++      "FlowID": "82000000-0000-4000-8000-000000000009",
++      "VersionID": "83000000-0000-4000-8000-000000000010",
++      "DefinitionVersion": 3,
++      "SchemaVersion": 4,
++      "TargetNodeID": ""
++    },
++    "CanonicalHex": "575646434d4400020000002431303030303030302d303030302d343030302d383030302d3030303030303030303030310000002432303030303030302d303030302d343030302d383030302d3030303030303030303030320000002433303030303030302d303030302d343030302d383030302d3030303030303030303030330000002438313030303030302d303030302d343030302d383030302d3030303030303030303030380000002434303030303030302d303030302d343030302d383030302d3030303030303030303030340000002438323030303030302d303030302d343030302d383030302d3030303030303030303030390000002438333030303030302d303030302d343030302d383030302d3030303030303030303031300000002435303030303030302d303030302d343030302d383030302d3030303030303030303030350000002436303030303030302d303030302d343030302d383030302d3030303030303030303030360000002437303030303030302d303030302d343030302d383030302d3030303030303030303030370000000672656a656374000000000000000000000003000000000000000400000000000000080000000000000009000000000000000a000000000000000b0100000000000000000000000000000000000000000000000000000000000000",
++    "SHA256": "1cf7cf6efb4722279971a5efbec0cb293c0ca7292e5df388359a15ad25fbb718"
++  },
++  {
++    "Name": "v2_start",
++    "Command": {
++      "ProtocolVersion": 2,
++      "CommandID": "10000000-0000-4000-8000-000000000001",
++      "AppID": "20000000-0000-4000-8000-000000000002",
++      "TableID": "30000000-0000-4000-8000-000000000003",
++      "RecordID": "40000000-0000-4000-8000-000000000004",
++      "InstanceID": "50000000-0000-4000-8000-000000000005",
++      "TaskID": "",
++      "ActorID": "70000000-0000-4000-8000-000000000007",
++      "Action": "start",
++      "RecordVersion": 8,
++      "FenceEpoch": 9,
++      "TaskEpoch": 0,
++      "ExpectedSequence": 0,
++      "PayloadHash": [
++        1,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0
++      ],
++      "ViewID": "81000000-0000-4000-8000-000000000008",
++      "FlowID": "82000000-0000-4000-8000-000000000009",
++      "VersionID": "83000000-0000-4000-8000-000000000010",
++      "DefinitionVersion": 3,
++      "SchemaVersion": 4,
++      "TargetNodeID": ""
++    },
++    "CanonicalHex": "575646434d4400020000002431303030303030302d303030302d343030302d383030302d3030303030303030303030310000002432303030303030302d303030302d343030302d383030302d3030303030303030303030320000002433303030303030302d303030302d343030302d383030302d3030303030303030303030330000002438313030303030302d303030302d343030302d383030302d3030303030303030303030380000002434303030303030302d303030302d343030302d383030302d3030303030303030303030340000002438323030303030302d303030302d343030302d383030302d3030303030303030303030390000002438333030303030302d303030302d343030302d383030302d3030303030303030303031300000002435303030303030302d303030302d343030302d383030302d303030303030303030303035000000000000002437303030303030302d303030302d343030302d383030302d303030303030303030303037000000057374617274000000000000000000000003000000000000000400000000000000080000000000000009000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000",
++    "SHA256": "410152b86ab7afb08bb3c6084a7178a5b99233700b6cbf27075bb04b92a43363"
++  },
++  {
++    "Name": "v2_withdraw",
++    "Command": {
++      "ProtocolVersion": 2,
++      "CommandID": "10000000-0000-4000-8000-000000000001",
++      "AppID": "20000000-0000-4000-8000-000000000002",
++      "TableID": "30000000-0000-4000-8000-000000000003",
++      "RecordID": "40000000-0000-4000-8000-000000000004",
++      "InstanceID": "50000000-0000-4000-8000-000000000005",
++      "TaskID": "",
++      "ActorID": "70000000-0000-4000-8000-000000000007",
++      "Action": "withdraw",
++      "RecordVersion": 8,
++      "FenceEpoch": 9,
++      "TaskEpoch": 0,
++      "ExpectedSequence": 11,
++      "PayloadHash": [
++        1,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0
++      ],
++      "ViewID": "81000000-0000-4000-8000-000000000008",
++      "FlowID": "82000000-0000-4000-8000-000000000009",
++      "VersionID": "83000000-0000-4000-8000-000000000010",
++      "DefinitionVersion": 3,
++      "SchemaVersion": 4,
++      "TargetNodeID": ""
++    },
++    "CanonicalHex": "575646434d4400020000002431303030303030302d303030302d343030302d383030302d3030303030303030303030310000002432303030303030302d303030302d343030302d383030302d3030303030303030303030320000002433303030303030302d303030302d343030302d383030302d3030303030303030303030330000002438313030303030302d303030302d343030302d383030302d3030303030303030303030380000002434303030303030302d303030302d343030302d383030302d3030303030303030303030340000002438323030303030302d303030302d343030302d383030302d3030303030303030303030390000002438333030303030302d303030302d343030302d383030302d3030303030303030303031300000002435303030303030302d303030302d343030302d383030302d303030303030303030303035000000000000002437303030303030302d303030302d343030302d383030302d3030303030303030303030370000000877697468647261770000000000000000000000030000000000000004000000000000000800000000000000090000000000000000000000000000000b0100000000000000000000000000000000000000000000000000000000000000",
++    "SHA256": "8b1758059bce1ceb3d8f3dd1eb9a93be14d4469b1b9b7621cc99e5df8ad6fbe0"
++  },
++  {
++    "Name": "v2_return",
++    "Command": {
++      "ProtocolVersion": 2,
++      "CommandID": "10000000-0000-4000-8000-000000000001",
++      "AppID": "20000000-0000-4000-8000-000000000002",
++      "TableID": "30000000-0000-4000-8000-000000000003",
++      "RecordID": "40000000-0000-4000-8000-000000000004",
++      "InstanceID": "50000000-0000-4000-8000-000000000005",
++      "TaskID": "60000000-0000-4000-8000-000000000006",
++      "ActorID": "70000000-0000-4000-8000-000000000007",
++      "Action": "return",
++      "RecordVersion": 8,
++      "FenceEpoch": 9,
++      "TaskEpoch": 10,
++      "ExpectedSequence": 11,
++      "PayloadHash": [
++        1,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0,
++        0
++      ],
++      "ViewID": "81000000-0000-4000-8000-000000000008",
++      "FlowID": "82000000-0000-4000-8000-000000000009",
++      "VersionID": "83000000-0000-4000-8000-000000000010",
++      "DefinitionVersion": 3,
++      "SchemaVersion": 4,
++      "TargetNodeID": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
++    },
++    "CanonicalHex": "575646434d4400020000002431303030303030302d303030302d343030302d383030302d3030303030303030303030310000002432303030303030302d303030302d343030302d383030302d3030303030303030303030320000002433303030303030302d303030302d343030302d383030302d3030303030303030303030330000002438313030303030302d303030302d343030302d383030302d3030303030303030303030380000002434303030303030302d303030302d343030302d383030302d3030303030303030303030340000002438323030303030302d303030302d343030302d383030302d3030303030303030303030390000002438333030303030302d303030302d343030302d383030302d3030303030303030303031300000002435303030303030302d303030302d343030302d383030302d3030303030303030303030350000002436303030303030302d303030302d343030302d383030302d3030303030303030303030360000002437303030303030302d303030302d343030302d383030302d3030303030303030303030370000000672657475726e0000002462626262626262622d626262622d346262622d386262622d6262626262626262626262620000000000000003000000000000000400000000000000080000000000000009000000000000000a000000000000000b0100000000000000000000000000000000000000000000000000000000000000",
++    "SHA256": "eb0770f0fce74bfa42040f43ab124d39192995ab4fcb66a155cae2d7febc2479"
++  }
++]
