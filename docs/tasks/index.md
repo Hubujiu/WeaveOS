@@ -55,3 +55,5 @@ V030-030 B 段受权实现待Root复核：`task/V030-030-engine-actions`，冻�
 V030-030 Root复核修复：补测4086e897的3新例先实际RED，再修取消/身份判定先后与严格UTF8；最终36+兼容5及gate16/41全绿，旧18/8/9+互操作1/governance240重跑通过。[修复证据](../evidence/V030-030/execution-review-fix/README.md)。等待Root复核后完整远端CI，无main/部署或产品HTTP交付。
 
 V030-030 B 段交付：[Draft PR42](https://github.com/Hubujiu/WeaveOS/pull/42)，base冻结A分支`task/V030-030-engine-execution`530d877，PR40不动。Root已完成17dd0b0源码/证据复核并放行最终metadata head完整远端CI；行为/测试源码不变，无status-only反复提交。仍未接产品执行RPC/HTTP、业务权限/投影/触发或正式bootstrap，非全链路交付。
+
+Go执行负载与结果验证：[V030-031](V030-031.md)，task/V030-031-execution-codecs / ../WeaveOS-worktrees/V030-031；Root合同/15测试/8固定向量，[draft PR41](https://github.com/Hubujiu/WeaveOS/pull/41)，独立基线530d877；仅有界codec，云端RED/GREEN及基准已保存，待Root源码审查和最终CI，不代表完整审批或全链路完成。
