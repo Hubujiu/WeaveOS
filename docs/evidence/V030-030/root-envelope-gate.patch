@@ -1,0 +1,156 @@
+commit f6252e3acfda0c2010f3d7398b76ecec15adc07d
+Author:     Hubujiu <xiaoyuliu599@gmail.com>
+AuthorDate: Sun Oct 4 22:45:40 2026 -0700
+Commit:     Hubujiu <xiaoyuliu599@gmail.com>
+CommitDate: Sun Oct 4 22:45:40 2026 -0700
+
+    test(ci): require exact Java envelope cases without altering deployment gate
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 04e7c13..9d8c441 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -153,15 +153,22 @@ jobs:
+       - name: Prepare locked offline Java dependencies
+         run: bash services/workflow-engine/prepare-build.sh 2>&1 | tee services/workflow-engine/ci-logs/prepare.txt
+       - name: Clean verify against dedicated internal PostgreSQL
+-        run: bash services/workflow-engine/run-tests.sh clean verify 2>&1 | tee services/workflow-engine/ci-logs/verify.txt
++        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootDeploymentRegistryTest verify 2>&1 | tee services/workflow-engine/ci-logs/verify.txt
+       - name: Require all 18 Root-owned cases without skips
+         run: python3 services/workflow-engine/ci_gate.py services/workflow-engine/target/surefire-reports services/workflow-engine/expected-tests.json 2>&1 | tee services/workflow-engine/ci-logs/report-gate.txt
++      - name: Root-owned envelope report gate acceptance
++        run: python3 services/workflow-engine/envelope_ci_gate_tests.py 2>&1 | tee services/workflow-engine/ci-logs/envelope-gate-tests.txt
++      - name: Exact Java command envelope compatibility cases
++        run: bash services/workflow-engine/run-tests.sh -Dtest=RootCommandEnvelopeTest -Dworkflow.reports=target/envelope-ci-reports test 2>&1 | tee services/workflow-engine/ci-logs/envelope-tests.txt
++      - name: Require all eight envelope cases without skips
++        run: python3 services/workflow-engine/envelope_ci_gate.py services/workflow-engine/target/envelope-ci-reports services/workflow-engine/expected-envelope-tests.json 2>&1 | tee services/workflow-engine/ci-logs/envelope-report-gate.txt
+       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+         if: always()
+         with:
+           name: workflow-engine-${{ github.run_id }}
+           path: |
+             services/workflow-engine/target/surefire-reports/
++            services/workflow-engine/target/envelope-ci-reports/
+             services/workflow-engine/ci-logs/
+           if-no-files-found: warn
+           retention-days: 14
+diff --git a/docs/tasks/V030-030.md b/docs/tasks/V030-030.md
+index 324c971..29c145a 100644
+--- a/docs/tasks/V030-030.md
++++ b/docs/tasks/V030-030.md
+@@ -1,7 +1,7 @@
+ # V030-030 · 正式引擎审批执行与跨语言身份
+ 
+ <!-- task-meta
+-{"id":"V030-030","title":"正式引擎审批执行与跨语言身份","branch":"task/V030-030-engine-execution","worktree":"../WeaveOS-worktrees/V030-030","pr":null,"owner":"Root合同测试验收；GPT-6.1-sol实现","dependsOn":[],"allowedPaths":["services/workflow-engine/src/main/java/org/weaveos/workflow/CommandEnvelope.java","services/workflow-engine/src/test/java/org/weaveos/workflow/RootCommandEnvelopeTest.java","docs/tasks/V030-030.md","docs/tasks/index.md","docs/evidence/V030-030/"],"deliveryState":"in_progress"}
++{"id":"V030-030","title":"正式引擎审批执行与跨语言身份","branch":"task/V030-030-engine-execution","worktree":"../WeaveOS-worktrees/V030-030","pr":null,"owner":"Root合同测试验收；GPT-6.1-sol实现","dependsOn":[],"allowedPaths":["services/workflow-engine/src/main/java/org/weaveos/workflow/CommandEnvelope.java","services/workflow-engine/src/test/java/org/weaveos/workflow/RootCommandEnvelopeTest.java","docs/tasks/V030-030.md","docs/tasks/index.md","docs/evidence/V030-030/","services/workflow-engine/envelope_ci_gate.py","services/workflow-engine/envelope_ci_gate_tests.py","services/workflow-engine/expected-envelope-tests.json",".github/workflows/ci.yml"],"deliveryState":"in_progress"}
+ -->
+ 
+ ## Sources
+@@ -18,3 +18,6 @@ Root provides CommandEnvelope behaviorless declarations and eight Java tests wit
+ Read full ADR: final immutable class decode(byte[]) accepts only canonical v2 at most538bytes. Fixed8byteprefix, bounded12string fields then6uint64BE then32rawhash. All identity/action/integer requirements equal Go v2; reject oldv1/unknown/truncated/trailing/huge lengths/malformed text/zero UUID/hash, no rawinput leaks. Check lengths before allocation. Getters and copies immutable; fingerprint SHA256 exact bytes. Runtime authorization and engine effects are not part of this parser.
+ 
+ Run Root8 JUnit cases plus existing deployment18/RPC9 and relevant oldproof regression using locked existing Java/Maven/PG tools. Report actual timing and theoretical bound separately. No claims of full approval execution or cross-service readiness from parser GREEN. Update task index/evidence; push authorized checkpoint/draftPR base task/V030-029-command-v2 as appropriate, preserving independent small changes. Existing CI gates must not be weakened or expected manifests silently expanded; precise new gate is Root-owned. Report stageA useful results as soon as available. StageB requires new Root Request/Payload/Receipt/DDL and real Flowable tests before implementation; do not guess APIs or business semantics. Root will continue that contract; stageA is not overall completion.
++
++## Root exact envelope CI contract
++Root supplies12 synthetic report-gate tests, fixed manifest of8 Java cases, and failing envelope_ci_gate.py declaration. Observe actual gate RED before implementing only that gate. Reject missing/extra/duplicate cases or reports, wrongclass/suite, mismatched counters, failure/error/skip, malformed XML/DOCTYPE. Legacy18 deployment gate remains unchanged and is now explicitly selected; new8 run/report independently in same job. ExistingRPC9 separate gate unchanged. Merge sharedsecurity CI enumeration without deleting either Root addition. No CI success claim until exacthead runs both old18 and new8 with strict gates.
+diff --git a/services/workflow-engine/envelope_ci_gate.py b/services/workflow-engine/envelope_ci_gate.py
+new file mode 100644
+index 0000000..46f51fb
+--- /dev/null
++++ b/services/workflow-engine/envelope_ci_gate.py
+@@ -0,0 +1,9 @@
++"""Root declaration for strict eight-case envelope report validation."""
++class GateError(Exception):
++ pass
++
++def validate(report_dir,manifest):
++ raise GateError("not implemented")
++
++if __name__=="__main__":
++ raise SystemExit(1)
+diff --git a/services/workflow-engine/envelope_ci_gate_tests.py b/services/workflow-engine/envelope_ci_gate_tests.py
+new file mode 100644
+index 0000000..c0ec0aa
+--- /dev/null
++++ b/services/workflow-engine/envelope_ci_gate_tests.py
+@@ -0,0 +1,60 @@
++"""Root-owned CI gate acceptance. Only synthetic JUnit reports, no network."""
++import copy
++import importlib.util
++import json
++from pathlib import Path
++import tempfile
++import unittest
++import xml.etree.ElementTree as ET
++BASE=Path(__file__).resolve().parent
++spec=importlib.util.spec_from_file_location("gate",BASE/"envelope_ci_gate.py")
++gate=importlib.util.module_from_spec(spec);spec.loader.exec_module(gate)
++class RootGateTest(unittest.TestCase):
++ def setUp(self):
++  self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
++  self.path=Path(self.tmp.name);self.manifest=json.loads((BASE/"expected-envelope-tests.json").read_text())
++  self.root=ET.Element("testsuite",name=self.manifest["classname"],tests=str(len(self.manifest["tests"])),failures="0",errors="0",skipped="0")
++  for name in self.manifest["tests"]:ET.SubElement(self.root,"testcase",name=name,classname=self.manifest["classname"])
++ def write(self):
++  ET.ElementTree(self.root).write(self.path/("TEST-"+self.manifest["classname"]+".xml"))
++ def check(self):
++  self.write();return gate.validate(self.path,self.manifest)
++ def test_exact_eight_pass(self):
++  self.assertEqual(8,self.check())
++ def test_missing_report_fails(self):
++  with self.assertRaises(gate.GateError):gate.validate(self.path,self.manifest)
++ def test_missing_case_fails(self):
++  self.root.remove(self.root[0]);self.root.set("tests","7")
++  with self.assertRaises(gate.GateError):self.check()
++ def test_duplicate_replacing_case_fails(self):
++  self.root[1].set("name",self.root[0].get("name"))
++  with self.assertRaises(gate.GateError):self.check()
++ def test_wrong_class_fails(self):
++  self.root[0].set("classname","other")
++  with self.assertRaises(gate.GateError):self.check()
++ def test_extra_report_fails(self):
++  self.write();(self.path/"TEST-unexpected.xml").write_text("<testsuite/>")
++  with self.assertRaises(gate.GateError):gate.validate(self.path,self.manifest)
++ def test_failure_error_skip_children_fail_even_when_counts_lie(self):
++  for tag in ("failure","error","skipped"):
++   child=ET.SubElement(self.root[0],tag)
++   with self.assertRaises(gate.GateError):self.check()
++   self.root[0].remove(child)
++ def test_summary_counts_must_match_cases(self):
++  for key,value in (("tests","7"),("failures","1"),("errors","1"),("skipped","1"),("tests","bad")):
++   previous=self.root.get(key);self.root.set(key,value)
++   with self.assertRaises(gate.GateError):self.check()
++   self.root.set(key,previous)
++ def test_duplicate_manifest_fails(self):
++  self.manifest["tests"][1]=self.manifest["tests"][0]
++  with self.assertRaises(gate.GateError):self.check()
++ def test_wrong_suite_fails(self):
++  self.root.set("name","other")
++  with self.assertRaises(gate.GateError):self.check()
++ def test_malformed_xml_fails(self):
++  self.write();next(self.path.glob("TEST-*.xml")).write_text("<broken")
++  with self.assertRaises(gate.GateError):gate.validate(self.path,self.manifest)
++ def test_doctype_fails(self):
++  self.write();p=next(self.path.glob("TEST-*.xml"));p.write_text('<!DOCTYPE testsuite [<!ENTITY x "bad">]>'+p.read_text())
++  with self.assertRaises(gate.GateError):gate.validate(self.path,self.manifest)
++if __name__=="__main__":unittest.main()
+diff --git a/services/workflow-engine/expected-envelope-tests.json b/services/workflow-engine/expected-envelope-tests.json
+new file mode 100644
+index 0000000..1157522
+--- /dev/null
++++ b/services/workflow-engine/expected-envelope-tests.json
+@@ -0,0 +1,13 @@
++{
++  "classname": "org.weaveos.workflow.RootCommandEnvelopeTest",
++  "tests": [
++    "exactGoGoldenHeadersBytesAndHashes",
++    "rejectsLegacyUnknownPrefixNullAndOversize",
++    "rejectsEveryTruncationAndTrailingData",
++    "rejectsOversizedLengthAndNonCanonicalText",
++    "validatesAllUuidBindingsAndNonzeroHash",
++    "validatesExactSafeIntegerBounds",
++    "validatesActionSpecificTaskAndTargetIdentity",
++    "callerCannotMutateAcceptedIdentityOrReturnedArrays"
++  ]
++}
