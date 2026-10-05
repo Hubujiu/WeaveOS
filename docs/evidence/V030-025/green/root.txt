@@ -1,0 +1,77 @@
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:51:2 › Root focused designer uses shell sidebars and a clean central canvas 1440 (1.7s)
+  ✓  2 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:51:2 › Root focused designer uses shell sidebars and a clean central canvas 1280 (1.6s)
+  ✓  3 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:80:1 › Root Mono designer retains palette, neutral selection and preview source focus (1.9s)
+  ✘  4 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:93:1 › Root Mono designer narrow reduced-motion remains editable without page overflow (30.0s)
+  ✘  5 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:102:1 › Root focused designer exit keeps unsaved edits until explicit discard (2.9s)
+  ✓  6 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:117:1 › Root focused designer header save waits for preflight and preserves edit on rejection (1.8s)
+
+
+  1) [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:93:1 › Root Mono designer narrow reduced-motion remains editable without page overflow 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: '字段面板' }).getByRole('button', { name: '文本', exact: true })
+        - locator resolved to <button type="button" draggable="true">…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <header class="mono-top">…</header> from <div class="mono-main" data-testid="application-shell">…</div> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <header class="mono-top">…</header> from <div class="mono-main" data-testid="application-shell">…</div> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        55 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <header class="mono-top">…</header> from <div class="mono-main" data-testid="application-shell">…</div> subtree intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+
+
+      93 | test('Root Mono designer narrow reduced-motion remains editable without page overflow',async({page})=>{
+      94 |  await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});await fixture(page);await page.goto(routePath+'/design');
+    > 95 |  const palette=page.getByRole('region',{name:'字段面板'});await palette.getByRole('button',{name:'文本',exact:true}).click();
+         |                                                                                                                ^
+      96 |  const name=page.getByLabel('字段名称',{exact:true});await name.scrollIntoViewIfNeeded();await name.fill('小屏仍可编辑');await expect(name).toHaveValue('小屏仍可编辑');
+      97 |  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+      98 |  await page.getByRole('button',{name:'预览',exact:true}).click();await expect(page.getByRole('dialog',{name:'表单预览',exact:true})).toBeVisible();
+        at /repo/apps/web/src/root-monochrome-designer.component.spec.ts:95:112
+
+    Error Context: ../tmp/root-results/root-monochrome-designer.c-d0c2a-table-without-page-overflow-chromium/error-context.md
+
+  2) [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:102:1 › Root focused designer exit keeps unsaved edits until explicit discard 
+
+    Error: expect(received).toHaveLength(expected)
+
+    Expected length: 0
+    Received length: 1
+    Received array:  [{"actor": "11111111-1111-4111-8111-111111111111", "body": {"filter": null, "page": 1, "pageSize": 20, "sort": null}, "method": "POST", "path": "applications/22222222-2222-4222-8222-222222222222/forms/33333333-3333-4333-8333-333333333333/records/search"}]
+
+      113 |  await expect(page.getByRole('navigation',{name:'应用导航',exact:true})).toBeVisible();
+      114 |  await expect(page.getByTestId('workspace-shell')).toHaveCount(1);
+    > 115 |  expect(api.calls.filter(c=>c.method!=='GET')).toHaveLength(0);
+          |                                                ^
+      116 | });
+      117 | test('Root focused designer header save waits for preflight and preserves edit on rejection',async({page})=>{
+      118 |  await page.setViewportSize({width:1440,height:1000});await fixture(page);
+        at /repo/apps/web/src/root-monochrome-designer.component.spec.ts:115:48
+
+    Error Context: ../tmp/root-results/root-monochrome-designer.c-41592-dits-until-explicit-discard-chromium/error-context.md
+
+  2 failed
+    [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:93:1 › Root Mono designer narrow reduced-motion remains editable without page overflow 
+    [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:102:1 › Root focused designer exit keeps unsaved edits until explicit discard 
+  4 passed (42.5s)

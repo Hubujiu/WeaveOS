@@ -10,6 +10,7 @@ import { CreateApplication } from '../catalog/CreateApplication';
 import { useApplications } from '../useApplications';
 import { useApplicationOperation } from '../useApplicationOperation';
 import '../applications.css';
+import { DesignerSlotsProvider } from './DesignerSlots';
 
 const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const validCreatedApplication = (app: Application, actorId: string) => uuid.test(app?.id) && typeof app.name === 'string' && app.name.trim().length > 0 && app.ownerUserId === actorId && app.policyRevision === 1;
@@ -62,7 +63,7 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onPerm
  };
  const canCreate = access.bootstrapAdmin || access.permissions.some(p => p.code === 'applications.create');
  if (suspended) return null;
- return <WorkspaceShell user={user} access={access} catalog={catalog} appId={appId} admin={!!adminContent}
+ return <DesignerSlotsProvider><WorkspaceShell user={user} access={access} catalog={catalog} appId={appId} admin={!!adminContent}
   accountOpen={account} onAccount={()=>setAccount(value=>!value)} onHome={()=>navigate('/app')}
   onCatalog={()=>navigate('/app/applications')} onAdmin={()=>navigate('/app/admin')}
   tabs={
@@ -80,5 +81,5 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onPerm
   </main>
   {account && <section className="account-menu" aria-label="账号信息"><strong>{user.account}</strong><p>{access.bootstrapAdmin ? 'Bootstrap Admin' : access.identities.length ? access.identities.map(v => v.name).join('、') : '尚未分配身份'}</p>{access.permissions.map(p => <div key={p.code}><span>{p.name}</span>{p.sources?.map((s, i) => <small key={i}>{s.identityName}{s.templateName ? ' · ' + s.templateName : ' · 直接权限'}</small>)}</div>)}<button className="admin-button" disabled={pending} onClick={logout}>退出登录</button></section>}
   {create && <CreateApplication actorId={user.id} close={closeCreate} onDirty={onDirty} operation={operation} />}
- </WorkspaceShell>;
+ </WorkspaceShell></DesignerSlotsProvider>;
 }

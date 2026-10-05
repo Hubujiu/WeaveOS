@@ -7,6 +7,7 @@ import { FormsDialog } from './FormsDialog';
 import { FileText, ChartColumn, Clock, SquareCheck, UsersRound, LayoutGrid } from 'lucide-react';
 import {createLeaveController,type LeaveController,type LeaveGuardProps,type LeaveStatus} from './leaveGuard';
 import './forms.css';
+import { DesignerSlots, useDesignerSlots } from '../shell/DesignerSlots';
 
 export type FormDesignerProps = LeaveGuardProps&{
   appId:string;actorId:string;viewId:string;onDirtyChange?:(dirty:boolean)=>void;onBack?:()=>void;
@@ -109,6 +110,8 @@ export function FormDesigner(props:FormDesignerProps){
 }
 function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthorized,onIdentityMismatch,registerLeaveGuard,
   scopeKey}:FormDesignerProps&{scopeKey:string}){
+  const shellSlots=useDesignerSlots();
+  const focused=!!shellSlots;
   const restored=draftMemory.get(scopeKey);
   const [base,reactSetBase]=useState<Definition|null>(restored?.base??null),
     [draft,reactSetDraft]=useState<DefinitionInput|null>(restored?.draft??null);
@@ -363,23 +366,7 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
       </div>}
     </div>;
   };
-  return <section className="forms-module forms-designer" aria-label="表单设计器">
-    <div className="forms-toolbar"><div className="forms-toolbar-title">
-      <button type="button" className="forms-link" onClick={openLeave}>返回工作台</button>
-      <div className="forms-designer-title"><span>表单设计</span><strong>{base.form.name}</strong></div>{dirty&&<span className="forms-unsaved">未保存</span>}</div>
-      <div className="forms-toolbar-actions">
-        {(phase==='preflight'||phase==='saving')&&<span role="status">{phase==='preflight'?'正在预检…':'正在保存…'}</span>}
-        {phase==='unconfirmed'&&<><button type="button" onClick={()=>void checkOriginal()}>查询保存结果</button>
-          <button type="button" disabled={permissionRevoked} onClick={()=>pending&&void commit(pending,true)}>按原请求重试</button></>}
-        <button type="button" className="forms-primary" disabled={!editable} onClick={()=>void save()}>保存</button>
-      </div></div>
-    <div className="forms-designer-navigation"><span className="forms-designer-current">设计</span>
-      <button type="button" onClick={()=>setDialog('preview')}>预览</button></div>
-    {error&&<p className="forms-alert" role="alert">{error}</p>}
-    {notice&&<p className="forms-success" role="status">{notice}</p>}
-    {(!base.capabilities.canManageDefinition||permissionRevoked)&&!error&&<p className="forms-alert" role="alert">没有表单配置权限，当前仅可查看</p>}
-    <div className="forms-designer-grid">
-      <section className="forms-panel forms-palette" role="region" aria-label="字段面板"><h2>字段面板</h2>
+  const paletteContent=<section className="forms-panel forms-palette" role="region" aria-label="字段面板"><h2>{focused?'字段':'字段面板'}</h2>
         <div>{palette.map(entry=><button type="button" key={entry.kind} disabled={!editable}
           draggable={editable} onDragStart={event=>event.dataTransfer.setData('application/x-weaveos-form',JSON.stringify({kind:'palette',value:entry.kind}))}
           onClick={()=>addKind(entry.kind)}>{(() => {
@@ -395,15 +382,15 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
           onDragStart={event=>event.dataTransfer.setData('application/x-weaveos-form',
             JSON.stringify({kind:'existing',value:item.id}))}
           onClick={()=>addExistingField(item.id)}>{item.name} · {labelFor[item.kind]}</button>)}</div></>}
-        <h3>高级字段</h3><p>附件、关联、公式等将在后续版本接入。</p>
-      </section>
-      <section className="forms-panel forms-canvas" role="region" aria-label="表单画布"
+        {!focused&&<><h3>高级字段</h3><p>附件、关联、公式等将在后续版本接入。</p></>}
+      </section>;
+  const canvasContent=<section className="forms-panel forms-canvas" role="region" aria-label="表单画布"
         onDragOver={event=>event.preventDefault()} onDrop={event=>drop(event)}>
-        <h2>{base.form.name}</h2><p className="forms-muted">拖拽或用键盘添加字段，保存后才会生效</p>
+        {!focused&&<><h2>{base.form.name}</h2><p className="forms-muted">拖拽或用键盘添加字段，保存后才会生效</p></>}
         <div className="forms-canvas-grid">{draft.layout.map(canvasNode)}
           {!draft.layout.length&&<div className="forms-canvas-empty">从左侧选择字段，或拖入这里开始设计表单</div>}</div>
-      </section>
-      <section className="forms-panel forms-properties" role="region" aria-label="字段属性"><h2>字段属性</h2>
+      </section>;
+  const propertiesContent=<section className="forms-panel forms-properties" role="region" aria-label="字段属性"><h2>字段属性</h2>
         {field?<>
           <h3>{field.name}</h3><label>稳定字段 ID<input value={field.id} readOnly/></label>
           <label>字段名称<input aria-label="字段名称" value={field.name} disabled={!editable}
@@ -455,8 +442,36 @@ function FormDesignerScope({appId,actorId,viewId,onDirtyChange,onBack,onUnauthor
           <button type="button" className="forms-danger" disabled={!editable}
             onClick={()=>{setDraft(previous=>previous?{...previous,layout:removeNode(previous.layout,node.id)}:previous);setSelected(null);}}>移除布局节点</button>
         </>:<p className="forms-muted">选择画布中的字段，配置名称、校验、默认值和宽度。</p>}
-      </section>
-    </div>
+      </section>;
+  return <section className={`forms-module forms-designer${focused?' forms-designer-focused':''}`} aria-label="表单设计器">
+    {focused?<DesignerSlots scope={scopeKey} palette={paletteContent} properties={propertiesContent}
+      context={<div className="forms-toolbar-title forms-focused-context"><strong>{base.form.name}</strong>{dirty&&<span className="forms-unsaved">未保存</span>}</div>}
+      actions={<div className="forms-focused-actions">
+        <button type="button" onClick={()=>setDialog('preview')}>预览</button>
+        <button type="button" className="forms-primary" disabled={!editable} onClick={()=>void save()}>保存</button>
+        <button type="button" onClick={openLeave}>退出</button>
+      </div>}/>:<>
+    <div className="forms-toolbar"><div className="forms-toolbar-title">
+      <button type="button" className="forms-link" onClick={openLeave}>返回工作台</button>
+      <div className="forms-designer-title"><span>表单设计</span><strong>{base.form.name}</strong></div>{dirty&&<span className="forms-unsaved">未保存</span>}</div>
+      <div className="forms-toolbar-actions">
+        {(phase==='preflight'||phase==='saving')&&<span role="status">{phase==='preflight'?'正在预检…':'正在保存…'}</span>}
+        {phase==='unconfirmed'&&<><button type="button" onClick={()=>void checkOriginal()}>查询保存结果</button>
+          <button type="button" disabled={permissionRevoked} onClick={()=>pending&&void commit(pending,true)}>按原请求重试</button></>}
+        <button type="button" className="forms-primary" disabled={!editable} onClick={()=>void save()}>保存</button>
+      </div></div>
+    <div className="forms-designer-navigation"><span className="forms-designer-current">设计</span>
+      <button type="button" onClick={()=>setDialog('preview')}>预览</button></div>
+    </>}
+    {focused&&<>
+      {(phase==='preflight'||phase==='saving')&&<p role="status">{phase==='preflight'?'正在预检…':'正在保存…'}</p>}
+      {phase==='unconfirmed'&&<div className="forms-operation-actions"><button type="button" onClick={()=>void checkOriginal()}>查询保存结果</button>
+        <button type="button" disabled={permissionRevoked} onClick={()=>pending&&void commit(pending,true)}>按原请求重试</button></div>}
+    </>}
+    {error&&<p className="forms-alert" role="alert">{error}</p>}
+    {notice&&<p className="forms-success" role="status">{notice}</p>}
+    {(!base.capabilities.canManageDefinition||permissionRevoked)&&!error&&<p className="forms-alert" role="alert">没有表单配置权限，当前仅可查看</p>}
+    {focused?canvasContent:<div className="forms-designer-grid">{paletteContent}{canvasContent}{propertiesContent}</div>}
     {dialog==='preview'&&<FormsDialog title="表单预览" onClose={()=>setDialog(null)}>
       <p className="forms-muted">本地预览，尚未保存。输入不会创建记录。</p>
       <div className="forms-preview"><FormPreview fields={draft.fields} layout={draft.layout}/></div>
