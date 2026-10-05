@@ -1,0 +1,93 @@
+
+Running 6 tests using 1 worker
+
+  ✘  1 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:51:2 › Root focused designer uses shell sidebars and a clean central canvas 1440 (2.0s)
+  ✘  2 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:51:2 › Root focused designer uses shell sidebars and a clean central canvas 1280 (1.7s)
+  ✓  3 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:80:1 › Root Mono designer retains palette, neutral selection and preview source focus (2.0s)
+  ✓  4 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:93:1 › Root Mono designer narrow reduced-motion remains editable without page overflow (1.7s)
+  ✘  5 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:102:1 › Root focused designer exit keeps unsaved edits until explicit discard (30.0s)
+  ✘  6 [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:117:1 › Root focused designer header save waits for preflight and preserves edit on rejection (30.0s)
+
+
+  1) [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:51:2 › Root focused designer uses shell sidebars and a clean central canvas 1440 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 1
+    Received:    221
+
+      57 |   const top=page.locator('.mono-top');const t=(await top.boundingBox())!;
+      58 |   expect(Math.abs(rail.width-78)).toBeLessThanOrEqual(1);
+    > 59 |   expect(Math.abs(p.x-78)).toBeLessThanOrEqual(1);expect(Math.abs(p.width-190)).toBeLessThanOrEqual(1);
+         |                            ^
+      60 |   expect(Math.abs(a.width-332)).toBeLessThanOrEqual(1);expect(Math.abs(a.x+a.width-width)).toBeLessThanOrEqual(1);
+      61 |   expect(Math.abs(t.y)).toBeLessThanOrEqual(1);expect(Math.abs(t.height-64)).toBeLessThanOrEqual(1);
+      62 |   expect(p.y).toBeGreaterThanOrEqual(64);expect(p.y).toBeLessThanOrEqual(96);
+        at /repo/apps/web/src/root-monochrome-designer.component.spec.ts:59:28
+
+    Error Context: ../tmp/root-results/root-monochrome-designer.c-10a0b-a-clean-central-canvas-1440-chromium/error-context.md
+
+  2) [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:51:2 › Root focused designer uses shell sidebars and a clean central canvas 1280 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 1
+    Received:    221
+
+      57 |   const top=page.locator('.mono-top');const t=(await top.boundingBox())!;
+      58 |   expect(Math.abs(rail.width-78)).toBeLessThanOrEqual(1);
+    > 59 |   expect(Math.abs(p.x-78)).toBeLessThanOrEqual(1);expect(Math.abs(p.width-190)).toBeLessThanOrEqual(1);
+         |                            ^
+      60 |   expect(Math.abs(a.width-332)).toBeLessThanOrEqual(1);expect(Math.abs(a.x+a.width-width)).toBeLessThanOrEqual(1);
+      61 |   expect(Math.abs(t.y)).toBeLessThanOrEqual(1);expect(Math.abs(t.height-64)).toBeLessThanOrEqual(1);
+      62 |   expect(p.y).toBeGreaterThanOrEqual(64);expect(p.y).toBeLessThanOrEqual(96);
+        at /repo/apps/web/src/root-monochrome-designer.component.spec.ts:59:28
+
+    Error Context: ../tmp/root-results/root-monochrome-designer.c-0d11a-a-clean-central-canvas-1280-chromium/error-context.md
+
+  3) [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:102:1 › Root focused designer exit keeps unsaved edits until explicit discard 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.mono-top').getByRole('button', { name: '退出', exact: true })
+
+
+      104 |  await page.getByRole('region',{name:'字段面板'}).getByRole('button',{name:'文本',exact:true}).click();
+      105 |  await page.getByLabel('字段名称',{exact:true}).fill('退出前的草稿');
+    > 106 |  await page.locator('.mono-top').getByRole('button',{name:'退出',exact:true}).click();
+          |                                                                             ^
+      107 |  const dialog=page.getByRole('dialog',{name:'结构或布局尚未保存',exact:true});await expect(dialog).toBeVisible();
+      108 |  await dialog.getByRole('button',{name:'继续编辑',exact:true}).click();
+      109 |  await expect(dialog).toBeHidden();await expect(page.getByLabel('字段名称',{exact:true})).toHaveValue('退出前的草稿');
+        at /repo/apps/web/src/root-monochrome-designer.component.spec.ts:106:77
+
+    Error Context: ../tmp/root-results/root-monochrome-designer.c-41592-dits-until-explicit-discard-chromium/error-context.md
+
+  4) [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:117:1 › Root focused designer header save waits for preflight and preserves edit on rejection 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.mono-top').getByRole('button', { name: '保存', exact: true })
+
+
+      122 |  await page.getByRole('region',{name:'字段面板'}).getByRole('button',{name:'文本',exact:true}).click();
+      123 |  await page.getByLabel('字段名称',{exact:true}).fill('等待确认的字段');
+    > 124 |  await page.locator('.mono-top').getByRole('button',{name:'保存',exact:true}).click();
+          |                                                                             ^
+      125 |  try{
+      126 |   await expect.poll(()=>seen).toBe(1);
+      127 |   await expect(page.getByText('正在预检…',{exact:true})).toBeVisible();
+        at /repo/apps/web/src/root-monochrome-designer.component.spec.ts:124:77
+
+    Error Context: ../tmp/root-results/root-monochrome-designer.c-c6665-preserves-edit-on-rejection-chromium/error-context.md
+
+  4 failed
+    [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:51:2 › Root focused designer uses shell sidebars and a clean central canvas 1440 
+    [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:51:2 › Root focused designer uses shell sidebars and a clean central canvas 1280 
+    [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:102:1 › Root focused designer exit keeps unsaved edits until explicit discard 
+    [chromium] › apps/web/src/root-monochrome-designer.component.spec.ts:117:1 › Root focused designer header save waits for preflight and preserves edit on rejection 
+  2 passed (1.2m)
