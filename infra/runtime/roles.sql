@@ -121,3 +121,17 @@ GRANT UPDATE (name,revision,state,current_version,candidate_version,updated_at)
 GRANT UPDATE (state,sequence,updated_at) ON applications.workflow_instances TO auth_app;
 GRANT SELECT ON applications.workflow_definitions,applications.workflow_versions,
  applications.workflow_deployments,applications.workflow_instances TO auth_backup;
+
+-- V030-027 finite mutable dispatch state; identity and complete receipts are append-only.
+REVOKE ALL ON applications.workflow_publications,applications.workflow_engine_receipts FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+GRANT SELECT,INSERT ON applications.workflow_publications,applications.workflow_engine_receipts TO auth_app;
+GRANT UPDATE(status,attempts,next_attempt_at,lease_token,lease_until,reason,updated_at,completed_at) ON applications.workflow_publications TO auth_app;
+GRANT UPDATE(close_epoch) ON applications.workflow_definitions TO auth_app;
+GRANT SELECT ON applications.workflow_publications,applications.workflow_engine_receipts TO auth_backup;
+
+-- V030-033: confirmed execution projections; events are append-only to runtime.
+REVOKE ALL ON applications.workflow_execution_events,applications.workflow_tasks FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+GRANT SELECT,INSERT ON applications.workflow_execution_events,applications.workflow_tasks TO auth_app;
+GRANT UPDATE(closed_command_id) ON applications.workflow_tasks TO auth_app;
+GRANT UPDATE(engine_process_id) ON applications.workflow_instances TO auth_app;
+GRANT SELECT ON applications.workflow_execution_events,applications.workflow_tasks TO auth_backup;

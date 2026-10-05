@@ -1,0 +1,394 @@
+=== RUN   TestRestrictedLostCommitAckRecoversExactRecordDraftAuditOperation
+--- PASS: TestRestrictedLostCommitAckRecoversExactRecordDraftAuditOperation (0.12s)
+=== RUN   TestRestrictedDefinitePreCommitRollbackKeepsDraftAndOriginalKey
+--- PASS: TestRestrictedDefinitePreCommitRollbackKeepsDraftAndOriginalKey (0.10s)
+=== RUN   TestRootCommandFenceMetadataExists
+--- PASS: TestRootCommandFenceMetadataExists (0.04s)
+=== RUN   TestRootCommandFenceAcquireReplayAndRelease
+--- PASS: TestRootCommandFenceAcquireReplayAndRelease (0.05s)
+=== RUN   TestRootCommandFenceOtherCommandCannotReplace
+--- PASS: TestRootCommandFenceOtherCommandCannotReplace (0.06s)
+=== RUN   TestRootCommandFenceOldTokenCannotReleaseNewOccupant
+--- PASS: TestRootCommandFenceOldTokenCannotReleaseNewOccupant (0.05s)
+=== RUN   TestRootCommandFenceAcquireCallerRollback
+--- PASS: TestRootCommandFenceAcquireCallerRollback (0.05s)
+=== RUN   TestRootCommandFenceReleaseCallerRollback
+--- PASS: TestRootCommandFenceReleaseCallerRollback (0.05s)
+=== RUN   TestRootCommandFenceStaleVersionsAndForeignResources
+--- PASS: TestRootCommandFenceStaleVersionsAndForeignResources (0.05s)
+=== RUN   TestRootCommandFenceNullAndZeroInputsFailClosed
+--- PASS: TestRootCommandFenceNullAndZeroInputsFailClosed (0.07s)
+=== RUN   TestRootCommandFenceBlocksRealEditButNotOtherRecord
+--- PASS: TestRootCommandFenceBlocksRealEditButNotOtherRecord (0.10s)
+=== RUN   TestRootCommandFenceSchemaChangeRollsBackDDL
+--- PASS: TestRootCommandFenceSchemaChangeRollsBackDDL (0.05s)
+=== RUN   TestRootCommandFenceRuntimeHasNoDirectWritePrivilege
+--- PASS: TestRootCommandFenceRuntimeHasNoDirectWritePrivilege (0.05s)
+=== RUN   TestRootCommandFenceReleaseRequiresPositiveExactToken
+--- PASS: TestRootCommandFenceReleaseRequiresPositiveExactToken (0.05s)
+=== RUN   TestRootCommandFenceCounterExhaustionDoesNotWrap
+--- PASS: TestRootCommandFenceCounterExhaustionDoesNotWrap (0.05s)
+=== RUN   TestRootCommandFenceDoesNotBlockViewOnlyLayout
+--- PASS: TestRootCommandFenceDoesNotBlockViewOnlyLayout (0.05s)
+=== RUN   TestRootFormalLedgerTablesExist
+--- PASS: TestRootFormalLedgerTablesExist (0.04s)
+=== RUN   TestRootFormalLedgerAcceptAndFenceCommitTogether
+--- PASS: TestRootFormalLedgerAcceptAndFenceCommitTogether (0.05s)
+=== RUN   TestRootFormalLedgerAcceptAndFenceRollbackTogether
+--- PASS: TestRootFormalLedgerAcceptAndFenceRollbackTogether (0.05s)
+=== RUN   TestRootFormalLedgerApplyReleaseAtomicAndReplay
+--- PASS: TestRootFormalLedgerApplyReleaseAtomicAndReplay (0.07s)
+=== RUN   TestRootFormalLedgerRuntimeCannotRewriteIdentityOrDeleteHistory
+--- PASS: TestRootFormalLedgerRuntimeCannotRewriteIdentityOrDeleteHistory (0.06s)
+=== RUN   TestRootFormalLedgerDatabaseConstraints
+--- PASS: TestRootFormalLedgerDatabaseConstraints (0.04s)
+=== RUN   TestRootFormalLedgerCurrentRolesLeastPrivilege
+--- PASS: TestRootFormalLedgerCurrentRolesLeastPrivilege (0.04s)
+=== RUN   TestRootCatalogCompatibilityDoesNotScanArchivedVersions
+    root_workflow_catalog_scale_test.go:116: catalog actual query: retired=4999 live=1 elapsed=3.081686ms aggregate_plan_rows=7 plan=[
+          {
+            "Plan": {
+              "Node Type": "Sort",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 17.71,
+              "Total Cost": 17.71,
+              "Plan Rows": 1,
+              "Plan Width": 808,
+              "Actual Startup Time": 0.029,
+              "Actual Total Time": 0.030,
+              "Actual Rows": 1.00,
+              "Actual Loops": 1,
+              "Disabled": false,
+              "Sort Key": ["((d.id)::text)", "v.version"],
+              "Sort Method": "quicksort",
+              "Sort Space Used": 25,
+              "Sort Space Type": "Memory",
+              "Shared Hit Blocks": 4,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Nested Loop",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 1.32,
+                  "Total Cost": 17.70,
+                  "Plan Rows": 1,
+                  "Plan Width": 808,
+                  "Actual Startup Time": 0.023,
+                  "Actual Total Time": 0.024,
+                  "Actual Rows": 1.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Inner Unique": true,
+                  "Shared Hit Blocks": 4,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Unique",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 1.04,
+                      "Total Cost": 1.06,
+                      "Plan Rows": 2,
+                      "Plan Width": 40,
+                      "Actual Startup Time": 0.016,
+                      "Actual Total Time": 0.016,
+                      "Actual Rows": 1.00,
+                      "Actual Loops": 1,
+                      "Disabled": false,
+                      "Shared Hit Blocks": 1,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "Sort",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 1.04,
+                          "Total Cost": 1.04,
+                          "Plan Rows": 2,
+                          "Plan Width": 40,
+                          "Actual Startup Time": 0.015,
+                          "Actual Total Time": 0.015,
+                          "Actual Rows": 1.00,
+                          "Actual Loops": 1,
+                          "Disabled": false,
+                          "Sort Key": ["d.app_id", "d.id", "d.current_version"],
+                          "Sort Method": "quicksort",
+                          "Sort Space Used": 25,
+                          "Sort Space Type": "Memory",
+                          "Shared Hit Blocks": 1,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Append",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Startup Cost": 0.00,
+                              "Total Cost": 1.03,
+                              "Plan Rows": 2,
+                              "Plan Width": 40,
+                              "Actual Startup Time": 0.006,
+                              "Actual Total Time": 0.009,
+                              "Actual Rows": 1.00,
+                              "Actual Loops": 1,
+                              "Disabled": false,
+                              "Shared Hit Blocks": 1,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0,
+                              "Subplans Removed": 0,
+                              "Plans": [
+                                {
+                                  "Node Type": "Seq Scan",
+                                  "Parent Relationship": "Member",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Relation Name": "workflow_definitions",
+                                  "Alias": "d",
+                                  "Startup Cost": 0.00,
+                                  "Total Cost": 1.02,
+                                  "Plan Rows": 1,
+                                  "Plan Width": 40,
+                                  "Actual Startup Time": 0.006,
+                                  "Actual Total Time": 0.006,
+                                  "Actual Rows": 1.00,
+                                  "Actual Loops": 1,
+                                  "Disabled": false,
+                                  "Filter": "(((state)::text = ANY ('{enabled,closing}'::text[])) AND (app_id = 'aae19aaa-d201-4c73-8193-6e2879f1683e'::uuid) AND (table_id = '4ae20e10-cdee-4521-9881-69ed0d9c5362'::uuid))",
+                                  "Rows Removed by Filter": 0,
+                                  "Shared Hit Blocks": 1,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0
+                                },
+                                {
+                                  "Node Type": "Seq Scan",
+                                  "Parent Relationship": "Member",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Relation Name": "workflow_instances",
+                                  "Alias": "i",
+                                  "Startup Cost": 0.00,
+                                  "Total Cost": 0.00,
+                                  "Plan Rows": 1,
+                                  "Plan Width": 40,
+                                  "Actual Startup Time": 0.001,
+                                  "Actual Total Time": 0.002,
+                                  "Actual Rows": 0.00,
+                                  "Actual Loops": 1,
+                                  "Disabled": false,
+                                  "Filter": "(((state)::text = ANY ('{starting,active}'::text[])) AND (app_id = 'aae19aaa-d201-4c73-8193-6e2879f1683e'::uuid) AND (table_id = '4ae20e10-cdee-4521-9881-69ed0d9c5362'::uuid))",
+                                  "Rows Removed by Filter": 0,
+                                  "Shared Hit Blocks": 0,
+                                  "Shared Read Blocks": 0,
+                                  "Shared Dirtied Blocks": 0,
+                                  "Shared Written Blocks": 0,
+                                  "Local Hit Blocks": 0,
+                                  "Local Read Blocks": 0,
+                                  "Local Dirtied Blocks": 0,
+                                  "Local Written Blocks": 0,
+                                  "Temp Read Blocks": 0,
+                                  "Temp Written Blocks": 0
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "Node Type": "Index Scan",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Scan Direction": "Forward",
+                      "Index Name": "uq_workflow_publication_version",
+                      "Relation Name": "workflow_versions",
+                      "Alias": "v",
+                      "Startup Cost": 0.28,
+                      "Total Cost": 8.30,
+                      "Plan Rows": 1,
+                      "Plan Width": 808,
+                      "Actual Startup Time": 0.006,
+                      "Actual Total Time": 0.006,
+                      "Actual Rows": 1.00,
+                      "Actual Loops": 1,
+                      "Disabled": false,
+                      "Index Cond": "((app_id = d.app_id) AND (flow_id = d.id) AND (version = d.current_version))",
+                      "Rows Removed by Index Recheck": 0,
+                      "Index Searches": 1,
+                      "Shared Hit Blocks": 3,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 3,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.202,
+            "Triggers": [
+            ],
+            "Execution Time": 0.050
+          }
+        ]
+--- PASS: TestRootCatalogCompatibilityDoesNotScanArchivedVersions (0.20s)
+=== RUN   TestRootCatalogVersionIsDurableAndCallerRollback
+--- PASS: TestRootCatalogVersionIsDurableAndCallerRollback (0.05s)
+=== RUN   TestRootCatalogUndeployedCannotEnableOrStart
+--- PASS: TestRootCatalogUndeployedCannotEnableOrStart (0.05s)
+=== RUN   TestRootCatalogDeploymentReceiptIdempotentAndBound
+--- PASS: TestRootCatalogDeploymentReceiptIdempotentAndBound (0.05s)
+=== RUN   TestRootCatalogOldDeploymentCannotReplaceNewCandidate
+--- PASS: TestRootCatalogOldDeploymentCannotReplaceNewCandidate (0.05s)
+=== RUN   TestRootCatalogInstancesKeepStructureWhileNextUsesConfirmedVersion
+--- PASS: TestRootCatalogInstancesKeepStructureWhileNextUsesConfirmedVersion (0.06s)
+=== RUN   TestRootCatalogCloseWaitsForAcceptedStartAndRejectsNewStart
+--- PASS: TestRootCatalogCloseWaitsForAcceptedStartAndRejectsNewStart (0.06s)
+=== RUN   TestRootCatalogCloseWithoutInstancesAndLateCloseCAS
+--- PASS: TestRootCatalogCloseWithoutInstancesAndLateCloseCAS (0.06s)
+=== RUN   TestRootCatalogIndependentFlowsSameRecord
+--- PASS: TestRootCatalogIndependentFlowsSameRecord (0.06s)
+=== RUN   TestRootCatalogCASAndResourceScope
+--- PASS: TestRootCatalogCASAndResourceScope (0.09s)
+=== RUN   TestRootCatalogInvalidGraphHasNoPersistentVersion
+--- PASS: TestRootCatalogInvalidGraphHasNoPersistentVersion (0.04s)
+=== RUN   TestRootCatalogCompatibilityIsPrecise
+--- PASS: TestRootCatalogCompatibilityIsPrecise (0.05s)
+=== RUN   TestRootCatalogOldInFlightVersionBlocksUntilTerminal
+--- PASS: TestRootCatalogOldInFlightVersionBlocksUntilTerminal (0.06s)
+=== RUN   TestRootCatalogDisabledHistoryDoesNotBlockSchema
+--- PASS: TestRootCatalogDisabledHistoryDoesNotBlockSchema (0.05s)
+=== RUN   TestRootCatalogDeploymentRechecksChangedSchema
+--- PASS: TestRootCatalogDeploymentRechecksChangedSchema (0.05s)
+=== RUN   TestRootCatalogConcurrentVersionCAS
+--- PASS: TestRootCatalogConcurrentVersionCAS (0.05s)
+=== RUN   TestRootCatalogImmutableVersionsAndMinimumRoles
+--- PASS: TestRootCatalogImmutableVersionsAndMinimumRoles (0.06s)
+=== RUN   TestRestrictedRecordCreateReplaysMinimumAndUsesControlledDML
+--- PASS: TestRestrictedRecordCreateReplaysMinimumAndUsesControlledDML (0.07s)
+=== RUN   TestRestrictedCreateNotReadyAfterLiveAuthorization
+=== RUN   TestRestrictedCreateNotReadyAfterLiveAuthorization/authorized
+=== RUN   TestRestrictedCreateNotReadyAfterLiveAuthorization/unauthorized
+--- PASS: TestRestrictedCreateNotReadyAfterLiveAuthorization (0.11s)
+    --- PASS: TestRestrictedCreateNotReadyAfterLiveAuthorization/authorized (0.06s)
+    --- PASS: TestRestrictedCreateNotReadyAfterLiveAuthorization/unauthorized (0.05s)
+=== RUN   TestRestrictedReadAndEditNotReadyAfterLiveAuthorization
+--- PASS: TestRestrictedReadAndEditNotReadyAfterLiveAuthorization (0.06s)
+=== RUN   TestRestrictedEmptyEditRequiresActionAndActualRowScope
+=== RUN   TestRestrictedEmptyEditRequiresActionAndActualRowScope/menu_only_not_ready
+=== RUN   TestRestrictedEmptyEditRequiresActionAndActualRowScope/own_scope_other_row
+--- PASS: TestRestrictedEmptyEditRequiresActionAndActualRowScope (0.13s)
+    --- PASS: TestRestrictedEmptyEditRequiresActionAndActualRowScope/menu_only_not_ready (0.07s)
+    --- PASS: TestRestrictedEmptyEditRequiresActionAndActualRowScope/own_scope_other_row (0.07s)
+=== RUN   TestRestrictedEditCASAndPendingFence
+--- PASS: TestRestrictedEditCASAndPendingFence (0.09s)
+=== RUN   TestRestrictedConcurrentEditsCommitOneVersionAndAudit
+--- PASS: TestRestrictedConcurrentEditsCommitOneVersionAndAudit (0.08s)
+=== RUN   TestRestrictedReferenceWriteRequiresActiveAuthoritativeSource
+--- PASS: TestRestrictedReferenceWriteRequiresActiveAuthoritativeSource (0.07s)
+=== RUN   TestRestrictedOmittedReferenceDefaultMustStillBeActive
+--- PASS: TestRestrictedOmittedReferenceDefaultMustStillBeActive (0.09s)
+=== RUN   TestRestrictedDefaultReferenceSerializesWithSourceDisable
+--- PASS: TestRestrictedDefaultReferenceSerializesWithSourceDisable (0.07s)
+=== RUN   TestRestrictedDraftCreateIsExplicitAndDoesNotMutateRecord
+--- PASS: TestRestrictedDraftCreateIsExplicitAndDoesNotMutateRecord (0.05s)
+=== RUN   TestRestrictedDraftSubmitConsumesWithRecordAndOperation
+--- PASS: TestRestrictedDraftSubmitConsumesWithRecordAndOperation (0.07s)
+=== RUN   TestRestrictedDraftPatchNoopAndDiscardLedger
+--- PASS: TestRestrictedDraftPatchNoopAndDiscardLedger (0.07s)
+=== RUN   TestRestrictedDraftExplicitRemovalAfterSchemaAndBaseConflict
+--- PASS: TestRestrictedDraftExplicitRemovalAfterSchemaAndBaseConflict (0.09s)
+=== RUN   TestRestrictedDraftExplicitRemovalAfterFieldGrantRevoke
+--- PASS: TestRestrictedDraftExplicitRemovalAfterFieldGrantRevoke (0.07s)
+=== RUN   TestRestrictedDraftReadOwnerCursorAndRecordDetail
+--- PASS: TestRestrictedDraftReadOwnerCursorAndRecordDetail (0.06s)
+=== RUN   TestRestrictedBoundDraftListUsesEditGrantForItsTarget
+--- PASS: TestRestrictedBoundDraftListUsesEditGrantForItsTarget (0.06s)
+=== RUN   TestRestrictedQueryOnlyObservableChangesInvalidate
+--- PASS: TestRestrictedQueryOnlyObservableChangesInvalidate (0.06s)
+=== RUN   TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission
+=== RUN   TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission/removed
+=== RUN   TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission/revoked
+=== RUN   TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission/invalid_incoming
+--- PASS: TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission (0.15s)
+    --- PASS: TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission/removed (0.05s)
+    --- PASS: TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission/revoked (0.05s)
+    --- PASS: TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission/invalid_incoming (0.05s)
+=== RUN   TestRestrictedReferencePredicateMissingRegistryIsUnavailable
+--- PASS: TestRestrictedReferencePredicateMissingRegistryIsUnavailable (0.06s)
+=== RUN   TestRestrictedListWriteChecksSavedProjectionBeforeClaim
+--- PASS: TestRestrictedListWriteChecksSavedProjectionBeforeClaim (0.10s)
+=== RUN   TestRestrictedAdvanceFailureOnlyReplaysConfirmedOriginalKey
+--- PASS: TestRestrictedAdvanceFailureOnlyReplaysConfirmedOriginalKey (0.10s)
+=== RUN   TestRestrictedRealRecordSearchMasksBeforeCountAndReusesContext
+--- PASS: TestRestrictedRealRecordSearchMasksBeforeCountAndReusesContext (0.05s)
+PASS

@@ -1,0 +1,128 @@
+✖ Go source and dependencies have no reachable published vulnerabilities (34958.578827ms)
+✖ tracked source archive passes a redacted Gitleaks secret scan (0.351381ms)
+✖ frontend dependency audit reports no published vulnerabilities (27.572438ms)
+✖ required Go modules have no fixable advisories and unsafe OpenPGP is absent from every application dependency (30.016217ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 35086.146659
+
+✖ failing tests:
+
+test at infra/runtime/security.test.mjs:5:1
+✖ Go source and dependencies have no reachable published vulnerabilities (34958.578827ms)
+  AssertionError [ERR_ASSERTION]: Unable to find image 'golang:1.27.1@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244' locally
+  docker.io/library/golang@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244: Pulling from library/golang
+  6eefb2f5d3e9: Pulling fs layer
+  42f0cc32f2e3: Pulling fs layer
+  38985a14f2b1: Pulling fs layer
+  0069ea6125d2: Pulling fs layer
+  ef1dbfdbb5d5: Pulling fs layer
+  0f84d036a453: Pulling fs layer
+  4f4fb700ef54: Pulling fs layer
+  ef1dbfdbb5d5: Waiting
+  0f84d036a453: Waiting
+  4f4fb700ef54: Waiting
+  0069ea6125d2: Waiting
+  42f0cc32f2e3: Verifying Checksum
+  42f0cc32f2e3: Download complete
+  6eefb2f5d3e9: Verifying Checksum
+  6eefb2f5d3e9: Download complete
+  38985a14f2b1: Verifying Checksum
+  38985a14f2b1: Download complete
+  0f84d036a453: Verifying Checksum
+  0f84d036a453: Download complete
+  4f4fb700ef54: Verifying Checksum
+  4f4fb700ef54: Download complete
+  6eefb2f5d3e9: Pull complete
+  ef1dbfdbb5d5: Verifying Checksum
+  ef1dbfdbb5d5: Download complete
+  42f0cc32f2e3: Pull complete
+  0069ea6125d2: Verifying Checksum
+  0069ea6125d2: Download complete
+  38985a14f2b1: Pull complete
+  0069ea6125d2: Pull complete
+  ef1dbfdbb5d5: Pull complete
+  0f84d036a453: Pull complete
+  4f4fb700ef54: Pull complete
+  Digest: sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244
+  Status: Downloaded newer image for golang@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244
+  docker: Error response from daemon: no space left on device
+  
+  Run 'docker run --help' for more information
+  
+  
+  125 !== 0
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-027/infra/runtime/security.test.mjs:7:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 125,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at infra/runtime/security.test.mjs:9:1
+✖ tracked source archive passes a redacted Gitleaks secret scan (0.351381ms)
+  Error: ENOSPC: no space left on device, mkdir '/workspace/WeaveOS-worktrees/V030-027/.work/gitleaks-1791178127874'
+      at mkdirSync (node:fs:1411:26)
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-027/infra/runtime/security.test.mjs:10:60)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    errno: -28,
+    code: 'ENOSPC',
+    syscall: 'mkdir',
+    path: '/workspace/WeaveOS-worktrees/V030-027/.work/gitleaks-1791178127874'
+  }
+
+test at infra/runtime/security.test.mjs:16:1
+✖ frontend dependency audit reports no published vulnerabilities (27.572438ms)
+  AssertionError [ERR_ASSERTION]: Dependency audit did not return valid JSON
+  
+  125 !== 0
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-027/infra/runtime/security.test.mjs:19:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 125,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at infra/runtime/security.test.mjs:21:1
+✖ required Go modules have no fixable advisories and unsafe OpenPGP is absent from every application dependency (30.016217ms)
+  AssertionError [ERR_ASSERTION]: module scanner must complete successfully or report actual advisories
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-027/infra/runtime/security.test.mjs:24:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
