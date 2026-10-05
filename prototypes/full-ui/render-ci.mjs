@@ -37,6 +37,7 @@ try{
  await page.getByRole('button',{name:'退出',exact:true}).click();await page.waitForFunction(()=>window.__readyRoute==='records');
  await go('approval');await page.getByRole('textbox',{name:'报销金额',exact:true}).fill('2500.00');await page.getByRole('button',{name:'同意',exact:true}).click();assert.equal(await page.getByRole('heading',{name:'先保存修改'}).isVisible(),true);await page.keyboard.press('Escape');
  await go('records?modal=filter-editor');assert.equal(await page.locator('.filter-row').first().locator('select').nth(1).locator('option').count(),2);await page.keyboard.press('Escape');
+ await page.emulateMedia({reducedMotion:'no-preference'});await go('records');await page.locator('[data-modal="filters"]').click();await page.waitForFunction(()=>document.querySelector('dialog').getAnimations().every(a=>a.playState==='finished'));await page.getByRole('button',{name:'取消',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('dialog').open);await page.emulateMedia({reducedMotion:'reduce'});
  assert.deepEqual(errors,[]);
  // Browser-rendered overview boards: actual page screenshots, six per board.
  for(let start=0;start<results.length;start+=6){
