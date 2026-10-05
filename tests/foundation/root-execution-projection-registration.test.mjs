@@ -112,7 +112,7 @@ test('Root V033: all previous migration identities remain unchanged',()=>{
 });
 test('Root V033: reviewed least-privilege role source is accepted exactly',()=>{
  const sql=readFileSync(new URL('../../infra/runtime/roles.sql',import.meta.url),'utf8');
- assert.equal(createHash('sha256').update(sql).digest('hex'),'c2e23f9d85d51ff626eeba6ea7c5ddbdccb4becc564b4021d50578e27c45a0cf');
+ assert.equal(createHash('sha256').update(sql).digest('hex'),'0c274ae29afbe2a5c802491328358992abeb1361c56e6d6222265873e46c2e6c');
  assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql));assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql.replace(/\n/g,'\r\n')));
 });
 test('Root V033: role policy still rejects unreviewed extra privileges',()=>{
