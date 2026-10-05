@@ -14,8 +14,8 @@ Default pinned image `mcr.microsoft.com/playwright@sha256:eff16c30e6f3f4af0a03fa
 
 - Root exact six: **6 passed** ([log](green/root-final.txt)). Command: `pnpm exec playwright test -c apps/web/playwright.component.config.ts root-monochrome-designer.component.spec.ts --reporter=list --output=/tmp/root-results`.
 - Independent corrected Shell/return/menu cases: **7 passed** ([log](green/root-corrected.txt); targeted subset includes4Root cases).
-- Previous three-browser forms: **234 passed** ([log](green/forms.txt)). Final cosmetic portal tokens rerun tracked in [final log](green/forms-final.txt).
-- Complete first attempt at4workers: **496 passed,1skipped,4failed** ([log](green/components.txt)). Three Root-corrected expectations; one personnel-menu interception. Unchanged menu test passes at default1worker. Final full default regression tracked in [final log](green/components-final.txt); no weakened selectors or timeout changes.
+- Final three-browser forms: **234 passed**, exit0,3.6m ([log](green/forms-final.txt)). Previous log also retained.
+- Complete first attempt at4workers: **496 passed,1skipped,4failed** ([log](green/components.txt)). Three Root-corrected expectations; one personnel-menu interception. Unchanged menu test passes at default1worker. Final complete default1worker regression **500 passed /1existing skipped /0failed**, exit0,13.4m ([log](green/components-final.txt)); no weakened selectors or timeout changes.
 - Final typecheck/build: PASS ([typecheck](green/typecheck-final.txt), [build](green/build-final.txt)). Existing chunk-size advisory only. Initial generated Vite-cache EACCES retained separately; only task cache ownership repaired.
 - Governance/foundation: **240 passed** ([log](green/governance-final.txt)); [task scope](green/tasks-final.txt) and [repository](green/repository-final.txt) PASS. Task required exact Scope heading and PR metadata were corrected, without changing policy.
 
