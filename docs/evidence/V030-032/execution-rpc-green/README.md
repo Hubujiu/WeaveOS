@@ -7,3 +7,5 @@
 go-regression.jsonl保留最初24存储例未设置DB环境失败，其余54通过，其中workflowrpc17通过。flowcommands-fixture-environment-failure.*保留首次converter缺可写GOCACHE造成brokenpipe。两个都是环境失败，不计业务RED、不删除测试或skip。完整隔离fixture重跑flowcommands-fixture.jsonl的61例全部通过。
 
 所有测试fixture内部网络、仅b3-postgres合成DB、无公开端口。清理核验结果见remaining-*，必要工具链/cache和开放任务worktree保留。完整命令见commands.txt；SHA256SUMS.txt覆盖证据目录除自身的所有文件。本地checkpoint待Root审查，未push/开PR/最终远端CI/合main/部署。
+
+Committed-copy note: frozen-source-verification.json now retains all verified paths and verdict but omits public per-path Git blob IDs because their adjacency to key/token filenames triggers17 generic-api-key false positives. The original complete mapping remains immutable in Root-reviewed GREEN ZIP file_00000000857881fb9cdcb3af15930cdd (SHA25609dd9e83ed8218ec16e267f958612be80cdee4cb0dec67914fd709154737e6c5). This copy has an updated SHA256SUMS entry; original artifact and actual test reports were not rewritten. Scanner rules/allowlists are unchanged.

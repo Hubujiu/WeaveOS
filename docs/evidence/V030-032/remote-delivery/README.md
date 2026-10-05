@@ -1,0 +1,7 @@
+# V030-032 最终远端交付准备
+
+Root源码审查通过；PR43 draft，base精确JavaB b6b10080，额外整合精确Go31。实现源码/Root冻结交付与已审a10a6c3不变，最终提交只包含必要PR元数据与证据副本说明。
+
+原预推Gitleaks失败17项，详见initial-gitleaks-test.log/exit及脱敏摘要。均为公开Git blob IDs邻接key/token路径造成generic-api-key误报。仅提交中的frozen-source-verification.json改为保留已核验全路径清单/结论，省略per-path blob值并引用原始Root已核验ZIP；完整原映射与原SHA清单仍在原GREEN artifact，未改artifact或实际测试报告。新提交副本SHA清单已更新。原扫描规则/安全测试/白名单未改。修正后的staged candidate原扫描器exit0，无finding。
+
+PR创建使用此前准备分支head以取得真实PR编号；唯一交付元数据提交随后固定最终head并推送，早期准备head CI不作为最终验收。最终精确head全部8项远端检查须另取GitHub原run证据与Root交付报告，不为进度继续提交，不预填成功或accepted。原失败日志两处尾随空格保留原始字节。

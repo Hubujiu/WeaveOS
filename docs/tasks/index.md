@@ -58,4 +58,4 @@ V030-030 B 段交付：[Draft PR42](https://github.com/Hubujiu/WeaveOS/pull/42)�
 
 Go执行负载与结果验证：[V030-031](V030-031.md)，task/V030-031-execution-codecs / ../WeaveOS-worktrees/V030-031；Root合同/15测试/8固定向量，[draft PR41](https://github.com/Hubujiu/WeaveOS/pull/41)，独立基线530d877；仅有界codec，云端RED/GREEN及基准已保存，待Root源码审查和最终CI，不代表完整审批或全链路完成。
 
-执行RPC独立准备：[V030-032](V030-032.md)，task/V030-032-execution-rpc / ../WeaveOS-worktrees/V030-032；精确JavaB b6b10080 + Go codec888ac429，唯一索引冲突保留两边。Root负责规划/冻结契约/亲写测试/验收；状态准备中，本轮仅机械依赖整合和任务元数据，测试NOT RUN、RPC未实施，等待Root交付。无PR/main合并/部署。
+执行RPC：[V030-032](V030-032.md)，task/V030-032-execution-rpc / ../WeaveOS-worktrees/V030-032；精确JavaB b6b10080 + Go codec888ac429，[Draft PR43](https://github.com/Hubujiu/WeaveOS/pull/43) base为JavaB。Root亲写合同/测试并已核验真实RED、三文件源码及本地GREEN；冻结测试/契约保持不变，等待最终固定head全部8项远端CI。未整合V027运行接线，无main合并/部署。
