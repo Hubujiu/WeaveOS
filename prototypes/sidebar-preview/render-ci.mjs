@@ -1,0 +1,37 @@
+import { firefox } from '@playwright/test';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import assert from 'node:assert/strict';
+
+const out=resolve('prototypes/sidebar-preview/output');
+await mkdir(out,{recursive:true});
+const browser=await firefox.launch({headless:true});
+const errors=[];
+try{
+ const page=await browser.newPage({viewport:{width:1440,height:960},deviceScaleFactor:2});
+ page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(pathToFileURL(resolve('prototypes/sidebar-preview/WeaveOS.html')).href,{waitUntil:'load'});
+ await page.evaluate(()=>document.fonts.ready);
+ assert.equal(await page.locator('tbody tr').count(),10);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+ await page.screenshot({path:out+'/sidebar-open.png'});
+ await page.getByRole('button',{name:'收起侧边栏',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('.sidebar').getBoundingClientRect().width===0);
+ await page.screenshot({path:out+'/sidebar-closed.png'});
+ await page.getByRole('button',{name:'展开侧边栏',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('.sidebar').getBoundingClientRect().width===236);
+ await page.getByRole('textbox',{name:'搜索记录',exact:true}).fill('梁宇凡');
+ assert.equal(await page.locator('tbody tr').count(),2);
+ await page.getByRole('textbox',{name:'搜索记录',exact:true}).fill('');
+ assert.equal(await page.locator('tbody tr').count(),10);
+ await page.getByRole('button',{name:'新建记录',exact:true}).click();
+ assert.equal(await page.locator('dialog').isVisible(),true);
+ await page.getByRole('button',{name:'取消',exact:true}).click();
+ assert.equal(await page.locator('dialog').isVisible(),false);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+ assert.deepEqual(errors,[]);
+ const result={browser:browser.version(),viewport:{width:1440,height:960},deviceScaleFactor:2,rows:10,searchRows:2,collapse:true,expand:true,dialog:true,horizontalOverflow:false,pageErrors:errors};
+ await writeFile(out+'/checks.json',JSON.stringify(result,null,2));
+ console.log(JSON.stringify(result));
+} finally{await browser.close()}
