@@ -29,10 +29,27 @@ type rootTaskFixture struct {
 	task fc.ExecutionTask
 }
 
+// Keep intentionally pending commands as evidence without feeding another
+// package's global scheduler after this synthetic fixture has finished.
+func rootTaskKeepDispatchPrivate(t *testing.T, f recordFixture) {
+	t.Helper()
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if _, err := f.owner.Exec(ctx, `UPDATE applications.workflow_dispatch d
+ SET next_attempt_at='9999-01-01T00:00:00Z'
+ FROM applications.workflow_commands c
+ WHERE c.command_id=d.command_id AND c.command_json->>'AppID'=$1`, f.app); err != nil {
+			t.Errorf("preserve private pending-command fixture: %v", err)
+		}
+	})
+}
+
 func rootTaskSetup(t *testing.T, foreign bool) rootTaskFixture {
 	t.Helper()
 	base := rootCaptureSetup(t)
 	f := base.recordFixture
+	rootTaskKeepDispatchPrivate(t, f)
 	if foreign {
 		f.ownRecord = f.otherRecord
 	}
