@@ -204,12 +204,12 @@ jobs:
           PYCODE
       - name: Root formal engine and authenticated RPC composition
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootWorkflowRuntimeTest -Dworkflow.reports=ci-logs/runtime-composition-reports test 2>&1 | tee services/workflow-engine/ci-logs/runtime-composition-tests.txt
-      - name: Require all twelve real runtime composition cases
+      - name: Require all thirteen real runtime composition cases
         working-directory: services/workflow-engine
         run: |
           python3 - <<'PYCODE'
           from rpc_ci_gate import _java
-          _java("ci-logs/runtime-composition-reports", "org.weaveos.workflow.RootWorkflowRuntimeTest", ['authenticatedHealthReflectsRegisteredServices', 'everyRegisteredServiceRejectsMissingIdentity', 'unknownHealthServiceIsNotFalselyServing', 'controlledPublishStartAndApprovalUseTheRestrictedRole', 'closeAndRestartReplayTheSameDurableReceipt', 'missingSchemaFailsBeforeListeningOrAutoDdl', 'privilegedAccountCannotStartTheRuntime', 'occupiedPortStartupFailureReleasesDatabaseResources', 'closeIsIdempotentStopsServingAndReleasesResources', 'healthIsNotServingWhenDatabaseCannotBeReached', 'configuredCallCapacityRejectsOverloadWithoutUnboundedWorkers', 'nullConfigurationFailsClosed'])
+          _java("ci-logs/runtime-composition-reports", "org.weaveos.workflow.RootWorkflowRuntimeTest", ['authenticatedHealthReflectsRegisteredServices', 'everyRegisteredServiceRejectsMissingIdentity', 'unknownHealthServiceIsNotFalselyServing', 'controlledPublishStartAndApprovalUseTheRestrictedRole', 'closeAndRestartReplayTheSameDurableReceipt', 'missingSchemaFailsBeforeListeningOrAutoDdl', 'privilegedAccountCannotStartTheRuntime', 'occupiedPortStartupFailureReleasesDatabaseResources', 'closeIsIdempotentStopsServingAndReleasesResources', 'healthIsNotServingWhenDatabaseCannotBeReached', 'configuredCallCapacityRejectsOverloadWithoutUnboundedWorkers', 'inflightCloseRollsBackPendingWriteAndSameRequestCanRecover', 'nullConfigurationFailsClosed'])
           PYCODE
       - name: Root actual Java main process lifecycle
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootWorkflowMainProcessTest -Dworkflow.reports=ci-logs/runtime-main-reports test 2>&1 | tee services/workflow-engine/ci-logs/runtime-main-tests.txt

@@ -114,5 +114,25 @@ class RootWorkflowRuntimeTest {
    for(var future:futures)assertTrue(Set.of(Status.Code.OK,Status.Code.RESOURCE_EXHAUSTED).contains(future.get(10,TimeUnit.SECONDS)));
   }finally{senders.shutdownNow();senders.awaitTermination(5,TimeUnit.SECONDS);}
  }
+ @Test void inflightCloseRollsBackPendingWriteAndSameRequestCanRecover()throws Exception{
+  env.put("WEAVEOS_ENGINE_SHUTDOWN_TIMEOUT_MS","100");start();
+  var sender=Executors.newSingleThreadExecutor();
+  try(var owner=new DriverManagerDataSource(database.fixture.url+"?currentSchema="+database.fixture.schema,"b3_fixture","b3_fixture_only").getConnection()){
+   owner.setAutoCommit(false);try(var lock=owner.createStatement()){
+    lock.execute("LOCK TABLE wf_deployments IN ACCESS EXCLUSIVE MODE");
+    Future<?> pending=sender.submit(()->{deploy();return null;});
+    long deadline=System.nanoTime()+5_000_000_000L;boolean blocked=false;
+    do{blocked=database.fixture.admin.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE usename=? AND wait_event_type='Lock'",Integer.class,database.fixture.role)>0;if(blocked)break;Thread.sleep(10);}while(System.nanoTime()<deadline);
+    assertTrue(blocked,"must observe the actual in-flight database wait before closing");
+    assertTimeoutPreemptively(java.time.Duration.ofSeconds(5),runtime::close);
+    var failure=assertThrows(ExecutionException.class,()->pending.get(5,TimeUnit.SECONDS));assertInstanceOf(StatusRuntimeException.class,failure.getCause());
+    assertEquals(Status.Code.UNAVAILABLE,((StatusRuntimeException)failure.getCause()).getStatus().getCode());noConnections();
+   }finally{owner.rollback();}
+  }finally{sender.shutdownNow();sender.awaitTermination(5,TimeUnit.SECONDS);}
+  assertEquals(0,database.fixture.jdbc.queryForObject("SELECT count(*) FROM wf_deployments",Integer.class));
+  disconnect();runtime=null;start();deploy();deploy();
+  assertEquals(1,database.fixture.jdbc.queryForObject("SELECT count(*) FROM wf_deployments WHERE status='confirmed'",Integer.class));
+  assertEquals(1,database.fixture.jdbc.queryForObject("SELECT count(*) FROM act_re_procdef",Integer.class));
+ }
  @Test void nullConfigurationFailsClosed(){var error=assertThrows(IllegalStateException.class,()->WorkflowRuntime.start(null));assertEquals(FAILURE,error.getMessage());assertNull(error.getCause());}
 }
