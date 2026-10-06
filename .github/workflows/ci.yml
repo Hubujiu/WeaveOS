@@ -397,6 +397,34 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  workflow-schema-cli:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Build pinned static Goose for isolated test containers
+        run: CGO_ENABLED=0 go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
+      - name: Root real migration CLI and runtime-role acceptance
+        run: |
+          mkdir -p services/workflow-engine/schema-cli-reports
+          WEAVEOS_SCHEMA_TEST_GOOSE="$(go env GOPATH)/bin/goose" bash services/workflow-engine/run-schema-cli-tests.sh 2>&1 | tee services/workflow-engine/schema-cli-reports/run.log
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: workflow-schema-cli-${{ github.run_id }}
+          path: services/workflow-engine/schema-cli-reports/
+          if-no-files-found: warn
+          retention-days: 14
+
   workflow-backup:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
