@@ -202,6 +202,15 @@ jobs:
           from rpc_ci_gate import _java
           _java("ci-logs/runtime-pool-reports", "org.weaveos.workflow.RootRuntimeDataSourceTest", ['poolUsesValidatedSchemaAndSessionTimeouts', 'returnedConnectionIsReusedWithoutUnboundedGrowth', 'fullPoolTimesOutThenRecoversAfterReturn', 'actualStatementTimeoutCancelsSlowQuery', 'actualLockTimeoutDoesNotLeaveAChangedRow', 'schemaGuardDoesNotLeakReadOnlyTransactionStateIntoPool', 'closeRejectsBorrowAndReleasesServerConnections', 'wrongCredentialsFailWithoutSecretCause', 'nullConfigurationFailsClosed'])
           PYCODE
+      - name: Root formal engine and authenticated RPC composition
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootWorkflowRuntimeTest -Dworkflow.reports=ci-logs/runtime-composition-reports test 2>&1 | tee services/workflow-engine/ci-logs/runtime-composition-tests.txt
+      - name: Require all twelve real runtime composition cases
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/runtime-composition-reports", "org.weaveos.workflow.RootWorkflowRuntimeTest", ['authenticatedHealthReflectsRegisteredServices', 'everyRegisteredServiceRejectsMissingIdentity', 'unknownHealthServiceIsNotFalselyServing', 'controlledPublishStartAndApprovalUseTheRestrictedRole', 'closeAndRestartReplayTheSameDurableReceipt', 'missingSchemaFailsBeforeListeningOrAutoDdl', 'privilegedAccountCannotStartTheRuntime', 'occupiedPortStartupFailureReleasesDatabaseResources', 'closeIsIdempotentStopsServingAndReleasesResources', 'healthIsNotServingWhenDatabaseCannotBeReached', 'configuredCallCapacityRejectsOverloadWithoutUnboundedWorkers', 'nullConfigurationFailsClosed'])
+          PYCODE
       - name: Internal service identity over real plaintext gRPC
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootServiceTokenInterceptorTest -Dworkflow.reports=ci-logs/service-token-reports test 2>&1 | tee services/workflow-engine/ci-logs/service-token-tests.txt
       - name: Require all eight service identity cases without skips
