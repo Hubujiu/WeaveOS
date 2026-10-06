@@ -1,0 +1,451 @@
+//go:build workflowruntime_integration && workflowrpc_integration && linux
+
+package main
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"encoding/json"
+	"errors"
+	"io"
+	"net"
+	"net/http/httptest"
+	"net/http/httputil"
+	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"sync/atomic"
+	"syscall"
+	"testing"
+	"time"
+
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
+	fc "github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
+	wc "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
+	wr "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc"
+	pb "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc/pb"
+	"github.com/jackc/pgx/v5"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	hp "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+)
+
+// Test-only transparent unary transport: never a product adapter or fake engine.
+type rootFormalCodec struct{}
+
+func (rootFormalCodec) Name() string { return "proto" }
+func (rootFormalCodec) Marshal(v any) ([]byte, error) {
+	p, ok := v.(*[]byte)
+	if !ok {
+		return nil, errors.New("expected raw frame")
+	}
+	return *p, nil
+}
+func (rootFormalCodec) Unmarshal(b []byte, v any) error {
+	p, ok := v.(*[]byte)
+	if !ok {
+		return errors.New("expected raw frame")
+	}
+	*p = bytes.Clone(b)
+	return nil
+}
+
+type rootFormalProxy struct {
+	upstream    *grpc.ClientConn
+	server      *grpc.Server
+	listener    net.Listener
+	armed, held atomic.Bool
+	executions  atomic.Int32
+	dropped     chan *pb.ExecutionReceipt
+}
+
+func (p *rootFormalProxy) forward(_ any, stream grpc.ServerStream) error {
+	method, ok := grpc.MethodFromServerStream(stream)
+	if !ok {
+		return status.Error(codes.Internal, "fixture method unavailable")
+	}
+	md, _ := metadata.FromIncomingContext(stream.Context())
+	if values := md.Get("authorization"); len(values) != 1 || values[0] != "Bearer "+rootRPCToken || len(md.Get("cookie")) != 0 {
+		return status.Error(codes.Unauthenticated, "fixture identity rejected")
+	}
+	var request, response []byte
+	if e := stream.RecvMsg(&request); e != nil {
+		return e
+	}
+	if method == "/weaveos.workflow.v1.ExecutionService/Lookup" && p.held.Load() {
+		return status.Error(codes.Unavailable, "fixture holds recovery")
+	}
+	if method == "/weaveos.workflow.v1.ExecutionService/Execute" {
+		p.executions.Add(1)
+	}
+	if e := p.upstream.Invoke(stream.Context(), method, &request, &response, grpc.ForceCodec(rootFormalCodec{}), grpc.MaxCallRecvMsgSize(1048576+16384), grpc.MaxCallSendMsgSize(1048576+16384)); e != nil {
+		return e
+	}
+	if method == "/weaveos.workflow.v1.ExecutionService/Execute" && p.armed.CompareAndSwap(true, false) {
+		r := new(pb.ExecutionReceipt)
+		if e := proto.Unmarshal(response, r); e != nil {
+			return status.Error(codes.Internal, "fixture receipt decode")
+		}
+		p.held.Store(true)
+		p.dropped <- r
+		return status.Error(codes.Unavailable, "fixture discarded committed reply")
+	}
+	return stream.SendMsg(&response)
+}
+func rootFormalStartChild(t *testing.T, name, binary string, args []string, env map[string]string) *rootBFFProcess {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), name+".log")
+	file, e := os.Create(path)
+	if e != nil {
+		t.Fatal(e)
+	}
+	cmd := exec.Command(binary, args...)
+	cmd.Env = []string{"LANG=C.UTF-8"}
+	for k, v := range env {
+		cmd.Env = append(cmd.Env, k+"="+v)
+	}
+	cmd.Stdout = file
+	cmd.Stderr = file
+	if e = cmd.Start(); e != nil {
+		_ = file.Close()
+		t.Fatal(e)
+	}
+	p := &rootBFFProcess{command: cmd, done: make(chan struct{}), output: path}
+	go func() { p.err = cmd.Wait(); _ = file.Close(); close(p.done) }()
+	return p
+}
+func rootFormalStop(p *rootBFFProcess, kill bool) {
+	if p == nil {
+		return
+	}
+	select {
+	case <-p.done:
+		return
+	default:
+	}
+	if kill {
+		_ = p.command.Process.Kill()
+	} else {
+		_ = p.command.Process.Signal(syscall.SIGTERM)
+	}
+	select {
+	case <-p.done:
+	case <-time.After(5 * time.Second):
+		_ = p.command.Process.Kill()
+		<-p.done
+	}
+}
+func rootFormalLog(t *testing.T, name string, p *rootBFFProcess) {
+	t.Helper()
+	if p == nil {
+		return
+	}
+	b, _ := os.ReadFile(p.output)
+	safe := strings.NewReplacer(rootRPCToken, "[fixture-token]", "v041_synthetic_only", "[fixture-password]").Replace(string(b))
+	if t.Failed() {
+		t.Log(name + " child output: " + safe)
+	}
+	if p.command.ProcessState != nil {
+		if usage, ok := p.command.ProcessState.SysUsage().(*syscall.Rusage); ok {
+			t.Logf("FORMAL_RESOURCE process=%s maxRSSKiB=%d", name, usage.Maxrss)
+		}
+	}
+}
+
+type rootFormalFixture struct {
+	f               *rootTaskHTTPFixture
+	java, bff       *rootBFFProcess
+	javaEnv, bffEnv map[string]string
+	javaArgs        []string
+	binary, addr    string
+	conn            *grpc.ClientConn
+	execution       *wr.ExecutionClient
+	proxy           *rootFormalProxy
+	public          *httptest.Server
+}
+
+func (x *rootFormalFixture) waitEngine(t *testing.T) {
+	t.Helper()
+	deadline := time.Now().Add(20 * time.Second)
+	for time.Now().Before(deadline) {
+		select {
+		case <-x.java.done:
+			t.Fatal("actual WorkflowEngineMain exited before ready")
+		default:
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		r, e := hp.NewHealthClient(x.conn).Check(ctx, &hp.HealthCheckRequest{Service: rootExecutionHealth})
+		cancel()
+		if e == nil && r.Status == hp.HealthCheckResponse_SERVING {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatal("actual WorkflowEngineMain did not become ready")
+}
+func rootFormalEventually(t *testing.T, ctx context.Context, condition func() (bool, error)) {
+	t.Helper()
+	deadline := time.Now().Add(15 * time.Second)
+	for time.Now().Before(deadline) {
+		ok, e := condition()
+		if e != nil && !errors.Is(e, pgx.ErrNoRows) {
+			t.Fatal(e)
+		}
+		if ok && e == nil {
+			return
+		}
+		select {
+		case <-ctx.Done():
+			t.Fatal(ctx.Err())
+		case <-time.After(20 * time.Millisecond):
+		}
+	}
+	t.Fatal("formal background operation did not converge within test bound")
+}
+func rootFormalSetup(t *testing.T) *rootFormalFixture {
+	t.Helper()
+	started := time.Now()
+	f := rootHTTPResourceSetup(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	t.Cleanup(cancel)
+	f.ctx = ctx
+	x := &rootFormalFixture{f: f, binary: os.Getenv("WEAVEOS_FORMAL_BFF_BINARY"), addr: rootMainAddress(t)}
+	if !filepath.IsAbs(x.binary) {
+		t.Fatal("precompiled actual BFF binary required")
+	}
+	classpath := os.Getenv("WEAVEOS_FORMAL_JAVA_CLASSPATH")
+	if classpath == "" || strings.Contains(classpath, "test-classes") {
+		t.Fatal("actual Java runtime-only classpath required")
+	}
+	t.Cleanup(func() {
+		rootFormalStop(x.bff, false)
+		if x.public != nil {
+			x.public.Close()
+		}
+		if x.proxy != nil {
+			x.proxy.server.Stop()
+			_ = x.proxy.listener.Close()
+		}
+		if x.conn != nil {
+			_ = x.conn.Close()
+		}
+		rootFormalStop(x.java, false)
+		rootFormalLog(t, "bff", x.bff)
+		rootFormalLog(t, "java", x.java)
+	})
+	engineAddr := rootMainAddress(t)
+	_, enginePort, _ := net.SplitHostPort(engineAddr)
+	x.javaEnv = map[string]string{"WEAVEOS_ENGINE_JDBC_URL": "jdbc:postgresql://b3-postgres:5432/b3_flowable_fixture", "WEAVEOS_ENGINE_DB_USER": "v041_runtime", "WEAVEOS_ENGINE_DB_PASSWORD": "v041_synthetic_only", "WEAVEOS_ENGINE_SERVICE_TOKEN": rootRPCToken, "WEAVEOS_ENGINE_SCHEMA": "workflow", "WEAVEOS_ENGINE_BIND_HOST": "127.0.0.1", "WEAVEOS_ENGINE_PORT": enginePort, "WEAVEOS_ENGINE_POOL_MAX": "2", "WEAVEOS_ENGINE_RPC_THREADS": "2", "WEAVEOS_ENGINE_QUEUE_CAPACITY": "8", "WEAVEOS_ENGINE_CONNECTION_TIMEOUT_MS": "1000", "WEAVEOS_ENGINE_STATEMENT_TIMEOUT_MS": "5000", "WEAVEOS_ENGINE_LOCK_TIMEOUT_MS": "1000", "WEAVEOS_ENGINE_SHUTDOWN_TIMEOUT_MS": "1000"}
+	x.javaArgs = []string{"-Xms32m", "-Xmx384m", "-cp", classpath, "org.weaveos.workflow.WorkflowEngineMain"}
+	x.java = rootFormalStartChild(t, "java", "java", x.javaArgs, x.javaEnv)
+	identity, e := wr.NewServiceIdentity(rootRPCToken)
+	if e != nil {
+		t.Fatal(e)
+	}
+	x.conn, e = grpc.NewClient(engineAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithNoProxy(), grpc.WithDisableRetry(), grpc.WithUnaryInterceptor(identity.UnaryInterceptor()))
+	if e != nil {
+		t.Fatal(e)
+	}
+	x.waitEngine(t)
+	x.execution, e = wr.NewExecutionClient(x.conn, 3*time.Second)
+	if e != nil {
+		t.Fatal(e)
+	}
+	listener, e := net.Listen("tcp", "127.0.0.1:0")
+	if e != nil {
+		t.Fatal(e)
+	}
+	x.proxy = &rootFormalProxy{upstream: x.conn, listener: listener, dropped: make(chan *pb.ExecutionReceipt, 1)}
+	x.proxy.server = grpc.NewServer(grpc.ForceServerCodec(rootFormalCodec{}), grpc.UnknownServiceHandler(x.proxy.forward), grpc.MaxRecvMsgSize(1048576+16384))
+	go func() { _ = x.proxy.server.Serve(listener) }()
+	target, _ := url.Parse("http://" + x.addr)
+	reverse := httputil.NewSingleHostReverseProxy(target)
+	x.public = httptest.NewUnstartedServer(reverse)
+	origin := "https://" + x.public.Listener.Addr().String()
+	database, e := url.Parse(os.Getenv("WEAVEOS_TEST_DATABASE_URL"))
+	if e != nil {
+		t.Fatal(e)
+	}
+	q := database.Query()
+	q.Set("options", "-c role=auth_app")
+	q.Set("application_name", "formal-bff-"+f.app)
+	database.RawQuery = q.Encode()
+	cfg := config{DatabaseURL: database.String(), RedisURL: os.Getenv("WEAVEOS_TEST_REDIS_URL"), Origin: origin, Generation: "task-http-" + strings.ReplaceAll(f.app, "-", ""), AuditKeyID: "test", AuditKey: []byte("synthetic-audit-key-32-bytes-only!"), DefinitionKeyID: "test", DefinitionKey: []byte("isolated-definition-test-32bytes!"), SchemaLimits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}, WorkflowRuntime: rootRPCConfig(t)}
+	cfg.WorkflowRuntime.Target = listener.Addr().String()
+	x.bffEnv = rootMainEnvironment(cfg, x.addr)
+	x.bffEnv["WEAVEOS_TRUSTED_PROXY_HOSTS"] = "127.0.0.1"
+	x.bff = rootFormalStartChild(t, "bff", x.binary, nil, x.bffEnv)
+	rootMainReady(t, x.bff, x.addr)
+	if x.java.command.Process.Pid == x.bff.command.Process.Pid {
+		t.Fatal("runtime programs are not independent processes")
+	}
+	x.public.StartTLS()
+	f.server.Close()
+	f.server = x.public
+	f.client = x.public.Client()
+	t.Logf("FORMAL_RESOURCE fixtureSetupAndRuntimeStartupMillis=%d", time.Since(started).Milliseconds())
+	x.publishAndStart(t)
+	return x
+}
+func (x *rootFormalFixture) publishAndStart(t *testing.T) {
+	t.Helper()
+	f := x.f
+	f.flow, f.instance, f.node = f.id(t), f.id(t), f.id(t)
+	start, end := f.id(t), f.id(t)
+	graph := map[string]any{"version": 1, "nodes": []any{map[string]any{"id": start, "kind": "start"}, map[string]any{"id": f.node, "kind": "approval", "approval": map[string]any{"mode": "all", "assigneeIds": []string{f.actor}, "editableFieldIds": []string{}}}, map[string]any{"id": end, "kind": "end"}}, "edges": []any{map[string]any{"from": start, "to": f.node}, map[string]any{"from": f.node, "to": end}}}
+	base := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/workflows/" + f.flow + "/"
+	body, _ := json.Marshal(map[string]any{"operationId": f.id(t), "name": "Formal runtime approval", "expectedRevision": 0, "expectedSchemaVersion": 1, "graph": graph, "allowWithdraw": true})
+	rootHTTPData(t, f.call(t, "PUT", base+"definition", string(body), nil), 201)
+	operation := f.id(t)
+	body, _ = json.Marshal(map[string]any{"operationId": operation, "expectedRevision": 1, "expectedSchemaVersion": 1})
+	rootHTTPData(t, f.call(t, "POST", base+"publish", string(body), nil), 202)
+	rootFormalEventually(t, f.ctx, func() (bool, error) {
+		data := rootHTTPData(t, f.call(t, "GET", base+"publications/"+operation, "", nil), 200)
+		return rootHTTPString(t, data, "status") == "confirmed", nil
+	})
+	var revision int64
+	if e := f.owner.QueryRow(f.ctx, "SELECT revision FROM applications.workflow_definitions WHERE app_id=$1 AND id=$2", f.app, f.flow).Scan(&revision); e != nil {
+		t.Fatal(e)
+	}
+	body, _ = json.Marshal(map[string]any{"operationId": f.id(t), "expectedRevision": revision})
+	rootHTTPData(t, f.call(t, "POST", base+"enable", string(body), nil), 200)
+	f.transaction(t, func(tx pgx.Tx) error {
+		head, e := (wc.Catalog{}).GetInTx(f.ctx, tx, f.app, f.flow)
+		if e != nil {
+			return e
+		}
+		_, e = (wc.Catalog{}).ReserveInTx(f.ctx, tx, wc.ReserveInput{AppID: f.app, FlowID: f.flow, InstanceID: f.instance, RecordID: f.record, ActorID: f.actor, ExpectedRevision: head.Revision, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1})
+		return e
+	})
+	if e := f.owner.QueryRow(f.ctx, "SELECT version_id::text FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2 AND version=1", f.app, f.flow).Scan(&f.version); e != nil {
+		t.Fatal(e)
+	}
+	command := fc.Command{ProtocolVersion: 2, CommandID: f.id(t), AppID: f.app, TableID: f.table, ViewID: f.view, RecordID: f.record, InstanceID: f.instance, ActorID: f.actor, Action: "start", RecordVersion: 1, SchemaVersion: 1, FlowID: f.flow, DefinitionVersion: 1, VersionID: f.version}
+	payload := fc.ExecutionPayload{EvidenceHash: sha256.Sum256([]byte("formal existing-record start fixture")), Start: &fc.ExecutionStart{AllowWithdraw: true, Approvers: map[string][]string{f.node: {f.actor}}}, Routes: map[string]bool{}}
+	raw, e := fc.EncodeExecutionPayload("start", payload)
+	if e != nil {
+		t.Fatal(e)
+	}
+	command.PayloadHash = sha256.Sum256(raw)
+	f.transaction(t, func(tx pgx.Tx) error {
+		if e := tx.QueryRow(f.ctx, "SELECT applications.acquire_record_command_fence($1,$2,$3,$4,$5,$6,$7)", f.app, f.table, f.view, f.record, command.CommandID, 1, 1).Scan(&command.FenceEpoch); e != nil {
+			return e
+		}
+		_, e := (fc.Ledger{Namespace: "applications"}).AcceptExecutionInTx(f.ctx, tx, command, payload)
+		return e
+	})
+	// No DispatchOne/Run call here: only the actual BFF process consumes work.
+	rootFormalEventually(t, f.ctx, func() (bool, error) {
+		e := f.owner.QueryRow(f.ctx, "SELECT id::text FROM applications.workflow_tasks WHERE app_id=$1 AND instance_id=$2 AND closed_command_id IS NULL", f.app, f.instance).Scan(&f.task)
+		return e == nil, e
+	})
+	receipt, found, e := x.execution.Lookup(f.ctx, command)
+	if e != nil || !found || receipt.Result.State != "active" || len(receipt.Result.Tasks) != 1 || receipt.Result.Tasks[0].ID != f.task {
+		t.Fatal("formal existing task lacks genuine Java receipt", e)
+	}
+}
+func (x *rootFormalFixture) finish(t *testing.T, operation string, c fc.Command, want string) {
+	t.Helper()
+	f := x.f
+	started := time.Now()
+	rootFormalEventually(t, f.ctx, func() (bool, error) {
+		data := rootHTTPData(t, f.call(t, "GET", "/api/v1/application-workflow-operations/"+operation, "", nil), 200)
+		return rootHTTPString(t, data, "status") == "success", nil
+	})
+	rootHTTPFinalJava(t, f, operation, c, want)
+	receipt, found, e := x.execution.Lookup(f.ctx, c)
+	if e != nil || !found || receipt == nil || receipt.Result.State != want {
+		t.Fatal("formal HTTP outcome lacks genuine engine receipt", e)
+	}
+	t.Logf("FORMAL_RESOURCE postAcceptanceCompletionMillis=%d", time.Since(started).Milliseconds())
+}
+func TestRootFormalRuntimePublishAndApprove(t *testing.T) {
+	for _, action := range []string{"agree", "reject"} {
+		t.Run(action, func(t *testing.T) {
+			x := rootFormalSetup(t)
+			op, c, body := rootHTTPAcceptedJavaAction(t, x.f, action)
+			want := "completed"
+			if action == "reject" {
+				want = "rejected"
+			}
+			x.finish(t, op, c, want)
+			again := rootHTTPData(t, x.f.call(t, "POST", x.f.taskPath()+"/actions", body, nil), 200)
+			if rootHTTPString(t, again, "commandId") != c.CommandID {
+				t.Fatal("exact HTTP replay changed the command")
+			}
+		})
+	}
+}
+func TestRootFormalRuntimeLostReplyBffRestart(t *testing.T) {
+	x := rootFormalSetup(t)
+	before := x.proxy.executions.Load()
+	x.proxy.armed.Store(true)
+	op, c, _ := rootHTTPAcceptedJavaAction(t, x.f, "agree")
+	select {
+	case receipt := <-x.proxy.dropped:
+		if receipt.CommandId != c.CommandID || receipt.Outcome != "success" {
+			t.Fatal("did not discard this genuine successful response")
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("real committed response was not intercepted")
+	}
+	rootHTTPPendingJava(t, x.f, op, c)
+	real, found, e := x.execution.Lookup(x.f.ctx, c)
+	if e != nil || !found || real.Result.State != "completed" {
+		t.Fatal("engine did not commit before response loss", e)
+	}
+	rootFormalStop(x.bff, true)
+	rootFormalLog(t, "killed-bff", x.bff)
+	x.bff = rootFormalStartChild(t, "restarted-bff", x.binary, nil, x.bffEnv)
+	rootMainReady(t, x.bff, x.addr)
+	x.proxy.held.Store(false)
+	rootHTTPRetryDue(t, x.f, c)
+	x.finish(t, op, c, "completed")
+	if x.proxy.executions.Load() != before+1 {
+		t.Fatal("recovery re-executed instead of looking up original receipt")
+	}
+}
+func TestRootFormalRuntimeEngineRestart(t *testing.T) {
+	x := rootFormalSetup(t)
+	f := x.f
+	preview := rootHTTPData(t, f.call(t, "GET", f.taskPath(), "", nil), 200)
+	operation := f.id(t)
+	body := rootHTTPActionBody(operation, "agree", rootHTTPString(t, preview, "basisToken"))
+	rootFormalStop(x.java, true)
+	rootFormalLog(t, "killed-java", x.java)
+	rootFormalEventually(t, f.ctx, func() (bool, error) {
+		r, e := f.client.Get(f.server.URL + "/health/ready")
+		if e != nil {
+			return false, e
+		}
+		_, _ = io.Copy(io.Discard, r.Body)
+		_ = r.Body.Close()
+		return r.StatusCode == 503, nil
+	})
+	rootHTTPError(t, f.call(t, "POST", f.taskPath()+"/actions", body, nil), 503, "COMMON_SERVICE_UNAVAILABLE")
+	var count int
+	if e := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2", f.actor, operation).Scan(&count); e != nil || count != 0 {
+		t.Fatal("engine outage consumed new operation", e)
+	}
+	x.java = rootFormalStartChild(t, "restarted-java", "java", x.javaArgs, x.javaEnv)
+	x.waitEngine(t)
+	rootMainReady(t, x.bff, x.addr)
+	accepted := rootHTTPData(t, f.call(t, "POST", f.taskPath()+"/actions", body, nil), 202)
+	id := rootHTTPString(t, accepted, "commandId")
+	var raw []byte
+	if e := f.owner.QueryRow(f.ctx, "SELECT command_json FROM applications.workflow_commands WHERE command_id=$1", id).Scan(&raw); e != nil {
+		t.Fatal(e)
+	}
+	var c fc.Command
+	if json.Unmarshal(raw, &c) != nil || c.CommandID != id {
+		t.Fatal("invalid durable restarted command")
+	}
+	x.finish(t, operation, c, "completed")
+}
