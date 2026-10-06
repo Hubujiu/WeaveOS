@@ -165,6 +165,12 @@ jobs:
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootNativeVersioningTest -Dworkflow.reports=ci-logs/native-version-reports test 2>&1 | tee services/workflow-engine/ci-logs/native-version-tests.txt
       - name: Require eight native version cases without skips
         run: python3 services/workflow-engine/native_version_ci_gate.py services/workflow-engine/ci-logs/native-version-reports
+      - name: Root-owned native history report gate tests
+        run: python3 services/workflow-engine/native_history_ci_gate_tests.py
+      - name: Native history authority and transaction contract
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootNativeHistoryTest -Dworkflow.reports=ci-logs/native-history-reports test 2>&1 | tee services/workflow-engine/ci-logs/native-history-tests.txt
+      - name: Require eight native history cases without skips
+        run: python3 services/workflow-engine/native_history_ci_gate.py services/workflow-engine/ci-logs/native-history-reports
       - name: Clean verify against dedicated internal PostgreSQL
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootDeploymentRegistryTest verify 2>&1 | tee services/workflow-engine/ci-logs/verify.txt
       - name: Require all 18 Root-owned cases without skips
