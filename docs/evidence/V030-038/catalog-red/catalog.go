@@ -145,7 +145,7 @@ func (Catalog) PutVersionInTx(ctx context.Context, tx pgx.Tx, in VersionInput) (
 	if err != nil {
 		return Head{}, err
 	}
-	bpmn, err := flowgraph.CompileScopedBPMN(in.Graph, resources.fields, in.AppID, in.FlowID)
+	bpmn, err := flowgraph.CompileBPMN(in.Graph, resources.fields, versionID)
 	if err != nil || len(bpmn) == 0 {
 		return Head{}, ErrInvalid
 	}
