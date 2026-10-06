@@ -126,7 +126,7 @@ class RootWorkflowRuntimeTest {
     assertTrue(blocked,"must observe the actual in-flight database wait before closing");
     assertTimeoutPreemptively(java.time.Duration.ofSeconds(5),runtime::close);
     var failure=assertThrows(ExecutionException.class,()->pending.get(5,TimeUnit.SECONDS));assertInstanceOf(StatusRuntimeException.class,failure.getCause());
-    assertTrue(Set.of(Status.Code.UNAVAILABLE,Status.Code.CANCELLED).contains(((StatusRuntimeException)failure.getCause()).getStatus().getCode()),"forceful shutdown is a transport termination, not a durable business outcome");noConnections();
+    assertEquals(Status.Code.UNAVAILABLE,((StatusRuntimeException)failure.getCause()).getStatus().getCode());noConnections();
    }finally{owner.rollback();}
   }finally{sender.shutdownNow();sender.awaitTermination(5,TimeUnit.SECONDS);}
   assertEquals(0,database.fixture.jdbc.queryForObject("SELECT count(*) FROM wf_deployments",Integer.class));
