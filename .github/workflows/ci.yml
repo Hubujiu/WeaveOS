@@ -177,6 +177,24 @@ jobs:
               "badIdentityDoesNotPoisonLaterValidRequest",
           ])
           PYCODE
+      - name: Explicit schema migration payload against real PostgreSQL
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootExplicitSchemaTest -Dworkflow.reports=ci-logs/explicit-schema-reports test 2>&1 | tee services/workflow-engine/ci-logs/explicit-schema-tests.txt
+      - name: Require all eight explicit schema cases without skips
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/explicit-schema-reports", "org.weaveos.workflow.RootExplicitSchemaTest", [
+              "nativeCatalogMatchesOfficialEngineCreatedSchema",
+              "nativeVersionMetadataIsPinned",
+              "protocolLedgerCatalogMatchesReviewedContract",
+              "pendingCommandCannotCommit",
+              "provisionalInstanceCannotCommit",
+              "installationFailureRollsBackAllTables",
+              "downRefusesToDeleteExistingHistory",
+              "engineStartsWithoutAutoCreatingOrUpgrading",
+          ])
+          PYCODE
       - name: Root-owned native version report gate tests
         run: python3 services/workflow-engine/native_version_ci_gate_tests.py
       - name: Native scoped version and old-instance compatibility
