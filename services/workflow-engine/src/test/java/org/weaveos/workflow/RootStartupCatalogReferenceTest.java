@@ -45,7 +45,11 @@ class RootStartupCatalogReferenceTest {
    byte[] bytes=manifest.toString().getBytes(StandardCharsets.UTF_8);assertTrue(bytes.length<2*1024*1024);
    Path output=Path.of("ci-logs/runtime-catalog-reference.txt");Files.createDirectories(output.getParent());Files.write(output,bytes);
    System.out.println("V041_CATALOG_META:rows="+rows.size()+";bytes="+bytes.length+";sha256="+HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)));
-   System.out.println("V041_CATALOG_BASE64:"+Base64.getEncoder().encodeToString(bytes));
+   // The initial independent reference has been captured and committed. Keep the
+   // actual artifact and hash, without flooding each CI log with 185 KB of Base64.
+   try(var frozen=getClass().getResourceAsStream("/runtime-catalog-reference.txt")){
+    assertNotNull(frozen);assertArrayEquals(frozen.readAllBytes(),bytes);
+   }
   } finally {fixture.cleanup();}
  }
 }

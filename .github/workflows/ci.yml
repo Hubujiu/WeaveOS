@@ -193,6 +193,15 @@ jobs:
           from rpc_ci_gate import _java
           _java("ci-logs/runtime-schema-reports", "org.weaveos.workflow.RootRuntimeSchemaTest", ['migratedSchemaAndRestrictedRoleAreAccepted', 'currentIdAllocatorAndHistoricalRowsAreNotFixedSnapshots', 'missingNativeTableIsRejected', 'missingProtocolTableIsRejected', 'missingColumnIsRejected', 'changedColumnTypeIsRejected', 'removedNotNullIsRejected', 'missingIndexIsRejected', 'removedConstraintIsRejected', 'disabledDeferredTriggerIsRejected', 'disabledForeignKeyTriggersAreRejected', 'changedTriggerFunctionIsRejected', 'enabledRowSecurityIsRejected', 'wrongNativeVersionIsRejected', 'wrongCommonVersionIsRejected', 'missingVersionIsRejected', 'superuserIsRejected', 'tableOwnerIsRejected', 'ownerMembershipIsRejectedEvenWithoutInheritance', 'schemaCreatePrivilegeIsRejected', 'databaseCreatePrivilegeIsRejected', 'temporaryTablePrivilegeIsRejected', 'truncatePrivilegeIsRejected', 'protocolDeletePrivilegeIsRejected', 'immutableProtocolUpdatePrivilegeIsRejected', 'missingRequiredReadPrivilegeIsRejected', 'missingRequiredUpdatePrivilegeIsRejected', 'missingSequencePrivilegeIsRejected', 'tableRegrantPrivilegeIsRejected', 'columnRegrantPrivilegeIsRejected', 'sequenceRegrantPrivilegeIsRejected', 'invalidArgumentsFailClosedWithoutConnecting', 'connectionFailureDoesNotExposeSecretOrSqlCause', 'verificationIsBoundedReadOnlyAndClosesItsConnection'])
           PYCODE
+      - name: Root bounded real JDBC pool contract
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootRuntimeDataSourceTest -Dworkflow.reports=ci-logs/runtime-pool-reports test 2>&1 | tee services/workflow-engine/ci-logs/runtime-pool-tests.txt
+      - name: Require all nine real JDBC pool cases
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/runtime-pool-reports", "org.weaveos.workflow.RootRuntimeDataSourceTest", ['poolUsesValidatedSchemaAndSessionTimeouts', 'returnedConnectionIsReusedWithoutUnboundedGrowth', 'fullPoolTimesOutThenRecoversAfterReturn', 'actualStatementTimeoutCancelsSlowQuery', 'actualLockTimeoutDoesNotLeaveAChangedRow', 'schemaGuardDoesNotLeakReadOnlyTransactionStateIntoPool', 'closeRejectsBorrowAndReleasesServerConnections', 'wrongCredentialsFailWithoutSecretCause', 'nullConfigurationFailsClosed'])
+          PYCODE
       - name: Internal service identity over real plaintext gRPC
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootServiceTokenInterceptorTest -Dworkflow.reports=ci-logs/service-token-reports test 2>&1 | tee services/workflow-engine/ci-logs/service-token-tests.txt
       - name: Require all eight service identity cases without skips

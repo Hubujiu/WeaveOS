@@ -128,6 +128,7 @@ public final class RuntimeSchema {
                     verifyTablePrivileges(connection, schema, timeoutMs);
                     verifyColumnPrivileges(connection, schema, timeoutMs);
                     verifySequencePrivileges(connection, schema, timeoutMs);
+                    verifyNoRegrant(connection, schema, timeoutMs);
                 } finally {
                     connection.rollback();
                 }
@@ -340,6 +341,32 @@ public final class RuntimeSchema {
                     && !result.getBoolean(3));
             }
         }
+    }
+
+    private static void verifyNoRegrant(Connection connection, String schema, int timeoutMs)
+            throws SQLException {
+        // Comma-separated PostgreSQL privilege tests are intentionally ANY here:
+        // every ability to regrant these table/column/sequence permissions is forbidden.
+        String tables = """
+            SELECT NOT EXISTS (
+              SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+              CROSS JOIN pg_roles r WHERE n.nspname=? AND c.relkind IN ('r','p') AND
+            """ + SCOPE + " AND " + REACHABLE_ROLE + """
+              AND (has_table_privilege(r.oid,c.oid,
+                   'SELECT WITH GRANT OPTION,INSERT WITH GRANT OPTION,UPDATE WITH GRANT OPTION,DELETE WITH GRANT OPTION,TRUNCATE WITH GRANT OPTION,REFERENCES WITH GRANT OPTION,TRIGGER WITH GRANT OPTION,MAINTAIN WITH GRANT OPTION')
+                OR has_any_column_privilege(r.oid,c.oid,
+                   'SELECT WITH GRANT OPTION,INSERT WITH GRANT OPTION,UPDATE WITH GRANT OPTION,REFERENCES WITH GRANT OPTION')))
+            """;
+        requireBoolean(connection, tables, timeoutMs, schema);
+        String sequences = """
+            SELECT NOT EXISTS (
+              SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+              CROSS JOIN pg_roles r WHERE n.nspname=? AND c.relkind='S' AND
+            """ + SCOPE + " AND " + REACHABLE_ROLE + """
+              AND has_sequence_privilege(r.oid,c.oid,
+                  'USAGE WITH GRANT OPTION,SELECT WITH GRANT OPTION,UPDATE WITH GRANT OPTION'))
+            """;
+        requireBoolean(connection, sequences, timeoutMs, schema);
     }
 
     private static void requireBoolean(Connection connection, String sql, int timeoutMs,
