@@ -71,3 +71,5 @@ Go执行负载与结果验证：[V030-031](V030-031.md)，task/V030-031-executio
 当前任务预览与审批操作接线：[V030-037](V030-037.md)，task/V030-037-approval-admission；核心30/38与真实HTTPS4/15、契约登记6及旧契约15通过，真实Java/备份/完整回归与最终CI待验收。Root亲写测试、debug及审查；当前为未完成检查点，前端暂停。
 
 - [V030-039 · source-map-js安全补丁与回滚候选](V030-039.md) — 用户已确认；Root本人实施，独立安全修补，未交付
+
+- [V030-040 · develop集成与main审批分离](V030-040.md) — develop已创建；Root审查集成，main保留用户批准，旧main-only工具限制已说明
