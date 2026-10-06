@@ -81,6 +81,9 @@ jobs:
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up
       - name: Prepare dedicated B2 PostgreSQL private socket fixture
         run: node infra/acceptance/run.mjs b2-fixture-start "$GITHUB_ENV" "$RUNNER_TEMP/weaveos-b2-ci.json"
+      - name: Native catalog persisted scope contract
+        working-directory: services/bff
+        run: go test -race -count=1 -v -run '^TestRootNativeCatalog' ./internal/apprecordservice
       - name: Format, static checks, race tests and build
         working-directory: services/bff
         run: |
