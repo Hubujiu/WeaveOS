@@ -1,17 +1,5 @@
 import {test,expect,type Page,type Route} from '@playwright/test';
 
-// Prepare only the browser engine, outside each unchanged business-test budget.
-// No app navigation or shared context: the normal page fixture stays isolated.
-test.beforeAll(async ({browser})=>{
- const context=await browser.newContext();
- try {
-  const page=await context.newPage();
-  await page.goto('about:blank');
- } finally {
-  await context.close();
- }
-});
-
 const id='00000000-0000-4000-8000-000000000001';
 const identityId='00000000-0000-4000-8000-000000000002';
 const draftId='00000000-0000-4000-8000-000000000009';
