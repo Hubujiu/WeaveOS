@@ -211,6 +211,15 @@ jobs:
           from rpc_ci_gate import _java
           _java("ci-logs/runtime-composition-reports", "org.weaveos.workflow.RootWorkflowRuntimeTest", ['authenticatedHealthReflectsRegisteredServices', 'everyRegisteredServiceRejectsMissingIdentity', 'unknownHealthServiceIsNotFalselyServing', 'controlledPublishStartAndApprovalUseTheRestrictedRole', 'closeAndRestartReplayTheSameDurableReceipt', 'missingSchemaFailsBeforeListeningOrAutoDdl', 'privilegedAccountCannotStartTheRuntime', 'occupiedPortStartupFailureReleasesDatabaseResources', 'closeIsIdempotentStopsServingAndReleasesResources', 'healthIsNotServingWhenDatabaseCannotBeReached', 'configuredCallCapacityRejectsOverloadWithoutUnboundedWorkers', 'nullConfigurationFailsClosed'])
           PYCODE
+      - name: Root actual Java main process lifecycle
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootWorkflowMainProcessTest -Dworkflow.reports=ci-logs/runtime-main-reports test 2>&1 | tee services/workflow-engine/ci-logs/runtime-main-tests.txt
+      - name: Require all three actual main process cases
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/runtime-main-reports", "org.weaveos.workflow.RootWorkflowMainProcessTest", ["actualMainServesThenSigtermPreservesCommittedDefinition", "invalidEnvironmentExitsNonzeroWithoutSecretOutput", "unknownArgumentsFailWithoutEchoingArgument"])
+          PYCODE
       - name: Internal service identity over real plaintext gRPC
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootServiceTokenInterceptorTest -Dworkflow.reports=ci-logs/service-token-reports test 2>&1 | tee services/workflow-engine/ci-logs/service-token-tests.txt
       - name: Require all eight service identity cases without skips
