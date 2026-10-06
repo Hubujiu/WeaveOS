@@ -161,6 +161,20 @@ jobs:
         run: bash services/workflow-engine/prepare-build.sh 2>&1 | tee services/workflow-engine/ci-logs/prepare.txt
       - name: Bounded Java process configuration
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootRuntimeConfigurationTest -Dworkflow.reports=ci-logs/runtime-config-reports test 2>&1 | tee services/workflow-engine/ci-logs/runtime-config-tests.txt
+      - name: Root real subprocess library log privacy
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootRuntimeLoggingTest -Dworkflow.reports=ci-logs/runtime-logging-reports test 2>&1 | tee services/workflow-engine/ci-logs/runtime-logging-tests.txt
+      - name: Require all four actual log boundary cases
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/runtime-logging-reports", "org.weaveos.workflow.RootRuntimeLoggingTest", [
+              "slf4jLibraryFailuresKeepSignalWithoutPayloadOrStack",
+              "julLibraryFailuresUseTheSameSafeBoundary",
+              "verboseLibraryMessagesAreNotEnabledByDefault",
+              "repeatedInitializationDoesNotSilenceOrDuplicateWarnings",
+          ])
+          PYCODE
       - name: Require all eleven runtime configuration cases
         working-directory: services/workflow-engine
         run: |

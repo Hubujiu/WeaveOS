@@ -8,6 +8,7 @@ public final class WorkflowEngineMain {
         Thread shutdownHook = null;
         boolean failed = false;
         try {
+            RuntimeLogging.initialize();
             if (args.length != 0) throw new IllegalArgumentException();
             try (WorkflowRuntime runtime = WorkflowRuntime.start(
                     RuntimeConfiguration.read(System.getenv()))) {

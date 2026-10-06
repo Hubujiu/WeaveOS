@@ -1,0 +1,13 @@
+<configuration>
+  <!-- Library messages and throwable chains can contain SQL, BPMN and credentials.
+       Preserve bounded diagnostic signals without serializing those payloads. -->
+  <appender name="SAFE_RUNTIME" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.err</target>
+    <encoder>
+      <pattern>%date{ISO8601} %-5level %logger event=runtime_library_log%n%nopex</pattern>
+    </encoder>
+  </appender>
+  <root level="WARN">
+    <appender-ref ref="SAFE_RUNTIME"/>
+  </root>
+</configuration>
