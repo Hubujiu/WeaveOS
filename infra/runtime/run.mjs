@@ -12,9 +12,9 @@ if(existsSync(resolve(dir,'CURRENT.json')))throw new Error('Existing runtime: pr
 for(const sub of ['tls','secrets','backups','public'])mkdirSync(resolve(dir,sub),{recursive:true});
 const commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
 const artifacts=process.env.WEAVEOS_ARTIFACT_RECORD?JSON.parse(readFileSync(process.env.WEAVEOS_ARTIFACT_RECORD,'utf8')):packageImages({root,commit,outputDir:resolve(dir,'artifacts')});
-// Prior local code snapshot already passed the full product pipeline. First
-// version has no earlier production release; record this rollback limitation.
-const previous=packageImages({root,commit:'85c2ee12beb13cf95eb7cc16a0508df35773b250',outputDir:resolve(dir,'previous-artifacts')});
+// Security-patched derivative of the previously verified 85c2ee snapshot.
+// This fixture must verify the new candidate; it is not a production rollback.
+const previous=packageImages({root,commit:'c37226731a6bdbf5c6187aad6cfe1ff9be5daadd',outputDir:resolve(dir,'previous-artifacts')});
 verifyArtifacts(artifacts);verifyArtifacts(previous);
 const project=`weaveos-v010-008-${Date.now()}`,generation=project;
 const env={...process.env,WEAVEOS_RUNTIME_DIR:dir,WEAVEOS_BFF_IMAGE:artifacts.bff.imageID,WEAVEOS_WEB_IMAGE:artifacts.web.imageID};
