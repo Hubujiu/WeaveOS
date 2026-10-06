@@ -75,3 +75,5 @@ Flowable原生版本与流程层精简：[V030-038](V030-038.md)，Root本人设
 - [V030-039 · source-map-js安全补丁与回滚候选](V030-039.md) — b28精确11项CI通过，代码已集成develop；main未推广
 
 - [V030-040 · develop集成与main审批分离](V030-040.md) — PR50最终11项CI通过并squash合入develop c33d49c；main保留用户批准，旧main-only工具限制已说明
+
+- [V030-041 · 独立Flowable启动与后台生命周期](V030-041.md) — 内部不使用TLS；Root先行runner八项RED，身份无关切片实施中，正式服务与迁移仍待后续验收

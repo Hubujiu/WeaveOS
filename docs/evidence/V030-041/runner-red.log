@@ -1,0 +1,27 @@
+=== RUN   TestRootRunRejectsInvalidWorker
+    root_runner_test.go:14: invalid worker must fail, got <nil>
+--- FAIL: TestRootRunRejectsInvalidWorker (0.00s)
+=== RUN   TestRootRunRejectsNilContext
+    root_runner_test.go:20: nil context must fail, got <nil>
+--- FAIL: TestRootRunRejectsNilContext (0.00s)
+=== RUN   TestRootLoopCancelledBeforeFirstClaim
+    root_runner_test.go:29: err=<nil> calls=0
+--- FAIL: TestRootLoopCancelledBeforeFirstClaim (0.00s)
+=== RUN   TestRootLoopDrainsWorkWithoutIdleSleep
+    root_runner_test.go:47: err=<nil> calls=0 waits=0
+--- FAIL: TestRootLoopDrainsWorkWithoutIdleSleep (0.00s)
+=== RUN   TestRootLoopIdleUsesBoundedCancellableWait
+    root_runner_test.go:62: err=<nil> calls=0
+--- FAIL: TestRootLoopIdleUsesBoundedCancellableWait (0.00s)
+=== RUN   TestRootLoopErrorBacksOffEvenWhenWorkClaimed
+    root_runner_test.go:85: err=<nil> calls=0 waits=0
+--- FAIL: TestRootLoopErrorBacksOffEvenWhenWorkClaimed (0.00s)
+=== RUN   TestRootLoopCancellationAfterDispatchSkipsWaitAndNewClaim
+    root_runner_test.go:99: err=<nil> calls=0 waits=0
+--- FAIL: TestRootLoopCancellationAfterDispatchSkipsWaitAndNewClaim (0.00s)
+=== RUN   TestRootLoopRejectsIncompleteSeams
+    root_runner_test.go:111: invalid seam accepted: <nil>
+--- FAIL: TestRootLoopRejectsIncompleteSeams (0.00s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/workflowexecution	0.016s
+FAIL

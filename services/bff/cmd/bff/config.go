@@ -34,10 +34,15 @@ type config struct {
 	DefinitionKey                                         []byte
 	DefinitionKeyID                                       string
 	SchemaLimits                                          appschema.Limits
+	WorkflowRuntime                                       workflowRuntimeConfig
 }
 
 func readConfig(get func(string) string) (config, error) {
-	cfg := config{DatabaseURL: get("WEAVEOS_DATABASE_URL"), RedisURL: get("WEAVEOS_REDIS_URL"), Origin: get("WEAVEOS_PUBLIC_ORIGIN"), Generation: get("WEAVEOS_SESSION_GENERATION"), AuditKeyID: get("WEAVEOS_AUDIT_KEY_ID")}
+	workflow, err := readWorkflowRuntimeConfig(get)
+	if err != nil {
+		return config{}, err
+	}
+	cfg := config{DatabaseURL: get("WEAVEOS_DATABASE_URL"), RedisURL: get("WEAVEOS_REDIS_URL"), Origin: get("WEAVEOS_PUBLIC_ORIGIN"), Generation: get("WEAVEOS_SESSION_GENERATION"), AuditKeyID: get("WEAVEOS_AUDIT_KEY_ID"), WorkflowRuntime: workflow}
 	if raw := get("WEAVEOS_TRUSTED_PROXY_HOSTS"); raw != "" {
 		for _, value := range strings.Split(raw, ",") {
 			host := strings.TrimSpace(value)
@@ -69,6 +74,10 @@ func readConfig(get func(string) string) (config, error) {
 	return cfg, nil
 }
 func buildHandler(ctx context.Context, cfg config) (http.Handler, func(), error) {
+	// Formal runtime and caller-identity wiring are not available yet.
+	if cfg.WorkflowRuntime.Enabled {
+		return nil, nil, errors.New("workflow runtime composition unavailable")
+	}
 	if cfg.DatabaseURL == "" && cfg.RedisURL == "" && cfg.Origin == "" && cfg.Generation == "" && cfg.AuditKeyID == "" && len(cfg.AuditKey) == 0 {
 		return httpserver.NewHandler(nil), func() {}, nil
 	}

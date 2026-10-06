@@ -159,6 +159,24 @@ jobs:
           python3 services/workflow-engine/ci_gate_tests.py 2>&1 | tee services/workflow-engine/ci-logs/gate-tests.txt
       - name: Prepare locked offline Java dependencies
         run: bash services/workflow-engine/prepare-build.sh 2>&1 | tee services/workflow-engine/ci-logs/prepare.txt
+      - name: Internal service identity over real plaintext gRPC
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootServiceTokenInterceptorTest -Dworkflow.reports=ci-logs/service-token-reports test 2>&1 | tee services/workflow-engine/ci-logs/service-token-tests.txt
+      - name: Require all eight service identity cases without skips
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/service-token-reports", "org.weaveos.workflow.RootServiceTokenInterceptorTest", [
+              "rejectsInvalidConfiguredTokensWithoutEchoingInput",
+              "acceptsConfiguredBoundaryTokensAndRedactsIdentity",
+              "validIdentityInvokesHandlerExactlyOnce",
+              "missingIdentityIsRejectedBeforeHandler",
+              "incorrectIdentityIsRejectedBeforeHandler",
+              "duplicateIdentityIsRejectedEvenWhenOneOrBothAreValid",
+              "ambiguousBearerFormattingIsRejected",
+              "badIdentityDoesNotPoisonLaterValidRequest",
+          ])
+          PYCODE
       - name: Root-owned native version report gate tests
         run: python3 services/workflow-engine/native_version_ci_gate_tests.py
       - name: Native scoped version and old-instance compatibility

@@ -1,0 +1,99 @@
+package main
+
+import (
+	"errors"
+	"net"
+	"net/netip"
+	"strconv"
+	"strings"
+	"time"
+)
+
+type workflowRuntimeConfig struct {
+	Enabled    bool
+	Target     string
+	RPCTimeout time.Duration
+}
+
+func readWorkflowRuntimeConfig(get func(string) string) (workflowRuntimeConfig, error) {
+	if get == nil {
+		return workflowRuntimeConfig{}, errors.New("invalid workflow configuration reader")
+	}
+	enabled := get("WEAVEOS_WORKFLOW_ENABLED")
+	target := get("WEAVEOS_WORKFLOW_TARGET")
+	rawTimeout := get("WEAVEOS_WORKFLOW_RPC_TIMEOUT_MS")
+	switch enabled {
+	case "", "false":
+		if target != "" || rawTimeout != "" {
+			return workflowRuntimeConfig{}, errors.New("workflow configuration present while disabled")
+		}
+		return workflowRuntimeConfig{}, nil
+	case "true":
+	default:
+		return workflowRuntimeConfig{}, errors.New("invalid workflow enable configuration")
+	}
+	if !validWorkflowTarget(target) {
+		return workflowRuntimeConfig{}, errors.New("invalid workflow target configuration")
+	}
+	timeout := int64(5000)
+	if rawTimeout != "" {
+		if !workflowDecimal(rawTimeout) {
+			return workflowRuntimeConfig{}, errors.New("invalid workflow RPC timeout configuration")
+		}
+		var err error
+		timeout, err = strconv.ParseInt(rawTimeout, 10, 32)
+		if err != nil || timeout < 1 || timeout > 30000 {
+			return workflowRuntimeConfig{}, errors.New("invalid workflow RPC timeout configuration")
+		}
+	}
+	return workflowRuntimeConfig{Enabled: true, Target: target, RPCTimeout: time.Duration(timeout) * time.Millisecond}, nil
+}
+
+func workflowDecimal(value string) bool {
+	if value == "" {
+		return false
+	}
+	for i := range value {
+		if value[i] < '0' || value[i] > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func validWorkflowTarget(target string) bool {
+	if strings.ContainsAny(target, "/@?#") {
+		return false
+	}
+	host, rawPort, err := net.SplitHostPort(target)
+	if err != nil || host == "" || !workflowDecimal(rawPort) {
+		return false
+	}
+	port, err := strconv.ParseUint(rawPort, 10, 16)
+	if err != nil || port == 0 {
+		return false
+	}
+	if address, err := netip.ParseAddr(host); err == nil {
+		return (address.IsPrivate() || address.IsLoopback()) && (!strings.HasPrefix(target, "[") || address.Is6())
+	}
+	if strings.HasPrefix(target, "[") {
+		return false
+	}
+	// A valid DNS name does not establish private routing or caller identity.
+	host = strings.TrimSuffix(host, ".")
+	if host == "" || len(host) > 253 {
+		return false
+	}
+	for _, label := range strings.Split(host, ".") {
+		if len(label) == 0 || len(label) > 63 || label[0] == '-' || label[len(label)-1] == '-' {
+			return false
+		}
+		for i := range label {
+			c := label[i]
+			if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-') {
+				return false
+			}
+		}
+	}
+	return true
+}

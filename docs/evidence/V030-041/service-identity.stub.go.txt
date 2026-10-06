@@ -1,0 +1,8 @@
+package workflowrpc
+
+import "google.golang.org/grpc"
+
+type ServiceIdentity struct{}
+
+func NewServiceIdentity(token string) (*ServiceIdentity, error)          { return &ServiceIdentity{}, nil }
+func (s *ServiceIdentity) UnaryInterceptor() grpc.UnaryClientInterceptor { return nil }
