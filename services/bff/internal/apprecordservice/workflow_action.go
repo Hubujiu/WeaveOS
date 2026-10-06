@@ -77,6 +77,10 @@ func (s *Service) AcceptWorkflowTask(ctx context.Context, principal session.Prin
 		return empty, applications.ErrInvalid
 	}
 	fingerprint := sha256.Sum256(raw)
+	runtimeReady := true
+	if s.RuntimeReady != nil {
+		runtimeReady = s.RuntimeReady(ctx) == nil
+	}
 	var basis querycontext.Metadata
 	loadErr := querycontext.ErrExpired
 	if workflowActionToken(req.BasisToken) {
@@ -188,6 +192,9 @@ func (s *Service) AcceptWorkflowTask(ctx context.Context, principal session.Prin
 		if err != nil {
 			return empty, err
 		}
+	}
+	if !runtimeReady {
+		return empty, ErrUnavailable
 	}
 	commandID, err := workflowNewCommandID()
 	if err != nil {

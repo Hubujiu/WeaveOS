@@ -1,0 +1,37 @@
+=== RUN   TestRootServiceIdentityRejectsInvalidToken
+    root_service_identity_test.go:24: invalid token accepted (length 0)
+    root_service_identity_test.go:24: invalid token accepted (length 31)
+    root_service_identity_test.go:24: invalid token accepted (length 257)
+    root_service_identity_test.go:24: invalid token accepted (length 36)
+    root_service_identity_test.go:24: invalid token accepted (length 36)
+    root_service_identity_test.go:24: invalid token accepted (length 36)
+    root_service_identity_test.go:24: invalid token accepted (length 37)
+    root_service_identity_test.go:24: invalid token accepted (length 36)
+    root_service_identity_test.go:24: invalid token accepted (length 36)
+--- FAIL: TestRootServiceIdentityRejectsInvalidToken (0.00s)
+=== RUN   TestRootServiceIdentityAcceptsBoundaries
+    root_service_identity_test.go:38: no authentication interceptor
+--- FAIL: TestRootServiceIdentityAcceptsBoundaries (0.00s)
+=== RUN   TestRootServiceIdentityRedactsFormatting
+    root_service_identity_test.go:50: unsafe or unspecified credential representation for %v: &{}
+    root_service_identity_test.go:50: unsafe or unspecified credential representation for %+v: &{}
+    root_service_identity_test.go:50: unsafe or unspecified credential representation for %#v: &workflowrpc.ServiceIdentity{}
+    root_service_identity_test.go:50: unsafe or unspecified credential representation for %s: &{}
+    root_service_identity_test.go:50: unsafe or unspecified credential representation for %q: &{}
+--- FAIL: TestRootServiceIdentityRedactsFormatting (0.00s)
+=== RUN   TestRootServiceIdentityReplacesCallerAuthorizationAndCookies
+    root_service_identity_test.go:67: no interceptor
+--- FAIL: TestRootServiceIdentityReplacesCallerAuthorizationAndCookies (0.00s)
+=== RUN   TestRootServiceIdentityPreservesCallAndDoesNotRetry
+    root_service_identity_test.go:93: no interceptor
+--- FAIL: TestRootServiceIdentityPreservesCallAndDoesNotRetry (0.00s)
+=== RUN   TestRootServiceIdentityRejectsUninitializedUse
+    root_service_identity_test.go:124: must return fail-closed interceptor
+    root_service_identity_test.go:124: must return fail-closed interceptor
+--- FAIL: TestRootServiceIdentityRejectsUninitializedUse (0.00s)
+=== RUN   TestRootServiceIdentityConcurrentCallsDoNotShareMetadata
+    root_service_identity_test.go:138: no interceptor
+--- FAIL: TestRootServiceIdentityConcurrentCallsDoNotShareMetadata (0.00s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc	0.013s
+FAIL

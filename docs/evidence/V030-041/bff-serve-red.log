@@ -1,0 +1,26 @@
+=== RUN   TestRootServeStopsWorkersBeforeDrainingAndKeepsStorageUntilRequestsFinish
+    root_serve_bff_test.go:104: server exited before actual request: <nil>
+--- FAIL: TestRootServeStopsWorkersBeforeDrainingAndKeepsStorageUntilRequestsFinish (0.00s)
+=== RUN   TestRootServeForcesTimedOutHttpDrainAndReportsFailure
+    root_serve_bff_test.go:130: server exited before actual request: <nil>
+--- FAIL: TestRootServeForcesTimedOutHttpDrainAndReportsFailure (0.00s)
+=== RUN   TestRootServeUnexpectedWorkerFailureStopsHttpWithoutExposingCause
+    root_serve_bff_test.go:151: server exited before actual request: <nil>
+--- FAIL: TestRootServeUnexpectedWorkerFailureStopsHttpWithoutExposingCause (0.00s)
+=== RUN   TestRootServeListenerFailureStillStopsWorkersAndClosesResources
+    root_serve_bff_test.go:180: listener failure ignored or exposed <nil>
+--- FAIL: TestRootServeListenerFailureStillStopsWorkersAndClosesResources (0.00s)
+=== RUN   TestRootServeCanceledBeforeStartNeverAcceptsButCleansHost
+    root_serve_bff_test.go:194: pre-canceled startup served requests or leaked ownership
+--- FAIL: TestRootServeCanceledBeforeStartNeverAcceptsButCleansHost (0.00s)
+=== RUN   TestRootServeRejectsMissingInputsAndUnboundedGrace
+    root_serve_bff_test.go:208: invalid lifecycle accepted
+    root_serve_bff_test.go:208: invalid lifecycle accepted
+    root_serve_bff_test.go:208: invalid lifecycle accepted
+    root_serve_bff_test.go:208: invalid lifecycle accepted
+    root_serve_bff_test.go:208: invalid lifecycle accepted
+    root_serve_bff_test.go:208: invalid lifecycle accepted
+--- FAIL: TestRootServeRejectsMissingInputsAndUnboundedGrace (0.00s)
+FAIL
+FAIL	github.com/Hubujiu/WeaveOS/services/bff/cmd/bff	0.017s
+FAIL

@@ -86,6 +86,12 @@ jobs:
         run: |
           psql "$WEAVEOS_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f ../../infra/runtime/roles.sql
           go test -race -count=1 -v -run '^TestRootNativeCatalog' ./internal/apprecordservice
+      - name: Root runtime admission preserves atomic writes and replay
+        working-directory: services/bff
+        run: go test -race -p 1 -count=1 -v -run '^TestRootRuntimeAdmission' ./internal/appstructure ./internal/apprecordservice
+      - name: Root actual BFF host and OS process lifecycle
+        working-directory: services/bff
+        run: go test -race -count=1 -v -run '^TestRoot(Host|MainProcess)' ./cmd/bff
       - name: Format, static checks, race tests and build
         working-directory: services/bff
         run: |
@@ -159,6 +165,117 @@ jobs:
           python3 services/workflow-engine/ci_gate_tests.py 2>&1 | tee services/workflow-engine/ci-logs/gate-tests.txt
       - name: Prepare locked offline Java dependencies
         run: bash services/workflow-engine/prepare-build.sh 2>&1 | tee services/workflow-engine/ci-logs/prepare.txt
+      - name: Bounded Java process configuration
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootRuntimeConfigurationTest -Dworkflow.reports=ci-logs/runtime-config-reports test 2>&1 | tee services/workflow-engine/ci-logs/runtime-config-tests.txt
+      - name: Root real subprocess library log privacy
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootRuntimeLoggingTest -Dworkflow.reports=ci-logs/runtime-logging-reports test 2>&1 | tee services/workflow-engine/ci-logs/runtime-logging-tests.txt
+      - name: Require all four actual log boundary cases
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/runtime-logging-reports", "org.weaveos.workflow.RootRuntimeLoggingTest", [
+              "slf4jLibraryFailuresKeepSignalWithoutPayloadOrStack",
+              "julLibraryFailuresUseTheSameSafeBoundary",
+              "verboseLibraryMessagesAreNotEnabledByDefault",
+              "repeatedInitializationDoesNotSilenceOrDuplicateWarnings",
+          ])
+          PYCODE
+      - name: Require all eleven runtime configuration cases
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/runtime-config-reports", "org.weaveos.workflow.RootRuntimeConfigurationTest", [
+              "completeConfigurationUsesBoundedDefaults", "requiredFieldsFailClosed",
+              "unsafeJdbcTargetsAreRejected", "privateAndLoopbackJdbcTargetsAreAccepted",
+              "schemaUsesSafeExplicitIdentifier", "bindHostAndPortAreValidated",
+              "resourceLimitsRejectInvalidOrUnboundedValues", "resourceBoundariesAreAccepted",
+              "configurationAndErrorsNeverEchoSecrets", "unknownEngineOptionsAreNotSilentlyIgnored",
+              "parsedConfigurationDoesNotRetainMutableEnvironmentMap",
+          ])
+          PYCODE
+      - name: Root independent native catalog reference capture
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootStartupCatalogReferenceTest -Dworkflow.reports=ci-logs/catalog-reference-reports test 2>&1 | tee services/workflow-engine/ci-logs/catalog-reference-tests.txt
+      - name: Require successful complete catalog reference capture
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/catalog-reference-reports", "org.weaveos.workflow.RootStartupCatalogReferenceTest", ["captureOfficialNativeAndProtocolCatalog"])
+          PYCODE
+      - name: Root runtime schema and role startup guard
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootRuntimeSchemaTest -Dworkflow.reports=ci-logs/runtime-schema-reports test 2>&1 | tee services/workflow-engine/ci-logs/runtime-schema-tests.txt
+      - name: Require all thirty-four runtime startup guard cases
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/runtime-schema-reports", "org.weaveos.workflow.RootRuntimeSchemaTest", ['migratedSchemaAndRestrictedRoleAreAccepted', 'currentIdAllocatorAndHistoricalRowsAreNotFixedSnapshots', 'missingNativeTableIsRejected', 'missingProtocolTableIsRejected', 'missingColumnIsRejected', 'changedColumnTypeIsRejected', 'removedNotNullIsRejected', 'missingIndexIsRejected', 'removedConstraintIsRejected', 'disabledDeferredTriggerIsRejected', 'disabledForeignKeyTriggersAreRejected', 'changedTriggerFunctionIsRejected', 'enabledRowSecurityIsRejected', 'wrongNativeVersionIsRejected', 'wrongCommonVersionIsRejected', 'missingVersionIsRejected', 'superuserIsRejected', 'tableOwnerIsRejected', 'ownerMembershipIsRejectedEvenWithoutInheritance', 'schemaCreatePrivilegeIsRejected', 'databaseCreatePrivilegeIsRejected', 'temporaryTablePrivilegeIsRejected', 'truncatePrivilegeIsRejected', 'protocolDeletePrivilegeIsRejected', 'immutableProtocolUpdatePrivilegeIsRejected', 'missingRequiredReadPrivilegeIsRejected', 'missingRequiredUpdatePrivilegeIsRejected', 'missingSequencePrivilegeIsRejected', 'tableRegrantPrivilegeIsRejected', 'columnRegrantPrivilegeIsRejected', 'sequenceRegrantPrivilegeIsRejected', 'invalidArgumentsFailClosedWithoutConnecting', 'connectionFailureDoesNotExposeSecretOrSqlCause', 'verificationIsBoundedReadOnlyAndClosesItsConnection'])
+          PYCODE
+      - name: Root bounded real JDBC pool contract
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootRuntimeDataSourceTest -Dworkflow.reports=ci-logs/runtime-pool-reports test 2>&1 | tee services/workflow-engine/ci-logs/runtime-pool-tests.txt
+      - name: Require all nine real JDBC pool cases
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/runtime-pool-reports", "org.weaveos.workflow.RootRuntimeDataSourceTest", ['poolUsesValidatedSchemaAndSessionTimeouts', 'returnedConnectionIsReusedWithoutUnboundedGrowth', 'fullPoolTimesOutThenRecoversAfterReturn', 'actualStatementTimeoutCancelsSlowQuery', 'actualLockTimeoutDoesNotLeaveAChangedRow', 'schemaGuardDoesNotLeakReadOnlyTransactionStateIntoPool', 'closeRejectsBorrowAndReleasesServerConnections', 'wrongCredentialsFailWithoutSecretCause', 'nullConfigurationFailsClosed'])
+          PYCODE
+      - name: Root formal engine and authenticated RPC composition
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootWorkflowRuntimeTest -Dworkflow.reports=ci-logs/runtime-composition-reports test 2>&1 | tee services/workflow-engine/ci-logs/runtime-composition-tests.txt
+      - name: Require all thirteen real runtime composition cases
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/runtime-composition-reports", "org.weaveos.workflow.RootWorkflowRuntimeTest", ['authenticatedHealthReflectsRegisteredServices', 'everyRegisteredServiceRejectsMissingIdentity', 'unknownHealthServiceIsNotFalselyServing', 'controlledPublishStartAndApprovalUseTheRestrictedRole', 'closeAndRestartReplayTheSameDurableReceipt', 'missingSchemaFailsBeforeListeningOrAutoDdl', 'privilegedAccountCannotStartTheRuntime', 'occupiedPortStartupFailureReleasesDatabaseResources', 'closeIsIdempotentStopsServingAndReleasesResources', 'healthIsNotServingWhenDatabaseCannotBeReached', 'configuredCallCapacityRejectsOverloadWithoutUnboundedWorkers', 'inflightCloseRollsBackPendingWriteAndSameRequestCanRecover', 'nullConfigurationFailsClosed'])
+          PYCODE
+      - name: Root actual Java main process lifecycle
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootWorkflowMainProcessTest -Dworkflow.reports=ci-logs/runtime-main-reports test 2>&1 | tee services/workflow-engine/ci-logs/runtime-main-tests.txt
+      - name: Require all three actual main process cases
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/runtime-main-reports", "org.weaveos.workflow.RootWorkflowMainProcessTest", ["actualMainServesThenSigtermPreservesCommittedDefinition", "invalidEnvironmentExitsNonzeroWithoutSecretOutput", "unknownArgumentsFailWithoutEchoingArgument"])
+          PYCODE
+      - name: Internal service identity over real plaintext gRPC
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootServiceTokenInterceptorTest -Dworkflow.reports=ci-logs/service-token-reports test 2>&1 | tee services/workflow-engine/ci-logs/service-token-tests.txt
+      - name: Require all eight service identity cases without skips
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/service-token-reports", "org.weaveos.workflow.RootServiceTokenInterceptorTest", [
+              "rejectsInvalidConfiguredTokensWithoutEchoingInput",
+              "acceptsConfiguredBoundaryTokensAndRedactsIdentity",
+              "validIdentityInvokesHandlerExactlyOnce",
+              "missingIdentityIsRejectedBeforeHandler",
+              "incorrectIdentityIsRejectedBeforeHandler",
+              "duplicateIdentityIsRejectedEvenWhenOneOrBothAreValid",
+              "ambiguousBearerFormattingIsRejected",
+              "badIdentityDoesNotPoisonLaterValidRequest",
+          ])
+          PYCODE
+      - name: Explicit schema migration payload against real PostgreSQL
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootExplicitSchemaTest -Dworkflow.reports=ci-logs/explicit-schema-reports test 2>&1 | tee services/workflow-engine/ci-logs/explicit-schema-tests.txt
+      - name: Require all eight explicit schema cases without skips
+        working-directory: services/workflow-engine
+        run: |
+          python3 - <<'PYCODE'
+          from rpc_ci_gate import _java
+          _java("ci-logs/explicit-schema-reports", "org.weaveos.workflow.RootExplicitSchemaTest", [
+              "nativeCatalogMatchesOfficialEngineCreatedSchema",
+              "nativeVersionMetadataIsPinned",
+              "protocolLedgerCatalogMatchesReviewedContract",
+              "pendingCommandCannotCommit",
+              "provisionalInstanceCannotCommit",
+              "installationFailureRollsBackAllTables",
+              "downRefusesToDeleteExistingHistory",
+              "engineStartsWithoutAutoCreatingOrUpgrading",
+          ])
+          PYCODE
       - name: Root-owned native version report gate tests
         run: python3 services/workflow-engine/native_version_ci_gate_tests.py
       - name: Native scoped version and old-instance compatibility
@@ -358,6 +475,74 @@ jobs:
         with:
           name: workflow-actions-${{ github.run_id }}
           path: services/workflow-engine/actions-ci-reports/interop.jsonl
+          if-no-files-found: warn
+          retention-days: 14
+
+  workflow-formal-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - name: Root-owned formal process report gate tests
+        run: python3 services/workflow-engine/formal_runtime_gate_tests.py
+      - name: Prepare locked Java and migration tools
+        run: |
+          bash services/workflow-engine/prepare-build.sh
+          CGO_ENABLED=0 go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
+      - name: Actual BFF and Flowable process acceptance and restart recovery
+        run: WEAVEOS_FORMAL_GOOSE="$(go env GOPATH)/bin/goose" node services/workflow-engine/run-formal-runtime.mjs
+      - name: Require complete exact formal process scenarios without skips
+        run: python3 services/workflow-engine/formal_runtime_gate.py services/workflow-engine/formal-runtime-reports/tests.jsonl
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: workflow-formal-runtime-${{ github.run_id }}
+          path: |
+            services/workflow-engine/formal-runtime-reports/
+            .work/v041-formal-*/*.stdout
+            .work/v041-formal-*/*.stderr
+            .work/v041-formal-*/*.log
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+
+  workflow-schema-cli:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Build pinned static Goose for isolated test containers
+        run: CGO_ENABLED=0 go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
+      - name: Root real migration CLI and runtime-role acceptance
+        run: |
+          mkdir -p services/workflow-engine/schema-cli-reports
+          WEAVEOS_SCHEMA_TEST_GOOSE="$(go env GOPATH)/bin/goose" bash services/workflow-engine/run-schema-cli-tests.sh 2>&1 | tee services/workflow-engine/schema-cli-reports/run.log
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: workflow-schema-cli-${{ github.run_id }}
+          path: services/workflow-engine/schema-cli-reports/
           if-no-files-found: warn
           retention-days: 14
 

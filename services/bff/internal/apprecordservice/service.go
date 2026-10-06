@@ -2,6 +2,7 @@ package apprecordservice
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -18,6 +19,7 @@ import (
 var ErrUnavailable = errors.New("record service unavailable")
 
 type Service struct {
+	RuntimeReady  func(context.Context) error
 	Pool          *pgxpool.Pool
 	Queries       *querycontext.Store
 	WorkflowBases *querycontext.Store

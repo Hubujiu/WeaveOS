@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,45 +16,44 @@ import (
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
+	if err := runBFF(logger); err != nil {
+		logger.Error("BFF host failed", "error", err.Error())
+		os.Exit(1)
+	}
+}
+
+func runBFF(logger *slog.Logger) (err error) {
+	processCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	cfg, err := readConfig(os.Getenv)
 	if err != nil {
-		logger.Error("BFF authentication configuration invalid")
-		os.Exit(1)
+		return errors.New("BFF authentication configuration invalid")
 	}
-	startup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	handler, closeResources, err := buildHandler(startup, cfg)
+	startup, cancel := context.WithTimeout(processCtx, 5*time.Second)
+	host, err := buildHost(startup, processCtx, cfg)
 	cancel()
 	if err != nil {
-		logger.Error("BFF authentication initialization failed")
-		os.Exit(1)
+		return errors.New("BFF authentication initialization failed")
 	}
-	defer closeResources()
+	defer func() {
+		if host.Close() != nil {
+			err = errors.Join(err, errBFFHostCleanup)
+		}
+	}()
 	addr := os.Getenv("BFF_ADDR")
 	if addr == "" {
 		addr = "127.0.0.1:8080"
 	}
 	server := &http.Server{
-		Addr: addr, Handler: handler,
+		Addr: addr, Handler: host.Handler,
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second,
 		WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-	stopped := make(chan struct{})
-	go func() {
-		<-ctx.Done()
-		shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if err := server.Shutdown(shutdown); err != nil {
-			_ = server.Close()
-		}
-		close(stopped)
-	}()
-	logger.Info("starting BFF host", "authenticationConfigured", cfg.DatabaseURL != "")
-	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		logger.Error("BFF host failed", "error", err.Error())
-		os.Exit(1)
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return errors.New("BFF HTTP listener initialization failed")
 	}
-	<-stopped
+	logger.Info("starting BFF host", "authenticationConfigured", cfg.DatabaseURL != "")
+	return serveBFF(processCtx, host, server, listener, 10*time.Second)
 }

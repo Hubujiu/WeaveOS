@@ -1,0 +1,15 @@
+package main
+
+import "context"
+
+// Callable declaration only; Root's behavior RED precedes implementation.
+type workflowWorkers struct{}
+
+func startWorkflowWorkers(context.Context, func(context.Context) error, func(context.Context) error) (*workflowWorkers, error) {
+	return nil, nil
+}
+func (*workflowWorkers) Stop()                      {}
+func (*workflowWorkers) Done() <-chan struct{}      { return nil }
+func (*workflowWorkers) Ready() bool                { return false }
+func (*workflowWorkers) Err() error                 { return nil }
+func (*workflowWorkers) Wait(context.Context) error { return nil }
