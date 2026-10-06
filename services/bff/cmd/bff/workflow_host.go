@@ -50,13 +50,25 @@ func (host *bffHost) ready(ctx context.Context) error {
 		return errBFFHostUnavailable
 	}
 	if host.rpc != nil {
-		if err := host.rpc.Ready(ctx); err != nil {
+		if err := host.runtimeReady(ctx); err != nil {
 			return errBFFHostUnavailable
 		}
 	}
 	// Closing or worker failure during dependency I/O must not yield a stale
 	// healthy result. No lifecycle lock is held across the network checks.
 	if ctx.Err() != nil || !host.running() || host.workers != nil && !host.workers.Ready() {
+		return errBFFHostUnavailable
+	}
+	return nil
+}
+
+// Runtime admission is checked before a domain transaction. Do not repeat the
+// already-established authentication/storage probe or retain remote error text.
+func (host *bffHost) runtimeReady(ctx context.Context) error {
+	if ctx == nil || ctx.Err() != nil || !host.running() || host.rpc == nil || host.workers == nil || !host.workers.Ready() {
+		return errBFFHostUnavailable
+	}
+	if host.rpc.Ready(ctx) != nil || ctx.Err() != nil || !host.running() || !host.workers.Ready() {
 		return errBFFHostUnavailable
 	}
 	return nil

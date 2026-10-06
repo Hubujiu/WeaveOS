@@ -166,6 +166,8 @@ func buildHost(startupCtx, processCtx context.Context, cfg config) (*bffHost, er
 			return host.failStartup(errors.New("workflow workers unavailable"))
 		}
 		host.workers = workers
+		workflows.RuntimeReady = host.runtimeReady
+		records.RuntimeReady = host.runtimeReady
 	}
 	host.Handler = httpserver.NewHandler(host.ready, s)
 	return host, nil
