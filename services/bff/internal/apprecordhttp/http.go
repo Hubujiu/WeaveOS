@@ -22,6 +22,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowevidence"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -47,6 +48,17 @@ func respond(w http.ResponseWriter, r *http.Request, status int, code string, da
 	if code == "OK" {
 		message = "success"
 	}
+	if code == "OK" {
+		if workflow, ok := data.(apprecordservice.WorkflowOperationResult); ok {
+			switch workflow.Status {
+			case "pending":
+				message = "操作处理中"
+			case "no_effect":
+				message = "操作未执行"
+			}
+		}
+	}
+
 	_ = json.NewEncoder(w).Encode(struct {
 		Code    string         `json:"code"`
 		Message string         `json:"message"`
@@ -59,6 +71,14 @@ func failure(w http.ResponseWriter, r *http.Request, e error, operation string) 
 	status, code, data := 503, "COMMON_SERVICE_UNAVAILABLE", any(nil)
 	var domain *appstructure.Error
 	switch {
+	case errors.Is(e, apprecordservice.ErrWorkflowTaskChanged):
+		status, code = 409, "WORKFLOW_TASK_CHANGED"
+	case errors.Is(e, apprecordservice.ErrWorkflowBasisChanged):
+		status, code = 409, "WORKFLOW_BASIS_CHANGED"
+	case errors.Is(e, apprecordservice.ErrWorkflowBasisExpired):
+		status, code = 409, "WORKFLOW_BASIS_EXPIRED"
+	case errors.Is(e, workflowevidence.ErrTooLarge):
+		status, code = 409, "WORKFLOW_EVIDENCE_TOO_LARGE"
 	case errors.Is(e, applications.ErrExpectedActorInvalid):
 		status, code, data = 400, "COMMON_VALIDATION_FAILED", applications.ActorHeaderViolation()
 	case errors.Is(e, applications.ErrSessionChanged):
@@ -177,6 +197,9 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if s.Records == nil || s.Records.Pool == nil {
 		failure(w, r, apprecordservice.ErrUnavailable, "")
+		return
+	}
+	if s.workflowHTTP(w, r, p) {
 		return
 	}
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
