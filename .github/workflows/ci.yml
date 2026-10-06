@@ -171,6 +171,11 @@ jobs:
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootNativeHistoryTest -Dworkflow.reports=ci-logs/native-history-reports test 2>&1 | tee services/workflow-engine/ci-logs/native-history-tests.txt
       - name: Require eight native history cases without skips
         run: python3 services/workflow-engine/native_history_ci_gate.py services/workflow-engine/ci-logs/native-history-reports
+      - name: Observe native history query and storage costs
+        run: bash services/workflow-engine/run-tests.sh -Dtest=RootNativeHistoryCostTest -Dworkflow.reports=ci-logs/native-history-cost-reports test 2>&1 | tee services/workflow-engine/ci-logs/native-history-cost.txt
+      - name: Require completed cost observation report
+        working-directory: services/workflow-engine
+        run: python3 -c 'from rpc_ci_gate import _java; _java("ci-logs/native-history-cost-reports", "org.weaveos.workflow.RootNativeHistoryCostTest", ["observeNativeAndDuplicateCostsAtTwoActualHistorySizes"])'
       - name: Clean verify against dedicated internal PostgreSQL
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootDeploymentRegistryTest verify 2>&1 | tee services/workflow-engine/ci-logs/verify.txt
       - name: Require all 18 Root-owned cases without skips
