@@ -38,7 +38,7 @@ class RootStartupCatalogReferenceTest {
    Collections.sort(rows);
    assertEquals(36,rows.stream().filter(row->row.startsWith("T|")).count());
    assertEquals(2,rows.stream().filter(row->row.startsWith("F|")).count());
-   assertEquals(0,rows.stream().filter(row->row.startsWith("S|")).count());
+   assertEquals(2,rows.stream().filter(row->row.startsWith("S|")).count());
    assertTrue(rows.size()>500 && rows.size()<4096);
    StringBuilder manifest=new StringBuilder("# Flowable8.0.0 / PostgreSQL18 native schema plus reviewed WeaveOS protocol structure\n# Each non-comment line is base64 UTF-8; sorted before encoding. Schema qualifier is <schema>.\n");
    for(String row:rows){assertTrue(row.getBytes(StandardCharsets.UTF_8).length<=8192);manifest.append(Base64.getEncoder().encodeToString(row.getBytes(StandardCharsets.UTF_8))).append('\n');}
