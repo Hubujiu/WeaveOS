@@ -10118,6 +10118,34 @@
               }
             }
           },
+          "202": {
+            "description": "Durably accepted pending or unknown publication; does not mean deployment success",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Location": {
+                "description": "Publication status resource for the authenticated initiator",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "description": "Publication results must not be cached",
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowPublicationEnvelope"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Workflow management result; safe envelope, no SQL details",
             "headers": {
@@ -10271,34 +10299,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope"
-                }
-              }
-            }
-          },
-          "202": {
-            "description": "Durably accepted pending or unknown publication; does not mean deployment success",
-            "headers": {
-              "X-Request-Id": {
-                "$ref": "#/components/headers/RequestId"
-              },
-              "Location": {
-                "description": "Publication status resource for the authenticated initiator",
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "Cache-Control": {
-                "description": "Publication results must not be cached",
-                "schema": {
-                  "type": "string",
-                  "const": "no-store"
-                }
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WorkflowPublicationEnvelope"
                 }
               }
             }
@@ -10538,6 +10538,761 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/records/{recordId}/workflow-instances/{instanceId}/tasks/{taskId}": {
+      "get": {
+        "operationId": "previewWorkflowTask",
+        "summary": "Read current authorized record for an assigned active approval task",
+        "description": "Same RR snapshot for live Session, resource/menu/row/field access, assigned task and actual data. The task does not grant extra data access; owner/admin does not override task assignment. Returns only visible fields and an opaque Session token. No query parameters.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "instanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current visible record and task with opaque basis token.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskPreviewEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/records/{recordId}/workflow-instances/{instanceId}/tasks/{taskId}/actions": {
+      "post": {
+        "operationId": "acceptWorkflowTaskAction",
+        "summary": "Accept agree or reject for the exact current approval basis",
+        "description": "Strict closed JSON up to 4096 bytes. Current assignment and data access are rechecked. A stale related record/schema/display/visibility or task version requires refresh; unrelated changes do not. Same actor+operationId and exact request replays the original command. Acceptance, immutable evidence, record fence and queue commit together. Pending and no_effect never imply successful advancement. No implicit form save, new instance or direct engine fallback. No query parameters.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "instanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "x-max-body-bytes": 4096,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowTaskAction"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Original operation already has a verified application-confirmed outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskFinalEnvelope"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Durably accepted, still pending application confirmation; never show an approval-success toast for this response.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Location": {
+                "description": "Poll the same actor's minimum operation outcome.",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^/api/v1/application-workflow-operations/[0-9a-f-]{36}$"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskPendingEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application-workflow-operations/{operationId}": {
+      "get": {
+        "operationId": "getWorkflowTaskOperation",
+        "summary": "Read one's own minimum accepted approval outcome",
+        "description": "Requires a current live Session and exact original actor. Current data revocation does not erase one's own minimum operation receipt; no record values, content hashes or other actors' results are exposed. Only the application-confirmed original receipt/event determines final status. Unknown/missing or a network timeout never proves no_effect. No query parameters.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "operationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending or verified original confirmed outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskOperationEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
                 }
               }
             }
@@ -14142,6 +14897,7 @@
             "enum": [
               200,
               201,
+              202,
               204
             ]
           },
@@ -14176,10 +14932,14 @@
               },
               {
                 "$ref": "#/components/schemas/DraftOperationResult"
+              },
+              {
+                "$ref": "#/components/schemas/WorkflowTaskPending"
               }
             ]
           }
-        }
+        },
+        "description": "Confirmed means the original application transaction is durable. For workflow task actions httpStatus202 and result.status=pending confirm acceptance only; read the dedicated workflow operation endpoint for the applied final outcome."
       },
       "ApplicationEnvelope": {
         "allOf": [
@@ -19786,6 +20546,468 @@
               },
               "data": {
                 "$ref": "#/components/schemas/WorkflowPublicationResult"
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowTaskInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "instanceId",
+          "nodeId",
+          "activationEpoch",
+          "sequence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "instanceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "nodeId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "activationEpoch": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "WorkflowTaskPreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "basisToken",
+          "task",
+          "record",
+          "fields"
+        ],
+        "properties": {
+          "basisToken": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43,
+            "pattern": "^[A-Za-z0-9_-]{43}$",
+            "description": "Random opaque Session-bound preview token; never a content hash or authorization grant."
+          },
+          "task": {
+            "$ref": "#/components/schemas/WorkflowTaskInfo"
+          },
+          "record": {
+            "$ref": "#/components/schemas/BusinessRecord"
+          },
+          "fields": {
+            "type": "array",
+            "maxItems": 1600,
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "description": "Only field definitions visible under the same current row-specific policy as record.values."
+          }
+        }
+      },
+      "WorkflowTaskAction": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "action",
+          "basisToken"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "agree",
+              "reject"
+            ]
+          },
+          "basisToken": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      },
+      "WorkflowTaskPending": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "commandId",
+          "instanceId",
+          "status"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "instanceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "status": {
+            "const": "pending"
+          }
+        }
+      },
+      "WorkflowTaskSuccess": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "commandId",
+          "instanceId",
+          "status",
+          "instanceState",
+          "sequence"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "instanceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "status": {
+            "const": "success"
+          },
+          "instanceState": {
+            "type": "string",
+            "enum": [
+              "active",
+              "completed",
+              "rejected"
+            ]
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "WorkflowTaskNoEffect": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "commandId",
+          "instanceId",
+          "status",
+          "instanceState",
+          "reason",
+          "sequence"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "instanceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "status": {
+            "const": "no_effect"
+          },
+          "instanceState": {
+            "const": "unchanged"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "instance_missing",
+              "instance_exists",
+              "deployment_missing",
+              "deployment_mismatch",
+              "scope_mismatch",
+              "terminal_instance",
+              "stale_sequence",
+              "stale_fence",
+              "stale_schema_version",
+              "stale_record_version",
+              "task_missing",
+              "task_inactive",
+              "task_epoch_mismatch",
+              "actor_mismatch",
+              "withdrawal_forbidden",
+              "return_target_unvisited",
+              "return_target_forbidden",
+              "cancelled"
+            ]
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "WorkflowTaskFinal": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/WorkflowTaskSuccess"
+          },
+          {
+            "$ref": "#/components/schemas/WorkflowTaskNoEffect"
+          }
+        ]
+      },
+      "WorkflowTaskOperation": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/WorkflowTaskPending"
+          },
+          {
+            "$ref": "#/components/schemas/WorkflowTaskSuccess"
+          },
+          {
+            "$ref": "#/components/schemas/WorkflowTaskNoEffect"
+          }
+        ]
+      },
+      "WorkflowTaskPreviewEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/WorkflowTaskPreview"
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowTaskPendingEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/WorkflowTaskPending"
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowTaskFinalEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/WorkflowTaskFinal"
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowTaskOperationEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/WorkflowTaskOperation"
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowTaskErrorEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "COMMON_INVALID_ARGUMENT",
+                  "COMMON_VALIDATION_FAILED",
+                  "AUTH_INVALID_CREDENTIALS",
+                  "AUTH_UNAUTHENTICATED",
+                  "AUTH_SESSION_EXPIRED",
+                  "COMMON_PERMISSION_DENIED",
+                  "COMMON_CSRF_REJECTED",
+                  "USER_ACCOUNT_ALREADY_EXISTS",
+                  "USER_NOT_FOUND",
+                  "INVITATION_INVALID",
+                  "INVITATION_ALREADY_USED",
+                  "COMMON_UNSUPPORTED_MEDIA_TYPE",
+                  "COMMON_SERVICE_UNAVAILABLE",
+                  "COMMON_DEADLINE_EXCEEDED",
+                  "COMMON_INTERNAL_ERROR",
+                  "PERSONNEL_CONFLICT",
+                  "PERSONNEL_NOT_FOUND",
+                  "COMMON_QUERY_CHANGED",
+                  "COMMON_QUERY_CONTEXT_EXPIRED",
+                  "PERSONNEL_DRAFT_CONFLICT",
+                  "PERSONNEL_DRAFT_LIMIT_REACHED",
+                  "PERSONNEL_PRESET_NAME_CONFLICT",
+                  "PERSONNEL_PRESET_LIMIT_REACHED",
+                  "PERSONNEL_PRESET_CONFLICT",
+                  "APPLICATION_NOT_FOUND",
+                  "APPLICATION_FORBIDDEN",
+                  "APPLICATION_POLICY_CONFLICT",
+                  "APPLICATION_OPERATION_CONFLICT",
+                  "APPLICATION_OPERATION_UNCONFIRMED",
+                  "APPLICATION_RESOURCE_INVALID",
+                  "APPLICATION_STRUCTURE_CONFLICT",
+                  "APPLICATION_SCHEMA_CONFLICT",
+                  "APPLICATION_VIEW_CONFLICT",
+                  "APPLICATION_SCHEMA_DEPENDENCY_BLOCKED",
+                  "APPLICATION_SCHEMA_REQUIRED_BACKFILL",
+                  "APPLICATION_SCHEMA_CONVERSION_FAILED",
+                  "APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED",
+                  "APPLICATION_SCHEMA_CONFIRMATION_REQUIRED",
+                  "APPLICATION_SCHEMA_CONFIRMATION_STALE",
+                  "AUTH_SESSION_CHANGED",
+                  "APPLICATION_SCHEMA_NOT_READY",
+                  "APPLICATION_RECORD_CONFLICT",
+                  "APPLICATION_RECORD_FENCED",
+                  "APPLICATION_QUERY_CHANGED",
+                  "APPLICATION_QUERY_CONTEXT_EXPIRED",
+                  "APPLICATION_DRAFT_CONFLICT",
+                  "APPLICATION_DRAFT_BASE_CONFLICT",
+                  "WORKFLOW_TASK_CHANGED",
+                  "WORKFLOW_BASIS_CHANGED",
+                  "WORKFLOW_BASIS_EXPIRED",
+                  "WORKFLOW_EVIDENCE_TOO_LARGE"
+                ]
+              },
+              "data": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ValidationErrorData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordSchemaConflictData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordVersionConflictData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordDraftConflictData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordUnconfirmedData"
+                  }
+                ]
               }
             }
           }

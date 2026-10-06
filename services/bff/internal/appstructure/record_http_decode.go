@@ -15,6 +15,8 @@ import (
 func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[string]json.RawMessage, error) {
 	required, optional, nullable := []string{}, []string{}, []string{}
 	switch kind {
+	case "workflow.task.action":
+		required = []string{"operationId", "action", "basisToken"}
 	case "record.create":
 		required = []string{"operationId", "expectedSchemaVersion", "values"}
 		optional = []string{"draftRef", "queryVersion"}
@@ -41,6 +43,9 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 	if kind == "record.search" {
 		limit = 64 << 10
 	}
+	if kind == "workflow.task.action" {
+		limit = 4096
+	}
 	raw, e := io.ReadAll(http.MaxBytesReader(w, r.Body, limit))
 	if e != nil || !utf8.Valid(raw) {
 		return nil, recordBodyInvalid()
@@ -55,6 +60,14 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 	m, e := object(raw, required, optional, nullable)
 	if e != nil {
 		return nil, recordBodyInvalid()
+	}
+	if kind == "workflow.task.action" {
+		var operation, action, token string
+		if json.Unmarshal(m["operationId"], &operation) != nil || operation == "00000000-0000-0000-0000-000000000000" ||
+			json.Unmarshal(m["action"], &action) != nil || (action != "agree" && action != "reject") ||
+			json.Unmarshal(m["basisToken"], &token) != nil || token == "" || utf8.RuneCountInString(token) > 256 {
+			return nil, recordBodyInvalid()
+		}
 	}
 	for _, key := range []string{"operationId", "targetRecordId"} {
 		if b, ok := m[key]; ok && string(b) != "null" {

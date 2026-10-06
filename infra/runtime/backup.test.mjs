@@ -62,6 +62,7 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  sql(live,readFileSync('db/migrations/00018_workflow_execution_projection.sql','utf8').split('-- +goose Down')[0]);
  sql(live,readFileSync('db/migrations/00019_workflow_execution_recovery.sql','utf8').split('-- +goose Down')[0]);
  sql(live,readFileSync('db/migrations/00020_workflow_evidence.sql','utf8').split('-- +goose Down')[0]);
+ sql(live,readFileSync('db/migrations/00021_workflow_task_operations.sql','utf8').split('-- +goose Down')[0]);
  sql(live,"SELECT setval('applications.record_command_fence_epoch_seq',41,true);");
  sql(live,`INSERT INTO auth.users(id,account) VALUES('77777777-7777-4777-8777-777777777777','preset-backup-synthetic');
  INSERT INTO personnel.table_presets(id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at)
@@ -98,12 +99,25 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  INSERT INTO applications.workflow_evidence_documents(app_id,evidence_hash,table_id,view_id,record_id,created_by,schema_version,record_version,field_count,body)
  VALUES('${h.appId}',decode('${golden.manifestSHA256}','hex'),'${h.tableId}','${h.viewId}','${h.recordId}','${h.createdBy}',${h.schemaVersion},${h.recordVersion},1,decode('${manifestBody.toString('hex')}','hex'));
  INSERT INTO applications.workflow_evidence_members(app_id,evidence_hash,field_id,content_hash) VALUES('${h.appId}',decode('${golden.manifestSHA256}','hex'),'${field.id}',decode('${golden.fieldSHA256}','hex'));`);
+ // Synthetic opaque receipt tests backup bytes and CHECKs only. Real acceptance
+ // and command binding are covered by Root's PG business-service tests.
+ const actionOperation=recoveryID(910);
+ const actionReceipt={operationId:actionOperation,commandId:recoveryID(911),instanceId:recoveryID(912),status:'pending'};
+ sql(live,`INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location)
+ VALUES('${h.createdBy}','${actionOperation}','${h.appId}','workflow.task.agree',decode('${'17'.repeat(32)}','hex'),$receipt${JSON.stringify(actionReceipt)}$receipt$::jsonb,202,'/api/v1/application-workflow-operations/${actionOperation}');`);
  sql(live,"CREATE TABLE public.goose_db_version(id serial PRIMARY KEY,version_id bigint); INSERT INTO public.goose_db_version(version_id) VALUES(0),(1);");
  sql(live,readFileSync('infra/runtime/roles.sql','utf8'));
  sql('postgres',"DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='weaveos_backup_probe') THEN CREATE ROLE weaveos_backup_probe LOGIN; END IF; END $$; GRANT auth_backup TO weaveos_backup_probe;");
  const encrypted=resolve(dir,'ledger.enc');
  backupDatabase({...options,user:'weaveos_backup_probe',database:live,backupFile:encrypted});
  restoreDatabase({...options,database:restored,backupFile:encrypted});
+ const operationQuery="SELECT actor_user_id,operation_id,app_id,operation_kind,encode(fingerprint,'hex'),result_json,http_status,location,created_at FROM applications.operations ORDER BY actor_user_id,operation_id;";
+ assert.equal(sql(restored,operationQuery),sql(live,operationQuery),'pending operation receipt bytes must survive restricted backup');
+ assert.ok(sql(restored,operationQuery).includes(actionOperation));
+ const checks="SELECT conname,pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid='applications.operations'::regclass AND conname IN ('ck_operation_kind','ck_operation_result','ck_workflow_task_operation_result') ORDER BY conname;";
+ assert.equal(sql(restored,checks),sql(live,checks),'new pending receipt guards must survive restore');
+ assert.ok(sql(restored,checks).includes('ck_workflow_task_operation_result'));
+ assert.throws(()=>sql(restored,`UPDATE applications.operations SET result_json=jsonb_set(result_json,'{status}','"success"'::jsonb) WHERE operation_id='${actionOperation}';`),'restored acceptance cannot pretend final success');
  const recoveryColumns="c.command_id,c.command_json,encode(c.command_hash,'hex'),c.state,c.receipt_json,c.created_at,encode(c.execution_payload,'hex'),d.protocol_version,d.created_at,d.next_attempt_at,d.attempts,d.lease_token,d.lease_until,d.last_error";
  const recoveryQuery='SELECT '+recoveryColumns+' FROM applications.workflow_commands c JOIN applications.workflow_dispatch d USING(command_id);';
  const recovered=sql(restored,recoveryQuery);

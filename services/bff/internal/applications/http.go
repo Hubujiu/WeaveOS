@@ -241,6 +241,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if s.Records != nil {
+		if strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/") {
+			s.Records.ServeHTTP(w, r)
+			return
+		}
 		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
 		parts := strings.Split(path, "/")
 		if path != r.URL.Path && len(parts) >= 4 && parts[1] == "forms" && (parts[3] == "records" || parts[3] == "drafts") && !(len(parts) == 6 && parts[3] == "records" && parts[5] == "history") {
