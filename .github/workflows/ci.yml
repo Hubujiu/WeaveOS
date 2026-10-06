@@ -154,6 +154,12 @@ jobs:
           python3 services/workflow-engine/ci_gate_tests.py 2>&1 | tee services/workflow-engine/ci-logs/gate-tests.txt
       - name: Prepare locked offline Java dependencies
         run: bash services/workflow-engine/prepare-build.sh 2>&1 | tee services/workflow-engine/ci-logs/prepare.txt
+      - name: Root-owned native version report gate tests
+        run: python3 services/workflow-engine/native_version_ci_gate_tests.py
+      - name: Native scoped version and old-instance compatibility
+        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootNativeVersioningTest -Dworkflow.reports=ci-logs/native-version-reports test 2>&1 | tee services/workflow-engine/ci-logs/native-version-tests.txt
+      - name: Require eight native version cases without skips
+        run: python3 services/workflow-engine/native_version_ci_gate.py services/workflow-engine/ci-logs/native-version-reports
       - name: Clean verify against dedicated internal PostgreSQL
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootDeploymentRegistryTest verify 2>&1 | tee services/workflow-engine/ci-logs/verify.txt
       - name: Require all 18 Root-owned cases without skips
