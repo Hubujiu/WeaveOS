@@ -2,18 +2,35 @@
 
 每任务使用已约定版本编号（当前V010-NNN或V030-NNN，NNN为三位数字）、docs/tasks/<ID>.md、task/<ID>-topic分支和../WeaveOS-worktrees/<ID>工作树；路径与元数据必须包含同一个完整ID，历史任务不重编号。规划只登记；领取时创建，不伪造运行中的Agent。每阶段写完成/待完成、来源、owner、允许路径、PR、RED/GREEN、阻塞与下一条命令，并推送，不仅留在聊天。
 
-## 开始或接手
+## 当前分支流程（2026-10-06起）
 
-先git fetch --prune origin；读远程main的AGENTS/HANDOFF/任务索引和目标文档，同时检查远程任务分支、PR及git worktree list。未合并分支中更新更近的文档是任务现场，再按Notion路由核对适用正文。
+- task分支承载独立任务与真实RED→GREEN；默认基线和PR目标是develop
+- Root审查并按相关测试判断完成后，可将成果集成到develop；可以据已记录的阶段判断继续下一任务，不要求上游先合main
+- main仅接收用户已确认的推广，不能把develop集成当作main批准。推广前列出范围、精确来源、验证结果及已有main自动交付的后续效果
+- develop质量要求不低于任务要求。未完成/失败内容保留在任务分支；当前已有串联分支只整合确已核验的候选，不按PR编号批量接受
+
+Root在任务文档记录阶段判断：来源commit、审查范围、通过/失败/未运行项、为何不阻塞下一阶段。新任务明确从当时develop SHA创建，PR明确base=develop。首次初始化develop仅复制核实的main；已有在途任务/初始化文档可保留其既有精确基线，并在集成时复核差异。
+
+### 旧工具过渡边界
+
+下文start/status/cleanup命令和脚本描述是旧“任务PR直接合main”的实现说明。脚本尚未适配develop，不能宣称默认行为已改变；新任务由Root用明确的Git/连接器操作创建、审查和集成，并记录实际引用。不得假造旧工具的accepted结果或为消除拒绝直接删掉安全检查。
+
+新develop任务的最终批准需同时保留任务集成PR、用户确认及main推广记录。清理前仍检查精确tip、干净工作树、持久证据和无活动依赖；旧工具无法证明新的推广链时停止自动清理，改由Root做等价明确核验。main尚未批准或工作仍被引用时，不清除必要任务现场。
+
+来源：[V030-040 PRD](https://app.notion.com/p/3f12f5a9e6488190a8eec8d0deb0a679)、[ADR](https://app.notion.com/p/3f12f5a9e6488150b5c4feb676dd5bc9)。下文与本节冲突的旧main-only开发前置要求不再作为阶段推进规则；最终用户main批准、TDD及数据保护仍保留。
+
+## 开始或接手（旧工具说明）
+
+先git fetch --prune origin；读远程develop及main的AGENTS/HANDOFF/任务索引和目标文档，同时检查远程任务分支、PR及git worktree list。未合并分支中更新更近的文档是任务现场，再按Notion路由核对适用正文。
 
 ```sh
 node scripts/task.mjs start V010-002
 node scripts/task.mjs start V010-002 --apply
 ```
 
-默认dry-run；--apply创建独立工作树和分支并推送。需要真实clone、Git、已登录GitHub CLI和网络。已有branch/worktree时拒绝重建，应恢复原任务；依赖未验收就不能开始依赖它的实现。
+默认dry-run；--apply创建独立工作树和分支并推送。需要真实clone、Git、已登录GitHub CLI和网络。已有branch/worktree时拒绝重建，应恢复原任务；旧main-only启动工具的依赖判定仍是最终main验收；新develop阶段不能直接沿用该判定，按上述Root阶段判断流程执行。
 
-## 唯一验收含义
+## 旧直接main任务的验收含义
 
 合并前deliveryState=ready只表示待验收；不设置一个只能合并后勾选的递归“PR已合并”复选框。任务清单写本PR可交付、可验证的事项。
 

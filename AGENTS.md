@@ -4,11 +4,21 @@
 
 ## 0. 每次任务先恢复现场
 
-先读本文件 → [HANDOFF.md](HANDOFF.md) → [任务流程](docs/workflow.md) → [任务索引](docs/tasks/index.md) → 目标任务文档 → 目标目录沿途AGENTS。实际检查GitHub远程main、任务分支/PR、CI与本机worktree；不得只信聊天或旧摘要。
+先读本文件 → [HANDOFF.md](HANDOFF.md) → [任务流程](docs/workflow.md) → [任务索引](docs/tasks/index.md) → 目标任务文档 → 目标目录沿途AGENTS。实际检查GitHub远程main/develop、任务分支/PR、CI与本机worktree；不得只信聊天或旧摘要。
 
-每任务使用已约定版本编号（当前支持 `V010-NNN` 与 `V030-NNN`，NNN为三位数字），固定 `docs/tasks/<ID>.md`、独立 `task/<ID>-topic` 分支、独立 `../WeaveOS-worktrees/<ID>` 工作树，完整ID及版本前缀必须一致；不得重编号已有任务。领取前核对依赖验收，不同时让多个Agent写同一工作树。规划不是执行，不伪造已启动的Agent或分支。
+每任务使用已约定版本编号（当前支持 `V010-NNN` 与 `V030-NNN`，NNN为三位数字），固定 `docs/tasks/<ID>.md`、独立 `task/<ID>-topic` 分支、独立 `../WeaveOS-worktrees/<ID>` 工作树，完整ID及版本前缀必须一致；不得重编号已有任务。领取前核对依赖阶段交付与证据，不同时让多个Agent写同一工作树。规划不是执行，不伪造已启动的Agent或分支。
 
 任务文档必须记录来源、范围、owner、允许改动路径、依赖、PR、验收项、完成/待完成、RED/GREEN、阻塞和下一条执行命令。每个可验证阶段更新并推送，使中断/换Agent后可恢复。PR必须更新对应任务文档，不把进度只存在临时文件或聊天里。
+
+## 0.1 develop集成与main审批（用户2026-10-06确认）
+
+新任务默认从远程develop建立独立分支/工作树，PR默认目标develop。Root按精确源码、代码审查和相关真实测试判断是否进入下一阶段、是否可合入develop；上游未合main本身不再阻止后续开发。未完成、失败和未覆盖项目必须照实记录，不因是开发分支就降低测试标准。
+
+main是经过用户审批的版本：Root不能把develop中的成果自动推广到main。每次main推广前仍须取得用户确认，并说明实际范围及main已有自动交付的后续效果；创建/合入develop不授权生产部署。默认分支、分支保护、凭据与工作流权限不随本规则自动改变。
+
+阶段完成、develop集成、用户main批准是不同事实，不能互相冒充。既有串联PR逐步整合，保留原commit/测试/审批映射；未完成任务不得因初始化develop被批量合入。来源：V030-040 Notion PRD/ADR及用户Sentinel_9233a256e39c81918e3c1bcf147673f8。
+
+旧scripts/task.mjs和清理工具仍按“任务PR直接合main”工作；在完成独立适配测试前，不能用其main-only结果冒称新develop流程已验收。Root按docs/workflow.md明确核对GitHub/Git事实，工具拒绝时不伪造accepted，也不提前清理仍有依赖的任务证据。
 
 ## 1. NOTION-GATE：先实际读取，再改动
 
@@ -62,7 +72,7 @@ v0.1.0只围绕邀请码注册、账号密码登录、Web Session、Bootstrap Ad
 
 合并前任务最多标deliveryState=ready，不提前标accepted。所有新任务使用squash merge；先核对最终head适用CI/验收通过，不能以初始提交的绿灯替代最终代码验证。
 
-**只有GitHub远程main同路径、同任务ID文档存在且所有事项完成，并且对应PR已经合入本仓库main，才代表已验收。** 本地main、同名不同目录文件、closed未merged的PR或分支清单全勾均不足。
+**用户最终批准以实际main推广为准：远程main应包含对应任务/实现，并有用户确认及已合入main的推广记录。** 任务PR只合develop代表开发集成，不等于用户main批准。旧直接main任务仍核对其原PR；新develop任务保留任务PR与后续main推广的关联，不能用本地分支或清单全勾代替远端事实。
 
 验收后按docs/workflow.md分两阶段清理，保留main任务与证据。远端Actions重新读取main文档和PR，确认远程分支tip等于验收PR head且squash commit在main，仅条件删除该远程引用；它不能检查或删除开发者机器的工作树，不能宣称本地也已清理。
 
