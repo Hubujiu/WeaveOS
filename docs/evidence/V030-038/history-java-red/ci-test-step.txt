@@ -1,0 +1,252 @@
+2026-10-06T05:38:17.0406185Z ##[group]Run bash services/workflow-engine/run-tests.sh clean -Dtest=RootNativeHistoryTest -Dworkflow.reports=ci-logs/native-history-reports test 2>&1 | tee services/workflow-engine/ci-logs/native-history-tests.txt
+2026-10-06T05:38:17.0407740Z [36;1mbash services/workflow-engine/run-tests.sh clean -Dtest=RootNativeHistoryTest -Dworkflow.reports=ci-logs/native-history-reports test 2>&1 | tee services/workflow-engine/ci-logs/native-history-tests.txt[0m
+2026-10-06T05:38:17.0472165Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-06T05:38:17.0472526Z ##[endgroup]
+2026-10-06T05:38:18.4659422Z postgres (PostgreSQL) 18.6 (Debian 18.6-1.pgdg13+2)
+2026-10-06T05:38:18.4834707Z fixture published ports={}
+2026-10-06T05:38:18.4980468Z fixture network internal=true
+2026-10-06T05:38:19.8508542Z [INFO] Scanning for projects...
+2026-10-06T05:38:20.1185815Z [INFO] 
+2026-10-06T05:38:20.1194575Z [INFO] --------------------< org.weaveos:workflow-engine >---------------------
+2026-10-06T05:38:20.1195516Z [INFO] Building WeaveOS controlled workflow engine core 0.3.0-SNAPSHOT
+2026-10-06T05:38:20.1196184Z [INFO]   from pom.xml
+2026-10-06T05:38:20.1196715Z [INFO] --------------------------------[ jar ]---------------------------------
+2026-10-06T05:38:20.7579149Z [INFO] 
+2026-10-06T05:38:20.7579736Z [INFO] --- clean:3.5.0:clean (default-clean) @ workflow-engine ---
+2026-10-06T05:38:20.8146739Z [INFO] Deleting /proof/target
+2026-10-06T05:38:20.8477484Z [INFO] 
+2026-10-06T05:38:20.8479754Z [INFO] --- resources:3.3.1:resources (default-resources) @ workflow-engine ---
+2026-10-06T05:38:20.9366404Z [INFO] skip non existing resourceDirectory /proof/src/main/resources
+2026-10-06T05:38:20.9374076Z [INFO] skip non existing resourceDirectory /proof/src/main/resources
+2026-10-06T05:38:20.9375265Z [INFO] 
+2026-10-06T05:38:20.9384620Z [INFO] --- compiler:3.14.1:compile (default-compile) @ workflow-engine ---
+2026-10-06T05:38:21.0413189Z [INFO] Recompiling the module because of changed source code.
+2026-10-06T05:38:21.0489464Z [INFO] Compiling 29 source files with javac [debug parameters release 17] to target/classes
+2026-10-06T05:38:23.6188148Z [INFO] 
+2026-10-06T05:38:23.6194488Z [INFO] --- resources:3.3.1:testResources (default-testResources) @ workflow-engine ---
+2026-10-06T05:38:23.6267672Z [INFO] Copying 6 resources from src/test/resources to target/test-classes
+2026-10-06T05:38:23.6318196Z [INFO] 
+2026-10-06T05:38:23.6319799Z [INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ workflow-engine ---
+2026-10-06T05:38:23.6395082Z [INFO] Recompiling the module because of changed dependency.
+2026-10-06T05:38:23.6403281Z [INFO] Compiling 10 source files with javac [debug parameters release 17] to target/test-classes
+2026-10-06T05:38:24.8088777Z [INFO] 
+2026-10-06T05:38:24.8090859Z [INFO] --- surefire:3.5.4:test (default-test) @ workflow-engine ---
+2026-10-06T05:38:24.9332146Z [INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+2026-10-06T05:38:24.9801363Z [INFO] 
+2026-10-06T05:38:24.9802842Z [INFO] -------------------------------------------------------
+2026-10-06T05:38:24.9804051Z [INFO]  T E S T S
+2026-10-06T05:38:24.9812477Z [INFO] -------------------------------------------------------
+2026-10-06T05:38:25.7362620Z [INFO] Running org.weaveos.workflow.RootNativeHistoryTest
+2026-10-06T05:38:27.6516110Z 05:38:27.545 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+2026-10-06T05:38:27.6535956Z 05:38:27.548 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+2026-10-06T05:38:27.6538421Z 05:38:27.549 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:27.6541389Z 05:38:27.550 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@3b8ec001
+2026-10-06T05:38:27.6543193Z 05:38:27.550 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+2026-10-06T05:38:27.6545562Z 05:38:27.550 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+2026-10-06T05:38:27.6547918Z 05:38:27.551 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:27.6550322Z 05:38:27.600 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+2026-10-06T05:38:27.7494419Z 05:38:27.698 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+2026-10-06T05:38:27.8505274Z 05:38:27.758 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+2026-10-06T05:38:27.8507760Z 05:38:27.780 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+2026-10-06T05:38:27.8509536Z 05:38:27.822 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+2026-10-06T05:38:29.4559056Z 05:38:29.362 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+2026-10-06T05:38:29.4577389Z 05:38:29.362 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+2026-10-06T05:38:29.4586885Z 05:38:29.362 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:29.4597517Z 05:38:29.362 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@3313d477
+2026-10-06T05:38:29.4607196Z 05:38:29.362 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+2026-10-06T05:38:29.4624087Z 05:38:29.362 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+2026-10-06T05:38:29.4634376Z 05:38:29.363 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:29.4646312Z 05:38:29.379 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+2026-10-06T05:38:29.5556851Z 05:38:29.466 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+2026-10-06T05:38:29.5560603Z 05:38:29.529 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+2026-10-06T05:38:29.5568667Z 05:38:29.549 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+2026-10-06T05:38:29.6554853Z 05:38:29.565 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+2026-10-06T05:38:30.4588732Z 05:38:30.396 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+2026-10-06T05:38:30.4596929Z 05:38:30.396 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+2026-10-06T05:38:30.4605834Z 05:38:30.397 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:30.4609091Z 05:38:30.397 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@70b48eb3
+2026-10-06T05:38:30.4611613Z 05:38:30.397 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+2026-10-06T05:38:30.4614081Z 05:38:30.397 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+2026-10-06T05:38:30.4616599Z 05:38:30.397 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:30.4619171Z 05:38:30.407 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+2026-10-06T05:38:30.5591234Z 05:38:30.473 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+2026-10-06T05:38:30.5593775Z 05:38:30.517 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+2026-10-06T05:38:30.5596261Z 05:38:30.536 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+2026-10-06T05:38:30.5607159Z 05:38:30.547 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+2026-10-06T05:38:31.1611070Z 05:38:31.076 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+2026-10-06T05:38:31.1617226Z 05:38:31.076 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+2026-10-06T05:38:31.1621554Z 05:38:31.076 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:31.1626632Z 05:38:31.076 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@6f3bd37f
+2026-10-06T05:38:31.1629488Z 05:38:31.076 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+2026-10-06T05:38:31.1642078Z 05:38:31.076 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+2026-10-06T05:38:31.1645060Z 05:38:31.076 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:31.1647663Z 05:38:31.087 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+2026-10-06T05:38:31.1649340Z 05:38:31.144 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+2026-10-06T05:38:31.2615132Z 05:38:31.193 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+2026-10-06T05:38:31.2617609Z 05:38:31.207 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+2026-10-06T05:38:31.2622653Z 05:38:31.216 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+2026-10-06T05:38:31.7635334Z 05:38:31.703 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+2026-10-06T05:38:31.7668397Z 05:38:31.703 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+2026-10-06T05:38:31.7671057Z 05:38:31.703 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:31.7673783Z 05:38:31.703 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@1b46392c
+2026-10-06T05:38:31.7681581Z 05:38:31.703 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+2026-10-06T05:38:31.7683996Z 05:38:31.703 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+2026-10-06T05:38:31.7686250Z 05:38:31.703 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:31.7688671Z 05:38:31.715 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+2026-10-06T05:38:31.8632199Z 05:38:31.798 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+2026-10-06T05:38:31.8634793Z 05:38:31.851 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+2026-10-06T05:38:31.9637458Z 05:38:31.864 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+2026-10-06T05:38:31.9638984Z 05:38:31.873 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+2026-10-06T05:38:32.6646655Z 05:38:32.601 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+2026-10-06T05:38:32.6649167Z 05:38:32.601 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+2026-10-06T05:38:32.6651730Z 05:38:32.602 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:32.6657153Z 05:38:32.602 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@a056b26
+2026-10-06T05:38:32.6659215Z 05:38:32.602 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+2026-10-06T05:38:32.6660614Z 05:38:32.602 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+2026-10-06T05:38:32.6661861Z 05:38:32.602 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:32.6663136Z 05:38:32.614 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+2026-10-06T05:38:32.7647056Z 05:38:32.672 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+2026-10-06T05:38:32.7649918Z 05:38:32.713 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+2026-10-06T05:38:32.7651761Z 05:38:32.727 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+2026-10-06T05:38:32.7653115Z 05:38:32.735 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+2026-10-06T05:38:33.3755479Z 05:38:33.306 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+2026-10-06T05:38:33.3757552Z 05:38:33.306 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+2026-10-06T05:38:33.3759003Z 05:38:33.306 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:33.3760375Z 05:38:33.306 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@66d3b881
+2026-10-06T05:38:33.3762024Z 05:38:33.306 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+2026-10-06T05:38:33.3764628Z 05:38:33.306 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+2026-10-06T05:38:33.3766907Z 05:38:33.306 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:33.3769259Z 05:38:33.316 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+2026-10-06T05:38:33.4738871Z 05:38:33.373 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+2026-10-06T05:38:33.4741180Z 05:38:33.424 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+2026-10-06T05:38:33.4742620Z 05:38:33.437 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+2026-10-06T05:38:33.4744366Z 05:38:33.444 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+2026-10-06T05:38:34.1754831Z 05:38:34.088 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+2026-10-06T05:38:34.1761039Z 05:38:34.088 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+2026-10-06T05:38:34.1763954Z 05:38:34.088 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:34.1766538Z 05:38:34.088 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@3babcaed
+2026-10-06T05:38:34.1768748Z 05:38:34.088 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+2026-10-06T05:38:34.1770784Z 05:38:34.088 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+2026-10-06T05:38:34.1774704Z 05:38:34.088 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:34.1777359Z 05:38:34.100 [main] INFO org.flowable.common.engine.impl.db.CommonDbSchemaManager -- performing create on common with resource org/flowable/common/db/create/flowable.postgres.create.common.sql
+2026-10-06T05:38:34.1779777Z 05:38:34.170 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on engine with resource org/flowable/db/create/flowable.postgres.create.engine.sql
+2026-10-06T05:38:34.2755356Z 05:38:34.216 [main] INFO org.flowable.engine.impl.db.ProcessDbSchemaManager -- performing create on history with resource org/flowable/db/create/flowable.postgres.create.history.sql
+2026-10-06T05:38:34.2757151Z 05:38:34.228 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+2026-10-06T05:38:34.2758341Z 05:38:34.235 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+2026-10-06T05:38:34.8765790Z 05:38:34.783 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 100
+2026-10-06T05:38:34.8769298Z 05:38:34.783 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-task-invoker-thread-%d
+2026-10-06T05:38:34.8774927Z 05:38:34.783 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:34.8777642Z 05:38:34.783 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Using rejectedExecutionHandler java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy@7af0d91b
+2026-10-06T05:38:34.8779994Z 05:38:34.783 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread pool queue of size 2048
+2026-10-06T05:38:34.8782281Z 05:38:34.783 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating thread factory with naming pattern flowable-async-job-executor-thread-%d
+2026-10-06T05:38:34.8785011Z 05:38:34.783 [main] INFO org.flowable.common.engine.impl.async.DefaultAsyncTaskExecutor -- Creating executor service with corePoolSize 8, maxPoolSize 8 and keepAliveTime 5000
+2026-10-06T05:38:34.8787014Z 05:38:34.796 [main] INFO org.flowable.engine.impl.ProcessEngineImpl -- ProcessEngine default created
+2026-10-06T05:38:34.8788568Z 05:38:34.806 [main] INFO org.flowable.engine.impl.cmd.ValidateV5EntitiesCmd -- Total of v5 deployments found: 0
+2026-10-06T05:38:34.9299519Z [ERROR] Tests run: 8, Failures: 7, Errors: 0, Skipped: 0, Time elapsed: 9.176 s <<< FAILURE! -- in org.weaveos.workflow.RootNativeHistoryTest
+2026-10-06T05:38:34.9301406Z [ERROR] org.weaveos.workflow.RootNativeHistoryTest.repeatedReturnsKeepDistinctActivationsAndAppendHistory -- Time elapsed: 1.207 s <<< FAILURE!
+2026-10-06T05:38:34.9302460Z org.opentest4j.AssertionFailedError: expected: <success> but was: <no_effect>
+2026-10-06T05:38:34.9303117Z 	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+2026-10-06T05:38:34.9304118Z 	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+2026-10-06T05:38:34.9304762Z 	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)
+2026-10-06T05:38:34.9305293Z 	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:184)
+2026-10-06T05:38:34.9305802Z 	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:179)
+2026-10-06T05:38:34.9306304Z 	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1188)
+2026-10-06T05:38:34.9306937Z 	at org.weaveos.workflow.RootExecutionRegistryTest.verify(RootExecutionRegistryTest.java:134)
+2026-10-06T05:38:34.9307845Z 	at org.weaveos.workflow.RootNativeHistoryTest.repeatedReturnsKeepDistinctActivationsAndAppendHistory(RootNativeHistoryTest.java:72)
+2026-10-06T05:38:34.9308471Z 
+2026-10-06T05:38:34.9309247Z [ERROR] org.weaveos.workflow.RootNativeHistoryTest.startWritesNativeHistorySynchronouslyWithoutShadowVisits -- Time elapsed: 0.675 s <<< FAILURE!
+2026-10-06T05:38:34.9310223Z org.opentest4j.AssertionFailedError: expected: <0> but was: <1>
+2026-10-06T05:38:34.9310784Z 	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+2026-10-06T05:38:34.9311473Z 	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+2026-10-06T05:38:34.9312097Z 	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)
+2026-10-06T05:38:34.9312613Z 	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:168)
+2026-10-06T05:38:34.9313119Z 	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:163)
+2026-10-06T05:38:34.9317596Z 	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:662)
+2026-10-06T05:38:34.9319293Z 	at org.weaveos.workflow.RootNativeHistoryTest.lambda$startWritesNativeHistorySynchronouslyWithoutShadowVisits$0(RootNativeHistoryTest.java:47)
+2026-10-06T05:38:34.9321200Z 	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68)
+2026-10-06T05:38:34.9322786Z 	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:137)
+2026-10-06T05:38:34.9325595Z 	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67)
+2026-10-06T05:38:34.9327534Z 	at org.weaveos.workflow.RootNativeHistoryTest.startWritesNativeHistorySynchronouslyWithoutShadowVisits(RootNativeHistoryTest.java:45)
+2026-10-06T05:38:34.9328706Z 
+2026-10-06T05:38:34.9329687Z [ERROR] org.weaveos.workflow.RootNativeHistoryTest.missingOrAsyncHistoryConfigurationCannotEnableBridge -- Time elapsed: 0.598 s <<< FAILURE!
+2026-10-06T05:38:34.9332464Z org.opentest4j.AssertionFailedError: Expected java.lang.IllegalArgumentException to be thrown, but nothing was thrown.
+2026-10-06T05:38:34.9334290Z 	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+2026-10-06T05:38:34.9335674Z 	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:74)
+2026-10-06T05:38:34.9336728Z 	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+2026-10-06T05:38:34.9337635Z 	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3223)
+2026-10-06T05:38:34.9339064Z 	at org.weaveos.workflow.RootNativeHistoryTest.missingOrAsyncHistoryConfigurationCannotEnableBridge(RootNativeHistoryTest.java:95)
+2026-10-06T05:38:34.9340147Z 
+2026-10-06T05:38:34.9340929Z [ERROR] org.weaveos.workflow.RootNativeHistoryTest.visitedReturnWorksWithoutLegacyRows -- Time elapsed: 0.921 s <<< FAILURE!
+2026-10-06T05:38:34.9342277Z org.opentest4j.AssertionFailedError: expected: <success> but was: <no_effect>
+2026-10-06T05:38:34.9343541Z 	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+2026-10-06T05:38:34.9344806Z 	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+2026-10-06T05:38:34.9345977Z 	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)
+2026-10-06T05:38:34.9346923Z 	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:184)
+2026-10-06T05:38:34.9347852Z 	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:179)
+2026-10-06T05:38:34.9348760Z 	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1188)
+2026-10-06T05:38:34.9349884Z 	at org.weaveos.workflow.RootExecutionRegistryTest.verify(RootExecutionRegistryTest.java:134)
+2026-10-06T05:38:34.9351392Z 	at org.weaveos.workflow.RootNativeHistoryTest.visitedReturnWorksWithoutLegacyRows(RootNativeHistoryTest.java:52)
+2026-10-06T05:38:34.9352353Z 
+2026-10-06T05:38:34.9353924Z [ERROR] org.weaveos.workflow.RootNativeHistoryTest.forgedLegacyVisitCannotAuthorizeUnvisitedTarget -- Time elapsed: 0.737 s <<< FAILURE!
+2026-10-06T05:38:34.9355668Z org.opentest4j.AssertionFailedError: expected: <no_effect> but was: <success>
+2026-10-06T05:38:34.9356891Z 	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+2026-10-06T05:38:34.9358101Z 	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+2026-10-06T05:38:34.9359225Z 	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)
+2026-10-06T05:38:34.9360228Z 	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:184)
+2026-10-06T05:38:34.9361141Z 	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:179)
+2026-10-06T05:38:34.9362061Z 	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1188)
+2026-10-06T05:38:34.9363162Z 	at org.weaveos.workflow.RootExecutionRegistryTest.verify(RootExecutionRegistryTest.java:134)
+2026-10-06T05:38:34.9403887Z 	at org.weaveos.workflow.RootExecutionRegistryTest.noEffect(RootExecutionRegistryTest.java:144)
+2026-10-06T05:38:34.9405532Z 	at org.weaveos.workflow.RootNativeHistoryTest.forgedLegacyVisitCannotAuthorizeUnvisitedTarget(RootNativeHistoryTest.java:60)
+2026-10-06T05:38:34.9406574Z 
+2026-10-06T05:38:34.9407560Z [ERROR] org.weaveos.workflow.RootNativeHistoryTest.failedReturnRollsBackNativeHistoryAndExactRuntimeTasks -- Time elapsed: 0.772 s <<< FAILURE!
+2026-10-06T05:38:34.9409548Z org.opentest4j.AssertionFailedError: Expected org.weaveos.workflow.RootNativeHistoryTest.Injected to be thrown, but nothing was thrown.
+2026-10-06T05:38:34.9411053Z 	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+2026-10-06T05:38:34.9412106Z 	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:74)
+2026-10-06T05:38:34.9413051Z 	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+2026-10-06T05:38:34.9414156Z 	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3223)
+2026-10-06T05:38:34.9415661Z 	at org.weaveos.workflow.RootNativeHistoryTest.failedReturnRollsBackNativeHistoryAndExactRuntimeTasks(RootNativeHistoryTest.java:84)
+2026-10-06T05:38:34.9416778Z 
+2026-10-06T05:38:34.9417726Z [ERROR] org.weaveos.workflow.RootNativeHistoryTest.reopenedEngineUsesNativeHistoryAndPreservesOldReceipt -- Time elapsed: 1.056 s <<< FAILURE!
+2026-10-06T05:38:34.9419353Z org.opentest4j.AssertionFailedError: expected: <success> but was: <no_effect>
+2026-10-06T05:38:34.9420500Z 	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+2026-10-06T05:38:34.9421801Z 	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+2026-10-06T05:38:34.9422980Z 	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)
+2026-10-06T05:38:34.9424196Z 	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:184)
+2026-10-06T05:38:34.9425221Z 	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:179)
+2026-10-06T05:38:34.9426141Z 	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1188)
+2026-10-06T05:38:34.9427230Z 	at org.weaveos.workflow.RootExecutionRegistryTest.verify(RootExecutionRegistryTest.java:134)
+2026-10-06T05:38:34.9428938Z 	at org.weaveos.workflow.RootNativeHistoryTest.reopenedEngineUsesNativeHistoryAndPreservesOldReceipt(RootNativeHistoryTest.java:66)
+2026-10-06T05:38:34.9430096Z 
+2026-10-06T05:38:34.9570890Z [INFO] 
+2026-10-06T05:38:34.9574656Z [INFO] Results:
+2026-10-06T05:38:34.9580407Z [INFO] 
+2026-10-06T05:38:34.9587851Z [ERROR] Failures: 
+2026-10-06T05:38:34.9593057Z [ERROR]   RootNativeHistoryTest.failedReturnRollsBackNativeHistoryAndExactRuntimeTasks:84 Expected org.weaveos.workflow.RootNativeHistoryTest.Injected to be thrown, but nothing was thrown.
+2026-10-06T05:38:34.9596875Z [ERROR]   RootNativeHistoryTest.forgedLegacyVisitCannotAuthorizeUnvisitedTarget:60 expected: <no_effect> but was: <success>
+2026-10-06T05:38:34.9602209Z [ERROR]   RootNativeHistoryTest.missingOrAsyncHistoryConfigurationCannotEnableBridge:95 Expected java.lang.IllegalArgumentException to be thrown, but nothing was thrown.
+2026-10-06T05:38:34.9605100Z [ERROR]   RootNativeHistoryTest.reopenedEngineUsesNativeHistoryAndPreservesOldReceipt:66 expected: <success> but was: <no_effect>
+2026-10-06T05:38:34.9610425Z [ERROR]   RootNativeHistoryTest.repeatedReturnsKeepDistinctActivationsAndAppendHistory:72 expected: <success> but was: <no_effect>
+2026-10-06T05:38:34.9620526Z [ERROR]   RootNativeHistoryTest.startWritesNativeHistorySynchronouslyWithoutShadowVisits:45->lambda$startWritesNativeHistorySynchronouslyWithoutShadowVisits$0:47 expected: <0> but was: <1>
+2026-10-06T05:38:34.9632305Z [ERROR]   RootNativeHistoryTest.visitedReturnWorksWithoutLegacyRows:52 expected: <success> but was: <no_effect>
+2026-10-06T05:38:34.9636330Z [INFO] 
+2026-10-06T05:38:34.9637028Z [ERROR] Tests run: 8, Failures: 7, Errors: 0, Skipped: 0
+2026-10-06T05:38:34.9641980Z [INFO] 
+2026-10-06T05:38:34.9685013Z [INFO] ------------------------------------------------------------------------
+2026-10-06T05:38:34.9693702Z [INFO] BUILD FAILURE
+2026-10-06T05:38:34.9694592Z [INFO] ------------------------------------------------------------------------
+2026-10-06T05:38:34.9700446Z [INFO] Total time:  15.140 s
+2026-10-06T05:38:34.9708094Z [INFO] Finished at: 2026-10-06T05:38:34Z
+2026-10-06T05:38:34.9711776Z [INFO] ------------------------------------------------------------------------
+2026-10-06T05:38:34.9724474Z [ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.4:test (default-test) on project workflow-engine: There are test failures.
+2026-10-06T05:38:34.9727450Z [ERROR] 
+2026-10-06T05:38:34.9731090Z [ERROR] See /proof/ci-logs/native-history-reports for the individual test results.
+2026-10-06T05:38:34.9735322Z [ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+2026-10-06T05:38:34.9738626Z [ERROR] -> [Help 1]
+2026-10-06T05:38:34.9742360Z [ERROR] 
+2026-10-06T05:38:34.9746771Z [ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+2026-10-06T05:38:34.9750292Z [ERROR] Re-run Maven using the -X switch to enable full debug logging.
+2026-10-06T05:38:34.9753266Z [ERROR] 
+2026-10-06T05:38:34.9757841Z [ERROR] For more information about the errors and possible solutions, please read the following articles:
+2026-10-06T05:38:34.9760317Z [ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+2026-10-06T05:38:35.2450136Z ##[error]Process completed with exit code 1.
