@@ -90,6 +90,10 @@ func (s *Service) publish(w http.ResponseWriter, r *http.Request, p session.Prin
 		return
 	}
 	ctx := r.Context()
+	runtimeReady := true
+	if s.Application.RuntimeReady != nil {
+		runtimeReady = s.Application.RuntimeReady(ctx) == nil
+	}
 	manager, e := (&applications.Application{Pool: s.Application.Pool}).BeginManagerWrite(ctx, p, appID, s.Application.managerOptions()...)
 	if e != nil {
 		fail(w, r, e, q.OperationID)
@@ -139,6 +143,10 @@ func (s *Service) publish(w http.ResponseWriter, r *http.Request, p session.Prin
 		}
 		if err = authorizeAssignees(ctx, tx, appID, viewID, v.Graph); err != nil {
 			fail(w, r, err, q.OperationID)
+			return
+		}
+		if !runtimeReady {
+			fail(w, r, session.ErrUnavailable, q.OperationID)
 			return
 		}
 		hash := sha256.Sum256([]byte(v.BPMN))
