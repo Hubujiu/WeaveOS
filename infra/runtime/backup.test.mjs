@@ -104,7 +104,7 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  const actionOperation=recoveryID(910);
  const actionReceipt={operationId:actionOperation,commandId:recoveryID(911),instanceId:recoveryID(912),status:'pending'};
  sql(live,`INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location)
- VALUES('${h.createdBy}','${actionOperation}','${h.appId}','workflow.task.agree',decode('${'17'.repeat(32)}','hex'),$receipt${JSON.stringify(actionReceipt)}$receipt$::jsonb,202,'/api/v1/application-workflow-operations/${actionOperation}');`);
+ VALUES('${h.createdBy}','${actionOperation}','${h.appId}','workflow.task.agree',decode('${'17'.repeat(32)}','hex'),$receipt$${JSON.stringify(actionReceipt)}$receipt$::jsonb,202,'/api/v1/application-workflow-operations/${actionOperation}');`);
  sql(live,"CREATE TABLE public.goose_db_version(id serial PRIMARY KEY,version_id bigint); INSERT INTO public.goose_db_version(version_id) VALUES(0),(1);");
  sql(live,readFileSync('infra/runtime/roles.sql','utf8'));
  sql('postgres',"DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='weaveos_backup_probe') THEN CREATE ROLE weaveos_backup_probe LOGIN; END IF; END $$; GRANT auth_backup TO weaveos_backup_probe;");
@@ -114,10 +114,50 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  const operationQuery="SELECT actor_user_id,operation_id,app_id,operation_kind,encode(fingerprint,'hex'),result_json,http_status,location,created_at FROM applications.operations ORDER BY actor_user_id,operation_id;";
  assert.equal(sql(restored,operationQuery),sql(live,operationQuery),'pending operation receipt bytes must survive restricted backup');
  assert.ok(sql(restored,operationQuery).includes(actionOperation));
- const checks="SELECT conname,pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid='applications.operations'::regclass AND conname IN ('ck_operation_kind','ck_operation_result','ck_workflow_task_operation_result') ORDER BY conname;";
- assert.equal(sql(restored,checks),sql(live,checks),'new pending receipt guards must survive restore');
- assert.ok(sql(restored,checks).includes('ck_workflow_task_operation_result'));
- assert.throws(()=>sql(restored,`UPDATE applications.operations SET result_json=jsonb_set(result_json,'{status}','"success"'::jsonb) WHERE operation_id='${actionOperation}';`),'restored acceptance cannot pretend final success');
+ // PostgreSQL may deparse equivalent casts differently after pg_restore.
+ // Validate catalog flags and actual behavior, not rendered expression text.
+ const checks="SELECT count(*)=3 AND bool_and(contype='c' AND convalidated AND conenforced AND NOT condeferrable) AS guards_valid FROM pg_constraint WHERE conrelid='applications.operations'::regclass AND conname IN ('ck_operation_kind','ck_operation_result','ck_workflow_task_operation_result');";
+ const normalKinds=['application.create','group.create','group.update','members.replace','grants.replace','directory.create','directory.update','table.create','table.update','form.create','form.update','definition.save','record.create','record.edit','draft.create','draft.update','draft.discard','workflow.definition.save','workflow.enable','workflow.close'];
+ const state=(kind='workflow.task.agree',body=actionReceipt,status=202,location=`/api/v1/application-workflow-operations/${actionOperation}`)=>({kind,body,status,location});
+ const literal=value=>value===null?'NULL':"'"+String(value).replaceAll("'","''")+"'";
+ const update=({kind,body,status,location})=>`UPDATE applications.operations SET operation_kind=${literal(kind)},result_json=${body===null?'NULL':literal(JSON.stringify(body))+'::jsonb'},http_status=${status===null?'NULL':status},location=${literal(location)} WHERE operation_id='${actionOperation}';`;
+ // Existing RecordMutationResult and DraftOperationResult are closed contracts.
+ // Legal old kinds must carry their own receipt shape, not an empty object.
+ const recordResult={operationId:actionOperation,id:recoveryID(921),recordVersion:1,schemaVersion:4,createdAt:'2026-10-06T00:00:00Z',updatedAt:'2026-10-06T00:00:00Z'};
+ const draftResult={operationId:actionOperation,id:recoveryID(922),draftVersion:1};
+ const legacyResult=kind=>kind.startsWith('record.')?recordResult:kind.startsWith('draft.')?draftResult:{};
+ const valid=[...normalKinds.map(kind=>state(kind,legacyResult(kind),kind==='draft.discard'?204:kind.endsWith('.create')?201:200,'')),state(),state('workflow.task.reject'),state('workflow.task.agree',null,null,null)];
+ const invalid=[
+  state('unknown.kind',null,null,null),
+  state('application.create',{},202,''),
+  state('workflow.task.agree',actionReceipt,200),
+  state('workflow.task.reject',{...actionReceipt,status:'success'}),
+  state('workflow.task.agree',{...actionReceipt,extra:'forbidden'}),
+  state('workflow.task.agree',{...actionReceipt,operationId:recoveryID(920)}),
+  state('workflow.task.agree',actionReceipt,202,'/wrong'),
+  state('workflow.task.agree',null,202,null),
+  state('workflow.task.agree',actionReceipt,null),
+  state('workflow.task.agree',actionReceipt,202,null),
+  state('workflow.task.agree',[]),
+ ];
+ for(const key of ['operationId','commandId','instanceId','status']){
+  const missing={...actionReceipt};delete missing[key];invalid.push(state('workflow.task.agree',missing));
+  invalid.push(state('workflow.task.agree',{...actionReceipt,[key]:42}));
+ }
+ for(const key of ['commandId','instanceId']){
+  invalid.push(state('workflow.task.agree',{...actionReceipt,[key]:'00000000-0000-0000-0000-000000000000'}));
+  invalid.push(state('workflow.task.agree',{...actionReceipt,[key]:'not-a-uuid'}));
+ }
+ for(const database of [live,restored]){
+  assert.match(sql(database,checks),/\bt\b/,'all three CHECK guards must exist, be validated and enforced');
+  for(const row of valid)sql(database,`BEGIN; ${update(row)} ROLLBACK;`);
+  for(const [index,row] of invalid.entries()){
+   // Only 23514 proves a CHECK guard rejected the mutation. Syntax, connection
+   // and unrelated constraint failures propagate and fail this test.
+   sql(database,`DO $guard$ DECLARE violated text; BEGIN BEGIN ${update(row)} RAISE EXCEPTION 'invalid receipt ${index} accepted' USING ERRCODE='P0001'; EXCEPTION WHEN check_violation THEN GET STACKED DIAGNOSTICS violated=CONSTRAINT_NAME; IF violated NOT IN ('ck_operation_kind','ck_operation_result','ck_workflow_task_operation_result') THEN RAISE; END IF; END; END $guard$;`);
+  }
+  assert.equal(sql(database,operationQuery),sql(live,operationQuery),'guard probes must preserve original pending receipt');
+ }
  const recoveryColumns="c.command_id,c.command_json,encode(c.command_hash,'hex'),c.state,c.receipt_json,c.created_at,encode(c.execution_payload,'hex'),d.protocol_version,d.created_at,d.next_attempt_at,d.attempts,d.lease_token,d.lease_until,d.last_error";
  const recoveryQuery='SELECT '+recoveryColumns+' FROM applications.workflow_commands c JOIN applications.workflow_dispatch d USING(command_id);';
  const recovered=sql(restored,recoveryQuery);

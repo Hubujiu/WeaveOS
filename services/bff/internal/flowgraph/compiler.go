@@ -20,11 +20,17 @@ const (
 // subset. It never incorporates user predicates, labels, or assignee identities
 // into executable XML.
 func CompileBPMN(g Graph, fields []appquery.Field, definitionID string) ([]byte, error) {
-	validated, err := Validate(g, fields)
-	if err != nil {
+	if !validUUID(definitionID) {
 		return nil, ErrInvalid
 	}
-	if !validUUID(definitionID) {
+	return compileBPMN(g, fields, "p_"+uuidCompact(definitionID))
+}
+
+// compileBPMN is the single renderer for legacy and application-scoped keys.
+// Both callers construct processKey solely from validated server identities.
+func compileBPMN(g Graph, fields []appquery.Field, processKey string) ([]byte, error) {
+	validated, err := Validate(g, fields)
+	if err != nil {
 		return nil, ErrInvalid
 	}
 
@@ -53,7 +59,7 @@ func CompileBPMN(g Graph, fields []appquery.Field, definitionID string) ([]byte,
 	process := bpmnElement{
 		name: "process",
 		attrs: []xml.Attr{
-			bpmnAttr("id", "p_"+uuidCompact(definitionID)),
+			bpmnAttr("id", processKey),
 			bpmnAttr("isExecutable", "true"),
 		},
 	}

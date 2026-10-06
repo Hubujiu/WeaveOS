@@ -452,6 +452,7 @@ func rootTaskConditionSetup(t *testing.T) (rootTaskFixture, string) {
 	t.Helper()
 	base := rootCaptureSetup(t)
 	f := base.recordFixture
+	rootTaskKeepDispatchPrivate(t, f)
 	f.ownRecord = f.otherRecord
 	g := rootCatalogCondition(t, f)
 	condition := ""
