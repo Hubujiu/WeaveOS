@@ -24,10 +24,9 @@ func readWorkflowRuntimeConfig(get func(string) string) (workflowRuntimeConfig, 
 	enabled := get("WEAVEOS_WORKFLOW_ENABLED")
 	target := get("WEAVEOS_WORKFLOW_TARGET")
 	rawTimeout := get("WEAVEOS_WORKFLOW_RPC_TIMEOUT_MS")
-	serviceToken := get("WEAVEOS_WORKFLOW_SERVICE_TOKEN")
 	switch enabled {
 	case "", "false":
-		if target != "" || rawTimeout != "" || serviceToken != "" {
+		if target != "" || rawTimeout != "" {
 			return workflowRuntimeConfig{}, errors.New("workflow configuration present while disabled")
 		}
 		return workflowRuntimeConfig{}, nil
@@ -49,11 +48,7 @@ func readWorkflowRuntimeConfig(get func(string) string) (workflowRuntimeConfig, 
 			return workflowRuntimeConfig{}, errors.New("invalid workflow RPC timeout configuration")
 		}
 	}
-	identity, err := workflowrpc.NewServiceIdentity(serviceToken)
-	if err != nil {
-		return workflowRuntimeConfig{}, errors.New("invalid workflow service identity configuration")
-	}
-	return workflowRuntimeConfig{Identity: identity, Enabled: true, Target: target, RPCTimeout: time.Duration(timeout) * time.Millisecond}, nil
+	return workflowRuntimeConfig{Enabled: true, Target: target, RPCTimeout: time.Duration(timeout) * time.Millisecond}, nil
 }
 
 func workflowDecimal(value string) bool {
