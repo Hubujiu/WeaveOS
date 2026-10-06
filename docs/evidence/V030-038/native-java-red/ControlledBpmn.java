@@ -33,12 +33,7 @@ final class ControlledBpmn {
         if (id == null || !UUID.matcher(id).matches() || id.equals("00000000-0000-0000-0000-000000000000")) invalid();
     }
 
-    record Validated(byte[] bytes, String processKey) {}
-
-    static Validated validate(String xml, String versionId, String appId, String flowId) {
-        requireUuid(versionId);
-        requireUuid(appId);
-        requireUuid(flowId);
+    static byte[] validate(String xml, String versionId) {
         if (xml == null || xml.isEmpty() || xml.length() > MAX_BYTES) invalid();
         byte[] bytes = xml.getBytes(StandardCharsets.UTF_8);
         if (bytes.length > MAX_BYTES || !new String(bytes, StandardCharsets.UTF_8).equals(xml)) invalid();
@@ -72,15 +67,9 @@ final class ControlledBpmn {
             if (processes.size() != 1) invalid();
             Element process = processes.get(0);
             name(process, "process");
-            // Keep accepted legacy publications replayable; new definitions share the
-            // exact app/flow identity so Flowable owns their native version sequence.
-            String processKey = process.getAttribute("id");
-            String legacyKey = "p_" + versionId.replace("-", "");
-            String scopedKey = "p_" + appId.replace("-", "") + "_" + flowId.replace("-", "");
-            if (!processKey.equals(legacyKey) && !processKey.equals(scopedKey)) invalid();
-            attrs(process, Map.of("id", processKey, "isExecutable", "true"), false);
+            attrs(process, Map.of("id", "p_" + versionId.replace("-", ""), "isExecutable", "true"), false);
             validateProcess(process);
-            return new Validated(bytes, processKey);
+            return bytes;
         } catch (InvalidDeployment e) {
             throw e;
         } catch (Exception e) {
