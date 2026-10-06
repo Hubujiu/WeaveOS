@@ -31,7 +31,8 @@ public final class RuntimeDataSource {
             pool.addDataSourceProperty("currentSchema", configuration.schema());
             pool.addDataSourceProperty("options",
                 "-c statement_timeout=" + configuration.statementTimeoutMs()
-                    + " -c lock_timeout=" + configuration.lockTimeoutMs());
+                    + " -c lock_timeout=" + configuration.lockTimeoutMs()
+                    + " -c client_connection_check_interval=1000");
             pool.addDataSourceProperty("tcpKeepAlive", "true");
 
             // pgJDBC uses whole seconds. Keep transport waits finite, allowing

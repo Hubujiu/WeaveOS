@@ -1,0 +1,19 @@
+package main
+
+import (
+	"context"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc"
+	"google.golang.org/grpc"
+)
+
+// Callable declaration only. Root must observe behavioral RED before implementation.
+type workflowRPC struct {
+	Deployment *workflowrpc.Client
+	Execution  *workflowrpc.ExecutionClient
+}
+
+func connectWorkflowRPC(context.Context, workflowRuntimeConfig, func(string, ...grpc.DialOption) (*grpc.ClientConn, error)) (*workflowRPC, error) {
+	return nil, nil
+}
+func (*workflowRPC) Ready(context.Context) error { return nil }
+func (*workflowRPC) Close() error                { return nil }
