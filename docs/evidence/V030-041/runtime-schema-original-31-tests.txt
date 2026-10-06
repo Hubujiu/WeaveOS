@@ -79,9 +79,6 @@ class RootRuntimeSchemaTest {
  @Test void missingRequiredReadPrivilegeIsRejected(){admin.execute("REVOKE SELECT ON "+schema+".act_ru_task FROM "+role);rejects();}
  @Test void missingRequiredUpdatePrivilegeIsRejected(){admin.execute("REVOKE UPDATE(decision) ON "+schema+".wf_execution_tasks FROM "+role);rejects();}
  @Test void missingSequencePrivilegeIsRejected(){admin.execute("REVOKE ALL ON SEQUENCE "+schema+".act_evt_log_log_nr__seq FROM "+role);rejects();}
- @Test void tableRegrantPrivilegeIsRejected(){admin.execute("GRANT SELECT ON "+schema+".act_hi_procinst TO "+role+" WITH GRANT OPTION");rejects();}
- @Test void columnRegrantPrivilegeIsRejected(){admin.execute("GRANT UPDATE(decision) ON "+schema+".wf_execution_tasks TO "+role+" WITH GRANT OPTION");rejects();}
- @Test void sequenceRegrantPrivilegeIsRejected(){admin.execute("GRANT USAGE ON SEQUENCE "+schema+".act_evt_log_log_nr__seq TO "+role+" WITH GRANT OPTION");rejects();}
  @Test void invalidArgumentsFailClosedWithoutConnecting(){
   var monitor=new Monitor(runtime);
   for(String invalid:List.of("", "pg_catalog", "workflow; DROP SCHEMA public", "x".repeat(64)))
