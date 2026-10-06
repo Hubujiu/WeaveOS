@@ -14,9 +14,11 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/personnel"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowexecution"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/grpc"
 	"log/slog"
 	"net/http"
 	"net/netip"
@@ -73,37 +75,55 @@ func readConfig(get func(string) string) (config, error) {
 	}
 	return cfg, nil
 }
-func buildHandler(ctx context.Context, cfg config) (http.Handler, func(), error) {
-	// Formal runtime and caller-identity wiring are not available yet.
-	if cfg.WorkflowRuntime.Enabled {
-		return nil, nil, errors.New("workflow runtime composition unavailable")
+func buildHost(startupCtx, processCtx context.Context, cfg config) (*bffHost, error) {
+	if startupCtx == nil || processCtx == nil || startupCtx.Err() != nil || processCtx.Err() != nil {
+		return nil, errors.New("BFF host requires active startup and process contexts")
 	}
-	if cfg.DatabaseURL == "" && cfg.RedisURL == "" && cfg.Origin == "" && cfg.Generation == "" && cfg.AuditKeyID == "" && len(cfg.AuditKey) == 0 {
-		return httpserver.NewHandler(nil), func() {}, nil
+	if cfg.WorkflowRuntime.Enabled && (cfg.SchemaLimits.LockTimeout < time.Millisecond || cfg.SchemaLimits.StatementTimeout < time.Millisecond) {
+		return nil, errors.New("incomplete or invalid workflow schema limits")
+	}
+	host := &bffHost{processCtx: processCtx}
+	if !cfg.WorkflowRuntime.Enabled && cfg.DatabaseURL == "" && cfg.RedisURL == "" && cfg.Origin == "" && cfg.Generation == "" && cfg.AuditKeyID == "" && len(cfg.AuditKey) == 0 {
+		host.Handler = httpserver.NewHandler(nil)
+		return host, nil
 	}
 	parsed, err := url.Parse(cfg.Origin)
 	if err != nil || parsed.Scheme != "https" || parsed.Host == "" || parsed.User != nil || parsed.Path != "" || parsed.RawQuery != "" || parsed.Fragment != "" || cfg.DatabaseURL == "" || cfg.RedisURL == "" || !regexp.MustCompile(`^[A-Za-z0-9_-]+$`).MatchString(cfg.Generation) || !regexp.MustCompile(`^[A-Za-z0-9_-]{1,16}$`).MatchString(cfg.AuditKeyID) || len(cfg.AuditKey) < 32 {
-		return nil, nil, errors.New("incomplete or invalid authentication configuration")
+		return nil, errors.New("incomplete or invalid authentication configuration")
 	}
-	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	pool, err := pgxpool.New(startupCtx, cfg.DatabaseURL)
 	if err != nil {
-		return nil, nil, errors.New("invalid authentication database configuration")
+		return nil, errors.New("invalid authentication database configuration")
 	}
 	sessions := session.NewStore(cfg.RedisURL, cfg.Generation)
 	queryOptions, err := redis.ParseURL(cfg.RedisURL)
 	if err != nil {
 		_ = sessions.Close()
 		pool.Close()
-		return nil, nil, errors.New("invalid query Redis configuration")
+		return nil, errors.New("invalid query Redis configuration")
 	}
 	queryRedis := redis.NewClient(queryOptions)
-	close := func() { _ = queryRedis.Close(); _ = sessions.Close(); pool.Close() }
+	host.closeResources = func() error {
+		failed := false
+		if err := queryRedis.Close(); err != nil {
+			failed = true
+		}
+		if err := sessions.Close(); err != nil {
+			failed = true
+		}
+		pool.Close()
+		if failed {
+			return errBFFHostCleanup
+		}
+		return nil
+	}
 	s := &auth.Service{Pool: pool, Sessions: sessions, Origin: cfg.Origin, AuditKeyID: cfg.AuditKeyID, AuditKey: cfg.AuditKey, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	people := &personnel.Application{Pool: pool, Queries: personnel.NewQueryContextStore(queryRedis, cfg.Generation)}
 	s.Personnel = &personnel.Service{Application: people, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	apps := &applications.Service{Application: &applications.Application{Pool: pool}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	apps.Definitions = &appstructure.Service{Application: &appstructure.Application{Pool: pool, ConfirmationKey: cfg.DefinitionKey, ConfirmationKeyID: cfg.DefinitionKeyID, Limits: cfg.SchemaLimits, Dependencies: appstructure.LocalRegistry{}, References: appstructure.CurrentSources{}, CandidateRedis: queryRedis, CandidateNamespace: cfg.Generation, RecordAccess: apprecordhttp.ResolveAccess}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
-	apps.Workflows = &appworkflows.Service{Application: &appworkflows.Application{Pool: pool, Limits: cfg.SchemaLimits}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
+	workflows := &appworkflows.Application{Pool: pool, Limits: cfg.SchemaLimits}
+	apps.Workflows = &appworkflows.Service{Application: workflows, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
 	records := apprecordservice.New(pool, queryRedis, cfg.Generation)
 	records.Limits = cfg.SchemaLimits
 	apps.Records = &apprecordhttp.Service{Records: records, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
@@ -123,9 +143,40 @@ func buildHandler(ctx context.Context, cfg config) (http.Handler, func(), error)
 		}
 		return tx, err
 	}
-	if err := s.Ready(ctx); err != nil {
-		close()
-		return nil, nil, errors.New("authentication dependencies unavailable")
+	host.authReady = s.Ready
+	if err := s.Ready(startupCtx); err != nil {
+		return host.failStartup(errors.New("authentication dependencies unavailable"))
 	}
-	return httpserver.NewHandler(s.Ready, s), close, nil
+	if startupCtx.Err() != nil || processCtx.Err() != nil {
+		return host.failStartup(errBFFHostUnavailable)
+	}
+	if cfg.WorkflowRuntime.Enabled {
+		rpc, err := connectWorkflowRPC(startupCtx, cfg.WorkflowRuntime, grpc.NewClient)
+		if err != nil {
+			return host.failStartup(err)
+		}
+		host.rpc = rpc
+		workflows.DeploymentClient = rpc.Deployment
+		execution := &workflowexecution.Worker{Pool: pool, Client: rpc.Execution, RPCTimeout: cfg.WorkflowRuntime.RPCTimeout, Limits: cfg.SchemaLimits}
+		if startupCtx.Err() != nil {
+			return host.failStartup(errBFFHostUnavailable)
+		}
+		workers, err := startWorkflowWorkers(processCtx, workflows.RunPublications, execution.Run)
+		if err != nil {
+			return host.failStartup(errors.New("workflow workers unavailable"))
+		}
+		host.workers = workers
+	}
+	host.Handler = httpserver.NewHandler(host.ready, s)
+	return host, nil
+}
+
+// The compatibility entry point shares the full host composition, with workers
+// owned by the returned cleanup function rather than the startup context.
+func buildHandler(ctx context.Context, cfg config) (http.Handler, func(), error) {
+	host, err := buildHost(ctx, context.Background(), cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	return host.Handler, func() { _ = host.Close() }, nil
 }

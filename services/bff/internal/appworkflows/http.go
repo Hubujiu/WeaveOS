@@ -25,6 +25,7 @@ import (
 )
 
 type Application struct {
+	RuntimeReady     func(context.Context) error
 	Pool             *pgxpool.Pool
 	Limits           appschema.Limits
 	DeploymentClient DeploymentClient

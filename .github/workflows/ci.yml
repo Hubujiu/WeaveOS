@@ -89,6 +89,9 @@ jobs:
       - name: Root actual BFF host lifecycle on isolated dependencies
         working-directory: services/bff
         run: go test -race -count=1 -v -run '^TestRootHost' ./cmd/bff
+      - name: Root runtime admission preserves atomic writes and replay
+        working-directory: services/bff
+        run: go test -race -p 1 -count=1 -v -run '^TestRootRuntimeAdmission' ./internal/appstructure ./internal/apprecordservice
       - name: Format, static checks, race tests and build
         working-directory: services/bff
         run: |
