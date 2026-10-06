@@ -160,8 +160,7 @@ class RootExecutionRegistryTest {
  long count(String table){return jdbc.queryForObject("SELECT count(*) FROM "+table,Long.class);}
  void emptyExecution(){
   assertEquals(0,count("wf_execution_commands"));assertEquals(0,count("wf_execution_instances"));
-  assertEquals(0,count("wf_execution_tasks"));
-  assertEquals(0,engine.getHistoryService().createHistoricActivityInstanceQuery().count());
+  assertEquals(0,count("wf_execution_tasks"));assertEquals(0,count("wf_execution_visits"));
   assertEquals(0,engine.getRuntimeService().createProcessInstanceQuery().count());
   assertEquals(0,engine.getHistoryService().createHistoricProcessInstanceQuery().count());
  }
@@ -173,11 +172,7 @@ class RootExecutionRegistryTest {
  @Test void startCreatesDurableExactBindingsAndFullTaskMapping()throws Exception{
   deploy("all");var c=new Command();var r=registry.execute(c.request());verify(c,r,"success");
   active(r,2,Set.of(id(8),id(9)),1);assertEquals(1,count("wf_execution_instances"));
-  assertEquals(2,count("wf_execution_tasks"));
-  assertTrue(engine.getHistoryService().createHistoricActivityInstanceQuery()
-   .processInstanceId(r.result().engineProcessId()).activityId("n_"+id(2).replace("-","")).activityType("userTask").count()>0);
-  assertEquals(2,engine.getHistoryService().createHistoricTaskInstanceQuery()
-   .processInstanceId(r.result().engineProcessId()).taskDefinitionKey("n_"+id(2).replace("-","")).count());
+  assertEquals(2,count("wf_execution_tasks"));assertEquals(1,count("wf_execution_visits"));
   assertEquals(VERSION,jdbc.queryForObject("SELECT version_id::text FROM wf_execution_instances",String.class));
   assertEquals(INITIATOR,jdbc.queryForObject("SELECT initiator_id::text FROM wf_execution_instances",String.class));
   assertArrayEquals(c.payload,jdbc.queryForObject("SELECT start_payload_bytes FROM wf_execution_instances",byte[].class));

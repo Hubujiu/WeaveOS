@@ -49,6 +49,13 @@ CREATE TABLE wf_execution_tasks (
  CHECK((state='completed')=(decision IS NOT NULL))
 );
 CREATE INDEX ix_wf_execution_tasks_active ON wf_execution_tasks(instance_id,state,task_id);
+CREATE TABLE wf_execution_visits (
+ instance_id uuid NOT NULL REFERENCES wf_execution_instances(instance_id) ON DELETE RESTRICT,
+ node_id uuid NOT NULL,
+ activation_epoch bigint NOT NULL CHECK(activation_epoch BETWEEN 1 AND 9007199254740991),
+ PRIMARY KEY(instance_id,node_id,activation_epoch),
+ UNIQUE(instance_id,activation_epoch)
+);
 CREATE FUNCTION wf_execution_result_required() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE pending boolean;
 BEGIN

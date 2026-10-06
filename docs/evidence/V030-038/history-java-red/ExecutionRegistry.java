@@ -6,7 +6,6 @@ import javax.sql.DataSource;
 import org.flowable.bpmn.model.UserTask;
 import org.flowable.bpmn.model.ExclusiveGateway;
 import org.flowable.engine.ProcessEngine;
-import org.flowable.common.engine.impl.history.HistoryLevel;
 import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -50,8 +49,6 @@ public final class ExecutionRegistry {
             ||underlying(jdbc.getDataSource())!=underlying(m.getDataSource())
             ||underlying(jdbc.getDataSource())!=underlying(c.getDataSource()))
             throw new IllegalArgumentException("registry and engine require the same Spring JDBC transaction boundary");
-        if(c.getHistoryLevel()==null || !c.getHistoryLevel().isAtLeast(HistoryLevel.ACTIVITY) || c.isAsyncHistoryEnabled())
-            throw new IllegalArgumentException("execution requires synchronous native activity history");
         transaction=new TransactionTemplate(manager);transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
     }
     private static DataSource underlying(DataSource ds){while(ds instanceof TransactionAwareDataSourceProxy p)ds=p.getTargetDataSource();return Objects.requireNonNull(ds);}
@@ -107,11 +104,8 @@ public final class ExecutionRegistry {
                 if(number(task,"activation_epoch")!=c.taskEpoch())return finish(c,"no_effect",unchanged(c,"task_epoch_mismatch"),probe);
                 if(!text(task,"assignee_id").equals(c.actorId()))return finish(c,"no_effect",unchanged(c,"actor_mismatch"),probe);
                 if(c.action().equals("return")){
-                    boolean visited=!engine.getHistoryService().createHistoricActivityInstanceQuery()
-                        .processInstanceId(text(instance,"engine_process_id"))
-                        .activityId("n_"+ExecutionCodec.compact(c.targetNodeId())).activityType("userTask")
-                        .listPage(0,1).isEmpty();
-                    if(!visited)return finish(c,"no_effect",unchanged(c,"return_target_unvisited"),probe);
+                    long visited=jdbc.queryForObject("SELECT count(*) FROM wf_execution_visits WHERE instance_id=?::uuid AND node_id=?::uuid",Long.class,c.instanceId(),c.targetNodeId());
+                    if(visited==0)return finish(c,"no_effect",unchanged(c,"return_target_unvisited"),probe);
                     if(historical&&!text(task,"node_id").equals(c.targetNodeId()))return finish(c,"no_effect",unchanged(c,"return_target_forbidden"),probe);
                 }
             }else{
@@ -190,6 +184,7 @@ public final class ExecutionRegistry {
             if(epoch==ExecutionCodec.MAX)throw new InvalidCommand();epoch++;
             Set<String> nodes=new HashSet<>();fresh.forEach(t->nodes.add(ExecutionCodec.nodeId(t.getTaskDefinitionKey())));
             if(nodes.size()!=1)throw new IllegalStateException("controlled process must have one new approval activation");
+            jdbc.update("INSERT INTO wf_execution_visits(instance_id,node_id,activation_epoch) VALUES(?::uuid,?::uuid,?)",c.instanceId(),nodes.iterator().next(),epoch);
             for(var t:fresh){ExecutionCodec.uuid(t.getAssignee());jdbc.update("""
                 INSERT INTO wf_execution_tasks(task_id,instance_id,engine_task_id,node_id,activation_epoch,assignee_id,state)
                 VALUES(?::uuid,?::uuid,?,?::uuid,?,?::uuid,'active')

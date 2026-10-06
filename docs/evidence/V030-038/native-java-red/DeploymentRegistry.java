@@ -67,8 +67,7 @@ public final class DeploymentRegistry {
         ControlledBpmn.requireUuid(request.flowId());
         ControlledBpmn.requireUuid(request.versionId());
         if (request.version() < 1 || request.version() > 9007199254740991L) throw new InvalidDeployment();
-        var validated = ControlledBpmn.validate(request.bpmnXml(), request.versionId(), request.appId(), request.flowId());
-        byte[] bytes = validated.bytes();
+        byte[] bytes = ControlledBpmn.validate(request.bpmnXml(), request.versionId());
         String hash = sha256(bytes);
         return transaction.execute(status -> {
             // Both unique keys arbitrate before deployment. DO NOTHING avoids aborting a PG transaction
@@ -90,7 +89,7 @@ public final class DeploymentRegistry {
             var deployment = repository.createDeployment().name(request.versionId())
                 .addBytes(request.versionId() + ".bpmn20.xml", bytes).deploy();
             var definition = repository.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
-            if (definition == null || !definition.getKey().equals(validated.processKey())) {
+            if (definition == null || !definition.getKey().equals("p_" + request.versionId().replace("-", ""))) {
                 throw new IllegalStateException("controlled process definition missing");
             }
             probe.accept(Stage.AFTER_ENGINE);
