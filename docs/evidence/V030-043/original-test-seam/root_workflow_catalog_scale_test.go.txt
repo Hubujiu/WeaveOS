@@ -56,55 +56,6 @@ func rootCatalogExaminedRows(v any) float64 {
 	}
 	return 0
 }
-
-// Count only the relation under this contract. Unrelated test fixtures can
-// increase definitions/instances scan work without reading archived versions.
-func rootCatalogVersionRows(v any) (rows float64, found bool) {
-	switch x := v.(type) {
-	case []any:
-		for _, item := range x {
-			n, ok := rootCatalogVersionRows(item)
-			rows += n
-			found = found || ok
-		}
-	case map[string]any:
-		if x["Relation Name"] == "workflow_versions" {
-			found = true
-			loops, _ := x["Actual Loops"].(float64)
-			n, _ := x["Actual Rows"].(float64)
-			removed, _ := x["Rows Removed by Filter"].(float64)
-			recheck, _ := x["Rows Removed by Index Recheck"].(float64)
-			rows += (n + removed + recheck) * loops
-		}
-		for _, key := range []string{"Plan", "Plans"} {
-			n, ok := rootCatalogVersionRows(x[key])
-			rows += n
-			found = found || ok
-		}
-	}
-	return rows, found
-}
-func TestRootCatalogVersionWorkOracle(t *testing.T) {
-	for _, tc := range []struct {
-		plan  string
-		want  float64
-		found bool
-	}{
-		{`[{"Plan":{"Plans":[{"Relation Name":"workflow_definitions","Actual Rows":1,"Rows Removed by Filter":5000,"Actual Loops":1},{"Relation Name":"workflow_versions","Actual Rows":1,"Actual Loops":1}]}}]`, 1, true},
-		{`[{"Plan":{"Relation Name":"workflow_versions","Actual Rows":1,"Rows Removed by Filter":4999,"Actual Loops":1}}]`, 5000, true},
-		{`[{"Plan":{"Relation Name":"workflow_versions","Actual Rows":1,"Actual Loops":5000}}]`, 5000, true},
-		{`[{"Plan":{"Relation Name":"workflow_definitions","Actual Rows":1,"Actual Loops":1}}]`, 0, false},
-	} {
-		var plan any
-		if e := json.Unmarshal([]byte(tc.plan), &plan); e != nil {
-			t.Fatal(e)
-		}
-		n, found := rootCatalogVersionRows(plan)
-		if n != tc.want || found != tc.found {
-			t.Fatalf("version-work oracle got %g/%v want %g/%v", n, found, tc.want, tc.found)
-		}
-	}
-}
 func TestRootCatalogCompatibilityDoesNotScanArchivedVersions(t *testing.T) {
 	f := newRecordFixture(t)
 	h := rootCatalogReady(t, f, rootCatalogGraph(t, f, true))
@@ -163,9 +114,7 @@ func TestRootCatalogCompatibilityDoesNotScanArchivedVersions(t *testing.T) {
 	}
 	examined := rootCatalogExaminedRows(plan)
 	t.Logf("catalog actual query: retired=4999 live=1 elapsed=%s aggregate_plan_rows=%g plan=%s", elapsed, examined, raw)
-	versionRows, found := rootCatalogVersionRows(plan)
-	t.Logf("catalog version relation examined_rows=%g", versionRows)
-	if !found || versionRows > 8 {
-		t.Fatalf("compatibility traversed archived history: version relation work=%g, found=%v for one live version; expected indexed live-key lookup independent of 4999 retired versions", versionRows, found)
+	if examined > 256 {
+		t.Fatalf("compatibility traversed archived history: plan work=%g for one live version; expected indexed live-key lookup independent of 4999 retired versions", examined)
 	}
 }
