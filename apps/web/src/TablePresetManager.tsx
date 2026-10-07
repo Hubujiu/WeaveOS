@@ -103,6 +103,16 @@ export function TablePresetManager(props:Props){
   document.addEventListener('click',queue);document.addEventListener('pointerup',queue);document.addEventListener('pointercancel',queue);window.addEventListener('blur',queue);
   if(!['mousedown','pointerdown','touchstart'].includes(event.type))queue();
  }
+ useLayoutEffect(()=>{
+  function beginOutsideGesture(event:PointerEvent){
+   if(!sharedMotion||dirty||busy||confirmation||!intent.current)return;
+   const target=event.target;
+   if(target instanceof Node&&!popup?.contains(target)&&!trigger.current?.contains(target))deferOutsideClose(event);
+  }
+  // Native capture precedes focus-out, which can arrive before outside-press.
+  document.addEventListener('pointerdown',beginOutsideGesture,true);
+  return()=>document.removeEventListener('pointerdown',beginOutsideGesture,true);
+ },[sharedMotion,dirty,busy,confirmation,popup]);
  useLayoutEffect(()=>{const media=matchMedia('(prefers-reduced-motion: reduce)');const sync=()=>setReducedMotion(media.matches);media.addEventListener('change',sync);return()=>media.removeEventListener('change',sync);},[]);
  useLayoutEffect(()=>{
   if(!popup||sharedMotion||!everOpened.current)return;const version=++generation.current,focusToken=focusLifecycle.current;
@@ -172,7 +182,7 @@ export function TablePresetManager(props:Props){
   {edit&&<footer className="preset-footer"><span>{leaves} / 20 条件</span><button type="button" disabled={busy} onClick={()=>{if(dirty)setConfirmation({kind:'leave',returnToManager:true});else{setEdit(null);setError('');}}}>取消</button><button type="button" className="preset-primary" disabled={busy} onClick={()=>void save()}>{busy?'保存中…':'确定'}</button></footer>}
  </div>;
  return <>
-  <Popover.Root open={open} onOpenChange={(next,details)=>{const requested=details.reason==='trigger-press'?!intent.current:next;if(!requested){details.preventUnmountOnClose();if(details.reason==='outside-press'&&sharedMotion&&!dirty&&!busy&&!confirmation){details.cancel();deferOutsideClose(details.event);}else requestClose(details.reason!=='outside-press');}else changeOpen(true);}} actionsRef={actions}>
+  <Popover.Root open={open} onOpenChange={(next,details)=>{const requested=details.reason==='trigger-press'?!intent.current:next;if(!requested){details.preventUnmountOnClose();if(outsideClose.current&&(details.reason==='outside-press'||details.reason==='focus-out')){details.cancel();return;}if(details.reason==='outside-press'&&sharedMotion&&!dirty&&!busy&&!confirmation){details.cancel();deferOutsideClose(details.event);}else requestClose(details.reason!=='outside-press');}else changeOpen(true);}} actionsRef={actions}>
    <Popover.Trigger ref={trigger} className="q36-filter-trigger" aria-label={active?'自定义筛选，已应用':'自定义筛选'}><ViewTransition default="none" update={expanded?'q36-filter-trigger-out':'q36-filter-trigger-in'}><span className="q36-filter-trigger-content" style={{visibility:sharedMotion&&expanded?'hidden':undefined}}><Funnel size={16} weight={active?'fill':'regular'}/><span>自定义筛选</span>{active&&<span className="q36-filter-count">1</span>}</span></ViewTransition>{sharedMotion&&!expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={()=>sharedComplete(sharedVersion,focusVersion)} onEnter={()=>sharedComplete(sharedVersion,focusVersion)} onExit={()=>sharedComplete(sharedVersion,focusVersion)}><span className="q36-filter-trigger-frame" aria-hidden="true"/></ViewTransition>}</Popover.Trigger>
    <Popover.Portal keepMounted><Popover.Positioner className="preset-positioner" side="bottom" align="start" collisionPadding={12}><Popover.Popup ref={setPopup} id={panelId} className={'preset-popup '+(edit?'preset-editor':'preset-manager')} aria-label={title} aria-hidden={sharedMotion?!expanded:!open} inert={sharedMotion?!expanded:!open} initialFocus={firstControl} finalFocus={finalFocus}>
     {sharedMotion?expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={()=>sharedComplete(sharedVersion,focusVersion)} onEnter={()=>sharedComplete(sharedVersion,focusVersion)} onExit={()=>sharedComplete(sharedVersion,focusVersion)}><div className="q36-filter-shell" aria-hidden="true"/></ViewTransition>:<div className="q36-filter-shell" aria-hidden="true"/>}
