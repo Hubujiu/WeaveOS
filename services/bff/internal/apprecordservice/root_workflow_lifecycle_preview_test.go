@@ -56,7 +56,7 @@ func TestRootLifecyclePreviewTerminalCannotReturnOrWithdraw(t *testing.T) {
 	if _, e := f.service.PreviewWorkflowLifecycle(f.ctx, f.principal, rootLifecycleRequest(f)); e != nil {
 		t.Fatal(e)
 	}
-	if _, e := f.owner.Exec(f.ctx, "UPDATE applications.workflow_instances SET state='approved',sequence=sequence+1 WHERE id=$1", f.instance.ID); e != nil {
+	if _, e := f.owner.Exec(f.ctx, "UPDATE applications.workflow_instances SET state='completed',sequence=sequence+1 WHERE id=$1", f.instance.ID); e != nil {
 		t.Fatal(e)
 	}
 	r, e := f.service.PreviewWorkflowLifecycle(f.ctx, f.principal, rootLifecycleRequest(f))
@@ -79,5 +79,32 @@ func TestRootLifecyclePreviewSingleConnectionDoesNotNestPool(t *testing.T) {
 	defer cancel()
 	if _, e = svc.PreviewWorkflowLifecycle(ctx, f.principal, rootLifecycleRequest(f)); e != nil {
 		t.Fatal(e)
+	}
+}
+
+func TestRootLifecyclePreviewOwnerWithoutWorkflowRoleDenied(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	p := f.principal
+	p.UserID = f.other
+	p.SessionRef = recordOperationID(t, f.recordFixture)
+	r, e := f.service.PreviewWorkflowLifecycle(f.ctx, p, rootLifecycleRequest(f))
+	if !errors.Is(e, applications.ErrDenied) || r.BasisToken != "" {
+		t.Fatalf("app ownership is not withdrawal role %+v %v", r, e)
+	}
+}
+func TestRootLifecyclePreviewHistoricalApproverOnlyOwnActualNode(t *testing.T) {
+	p := rootProjectionFixture(t)
+	old := p.start(t)
+	c, payload := p.accept(t, "agree", old.ID, "", 1, 1)
+	current := p.task(t, p.second, p.other, 2)
+	receipt, body := p.receipt(t, c, "active", "", current)
+	p.apply(t, c, payload, receipt, body, true)
+	q := WorkflowLifecycleRequest{AppID: p.app, ViewID: p.view, RecordID: p.ownRecord, InstanceID: p.instance.ID}
+	r, e := p.service.PreviewWorkflowLifecycle(p.ctx, p.principal, q)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if len(r.ReturnTargets) != 1 || r.ReturnTargets[0].NodeID != p.first || r.ReturnTargets[0].TaskID != old.ID || r.ReturnTargets[0].ActivationEpoch != 1 {
+		t.Fatalf("historical approver got unrelated targets %+v", r.ReturnTargets)
 	}
 }
