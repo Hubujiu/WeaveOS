@@ -21,7 +21,7 @@ All Go stderr streams are empty and no race report appears. Original stdout JSON
 
 Root test/fixture/OpenAPI/dependency/migration/role/engine/CI files are frozen and unchanged. Test hashes match a6859b7(service),746bd631(SaveHTTP),ea4b2826(ActionHTTP); full hashes and locked go.mod/go.sum hashes are in run.json. The original declaration-only stub remains preserved in original-test-seam with hash380f14ca.
 
-Task metadata still lists appstructure/record_http.go rather than record_http_decode.go; this implementation follows Root's explicit four-file release. Root should align allowedPaths before final scope/CI review. This executor appends results only, without altering the Root-owned task contract.
+Metadata correction on the subsequent read-only regression turn: allowedPaths already lists appstructure/record_http_decode.go at d30da6bc. The previous executor metadata note relied on an older task version and was inaccurate. No allowedPaths edit or Root contract change is needed; this correction changes no source or raw verification log.
 
 Pending Root source review, debugging/expanded acceptance and final checks. No PR, merge, main or deployment action. Original task-only resources retained for Root's next authorized run.
 

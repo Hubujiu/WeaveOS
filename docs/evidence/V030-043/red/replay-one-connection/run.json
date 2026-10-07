@@ -1,0 +1,84 @@
+{
+  "source_commit": "32f4b88085a0d2129023289ef24a07988a742428",
+  "source_parent": "dbdb67f3f444d6fbda34e121196870b3501534fe",
+  "hashes_before": {
+    "services/bff/internal/apprecordservice/root_workflow_save_replay_test.go": "7ed78534662bc5ea4dc0d1fe68ec74e07ca2cedb72b97ce71d87927ad80d38c5",
+    "services/bff/internal/apprecordservice/workflow_save.go": "71e5dc2a3644d3f27fbe4b69d39d1dae20fd2d742af16959eb0914224f3e860a",
+    "services/bff/internal/apprecordservice/root_workflow_save_test.go": "a6859b7aa80a21c4ace9f1f1d3be627009744a75ab779b2adb20fd3ffe1949d1",
+    "services/bff/cmd/bff/root_workflow_save_http_test.go": "746bd631ee6ac6d48da6106a0a9baa2403770d54cff943e4b04abc0b5e360aa4",
+    "services/bff/cmd/bff/root_workflow_action_http_test.go": "ea4b2826cf8e5456744b1af34b3034a4328e2474beed2fa6d7fcf50cd21bb36d",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "argv": [
+    "go",
+    "test",
+    "-race",
+    "-p",
+    "1",
+    "-count=1",
+    "-json",
+    "-run",
+    "^TestRootWorkflowSaveReplayUsesOnePoolConnection$",
+    "./internal/apprecordservice"
+  ],
+  "started_at": "2026-10-07T02:54:21.498053+00:00",
+  "environment": {
+    "CGO_ENABLED": "1",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "sum.golang.org",
+    "storage": "Same original task-private hot PostgreSQL/Redis, no recreate"
+  },
+  "exit_code": 1,
+  "finished_at": "2026-10-07T02:54:28.537321+00:00",
+  "hashes_after": {
+    "services/bff/internal/apprecordservice/root_workflow_save_replay_test.go": "7ed78534662bc5ea4dc0d1fe68ec74e07ca2cedb72b97ce71d87927ad80d38c5",
+    "services/bff/internal/apprecordservice/workflow_save.go": "71e5dc2a3644d3f27fbe4b69d39d1dae20fd2d742af16959eb0914224f3e860a",
+    "services/bff/internal/apprecordservice/root_workflow_save_test.go": "a6859b7aa80a21c4ace9f1f1d3be627009744a75ab779b2adb20fd3ffe1949d1",
+    "services/bff/cmd/bff/root_workflow_save_http_test.go": "746bd631ee6ac6d48da6106a0a9baa2403770d54cff943e4b04abc0b5e360aa4",
+    "services/bff/cmd/bff/root_workflow_action_http_test.go": "ea4b2826cf8e5456744b1af34b3034a4328e2474beed2fa6d7fcf50cd21bb36d",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "status": "ACTUAL_REPLAY_RESOURCE_BOUNDARY_RED",
+  "hashes_unchanged": true,
+  "artifact_hashes": {
+    "test.stdout.jsonl": {
+      "raw_sha256": "f94dad87955cee22f281f9365b158b3a59469e5f1ba53798198e82d4194ef8f4",
+      "submitted_sha256": "f94dad87955cee22f281f9365b158b3a59469e5f1ba53798198e82d4194ef8f4",
+      "bytes": 2062,
+      "redaction": "none required after review"
+    },
+    "test.stderr": {
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "submitted_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "redaction": "none required after review"
+    },
+    "test.exit": {
+      "raw_sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "submitted_sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2,
+      "redaction": "none required after review"
+    }
+  },
+  "result": {
+    "counts": {
+      "top": {
+        "fail": 1
+      },
+      "subcase": {}
+    },
+    "cases": [
+      {
+        "name": "TestRootWorkflowSaveReplayUsesOnePoolConnection",
+        "result": "fail",
+        "elapsed_seconds": 3.12,
+        "failure_output": [
+          "root_workflow_save_replay_test.go:30: confirmed replay must complete without a nested pool acquisition: context deadline exceeded"
+        ]
+      }
+    ]
+  }
+}
