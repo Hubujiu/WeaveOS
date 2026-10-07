@@ -111,17 +111,19 @@ func (s *Service) SaveWorkflowTask(ctx context.Context, principal session.Princi
 		return empty, err
 	}
 	if old != nil {
-		// RecordWrite deliberately recovers confirmed results before action
-		// checks. Supplement that with the established current row read path;
-		// an own-only grant must not disclose a different owner's receipt.
-		if _, err = s.GetRecord(ctx, principal, req.AppID, req.ViewID, req.RecordID); err != nil {
-			return empty, err
-		}
 		var result MutationResult
 		if !closedJSON(old.Data, &result) || old.Status != 200 || result.ID != req.RecordID || result.OperationID != req.OperationID {
 			return empty, ErrUnavailable
 		}
+		// Replay has made no mutation. Release its connection and admission
+		// locks before the ordinary current-permission read opens a new tx.
+		// Holding both transactions can exhaust even a healthy bounded pool.
 		if err = write.Commit(ctx); err != nil {
+			return empty, err
+		}
+		// A committed receipt is not permission to disclose a currently
+		// unreadable row. Do not return it until this fresh read succeeds.
+		if _, err = s.GetRecord(ctx, principal, req.AppID, req.ViewID, req.RecordID); err != nil {
 			return empty, err
 		}
 		return result, nil

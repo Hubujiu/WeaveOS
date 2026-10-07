@@ -35,3 +35,16 @@ func TestRootWorkflowSaveReplayUsesOnePoolConnection(t *testing.T) {
 	rootSaveRow(t, f, "saved-once", 2)
 	rootSaveCounts(t, f, 1)
 }
+
+func TestRootWorkflowSaveReplayStillChecksCurrentReadPermission(t *testing.T) {
+	f := rootSaveSetup(t, true)
+	req := rootSaveRequest(t, f, "saved-once")
+	rootSave(t, f, req)
+	rootSaveExec(t, f, "UPDATE applications.permission_groups SET enabled=false WHERE app_id=$1", f.app)
+	result, err := f.service.SaveWorkflowTask(f.ctx, f.principal, req, applications.Metadata{RequestID: "root-v043-replay-revoked-read"})
+	if err == nil || result.ID != "" {
+		t.Fatalf("confirmed operation bypassed current read authorization: %+v, %v", result, err)
+	}
+	rootSaveRow(t, f, "saved-once", 2)
+	rootSaveCounts(t, f, 1)
+}
