@@ -1,0 +1,3785 @@
+{
+  "source_commit": "e44268c2ac0b31e2dda1864ef633f69770b82c40",
+  "worktree": "/workspace/WeaveOS-worktrees/V030-045",
+  "hashes_before": {
+    "services/bff/cmd/bff/root_formal_lifecycle_test.go": "918100e87e94754a3df1b872a5654bc4034dd1dfa39bc77a191dbc7fbfae97d9",
+    "services/bff/cmd/bff/root_formal_node_save_test.go": "3f7c75ff4a513bd6096fffb0d505458aa850bd7a0e211f98ae1bc53d860d64f0",
+    "services/bff/internal/apprecordservice/workflow_lifecycle_action.go": "975efcb8d3b5bd49afaeadab075041640630bd20224cbf5ce7e7cc689025a407",
+    "services/bff/internal/apprecordservice/workflow_save.go": "ddbb1a405968bc7608b3d3108ad02027efc06fbb5d28422f1d9a94b074fc2ae5",
+    "services/bff/internal/apprecordhttp/workflow_lifecycle.go": "57a9f3eb5cf293ba3f71611f98fb4d155d570f1e422449dae506bf1270514277",
+    "services/bff/internal/appstructure/record_http_decode.go": "2acceeabc4780e4fa5de4ab53de02b01770072a80bb7212840dd9cf7a45e71b1",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "environment": {
+    "Go": "1.27.1",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "sum.golang.org",
+    "CGO_ENABLED": "1",
+    "storage": "Verified original V045 isolated hot database version22 via real psql; original archive and Redis reused sequentially after V046 separate hot21/archive6 completed. No migration action."
+  },
+  "runs": [
+    {
+      "label": "default-four-packages",
+      "argv": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "./internal/apprecordservice",
+        "./internal/applications",
+        "./internal/appstructure",
+        "./cmd/bff"
+      ],
+      "started_at": "2026-10-07T06:15:21.978470+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T06:17:15.390185+00:00",
+      "cases": [
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedLostCommitAckRecoversExactRecordDraftAuditOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedDefinitePreCommitRollbackKeepsDraftAndOriginalKey",
+          "result": "pass",
+          "elapsed_seconds": 0.22
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceMetadataExists",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceAcquireReplayAndRelease",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceOtherCommandCannotReplace",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceOldTokenCannotReleaseNewOccupant",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceAcquireCallerRollback",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceReleaseCallerRollback",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceStaleVersionsAndForeignResources",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceNullAndZeroInputsFailClosed",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceBlocksRealEditButNotOtherRecord",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceSchemaChangeRollsBackDDL",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceRuntimeHasNoDirectWritePrivilege",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceReleaseRequiresPositiveExactToken",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceCounterExhaustionDoesNotWrap",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCommandFenceDoesNotBlockViewOnlyLayout",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryAcceptPersistsOriginalPayloadAndSchedulingIdentity",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryAcceptCallerRollbackDropsPayloadLedgerQueueAndFence",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryAcceptSavepointPreventsPartialCommandAfterQueueFailure",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryAcceptExactReplayConflictAndTerminalReplay",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryLegacyV2CannotBePromotedOrHavePayloadGuessed",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryPayloadBindingCorruptionAndMissingCommand",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryPayloadImmutableRuntimeAndNarrowSchedulerGrants",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryConcurrentExactAcceptanceKeepsOneQueue",
+          "result": "pass",
+          "elapsed_seconds": 0.26
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionStartCommitsBoundTasksEventAndFence",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionCallerRollbackKeepsPending",
+          "result": "pass",
+          "elapsed_seconds": 0.26
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionDuplicateDoesNotReleaseNewFence",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionTransitionsPreserveTaskHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.31
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionTerminalActionsRemoveOnlyActiveTasks/agree",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionTerminalActionsRemoveOnlyActiveTasks/reject",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionTerminalActionsRemoveOnlyActiveTasks/withdraw",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionTerminalActionsRemoveOnlyActiveTasks",
+          "result": "pass",
+          "elapsed_seconds": 0.41
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionConfirmedNoEffectLeavesActiveState",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionCancelledStartDrainsReservation",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionReturnCreatesNewActivation",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionHistoricalReturnBindsTarget",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionNoEffectUnknownStartCannotHideExistingEngine",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/payload",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/body",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/receipt",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/instance",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/sequence",
+          "result": "pass",
+          "elapsed_seconds": 0.19
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/schema",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/record",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/action_state",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/process",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionInvalidBindingsNeverWrite",
+          "result": "pass",
+          "elapsed_seconds": 1.29
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit/event",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit/task",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit/instance",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit/ledger",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit/dispatch",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit/fence",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit",
+          "result": "pass",
+          "elapsed_seconds": 0.51
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionConcurrentExactReceiptHasOneEffect",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionNilPortsAndInvalidVersion",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionMissingFenceCannotPublish",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionTaskIdentityCannotBeRewrittenOrReactivated/assignee",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionTaskIdentityCannotBeRewrittenOrReactivated/engine",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionTaskIdentityCannotBeRewrittenOrReactivated/epoch",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionTaskIdentityCannotBeRewrittenOrReactivated/reactivate",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionTaskIdentityCannotBeRewrittenOrReactivated/foreign_node",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionTaskIdentityCannotBeRewrittenOrReactivated",
+          "result": "pass",
+          "elapsed_seconds": 0.41
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionIndependentFlowsKeepSeparateResults",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionRuntimeEventsAreAppendOnly",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionAssigneeMustBelongToVersionNode",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionForeignInstanceDoesNotAcquireItsLock",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootProjectionVisitedNodeHasScopedIndex",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerExecuteAndProjectWithoutDatabaseTransactionAcrossRPC",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerLookupConfirmedNeverReexecutes",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerLookupFailureStaysPending",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerLostExecuteResponseRestartsWithSameIdentity",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerRejectsMalformedOrContradictoryReplies/nil-confirmed",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerRejectsMalformedOrContradictoryReplies/contradictory-absent",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerRejectsMalformedOrContradictoryReplies/wrong-body-hash",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerRejectsMalformedOrContradictoryReplies/nil-execute",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerRejectsMalformedOrContradictoryReplies",
+          "result": "pass",
+          "elapsed_seconds": 0.28
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerProjectionFailureKeepsFenceThenRecovers",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerClaimPreventsDuplicateLiveDispatch",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerExpiredLeaseCannotAffectLaterFence/false",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerExpiredLeaseCannotAffectLaterFence/true",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerExpiredLeaseCannotAffectLaterFence",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerAcceptedCommandSurvivesAuthorityRevocation",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerLegacyQueueAndFutureDueAreNotExecuted",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerCorruptStoredPayloadFailsBeforeRPC",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerOtherRecordContinuesDuringUnknownRPC",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRecoveryWorkerConfirmedNoEffectUsesExistingAtomicProjection",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootFormalLedgerTablesExist",
+          "result": "pass",
+          "elapsed_seconds": 0.04
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootFormalLedgerAcceptAndFenceCommitTogether",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootFormalLedgerAcceptAndFenceRollbackTogether",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootFormalLedgerApplyReleaseAtomicAndReplay",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootFormalLedgerRuntimeCannotRewriteIdentityOrDeleteHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootFormalLedgerDatabaseConstraints",
+          "result": "pass",
+          "elapsed_seconds": 0.04
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootFormalLedgerCurrentRolesLeastPrivilege",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootNativeCatalogStableKeyAndImmutablePriorVersion",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootNativeCatalogBindsEachApplicationScope",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRuntimeAdmissionRejectsUnavailableWithoutConsumingAction/agree",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRuntimeAdmissionRejectsUnavailableWithoutConsumingAction/reject",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRuntimeAdmissionRejectsUnavailableWithoutConsumingAction",
+          "result": "pass",
+          "elapsed_seconds": 0.28
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRuntimeAdmissionChecksHealthOutsideBusinessTransaction",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRuntimeAdmissionKeepsAcceptedReplayDuringOutage",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootRuntimeAdmissionPreservesActualRowVisibilityPriority",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionLostActualRowAccessDoesNotRevealClosedTask",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionSQLNullIsFalseButMissingConditionIsNotTrue/actual-null-value",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionSQLNullIsFalseButMissingConditionIsNotTrue/corrupt-null-predicate",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionSQLNullIsFalseButMissingConditionIsNotTrue",
+          "result": "pass",
+          "elapsed_seconds": 0.26
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionLostActualCommitReplyRecoversOnePendingCommand",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionActualCommitRollbackLeavesNoPartialAcceptance",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionAcceptedReceiptIsPendingMinimalAnd202Only",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionMigrationDownNeverDeletesAcceptedHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionAcceptsOriginalEvidenceCommandQueueFenceAndMinimumReceipt/agree",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionAcceptsOriginalEvidenceCommandQueueFenceAndMinimumReceipt/reject",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionAcceptsOriginalEvidenceCommandQueueFenceAndMinimumReceipt",
+          "result": "pass",
+          "elapsed_seconds": 0.29
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionReplayIgnoresExpiredTokenAndRevokedDataButChecksLiveActor",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionSameOperationDifferentRequestCannotMutate/action",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionSameOperationDifferentRequestCannotMutate/record",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionSameOperationDifferentRequestCannotMutate/instance",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionSameOperationDifferentRequestCannotMutate/task",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionSameOperationDifferentRequestCannotMutate/token",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionSameOperationDifferentRequestCannotMutate",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionRejectsStaleRelatedEvidenceAndAcceptsUnrelatedSourceChange/record",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionRejectsStaleRelatedEvidenceAndAcceptsUnrelatedSourceChange/reference",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionRejectsStaleRelatedEvidenceAndAcceptsUnrelatedSourceChange/visible-mask",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionRejectsStaleRelatedEvidenceAndAcceptsUnrelatedSourceChange/schema",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionRejectsStaleRelatedEvidenceAndAcceptsUnrelatedSourceChange/unrelated",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionRejectsStaleRelatedEvidenceAndAcceptsUnrelatedSourceChange",
+          "result": "pass",
+          "elapsed_seconds": 0.61
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionExpiredCrossSessionAndWrongTaskTokensCreateNothing/expired",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionExpiredCrossSessionAndWrongTaskTokensCreateNothing/different-session",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionExpiredCrossSessionAndWrongTaskTokensCreateNothing/different-task",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionExpiredCrossSessionAndWrongTaskTokensCreateNothing/different-record",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionExpiredCrossSessionAndWrongTaskTokensCreateNothing",
+          "result": "pass",
+          "elapsed_seconds": 0.48
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionRevokedDataOrTaskNeverGrantsAuthority/data",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionRevokedDataOrTaskNeverGrantsAuthority/assignee",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionRevokedDataOrTaskNeverGrantsAuthority/epoch",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionRevokedDataOrTaskNeverGrantsAuthority/closed",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionRevokedDataOrTaskNeverGrantsAuthority",
+          "result": "pass",
+          "elapsed_seconds": 0.42
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionConcurrentExactRequestsCreateOneCommand",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionDistinctConcurrentKeysCannotBypassRecordFence",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionEveryDatabaseFailureRollsBackAllNewState/workflow_evidence_documents",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionEveryDatabaseFailureRollsBackAllNewState/workflow_commands",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionEveryDatabaseFailureRollsBackAllNewState/workflow_dispatch",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionEveryDatabaseFailureRollsBackAllNewState/operations",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionEveryDatabaseFailureRollsBackAllNewState",
+          "result": "pass",
+          "elapsed_seconds": 0.6
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionConfirmedStatusRequiresOriginalAppliedEvent/agree",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionConfirmedStatusRequiresOriginalAppliedEvent/reject",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionConfirmedStatusRequiresOriginalAppliedEvent",
+          "result": "pass",
+          "elapsed_seconds": 0.29
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionNoEffectIsConfirmedOnlyAfterApplicationProjection",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionEvaluatesPinnedConditionsOnActualHiddenTypedFields",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionFenceProtectsOnlyTargetAndDoesNotImplicitlySave",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowActionInvalidOrNonWorkflowOperationsNeverReturnStatus",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogVersionWorkOracle",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogCompatibilityDoesNotScanArchivedVersions",
+          "result": "pass",
+          "elapsed_seconds": 0.32
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogVersionIsDurableAndCallerRollback",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogUndeployedCannotEnableOrStart",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogDeploymentReceiptIdempotentAndBound",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogOldDeploymentCannotReplaceNewCandidate",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogInstancesKeepStructureWhileNextUsesConfirmedVersion",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogCloseWaitsForAcceptedStartAndRejectsNewStart",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogCloseWithoutInstancesAndLateCloseCAS",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogIndependentFlowsSameRecord",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogCASAndResourceScope",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogInvalidGraphHasNoPersistentVersion",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogCompatibilityIsPrecise",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogOldInFlightVersionBlocksUntilTerminal",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogDisabledHistoryDoesNotBlockSchema",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogDeploymentRechecksChangedSchema",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogConcurrentVersionCAS",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootCatalogImmutableVersionsAndMinimumRoles",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceCaptureRejectsOversizeBeforeTransferringValue",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceCaptureUsesRealValuesAndOriginalVisibleMask",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceCaptureRetainsRRSourceSnapshotThenSeesRefresh",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceCaptureRejectsDeniedAndMissingRows",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceCaptureDeletedMemberUsesRetainedRegistry",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceCaptureTypedValuesAndRemovedOptionLabels",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceCaptureWriteLifecycleSharesOuterRollback",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceCaptureRejectsUnboundScopeAndInvalidPorts",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceCaptureReferenceQueriesAreBatched",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceCostComparison",
+          "result": "pass",
+          "elapsed_seconds": 30.94
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreEmptyFormHasImmutableDirectory",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreResourceBudgetRejectsBeforeSQL/manifest",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreResourceBudgetRejectsBeforeSQL/field-count",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreResourceBudgetRejectsBeforeSQL/field-body",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreResourceBudgetRejectsBeforeSQL/aggregate",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreResourceBudgetRejectsBeforeSQL",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreRoundtripReplayAndSelectedFields",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreOuterTransactionControlsVisibilityAndRollback",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreChangedFieldReusesOtherContent",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreSavepointRollsBackEveryPartialStage/workflow_evidence_blobs",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreSavepointRollsBackEveryPartialStage/workflow_evidence_documents",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreSavepointRollsBackEveryPartialStage/workflow_evidence_members",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreSavepointRollsBackEveryPartialStage",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller/manifest-hash",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller/body-hash",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller/wrong-field",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller/missing-blob",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller/duplicate-blob",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller/noncanonical-manifest",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreScopeAndForeignResourceBinding",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreCorruptionFailsClosedAndIsNotSilentlyRepaired/manifest-bytes",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreCorruptionFailsClosedAndIsNotSilentlyRepaired/metadata",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreCorruptionFailsClosedAndIsNotSilentlyRepaired/member",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreCorruptionFailsClosedAndIsNotSilentlyRepaired/field-bytes",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreCorruptionFailsClosedAndIsNotSilentlyRepaired",
+          "result": "pass",
+          "elapsed_seconds": 0.21
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreBlobCollisionCannotOverwriteEarlierBytes",
+          "result": "pass",
+          "elapsed_seconds": 0.04
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreConcurrentFirstAcceptanceHasOneDocument",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreHistoryDoesNotJoinCurrentValuesOrReferenceLabels",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreInvalidPortsMissingAndUnknownSelection",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreRolesAreAppendOnlyAndBackupReadOnly",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreDownRefusesExistingHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootEvidenceStoreQueriesAreBoundedRatherThanPerField",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecycleActionAcceptedIdentityAndNoEarlyTransition/withdraw",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecycleActionAcceptedIdentityAndNoEarlyTransition/return",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecycleActionAcceptedIdentityAndNoEarlyTransition",
+          "result": "pass",
+          "elapsed_seconds": 0.24
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecycleActionReplayAndChangedPayload",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecycleActionRejectsUnvisitedTargetWithoutWrites",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecycleActionLatestBasisAndRevokedPermission/version",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecycleActionLatestBasisAndRevokedPermission/revoke",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecycleActionLatestBasisAndRevokedPermission",
+          "result": "pass",
+          "elapsed_seconds": 0.21
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecycleActionWriteFailureRollsBackEverything",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecycleOperationKindsAndClosedReceipt/workflow.instance.withdraw",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecycleOperationKindsAndClosedReceipt/workflow.task.return",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecycleOperationKindsAndClosedReceipt",
+          "result": "pass",
+          "elapsed_seconds": 0.04
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowLifecycleWithdrawQualification",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowLifecycleCurrentApproverActualVisitedTargets",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowLifecycleHistoricalApproverOnlyOwnSuccessfulNode",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowLifecycleRevokedOrTerminalNeverReturns",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowLifecycleForeignActorAndInstanceCannotGrant",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowLifecycleDoesNotMutateFacts",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecyclePreviewCurrentRecordAndTargets",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecyclePreviewRevokedRecordAccessDenied",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecyclePreviewRejectsMismatchedRecord",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecyclePreviewTerminalCannotReturnOrWithdraw",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecyclePreviewSingleConnectionDoesNotNestPool",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecyclePreviewOwnerWithoutWorkflowRoleDenied",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootLifecyclePreviewHistoricalApproverOnlyOwnActualNode",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRevokedPermissionDoesNotRevealClosedTask",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewExposesOnlyCurrentReadableFields",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewTokenBindsActualEvidenceTaskAndSession",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRequiresCurrentSessionMenuAndActualRowScope/inactive",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRequiresCurrentSessionMenuAndActualRowScope/no-menu",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRequiresCurrentSessionMenuAndActualRowScope/no-data",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRequiresCurrentSessionMenuAndActualRowScope/own-on-foreign",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRequiresCurrentSessionMenuAndActualRowScope",
+          "result": "pass",
+          "elapsed_seconds": 0.33
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewTaskAssignmentIsNotOverriddenByAppOwner",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask/app",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask/view",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask/record",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask/instance",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask/task",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask/closed",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask",
+          "result": "pass",
+          "elapsed_seconds": 0.51
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRefreshTracksRelatedDisplaysButNotUnrelatedChanges",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewClosedDefinitionDoesNotBlockExistingTask",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewLRUAndRedisFailureNeverMutateBusinessState",
+          "result": "pass",
+          "elapsed_seconds": 0.21
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowPreviewRetainsVisibleRemovedOptionAndExactNumber",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveReplayUsesOnePoolConnection",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveReplayStillChecksCurrentReadPermission",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveWritesOriginalHistoryButNeverAdvancesTask",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveReadOnlyNodeCannotWrite",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveCannotEditOutsideNodeWhitelist",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveCurrentFieldPermissionStillRequired",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveOtherActorCannotUseCurrentTask",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveStaleRecordBasisRejectsWholeMutation",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveTaskSequenceChangeRequiresRefresh",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveExpiredAndCrossSessionBasis/expired",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveExpiredAndCrossSessionBasis/session",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveExpiredAndCrossSessionBasis",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveIdenticalReplayAndConflictingPayload",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveOldApprovalBasisCannotApproveNewValue",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSavePendingCommandFenceRejectsSave",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveConcurrentWritersHaveOneActualVersion",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveActualCommitRollbackIsAtomic",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveLostCommitReplyReplaysOneRealSave",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveHistoryFailureRollsBackTypedRowAndOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSavePreviewExposesOnlyEditableVisibleIntersection",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveDefinitionRevisionDoesNotChangeInflightWhitelist",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveDoesNotDependOnEngineReadiness",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveOtherFlowKeepsIndependentTaskAndSeesLatestRecord",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRootWorkflowSaveRacingApprovalCannotAdvanceUnseenValue",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedRecordCreateReplaysMinimumAndUsesControlledDML",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedCreateNotReadyAfterLiveAuthorization/authorized",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedCreateNotReadyAfterLiveAuthorization/unauthorized",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedCreateNotReadyAfterLiveAuthorization",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedReadAndEditNotReadyAfterLiveAuthorization",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedEmptyEditRequiresActionAndActualRowScope/menu_only_not_ready",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedEmptyEditRequiresActionAndActualRowScope/own_scope_other_row",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedEmptyEditRequiresActionAndActualRowScope",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedEditCASAndPendingFence",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedConcurrentEditsCommitOneVersionAndAudit",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedReferenceWriteRequiresActiveAuthoritativeSource",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedOmittedReferenceDefaultMustStillBeActive",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedDefaultReferenceSerializesWithSourceDisable",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedDraftCreateIsExplicitAndDoesNotMutateRecord",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedDraftSubmitConsumesWithRecordAndOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedDraftPatchNoopAndDiscardLedger",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedDraftExplicitRemovalAfterSchemaAndBaseConflict",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedDraftExplicitRemovalAfterFieldGrantRevoke",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedDraftReadOwnerCursorAndRecordDetail",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedBoundDraftListUsesEditGrantForItsTarget",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedQueryOnlyObservableChangesInvalidate",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission/removed",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission/revoked",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission/invalid_incoming",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedReferencePredicateMissingRegistryIsUnavailable",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedListWriteChecksSavedProjectionBeforeClaim",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedAdvanceFailureOnlyReplaysConfirmedOriginalKey",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice",
+          "name": "TestRestrictedRealRecordSearchMasksBeforeCountAndReusesContext",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5RejectsCaseFoldedGrantFields/uppercase",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5RejectsCaseFoldedGrantFields/alias",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5RejectsCaseFoldedGrantFields",
+          "result": "pass",
+          "elapsed_seconds": 0.32
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5CommitPgErrorAfterSuccessIsUnconfirmed/40003/create",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5CommitPgErrorAfterSuccessIsUnconfirmed/40003/policy",
+          "result": "pass",
+          "elapsed_seconds": 0.26
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5CommitPgErrorAfterSuccessIsUnconfirmed/23514/create",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5CommitPgErrorAfterSuccessIsUnconfirmed/23514/policy",
+          "result": "pass",
+          "elapsed_seconds": 0.24
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5CommitPgErrorAfterSuccessIsUnconfirmed",
+          "result": "pass",
+          "elapsed_seconds": 0.87
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5UnconfirmedRetainsInternalPgErrorCause",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5ExplicitCommitRollbackIsDefinite",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5UnknownCommitOriginalKeyRecovery",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5CommittedWriteSurvivesRenewalRevocation",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5AuditFailureRollsBackEntireCreate",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5ConcurrentCASAndIdenticalOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.27
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5SafeRevisionRequestBoundary",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5NULNameIsInvalidAndLeavesNoOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5FrozenSchemaAndCapability",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5CreateAtomicAndActorScopedOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5OwnerMembersMenuAndRevoke",
+          "result": "pass",
+          "elapsed_seconds": 0.35
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5EveryWriteReplayAndConflict",
+          "result": "pass",
+          "elapsed_seconds": 0.47
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5SessionCSRFAndClosedPayload",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5CreateCapabilityDoesNotGrantOtherApp",
+          "result": "pass",
+          "elapsed_seconds": 0.24
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5RevokeFirstPreventsWaitingCreate/capability",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5RevokeFirstPreventsWaitingCreate/account",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5RevokeFirstPreventsWaitingCreate",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5WriteFirstProtectedUntilCommitThenRevoke",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5CreateCapabilityViaPersonnelTemplate",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5ResourceOwnershipClosedGrantAndConfigurationReads",
+          "result": "pass",
+          "elapsed_seconds": 0.5
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5SQLSameAppForeignKeysFixedOwnerAndCatalogPrivilege",
+          "result": "pass",
+          "elapsed_seconds": 0.25
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5OperationsRejectNullConfirmedStatus",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5ListHasTwoDataStatementsAtControlledScale/0",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5ListHasTwoDataStatementsAtControlledScale/10",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5ListHasTwoDataStatementsAtControlledScale/100",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5ListHasTwoDataStatementsAtControlledScale/1000",
+          "result": "pass",
+          "elapsed_seconds": 0.28
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5ListHasTwoDataStatementsAtControlledScale",
+          "result": "pass",
+          "elapsed_seconds": 0.72
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5MemberReplacementHasConstantStatementsAtThousandMembers",
+          "result": "pass",
+          "elapsed_seconds": 0.42
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5GrantValidationIsOneCompleteTupleSetQuery",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5SetListUsesCompleteCurrentAuthorizationFacts",
+          "result": "pass",
+          "elapsed_seconds": 0.24
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5SetListRetainsOneRRRevisionAndPolicySnapshot",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5SetMemberReplacementRejectsMissingUserAtomically",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/applications",
+          "name": "TestB5GrantSetCostNormalizationAndAtomicReplacement",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestExpectedActorRejectsSwitchedSessionBeforeDefinitionClaim",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestExpectedActorGuardCoversOriginalOperationAndReads",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestExpectedActorHeaderStrictnessAndLegacyCompatibility",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction/metadata",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction/layout",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction/audit",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction/result",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction",
+          "result": "pass",
+          "elapsed_seconds": 0.51
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestAtomicNewFormFailureLeavesNoTableOrView",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestExactStoredDefaultsAndLayoutOnlyPreservesRows",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestNewReferenceDefaultNeedsActiveSource",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestNormalizedDefaultsReplaySameOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestOptionsMappingChangesRealValuesAndPreflightIsReadOnly",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestConfirmationSameCountChangeExpiryAndReplay",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRequiredAndConversionFailureRollBack",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestTwoSessionsSchemaViewCASAndIdenticalOperationSerialize/schema",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestTwoSessionsSchemaViewCASAndIdenticalOperationSerialize/view",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestTwoSessionsSchemaViewCASAndIdenticalOperationSerialize/same_operation",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestTwoSessionsSchemaViewCASAndIdenticalOperationSerialize",
+          "result": "pass",
+          "elapsed_seconds": 0.44
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestExpiredTamperedWrongViewAndChangedPlanConfirmation",
+          "result": "pass",
+          "elapsed_seconds": 0.19
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestLiveFlowRegistryBlocksAndDependencyOnlyChangeStalesToken",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestDirectoryCycleCrossAppAndVersionGate",
+          "result": "pass",
+          "elapsed_seconds": 0.21
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestNumericPolicyChangeKeepsConfiguredDefault",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestLayoutOnlyNeverDeduplicatesExistingMultiColumn",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestExplicitMultiMappingDeduplicatesRealUUIDArray",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestExplicitZeroSpanAndUnknownMappingsReject",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestTimestampToTextUsesCanonicalUTC",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRealRestrictedRoleCannotAlterDropOrExecuteViaPublic",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestDepartmentCandidatesAreLiveMinimalAndCursorScoped",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestDepartmentCandidatesUseSharedDispatchAuthorizationAndActorGuard",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestDefinitionAuditCorrelatesActualHTTPRequest",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestMissingConfirmationReportsActualNonNullImpact",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRealDefinitionCommitAckLossUsesOriginalOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestHistoryLabelsUseCurrentTombstoneAndExplicitUnavailable",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRealPGStructureMigrationAndRestrictedDDL",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestAtomicFormCreateAndGridSave",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestOrdinaryRootMenuDoesNotGrantDefinition",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestMemberAssignmentRejectsNewInactiveAndPreservesExistingInactive",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestMemberAssignmentLocksSourceStatusBeforeAppGate",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestOwnerMemberCandidatesUseOpaqueBoundCursorAndMinimalLiveData",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestActualGroupMembersRetainIdsAndInactiveDisplay",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestCandidateCursorBindsActorAppExpiryAndLiveAuthorization",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestCandidateSearchTreatsWildcardCharactersAsLiteralPrefix",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestActualMenuGranteeCannotManageChildDefinitionsOrEnumerateCandidates",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestCreateOnlyExpectedActorGuardAndOwnerBootstrapManagement",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestOtherViewRemovalAndTypeConversionHaveDifferentGuards",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestOtherViewLayoutChangesDependencyRevision",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRequiredSelectionCannotBeClearedAndMultiToSingleCannotHideCardinality",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestDependencyUnavailableDoesNotPretendEmpty",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestPreflightReferenceSourceAndStrictCompleteDTO",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestHistoryHTTPRealOwnerCursorAndDeletedFieldTombstone",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestPublishedRecordDMLIncludesRequiredSameTxHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRequiredCreateHistoryBeforeIsAbsentNull",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestHistoryTypedWriteCanonicalRollbackNoopAndScopedPage",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestHistoryMigrationPreservesOptionLabelsAndRestrictsAuditReader",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestDataGrantBlocksFieldRemovalAndChangesDependencyRevision",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestHistoryCreateCapturesActualSQLDefaultAndStorageFailureRollsBack",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/record.create",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/record.edit",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/record.search",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/draft.create",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/draft.update",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestFrozenRecordHTTPDecoderRejectsDuplicateUnknownNullAndNumericValues",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestFrozenRecordHTTPDecoderBoundsRawBodiesAndMedia",
+          "result": "pass",
+          "elapsed_seconds": 0.03
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRecordHTTPQueryTokenMaximumMatchesFrozenDTO",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRealRecordGateFenceAuditAndMinimumOperationLifecycle",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestTypedDefaultsOnlyCreateRejectsInactiveReferencesAtomically/member",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestTypedDefaultsOnlyCreateRejectsInactiveReferencesAtomically/department",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestTypedDefaultsOnlyCreateRejectsInactiveReferencesAtomically",
+          "result": "pass",
+          "elapsed_seconds": 0.28
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestNativeTypedCapabilityRejectsInactiveReferenceDefault",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestNativeReferenceGuardRequiresRealRegistryAndCounter/registry",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestNativeReferenceGuardRequiresRealRegistryAndCounter/counter",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestNativeReferenceGuardRequiresRealRegistryAndCounter",
+          "result": "pass",
+          "elapsed_seconds": 0.23
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestNativeGuardValidatesActualPostgreSQLReferenceDefault",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestNativeNullableReferenceWithoutConstantCreatesNull",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestNonManagerRecordTransactionResolvesActualResourcesAndSession",
+          "result": "pass",
+          "elapsed_seconds": 0.19
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestDataGrantReplacementPersistsExactMasksAndRegisteredFormMenu",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRecordSourcesPreserveMultiDepartmentEdgesAndDeletedIdentity",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestNativeRecordCapabilityRejectsNonCanonicalAndSystemKeys",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestNativeRecordCapabilityRequiresFiniteOperationAndSchemaCAS",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRecordSharedMigrationRelationsAreReal",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestControlledRecordDMLWritesNativeValuesAndProtectsSystemAndCAS",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationSchemaAndRestrictedRoles",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationAcceptsDurablyWithoutPublishingOnSave",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationReplayAndFingerprint",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationRPCDoesNotHoldApplicationOrFlowLocks",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationLostResponseRecoversSameIntent",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationNewCandidateCannotBeOverwrittenByLateReceipt",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationSchemaChangeBlocksActivationPermanently",
+          "result": "pass",
+          "elapsed_seconds": 0.21
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationCloseEpochRejectsLateReceipt",
+          "result": "pass",
+          "elapsed_seconds": 0.21
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationRequiresSessionCsrfAndExactActor",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationStrictPayloadRejectsExtraAndDuplicateKeys",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationAuthorityReturnRequiresFreshExplicitIntent",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationBadReceiptNeverAdvancesVersion",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationExpiredLeaseCannotDoubleConfirm",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationAuditFailureRollsBackActivationAndRecovers",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationBackgroundLoopRetriesWithoutBrowserResubmission",
+          "result": "pass",
+          "elapsed_seconds": 1.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationAuditUsesExactIdentityAndFiniteStates",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootPublicationMigrationDownRefusesDurableHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootRuntimeAdmissionUnavailablePublicationCreatesNothingAndCanRetry",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootRuntimeAdmissionPublicationProbePrecedesBusinessTransaction",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootRuntimeAdmissionPublicationReplayRemainsAvailableDuringOutage",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootRuntimeAdmissionPublicationStillChecksRevisionBeforeOutage",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPAuditRetainsExactManagementIdentity",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/not-a-uuid",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/#00",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/00000000-0000-0000-0000-000000000000",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/11111111-1111-4111-8111-111111111111_",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPPersistAndReadCanonicalDefinition",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPReplayIsAtomicAndPayloadBound",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPRequiresRealSessionCSRFAndExpectedActor",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPOrdinaryDataAccessDoesNotGrantManagement",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPRejectsCandidateWithoutExistingPermission",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPOwnScopeCandidateAndRevocationRechecked",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPEnableRequiresConfirmedDeployment",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPCloseReportsClosingWithAcceptedInstance",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic/schema",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic/revision",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic/graph",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic",
+          "result": "pass",
+          "elapsed_seconds": 0.35
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPClosedJSONAndNoClientDeploymentProof",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPRevokedAccountCannotReplayOrRead",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowHTTPHostRoutesBeforeGenericForms",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowSchemaSaveRejectsAndRollsBackAllChanges",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowSchemaPreflightReportsConflictWithoutConfirmation",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind/text",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind/multiline",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind",
+          "result": "pass",
+          "elapsed_seconds": 0.28
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowSchemaRechecksAfterPreviouslyAllowedPreflight",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowSchemaClosedUnusedHistoryAllowsRemoval",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowSchemaInFlightOldDefinitionStillProtectsField",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRootWorkflowSchemaSaveSerializesWithEnable",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRecordReadResolvesLiveNonManagerInOneReadOnlyRR",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestOwnerRuntimeHTTPUsesRealResourceAndSafeMinuteInput",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRuntimeProjectionPrunesHiddenFieldsDefaultsAndEmptyGroups",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestRuntimeHistoryHintRequiresSameFieldReadHistoryIntersection",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestReferenceSourcePreserves254CharacterAuthoritativeAccount",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestActiveAuthoritativeReferenceDefaultsAndInactiveRejection",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestUnauthorizedDefinitionWriteCannotInspectReferenceAvailability",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestAllCommonKindsProduceTypedPGColumnsAndConstantDefaults",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure",
+          "name": "TestNewStructureAuditArchivesWithActualMaintenanceRoles",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestB5CompositionWiresApplicationsWithSameSession",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestReadAuthenticationConfiguration",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestCompositionWiresRealAuthenticationAndReadiness",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestCompositionRejectsIncompleteAuthenticationConfig",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestDefinitionConfigRequiresDedicatedExplicitKeyAndLimits",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestBFFCompositionExposesDefinitionWithSameSession/draft_list_is_the_frozen_items_object",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestBFFCompositionExposesDefinitionWithSameSession/record_HTTP_and_atomic_history",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestBFFCompositionExposesDefinitionWithSameSession/draft_HTTP_remains_separate_from_records",
+          "result": "pass",
+          "elapsed_seconds": 0.04
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestBFFCompositionExposesDefinitionWithSameSession/ordinary_runtime_uses_registered_form_tuple/field_scoped_ordinary_reference_candidates",
+          "result": "pass",
+          "elapsed_seconds": 0.04
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestBFFCompositionExposesDefinitionWithSameSession/ordinary_runtime_uses_registered_form_tuple",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestBFFCompositionExposesDefinitionWithSameSession",
+          "result": "pass",
+          "elapsed_seconds": 0.33
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/own_access",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/ordinary_invitation",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/invitation_query_uses_production_guard_wiring",
+          "result": "pass",
+          "elapsed_seconds": 2.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/password_reset_remains_Root",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestCompositionWiresPersonnelAndOrdinaryInvitationQ25",
+          "result": "pass",
+          "elapsed_seconds": 2.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestConfiguredProxyHostsAreReadAndInvalidHostsRejected",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootHostAdmissionRejectsNewTaskWhenEngineBecomesUnavailable",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootHostAdmissionRejectsNewPublicationWhenEngineBecomesUnavailable",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootMainProcessSigtermStopsClaimsBeforeWaitingForActiveHttp",
+          "result": "pass",
+          "elapsed_seconds": 4.55
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootMainProcessInvalidIdentityExitsWithoutSecrets",
+          "result": "pass",
+          "elapsed_seconds": 1.1
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootMainProcessOccupiedAddressExitsAndReleasesInitializedDependencies",
+          "result": "pass",
+          "elapsed_seconds": 1.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootServeStopsWorkersBeforeDrainingAndKeepsStorageUntilRequestsFinish",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootServeForcesTimedOutHttpDrainAndReportsFailure",
+          "result": "pass",
+          "elapsed_seconds": 0.04
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootServeUnexpectedWorkerFailureStopsHttpWithoutExposingCause",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootServeListenerFailureStillStopsWorkersAndClosesResources",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootServeCanceledBeforeStartNeverAcceptsButCleansHost",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootServeRejectsMissingInputsAndUnboundedGrace",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPRealHostPreviewAcceptedAndStatus/agree",
+          "result": "pass",
+          "elapsed_seconds": 0.19
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPRealHostPreviewAcceptedAndStatus/reject",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPRealHostPreviewAcceptedAndStatus",
+          "result": "pass",
+          "elapsed_seconds": 0.36
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch/no-session",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch/csrf",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch/actor",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/0",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/1",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/2",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/3",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/4",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/5",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/6",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/7",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/8",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/9",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes",
+          "result": "pass",
+          "elapsed_seconds": 0.66
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowActionHTTPStaleBasisRequiresRefresh",
+          "result": "pass",
+          "elapsed_seconds": 0.25
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootHostEnabledWiresRealDependenciesAndKeepsAuthentication",
+          "result": "pass",
+          "elapsed_seconds": 0.02
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootHostStartupCancellationDoesNotOwnWorkerLifetime",
+          "result": "pass",
+          "elapsed_seconds": 0.02
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootHostProcessCancellationStopsBothWorkers",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootHostUnhealthyEngineFailsStartupAndCleansDependencies",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootHostWrongIdentityFailsStartupWithoutEcho",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootHostReadinessTracksEngineFailureAndRecovery",
+          "result": "pass",
+          "elapsed_seconds": 0.02
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootHostCloseWaitsWorkersAndReleasesStorageIdempotently",
+          "result": "pass",
+          "elapsed_seconds": 0.02
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootHostDisabledModePreservesExistingReadiness",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootHostRejectsIncompleteLifecycleAndWriteLimits",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowIdentityRequiredWhenEnabled",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowIdentityRejectedWhenDisabled",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowIdentityValidatesWithoutEchoingInvalidValues",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowIdentityActuallyFeedsExistingRpcInterceptor",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowIdentityConfigurationRemainsRedacted",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootLifecycleHTTPSPreviewAcceptAndOperation/withdraw",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootLifecycleHTTPSPreviewAcceptAndOperation/return",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootLifecycleHTTPSPreviewAcceptAndOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.39
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootLifecycleHTTPSRejectsClosedBodyAndQuery",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootLifecycleHTTPSIdentityAndCSRF",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootLifecycleHTTPSOldPreviewCannotApproveChangedInstance",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCConnectAuthenticatedBothServices",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCRejectWrongIdentityAndRelease",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCRejectOneUnhealthyService",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCReadyTracksRecoveryAndStartupContext",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCStartupHealthHasDeadline",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCInvalidConfigurationNeverDials/disabled",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCInvalidConfigurationNeverDials/nil-context",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCInvalidConfigurationNeverDials/canceled",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCInvalidConfigurationNeverDials/target",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCInvalidConfigurationNeverDials/identity",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCInvalidConfigurationNeverDials/timeout-zero",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCInvalidConfigurationNeverDials/timeout-high",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCInvalidConfigurationNeverDials",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCDialFailureIsSanitized",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCCloseIsConcurrentAndIdempotent",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootRPCBothBusinessClientsUseSameAuthenticatedConnection",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowConfigDisabledByDefault",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowConfigRequiresExplicitCompleteEnable",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowConfigParsesPlaintextInternalTargets",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowConfigRejectsUnsafeTargetSyntax",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowConfigBoundsDeadline",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootReadConfigWiresWorkflowValidation",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowEnabledCannotSilentlyUseUnconfiguredHandler",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPRealHostSaveAndGenericReceipt",
+          "result": "pass",
+          "elapsed_seconds": 0.19
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPPreservesSessionCSRFAndActorBoundaries/session",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPPreservesSessionCSRFAndActorBoundaries/csrf",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPPreservesSessionCSRFAndActorBoundaries/origin",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPPreservesSessionCSRFAndActorBoundaries/actor",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPPreservesSessionCSRFAndActorBoundaries",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPClosedBodyAndNonemptyChanges/unknown",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPClosedBodyAndNonemptyChanges/duplicate-operation",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPClosedBodyAndNonemptyChanges/empty",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPClosedBodyAndNonemptyChanges/null",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPClosedBodyAndNonemptyChanges/number",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPClosedBodyAndNonemptyChanges/duplicate-field",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPClosedBodyAndNonemptyChanges/extra-query",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPClosedBodyAndNonemptyChanges",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkflowSaveHTTPReadonlyApprovalNodeDenied",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkersRejectInvalidInputsBeforeStarting",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkersStartExactlyOneOfEachUntilStopped",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkersFollowProcessCancellation",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkersDoneWaitsForBothBoundedCleanupPaths",
+          "result": "pass",
+          "elapsed_seconds": 0.03
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkersUnexpectedFailureCancelsSiblingAndRedactsCause",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkersUnexpectedNilReturnIsNotSuccess",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkersConcurrentStopAndWaitAreIdempotent",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootWorkersInvalidWaitDoesNotStopRunningWorkers",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "package": "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff",
+          "name": "TestRootHTTPSRecordVersionContract",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        }
+      ],
+      "failure_outputs": [
+        "root_workflow_catalog_scale_test.go:165: catalog actual query: retired=4999 live=1 elapsed=3.151352ms aggregate_plan_rows=324 plan=[",
+        "root_workflow_catalog_scale_test.go:167: catalog version relation examined_rows=1",
+        "root_workflow_evidence_capture_budget_test.go:64: oversize rejection received 552 transport bytes instead of a >4MiB field",
+        "root_workflow_evidence_capture_test.go:390: 23 fields including 21 member references: 4 capture SQL statements",
+        "root_workflow_evidence_cost_test.go:405: ROOT_EVIDENCE_COST {\"architecture\":\"amd64\",\"benchmarkN\":19,\"changedFieldsPerVersion\":1,\"clientAllocatedBytesPerOp\":4965694,\"clientAllocsPerOp\":10489,\"fields\":32,\"go\":\"go1.27.1\",\"logicalBodyBytes\":4665911,\"mode\":\"full-copy\",\"nsPerOp\":64903740,\"p50ns\":64256450,\"p95ns\":68044920,\"pgIndexBytes\":16384,\"pgTableBytes\":4956160,\"pgTotalBytes\":4972544,\"postgres\":\"18.6 (Debian 18.6-1.pgdg13+2)\",\"scope\":\"synthetic warm reads; same owner benchmark connection; production write role validated separately; allocation is not RSS; default TOAST; Store size is three-table growth\",\"valueBytes\":4096,\"versions\":32,\"warmSamples\":20}",
+        "root_workflow_evidence_cost_test.go:405: ROOT_EVIDENCE_COST {\"architecture\":\"amd64\",\"benchmarkN\":16,\"changedFieldsPerVersion\":1,\"clientAllocatedBytesPerOp\":5466232,\"clientAllocsPerOp\":10264,\"fields\":32,\"go\":\"go1.27.1\",\"logicalBodyBytes\":329084,\"mode\":\"delta-chain\",\"nsPerOp\":65050104,\"p50ns\":63192522,\"p95ns\":72922183,\"pgIndexBytes\":16384,\"pgTableBytes\":450560,\"pgTotalBytes\":466944,\"postgres\":\"18.6 (Debian 18.6-1.pgdg13+2)\",\"scope\":\"synthetic warm reads; same owner benchmark connection; production write role validated separately; allocation is not RSS; default TOAST; Store size is three-table growth\",\"valueBytes\":4096,\"versions\":32,\"warmSamples\":20}",
+        "root_workflow_evidence_cost_test.go:405: ROOT_EVIDENCE_COST {\"architecture\":\"amd64\",\"benchmarkN\":16,\"changedFieldsPerVersion\":1,\"clientAllocatedBytesPerOp\":4968518,\"clientAllocsPerOp\":11037,\"fields\":32,\"go\":\"go1.27.1\",\"logicalBodyBytes\":454628,\"mode\":\"content-reuse\",\"nsPerOp\":68331085,\"p50ns\":67843211,\"p95ns\":71106607,\"pgIndexBytes\":196608,\"pgTableBytes\":737280,\"pgTotalBytes\":933888,\"postgres\":\"18.6 (Debian 18.6-1.pgdg13+2)\",\"scope\":\"synthetic warm reads; same owner benchmark connection; production write role validated separately; allocation is not RSS; default TOAST; Store size is three-table growth\",\"valueBytes\":4096,\"versions\":32,\"warmSamples\":20}",
+        "root_workflow_evidence_cost_test.go:405: ROOT_EVIDENCE_COST {\"architecture\":\"amd64\",\"benchmarkN\":18,\"changedFieldsPerVersion\":1,\"clientAllocatedBytesPerOp\":4881868,\"clientAllocsPerOp\":10491,\"fields\":32,\"go\":\"go1.27.1\",\"logicalBodyBytes\":18663700,\"mode\":\"full-copy\",\"nsPerOp\":62971130,\"p50ns\":64439076,\"p95ns\":66921088,\"pgIndexBytes\":16384,\"pgTableBytes\":19693568,\"pgTotalBytes\":19709952,\"postgres\":\"18.6 (Debian 18.6-1.pgdg13+2)\",\"scope\":\"synthetic warm reads; same owner benchmark connection; production write role validated separately; allocation is not RSS; default TOAST; Store size is three-table growth\",\"valueBytes\":4096,\"versions\":128,\"warmSamples\":20}",
+        "root_workflow_evidence_cost_test.go:405: ROOT_EVIDENCE_COST {\"architecture\":\"amd64\",\"benchmarkN\":18,\"changedFieldsPerVersion\":1,\"clientAllocatedBytesPerOp\":6656083,\"clientAllocsPerOp\":11176,\"fields\":32,\"go\":\"go1.27.1\",\"logicalBodyBytes\":909145,\"mode\":\"delta-chain\",\"nsPerOp\":66846721,\"p50ns\":65049154,\"p95ns\":68098454,\"pgIndexBytes\":16384,\"pgTableBytes\":1286144,\"pgTotalBytes\":1302528,\"postgres\":\"18.6 (Debian 18.6-1.pgdg13+2)\",\"scope\":\"synthetic warm reads; same owner benchmark connection; production write role validated separately; allocation is not RSS; default TOAST; Store size is three-table growth\",\"valueBytes\":4096,\"versions\":128,\"warmSamples\":20}",
+        "root_workflow_evidence_cost_test.go:405: ROOT_EVIDENCE_COST {\"architecture\":\"amd64\",\"benchmarkN\":16,\"changedFieldsPerVersion\":1,\"clientAllocatedBytesPerOp\":4943720,\"clientAllocsPerOp\":11000,\"fields\":32,\"go\":\"go1.27.1\",\"logicalBodyBytes\":1415041,\"mode\":\"content-reuse\",\"nsPerOp\":63748727,\"p50ns\":63386347,\"p95ns\":66653482,\"pgIndexBytes\":647168,\"pgTableBytes\":2269184,\"pgTotalBytes\":2916352,\"postgres\":\"18.6 (Debian 18.6-1.pgdg13+2)\",\"scope\":\"synthetic warm reads; same owner benchmark connection; production write role validated separately; allocation is not RSS; default TOAST; Store size is three-table growth\",\"valueBytes\":4096,\"versions\":128,\"warmSamples\":20}",
+        "root_workflow_evidence_store_test.go:640: 64 fields: put=7 SQL statements; read=3 SQL statements",
+        "set_cost_test.go:139: B5_COST {\"dataStatementCounts\":[2,2,2,2,2],\"kind\":\"list\",\"latencyMs\":[4.23,0.935,0.779,0.844,0.732],\"medianMs\":0.844,\"scope\":\"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded\",\"size\":0}",
+        "set_cost_test.go:139: B5_COST {\"dataStatementCounts\":[2,2,2,2,2],\"kind\":\"list\",\"latencyMs\":[4.455,1.084,0.884,0.866,0.889],\"medianMs\":0.889,\"scope\":\"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded\",\"size\":10}",
+        "set_cost_test.go:139: B5_COST {\"dataStatementCounts\":[2,2,2,2,2],\"kind\":\"list\",\"latencyMs\":[8.176,1.676,1.537,1.236,1.343],\"medianMs\":1.537,\"scope\":\"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded\",\"size\":100}",
+        "set_cost_test.go:139: B5_COST {\"dataStatementCounts\":[2,2,2,2,2],\"kind\":\"list\",\"latencyMs\":[10.599,6.954,8.741,7.859,7.568],\"medianMs\":7.859,\"scope\":\"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded\",\"size\":1000}",
+        "set_cost_test.go:201: B5_COST {\"dataStatementCounts\":[19,19,19],\"kind\":\"members.replace\",\"latencyMs\":[17.781,7.593,6.962],\"medianMs\":7.593,\"scope\":\"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded\",\"size\":10}",
+        "set_cost_test.go:201: B5_COST {\"dataStatementCounts\":[19,19,19],\"kind\":\"members.replace\",\"latencyMs\":[10.03,15.623,12.218],\"medianMs\":12.218,\"scope\":\"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded\",\"size\":100}",
+        "set_cost_test.go:201: B5_COST {\"dataStatementCounts\":[19,19,19],\"kind\":\"members.replace\",\"latencyMs\":[32.385,33.6,41.92],\"medianMs\":33.6,\"scope\":\"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded\",\"size\":1000}",
+        "set_semantics_test.go:203: B5_COST {\"dataStatementCounts\":[20],\"kind\":\"grants.replace.submitted\",\"latencyMs\":[18.694],\"medianMs\":18.694,\"scope\":\"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded\",\"size\":1000}",
+        "set_semantics_test.go:203: B5_COST {\"dataStatementCounts\":[20],\"kind\":\"grants.replace.submitted\",\"latencyMs\":[7.098],\"medianMs\":7.098,\"scope\":\"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded\",\"size\":1}",
+        "set_semantics_test.go:203: B5_COST {\"dataStatementCounts\":[20],\"kind\":\"grants.replace.submitted\",\"latencyMs\":[11.594],\"medianMs\":11.594,\"scope\":\"same isolated PostgreSQL18.6; actual auth_app; direct application method; setup and tx-control statements excluded\",\"size\":0}"
+      ]
+    }
+  ],
+  "fixture_verification": [
+    {
+      "label": "database-and-goose-version",
+      "argv": [
+        "docker",
+        "run",
+        "--rm",
+        "--pull=never",
+        "--network",
+        "none",
+        "--mount",
+        "type=bind,source=/tmp/weaveos-v030-043-red-2LAJaOtw/pg,target=/tmp/weaveos-v030-043-red-2LAJaOtw/pg,readonly",
+        "--env",
+        "PGDATABASE",
+        "--entrypoint",
+        "sh",
+        "sha256:662db3da228c2ea2649b3ae04db4b4479e85fea5979f6a917a7f6d5cb1e7ec39",
+        "-c",
+        "exec psql --dbname=\"$PGDATABASE\" -At -v ON_ERROR_STOP=1 -c \"SELECT current_database(), max(version_id) FROM public.goose_db_version WHERE is_applied\""
+      ],
+      "started_at": "2026-10-07T06:15:19.806788+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T06:15:21.927302+00:00"
+    },
+    {
+      "label": "goose-status",
+      "argv": [
+        "/workspace/.weaveos-tools/gopath/bin/goose",
+        "-dir",
+        "/workspace/WeaveOS-worktrees/V030-045/db/migrations",
+        "status"
+      ],
+      "started_at": "2026-10-07T06:15:21.927405+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T06:15:21.978410+00:00"
+    }
+  ],
+  "hashes_after": {
+    "services/bff/cmd/bff/root_formal_lifecycle_test.go": "918100e87e94754a3df1b872a5654bc4034dd1dfa39bc77a191dbc7fbfae97d9",
+    "services/bff/cmd/bff/root_formal_node_save_test.go": "3f7c75ff4a513bd6096fffb0d505458aa850bd7a0e211f98ae1bc53d860d64f0",
+    "services/bff/internal/apprecordservice/workflow_lifecycle_action.go": "975efcb8d3b5bd49afaeadab075041640630bd20224cbf5ce7e7cc689025a407",
+    "services/bff/internal/apprecordservice/workflow_save.go": "ddbb1a405968bc7608b3d3108ad02027efc06fbb5d28422f1d9a94b074fc2ae5",
+    "services/bff/internal/apprecordhttp/workflow_lifecycle.go": "57a9f3eb5cf293ba3f71611f98fb4d155d570f1e422449dae506bf1270514277",
+    "services/bff/internal/appstructure/record_http_decode.go": "2acceeabc4780e4fa5de4ab53de02b01770072a80bb7212840dd9cf7a45e71b1",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "hashes_unchanged": true,
+  "worktree_clean_after": false,
+  "artifact_hashes": {
+    "database-and-goose-version.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "database-and-goose-version.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "database-and-goose-version.stdout": "da1ad12b05fe2d4fbb09917ea04e1f77237a0d6422314cf2fd548a8adc2738df",
+    "default-four-packages.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "default-four-packages.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "default-four-packages.stdout.jsonl": "74ef339d42ab7a83443eb253723ab7b54848d255d9995dc20f0e1cef5470b794",
+    "go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f",
+    "goose-status.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "goose-status.stderr": "182d164d1b60744417bcf3615f6862a14c40a5a4c3ff12210f3a0fdcac590e85",
+    "goose-status.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "record_http_decode.go": "2acceeabc4780e4fa5de4ab53de02b01770072a80bb7212840dd9cf7a45e71b1",
+    "root_formal_lifecycle_test.go": "918100e87e94754a3df1b872a5654bc4034dd1dfa39bc77a191dbc7fbfae97d9",
+    "root_formal_node_save_test.go": "3f7c75ff4a513bd6096fffb0d505458aa850bd7a0e211f98ae1bc53d860d64f0",
+    "workflow_lifecycle.go": "57a9f3eb5cf293ba3f71611f98fb4d155d570f1e422449dae506bf1270514277",
+    "workflow_lifecycle_action.go": "975efcb8d3b5bd49afaeadab075041640630bd20224cbf5ce7e7cc689025a407",
+    "workflow_save.go": "ddbb1a405968bc7608b3d3108ad02027efc06fbb5d28422f1d9a94b074fc2ae5"
+  },
+  "status": "DEFAULT_REGRESSION_RESULT_FOR_ROOT"
+}
