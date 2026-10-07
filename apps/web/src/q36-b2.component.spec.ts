@@ -395,7 +395,7 @@ test.describe('Q36 B2 focus review evidence',()=>{
 });
 
 // Root diagnostic: observe native event delivery without changing timing or handlers.
-test('Root Q36 outside tab click after reopening records native event delivery',async({page})=>{
+for(const pressDuration of [0,100,300])test(`Root Q36 outside tab click after reopening records native event delivery ${pressDuration}ms`,async({page})=>{
  await holdFilterExit(page,'engine');await focusFixture(page);
  await page.evaluate(()=>{
   const events:unknown[]=[];Object.defineProperty(window,'__q36OutsideClickEvidence',{value:events});
@@ -406,6 +406,6 @@ test('Root Q36 outside tab click after reopening records native event delivery',
   const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});
   await trigger.click();await expect(panel).toBeVisible();await panel.getByRole('button',{name:'关闭筛选管理',exact:true}).click();await waitHeldExit(page);
   await trigger.click();await expect(panel).toBeVisible();const first=panel.getByRole('button',{name:'新增筛选',exact:true});await first.focus();await releaseHeldExit(page);await expect(first).toBeFocused();await expect(panel).toBeVisible();
-  await page.getByRole('tab',{name:'身份',exact:true}).click();await expect(page.getByLabel('搜索身份',{exact:true})).toBeVisible();await expect(panel).toBeHidden();
+  await page.getByRole('tab',{name:'身份',exact:true}).click({delay:pressDuration});await expect(page.getByLabel('搜索身份',{exact:true})).toBeVisible();await expect(panel).toBeHidden();
  }finally{const path=test.info().outputPath('native-outside-click.json');await writeFile(path,JSON.stringify(await page.evaluate(()=>(window as unknown as {__q36OutsideClickEvidence:unknown[]}).__q36OutsideClickEvidence),null,2));await test.info().attach('native-outside-click.json',{path,contentType:'application/json'});}
 });
