@@ -15,6 +15,9 @@ import (
 func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[string]json.RawMessage, error) {
 	required, optional, nullable := []string{}, []string{}, []string{}
 	switch kind {
+	case "workflow.instances.search":
+		required = []string{"page"}
+		optional = []string{"pageSize", "queryVersion"}
 	case "workflow.task.action":
 		required = []string{"operationId", "action", "basisToken"}
 	case "record.create":
@@ -43,7 +46,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 	if kind == "record.search" {
 		limit = 64 << 10
 	}
-	if kind == "workflow.task.action" {
+	if kind == "workflow.task.action" || kind == "workflow.instances.search" {
 		limit = 4096
 	}
 	raw, e := io.ReadAll(http.MaxBytesReader(w, r.Body, limit))

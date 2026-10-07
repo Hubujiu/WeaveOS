@@ -199,7 +199,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		failure(w, r, apprecordservice.ErrUnavailable, "")
 		return
 	}
-	if s.workflowHTTP(w, r, p) {
+	if s.workflowReadHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
 		return
 	}
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
