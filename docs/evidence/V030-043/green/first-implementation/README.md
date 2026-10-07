@@ -1,6 +1,6 @@
 # V030-043 first scoped implementation and validation
 
-Root released exactly four production paths after personally reading strengthened RED at89d9a4c. Implementation commit `fa7d05b5c844fc11f78bab161022bc72ddc26843` has parent `89d9a4c955ac8b8bc15a0cc3f9c7557b6296ee16` and changes only workflow_save.go, workflow_preview.go, apprecordhttp/workflow.go and appstructure/record_http_decode.go. The pre-run production.patch and file hashes preserve the exact tested bytes; no source changed during/after this first test run.
+Root released exactly four production paths after personally reading strengthened RED at89d9a4c. Implementation commit `fa7d05b5c844fc11f78bab161022bc72ddc26843` has parent `89d9a4c955ac8b8bc15a0cc3f9c7557b6296ee16` and changes only workflow_save.go, workflow_preview.go, apprecordhttp/workflow.go and appstructure/record_http_decode.go. The pre-run production.patch.gz (lossless gzip) and file hashes preserve the exact tested bytes; no source changed during/after this first test run.
 
 Actual new PRD/ADR were fetched read-only before implementation: PRD3f22f5a9e64881159058fa3869005e1b, last-edited2026-10-07T02:06:38.874Z; ADR3f22f5a9e6488103abfcf6a44eceb773, last-edited2026-10-07T02:15:49.568Z. Both identify this as a Root execution contract and retain unverified/global-release status; no source approval state changed.
 
@@ -24,3 +24,5 @@ Root test/fixture/OpenAPI/dependency/migration/role/engine/CI files are frozen a
 Task metadata still lists appstructure/record_http.go rather than record_http_decode.go; this implementation follows Root's explicit four-file release. Root should align allowedPaths before final scope/CI review. This executor appends results only, without altering the Root-owned task contract.
 
 Pending Root source review, debugging/expanded acceptance and final checks. No PR, merge, main or deployment action. Original task-only resources retained for Root's next authorized run.
+
+Artifact formatting note: adding the raw unified diff as text produced git whitespace warnings for its mandatory context-space followed by Go indentation tabs. The original patch bytes are now stored losslessly as production.patch.gz; decompression matches the original raw_sha256 in run.json. No product source or verification rule changed. The initial raw artifact checkpoint remains in Git history and the task-private directory.
