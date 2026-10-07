@@ -229,12 +229,20 @@ func rootHTTPResourceSetup(t *testing.T) *rootTaskHTTPFixture {
 }
 func rootHTTPTaskSetup(t *testing.T) *rootTaskHTTPFixture {
 	t.Helper()
+	return rootHTTPTaskSetupEditable(t, false)
+}
+
+func rootHTTPTaskSetupEditable(t *testing.T, editable bool) *rootTaskHTTPFixture {
+	t.Helper()
 	f := rootHTTPResourceSetup(t)
 	ctx := f.ctx
 	var e error
 	f.flow, f.instance, f.node, f.task = f.id(t), f.id(t), f.id(t), f.id(t)
 	start, end := f.id(t), f.id(t)
 	graph := flowgraph.Graph{Version: 1, Nodes: []flowgraph.Node{{ID: start, Kind: "start"}, {ID: f.node, Kind: "approval", Approval: &flowgraph.Approval{Mode: "all", AssigneeIDs: []string{f.actor}}}, {ID: end, Kind: "end"}}, Edges: []flowgraph.Edge{{From: start, To: f.node}, {From: f.node, To: end}}}
+	if editable {
+		graph.Nodes[1].Approval.EditableFieldIDs = []string{f.field}
+	}
 	f.transaction(t, func(tx pgx.Tx) error {
 		catalog := wc.Catalog{}
 		head, e := catalog.PutVersionInTx(ctx, tx, wc.VersionInput{AppID: f.app, TableID: f.table, ViewID: f.view, FlowID: f.flow, ActorID: f.actor, Name: "Approval", ExpectedSchemaVersion: 1, Graph: graph, AllowWithdraw: true})
@@ -287,7 +295,7 @@ func TestRootWorkflowActionHTTPRealHostPreviewAcceptedAndStatus(t *testing.T) {
 			f := rootHTTPTaskSetup(t)
 			preview := rootHTTPData(t, f.call(t, "GET", f.taskPath(), "", nil), 200)
 			token := rootHTTPString(t, preview, "basisToken")
-			if len(preview) != 4 || token == "" {
+			if len(preview) != 5 || token == "" || string(preview["editableFieldIds"]) != "[]" {
 				t.Fatal("preview DTO not exact")
 			}
 			op := f.id(t)

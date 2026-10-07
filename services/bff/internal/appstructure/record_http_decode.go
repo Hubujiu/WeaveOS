@@ -17,6 +17,8 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 	switch kind {
 	case "workflow.task.action":
 		required = []string{"operationId", "action", "basisToken"}
+	case "workflow.task.save":
+		required = []string{"operationId", "basisToken", "changes"}
 	case "record.create":
 		required = []string{"operationId", "expectedSchemaVersion", "values"}
 		optional = []string{"draftRef", "queryVersion"}
@@ -69,6 +71,13 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 			return nil, recordBodyInvalid()
 		}
 	}
+	if kind == "workflow.task.save" {
+		var operation, token string
+		if json.Unmarshal(m["operationId"], &operation) != nil || operation == "00000000-0000-0000-0000-000000000000" ||
+			json.Unmarshal(m["basisToken"], &token) != nil || token == "" || utf8.RuneCountInString(token) > 256 {
+			return nil, recordBodyInvalid()
+		}
+	}
 	for _, key := range []string{"operationId", "targetRecordId"} {
 		if b, ok := m[key]; ok && string(b) != "null" {
 			var id string
@@ -93,6 +102,9 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 		if b, ok := m[key]; ok {
 			var values map[string]json.RawMessage
 			if json.Unmarshal(b, &values) != nil || values == nil {
+				return nil, recordBodyInvalid()
+			}
+			if kind == "workflow.task.save" && (len(values) == 0 || len(values) > 200) {
 				return nil, recordBodyInvalid()
 			}
 			for id, v := range values {
