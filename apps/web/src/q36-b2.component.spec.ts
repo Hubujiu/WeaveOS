@@ -1,3 +1,4 @@
+import {writeFile} from 'node:fs/promises';
 import {test,expect,type Page,type Route} from '@playwright/test';
 
 // Prepare only the browser engine, outside each unchanged business-test budget.
@@ -406,5 +407,5 @@ test('Root Q36 outside tab click after reopening records native event delivery',
   await trigger.click();await expect(panel).toBeVisible();await panel.getByRole('button',{name:'关闭筛选管理',exact:true}).click();await waitHeldExit(page);
   await trigger.click();await expect(panel).toBeVisible();const first=panel.getByRole('button',{name:'新增筛选',exact:true});await first.focus();await releaseHeldExit(page);await expect(first).toBeFocused();await expect(panel).toBeVisible();
   await page.getByRole('tab',{name:'身份',exact:true}).click();await expect(page.getByLabel('搜索身份',{exact:true})).toBeVisible();await expect(panel).toBeHidden();
- }finally{await test.info().attach('native-outside-click.json',{body:JSON.stringify(await page.evaluate(()=>(window as unknown as {__q36OutsideClickEvidence:unknown[]}).__q36OutsideClickEvidence),null,2),contentType:'application/json'});}
+ }finally{const path=test.info().outputPath('native-outside-click.json');await writeFile(path,JSON.stringify(await page.evaluate(()=>(window as unknown as {__q36OutsideClickEvidence:unknown[]}).__q36OutsideClickEvidence),null,2));await test.info().attach('native-outside-click.json',{path,contentType:'application/json'});}
 });
