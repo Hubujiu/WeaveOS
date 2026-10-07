@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "basisToken",
+    "task",
+    "record",
+    "fields"
+  ],
+  "properties": {
+    "basisToken": {
+      "type": "string",
+      "minLength": 43,
+      "maxLength": 43,
+      "pattern": "^[A-Za-z0-9_-]{43}$",
+      "description": "Random opaque Session-bound preview token; never a content hash or authorization grant."
+    },
+    "task": {
+      "$ref": "#/components/schemas/WorkflowTaskInfo"
+    },
+    "record": {
+      "$ref": "#/components/schemas/BusinessRecord"
+    },
+    "fields": {
+      "type": "array",
+      "maxItems": 1600,
+      "items": {
+        "$ref": "#/components/schemas/Field"
+      },
+      "description": "Only field definitions visible under the same current row-specific policy as record.values."
+    }
+  }
+}
