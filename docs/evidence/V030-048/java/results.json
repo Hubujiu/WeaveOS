@@ -1,0 +1,53 @@
+[
+  {
+    "name": "pool",
+    "command": [
+      "bash",
+      "services/workflow-engine/run-tests.sh",
+      "-Dtest=RootRuntimeDataSourceTest",
+      "-Dworkflow.reports=target/v048-pool-reports",
+      "test"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048",
+    "exit": 0,
+    "source_hashes_unchanged": true,
+    "reports": [
+      {
+        "name": "org.weaveos.workflow.RootRuntimeDataSourceTest",
+        "tests": "9",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      }
+    ]
+  },
+  {
+    "name": "batch2",
+    "command": [
+      "bash",
+      "services/workflow-engine/run-tests.sh",
+      "-Dtest=RootExecutionRegistryTest#concurrentExecutionAndCancellationHaveOneDurableOutcome,RootWorkflowRuntimeTest#configuredCallCapacityRejectsOverloadWithoutUnboundedWorkers",
+      "-Dworkflow.reports=target/v048-batch2-reports",
+      "test"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048",
+    "exit": 0,
+    "source_hashes_unchanged": true,
+    "reports": [
+      {
+        "name": "org.weaveos.workflow.RootWorkflowRuntimeTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "org.weaveos.workflow.RootExecutionRegistryTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      }
+    ]
+  }
+]

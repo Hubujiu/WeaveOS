@@ -59,6 +59,8 @@ class RootRuntimeDataSourceTest {
  }
  @Test void actualLockTimeoutDoesNotLeaveAChangedRow()throws Exception{
   var pool=open(environment());
+  String before=fixture.jdbc.queryForObject("SELECT value_ FROM act_ge_property WHERE name_='next.dbid'",String.class);
+  assertNotNull(before);
   try(var owner=new DriverManagerDataSource(fixture.url+"?currentSchema="+fixture.schema,"b3_fixture","b3_fixture_only").getConnection()){
    owner.setAutoCommit(false);try(var lock=owner.createStatement()){
     lock.execute("SELECT * FROM act_ge_property WHERE name_='next.dbid' FOR UPDATE");
@@ -67,7 +69,7 @@ class RootRuntimeDataSourceTest {
     }
    }finally{owner.rollback();}
   }
-  assertNotEquals("999999",fixture.jdbc.queryForObject("SELECT value_ FROM act_ge_property WHERE name_='next.dbid'",String.class));
+  assertEquals(before,fixture.jdbc.queryForObject("SELECT value_ FROM act_ge_property WHERE name_='next.dbid'",String.class));
  }
  @Test void schemaGuardDoesNotLeakReadOnlyTransactionStateIntoPool()throws Exception{
   var pool=open(environment());RuntimeSchema.verify(pool,fixture.schema,5000);

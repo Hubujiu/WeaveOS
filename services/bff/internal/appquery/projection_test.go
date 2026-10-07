@@ -53,14 +53,15 @@ func TestPGFullProjectionChangesOnlyWhenActualAuthorizedRowsChange(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if b := read(); b.Total != a.Total || b.Fingerprint == a.Fingerprint {
-		t.Fatalf("off-page visible change missed: %+v %+v", a, b)
+	beforeUnrelated := read()
+	if beforeUnrelated.Total != a.Total || beforeUnrelated.Fingerprint == a.Fingerprint {
+		t.Fatalf("off-page visible change missed: %+v %+v", a, beforeUnrelated)
 	}
 	_, err = db.Exec(ctx, `UPDATE v015_projection SET visible='new' WHERE id=3`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if b := read(); b.Total != a.Total {
-		t.Fatal("other owner's row entered COUNT")
+	if afterUnrelated := read(); afterUnrelated != beforeUnrelated {
+		t.Fatalf("other owner's edit changed authorized projection: before=%+v after=%+v", beforeUnrelated, afterUnrelated)
 	}
 }
