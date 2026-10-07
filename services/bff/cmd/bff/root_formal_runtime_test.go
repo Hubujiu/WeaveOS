@@ -209,7 +209,8 @@ func rootFormalEventually(t *testing.T, ctx context.Context, condition func() (b
 	}
 	t.Fatal("formal background operation did not converge within test bound")
 }
-func rootFormalSetup(t *testing.T) *rootFormalFixture {
+func rootFormalSetup(t *testing.T) *rootFormalFixture { return rootFormalSetupEditable(t, false) }
+func rootFormalSetupEditable(t *testing.T, editable bool) *rootFormalFixture {
 	t.Helper()
 	started := time.Now()
 	f := rootHTTPResourceSetup(t)
@@ -291,15 +292,19 @@ func rootFormalSetup(t *testing.T) *rootFormalFixture {
 	f.server = x.public
 	f.client = x.public.Client()
 	t.Logf("FORMAL_RESOURCE fixtureSetupAndRuntimeStartupMillis=%d", time.Since(started).Milliseconds())
-	x.publishAndStart(t)
+	x.publishAndStartEditable(t, editable)
 	return x
 }
-func (x *rootFormalFixture) publishAndStart(t *testing.T) {
+func (x *rootFormalFixture) publishAndStartEditable(t *testing.T, editable bool) {
 	t.Helper()
 	f := x.f
 	f.flow, f.instance, f.node = f.id(t), f.id(t), f.id(t)
 	start, end := f.id(t), f.id(t)
-	graph := map[string]any{"version": 1, "nodes": []any{map[string]any{"id": start, "kind": "start"}, map[string]any{"id": f.node, "kind": "approval", "approval": map[string]any{"mode": "all", "assigneeIds": []string{f.actor}, "editableFieldIds": []string{}}}, map[string]any{"id": end, "kind": "end"}}, "edges": []any{map[string]any{"from": start, "to": f.node}, map[string]any{"from": f.node, "to": end}}}
+	editableIDs := []string{}
+	if editable {
+		editableIDs = []string{f.field}
+	}
+	graph := map[string]any{"version": 1, "nodes": []any{map[string]any{"id": start, "kind": "start"}, map[string]any{"id": f.node, "kind": "approval", "approval": map[string]any{"mode": "all", "assigneeIds": []string{f.actor}, "editableFieldIds": editableIDs}}, map[string]any{"id": end, "kind": "end"}}, "edges": []any{map[string]any{"from": start, "to": f.node}, map[string]any{"from": f.node, "to": end}}}
 	base := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/workflows/" + f.flow + "/"
 	body, _ := json.Marshal(map[string]any{"operationId": f.id(t), "name": "Formal runtime approval", "expectedRevision": 0, "expectedSchemaVersion": 1, "graph": graph, "allowWithdraw": true})
 	rootHTTPData(t, f.call(t, "PUT", base+"definition", string(body), nil), 201)
