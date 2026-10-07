@@ -189,14 +189,14 @@ func (s *workflowReadStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
 	if !workflowID(creator) {
 		return fail(ErrUnavailable)
 	}
-	// Bind the current resource's actual grants and row ownership, never task
-	// membership or unrelated records. No business field values are selected.
+	// Live menu and effective row readability were checked above on every call.
+	// This summary exposes no business fields or edit capabilities: unrelated
+	// grant changes must not alter its projection fingerprint. Bind only the
+	// authorized actor/resource identity, not the entire grant representation.
 	authority, err := json.Marshal(struct {
 		Binding workflowReadBinding
 		TableID string
-		Creator string
-		Policy  appaccess.Policy
-	}{s.binding, facts.TableID, creator, policy})
+	}{s.binding, facts.TableID})
 	if err != nil {
 		return fail(ErrUnavailable)
 	}
