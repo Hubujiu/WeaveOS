@@ -20,10 +20,6 @@ jobs:
           npm install --global pnpm@10.28.2 --ignore-scripts
           pnpm install --frozen-lockfile --ignore-scripts
           pnpm exec playwright install --with-deps chromium firefox webkit
-      - name: Observe original click sequence without retry or deadline changes
-        env:
-          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/root-native-report.json
-        run: pnpm exec playwright test --config docs/evidence/V010-020/q36-b2/components.config.ts q36-b2.component.spec.ts --project firefox --grep 'Root Q36 outside tab click after reopening records native event delivery' --repeat-each=10 --workers=1 --trace on --reporter=list,json --output test-results/root-native-click
       - name: Type and production build
         run: |
           pnpm typecheck
@@ -31,7 +27,7 @@ jobs:
       - name: All unchanged Q36 regressions across three engines
         env:
           PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/root-q36-regression.json
-        run: pnpm exec playwright test --config docs/evidence/V010-020/q36-b2/components.config.ts 'q36-front-|q36-b2\\.component' --workers=1 --reporter=list,json --output test-results/root-q36-regression
+        run: pnpm exec playwright test --config docs/evidence/V010-020/q36-b2/components.config.ts 'q36-front-|q36-b2' --workers=1 --reporter=list,json --output test-results/root-q36-regression
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: always()
         with:
