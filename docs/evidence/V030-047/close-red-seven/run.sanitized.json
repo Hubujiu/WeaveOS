@@ -1,0 +1,356 @@
+{
+  "source_commit": "19a9a2eee1177cb48311e71378b84822332d7e1f",
+  "base": "b056fc34f41d389c5a4aee54b6e81a29dae578bd",
+  "test_path": "services/bff/internal/apprecordservice/root_workflow_close_finalization_test.go",
+  "original_test_sha256": "314ace22069a6b89bb3bce1153a266eb8f0d9665f2da856081705a5d8eb20057",
+  "formatted_test_sha256": "8a56402baaeba01b9ba30ad1acf3cab825c9d7e057d1ecd8458705e6252d67d0",
+  "hashes_before": [
+    [
+      "services/bff/internal/apprecordservice/root_workflow_close_finalization_test.go",
+      "8a56402baaeba01b9ba30ad1acf3cab825c9d7e057d1ecd8458705e6252d67d0"
+    ],
+    [
+      "services/bff/internal/workflowprojection/projection.go",
+      "ca3119c1dc0d878cb0b1abe985ab0759251f333f75c4091cf8e527469aacec4d"
+    ],
+    [
+      "services/bff/go.mod",
+      "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632"
+    ],
+    [
+      "services/bff/go.sum",
+      "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+    ],
+    [
+      "db/migrations/00001_auth.sql",
+      "ab5c96db2fb775501df3fc2c55a16f9ffd6c8630c6e9f875aa238230b6b522b4"
+    ],
+    [
+      "db/migrations/00002_personnel.sql",
+      "544512f1654ae0a96f51e0fa24f61b58e3f15c8a2e3fa2928b0dd969e5a1b91e"
+    ],
+    [
+      "db/migrations/00003_query_drafts.sql",
+      "9b1f546d158931d09245070a4d5b6b46dd64b128b008363ae7a44f74bae8860a"
+    ],
+    [
+      "db/migrations/00004_query_revision_writers.sql",
+      "85faf7406d0e82ce7ca14aaf10276f80ef5a88a5c957170f111a261e910c925d"
+    ],
+    [
+      "db/migrations/00005_table_presets.sql",
+      "9f8ec8b86e7d7ab208940b88f43283ca11895a34e18b3af328e25b1e8ba40509"
+    ],
+    [
+      "db/migrations/00006_apps_policy.sql",
+      "1cca96dc6e5b7acf11c0c9f40364d1fdb5d9d57b4f8ddd8b0036dd5b5bf15fb0"
+    ],
+    [
+      "db/migrations/00007_app_structure.sql",
+      "080b6daf0aacf0763d54dfadcbcffc2135486835700895b08010c77cb5d12531"
+    ],
+    [
+      "db/migrations/00008_app_records.sql",
+      "3df7c46c65744b6bf42ba37e625e8fa2d865806ed139e03306d5a8a2b42d63b0"
+    ],
+    [
+      "db/migrations/00009_record_save_history.sql",
+      "6468e6f8bf0e1d349840238c5fa44a316abf9ad53cf46055b6a9b025bdf8bed1"
+    ],
+    [
+      "db/migrations/00010_member_source_label_width.sql",
+      "326d7d0f171dba8350f7e8fbd1f96c5182235c969d73b4f0a585571c7b8a9a51"
+    ],
+    [
+      "db/migrations/00011_record_reference_defaults.sql",
+      "d15de1b9265a7d8da2dab448cfe2ba026472a15a08c0163f5e60f237b1c1e9f8"
+    ],
+    [
+      "db/migrations/00012_actual_reference_defaults.sql",
+      "450b3e8aa0bd1f2419915074a32d1d8d47ce5fe2b82c891f4f058a1a429e3490"
+    ],
+    [
+      "db/migrations/00013_record_command_fence.sql",
+      "2e75231b237d8e61cb3a291cbbe144cfa1e10ee0a7090e96a0c02f61ff0e0498"
+    ],
+    [
+      "db/migrations/00014_workflow_command_ledger.sql",
+      "c54a0414b1beb9ea835bf830cc7a735431d6d816059f22821ffab5e87e37f2cb"
+    ],
+    [
+      "db/migrations/00015_workflow_catalog.sql",
+      "5056a36d4f9ed64fdd98432f231ec67012cde693439ac75139e595b51f0911fc"
+    ],
+    [
+      "db/migrations/00016_workflow_management_operations.sql",
+      "f68d650947d665a7ccb905cd5c7d0d85dfe15b4dcc501c00066cd38c00b71929"
+    ],
+    [
+      "db/migrations/00017_workflow_publications.sql",
+      "26dc61e4b3811862b66fd5db5ad0bff872e20284c83159744c3eb280486eb4fb"
+    ],
+    [
+      "db/migrations/00018_workflow_execution_projection.sql",
+      "70b73412bccd5b95ede435f8c1142496dd0c4c53e60163e15a9591b784527f6b"
+    ],
+    [
+      "db/migrations/00019_workflow_execution_recovery.sql",
+      "c7fc65a5b0437e73245490804237fe3189428a33e4329f40c16b45aa9e2d3d34"
+    ],
+    [
+      "db/migrations/00020_workflow_evidence.sql",
+      "6699d65269ddbeeddc429486038865e09b35a857b407639487ade4aaaf8cb4d9"
+    ],
+    [
+      "db/migrations/00021_workflow_task_operations.sql",
+      "9075fdc77a15d31e44a6247c4d1ced4e7afbd35607f4fd334eee0ceab5c6220a"
+    ]
+  ],
+  "fixture": "Existing V045 real isolated PostgreSQL version22; archive and Redis reused; no migrations or new services",
+  "runs": [
+    {
+      "label": "fixture-version-before",
+      "argv": null,
+      "started_at": "2026-10-07T07:29:34.622020+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T07:29:41.688728+00:00",
+      "argv_omitted_reason": "Private fixture socket/PGDATABASE arguments retained only in original private run."
+    },
+    {
+      "label": "workflow-close-red",
+      "argv": [
+        "<existing-tool-root>/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "-run",
+        "^TestRootWorkflowClose",
+        "./internal/apprecordservice"
+      ],
+      "started_at": "2026-10-07T07:29:41.689082+00:00",
+      "exit_code": 1,
+      "finished_at": "2026-10-07T07:29:46.964226+00:00",
+      "cases": [
+        {
+          "name": "TestRootWorkflowCloseFinalizesWithLastConfirmedCompletion",
+          "result": "fail"
+        },
+        {
+          "name": "TestRootWorkflowCloseDoesNotDisableWithoutCloseRequest",
+          "result": "pass"
+        },
+        {
+          "name": "TestRootWorkflowCloseCountsAcceptedStartingUntilConfirmedNoEffect",
+          "result": "fail"
+        },
+        {
+          "name": "TestRootWorkflowCloseOuterRollbackKeepsPendingAndClosing",
+          "result": "fail"
+        },
+        {
+          "name": "TestRootWorkflowCloseWriteFaultRollsBackProjectionForRecovery",
+          "result": "fail"
+        },
+        {
+          "name": "TestRootWorkflowCloseRetainsOtherActiveInstance",
+          "result": "fail"
+        },
+        {
+          "name": "TestRootWorkflowCloseConcurrentFinalReceiptsFinalizeOnce",
+          "result": "fail"
+        }
+      ],
+      "counts": {
+        "fail": 6,
+        "pass": 1
+      },
+      "failure_outputs": [
+        "root_workflow_close_finalization_test.go:66: last confirmed instance did not finalize exactly one close: before={Head:{FlowID:7c90d4bd-bf5b-4c26-8c27-37a4c367a9c3 AppID:0a315e53-bc46-4581-95f8-04080ee6f8d1 TableID:5a6114a0-1602-4664-b9b9-ba3ab766f2d8 ViewID:e59587bd-7bcf-4300-80a1-0028dc32dba7 Name:Expense State:closing Revision:4 CurrentVersion:1 CandidateVersion:1} CloseEpoch:1} after={Head:{FlowID:7c90d4bd-bf5b-4c26-8c27-37a4c367a9c3 AppID:0a315e53-bc46-4581-95f8-04080ee6f8d1 TableID:5a6114a0-1602-4664-b9b9-ba3ab766f2d8 ViewID:e59587bd-7bcf-4300-80a1-0028dc32dba7 Name:Expense State:closing Revision:4 CurrentVersion:1 CandidateVersion:1} CloseEpoch:1}",
+        "--- FAIL: TestRootWorkflowCloseFinalizesWithLastConfirmedCompletion (0.13s)",
+        "root_workflow_close_finalization_test.go:101: last confirmed instance did not finalize exactly one close: before={Head:{FlowID:c0057800-c272-4a9e-b571-aa7b2a45969b AppID:eef6aa85-a573-4ace-9c67-fdbf8ccde462 TableID:e67f13b5-c8d4-4921-9c15-3389ed8e0e9e ViewID:0af06d43-9d2b-4511-b397-0747ee6d61e6 Name:Expense State:closing Revision:4 CurrentVersion:1 CandidateVersion:1} CloseEpoch:1} after={Head:{FlowID:c0057800-c272-4a9e-b571-aa7b2a45969b AppID:eef6aa85-a573-4ace-9c67-fdbf8ccde462 TableID:e67f13b5-c8d4-4921-9c15-3389ed8e0e9e ViewID:0af06d43-9d2b-4511-b397-0747ee6d61e6 Name:Expense State:closing Revision:4 CurrentVersion:1 CandidateVersion:1} CloseEpoch:1}",
+        "--- FAIL: TestRootWorkflowCloseCountsAcceptedStartingUntilConfirmedNoEffect (0.14s)",
+        "root_workflow_close_finalization_test.go:117: last confirmed instance did not finalize exactly one close: before={Head:{FlowID:b50fcc95-9d56-4d6a-a58e-90fb241699fb AppID:62d8cb19-882a-4e67-85dd-5d9554056294 TableID:03137c64-68fa-4049-9061-0690844dced1 ViewID:e12f8f6d-3ad6-4e23-b699-bf7b3412e06e Name:Expense State:closing Revision:4 CurrentVersion:1 CandidateVersion:1} CloseEpoch:1} after={Head:{FlowID:b50fcc95-9d56-4d6a-a58e-90fb241699fb AppID:62d8cb19-882a-4e67-85dd-5d9554056294 TableID:03137c64-68fa-4049-9061-0690844dced1 ViewID:e12f8f6d-3ad6-4e23-b699-bf7b3412e06e Name:Expense State:closing Revision:4 CurrentVersion:1 CandidateVersion:1} CloseEpoch:1}",
+        "--- FAIL: TestRootWorkflowCloseOuterRollbackKeepsPendingAndClosing (0.17s)",
+        "root_workflow_close_finalization_test.go:142: did not reach real close write failure: <nil>",
+        "--- FAIL: TestRootWorkflowCloseWriteFaultRollsBackProjectionForRecovery (0.13s)",
+        "root_workflow_close_finalization_test.go:186: last confirmed instance did not finalize exactly one close: before={Head:{FlowID:3edb3e84-fe49-4eb6-a3a7-2267e8255cc0 AppID:a956bb9a-d421-4902-91e7-9503aa7f02a4 TableID:80419685-30d0-43db-a379-92752afbb6b5 ViewID:c1fd6823-5974-4e90-abb3-8748299444d6 Name:Expense State:closing Revision:4 CurrentVersion:1 CandidateVersion:1} CloseEpoch:1} after={Head:{FlowID:3edb3e84-fe49-4eb6-a3a7-2267e8255cc0 AppID:a956bb9a-d421-4902-91e7-9503aa7f02a4 TableID:80419685-30d0-43db-a379-92752afbb6b5 ViewID:c1fd6823-5974-4e90-abb3-8748299444d6 Name:Expense State:closing Revision:4 CurrentVersion:1 CandidateVersion:1} CloseEpoch:1}",
+        "--- FAIL: TestRootWorkflowCloseRetainsOtherActiveInstance (0.20s)",
+        "root_workflow_close_finalization_test.go:232: last confirmed instance did not finalize exactly one close: before={Head:{FlowID:b5c90379-d8e0-4398-b1a7-725ae4de8ef7 AppID:8bcce7af-4bf2-4cc6-99e2-5ec09e12a37d TableID:3544c5e5-f0de-4938-9205-b3457a2bc1fd ViewID:384051ea-cf77-4069-bd4e-4ea115b981d0 Name:Expense State:closing Revision:4 CurrentVersion:1 CandidateVersion:1} CloseEpoch:1} after={Head:{FlowID:b5c90379-d8e0-4398-b1a7-725ae4de8ef7 AppID:8bcce7af-4bf2-4cc6-99e2-5ec09e12a37d TableID:3544c5e5-f0de-4938-9205-b3457a2bc1fd ViewID:384051ea-cf77-4069-bd4e-4ea115b981d0 Name:Expense State:closing Revision:4 CurrentVersion:1 CandidateVersion:1} CloseEpoch:1}",
+        "--- FAIL: TestRootWorkflowCloseConcurrentFinalReceiptsFinalizeOnce (0.19s)"
+      ]
+    },
+    {
+      "label": "fixture-version-after",
+      "argv": null,
+      "started_at": "2026-10-07T07:29:46.964724+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T07:29:55.608579+00:00",
+      "argv_omitted_reason": "Private fixture socket/PGDATABASE arguments retained only in original private run."
+    }
+  ],
+  "hashes_after": [
+    [
+      "services/bff/internal/apprecordservice/root_workflow_close_finalization_test.go",
+      "8a56402baaeba01b9ba30ad1acf3cab825c9d7e057d1ecd8458705e6252d67d0"
+    ],
+    [
+      "services/bff/internal/workflowprojection/projection.go",
+      "ca3119c1dc0d878cb0b1abe985ab0759251f333f75c4091cf8e527469aacec4d"
+    ],
+    [
+      "services/bff/go.mod",
+      "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632"
+    ],
+    [
+      "services/bff/go.sum",
+      "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+    ],
+    [
+      "db/migrations/00001_auth.sql",
+      "ab5c96db2fb775501df3fc2c55a16f9ffd6c8630c6e9f875aa238230b6b522b4"
+    ],
+    [
+      "db/migrations/00002_personnel.sql",
+      "544512f1654ae0a96f51e0fa24f61b58e3f15c8a2e3fa2928b0dd969e5a1b91e"
+    ],
+    [
+      "db/migrations/00003_query_drafts.sql",
+      "9b1f546d158931d09245070a4d5b6b46dd64b128b008363ae7a44f74bae8860a"
+    ],
+    [
+      "db/migrations/00004_query_revision_writers.sql",
+      "85faf7406d0e82ce7ca14aaf10276f80ef5a88a5c957170f111a261e910c925d"
+    ],
+    [
+      "db/migrations/00005_table_presets.sql",
+      "9f8ec8b86e7d7ab208940b88f43283ca11895a34e18b3af328e25b1e8ba40509"
+    ],
+    [
+      "db/migrations/00006_apps_policy.sql",
+      "1cca96dc6e5b7acf11c0c9f40364d1fdb5d9d57b4f8ddd8b0036dd5b5bf15fb0"
+    ],
+    [
+      "db/migrations/00007_app_structure.sql",
+      "080b6daf0aacf0763d54dfadcbcffc2135486835700895b08010c77cb5d12531"
+    ],
+    [
+      "db/migrations/00008_app_records.sql",
+      "3df7c46c65744b6bf42ba37e625e8fa2d865806ed139e03306d5a8a2b42d63b0"
+    ],
+    [
+      "db/migrations/00009_record_save_history.sql",
+      "6468e6f8bf0e1d349840238c5fa44a316abf9ad53cf46055b6a9b025bdf8bed1"
+    ],
+    [
+      "db/migrations/00010_member_source_label_width.sql",
+      "326d7d0f171dba8350f7e8fbd1f96c5182235c969d73b4f0a585571c7b8a9a51"
+    ],
+    [
+      "db/migrations/00011_record_reference_defaults.sql",
+      "d15de1b9265a7d8da2dab448cfe2ba026472a15a08c0163f5e60f237b1c1e9f8"
+    ],
+    [
+      "db/migrations/00012_actual_reference_defaults.sql",
+      "450b3e8aa0bd1f2419915074a32d1d8d47ce5fe2b82c891f4f058a1a429e3490"
+    ],
+    [
+      "db/migrations/00013_record_command_fence.sql",
+      "2e75231b237d8e61cb3a291cbbe144cfa1e10ee0a7090e96a0c02f61ff0e0498"
+    ],
+    [
+      "db/migrations/00014_workflow_command_ledger.sql",
+      "c54a0414b1beb9ea835bf830cc7a735431d6d816059f22821ffab5e87e37f2cb"
+    ],
+    [
+      "db/migrations/00015_workflow_catalog.sql",
+      "5056a36d4f9ed64fdd98432f231ec67012cde693439ac75139e595b51f0911fc"
+    ],
+    [
+      "db/migrations/00016_workflow_management_operations.sql",
+      "f68d650947d665a7ccb905cd5c7d0d85dfe15b4dcc501c00066cd38c00b71929"
+    ],
+    [
+      "db/migrations/00017_workflow_publications.sql",
+      "26dc61e4b3811862b66fd5db5ad0bff872e20284c83159744c3eb280486eb4fb"
+    ],
+    [
+      "db/migrations/00018_workflow_execution_projection.sql",
+      "70b73412bccd5b95ede435f8c1142496dd0c4c53e60163e15a9591b784527f6b"
+    ],
+    [
+      "db/migrations/00019_workflow_execution_recovery.sql",
+      "c7fc65a5b0437e73245490804237fe3189428a33e4329f40c16b45aa9e2d3d34"
+    ],
+    [
+      "db/migrations/00020_workflow_evidence.sql",
+      "6699d65269ddbeeddc429486038865e09b35a857b407639487ade4aaaf8cb4d9"
+    ],
+    [
+      "db/migrations/00021_workflow_task_operations.sql",
+      "9075fdc77a15d31e44a6247c4d1ced4e7afbd35607f4fd334eee0ceab5c6220a"
+    ]
+  ],
+  "hashes_unchanged": true,
+  "changed_worktree_paths": [
+    "services/bff/internal/apprecordservice/root_workflow_close_finalization_test.go"
+  ],
+  "artifact_hashes": [
+    [
+      "fixture-version-after.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "fixture-version-after.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "fixture-version-after.stdout",
+      "da1ad12b05fe2d4fbb09917ea04e1f77237a0d6422314cf2fd548a8adc2738df"
+    ],
+    [
+      "fixture-version-before.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "fixture-version-before.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "fixture-version-before.stdout",
+      "da1ad12b05fe2d4fbb09917ea04e1f77237a0d6422314cf2fd548a8adc2738df"
+    ],
+    [
+      "root_test.formatted.go",
+      "8a56402baaeba01b9ba30ad1acf3cab825c9d7e057d1ecd8458705e6252d67d0"
+    ],
+    [
+      "root_test.original.go",
+      "314ace22069a6b89bb3bce1153a266eb8f0d9665f2da856081705a5d8eb20057"
+    ],
+    [
+      "workflow-close-red.exit",
+      "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    ],
+    [
+      "workflow-close-red.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "workflow-close-red.stdout",
+      "5b2371cfc8d66ec10164588d3787026332a032aefb6874ea4a1f2f5947c9ee42"
+    ]
+  ],
+  "sanitization": {
+    "byte_identical_to_original_run": false,
+    "fixture_arguments_omitted": true,
+    "original_private_run_hashes": [
+      [
+        "run.json",
+        "f2563fd39526563eb7baa52a1b39112a79b93e504125b382678f86f175bc712b"
+      ]
+    ]
+  }
+}
