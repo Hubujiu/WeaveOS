@@ -15,6 +15,9 @@ import (
 func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[string]json.RawMessage, error) {
 	required, optional, nullable := []string{}, []string{}, []string{}
 	switch kind {
+	case "workflow.lifecycle.action":
+		required = []string{"operationId", "action", "basisToken"}
+		optional = []string{"targetNodeId"}
 	case "workflow.task.action":
 		required = []string{"operationId", "action", "basisToken"}
 	case "record.create":
@@ -43,7 +46,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 	if kind == "record.search" {
 		limit = 64 << 10
 	}
-	if kind == "workflow.task.action" {
+	if kind == "workflow.task.action" || kind == "workflow.lifecycle.action" {
 		limit = 4096
 	}
 	raw, e := io.ReadAll(http.MaxBytesReader(w, r.Body, limit))
@@ -67,6 +70,22 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 			json.Unmarshal(m["action"], &action) != nil || (action != "agree" && action != "reject") ||
 			json.Unmarshal(m["basisToken"], &token) != nil || token == "" || utf8.RuneCountInString(token) > 256 {
 			return nil, recordBodyInvalid()
+		}
+	}
+	if kind == "workflow.lifecycle.action" {
+		var operation, action, token string
+		if json.Unmarshal(m["operationId"], &operation) != nil || operation == "00000000-0000-0000-0000-000000000000" || json.Unmarshal(m["action"], &action) != nil || (action != "withdraw" && action != "return") || json.Unmarshal(m["basisToken"], &token) != nil || token == "" || utf8.RuneCountInString(token) > 256 {
+			return nil, recordBodyInvalid()
+		}
+		target, present := m["targetNodeId"]
+		if action == "withdraw" && present {
+			return nil, recordBodyInvalid()
+		}
+		if action == "return" {
+			var id string
+			if !present || json.Unmarshal(target, &id) != nil || !appfields.ValidID(id) || id == "00000000-0000-0000-0000-000000000000" {
+				return nil, recordBodyInvalid()
+			}
 		}
 	}
 	for _, key := range []string{"operationId", "targetRecordId"} {
