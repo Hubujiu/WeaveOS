@@ -28,3 +28,5 @@ Fixed Maven/JDK/PostgreSQL/Redis images pulled at script digest; existing prepar
 Raw JSONL/stdout/stderr/exits, full formal step/container logs, exact commands/times/source hashes/isolation/report identities and original/submitted artifact hashes in run.json. Private generated report directory archived outside Git after byte-identical copies; no binary/settings/session secret committed. Scope does not include all repository packages, frontend/browser/product/final CI, public record-create workflow trigger, PR, merge or deployment. Root source/evidence review and acceptance remain pending.
 
 Three raw stdout streams contain original whitespace/control framing and are stored as lossless gzip (.stdout.gz); decompressed SHA256 equals original bytes. Originals remain task-private. Other logs are unchanged raw files.
+
+Container .log streams are also stored as lossless .log.gz to preserve original trailing blank lines and include them despite the repository global log ignore rule. Manifest coverage was checked against tracked files.
