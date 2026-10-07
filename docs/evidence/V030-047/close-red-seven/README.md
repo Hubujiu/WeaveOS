@@ -1,0 +1,7 @@
+# V030-047 seven-case actual close RED
+
+Root-authored test source commit: 19a9a2eee1177cb48311e71378b84822332d7e1f, base b056fc34f41d389c5a4aee54b6e81a29dae578bd. Only the new test file was taken, then mechanical gofmt applied. Local branch HEAD remains 60ef37f5; no production or DDL changes. The earlier five-case run is independently preserved in ../close-red/.
+
+Actual command: go test -race -p 1 -count=1 -json -run '^TestRootWorkflowClose' ./internal/apprecordservice. Existing real isolated V045 PostgreSQL was verified version22 before and after; no migrations or new services. Result: exit1, 6 FAIL and 1 PASS, no SKIP. Five failures reached final-confirmation assertions with closing/revision4 rather than disabled/revision5; the real write-fault test got nil instead of its close-write trigger error. Completion without a close request passed. The concurrent final receipts completed without timeout or deadlock before the final catalog assertion failed. This is behavior RED, not compilation/environment failure.
+
+Raw stdout/stderr/exit and original/formatted test snapshots are exact copies. The original private run.json stays private; run.sanitized.json explicitly omits fixture arguments and normalizes local tool paths and is not byte-identical. Raw-copy hashes are ordered [path,digest] pairs. All test/production/migration/dependency hashes checked before/after are unchanged. No environment dump, credentials, private keys, implementation, test changes beyond gofmt, or DDL changes are included. Root owns subsequent tests/debug/contracts and acceptance.
