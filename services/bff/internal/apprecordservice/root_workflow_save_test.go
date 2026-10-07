@@ -361,3 +361,85 @@ func TestRootWorkflowSaveDoesNotDependOnEngineReadiness(t *testing.T) {
 	rootSaveRow(t, f, "local save", 2)
 	rootSaveCounts(t, f, 1)
 }
+
+func TestRootWorkflowSaveOtherFlowKeepsIndependentTaskAndSeesLatestRecord(t *testing.T) {
+	a := rootSaveSetup(t, true)
+	f := a.recordFixture
+	graph := rootCatalogGraph(t, f, true)
+	head := rootCatalogReady(t, f, graph)
+	instance := rootCatalogReserve(t, f, rootCatalogReserveInput(t, f, head))
+	var version string
+	if e := f.owner.QueryRow(f.ctx, "SELECT version_id::text FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2 AND version=1", f.app, head.FlowID).Scan(&version); e != nil {
+		t.Fatal(e)
+	}
+	p := rootProjection{recordFixture: f, head: head, instance: instance, version: version, first: graph.Nodes[1].ID, second: graph.Nodes[1].ID}
+	command, payload := rootRecoveryAccept(t, p)
+	task := p.task(t, p.first, p.actor, 1)
+	receipt, body := p.receipt(t, command, "active", "", task)
+	p.apply(t, command, payload, receipt, body, true)
+	b := rootTaskFixture{rootProjection: p, task: task}
+	oldB := rootActionRequest(t, b, "agree")
+	rootSave(t, a, rootSaveRequest(t, a, "latest shared value"))
+	var state string
+	var sequence int64
+	var closed bool
+	if e := f.owner.QueryRow(f.ctx, "SELECT i.state,i.sequence,t.closed_command_id IS NOT NULL FROM applications.workflow_instances i JOIN applications.workflow_tasks t ON t.instance_id=i.id WHERE i.id=$1 AND t.id=$2", b.instance.ID, b.task.ID).Scan(&state, &sequence, &closed); e != nil || state != "active" || sequence != 1 || closed {
+		t.Fatal("Save in A changed B workflow state", e)
+	}
+	latest := rootTaskPreview(t, b)
+	if latest.Record.RecordVersion != 2 {
+		t.Fatal("B was pinned to old record")
+	}
+	_, e := f.service.AcceptWorkflowTask(f.ctx, f.principal, oldB, applications.Metadata{RequestID: "v043-b-stale"})
+	if !errors.Is(e, ErrWorkflowBasisChanged) {
+		t.Fatalf("B accepted an unseen changed record: %v", e)
+	}
+	var count int
+	if e = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_commands WHERE command_json->>'AppID'=$1", f.app).Scan(&count); e != nil || count != 2 {
+		t.Fatal("Save or stale B action emitted extra command", e)
+	}
+	rootSaveRow(t, a, "latest shared value", 2)
+}
+
+func TestRootWorkflowSaveRacingApprovalCannotAdvanceUnseenValue(t *testing.T) {
+	f := rootSaveSetup(t, true)
+	save := rootSaveRequest(t, f, "new value")
+	action := WorkflowTaskActionRequest{WorkflowTaskRequest: f.request(), OperationID: recordOperationID(t, f.recordFixture), Action: "agree", BasisToken: save.BasisToken}
+	start := make(chan struct{})
+	var saveErr, actionErr error
+	var accepted WorkflowOperationResult
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		<-start
+		_, saveErr = f.service.SaveWorkflowTask(f.ctx, f.principal, save, applications.Metadata{RequestID: "v043-save-races-action"})
+	}()
+	go func() {
+		defer wg.Done()
+		<-start
+		accepted, actionErr = f.service.AcceptWorkflowTask(f.ctx, f.principal, action, applications.Metadata{RequestID: "v043-action-races-save"})
+	}()
+	close(start)
+	wg.Wait()
+	if (saveErr == nil) == (actionErr == nil) {
+		t.Fatalf("exactly one operation may win: Save=%v Action=%v", saveErr, actionErr)
+	}
+	if saveErr == nil {
+		if !errors.Is(actionErr, ErrWorkflowBasisChanged) {
+			t.Fatalf("unexpected old-basis error: %v", actionErr)
+		}
+		rootSaveRow(t, f, "new value", 2)
+		rootSaveCounts(t, f, 1)
+	} else {
+		var fenced *appstructure.Error
+		if !errors.As(saveErr, &fenced) || fenced.Code != "APPLICATION_RECORD_FENCED" {
+			t.Fatalf("Save did not respect pending approval fence: %v", saveErr)
+		}
+		c, _ := rootActionRead(t, f, accepted)
+		if c.RecordVersion != 1 {
+			t.Fatal("approval changed its seen version")
+		}
+		rootSaveRow(t, f, "alpha", 1)
+	}
+}
