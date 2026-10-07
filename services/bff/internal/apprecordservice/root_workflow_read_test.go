@@ -26,7 +26,10 @@ func TestRootWorkflowReadCurrentRecordSummary(t *testing.T) {
 }
 func TestRootWorkflowReadOwnScopeRejectsForeignRecord(t *testing.T) {
 	f := rootTaskSetup(t, false)
-	if _, e := f.owner.Exec(f.ctx, "UPDATE applications.grants SET row_scope='own' WHERE app_id=$1 AND action='data.read'", f.app); e != nil {
+	if _, e := f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.read' AND row_scope='all')", f.app); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.owner.Exec(f.ctx, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.read' AND row_scope='all'", f.app); e != nil {
 		t.Fatal(e)
 	}
 	q := rootReadRequest(f)
