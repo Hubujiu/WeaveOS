@@ -19,11 +19,12 @@ import (
 var ErrUnavailable = errors.New("record service unavailable")
 
 type Service struct {
-	RuntimeReady  func(context.Context) error
-	Pool          *pgxpool.Pool
-	Queries       *querycontext.Store
-	WorkflowBases *querycontext.Store
-	Limits        appschema.Limits
+	RuntimeReady           func(context.Context) error
+	Pool                   *pgxpool.Pool
+	Queries                *querycontext.Store
+	WorkflowBases          *querycontext.Store
+	WorkflowLifecycleBases *querycontext.Store
+	Limits                 appschema.Limits
 }
 
 func New(pool *pgxpool.Pool, client redis.UniversalClient, generation string) *Service {
@@ -54,7 +55,7 @@ func New(pool *pgxpool.Pool, client redis.UniversalClient, generation string) *S
 				b.Data >= a.Data && b.Dependency >= a.Dependency && b.Schema >= a.Schema && b.View >= a.View && b.Policy >= a.Policy && b.Source >= a.Source
 		},
 	}
-	return &Service{Pool: pool, Queries: querycontext.NewStore(client, "applications", generation, policy), WorkflowBases: newWorkflowBasisStore(client, generation)}
+	return &Service{Pool: pool, Queries: querycontext.NewStore(client, "applications", generation, policy), WorkflowBases: newWorkflowBasisStore(client, generation), WorkflowLifecycleBases: newWorkflowLifecycleStore(client, generation)}
 }
 
 func closedJSON(raw json.RawMessage, out any) bool {
