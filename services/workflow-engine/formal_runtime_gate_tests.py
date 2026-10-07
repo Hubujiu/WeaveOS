@@ -10,7 +10,7 @@ spec = importlib.util.spec_from_file_location("formal_gate", Path(__file__).with
 gate = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gate)
 PACKAGE = "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff"
-CASES = ["TestRootFormalRuntimePublishAndApprove", "TestRootFormalRuntimeLostReplyBffRestart", "TestRootFormalRuntimeEngineRestart"]
+CASES = ["TestRootFormalRuntimePublishAndApprove", "TestRootFormalRuntimeLostReplyBffRestart", "TestRootFormalRuntimeEngineRestart", "TestRootFormalRuntimeNodeSaveThenApproveLatest", "TestRootFormalRuntimeReturnThenWithdrawRecovery"]
 EXPECTED = CASES + [CASES[0] + "/agree", CASES[0] + "/reject"]
 
 class RootFormalRuntimeGateTest(unittest.TestCase):
@@ -31,7 +31,7 @@ class RootFormalRuntimeGateTest(unittest.TestCase):
         self.path.write_text("".join(json.dumps(event) + "\n" for event in self.events))
         return gate.validate(self.path)
     def test_exact_scenarios_and_action_variants(self):
-        self.assertEqual(5, self.check())
+        self.assertEqual(7, self.check())
     def test_each_missing_case_rejected(self):
         original = copy.deepcopy(self.events)
         for name in EXPECTED:
