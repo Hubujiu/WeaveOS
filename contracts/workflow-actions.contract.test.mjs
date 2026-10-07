@@ -1,5 +1,6 @@
 // Root-owned public task-action contract; runtime behavior is covered by Go HTTPS tests.
 import test from 'node:test';
+import {assertUnordered} from './semantic-assertions.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const api=JSON.parse(readFileSync(new URL('./openapi/openapi.json',import.meta.url)));
@@ -18,14 +19,20 @@ test('Root V037: exact preview/action/status routes use existing Session and CSR
  assert.equal(post.responses['202'].content['application/json'].schema.$ref,ref('WorkflowTaskPendingEnvelope'));assert.ok(post.responses['202'].headers.Location);
 });
 test('Root V037: exact closed action body and separate pending/final result shapes',()=>{
- const s=api.components.schemas;assert.deepEqual(s.WorkflowTaskAction.required,['operationId','action','basisToken']);assert.equal(s.WorkflowTaskAction.additionalProperties,false);assert.deepEqual(s.WorkflowTaskAction.properties.action.enum,['agree','reject']);
- assert.deepEqual(s.WorkflowTaskPending.required,['operationId','commandId','instanceId','status']);assert.equal(s.WorkflowTaskPending.additionalProperties,false);assert.equal(s.WorkflowTaskPending.properties.status.const,'pending');
+ const s=api.components.schemas;assertUnordered(s.WorkflowTaskAction.required,['operationId','action','basisToken']);assert.equal(s.WorkflowTaskAction.additionalProperties,false);assertUnordered(s.WorkflowTaskAction.properties.action.enum,['agree','reject']);
+ assertUnordered(s.WorkflowTaskPending.required,['operationId','commandId','instanceId','status']);assert.equal(s.WorkflowTaskPending.additionalProperties,false);assert.equal(s.WorkflowTaskPending.properties.status.const,'pending');
  assert.equal(s.WorkflowTaskSuccess.properties.status.const,'success');assert.equal(s.WorkflowTaskNoEffect.properties.status.const,'no_effect');
- assert.deepEqual(s.WorkflowTaskOperation.oneOf,[{$ref:ref('WorkflowTaskPending')},{$ref:ref('WorkflowTaskSuccess')},{$ref:ref('WorkflowTaskNoEffect')}]);
- assert.deepEqual(s.ApplicationOperation.properties.httpStatus.enum,[200,201,202,204]);assert.ok(s.ApplicationOperation.properties.result.oneOf.some(x=>x.$ref===ref('WorkflowTaskPending')));
+ assertUnordered(s.WorkflowTaskOperation.oneOf,[{$ref:ref('WorkflowTaskPending')},{$ref:ref('WorkflowTaskSuccess')},{$ref:ref('WorkflowTaskNoEffect')}]);
+ assertUnordered(s.ApplicationOperation.properties.httpStatus.enum,[200,201,202,204]);assert.ok(s.ApplicationOperation.properties.result.oneOf.some(x=>x.$ref===ref('WorkflowTaskPending')));
  assert.equal(s.WorkflowTaskPreview.properties.editableFieldIds.type,'array');assert.equal(s.WorkflowTaskPreview.properties.editableFieldIds.uniqueItems,true);assert.equal(s.WorkflowTaskPreview.properties.editableFieldIds.maxItems,200);
- assert.deepEqual(s.WorkflowTaskPreview.required,['basisToken','task','record','fields','editableFieldIds']);assert.equal(s.WorkflowTaskPreview.properties.fields.items.$ref,ref('Field'));assert.equal(s.WorkflowTaskPreview.properties.record.$ref,ref('BusinessRecord'));
- for(const name of ['WorkflowTaskPending','WorkflowTaskSuccess','WorkflowTaskNoEffect'])for(const forbidden of ['evidenceHash','values','fields','payload','routes','actorId'])assert.equal(s[name].properties[forbidden],undefined);
+ assertUnordered(s.WorkflowTaskPreview.required,['basisToken','task','record','fields','editableFieldIds']);assert.equal(s.WorkflowTaskPreview.properties.fields.items.$ref,ref('Field'));assert.equal(s.WorkflowTaskPreview.properties.record.$ref,ref('BusinessRecord'));
+ const allowed={WorkflowTaskPending:['operationId','commandId','instanceId','status'],WorkflowTaskSuccess:['operationId','commandId','instanceId','status','instanceState','sequence'],WorkflowTaskNoEffect:['operationId','commandId','instanceId','status','instanceState','reason','sequence']};
+ for(const [name,fields] of Object.entries(allowed)){
+  assert.equal(s[name].additionalProperties,false);
+  assertUnordered(Object.keys(s[name].properties),fields,`${name} exact public fields`);
+  assertUnordered(s[name].required,fields,`${name} all public fields required`);
+ }
+ assertUnordered(Object.keys(s.WorkflowTaskAction.properties),['operationId','action','basisToken']);
 });
 test('Root V037: stale task/basis and oversized real evidence have public safe conflicts',()=>{
  for(const code of ['WORKFLOW_TASK_CHANGED','WORKFLOW_BASIS_CHANGED','WORKFLOW_BASIS_EXPIRED','WORKFLOW_EVIDENCE_TOO_LARGE']){

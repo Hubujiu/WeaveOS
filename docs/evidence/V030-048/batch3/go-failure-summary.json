@@ -1,0 +1,26 @@
+{
+  "top_level_pass": [
+    "TestNewReferenceDefaultFailsClosedWithoutSourceValidator",
+    "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies",
+    "TestFrozenRecordHTTPDecoderRejectsDuplicateUnknownNullAndNumericValues"
+  ],
+  "top_level_fail": [
+    "TestFrozenRecordHTTPDecoderBoundsRawBodiesAndMedia"
+  ],
+  "failure_assertions": [
+    {
+      "test": "TestFrozenRecordHTTPDecoderBoundsRawBodiesAndMedia/record.search",
+      "output": "    record_http_decode_test.go:74: otherwise valid JSON one byte over limit must reject: COMMON_VALIDATION_FAILED\n"
+    },
+    {
+      "test": "TestFrozenRecordHTTPDecoderBoundsRawBodiesAndMedia/record.create",
+      "output": "    record_http_decode_test.go:74: otherwise valid JSON one byte over limit must reject: COMMON_VALIDATION_FAILED\n"
+    },
+    {
+      "test": "TestFrozenRecordHTTPDecoderBoundsRawBodiesAndMedia/draft.create",
+      "output": "    record_http_decode_test.go:74: otherwise valid JSON one byte over limit must reject: COMMON_VALIDATION_FAILED\n"
+    }
+  ],
+  "skipped": [],
+  "no_executor_debug_or_source_change": true
+}

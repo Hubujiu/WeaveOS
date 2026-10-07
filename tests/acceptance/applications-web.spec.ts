@@ -232,7 +232,9 @@ test('V030-012 real HTTPS Shell persists a directory, form and saved designer fi
  const directoryWrite = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/directories'));
  await page.getByRole('button', { name: '创建目录', exact: true }).click();
  const directoryResponse = await directoryWrite;
- expect(directoryResponse.status(), (await directoryResponse.json()).code).toBe(201);
+ const directoryReceipt=await directoryResponse.json();
+ expect(directoryResponse.status(),directoryReceipt.code).toBe(201);
+ expect(directoryReceipt.data.id).toEqual(expect.any(String));
  await expect(page.getByRole('treeitem', { name: folderName, exact: true })).toBeVisible();
  if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('form-directory-created.png'), fullPage: true });
  await page.getByRole('treeitem', { name: folderName, exact: true }).getByRole('button').first().click();
@@ -245,7 +247,7 @@ test('V030-012 real HTTPS Shell persists a directory, form and saved designer fi
  expect(savedStructure.status).toBe(200);
  const forms = savedStructure.data.forms as { id: string; name: string; directoryId: string | null }[];
  const form = forms.find(value => value.name === formName);
- expect(form?.directoryId).toBeTruthy();
+ expect(form?.directoryId).toBe(directoryReceipt.data.id);
  await page.getByRole('button', { name: '配置表单 ' + formName }).click();
  await expect(page).toHaveURL(new RegExp('/app/applications/' + app.id + '/forms/' + form!.id + '/design$'));
  await expect(page.getByRole('region', { name: '表单设计器' })).toBeVisible();

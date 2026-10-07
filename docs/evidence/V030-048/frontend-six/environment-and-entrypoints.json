@@ -1,0 +1,47 @@
+{
+  "worktree": "/workspace/WeaveOS-worktrees/V030-048",
+  "branch": "task/V030-048-test-oracles",
+  "develop_baseline": "67eb444d3e698dac53ede3cb344909384c91cc13",
+  "current_HEAD": "0dc343d142ee0ddb02f634fccbb2740eda23f48b",
+  "later_batches_uncommitted": true,
+  "tools": {
+    "Go": "1.27.1",
+    "Node": "24.14.0",
+    "pnpm": "10.28.2",
+    "Java": "17.0.17",
+    "Maven": "3.9.11 locked offline Docker",
+    "Goose": "3.28.0",
+    "DockerServer": "28.4.0",
+    "Compose": "2.40.3",
+    "Buildx": "0.31.0",
+    "OpenSSL": "3.5.7"
+  },
+  "services": [
+    "weaveos-v030-048-postgres PG18.6 host55448 running",
+    "weaveos-v030-048-redis Redis8.2.10 host56448 running",
+    "weaveos-b2-ci-43ec721505ab78beea8745a4cc40bd51 private Unix socket running; state retained"
+  ],
+  "runner_env": {
+    ".work/acceptance/runtime.env_exists": false,
+    ".work/runtime/CURRENT.json_exists": false,
+    "127.0.0.1:19443_bind_probe": "available",
+    "local_workspace_disk_available": "23G observed"
+  },
+  "official_entries": {
+    "normal_CI": ".github/workflows/ci.yml: governance, Go, browser, Java engine, RPC/execution/recovery/actions/formal-runtime/schema-cli/backup jobs",
+    "product_workflow": ".github/workflows/acceptance.yml",
+    "product": "node infra/acceptance/run.mjs",
+    "runtime": "node infra/runtime/run.mjs",
+    "runtime_prerequisites": "preceding runtime unit tests from acceptance.yml; exact committed candidate and available rollback history; Docker Linux + Compose/buildx/OCI loading + Node/OpenSSL + image/dependency fetch access",
+    "release": "node scripts/check-release.mjs only conditional verify_release gate; not run"
+  },
+  "readiness_gaps": [
+    "uncommitted candidate must be frozen as exact commit: runtime packageImages uses git archive(commit), otherwise later patches absent",
+    "runtime hardcoded rollback commit c37226731a6bdbf5c6187aad6cfe1ff9be5daadd absent locally; full history needed before running",
+    "only PG/Redis/Maven Docker images cached: Go1.25.7 acceptance runner, Go1.27.1 runtime, Playwright1.63.0-noble, node24.14.0, nginx/debian/scanner images not prefetched or validated",
+    "DockerServer28.4.0 differs official acceptance workflow Docker29.6.2 with containerd-snapshotter; OCI load capability not exercised",
+    "current task test DB is shared by stage suites; full runners create independent stack, do not point them at shared task DB"
+  ],
+  "browser_capabilities": "Chromium target actual6PASS; Firefox launch previously checked; WebKit launch uses local library workaround, full product runner uses fixed Playwright Docker image",
+  "no_full_regression_started": true
+}

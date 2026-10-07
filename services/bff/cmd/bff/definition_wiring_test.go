@@ -12,9 +12,47 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
+	"time"
 )
+
+func rootDefinitionEnvelope(t *testing.T, w *httptest.ResponseRecorder, status int, code string) map[string]any {
+	t.Helper()
+	var body map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("invalid response JSON: %v", err)
+	}
+	keys := make([]string, 0, len(body))
+	for key := range body {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	if w.Code != status || body["code"] != code || !reflect.DeepEqual(keys, []string{"code", "data", "message", "meta"}) {
+		t.Fatalf("expected status %d/code %s/closed envelope; got %d %s", status, code, w.Code, w.Body.String())
+	}
+	if body["data"] == nil {
+		return nil
+	}
+	data, ok := body["data"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected object data: %s", w.Body.String())
+	}
+	return data
+}
+func rootDefinitionFieldSet(t *testing.T, data map[string]any, want []string) {
+	t.Helper()
+	got := make([]string, 0, len(data))
+	for key := range data {
+		got = append(got, key)
+	}
+	sort.Strings(got)
+	sort.Strings(want)
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("response fields got %v want %v", got, want)
+	}
+}
 
 func TestDefinitionConfigRequiresDedicatedExplicitKeyAndLimits(t *testing.T) {
 	values := map[string]string{"WEAVEOS_DEFINITION_HMAC_KEY": base64.StdEncoding.EncodeToString([]byte("isolated-definition-test-32bytes!")), "WEAVEOS_DEFINITION_KEY_ID": "test", "WEAVEOS_SCHEMA_LOCK_TIMEOUT_MS": "1000", "WEAVEOS_SCHEMA_STATEMENT_TIMEOUT_MS": "5000"}
@@ -22,9 +60,8 @@ func TestDefinitionConfigRequiresDedicatedExplicitKeyAndLimits(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	key := reflect.ValueOf(cfg).FieldByName("DefinitionKey")
-	if !key.IsValid() || key.Len() < 32 {
-		t.Fatal("dedicated injected definition key was not loaded")
+	if !reflect.DeepEqual(cfg.DefinitionKey, []byte("isolated-definition-test-32bytes!")) || cfg.DefinitionKeyID != "test" || cfg.SchemaLimits.LockTimeout != time.Second || cfg.SchemaLimits.StatementTimeout != 5*time.Second {
+		t.Fatal("dedicated key bytes, key identity and exact lock/statement budgets must match explicit configuration")
 	}
 	values["WEAVEOS_SCHEMA_LOCK_TIMEOUT_MS"] = "0"
 	if _, e = readConfig(func(k string) string { return values[k] }); e == nil {
@@ -143,13 +180,21 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 	var out struct {
 		Data struct{ Form struct{ ID string } }
 	}
-	json.Unmarshal(w.Body.Bytes(), &out)
+	if e := json.Unmarshal(w.Body.Bytes(), &out); e != nil {
+		t.Fatal(e)
+	}
 	var saveID string
-	p.QueryRow(c, "SELECT gen_random_uuid()::text").Scan(&saveID)
+	if e := p.QueryRow(c, "SELECT gen_random_uuid()::text").Scan(&saveID); e != nil {
+		t.Fatal(e)
+	}
 	var fieldID string
-	p.QueryRow(c, "SELECT gen_random_uuid()::text").Scan(&fieldID)
+	if e := p.QueryRow(c, "SELECT gen_random_uuid()::text").Scan(&fieldID); e != nil {
+		t.Fatal(e)
+	}
 	var referenceID string
-	p.QueryRow(c, "SELECT gen_random_uuid()::text").Scan(&referenceID)
+	if e := p.QueryRow(c, "SELECT gen_random_uuid()::text").Scan(&referenceID); e != nil {
+		t.Fatal(e)
+	}
 	w = request("PUT", "/forms/"+out.Data.Form.ID+"/definition", `{"operationId":"`+saveID+`","expectedSchemaVersion":0,"expectedViewVersion":0,"fields":[{"id":"`+fieldID+`","name":"标题","kind":"text","required":false,"default":null,"config":{"maxLength":null},"presentation":{"helpText":null,"displayTimeZone":null}},{"id":"`+referenceID+`","name":"成员引用","kind":"member","required":false,"default":null,"config":{},"presentation":{"helpText":null,"displayTimeZone":null}}],"layout":[],"optionMappings":[],"confirmationToken":null}`)
 	if w.Code != 200 {
 		t.Fatalf("composed actual Save %d %s", w.Code, w.Body.String())
@@ -185,13 +230,19 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 		if e := json.Unmarshal(w.Body.Bytes(), &mutation); e != nil {
 			t.Fatal(e)
 		}
+		confirmedCreate := rootDefinitionEnvelope(t, w, 201, "OK")
+		rootDefinitionFieldSet(t, confirmedCreate, []string{"operationId", "id", "recordVersion", "schemaVersion", "createdAt", "updatedAt"})
+		if confirmedCreate["operationId"] != createID {
+			t.Fatal("create receipt lost the actual operation identity")
+		}
 		id := mutation.Data.ID
 		if id == "" || mutation.Data.RecordVersion != 1 || mutation.Data.SchemaVersion != 1 || !strings.HasSuffix(w.Header().Get("Location"), "/records/"+id) {
 			t.Fatalf("exact create response %s", w.Body.String())
 		}
 		w = request("GET", root+"/records/"+id, "")
-		if w.Code != 200 || !strings.Contains(w.Body.String(), `"alpha"`) || !strings.Contains(w.Body.String(), `"appId":"`+app+`"`) {
-			t.Fatalf("same RR record read %d %s", w.Code, w.Body.String())
+		record := rootDefinitionEnvelope(t, w, 200, "OK")
+		if record["id"] != id || record["appId"] != app || record["viewId"] != out.Data.Form.ID || record["recordVersion"] != float64(1) || !reflect.DeepEqual(record["values"], map[string]any{fieldID: "alpha", referenceID: nil}) {
+			t.Fatalf("exact record identity/version/values: %+v", record)
 		}
 		w = request("POST", root+"/records/search", `{"page":1,"pageSize":20,"filter":null,"sort":null}`)
 		if w.Code != 200 {
@@ -211,34 +262,52 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 			t.Fatalf("actual edit %d %s", w.Code, w.Body.String())
 		}
 		w = request("POST", root+"/records", body)
-		if w.Code != 201 || strings.Contains(w.Body.String(), `"alpha"`) || strings.Contains(w.Body.String(), `"beta"`) {
-			t.Fatalf("minimum confirmed replay %d %s", w.Code, w.Body.String())
+		if replay := rootDefinitionEnvelope(t, w, 201, "OK"); !reflect.DeepEqual(replay, confirmedCreate) {
+			t.Fatalf("confirmed replay must equal the original independently validated receipt: %+v", replay)
 		}
 		w = request("GET", root+"/records/"+id+"/history", "")
-		if w.Code != 200 || !strings.Contains(w.Body.String(), `"alpha"`) || !strings.Contains(w.Body.String(), `"beta"`) {
-			t.Fatalf("real same-Tx history %d %s", w.Code, w.Body.String())
+		history := rootDefinitionEnvelope(t, w, 200, "OK")
+		items, ok := history["items"].([]any)
+		if !ok || len(items) != 2 {
+			t.Fatalf("expected both history transitions: %+v", history)
+		}
+		gotChanges := map[float64][]any{}
+		for _, raw := range items {
+			event := raw.(map[string]any)
+			version := event["recordVersionAfter"].(float64)
+			if _, duplicate := gotChanges[version]; duplicate {
+				t.Fatal("duplicate history version")
+			}
+			changes := event["changes"].([]any)
+			matches := 0
+			for _, raw := range changes {
+				change := raw.(map[string]any)
+				if change["fieldId"] == fieldID {
+					matches++
+					gotChanges[version] = []any{event["recordVersionBefore"], change["before"], change["after"]}
+				}
+			}
+			if matches != 1 {
+				t.Fatal("history must contain exactly one selected field transition per event")
+			}
+		}
+		wantChanges := map[float64][]any{1: {float64(0), nil, "alpha"}, 2: {float64(1), "alpha", "beta"}}
+		if !reflect.DeepEqual(gotChanges, wantChanges) {
+			t.Fatalf("history transitions got %+v want %+v", gotChanges, wantChanges)
 		}
 		var count int
 		if e := p.QueryRow(c, "SELECT count(*) FROM applications.record_change_events WHERE app_id=$1 AND record_id=$2", app, id).Scan(&count); e != nil || count != 2 {
 			t.Fatalf("actual history events %d %v", count, e)
 		}
 		w = request("PATCH", root+"/records/"+id, `{"operationId":"`+newID()+`","expectedSchemaVersion":1,"expectedRecordVersion":1,"changes":{}}`)
-		if w.Code != 409 || !strings.Contains(w.Body.String(), `"APPLICATION_RECORD_CONFLICT"`) {
-			t.Fatalf("stale record CAS %d %s", w.Code, w.Body.String())
-		}
+		rootDefinitionEnvelope(t, w, 409, "APPLICATION_RECORD_CONFLICT")
 		w = request("POST", root+"/records/search", `{"page":1,"pageSize":20,"filter":null,"sort":null,"queryVersion":"`+page.Data.QueryVersion+`"}`)
-		if w.Code != 409 || !strings.Contains(w.Body.String(), `"APPLICATION_QUERY_CHANGED"`) {
-			t.Fatalf("changed saved projection %d %s", w.Code, w.Body.String())
-		}
+		rootDefinitionEnvelope(t, w, 409, "APPLICATION_QUERY_CHANGED")
 		w = request("POST", root+"/records/search", `{"page":1,"pageSize":20,"filter":null,"sort":null,"queryVersion":"not-a-token"}`)
-		if w.Code != 409 || !strings.Contains(w.Body.String(), `"APPLICATION_QUERY_CONTEXT_EXPIRED"`) {
-			t.Fatalf("expired invalid context %d %s", w.Code, w.Body.String())
-		}
+		rootDefinitionEnvelope(t, w, 409, "APPLICATION_QUERY_CONTEXT_EXPIRED")
 		for _, body := range []string{`{"operationId":"` + newID() + `","expectedSchemaVersion":1,"values":{},"extra":true}`, `{"operationId":"` + newID() + `","expectedSchemaVersion":1,"values":{"` + fieldID + `":123}}`, `{"operationId":"` + newID() + `","expectedSchemaVersion":1,"values":{},"values":{}}`} {
 			w = request("POST", root+"/records", body)
-			if w.Code != 400 || !strings.Contains(w.Body.String(), `"COMMON_VALIDATION_FAILED"`) {
-				t.Fatalf("strict record body %d %s", w.Code, w.Body.String())
-			}
+			rootDefinitionEnvelope(t, w, 400, "COMMON_VALIDATION_FAILED")
 		}
 		for _, bad := range []struct {
 			header, value string
@@ -254,9 +323,7 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 			r.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: csrf})
 			w := httptest.NewRecorder()
 			*w = *serve(r)
-			if w.Code != bad.status || !strings.Contains(w.Body.String(), bad.code) {
-				t.Fatalf("shared guard %s %d %s", bad.header, w.Code, w.Body.String())
-			}
+			rootDefinitionEnvelope(t, w, bad.status, bad.code)
 		}
 		if e := p.QueryRow(c, "SELECT count(*) FROM applications.operations WHERE app_id=$1 AND operation_kind='record.create'", app).Scan(&count); e != nil || count != 1 {
 			t.Fatalf("rejected input/CSRF/actor must have no operation effects %d %v", count, e)
@@ -278,35 +345,40 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 		if json.Unmarshal(w.Body.Bytes(), &draft) != nil || draft.Data.ID == "" || draft.Data.DraftVersion != 1 {
 			t.Fatalf("draft response %s", w.Body.String())
 		}
-		var minimum struct{ Data map[string]any }
-		if json.Unmarshal(w.Body.Bytes(), &minimum) != nil || len(minimum.Data) != 3 || minimum.Data["operationId"] != draftOperation || strings.Contains(w.Body.String(), "unfinished") {
-			t.Fatalf("ADR14 normal draft write must exact minimum %s", w.Body.String())
+		expectedDraft := map[string]any{"operationId": draftOperation, "id": draft.Data.ID, "draftVersion": float64(1)}
+		if got := rootDefinitionEnvelope(t, w, 201, "OK"); !reflect.DeepEqual(got, expectedDraft) {
+			t.Fatalf("exact initial draft receipt %+v", got)
 		}
 		w = request("POST", root+"/drafts", draftBody)
-		if w.Code != 201 || json.Unmarshal(w.Body.Bytes(), &minimum) != nil || len(minimum.Data) != 3 || minimum.Data["operationId"] != draftOperation || minimum.Data["id"] != draft.Data.ID || strings.Contains(w.Body.String(), "unfinished") {
-			t.Fatalf("ADR14 replay must same minimum %s", w.Body.String())
+		if got := rootDefinitionEnvelope(t, w, 201, "OK"); !reflect.DeepEqual(got, expectedDraft) {
+			t.Fatalf("exact draft replay %+v", got)
 		}
 		path := root + "/drafts/" + draft.Data.ID
 		w = request("GET", path, "")
-		if w.Code != 200 || !strings.Contains(w.Body.String(), `"unfinished"`) {
-			t.Fatalf("draft read %d %s", w.Code, w.Body.String())
+		draftRead := rootDefinitionEnvelope(t, w, 200, "OK")
+		if !reflect.DeepEqual(draftRead["values"], map[string]any{fieldID: "unfinished"}) {
+			t.Fatalf("exact incomplete draft input %+v", draftRead)
 		}
 		patchOperation := newID()
 		patchBody := `{"operationId":"` + patchOperation + `","expectedDraftVersion":1,"changes":{},"removeFieldIds":["` + fieldID + `"]}`
 		w = request("PATCH", path, patchBody)
-		if w.Code != 200 || strings.Contains(w.Body.String(), `"unfinished"`) {
-			t.Fatalf("draft sparse remove %d %s", w.Code, w.Body.String())
-		}
-		if json.Unmarshal(w.Body.Bytes(), &minimum) != nil || len(minimum.Data) != 3 || minimum.Data["operationId"] != patchOperation || minimum.Data["draftVersion"] != float64(2) {
-			t.Fatalf("ADR14 patch minimum %s", w.Body.String())
+		expectedPatch := map[string]any{"operationId": patchOperation, "id": draft.Data.ID, "draftVersion": float64(2)}
+		if got := rootDefinitionEnvelope(t, w, 200, "OK"); !reflect.DeepEqual(got, expectedPatch) {
+			t.Fatalf("exact draft patch receipt %+v", got)
 		}
 		w = request("PATCH", path, patchBody)
-		if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &minimum) != nil || len(minimum.Data) != 3 || minimum.Data["draftVersion"] != float64(2) {
-			t.Fatalf("ADR14 patch confirmed replay %d %s", w.Code, w.Body.String())
+		if got := rootDefinitionEnvelope(t, w, 200, "OK"); !reflect.DeepEqual(got, expectedPatch) {
+			t.Fatalf("exact draft patch replay %+v", got)
+		}
+		w = request("GET", path, "")
+		if got := rootDefinitionEnvelope(t, w, 200, "OK"); !reflect.DeepEqual(got["values"], map[string]any{}) {
+			t.Fatalf("sparse removal must persist an empty value object: %+v", got)
 		}
 		w = request("GET", root+"/drafts?pageSize=1", "")
-		if w.Code != 200 || !strings.HasPrefix(strings.TrimSpace(w.Body.String()), `{"code":"OK"`) || !strings.Contains(w.Body.String(), `"pagination"`) {
-			t.Fatalf("draft list envelope %d %s", w.Code, w.Body.String())
+		list := rootDefinitionEnvelope(t, w, 200, "OK")
+		drafts, ok := list["items"].([]any)
+		if !ok || len(drafts) != 1 || drafts[0].(map[string]any)["id"] != draft.Data.ID {
+			t.Fatalf("exact draft list %+v", list)
 		}
 		query := path + "?operationId=" + newID() + "&expectedDraftVersion=2"
 		w = request("DELETE", query, "")
@@ -351,12 +423,12 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 		r.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: memberCSRF})
 		w := httptest.NewRecorder()
 		*w = *serve(r)
-		if w.Code != 200 || !strings.Contains(w.Body.String(), `"read":"own"`) || strings.Contains(w.Body.String(), `"create":true`) {
-			t.Fatalf("ordinary runtime actual grant projection %d %s", w.Code, w.Body.String())
+		runtimeData := rootDefinitionEnvelope(t, w, 200, "OK")
+		capabilities, ok := runtimeData["capabilities"].(map[string]any)
+		if !ok || capabilities["read"] != "own" || capabilities["create"] != false || capabilities["history"] != "none" {
+			t.Fatalf("exact ordinary capability paths: %+v", runtimeData)
 		}
-		if !strings.Contains(w.Body.String(), `"history":"none"`) {
-			t.Fatalf("ADR14 runtime lacks read/history intersection %s", w.Body.String())
-		}
+		rootDefinitionFieldSet(t, capabilities, []string{"create", "read", "edit", "search", "draftCreate", "draftEdit", "history"})
 		memberRequest := func(method, path, body string) *httptest.ResponseRecorder {
 			r := httptest.NewRequest(method, cfg.Origin+"/api/v1/applications/"+app+path, strings.NewReader(body))
 			r.Header.Set("Origin", cfg.Origin)
@@ -369,8 +441,9 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 			return w
 		}
 		w = memberRequest("POST", root+"/records/search", `{"page":1,"pageSize":20,"filter":null,"sort":null}`)
-		if w.Code != 200 || !strings.Contains(w.Body.String(), `"total":0`) {
-			t.Fatalf("immutable createdBy own predicate before COUNT %d %s", w.Code, w.Body.String())
+		ownPage := rootDefinitionEnvelope(t, w, 200, "OK")
+		if ownPage["total"] != float64(0) || !reflect.DeepEqual(ownPage["items"], []any{}) {
+			t.Fatalf("own predicate must return the exact empty page: %+v", ownPage)
 		}
 		if _, e := p.Exec(c, "INSERT INTO applications.grants(app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,'form',$3,'data.create','all')", app, group, out.Data.Form.ID); e != nil {
 			t.Fatal(e)
@@ -388,12 +461,15 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 			t.Fatalf("ordinary created ID %s", w.Body.String())
 		}
 		w = memberRequest("GET", root+"/records/"+mine.Data.ID, "")
-		if w.Code != 200 || !strings.Contains(w.Body.String(), `"createdBy":"`+member+`"`) {
-			t.Fatalf("ordinary own read %d %s", w.Code, w.Body.String())
+		own := rootDefinitionEnvelope(t, w, 200, "OK")
+		if own["id"] != mine.Data.ID || own["createdBy"] != member {
+			t.Fatalf("ordinary own record binding: %+v", own)
 		}
 		w = memberRequest("GET", root+"/runtime", "")
-		if w.Code != 200 || !strings.Contains(w.Body.String(), `"create":true`) {
-			t.Fatalf("defaults-only runtime capability %d %s", w.Code, w.Body.String())
+		runtimeData = rootDefinitionEnvelope(t, w, 200, "OK")
+		capabilities, ok = runtimeData["capabilities"].(map[string]any)
+		if !ok || capabilities["create"] != true {
+			t.Fatalf("defaults-only create capability: %+v", runtimeData)
 		}
 		t.Run("field scoped ordinary reference candidates", func(t *testing.T) {
 			var createGrant, editGrant string

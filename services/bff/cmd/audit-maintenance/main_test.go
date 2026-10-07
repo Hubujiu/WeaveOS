@@ -12,10 +12,7 @@ import (
 )
 
 func TestMaintenanceRequiresExplicitSingleRun(t *testing.T) {
-	live, cold := os.Getenv("WEAVEOS_TEST_DATABASE_URL"), os.Getenv("WEAVEOS_TEST_ARCHIVE_DATABASE_URL")
-	if live == "" || cold == "" || live == cold {
-		t.Fatal("distinct isolated migrated live and archive databases required")
-	}
+	live, cold := maintenanceDatabases(t)
 	binary := filepath.Join(t.TempDir(), "maintenance.exe")
 	if output, err := exec.Command("go", "build", "-o", binary, ".").CombinedOutput(); err != nil {
 		t.Fatalf("build: %s: %v", output, err)

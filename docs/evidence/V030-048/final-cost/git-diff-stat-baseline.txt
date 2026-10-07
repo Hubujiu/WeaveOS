@@ -1,0 +1,176 @@
+ .github/workflows/ci.yml                           |   5 -
+ .../src/applications.form-shell.component.spec.ts  |  10 +-
+ apps/web/src/auth.component.spec.ts                |  20 +-
+ apps/web/src/q36-b2.component.spec.ts              |  12 +-
+ .../src/root-monochrome-shell.component.spec.ts    |   6 +-
+ contracts/workflow-actions.contract.test.mjs       |  19 +-
+ contracts/workflow-lifecycle.contract.test.mjs     |   5 +-
+ docs/evidence/V030-048/apply-check.exit            |   1 +
+ docs/evidence/V030-048/apply-check.stderr          |   0
+ docs/evidence/V030-048/apply-check.stdout          |   0
+ docs/evidence/V030-048/apply.exit                  |   1 +
+ docs/evidence/V030-048/apply.stderr                |   0
+ docs/evidence/V030-048/apply.stdout                |   0
+ docs/evidence/V030-048/apply2-check.exit           |   1 +
+ docs/evidence/V030-048/apply2-check.stderr         |   0
+ docs/evidence/V030-048/apply2-check.stdout         |   0
+ docs/evidence/V030-048/apply2.exit                 |   1 +
+ docs/evidence/V030-048/apply2.stderr               |   0
+ docs/evidence/V030-048/apply2.stdout               |   0
+ .../V030-048/audit-observation/archive-detail.exit |   1 +
+ .../audit-observation/archive-detail.stderr        |   0
+ .../audit-observation/archive-detail.stdout        |   1 +
+ .../V030-048/audit-observation/archive.exit        |   1 +
+ .../V030-048/audit-observation/archive.stderr      |   0
+ .../V030-048/audit-observation/archive.stdout      |   2 +
+ .../V030-048/audit-observation/commands.json       |   6 +
+ .../audit-observation/database-names.stdout        |   2 +
+ .../audit-observation/detail-commands.json         |   5 +
+ .../V030-048/audit-observation/hot-detail.exit     |   1 +
+ .../V030-048/audit-observation/hot-detail.stderr   |   0
+ .../V030-048/audit-observation/hot-detail.stdout   |   1 +
+ docs/evidence/V030-048/audit-observation/hot.exit  |   1 +
+ .../evidence/V030-048/audit-observation/hot.stderr |   0
+ .../evidence/V030-048/audit-observation/hot.stdout |   2 +
+ docs/evidence/V030-048/batch1/appquery.exit        |   1 +
+ docs/evidence/V030-048/batch1/appquery.stderr      |   0
+ docs/evidence/V030-048/batch1/appquery.stdout      |   8 +
+ docs/evidence/V030-048/batch1/auth.exit            |   1 +
+ docs/evidence/V030-048/batch1/auth.stderr          |   0
+ docs/evidence/V030-048/batch1/auth.stdout          | 180 +++++++++++
+ .../V030-048/batch1/hash-collection-note.txt       |   1 +
+ docs/evidence/V030-048/batch1/modified-files.txt   |  11 +
+ docs/evidence/V030-048/batch1/personnel.exit       |   1 +
+ docs/evidence/V030-048/batch1/personnel.stderr     |   0
+ docs/evidence/V030-048/batch1/personnel.stdout     |  16 +
+ docs/evidence/V030-048/batch1/python-hashed.exit   |   1 +
+ docs/evidence/V030-048/batch1/python-hashed.stderr |   5 +
+ docs/evidence/V030-048/batch1/python-hashed.stdout |   0
+ docs/evidence/V030-048/batch1/python.exit          |   1 +
+ docs/evidence/V030-048/batch1/python.stderr        |   5 +
+ docs/evidence/V030-048/batch1/python.stdout        |   0
+ docs/evidence/V030-048/batch1/results.json         |  76 +++++
+ .../V030-048/batch1/source-after-appquery.sha256   |  11 +
+ .../V030-048/batch1/source-after-auth.sha256       |  11 +
+ .../V030-048/batch1/source-after-personnel.sha256  |  11 +
+ .../V030-048/batch1/source-after-python.sha256     |  11 +
+ .../V030-048/batch1/source-before-appquery.sha256  |  11 +
+ .../V030-048/batch1/source-before-auth.sha256      |   0
+ .../V030-048/batch1/source-before-personnel.sha256 |  11 +
+ docs/evidence/V030-048/batch1/source-before.sha256 |  11 +
+ .../V030-048/batch2/all-modified-files.txt         |  21 ++
+ docs/evidence/V030-048/batch2/appdrafts.exit       |   1 +
+ .../V030-048/batch2/appdrafts.source-after.sha256  |  21 ++
+ .../V030-048/batch2/appdrafts.source-before.sha256 |  21 ++
+ docs/evidence/V030-048/batch2/appdrafts.stderr     |   0
+ docs/evidence/V030-048/batch2/appdrafts.stdout     |   8 +
+ docs/evidence/V030-048/batch2/apprecords.exit      |   1 +
+ .../V030-048/batch2/apprecords.source-after.sha256 |  21 ++
+ .../batch2/apprecords.source-before.sha256         |  21 ++
+ docs/evidence/V030-048/batch2/apprecords.stderr    |   0
+ docs/evidence/V030-048/batch2/apprecords.stdout    |   8 +
+ docs/evidence/V030-048/batch2/appstructure.exit    |   1 +
+ .../batch2/appstructure.source-after.sha256        |  21 ++
+ .../batch2/appstructure.source-before.sha256       |  21 ++
+ docs/evidence/V030-048/batch2/appstructure.stderr  |   0
+ docs/evidence/V030-048/batch2/appstructure.stdout  |   8 +
+ .../V030-048/batch2/audit-maintenance.exit         |   1 +
+ .../batch2/audit-maintenance.source-after.sha256   |  21 ++
+ .../batch2/audit-maintenance.source-before.sha256  |  21 ++
+ .../V030-048/batch2/audit-maintenance.stderr       |   0
+ .../V030-048/batch2/audit-maintenance.stdout       |  10 +
+ docs/evidence/V030-048/batch2/audit.exit           |   1 +
+ .../V030-048/batch2/audit.source-after.sha256      |  21 ++
+ .../V030-048/batch2/audit.source-before.sha256     |  21 ++
+ docs/evidence/V030-048/batch2/audit.stderr         |   0
+ docs/evidence/V030-048/batch2/audit.stdout         |  84 +++++
+ docs/evidence/V030-048/batch2/modified-files.txt   |  10 +
+ docs/evidence/V030-048/batch2/persistence.exit     |   1 +
+ .../batch2/persistence.source-after.sha256         |  21 ++
+ .../batch2/persistence.source-before.sha256        |  21 ++
+ docs/evidence/V030-048/batch2/persistence.stderr   |   0
+ docs/evidence/V030-048/batch2/persistence.stdout   |   8 +
+ docs/evidence/V030-048/batch2/personnel.exit       |   1 +
+ .../V030-048/batch2/personnel.source-after.sha256  |  21 ++
+ .../V030-048/batch2/personnel.source-before.sha256 |  21 ++
+ docs/evidence/V030-048/batch2/personnel.stderr     |   0
+ docs/evidence/V030-048/batch2/personnel.stdout     |   8 +
+ docs/evidence/V030-048/batch2/results.json         | 184 +++++++++++
+ docs/evidence/V030-048/batch2/workflowrpc.exit     |   1 +
+ .../batch2/workflowrpc.source-after.sha256         |  21 ++
+ .../batch2/workflowrpc.source-before.sha256        |  21 ++
+ docs/evidence/V030-048/batch2/workflowrpc.stderr   |   0
+ docs/evidence/V030-048/batch2/workflowrpc.stdout   |   8 +
+ docs/evidence/V030-048/checkpoint-log-review.json  |  10 +
+ docs/evidence/V030-048/gate-mutation-evidence.json |  16 +
+ ....weaveos.workflow.RootExecutionRegistryTest.xml |  61 ++++
+ ...rg.weaveos.workflow.RootWorkflowRuntimeTest.xml | 339 ++++++++++++++++++++
+ ....weaveos.workflow.RootExecutionRegistryTest.txt |   4 +
+ ...rg.weaveos.workflow.RootWorkflowRuntimeTest.txt |   4 +
+ docs/evidence/V030-048/java/batch2.exit            |   1 +
+ .../V030-048/java/batch2.source-after.sha256       |  21 ++
+ .../V030-048/java/batch2.source-before.sha256      |  21 ++
+ docs/evidence/V030-048/java/batch2.stderr          | 276 ++++++++++++++++
+ docs/evidence/V030-048/java/batch2.stdout          |  44 +++
+ ....weaveos.workflow.RootRuntimeDataSourceTest.xml |  69 ++++
+ ....weaveos.workflow.RootRuntimeDataSourceTest.txt |   4 +
+ docs/evidence/V030-048/java/pool.exit              |   1 +
+ .../V030-048/java/pool.source-after.sha256         |  21 ++
+ .../V030-048/java/pool.source-before.sha256        |  21 ++
+ docs/evidence/V030-048/java/pool.stderr            |   0
+ docs/evidence/V030-048/java/pool.stdout            |  44 +++
+ docs/evidence/V030-048/java/results.json           |  53 +++
+ docs/evidence/V030-048/root-batch1.patch           | 348 ++++++++++++++++++++
+ docs/evidence/V030-048/root-batch2.patch           | 356 +++++++++++++++++++++
+ docs/evidence/V030-048/source-final.sha256         |  21 ++
+ docs/tasks/V030-048.md                             | 107 +++++++
+ docs/tasks/index.md                                |   2 +
+ infra/runtime/backup.test.mjs                      |  36 ++-
+ infra/runtime/monitor.test.mjs                     |   4 +-
+ infra/runtime/recovery.test.mjs                    |  19 +-
+ services/bff/cmd/audit-maintenance/main_test.go    |  47 ++-
+ services/bff/cmd/bff/definition_wiring_test.go     | 186 +++++++----
+ services/bff/cmd/bff/root_main_process_test.go     |  18 +-
+ .../bff/cmd/bff/root_workflow_read_http_test.go    |  36 ++-
+ .../bff/cmd/bff/root_workflow_save_http_test.go    |   8 +-
+ services/bff/internal/appdrafts/store_test.go      |  10 +-
+ .../bff/internal/applications/set_cost_test.go     |   8 +-
+ .../internal/applications/set_semantics_test.go    |   4 +-
+ services/bff/internal/appquery/projection_test.go  |   9 +-
+ .../bff/internal/apprecords/concurrency_test.go    |  17 +-
+ .../apprecordservice/root_workflow_catalog_test.go |  56 ++--
+ .../root_workflow_evidence_cost_test.go            |   2 +
+ .../root_workflow_evidence_store_test.go           |  10 +
+ .../root_workflow_read_cost_test.go                |  52 ++-
+ services/bff/internal/appschema/primitives_test.go |  18 +-
+ services/bff/internal/appschema/save_test.go       |  16 +-
+ .../bff/internal/appschema/transaction_test.go     |   8 +
+ .../bff/internal/appstructure/behavior_test.go     |   2 +-
+ .../appstructure/record_http_decode_test.go        |  21 +-
+ .../internal/appstructure/record_shared_test.go    |  27 +-
+ services/bff/internal/audit/maintenance_test.go    |  36 ++-
+ services/bff/internal/auth/protocol_test.go        |   8 +-
+ services/bff/internal/auth/service_test.go         |  16 +-
+ services/bff/internal/flowgraph/graph_test.go      |  12 +-
+ .../persistence/personnel_activity_schema_test.go  |  10 +-
+ .../bff/internal/personnel/definitions_test.go     |   6 +-
+ services/bff/internal/personnel/http_test.go       |   6 +-
+ .../personnel/query_engine_consistency_test.go     |  21 +-
+ .../bff/internal/personnel/query_revision_test.go  |  12 +-
+ services/bff/internal/personnel/response_test.go   |  33 +-
+ .../workflowrpc/root_execution_client_test.go      |   8 +-
+ .../workflow-engine/execution_ci_gate_tests.py     |   3 +-
+ .../workflow/RootExecutionRegistryTest.java        |   5 +-
+ .../workflow/RootRuntimeDataSourceTest.java        |   4 +-
+ .../weaveos/workflow/RootRuntimeLoggingTest.java   |  25 +-
+ .../weaveos/workflow/RootWorkflowRuntimeTest.java  |   9 +-
+ tests/acceptance/api.test.mjs                      |  34 +-
+ tests/acceptance/applications-web.spec.ts          |   6 +-
+ tests/acceptance/expanded-api.mjs                  |   1 +
+ tests/acceptance/filter-manager-web.spec.ts        |  13 +-
+ tests/acceptance/integration.test.mjs              |   6 +-
+ tests/acceptance/storage-observer.test.mjs         |   3 +-
+ tests/acceptance/web.spec.ts                       |  12 +-
+ .../root-workflow-action-registration.test.mjs     |   9 +-
+ tests/governance/result-counts.test.mjs            |   8 +-
+ 175 files changed, 3648 insertions(+), 305 deletions(-)

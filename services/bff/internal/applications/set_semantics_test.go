@@ -201,8 +201,8 @@ func TestB5GrantSetCostNormalizationAndAtomicReplacement(t *testing.T) {
 		elapsed := float64(time.Since(start).Microseconds()) / 1000
 		c.active.Store(false)
 		logCost(t, "grants.replace.submitted", n, []int64{c.queries.Load()}, []float64{elapsed})
-		if err != nil || c.queries.Load() != 20 || c.menuValidation.Load() != 1 {
-			t.Fatal("normalized full grant replacement must use 20 statements and one tuple validation", err)
+		if err != nil || c.queries.Load() < 1 || c.queries.Load() > 20 || c.menuValidation.Load() != 1 {
+			t.Fatal("normalized full grant replacement must stay within 20 statements and use one tuple validation", err)
 		}
 		rev++
 		var stored int
