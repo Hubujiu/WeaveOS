@@ -6,6 +6,8 @@ import (
  "fmt"
  "strings"
  "testing"
+ "time"
+ fc "github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
 
  "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
  "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowprojection"
@@ -60,4 +62,27 @@ func TestRootWorkflowCloseWriteFaultRollsBackProjectionForRecovery(t *testing.T)
  if e=tx.Commit(f.ctx);e!=nil{t.Fatal(e)};f.state(t,"active",1,1,1,1);rootActionCount(t,f,1,1,1)
  h:=rootCloseHead(t,f);if h.State!="closing"||h.Revision!=before.Revision{t.Fatal("failed closure leaked a catalog change")}
  cleanup();f.apply(t,c,p,receipt,body,true);rootCheckClosed(t,f,before)
+}
+
+func rootSecondCloseInstance(t *testing.T,f rootTaskFixture) rootTaskFixture {
+ t.Helper();second:=f.rootProjection;second.recordFixture.ownRecord=f.otherRecord
+ second.instance=rootCatalogReserve(t,second.recordFixture,rootCatalogReserveInput(t,second.recordFixture,f.head))
+ c,p:=rootRecoveryAccept(t,second);task:=second.task(t,second.first,second.actor,1);r,b:=second.receipt(t,c,"active","",task);second.apply(t,c,p,r,b,true)
+ return rootTaskFixture{rootProjection:second,task:task}
+}
+func TestRootWorkflowCloseRetainsOtherActiveInstance(t *testing.T){
+ f:=rootTaskSetup(t,false);other:=rootSecondCloseInstance(t,f)
+ a:=rootAction(t,f,rootActionRequest(t,f,"agree"));ac,ap:=rootActionRead(t,f,a);ar,ab:=f.receipt(t,ac,"completed","")
+ b:=rootAction(t,other,rootActionRequest(t,other,"agree"));bc,bp:=rootActionRead(t,other,b);br,bb:=other.receipt(t,bc,"completed","")
+ before:=rootRequestClose(t,f);f.apply(t,ac,ap,ar,ab,true)
+ h:=rootCloseHead(t,f);if h.State!="closing"||h.Revision!=before.Revision{t.Fatal("closed while another active instance remains")}
+ other.apply(t,bc,bp,br,bb,true);rootCheckClosed(t,f,before)
+}
+func TestRootWorkflowCloseConcurrentFinalReceiptsFinalizeOnce(t *testing.T){
+ f:=rootTaskSetup(t,false);other:=rootSecondCloseInstance(t,f)
+ type job struct{f rootTaskFixture;c fc.Command;p fc.ExecutionPayload;r fc.Receipt;b []byte};var jobs []job
+ for _,fixture:=range []rootTaskFixture{f,other}{accepted:=rootAction(t,fixture,rootActionRequest(t,fixture,"agree"));c,p:=rootActionRead(t,fixture,accepted);r,b:=fixture.receipt(t,c,"completed","");jobs=append(jobs,job{fixture,c,p,r,b})}
+ before:=rootRequestClose(t,f);ctx,cancel:=context.WithTimeout(f.ctx,5*time.Second);defer cancel();start:=make(chan struct{});results:=make(chan error,2)
+ for _,j:=range jobs{go func(j job){<-start;tx,e:=j.f.runtime.Begin(ctx);if e!=nil{results<-e;return};defer tx.Rollback(context.Background());_,e=(workflowprojection.Store{}).ApplyInTx(ctx,tx,j.c,j.p,j.r,j.b);if e==nil{e=tx.Commit(ctx)};results<-e}(j)}
+ close(start);for i:=0;i<2;i++{if e:=<-results;e!=nil{t.Fatal(e)}};rootCheckClosed(t,f,before)
 }
