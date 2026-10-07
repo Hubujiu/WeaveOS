@@ -47,15 +47,25 @@ func maintenanceDatabases(t *testing.T) (string, string) {
 	})
 	goose, err := exec.LookPath("goose")
 	if err != nil {
-		output, e := exec.Command("go", "env", "GOPATH").Output()
+		// The product acceptance runner installs Goose into GOBIN outside PATH.
+		// Respect that actual Go install destination before GOPATH/bin fallback.
+		output, e := exec.Command("go", "env", "GOBIN").Output()
 		if e != nil {
-			t.Fatal("Go tools path unavailable")
+			t.Fatal("Go tools destination unavailable")
+		}
+		binDir := strings.TrimSpace(string(output))
+		if binDir == "" {
+			output, e = exec.Command("go", "env", "GOPATH").Output()
+			if e != nil {
+				t.Fatal("Go tools path unavailable")
+			}
+			binDir = filepath.Join(strings.Split(strings.TrimSpace(string(output)), string(os.PathListSeparator))[0], "bin")
 		}
 		suffix := ""
 		if runtime.GOOS == "windows" {
 			suffix = ".exe"
 		}
-		goose = filepath.Join(strings.Split(strings.TrimSpace(string(output)), string(os.PathListSeparator))[0], "bin", "goose"+suffix)
+		goose = filepath.Join(binDir, "goose"+suffix)
 		if _, e = os.Stat(goose); e != nil {
 			t.Fatal("existing Goose migration CLI required")
 		}
