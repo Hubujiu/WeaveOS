@@ -1,0 +1,44 @@
+{
+  "exact_head": "954de6f3142cc2229becd159e06f6cc3d98b0c5b",
+  "argv": [
+    "docker",
+    "run",
+    "--rm",
+    "--mount",
+    "type=bind,src=<private-scan-dir>/scan,dst=/scan,readonly",
+    "--mount",
+    "type=bind,src=<private-scan-dir>/reports,dst=/reports",
+    "zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f",
+    "dir",
+    "/scan",
+    "--redact",
+    "--no-banner",
+    "--log-level",
+    "warn",
+    "--report-format",
+    "json",
+    "--report-path",
+    "/reports/findings.redacted.json"
+  ],
+  "started_at": "2026-10-07T07:20:45.563035+00:00",
+  "same_scanner_and_scan_flags_as_security_test": true,
+  "only_extra_flags": "JSON private report output",
+  "exit_code": 0,
+  "finished_at": "2026-10-07T07:20:59.858350+00:00",
+  "archive_hashes": [
+    [
+      "source.tar",
+      "96bac4cbcf217e3d73151f67aeed0cde20db4f8c5525caa691743f262b5159d7"
+    ]
+  ],
+  "sanitization": {
+    "byte_identical_to_original_run": false,
+    "filesystem_locations_normalized": true,
+    "original_private_run_hashes": [
+      [
+        "run.json",
+        "f2c18f5f9ffb83d08388b6e6636403223d9239e8ef91409834b646a0b0514e41"
+      ]
+    ]
+  }
+}
