@@ -1,0 +1,59 @@
+{
+  "source_commit": "ef1b8f4e6b9f85cd8858d795eb562ba213c37fc0",
+  "worktree": "/workspace/WeaveOS-worktrees/V030-046",
+  "hashes_before": {
+    "services/bff/internal/apprecordservice/root_workflow_read_test.go": "bd53d7a402ef66ecbe34cc19463c01da620e916ad39d347943534696c4013154",
+    "services/bff/internal/apprecordservice/workflow_read.go": "19ded974602e1a8c47025df41b10c7ef4719238193a21bc367371671487db437",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "started_at": "2026-10-07T05:02:10.212489+00:00",
+  "environment": {
+    "Go": "1.27.1",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "sum.golang.org",
+    "CGO_ENABLED": "1",
+    "storage": "Same authorized original private real hot/archivePG18.6/Redis8.2.10; sequential after V045 completed"
+  },
+  "argv": [
+    "/workspace/.weaveos-tools/go/bin/go",
+    "test",
+    "-race",
+    "-p",
+    "1",
+    "-count=1",
+    "-json",
+    "-run",
+    "^TestRootWorkflowReadUnrelatedEditGrantDoesNotExpire$",
+    "./internal/apprecordservice"
+  ],
+  "exit_code": 1,
+  "finished_at": "2026-10-07T05:02:13.971686+00:00",
+  "hashes_after": {
+    "services/bff/internal/apprecordservice/root_workflow_read_test.go": "bd53d7a402ef66ecbe34cc19463c01da620e916ad39d347943534696c4013154",
+    "services/bff/internal/apprecordservice/workflow_read.go": "19ded974602e1a8c47025df41b10c7ef4719238193a21bc367371671487db437",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "worktree_clean_after": true,
+  "cases": [
+    {
+      "name": "TestRootWorkflowReadUnrelatedEditGrantDoesNotExpire",
+      "result": "fail",
+      "elapsed_seconds": 0.1,
+      "failure_outputs": [
+        "root_workflow_read_test.go:155: unrelated edit capability changed read summary {Items:[] Total:0 Page:0 PageSize:0 QueryVersion:} complete query projection changed"
+      ]
+    }
+  ],
+  "hashes_unchanged": true,
+  "artifact_hashes": {
+    "test.exit": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test.stdout.jsonl": "eb9cc939d188b6c58081b025219ae5fb28e38e4bbd67d1ed8422671de5b5a917",
+    "workflow_read.go": "19ded974602e1a8c47025df41b10c7ef4719238193a21bc367371671487db437",
+    "root_workflow_read_test.go": "bd53d7a402ef66ecbe34cc19463c01da620e916ad39d347943534696c4013154"
+  },
+  "status": "ORIGINAL_UNRELATED_EDIT_GRANT_REPRODUCTION_FAILURE"
+}
