@@ -1,0 +1,1204 @@
+{
+  "source_commit": "faaeb0093e35cff656c07f42d00daf93f6a1350c",
+  "worktree": "/workspace/WeaveOS-worktrees/V030-046",
+  "hashes_before": [
+    [
+      "services/bff/cmd/bff/root_workflow_read_http_test.go",
+      "52dcb1d50807ad7757ed9f662bcb5ef982eafba441a47f26b58243740456a8b6"
+    ],
+    [
+      "services/bff/cmd/bff/root_workflow_action_http_test.go",
+      "df3c1cde387715340aeb84847e06288725abea5d5334e8ce7ae17a660ffcc381"
+    ],
+    [
+      "services/bff/internal/apprecordservice/root_workflow_read_test.go",
+      "ff4490e9e868dc82c7f61cccf7e7bbe8993d3da349d75ead58141982591f182b"
+    ],
+    [
+      "services/bff/internal/apprecordservice/workflow_read.go",
+      "19ded974602e1a8c47025df41b10c7ef4719238193a21bc367371671487db437"
+    ],
+    [
+      "services/bff/internal/apprecordservice/service.go",
+      "d2cc579654a72da4345677800f76acc3bd769c8684b52982b8501c33534b2612"
+    ],
+    [
+      "services/bff/internal/apprecordhttp/http.go",
+      "c743617ccef7223c993f6f453bf33c0b232d21ef313a33dee659c98668a43e41"
+    ],
+    [
+      "services/bff/internal/apprecordhttp/workflow_read.go",
+      "d830ceebb7b872cef5103333bee61d1b75a4d6c0b61481a2abfcc0dc76afcea9"
+    ],
+    [
+      "services/bff/internal/appstructure/record_http_decode.go",
+      "582ad888c97d630f6ed52178202fc329ea3e561c9d8f1274f5d8f0b7bfc72279"
+    ],
+    [
+      "scripts/v030-046/register-workflow-read.mjs",
+      "532838a3c1b56385ec3d5348a7838ad10da685e6c3ac8fa02b29e7a7ecaf6d4b"
+    ],
+    [
+      "contracts/workflow-read.contract.test.mjs",
+      "6ded22b9c756d8c75b6178c0b1ed4e1422652bd39aa80427e304bc40f85c79f3"
+    ],
+    [
+      "contracts/openapi/openapi.json",
+      "a9b4fb664ab882a99707f3ef65e76de30e0649daa84fa13d0faa852166424361"
+    ],
+    [
+      "services/bff/go.mod",
+      "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632"
+    ],
+    [
+      "services/bff/go.sum",
+      "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+    ]
+  ],
+  "started_at": "2026-10-07T04:51:05.148355+00:00",
+  "environment": {
+    "Go": "1.27.1",
+    "Node": "24.19.0",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "sum.golang.org",
+    "CGO_ENABLED": "1",
+    "storage": "Same authorized original private real hot/archivePG18.6/Redis8.2.10; sequential after V045 preview RED; generated OpenAPI is the only allowed pre-run worktree change"
+  },
+  "runs": {
+    "contracts": {
+      "argv": [
+        "node",
+        "--test",
+        "contracts/application-records.contract.test.mjs",
+        "contracts/application-structure.contract.test.mjs",
+        "contracts/ci.test.mjs",
+        "contracts/openapi.contract.test.mjs",
+        "contracts/password-ascii.contract.test.mjs",
+        "contracts/personnel-responses.contract.test.mjs",
+        "contracts/personnel.contract.test.mjs",
+        "contracts/query-drafts-responses.contract.test.mjs",
+        "contracts/query-drafts.contract.test.mjs",
+        "contracts/query-post.contract.test.mjs",
+        "contracts/table-presets.contract.test.mjs",
+        "contracts/workflow-actions.contract.test.mjs",
+        "contracts/workflow-publication.test.mjs",
+        "contracts/workflow-read.contract.test.mjs"
+      ],
+      "cwd": "/workspace/WeaveOS-worktrees/V030-046",
+      "started_at": "2026-10-07T04:51:05.148911+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T04:51:05.531371+00:00",
+      "stderr_bytes": 0,
+      "counts": {
+        "tests": 54,
+        "pass": 54,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "workflow-read-https": {
+      "argv": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "-run",
+        "^TestRootWorkflowReadHTTPS",
+        "./cmd/bff"
+      ],
+      "cwd": "/workspace/WeaveOS-worktrees/V030-046/services/bff",
+      "started_at": "2026-10-07T04:51:05.532596+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T04:51:11.111182+00:00",
+      "stderr_bytes": 0,
+      "cases": [
+        {
+          "name": "TestRootWorkflowReadHTTPSCurrentSummaryAndClosedProjection",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootWorkflowReadHTTPSClosedBody",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootWorkflowReadHTTPSIdentityAndCSRFAreRequired",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootWorkflowReadHTTPSChangedSummaryRequiresRefresh",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        }
+      ],
+      "counts": {
+        "pass_top": 4
+      }
+    },
+    "workflow-read-service": {
+      "argv": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "-run",
+        "^TestRootWorkflowRead",
+        "./internal/apprecordservice"
+      ],
+      "cwd": "/workspace/WeaveOS-worktrees/V030-046/services/bff",
+      "started_at": "2026-10-07T04:51:11.112519+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T04:51:16.260408+00:00",
+      "stderr_bytes": 0,
+      "cases": [
+        {
+          "name": "TestRootWorkflowReadCurrentRecordSummary",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "name": "TestRootWorkflowReadOwnScopeRejectsForeignRecord",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "name": "TestRootWorkflowReadRevocationIsLive",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "name": "TestRootWorkflowReadTwoFlowsPageWithoutDuplicates",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestRootWorkflowReadRelatedChangeRequiresRefresh",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestRootWorkflowReadUnrelatedRecordDoesNotExpire",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestRootWorkflowReadRejectsInvalidPageAndForeignSession",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        }
+      ],
+      "counts": {
+        "pass_top": 7
+      }
+    },
+    "old-workflow-action-http": {
+      "argv": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "-run",
+        "^TestRootWorkflowActionHTTP",
+        "./cmd/bff"
+      ],
+      "cwd": "/workspace/WeaveOS-worktrees/V030-046/services/bff",
+      "started_at": "2026-10-07T04:51:16.261466+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T04:51:19.808765+00:00",
+      "stderr_bytes": 0,
+      "cases": [
+        {
+          "name": "TestRootWorkflowActionHTTPRealHostPreviewAcceptedAndStatus/agree",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRealHostPreviewAcceptedAndStatus/reject",
+          "result": "pass",
+          "elapsed_seconds": 0.19
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRealHostPreviewAcceptedAndStatus",
+          "result": "pass",
+          "elapsed_seconds": 0.38
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch/no-session",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch/csrf",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch/actor",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/0",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/1",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/2",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/3",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/4",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/5",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/6",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/7",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/8",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/9",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes",
+          "result": "pass",
+          "elapsed_seconds": 0.65
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPStaleBasisRequiresRefresh",
+          "result": "pass",
+          "elapsed_seconds": 0.19
+        }
+      ],
+      "counts": {
+        "pass_sub": 15,
+        "pass_top": 4
+      }
+    },
+    "decoder-full": {
+      "argv": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "./internal/appstructure"
+      ],
+      "cwd": "/workspace/WeaveOS-worktrees/V030-046/services/bff",
+      "started_at": "2026-10-07T04:51:19.809994+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T04:51:40.003648+00:00",
+      "stderr_bytes": 0,
+      "cases": [
+        {
+          "name": "TestExpectedActorRejectsSwitchedSessionBeforeDefinitionClaim",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestExpectedActorGuardCoversOriginalOperationAndReads",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "name": "TestExpectedActorHeaderStrictnessAndLegacyCompatibility",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction/metadata",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction/layout",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction/audit",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction/result",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction",
+          "result": "pass",
+          "elapsed_seconds": 0.42
+        },
+        {
+          "name": "TestAtomicNewFormFailureLeavesNoTableOrView",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "name": "TestExactStoredDefaultsAndLayoutOnlyPreservesRows",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestNewReferenceDefaultNeedsActiveSource",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "name": "TestNormalizedDefaultsReplaySameOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestOptionsMappingChangesRealValuesAndPreflightIsReadOnly",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestConfirmationSameCountChangeExpiryAndReplay",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRequiredAndConversionFailureRollBack",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestTwoSessionsSchemaViewCASAndIdenticalOperationSerialize/schema",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestTwoSessionsSchemaViewCASAndIdenticalOperationSerialize/view",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestTwoSessionsSchemaViewCASAndIdenticalOperationSerialize/same_operation",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestTwoSessionsSchemaViewCASAndIdenticalOperationSerialize",
+          "result": "pass",
+          "elapsed_seconds": 0.37
+        },
+        {
+          "name": "TestExpiredTamperedWrongViewAndChangedPlanConfirmation",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestLiveFlowRegistryBlocksAndDependencyOnlyChangeStalesToken",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestDirectoryCycleCrossAppAndVersionGate",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "name": "TestNumericPolicyChangeKeepsConfiguredDefault",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestLayoutOnlyNeverDeduplicatesExistingMultiColumn",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestExplicitMultiMappingDeduplicatesRealUUIDArray",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestExplicitZeroSpanAndUnknownMappingsReject",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "name": "TestTimestampToTextUsesCanonicalUTC",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRealRestrictedRoleCannotAlterDropOrExecuteViaPublic",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestDepartmentCandidatesAreLiveMinimalAndCursorScoped",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "name": "TestDepartmentCandidatesUseSharedDispatchAuthorizationAndActorGuard",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestDefinitionAuditCorrelatesActualHTTPRequest",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestMissingConfirmationReportsActualNonNullImpact",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRealDefinitionCommitAckLossUsesOriginalOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestHistoryLabelsUseCurrentTombstoneAndExplicitUnavailable",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestRealPGStructureMigrationAndRestrictedDDL",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "name": "TestAtomicFormCreateAndGridSave",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestOrdinaryRootMenuDoesNotGrantDefinition",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "name": "TestMemberAssignmentRejectsNewInactiveAndPreservesExistingInactive",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestMemberAssignmentLocksSourceStatusBeforeAppGate",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "name": "TestOwnerMemberCandidatesUseOpaqueBoundCursorAndMinimalLiveData",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "name": "TestActualGroupMembersRetainIdsAndInactiveDisplay",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "name": "TestCandidateCursorBindsActorAppExpiryAndLiveAuthorization",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestCandidateSearchTreatsWildcardCharactersAsLiteralPrefix",
+          "result": "pass",
+          "elapsed_seconds": 0.06
+        },
+        {
+          "name": "TestActualMenuGranteeCannotManageChildDefinitionsOrEnumerateCandidates",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestCreateOnlyExpectedActorGuardAndOwnerBootstrapManagement",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestOtherViewRemovalAndTypeConversionHaveDifferentGuards",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestOtherViewLayoutChangesDependencyRevision",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRequiredSelectionCannotBeClearedAndMultiToSingleCannotHideCardinality",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestDependencyUnavailableDoesNotPretendEmpty",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestPreflightReferenceSourceAndStrictCompleteDTO",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "name": "TestHistoryHTTPRealOwnerCursorAndDeletedFieldTombstone",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestPublishedRecordDMLIncludesRequiredSameTxHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRequiredCreateHistoryBeforeIsAbsentNull",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestHistoryTypedWriteCanonicalRollbackNoopAndScopedPage",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestHistoryMigrationPreservesOptionLabelsAndRestrictsAuditReader",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestDataGrantBlocksFieldRemovalAndChangesDependencyRevision",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestHistoryCreateCapturesActualSQLDefaultAndStorageFailureRollsBack",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/record.create",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/record.edit",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/record.search",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/draft.create",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/draft.update",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderRejectsDuplicateUnknownNullAndNumericValues",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderBoundsRawBodiesAndMedia",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "name": "TestRecordHTTPQueryTokenMaximumMatchesFrozenDTO",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRealRecordGateFenceAuditAndMinimumOperationLifecycle",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestTypedDefaultsOnlyCreateRejectsInactiveReferencesAtomically/member",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestTypedDefaultsOnlyCreateRejectsInactiveReferencesAtomically/department",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestTypedDefaultsOnlyCreateRejectsInactiveReferencesAtomically",
+          "result": "pass",
+          "elapsed_seconds": 0.27
+        },
+        {
+          "name": "TestNativeTypedCapabilityRejectsInactiveReferenceDefault",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestNativeReferenceGuardRequiresRealRegistryAndCounter/registry",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestNativeReferenceGuardRequiresRealRegistryAndCounter/counter",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestNativeReferenceGuardRequiresRealRegistryAndCounter",
+          "result": "pass",
+          "elapsed_seconds": 0.21
+        },
+        {
+          "name": "TestNativeGuardValidatesActualPostgreSQLReferenceDefault",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestNativeNullableReferenceWithoutConstantCreatesNull",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestNonManagerRecordTransactionResolvesActualResourcesAndSession",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "name": "TestDataGrantReplacementPersistsExactMasksAndRegisteredFormMenu",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRecordSourcesPreserveMultiDepartmentEdgesAndDeletedIdentity",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "name": "TestNativeRecordCapabilityRejectsNonCanonicalAndSystemKeys",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestNativeRecordCapabilityRequiresFiniteOperationAndSchemaCAS",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestRecordSharedMigrationRelationsAreReal",
+          "result": "pass",
+          "elapsed_seconds": 0.05
+        },
+        {
+          "name": "TestControlledRecordDMLWritesNativeValuesAndProtectsSystemAndCAS",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootPublicationSchemaAndRestrictedRoles",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootPublicationAcceptsDurablyWithoutPublishingOnSave",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootPublicationReplayAndFingerprint",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootPublicationRPCDoesNotHoldApplicationOrFlowLocks",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootPublicationLostResponseRecoversSameIntent",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootPublicationNewCandidateCannotBeOverwrittenByLateReceipt",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootPublicationSchemaChangeBlocksActivationPermanently",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootPublicationCloseEpochRejectsLateReceipt",
+          "result": "pass",
+          "elapsed_seconds": 0.19
+        },
+        {
+          "name": "TestRootPublicationRequiresSessionCsrfAndExactActor",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootPublicationStrictPayloadRejectsExtraAndDuplicateKeys",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootPublicationAuthorityReturnRequiresFreshExplicitIntent",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestRootPublicationBadReceiptNeverAdvancesVersion",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootPublicationExpiredLeaseCannotDoubleConfirm",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestRootPublicationAuditFailureRollsBackActivationAndRecovers",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootPublicationBackgroundLoopRetriesWithoutBrowserResubmission",
+          "result": "pass",
+          "elapsed_seconds": 1.18
+        },
+        {
+          "name": "TestRootPublicationAuditUsesExactIdentityAndFiniteStates",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestRootPublicationMigrationDownRefusesDurableHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootRuntimeAdmissionUnavailablePublicationCreatesNothingAndCanRetry",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootRuntimeAdmissionPublicationProbePrecedesBusinessTransaction",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootRuntimeAdmissionPublicationReplayRemainsAvailableDuringOutage",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootRuntimeAdmissionPublicationStillChecksRevisionBeforeOutage",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootWorkflowHTTPAuditRetainsExactManagementIdentity",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/not-a-uuid",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/#00",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/00000000-0000-0000-0000-000000000000",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/11111111-1111-4111-8111-111111111111_",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootWorkflowHTTPPersistAndReadCanonicalDefinition",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootWorkflowHTTPReplayIsAtomicAndPayloadBound",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootWorkflowHTTPRequiresRealSessionCSRFAndExpectedActor",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootWorkflowHTTPOrdinaryDataAccessDoesNotGrantManagement",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootWorkflowHTTPRejectsCandidateWithoutExistingPermission",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootWorkflowHTTPOwnScopeCandidateAndRevocationRechecked",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootWorkflowHTTPEnableRequiresConfirmedDeployment",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootWorkflowHTTPCloseReportsClosingWithAcceptedInstance",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic/schema",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic/revision",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic/graph",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic",
+          "result": "pass",
+          "elapsed_seconds": 0.37
+        },
+        {
+          "name": "TestRootWorkflowHTTPClosedJSONAndNoClientDeploymentProof",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestRootWorkflowHTTPRevokedAccountCannotReplayOrRead",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootWorkflowHTTPHostRoutesBeforeGenericForms",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootWorkflowSchemaSaveRejectsAndRollsBackAllChanges",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootWorkflowSchemaPreflightReportsConflictWithoutConfirmation",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind/text",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind/multiline",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind",
+          "result": "pass",
+          "elapsed_seconds": 0.25
+        },
+        {
+          "name": "TestRootWorkflowSchemaRechecksAfterPreviouslyAllowedPreflight",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootWorkflowSchemaClosedUnusedHistoryAllowsRemoval",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootWorkflowSchemaInFlightOldDefinitionStillProtectsField",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootWorkflowSchemaSaveSerializesWithEnable",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRecordReadResolvesLiveNonManagerInOneReadOnlyRR",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "name": "TestOwnerRuntimeHTTPUsesRealResourceAndSafeMinuteInput",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestRuntimeProjectionPrunesHiddenFieldsDefaultsAndEmptyGroups",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRuntimeHistoryHintRequiresSameFieldReadHistoryIntersection",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestReferenceSourcePreserves254CharacterAuthoritativeAccount",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "name": "TestActiveAuthoritativeReferenceDefaultsAndInactiveRejection",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestUnauthorizedDefinitionWriteCannotInspectReferenceAvailability",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestAllCommonKindsProduceTypedPGColumnsAndConstantDefaults",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestNewStructureAuditArchivesWithActualMaintenanceRoles",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        }
+      ],
+      "counts": {
+        "pass_top": 118,
+        "pass_sub": 26
+      }
+    }
+  },
+  "finished_at": "2026-10-07T04:51:40.003891+00:00",
+  "hashes_after": [
+    [
+      "services/bff/cmd/bff/root_workflow_read_http_test.go",
+      "52dcb1d50807ad7757ed9f662bcb5ef982eafba441a47f26b58243740456a8b6"
+    ],
+    [
+      "services/bff/cmd/bff/root_workflow_action_http_test.go",
+      "df3c1cde387715340aeb84847e06288725abea5d5334e8ce7ae17a660ffcc381"
+    ],
+    [
+      "services/bff/internal/apprecordservice/root_workflow_read_test.go",
+      "ff4490e9e868dc82c7f61cccf7e7bbe8993d3da349d75ead58141982591f182b"
+    ],
+    [
+      "services/bff/internal/apprecordservice/workflow_read.go",
+      "19ded974602e1a8c47025df41b10c7ef4719238193a21bc367371671487db437"
+    ],
+    [
+      "services/bff/internal/apprecordservice/service.go",
+      "d2cc579654a72da4345677800f76acc3bd769c8684b52982b8501c33534b2612"
+    ],
+    [
+      "services/bff/internal/apprecordhttp/http.go",
+      "c743617ccef7223c993f6f453bf33c0b232d21ef313a33dee659c98668a43e41"
+    ],
+    [
+      "services/bff/internal/apprecordhttp/workflow_read.go",
+      "d830ceebb7b872cef5103333bee61d1b75a4d6c0b61481a2abfcc0dc76afcea9"
+    ],
+    [
+      "services/bff/internal/appstructure/record_http_decode.go",
+      "582ad888c97d630f6ed52178202fc329ea3e561c9d8f1274f5d8f0b7bfc72279"
+    ],
+    [
+      "scripts/v030-046/register-workflow-read.mjs",
+      "532838a3c1b56385ec3d5348a7838ad10da685e6c3ac8fa02b29e7a7ecaf6d4b"
+    ],
+    [
+      "contracts/workflow-read.contract.test.mjs",
+      "6ded22b9c756d8c75b6178c0b1ed4e1422652bd39aa80427e304bc40f85c79f3"
+    ],
+    [
+      "contracts/openapi/openapi.json",
+      "a9b4fb664ab882a99707f3ef65e76de30e0649daa84fa13d0faa852166424361"
+    ],
+    [
+      "services/bff/go.mod",
+      "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632"
+    ],
+    [
+      "services/bff/go.sum",
+      "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+    ]
+  ],
+  "hashes_unchanged": true,
+  "status": "GENERATED_OPENAPI_CONTRACT_HTTPS_SERVICE_ACTION_AND_DECODER_GREEN",
+  "artifact_hashes": [
+    [
+      "decoder-full.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "decoder-full.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "decoder-full.stdout.jsonl",
+      "19e0f13d7ee0f65ef9491d3dd5fad67a054e686f4875092213cf2f88a546c7ef"
+    ],
+    [
+      "old-workflow-action-http.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "old-workflow-action-http.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "old-workflow-action-http.stdout.jsonl",
+      "9ac2002a498c478a6902db67a991d18ac65f5eb476f573e2090b6f59bb5a9c88"
+    ],
+    [
+      "workflow-read-service.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "workflow-read-service.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "workflow-read-service.stdout.jsonl",
+      "ceb3df71b9cf81c0dc2eafacd37aef987dbda80bc43536846371df380b8b5c37"
+    ],
+    [
+      "workflow-read-https.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "workflow-read-https.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "workflow-read-https.stdout.jsonl",
+      "e424d88641f1ca1430223ad9df43bcaf22dfae3567deec3737d9694e5cef3cde"
+    ],
+    [
+      "contracts.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "contracts.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "contracts.stdout",
+      "22283b1a79554c8ac87ad676dced095e8c736d5b45bd38cc6044c25f8bd9e97b"
+    ],
+    [
+      "generator-run.json",
+      "2d0bfc5bb54c74b9330da25cf53dae15ccef0eaf3c99dae7f44de1509e3a06d4"
+    ],
+    [
+      "generator.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "generator.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "generator.stdout",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ]
+  ]
+}

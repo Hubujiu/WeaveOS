@@ -1,0 +1,9 @@
+# Root native-gesture debugging and regression evidence
+
+Original PR54 head31925112 failed the existing Firefox stale-exit/unmount test. Root did not weaken or retry away that failure. Isolated0ms native observation initially20/20 passed; extending realistic held presses to0/100/300ms produced2 failures out of30 on4c60732c. Both100ms failures delivered native pointer/mouse/click to the correct identity tab with no default prevention, yet React navigation was absent.
+
+First fix e4cf34f4 delayed outside-press only:29/30 passed, one100ms failure remained. Captured focusin already showed220ms closing duration. Base UI1.8 can close on focus-out before its intentional outside-press; React19.3 disables synthetic event dispatch during its async ViewTransition commit. Root added native pointerdown capture for clean shared-motion outside gestures, deferring both focus-out and outside-press close until the real gesture finishes. No synthetic click, scanner/test waiver, longer assertion budget or changed dirty/busy/Escape rule. Reopen/unmount/cancel clears pending handlers.
+
+Second fix5a88d63d/run37582994610:30/30 genuine gestures pass. Final c0d5d442/run37583672188:168PASS/9existingSKIP across all three engines, no failures; typecheck and production build pass. These are component regressions, not backend or full product acceptance. Exact skipped identities are compared separately with prior baselines.
+
+Native JSON from all observed failures and all30 final gestures, logs and hashes are preserved here. Trace/video artifacts remain in Root-downloaded CI archives and original runs; their absence from this source directory is not a claim that binary traces were embedded. Original test source is recoverable from the exact commits; the integrated q36-b2.component.spec.ts retains the unchanged original tests plus the three gesture regressions.
