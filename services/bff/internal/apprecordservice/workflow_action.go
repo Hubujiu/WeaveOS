@@ -316,7 +316,7 @@ func (s *Service) WorkflowOperation(ctx context.Context, principal session.Princ
 	if err != nil {
 		return empty, err
 	}
-	if kind != "workflow.task.agree" && kind != "workflow.task.reject" {
+	if kind != "workflow.task.agree" && kind != "workflow.task.reject" && kind != "workflow.instance.withdraw" && kind != "workflow.task.return" {
 		return empty, applications.ErrMissing
 	}
 	var result WorkflowOperationResult
@@ -329,7 +329,7 @@ func (s *Service) WorkflowOperation(ctx context.Context, principal session.Princ
 		return empty, err
 	}
 	command := entry.Command
-	if command.ProtocolVersion != 2 || command.AppID != appID || command.ActorID != principal.UserID || command.InstanceID != result.InstanceID || kind != "workflow.task."+command.Action {
+	if command.ProtocolVersion != 2 || command.AppID != appID || command.ActorID != principal.UserID || command.InstanceID != result.InstanceID || kind != workflowOperationKind(command.Action) {
 		return empty, ErrUnavailable
 	}
 	payload, err := ledger.ExecutionPayloadInTx(ctx, tx, command)
@@ -371,4 +371,11 @@ func (s *Service) WorkflowOperation(ctx context.Context, principal session.Princ
 		return empty, err
 	}
 	return result, nil
+}
+
+func workflowOperationKind(action string) string {
+	if action == "withdraw" {
+		return "workflow.instance.withdraw"
+	}
+	return "workflow.task." + action
 }

@@ -200,7 +200,7 @@ func (w *RecordWrite) Context() RecordContext { return w.context }
 
 func recordOperation(kind string) bool {
 	switch kind {
-	case "record.create", "record.edit", "draft.create", "draft.update", "draft.discard", "workflow.task.agree", "workflow.task.reject":
+	case "record.create", "record.edit", "draft.create", "draft.update", "draft.discard", "workflow.task.agree", "workflow.task.reject", "workflow.instance.withdraw", "workflow.task.return":
 		return true
 	}
 	return false
