@@ -15,6 +15,7 @@ import (
 	ev "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowevidence"
 	"github.com/jackc/pgx/v5"
 	"github.com/redis/go-redis/v9"
+	"sort"
 	"time"
 )
 
@@ -31,10 +32,11 @@ type WorkflowTaskInfo struct {
 	Sequence        int64  `json:"sequence"`
 }
 type WorkflowTaskPreview struct {
-	BasisToken string            `json:"basisToken"`
-	Task       WorkflowTaskInfo  `json:"task"`
-	Record     Record            `json:"record"`
-	Fields     []appfields.Field `json:"fields"`
+	BasisToken       string            `json:"basisToken"`
+	Task             WorkflowTaskInfo  `json:"task"`
+	Record           Record            `json:"record"`
+	Fields           []appfields.Field `json:"fields"`
+	EditableFieldIDs []string          `json:"editableFieldIds"`
 }
 
 // workflowBasisBinding contains only immutable task identity and counters.
@@ -145,7 +147,8 @@ func (s *Service) PreviewWorkflowTask(ctx context.Context, principal session.Pri
 	if !workflowID(binding.NodeID) || !workflowID(binding.VersionID) || !workflowID(assignee) || !workflowPositive(binding.ActivationEpoch) || !workflowPositive(binding.DefinitionVersion) || binding.Sequence < 0 || binding.Sequence > workflowMaxCounter {
 		return empty, ErrUnavailable
 	}
-	if !workflowApprovalRoster(graphJSON, binding.NodeID, assignee) {
+	editable, valid := workflowApprovalEditableFields(graphJSON, binding.NodeID, assignee)
+	if !valid {
 		return empty, ErrUnavailable
 	}
 	bundle, err := captureWorkflowEvidence(ctx, tx, facts, req.RecordID)
@@ -159,6 +162,12 @@ func (s *Service) PreviewWorkflowTask(ctx context.Context, principal session.Pri
 	if err != nil {
 		return empty, err
 	}
+	for _, field := range preview.Fields {
+		if editable[field.ID] && policy.CanEdit(preview.Record.CreatedBy, []string{field.ID}) {
+			preview.EditableFieldIDs = append(preview.EditableFieldIDs, field.ID)
+		}
+	}
+	sort.Strings(preview.EditableFieldIDs)
 	preview.Task = WorkflowTaskInfo{ID: binding.TaskID, InstanceID: binding.InstanceID, NodeID: binding.NodeID, ActivationEpoch: binding.ActivationEpoch, Sequence: binding.Sequence}
 	criteria, err := json.Marshal(binding)
 	if err != nil {
@@ -185,56 +194,63 @@ func (s *Service) PreviewWorkflowTask(ctx context.Context, principal session.Pri
 // Validate the pinned graph's task node and roster without consulting a newer
 // definition or revalidating its field references against today's schema.
 func workflowApprovalRoster(raw []byte, nodeID, assignee string) bool {
+	_, valid := workflowApprovalEditableFields(raw, nodeID, assignee)
+	return valid
+}
+
+func workflowApprovalEditableFields(raw []byte, nodeID, assignee string) (map[string]bool, bool) {
 	var graph flowgraph.Graph
 	if !closedJSON(raw, &graph) || graph.Version != 1 || len(graph.Nodes) < 2 || len(graph.Nodes) > 100 || len(graph.Edges) < 1 || len(graph.Edges) > 200 {
-		return false
+		return nil, false
 	}
 	seen := make(map[string]bool, len(graph.Nodes))
 	found := false
+	editable := make(map[string]bool)
 	for _, node := range graph.Nodes {
 		if !workflowID(node.ID) || seen[node.ID] {
-			return false
+			return nil, false
 		}
 		seen[node.ID] = true
 		switch node.Kind {
 		case "start", "end", "condition":
 			if node.Approval != nil {
-				return false
+				return nil, false
 			}
 		case "approval":
 			if node.Approval == nil || (node.Approval.Mode != "all" && node.Approval.Mode != "any") || len(node.Approval.AssigneeIDs) < 1 || len(node.Approval.AssigneeIDs) > 50 || len(node.Approval.EditableFieldIDs) > 200 {
-				return false
+				return nil, false
 			}
 			if len(bytes.TrimSpace(node.Condition)) != 0 && !bytes.Equal(bytes.TrimSpace(node.Condition), []byte("null")) {
-				return false
+				return nil, false
 			}
 			roster := make(map[string]bool, len(node.Approval.AssigneeIDs))
 			for _, id := range node.Approval.AssigneeIDs {
 				if !workflowID(id) || roster[id] {
-					return false
+					return nil, false
 				}
 				roster[id] = true
 			}
 			fields := make(map[string]bool, len(node.Approval.EditableFieldIDs))
 			for _, id := range node.Approval.EditableFieldIDs {
 				if !workflowID(id) || fields[id] {
-					return false
+					return nil, false
 				}
 				fields[id] = true
 			}
 			if node.ID == nodeID {
 				found = roster[assignee]
+				editable = fields
 			}
 		default:
-			return false
+			return nil, false
 		}
 	}
 	for _, edge := range graph.Edges {
 		if !seen[edge.From] || !seen[edge.To] {
-			return false
+			return nil, false
 		}
 	}
-	return found
+	return editable, found
 }
 
 func workflowVisiblePreview(bundle ev.Bundle) (WorkflowTaskPreview, workflowBasisRevision, error) {
@@ -244,7 +260,7 @@ func workflowVisiblePreview(bundle ev.Bundle) (WorkflowTaskPreview, workflowBasi
 		return empty, workflowBasisRevision{}, ErrUnavailable
 	}
 	h := manifest.Header
-	preview := WorkflowTaskPreview{Fields: make([]appfields.Field, 0, len(manifest.VisibleFieldIDs)), Record: Record{ID: h.RecordID, AppID: h.AppID, TableID: h.TableID, ViewID: h.ViewID, CreatedBy: h.CreatedBy, CreatedAt: h.CreatedAt, UpdatedAt: h.UpdatedAt, RecordVersion: h.RecordVersion, SchemaVersion: h.SchemaVersion, Values: make(map[string]any, len(manifest.VisibleFieldIDs)), ReferenceDisplays: make(map[string]map[string]ReferenceDisplay)}}
+	preview := WorkflowTaskPreview{EditableFieldIDs: []string{}, Fields: make([]appfields.Field, 0, len(manifest.VisibleFieldIDs)), Record: Record{ID: h.RecordID, AppID: h.AppID, TableID: h.TableID, ViewID: h.ViewID, CreatedBy: h.CreatedBy, CreatedAt: h.CreatedAt, UpdatedAt: h.UpdatedAt, RecordVersion: h.RecordVersion, SchemaVersion: h.SchemaVersion, Values: make(map[string]any, len(manifest.VisibleFieldIDs)), ReferenceDisplays: make(map[string]map[string]ReferenceDisplay)}}
 	visible := make(map[string]bool, len(manifest.VisibleFieldIDs))
 	for _, id := range manifest.VisibleFieldIDs {
 		visible[id] = true

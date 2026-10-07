@@ -44,7 +44,8 @@ func (s *Service) workflowHTTP(w http.ResponseWriter, r *http.Request, p session
 	}
 	preview := len(parts) == 9 && parts[7] == "tasks" && r.Method == "GET"
 	action := len(parts) == 10 && parts[7] == "tasks" && parts[9] == "actions" && r.Method == "POST"
-	if !preview && !action {
+	save := len(parts) == 10 && parts[7] == "tasks" && parts[9] == "record" && r.Method == "PATCH"
+	if !preview && !action && !save {
 		respond(w, r, 404, "API_NOT_FOUND", nil, nil)
 		return true
 	}
@@ -68,13 +69,26 @@ func (s *Service) workflowHTTP(w http.ResponseWriter, r *http.Request, p session
 		s.finish(w, r, p, 200, result, "", false, nil)
 		return true
 	}
-	body, err := appstructure.DecodeRecordBody(w, r, "workflow.task.action")
+	kind := "workflow.task.action"
+	if save {
+		kind = "workflow.task.save"
+	}
+	body, err := appstructure.DecodeRecordBody(w, r, kind)
 	if err != nil {
 		failure(w, r, err, "")
 		return true
 	}
 	operation := value[string](body, "operationId")
 	m := httpserver.Metadata(r.Context())
+	if save {
+		result, err := s.Records.SaveWorkflowTask(r.Context(), p, apprecordservice.WorkflowTaskSaveRequest{WorkflowTaskRequest: req, OperationID: operation, BasisToken: value[string](body, "basisToken"), Changes: value[map[string]any](body, "changes")}, applications.Metadata{RequestID: m.RequestID, ClientIP: m.ClientIP, UserAgent: r.UserAgent()})
+		if err != nil {
+			failure(w, r, err, operation)
+			return true
+		}
+		s.finish(w, r, p, 200, result, "", true, nil)
+		return true
+	}
 	result, err := s.Records.AcceptWorkflowTask(r.Context(), p, apprecordservice.WorkflowTaskActionRequest{WorkflowTaskRequest: req, OperationID: operation, Action: value[string](body, "action"), BasisToken: value[string](body, "basisToken")}, applications.Metadata{RequestID: m.RequestID, ClientIP: m.ClientIP, UserAgent: r.UserAgent()})
 	if err != nil {
 		failure(w, r, err, operation)

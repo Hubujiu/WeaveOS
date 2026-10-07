@@ -23,7 +23,8 @@ test('Root V037: exact closed action body and separate pending/final result shap
  assert.equal(s.WorkflowTaskSuccess.properties.status.const,'success');assert.equal(s.WorkflowTaskNoEffect.properties.status.const,'no_effect');
  assert.deepEqual(s.WorkflowTaskOperation.oneOf,[{$ref:ref('WorkflowTaskPending')},{$ref:ref('WorkflowTaskSuccess')},{$ref:ref('WorkflowTaskNoEffect')}]);
  assert.deepEqual(s.ApplicationOperation.properties.httpStatus.enum,[200,201,202,204]);assert.ok(s.ApplicationOperation.properties.result.oneOf.some(x=>x.$ref===ref('WorkflowTaskPending')));
- assert.deepEqual(s.WorkflowTaskPreview.required,['basisToken','task','record','fields']);assert.equal(s.WorkflowTaskPreview.properties.fields.items.$ref,ref('Field'));assert.equal(s.WorkflowTaskPreview.properties.record.$ref,ref('BusinessRecord'));
+ assert.equal(s.WorkflowTaskPreview.properties.editableFieldIds.type,'array');assert.equal(s.WorkflowTaskPreview.properties.editableFieldIds.uniqueItems,true);assert.equal(s.WorkflowTaskPreview.properties.editableFieldIds.maxItems,200);
+ assert.deepEqual(s.WorkflowTaskPreview.required,['basisToken','task','record','fields','editableFieldIds']);assert.equal(s.WorkflowTaskPreview.properties.fields.items.$ref,ref('Field'));assert.equal(s.WorkflowTaskPreview.properties.record.$ref,ref('BusinessRecord'));
  for(const name of ['WorkflowTaskPending','WorkflowTaskSuccess','WorkflowTaskNoEffect'])for(const forbidden of ['evidenceHash','values','fields','payload','routes','actorId'])assert.equal(s[name].properties[forbidden],undefined);
 });
 test('Root V037: stale task/basis and oversized real evidence have public safe conflicts',()=>{
