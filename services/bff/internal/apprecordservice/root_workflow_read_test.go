@@ -135,3 +135,23 @@ func TestRootWorkflowReadRejectsInvalidPageAndForeignSession(t *testing.T) {
 		t.Fatal("foreign session reused query")
 	}
 }
+
+func TestRootWorkflowReadUnrelatedEditGrantDoesNotExpire(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	q := rootReadRequest(f)
+	a, e := f.service.SearchRecordWorkflows(f.ctx, f.principal, q)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e = f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN(SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.edit')", f.app); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = f.owner.Exec(f.ctx, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.edit'", f.app); e != nil {
+		t.Fatal(e)
+	}
+	q.QueryVersion = a.QueryVersion
+	b, e := f.service.SearchRecordWorkflows(f.ctx, f.principal, q)
+	if e != nil || b.Total != a.Total || b.QueryVersion != a.QueryVersion {
+		t.Fatalf("unrelated edit capability changed read summary %+v %v", b, e)
+	}
+}
