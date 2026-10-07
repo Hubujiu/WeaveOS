@@ -2,7 +2,9 @@ package apprecordservice
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"testing"
@@ -94,6 +96,13 @@ func TestRootLifecyclePreviewOwnerWithoutWorkflowRoleDenied(t *testing.T) {
 }
 func TestRootLifecyclePreviewHistoricalApproverOnlyOwnActualNode(t *testing.T) {
 	p := rootProjectionFixture(t)
+	// This older projection fixture predates complete field metadata required by evidence.
+	// Supply the same explicit valid definitions as the established capture fixture.
+	rootCaptureDefinitions(t, rootEvidenceStoreFixture{recordFixture: p.recordFixture}, []appfields.Field{
+		{ID: p.public, Name: "Public", Kind: "text", Default: json.RawMessage("null"), Config: json.RawMessage(`{"maxLength":null}`)},
+		{ID: p.secret, Name: "Secret", Kind: "text", Default: json.RawMessage("null"), Config: json.RawMessage(`{"maxLength":null}`)},
+		{ID: p.reference, Name: "Member", Kind: "member", Default: json.RawMessage("null"), Config: json.RawMessage(`{}`)},
+	})
 	old := p.start(t)
 	c, payload := p.accept(t, "agree", old.ID, "", 1, 1)
 	current := p.task(t, p.second, p.other, 2)
