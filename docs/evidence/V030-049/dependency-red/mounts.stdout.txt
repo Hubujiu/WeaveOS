@@ -1,0 +1,235 @@
+✖ PRD V049: container Go cache binds only module and build dependencies (1.849147ms)
+✖ PRD V049: container pnpm store has one precise public dependency mount (0.24459ms)
+✖ PRD V049: reject ambiguous cache root "" (0.782785ms)
+✖ PRD V049: reject ambiguous cache root "." (0.095211ms)
+✖ PRD V049: reject ambiguous cache root "/tmp/cache,readonly" (0.119266ms)
+✖ PRD V049: reject ambiguous cache root "/tmp/cache\nother" (0.117113ms)
+✖ PRD V049: no cache layout exists for database (0.106357ms)
+✖ PRD V049: no cache layout exists for redis (0.076062ms)
+✖ PRD V049: no cache layout exists for runtime (0.1083ms)
+✖ PRD V049: no cache layout exists for settings (0.138985ms)
+✖ PRD V049: no cache layout exists for results (0.094019ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 0
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 58.254283
+
+✖ failing tests:
+
+test at tests/governance/dependency-cache.test.mjs:4:1
+✖ PRD V049: container Go cache binds only module and build dependencies (1.849147ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   '--mount',
+  -   'type=bind,src=/tmp/ci-public-cache/go-mod,dst=/go/pkg/mod',
+  -   '--mount',
+  -   'type=bind,src=/tmp/ci-public-cache/go-build,dst=/root/.cache/go-build'
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-049/tests/governance/dependency-cache.test.mjs:5:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ '--mount', 'type=bind,src=/tmp/ci-public-cache/go-mod,dst=/go/pkg/mod', '--mount', 'type=bind,src=/tmp/ci-public-cache/go-build,dst=/root/.cache/go-build' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/governance/dependency-cache.test.mjs:9:1
+✖ PRD V049: container pnpm store has one precise public dependency mount (0.24459ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   '--mount',
+  -   'type=bind,src=/tmp/ci-public-cache/pnpm-store,dst=/repo/.work/pnpm-store'
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-049/tests/governance/dependency-cache.test.mjs:10:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ '--mount', 'type=bind,src=/tmp/ci-public-cache/pnpm-store,dst=/repo/.work/pnpm-store' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/governance/dependency-cache.test.mjs:13:73
+✖ PRD V049: reject ambiguous cache root "" (0.782785ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-049/tests/governance/dependency-cache.test.mjs:13:151)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/governance/dependency-cache.test.mjs:13:73
+✖ PRD V049: reject ambiguous cache root "." (0.095211ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-049/tests/governance/dependency-cache.test.mjs:13:151)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/governance/dependency-cache.test.mjs:13:73
+✖ PRD V049: reject ambiguous cache root "/tmp/cache,readonly" (0.119266ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-049/tests/governance/dependency-cache.test.mjs:13:151)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/governance/dependency-cache.test.mjs:13:73
+✖ PRD V049: reject ambiguous cache root "/tmp/cache\nother" (0.117113ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-049/tests/governance/dependency-cache.test.mjs:13:151)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/governance/dependency-cache.test.mjs:14:71
+✖ PRD V049: no cache layout exists for database (0.106357ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-049/tests/governance/dependency-cache.test.mjs:14:132)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/governance/dependency-cache.test.mjs:14:71
+✖ PRD V049: no cache layout exists for redis (0.076062ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-049/tests/governance/dependency-cache.test.mjs:14:132)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/governance/dependency-cache.test.mjs:14:71
+✖ PRD V049: no cache layout exists for runtime (0.1083ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-049/tests/governance/dependency-cache.test.mjs:14:132)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/governance/dependency-cache.test.mjs:14:71
+✖ PRD V049: no cache layout exists for settings (0.138985ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-049/tests/governance/dependency-cache.test.mjs:14:132)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/governance/dependency-cache.test.mjs:14:71
+✖ PRD V049: no cache layout exists for results (0.094019ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///workspace/WeaveOS-worktrees/V030-049/tests/governance/dependency-cache.test.mjs:14:132)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }

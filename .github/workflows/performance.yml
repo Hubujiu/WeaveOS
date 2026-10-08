@@ -7,6 +7,9 @@
     "contents": "read"
   },
   "jobs": {
+    "preflight": {
+      "uses": "./.github/workflows/preflight.yml"
+    },
     "go-cost": {
       "runs-on": "ubuntu-24.04",
       "services": {
@@ -52,7 +55,8 @@
           "uses": "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
           "with": {
             "go-version-file": ".go-version",
-            "cache": false
+            "cache": true,
+            "cache-dependency-path": "services/bff/go.mod\nservices/bff/go.sum\n.github/workflows/preflight.yml\n"
           }
         },
         {
@@ -84,7 +88,8 @@
             "retention-days": 7
           }
         }
-      ]
+      ],
+      "needs": "preflight"
     },
     "java-cost": {
       "runs-on": "ubuntu-24.04",
@@ -99,6 +104,14 @@
           "uses": "actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
           "with": {
             "persist-credentials": false
+          }
+        },
+        {
+          "name": "Locked Java dependency and toolchain cache",
+          "uses": "actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+          "with": {
+            "path": "services/workflow-engine/.work/m2\nservices/workflow-engine/.work/toolchain\n",
+            "key": "java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}"
           }
         },
         {
@@ -126,7 +139,8 @@
             "retention-days": 7
           }
         }
-      ]
+      ],
+      "needs": "preflight"
     }
   }
 }

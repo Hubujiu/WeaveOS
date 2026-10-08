@@ -11,7 +11,10 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  preflight:
+    uses: ./.github/workflows/preflight.yml
   governance:
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -42,6 +45,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   go:
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     services:
@@ -72,7 +76,11 @@ jobs:
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - name: Migrate isolated PostgreSQL for real storage tests
         run: |
           go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
@@ -109,6 +117,7 @@ jobs:
           path: services/bff/coverage.out
           retention-days: 14
   browser:
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -121,11 +130,20 @@ jobs:
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
+      - name: Fixed package manager
+        run: npm install --global pnpm@10.28.2 --ignore-scripts
+      - name: Locked pnpm dependency store cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .work/pnpm-store
+          key: pnpm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.node-version', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
       - name: Frozen dependencies
-        run: |
-          npm install --global pnpm@10.28.2 --ignore-scripts
-          pnpm install --frozen-lockfile --ignore-scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store
       - name: Authentication OpenAPI 3.2.1 contract
         run: |
           node --test contracts/*.test.mjs
@@ -150,6 +168,7 @@ jobs:
             test-results/
           retention-days: 14
   workflow-engine:
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
@@ -159,6 +178,13 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Locked Java dependency and toolchain cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            services/workflow-engine/.work/m2
+            services/workflow-engine/.work/toolchain
+          key: java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}
       - name: Root-owned report gate acceptance
         run: |
           mkdir -p services/workflow-engine/ci-logs
@@ -316,6 +342,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
   workflow-rpc:
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -325,10 +352,21 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Locked Java dependency and toolchain cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            services/workflow-engine/.work/m2
+            services/workflow-engine/.work/toolchain
+          key: java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - name: Root-owned RPC report gate acceptance
         run: |
           mkdir -p services/workflow-engine/rpc-ci-logs
@@ -356,6 +394,7 @@ jobs:
           retention-days: 14
 
   execution-rpc:
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     defaults:
@@ -365,10 +404,21 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Locked Java dependency and toolchain cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            services/workflow-engine/.work/m2
+            services/workflow-engine/.work/toolchain
+          key: java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - name: Root-owned execution RPC gate tests
         run: |
           mkdir -p services/workflow-engine/execution-rpc-ci-logs
@@ -400,6 +450,7 @@ jobs:
           retention-days: 14
 
   workflow-recovery:
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -409,10 +460,21 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Locked Java dependency and toolchain cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            services/workflow-engine/.work/m2
+            services/workflow-engine/.work/toolchain
+          key: java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .node-version
@@ -437,6 +499,7 @@ jobs:
           retention-days: 14
 
   workflow-actions:
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -446,10 +509,21 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Locked Java dependency and toolchain cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            services/workflow-engine/.work/m2
+            services/workflow-engine/.work/toolchain
+          key: java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .node-version
@@ -474,6 +548,7 @@ jobs:
           retention-days: 14
 
   workflow-formal-runtime:
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -483,10 +558,21 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Locked Java dependency and toolchain cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            services/workflow-engine/.work/m2
+            services/workflow-engine/.work/toolchain
+          key: java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .node-version
@@ -514,6 +600,7 @@ jobs:
           retention-days: 14
 
   workflow-schema-cli:
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
@@ -526,7 +613,11 @@ jobs:
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - name: Build pinned static Goose for isolated test containers
         run: CGO_ENABLED=0 go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
       - name: Root real migration CLI and runtime-role acceptance
@@ -542,6 +633,7 @@ jobs:
           retention-days: 14
 
   workflow-backup:
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

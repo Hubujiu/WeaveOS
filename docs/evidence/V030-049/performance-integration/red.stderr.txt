@@ -1,0 +1,34 @@
+FF..F..
+======================================================================
+FAIL: test_all_existing_go_setup_actions_use_locked_dependency_cache (__main__.WorkflowContracts.test_all_existing_go_setup_actions_use_locked_dependency_cache) (file='performance.yml', job='go-cost')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/WeaveOS-worktrees/V030-049/tests/governance/root_ci_throughput_test.py", line 74, in test_all_existing_go_setup_actions_use_locked_dependency_cache
+    self.assertEqual(settings.get('cache'), 'true', 'actual setup-go cache enabled')
+AssertionError: 'false' != 'true'
+- false
++ true
+ : actual setup-go cache enabled
+
+======================================================================
+FAIL: test_all_test_entrypoints_scheduler_block_heavy_work_on_preflight (__main__.WorkflowContracts.test_all_test_entrypoints_scheduler_block_heavy_work_on_preflight) (file='performance.yml')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/WeaveOS-worktrees/V030-049/tests/governance/root_ci_throughput_test.py", line 48, in test_all_test_entrypoints_scheduler_block_heavy_work_on_preflight
+    assert_gate_graph(self, workflow(ROOT, file))
+  File "/workspace/WeaveOS-worktrees/V030-049/tests/governance/root_ci_throughput_test.py", line 35, in assert_gate_graph
+    test.assertEqual(len(gates), 1, 'exactly one call to shared preflight per entry workflow')
+AssertionError: 0 != 1 : exactly one call to shared preflight per entry workflow
+
+======================================================================
+FAIL: test_java_cache_is_narrow_and_bound_to_build_inputs (__main__.WorkflowContracts.test_java_cache_is_narrow_and_bound_to_build_inputs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/WeaveOS-worktrees/V030-049/tests/governance/root_ci_throughput_test.py", line 87, in test_java_cache_is_narrow_and_bound_to_build_inputs
+    self.assertEqual(len(caches), 1, f'{file}/{name} requires one narrow Java cache')
+AssertionError: 0 != 1 : performance.yml/java-cost requires one narrow Java cache
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.122s
+
+FAILED (failures=3)
