@@ -22,3 +22,7 @@ Root原件SHA256：Python bfa864b21ef70fff8830436fe909c6f3b15a5441b550b9bb309fbd
 容器依赖阶段：dependency-red保存Root公共依赖helper11项占位有效FAIL及初版Python第6项product缓存声明缺失的有效RED；dependency-helper-green保存精确Root实现/测试与11PASS；dependency-node-green保存累计60项Node定向PASS、0skip及源路径哈希，不重复复制整套workflows。修正版Python仅追加Root明确要求的go.mod/go.sum输入，等待Root最终SHA核验；product三路径声明尚未实施，不能把部分接线说成完成。未运行真实冷/热/失效或CI，旧security扫描文件不动。
 
 Root最终确认Python修正版SHA后，dependency-product-red记录该版本6项实际1目标FAIL；随后product三公共路径/key声明实施，dependency-final-green记录Python6/Node60全部PASS。regression记录固定Node24.14.0的既有治理/底座/契约379PASS、0skip与结构/任务/diff全部exit0。完整组件发现baseline.json以baseline.json.gz无损归档，baseline-archive.json记录原始/压缩SHA，原件留工作树。上述无真实冷/热/失效或CI结果。
+
+本地授权检查点71bba1128d77afa2068714fd6424cdb105ca5206包含显式选入的批准源码和已审最小证据；checkpoint-evidence-selection.json保留该提交前逐文件SHA。secret-only记录原固定Gitleaks在该确切HEAD的1PASS/0skip/exit0。此结果和更新的任务摘要未再次提交，保持已扫描HEAD不变；无推送/PR/CI。附加cached whitespace检查原RED两日志16处空白为exit2，源码/任务0，原日志字节保留。
+
+python-runtime-cache记录Root第7项原件SHA匹配、实际RED（6PASS/1目标FAIL）及指定两处YAML补正后的Python7/Node60/旧快检379PASS与结构检查exit0；仅最小日志与原件，不复制整套workflow。此前71b确切检查点已按Root单次授权推送；当前新增cache补正尚未推送，新检查点不等于已secret-scan或完整CI通过。

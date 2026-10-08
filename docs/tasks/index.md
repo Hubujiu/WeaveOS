@@ -1,6 +1,6 @@
 # v0.1.0 任务索引
 
-- [V030-049 · CI 提速与完整测试身份汇总](V030-049.md) — task/V030-049-ci-throughput / ../WeaveOS-worktrees/V030-049；基线develop67eb444d，后续整合最终通过V048再冻结。缓存/preflight/组件四片及容器公共依赖接线按Root原件有效RED→GREEN，Python6/Node60定向PASS，既有治理/底座/契约379PASS、0skip；固定工具真实--list502项/36文件，仅一原有WebKit-only能力skip获准。实际四片/冷热失效/完整product/CI待Root冻结后运行；当前准备授权本地检查点与exact-HEAD secret-only，无推送/main/部署。
+- [V030-049 · CI 提速与完整测试身份汇总](V030-049.md) — task/V030-049-ci-throughput / ../WeaveOS-worktrees/V030-049；基线develop67eb444d，后续整合最终通过V048再冻结。缓存/preflight/组件四片及容器公共依赖接线按Root原件有效RED→GREEN，Python7/Node60定向PASS，既有治理/底座/契约379PASS、0skip；固定工具真实--list502项/36文件，仅一原有WebKit-only能力skip获准。实际四片/冷热失效/完整product/CI待Root冻结后运行；授权本地检查点71bba112及该HEAD secret-only1PASS，71b已按Root授权单次推送；后续Python实际runtime key按Root合同RED→GREEN，本地准备固定V048不提交整合；无PR/手动CI/main/部署。
 
 Java 审批命令身份 A 段：[V030-030](V030-030.md)，task/V030-030-engine-execution / ../WeaveOS-worktrees/V030-030；精确 V029 80e4151 基线及 Root f869911 测试，[draft PR40](https://github.com/Hubujiu/WeaveOS/pull/40) 叠在 V029。云环境真实 Java8/独立门禁12 RED→GREEN，旧部署18/RPC9/互操作1/proof24通过；Root 提供全部测试及 CI 枚举，执行者仅实现 CommandEnvelope 和受测独立门禁，复用指定安全补丁。最终远端 CI 待查询，B/C 合同待 Root，前端暂停，无 main 合并或部署。
 

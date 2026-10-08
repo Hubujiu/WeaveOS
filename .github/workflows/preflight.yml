@@ -31,11 +31,14 @@ jobs:
           key: pnpm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.node-version', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
       - name: Frozen dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store
+      - name: Identify Python cache runtime
+        id: python-runtime
+        run: python3 -c 'import platform; print("version=" + platform.python_version())' >> "$GITHUB_OUTPUT"
       - name: Locked Python dependency download cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .work/pip-cache
-          key: python-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci-requirements.txt') }}
+          key: python-${{ runner.os }}-${{ runner.arch }}-${{ steps.python-runtime.outputs.version }}-${{ hashFiles('scripts/ci-requirements.txt') }}
       - name: Isolated Python workflow contract dependencies
         run: |
           python3 -m venv "$RUNNER_TEMP/weaveos-preflight-venv"
