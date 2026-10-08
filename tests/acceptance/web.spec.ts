@@ -267,12 +267,12 @@ test('WEB-12 PRD login: network failure differs from credential failure and perm
   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
-  await expect(page.getByRole('alert')).toHaveText('邮箱或密码不正确');
+  await expect(page.getByRole('alert').getByText('邮箱或密码不正确',{exact:true})).toBeVisible();
   // Real transport fault injection, not a mocked business response.
   await page.route('**/api/v1/sessions', route => route.abort('connectionfailed'));
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
-  await expect(page.getByRole('alert')).toHaveText('网络连接失败，请检查网络后重试');
+  await expect(page.getByRole('alert').getByText('网络连接失败，请检查网络后重试',{exact:true})).toBeVisible();
   await expect(page.getByLabel('账号',{exact:true})).toHaveValue('synthetic-unknown-user');
   await expect(page.getByLabel('密码',{exact:true})).toHaveValue('Synthetic@123');
   await expect(page.getByRole('button', { name: '登录', exact: true })).toBeEnabled();
