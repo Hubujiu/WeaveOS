@@ -1,6 +1,10 @@
 # v0.1.0 任务索引
 
-- [V030-052 · 完整密码Schema校验](V030-052.md) — task/V030-052-password-schema-validation / ../WeaveOS-worktrees/V030-052；基线 develop `440d171e`，先验证旧解释器的JSON类型漏检，再接入标准校验器。当前 in_progress。
+- [V030-054 · 登录响应敏感字段契约校验](V030-054.md) — task/V030-054-login-response-schema / ../WeaveOS-worktrees/V030-054；基线 develop `c54c5402`，Root 亲写测试，用实际响应 Schema 替换英文声明绑定，当前 in_progress。
+
+- [V030-053 · BFF 构建成本测量](https://app.notion.com/p/3f32f5a9e648818eb300f21b1f4ccbf2) — 无代码改动/PR；九次暖构建实测后两次重复合计中位约 3.620 秒，当前保留原独立 fixture。完整脚本与原始结果已在 Notion 归档，不宣称端到端 CI 提速。
+
+- [V030-052 · 完整密码 Schema 校验](V030-052.md) — [PR #61](https://github.com/Hubujiu/WeaveOS/pull/61) 已合入 develop `c54c5402`；标准校验器、JSON 类型矩阵及完整 CI 已验收，首次字体超时与限定同头复跑证据保留。
 
 - [V030-051 · 生产筛选管理器覆盖迁移与旧测试退役](V030-051.md) — [PR #60](https://github.com/Hubujiu/WeaveOS/pull/60) 已合入 develop `440d171e`；完整CI及两轮真实产品验收通过，默认组件490项，最终事实与归档见本批Notion。冻结任务保留验收前记录。
 
