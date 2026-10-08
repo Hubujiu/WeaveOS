@@ -1,0 +1,356 @@
+--- a/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRegistryTest.java
++++ b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRegistryTest.java
+@@ -276,7 +276,10 @@
+  }
+  @Test void concurrentExecutionAndCancellationHaveOneDurableOutcome()throws Exception{
+   deploy("all");var c=new Command();var results=race(()->registry.execute(c.request()),()->registry.establishNoEffect(c.request()));
+-  assertEquals(results.get(0),results.get(1));var r=results.get(0);verify(c,r,r.outcome());
++  assertEquals(results.get(0),results.get(1));var r=results.get(0);
++  assertTrue(Set.of("success","no_effect").contains(r.outcome()),"race must resolve to one defined durable outcome");
++  if(r.outcome().equals("success")){verify(c,r,"success");active(r,2,Set.of(id(8),id(9)),1);}
++  else{verify(c,r,"no_effect");assertEquals("unchanged",r.result().state());assertEquals("cancelled",r.result().reason());assertEquals("",r.result().engineProcessId());assertEquals(List.of(),r.result().tasks());}
+   long expected=r.outcome().equals("success")?1:0;
+   assertEquals(expected,count("wf_execution_instances"));assertEquals(expected,engine.getHistoryService().createHistoricProcessInstanceQuery().count());
+  }
+--- a/services/workflow-engine/src/test/java/org/weaveos/workflow/RootWorkflowRuntimeTest.java
++++ b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootWorkflowRuntimeTest.java
+@@ -105,13 +105,20 @@
+   try(var owner=new DriverManagerDataSource(database.fixture.url+"?currentSchema="+database.fixture.schema,"b3_fixture","b3_fixture_only").getConnection()){
+    owner.setAutoCommit(false);try(var lock=owner.createStatement()){
+     lock.execute("LOCK TABLE wf_deployments IN ACCESS EXCLUSIVE MODE");
+-    for(int i=0;i<8;i++)futures.add(senders.submit(()->{try{deployments().lookup(request);return Status.Code.OK;}catch(StatusRuntimeException failure){return failure.getStatus().getCode();}}));
++    Callable<Status.Code> lookup=()->{try{deployments().lookup(request);return Status.Code.OK;}catch(StatusRuntimeException failure){return failure.getStatus().getCode();}};
++    futures.add(senders.submit(lookup));
++    long admissionDeadline=System.nanoTime()+2_000_000_000L;int admitted;
++    do{admitted=database.fixture.admin.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE usename=? AND wait_event_type='Lock'",Integer.class,database.fixture.role);if(admitted==1)break;Thread.sleep(10);}while(System.nanoTime()<admissionDeadline);
++    assertEquals(1,admitted,"the first authorized request must actually reach the database barrier");
++    for(int i=1;i<8;i++)futures.add(senders.submit(lookup));
+     boolean rejected=false;long until=System.nanoTime()+5_000_000_000L;
+     do{for(var future:futures)if(future.isDone()&&future.get()==Status.Code.RESOURCE_EXHAUSTED)rejected=true;if(rejected)break;Thread.sleep(10);}while(System.nanoTime()<until);
+     assertTrue(rejected,"bounded call capacity must explicitly reject excess work");
+     int blocked=database.fixture.admin.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE usename=? AND wait_event_type='Lock'",Integer.class,database.fixture.role);assertTrue(blocked<=1,"one configured RPC worker must not run many blocked queries");
+    }finally{owner.rollback();}
++   assertEquals(Status.Code.OK,futures.get(0).get(10,TimeUnit.SECONDS),"the admitted request must complete after releasing the barrier");
+    for(var future:futures)assertTrue(Set.of(Status.Code.OK,Status.Code.RESOURCE_EXHAUSTED).contains(future.get(10,TimeUnit.SECONDS)));
++   assertDoesNotThrow(()->deployments().lookup(request),"capacity must recover for a later request");
+   }finally{senders.shutdownNow();senders.awaitTermination(5,TimeUnit.SECONDS);}
+  }
+  @Test void inflightCloseRollsBackPendingWriteAndSameRequestCanRecover()throws Exception{
+--- a/services/bff/internal/personnel/definitions_test.go
++++ b/services/bff/internal/personnel/definitions_test.go
+@@ -4,6 +4,7 @@
+ 	"context"
+ 	"encoding/json"
+ 	"errors"
++	"github.com/jackc/pgx/v5/pgconn"
+ 	"testing"
+ )
+ 
+@@ -78,8 +79,9 @@
+ 	f := setup(t)
+ 	ctx := context.Background()
+ 	_, err := f.app.SaveDefinition(ctx, f.actor, Identity, "", DefinitionInput{Name: "must-rollback", PermissionCodes: []string{}, TemplateIDs: []string{}}, RequestMetadata{})
+-	if err == nil || errors.Is(err, ErrNotImplemented) {
+-		t.Fatalf("audit constraint failure must be reached: %v", err)
++	var pgerr *pgconn.PgError
++	if !errors.As(err, &pgerr) || pgerr.Code != "23514" || pgerr.ConstraintName != "ck_authentication_events_request_id" {
++		t.Fatalf("expected the audit request-id CHECK failure, got %v", err)
+ 	}
+ 	var count int
+ 	if err := f.owner.QueryRow(ctx, "SELECT count(*) FROM personnel.identities WHERE name='must-rollback'").Scan(&count); err != nil {
+--- a/services/bff/internal/workflowrpc/root_execution_client_test.go
++++ b/services/bff/internal/workflowrpc/root_execution_client_test.go
+@@ -340,8 +340,8 @@
+ 	client := rootExecutionClient(t, conn)
+ 	cancel()
+ 	r, e := client.Execute(parent, c, p)
+-	if e == nil || r != nil {
+-		t.Fatal("cancelled caller succeeded")
++	if status.Code(e) != codes.Canceled || r != nil {
++		t.Fatalf("cancelled caller must remain canceled with no receipt: receipt=%+v err=%v", r, e)
+ 	}
+ 	if conn.calls > 1 {
+ 		t.Fatal("unexpected retry")
+@@ -358,8 +358,8 @@
+ 	if e != nil {
+ 		t.Fatal(e)
+ 	}
+-	if r, e := short.Execute(context.Background(), c, p); e == nil || r != nil {
+-		t.Fatal("timeout became success")
++	if r, e := short.Execute(context.Background(), c, p); status.Code(e) != codes.DeadlineExceeded || r != nil || conn2.calls != 1 {
++		t.Fatalf("one dispatched RPC must expire without a confirmed receipt: calls=%d receipt=%+v err=%v", conn2.calls, r, e)
+ 	}
+ }
+ func TestRootExecutionClientDoesNotMutateCallerInput(t *testing.T) {
+--- a/services/bff/internal/persistence/personnel_activity_schema_test.go
++++ b/services/bff/internal/persistence/personnel_activity_schema_test.go
+@@ -2,6 +2,7 @@
+ 
+ import (
+ 	"context"
++	"reflect"
+ 	"testing"
+ )
+ 
+@@ -28,12 +29,13 @@
+ 	if err != nil {
+ 		t.Fatal(err)
+ 	}
+-	var count int
+-	if err := tx.QueryRow(ctx, "SELECT count(*) FROM personnel.activity_events WHERE id IN ('00000000-0000-4000-8000-000000000081','00000000-0000-4000-8000-000000000083','00000000-0000-4000-8000-000000000084')").Scan(&count); err != nil {
++	var ids []string
++	if err := tx.QueryRow(ctx, "SELECT array_agg(id::text ORDER BY id) FROM personnel.activity_events WHERE id IN ('00000000-0000-4000-8000-000000000081','00000000-0000-4000-8000-000000000083','00000000-0000-4000-8000-000000000084')").Scan(&ids); err != nil {
+ 		t.Fatal(err)
+ 	}
+-	if count != 2 {
+-		t.Fatalf("only personnel and invitation activity visible, got %d", count)
++	wantIDs := []string{"00000000-0000-4000-8000-000000000081", "00000000-0000-4000-8000-000000000084"}
++	if !reflect.DeepEqual(ids, wantIDs) {
++		t.Fatalf("expected personnel and invitation identities %v, got %v", wantIDs, ids)
+ 	}
+ 	rows, err := tx.Query(ctx, "SELECT column_name FROM information_schema.columns WHERE table_schema='personnel' AND table_name='activity_events' ORDER BY ordinal_position")
+ 	if err != nil {
+--- a/services/bff/internal/appstructure/record_shared_test.go
++++ b/services/bff/internal/appstructure/record_shared_test.go
+@@ -8,6 +8,8 @@
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+ 	"github.com/jackc/pgx/v5"
+ 	"github.com/jackc/pgx/v5/pgconn"
++	"reflect"
++	"sort"
+ 	"testing"
+ 	"time"
+ )
+@@ -62,20 +64,23 @@
+ 	}
+ 	data(t, rootCall(t, f, "PUT", base+"/"+group+"/grants", map[string]any{"grants": grants, "operationId": uuid(t, f.owner), "expectedPolicyRevision": 2}, f.actor), 200)
+ 	stored := data(t, rootCall(t, f, "GET", base+"/"+group+"/grants", nil, f.actor), 200)["grants"].([]any)
+-	if len(stored) != 4 {
+-		t.Fatalf("complete grants dropped %+v", stored)
+-	}
+-	for _, raw := range stored {
+-		grant := raw.(map[string]any)
+-		mask := grant["fields"].([]any)
+-		if grant["action"] == "data.read" || grant["action"] == "data.history" {
+-			if len(mask) != 1 || mask[0] != number["id"] {
+-				t.Fatalf("field mask lost %+v", grant)
++	canonical := func(values []any) []string {
++		t.Helper()
++		result := make([]string, len(values))
++		for i, value := range values {
++			raw, err := json.Marshal(value)
++			if err != nil {
++				t.Fatal(err)
+ 			}
+-		} else if len(mask) != 0 {
+-			t.Fatal("defaults-only create/menu masks changed", grant)
+-		}
+-	}
++			result[i] = string(raw)
++		}
++		sort.Strings(result)
++		return result
++	}
++	if got, want := canonical(stored), canonical(grants); !reflect.DeepEqual(got, want) {
++		t.Fatalf("complete resource/action/row scope/field grants got %v, want %v", got, want)
++	}
++
+ 	foreign := map[string]any{"resourceKind": "form", "resourceId": view, "action": "data.edit", "rowScope": "all", "fields": []string{uuid(t, f.owner)}}
+ 	w := rootCall(t, f, "PUT", base+"/"+group+"/grants", map[string]any{"grants": []any{foreign}, "operationId": uuid(t, f.owner), "expectedPolicyRevision": 3}, f.actor)
+ 	if w.Code != 400 {
+--- a/services/bff/internal/appdrafts/store_test.go
++++ b/services/bff/internal/appdrafts/store_test.go
+@@ -4,6 +4,7 @@
+ 	"context"
+ 	"errors"
+ 	"os"
++	"reflect"
+ 	"testing"
+ 
+ 	"github.com/jackc/pgx/v5"
+@@ -159,8 +160,15 @@
+ 	if err != nil {
+ 		t.Fatal(err)
+ 	}
+-	if len(second.Items) != 1 || second.NextToken != "" || second.Items[0].ID == first.Items[0].ID {
++	if len(second.Items) != 1 || second.NextToken != "" {
+ 		t.Fatalf("second page %+v", second)
++	}
++	// All three rows were created in one transaction, so updated_at is tied.
++	// The documented descending UUID tie-break determines the exact two pages.
++	gotIDs := []string{first.Items[0].ID, first.Items[1].ID, second.Items[0].ID}
++	wantIDs := []string{"11111111-1111-4111-8111-111111111114", "11111111-1111-4111-8111-111111111113", "11111111-1111-4111-8111-111111111112"}
++	if !reflect.DeepEqual(gotIDs, wantIDs) {
++		t.Fatalf("complete cursor sequence got %v, want %v", gotIDs, wantIDs)
+ 	}
+ 	if err := tx.Rollback(ctx); err != nil {
+ 		t.Fatal(err)
+--- a/services/bff/internal/apprecords/concurrency_test.go
++++ b/services/bff/internal/apprecords/concurrency_test.go
+@@ -65,7 +65,11 @@
+ 	if err != nil {
+ 		t.Fatal(err)
+ 	}
+-	defer owner.Close(ctx)
++	t.Cleanup(func() {
++		if err := owner.Close(context.Background()); err != nil {
++			t.Errorf("close owned fixture connection: %v", err)
++		}
++	})
+ 	raw := make([]byte, 4)
+ 	if _, err := rand.Read(raw); err != nil {
+ 		t.Fatal(err)
+@@ -75,7 +79,16 @@
+ 	if _, err := owner.Exec(ctx, `CREATE SCHEMA `+quoted); err != nil {
+ 		t.Fatal(err)
+ 	}
+-	t.Cleanup(func() { _, _ = owner.Exec(context.Background(), `DROP SCHEMA `+quoted+` CASCADE`) })
++	t.Cleanup(func() {
++		if _, err := owner.Exec(context.Background(), `DROP SCHEMA `+quoted+` CASCADE`); err != nil {
++			t.Errorf("drop owned fixture schema %s: %v", schema, err)
++			return
++		}
++		var absent bool
++		if err := owner.QueryRow(context.Background(), "SELECT NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname=$1)", schema).Scan(&absent); err != nil || !absent {
++			t.Errorf("owned schema cleanup not verified: absent=%v err=%v", absent, err)
++		}
++	})
+ 	tableName := pgx.Identifier{schema, "t_bbbbbbbbbbbb4bbb8bbbbbbbbbbbbbbb"}.Sanitize()
+ 	commands := []string{
+ 		`CREATE TABLE ` + tableName + `(id uuid PRIMARY KEY,created_by uuid NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),record_version bigint NOT NULL DEFAULT 1,f_11111111111141118111111111111111 text)`,
+--- a/services/bff/internal/audit/maintenance_test.go
++++ b/services/bff/internal/audit/maintenance_test.go
+@@ -6,6 +6,8 @@
+ 	"github.com/jackc/pgx/v5"
+ 	"github.com/jackc/pgx/v5/pgxpool"
+ 	"os"
++	"reflect"
++	"sort"
+ 	"testing"
+ 	"time"
+ )
+@@ -61,7 +63,17 @@
+ 	reader.Authentication.DB = reader.Live
+ 	events, err := reader.List(request, 100)
+ 	if err != nil || len(events) != 1 {
+-		t.Fatal("restricted reader must read current hot events only")
++		t.Fatalf("restricted reader must read one current hot event: count=%d err=%v", len(events), err)
++	}
++	var hot struct {
++		ID        string `json:"id"`
++		RequestID string `json:"request_id"`
++	}
++	if err := json.Unmarshal(events[0], &hot); err != nil {
++		t.Fatal(err)
++	}
++	if hot.ID != "10000000-0000-4000-8000-000000000002" || hot.RequestID != "reader" {
++		t.Fatalf("wrong hot event: %+v", hot)
+ 	}
+ }
+ func clean(t *testing.T) (*pgxpool.Pool, *pgxpool.Pool) {
+@@ -168,8 +180,13 @@
+ 	if _, err := Maintain(context.Background(), l, c, time.Date(2024, 2, 29, 12, 0, 0, 0, time.UTC)); err != nil {
+ 		t.Fatal(err)
+ 	}
+-	if count(t, c, "archive.authentication_events") != 1 {
+-		t.Fatal("one year is a calendar interval, including leap-day boundary")
++	var retained []string
++	if err := c.QueryRow(context.Background(), "SELECT array_agg(id::text ORDER BY id) FROM archive.authentication_events").Scan(&retained); err != nil {
++		t.Fatal(err)
++	}
++	want := []string{"10000000-0000-4000-8000-000000000002"}
++	if !reflect.DeepEqual(retained, want) {
++		t.Fatalf("calendar year boundary retained %v, want %v", retained, want)
+ 	}
+ }
+ func TestAuditReadRequiresCurrentBootstrapAndDoesNotReadCold(t *testing.T) {
+@@ -188,8 +205,17 @@
+ 	if err := json.Unmarshal(events[0], &e); err != nil {
+ 		t.Fatal(err)
+ 	}
+-	if len(e) != 12 {
+-		t.Fatal("audit output must contain only twelve approved fields")
++	keys := make([]string, 0, len(e))
++	for key := range e {
++		keys = append(keys, key)
++	}
++	sort.Strings(keys)
++	wantKeys := []string{"account_fingerprint", "actor_user_id", "client_ip", "event_type", "id", "occurred_at", "outcome", "reason_code", "request_id", "session_ref", "subject_user_id", "user_agent"}
++	if !reflect.DeepEqual(keys, wantKeys) {
++		t.Fatalf("approved audit fields got %v, want %v", keys, wantKeys)
++	}
++	if string(e["id"]) != `"10000000-0000-4000-8000-000000000001"` || string(e["request_id"]) != `"hot-only"` {
++		t.Fatalf("expected exact hot event, got %s", events[0])
+ 	}
+ 	if _, err := l.Exec(context.Background(), "UPDATE auth.users SET is_bootstrap_admin=false"); err != nil {
+ 		t.Fatal(err)
+--- a/services/bff/cmd/audit-maintenance/main_test.go
++++ b/services/bff/cmd/audit-maintenance/main_test.go
+@@ -2,6 +2,7 @@
+ 
+ import (
+ 	"context"
++	"encoding/json"
+ 	"os"
+ 	"os/exec"
+ 	"path/filepath"
+@@ -11,19 +12,50 @@
+ )
+ 
+ func TestMaintenanceRequiresExplicitSingleRun(t *testing.T) {
++	live, cold := os.Getenv("WEAVEOS_TEST_DATABASE_URL"), os.Getenv("WEAVEOS_TEST_ARCHIVE_DATABASE_URL")
++	if live == "" || cold == "" || live == cold {
++		t.Fatal("distinct isolated migrated live and archive databases required")
++	}
+ 	binary := filepath.Join(t.TempDir(), "maintenance.exe")
+ 	if output, err := exec.Command("go", "build", "-o", binary, ".").CombinedOutput(); err != nil {
+ 		t.Fatalf("build: %s: %v", output, err)
+ 	}
+-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+-	defer cancel()
+-	cmd := exec.CommandContext(ctx, binary)
+-	cmd.Env = append(os.Environ(), "WEAVEOS_AUDIT_LIVE_DATABASE_URL="+os.Getenv("WEAVEOS_TEST_DATABASE_URL"), "WEAVEOS_AUDIT_COLD_DATABASE_URL="+os.Getenv("WEAVEOS_TEST_DATABASE_URL"))
+-	output, err := cmd.CombinedOutput()
+-	if ctx.Err() != nil {
+-		t.Fatal("without --once must reject immediately, not enter an internal schedule")
++	env := []string{}
++	for _, entry := range os.Environ() {
++		if !strings.HasPrefix(entry, "WEAVEOS_AUDIT_LIVE_DATABASE_URL=") && !strings.HasPrefix(entry, "WEAVEOS_AUDIT_COLD_DATABASE_URL=") {
++			env = append(env, entry)
++		}
+ 	}
+-	if err == nil || !strings.Contains(string(output), "audit maintenance failed") {
+-		t.Fatal("missing --once must fail with redacted diagnostic")
++	env = append(env, "WEAVEOS_AUDIT_LIVE_DATABASE_URL="+live, "WEAVEOS_AUDIT_COLD_DATABASE_URL="+cold)
++	run := func(timeout time.Duration, args ...string) ([]byte, error) {
++		t.Helper()
++		ctx, cancel := context.WithTimeout(context.Background(), timeout)
++		defer cancel()
++		cmd := exec.CommandContext(ctx, binary, args...)
++		cmd.Env = env
++		output, err := cmd.CombinedOutput()
++		if ctx.Err() != nil {
++			t.Fatalf("maintenance did not finish within test deadline: args=%v", args)
++		}
++		return output, err
++	}
++	// Prove the exact same fixture is valid before removing only the required flag.
++	output, err := run(10*time.Second, "--once")
++	var message struct {
++		Level   string `json:"level"`
++		Message string `json:"msg"`
++	}
++	if err != nil {
++		t.Fatalf("valid --once invocation must succeed: %s: %v", output, err)
++	}
++	if err := json.Unmarshal(output, &message); err != nil || message.Level != "INFO" || message.Message != "audit maintenance complete" {
++		t.Fatalf("expected successful single-run receipt: %s (%v)", output, err)
++	}
++	output, err = run(3 * time.Second)
++	if exit, ok := err.(*exec.ExitError); !ok || exit.ExitCode() != 1 {
++		t.Fatalf("missing --once must exit 1: %s: %v", output, err)
++	}
++	if err := json.Unmarshal(output, &message); err != nil || message.Level != "ERROR" || message.Message != "audit maintenance failed" {
++		t.Fatalf("expected exact redacted rejection: %s (%v)", output, err)
+ 	}
+ }

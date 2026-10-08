@@ -26,7 +26,8 @@ test('STORE-01 FR-006: newly created Redis Session has native one-hour TTL', asy
 test('STORE-02 FR-006: successful authentication renews a shortened native TTL', async t => {
   const o = await observe(t), session = await preparedLogin(fixtures().user);
   await o.setSessionPTTL(session.auth, 30000);
-  assert.ok(await o.sessionPTTL(session.auth) <= 30000, 'native TTL was actually shortened');
+  const shortened = await o.sessionPTTL(session.auth);
+  assert.ok(shortened > 0 && shortened <= 30000, 'native key must exist with a shortened positive TTL');
   const start = performance.now();
   await envelope(await send(routes.current, { session }), 200, 'OK');
   const ttl = await o.sessionPTTL(session.auth);
@@ -45,7 +46,8 @@ test('STORE-04 FR-006: failed privileged activity does not renew ordinary member
   await o.setSessionPTTL(session.auth, 30000);
   const before = await o.sessionPTTL(session.auth);
   await envelope(await send(routes.invitations, { method: 'POST', data: {}, session }), 403, 'COMMON_PERMISSION_DENIED');
-  assert.ok(await o.sessionPTTL(session.auth) <= before);
+  const after = await o.sessionPTTL(session.auth);
+  assert.ok(after > 0 && after <= before, 'denied activity must preserve the existing key without renewing it');
 });
 test('STORE-05 FR-008: Redis-expired Session is denied and not recreated by reads', async t => {
   const o = await observe(t), session = await preparedLogin(fixtures().user);

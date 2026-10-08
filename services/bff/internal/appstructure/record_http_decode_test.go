@@ -57,10 +57,23 @@ func TestFrozenRecordHTTPDecoderBoundsRawBodiesAndMedia(t *testing.T) {
 	for _, sample := range []struct {
 		kind string
 		size int
-	}{{"record.search", 64 * 1024}, {"record.create", 1024 * 1024}, {"draft.create", 1024 * 1024}} {
-		if e := decodeRecordBody(t, sample.kind, strings.Repeat(" ", sample.size+1)); e == nil {
-			t.Fatal("raw bound ignored", sample.kind)
-		}
+		raw  string
+	}{
+		{"record.search", 64 * 1024, `{"page":1,"pageSize":20,"filter":null,"sort":null}`},
+		{"record.create", 1024 * 1024, `{"operationId":"` + recordDecodeID + `","expectedSchemaVersion":1,"values":{}}`},
+		{"draft.create", 1024 * 1024, `{"operationId":"` + recordDecodeID + `","targetRecordId":null,"schemaVersion":1,"baseRecordVersion":null,"values":{}}`},
+	} {
+		t.Run(sample.kind, func(t *testing.T) {
+			boundary := sample.raw + strings.Repeat(" ", sample.size-len(sample.raw))
+			if e := decodeRecordBody(t, sample.kind, boundary); e != nil {
+				t.Fatalf("valid JSON at raw byte boundary rejected: %v", e)
+			}
+			e := decodeRecordBody(t, sample.kind, boundary+" ")
+			var domain *Error
+			if !errors.As(e, &domain) || domain.Code != "COMMON_VALIDATION_FAILED" {
+				t.Fatalf("otherwise valid JSON one byte over limit must reject: %v", e)
+			}
+		})
 	}
 	r := httptest.NewRequest("POST", "https://weaveos.test", strings.NewReader(`{}`))
 	r.Header.Set("Content-Type", "text/plain")

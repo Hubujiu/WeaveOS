@@ -1,0 +1,241 @@
+--- a/infra/runtime/recovery.test.mjs
++++ b/infra/runtime/recovery.test.mjs
+@@ -4,18 +4,19 @@
+ // ADR004/Redis recovery: a database rollback must not carry the original Session
+ // namespace into the recovered deployment. Full runtime checks use actual Cookies.
+ test('recovery must rotate shared generation after verified restore before resuming traffic',()=>{
+- let restored=false,updated=false,resumed=false;
++ const events=[];
+  const current='accepted-before-recovery';
+  const result=recoverRuntime({generation:current,
+-  pause(){},restore(){restored=true;},
+-  switchGeneration(generation){assert.ok(restored);assert.notEqual(generation,current);updated=true;},
+-  resume(){assert.ok(updated);resumed=true;},
++  pause(){events.push(['pause']);},restore(){events.push(['restore']);},
++  switchGeneration(generation){events.push(['switch',generation]);},
++  resume(){events.push(['resume']);},
+  });
+- assert.ok(restored&&updated&&resumed,'recovery must actually execute the ordered restoration and generation transition');
+- assert.notEqual(result.generation,current);
++ assert.equal(typeof result.generation,'string');assert.ok(result.generation.length>0);
++ assert.notEqual(result.generation,current,'the previous Session namespace must be invalidated');
++ assert.deepEqual(events,[['pause'],['restore'],['switch',result.generation],['resume']],'returned generation must be the one actually activated between restore and resume');
+ });
+ test('failed restore leaves traffic paused and does not publish a new generation',()=>{
+- let generation=false,resumed=false;
+- assert.throws(()=>recoverRuntime({generation:'old',pause(){},restore(){throw new Error('synthetic restore failure');},switchGeneration(){generation=true;},resume(){resumed=true;}}));
+- assert.equal(generation,false);assert.equal(resumed,false);
++ const events=[],failure=new Error('synthetic restore failure');
++ assert.throws(()=>recoverRuntime({generation:'old',pause(){events.push('pause');},restore(){events.push('restore');throw failure;},switchGeneration(){events.push('switch');},resume(){events.push('resume');}}),error=>error===failure);
++ assert.deepEqual(events,['pause','restore'],'failed restoration must stop with traffic paused');
+ });
+--- a/services/bff/internal/apprecordservice/root_workflow_evidence_store_test.go
++++ b/services/bff/internal/apprecordservice/root_workflow_evidence_store_test.go
+@@ -463,6 +463,16 @@
+ 		t.Fatal(e)
+ 	}
+ 	m, fields := rootEvidenceStoreRead(t, f, f.bundle.Hash, []string{f.public, f.reference})
++	gotIDs := make([]string, len(fields))
++	for i, field := range fields {
++		gotIDs[i] = field.Definition.ID
++	}
++	wantIDs := []string{f.public, f.reference}
++	sort.Strings(gotIDs)
++	sort.Strings(wantIDs)
++	if !reflect.DeepEqual(gotIDs, wantIDs) {
++		t.Fatalf("complete historical selection got %v, want %v", gotIDs, wantIDs)
++	}
+ 	if m.Header.RecordVersion != 1 {
+ 		t.Fatal("history followed current record version")
+ 	}
+--- a/services/bff/internal/apprecordservice/root_workflow_catalog_test.go
++++ b/services/bff/internal/apprecordservice/root_workflow_catalog_test.go
+@@ -3,6 +3,8 @@
+ import (
+ 	"encoding/json"
+ 	"errors"
++	"reflect"
++	"sort"
+ 	"sync"
+ 	"testing"
+ 
+@@ -125,7 +127,7 @@
+ 		t.Fatal(e)
+ 	}
+ 	var saved flowgraph.Graph
+-	if json.Unmarshal(raw, &saved) != nil || len(saved.Nodes) != 3 || saved.Nodes[1].ID != g.Nodes[1].ID || bpmn == "" || !allowed {
++	if json.Unmarshal(raw, &saved) != nil || !reflect.DeepEqual(saved, g) || bpmn == "" || !allowed {
+ 		t.Fatalf("missing immutable version %s", raw)
+ 	}
+ 	tx, e := f.runtime.Begin(f.ctx)
+@@ -371,27 +373,28 @@
+ 	if got := rootCatalogConflicts(t, f, rootCatalogFields(f, appquery.Multiline)); len(got) != 0 {
+ 		t.Fatalf("compatible text equality blocked %+v", got)
+ 	}
+-	conflicts := rootCatalogConflicts(t, f, rootCatalogFields(f, appquery.Boolean))
+-	found := false
+-	for _, c := range conflicts {
+-		if c.FlowID == h.FlowID && c.Version == 1 && c.NodeID == g.Nodes[3].ID && c.FieldID == f.public && c.Reason != "" {
+-			found = true
+-		}
+-	}
+-	if !found {
+-		t.Fatalf("missing precise incompatible condition %+v", conflicts)
+-	}
++	check := func(got, want []workflowcatalog.Conflict) {
++		t.Helper()
++		order := func(values []workflowcatalog.Conflict) {
++			sort.Slice(values, func(i, j int) bool {
++				if values[i].NodeID != values[j].NodeID {
++					return values[i].NodeID < values[j].NodeID
++				}
++				return values[i].Reason < values[j].Reason
++			})
++		}
++		order(got)
++		order(want)
++		if !reflect.DeepEqual(got, want) {
++			t.Fatalf("complete compatibility conflicts got %+v, want %+v", got, want)
++		}
++	}
++	check(rootCatalogConflicts(t, f, rootCatalogFields(f, appquery.Boolean)), []workflowcatalog.Conflict{{FlowID: h.FlowID, Version: 1, NodeID: g.Nodes[3].ID, FieldID: f.public, Reason: "condition_type_incompatible"}})
+ 	removed := rootCatalogFields(f, appquery.Text)[1:]
+-	conflicts = rootCatalogConflicts(t, f, removed)
+-	seen := map[string]bool{}
+-	for _, c := range conflicts {
+-		if c.FlowID == h.FlowID && c.FieldID == f.public {
+-			seen[c.NodeID] = true
+-		}
+-	}
+-	if !seen[g.Nodes[1].ID] || !seen[g.Nodes[3].ID] {
+-		t.Fatalf("missing editable/condition dependencies %+v", conflicts)
+-	}
++	check(rootCatalogConflicts(t, f, removed), []workflowcatalog.Conflict{
++		{FlowID: h.FlowID, Version: 1, NodeID: g.Nodes[1].ID, FieldID: f.public, Reason: "editable_field_removed"},
++		{FlowID: h.FlowID, Version: 1, NodeID: g.Nodes[3].ID, FieldID: f.public, Reason: "condition_field_removed"},
++	})
+ }
+ func TestRootCatalogOldInFlightVersionBlocksUntilTerminal(t *testing.T) {
+ 	f := newRecordFixture(t)
+--- a/services/bff/internal/flowgraph/graph_test.go
++++ b/services/bff/internal/flowgraph/graph_test.go
+@@ -243,14 +243,12 @@
+ 	if _, e := Validate(makeChain(101), fields()); !errors.Is(e, ErrInvalid) {
+ 		t.Fatalf("101 nodes: %v", e)
+ 	}
+-	g := graph()
+-	for i := 0; i < 201; i++ {
+-		g.Edges = append(g.Edges, g.Edges[0])
+-	}
+-	if _, e := Validate(g, fields()); !errors.Is(e, ErrInvalid) {
+-		t.Fatal("edge limit")
+-	}
+-	g = graph()
++	// With at most 100 nodes, one start (one outgoing edge), at least one end
++	// (zero), and other nodes having at most two outgoing edges, valid graphs
++	// have at most 197 edges. The 200-edge cap is an early rejection guard, not
++	// an independently reachable valid boundary. Duplicate edges are already
++	// covered by TestRootEdgesAndBinaryBranches; do not duplicate that test here.
++	g := graph()
+ 	g.Nodes[1].Approval.AssigneeIDs = nil
+ 	for i := 100; i < 150; i++ {
+ 		g.Nodes[1].Approval.AssigneeIDs = append(g.Nodes[1].Approval.AssigneeIDs, rid(i))
+--- a/tests/acceptance/api.test.mjs
++++ b/tests/acceptance/api.test.mjs
+@@ -51,36 +51,10 @@
+ }
+ function unique(label) { return `acceptance-${label}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`; }
+ 
+-test('FR-007: anonymous current-session request is unauthorized', async () => {
+-  assert.equal((await send(routes.current)).status, 401);
+-});
+-test('API-14: forged identity headers cannot authenticate a caller', async () => {
+-  const response = await send(routes.current, 'GET', undefined, undefined, { 'X-User-Id': 'bootstrap-admin', 'X-Role': 'ALL' });
+-  assert.equal(response.status, 401);
+-});
+-test('FR-001: wrong credentials never create a session or leak passwords', async () => {
+-  const response = await send(routes.login, 'POST', { account: 'definitely-unknown-acceptance', password });
+-  assert.equal(response.status, 401);
+-  assert.equal(response.headers.get('set-cookie'), null);
+-  const body = await response.json();
+-  assert.deepEqual(Object.keys(body).sort(), ['code', 'data', 'message', 'meta']);
+-  assert.equal(body.data, null);
+-  assert.ok(!JSON.stringify(body).includes(password));
+-});
+-for (const [label, invitationCode] of [['missing', undefined], ['invalid', 'synthetic-invalid-code']]) {
+-  test(`FR-003: ${label} invitation cannot create an account`, async () => {
+-    const response = await send(routes.register, 'POST', { account: unique(label), password, invitationCode });
+-    assert.equal(response.status, 400);
+-    assert.equal(response.headers.get('set-cookie'), null);
+-  });
+-}
+-for (const [label, invalid] of [['uppercase', 'lowercase@123'], ['lowercase', 'UPPERCASE@123'], ['digit', 'NoDigits@Here'], ['special', 'NoSpecial123']]) {
+-  test(`FR-018: password missing ${label} is rejected`, async () => {
+-    const f = fixtures();
+-    const response = await send(routes.register, 'POST', { account: unique(label), password: invalid, invitationCode: f.invitations.passwordPolicy });
+-    assert.equal(response.status, 400);
+-  });
+-}
++// Single-request anonymous/header/credentials/invitation/password cases are
++// registered by expanded-api.mjs (HTTP-01/02/03/04/08/09), with stronger
++// envelope, Cookie, secret-disclosure and invitation-consumption assertions.
++// Keep this independent multi-step lifecycle and the distinct races below.
+ test('FR-003/017/001/005/009: registration, explicit login, restore and logout form a real HTTP lifecycle', async () => {
+   const f = fixtures(), account = unique('lifecycle');
+   const registration = await send(routes.register, 'POST', { account, password, invitationCode: f.invitations.valid });
+--- a/tests/acceptance/expanded-api.mjs
++++ b/tests/acceptance/expanded-api.mjs
+@@ -9,6 +9,7 @@
+ });
+ for (const [label, headers] of [
+   ['user', { 'X-User-Id': 'bootstrap-admin' }], ['role', { 'X-Role': 'ALL' }],
++  ['user and role together', { 'X-User-Id': 'bootstrap-admin', 'X-Role': 'ALL' }],
+   ['tenant', { 'X-Tenant-Id': 'test-tenant', 'X-User-Id': 'admin' }],
+   ['bearer', { Authorization: 'Bearer synthetic-not-a-session' }],
+   ['trace', { 'X-Request-Id': 'bootstrap-admin', traceparent: '00-11111111111111111111111111111111-1111111111111111-01' }],
+--- a/services/bff/internal/personnel/http_test.go
++++ b/services/bff/internal/personnel/http_test.go
+@@ -138,10 +138,8 @@
+ 	if w := f.request("POST", "/api/v1/personnel/identities", `{"name":"x","description":"","templateIds":[],"permissionCodes":[],"version":0}`, true, true); w.Code != 400 {
+ 		t.Fatalf("create must reject edit-only version even zero, got %d", w.Code)
+ 	}
+-	root := rootDepartment(t, f.fixture)
+-	if w := f.requestCurrentQuery(t, "POST", "/api/v1/personnel/members/"+f.actor.UserID+"/groups", `{"operation":"add","departmentId":"`+root+`","sourceDepartmentId":null,"version":0}`, true, true); w.Code != 400 {
+-		t.Fatalf("optional UUID may be absent but not null, got %d", w.Code)
+-	}
++	// Optional sourceDepartmentId=null is covered by the dedicated
++	// TestHTTPOptionalUUIDMustNotBeNullQ25 with the same real query baseline.
+ 	for _, query := range []string{"?page=0", "?pageSize=101", "?page=1&page=2", "?bootstrapAdmin=true"} {
+ 		if w := f.request("GET", "/api/v1/personnel/members"+query, "", true, false); w.Code != 400 {
+ 			t.Fatalf("strict query %s: %d", query, w.Code)
+--- a/tests/governance/result-counts.test.mjs
++++ b/tests/governance/result-counts.test.mjs
+@@ -3,14 +3,14 @@
+ import {readFileSync} from 'node:fs';
+ import {countAPIReport,countBrowserReport} from '../../infra/acceptance/result-counts.mjs';
+ const tap='# tests 124\n# suites 0\n# pass 124\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n';
+-test('API actual TAP report counts every passed case',()=>assert.equal(countAPIReport(tap),124));
++test('API actual TAP report counts every passed case',()=>{for(const count of [1,7,124,501])assert.equal(countAPIReport(tap.replaceAll('124',String(count))),count);});
+ test('API failed, skipped, truncated and contradictory reports cannot publish success',()=>{
+  for(const report of [tap.replace('# fail 0','# fail 1'),tap.replace('# skipped 0','# skipped 1'),tap.replace('# pass 124','# pass 123'),'# tests 124\n'])assert.throws(()=>countAPIReport(report));
+ });
+-test('browser counts come from the successful complete JSON report',()=>assert.equal(countBrowserReport({stats:{expected:117,unexpected:0,flaky:0,skipped:0}}),117));
++test('browser counts come from the successful complete JSON report',()=>{for(const expected of [1,49,117,501])assert.equal(countBrowserReport({stats:{expected,unexpected:0,flaky:0,skipped:0}}),expected);});
+ test('browser failure, flakiness, skips and empty reports cannot publish success',()=>{
+  for(const report of [{},{stats:{expected:0,unexpected:0,flaky:0,skipped:0}},{stats:{expected:117,unexpected:1,flaky:0,skipped:0}},{stats:{expected:117,unexpected:0,flaky:1,skipped:0}},{stats:{expected:117,unexpected:0,flaky:0,skipped:1}}])assert.throws(()=>countBrowserReport(report));
+ });
+-for(const path of ['infra/acceptance/run.mjs','infra/runtime/run.mjs'])test('real API/browser reports drive the published counts: '+path,()=>{
+- const source=readFileSync(path,'utf8');assert.match(source,/countAPIReport\(readFileSync/);assert.match(source,/countBrowserReport\(JSON\.parse\(readFileSync/);assert.match(source,/test-reporter-destination=.*api\.tap/);assert.match(source,/PLAYWRIGHT_JSON_OUTPUT_NAME=.*browser\.json/);assert.doesNotMatch(source,/api:\s*122|browser:\s*111/);
++for(const path of ['infra/acceptance/run.mjs','infra/runtime/run.mjs'])test('runner declares report parsing and output destinations: '+path,()=>{
++ const source=readFileSync(path,'utf8');assert.match(source,/countAPIReport\(readFileSync/);assert.match(source,/countBrowserReport\(JSON\.parse\(readFileSync/);assert.match(source,/test-reporter-destination=.*api\.tap/);assert.match(source,/PLAYWRIGHT_JSON_OUTPUT_NAME=.*browser\.json/);
+ });
+--- a/tests/acceptance/web.spec.ts
++++ b/tests/acceptance/web.spec.ts
+@@ -81,7 +81,6 @@
+   await page.getByLabel('确认密码', { exact: true }).fill('Synthetic@123');
+   await page.getByRole('button', { name: '注册', exact: true }).click();
+   await expect(page).toHaveURL(/\/login(?:\?|$)/);
+-  expect((await context.cookies()).filter(cookie => cookie.httpOnly).length).toBe(0);
+   expect((await context.cookies()).filter(cookie => cookie.httpOnly)).toHaveLength(0);
+   await page.goto('/app');
+   await expect(page).toHaveURL(/\/login(?:\?|$)/);

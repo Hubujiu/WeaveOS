@@ -1,0 +1,146 @@
+{
+  "name": "Comparative performance experiments",
+  "on": {
+    "workflow_dispatch": {}
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "jobs": {
+    "preflight": {
+      "uses": "./.github/workflows/preflight.yml"
+    },
+    "go-cost": {
+      "runs-on": "ubuntu-24.04",
+      "services": {
+        "postgres": {
+          "image": "postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722",
+          "env": {
+            "POSTGRES_USER": "weaveos_test",
+            "POSTGRES_PASSWORD": "isolated-ci-only",
+            "POSTGRES_DB": "weaveos_ci_test"
+          },
+          "ports": [
+            "5432:5432"
+          ],
+          "options": "--health-cmd \"pg_isready -U weaveos_test -d weaveos_ci_test\" --health-interval 5s --health-timeout 5s --health-retries 12"
+        },
+        "redis": {
+          "image": "redis:8.2.10@sha256:164c759a0c342ee69d08fc99219382b0fd682181465c0df2e0e6911f4c85d73c",
+          "ports": [
+            "6379:6379"
+          ],
+          "options": "--health-cmd \"redis-cli ping\" --health-interval 5s --health-timeout 5s --health-retries 12"
+        }
+      },
+      "env": {
+        "WEAVEOS_TEST_DATABASE_URL": "postgres://weaveos_test:isolated-ci-only@127.0.0.1:5432/weaveos_ci_test?sslmode=disable",
+        "WEAVEOS_TEST_ARCHIVE_DATABASE_URL": "postgres://weaveos_test:isolated-ci-only@127.0.0.1:5432/weaveos_ci_archive_test?sslmode=disable",
+        "WEAVEOS_TEST_REDIS_URL": "redis://127.0.0.1:6379/15"
+      },
+      "timeout-minutes": 20,
+      "defaults": {
+        "run": {
+          "shell": "bash"
+        }
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "with": {
+            "go-version-file": ".go-version",
+            "cache": true,
+            "cache-dependency-path": "services/bff/go.mod\nservices/bff/go.sum\n"
+          }
+        },
+        {
+          "name": "Migrate isolated PostgreSQL for real storage tests",
+          "run": "go install github.com/pressly/goose/v3/cmd/goose@v3.28.0\nPGPASSWORD=isolated-ci-only createdb -h 127.0.0.1 -U weaveos_test weaveos_ci_archive_test\n\"$(go env GOPATH)/bin/goose\" -dir db/archive-migrations postgres \"$WEAVEOS_TEST_ARCHIVE_DATABASE_URL\" up\n\"$(go env GOPATH)/bin/goose\" -dir db/migrations postgres \"$WEAVEOS_TEST_DATABASE_URL\" up\n"
+        },
+        {
+          "name": "Prepare approved isolated database roles",
+          "run": "psql \"$WEAVEOS_TEST_DATABASE_URL\" -v ON_ERROR_STOP=1 -f infra/runtime/roles.sql"
+        },
+        {
+          "id": "measure",
+          "name": "Measure isolated SQL and history representations",
+          "working-directory": "services/bff",
+          "run": "go test -tags=weaveos_cost -p 1 -count=1 -json -run '^(TestRootWorkflowReadSyntheticAccessPaths|TestRootEvidenceCostComparison)$' ./internal/apprecordservice > cost-results.jsonl"
+        },
+        {
+          "id": "verify",
+          "name": "Require both complete measurements without skips",
+          "run": "python3 - <<'PYCODE'\nimport json\nfrom collections import Counter\nfrom pathlib import Path\nrows=[json.loads(line) for line in Path(\"services/bff/cost-results.jsonl\").read_text().splitlines()]\nexpected=Counter([\"TestRootWorkflowReadSyntheticAccessPaths\",\"TestRootEvidenceCostComparison\"])\nassert not any(row.get(\"Action\") in (\"fail\",\"skip\") for row in rows), \"failed or skipped measurement\"\nassert Counter(row[\"Test\"] for row in rows if row.get(\"Action\")==\"pass\" and \"Test\" in row)==expected, \"missing, duplicate or extra measurement\"\nassert any(row.get(\"Action\")==\"pass\" and \"Test\" not in row for row in rows), \"incomplete package\"\nprint(\"two complete independent cost measurements\")\nPYCODE"
+        },
+        {
+          "uses": "actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4",
+          "if": "always()",
+          "with": {
+            "name": "go-cost-${{ github.run_id }}",
+            "path": "services/bff/cost-results.jsonl",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        }
+      ],
+      "needs": "preflight"
+    },
+    "java-cost": {
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 15,
+      "defaults": {
+        "run": {
+          "shell": "bash"
+        }
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "name": "Locked Java dependency and toolchain cache",
+          "uses": "actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+          "with": {
+            "path": "services/workflow-engine/.work/m2\nservices/workflow-engine/.work/toolchain\n",
+            "key": "java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}"
+          }
+        },
+        {
+          "name": "Prepare locked Java dependencies",
+          "run": "mkdir -p services/workflow-engine/ci-logs\nbash services/workflow-engine/prepare-build.sh"
+        },
+        {
+          "id": "measure",
+          "name": "Measure native history costs",
+          "run": "bash services/workflow-engine/run-tests.sh -Dtest=RootNativeHistoryCostTest -Dworkflow.reports=ci-logs/native-history-cost-reports test"
+        },
+        {
+          "id": "verify",
+          "name": "Require completed native history measurement",
+          "working-directory": "services/workflow-engine",
+          "run": "python3 -c 'from rpc_ci_gate import _java; _java(\"ci-logs/native-history-cost-reports\", \"org.weaveos.workflow.RootNativeHistoryCostTest\", [\"observeNativeAndDuplicateCostsAtTwoActualHistorySizes\"])'"
+        },
+        {
+          "uses": "actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4",
+          "if": "always()",
+          "with": {
+            "name": "java-cost-${{ github.run_id }}",
+            "path": "services/workflow-engine/ci-logs/native-history-cost-reports/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        }
+      ],
+      "needs": "preflight"
+    }
+  }
+}

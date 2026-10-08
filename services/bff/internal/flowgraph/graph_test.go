@@ -243,14 +243,12 @@ func TestRootResourceLimits(t *testing.T) {
 	if _, e := Validate(makeChain(101), fields()); !errors.Is(e, ErrInvalid) {
 		t.Fatalf("101 nodes: %v", e)
 	}
+	// With at most 100 nodes, one start (one outgoing edge), at least one end
+	// (zero), and other nodes having at most two outgoing edges, valid graphs
+	// have at most 197 edges. The 200-edge cap is an early rejection guard, not
+	// an independently reachable valid boundary. Duplicate edges are already
+	// covered by TestRootEdgesAndBinaryBranches; do not duplicate that test here.
 	g := graph()
-	for i := 0; i < 201; i++ {
-		g.Edges = append(g.Edges, g.Edges[0])
-	}
-	if _, e := Validate(g, fields()); !errors.Is(e, ErrInvalid) {
-		t.Fatal("edge limit")
-	}
-	g = graph()
 	g.Nodes[1].Approval.AssigneeIDs = nil
 	for i := 100; i < 150; i++ {
 		g.Nodes[1].Approval.AssigneeIDs = append(g.Nodes[1].Approval.AssigneeIDs, rid(i))

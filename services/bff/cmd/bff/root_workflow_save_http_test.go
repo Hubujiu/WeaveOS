@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -22,12 +23,13 @@ func TestRootWorkflowSaveHTTPRealHostSaveAndGenericReceipt(t *testing.T) {
 	op := f.id(t)
 	body := rootHTTPSaveBody(op, token, f.field, "saved by node")
 	saved := rootHTTPData(t, f.call(t, "PATCH", f.taskPath()+"/record", body, nil), 200)
-	if len(saved) != 6 || rootHTTPString(t, saved, "id") != f.record || rootHTTPString(t, saved, "operationId") != op || string(saved["recordVersion"]) != "2" {
+	rootHTTPFieldSet(t, saved, []string{"operationId", "id", "recordVersion", "schemaVersion", "createdAt", "updatedAt"})
+	if rootHTTPString(t, saved, "id") != f.record || rootHTTPString(t, saved, "operationId") != op || string(saved["recordVersion"]) != "2" {
 		t.Fatal("save response not original record result")
 	}
 	repeated := rootHTTPData(t, f.call(t, "PATCH", f.taskPath()+"/record", body, nil), 200)
-	if string(repeated["recordVersion"]) != "2" {
-		t.Fatal("duplicate HTTP save wrote twice")
+	if !reflect.DeepEqual(repeated, saved) {
+		t.Fatal("duplicate HTTP save must return the complete original receipt without writing twice")
 	}
 	result := rootHTTPData(t, f.call(t, "GET", "/api/v1/application-operations/"+op, "", nil), 200)
 	if string(result["httpStatus"]) != "200" {

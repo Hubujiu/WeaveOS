@@ -4,8 +4,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
+	"sort"
 	"testing"
+	"time"
 )
+
+func rootHTTPFieldSet(t *testing.T, data map[string]json.RawMessage, want []string) {
+	t.Helper()
+	got := make([]string, 0, len(data))
+	for key := range data {
+		got = append(got, key)
+	}
+	sort.Strings(got)
+	sort.Strings(want)
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("exact public fields got %v want %v", got, want)
+	}
+}
 
 func rootWorkflowReadPath(f *rootTaskHTTPFixture) string {
 	return fmt.Sprintf("/api/v1/applications/%s/forms/%s/records/%s/workflow-instances/search", f.app, f.view, f.record)
@@ -13,15 +29,25 @@ func rootWorkflowReadPath(f *rootTaskHTTPFixture) string {
 func TestRootWorkflowReadHTTPSCurrentSummaryAndClosedProjection(t *testing.T) {
 	f := rootHTTPTaskSetup(t)
 	data := rootHTTPData(t, f.call(t, "POST", rootWorkflowReadPath(f), `{"page":1}`, nil), 200)
-	if len(data) != 5 {
-		t.Fatalf("page keys %v", data)
-	}
+	rootHTTPFieldSet(t, data, []string{"items", "page", "pageSize", "queryVersion", "total"})
 	var items []map[string]json.RawMessage
 	if e := json.Unmarshal(data["items"], &items); e != nil || len(items) != 1 {
 		t.Fatalf("items %s %v", data["items"], e)
 	}
-	if len(items[0]) != 9 {
-		t.Fatalf("private or missing projection keys %v", items[0])
+	rootHTTPFieldSet(t, items[0], []string{"id", "flowId", "initiatorId", "name", "definitionVersion", "sequence", "state", "createdAt", "updatedAt"})
+	for key, want := range map[string]string{"id": f.instance, "flowId": f.flow, "initiatorId": f.actor, "name": "Approval", "state": "active"} {
+		if rootHTTPString(t, items[0], key) != want {
+			t.Fatalf("summary %s must equal fixture identity/value", key)
+		}
+	}
+	if string(data["page"]) != "1" || string(data["total"]) != "1" || string(items[0]["definitionVersion"]) != "1" || string(items[0]["sequence"]) != "1" {
+		t.Fatal("wrong summary version/sequence or page totals")
+	}
+	for _, key := range []string{"createdAt", "updatedAt"} {
+		at, err := time.Parse(time.RFC3339Nano, rootHTTPString(t, items[0], key))
+		if err != nil || at.IsZero() {
+			t.Fatalf("valid %s timestamp required", key)
+		}
 	}
 	if rootHTTPString(t, items[0], "id") != f.instance || rootHTTPString(t, items[0], "state") != "active" || string(data["pageSize"]) != "20" || rootHTTPString(t, data, "queryVersion") == "" {
 		t.Fatalf("wrong summary %v", data)

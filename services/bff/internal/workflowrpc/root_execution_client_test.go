@@ -340,8 +340,8 @@ func TestRootExecutionClientDeadlineAndParentCancellation(t *testing.T) {
 	client := rootExecutionClient(t, conn)
 	cancel()
 	r, e := client.Execute(parent, c, p)
-	if e == nil || r != nil {
-		t.Fatal("cancelled caller succeeded")
+	if status.Code(e) != codes.Canceled || r != nil {
+		t.Fatalf("cancelled caller must remain canceled with no receipt: receipt=%+v err=%v", r, e)
 	}
 	if conn.calls > 1 {
 		t.Fatal("unexpected retry")
@@ -358,8 +358,8 @@ func TestRootExecutionClientDeadlineAndParentCancellation(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	if r, e := short.Execute(context.Background(), c, p); e == nil || r != nil {
-		t.Fatal("timeout became success")
+	if r, e := short.Execute(context.Background(), c, p); status.Code(e) != codes.DeadlineExceeded || r != nil || conn2.calls != 1 {
+		t.Fatalf("one dispatched RPC must expire without a confirmed receipt: calls=%d receipt=%+v err=%v", conn2.calls, r, e)
 	}
 }
 func TestRootExecutionClientDoesNotMutateCallerInput(t *testing.T) {

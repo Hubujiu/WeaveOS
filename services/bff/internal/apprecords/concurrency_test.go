@@ -65,7 +65,11 @@ func TestTwoRealPGConnectionsCompeteOnRecordVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer owner.Close(ctx)
+	t.Cleanup(func() {
+		if err := owner.Close(context.Background()); err != nil {
+			t.Errorf("close owned fixture connection: %v", err)
+		}
+	})
 	raw := make([]byte, 4)
 	if _, err := rand.Read(raw); err != nil {
 		t.Fatal(err)
@@ -75,7 +79,16 @@ func TestTwoRealPGConnectionsCompeteOnRecordVersion(t *testing.T) {
 	if _, err := owner.Exec(ctx, `CREATE SCHEMA `+quoted); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _, _ = owner.Exec(context.Background(), `DROP SCHEMA `+quoted+` CASCADE`) })
+	t.Cleanup(func() {
+		if _, err := owner.Exec(context.Background(), `DROP SCHEMA `+quoted+` CASCADE`); err != nil {
+			t.Errorf("drop owned fixture schema %s: %v", schema, err)
+			return
+		}
+		var absent bool
+		if err := owner.QueryRow(context.Background(), "SELECT NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname=$1)", schema).Scan(&absent); err != nil || !absent {
+			t.Errorf("owned schema cleanup not verified: absent=%v err=%v", absent, err)
+		}
+	})
 	tableName := pgx.Identifier{schema, "t_bbbbbbbbbbbb4bbb8bbbbbbbbbbbbbbb"}.Sanitize()
 	commands := []string{
 		`CREATE TABLE ` + tableName + `(id uuid PRIMARY KEY,created_by uuid NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),record_version bigint NOT NULL DEFAULT 1,f_11111111111141118111111111111111 text)`,

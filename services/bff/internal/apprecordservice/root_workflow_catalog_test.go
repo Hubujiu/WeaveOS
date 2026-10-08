@@ -3,6 +3,8 @@ package apprecordservice
 import (
 	"encoding/json"
 	"errors"
+	"reflect"
+	"sort"
 	"sync"
 	"testing"
 
@@ -124,9 +126,20 @@ func TestRootCatalogVersionIsDurableAndCallerRollback(t *testing.T) {
 	if e := f.runtime.QueryRow(f.ctx, "SELECT graph_json,bpmn_xml,allow_withdraw FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2 AND version=1", f.app, id).Scan(&raw, &bpmn, &allowed); e != nil {
 		t.Fatal(e)
 	}
-	var saved flowgraph.Graph
-	if json.Unmarshal(raw, &saved) != nil || len(saved.Nodes) != 3 || saved.Nodes[1].ID != g.Nodes[1].ID || bpmn == "" || !allowed {
-		t.Fatalf("missing immutable version %s", raw)
+	// Compare the complete JSON document, not Go's nil RawMessage versus unmarshaled JSON null representation. Expected content comes from input g.
+	expectedJSON, err := json.Marshal(g)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var saved, expected any
+	if err = json.Unmarshal(raw, &saved); err != nil {
+		t.Fatal(err)
+	}
+	if err = json.Unmarshal(expectedJSON, &expected); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(saved, expected) || bpmn == "" || !allowed {
+		t.Fatalf("complete immutable graph mismatch: got %s want %s", raw, expectedJSON)
 	}
 	tx, e := f.runtime.Begin(f.ctx)
 	if e != nil {
@@ -371,27 +384,28 @@ func TestRootCatalogCompatibilityIsPrecise(t *testing.T) {
 	if got := rootCatalogConflicts(t, f, rootCatalogFields(f, appquery.Multiline)); len(got) != 0 {
 		t.Fatalf("compatible text equality blocked %+v", got)
 	}
-	conflicts := rootCatalogConflicts(t, f, rootCatalogFields(f, appquery.Boolean))
-	found := false
-	for _, c := range conflicts {
-		if c.FlowID == h.FlowID && c.Version == 1 && c.NodeID == g.Nodes[3].ID && c.FieldID == f.public && c.Reason != "" {
-			found = true
+	check := func(got, want []workflowcatalog.Conflict) {
+		t.Helper()
+		order := func(values []workflowcatalog.Conflict) {
+			sort.Slice(values, func(i, j int) bool {
+				if values[i].NodeID != values[j].NodeID {
+					return values[i].NodeID < values[j].NodeID
+				}
+				return values[i].Reason < values[j].Reason
+			})
+		}
+		order(got)
+		order(want)
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("complete compatibility conflicts got %+v, want %+v", got, want)
 		}
 	}
-	if !found {
-		t.Fatalf("missing precise incompatible condition %+v", conflicts)
-	}
+	check(rootCatalogConflicts(t, f, rootCatalogFields(f, appquery.Boolean)), []workflowcatalog.Conflict{{FlowID: h.FlowID, Version: 1, NodeID: g.Nodes[3].ID, FieldID: f.public, Reason: "condition_type_incompatible"}})
 	removed := rootCatalogFields(f, appquery.Text)[1:]
-	conflicts = rootCatalogConflicts(t, f, removed)
-	seen := map[string]bool{}
-	for _, c := range conflicts {
-		if c.FlowID == h.FlowID && c.FieldID == f.public {
-			seen[c.NodeID] = true
-		}
-	}
-	if !seen[g.Nodes[1].ID] || !seen[g.Nodes[3].ID] {
-		t.Fatalf("missing editable/condition dependencies %+v", conflicts)
-	}
+	check(rootCatalogConflicts(t, f, removed), []workflowcatalog.Conflict{
+		{FlowID: h.FlowID, Version: 1, NodeID: g.Nodes[1].ID, FieldID: f.public, Reason: "editable_field_removed"},
+		{FlowID: h.FlowID, Version: 1, NodeID: g.Nodes[3].ID, FieldID: f.public, Reason: "condition_field_removed"},
+	})
 }
 func TestRootCatalogOldInFlightVersionBlocksUntilTerminal(t *testing.T) {
 	f := newRecordFixture(t)

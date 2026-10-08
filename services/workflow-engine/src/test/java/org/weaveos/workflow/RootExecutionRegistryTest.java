@@ -276,7 +276,10 @@ class RootExecutionRegistryTest {
  }
  @Test void concurrentExecutionAndCancellationHaveOneDurableOutcome()throws Exception{
   deploy("all");var c=new Command();var results=race(()->registry.execute(c.request()),()->registry.establishNoEffect(c.request()));
-  assertEquals(results.get(0),results.get(1));var r=results.get(0);verify(c,r,r.outcome());
+  assertEquals(results.get(0),results.get(1));var r=results.get(0);
+  assertTrue(Set.of("success","no_effect").contains(r.outcome()),"race must resolve to one defined durable outcome");
+  if(r.outcome().equals("success")){verify(c,r,"success");active(r,2,Set.of(id(8),id(9)),1);}
+  else{verify(c,r,"no_effect");assertEquals("unchanged",r.result().state());assertEquals("cancelled",r.result().reason());assertEquals("",r.result().engineProcessId());assertEquals(List.of(),r.result().tasks());}
   long expected=r.outcome().equals("success")?1:0;
   assertEquals(expected,count("wf_execution_instances"));assertEquals(expected,engine.getHistoryService().createHistoricProcessInstanceQuery().count());
  }

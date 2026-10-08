@@ -80,7 +80,8 @@ class RootExecutionGateTest(unittest.TestCase):
 
     def test_extra_case_fails(self):
         ET.SubElement(self.roots[0], "testcase", name="unexpected", classname=self.roots[0].get("name"))
-        self.roots[0].set("tests", "34")
+        self.roots[0].set("tests", str(len(self.roots[0])))
+        self.assertEqual(37, len(self.roots[0]), "extra identity is the only invalid condition")
         with self.assertRaises(gate.GateError):
             self.check()
 

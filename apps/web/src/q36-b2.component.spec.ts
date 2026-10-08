@@ -1,5 +1,5 @@
 import {writeFile} from 'node:fs/promises';
-import {test,expect,type Page,type Route} from '@playwright/test';
+import {test,expect,type Page,type Route,type Request} from '@playwright/test';
 
 // Prepare only the browser engine, outside each unchanged business-test budget.
 // No app navigation or shared context: the normal page fixture stays isolated.
@@ -105,10 +105,18 @@ for(const code of ['COMMON_QUERY_CHANGED','COMMON_QUERY_CONTEXT_EXPIRED'])test('
 
 test('Q36 B2 late responses cannot overwrite the newest search',async({page})=>{
  await fixture(page);let release:((r:Route)=>Promise<void>)|undefined;let oldRoute:Route|undefined;
+ let settledOlder!:()=>void;const olderFinished=new Promise<void>(resolve=>{settledOlder=resolve;});
+ const observeOlder=(request:Request)=>{if(request.method()==='POST'&&request.url().endsWith('/personnel/members/search')&&request.postDataJSON()?.search==='older')settledOlder();};
+ page.on('requestfinished',observeOlder);page.on('requestfailed',observeOlder);
  await page.route('**/personnel/members/search',async r=>{const input=r.request().postDataJSON();if(input.search==='older'){oldRoute=r;release=async route=>{await route.fulfill({json:envelope(paging([{...member,account:'late-old-response'}],input))}).catch(()=>{});};return;}await r.fulfill({json:envelope(paging([{...member,account:input.search==='newer'?'newest-response':member.account}],input))});});
  await admin(page);await page.getByLabel('搜索成员',{exact:true}).fill('older');await expect.poll(()=>!!oldRoute).toBe(true);
  await page.getByLabel('搜索成员',{exact:true}).fill('newer');await expect(page.locator('.member-table')).toContainText('newest-response');
- if(release&&oldRoute)await release(oldRoute);await page.waitForTimeout(200);await expect(page.locator('.member-table')).not.toContainText('late-old-response');
+ const rows=page.locator('.member-table tbody tr[data-row-id]');await expect(rows).toHaveCount(1);
+ const newestRows=await rows.allTextContents();
+ if(release&&oldRoute)await release(oldRoute);await olderFinished;
+ await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+ await expect(rows).toHaveCount(1);await expect(page.getByLabel('选择成员：newest-response',{exact:true})).toBeVisible();
+ expect(await rows.allTextContents()).toEqual(newestRows);
 });
 
 test('Q36 B2 unused template card save keeps member page and validates its existing context on return',async({page})=>{

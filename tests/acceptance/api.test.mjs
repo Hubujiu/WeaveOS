@@ -51,36 +51,10 @@ async function login(account) {
 }
 function unique(label) { return `acceptance-${label}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`; }
 
-test('FR-007: anonymous current-session request is unauthorized', async () => {
-  assert.equal((await send(routes.current)).status, 401);
-});
-test('API-14: forged identity headers cannot authenticate a caller', async () => {
-  const response = await send(routes.current, 'GET', undefined, undefined, { 'X-User-Id': 'bootstrap-admin', 'X-Role': 'ALL' });
-  assert.equal(response.status, 401);
-});
-test('FR-001: wrong credentials never create a session or leak passwords', async () => {
-  const response = await send(routes.login, 'POST', { account: 'definitely-unknown-acceptance', password });
-  assert.equal(response.status, 401);
-  assert.equal(response.headers.get('set-cookie'), null);
-  const body = await response.json();
-  assert.deepEqual(Object.keys(body).sort(), ['code', 'data', 'message', 'meta']);
-  assert.equal(body.data, null);
-  assert.ok(!JSON.stringify(body).includes(password));
-});
-for (const [label, invitationCode] of [['missing', undefined], ['invalid', 'synthetic-invalid-code']]) {
-  test(`FR-003: ${label} invitation cannot create an account`, async () => {
-    const response = await send(routes.register, 'POST', { account: unique(label), password, invitationCode });
-    assert.equal(response.status, 400);
-    assert.equal(response.headers.get('set-cookie'), null);
-  });
-}
-for (const [label, invalid] of [['uppercase', 'lowercase@123'], ['lowercase', 'UPPERCASE@123'], ['digit', 'NoDigits@Here'], ['special', 'NoSpecial123']]) {
-  test(`FR-018: password missing ${label} is rejected`, async () => {
-    const f = fixtures();
-    const response = await send(routes.register, 'POST', { account: unique(label), password: invalid, invitationCode: f.invitations.passwordPolicy });
-    assert.equal(response.status, 400);
-  });
-}
+// Single-request anonymous/header/credentials/invitation/password cases are
+// registered by expanded-api.mjs (HTTP-01/02/03/04/08/09), with stronger
+// envelope, Cookie, secret-disclosure and invitation-consumption assertions.
+// Keep this independent multi-step lifecycle and the distinct races below.
 test('FR-003/017/001/005/009: registration, explicit login, restore and logout form a real HTTP lifecycle', async () => {
   const f = fixtures(), account = unique('lifecycle');
   const registration = await send(routes.register, 'POST', { account, password, invitationCode: f.invitations.valid });

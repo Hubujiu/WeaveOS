@@ -26,3 +26,5 @@ Root最终确认Python修正版SHA后，dependency-product-red记录该版本6�
 本地授权检查点71bba1128d77afa2068714fd6424cdb105ca5206包含显式选入的批准源码和已审最小证据；checkpoint-evidence-selection.json保留该提交前逐文件SHA。secret-only记录原固定Gitleaks在该确切HEAD的1PASS/0skip/exit0。此结果和更新的任务摘要未再次提交，保持已扫描HEAD不变；无推送/PR/CI。附加cached whitespace检查原RED两日志16处空白为exit2，源码/任务0，原日志字节保留。
 
 python-runtime-cache记录Root第7项原件SHA匹配、实际RED（6PASS/1目标FAIL）及指定两处YAML补正后的Python7/Node60/旧快检379PASS与结构检查exit0；仅最小日志与原件，不复制整套workflow。此前71b确切检查点已按Root单次授权推送；当前新增cache补正尚未推送，新检查点不等于已secret-scan或完整CI通过。
+
+performance-integration保全Root更新测试/原performance/实际Python7中3FAIL及修复后7PASS、Node380PASS和结构检查；两更新文件匹配Root给定SHA。develop-component-discovery保存固定工具新--list500项/36文件/errors=[]，完整身份及与原502的三删一增精确差异，只发现不执行。PR57已由Root合develop3272446，本地以该实际祖先保留未提交合并；原1af准备记录作为历史保留。
