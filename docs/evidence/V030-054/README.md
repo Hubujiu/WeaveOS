@@ -27,3 +27,10 @@ v2 只将原 components.schemas 放入标准 $defs 容器，allOf 使用实际 l
 ## 局部验证与待验收
 契约/底座/治理 390 PASS，typecheck、lint、build、verify-repo、check-tasks、diff 检查成功；12 条既有 lint warning 与 chunk 提示保留，未降低门槛。OpenAPI/package/lock 不变。
 本归档写入时，提交后的固定 HEAD 秘密扫描和精确最终候选完整 CI 尚待执行，不能将局部结果当作已合 develop、main 审批或部署。最终事实写回 Notion 与 PR，不为写“通过”再改变冻结代码候选。
+
+
+## 两个已证实文件摘要的显式表示
+初始提交 24661619b4e04abc5620633ab3693b80f5116c06 的扫描命中归档脚本中的两个源文件摘要。Root按列范围、脚本原字节和真实源文件逐项核对，未知/不匹配均为零，证实不是认证材料。
+仅 archive-evidence.py 这一条目的 text 改为 textSegments：按顺序连接普通片段的 text 和校验片段 sourceFileSHA256.sha256，即还原原脚本全部字节，其原 bytes/SHA 均保持。两个摘要的源路径和值明确列出，没有编码或隐藏值。
+将该条目还原为 text，再去掉 bundle 顶层 representation，用 UTF-8、ensure_ascii=false、indent=2 和末尾换行序列化，可精确重建原279694字节/SHA04db1b765d63265ca997eb828ef9aebccc9311b3d89b1c81fc1a46dd6e6c0bd0。normalize-checksums.py 实际要求整份原件逐字相等；checksum-representation.json保存转换前后hash与定位。其他106条记录及所有原始stdout/stderr不变。
+manifest 中原始文件指纹仍指向还原后的原件，bundle 的 bytes/SHA 更新为新表示。原bundle/manifest和初始提交保留；没有改scanner版本、规则、配置、忽略清单或扫描范围。新HEAD须用同一原扫描复验，本文不预先声明复验成功。
