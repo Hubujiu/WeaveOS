@@ -194,11 +194,6 @@ async function managerTriggerPixels(page:Page,info:TestInfo,label:string){
  const trigger=page.getByRole('button',{name:'自定义筛选',exact:true});
  await page.mouse.move(0,0);
  await trigger.focus();
- // Programmatic focus preserves pointer modality after outside close. Compare
- // the same real keyboard-focus state without hiding styles or masking pixels.
- await page.keyboard.press('Tab');await trigger.focus();
- await expect(trigger).toBeFocused();
- expect(await trigger.evaluate(el=>el.matches(':focus-visible'))).toBe(true);
  const image=await trigger.screenshot();
  await info.attach(label,{body:image,contentType:'image/png'});
  return image;
@@ -358,7 +353,6 @@ for(const newerFocus of [false,true])test(`V051 production manager delayed list 
   if(newerFocus){await close.focus();await expect(close).toBeFocused();}
   const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/v1/personnel/table-presets'&&r.request().method()==='GET');
   release();await response;await expect(first).toBeEnabled();
-  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
   await expect(newerFocus?close:first).toBeFocused();
  }finally{release();}
 });

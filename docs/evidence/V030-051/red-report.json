@@ -1,0 +1,231 @@
+{
+  "config": {
+    "argv": [
+      "/workspace/.weaveos-tools/node_modules/node-linux-x64/bin/node",
+      "/work/node_modules/.pnpm/@playwright+test@1.63.0/node_modules/@playwright/test/cli.js",
+      "test",
+      "--config",
+      "docs/evidence/V010-020/filter-manager/frontend/components.config.ts",
+      "--project",
+      "chromium",
+      "--grep",
+      "V051 production manager delayed list focus",
+      "--workers=1",
+      "--retries=0",
+      "--reporter=json",
+      "--trace",
+      "retain-on-failure",
+      "--output",
+      "/results/test-results"
+    ],
+    "configFile": "/work/docs/evidence/V010-020/filter-manager/frontend/components.config.ts",
+    "rootDir": "/work/apps/web/src",
+    "failOnFlakyTests": false,
+    "forbidOnly": true,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/results/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/work/apps/web/src",
+        "testIgnore": [],
+        "testMatch": [
+          "filter-manager.component.spec.ts"
+        ],
+        "timeout": 20000
+      },
+      {
+        "outputDir": "/results/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/work/apps/web/src",
+        "testIgnore": [],
+        "testMatch": [
+          "filter-manager.component.spec.ts"
+        ],
+        "timeout": 20000
+      },
+      {
+        "outputDir": "/results/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/work/apps/web/src",
+        "testIgnore": [],
+        "testMatch": [
+          "filter-manager.component.spec.ts"
+        ],
+        "timeout": 20000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": {
+      "command": "pnpm --dir apps/web exec vite --host 127.0.0.1 --port 43122 --strictPort",
+      "cwd": "/work",
+      "url": "http://127.0.0.1:43122",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "filter-manager.component.spec.ts",
+      "file": "filter-manager.component.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "V051 production manager delayed list focus reaches the first enabled control",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 20000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5777,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeFocused\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '管理自定义筛选', exact: true }).getByRole('button', { name: '新增筛选', exact: true })\nExpected: focused\nReceived: inactive\nTimeout:  3000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeFocused\" getByRole('dialog', { name: '管理自定义筛选', exact: true }).getByRole('button', { name: '新增筛选', exact: true }) with timeout 3000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '管理自定义筛选', exact: true }).getByRole('button', { name: '新增筛选', exact: true })\u001b[22m\n\u001b[2m    10 × locator resolved to <button type=\"button\" aria-label=\"新增筛选\" class=\"preset-add preset-new\">…</button>\u001b[22m\n\u001b[2m       - unexpected value \"inactive\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeFocused\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '管理自定义筛选', exact: true }).getByRole('button', { name: '新增筛选', exact: true })\nExpected: focused\nReceived: inactive\nTimeout:  3000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeFocused\" getByRole('dialog', { name: '管理自定义筛选', exact: true }).getByRole('button', { name: '新增筛选', exact: true }) with timeout 3000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '管理自定义筛选', exact: true }).getByRole('button', { name: '新增筛选', exact: true })\u001b[22m\n\u001b[2m    10 × locator resolved to <button type=\"button\" aria-label=\"新增筛选\" class=\"preset-add preset-new\">…</button>\u001b[22m\n\u001b[2m       - unexpected value \"inactive\"\u001b[22m\n\n    at /work/apps/web/src/filter-manager.component.spec.ts:356:40",
+                    "location": {
+                      "file": "/work/apps/web/src/filter-manager.component.spec.ts",
+                      "column": 40,
+                      "line": 356
+                    },
+                    "snippet": "  354 |   const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/v1/personnel/table-presets'&&r.request().method()==='GET');\n  355 |   release();await response;await expect(first).toBeEnabled();\n> 356 |   await expect(newerFocus?close:first).toBeFocused();\n      |                                        ^\n  357 |  }finally{release();}\n  358 | });\n  359 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/work/apps/web/src/filter-manager.component.spec.ts",
+                        "column": 40,
+                        "line": 356
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeFocused\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: '管理自定义筛选', exact: true }).getByRole('button', { name: '新增筛选', exact: true })\nExpected: focused\nReceived: inactive\nTimeout:  3000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeFocused\" getByRole('dialog', { name: '管理自定义筛选', exact: true }).getByRole('button', { name: '新增筛选', exact: true }) with timeout 3000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: '管理自定义筛选', exact: true }).getByRole('button', { name: '新增筛选', exact: true })\u001b[22m\n\u001b[2m    10 × locator resolved to <button type=\"button\" aria-label=\"新增筛选\" class=\"preset-add preset-new\">…</button>\u001b[22m\n\u001b[2m       - unexpected value \"inactive\"\u001b[22m\n\n\n  354 |   const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/v1/personnel/table-presets'&&r.request().method()==='GET');\n  355 |   release();await response;await expect(first).toBeEnabled();\n> 356 |   await expect(newerFocus?close:first).toBeFocused();\n      |                                        ^\n  357 |  }finally{release();}\n  358 | });\n  359 |\n    at /work/apps/web/src/filter-manager.component.spec.ts:356:40"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T08:11:26.166Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/results/test-results/filter-manager.component-V-58e7c-s-the-first-enabled-control-chromium/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/results/test-results/filter-manager.component-V-58e7c-s-the-first-enabled-control-chromium/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/work/apps/web/src/filter-manager.component.spec.ts",
+                    "column": 40,
+                    "line": 356
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4a60f4986279c670f6aa-51261c04a476a3376466",
+          "file": "filter-manager.component.spec.ts",
+          "line": 343,
+          "column": 38
+        },
+        {
+          "title": "V051 production manager delayed list focus respects newer focus",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 20000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2582,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T08:11:32.646Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4a60f4986279c670f6aa-a60230c6a8dd47e9302d",
+          "file": "filter-manager.component.spec.ts",
+          "line": 343,
+          "column": 38
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-08T08:11:24.562Z",
+    "duration": 10827.982,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
