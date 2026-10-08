@@ -1,6 +1,8 @@
 # v0.1.0 任务索引
 
-- [V030-054 · 登录响应敏感字段契约校验](V030-054.md) — task/V030-054-login-response-schema / ../WeaveOS-worktrees/V030-054；基线 develop `c54c5402`，Root 亲写测试，用实际响应 Schema 替换英文声明绑定，当前 in_progress。
+- [V030-055 · 磁盘准备真实拒绝与调用边界](V030-055.md) — task/V030-055-hosted-disk-oracle / ../WeaveOS-worktrees/V030-055；基线 develop `0ab6986c`，仅补齐真实 Bash 控制流与副作用调用观察，保留原安全守卫，当前 in_progress。
+
+- [V030-054 · 登录响应敏感字段契约校验](V030-054.md) — [PR #62](https://github.com/Hubujiu/WeaveOS/pull/62) 已合入 develop `0ab6986c`；真实 Schema 校验、四层反例及完整 CI 已验收，首轮 WebKit 准备失败与同头复跑保留，冻结文档保留验收前状态。
 
 - [V030-053 · BFF 构建成本测量](https://app.notion.com/p/3f32f5a9e648818eb300f21b1f4ccbf2) — 无代码改动/PR；九次暖构建实测后两次重复合计中位约 3.620 秒，当前保留原独立 fixture。完整脚本与原始结果已在 Notion 归档，不宣称端到端 CI 提速。
 

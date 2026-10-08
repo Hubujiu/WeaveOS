@@ -2,8 +2,14 @@
 
 These assert scheduler/cache declarations, not successful product execution.
 Independent runtime/report contracts are exercised separately.
+V030-055 additionally executes reviewed disk-preparation Bash with recorded external effects.
 """
 import copy
+import json
+import shutil
+import subprocess
+import sys
+import tempfile
 import os
 from pathlib import Path
 import unittest
@@ -167,6 +173,90 @@ class WorkflowContracts(unittest.TestCase):
         self.assertEqual(len(versions), 1)
         self.assertIn('python3', versions[0]['run'])
         self.assertIn('GITHUB_OUTPUT', versions[0]['run'])
+
+class HostedDiskContracts(unittest.TestCase):
+    """V030-055: real Bash control flow; external effects are recording stubs.
+
+    This executes reviewed repository code, not arbitrary untrusted shell.
+    It does not delete an SDK or prove real disk capacity or tool behavior.
+    """
+
+    def setUp(self):
+        doc = workflow(ROOT, 'acceptance.yml')
+        job = doc['jobs']['product']
+        matches = [step for step in job['steps'] if step.get('name') ==
+                   'Prepare hosted Linux disk for browser images and vulnerability database']
+        self.assertEqual(len(matches), 1, 'one reachable disk preparation step is required')
+        self.step = matches[0]
+        self.assertEqual(self.step.get('shell'), 'bash', 'exercise the declared GitHub Bash semantics')
+        self.assertNotIn('if', self.step, 'disk preparation cannot be conditionally skipped')
+        self.assertNotIn('continue-on-error', self.step, 'disk failure cannot be hidden')
+        self.assertIsInstance(self.step.get('run'), str)
+        for scope in [doc, job, self.step]:
+            self.assertFalse({'RUNNER_ENVIRONMENT', 'RUNNER_OS'} & set(scope.get('env', {})),
+                             'workflow cannot override the runner eligibility inputs')
+
+    def exercise(self, environment, operating_system, cleanup_status=0):
+        # Only external side effects are replaced. The original YAML run body,
+        # Bash parser, test builtin, ordering and exit propagation remain real.
+        bash = shutil.which('bash')
+        self.assertIsNotNone(bash, 'Bash is required; absence is an environment error')
+        with tempfile.TemporaryDirectory(prefix='weaveos-hosted-disk-') as directory:
+            temp = Path(directory)
+            bin_dir = temp / 'bin'
+            bin_dir.mkdir()
+            calls_file = temp / 'calls.jsonl'
+            stub = ('#!' + sys.executable + '\n' +
+                    'import json, os, sys\n'
+                    'from pathlib import Path\n'
+                    'name = Path(sys.argv[0]).name\n'
+                    'with open(os.environ["CALLS_FILE"], "a") as output:\n'
+                    '    output.write(json.dumps([name, *sys.argv[1:]]) + "\\n")\n'
+                    'sys.exit(int(os.environ["CLEANUP_STATUS"]) if name == "sudo" '
+                    'else (0 if name == "df" else 97))\n')
+            for name in ['sudo', 'df', 'rm', 'docker']:
+                executable = bin_dir / name
+                executable.write_text(stub)
+                executable.chmod(0o700)
+            script = temp / 'disk.sh'
+            script.write_text(self.step['run'])
+            # No inherited credentials, BASH_ENV, ENV, shell functions or PATH.
+            env = {'PATH': str(bin_dir), 'HOME': str(temp), 'LC_ALL': 'C',
+                   'CALLS_FILE': str(calls_file), 'CLEANUP_STATUS': str(cleanup_status)}
+            if environment is not None:
+                env['RUNNER_ENVIRONMENT'] = environment
+            if operating_system is not None:
+                env['RUNNER_OS'] = operating_system
+            result = subprocess.run([bash, '--noprofile', '--norc', '-e', '-o', 'pipefail', str(script)],
+                                    cwd=temp, env=env, capture_output=True, text=True, timeout=10)
+            calls = [json.loads(line) for line in calls_file.read_text().splitlines()] if calls_file.exists() else []
+            return result, calls
+
+    def test_only_hosted_linux_can_issue_any_external_preparation_call(self):
+        for environment in ['github-hosted', 'self-hosted', 'unknown', '', None]:
+            for operating_system in ['Linux', 'Windows', 'macOS', '', None]:
+                if (environment, operating_system) == ('github-hosted', 'Linux'):
+                    continue
+                with self.subTest(environment=environment, operating_system=operating_system):
+                    result, calls = self.exercise(environment, operating_system)
+                    self.assertNotEqual(result.returncode, 0, 'ineligible runner must refuse preparation')
+                    self.assertEqual(calls, [], 'ineligible runner issued an external preparation call')
+
+    def test_hosted_linux_requests_only_the_single_approved_sdk_cleanup(self):
+        result, calls = self.exercise('github-hosted', 'Linux')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        # Exact current command adapter, not a general sudo/rm argument parser.
+        # The independent target restriction is the single unused Android SDK.
+        self.assertEqual([call for call in calls if call[0] != 'df'],
+                         [['sudo', 'rm', '-rf', '--', '/usr/local/lib/android']],
+                         'cleanup must request exactly the one approved SDK, with no extra destructive calls')
+
+    def test_cleanup_failure_stops_the_step_without_successful_continuation(self):
+        result, calls = self.exercise('github-hosted', 'Linux', cleanup_status=23)
+        self.assertEqual(result.returncode, 23, 'Bash must propagate the actual cleanup failure')
+        self.assertEqual(calls, [['sudo', 'rm', '-rf', '--', '/usr/local/lib/android']],
+                         'failed cleanup must stop before subsequent external commands')
+
 
 if __name__ == '__main__':
     unittest.main()
