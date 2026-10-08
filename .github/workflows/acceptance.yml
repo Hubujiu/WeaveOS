@@ -18,9 +18,88 @@ concurrency:
 permissions:
   contents: read
 jobs:
+  preflight:
+    uses: ./.github/workflows/preflight.yml
+  components:
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    env:
+      COMPONENT_SHARD: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - name: Fixed package manager
+        run: npm install --global pnpm@10.28.2 --ignore-scripts
+      - name: Locked pnpm dependency store cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .work/pnpm-store
+          key: pnpm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.node-version', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
+      - name: Frozen component dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store
+      - name: Locked Playwright browser cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package.json', 'pnpm-lock.yaml') }}
+      - name: Required browser and system dependencies
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Bind actual checkout and discover the complete component identity set
+        run: |
+          mkdir -p "$RUNNER_TEMP/component-reports/shard-$COMPONENT_SHARD"
+          node --input-type=module <<'JS'
+          import {execFileSync} from 'node:child_process';
+          import {writeFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], {encoding: 'utf8'}).trim();
+          const shardIndex = Number(process.env.COMPONENT_SHARD);
+          writeFileSync(join(process.env.RUNNER_TEMP, 'component-reports', `shard-${shardIndex}`, 'metadata.json'), JSON.stringify({sourceSha, shardIndex, shardTotal: 4}) + '\n');
+          JS
+          PLAYWRIGHT_JSON_OUTPUT_NAME="$RUNNER_TEMP/component-reports/shard-$COMPONENT_SHARD/baseline.json" pnpm exec playwright test --config apps/web/playwright.component.config.ts --list --reporter=json
+      - name: Actual component shard with no retry or worker expansion
+        run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME="$RUNNER_TEMP/component-reports/shard-$COMPONENT_SHARD/report.json" pnpm exec playwright test --config apps/web/playwright.component.config.ts --shard=${{ matrix.shard }}/4 --workers=1 --retries=0 --reporter=line,json --output "$RUNNER_TEMP/component-execution"
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: components-${{ github.run_id }}-${{ github.run_attempt }}-shard-${{ matrix.shard }}
+          path: ${{ runner.temp }}/component-reports/
+          if-no-files-found: error
+          retention-days: 14
+  component-coverage:
+    needs: components
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: components-${{ github.run_id }}-${{ github.run_attempt }}-shard-*
+          path: ${{ runner.temp }}/component-shards
+          merge-multiple: true
+          digest-mismatch: error
+      - name: Verify four same-candidate bundles and complete actual identity coverage
+        run: node scripts/verify-component-artifacts.mjs "$RUNNER_TEMP/component-shards" "$RUNNER_TEMP/component-summary.json"
   product:
+    needs: component-coverage
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    env:
+      WEAVEOS_DEPENDENCY_CACHE_DIR: ${{ github.workspace }}/.work/dependency-cache
     steps:
       - name: Prepare hosted Linux disk for browser images and vulnerability database
         shell: bash
@@ -41,9 +120,25 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .node-version
+      - name: Locked public container dependency caches
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .work/dependency-cache/go-mod
+            .work/dependency-cache/go-build
+            .work/dependency-cache/pnpm-store
+          key: containers-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.go-version', '.node-version', 'pnpm-lock.yaml', 'package.json', 'services/bff/go.mod', 'services/bff/go.sum', 'infra/ci/dependency-cache.mjs', 'infra/acceptance/run.mjs', 'infra/runtime/run.mjs') }}
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: components-${{ github.run_id }}-${{ github.run_attempt }}-shard-*
+          path: ${{ runner.temp }}/component-shards
+          merge-multiple: true
+          digest-mismatch: error
       - name: Migrations, HTTPS and real product acceptance
         # postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 and redis:8.2.10@sha256:164c759a0c342ee69d08fc99219382b0fd682181465c0df2e0e6911f4c85d73c in compose.json.
         # Runner executes playwright test tests/acceptance using its HTTPS config.
+        env:
+          WEAVEOS_COMPONENT_SHARD_DIR: ${{ runner.temp }}/component-shards
         run: node infra/acceptance/run.mjs
       - name: Runtime configuration, crypto, failure handling and dependency security
         run: node --test infra/runtime/rollback-security.test.mjs infra/runtime/artifacts.test.mjs infra/runtime/storage-version.test.mjs infra/runtime/config.test.mjs infra/runtime/backup-crypto.test.mjs infra/runtime/recovery.test.mjs infra/runtime/monitor.test.mjs infra/runtime/cli.test.mjs infra/runtime/advisory-review.test.mjs infra/runtime/security.test.mjs

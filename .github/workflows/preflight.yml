@@ -1,0 +1,46 @@
+name: Fast preflight
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+      - name: Fixed package manager
+        run: npm install --global pnpm@10.28.2 --ignore-scripts
+      - name: Locked pnpm dependency store cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .work/pnpm-store
+          key: pnpm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.node-version', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
+      - name: Frozen dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store
+      - name: Locked Python dependency download cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .work/pip-cache
+          key: python-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci-requirements.txt') }}
+      - name: Isolated Python workflow contract dependencies
+        run: |
+          python3 -m venv "$RUNNER_TEMP/weaveos-preflight-venv"
+          "$RUNNER_TEMP/weaveos-preflight-venv/bin/python" -m pip install --isolated --index-url https://pypi.org/simple --cache-dir .work/pip-cache -r scripts/ci-requirements.txt
+      - name: Root workflow scheduler and cache contracts
+        run: '"$RUNNER_TEMP/weaveos-preflight-venv/bin/python" tests/governance/root_ci_throughput_test.py'
+      - name: Required fast checks in failure-stopping order
+        run: node scripts/preflight.mjs
