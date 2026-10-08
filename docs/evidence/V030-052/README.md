@@ -37,3 +37,9 @@ Q13 / FR-018 / 已接受 ADR-001 要求密码是可打印 ASCII 字符串，并�
 契约/底座/治理390 PASS，0 FAIL/SKIP；audit各级漏洞0；typecheck、lint、build和结构检查通过。Lint12条warning的规则/位置/消息与[PR60 CI browser](https://github.com/Hubujiu/WeaveOS/actions/runs/37760742098)一致：license1项、required-property2项、unused-component9项。原有大chunk提示也保留，没有降低门槛。
 
 最终完整CI和Root审查仍待本地候选冻结后执行；最终状态及结果另归档Notion，不提前把本地通过记为develop集成、main批准或部署。
+
+
+## 校验摘要误报与可逆元数据表示
+初始提交 `54c06aabebf57c62c54fbe474719c94ac224ec7e` 的execution.json触发38条generic-api-key。全部命中键为OpenAPI文件路径，全部值已逐条证明是未改动源码的实际SHA256。原始执行记录保留在该提交及本地归档，未发现这些条目包含认证材料。
+
+当前execution.json将文件摘要映射表达为明确的path/sha256记录列表；`_archive_representation`说明转换，normalization-report.json记录原始文件hash、38个位置及逆转换相等证明。normalize-evidence.py包含完整转换/验证代码：还原这些列表为路径到摘要的对象，并去掉新增表示说明，即得到与原JSON完全相同的数据。所有原始stdout/stderr保持逐字相同。没有对值编码、截断或隐藏，也没有放宽秘密扫描规则或添加豁免。
