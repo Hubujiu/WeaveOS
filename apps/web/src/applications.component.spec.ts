@@ -305,15 +305,11 @@ test('V030-012 retry after lost response preserves the operation key and exact p
  expect(writes[1]).toEqual(writes[0]);
 });
 
+// Exhaustive receipt classification lives in application-create-receipt.test.mjs.
+// Keep a real hook/UI path for each boundary, including exact-operation retry.
 for (const reply of [
- { name: '201 empty JSON', status: 201, json: {} },
  { name: '201 JSON null', status: 201, json: null },
- { name: '201 error envelope', status: 201, json: { code: 'COMMON_SERVICE_UNAVAILABLE', data: null } },
- { name: '201 missing data', status: 201, json: { code: 'OK' } },
- { name: '201 malformed application', status: 201, json: { code: 'OK', data: { id: application.id, name: '新业务应用' } } },
  { name: '201 wrong owner', status: 201, json: { code: 'OK', data: { ...application, ownerUserId: '00000000-0000-4000-8000-000000000003' } } },
- { name: '201 invalid application UUID', status: 201, json: { code: 'OK', data: { ...application, id: 'not-an-app-id' } } },
- { name: '201 wrong initial revision', status: 201, json: { code: 'OK', data: { ...application, policyRevision: 2 } } },
  { name: '200 valid application body', status: 200, json: { code: 'OK', data: application } },
 ]) {
  test('V030-012 non-confirming create reply retains the original operation: ' + reply.name, async ({ page }) => {
