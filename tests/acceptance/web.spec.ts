@@ -81,7 +81,6 @@ test('FR-017: successful registration returns to login without a session', async
   await page.getByLabel('确认密码', { exact: true }).fill('Synthetic@123');
   await page.getByRole('button', { name: '注册', exact: true }).click();
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
-  expect((await context.cookies()).filter(cookie => cookie.httpOnly).length).toBe(0);
   expect((await context.cookies()).filter(cookie => cookie.httpOnly)).toHaveLength(0);
   await page.goto('/app');
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
@@ -268,14 +267,21 @@ test('WEB-12 PRD login: network failure differs from credential failure and perm
   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
-  const credentialsError = await page.getByRole('alert').textContent();
+  await expect(page.getByRole('alert').getByText('邮箱或密码不正确',{exact:true})).toBeVisible();
   // Real transport fault injection, not a mocked business response.
   await page.route('**/api/v1/sessions', route => route.abort('connectionfailed'));
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
-  await expect.poll(async () => (await page.getByRole('alert').textContent()) !== credentialsError).toBe(true);
+  await expect(page.getByRole('alert').getByText('网络连接失败，请检查网络后重试',{exact:true})).toBeVisible();
+  await expect(page.getByLabel('账号',{exact:true})).toHaveValue('synthetic-unknown-user');
+  await expect(page.getByLabel('密码',{exact:true})).toHaveValue('Synthetic@123');
   await expect(page.getByRole('button', { name: '登录', exact: true })).toBeEnabled();
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
+  await page.unroute('**/api/v1/sessions');
+  await page.getByLabel('账号',{exact:true}).fill(fixtures().user.account);
+  await page.getByLabel('密码',{exact:true}).fill(fixtures().user.password);
+  await page.getByRole('button',{name:'登录',exact:true}).click();
+  await expect(page).toHaveURL(/\/app(?:\/|\?|$)/);
 });
 
 async function fillRegistration(page: Page, account: string, code: string) {

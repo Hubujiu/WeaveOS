@@ -1,0 +1,76 @@
+[
+  {
+    "name": "python-hashed",
+    "command": [
+      "python",
+      "services/workflow-engine/execution_ci_gate_tests.py"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048",
+    "exit": 0,
+    "source_hashes_unchanged": true
+  },
+  {
+    "name": "auth",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "-p",
+      "1",
+      "-count=1",
+      "-json",
+      "./internal/auth"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048/services/bff",
+    "exit": 0,
+    "source_hashes_unchanged": true,
+    "top_level_pass": 31,
+    "all_test_pass": 43,
+    "fail": 0,
+    "skip": 0
+  },
+  {
+    "name": "personnel",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "-p",
+      "1",
+      "-count=1",
+      "-json",
+      "-run",
+      "TestQ36RevisionActualWriterCoverageAndNoops|TestQ36HTTPChangedCriteriaUsesOneRRAndNoHistoricalRows|TestEmptyDefinitionRelationsSerializeAsArraysQ25",
+      "./internal/personnel"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048/services/bff",
+    "exit": 0,
+    "source_hashes_unchanged": true,
+    "top_level_pass": 3,
+    "all_test_pass": 3,
+    "fail": 0,
+    "skip": 0
+  },
+  {
+    "name": "appquery",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "-p",
+      "1",
+      "-count=1",
+      "-json",
+      "-run",
+      "TestPGFullProjectionChangesOnlyWhenActualAuthorizedRowsChange",
+      "./internal/appquery"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048/services/bff",
+    "exit": 0,
+    "source_hashes_unchanged": true,
+    "top_level_pass": 1,
+    "all_test_pass": 1,
+    "fail": 0,
+    "skip": 0
+  }
+]

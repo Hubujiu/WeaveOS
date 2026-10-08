@@ -14,7 +14,8 @@ const observed = async t => { const o = await open({baseURL: process.env.WEAVEOS
 test('observer changes native TTL before testing renewal', async t => {
   const o = await observed(t), s = await preparedLogin(fixtures().user), key = keyOf(s.auth);
   await o.setSessionPTTL(s.auth, 30000);
-  assert.ok(Number(redis('PTTL', key)) <= 30000, 'native TTL must be shortened');
+  const ttl = Number(redis('PTTL', key));
+  assert.ok(ttl > 0 && ttl <= 30000, 'native key must exist with a shortened positive TTL');
 });
 test('observer changes native creation timestamp', async t => {
   const o = await observed(t), s = await preparedLogin(fixtures().user);

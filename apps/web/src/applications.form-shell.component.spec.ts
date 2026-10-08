@@ -81,7 +81,10 @@ test('V030-012 external Back discard removes a designer draft before returning',
  await guard.getByRole('button', { name: '放弃修改' }).click();
  await expect(page).toHaveURL(new RegExp('/app/applications/' + appId + '$'));
  await page.getByRole('button', { name: '配置表单 请假申请' }).click();
- await expect(page.getByRole('region', { name: '表单画布' })).not.toContainText('放弃的字段');
+ const canvas=page.getByRole('region',{name:'表单画布'});
+ await expect(canvas.locator('.forms-canvas-node')).toHaveCount(0);
+ await expect(canvas.getByRole('heading')).toHaveText(form.name);
+ await expect(canvas).toHaveText(form.name+' 拖拽或用键盘添加字段，保存后才会生效 从左侧选择字段，或拖入这里开始设计表单',{useInnerText:true});
  expect(backend.writes).toEqual([]);
 });
 
@@ -104,7 +107,10 @@ test('V030-012 closing the current app tab waits for form discard and clears onl
  await expect(close).toHaveCount(0);
  await page.getByRole('main').getByRole('button', { name: application.name, exact: true }).click();
  await page.getByRole('button', { name: '配置表单 请假申请' }).click();
- await expect(page.getByRole('region', { name: '表单画布' })).not.toContainText('关闭前字段');
+ const canvas=page.getByRole('region',{name:'表单画布'});
+ await expect(canvas.locator('.forms-canvas-node')).toHaveCount(0);
+ await expect(canvas.getByRole('heading')).toHaveText(form.name);
+ await expect(canvas).toHaveText(form.name+' 拖拽或用键盘添加字段，保存后才会生效 从左侧选择字段，或拖入这里开始设计表单',{useInnerText:true});
  expect(backend.writes).toEqual([]);
 });
 

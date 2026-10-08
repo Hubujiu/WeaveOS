@@ -10,7 +10,7 @@ if(!container?.startsWith('weaveos-v010-'))throw new Error('Isolated PostgreSQL1
 const dir=resolve('.work/backup-tests',String(Date.now()));mkdirSync(dir,{recursive:true});
 const user=process.env.WEAVEOS_BACKUP_TEST_USER??'weaveos_test';
 if(!/^weaveos_[a-zA-Z0-9_]+$/.test(user))throw new Error('Isolated backup test identity required');
-const sql=(database,text)=>execFileSync('docker',['exec','-i',container,'psql','-X','-v','ON_ERROR_STOP=1','-U',user,'-d',database],{input:text,stdio:['pipe','pipe','pipe'],encoding:'utf8'});
+const sql=(database,text)=>execFileSync('docker',['exec','-i',container,'psql','-X','-A','-t','-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-U',user,'-d',database],{input:text,stdio:['pipe','pipe','pipe'],encoding:'utf8'});
 const suffix=Date.now(),source=`weaveos_backup_source_${suffix}`,target=`weaveos_backup_target_${suffix}`;
 sql('postgres',`CREATE DATABASE ${source}; CREATE DATABASE ${target};`);
 // Synthetic source independent of backup implementation. Restore must preserve
@@ -24,7 +24,7 @@ test('real encrypted logical backup restores into an isolated empty database',()
  assert.equal(readFileSync(backupFile).includes(Buffer.from('synthetic-one-way-hash')),false);
  restoreDatabase({...options,database:target});
  const restored=sql(target,'SELECT status,password_hash,invitation_consumed FROM auth.recovery_fixture;');
- assert.ok(restored.includes('disabled')&&restored.includes('synthetic-one-way-hash')&&restored.includes('t'),'restore must retain original state');
+ assert.equal(restored.trim(),'disabled|synthetic-one-way-hash|t','restore must retain the complete original row');
 });
 test('missing source produces a failure and no successful backup file',()=>{
  const failedFile=resolve(dir,'must-not-exist.enc'),alertFile=resolve(dir,'backup-alerts.jsonl');
@@ -36,7 +36,7 @@ test('wrong-key restore fails before any database mutation',()=>{
  const wrongKey=resolve(dir,'wrong-key');writeFileSync(wrongKey,randomBytes(32),{mode:0o600,flag:'wx'});
  const untouched=`weaveos_backup_untouched_${suffix}`;sql('postgres',`CREATE DATABASE ${untouched};`);
  assert.throws(()=>restoreDatabase({...options,database:untouched,keyFile:wrongKey}));
- assert.ok(sql(untouched,"SELECT to_regclass('auth.recovery_fixture') IS NULL AS untouched;").includes('t'));
+ assert.equal(sql(untouched,"SELECT to_regclass('auth.recovery_fixture') IS NULL;").trim(),'t');
 });
 
 test('restricted backup preserves migration ledger sequence and remains unable to advance it',()=>{
@@ -149,7 +149,7 @@ test('restricted backup preserves migration ledger sequence and remains unable t
   invalid.push(state('workflow.task.agree',{...actionReceipt,[key]:'not-a-uuid'}));
  }
  for(const database of [live,restored]){
-  assert.match(sql(database,checks),/\bt\b/,'all three CHECK guards must exist, be validated and enforced');
+  assert.equal(sql(database,checks).trim(),'t','all three CHECK guards must exist, be validated and enforced');
   for(const row of valid)sql(database,`BEGIN; ${update(row)} ROLLBACK;`);
   for(const [index,row] of invalid.entries()){
    // Only 23514 proves a CHECK guard rejected the mutation. Syntax, connection
@@ -171,18 +171,26 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  for(const query of evidenceQueries)assert.equal(sql(restored,query),sql(live,query),'restricted backup must preserve immutable evidence bytes, metadata and membership exactly');
  assert.ok(sql(restored,evidenceQueries[0]).includes(fieldBody.toString('hex')),'actual original field bytes must survive restore');
  assert.ok(sql(restored,evidenceQueries[1]).includes(manifestBody.toString('hex')),'actual original manifest bytes must survive restore');
+ const guardedQueries=[...evidenceQueries,recoveryQuery,operationQuery,"SELECT last_value,is_called FROM public.goose_db_version_id_seq;","SELECT last_value,is_called FROM applications.record_command_fence_epoch_seq;"];
+ const guardedBefore=guardedQueries.map(query=>sql(live,query));
+ const denied=(statement,message)=>assert.throws(()=>sql(live,statement),error=>{
+  assert.equal(error.status,3,'psql must reach a SQL error rather than fail to connect');
+  assert.match(String(error.stderr),/ERROR:\s+42501:/,'only insufficient_privilege proves role denial');
+  return true;
+ },message);
  for(const table of ['workflow_evidence_blobs','workflow_evidence_documents','workflow_evidence_members']){
-  assert.throws(()=>sql(live,`SET ROLE weaveos_backup_probe; DELETE FROM applications.${table};`),'backup cannot delete evidence');
-  assert.throws(()=>sql(live,`SET ROLE weaveos_backup_probe; UPDATE applications.${table} SET app_id=app_id;`),'backup cannot mutate evidence');
+  denied(`SET ROLE weaveos_backup_probe; DELETE FROM applications.${table};`,'backup cannot delete evidence');
+  denied(`SET ROLE weaveos_backup_probe; UPDATE applications.${table} SET app_id=app_id;`,'backup cannot mutate evidence');
  }
- assert.throws(()=>sql(live,"SET ROLE weaveos_backup_probe; UPDATE applications.workflow_commands SET execution_payload=NULL;"),'backup must not rewrite accepted execution inputs');
- assert.throws(()=>sql(live,"SET ROLE weaveos_backup_probe; UPDATE applications.workflow_dispatch SET attempts=0;"),'backup must not alter retry or lease metadata');
- assert.ok(sql(restored,"SELECT nextval('public.goose_db_version_id_seq')=3 AS original_sequence;").includes('t'),'restored sequence must continue after original ledger rows');
- assert.ok(sql(restored,"SELECT nextval('applications.record_command_fence_epoch_seq')=42 AS original_fence_epoch;").includes('t'),'restored fence epoch must not reuse previously allocated numbers');
- assert.throws(()=>sql(live,"SET ROLE weaveos_backup_probe; SELECT nextval('applications.record_command_fence_epoch_seq');"),'backup role must not allocate fence epochs');
- assert.throws(()=>sql(live,"SET ROLE weaveos_backup_probe; SELECT setval('applications.record_command_fence_epoch_seq',1,true);"),'backup role must not reset fence epochs');
+ denied("SET ROLE weaveos_backup_probe; UPDATE applications.workflow_commands SET execution_payload=NULL;",'backup must not rewrite accepted execution inputs');
+ denied("SET ROLE weaveos_backup_probe; UPDATE applications.workflow_dispatch SET attempts=0;",'backup must not alter retry or lease metadata');
+ assert.equal(sql(restored,"SELECT nextval('public.goose_db_version_id_seq');").trim(),'3','restored sequence must continue after original ledger rows');
+ assert.equal(sql(restored,"SELECT nextval('applications.record_command_fence_epoch_seq');").trim(),'42','restored fence epoch must continue after original allocations');
+ denied("SET ROLE weaveos_backup_probe; SELECT nextval('applications.record_command_fence_epoch_seq');",'backup role must not allocate fence epochs');
+ denied("SET ROLE weaveos_backup_probe; SELECT setval('applications.record_command_fence_epoch_seq',1,true);",'backup role must not reset fence epochs');
  const presetColumns="id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at";
  assert.equal(sql(restored,'SELECT '+presetColumns+' FROM personnel.table_presets;'),sql(live,'SELECT '+presetColumns+' FROM personnel.table_presets;'),'restricted backup must preserve complete named configuration, Unicode, AST, ownership, slot, CAS and timestamps');
- assert.ok(sql(restored,"SELECT name='持久方案😀' AND slot=20 AND version=7 AS preset_content FROM personnel.table_presets WHERE id='88888888-8888-4888-8888-888888888888';").includes('t'),'synthetic independent preset survives encrypted backup/restore');
- assert.throws(()=>sql(live,"SET ROLE weaveos_backup_probe; SELECT nextval('public.goose_db_version_id_seq');"),'read-only backup must not allocate sequence values');
+ assert.equal(sql(restored,"SELECT name,slot,version FROM personnel.table_presets WHERE id='88888888-8888-4888-8888-888888888888';").trim(),'持久方案😀|20|7','synthetic independent preset survives encrypted backup/restore');
+ denied("SET ROLE weaveos_backup_probe; SELECT nextval('public.goose_db_version_id_seq');",'read-only backup must not allocate sequence values');
+ assert.deepEqual(guardedQueries.map(query=>sql(live,query)),guardedBefore,'denied backup operations must preserve exact data, evidence and sequence state');
 });

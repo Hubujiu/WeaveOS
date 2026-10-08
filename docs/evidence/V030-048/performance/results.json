@@ -1,0 +1,155 @@
+[
+  {
+    "name": "isolation",
+    "command": [
+      "node",
+      "--test",
+      "tests/governance/performance-isolation.test.mjs"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048",
+    "started": "2026-10-07T13:12:09.599438+00:00",
+    "finished": "2026-10-07T13:12:09.885368+00:00",
+    "exit": 0,
+    "source_hashes_unchanged": true
+  },
+  {
+    "name": "format",
+    "command": [
+      "gofmt",
+      "-l",
+      "services/bff/internal/apprecordservice/root_workflow_read_cost_test.go",
+      "services/bff/internal/apprecordservice/root_workflow_evidence_cost_test.go"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048",
+    "started": "2026-10-07T13:12:09.887848+00:00",
+    "finished": "2026-10-07T13:12:09.906081+00:00",
+    "exit": 0,
+    "source_hashes_unchanged": true,
+    "formatted": true
+  },
+  {
+    "name": "check-tasks",
+    "command": [
+      "node",
+      "scripts/check-tasks.mjs"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048",
+    "started": "2026-10-07T13:12:09.908674+00:00",
+    "finished": "2026-10-07T13:12:09.985130+00:00",
+    "exit": 0,
+    "source_hashes_unchanged": true
+  },
+  {
+    "name": "verify-repo",
+    "command": [
+      "node",
+      "scripts/verify-repo.mjs"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048",
+    "started": "2026-10-07T13:12:09.988476+00:00",
+    "finished": "2026-10-07T13:12:10.102345+00:00",
+    "exit": 0,
+    "source_hashes_unchanged": true
+  },
+  {
+    "name": "default-list",
+    "command": [
+      "go",
+      "list",
+      "-f",
+      "{{join .TestGoFiles \"\n\"}}",
+      "./internal/apprecordservice"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048/services/bff",
+    "started": "2026-10-07T13:12:10.105718+00:00",
+    "finished": "2026-10-07T13:12:10.117043+00:00",
+    "exit": 1,
+    "source_hashes_unchanged": true
+  },
+  {
+    "name": "opt-in-list",
+    "command": [
+      "go",
+      "list",
+      "-tags=weaveos_cost",
+      "-f",
+      "{{join .TestGoFiles \"\n\"}}",
+      "./internal/apprecordservice"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048/services/bff",
+    "started": "2026-10-07T13:12:10.120927+00:00",
+    "finished": "2026-10-07T13:12:10.131000+00:00",
+    "exit": 1,
+    "source_hashes_unchanged": true
+  },
+  {
+    "name": "roles",
+    "command": [
+      "docker",
+      "exec",
+      "-i",
+      "weaveos-v030-048-postgres",
+      "psql",
+      "-X",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-U",
+      "weaveos_test",
+      "-d",
+      "weaveos_v030_048_test"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048",
+    "started": "2026-10-07T13:12:10.133429+00:00",
+    "finished": "2026-10-07T13:12:10.452568+00:00",
+    "exit": 0,
+    "source_hashes_unchanged": true
+  },
+  {
+    "name": "go-cost",
+    "command": [
+      "go",
+      "test",
+      "-tags=weaveos_cost",
+      "-p",
+      "1",
+      "-count=1",
+      "-json",
+      "-run",
+      "^(TestRootWorkflowReadSyntheticAccessPaths|TestRootEvidenceCostComparison)$",
+      "./internal/apprecordservice"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048/services/bff",
+    "started": "2026-10-07T13:12:10.454824+00:00",
+    "finished": "2026-10-07T13:13:03.720797+00:00",
+    "exit": 0,
+    "source_hashes_unchanged": true
+  },
+  {
+    "name": "java-cost",
+    "command": [
+      "bash",
+      "services/workflow-engine/run-tests.sh",
+      "-Dtest=RootNativeHistoryCostTest",
+      "-Dworkflow.reports=target/v048-cost-reports",
+      "test"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048",
+    "started": "2026-10-07T13:13:03.723757+00:00",
+    "finished": "2026-10-07T13:13:50.101210+00:00",
+    "exit": 0,
+    "source_hashes_unchanged": true
+  },
+  {
+    "name": "java-gate",
+    "command": [
+      "python3",
+      "-c",
+      "from rpc_ci_gate import _java; _java(\"target/v048-cost-reports\", \"org.weaveos.workflow.RootNativeHistoryCostTest\", [\"observeNativeAndDuplicateCostsAtTwoActualHistorySizes\"])"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048/services/workflow-engine",
+    "started": "2026-10-07T13:13:50.105654+00:00",
+    "finished": "2026-10-07T13:13:50.162098+00:00",
+    "exit": 0,
+    "source_hashes_unchanged": true
+  }
+]

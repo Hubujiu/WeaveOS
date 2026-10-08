@@ -446,8 +446,20 @@ func TestSaveMetadataFailureRollsBackPhysicalAndMetadata(t *testing.T) {
 	}
 	assertState(t, f, []string{column1}, "0")
 	var fields []byte
-	if err = f.pool.QueryRow(context.Background(), "SELECT fields FROM "+pgx.Identifier{f.namespace, "fixture_metadata"}.Sanitize()).Scan(&fields); err != nil || !strings.Contains(string(fields), "old") {
-		t.Fatal("metadata must roll back too")
+	if err = f.pool.QueryRow(context.Background(), "SELECT fields FROM "+pgx.Identifier{f.namespace, "fixture_metadata"}.Sanitize()).Scan(&fields); err != nil {
+		t.Fatal(err)
+	}
+	var actual []Field
+	if err = json.Unmarshal(fields, &actual); err != nil {
+		t.Fatal(err)
+	}
+	expected := []Field{{ID: fieldID1, Name: "old", Type: Text}}
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("metadata rollback got %+v want %+v", actual, expected)
+	}
+	var oldValue string
+	if err = f.pool.QueryRow(context.Background(), "SELECT "+column1+" FROM "+f.table()).Scan(&oldValue); err != nil || oldValue != "old value" {
+		t.Fatalf("rollback must preserve original stored value: %q %v", oldValue, err)
 	}
 }
 

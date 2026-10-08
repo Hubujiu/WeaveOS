@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -52,20 +53,24 @@ func TestQ36HTTPChangedCriteriaUsesOneRRAndNoHistoricalRows(t *testing.T) {
 	if result.Total != 2 || result.QueryVersion == first.QueryVersion {
 		t.Fatal("new criteria baseline missing")
 	}
-	for _, m := range result.Items {
-		if m.ID == ids[1] && m.Account != prefix+"1" {
-			t.Fatal("new query/page mixed a later snapshot into old-baseline validation")
+	assertMembers := func(page MembersQueryPage, secondAccount string) {
+		t.Helper()
+		got := make(map[string]string, len(page.Items))
+		for _, member := range page.Items {
+			got[member.ID] = member.Account
+		}
+		want := map[string]string{ids[0]: prefix + "0", ids[1]: secondAccount}
+		if page.Total != 2 || len(page.Items) != 2 || !reflect.DeepEqual(got, want) {
+			t.Fatalf("expected complete coherent member page %v; total=%d items=%+v", want, page.Total, page.Items)
 		}
 	}
+	assertMembers(first, prefix+"1")
+	assertMembers(result, prefix+"1")
 	body["queryVersion"] = result.QueryVersion
 	queryError(t, f.request("POST", "/api/v1/personnel/members/search", queryBody(t, body), true, true), 409, "COMMON_QUERY_CHANGED")
 	delete(body, "queryVersion")
 	refreshed := memberQueryResponse(t, f.request("POST", "/api/v1/personnel/members/search", queryBody(t, body), true, true))
-	for _, m := range refreshed.Items {
-		if m.ID == ids[1] && m.Account != prefix+"changed" {
-			t.Fatal("explicit refresh reused historical rows")
-		}
-	}
+	assertMembers(refreshed, prefix+"changed")
 }
 func TestQ36HTTPEventReferencesAndRealArchiveInvalidation(t *testing.T) {
 	f, trace := queryWeb(t)

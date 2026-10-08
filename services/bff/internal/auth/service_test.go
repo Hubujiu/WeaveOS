@@ -242,9 +242,13 @@ func TestBootstrapInvitationResetAndRevocationHTTP(t *testing.T) {
 	checkStatus(t, a.request("POST", "/api/v1/sessions", map[string]string{"account": "member", "password": "Aa1!"}, nil, nil), 401)
 	checkStatus(t, a.request("POST", "/api/v1/sessions", map[string]string{"account": "member", "password": "Abc@123456"}, nil, nil), 201)
 	var h1, h2 string
-	a.pool.QueryRow(context.Background(), "SELECT password_hash FROM auth.password_credentials WHERE user_id=$1", id).Scan(&h1)
+	if err := a.pool.QueryRow(context.Background(), "SELECT password_hash FROM auth.password_credentials WHERE user_id=$1", id).Scan(&h1); err != nil {
+		t.Fatal(err)
+	}
 	checkStatus(t, a.request("POST", path, map[string]string{}, admin, nil), 200)
-	a.pool.QueryRow(context.Background(), "SELECT password_hash FROM auth.password_credentials WHERE user_id=$1", id).Scan(&h2)
+	if err := a.pool.QueryRow(context.Background(), "SELECT password_hash FROM auth.password_credentials WHERE user_id=$1", id).Scan(&h2); err != nil {
+		t.Fatal(err)
+	}
 	if h1 == h2 || h2 == "Abc@123456" || !strings.HasPrefix(h2, "$argon2id$") {
 		t.Fatal("each reset must store a fresh salted hash")
 	}
@@ -292,7 +296,9 @@ func TestReadinessAndAuditPrivacyHTTP(t *testing.T) {
 	if !strings.HasPrefix(fingerprint, "test:") || len(fingerprint) != 69 || !strings.HasPrefix(ip, "192.0.2.7") || ua != "test-browser" {
 		t.Fatal("audit identity/IP/device semantics incorrect")
 	}
-	a.pool.QueryRow(context.Background(), "SELECT count(*) FROM auth.authentication_events WHERE event_type='login' AND outcome='success' AND subject_user_id=$1 AND session_ref IS NOT NULL", id).Scan(&count)
+	if err := a.pool.QueryRow(context.Background(), "SELECT count(*) FROM auth.authentication_events WHERE event_type='login' AND outcome='success' AND subject_user_id=$1 AND session_ref IS NOT NULL", id).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
 	if count != 1 {
 		t.Fatal("success audit must have independent Session reference")
 	}
@@ -302,7 +308,9 @@ func TestReadinessAndAuditPrivacyHTTP(t *testing.T) {
 	checkStatus(t, a.request("GET", "/api/v1/sessions/current", nil, cookies, nil), 401)
 	checkStatus(t, a.request("POST", "/api/v1/sessions", map[string]string{"account": "member", "password": "Aa1!"}, nil, nil), 401)
 	var auditJSON string
-	a.pool.QueryRow(context.Background(), "SELECT json_agg(e)::text FROM auth.authentication_events e").Scan(&auditJSON)
+	if err := a.pool.QueryRow(context.Background(), "SELECT json_agg(e)::text FROM auth.authentication_events e").Scan(&auditJSON); err != nil {
+		t.Fatal(err)
+	}
 	for _, secret := range []string{"Aa1!", "DoNotLog@123", "unknown-sensitive", cookies[0].Value, cookies[1].Value} {
 		if strings.Contains(auditJSON+a.logs.String(), secret) {
 			t.Fatal("audit leaked authentication input")

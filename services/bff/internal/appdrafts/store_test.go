@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
@@ -159,8 +160,15 @@ func TestRealPGOwnerCursorDraftList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(second.Items) != 1 || second.NextToken != "" || second.Items[0].ID == first.Items[0].ID {
+	if len(second.Items) != 1 || second.NextToken != "" {
 		t.Fatalf("second page %+v", second)
+	}
+	// All three rows were created in one transaction, so updated_at is tied.
+	// The documented descending UUID tie-break determines the exact two pages.
+	gotIDs := []string{first.Items[0].ID, first.Items[1].ID, second.Items[0].ID}
+	wantIDs := []string{"11111111-1111-4111-8111-111111111114", "11111111-1111-4111-8111-111111111113", "11111111-1111-4111-8111-111111111112"}
+	if !reflect.DeepEqual(gotIDs, wantIDs) {
+		t.Fatalf("complete cursor sequence got %v, want %v", gotIDs, wantIDs)
 	}
 	if err := tx.Rollback(ctx); err != nil {
 		t.Fatal(err)

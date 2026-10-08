@@ -1,0 +1,65 @@
+--- a/contracts/workflow-actions.contract.test.mjs
++++ b/contracts/workflow-actions.contract.test.mjs
+@@ -1,5 +1,6 @@
+ // Root-owned public task-action contract; runtime behavior is covered by Go HTTPS tests.
+ import test from 'node:test';
++import {assertUnordered} from './semantic-assertions.mjs';
+ import assert from 'node:assert/strict';
+ import {readFileSync} from 'node:fs';
+ const api=JSON.parse(readFileSync(new URL('./openapi/openapi.json',import.meta.url)));
+@@ -18,14 +19,20 @@
+  assert.equal(post.responses['202'].content['application/json'].schema.$ref,ref('WorkflowTaskPendingEnvelope'));assert.ok(post.responses['202'].headers.Location);
+ });
+ test('Root V037: exact closed action body and separate pending/final result shapes',()=>{
+- const s=api.components.schemas;assert.deepEqual(s.WorkflowTaskAction.required,['operationId','action','basisToken']);assert.equal(s.WorkflowTaskAction.additionalProperties,false);assert.deepEqual(s.WorkflowTaskAction.properties.action.enum,['agree','reject']);
+- assert.deepEqual(s.WorkflowTaskPending.required,['operationId','commandId','instanceId','status']);assert.equal(s.WorkflowTaskPending.additionalProperties,false);assert.equal(s.WorkflowTaskPending.properties.status.const,'pending');
++ const s=api.components.schemas;assertUnordered(s.WorkflowTaskAction.required,['operationId','action','basisToken']);assert.equal(s.WorkflowTaskAction.additionalProperties,false);assertUnordered(s.WorkflowTaskAction.properties.action.enum,['agree','reject']);
++ assertUnordered(s.WorkflowTaskPending.required,['operationId','commandId','instanceId','status']);assert.equal(s.WorkflowTaskPending.additionalProperties,false);assert.equal(s.WorkflowTaskPending.properties.status.const,'pending');
+  assert.equal(s.WorkflowTaskSuccess.properties.status.const,'success');assert.equal(s.WorkflowTaskNoEffect.properties.status.const,'no_effect');
+- assert.deepEqual(s.WorkflowTaskOperation.oneOf,[{$ref:ref('WorkflowTaskPending')},{$ref:ref('WorkflowTaskSuccess')},{$ref:ref('WorkflowTaskNoEffect')}]);
+- assert.deepEqual(s.ApplicationOperation.properties.httpStatus.enum,[200,201,202,204]);assert.ok(s.ApplicationOperation.properties.result.oneOf.some(x=>x.$ref===ref('WorkflowTaskPending')));
++ assertUnordered(s.WorkflowTaskOperation.oneOf,[{$ref:ref('WorkflowTaskPending')},{$ref:ref('WorkflowTaskSuccess')},{$ref:ref('WorkflowTaskNoEffect')}]);
++ assertUnordered(s.ApplicationOperation.properties.httpStatus.enum,[200,201,202,204]);assert.ok(s.ApplicationOperation.properties.result.oneOf.some(x=>x.$ref===ref('WorkflowTaskPending')));
+  assert.equal(s.WorkflowTaskPreview.properties.editableFieldIds.type,'array');assert.equal(s.WorkflowTaskPreview.properties.editableFieldIds.uniqueItems,true);assert.equal(s.WorkflowTaskPreview.properties.editableFieldIds.maxItems,200);
+- assert.deepEqual(s.WorkflowTaskPreview.required,['basisToken','task','record','fields','editableFieldIds']);assert.equal(s.WorkflowTaskPreview.properties.fields.items.$ref,ref('Field'));assert.equal(s.WorkflowTaskPreview.properties.record.$ref,ref('BusinessRecord'));
+- for(const name of ['WorkflowTaskPending','WorkflowTaskSuccess','WorkflowTaskNoEffect'])for(const forbidden of ['evidenceHash','values','fields','payload','routes','actorId'])assert.equal(s[name].properties[forbidden],undefined);
++ assertUnordered(s.WorkflowTaskPreview.required,['basisToken','task','record','fields','editableFieldIds']);assert.equal(s.WorkflowTaskPreview.properties.fields.items.$ref,ref('Field'));assert.equal(s.WorkflowTaskPreview.properties.record.$ref,ref('BusinessRecord'));
++ const allowed={WorkflowTaskPending:['operationId','commandId','instanceId','status'],WorkflowTaskSuccess:['operationId','commandId','instanceId','status','instanceState','sequence'],WorkflowTaskNoEffect:['operationId','commandId','instanceId','status','instanceState','reason','sequence']};
++ for(const [name,fields] of Object.entries(allowed)){
++  assert.equal(s[name].additionalProperties,false);
++  assertUnordered(Object.keys(s[name].properties),fields,`${name} exact public fields`);
++  assertUnordered(s[name].required,fields,`${name} all public fields required`);
++ }
++ assertUnordered(Object.keys(s.WorkflowTaskAction.properties),['operationId','action','basisToken']);
+ });
+ test('Root V037: stale task/basis and oversized real evidence have public safe conflicts',()=>{
+  for(const code of ['WORKFLOW_TASK_CHANGED','WORKFLOW_BASIS_CHANGED','WORKFLOW_BASIS_EXPIRED','WORKFLOW_EVIDENCE_TOO_LARGE']){
+--- a/contracts/workflow-lifecycle.contract.test.mjs
++++ b/contracts/workflow-lifecycle.contract.test.mjs
+@@ -1,5 +1,6 @@
++import {assertUnordered} from './semantic-assertions.mjs';
+ import test from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';
+ const api=JSON.parse(readFileSync(new URL('./openapi/openapi.json',import.meta.url)));const base='/api/v1/applications/{appId}/forms/{viewId}/records/{recordId}/workflow-instances/{instanceId}';
+ test('V045 lifecycle endpoints retain Session and POST CSRF with private cache policy',()=>{for(const [suffix,method]of [['/lifecycle','get'],['/actions','post']]){const op=api.paths[base+suffix]?.[method];assert.ok(op);assert.deepEqual(op.security,[{WebSession:[]}]);assert.ok(op.parameters.some(p=>p.$ref==='#/components/parameters/ExpectedActor'));for(const status of ['200','400','401','403','404','409','503'])assert.equal(op.responses[status].headers['Cache-Control'].schema.const,'no-store')}const post=api.paths[base+'/actions'].post;assert.ok(post.parameters.some(p=>p.$ref==='#/components/parameters/CsrfToken'));assert.equal(post.requestBody['x-max-body-bytes'],4096);assert.ok(post.responses['202'].headers.Location)});
+-test('V045 withdrawal and return bodies are disjoint closed shapes with server task authority',()=>{const s=api.components.schemas.WorkflowLifecycleAction;assert.ok(s);assert.equal(s.oneOf.length,2);const[w,r]=s.oneOf;assert.equal(w.additionalProperties,false);assert.equal(r.additionalProperties,false);assert.equal(w.properties.action.const,'withdraw');assert.equal(r.properties.action.const,'return');assert.deepEqual(w.required,['operationId','action','basisToken']);assert.deepEqual(r.required,['operationId','action','basisToken','targetNodeId']);for(const shape of [w,r])for(const key of ['actorId','taskId','taskEpoch','recordVersion','canWithdraw'])assert.equal(shape.properties[key],undefined)});
+-test('V045 lifecycle preview exposes masked record and bounded server targets',()=>{const s=api.components.schemas.WorkflowLifecyclePreview;assert.ok(s);assert.equal(s.additionalProperties,false);assert.deepEqual(s.required,['basisToken','instance','record','fields','canWithdraw','returnTargets']);assert.equal(s.properties.returnTargets.maxItems,100);assert.equal(s.properties.record.$ref,'#/components/schemas/BusinessRecord');assert.equal(s.properties.fields.items.$ref,'#/components/schemas/Field');assert.equal(s.properties.evidenceHash,undefined)});
++test('V045 withdrawal and return bodies are disjoint closed shapes with server task authority',()=>{const s=api.components.schemas.WorkflowLifecycleAction;assert.ok(s);assert.equal(s.oneOf.length,2);assertUnordered(s.oneOf.map(shape=>shape.properties.action.const),['withdraw','return']);const w=s.oneOf.find(shape=>shape.properties.action.const==='withdraw'),r=s.oneOf.find(shape=>shape.properties.action.const==='return');assert.equal(w.additionalProperties,false);assert.equal(r.additionalProperties,false);assert.equal(w.properties.action.const,'withdraw');assert.equal(r.properties.action.const,'return');assertUnordered(w.required,['operationId','action','basisToken']);assertUnordered(r.required,['operationId','action','basisToken','targetNodeId']);assertUnordered(Object.keys(w.properties),['operationId','action','basisToken']);assertUnordered(Object.keys(r.properties),['operationId','action','basisToken','targetNodeId'])});
++test('V045 lifecycle preview exposes masked record and bounded server targets',()=>{const s=api.components.schemas.WorkflowLifecyclePreview;assert.ok(s);assert.equal(s.additionalProperties,false);assertUnordered(s.required,['basisToken','instance','record','fields','canWithdraw','returnTargets']);assert.equal(s.properties.returnTargets.maxItems,100);assert.equal(s.properties.record.$ref,'#/components/schemas/BusinessRecord');assert.equal(s.properties.fields.items.$ref,'#/components/schemas/Field');assertUnordered(Object.keys(s.properties),['basisToken','instance','record','fields','canWithdraw','returnTargets'])});
+--- /dev/null
++++ b/contracts/semantic-assertions.mjs
+@@ -0,0 +1,15 @@
++import assert from 'node:assert/strict';
++
++// JSON Schema required/enum/composition alternatives are unordered. Values
++// inside an enum still retain their own array order and exact structure.
++function canonical(value) {
++  if (Array.isArray(value)) return value.map(canonical);
++  if (value && typeof value === 'object') return Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])]));
++  return value;
++}
++export function assertUnordered(actual, expected, message) {
++  assert.ok(Array.isArray(actual), message ?? 'expected an actual array');
++  assert.ok(Array.isArray(expected), 'expected an independent array oracle');
++  const encode = values => values.map(value => JSON.stringify(canonical(value))).sort();
++  assert.deepEqual(encode(actual), encode(expected), message);
++}

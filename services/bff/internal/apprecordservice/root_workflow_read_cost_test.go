@@ -1,8 +1,12 @@
+//go:build weaveos_cost
+
 package apprecordservice
 
 import (
 	"context"
+	"crypto/md5"
 	"encoding/json"
+	"fmt"
 	"github.com/jackc/pgx/v5"
 	"os"
 	"reflect"
@@ -30,7 +34,8 @@ func TestRootWorkflowReadSyntheticAccessPaths(t *testing.T) {
 		t.Fatal(e)
 	}
 	defer tx.Rollback(context.Background())
-	if _, e = tx.Exec(ctx, `CREATE TEMP TABLE root_read_cost_instances (LIKE applications.workflow_instances INCLUDING ALL) ON COMMIT DROP;
+	if _, e = tx.Exec(ctx, `CREATE TEMP TABLE root_read_cost_instances (LIKE applications.workflow_instances INCLUDING ALL EXCLUDING INDEXES) ON COMMIT DROP;
+ALTER TABLE root_read_cost_instances ADD PRIMARY KEY (id);
 CREATE TEMP TABLE root_read_cost_definitions(app_id uuid NOT NULL,id uuid PRIMARY KEY,name text NOT NULL) ON COMMIT DROP;
 INSERT INTO root_read_cost_definitions VALUES('10000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000003','Synthetic flow');
 INSERT INTO root_read_cost_instances(id,app_id,table_id,flow_id,view_id,record_id,initiator_id,definition_version,state,sequence,created_at,updated_at)
@@ -45,8 +50,14 @@ ANALYZE root_read_cost_instances; ANALYZE root_read_cost_definitions;`); e != ni
 	args := []any{"10000000-0000-4000-8000-000000000001", "10000000-0000-4000-8000-000000000002", record}
 	base := strings.ReplaceAll(strings.ReplaceAll(workflowReadSelect, "applications.workflow_instances", "root_read_cost_instances"), "applications.workflow_definitions", "root_read_cost_definitions") + workflowReadOrder
 	var expected []string
-	for _, variant := range []string{"existing", "prefix", "ordered"} {
-		if variant != "existing" {
+	// 100,000 rows across 100 records: record 0 has n=100,200,...,100000.
+	// In descending timestamp order, OFFSET 980 contains n=2000 down to 100.
+	for n := 2000; n >= 100; n -= 100 {
+		hash := md5.Sum([]byte(fmt.Sprintf("instance-%d", n)))
+		expected = append(expected, fmt.Sprintf("%x-%x-%x-%x-%x", hash[:4], hash[4:6], hash[6:8], hash[8:10], hash[10:]))
+	}
+	for _, variant := range []string{"no_record_index", "prefix", "ordered"} {
+		if variant != "no_record_index" {
 			suffix := ""
 			if variant == "ordered" {
 				suffix = ",created_at DESC,id DESC"
@@ -76,16 +87,35 @@ ANALYZE root_read_cost_instances; ANALYZE root_read_cost_definitions;`); e != ni
 			t.Fatal(e)
 		}
 		rows.Close()
-		if variant == "existing" {
-			expected = actual
-			if len(expected) != 20 {
-				t.Fatalf("fixture deep page length %d", len(expected))
-			}
-		} else if !reflect.DeepEqual(expected, actual) {
-			t.Fatal("index changed result order")
+		if !reflect.DeepEqual(expected, actual) {
+			t.Fatalf("variant %s returned wrong independent deep-page identities: got %v want %v", variant, actual, expected)
 		}
+		indexRows, e := tx.Query(ctx, "SELECT pg_get_indexdef(indexrelid) FROM pg_index WHERE indrelid='root_read_cost_instances'::regclass ORDER BY indexrelid")
+		if e != nil {
+			t.Fatal(e)
+		}
+		var indexes []string
+		for indexRows.Next() {
+			var definition string
+			if e = indexRows.Scan(&definition); e != nil {
+				t.Fatal(e)
+			}
+			indexes = append(indexes, definition)
+		}
+		if e = indexRows.Err(); e != nil {
+			t.Fatal(e)
+		}
+		indexRows.Close()
+		expectedCount := 2
+		if variant == "no_record_index" {
+			expectedCount = 1
+		}
+		if len(indexes) != expectedCount {
+			t.Fatalf("confounded %s index set: %v", variant, indexes)
+		}
+		t.Logf("ACCESS_PATH_INDEXES variant=%s definitions=%q", variant, indexes)
 		var size int64
-		if variant != "existing" {
+		if variant != "no_record_index" {
 			if e = tx.QueryRow(ctx, "SELECT pg_relation_size('root_read_cost_candidate')").Scan(&size); e != nil {
 				t.Fatal(e)
 			}
@@ -99,7 +129,7 @@ ANALYZE root_read_cost_instances; ANALYZE root_read_cost_definitions;`); e != ni
 				t.Logf("ACCESS_PATH variant=%s query=%s sample=%d rows=100000 related=1000 index_bytes=%d plan=%s", variant, query.name, sample, size, plan)
 			}
 		}
-		if variant != "existing" {
+		if variant != "no_record_index" {
 			if _, e = tx.Exec(ctx, "DROP INDEX root_read_cost_candidate"); e != nil {
 				t.Fatal(e)
 			}

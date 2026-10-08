@@ -5,6 +5,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
 import java.util.logging.Level;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
@@ -36,24 +39,32 @@ class RootRuntimeLoggingTest {
         for (String forbidden : new String[]{SECRET, "INSERT INTO", "<bpmn>", "forged-line", "SQLException", "Caused by:", "private-debug"})
             assertFalse(output.contains(forbidden), "free-form library payload escaped: " + forbidden);
     }
+    void exactSignals(String output,List<String> expected) {
+        var safe=Pattern.compile("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3} (WARN|ERROR) +([A-Za-z0-9_.$]+) event=runtime_library_log$");
+        var events=new ArrayList<String>();int completed=0;
+        for(String line:output.lines().toList()) {
+            if(line.equals("probe-complete")){completed++;continue;}
+            var match=safe.matcher(line);
+            assertTrue(match.matches(),"every line must be a bounded diagnostic record: "+line);
+            events.add(match.group(1)+" "+match.group(2));
+        }
+        assertEquals(1,completed);assertEquals(expected,events);
+    }
     @Test void slf4jLibraryFailuresKeepSignalWithoutPayloadOrStack() throws Exception {
         String output = run("slf"); noPayload(output);
-        assertTrue(output.contains(SLF_LOGGER)); assertTrue(output.contains("ERROR"));
+        exactSignals(output,List.of("ERROR "+SLF_LOGGER));
     }
     @Test void julLibraryFailuresUseTheSameSafeBoundary() throws Exception {
         String output = run("jul"); noPayload(output);
-        assertTrue(output.contains(JUL_LOGGER)); assertTrue(output.contains("ERROR"));
+        exactSignals(output,List.of("ERROR "+JUL_LOGGER));
     }
     @Test void verboseLibraryMessagesAreNotEnabledByDefault() throws Exception {
         String output = run("verbose"); noPayload(output);
-        assertFalse(output.contains("org.flowable.verboseprobe"));
-        assertTrue(output.contains(SLF_LOGGER)); assertTrue(output.contains("WARN"));
+        exactSignals(output,List.of("WARN "+SLF_LOGGER));
     }
     @Test void repeatedInitializationDoesNotSilenceOrDuplicateWarnings() throws Exception {
         String output = run("repeat"); noPayload(output);
-        assertEquals(1, output.split(java.util.regex.Pattern.quote(SLF_LOGGER), -1).length - 1);
-        assertEquals(1, output.split(java.util.regex.Pattern.quote(JUL_LOGGER), -1).length - 1);
-        assertTrue(output.contains("WARN"));
+        exactSignals(output,List.of("WARN "+SLF_LOGGER,"WARN "+JUL_LOGGER));
     }
     public static final class Probe {
         public static void main(String[] args) {

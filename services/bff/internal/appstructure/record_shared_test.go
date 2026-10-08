@@ -8,6 +8,8 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"reflect"
+	"sort"
 	"testing"
 	"time"
 )
@@ -62,20 +64,23 @@ func TestDataGrantReplacementPersistsExactMasksAndRegisteredFormMenu(t *testing.
 	}
 	data(t, rootCall(t, f, "PUT", base+"/"+group+"/grants", map[string]any{"grants": grants, "operationId": uuid(t, f.owner), "expectedPolicyRevision": 2}, f.actor), 200)
 	stored := data(t, rootCall(t, f, "GET", base+"/"+group+"/grants", nil, f.actor), 200)["grants"].([]any)
-	if len(stored) != 4 {
-		t.Fatalf("complete grants dropped %+v", stored)
-	}
-	for _, raw := range stored {
-		grant := raw.(map[string]any)
-		mask := grant["fields"].([]any)
-		if grant["action"] == "data.read" || grant["action"] == "data.history" {
-			if len(mask) != 1 || mask[0] != number["id"] {
-				t.Fatalf("field mask lost %+v", grant)
+	canonical := func(values []any) []string {
+		t.Helper()
+		result := make([]string, len(values))
+		for i, value := range values {
+			raw, err := json.Marshal(value)
+			if err != nil {
+				t.Fatal(err)
 			}
-		} else if len(mask) != 0 {
-			t.Fatal("defaults-only create/menu masks changed", grant)
+			result[i] = string(raw)
 		}
+		sort.Strings(result)
+		return result
 	}
+	if got, want := canonical(stored), canonical(grants); !reflect.DeepEqual(got, want) {
+		t.Fatalf("complete resource/action/row scope/field grants got %v, want %v", got, want)
+	}
+
 	foreign := map[string]any{"resourceKind": "form", "resourceId": view, "action": "data.edit", "rowScope": "all", "fields": []string{uuid(t, f.owner)}}
 	w := rootCall(t, f, "PUT", base+"/"+group+"/grants", map[string]any{"grants": []any{foreign}, "operationId": uuid(t, f.owner), "expectedPolicyRevision": 3}, f.actor)
 	if w.Code != 400 {

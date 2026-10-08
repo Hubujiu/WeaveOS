@@ -1,0 +1,72 @@
+[
+  {
+    "name": "bff",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "-p",
+      "1",
+      "-count=1",
+      "-json",
+      "-run",
+      "TestRootWorkflowReadHTTPSCurrentSummaryAndClosedProjection|TestRootWorkflowSaveHTTPRealHostSaveAndGenericReceipt|TestRootMainProcessSigtermStopsClaimsBeforeWaitingForActiveHttp",
+      "./cmd/bff"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048/services/bff",
+    "started": "2026-10-07T13:42:45.909115+00:00",
+    "finished": "2026-10-07T13:43:03.281405+00:00",
+    "exit": 0,
+    "52_sources_and_openapi_hashes_unchanged": true
+  },
+  {
+    "name": "java",
+    "command": [
+      "bash",
+      "services/workflow-engine/run-tests.sh",
+      "-Dtest=RootRuntimeLoggingTest",
+      "-Dworkflow.reports=target/v048-log-reports",
+      "test"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048",
+    "started": "2026-10-07T13:43:03.283693+00:00",
+    "finished": "2026-10-07T13:43:29.682451+00:00",
+    "exit": 0,
+    "52_sources_and_openapi_hashes_unchanged": true
+  },
+  {
+    "name": "b2-fixture-start",
+    "command": [
+      "node",
+      "infra/acceptance/run.mjs",
+      "b2-fixture-start",
+      "/workspace/.weaveos-v030-048/b2.env",
+      "/workspace/.weaveos-v030-048/b2-state.json"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048",
+    "started": "2026-10-07T13:43:29.684924+00:00",
+    "finished": "2026-10-07T13:43:42.321147+00:00",
+    "exit": 0,
+    "52_sources_and_openapi_hashes_unchanged": true
+  },
+  {
+    "name": "appschema",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "-p",
+      "1",
+      "-count=1",
+      "-json",
+      "-run",
+      "TestSaveMetadataFailureRollsBackPhysicalAndMetadata|TestApplyInCallerTransactionCanRollbackDDLAndMetadata|TestCommonPhysicalTypesAreRealPGColumns",
+      "./internal/appschema"
+    ],
+    "cwd": "/workspace/WeaveOS-worktrees/V030-048/services/bff",
+    "started": "2026-10-07T13:43:42.324229+00:00",
+    "finished": "2026-10-07T13:43:45.418890+00:00",
+    "exit": 0,
+    "52_sources_and_openapi_hashes_unchanged": true
+  }
+]
