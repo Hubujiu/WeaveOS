@@ -9,10 +9,10 @@ import { ApplicationCards, ApplicationCatalog } from '../catalog/ApplicationCata
 import { CreateApplication } from '../catalog/CreateApplication';
 import { useApplications } from '../useApplications';
 import { useApplicationOperation } from '../useApplicationOperation';
+import { validCreatedApplication } from '../creationReceipt';
 import '../applications.css';
 
 const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
-const validCreatedApplication = (app: Application, actorId: string) => uuid.test(app?.id) && typeof app.name === 'string' && app.name.trim().length > 0 && app.ownerUserId === actorId && app.policyRevision === 1;
 
 export function AppShell({ user, access, logout, pending, error, onDirty, onPermissionDirty, onFormsDirty, registerLeaveGuard, requestSectionLeave, onAuthLost, onIdentityMismatch, suspended, adminContent }: { user: User; access: Access; logout: () => void; pending: boolean; error: string; onDirty: (dirty: boolean) => void; onPermissionDirty: (dirty: boolean, summary: string) => void; onFormsDirty: (dirty: boolean) => void; registerLeaveGuard: RegisterLeaveGuard; requestSectionLeave: (action: () => void) => void; onAuthLost: () => void; onIdentityMismatch: () => void; suspended: boolean; adminContent?: ReactNode }) {
  const location = useLocation(); const navigate = useNavigate();

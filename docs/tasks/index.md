@@ -1,5 +1,7 @@
 # v0.1.0 任务索引
 
+- [V030-050 · 剩余重复测试删减与回执分层](V030-050.md) — task/V030-050-test-reduction / ../WeaveOS-worktrees/V030-050；基线 develop771732e9。Root 编写与验收，先记录替代覆盖，再精简人员重复布局和创建回执浏览器矩阵；实际验证与最终状态见任务和 Notion，当前 in_progress。
+
 - [V030-049 · CI 提速与完整测试身份汇总](V030-049.md) — task/V030-049-ci-throughput / ../WeaveOS-worktrees/V030-049；初始基线develop67eb444d，现已将PR57 squash后的develop3272446无冲突合入准备现场，尚未提交/冻结。缓存/preflight/组件四片及容器公共依赖接线按Root原件有效RED→GREEN，Python7/Node60定向PASS，整合后治理/底座/契约380PASS、0skip；整合后固定工具真实--list500项/36文件（原502三删一增），仅一原有WebKit-only能力skip获准。实际四片/冷热失效/完整product/CI待Root冻结后运行；授权本地检查点71bba112及该HEAD secret-only1PASS，71b已按Root授权单次推送；Python实际runtime key及performance入口按Root合同RED→GREEN，保留不提交整合现场待Root源码审查；无PR/手动CI/main/部署。
 
 Java 审批命令身份 A 段：[V030-030](V030-030.md)，task/V030-030-engine-execution / ../WeaveOS-worktrees/V030-030；精确 V029 80e4151 基线及 Root f869911 测试，[draft PR40](https://github.com/Hubujiu/WeaveOS/pull/40) 叠在 V029。云环境真实 Java8/独立门禁12 RED→GREEN，旧部署18/RPC9/互操作1/proof24通过；Root 提供全部测试及 CI 枚举，执行者仅实现 CommandEnvelope 和受测独立门禁，复用指定安全补丁。最终远端 CI 待查询，B/C 合同待 Root，前端暂停，无 main 合并或部署。
