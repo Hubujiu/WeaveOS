@@ -1,6 +1,8 @@
 # v0.1.0 任务索引
 
-- [V030-055 · 磁盘准备真实拒绝与调用边界](V030-055.md) — task/V030-055-hosted-disk-oracle / ../WeaveOS-worktrees/V030-055；基线 develop `0ab6986c`，仅补齐真实 Bash 控制流与副作用调用观察，保留原安全守卫，当前 in_progress。
+- [V030-056 · BPMN 固定图边完整映射验证](V030-056.md) — task/V030-056-bpmn-edge-oracle / ../WeaveOS-worktrees/V030-056；基线 develop `a6f04840`，只加强既有固定样例的边/default集合，当前 in_progress。
+
+- [V030-055 · 磁盘准备真实拒绝与调用边界](V030-055.md) — [PR #63](https://github.com/Hubujiu/WeaveOS/pull/63) 已合入 develop `a6f04840`；四个原文字漏检已由真实Bash调用矩阵检出，最终三workflow20jobs首轮通过，原安全守卫保留。
 
 - [V030-054 · 登录响应敏感字段契约校验](V030-054.md) — [PR #62](https://github.com/Hubujiu/WeaveOS/pull/62) 已合入 develop `0ab6986c`；真实 Schema 校验、四层反例及完整 CI 已验收，首轮 WebKit 准备失败与同头复跑保留，冻结文档保留验收前状态。
 
