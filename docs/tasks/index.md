@@ -1,6 +1,8 @@
 # v0.1.0 任务索引
 
-- [V030-051 · 生产筛选管理器覆盖迁移与旧测试退役](V030-051.md) — task/V030-051-filter-test-migration / ../WeaveOS-worktrees/V030-051；基线 develop3a33e71，Root 亲自编写测试与验收，先补现用组件独有覆盖再退役旧 panel 测试，当前 in_progress。
+- [V030-052 · 完整密码Schema校验](V030-052.md) — task/V030-052-password-schema-validation / ../WeaveOS-worktrees/V030-052；基线 develop `440d171e`，先验证旧解释器的JSON类型漏检，再接入标准校验器。当前 in_progress。
+
+- [V030-051 · 生产筛选管理器覆盖迁移与旧测试退役](V030-051.md) — [PR #60](https://github.com/Hubujiu/WeaveOS/pull/60) 已合入 develop `440d171e`；完整CI及两轮真实产品验收通过，默认组件490项，最终事实与归档见本批Notion。冻结任务保留验收前记录。
 
 - [V030-050 · 剩余重复测试删减与回执分层](V030-050.md) — [PR #59](https://github.com/Hubujiu/WeaveOS/pull/59) 已于 2026-10-08 合入 develop `3a33e710`，最终 source `e41ab9e0`；重复人员布局与创建回执矩阵已精简，冻结任务保留合入前记录。剩余生产筛选覆盖迁移见 V030-051。
 

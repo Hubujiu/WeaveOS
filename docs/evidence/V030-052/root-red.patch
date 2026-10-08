@@ -1,0 +1,62 @@
+--- a/contracts/password-ascii.contract.test.mjs
++++ b/contracts/password-ascii.contract.test.mjs
+@@ -12,7 +12,7 @@
+ }
+ test('Q13: registration schema accepts only printable ASCII with four classes', () => {
+   const schema = properties('/api/v1/registrations').password;
+-  for (const [value, expected] of [['Aa1!', true], [' Aa1! ', true], ['Aa1~', true], ['Aa1!中', false], ['Aa1!\t', false], ['Aa1!\n', false], ['Aa1!\x7f', false], ['Aa1 ', false], ['aa1!', false], ['AA1!', false], ['Aa!!', false]]) {
++  for (const [value, expected] of [['Aa1!', true], [' Aa1! ', true], ['Aa1~', true], ['Aa1!中', false], ['Aa1!\t', false], ['Aa1!\n', false], ['Aa1!\x7f', false], ['Aa1 ', false], ['aa1!', false], ['AA1!', false], ['Aa!!', false], [['A', 'a', '1', '!'], false], [null, false], [true, false], [1234, false], [{}, false]]) {
+     assert.equal(accepts(schema, value), expected, 'approved synthetic password fixture must match schema');
+   }
+ });
+--- a/docs/tasks/index.md
++++ b/docs/tasks/index.md
+@@ -1,6 +1,8 @@
+ # v0.1.0 任务索引
+ 
+-- [V030-051 · 生产筛选管理器覆盖迁移与旧测试退役](V030-051.md) — task/V030-051-filter-test-migration / ../WeaveOS-worktrees/V030-051；基线 develop3a33e71，Root 亲自编写测试与验收，先补现用组件独有覆盖再退役旧 panel 测试，当前 in_progress。
++- [V030-052 · 完整密码Schema校验](V030-052.md) — task/V030-052-password-schema-validation / ../WeaveOS-worktrees/V030-052；基线 develop `440d171e`，先验证旧解释器的JSON类型漏检，再接入标准校验器。当前 in_progress。
++
++- [V030-051 · 生产筛选管理器覆盖迁移与旧测试退役](V030-051.md) — [PR #60](https://github.com/Hubujiu/WeaveOS/pull/60) 已合入 develop `440d171e`；完整CI及两轮真实产品验收通过，默认组件490项，最终事实与归档见本批Notion。冻结任务保留验收前记录。
+ 
+ - [V030-050 · 剩余重复测试删减与回执分层](V030-050.md) — [PR #59](https://github.com/Hubujiu/WeaveOS/pull/59) 已于 2026-10-08 合入 develop `3a33e710`，最终 source `e41ab9e0`；重复人员布局与创建回执矩阵已精简，冻结任务保留合入前记录。剩余生产筛选覆盖迁移见 V030-051。
+ 
+--- /dev/null
++++ b/docs/tasks/V030-052.md
+@@ -0,0 +1,36 @@
++# V030-052 · 完整密码 Schema 校验
++
++<!-- task-meta
++{"id":"V030-052","title":"完整密码Schema校验","branch":"task/V030-052-password-schema-validation","worktree":"../WeaveOS-worktrees/V030-052","pr":null,"owner":"Root 亲自计划、测试、debug 与验收；执行环境机械执行精确补丁和命令","dependsOn":["V030-051"],"allowedPaths":["contracts/password-ascii.contract.test.mjs","package.json","pnpm-lock.yaml","docs/tasks/V030-052.md","docs/tasks/index.md","docs/evidence/V030-052/"],"deliveryState":"in_progress"}
++-->
++
++## Sources
++- 用户明确继续剩余测试优化；原审计 ORACLE-007 保留了完整校验器替换事项。
++- [本批 PRD](https://app.notion.com/p/3f32f5a9e6488147a531d2c4eebfad7f)
++- [本批 ADR](https://app.notion.com/p/3f32f5a9e648819eacc2e6cb5fed399b)
++- Root 于 2026-10-08 10:44–10:45 UTC 实读项目、PRD、Architecture 入口，当前认证 PRD FR-018/Q13、已接受 ADR-001 §3.3 与 ADR-002 所用类型/契约边界。PRD 最近更新 2026-09-30，ADR-001 为 2026-09-26，ADR-002 为 2026-10-01；不是依据旧索引状态。
++- [认证 PRD](https://app.notion.com/p/3e52f5a9e64880cd951fea95bdde9cdd)、[ADR-001](https://app.notion.com/p/3e52f5a9e64881c2b972d71ab1fc2e93)、[ADR-002](https://app.notion.com/p/3e52f5a9e648813da842e2ef15a09b3a)
++- 精确基线 develop `440d171ebca38ff97962aa24f391391fb029b431`，不修改 V051 已验收源码。
++
++## Scope
++只替换密码契约测试里的部分 JSON Schema 解释器。Q13 仍要求 JSON 字符串、可打印 ASCII 和四类字符；普通空格保留但不计特殊符号，不 trim、不规范化、不额外加长度下限。已有 11 个合成字符串样本和账号归一化检查保留，新增数组/null/布尔/数字/对象五类 JSON 类型样本；仍为原两个测试身份。
++
++测试先在旧 accepts 上观察可字符串化数组被误接收的真实 RED，再接入精确开发依赖 Ajv 8.20.0 的 2020-12 入口。仅编译权威 OpenAPI 的实际 password Schema Object；format=password 单独按 OAS 注解登记，不全局关闭格式校验、不启用类型转换/默认值/删字段。未用于生产认证，也不宣称 Ajv 校验整份 OpenAPI 3.2.1。
++
++不修改 OpenAPI、密码业务规则、Go BFF、前端、数据库、现有真实注册 API 测试或其他审计项。依赖锁必须核对原有版本未变；任何新决策先回写计划。main 推广和部署不在授权内。
++
++## Acceptance
++- [x] 修改前实际读取来源，Notion PRD/ADR 已创建并回读。
++- [ ] 旧解释器对新增 JSON 类型矩阵实际出现目标行为 RED；保留原件/命令/输出，环境错误不算 RED。
++- [ ] 标准校验器实际编译并通过全部 16 样本；原有账号检查保持；依赖精确锁定且原有版本不变。
++- [ ] 隔离引入错误长度约束等契约破坏导致真实断言失败，恢复原字节后通过；不把编译/环境失败冒充行为证据。
++- [ ] 全契约、底座/治理、类型、lint/build、范围及秘密扫描通过，最终精确候选完整适用 CI 通过。
++- [ ] Root 最终审查与结果归档，按已授权流程集成 develop。
++
++## Progress
++当前只有 Root 编写的 RED 矩阵与任务文档，旧 accepts 保持。尚未安装 Ajv、修改解释器或声称测试已运行。预期数组类型拒绝可揭示旧解释器对非字符串的 JavaScript 隐式转换；必须以实际运行结果确认。
++
++## Handoff
++下一条命令：固定 Node 24.14.0 执行 node --test contracts/password-ascii.contract.test.mjs，单次保留 stdout/stderr、退出码和精确源码哈希。预期第一项在新增数组输入处发生 actual true / expected false 的断言失败，账号规则项仍通过。若失败原因不符，先交 Root 诊断，不自行改预期、安装依赖、补实现或重跑。
++
++有效 RED 后由 Root 发最小 Ajv 接线及精确开发依赖补丁，再生成和审阅 lock。各阶段证据纳入同 ID 目录；最终通过状态写回 Notion，不额外制造代码候选。未经完整验收不 mark-ready 或合并，main 与部署仍须适用的独立授权。
