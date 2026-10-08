@@ -30,6 +30,7 @@ export function TablePresetManager(props:Props){
  const intent=useRef(false),everOpened=useRef(false),generation=useRef(0),animation=useRef<Animation[]>([]),sharedGeneration=useRef(0),sharedFrame=useRef(0),sharedTimer=useRef(0),requests=useRef(0);
  const outsideClose=useRef<(()=>void)|null>(null);
  const focusLifecycle=useRef(0),closeFocus=useRef<{token:number;popup:HTMLDivElement|null}|null>(null);
+ const openingFocus=useRef(false);
  const sharedVersion=sharedGeneration.current,focusVersion=focusLifecycle.current,panelId=useId(),sharedName=`q36-preset-shell-${panelId.replace(/[^a-zA-Z0-9_-]/g,'-')}`;
  const sharedMotion=!reducedMotion&&typeof document.startViewTransition==='function'&&navigator.vendor!=='Apple Computer, Inc.';
  const columns=view==='resource'?resource!.columns:view==='members'?memberBusinessColumns:eventBusinessColumns;
@@ -56,8 +57,31 @@ export function TablePresetManager(props:Props){
  // Returning a target lets Base UI queue another focus transfer. Perform the
  // restoration under the shared authority here, then suppress that extra move.
  const finalFocus:Popover.Popup.Props['finalFocus']=closeType=>{restoreCloseFocus(focusLifecycle.current,closeType==='keyboard');return false;};
+ function focusReadyControl(){
+  const control=firstControl.current;
+  if(!openingFocus.current||!intent.current||!control?.isConnected||control.disabled||control.closest('[inert]'))return;
+  const active=document.activeElement;
+  if(active===control){openingFocus.current=false;return;}
+  if(active!==document.body&&active!==document.documentElement&&active!==trigger.current&&active!==popup)return;
+  control.focus({preventScroll:true});
+  if(document.activeElement===control)openingFocus.current=false;
+ }
+ // Initial focus can run while the popup is inert or the list is loading.
+ // Retry only when the real control is ready and this opening still owns focus.
+ useLayoutEffect(()=>{
+  if(!open||!expanded||listLoading)return;
+  const frame=requestAnimationFrame(focusReadyControl);
+  return()=>cancelAnimationFrame(frame);
+ },[open,expanded,listLoading,popup]);
  useLayoutEffect(()=>{
   function newerInteraction(event:Event){
+   if(openingFocus.current){
+    if(event.type==='focusin'){
+     const target=event.target as Node|null,first=firstControl.current;
+     if(target===first)openingFocus.current=false;
+     else if(target!==document.body&&target!==document.documentElement&&target!==trigger.current&&target!==first?.closest('.preset-popup'))openingFocus.current=false;
+    }else if(event.type!=='keydown'||!['Escape','Shift','Control','Alt','Meta'].includes((event as KeyboardEvent).key))openingFocus.current=false;
+   }
    const pending=closeFocus.current;if(!pending)return;
    if(event.type==='focusin'){
     const target=event.target as Node|null;
@@ -74,13 +98,15 @@ export function TablePresetManager(props:Props){
  }
  function sharedComplete(version:number,focusToken:number){
   if(version!==sharedGeneration.current)return;requestAnimationFrame(()=>{if(version!==sharedGeneration.current)return;
-   if(intent.current&&(document.activeElement===popup||!popup?.contains(document.activeElement)))firstControl.current?.focus({preventScroll:true});
+   focusReadyControl();
    const motions=document.getAnimations().filter(a=>a.effect instanceof KeyframeEffect&&a.effect.pseudoElement?.startsWith('::view-transition'));
    Promise.allSettled(motions.map(a=>a.finished)).then(()=>finishShared(version,focusToken));
   });
  }
  function changeOpen(next:boolean,restoreFocus=true){
   outsideClose.current?.();
+  if(next&&!intent.current)openingFocus.current=true;
+  if(!next)openingFocus.current=false;
   if(next||next!==intent.current){invalidateCloseFocus();if(!next&&restoreFocus)closeFocus.current={token:focusLifecycle.current,popup};}else if(!restoreFocus)invalidateCloseFocus();
   intent.current=next;if(next)everOpened.current=true;const focusToken=focusLifecycle.current;
   if(sharedMotion){const version=++sharedGeneration.current;cancelAnimationFrame(sharedFrame.current);clearTimeout(sharedTimer.current);
@@ -126,7 +152,7 @@ export function TablePresetManager(props:Props){
    if(content)animation.current.push(content.animate([{opacity:previous.length?opacity:open?0:1},{opacity:open?1:0}],{duration:open?160:80,delay:open?100:0,fill:'both',easing:'ease-out'}));motion.finished.then(complete,()=>{});
   });return()=>{generation.current++;cancelAnimationFrame(frame);};
  },[open,popup,sharedMotion,reducedMotion]);
- useLayoutEffect(()=>()=>{outsideClose.current?.();invalidateCloseFocus();requests.current++;generation.current++;sharedGeneration.current++;animation.current.forEach(a=>a.cancel());cancelAnimationFrame(sharedFrame.current);clearTimeout(sharedTimer.current);document.documentElement.classList.remove('q36-filter-transition-active','q36-preset-transition-active');},[]);
+ useLayoutEffect(()=>()=>{openingFocus.current=false;outsideClose.current?.();invalidateCloseFocus();requests.current++;generation.current++;sharedGeneration.current++;animation.current.forEach(a=>a.cancel());cancelAnimationFrame(sharedFrame.current);clearTimeout(sharedTimer.current);document.documentElement.classList.remove('q36-filter-transition-active','q36-preset-transition-active');},[]);
  function begin(preset:ManagedPreset|null){const invalid=resource&&preset&&'invalid'in preset&&preset.invalid;const next={preset,name:preset?.name??'',blocks:presetBlocks(invalid?null:preset?.filter,filterKey),hidden:[...(invalid?hiddenColumnIds:(preset?.hiddenColumnIds??hiddenColumnIds))],initial:''};next.initial=contentKey(next,filterKey);setEdit(next);setConflict(false);setError('');setHiddenSearch('');setShownSearch('');}
  async function readEdit(item:ManagedPreset){if(busy)return;setBusy(true);setError('');try{if(resource&&'invalid'in item&&item.invalid){begin(item);return;}const latest=resource?await resource.repository.read(item.id):await workspaceApi<TablePreset>('personnel/table-presets/'+item.id);if(resource&&'invalid'in latest&&latest.invalid){begin(latest);return;}if(!editablePresetFilter(latest.filter))throw new Error('方案包含当前编辑器无法表达的筛选树，已保留原条件；不能静默转换或保存。');begin(latest);}catch(e){failed(e);}finally{setBusy(false);}}
  function patchRow(blockId:string,rowId:string,patch:Partial<PresetRow>){setEdit(e=>e?{...e,blocks:e.blocks.map(b=>b.id===blockId?{...b,rows:b.rows.map(r=>r.id===rowId?{...r,...patch}:r)}:b)}:e);}

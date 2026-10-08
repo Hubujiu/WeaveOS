@@ -1,8 +1,10 @@
 # v0.1.0 任务索引
 
-- [V030-050 · 剩余重复测试删减与回执分层](V030-050.md) — task/V030-050-test-reduction / ../WeaveOS-worktrees/V030-050；基线 develop771732e9。Root 编写与验收，先记录替代覆盖，再精简人员重复布局和创建回执浏览器矩阵；实际验证与最终状态见任务和 Notion，当前 in_progress。
+- [V030-051 · 生产筛选管理器覆盖迁移与旧测试退役](V030-051.md) — task/V030-051-filter-test-migration / ../WeaveOS-worktrees/V030-051；基线 develop3a33e71，Root 亲自编写测试与验收，先补现用组件独有覆盖再退役旧 panel 测试，当前 in_progress。
 
-- [V030-049 · CI 提速与完整测试身份汇总](V030-049.md) — task/V030-049-ci-throughput / ../WeaveOS-worktrees/V030-049；初始基线develop67eb444d，现已将PR57 squash后的develop3272446无冲突合入准备现场，尚未提交/冻结。缓存/preflight/组件四片及容器公共依赖接线按Root原件有效RED→GREEN，Python7/Node60定向PASS，整合后治理/底座/契约380PASS、0skip；整合后固定工具真实--list500项/36文件（原502三删一增），仅一原有WebKit-only能力skip获准。实际四片/冷热失效/完整product/CI待Root冻结后运行；授权本地检查点71bba112及该HEAD secret-only1PASS，71b已按Root授权单次推送；Python实际runtime key及performance入口按Root合同RED→GREEN，保留不提交整合现场待Root源码审查；无PR/手动CI/main/部署。
+- [V030-050 · 剩余重复测试删减与回执分层](V030-050.md) — [PR #59](https://github.com/Hubujiu/WeaveOS/pull/59) 已于 2026-10-08 合入 develop `3a33e710`，最终 source `e41ab9e0`；重复人员布局与创建回执矩阵已精简，冻结任务保留合入前记录。剩余生产筛选覆盖迁移见 V030-051。
+
+- [V030-049 · CI 提速与完整测试身份汇总](V030-049.md) — [PR #58](https://github.com/Hubujiu/WeaveOS/pull/58) 已于 2026-10-08 合入 develop `771732e9`，最终 source `e404b4cc`；缓存/preflight/组件四片及实际指针刷新回归已交付，冻结任务保留合入前记录。
 
 Java 审批命令身份 A 段：[V030-030](V030-030.md)，task/V030-030-engine-execution / ../WeaveOS-worktrees/V030-030；精确 V029 80e4151 基线及 Root f869911 测试，[draft PR40](https://github.com/Hubujiu/WeaveOS/pull/40) 叠在 V029。云环境真实 Java8/独立门禁12 RED→GREEN，旧部署18/RPC9/互操作1/proof24通过；Root 提供全部测试及 CI 枚举，执行者仅实现 CommandEnvelope 和受测独立门禁，复用指定安全补丁。最终远端 CI 待查询，B/C 合同待 Root，前端暂停，无 main 合并或部署。
 
@@ -90,4 +92,4 @@ Flowable原生版本与流程层精简：[V030-038](V030-038.md)，Root本人设
 
 - [V030-047 · 最后实例确认后的自动关闭收尾](V030-047.md) — 七项真实PG、累计八身份正式进程及最终13项CI通过，PR56已合develop0a65e58f；完整删除仍后续
 
-- [V030-048 · 精确行为断言与测试成本整改](V030-048.md) — Root亲自计划、测试、debug与验收；两批补丁已应用；第一批及第二批前七组通过，audit-maintenance有效--once失败待Root判断；Java/backup/acceptance待命，无全量CI/main推广/部署
+- [V030-048 · 精确行为断言与测试成本整改](V030-048.md) — [PR #57](https://github.com/Hubujiu/WeaveOS/pull/57) 已于 2026-10-08 合入 develop `3272446d`。本批覆盖原 84 组中的 58 组整改，其余 26 组保留/暂缓/历史范围，不能称 84 组全部完成；冻结任务内的待验收文字是合入前记录。
