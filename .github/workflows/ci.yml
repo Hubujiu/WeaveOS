@@ -80,6 +80,7 @@ jobs:
           cache-dependency-path: |
             services/bff/go.mod
             services/bff/go.sum
+            .github/workflows/preflight.yml
       - name: Migrate isolated PostgreSQL for real storage tests
         run: |
           go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
@@ -133,6 +134,7 @@ jobs:
           cache-dependency-path: |
             services/bff/go.mod
             services/bff/go.sum
+            .github/workflows/preflight.yml
       - name: Fixed package manager
         run: npm install --global pnpm@10.28.2 --ignore-scripts
       - name: Locked pnpm dependency store cache
@@ -364,6 +366,7 @@ jobs:
           cache-dependency-path: |
             services/bff/go.mod
             services/bff/go.sum
+            .github/workflows/preflight.yml
       - name: Root-owned RPC report gate acceptance
         run: |
           mkdir -p services/workflow-engine/rpc-ci-logs
@@ -415,6 +418,7 @@ jobs:
           cache-dependency-path: |
             services/bff/go.mod
             services/bff/go.sum
+            .github/workflows/preflight.yml
       - name: Root-owned execution RPC gate tests
         run: |
           mkdir -p services/workflow-engine/execution-rpc-ci-logs
@@ -470,6 +474,7 @@ jobs:
           cache-dependency-path: |
             services/bff/go.mod
             services/bff/go.sum
+            .github/workflows/preflight.yml
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .node-version
@@ -518,6 +523,7 @@ jobs:
           cache-dependency-path: |
             services/bff/go.mod
             services/bff/go.sum
+            .github/workflows/preflight.yml
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .node-version
@@ -566,6 +572,7 @@ jobs:
           cache-dependency-path: |
             services/bff/go.mod
             services/bff/go.sum
+            .github/workflows/preflight.yml
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .node-version
@@ -610,6 +617,7 @@ jobs:
           cache-dependency-path: |
             services/bff/go.mod
             services/bff/go.sum
+            .github/workflows/preflight.yml
       - name: Build pinned static Goose for isolated test containers
         run: CGO_ENABLED=0 go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
       - name: Root real migration CLI and runtime-role acceptance

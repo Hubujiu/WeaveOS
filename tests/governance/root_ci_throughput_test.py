@@ -142,6 +142,22 @@ class WorkflowContracts(unittest.TestCase):
                     'infra/acceptance/run.mjs', 'infra/runtime/run.mjs']:
             self.assertIn(key, settings['key'])
 
+    def test_preflight_cannot_reserve_empty_go_dependency_cache(self):
+        job = workflow(ROOT, 'preflight.yml')['jobs']['preflight']
+        setups = [step for step in job['steps']
+                  if step.get('uses', '').startswith('actions/setup-go@')]
+        self.assertEqual(len(setups), 1)
+        self.assertEqual(setups[0]['with'].get('cache'), 'false',
+                         'gofmt-only preflight must not reserve an immutable empty cache')
+        for file in ['ci.yml', 'performance.yml']:
+            for name, target in workflow(ROOT, file)['jobs'].items():
+                for step in target.get('steps', []):
+                    if step.get('uses', '').startswith('actions/setup-go@'):
+                        with self.subTest(file=file, job=name):
+                            self.assertIn('.github/workflows/preflight.yml',
+                                          step['with']['cache-dependency-path'].split(),
+                                          'cache key must invalidate the old empty preflight generation')
+
     def test_python_download_cache_uses_actual_runtime(self):
         job = workflow(ROOT, 'preflight.yml')['jobs']['preflight']
         caches = [step for step in job['steps'] if step.get('with', {}).get('path') == '.work/pip-cache']
