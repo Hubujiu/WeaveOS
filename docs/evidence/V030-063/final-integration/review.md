@@ -1,0 +1,7 @@
+# Final dependency integration review
+
+Actual develop cf27eaafd12a592b274ea62373b3e4b7f24d603e (PR71) was normally merged as b82bf8cf74a38914b15251f74a0c01c6f8761146. Its tree e9d16a58 was verified exactly; main remained6ffba4d. Compared with already-reviewed cb5dc3d, Go production/tests are byte-identical; only the OpenAPI list200 description is corrected to metadata-only, plus upstream final documentation/evidence. Conflicts preserved list route/schema, inbox and event route, and the existing shared history authorization helper with rollback semantics. No permissions or correct assertions were weakened.
+
+Exact integrated source b82bf8c with empty source patch: 712 top-level /548 subtests PASS, zero FAIL, three pre-existing opt-in appquery probes SKIP. Node527 PASS; OpenAPI0 errors/13 existing warnings; Go vet/build pass. Original RED provenance remains. Auth before enumeration, fixed10-minute session/resource/context binding, canonical batched ledger validation and current RR history authority reviewed. List is metadata-only, not complete basis integrity; detail keeps original mask/field checks. Final candidate PR/CI still pending.
+
+PR71 original font-delay failure and unchanged-head retry success are preserved in v062-merge.json, v062-browser-attempt1.json and lossless compressed original test/network trace. These are synthetic browser fixtures; no video/screenshot artifact dependency is needed for the diagnosed timing facts. This preserves the failed observation instead of hiding it with a green retry.
