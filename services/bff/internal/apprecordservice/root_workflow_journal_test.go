@@ -3,6 +3,7 @@ package apprecordservice
 import (
 	"encoding/json"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -147,5 +148,34 @@ func TestRootWorkflowJournalConfirmedReplayWithoutProjection(t *testing.T) {
 	}
 	if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_instances WHERE app_id=$1 AND id=$2", f.app, f.instance.ID).Scan(&instances); err != nil || instances != 0 {
 		t.Fatal("replay recreated execution instance", err)
+	}
+}
+
+func TestRootWorkflowJournalDirectRecordAccessPath(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	for i := 0; i < 200; i++ {
+		historyNoEffect(t, f)
+	}
+	noise := rootTaskSetup(t, false)
+	for i := 0; i < 400; i++ {
+		historyNoEffect(t, noise)
+	}
+	eventSQL(t, f, "ANALYZE applications.workflow_execution_events")
+	var plan []byte
+	if err := f.owner.QueryRow(f.ctx, `EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON)
+ SELECT command_id FROM applications.workflow_execution_events
+ WHERE app_id=$1 AND table_id=$2 AND record_id=$3
+ ORDER BY created_at DESC,command_id DESC LIMIT 21`, f.app, f.table, f.ownRecord).Scan(&plan); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("V064_DIRECT_HISTORY_PLAN targetConfirmed=201 otherConfirmed=401 bounded21 localFixture=%s", plan)
+	var definition string
+	var valid, ready bool
+	if err := f.owner.QueryRow(f.ctx, `SELECT pg_get_indexdef(indexrelid),indisvalid,indisready FROM pg_index
+ WHERE indexrelid=to_regclass('applications.ix_workflow_events_record_history')`).Scan(&definition, &valid, &ready); err != nil {
+		t.Fatalf("independent record-keyset access path missing: %v", err)
+	}
+	if !valid || !ready || !strings.Contains(definition, "(app_id, table_id, record_id, created_at DESC, command_id DESC)") {
+		t.Fatal("wrong independent history access path", definition)
 	}
 }
