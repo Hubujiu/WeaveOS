@@ -1,0 +1,34 @@
+package org.weaveos.workflow;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+/** Separate synthetic native-loopback harness; leaves Docker fixture contracts unchanged. */
+public final class NativeExecutionRpcFixtureMain {
+ public static void main(String[] args)throws Exception{
+  if(args.length!=2 || !args[0].equals("jdbc:postgresql://127.0.0.1:55444/b3_flowable_fixture")) throw new IllegalArgumentException("isolated native fixture URL required");
+  var f=new RootExecutionRegistryTest();
+  f.url=args[0];
+  f.admin=new JdbcTemplate(new DriverManagerDataSource(f.url,"b3_fixture","b3_fixture_only"));
+  f.schema="v030_exec_"+UUID.randomUUID().toString().replace("-","");
+  f.admin.execute("CREATE SCHEMA "+f.schema);f.open();
+  for(String resource:List.of("/deployment-registry-fixture.sql","/execution-registry-fixture.sql")){
+   try(var in=NativeExecutionRpcFixtureMain.class.getResourceAsStream(resource)){
+    if(in==null)throw new IllegalStateException("fixture resource missing");
+    f.jdbc.execute(new String(in.readAllBytes(),StandardCharsets.UTF_8));
+   }
+  }
+  var server=io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder.forAddress(new InetSocketAddress("127.0.0.1",0))
+   .maxInboundMessageSize(1024*1024+16384)
+   .addService(new DeploymentGrpcService(f.deployments))
+   .addService(new ExecutionGrpcService(f.registry)).build().start();
+  Runtime.getRuntime().addShutdownHook(new Thread(()->{server.shutdownNow();try{server.awaitTermination(10,java.util.concurrent.TimeUnit.SECONDS);}catch(InterruptedException e){Thread.currentThread().interrupt();}f.cleanup();}));
+  Files.writeString(Path.of(args[1]),Integer.toString(server.getPort()));
+  new CountDownLatch(1).await();
+ }
+}
