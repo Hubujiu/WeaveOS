@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
   workflow_call:
+    inputs:
+      force_full:
+        type: boolean
+        default: true
 permissions:
   contents: read
 concurrency:
@@ -13,6 +17,8 @@ concurrency:
 jobs:
   preflight:
     uses: ./.github/workflows/preflight.yml
+    with:
+      force_full: ${{ github.event_name != 'pull_request' || inputs.force_full == true }}
   governance:
     needs: preflight
     runs-on: ubuntu-24.04
@@ -46,6 +52,7 @@ jobs:
           retention-days: 7
   go:
     needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     services:
@@ -118,6 +125,7 @@ jobs:
           retention-days: 14
   browser:
     needs: preflight
+    if: needs.preflight.outputs.browser == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -169,6 +177,7 @@ jobs:
           retention-days: 14
   workflow-engine:
     needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
@@ -343,6 +352,7 @@ jobs:
           retention-days: 14
   workflow-rpc:
     needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -395,6 +405,7 @@ jobs:
 
   execution-rpc:
     needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     defaults:
@@ -451,6 +462,7 @@ jobs:
 
   workflow-recovery:
     needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -500,6 +512,7 @@ jobs:
 
   workflow-actions:
     needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -549,6 +562,7 @@ jobs:
 
   workflow-formal-runtime:
     needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -601,6 +615,7 @@ jobs:
 
   workflow-schema-cli:
     needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
@@ -634,6 +649,7 @@ jobs:
 
   workflow-backup:
     needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -662,3 +678,20 @@ jobs:
           test "$ready" = 1
           WEAVEOS_BACKUP_TEST_CONTAINER="$name" WEAVEOS_BACKUP_TEST_USER=weaveos_owner \
             node --test infra/runtime/backup.test.mjs
+
+  selection-gate:
+    if: always()
+    needs: [preflight, governance, go, browser, workflow-engine, workflow-rpc, execution-rpc, workflow-recovery, workflow-actions, workflow-formal-runtime, workflow-schema-cli, workflow-backup]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      NEEDS_JSON: ${{ toJSON(needs) }}
+      SELECTION_KIND: ci
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - run: node scripts/check-ci-selection.mjs

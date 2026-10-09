@@ -44,7 +44,19 @@ def assert_gate_graph(test, doc):
         if name == gate:
             continue
         test.assertIn(gate, ancestors(jobs, name), f'{name} may start without preflight')
-        test.assertNotIn('always()', job.get('if', ''), f'{name} bypasses failed preflight')
+        if name == 'selection-gate':
+            # V059: only the result verifier may run after skipped/failed jobs.
+            test.assertEqual(job.get('if'), 'always()')
+            needs = job.get('needs', [])
+            test.assertIsInstance(needs, list)
+            test.assertEqual(set(needs), set(jobs) - {name})
+            test.assertEqual([s['run'] for s in job.get('steps', []) if 'run' in s],
+                             ['node scripts/check-ci-selection.mjs'])
+            for step in job.get('steps', []):
+                if 'uses' in step:
+                    test.assertTrue(step['uses'].startswith(('actions/checkout@', 'actions/setup-node@')))
+        else:
+            test.assertNotIn('always()', job.get('if', ''), f'{name} bypasses failed preflight')
         test.assertNotEqual(job.get('continue-on-error'), 'true')
 
 class WorkflowContracts(unittest.TestCase):

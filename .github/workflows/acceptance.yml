@@ -9,6 +9,9 @@ on:
         default: false
   workflow_call:
     inputs:
+      force_full:
+        type: boolean
+        default: true
       verify_release:
         type: boolean
         default: false
@@ -20,8 +23,11 @@ permissions:
 jobs:
   preflight:
     uses: ./.github/workflows/preflight.yml
+    with:
+      force_full: ${{ github.event_name != 'pull_request' || inputs.force_full == true || inputs.verify_release == true }}
   components:
     needs: preflight
+    if: needs.preflight.outputs.product == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     strategy:
@@ -76,7 +82,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   component-coverage:
-    needs: components
+    needs: [preflight, components]
+    if: needs.preflight.outputs.product == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -95,7 +102,8 @@ jobs:
       - name: Verify four same-candidate bundles and complete actual identity coverage
         run: node scripts/verify-component-artifacts.mjs "$RUNNER_TEMP/component-shards" "$RUNNER_TEMP/component-summary.json"
   product:
-    needs: component-coverage
+    needs: [preflight, component-coverage]
+    if: needs.preflight.outputs.product == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
@@ -176,3 +184,20 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
+
+  selection-gate:
+    if: always()
+    needs: [preflight, components, component-coverage, product]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      NEEDS_JSON: ${{ toJSON(needs) }}
+      SELECTION_KIND: product
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - run: node scripts/check-ci-selection.mjs
