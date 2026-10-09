@@ -1,6 +1,8 @@
 package apprecordservice
 
 import (
+	"errors"
+	"github.com/jackc/pgx/v5/pgconn"
 	"reflect"
 	"testing"
 )
@@ -50,5 +52,26 @@ func TestRootWorkflowPublicationHistoryFullCatalogRemovalKeepsExecution(t *testi
 	list, err := f.service.ReadWorkflowEventHistory(f.ctx, f.principal, historyRequest(f, 20))
 	if err != nil || len(list.Items) != 2 {
 		t.Fatal("full catalog cleanup lost confirmed event list", err)
+	}
+}
+
+func TestRootWorkflowPublicationHistoryDrainGuardIncludesExecution(t *testing.T) {
+	for _, pending := range []bool{false, true} {
+		t.Run(map[bool]string{false: "active-instance", true: "pending-command-even-terminal-projection"}[pending], func(t *testing.T) {
+			f := rootTaskSetup(t, true)
+			if pending {
+				rootAction(t, f, rootActionRequest(t, f, "reject"))
+				// Isolate the command drain clause: a deliberately terminal local projection
+				// does not turn an accepted, unconfirmed command into safe cleanup.
+				eventSQL(t, f, "UPDATE applications.workflow_instances SET state='rejected' WHERE app_id=$1 AND id=$2", f.app, f.instance.ID)
+			}
+			for _, q := range []string{"DELETE FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2", "DELETE FROM applications.workflow_definitions WHERE app_id=$1 AND id=$2"} {
+				_, err := f.owner.Exec(f.ctx, q, f.app, f.head.FlowID)
+				var pg *pgconn.PgError
+				if !errors.As(err, &pg) || pg.Code != "55000" {
+					t.Fatalf("explicit execution drain guard missing: %v", err)
+				}
+			}
+		})
 	}
 }
