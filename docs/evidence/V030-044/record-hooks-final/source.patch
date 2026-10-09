@@ -1,0 +1,662 @@
+diff --git a/docs/tasks/V030-044.md b/docs/tasks/V030-044.md
+index fb26371..45a58d6 100644
+--- a/docs/tasks/V030-044.md
++++ b/docs/tasks/V030-044.md
+@@ -1,7 +1,7 @@
+ # V030-044 · 记录触发与并行流程
+ 
+ <!-- task-meta
+-{"id": "V030-044", "title": "记录触发与并行流程", "branch": "task/V030-044-record-triggers", "worktree": "../WeaveOS-worktrees/V030-044", "pr": 69, "owner": "主助手在自己的环境直接计划、编写、测试和验收；不委派", "dependsOn": ["V030-041"], "allowedPaths": ["services/bff/internal/workflowcatalog/trigger_reservation.go", "services/bff/internal/apprecordservice/root_workflow_trigger_reservation_test.go", "docs/tasks/V030-044.md", "docs/tasks/index.md", "docs/evidence/V030-044/", "services/bff/internal/workflowcatalog/", "services/bff/internal/appworkflows/", "services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go", "services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go", "services/bff/internal/persistence/workflow_trigger_configuration_test.go", "db/migrations/00024_workflow_trigger_configuration.sql", "contracts/openapi/openapi.json", "contracts/workflow-trigger-configuration.contract.test.mjs", "infra/runtime/roles.sql", "infra/runtime/backup.test.mjs", "infra/server/deploy/compatibility.json"], "deliveryState": "in_progress"}
++{"id": "V030-044", "title": "记录触发与并行流程", "branch": "task/V030-044-record-triggers", "worktree": "../WeaveOS-worktrees/V030-044", "pr": 69, "owner": "主助手在自己的环境直接计划、编写、测试和验收；不委派", "dependsOn": ["V030-041"], "allowedPaths": ["services/bff/cmd/bff/root_record_triggers_http_test.go", "services/bff/internal/apprecordservice/write.go", "services/bff/internal/apprecordservice/workflow_triggers.go", "services/bff/internal/workflowcatalog/record_triggers.go", "services/bff/internal/apprecordservice/root_record_triggers_test.go", "services/bff/internal/workflowcatalog/trigger_reservation.go", "services/bff/internal/apprecordservice/root_workflow_trigger_reservation_test.go", "docs/tasks/V030-044.md", "docs/tasks/index.md", "docs/evidence/V030-044/", "services/bff/internal/workflowcatalog/", "services/bff/internal/appworkflows/", "services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go", "services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go", "services/bff/internal/persistence/workflow_trigger_configuration_test.go", "db/migrations/00024_workflow_trigger_configuration.sql", "contracts/openapi/openapi.json", "contracts/workflow-trigger-configuration.contract.test.mjs", "infra/runtime/roles.sql", "infra/runtime/backup.test.mjs", "infra/server/deploy/compatibility.json"], "deliveryState": "in_progress"}
+ -->
+ 
+ ## Sources
+@@ -51,3 +51,10 @@ PRD、ADR 及数据设计 P2c 已追加并读回冻结合同。triggers 数组
+ ## 草稿 PR 与当前阻塞
+ - 已创建草稿 PR https://github.com/Hubujiu/WeaveOS/pull/69 ，目标 develop，保持 in_progress/draft。配置检查点远端 ee2cb2d8fbba82ed615da6c707d59c5c59825b69 与本地验过的 tree 0d13c19de8d12029a53967921cacd01f6acdf029 一致；原始测试顺序已保留。
+ - 后续记录写入接线的 Notion 技术 PLAN 正文更新被权限审查拒绝；已向用户明确请求这三个既有项目页面的正文同步授权。未绕过拒绝、未实施依赖尚未同步计划的新接线。继续验证当前已实现范围的 CI；不因此放弃已有检查点。
++
++## 已确认业务规则的后续验收测试准备
++用户要求完整范围完成才停下。下一阶段 Notion 技术计划同步仍待明确授权，暂不实施相应生产接线；可先依已确认 PRD/FLOW-01/03/05/07/11/12 与实际修改/表级范围准备黑盒 Create/Edit 验收测试。测试仅使用已有正式服务接口及隔离数据库，不将准备工作冒称实现。
++
++## 阻塞范围复核与既有合同内接线
++重读已有 V044 PRD/ADR：Create/Edit 与全部命中 starting 同应用库事务、已发布版本、表级范围、实际修改、节点 Save 排除都已明确。该最小接线复用已冻结的 catalog、typed record 和锁顺序，不新增产品规则、DDL、队列表或 worker，因此可依既有来源继续；此前将全部接线阻塞到 Notion 新 PLAN 写入过于宽泛。Notion 写入本身仍未重试或绕过，新增队列/接受器技术决策仍待同步。
++生产实现前已观察8组真实PG用例的缺失接线 RED，完整保留原失败及无效大写 UUID 夹具更正。实施计划：Create 写后同事务匹配；Edit 经现有 Gate/行锁/权限/fence 后由 DML 包装器比较真实类型值是否不同，保留旧保存和版本语义，仅实际变化写后匹配。按 flow ID 游标逐个保留，固定当前版本，不累积整批实例；不做引擎 RPC。
+diff --git a/services/bff/cmd/bff/root_record_triggers_http_test.go b/services/bff/cmd/bff/root_record_triggers_http_test.go
+new file mode 100644
+index 0000000..5860d04
+--- /dev/null
++++ b/services/bff/cmd/bff/root_record_triggers_http_test.go
+@@ -0,0 +1,76 @@
++package main
++
++import (
++	"encoding/json"
++	"net/http"
++	"testing"
++
++	wc "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
++	"github.com/jackc/pgx/v5"
++)
++
++// Real HTTPS configuration + record writes. Only engine deployment confirmation
++// is a synthetic catalog fixture: this proves entry/transaction wiring, not RPC.
++func rootHTTPTriggerSetup(t *testing.T) *rootTaskHTTPFixture {
++	t.Helper()
++	f := rootHTTPResourceSetup(t)
++	f.flow = f.id(t)
++	start, node, end := f.id(t), f.id(t), f.id(t)
++	body := map[string]any{"operationId": f.id(t), "name": "Record triggers", "expectedRevision": 0, "expectedSchemaVersion": 1, "allowWithdraw": true,
++		"triggers": []any{map[string]any{"event": "record.created", "condition": nil}, map[string]any{"event": "record.updated", "condition": nil}},
++		"graph":    map[string]any{"version": 1, "nodes": []any{map[string]any{"id": start, "kind": "start"}, map[string]any{"id": node, "kind": "approval", "approval": map[string]any{"mode": "all", "assigneeIds": []string{f.actor}, "editableFieldIds": []string{}}}, map[string]any{"id": end, "kind": "end"}}, "edges": []any{map[string]any{"from": start, "to": node}, map[string]any{"from": node, "to": end}}}}
++	raw, err := json.Marshal(body)
++	if err != nil {
++		t.Fatal(err)
++	}
++	rootHTTPData(t, f.call(t, "PUT", "/api/v1/applications/"+f.app+"/forms/"+f.view+"/workflows/"+f.flow+"/definition", string(raw), nil), 201)
++	f.transaction(t, func(tx pgx.Tx) error {
++		h, err := (wc.Catalog{}).ConfirmDeploymentInTx(f.ctx, tx, f.app, f.flow, 1, "isolated-trigger-HTTP-deployment")
++		if err != nil {
++			return err
++		}
++		_, err = (wc.Catalog{}).EnableInTx(f.ctx, tx, f.app, f.flow, h.Revision)
++		return err
++	})
++	return f
++}
++func rootHTTPTriggerCount(t *testing.T, f *rootTaskHTTPFixture, recordID string, want int) {
++	t.Helper()
++	var count int
++	if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_instances WHERE app_id=$1 AND flow_id=$2 AND record_id=$3", f.app, f.flow, recordID).Scan(&count); err != nil || count != want {
++		t.Fatalf("real HTTPS write retained %d intents, want %d: %v", count, want, err)
++	}
++}
++func TestRootRecordTriggersHTTPSCreateSessionCSRFAndReplay(t *testing.T) {
++	f := rootHTTPTriggerSetup(t)
++	path := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/records"
++	raw := `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"values":{"` + f.field + `":"created over HTTPS"}}`
++	rootHTTPError(t, f.call(t, "POST", path, raw, func(r *http.Request) { r.Header.Del("Cookie") }), 401, "AUTH_UNAUTHENTICATED")
++	rootHTTPError(t, f.call(t, "POST", path, raw, func(r *http.Request) { r.Header.Del("X-CSRF-Token") }), 403, "COMMON_CSRF_REJECTED")
++	got := rootHTTPData(t, f.call(t, "POST", path, raw, nil), 201)
++	record := rootHTTPString(t, got, "id")
++	rootHTTPTriggerCount(t, f, record, 1)
++	again := rootHTTPData(t, f.call(t, "POST", path, raw, nil), 201)
++	if rootHTTPString(t, again, "id") != record {
++		t.Fatal("HTTPS replay created a second record")
++	}
++	rootHTTPTriggerCount(t, f, record, 1)
++}
++func TestRootRecordTriggersHTTPSEditSameValueThenChanged(t *testing.T) {
++	f := rootHTTPTriggerSetup(t)
++	path := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/records/" + f.record
++	raw := `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"expectedRecordVersion":1,"changes":{"` + f.field + `":"original"}}`
++	got := rootHTTPData(t, f.call(t, "PATCH", path, raw, nil), 200)
++	rootHTTPTriggerCount(t, f, f.record, 0)
++	var version int64
++	if err := json.Unmarshal(got["recordVersion"], &version); err != nil {
++		t.Fatal(err)
++	}
++	body := map[string]any{"operationId": f.id(t), "expectedSchemaVersion": 1, "expectedRecordVersion": version, "changes": map[string]any{f.field: "actually changed over HTTPS"}}
++	bytes, err := json.Marshal(body)
++	if err != nil {
++		t.Fatal(err)
++	}
++	rootHTTPData(t, f.call(t, "PATCH", path, string(bytes), nil), 200)
++	rootHTTPTriggerCount(t, f, f.record, 1)
++}
+diff --git a/services/bff/internal/apprecordservice/root_record_triggers_test.go b/services/bff/internal/apprecordservice/root_record_triggers_test.go
+new file mode 100644
+index 0000000..39264d2
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/root_record_triggers_test.go
+@@ -0,0 +1,315 @@
++package apprecordservice
++
++import (
++	"encoding/json"
++	"errors"
++	"strings"
++	"sync"
++	"testing"
++
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
++	"github.com/jackc/pgx/v5"
++)
++
++func rootConfiguredTrigger(t *testing.T, f recordFixture, event string, condition json.RawMessage) workflowcatalog.Head {
++	t.Helper()
++	config := []workflowcatalog.Trigger{{Event: event, Condition: condition}}
++	in := rootCatalogInput(f, recordOperationID(t, f), 0, rootCatalogGraph(t, f, false))
++	in.Triggers = &config
++	var h workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var err error
++		h, err = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in)
++		return err
++	})
++	return rootCatalogEnable(t, f, rootCatalogDeploy(t, f, h))
++}
++func rootTriggeredCount(t *testing.T, f recordFixture, recordID string, want int) {
++	t.Helper()
++	var n int
++	if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_instances WHERE app_id=$1 AND record_id=$2", f.app, recordID).Scan(&n); err != nil || n != want {
++		t.Fatalf("persisted trigger instances=%d want=%d err=%v", n, want, err)
++	}
++}
++func rootTriggerCreateRequest(t *testing.T, f recordFixture, value string) CreateRequest {
++	t.Helper()
++	return CreateRequest{AppID: f.app, ViewID: f.view, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, Values: map[string]any{f.public: value}}
++}
++func TestRootRecordTriggersCreateTwoFlowsAndReplay(t *testing.T) {
++	f := newRecordFixture(t)
++	a := rootConfiguredTrigger(t, f, "record.created", rootTriggerCondition(f.public))
++	b := rootConfiguredTrigger(t, f, "record.created", nil)
++	req := rootTriggerCreateRequest(t, f, "alpha")
++	meta := applications.Metadata{RequestID: "v044-two-flows"}
++	got, err := f.service.Create(f.ctx, f.principal, req, meta)
++	if err != nil {
++		t.Fatal(err)
++	}
++	rootTriggeredCount(t, f, got.ID, 2)
++	var valid int
++	if err = f.owner.QueryRow(f.ctx, `SELECT count(*) FROM applications.workflow_instances WHERE app_id=$1 AND record_id=$2 AND flow_id=ANY($3::uuid[]) AND initiator_id=$4 AND state='starting' AND definition_version=1 AND sequence=0`, f.app, got.ID, []string{a.FlowID, b.FlowID}, f.actor).Scan(&valid); err != nil || valid != 2 {
++		t.Fatalf("wrong durable intent identity/state: %d %v", valid, err)
++	}
++	replay, err := f.service.Create(f.ctx, f.principal, req, meta)
++	if err != nil || replay != got {
++		t.Fatalf("operation replay changed: %+v %v", replay, err)
++	}
++	rootTriggeredCount(t, f, got.ID, 2)
++}
++func TestRootRecordTriggersCreateFiltersEventConditionAndDisabled(t *testing.T) {
++	f := newRecordFixture(t)
++	rootConfiguredTrigger(t, f, "record.created", rootTriggerCondition(f.public))
++	rootConfiguredTrigger(t, f, "record.updated", nil)
++	rootConfiguredTrigger(t, f, "manual", nil)
++	disabled := rootConfiguredTrigger(t, f, "record.created", nil)
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		_, err := (workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx, tx, f.app, disabled.FlowID, disabled.Revision)
++		return err
++	})
++	matched := rootConfiguredTrigger(t, f, "record.created", nil)
++	got, err := f.service.Create(f.ctx, f.principal, rootTriggerCreateRequest(t, f, "beta"), applications.Metadata{RequestID: "v044-event-condition"})
++	if err != nil {
++		t.Fatal(err)
++	}
++	rootTriggeredCount(t, f, got.ID, 1)
++	var flow string
++	if err = f.owner.QueryRow(f.ctx, "SELECT flow_id::text FROM applications.workflow_instances WHERE app_id=$1 AND record_id=$2", f.app, got.ID).Scan(&flow); err != nil || flow != matched.FlowID {
++		t.Fatalf("wrong match %s %v", flow, err)
++	}
++}
++func TestRootRecordTriggersUsePublishedNotCandidateConfiguration(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootConfiguredTrigger(t, f, "record.created", rootTriggerCondition(f.public))
++	empty := []workflowcatalog.Trigger{}
++	in := rootCatalogInput(f, h.FlowID, h.Revision, rootCatalogGraph(t, f, false))
++	in.Triggers = &empty
++	rootCatalogTx(t, f, func(tx pgx.Tx) error { _, err := (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in); return err })
++	got, err := f.service.Create(f.ctx, f.principal, rootTriggerCreateRequest(t, f, "alpha"), applications.Metadata{RequestID: "v044-published-config"})
++	if err != nil {
++		t.Fatal(err)
++	}
++	rootTriggeredCount(t, f, got.ID, 1)
++	var version int64
++	if err = f.owner.QueryRow(f.ctx, "SELECT definition_version FROM applications.workflow_instances WHERE app_id=$1 AND record_id=$2", f.app, got.ID).Scan(&version); err != nil || version != 1 {
++		t.Fatalf("candidate replaced published trigger %d %v", version, err)
++	}
++}
++func TestRootRecordTriggersSameTableOtherView(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootConfiguredTrigger(t, f, "record.created", nil)
++	otherView := recordOperationID(t, f)
++	if _, err := f.owner.Exec(f.ctx, "INSERT INTO applications.form_views(id,app_id,table_id,name,position,view_version) VALUES($1,$2,$3,'another view',1,1)", otherView, f.app, f.table); err != nil {
++		t.Fatal(err)
++	}
++	if _, err := f.owner.Exec(f.ctx, "INSERT INTO applications.menu_resources VALUES($1,'form',$2)", f.app, otherView); err != nil {
++		t.Fatal(err)
++	}
++	req := rootTriggerCreateRequest(t, f, "alpha")
++	req.ViewID = otherView
++	owner := f.principal
++	owner.UserID = f.other
++	owner.SessionRef = recordOperationID(t, f)
++	got, err := f.service.Create(f.ctx, owner, req, applications.Metadata{RequestID: "v044-other-view"})
++	if err != nil {
++		t.Fatal(err)
++	}
++	rootTriggeredCount(t, f, got.ID, 1)
++	var view, flow string
++	if err = f.owner.QueryRow(f.ctx, "SELECT view_id::text,flow_id::text FROM applications.workflow_instances WHERE app_id=$1 AND record_id=$2", f.app, got.ID).Scan(&view, &flow); err != nil || view != f.view || flow != h.FlowID {
++		t.Fatalf("trigger binding changed to write view: %s %s %v", view, flow, err)
++	}
++}
++func TestRootRecordTriggersEditOnlyActualChanges(t *testing.T) {
++	for _, kind := range []string{"same_text", "empty", "same_typed_uuid", "different_matching_field", "no_longer_matches"} {
++		t.Run(kind, func(t *testing.T) {
++			f := newRecordFixture(t)
++			rootConfiguredTrigger(t, f, "record.updated", rootTriggerCondition(f.public))
++			changes := map[string]any{}
++			want := 0
++			switch kind {
++			case "same_text":
++				changes[f.public] = "alpha"
++			case "same_typed_uuid":
++				changes[f.reference] = f.other
++			case "different_matching_field":
++				changes[f.reference] = f.actor
++				want = 1
++			case "no_longer_matches":
++				changes[f.public] = "beta"
++			}
++			_, err := f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: changes}, applications.Metadata{RequestID: "v044-real-change-" + kind})
++			if err != nil {
++				t.Fatal(err)
++			}
++			rootTriggeredCount(t, f, f.ownRecord, want)
++		})
++	}
++}
++func TestRootRecordTriggersEditAgainWhileConditionRemainsTrue(t *testing.T) {
++	f := newRecordFixture(t)
++	rootConfiguredTrigger(t, f, "record.updated", rootTriggerCondition(f.public))
++	var version int64 = 1
++	for i, value := range []string{f.actor, f.other} {
++		got, err := f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: version, Changes: map[string]any{f.reference: value}}, applications.Metadata{RequestID: "v044-remains-matching"})
++		if err != nil {
++			t.Fatal(err)
++		}
++		rootTriggeredCount(t, f, f.ownRecord, i+1)
++		version = got.RecordVersion
++		// Owner fixture models a confirmed terminal state; not engine E2E evidence.
++		if _, err = f.owner.Exec(f.ctx, "UPDATE applications.workflow_instances SET state='completed' WHERE app_id=$1 AND record_id=$2", f.app, f.ownRecord); err != nil {
++			t.Fatal(err)
++		}
++	}
++}
++
++func TestRootRecordTriggersCommitFailureRollsBackRecordIntentsAuditAndReceipt(t *testing.T) {
++	f := newRecordFixture(t)
++	rootConfiguredTrigger(t, f, "record.created", nil)
++	rootConfiguredTrigger(t, f, "record.created", nil)
++	name := "v044_trigger_fault_" + strings.ReplaceAll(f.app, "-", "")
++	function := pgx.Identifier{"applications", name}.Sanitize()
++	trigger := pgx.Identifier{name}.Sanitize()
++	sql := "CREATE FUNCTION " + function + "() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.app_id='" + f.app + "'::uuid THEN RAISE EXCEPTION 'isolated V044 final-commit fault' USING ERRCODE='P0001'; END IF; RETURN NEW; END $$"
++	if _, err := f.owner.Exec(f.ctx, sql); err != nil {
++		t.Fatal(err)
++	}
++	defer f.owner.Exec(f.ctx, "DROP FUNCTION "+function+"() CASCADE")
++	if _, err := f.owner.Exec(f.ctx, "CREATE CONSTRAINT TRIGGER "+trigger+" AFTER INSERT ON applications.workflow_instances DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION "+function+"()"); err != nil {
++		t.Fatal(err)
++	}
++	req := rootTriggerCreateRequest(t, f, "alpha")
++	if _, err := f.service.Create(f.ctx, f.principal, req, applications.Metadata{RequestID: "v044-atomic-commit-fault"}); err == nil {
++		t.Fatal("record save falsely succeeded without committing all matching trigger intents")
++	}
++	physical := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
++	var count int
++	if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM "+physical).Scan(&count); err != nil || count != 2 {
++		t.Fatalf("record escaped transaction rollback: %d %v", count, err)
++	}
++	for _, table := range []string{"workflow_instances", "record_write_audit", "operations"} {
++		if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications."+table+" WHERE app_id=$1", f.app).Scan(&count); err != nil || count != 0 {
++			t.Fatalf("%s escaped transaction rollback: %d %v", table, count, err)
++		}
++	}
++}
++
++func TestRootRecordTriggersTypedNumericAndNullChangeDetection(t *testing.T) {
++	for _, c := range []struct {
++		name, stored string
++		input        any
++		want         int
++	}{{"same_numeric_value", "1.00", "1.000", 0}, {"different_numeric_value", "1.00", "1.01", 1}, {"null_to_null", "", nil, 0}, {"null_to_number", "", "0.00", 1}} {
++		t.Run(c.name, func(t *testing.T) {
++			f := newRecordFixture(t)
++			base := rootEvidenceStoreFixture{recordFixture: f}
++			var raw []byte
++			if err := f.owner.QueryRow(f.ctx, "SELECT fields_json FROM applications.logical_tables WHERE id=$1", f.table).Scan(&raw); err != nil {
++				t.Fatal(err)
++			}
++			var defs []appfields.Field
++			if err := json.Unmarshal(raw, &defs); err != nil {
++				t.Fatal(err)
++			}
++			amount := appfields.Field{ID: recordOperationID(t, f), Name: "Amount", Kind: "number", Default: json.RawMessage("null"), Config: json.RawMessage(`{"precision":38,"scale":2,"roundingPlaces":2,"roundingMode":"HALF_UP"}`)}
++			rootCaptureAddField(t, base, amount, map[string]any{"Type": "numeric", "Precision": 38, "Scale": 2})
++			rootCaptureDefinitions(t, base, append(defs, amount))
++			if c.stored != "" {
++				if _, err := f.owner.Exec(f.ctx, "UPDATE "+rootCaptureRelation(base)+" SET "+rootCaptureColumn(amount.ID)+"=$2::numeric WHERE id=$1", f.ownRecord, c.stored); err != nil {
++					t.Fatal(err)
++				}
++			}
++			rootConfiguredTrigger(t, f, "record.updated", nil)
++			owner := f.principal
++			owner.UserID = f.other
++			owner.SessionRef = recordOperationID(t, f)
++			_, err := f.service.Edit(f.ctx, owner, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{amount.ID: c.input}}, applications.Metadata{RequestID: "v044-typed-" + c.name})
++			if err != nil {
++				t.Fatal(err)
++			}
++			rootTriggeredCount(t, f, f.ownRecord, c.want)
++		})
++	}
++}
++
++// Supplemental regressions for existing authority/idempotency/Save contracts.
++func TestRootRecordTriggersConcurrentOperationReplaysSingleIntentSet(t *testing.T) {
++	f := newRecordFixture(t)
++	rootConfiguredTrigger(t, f, "record.created", nil)
++	rootConfiguredTrigger(t, f, "record.created", nil)
++	req := rootTriggerCreateRequest(t, f, "concurrent")
++	const workers = 4
++	results := make(chan MutationResult, workers)
++	failures := make(chan error, workers)
++	start := make(chan struct{})
++	var group sync.WaitGroup
++	for i := 0; i < workers; i++ {
++		group.Add(1)
++		go func() {
++			defer group.Done()
++			<-start
++			got, err := f.service.Create(f.ctx, f.principal, req, applications.Metadata{RequestID: "v044-concurrent-replay"})
++			results <- got
++			failures <- err
++		}()
++	}
++	close(start)
++	group.Wait()
++	close(results)
++	close(failures)
++	for err := range failures {
++		if err != nil {
++			t.Fatal(err)
++		}
++	}
++	var first MutationResult
++	for result := range results {
++		if first.ID == "" {
++			first = result
++		} else if first != result {
++			t.Fatal("concurrent operation replay changed response")
++		}
++	}
++	rootTriggeredCount(t, f, first.ID, 2)
++}
++func TestRootRecordTriggersNodeSaveDoesNotTriggerOtherFlow(t *testing.T) {
++	f := rootSaveSetup(t, true)
++	rootConfiguredTrigger(t, f.recordFixture, "record.updated", nil)
++	rootSave(t, f, rootSaveRequest(t, f, "changed by node save"))
++	rootTriggeredCount(t, f.recordFixture, f.ownRecord, 1)
++	rootSaveCounts(t, f, 1)
++}
++func TestRootRecordTriggersDeniedWriteCreatesNoIntent(t *testing.T) {
++	f := newRecordFixture(t)
++	rootConfiguredTrigger(t, f, "record.created", nil)
++	req := rootTriggerCreateRequest(t, f, "alpha")
++	req.Values[f.secret] = "forbidden"
++	if _, err := f.service.Create(f.ctx, f.principal, req, applications.Metadata{RequestID: "v044-denied"}); !errors.Is(err, applications.ErrDenied) {
++		t.Fatalf("denied field write: %v", err)
++	}
++	var count int
++	if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_instances WHERE app_id=$1", f.app).Scan(&count); err != nil || count != 0 {
++		t.Fatalf("unauthorized trigger persisted: %d %v", count, err)
++	}
++}
++
++func TestRootRecordTriggersDoesNotSkipLowestValidFlowID(t *testing.T) {
++	f := newRecordFixture(t)
++	config := []workflowcatalog.Trigger{{Event: "record.created", Condition: json.RawMessage("null")}}
++	in := rootCatalogInput(f, "00000000-0000-0000-0000-000000000001", 0, rootCatalogGraph(t, f, false))
++	in.Triggers = &config
++	var h workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var err error
++		h, err = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in)
++		return err
++	})
++	rootCatalogEnable(t, f, rootCatalogDeploy(t, f, h))
++	got, err := f.service.Create(f.ctx, f.principal, rootTriggerCreateRequest(t, f, "alpha"), applications.Metadata{RequestID: "v044-lowest-uuid"})
++	if err != nil {
++		t.Fatal(err)
++	}
++	rootTriggeredCount(t, f, got.ID, 1)
++}
+diff --git a/services/bff/internal/apprecordservice/workflow_triggers.go b/services/bff/internal/apprecordservice/workflow_triggers.go
+new file mode 100644
+index 0000000..ca94a17
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/workflow_triggers.go
+@@ -0,0 +1,52 @@
++package apprecordservice
++
++import (
++	"context"
++	"encoding/json"
++	"strings"
++
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
++	"github.com/jackc/pgx/v5"
++)
++
++func retainRecordTriggers(ctx context.Context, tx pgx.Tx, facts applications.RecordContext, stored apprecords.MutationResult, event string) error {
++	_, err := (workflowcatalog.Catalog{}).ReserveRecordTriggersInTx(ctx, tx, workflowcatalog.RecordTriggerInput{
++		AppID: facts.App.ID, TableID: facts.TableID, ViewID: facts.ViewID, RecordID: stored.ID, ActorID: facts.Actor.ID, Event: event,
++		ExpectedSchemaVersion: stored.SchemaVersion, ExpectedRecordVersion: stored.RecordVersion,
++	})
++	return err
++}
++
++// Called by the DML adapter only after Writer has locked and authorized the row
++// and checked its fence/CAS. PostgreSQL's actual column types define equality;
++// no client JSON spelling or record-version increment stands in for a change.
++func recordValuesActuallyChange(ctx context.Context, tx pgx.Tx, table apprecords.Table, in apprecords.Edit, ids []string) (bool, error) {
++	if len(ids) == 0 {
++		return false, nil
++	}
++	if !appfields.ValidID(table.TableID) || !appfields.ValidID(in.ID) {
++		return false, apprecords.ErrInvalid
++	}
++	physical := make(map[string]any, len(ids))
++	comparisons := make([]string, 0, len(ids))
++	for _, id := range ids {
++		if !appfields.ValidID(id) {
++			return false, apprecords.ErrInvalid
++		}
++		col := "f_" + strings.ReplaceAll(id, "-", "")
++		physical[col] = in.Changes[id]
++		quoted := pgx.Identifier{col}.Sanitize()
++		comparisons = append(comparisons, "r."+quoted+" IS DISTINCT FROM proposed."+quoted)
++	}
++	raw, err := json.Marshal(physical)
++	if err != nil {
++		return false, apprecords.ErrInvalid
++	}
++	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(table.TableID, "-", "")}.Sanitize()
++	var changed bool
++	err = tx.QueryRow(ctx, "SELECT ("+strings.Join(comparisons, " OR ")+") FROM "+relation+" r CROSS JOIN LATERAL jsonb_populate_record(NULL::"+relation+",$2::jsonb) proposed WHERE r.id=$1::uuid", in.ID, raw).Scan(&changed)
++	return changed, err
++}
+diff --git a/services/bff/internal/apprecordservice/write.go b/services/bff/internal/apprecordservice/write.go
+index f367f70..e2beaa6 100644
+--- a/services/bff/internal/apprecordservice/write.go
++++ b/services/bff/internal/apprecordservice/write.go
+@@ -20,7 +20,10 @@ import (
+ 	"github.com/jackc/pgx/v5"
+ )
+ 
+-type controlledDML struct{ implementation appstructure.RecordDML }
++type controlledDML struct {
++	implementation appstructure.RecordDML
++	actualChange   *bool
++}
+ 
+ func validWriteLimits(l appschema.Limits) bool {
+ 	return l.LockTimeout >= time.Millisecond && l.StatementTimeout >= time.Millisecond
+@@ -35,6 +38,13 @@ func (d controlledDML) LockHeader(ctx context.Context, tx pgx.Tx, t apprecords.T
+ 	return apprecords.StoredHeader(h), e
+ }
+ func (d controlledDML) UpdateCAS(ctx context.Context, tx pgx.Tx, t apprecords.Table, in apprecords.Edit, ids []string) (apprecords.StoredHeader, error) {
++	if d.actualChange != nil {
++		changed, err := recordValuesActuallyChange(ctx, tx, t, in, ids)
++		if err != nil {
++			return apprecords.StoredHeader{}, err
++		}
++		*d.actualChange = changed
++	}
+ 	h, e := d.implementation.UpdateCAS(ctx, tx, appstructure.RecordTable(t), appstructure.RecordEdit(in), ids)
+ 	return apprecords.StoredHeader(h), e
+ }
+@@ -269,6 +279,9 @@ func (s *Service) Create(ctx context.Context, principal session.Principal, req C
+ 			return MutationResult{}, err
+ 		}
+ 	}
++	if err = retainRecordTriggers(ctx, write.Tx(), facts, stored, "record.created"); err != nil {
++		return MutationResult{}, err
++	}
+ 	result = MutationResult{OperationID: stored.OperationID, ID: stored.ID, RecordVersion: stored.RecordVersion, SchemaVersion: stored.SchemaVersion, CreatedAt: stored.CreatedAt.UTC().Format(time.RFC3339Nano), UpdatedAt: stored.UpdatedAt.UTC().Format(time.RFC3339Nano)}
+ 	raw, _ := json.Marshal(result)
+ 	if err = write.Complete(ctx, req.OperationID, applications.Result{Status: 201, Location: "", Data: raw}); err != nil {
+@@ -492,7 +505,8 @@ func (s *Service) Edit(ctx context.Context, principal session.Principal, req Edi
+ 	if err != nil {
+ 		return result, fmt.Errorf("apply edit: %w", err)
+ 	}
+-	writer := apprecords.Writer{Gate: appstructure.RecordGate{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID}, Authorization: recordAuthorization{policy: policy}, Fence: appstructure.RecordFence{AppID: req.AppID, TableID: facts.TableID}, Audit: recordAudit{port: appstructure.RecordAudit{Context: facts, OperationID: req.OperationID, BeforeRecordVersion: req.ExpectedRecordVersion, Metadata: metadata}}, DML: controlledDML{}}
++	var actuallyChanged bool
++	writer := apprecords.Writer{Gate: appstructure.RecordGate{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID}, Authorization: recordAuthorization{policy: policy}, Fence: appstructure.RecordFence{AppID: req.AppID, TableID: facts.TableID}, Audit: recordAudit{port: appstructure.RecordAudit{Context: facts, OperationID: req.OperationID, BeforeRecordVersion: req.ExpectedRecordVersion, Metadata: metadata}}, DML: controlledDML{actualChange: &actuallyChanged}}
+ 	stored, err := writer.EditInTx(ctx, write.Tx(), apprecords.Table{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID, Namespace: "appdata", SchemaVersion: facts.SchemaVersion, Ready: facts.SchemaReady, ActiveFieldIDs: active}, apprecords.Edit{OperationID: req.OperationID, ID: req.RecordID, ActorID: facts.Actor.ID, ExpectedSchemaVersion: req.ExpectedSchemaVersion, ExpectedRecordVersion: req.ExpectedRecordVersion, Changes: values})
+ 	if err != nil {
+ 		return result, fmt.Errorf("apply edit: %w", err)
+@@ -509,6 +523,11 @@ func (s *Service) Edit(ctx context.Context, principal session.Principal, req Edi
+ 			return MutationResult{}, err
+ 		}
+ 	}
++	if actuallyChanged {
++		if err = retainRecordTriggers(ctx, write.Tx(), facts, stored, "record.updated"); err != nil {
++			return MutationResult{}, err
++		}
++	}
+ 	result = MutationResult{OperationID: stored.OperationID, ID: stored.ID, RecordVersion: stored.RecordVersion, SchemaVersion: stored.SchemaVersion, CreatedAt: stored.CreatedAt.UTC().Format(time.RFC3339Nano), UpdatedAt: stored.UpdatedAt.UTC().Format(time.RFC3339Nano)}
+ 	raw, _ := json.Marshal(result)
+ 	if err = write.Complete(ctx, req.OperationID, applications.Result{Status: 200, Location: "", Data: raw}); err != nil {
+diff --git a/services/bff/internal/workflowcatalog/record_triggers.go b/services/bff/internal/workflowcatalog/record_triggers.go
+new file mode 100644
+index 0000000..c23c01a
+--- /dev/null
++++ b/services/bff/internal/workflowcatalog/record_triggers.go
+@@ -0,0 +1,109 @@
++package workflowcatalog
++
++import (
++	"context"
++	"encoding/json"
++	"errors"
++	"strings"
++
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
++	"github.com/jackc/pgx/v5"
++)
++
++// RecordTriggerInput contains trusted facts from an already-authorized write.
++// ViewID identifies the write view; rules are selected across its entire table.
++type RecordTriggerInput struct {
++	AppID, TableID, ViewID, RecordID, ActorID, Event string
++	ExpectedSchemaVersion, ExpectedRecordVersion     int64
++}
++type RecordTriggerCounts struct{ Reserved, Ignored int }
++
++// ReserveRecordTriggersInTx atomically retains matching starts with the caller's
++// record write. It never commits, calls an engine, or grants resource access.
++func (catalog Catalog) ReserveRecordTriggersInTx(ctx context.Context, tx pgx.Tx, in RecordTriggerInput) (RecordTriggerCounts, error) {
++	counts := RecordTriggerCounts{}
++	if tx == nil || !validIDs(in.AppID, in.TableID, in.ViewID, in.RecordID, in.ActorID) ||
++		in.Event != "record.created" && in.Event != "record.updated" ||
++		in.ExpectedSchemaVersion < 1 || in.ExpectedSchemaVersion > maxSafeInteger || in.ExpectedRecordVersion < 1 || in.ExpectedRecordVersion > maxSafeInteger {
++		return counts, ErrInvalid
++	}
++	resources, err := lockResources(ctx, tx, in.AppID, in.TableID, in.ViewID, true)
++	if err != nil {
++		return counts, err
++	}
++	if resources.schemaVersion != in.ExpectedSchemaVersion {
++		return counts, ErrConflict
++	}
++	actual, err := loadRecordVersion(ctx, tx, in.TableID, in.RecordID)
++	if errors.Is(err, pgx.ErrNoRows) {
++		return counts, ErrMissing
++	}
++	if err != nil {
++		return counts, mapDBError(err)
++	}
++	if actual != in.ExpectedRecordVersion {
++		return counts, ErrConflict
++	}
++	eventJSON, _ := json.Marshal([]map[string]string{{"event": in.Event}})
++	cursor := "00000000-0000-0000-0000-000000000000"
++	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(in.TableID, "-", "")}.Sanitize()
++	// App/table locks serialize configuration changes. Keyset iteration keeps
++	// result memory constant and acquires flow locks in the same stable order.
++	for {
++		var flowID string
++		err = tx.QueryRow(ctx, `SELECT d.id::text FROM applications.workflow_definitions d
++   JOIN applications.workflow_versions v ON v.app_id=d.app_id AND v.flow_id=d.id AND v.version=d.current_version
++   WHERE d.app_id=$1 AND d.table_id=$2 AND d.state='enabled' AND d.id>$3::uuid AND v.triggers_json @> $4::jsonb
++   ORDER BY d.id LIMIT 1`, in.AppID, in.TableID, cursor, eventJSON).Scan(&flowID)
++		if errors.Is(err, pgx.ErrNoRows) {
++			return counts, nil
++		}
++		if err != nil {
++			return counts, mapDBError(err)
++		}
++		cursor = flowID
++		head, err := headForUpdate(ctx, tx, in.AppID, flowID)
++		if err != nil {
++			return counts, mapDBError(err)
++		}
++		triggers, err := catalog.TriggersForVersionInTx(ctx, tx, in.AppID, flowID, head.CurrentVersion)
++		if err != nil {
++			return counts, err
++		}
++		triggers, err = NormalizeTriggers(triggers, resources.fields)
++		if err != nil {
++			return counts, ErrNotReady
++		}
++		for _, trigger := range triggers {
++			if trigger.Event != in.Event {
++				continue
++			}
++			plan, err := appquery.Compile(trigger.Condition, nil, resources.fields, 2)
++			if err != nil {
++				return counts, ErrNotReady
++			}
++			args := append([]any{in.RecordID}, plan.Arguments...)
++			var matches bool
++			if err = tx.QueryRow(ctx, "SELECT COALESCE(("+plan.Predicate+"),false) FROM "+relation+" r WHERE r.id=$1::uuid", args...).Scan(&matches); err != nil {
++				return counts, mapDBError(err)
++			}
++			if !matches {
++				break
++			}
++			id, err := randomID(ctx, tx)
++			if err != nil {
++				return counts, err
++			}
++			reservation, err := catalog.ReserveTriggeredInTx(ctx, tx, ReserveInput{AppID: in.AppID, FlowID: head.FlowID, InstanceID: id, RecordID: in.RecordID, ActorID: in.ActorID, ExpectedRevision: head.Revision, ExpectedSchemaVersion: in.ExpectedSchemaVersion, ExpectedRecordVersion: in.ExpectedRecordVersion})
++			if err != nil {
++				return counts, err
++			}
++			if reservation.Ignored {
++				counts.Ignored++
++			} else {
++				counts.Reserved++
++			}
++			break
++		}
++	}
++}

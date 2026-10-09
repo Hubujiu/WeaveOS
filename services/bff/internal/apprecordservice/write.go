@@ -20,7 +20,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type controlledDML struct{ implementation appstructure.RecordDML }
+type controlledDML struct {
+	implementation appstructure.RecordDML
+	actualChange   *bool
+}
 
 func validWriteLimits(l appschema.Limits) bool {
 	return l.LockTimeout >= time.Millisecond && l.StatementTimeout >= time.Millisecond
@@ -35,6 +38,13 @@ func (d controlledDML) LockHeader(ctx context.Context, tx pgx.Tx, t apprecords.T
 	return apprecords.StoredHeader(h), e
 }
 func (d controlledDML) UpdateCAS(ctx context.Context, tx pgx.Tx, t apprecords.Table, in apprecords.Edit, ids []string) (apprecords.StoredHeader, error) {
+	if d.actualChange != nil {
+		changed, err := recordValuesActuallyChange(ctx, tx, t, in, ids)
+		if err != nil {
+			return apprecords.StoredHeader{}, err
+		}
+		*d.actualChange = changed
+	}
 	h, e := d.implementation.UpdateCAS(ctx, tx, appstructure.RecordTable(t), appstructure.RecordEdit(in), ids)
 	return apprecords.StoredHeader(h), e
 }
@@ -269,6 +279,9 @@ func (s *Service) Create(ctx context.Context, principal session.Principal, req C
 			return MutationResult{}, err
 		}
 	}
+	if err = retainRecordTriggers(ctx, write.Tx(), facts, stored, "record.created"); err != nil {
+		return MutationResult{}, err
+	}
 	result = MutationResult{OperationID: stored.OperationID, ID: stored.ID, RecordVersion: stored.RecordVersion, SchemaVersion: stored.SchemaVersion, CreatedAt: stored.CreatedAt.UTC().Format(time.RFC3339Nano), UpdatedAt: stored.UpdatedAt.UTC().Format(time.RFC3339Nano)}
 	raw, _ := json.Marshal(result)
 	if err = write.Complete(ctx, req.OperationID, applications.Result{Status: 201, Location: "", Data: raw}); err != nil {
@@ -492,7 +505,8 @@ func (s *Service) Edit(ctx context.Context, principal session.Principal, req Edi
 	if err != nil {
 		return result, fmt.Errorf("apply edit: %w", err)
 	}
-	writer := apprecords.Writer{Gate: appstructure.RecordGate{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID}, Authorization: recordAuthorization{policy: policy}, Fence: appstructure.RecordFence{AppID: req.AppID, TableID: facts.TableID}, Audit: recordAudit{port: appstructure.RecordAudit{Context: facts, OperationID: req.OperationID, BeforeRecordVersion: req.ExpectedRecordVersion, Metadata: metadata}}, DML: controlledDML{}}
+	var actuallyChanged bool
+	writer := apprecords.Writer{Gate: appstructure.RecordGate{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID}, Authorization: recordAuthorization{policy: policy}, Fence: appstructure.RecordFence{AppID: req.AppID, TableID: facts.TableID}, Audit: recordAudit{port: appstructure.RecordAudit{Context: facts, OperationID: req.OperationID, BeforeRecordVersion: req.ExpectedRecordVersion, Metadata: metadata}}, DML: controlledDML{actualChange: &actuallyChanged}}
 	stored, err := writer.EditInTx(ctx, write.Tx(), apprecords.Table{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID, Namespace: "appdata", SchemaVersion: facts.SchemaVersion, Ready: facts.SchemaReady, ActiveFieldIDs: active}, apprecords.Edit{OperationID: req.OperationID, ID: req.RecordID, ActorID: facts.Actor.ID, ExpectedSchemaVersion: req.ExpectedSchemaVersion, ExpectedRecordVersion: req.ExpectedRecordVersion, Changes: values})
 	if err != nil {
 		return result, fmt.Errorf("apply edit: %w", err)
@@ -506,6 +520,11 @@ func (s *Service) Edit(ctx context.Context, principal session.Principal, req Edi
 			return MutationResult{}, err
 		}
 		if err = store.ConsumeInTx(ctx, write.Tx(), draftAccess(facts, policy, fields, &base, targetOwner), req.DraftRef.ID, req.DraftRef.DraftVersion, &req.RecordID, &base); err != nil {
+			return MutationResult{}, err
+		}
+	}
+	if actuallyChanged {
+		if err = retainRecordTriggers(ctx, write.Tx(), facts, stored, "record.updated"); err != nil {
 			return MutationResult{}, err
 		}
 	}

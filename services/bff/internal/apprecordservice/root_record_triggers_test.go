@@ -2,7 +2,9 @@ package apprecordservice
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
@@ -230,4 +232,84 @@ func TestRootRecordTriggersTypedNumericAndNullChangeDetection(t *testing.T) {
 			rootTriggeredCount(t, f, f.ownRecord, c.want)
 		})
 	}
+}
+
+// Supplemental regressions for existing authority/idempotency/Save contracts.
+func TestRootRecordTriggersConcurrentOperationReplaysSingleIntentSet(t *testing.T) {
+	f := newRecordFixture(t)
+	rootConfiguredTrigger(t, f, "record.created", nil)
+	rootConfiguredTrigger(t, f, "record.created", nil)
+	req := rootTriggerCreateRequest(t, f, "concurrent")
+	const workers = 4
+	results := make(chan MutationResult, workers)
+	failures := make(chan error, workers)
+	start := make(chan struct{})
+	var group sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			<-start
+			got, err := f.service.Create(f.ctx, f.principal, req, applications.Metadata{RequestID: "v044-concurrent-replay"})
+			results <- got
+			failures <- err
+		}()
+	}
+	close(start)
+	group.Wait()
+	close(results)
+	close(failures)
+	for err := range failures {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	var first MutationResult
+	for result := range results {
+		if first.ID == "" {
+			first = result
+		} else if first != result {
+			t.Fatal("concurrent operation replay changed response")
+		}
+	}
+	rootTriggeredCount(t, f, first.ID, 2)
+}
+func TestRootRecordTriggersNodeSaveDoesNotTriggerOtherFlow(t *testing.T) {
+	f := rootSaveSetup(t, true)
+	rootConfiguredTrigger(t, f.recordFixture, "record.updated", nil)
+	rootSave(t, f, rootSaveRequest(t, f, "changed by node save"))
+	rootTriggeredCount(t, f.recordFixture, f.ownRecord, 1)
+	rootSaveCounts(t, f, 1)
+}
+func TestRootRecordTriggersDeniedWriteCreatesNoIntent(t *testing.T) {
+	f := newRecordFixture(t)
+	rootConfiguredTrigger(t, f, "record.created", nil)
+	req := rootTriggerCreateRequest(t, f, "alpha")
+	req.Values[f.secret] = "forbidden"
+	if _, err := f.service.Create(f.ctx, f.principal, req, applications.Metadata{RequestID: "v044-denied"}); !errors.Is(err, applications.ErrDenied) {
+		t.Fatalf("denied field write: %v", err)
+	}
+	var count int
+	if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_instances WHERE app_id=$1", f.app).Scan(&count); err != nil || count != 0 {
+		t.Fatalf("unauthorized trigger persisted: %d %v", count, err)
+	}
+}
+
+func TestRootRecordTriggersDoesNotSkipLowestValidFlowID(t *testing.T) {
+	f := newRecordFixture(t)
+	config := []workflowcatalog.Trigger{{Event: "record.created", Condition: json.RawMessage("null")}}
+	in := rootCatalogInput(f, "00000000-0000-0000-0000-000000000001", 0, rootCatalogGraph(t, f, false))
+	in.Triggers = &config
+	var h workflowcatalog.Head
+	rootCatalogTx(t, f, func(tx pgx.Tx) error {
+		var err error
+		h, err = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in)
+		return err
+	})
+	rootCatalogEnable(t, f, rootCatalogDeploy(t, f, h))
+	got, err := f.service.Create(f.ctx, f.principal, rootTriggerCreateRequest(t, f, "alpha"), applications.Metadata{RequestID: "v044-lowest-uuid"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rootTriggeredCount(t, f, got.ID, 1)
 }
