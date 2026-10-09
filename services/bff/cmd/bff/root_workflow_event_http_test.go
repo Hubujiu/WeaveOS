@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"testing"
 
 	fc "github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowprojection"
 	"github.com/jackc/pgx/v5"
 )
@@ -82,8 +84,13 @@ func TestRootWorkflowEventHTTPSClosedReadAndIdentity(t *testing.T) {
 		rootHTTPError(t, f.call(t, method, path, "", nil), 404, "API_NOT_FOUND")
 	}
 	rootHTTPError(t, f.call(t, "GET", path+"/", "", nil), 404, "API_NOT_FOUND")
-	if _, e := f.owner.Exec(f.ctx, "UPDATE applications.apps SET owner_user_id=$2 WHERE id=$1", f.app, f.other); e != nil {
+	sid, _, e := f.store.Create(f.ctx, session.Record{UserID: f.other, SessionRef: f.id(t), AuthVersion: "1"})
+	if e != nil {
 		t.Fatal(e)
 	}
-	rootHTTPError(t, f.call(t, "GET", path, "", nil), 403, "APPLICATION_FORBIDDEN")
+	t.Cleanup(func() { f.store.Revoke(context.Background(), sid) })
+	rootHTTPError(t, f.call(t, "GET", path, "", func(r *http.Request) {
+		r.Header.Del("Cookie")
+		r.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: sid})
+	}), 403, "APPLICATION_FORBIDDEN")
 }

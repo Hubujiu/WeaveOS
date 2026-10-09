@@ -2,16 +2,20 @@ package apprecordservice
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func eventSQL(t *testing.T, f rootTaskFixture, q string, args ...any) {
@@ -256,5 +260,211 @@ func TestRootWorkflowEventOwnerRetainsRemovedFieldsButNotMissingForm(t *testing.
 	q.ViewID = recordOperationID(t, f.recordFixture)
 	if _, e := f.service.ReadWorkflowEvent(f.ctx, owner, q); !errors.Is(e, applications.ErrMissing) {
 		t.Fatal("owner bypassed actual form existence", e)
+	}
+}
+
+func TestRootWorkflowEventLoadsOnlyCurrentlyAuthorizedBlobs(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	eventGrant(t, f, "all", f.public)
+	q := eventConfirmed(t, f, "agree")
+	eventSQL(t, f, "UPDATE applications.workflow_evidence_blobs SET body=set_byte(body,8,0) WHERE app_id=$1 AND field_id=$2", f.app, f.secret)
+	got := eventRead(t, f, f.principal, q)
+	if len(got.Basis.Fields) != 1 || got.Basis.Fields[0].FieldID != f.public {
+		t.Fatal("unreadable blob affected allowed projection")
+	}
+	eventSQL(t, f, "UPDATE applications.workflow_evidence_blobs SET body=set_byte(body,8,0) WHERE app_id=$1 AND field_id=$2", f.app, f.public)
+	got, e := f.service.ReadWorkflowEvent(f.ctx, f.principal, q)
+	if !errors.Is(e, ErrUnavailable) || got.Event.ID != "" {
+		t.Fatal("authorized corrupt blob did not fail closed", e)
+	}
+}
+
+func TestRootWorkflowEventExactNumericArrayAndHistoricalOptionLabels(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	base := rootEvidenceStoreFixture{recordFixture: f.recordFixture}
+	var defs []appfields.Field
+	var raw []byte
+	if e := f.owner.QueryRow(f.ctx, "SELECT fields_json FROM applications.logical_tables WHERE id=$1", f.table).Scan(&raw); e != nil {
+		t.Fatal(e)
+	}
+	if e := json.Unmarshal(raw, &defs); e != nil {
+		t.Fatal(e)
+	}
+	a, b := recordOperationID(t, f.recordFixture), recordOperationID(t, f.recordFixture)
+	money := appfields.Field{ID: recordOperationID(t, f.recordFixture), Name: "Original money", Kind: "money", Default: json.RawMessage("null"), Config: json.RawMessage(`{"precision":38,"scale":18,"roundingPlaces":0,"roundingMode":"TOWARD_ZERO"}`)}
+	multi := appfields.Field{ID: recordOperationID(t, f.recordFixture), Name: "Original selections", Kind: "multi_select", Default: json.RawMessage("null"), Config: json.RawMessage(fmt.Sprintf(`{"options":[{"id":%q,"label":"First"},{"id":%q,"label":"Second"}]}`, a, b))}
+	rootCaptureAddField(t, base, money, map[string]any{"Type": "numeric", "Precision": 38, "Scale": 18})
+	rootCaptureAddField(t, base, multi, map[string]any{"Type": "uuid[]"})
+	defs = append(defs, money, multi)
+	rootCaptureDefinitions(t, base, defs)
+	var grant string
+	if e := f.owner.QueryRow(f.ctx, "SELECT id::text FROM applications.grants WHERE app_id=$1 AND action='data.read' AND row_scope='all' LIMIT 1", f.app).Scan(&grant); e != nil {
+		t.Fatal(e)
+	}
+	for _, id := range []string{money.ID, multi.ID} {
+		eventSQL(t, f, "INSERT INTO applications.grant_fields(app_id,grant_id,field_id,table_id) VALUES($1,$2,$3,$4)", f.app, grant, id, f.table)
+	}
+	eventGrant(t, f, "all", money.ID, multi.ID)
+	exact := "12345678901234567890.123456789012345678"
+	eventSQL(t, f, "UPDATE "+rootCaptureRelation(base)+" SET "+rootCaptureColumn(money.ID)+"=$2::numeric,"+rootCaptureColumn(multi.ID)+"=$3::uuid[] WHERE id=$1", f.ownRecord, exact, []string{b, a})
+	q := eventConfirmed(t, f, "agree")
+	defs[len(defs)-1].Name = "Renamed selections"
+	defs[len(defs)-1].Config = json.RawMessage(fmt.Sprintf(`{"options":[{"id":%q,"label":"Now first"}]}`, a))
+	rootCaptureDefinitions(t, base, defs)
+	eventSQL(t, f, "UPDATE "+rootCaptureRelation(base)+" SET "+rootCaptureColumn(money.ID)+"=0,"+rootCaptureColumn(multi.ID)+"=$2::uuid[],record_version=2 WHERE id=$1", f.ownRecord, []string{a})
+	got := eventRead(t, f, f.principal, q)
+	fields := eventFields(t, got)
+	wantArray, _ := json.Marshal([]string{b, a})
+	if len(fields) != 2 || string(fields[money.ID].Value) != fmt.Sprintf("%q", exact) || string(fields[multi.ID].Value) != string(wantArray) || fields[multi.ID].FieldName != "Original selections" || fields[multi.ID].ValueLabels[b].Label != "Second" || fields[multi.ID].ValueLabels[b].Deleted || fields[multi.ID].ValueLabels[a].Label != "First" {
+		t.Fatal("original precision/order/labels were rewritten", fields)
+	}
+}
+
+func TestRootWorkflowEventSystemStartDoesNotInventApproverRead(t *testing.T) {
+	f := rootCaptureSetup(t).recordFixture
+	instance, record := rootStartIntent(t, f, f.other)
+	if ok, e := f.service.acceptWorkflowStart(f.ctx, instance); e != nil || !ok {
+		t.Fatal("actual durable intent not accepted", e)
+	}
+	c, p := rootStartCommand(t, f, instance)
+	projection := rootProjection{recordFixture: f}
+	// A start that reaches an active approval uses the exact fixed node/roster.
+	var node string
+	for id := range p.Start.Approvers {
+		node = id
+	}
+	task := projection.task(t, node, f.other, 1)
+	r, b := projection.receipt(t, c, "active", "", task)
+	projection.apply(t, c, p, r, b, true)
+	owner := f.principal
+	owner.UserID = f.other
+	owner.SessionRef = f.other
+	got, e := f.service.ReadWorkflowEvent(f.ctx, owner, WorkflowEventRequest{f.app, f.view, record, c.CommandID})
+	if e != nil || got.Basis.Status != "available" || got.Basis.Fields == nil || len(got.Basis.Fields) != 0 || got.Event.Action != "start" || got.Event.NodeID != nil {
+		t.Fatal("system capture presented as human-readable approval basis", got, e)
+	}
+}
+
+func TestRootWorkflowEventBatchedHistoricalReadCost(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	base := rootEvidenceStoreFixture{recordFixture: f.recordFixture}
+	var defs []appfields.Field
+	var raw []byte
+	if e := f.owner.QueryRow(f.ctx, "SELECT fields_json FROM applications.logical_tables WHERE id=$1", f.table).Scan(&raw); e != nil {
+		t.Fatal(e)
+	}
+	if e := json.Unmarshal(raw, &defs); e != nil {
+		t.Fatal(e)
+	}
+	var readGrant string
+	if e := f.owner.QueryRow(f.ctx, "SELECT id::text FROM applications.grants WHERE app_id=$1 AND action='data.read' AND row_scope='all' LIMIT 1", f.app).Scan(&readGrant); e != nil {
+		t.Fatal(e)
+	}
+	ids := []string{f.public, f.secret, f.reference}
+	for i := 0; i < 32; i++ {
+		field := appfields.Field{ID: recordOperationID(t, f.recordFixture), Name: fmt.Sprintf("Historical %02d", i), Kind: "text", Default: json.RawMessage("null"), Config: json.RawMessage(`{"maxLength":null}`)}
+		rootCaptureAddField(t, base, field, map[string]any{"Type": "text"})
+		defs = append(defs, field)
+		ids = append(ids, field.ID)
+		eventSQL(t, f, "INSERT INTO applications.grant_fields(app_id,grant_id,field_id,table_id) VALUES($1,$2,$3,$4)", f.app, readGrant, field.ID, f.table)
+		eventSQL(t, f, "UPDATE "+rootCaptureRelation(base)+" SET "+rootCaptureColumn(field.ID)+"=$2 WHERE id=$1", f.ownRecord, fmt.Sprintf("value-%02d", i))
+	}
+	rootCaptureDefinitions(t, base, defs)
+	eventGrant(t, f, "all", ids...)
+	q := eventConfirmed(t, f, "agree")
+	trace := new(rootEvidenceQueryTrace)
+	cfg := f.runtime.Config()
+	cfg.ConnConfig.Tracer = trace
+	cfg.MaxConns = 1
+	pool, e := pgxpool.NewWithConfig(f.ctx, cfg)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer pool.Close()
+	if e = pool.Ping(f.ctx); e != nil {
+		t.Fatal(e)
+	}
+	service := *f.service
+	service.Pool = pool
+	var counts []int32
+	var times []float64
+	for i := 0; i < 3; i++ {
+		trace.count.Store(0)
+		start := time.Now()
+		got, e := service.ReadWorkflowEvent(f.ctx, f.principal, q)
+		ms := float64(time.Since(start).Microseconds()) / 1000
+		count := trace.count.Load()
+		if e != nil || len(got.Basis.Fields) != 35 {
+			t.Fatal("wide authorized basis missing", e)
+		}
+		if count > 24 {
+			t.Fatalf("per-field historical SQL: fields35 statements%d", count)
+		}
+		fields := eventFields(t, got)
+		for j, id := range ids[3:] {
+			if string(fields[id].Value) != fmt.Sprintf("%q", fmt.Sprintf("value-%02d", j)) {
+				t.Fatal("wide basis identity/value mismatch")
+			}
+		}
+		counts = append(counts, count)
+		times = append(times, ms)
+	}
+	t.Logf("V062_COST fields=35 real_readonly_service_statements_including_tx=%v elapsed_ms=%v; isolated warm PG, not production throughput", counts, times)
+}
+
+type eventSnapshotTrace struct {
+	sql     string
+	changed bool
+	change  func() error
+	err     error
+}
+
+func (s *eventSnapshotTrace) TraceQueryStart(ctx context.Context, _ *pgx.Conn, d pgx.TraceQueryStartData) context.Context {
+	s.sql = d.SQL
+	return ctx
+}
+func (s *eventSnapshotTrace) TraceQueryEnd(_ context.Context, _ *pgx.Conn, _ pgx.TraceQueryEndData) {
+	if !s.changed && strings.Contains(s.sql, "FROM applications.workflow_execution_events e JOIN") {
+		s.changed = true
+		s.err = s.change()
+	}
+}
+func TestRootWorkflowEventOneSnapshotAndNextRequestRevocation(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	eventGrant(t, f, "all", f.public)
+	q := eventConfirmed(t, f, "agree")
+	trace := &eventSnapshotTrace{change: func() error {
+		_, e := f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.history')", f.app)
+		if e != nil {
+			return e
+		}
+		_, e = f.owner.Exec(f.ctx, "UPDATE applications.workflow_evidence_blobs SET body=set_byte(body,8,0) WHERE app_id=$1 AND field_id=$2", f.app, f.public)
+		return e
+	}}
+	cfg := f.runtime.Config()
+	cfg.ConnConfig.Tracer = trace
+	cfg.MaxConns = 1
+	pool, e := pgxpool.NewWithConfig(f.ctx, cfg)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer pool.Close()
+	service := *f.service
+	service.Pool = pool
+	got, e := service.ReadWorkflowEvent(f.ctx, f.principal, q)
+	if !trace.changed || trace.err != nil {
+		t.Fatal("concurrent change fixture did not execute", trace.err)
+	}
+	if e != nil || len(got.Basis.Fields) != 1 || string(got.Basis.Fields[0].Value) != `"alpha"` {
+		t.Fatal("mixed pre-revocation event with later corrupted basis", e)
+	}
+	if _, e = service.ReadWorkflowEvent(f.ctx, f.principal, q); !errors.Is(e, applications.ErrDenied) {
+		t.Fatal("new request reused old history permission", e)
+	}
+	owner := f.principal
+	owner.UserID = f.other
+	owner.SessionRef = f.other
+	if _, e = service.ReadWorkflowEvent(f.ctx, owner, q); !errors.Is(e, ErrUnavailable) {
+		t.Fatal("fresh authorized snapshot did not observe injected corruption", e)
 	}
 }
