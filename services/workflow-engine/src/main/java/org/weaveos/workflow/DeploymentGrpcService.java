@@ -13,6 +13,9 @@ public final class DeploymentGrpcService extends DeploymentServiceGrpc.Deploymen
     private final DeploymentRegistry registry;
     public DeploymentGrpcService(DeploymentRegistry registry) { this.registry = Objects.requireNonNull(registry); }
 
+    // Compile-only R3 declaration; generated methods remain UNIMPLEMENTED until observed RED.
+    public DeploymentGrpcService(DeploymentRegistry registry, FlowDeletionRegistry deletion) { this(registry); }
+
     @Override public void deploy(DeployRequest request, StreamObserver<DeploymentReceipt> output) {
         if (outsideTransaction(output)) return;
         DeploymentRegistry.Receipt receipt;

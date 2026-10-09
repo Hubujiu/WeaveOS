@@ -40,6 +40,21 @@ public final class Deployment {
   static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_weaveos_workflow_v1_LookupResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_weaveos_workflow_v1_FlowDeletionRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_weaveos_workflow_v1_FlowDeletionRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_weaveos_workflow_v1_FlowDeletionReceipt_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_weaveos_workflow_v1_FlowDeletionReceipt_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_weaveos_workflow_v1_FlowDeletionLookupResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_weaveos_workflow_v1_FlowDeletionLookupResponse_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -64,14 +79,29 @@ public final class Deployment {
       "\022;\n\tconfirmed\030\001 \001(\0132&.weaveos.workflow.v" +
       "1.DeploymentReceiptH\000\0228\n\014not_observed\030\002 " +
       "\001(\0132 .weaveos.workflow.v1.NotObservedH\000B" +
-      "\010\n\006result2\274\001\n\021DeploymentService\022T\n\006Deplo" +
-      "y\022\".weaveos.workflow.v1.DeployRequest\032&." +
-      "weaveos.workflow.v1.DeploymentReceipt\022Q\n" +
-      "\006Lookup\022\".weaveos.workflow.v1.LookupRequ" +
-      "est\032#.weaveos.workflow.v1.LookupResponse" +
-      "B\\\n\027org.weaveos.workflow.v1P\001Z?github.co" +
-      "m/Hubujiu/WeaveOS/services/bff/internal/" +
-      "workflowrpc/pbb\006proto3"
+      "\010\n\006result\"L\n\023FlowDeletionRequest\022\016\n\006app_" +
+      "id\030\001 \001(\t\022\017\n\007flow_id\030\002 \001(\t\022\024\n\014operation_i" +
+      "d\030\003 \001(\t\"\234\001\n\023FlowDeletionReceipt\022\016\n\006app_i" +
+      "d\030\001 \001(\t\022\017\n\007flow_id\030\002 \001(\t\022\024\n\014operation_id" +
+      "\030\003 \001(\t\022\030\n\020deleted_versions\030\004 \001(\004\022\032\n\022dele" +
+      "ted_at_seconds\030\005 \001(\003\022\030\n\020deleted_at_nanos" +
+      "\030\006 \001(\005\"\237\001\n\032FlowDeletionLookupResponse\022=\n" +
+      "\tconfirmed\030\001 \001(\0132(.weaveos.workflow.v1.F" +
+      "lowDeletionReceiptH\000\0228\n\014not_observed\030\002 \001" +
+      "(\0132 .weaveos.workflow.v1.NotObservedH\000B\010" +
+      "\n\006result2\217\003\n\021DeploymentService\022T\n\006Deploy" +
+      "\022\".weaveos.workflow.v1.DeployRequest\032&.w" +
+      "eaveos.workflow.v1.DeploymentReceipt\022Q\n\006" +
+      "Lookup\022\".weaveos.workflow.v1.LookupReque" +
+      "st\032#.weaveos.workflow.v1.LookupResponse\022" +
+      "`\n\nDeleteFlow\022(.weaveos.workflow.v1.Flow" +
+      "DeletionRequest\032(.weaveos.workflow.v1.Fl" +
+      "owDeletionReceipt\022o\n\022LookupFlowDeletion\022" +
+      "(.weaveos.workflow.v1.FlowDeletionReques" +
+      "t\032/.weaveos.workflow.v1.FlowDeletionLook" +
+      "upResponseB\\\n\027org.weaveos.workflow.v1P\001Z" +
+      "?github.com/Hubujiu/WeaveOS/services/bff" +
+      "/internal/workflowrpc/pbb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -106,6 +136,24 @@ public final class Deployment {
     internal_static_weaveos_workflow_v1_LookupResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_weaveos_workflow_v1_LookupResponse_descriptor,
+        new java.lang.String[] { "Confirmed", "NotObserved", "Result", });
+    internal_static_weaveos_workflow_v1_FlowDeletionRequest_descriptor =
+      getDescriptor().getMessageTypes().get(5);
+    internal_static_weaveos_workflow_v1_FlowDeletionRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_weaveos_workflow_v1_FlowDeletionRequest_descriptor,
+        new java.lang.String[] { "AppId", "FlowId", "OperationId", });
+    internal_static_weaveos_workflow_v1_FlowDeletionReceipt_descriptor =
+      getDescriptor().getMessageTypes().get(6);
+    internal_static_weaveos_workflow_v1_FlowDeletionReceipt_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_weaveos_workflow_v1_FlowDeletionReceipt_descriptor,
+        new java.lang.String[] { "AppId", "FlowId", "OperationId", "DeletedVersions", "DeletedAtSeconds", "DeletedAtNanos", });
+    internal_static_weaveos_workflow_v1_FlowDeletionLookupResponse_descriptor =
+      getDescriptor().getMessageTypes().get(7);
+    internal_static_weaveos_workflow_v1_FlowDeletionLookupResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_weaveos_workflow_v1_FlowDeletionLookupResponse_descriptor,
         new java.lang.String[] { "Confirmed", "NotObserved", "Result", });
   }
 

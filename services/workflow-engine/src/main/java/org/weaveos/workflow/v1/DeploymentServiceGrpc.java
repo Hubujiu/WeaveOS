@@ -74,6 +74,68 @@ public final class DeploymentServiceGrpc {
     return getLookupMethod;
   }
 
+  private static volatile io.grpc.MethodDescriptor<org.weaveos.workflow.v1.FlowDeletionRequest,
+      org.weaveos.workflow.v1.FlowDeletionReceipt> getDeleteFlowMethod;
+
+  @io.grpc.stub.annotations.RpcMethod(
+      fullMethodName = SERVICE_NAME + '/' + "DeleteFlow",
+      requestType = org.weaveos.workflow.v1.FlowDeletionRequest.class,
+      responseType = org.weaveos.workflow.v1.FlowDeletionReceipt.class,
+      methodType = io.grpc.MethodDescriptor.MethodType.UNARY)
+  public static io.grpc.MethodDescriptor<org.weaveos.workflow.v1.FlowDeletionRequest,
+      org.weaveos.workflow.v1.FlowDeletionReceipt> getDeleteFlowMethod() {
+    io.grpc.MethodDescriptor<org.weaveos.workflow.v1.FlowDeletionRequest, org.weaveos.workflow.v1.FlowDeletionReceipt> getDeleteFlowMethod;
+    if ((getDeleteFlowMethod = DeploymentServiceGrpc.getDeleteFlowMethod) == null) {
+      synchronized (DeploymentServiceGrpc.class) {
+        if ((getDeleteFlowMethod = DeploymentServiceGrpc.getDeleteFlowMethod) == null) {
+          DeploymentServiceGrpc.getDeleteFlowMethod = getDeleteFlowMethod =
+              io.grpc.MethodDescriptor.<org.weaveos.workflow.v1.FlowDeletionRequest, org.weaveos.workflow.v1.FlowDeletionReceipt>newBuilder()
+              .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
+              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "DeleteFlow"))
+              .setSampledToLocalTracing(true)
+              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  org.weaveos.workflow.v1.FlowDeletionRequest.getDefaultInstance()))
+              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  org.weaveos.workflow.v1.FlowDeletionReceipt.getDefaultInstance()))
+              .setSchemaDescriptor(new DeploymentServiceMethodDescriptorSupplier("DeleteFlow"))
+              .build();
+        }
+      }
+    }
+    return getDeleteFlowMethod;
+  }
+
+  private static volatile io.grpc.MethodDescriptor<org.weaveos.workflow.v1.FlowDeletionRequest,
+      org.weaveos.workflow.v1.FlowDeletionLookupResponse> getLookupFlowDeletionMethod;
+
+  @io.grpc.stub.annotations.RpcMethod(
+      fullMethodName = SERVICE_NAME + '/' + "LookupFlowDeletion",
+      requestType = org.weaveos.workflow.v1.FlowDeletionRequest.class,
+      responseType = org.weaveos.workflow.v1.FlowDeletionLookupResponse.class,
+      methodType = io.grpc.MethodDescriptor.MethodType.UNARY)
+  public static io.grpc.MethodDescriptor<org.weaveos.workflow.v1.FlowDeletionRequest,
+      org.weaveos.workflow.v1.FlowDeletionLookupResponse> getLookupFlowDeletionMethod() {
+    io.grpc.MethodDescriptor<org.weaveos.workflow.v1.FlowDeletionRequest, org.weaveos.workflow.v1.FlowDeletionLookupResponse> getLookupFlowDeletionMethod;
+    if ((getLookupFlowDeletionMethod = DeploymentServiceGrpc.getLookupFlowDeletionMethod) == null) {
+      synchronized (DeploymentServiceGrpc.class) {
+        if ((getLookupFlowDeletionMethod = DeploymentServiceGrpc.getLookupFlowDeletionMethod) == null) {
+          DeploymentServiceGrpc.getLookupFlowDeletionMethod = getLookupFlowDeletionMethod =
+              io.grpc.MethodDescriptor.<org.weaveos.workflow.v1.FlowDeletionRequest, org.weaveos.workflow.v1.FlowDeletionLookupResponse>newBuilder()
+              .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
+              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "LookupFlowDeletion"))
+              .setSampledToLocalTracing(true)
+              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  org.weaveos.workflow.v1.FlowDeletionRequest.getDefaultInstance()))
+              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  org.weaveos.workflow.v1.FlowDeletionLookupResponse.getDefaultInstance()))
+              .setSchemaDescriptor(new DeploymentServiceMethodDescriptorSupplier("LookupFlowDeletion"))
+              .build();
+        }
+      }
+    }
+    return getLookupFlowDeletionMethod;
+  }
+
   /**
    * Creates a new async stub that supports all call types for the service
    */
@@ -150,6 +212,20 @@ public final class DeploymentServiceGrpc {
         io.grpc.stub.StreamObserver<org.weaveos.workflow.v1.LookupResponse> responseObserver) {
       io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getLookupMethod(), responseObserver);
     }
+
+    /**
+     */
+    default void deleteFlow(org.weaveos.workflow.v1.FlowDeletionRequest request,
+        io.grpc.stub.StreamObserver<org.weaveos.workflow.v1.FlowDeletionReceipt> responseObserver) {
+      io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getDeleteFlowMethod(), responseObserver);
+    }
+
+    /**
+     */
+    default void lookupFlowDeletion(org.weaveos.workflow.v1.FlowDeletionRequest request,
+        io.grpc.stub.StreamObserver<org.weaveos.workflow.v1.FlowDeletionLookupResponse> responseObserver) {
+      io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getLookupFlowDeletionMethod(), responseObserver);
+    }
   }
 
   /**
@@ -194,6 +270,22 @@ public final class DeploymentServiceGrpc {
       io.grpc.stub.ClientCalls.asyncUnaryCall(
           getChannel().newCall(getLookupMethod(), getCallOptions()), request, responseObserver);
     }
+
+    /**
+     */
+    public void deleteFlow(org.weaveos.workflow.v1.FlowDeletionRequest request,
+        io.grpc.stub.StreamObserver<org.weaveos.workflow.v1.FlowDeletionReceipt> responseObserver) {
+      io.grpc.stub.ClientCalls.asyncUnaryCall(
+          getChannel().newCall(getDeleteFlowMethod(), getCallOptions()), request, responseObserver);
+    }
+
+    /**
+     */
+    public void lookupFlowDeletion(org.weaveos.workflow.v1.FlowDeletionRequest request,
+        io.grpc.stub.StreamObserver<org.weaveos.workflow.v1.FlowDeletionLookupResponse> responseObserver) {
+      io.grpc.stub.ClientCalls.asyncUnaryCall(
+          getChannel().newCall(getLookupFlowDeletionMethod(), getCallOptions()), request, responseObserver);
+    }
   }
 
   /**
@@ -225,6 +317,20 @@ public final class DeploymentServiceGrpc {
       return io.grpc.stub.ClientCalls.blockingV2UnaryCall(
           getChannel(), getLookupMethod(), getCallOptions(), request);
     }
+
+    /**
+     */
+    public org.weaveos.workflow.v1.FlowDeletionReceipt deleteFlow(org.weaveos.workflow.v1.FlowDeletionRequest request) throws io.grpc.StatusException {
+      return io.grpc.stub.ClientCalls.blockingV2UnaryCall(
+          getChannel(), getDeleteFlowMethod(), getCallOptions(), request);
+    }
+
+    /**
+     */
+    public org.weaveos.workflow.v1.FlowDeletionLookupResponse lookupFlowDeletion(org.weaveos.workflow.v1.FlowDeletionRequest request) throws io.grpc.StatusException {
+      return io.grpc.stub.ClientCalls.blockingV2UnaryCall(
+          getChannel(), getLookupFlowDeletionMethod(), getCallOptions(), request);
+    }
   }
 
   /**
@@ -255,6 +361,20 @@ public final class DeploymentServiceGrpc {
     public org.weaveos.workflow.v1.LookupResponse lookup(org.weaveos.workflow.v1.LookupRequest request) {
       return io.grpc.stub.ClientCalls.blockingUnaryCall(
           getChannel(), getLookupMethod(), getCallOptions(), request);
+    }
+
+    /**
+     */
+    public org.weaveos.workflow.v1.FlowDeletionReceipt deleteFlow(org.weaveos.workflow.v1.FlowDeletionRequest request) {
+      return io.grpc.stub.ClientCalls.blockingUnaryCall(
+          getChannel(), getDeleteFlowMethod(), getCallOptions(), request);
+    }
+
+    /**
+     */
+    public org.weaveos.workflow.v1.FlowDeletionLookupResponse lookupFlowDeletion(org.weaveos.workflow.v1.FlowDeletionRequest request) {
+      return io.grpc.stub.ClientCalls.blockingUnaryCall(
+          getChannel(), getLookupFlowDeletionMethod(), getCallOptions(), request);
     }
   }
 
@@ -289,10 +409,28 @@ public final class DeploymentServiceGrpc {
       return io.grpc.stub.ClientCalls.futureUnaryCall(
           getChannel().newCall(getLookupMethod(), getCallOptions()), request);
     }
+
+    /**
+     */
+    public com.google.common.util.concurrent.ListenableFuture<org.weaveos.workflow.v1.FlowDeletionReceipt> deleteFlow(
+        org.weaveos.workflow.v1.FlowDeletionRequest request) {
+      return io.grpc.stub.ClientCalls.futureUnaryCall(
+          getChannel().newCall(getDeleteFlowMethod(), getCallOptions()), request);
+    }
+
+    /**
+     */
+    public com.google.common.util.concurrent.ListenableFuture<org.weaveos.workflow.v1.FlowDeletionLookupResponse> lookupFlowDeletion(
+        org.weaveos.workflow.v1.FlowDeletionRequest request) {
+      return io.grpc.stub.ClientCalls.futureUnaryCall(
+          getChannel().newCall(getLookupFlowDeletionMethod(), getCallOptions()), request);
+    }
   }
 
   private static final int METHODID_DEPLOY = 0;
   private static final int METHODID_LOOKUP = 1;
+  private static final int METHODID_DELETE_FLOW = 2;
+  private static final int METHODID_LOOKUP_FLOW_DELETION = 3;
 
   private static final class MethodHandlers<Req, Resp> implements
       io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
@@ -318,6 +456,14 @@ public final class DeploymentServiceGrpc {
         case METHODID_LOOKUP:
           serviceImpl.lookup((org.weaveos.workflow.v1.LookupRequest) request,
               (io.grpc.stub.StreamObserver<org.weaveos.workflow.v1.LookupResponse>) responseObserver);
+          break;
+        case METHODID_DELETE_FLOW:
+          serviceImpl.deleteFlow((org.weaveos.workflow.v1.FlowDeletionRequest) request,
+              (io.grpc.stub.StreamObserver<org.weaveos.workflow.v1.FlowDeletionReceipt>) responseObserver);
+          break;
+        case METHODID_LOOKUP_FLOW_DELETION:
+          serviceImpl.lookupFlowDeletion((org.weaveos.workflow.v1.FlowDeletionRequest) request,
+              (io.grpc.stub.StreamObserver<org.weaveos.workflow.v1.FlowDeletionLookupResponse>) responseObserver);
           break;
         default:
           throw new AssertionError();
@@ -351,6 +497,20 @@ public final class DeploymentServiceGrpc {
               org.weaveos.workflow.v1.LookupRequest,
               org.weaveos.workflow.v1.LookupResponse>(
                 service, METHODID_LOOKUP)))
+        .addMethod(
+          getDeleteFlowMethod(),
+          io.grpc.stub.ServerCalls.asyncUnaryCall(
+            new MethodHandlers<
+              org.weaveos.workflow.v1.FlowDeletionRequest,
+              org.weaveos.workflow.v1.FlowDeletionReceipt>(
+                service, METHODID_DELETE_FLOW)))
+        .addMethod(
+          getLookupFlowDeletionMethod(),
+          io.grpc.stub.ServerCalls.asyncUnaryCall(
+            new MethodHandlers<
+              org.weaveos.workflow.v1.FlowDeletionRequest,
+              org.weaveos.workflow.v1.FlowDeletionLookupResponse>(
+                service, METHODID_LOOKUP_FLOW_DELETION)))
         .build();
   }
 
@@ -401,6 +561,8 @@ public final class DeploymentServiceGrpc {
               .setSchemaDescriptor(new DeploymentServiceFileDescriptorSupplier())
               .addMethod(getDeployMethod())
               .addMethod(getLookupMethod())
+              .addMethod(getDeleteFlowMethod())
+              .addMethod(getLookupFlowDeletionMethod())
               .build();
         }
       }
