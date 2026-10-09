@@ -1,5 +1,7 @@
 # v0.1.0 任务索引
 
+- [V030-057 · 发布统计实际落盘验证](V030-057.md) — task/V030-057-result-publication / ../WeaveOS-worktrees/V030-057；基线 develop `a29cd550`，新增报告到结果文件的真实行为测试，当前 in_progress。
+
 - [V030-056 · BPMN 固定图边完整映射验证](V030-056.md) — task/V030-056-bpmn-edge-oracle / ../WeaveOS-worktrees/V030-056；基线 develop `a6f04840`，只加强既有固定样例的边/default集合，当前 in_progress。
 
 - [V030-055 · 磁盘准备真实拒绝与调用边界](V030-055.md) — [PR #63](https://github.com/Hubujiu/WeaveOS/pull/63) 已合入 develop `a6f04840`；四个原文字漏检已由真实Bash调用矩阵检出，最终三workflow20jobs首轮通过，原安全守卫保留。
