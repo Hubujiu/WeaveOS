@@ -113,6 +113,8 @@ Flowable原生版本与流程层精简：[V030-038](V030-038.md)，Root本人设
 
 - [V030-060 · 实测纯文档 CI 分流](V030-060.md) — V059 全量已通过并合 develop；仅 Markdown 的真实 PR 验证重测试跳过及汇总门禁，结果待实跑。
 
-- [V030-061 · 当前用户跨应用审批待办](V030-061.md) — 主助手直接执行；个人待办服务/封闭HTTP/索引及安全补强本地回归通过；[draft PR #70](https://github.com/Hubujiu/WeaveOS/pull/70) 等待最终精确CI与develop集成，未最终验收。
+- [V030-061 · 当前用户跨应用审批待办](V030-061.md) — 主助手直接执行；个人待办服务/封闭HTTP/索引及安全补强本地回归通过；[PR #70](https://github.com/Hubujiu/WeaveOS/pull/70) 最终cc811636全部适用CI通过，已squash develop a13e73b；未用户main批准。
+
+- [V030-062 · 已确认审批事件与历史依据详情](V030-062.md) — [PR #71](https://github.com/Hubujiu/WeaveOS/pull/71) 最终264b73b适用CI全绿并squash develop cf27eaa；main未推广。
 
 - [V030-066 · 原生流程删除安全性验证](V030-066.md) — 真实Flowable六项通过，精确CI接线RED→GREEN；[draft PR72](https://github.com/Hubujiu/WeaveOS/pull/72)待最终CI，不是产品删除入口。
