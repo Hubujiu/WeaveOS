@@ -1,0 +1,46 @@
+✖ personal inbox is exact guarded read-only POST without actor/resource input (1.246273ms)
+✖ personal inbox returns only current task routing metadata and bounded pagination (0.197411ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 92.69713
+
+✖ failing tests:
+
+test at contracts/workflow-inbox.contract.test.mjs:6:1
+✖ personal inbox is exact guarded read-only POST without actor/resource input (1.246273ms)
+  AssertionError [ERR_ASSERTION]: personal inbox route missing
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-061/contracts/workflow-inbox.contract.test.mjs:7:63)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at contracts/workflow-inbox.contract.test.mjs:15:1
+✖ personal inbox returns only current task routing metadata and bounded pagination (0.197411ms)
+  AssertionError [ERR_ASSERTION]: personal inbox summary missing
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-061/contracts/workflow-inbox.contract.test.mjs:16:46)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -1,0 +1,21 @@
+diff --git a/services/bff/internal/apprecordservice/workflow_inbox.go b/services/bff/internal/apprecordservice/workflow_inbox.go
+index f8a6a38..894c33c 100644
+--- a/services/bff/internal/apprecordservice/workflow_inbox.go
++++ b/services/bff/internal/apprecordservice/workflow_inbox.go
+@@ -6,6 +6,7 @@ import (
+ 	"encoding/hex"
+ 	"encoding/json"
+ 	"errors"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appaccess"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
+@@ -217,7 +218,7 @@ func (s *inboxStrategy) authorized(ctx context.Context, tx pgx.Tx, c *inboxCandi
+ 		return false, err
+ 	}
+ 	policy, menu := policyFor(facts)
+-	if !menu {
++	if !menu || policy.VisibleScope() == appaccess.None {
+ 		return false, nil
+ 	}
+ 	if facts.Actor.ID != s.binding.ActorID || facts.TableID != c.tableID || !facts.SchemaReady {
