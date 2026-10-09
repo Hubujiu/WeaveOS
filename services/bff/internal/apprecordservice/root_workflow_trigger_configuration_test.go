@@ -36,7 +36,7 @@ func TestRootTriggerConfigurationVersionImmutabilityAndInheritance(t *testing.T)
 		return err
 	})
 	got := rootReadTriggers(t, f, h, 1)
-	if !reflect.DeepEqual(got, configs) {
+	if !rootSameTriggerConfiguration(got, configs) {
 		t.Fatalf("config not persisted: got=%+v want=%+v", got, configs)
 	}
 	h = rootCatalogEnable(t, f, rootCatalogDeploy(t, f, h))
@@ -44,7 +44,7 @@ func TestRootTriggerConfigurationVersionImmutabilityAndInheritance(t *testing.T)
 	if h2.CurrentVersion != 1 || h2.CandidateVersion != 2 {
 		t.Fatalf("draft changed published version: %+v", h2)
 	}
-	if !reflect.DeepEqual(rootReadTriggers(t, f, h2, 2), configs) {
+	if !rootSameTriggerConfiguration(rootReadTriggers(t, f, h2, 2), configs) {
 		t.Fatal("omitted config lost existing candidate settings")
 	}
 	empty := []workflowcatalog.Trigger{}
@@ -58,7 +58,7 @@ func TestRootTriggerConfigurationVersionImmutabilityAndInheritance(t *testing.T)
 	if got := rootReadTriggers(t, f, h2, 3); got == nil || len(got) != 0 {
 		t.Fatalf("explicit empty must clear new candidate only: %+v", got)
 	}
-	if !reflect.DeepEqual(rootReadTriggers(t, f, h2, 1), configs) {
+	if !rootSameTriggerConfiguration(rootReadTriggers(t, f, h2, 1), configs) {
 		t.Fatal("published config was overwritten")
 	}
 	if h2.CurrentVersion != 1 {
@@ -117,4 +117,12 @@ func TestRootTriggerConfigurationMissingVersionAndLegacyEmpty(t *testing.T) {
 		}
 		return nil
 	})
+}
+
+// Conditions are JSON values; object key serialization order is not behavior.
+func rootSameTriggerConfiguration(a, b []workflowcatalog.Trigger) bool {
+	rawA, errA := json.Marshal(a)
+	rawB, errB := json.Marshal(b)
+	var left, right any
+	return errA == nil && errB == nil && json.Unmarshal(rawA, &left) == nil && json.Unmarshal(rawB, &right) == nil && reflect.DeepEqual(left, right)
 }
