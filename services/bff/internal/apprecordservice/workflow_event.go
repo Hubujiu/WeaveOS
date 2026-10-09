@@ -67,41 +67,12 @@ func (s *Service) ReadWorkflowEvent(ctx context.Context, p session.Principal, q 
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	tx, facts, err := (&applications.Application{Pool: s.Pool}).BeginRecordRead(ctx, p, q.AppID, q.ViewID)
+	a, err := s.beginWorkflowHistoryRead(ctx, p, q)
 	if err != nil {
 		return empty, err
 	}
+	tx, facts, creator, policy, currentIDs, full := a.tx, a.facts, a.creator, a.policy, a.currentIDs, a.full
 	defer tx.Rollback(context.Background())
-	policy, menu := policyFor(facts)
-	if !menu {
-		return empty, applications.ErrDenied
-	}
-	if policy.VisibleScope() == appaccess.None {
-		return empty, applications.ErrMissing
-	}
-	if !facts.SchemaReady {
-		return empty, &appstructure.Error{Code: "APPLICATION_SCHEMA_NOT_READY"}
-	}
-	_, currentIDs, err := fieldsInContext(facts)
-	if err != nil {
-		return empty, ErrUnavailable
-	}
-	var creator string
-	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(facts.TableID, "-", "")}.Sanitize()
-	err = tx.QueryRow(ctx, "SELECT created_by::text FROM "+relation+" WHERE id=$1::uuid", q.RecordID).Scan(&creator)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return empty, applications.ErrMissing
-	}
-	if err != nil {
-		return empty, ErrUnavailable
-	}
-	full := facts.Actor.BootstrapAdmin || facts.Actor.ID == facts.App.OwnerUserID
-	if len(policy.ReadFields(creator, currentIDs)) == 0 && !full {
-		return empty, applications.ErrMissing
-	}
-	if policy.HistoryScope() == appaccess.None || len(policy.HistoryFields(creator, currentIDs)) == 0 && !full {
-		return empty, applications.ErrDenied
-	}
 	result, err := readWorkflowEventInTx(ctx, tx, facts, q, creator, policy, currentIDs, full)
 	if err != nil {
 		return empty, err
@@ -110,6 +81,60 @@ func (s *Service) ReadWorkflowEvent(ctx context.Context, p session.Principal, q 
 		return empty, ErrUnavailable
 	}
 	return result, nil
+}
+
+type workflowHistoryRead struct {
+	tx         pgx.Tx
+	facts      applications.RecordContext
+	creator    string
+	policy     appaccess.Policy
+	currentIDs []string
+	full       bool
+}
+
+func (s *Service) beginWorkflowHistoryRead(ctx context.Context, p session.Principal, q WorkflowEventRequest) (*workflowHistoryRead, error) {
+	tx, facts, err := (&applications.Application{Pool: s.Pool}).BeginRecordRead(ctx, p, q.AppID, q.ViewID)
+	if err != nil {
+		return nil, err
+	}
+	ok := false
+	defer func() {
+		if !ok {
+			_ = tx.Rollback(context.Background())
+		}
+	}()
+	policy, menu := policyFor(facts)
+	if !menu {
+		return nil, applications.ErrDenied
+	}
+	if policy.VisibleScope() == appaccess.None {
+		return nil, applications.ErrMissing
+	}
+	if !facts.SchemaReady {
+		return nil, &appstructure.Error{Code: "APPLICATION_SCHEMA_NOT_READY"}
+	}
+	_, currentIDs, err := fieldsInContext(facts)
+	if err != nil {
+		return nil, ErrUnavailable
+	}
+	var creator string
+	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(facts.TableID, "-", "")}.Sanitize()
+	err = tx.QueryRow(ctx, "SELECT created_by::text FROM "+relation+" WHERE id=$1::uuid", q.RecordID).Scan(&creator)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, applications.ErrMissing
+	}
+	if err != nil {
+		return nil, ErrUnavailable
+	}
+	full := facts.Actor.BootstrapAdmin || facts.Actor.ID == facts.App.OwnerUserID
+	if len(policy.ReadFields(creator, currentIDs)) == 0 && !full {
+		return nil, applications.ErrMissing
+	}
+	if policy.HistoryScope() == appaccess.None || len(policy.HistoryFields(creator, currentIDs)) == 0 && !full {
+		return nil, applications.ErrDenied
+	}
+	ok = true
+	return &workflowHistoryRead{tx: tx, facts: facts, creator: creator, policy: policy, currentIDs: currentIDs, full: full}, nil
 }
 
 func readWorkflowEventInTx(ctx context.Context, tx pgx.Tx, facts applications.RecordContext, q WorkflowEventRequest, creator string, policy appaccess.Policy, currentIDs []string, full bool) (WorkflowEventResult, error) {
