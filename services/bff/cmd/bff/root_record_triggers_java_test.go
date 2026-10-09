@@ -122,9 +122,29 @@ func rootPublicTriggerJavaContract(t *testing.T, twoFlows, closeAfterCreate, los
 	body := `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"values":{"` + f.field + `":"public record to actual approval"}}`
 	record := f.record
 	if manualStart {
+		// The ordinary user obtains safe identity/CAS values from the public
+		// read endpoint, not from a manager API or a fixture SQL query.
+		data := rootHTTPData(t, f.call(t, "POST", f.root()+"/workflow-start-options/search", `{"page":1}`, nil), 200)
+		var options []ars.WorkflowManualOption
+		if err := json.Unmarshal(data["items"], &options); err != nil || len(options) != len(flows) {
+			t.Fatalf("public manual options missing: %s %v", data["items"], err)
+		}
 		for _, flow := range flows {
-			f.flow = flow
-			rootHTTPData(t, f.call(t, "POST", f.root()+"/workflow-starts", rootHTTPManualBody(t, f, f.id(t)), nil), 202)
+			found := false
+			for _, option := range options {
+				if option.FlowID != flow {
+					continue
+				}
+				found = true
+				request, err := json.Marshal(map[string]any{"operationId": f.id(t), "flowId": option.FlowID, "expectedWorkflowRevision": option.WorkflowRevision, "expectedSchemaVersion": option.SchemaVersion, "expectedRecordVersion": option.RecordVersion})
+				if err != nil {
+					t.Fatal(err)
+				}
+				rootHTTPData(t, f.call(t, "POST", f.root()+"/workflow-starts", string(request), nil), 202)
+			}
+			if !found {
+				t.Fatalf("eligible flow %s absent", flow)
+			}
 		}
 	} else {
 		record = rootHTTPString(t, rootHTTPData(t, f.call(t, "POST", path, body, nil), 201), "id")

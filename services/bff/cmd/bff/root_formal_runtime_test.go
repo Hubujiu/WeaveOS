@@ -321,14 +321,7 @@ func (x *rootFormalFixture) publishAndStartEditable(t *testing.T, editable bool)
 	}
 	body, _ = json.Marshal(map[string]any{"operationId": f.id(t), "expectedRevision": revision})
 	rootHTTPData(t, f.call(t, "POST", base+"enable", string(body), nil), 200)
-	f.transaction(t, func(tx pgx.Tx) error {
-		head, e := (wc.Catalog{}).GetInTx(f.ctx, tx, f.app, f.flow)
-		if e != nil {
-			return e
-		}
-		_, e = (wc.Catalog{}).ReserveInTx(f.ctx, tx, wc.ReserveInput{AppID: f.app, FlowID: f.flow, InstanceID: f.instance, RecordID: f.record, ActorID: f.actor, ExpectedRevision: head.Revision, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1})
-		return e
-	})
+
 	if e := f.owner.QueryRow(f.ctx, "SELECT version_id::text FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2 AND version=1", f.app, f.flow).Scan(&f.version); e != nil {
 		t.Fatal(e)
 	}
@@ -339,11 +332,21 @@ func (x *rootFormalFixture) publishAndStartEditable(t *testing.T, editable bool)
 		t.Fatal(e)
 	}
 	command.PayloadHash = sha256.Sum256(raw)
+	// Reserve and fixture command acceptance are one atomic setup. The actual
+	// background start admitter must never observe a half-built existing task.
 	f.transaction(t, func(tx pgx.Tx) error {
+		head, e := (wc.Catalog{}).GetInTx(f.ctx, tx, f.app, f.flow)
+		if e != nil {
+			return e
+		}
+		_, e = (wc.Catalog{}).ReserveInTx(f.ctx, tx, wc.ReserveInput{AppID: f.app, FlowID: f.flow, InstanceID: f.instance, RecordID: f.record, ActorID: f.actor, ExpectedRevision: head.Revision, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1})
+		if e != nil {
+			return e
+		}
 		if e := tx.QueryRow(f.ctx, "SELECT applications.acquire_record_command_fence($1,$2,$3,$4,$5,$6,$7)", f.app, f.table, f.view, f.record, command.CommandID, 1, 1).Scan(&command.FenceEpoch); e != nil {
 			return e
 		}
-		_, e := (fc.Ledger{Namespace: "applications"}).AcceptExecutionInTx(f.ctx, tx, command, payload)
+		_, e = (fc.Ledger{Namespace: "applications"}).AcceptExecutionInTx(f.ctx, tx, command, payload)
 		return e
 	})
 	// No DispatchOne/Run call here: only the actual BFF process consumes work.

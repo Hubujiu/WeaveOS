@@ -217,3 +217,106 @@ func TestRootManualOptionsRejectForeignTokenBindingsAndInvalidPages(t *testing.T
 		}
 	}
 }
+
+func TestRootManualOptionsOtherViewAndTokenIsolation(t *testing.T) {
+	f, r := rootManualSetup(t)
+	q := rootManualOptionsRequest(f)
+	first := rootManualOptions(t, f, q)
+	view := recordOperationID(t, f)
+	if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.form_views(id,app_id,table_id,name,position,view_version) VALUES($1,$2,$3,'other options view',1,1)", view, f.app, f.table); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.menu_resources VALUES($1,'form',$2)", f.app, view); e != nil {
+		t.Fatal(e)
+	}
+	var group string
+	if e := f.owner.QueryRow(f.ctx, "SELECT group_id::text FROM applications.group_members WHERE app_id=$1 AND user_id=$2 LIMIT 1", f.app, f.actor).Scan(&group); e != nil {
+		t.Fatal(e)
+	}
+	for _, action := range []string{"menu.enter", "data.read"} {
+		var grant string
+		if e := f.owner.QueryRow(f.ctx, "INSERT INTO applications.grants(app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,'form',$3,$4,'all') RETURNING id::text", f.app, group, view, action).Scan(&grant); e != nil {
+			t.Fatal(e)
+		}
+		if action == "data.read" {
+			if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.grant_fields(app_id,grant_id,field_id,table_id) VALUES($1,$2,$3,$4)", f.app, grant, f.public, f.table); e != nil {
+				t.Fatal(e)
+			}
+		}
+	}
+	q.ViewID = view
+	got := rootManualOptions(t, f, q)
+	if got.Total != 1 || len(got.Items) != 1 || got.Items[0].FlowID != r.FlowID {
+		t.Fatalf("same-table other view lost flow %+v", got)
+	}
+	q.QueryVersion = first.QueryVersion
+	if _, e := f.service.SearchManualWorkflowOptions(f.ctx, f.principal, q); !errors.Is(e, querycontext.ErrExpired) {
+		t.Fatalf("cross-view token allowed %v", e)
+	}
+	history, e := f.service.SearchRecordWorkflows(f.ctx, f.principal, WorkflowInstanceSearchRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, Page: 1})
+	if e != nil {
+		t.Fatal(e)
+	}
+	q = rootManualOptionsRequest(f)
+	q.QueryVersion = history.QueryVersion
+	if _, e = f.service.SearchManualWorkflowOptions(f.ctx, f.principal, q); !errors.Is(e, querycontext.ErrExpired) {
+		t.Fatalf("history namespace token allowed %v", e)
+	}
+}
+func TestRootManualOptionsOwnScopeAndFieldMaskAreLive(t *testing.T) {
+	for _, kind := range []string{"own", "empty_fields"} {
+		t.Run(kind, func(t *testing.T) {
+			f, _ := rootManualSetup(t)
+			q := rootManualOptionsRequest(f)
+			if kind == "own" {
+				if _, e := f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN(SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.read' AND row_scope='all')", f.app); e != nil {
+					t.Fatal(e)
+				}
+				if _, e := f.owner.Exec(f.ctx, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.read' AND row_scope='all'", f.app); e != nil {
+					t.Fatal(e)
+				}
+				q.RecordID = f.otherRecord
+				if _, e := f.service.SearchManualWorkflowOptions(f.ctx, f.principal, q); !errors.Is(e, applications.ErrMissing) {
+					t.Fatalf("own read leaked other record %v", e)
+				}
+			} else {
+				if _, e := f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN(SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.read')", f.app); e != nil {
+					t.Fatal(e)
+				}
+				if _, e := f.service.SearchManualWorkflowOptions(f.ctx, f.principal, q); !errors.Is(e, applications.ErrDenied) {
+					t.Fatalf("no readable fields still got options %v", e)
+				}
+			}
+		})
+	}
+}
+func TestRootManualOptionsReadHasNoBusinessSideEffects(t *testing.T) {
+	f, _ := rootManualSetup(t)
+	counts := func() [4]int64 {
+		t.Helper()
+		var c [4]int64
+		for i, table := range []string{"operations", "record_change_events", "workflow_instances", "workflow_commands"} {
+			where := "app_id=$1"
+			if table == "workflow_commands" {
+				where = "command_json->>'AppID'=$1"
+			}
+			if e := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications."+table+" WHERE "+where, f.app).Scan(&c[i]); e != nil {
+				t.Fatal(e)
+			}
+		}
+		return c
+	}
+	before := counts()
+	q := rootManualOptionsRequest(f)
+	first := rootManualOptions(t, f, q)
+	q.QueryVersion = first.QueryVersion
+	rootManualOptions(t, f, q)
+	if got := counts(); got != before {
+		t.Fatalf("read mutated business state before%v after%v", before, got)
+	}
+	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
+	var v int64
+	if e := f.owner.QueryRow(f.ctx, "SELECT record_version FROM "+relation+" WHERE id=$1", f.ownRecord).Scan(&v); e != nil || v != 1 {
+		t.Fatalf("read changed record %d %v", v, e)
+	}
+}
