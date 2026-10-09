@@ -1,0 +1,12 @@
+diff --git a/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionRegistry.java b/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionRegistry.java
+index b711f68..c51b7cf 100644
+--- a/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionRegistry.java
++++ b/services/workflow-engine/src/main/java/org/weaveos/workflow/ExecutionRegistry.java
+@@ -166,6 +166,7 @@ public final class ExecutionRegistry {
+         if(instance!=null)return finish(c,"no_effect",unchanged(c,"instance_exists"),probe);
+         if(deployment==null)return finish(c,"no_effect",unchanged(c,"deployment_missing"),probe);
+         if(!text(deployment,"app_id").equals(c.appId())||!text(deployment,"flow_id").equals(c.flowId())||number(deployment,"version")!=c.definitionVersion())return finish(c,"no_effect",unchanged(c,"deployment_mismatch"),probe);
++        if(FlowIdentityGate.lock(jdbc,c.appId(),c.flowId()))return finish(c,"no_effect",unchanged(c,"deployment_missing"),probe);
+         validateNodes(payload,text(deployment,"process_definition_id"));
+         int inserted=jdbc.update("""
+             INSERT INTO wf_execution_instances(instance_id,app_id,table_id,view_id,record_id,flow_id,version_id,definition_version,
