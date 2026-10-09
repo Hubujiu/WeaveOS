@@ -20,9 +20,8 @@ import (
 
 // V044 PRD: accepted Create trigger must eventually start the published flow.
 // No synthetic reserve/command/fence is injected to conceal missing admission.
-func rootHTTPTriggerJavaSetup(t *testing.T, deployment *wr.Client) *rootTaskHTTPFixture {
+func rootHTTPTriggerJavaConfigure(t *testing.T, f *rootTaskHTTPFixture, deployment *wr.Client) {
 	t.Helper()
-	f := rootHTTPResourceSetup(t)
 	f.flow = f.id(t)
 	start, node, end := f.id(t), f.id(t), f.id(t)
 	body := map[string]any{"operationId": f.id(t), "name": "Record triggers", "expectedRevision": 0, "expectedSchemaVersion": 1, "allowWithdraw": true,
@@ -51,10 +50,19 @@ func rootHTTPTriggerJavaSetup(t *testing.T, deployment *wr.Client) *rootTaskHTTP
 		_, err = (wc.Catalog{}).EnableInTx(f.ctx, tx, f.app, f.flow, h.Revision)
 		return err
 	})
-	return f
 }
 
 func TestRootRecordTriggerJavaPublicCreateReachesApproval(t *testing.T) {
+	rootPublicTriggerJavaContract(t, false, false)
+}
+func TestRootRecordTriggerJavaIndependentFlowsBothReachApproval(t *testing.T) {
+	rootPublicTriggerJavaContract(t, true, false)
+}
+func TestRootRecordTriggerJavaClosingDrainsAlreadyAcceptedIntent(t *testing.T) {
+	rootPublicTriggerJavaContract(t, false, true)
+}
+func rootPublicTriggerJavaContract(t *testing.T, twoFlows, closeAfterCreate bool) {
+	t.Helper()
 	target := os.Getenv("WEAVEOS_RPC_TEST_TARGET")
 	host, _, err := net.SplitHostPort(target)
 	if err != nil || (host != "b3-workflow" && host != "127.0.0.1") {
@@ -73,11 +81,33 @@ func TestRootRecordTriggerJavaPublicCreateReachesApproval(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f := rootHTTPTriggerJavaSetup(t, deployment)
+	f := rootHTTPResourceSetup(t)
+	rootHTTPTriggerJavaConfigure(t, f, deployment)
+	flows := []string{f.flow}
+	if twoFlows {
+		rootHTTPTriggerJavaConfigure(t, f, deployment)
+		flows = append(flows, f.flow)
+	}
 	path := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/records"
 	body := `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"values":{"` + f.field + `":"public record to actual approval"}}`
 	record := rootHTTPString(t, rootHTTPData(t, f.call(t, "POST", path, body, nil), 201), "id")
-	rootHTTPTriggerCount(t, f, record, 1)
+	for _, flow := range flows {
+		f.flow = flow
+		rootHTTPTriggerCount(t, f, record, 1)
+	}
+	if closeAfterCreate {
+		f.transaction(t, func(tx pgx.Tx) error {
+			var revision int64
+			if err := tx.QueryRow(f.ctx, "SELECT revision FROM applications.workflow_definitions WHERE app_id=$1 AND id=$2", f.app, f.flow).Scan(&revision); err != nil {
+				return err
+			}
+			head, err := (wc.Catalog{}).RequestCloseInTx(f.ctx, tx, f.app, f.flow, revision)
+			if err == nil && head.State != "closing" {
+				t.Fatalf("accepted starting intent must keep closing pending, got %s", head.State)
+			}
+			return err
+		})
+	}
 	worker := &we.Worker{Pool: f.runtime, Client: client, RPCTimeout: 20 * time.Second, Limits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}}
 	// Drain the current runtime path until idle, without fabricating a start ledger entry.
 	for {
@@ -89,18 +119,21 @@ func TestRootRecordTriggerJavaPublicCreateReachesApproval(t *testing.T) {
 			break
 		}
 	}
-	var state string
-	var tasks int
-	if err := f.owner.QueryRow(f.ctx, "SELECT state FROM applications.workflow_instances WHERE app_id=$1 AND flow_id=$2 AND record_id=$3", f.app, f.flow, record).Scan(&state); err != nil {
-		t.Fatal(err)
-	}
-	if state != "active" {
-		t.Fatalf("public trigger persisted but never reached actual Flowable approval: state=%s, want active", state)
-	}
-	if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_tasks t JOIN applications.workflow_instances i ON i.id=t.instance_id WHERE i.app_id=$1 AND i.flow_id=$2 AND i.record_id=$3", f.app, f.flow, record).Scan(&tasks); err != nil {
-		t.Fatal(err)
-	}
-	if tasks != 1 {
-		t.Fatalf("actual approval task count=%d want 1", tasks)
+	for _, flow := range flows {
+		f.flow = flow
+		var state string
+		var tasks int
+		if err := f.owner.QueryRow(f.ctx, "SELECT state FROM applications.workflow_instances WHERE app_id=$1 AND flow_id=$2 AND record_id=$3", f.app, f.flow, record).Scan(&state); err != nil {
+			t.Fatal(err)
+		}
+		if state != "active" {
+			t.Fatalf("public trigger persisted but never reached actual Flowable approval: state=%s, want active", state)
+		}
+		if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_tasks t JOIN applications.workflow_instances i ON i.id=t.instance_id WHERE i.app_id=$1 AND i.flow_id=$2 AND i.record_id=$3", f.app, f.flow, record).Scan(&tasks); err != nil {
+			t.Fatal(err)
+		}
+		if tasks != 1 {
+			t.Fatalf("actual approval task count=%d want 1", tasks)
+		}
 	}
 }
