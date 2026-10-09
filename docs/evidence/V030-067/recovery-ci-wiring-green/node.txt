@@ -1,0 +1,99 @@
+✔ controlled deletion runs six real suites with exact no-skip reports (1.558227ms)
+✖ Go deletion CI covers strict client and actual authenticated runtime interop (7.055954ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 156.438849
+
+✖ failing tests:
+
+test at WeaveOS-worktrees/V030-067/tests/governance/controlled-deletion-wiring.test.mjs:12:1
+✖ Go deletion CI covers strict client and actual authenticated runtime interop (7.055954ms)
+  AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /--publish|(?:^|\s)-p\s/. Input:
+  
+  '#!/usr/bin/env bash\n' +
+    'set -euo pipefail\n' +
+    'rpc_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)\n' +
+    'rpc_root=$(cd "$rpc_dir/../.." && pwd)\n' +
+    'rpc_go=${WEAVEOS_RPC_GO:-go}\n' +
+    `test "$($rpc_go version | cut -d ' ' -f 3)" = go1.27.2\n` +
+    'rpc_name="weaveos-v067-$(date +%s)-$$"\n' +
+    'rpc_network="${rpc_name}-network"\n' +
+    'rpc_pg="${rpc_name}-postgres"\n' +
+    'rpc_java="${rpc_name}-java"\n' +
+    "rpc_maven_image='mirror.gcr.io/library/maven@sha256:fa7aa19829157d299ff05f631b51697a388dcd2f6955e84249ecc652015f217b'\n" +
+    "rpc_pg_image='docker.io/library/postgres@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722'\n" +
+    'mkdir -p "$rpc_dir/.work"\n' +
+    'cleanup() {\n' +
+    '  if docker inspect "$rpc_java" >/dev/null 2>&1; then\n' +
+    '    docker stop --time 15 "$rpc_java" >/dev/null 2>&1 || true\n' +
+    '    docker logs "$rpc_java" 2>&1 || true\n' +
+    '    docker rm "$rpc_java" >/dev/null 2>&1 || true\n' +
+    '  fi\n' +
+    '  docker rm -f -v "$rpc_pg" >/dev/null 2>&1 || true\n' +
+    '  docker network rm "$rpc_network" >/dev/null 2>&1 || true\n' +
+    '}\n' +
+    'trap cleanup EXIT\n' +
+    '# Compile the existing tagged Root test to a static Linux executable with the locked Go SDK.\n' +
+    '# No host RPC connection is made; execution below is inside the private fixture network.\n' +
+    'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOTOOLCHAIN=local "$rpc_go" -C "$rpc_root/services/bff" test \\\n' +
+    '  -tags workflow_deletion_integration -c -o "$rpc_dir/.work/deletion-interop.test" ./internal/workflowrpc\n' +
+    'docker network create --internal --label weaveos.package=V030-067 "$rpc_network" >/dev/null\n' +
+    'docker run -d --name "$rpc_pg" --label weaveos.package=V030-067 --network "$rpc_network" --network-alias b3-postgres \\\n' +
+    '  -e POSTGRES_DB=b3_flowable_fixture -e POSTGRES_USER=b3_fixture -e POSTGRES_PASSWORD=b3_fixture_only \\\n' +
+    '  --tmpfs /var/lib/postgresql:rw "$rpc_pg_image" >/dev/null\n' +
+    'for rpc_attempt in {1..60}; do\n' +
+    '  if docker exec "$rpc_pg" pg_isready -U b3_fixture -d b3_flowable_fixture >/dev/null 2>&1; then break; fi\n' +
+    '  if [[ "$rpc_attempt" == 60 ]]; then docker logs "$rpc_pg"; exit 1; fi\n' +
+    '  sleep 1\n' +
+    'done\n' +
+    `docker network inspect --format 'fixture network internal={{.Internal}}' "$rpc_network"\n` +
+    `docker inspect --format 'fixture published ports={{json .HostConfig.PortBindings}}' "$rpc_pg"\n` +
+    'docker run --rm --user "$(id -u):$(id -g)" --network "$rpc_network" --label weaveos.package=V030-067 \\\n' +
+    '  -v "$rpc_dir:/proof" -v "$rpc_dir/.work/m2:/m2" -w /proof --entrypoint mvn "$rpc_maven_image" \\\n' +
+    '  -B -ntp -o -s maven-settings.xml -Duser.home=/tmp -Dmaven.repo.local=/m2 test-compile \\\n' +
+    '  org.apache.maven.plugins:maven-dependency-plugin:3.9.0:build-classpath -Dmdep.outputFile=.work/rpc-classpath -Dmdep.includeScope=test\n' +
+    'docker run -d --name "$rpc_java" --user "$(id -u):$(id -g)" --network "$rpc_network" --network-alias b3-workflow \\\n' +
+    '  --label weaveos.package=V030-067 -v "$rpc_dir:/proof" -v "$rpc_dir/.work/m2:/m2:ro" -w /proof \\\n' +
+    '  -e B3_TEST_JDBC_URL=jdbc:postgresql://b3-postgres:5432/b3_flowable_fixture --entrypoint sh "$rpc_maven_image" \\\n' +
+    `  -ec 'exec java -cp "target/classes:target/test-classes:$(cat .work/rpc-classpath)" org.weaveos.workflow.RootFlowDeletionInteropFixtureMain' >/dev/null\n` +
+    'for rpc_attempt in {1..60}; do\n' +
+    '  if docker exec "$rpc_java" test -f /tmp/weaveos-v067-deletion-ready; then break; fi\n' +
+    '  if [[ "$rpc_attempt" == 60 ]]; then docker logs "$rpc_java"; exit 1; fi\n' +
+    '  sleep 1\n' +
+    'done\n' +
+    'rpc_port=$(docker exec "$rpc_java" cat /tmp/weaveos-v067-deletion-ready)\n' +
+    '[[ "$rpc_port" =~ ^[0-9]+$ ]]\n' +
+    `docker inspect --format 'fixture published ports={{json .HostConfig.PortBindings}}' "$rpc_java"\n` +
+    'rpc_execute() {\n' +
+    '  docker exec -e NO_PROXY=b3-workflow,b3-postgres,127.0.0.1,localhost -e no_proxy=b3-workflow,b3-postgres,127.0.0.1,localhost \\\n' +
+    '    -e WEAVEOS_V067_RPC_TARGET="127.0.0.1:$rpc_port" "$rpc_java" \\\n' +
+    "    /proof/.work/deletion-interop.test -test.v=test2json -test.run '^TestRootGoJavaActualDeletionRuntimeInterop$' -test.timeout=90s\n" +
+    '}\n' +
+    'if [[ -n "${WEAVEOS_RPC_JSON_REPORT:-}" ]]; then\n' +
+    '  mkdir -p -- "$(dirname -- "$WEAVEOS_RPC_JSON_REPORT")"\n' +
+    '  # Only genuine test binary stdout enters test2json. Maven/fixture logs stay outside.\n' +
+    '  # set -o pipefail preserves failure of the original test, converter or report writer.\n' +
+    '  rpc_execute | "$rpc_go" tool test2json -t -p github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc | tee "$WEAVEOS_RPC_JSON_REPORT"\n' +
+    'else\n' +
+    '  rpc_execute\n' +
+    'fi\n'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-067/tests/governance/controlled-deletion-wiring.test.mjs:15:423)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '#!/usr/bin/env bash\nset -euo pipefail\nrpc_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)\nrpc_root=$(cd "$rpc_dir/../.." && pwd)\nrpc_go=${WEAVEOS_RPC_GO:-go}\ntest "$($rpc_go version | cut -d \' \' -f 3)" = go1.27.2\nrpc_name="weaveos-v067-$(date +%s)-$$"\nrpc_network="${rpc_name}-network"\nrpc_pg="${rpc_name}-postgres"\nrpc_java="${rpc_name}-java"\nrpc_maven_image=\'mirror.gcr.io/library/maven@sha256:fa7aa19829157d299ff05f631b51697a388dcd2f6955e84249ecc652015f217b\'\nrpc_pg_image=\'docker.io/library/postgres@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722\'\nmkdir -p "$rpc_dir/.work"\ncleanup() {\n  if docker inspect "$rpc_java" >/dev/null 2>&1; then\n    docker stop --time 15 "$rpc_java" >/dev/null 2>&1 || true\n    docker logs "$rpc_java" 2>&1 || true\n    docker rm "$rpc_java" >/dev/null 2>&1 || true\n  fi\n  docker rm -f -v "$rpc_pg" >/dev/null 2>&1 || true\n  docker network rm "$rpc_network" >/dev/null 2>&1 || true\n}\ntrap cleanup EXIT\n# Compile the existing tagged Root test to a static Linux executable with the locked Go SDK.\n# No host RPC connection is made; execution below is inside the private fixture network.\nCGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOTOOLCHAIN=local "$rpc_go" -C "$rpc_root/services/bff" test \\\n  -tags workflow_deletion_integration -c -o "$rpc_dir/.work/deletion-interop.test" ./internal/workflowrpc\ndocker network create --internal --label weaveos.package=V030-067 "$rpc_network" >/dev/null\ndocker run -d --name "$rpc_pg" --label weaveos.package=V030-067 --network "$rpc_network" --network-alias b3-postgres \\\n  -e POSTGRES_DB=b3_flowable_fixture -e POSTGRES_USER=b3_fixture -e POSTGRES_PASSWORD=b3_fixture_only \\\n  --tmpfs /var/lib/postgresql:rw "$rpc_pg_image" >/dev/null\nfor rpc_attempt in {1..60}; do\n  if docker exec "$rpc_pg" pg_isready -U b3_fixture -d b3_flowable_fixture >/dev/null 2>&1; then break; fi\n  if [[ "$rpc_attempt" == 60 ]]; then docker logs "$rpc_pg"; exit 1; fi\n  sleep 1\ndone\ndocker network inspect --format \'fixture network internal={{.Internal}}\' "$rpc_network"\ndocker inspect --format \'fixture published ports={{json .HostConfig.PortBindings}}\' "$rpc_pg"\ndocker run --rm --user "$(id -u):$(id -g)" --network "$rpc_network" --label weaveos.package=V030-067 \\\n  -v "$rpc_dir:/proof" -v "$rpc_dir/.work/m2:/m2" -w /proof --entrypoint mvn "$rpc_maven_image" \\\n  -B -ntp -o -s maven-settings.xml -Duser.home=/tmp -Dmaven.repo.local=/m2 test-compile \\\n  org.apache.maven.plugins:maven-dependency-plugin:3.9.0:build-classpath -Dmdep.outputFile=.work/rpc-classpath -Dmdep.includeScope=test\ndocker run -d --name "$rpc_java" --user "$(id -u):$(id -g)" --network "$rpc_network" --network-alias b3-workflow \\\n  --label weaveos.package=V030-067 -v "$rpc_dir:/proof" -v "$rpc_dir/.work/m2:/m2:ro" -w /proof \\\n  -e B3_TEST_JDBC_URL=jdbc:postgresql://b3-postgres:5432/b3_flowable_fixture --entrypoint sh "$rpc_maven_image" \\\n  -ec \'exec java -cp "target/classes:target/test-classes:$(cat .work/rpc-classpath)" org.weaveos.workflow.RootFlowDeletionInteropFixtureMain\' >/dev/null\nfor rpc_attempt in {1..60}; do\n  if docker exec "$rpc_java" test -f /tmp/weaveos-v067-deletion-ready; then break; fi\n  if [[ "$rpc_attempt" == 60 ]]; then docker logs "$rpc_java"; exit 1; fi\n  sleep 1\ndone\nrpc_port=$(docker exec "$rpc_java" cat /tmp/weaveos-v067-deletion-ready)\n[[ "$rpc_port" =~ ^[0-9]+$ ]]\ndocker inspect --format \'fixture published ports={{json .HostConfig.PortBindings}}\' "$rpc_java"\nrpc_execute() {\n  docker exec -e NO_PROXY=b3-workflow,b3-postgres,127.0.0.1,localhost -e no_proxy=b3-workflow,b3-postgres,127.0.0.1,localhost \\\n    -e WEAVEOS_V067_RPC_TARGET="127.0.0.1:$rpc_port" "$rpc_java" \\\n    /proof/.work/deletion-interop.test -test.v=test2json -test.run \'^TestRootGoJavaActualDeletionRuntimeInterop$\' -test.timeout=90s\n}\nif [[ -n "${WEAVEOS_RPC_JSON_REPORT:-}" ]]; then\n  mkdir -p -- "$(dirname -- "$WEAVEOS_RPC_JSON_REPORT")"\n  # Only genuine test binary stdout enters test2json. Maven/fixture logs stay outside.\n  # set -o pipefail preserves failure of the original test, converter or report writer.\n  rpc_execute | "$rpc_go" tool test2json -t -p github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc | tee "$WEAVEOS_RPC_JSON_REPORT"\nelse\n  rpc_execute\nfi\n',
+    expected: /--publish|(?:^|\s)-p\s/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
