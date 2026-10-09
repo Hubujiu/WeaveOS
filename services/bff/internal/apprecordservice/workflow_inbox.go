@@ -1,0 +1,272 @@
+package apprecordservice
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appaccess"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/jackc/pgx/v5"
+	"github.com/redis/go-redis/v9"
+	"strings"
+	"time"
+)
+
+type WorkflowInboxRequest struct {
+	Page, PageSize int
+	QueryVersion   string
+}
+type WorkflowInboxItem struct {
+	ID                string `json:"id"`
+	AppID             string `json:"appId"`
+	ViewID            string `json:"viewId"`
+	RecordID          string `json:"recordId"`
+	InstanceID        string `json:"instanceId"`
+	FlowID            string `json:"flowId"`
+	NodeID            string `json:"nodeId"`
+	FlowName          string `json:"flowName"`
+	CreatedAt         string `json:"createdAt"`
+	DefinitionVersion int64  `json:"definitionVersion"`
+	ActivationEpoch   int64  `json:"activationEpoch"`
+	Sequence          int64  `json:"sequence"`
+}
+type WorkflowInboxResult struct {
+	Items        []WorkflowInboxItem `json:"items"`
+	Total        int64               `json:"total"`
+	Page         int                 `json:"page"`
+	PageSize     int                 `json:"pageSize"`
+	QueryVersion string              `json:"queryVersion"`
+}
+
+func (s *Service) SearchWorkflowInbox(ctx context.Context, p session.Principal, q WorkflowInboxRequest) (WorkflowInboxResult, error) {
+	empty := WorkflowInboxResult{}
+	if s == nil || s.Pool == nil || s.WorkflowInbox == nil {
+		return empty, ErrUnavailable
+	}
+	if !workflowID(p.UserID) {
+		return empty, session.ErrUnauthorized
+	}
+	if q.PageSize == 0 {
+		q.PageSize = 20
+	}
+	if _, _, err := appquery.PageWindow(int64(q.Page), int64(q.PageSize)); err != nil {
+		return empty, err
+	}
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	binding := inboxBinding{ActorID: p.UserID}
+	raw, _ := json.Marshal(binding)
+	strategy := &inboxStrategy{service: s, principal: p, binding: binding, page: querycontext.Page{Number: q.Page, Size: q.PageSize}}
+	r, err := querycontext.Execute(ctx, s.WorkflowInbox, p.SessionRef, q.QueryVersion, raw, strategy.page, strategy)
+	if err != nil {
+		return empty, err
+	}
+	return WorkflowInboxResult{Items: r.Items, Total: r.Total, Page: q.Page, PageSize: q.PageSize, QueryVersion: r.Version}, nil
+}
+
+type inboxBinding struct {
+	ActorID string `json:"actorId"`
+}
+type inboxRevision struct {
+	Fingerprint string `json:"fingerprint"`
+}
+
+func validInboxRevision(raw json.RawMessage) (inboxRevision, bool) {
+	var r inboxRevision
+	ok := workflowClosedMetadata(raw, 128, 1, &r) && workflowReadFingerprintValid(r.Fingerprint)
+	return r, ok
+}
+func newWorkflowInboxStore(client redis.UniversalClient, generation string) *querycontext.Store {
+	return querycontext.NewStore(client, "workflow-inbox", generation, querycontext.Policy{
+		Validate: func(m querycontext.Metadata) bool {
+			var b inboxBinding
+			r, ok := validInboxRevision(m.Revision)
+			return ok && workflowClosedMetadata(m.Criteria, 128, 1, &b) && workflowID(b.ActorID) && m.View == "workflow-inbox:"+b.ActorID && m.Fingerprint == r.Fingerprint
+		},
+		Forward: func(resource string, old, next json.RawMessage) bool {
+			_, a := validInboxRevision(old)
+			_, b := validInboxRevision(next)
+			return a && b && strings.HasPrefix(resource, "workflow-inbox:") && workflowID(strings.TrimPrefix(resource, "workflow-inbox:"))
+		},
+	})
+}
+
+type inboxStrategy struct {
+	service     *Service
+	principal   session.Principal
+	binding     inboxBinding
+	read        *applications.PersonalRead
+	page        querycontext.Page
+	observation querycontext.Observation[[]WorkflowInboxItem]
+}
+
+func (s *inboxStrategy) Resource() string { return "workflow-inbox:" + s.binding.ActorID }
+func (s *inboxStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
+	r, e := (&applications.Application{Pool: s.service.Pool}).BeginPersonalRead(ctx, s.principal)
+	if e != nil {
+		return nil, e
+	}
+	s.read = r
+	return r.Tx, nil
+}
+func (s *inboxStrategy) validCriteria(raw json.RawMessage) bool {
+	var b inboxBinding
+	return workflowClosedMetadata(raw, 128, 1, &b) && b == s.binding
+}
+func (s *inboxStrategy) Prepare(_ context.Context, _ pgx.Tx, saved, incoming json.RawMessage) (json.RawMessage, json.RawMessage, error) {
+	if len(saved) > 0 && !s.validCriteria(saved) {
+		return nil, nil, querycontext.ErrExpired
+	}
+	if !s.validCriteria(incoming) {
+		return nil, nil, querycontext.ErrInvalid
+	}
+	return saved, incoming, nil
+}
+
+type inboxCandidate struct {
+	item    WorkflowInboxItem
+	tableID string
+	created time.Time
+}
+
+func (s *inboxStrategy) Revisions(ctx context.Context, tx pgx.Tx) (json.RawMessage, error) {
+	_, offset, err := appquery.PageWindow(int64(s.page.Number), int64(s.page.Size))
+	if err != nil {
+		return nil, err
+	}
+	h := sha256.New()
+	_, _ = h.Write([]byte("weaveos/personal-inbox/v1\x00"))
+	_, _ = h.Write([]byte(s.binding.ActorID))
+	s.observation = querycontext.Observation[[]WorkflowInboxItem]{Items: make([]WorkflowInboxItem, 0, s.page.Size)}
+	var beforeID string
+	var beforeTime time.Time
+	for {
+		q := `SELECT t.id::text,t.app_id::text,i.view_id::text,i.table_id::text,i.record_id::text,
+ i.id::text,i.flow_id::text,t.node_id::text,t.created_at,i.definition_version,t.activation_epoch,i.sequence
+ FROM applications.workflow_tasks t JOIN applications.workflow_instances i ON i.app_id=t.app_id AND i.id=t.instance_id
+ WHERE t.assignee_id=$1::uuid AND t.closed_command_id IS NULL AND i.state='active'`
+		args := []any{s.binding.ActorID}
+		if beforeID != "" {
+			q += " AND (t.created_at,t.id)<($2::timestamptz,$3::uuid)"
+			args = append(args, beforeTime, beforeID)
+		}
+		q += " ORDER BY t.created_at DESC,t.id DESC LIMIT 64"
+		rows, e := tx.Query(ctx, q, args...)
+		if e != nil {
+			return nil, e
+		}
+		batch := make([]inboxCandidate, 0, 64)
+		for rows.Next() {
+			var c inboxCandidate
+			v := &c.item
+			if e = rows.Scan(&v.ID, &v.AppID, &v.ViewID, &c.tableID, &v.RecordID, &v.InstanceID, &v.FlowID, &v.NodeID, &c.created, &v.DefinitionVersion, &v.ActivationEpoch, &v.Sequence); e != nil {
+				rows.Close()
+				return nil, e
+			}
+			v.CreatedAt = c.created.UTC().Format(time.RFC3339Nano)
+			batch = append(batch, c)
+		}
+		e = rows.Err()
+		rows.Close()
+		if e != nil {
+			return nil, e
+		}
+		for _, c := range batch {
+			visible, e := s.authorized(ctx, tx, &c)
+			if e != nil {
+				return nil, e
+			}
+			if !visible {
+				continue
+			}
+			if s.observation.Total >= workflowMaxCounter {
+				return nil, ErrUnavailable
+			}
+			raw, e := json.Marshal(c.item)
+			if e != nil {
+				return nil, e
+			}
+			_, _ = h.Write(raw)
+			_, _ = h.Write([]byte{0})
+			n := s.observation.Total
+			s.observation.Total++
+			if n >= offset && int64(len(s.observation.Items)) < int64(s.page.Size) {
+				s.observation.Items = append(s.observation.Items, c.item)
+			}
+		}
+		if len(batch) < 64 {
+			break
+		}
+		last := batch[len(batch)-1]
+		beforeID, beforeTime = last.item.ID, last.created
+	}
+	s.observation.Fingerprint = hex.EncodeToString(h.Sum(nil))
+	return json.Marshal(inboxRevision{Fingerprint: s.observation.Fingerprint})
+}
+func (s *inboxStrategy) authorized(ctx context.Context, tx pgx.Tx, c *inboxCandidate) (bool, error) {
+	v := &c.item
+	facts, err := s.read.RecordContext(ctx, v.AppID, v.ViewID)
+	if errors.Is(err, applications.ErrDenied) || errors.Is(err, applications.ErrMissing) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	policy, menu := policyFor(facts)
+	if !menu || policy.VisibleScope() == appaccess.None {
+		return false, nil
+	}
+	if facts.Actor.ID != s.binding.ActorID || facts.TableID != c.tableID || !facts.SchemaReady {
+		return false, ErrUnavailable
+	}
+	_, ids, err := fieldsInContext(facts)
+	if err != nil {
+		return false, err
+	}
+	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(c.tableID, "-", "")}.Sanitize()
+	var creator string
+	err = tx.QueryRow(ctx, "SELECT created_by::text FROM "+relation+" WHERE id=$1::uuid", v.RecordID).Scan(&creator)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if len(policy.ReadFields(creator, ids)) == 0 {
+		return false, nil
+	}
+	if !workflowID(creator) || !workflowID(v.ID) || !workflowID(v.NodeID) || !workflowPositive(v.DefinitionVersion) || !workflowPositive(v.ActivationEpoch) || v.Sequence < 0 || v.Sequence > workflowMaxCounter {
+		return false, ErrUnavailable
+	}
+	var graph []byte
+	err = tx.QueryRow(ctx, `SELECT d.name,v.graph_json FROM applications.workflow_definitions d
+ JOIN applications.workflow_versions v ON v.app_id=d.app_id AND v.flow_id=d.id
+ WHERE d.app_id=$1 AND d.id=$2 AND v.version=$3`, v.AppID, v.FlowID, v.DefinitionVersion).Scan(&v.FlowName, &graph)
+	if err != nil {
+		return false, ErrUnavailable
+	}
+	if !workflowApprovalRoster(graph, v.NodeID, s.binding.ActorID) {
+		return false, ErrUnavailable
+	}
+	return true, nil
+}
+func (s *inboxStrategy) Page(_ context.Context, _ pgx.Tx, raw json.RawMessage, page querycontext.Page) ([]WorkflowInboxItem, error) {
+	if !s.validCriteria(raw) || page != s.page {
+		return nil, querycontext.ErrInvalid
+	}
+	return s.observation.Items, nil
+}
+func (s *inboxStrategy) Observe(ctx context.Context, tx pgx.Tx, raw json.RawMessage, page querycontext.Page) (querycontext.Observation[[]WorkflowInboxItem], error) {
+	items, err := s.Page(ctx, tx, raw, page)
+	if err != nil {
+		return querycontext.Observation[[]WorkflowInboxItem]{}, err
+	}
+	r := s.observation
+	r.Items = items
+	return r, nil
+}

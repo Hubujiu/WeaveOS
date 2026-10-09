@@ -1,0 +1,107 @@
+Selected verbatim lines, not full job log. Job 113843121100; retrieved 2026-10-09 13:57 UTC.
+2026-10-09T13:33:08.4180712Z ##[endgroup]
+2026-10-09T13:33:08.4181487Z ##[group]Fetching the repository
+2026-10-09T13:33:08.4189654Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* +17037341cc5aac9a22af3386997055f4dfdf7f21:refs/remotes/pull/70/merge
+2026-10-09T13:33:14.1638033Z From https://github.com/Hubujiu/WeaveOS
+2026-10-09T13:33:14.1638703Z  * [new branch]        develop                                  -> origin/develop
+2026-10-09T13:33:14.1639342Z  * [new branch]        evidence/V030-039-rollback-patched       -> origin/evidence/V030-039-rollback-patched
+2026-10-09T13:33:14.1683032Z  * [new branch]        task/V030-061-workflow-inbox             -> origin/task/V030-061-workflow-inbox
+2026-10-09T13:33:14.1684144Z  * [new tag]           rollback/v0.1.0-85c2ee1                  -> rollback/v0.1.0-85c2ee1
+2026-10-09T13:33:14.1684744Z  * [new ref]           17037341cc5aac9a22af3386997055f4dfdf7f21 -> pull/70/merge
+2026-10-09T13:33:14.1686039Z ##[endgroup]
+2026-10-09T13:33:14.1686484Z ##[group]Determining the checkout info
+2026-10-09T13:33:14.1686885Z ##[endgroup]
+2026-10-09T13:33:14.1687086Z [command]/usr/bin/git sparse-checkout disable
+2026-10-09T13:33:14.1749830Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-09T13:33:14.1793801Z ##[group]Checking out the ref
+2026-10-09T13:33:14.1798249Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/70/merge
+2026-10-09T13:33:14.9495847Z Note: switching to 'refs/remotes/pull/70/merge'.
+2026-10-09T13:33:14.9496566Z 
+2026-10-09T13:33:14.9500118Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-09T13:33:14.9500362Z 
+2026-10-09T13:33:14.9500641Z HEAD is now at 17037341 Merge 4bdef6126dcc8a16a8d6c52a8dd303f8ff5bbc29 into d9c449fe0fa84ee5d2e98f9d99d43fada28b1332
+2026-10-09T13:33:14.9546371Z ##[endgroup]
+2026-10-09T13:33:14.9592086Z [command]/usr/bin/git log -1 --format=%H
+2026-10-09T13:33:14.9617720Z 17037341cc5aac9a22af3386997055f4dfdf7f21
+2026-10-09T13:33:14.9628846Z ##[group]Removing auth
+2026-10-09T13:33:14.9634189Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-09T13:33:14.9659389Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-09T13:33:32.7600062Z Total of 4 artifact(s) downloaded
+2026-10-09T13:33:32.7603165Z Download artifact has finished successfully
+2026-10-09T13:33:32.7697650Z ##[group]Run node infra/acceptance/run.mjs
+2026-10-09T13:33:32.7697960Z [36;1mnode infra/acceptance/run.mjs[0m
+2026-10-09T13:33:32.7753820Z shell: /usr/bin/bash -e {0}
+2026-10-09T13:33:32.7754053Z env:
+2026-10-09T13:45:19.4413409Z 
+2026-10-09T13:45:19.8945367Z [141/141] [webkit] › tests/acceptance/web.spec.ts:539:5 › R3 real refresh survives a stale-query response between pointer press and release
+2026-10-09T13:45:23.1152664Z   141 passed (3.7m)
+2026-10-09T13:45:23.5247358Z ✔ ADR-004: unknown API stays JSON404; untrusted identity/forwarding cannot grant access (53.916657ms)
+2026-10-09T13:45:24.7092814Z ✔ Real redis outage denies authenticated access and login; readiness recovers (1185.62831ms)
+2026-10-09T13:45:26.1255127Z ✔ Real postgres outage denies authenticated access and login; readiness recovers (1417.054043ms)
+2026-10-09T13:47:18.3510910Z #9 resolving provenance for metadata file
+2026-10-09T13:47:18.3511672Z #9 DONE 0.0s
+2026-10-09T13:47:19.1597271Z Loaded image: weaveos-v010-008-bff:17037341cc5aac9a22af3386997055f4dfdf7f21
+2026-10-09T13:47:19.4924891Z #0 building with "setup-docker-action" instance using docker driver
+2026-10-09T13:47:19.4925654Z 
+2026-10-09T13:47:19.4926162Z #1 [internal] load build definition from web.Dockerfile
+2026-10-09T13:47:21.5414621Z #10 resolving provenance for metadata file
+2026-10-09T13:47:21.5422027Z #10 DONE 0.0s
+2026-10-09T13:47:22.1315170Z Loaded image: weaveos-v010-008-web:17037341cc5aac9a22af3386997055f4dfdf7f21
+2026-10-09T13:47:22.2947783Z ✔ immutable BFF/web OCI artifacts associate exact source and independently verified manifest bytes (84668.75963ms)
+2026-10-09T13:47:22.3049401Z ✔ encrypted dump is authenticated AES256-GCM readable independently (1.697784ms)
+2026-10-09T13:47:22.3057042Z ✔ restore opens a separately created authenticated dump (0.319491ms)
+2026-10-09T13:47:32.8569749Z ℹ todo 0
+2026-10-09T13:47:32.8569961Z ℹ duration_ms 95302.155889
+2026-10-09T13:47:32.8639239Z ##[group]Run node infra/runtime/run.mjs
+2026-10-09T13:47:32.8639540Z [36;1mnode infra/runtime/run.mjs[0m
+2026-10-09T13:47:32.8721587Z shell: /usr/bin/bash -e {0}
+2026-10-09T13:47:32.8721828Z env:
+2026-10-09T13:47:44.9806458Z #8 resolving provenance for metadata file
+2026-10-09T13:47:44.9806893Z #8 DONE 0.0s
+2026-10-09T13:47:45.4194215Z Loaded image: weaveos-v010-008-bff:17037341cc5aac9a22af3386997055f4dfdf7f21
+2026-10-09T13:47:45.7692215Z #0 building with "setup-docker-action" instance using docker driver
+2026-10-09T13:47:45.7694993Z 
+2026-10-09T13:47:45.7696169Z #1 [internal] load build definition from web.Dockerfile
+2026-10-09T13:47:46.3549025Z #9 resolving provenance for metadata file
+2026-10-09T13:47:46.3549467Z #9 DONE 0.0s
+2026-10-09T13:47:46.7884534Z Loaded image: weaveos-v010-008-web:17037341cc5aac9a22af3386997055f4dfdf7f21
+2026-10-09T13:47:58.9029827Z 
+2026-10-09T13:47:58.9030444Z added 1 package in 983ms
+2026-10-09T13:47:58.9030652Z 
+2026-10-09T13:48:47.2087154Z ✔ real Redis memory exhaustion and restart fail closed and never restore historical sessions (690.32673ms)
+2026-10-09T13:48:52.5361809Z ✔ encrypted hot/cold backup restores true state, rotates generation, and rejects every old Cookie (4163.683886ms)
+2026-10-09T13:48:54.3369857Z ✔ actual rollback switches to previously verified artifact combination without Down or Session resurrection (2966.090213ms)
+2026-10-09T13:48:54.3468673Z ℹ tests 6
+2026-10-09T13:48:54.3469027Z ℹ suites 0
+2026-10-09T13:48:54.3469329Z ℹ pass 6
+2026-10-09T13:54:14.4265563Z 
+2026-10-09T13:54:14.9933447Z [141/141] [webkit] › tests/acceptance/web.spec.ts:539:5 › R3 real refresh survives a stale-query response between pointer press and release
+2026-10-09T13:54:17.8183079Z   141 passed (3.6m)
+2026-10-09T13:54:19.0214952Z  Container weaveos-v010-008-1791553686792-nginx-1  Stopping
+2026-10-09T13:54:19.1669233Z  Container weaveos-v010-008-1791553686792-nginx-1  Stopped
+2026-10-09T13:54:19.1669901Z  Container weaveos-v010-008-1791553686792-bff-1  Stopping
+2026-10-09T13:54:19.9679417Z   WEAVEOS_TEST_GOOSE: .work/runtime/tools/goose
+2026-10-09T13:54:19.9679672Z ##[endgroup]
+2026-10-09T13:54:26.6656605Z ✔ real Goose expansion, failed transactional migration and application rollback retain existing rows (6625.434297ms)
+2026-10-09T13:54:27.0604410Z ✔ ADR008 exact migration 00005 is registered for compatible packaging (1.075726ms)
+2026-10-09T13:54:27.0615019Z ✔ Q25 fixed installed role policy accepts reviewed bytes and rejects arbitrary uploaded SQL (0.36619ms)
+2026-10-09T13:54:27.0618860Z ✔ Q25 receiver validates pinned roles before backup and applies them after both migrations (0.493348ms)
+2026-10-09T13:54:31.2210131Z ℹ todo 0
+2026-10-09T13:54:31.2210356Z ℹ duration_ms 11224.241095
+2026-10-09T13:54:31.2275330Z ##[group]Run node infra/server/deploy/package.mjs .work/runtime/export/BUILD.json .work/deployment
+2026-10-09T13:54:31.2275894Z [36;1mnode infra/server/deploy/package.mjs .work/runtime/export/BUILD.json .work/deployment[0m
+2026-10-09T13:54:31.2332380Z shell: /usr/bin/bash -e {0}
+2026-10-09T13:54:31.2332610Z env:
+2026-10-09T13:54:38.0080621Z ##[group]Run actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+2026-10-09T13:54:38.0080977Z with:
+2026-10-09T13:54:38.0081236Z   name: tested-oci-17037341cc5aac9a22af3386997055f4dfdf7f21
+2026-10-09T13:54:38.0081544Z   path: .work/runtime/export/
+2026-10-09T13:54:38.0081787Z   include-hidden-files: true
+2026-10-09T13:54:38.0082023Z   if-no-files-found: error
+2026-10-09T13:54:42.0001897Z SHA256 digest of uploaded artifact zip is 218f033fa04ef60ca9690b2df1b8d18ed21e994be17d6123d94b02f3774d0b90
+2026-10-09T13:54:42.0003946Z Finalizing artifact upload
+2026-10-09T13:54:42.2685145Z Artifact tested-oci-17037341cc5aac9a22af3386997055f4dfdf7f21.zip successfully finalized. Artifact ID 11621371937
+2026-10-09T13:54:42.2686639Z Artifact tested-oci-17037341cc5aac9a22af3386997055f4dfdf7f21 has been successfully uploaded! Final size is 124722838 bytes. Artifact ID is 11621371937
+2026-10-09T13:54:42.2691787Z Artifact download URL: https://github.com/Hubujiu/WeaveOS/actions/runs/37936297037/artifacts/11621371937
+2026-10-09T13:54:42.4700186Z Post job cleanup.
+2026-10-09T13:54:42.6019030Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/WeaveOS/WeaveOS --files-from manifest.txt --use-compress-program zstdmt

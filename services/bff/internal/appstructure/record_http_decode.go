@@ -17,7 +17,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 	switch kind {
 	case "workflow.manual.start":
 		required = []string{"operationId", "flowId", "expectedWorkflowRevision", "expectedSchemaVersion", "expectedRecordVersion"}
-	case "workflow.instances.search", "workflow.manual.options.search":
+	case "workflow.instances.search", "workflow.manual.options.search", "workflow.inbox.search":
 		required = []string{"page"}
 		optional = []string{"pageSize", "queryVersion"}
 	case "workflow.lifecycle.action":
@@ -53,7 +53,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 	if kind == "record.search" {
 		limit = 64 << 10
 	}
-	if kind == "workflow.manual.start" || kind == "workflow.task.action" || kind == "workflow.lifecycle.action" || kind == "workflow.instances.search" || kind == "workflow.manual.options.search" {
+	if kind == "workflow.manual.start" || kind == "workflow.task.action" || kind == "workflow.lifecycle.action" || kind == "workflow.instances.search" || kind == "workflow.manual.options.search" || kind == "workflow.inbox.search" {
 		limit = 4096
 	}
 	raw, e := io.ReadAll(http.MaxBytesReader(w, r.Body, limit))
