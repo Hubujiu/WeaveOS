@@ -1,0 +1,26 @@
+diff --git a/services/bff/cmd/bff/root_workflow_event_history_http_test.go b/services/bff/cmd/bff/root_workflow_event_history_http_test.go
+index 5190805..ab4e66a 100644
+--- a/services/bff/cmd/bff/root_workflow_event_history_http_test.go
++++ b/services/bff/cmd/bff/root_workflow_event_history_http_test.go
+@@ -69,7 +69,7 @@ func TestRootWorkflowEventHistoryHTTPSClosedInput(t *testing.T) {
+ 	for _, body := range []string{"{}", "null", " "} {
+ 		rootHTTPError(t, f.call(t, "GET", path, body, nil), 400, "COMMON_VALIDATION_FAILED")
+ 	}
+-	rootHTTPError(t, f.call(t, "GET", path+"?pageToken=bad", "", nil), 409, "QUERY_CONTEXT_EXPIRED")
++	rootHTTPError(t, f.call(t, "GET", path+"?pageToken=bad", "", nil), 409, "APPLICATION_QUERY_CONTEXT_EXPIRED")
+ 	for _, method := range []string{"POST", "DELETE", "PATCH"} {
+ 		rootHTTPError(t, f.call(t, method, path, "", nil), 404, "API_NOT_FOUND")
+ 	}
+diff --git a/services/bff/internal/apprecordhttp/http.go b/services/bff/internal/apprecordhttp/http.go
+index 2159634..51d3683 100644
+--- a/services/bff/internal/apprecordhttp/http.go
++++ b/services/bff/internal/apprecordhttp/http.go
+@@ -212,7 +212,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		failure(w, r, apprecordservice.ErrUnavailable, "")
+ 		return
+ 	}
+-	if s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
++	if s.workflowEventHistoryHTTP(w, r, p) || s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
+ 		return
+ 	}
+ 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
