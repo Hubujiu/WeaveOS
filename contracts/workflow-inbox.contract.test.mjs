@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const api=JSON.parse(readFileSync(new URL('./openapi/openapi.json',import.meta.url)));
@@ -17,4 +18,12 @@ test('personal inbox returns only current task routing metadata and bounded pagi
  const keys=['id','appId','viewId','recordId','instanceId','flowId','nodeId','flowName','createdAt','definitionVersion','activationEpoch','sequence'].sort();assert.deepEqual(item.required.toSorted(),keys);assert.deepEqual(Object.keys(item.properties).sort(),keys);
  for(const k of ['definitionVersion','activationEpoch','sequence']){assert.equal(item.properties[k].maximum,9007199254740991);assert.equal(item.properties[k].minimum,k==='sequence'?0:1);}
  const res=schemas.WorkflowInboxResult;assert.equal(res.additionalProperties,false);assert.deepEqual(res.required.toSorted(),['items','page','pageSize','queryVersion','total']);assert.equal(res.properties.items.maxItems,100);
+});
+
+test('personal inbox performance-only migration is registered with exact bytes',()=>{
+ const path='migrations/00026_workflow_personal_inbox_index.sql';
+ const manifest=JSON.parse(readFileSync(new URL('../infra/server/deploy/compatibility.json',import.meta.url)));
+ const entry=manifest.migrations.filter(e=>e.path===path);assert.equal(entry.length,1,'personal-order migration not registered');
+ const raw=readFileSync(new URL('../db/'+path,import.meta.url),'utf8').replaceAll('\r\n','\n');
+ assert.equal(entry[0].sha256,createHash('sha256').update(raw).digest('hex'));
 });
