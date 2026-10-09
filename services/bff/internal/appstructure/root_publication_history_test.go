@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -112,5 +113,38 @@ func TestRootPublicationHistoryPendingAndUnknownBlockCatalogCleanup(t *testing.T
 				}
 			}
 		})
+	}
+}
+
+func TestRootPublicationHistoryRejectsStaleWriteSnapshots(t *testing.T) {
+	for _, iso := range []pgx.TxIsoLevel{pgx.RepeatableRead, pgx.Serializable} {
+		for _, action := range []string{"insert", "version-delete", "definition-delete"} {
+			t.Run(string(iso)+"/"+action, func(t *testing.T) {
+				p := rootPublicationSetup(t)
+				ctx := context.Background()
+				if action == "definition-delete" {
+					if _, err := p.s.f.owner.Exec(ctx, "DELETE FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2", p.s.f.app, p.flow); err != nil {
+						t.Fatal(err)
+					}
+				}
+				tx, err := p.s.f.owner.BeginTx(ctx, pgx.TxOptions{IsoLevel: iso})
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer tx.Rollback(ctx)
+				q := "INSERT INTO applications.workflow_deployments(app_id,flow_id,version,deployment_id) VALUES($1,$2,1,'isolated-snapshot-test')"
+				if action == "version-delete" {
+					q = "DELETE FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2"
+				}
+				if action == "definition-delete" {
+					q = "DELETE FROM applications.workflow_definitions WHERE app_id=$1 AND id=$2"
+				}
+				_, err = tx.Exec(ctx, q, p.s.f.app, p.flow)
+				var pg *pgconn.PgError
+				if !errors.As(err, &pg) || pg.Code != "25001" {
+					t.Fatalf("stale write snapshot was not explicitly rejected: %v", err)
+				}
+			})
+		}
 	}
 }
