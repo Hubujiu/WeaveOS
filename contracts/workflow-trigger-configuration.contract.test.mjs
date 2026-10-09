@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const api=JSON.parse(readFileSync(new URL('./openapi/openapi.json',import.meta.url)));
@@ -16,4 +17,13 @@ test('V044: closed event-condition configuration has three bounded event kinds',
  assert.deepEqual([...item.required].sort(),['condition','event']);
  assert.deepEqual([...item.properties.event.enum].sort(),['manual','record.created','record.updated']);
  assert.deepEqual(item.properties.condition.anyOf,[{$ref:'#/components/schemas/RecordFilterGroup'},{type:'null'}]);
+});
+
+test('V044: migration 24 is registered once after 23 with exact immutable bytes',()=>{
+ const manifest=JSON.parse(readFileSync(new URL('../infra/server/deploy/compatibility.json',import.meta.url)));
+ const path='migrations/00024_workflow_trigger_configuration.sql';
+ const matches=manifest.migrations.filter(item=>item.path===path);
+ assert.equal(matches.length,1,'migration 24 must be registered exactly once');
+ assert.equal(matches[0].sha256,createHash('sha256').update(readFileSync(new URL('../db/'+path,import.meta.url))).digest('hex'));
+ assert.ok(manifest.migrations.findIndex(item=>item.path===path)>manifest.migrations.findIndex(item=>item.path==='migrations/00023_workflow_record_order_index.sql'));
 });
