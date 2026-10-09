@@ -6,7 +6,10 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -167,6 +170,51 @@ func TestRootTriggerConfigurationPublishAndEnableRecheckFields(t *testing.T) {
 					}
 					return err
 				})
+			}
+		})
+	}
+}
+
+func TestRootTriggerConfigurationDownGuard(t *testing.T) {
+	raw, err := os.ReadFile("../../../../db/migrations/00024_workflow_trigger_configuration.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pieces := strings.Split(string(raw), "-- +goose Down")
+	if len(pieces) != 2 {
+		t.Fatal("missing Down contract")
+	}
+	for _, nonempty := range []bool{false, true} {
+		t.Run(map[bool]string{false: "empty", true: "configured"}[nonempty], func(t *testing.T) {
+			f := newRecordFixture(t)
+			rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
+			tx, err := f.owner.Begin(f.ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer tx.Rollback(f.ctx)
+			// Private isolated database; rollback restores every row and DDL change.
+			config := `[]`
+			if nonempty {
+				config = `[{"event":"manual","condition":null}]`
+			}
+			if _, err = tx.Exec(f.ctx, "UPDATE applications.workflow_versions SET triggers_json=$1", config); err != nil {
+				t.Fatal(err)
+			}
+			_, err = tx.Exec(f.ctx, pieces[1])
+			if nonempty {
+				var pgErr *pgconn.PgError
+				if !errors.As(err, &pgErr) || pgErr.Code != "55000" {
+					t.Fatalf("configured Down must refuse without data loss, got %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			var count int
+			if err = tx.QueryRow(f.ctx, "SELECT count(*) FROM information_schema.columns WHERE table_schema='applications' AND table_name='workflow_versions' AND column_name='triggers_json'").Scan(&count); err != nil || count != 0 {
+				t.Fatalf("empty configuration Down did not remove column: %d %v", count, err)
 			}
 		})
 	}
