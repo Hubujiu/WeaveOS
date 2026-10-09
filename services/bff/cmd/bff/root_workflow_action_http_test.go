@@ -153,6 +153,9 @@ func rootHTTPResultBytes(result fc.ExecutionResult) []byte {
 // This fixture creates a confirmed existing task through trusted internal ports.
 // It is HTTP ingress coverage, not evidence of a public start trigger or real engine.
 func rootHTTPResourceSetup(t *testing.T) *rootTaskHTTPFixture {
+	return rootHTTPResourceSetupRuntime(t, workflowRuntimeConfig{})
+}
+func rootHTTPResourceSetupRuntime(t *testing.T, runtimeCfg workflowRuntimeConfig) *rootTaskHTTPFixture {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	t.Cleanup(cancel)
@@ -199,7 +202,7 @@ func rootHTTPResourceSetup(t *testing.T) *rootTaskHTTPFixture {
 	}
 	t.Cleanup(func() { f.store.Revoke(context.Background(), f.sid) })
 	f.server = httptest.NewUnstartedServer(nil)
-	cfg := config{DatabaseURL: runtimeURL.String(), RedisURL: os.Getenv("WEAVEOS_TEST_REDIS_URL"), Origin: "https://" + f.server.Listener.Addr().String(), Generation: generation, AuditKeyID: "test", AuditKey: []byte("synthetic-audit-key-32-bytes-only!"), DefinitionKeyID: "test", DefinitionKey: []byte("isolated-definition-test-32bytes!"), SchemaLimits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}}
+	cfg := config{WorkflowRuntime: runtimeCfg, DatabaseURL: runtimeURL.String(), RedisURL: os.Getenv("WEAVEOS_TEST_REDIS_URL"), Origin: "https://" + f.server.Listener.Addr().String(), Generation: generation, AuditKeyID: "test", AuditKey: []byte("synthetic-audit-key-32-bytes-only!"), DefinitionKeyID: "test", DefinitionKey: []byte("isolated-definition-test-32bytes!"), SchemaLimits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}}
 	h, close, e := buildHandler(ctx, cfg)
 	if e != nil {
 		t.Fatal(e)

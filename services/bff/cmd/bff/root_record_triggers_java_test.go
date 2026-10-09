@@ -69,7 +69,15 @@ func rootPublicTriggerJavaContract(t *testing.T, twoFlows, closeAfterCreate bool
 	if err != nil || (host != "b3-workflow" && host != "127.0.0.1") {
 		t.Fatal("dedicated Docker or native loopback fixture required")
 	}
-	connection, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDisableRetry())
+	options := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDisableRetry()}
+	if token := os.Getenv("WEAVEOS_NATIVE_FIXTURE_TOKEN"); token != "" {
+		identity, e := wr.NewServiceIdentity(token)
+		if e != nil {
+			t.Fatal(e)
+		}
+		options = append(options, grpc.WithUnaryInterceptor(identity.UnaryInterceptor()))
+	}
+	connection, err := grpc.NewClient(target, options...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,4 +146,44 @@ func rootPublicTriggerJavaContract(t *testing.T, twoFlows, closeAfterCreate bool
 			t.Fatalf("actual approval task count=%d want 1", tasks)
 		}
 	}
+}
+
+// This case uses the actual configured BFF host lifecycle, not an injected
+// test worker. The isolated Java process authenticates the internal RPC.
+func TestRootRecordTriggerJavaHostRunsStartAdmission(t *testing.T) {
+	target := os.Getenv("WEAVEOS_RPC_TEST_TARGET")
+	token := os.Getenv("WEAVEOS_NATIVE_FIXTURE_TOKEN")
+	if token == "" {
+		token = "synthetic_v044_loopback_service_identity_01"
+	}
+	identity, err := wr.NewServiceIdentity(token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	connection, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDisableRetry(), grpc.WithUnaryInterceptor(identity.UnaryInterceptor()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { connection.Close() })
+	deployment, err := wr.NewClient(connection, 15*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := rootHTTPResourceSetupRuntime(t, workflowRuntimeConfig{Enabled: true, Identity: identity, Target: target, RPCTimeout: 15 * time.Second})
+	rootHTTPTriggerJavaConfigure(t, f, deployment)
+	path := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/records"
+	body := `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"values":{"` + f.field + `":"host dispatched record"}}`
+	record := rootHTTPString(t, rootHTTPData(t, f.call(t, "POST", path, body, nil), 201), "id")
+	deadline := time.Now().Add(5 * time.Second)
+	state := ""
+	for time.Now().Before(deadline) {
+		if err := f.owner.QueryRow(f.ctx, "SELECT state FROM applications.workflow_instances WHERE app_id=$1 AND flow_id=$2 AND record_id=$3", f.app, f.flow, record).Scan(&state); err != nil {
+			t.Fatal(err)
+		}
+		if state == "active" {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("actual host never dispatched accepted public start: state=%s want active", state)
 }
