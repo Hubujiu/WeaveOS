@@ -1,0 +1,37 @@
+C|wf_flow_deletion_guards|app_id|1|uuid|true|
+C|wf_flow_deletion_guards|created_at|7|timestamp with time zone|true|clock_timestamp()
+C|wf_flow_deletion_guards|deleted_at|6|timestamp with time zone|false|
+C|wf_flow_deletion_guards|deleted_versions|5|bigint|false|
+C|wf_flow_deletion_guards|flow_id|2|uuid|true|
+C|wf_flow_deletion_guards|operation_id|4|uuid|false|
+C|wf_flow_deletion_guards|retired|3|boolean|true|false
+F|wf_flow_deletion_guard_immutable|CREATE OR REPLACE FUNCTION <schema>.wf_flow_deletion_guard_immutable()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog'
+AS $function$
+BEGIN
+ IF TG_OP='INSERT' THEN
+  IF NEW.retired THEN RAISE EXCEPTION 'flow identity must be established live' USING ERRCODE='23514'; END IF;
+ ELSE
+  IF OLD.retired OR NEW.app_id IS DISTINCT FROM OLD.app_id OR NEW.flow_id IS DISTINCT FROM OLD.flow_id OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+   RAISE EXCEPTION 'flow deletion identity is immutable' USING ERRCODE='55000';
+  END IF;
+ END IF;
+ RETURN NEW;
+END;
+$function$
+
+G|wf_flow_deletion_guards||wf_flow_deletion_guard_immutable|wf_flow_deletion_guard_immutable|23|O|false|false|
+I|wf_flow_deletion_guards|CREATE UNIQUE INDEX pk_wf_flow_deletion_guards ON <schema>.wf_flow_deletion_guards USING btree (app_id, flow_id)|true|true
+I|wf_flow_deletion_guards|CREATE UNIQUE INDEX uq_wf_flow_deletion_operation ON <schema>.wf_flow_deletion_guards USING btree (operation_id)|true|true
+K|wf_flow_deletion_guards|ck_wf_flow_deletion_identity|c|CHECK (((app_id <> '00000000-0000-0000-0000-000000000000'::uuid) AND (flow_id <> '00000000-0000-0000-0000-000000000000'::uuid)))|false|false|true
+K|wf_flow_deletion_guards|ck_wf_flow_deletion_operation|c|CHECK (((operation_id IS NULL) OR (operation_id <> '00000000-0000-0000-0000-000000000000'::uuid)))|false|false|true
+K|wf_flow_deletion_guards|ck_wf_flow_deletion_result|c|CHECK ((((NOT retired) AND (operation_id IS NULL) AND (deleted_versions IS NULL) AND (deleted_at IS NULL)) OR (retired AND (operation_id IS NOT NULL) AND (deleted_versions IS NOT NULL) AND ((deleted_versions >= 0) AND (deleted_versions <= '9007199254740991'::bigint)) AND (deleted_at IS NOT NULL))))|false|false|true
+K|wf_flow_deletion_guards|pk_wf_flow_deletion_guards|p|PRIMARY KEY (app_id, flow_id)|false|false|true
+K|wf_flow_deletion_guards|uq_wf_flow_deletion_operation|u|UNIQUE (operation_id)|false|false|true
+K|wf_flow_deletion_guards|wf_flow_deletion_guards_app_id_not_null|n|NOT NULL app_id|false|false|true
+K|wf_flow_deletion_guards|wf_flow_deletion_guards_created_at_not_null|n|NOT NULL created_at|false|false|true
+K|wf_flow_deletion_guards|wf_flow_deletion_guards_flow_id_not_null|n|NOT NULL flow_id|false|false|true
+K|wf_flow_deletion_guards|wf_flow_deletion_guards_retired_not_null|n|NOT NULL retired|false|false|true
+T|wf_flow_deletion_guards|r|p|false|false
