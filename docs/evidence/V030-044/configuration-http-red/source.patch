@@ -1,0 +1,141 @@
+diff --git a/contracts/workflow-trigger-configuration.contract.test.mjs b/contracts/workflow-trigger-configuration.contract.test.mjs
+new file mode 100644
+index 0000000..e33e06e
+--- /dev/null
++++ b/contracts/workflow-trigger-configuration.contract.test.mjs
+@@ -0,0 +1,19 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import {readFileSync} from 'node:fs';
++const api=JSON.parse(readFileSync(new URL('./openapi/openapi.json',import.meta.url)));
++const schemas=api.components.schemas;
++test('V044: definition triggers are optional on save and required on read',()=>{
++ assert.equal(schemas.WorkflowDefinitionSave.properties.triggers?.$ref,'#/components/schemas/WorkflowTriggers');
++ assert.equal(schemas.WorkflowDefinitionSave.required.includes('triggers'),false);
++ assert.equal(schemas.WorkflowDefinition.properties.triggers?.$ref,'#/components/schemas/WorkflowTriggers');
++ assert.ok(schemas.WorkflowDefinition.required.includes('triggers'));
++});
++test('V044: closed event-condition configuration has three bounded event kinds',()=>{
++ const list=schemas.WorkflowTriggers;assert.ok(list);assert.equal(list.type,'array');assert.equal(list.maxItems,3);
++ assert.equal(list.items.$ref,'#/components/schemas/WorkflowTrigger');
++ const item=schemas.WorkflowTrigger;assert.equal(item.additionalProperties,false);
++ assert.deepEqual([...item.required].sort(),['condition','event']);
++ assert.deepEqual([...item.properties.event.enum].sort(),['manual','record.created','record.updated']);
++ assert.deepEqual(item.properties.condition.anyOf,[{$ref:'#/components/schemas/RecordFilterGroup'},{type:'null'}]);
++});
+diff --git a/services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go b/services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go
+new file mode 100644
+index 0000000..2f5d448
+--- /dev/null
++++ b/services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go
+@@ -0,0 +1,110 @@
++package appstructure
++
++import (
++	"encoding/json"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
++	"io"
++	"net/http"
++	"net/http/httptest"
++	"reflect"
++	"strings"
++	"testing"
++)
++
++func triggerTLSCall(t *testing.T, s rootWorkflowManagementFixture, server *httptest.Server, flow, method string, body any, login, csrf bool) *httptest.ResponseRecorder {
++	t.Helper()
++	raw, err := json.Marshal(body)
++	if err != nil {
++		t.Fatal(err)
++	}
++	req, err := http.NewRequest(method, server.URL+rootWorkflowHTTPPath(s, flow, "definition"), strings.NewReader(string(raw)))
++	if err != nil {
++		t.Fatal(err)
++	}
++	req.Host = "weaveos.test"
++	req.Header.Set("Content-Type", "application/json")
++	req.Header.Set("Origin", "https://weaveos.test")
++	if login {
++		req.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: s.f.sid})
++		req.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: s.f.csrf})
++	}
++	if csrf {
++		req.Header.Set("X-CSRF-Token", s.f.csrf)
++	}
++	response, err := server.Client().Do(req)
++	if err != nil {
++		t.Fatal(err)
++	}
++	defer response.Body.Close()
++	if response.TLS == nil {
++		t.Fatal("fixture must use real TLS transport")
++	}
++	w := httptest.NewRecorder()
++	for k, v := range response.Header {
++		w.Header()[k] = v
++	}
++	w.WriteHeader(response.StatusCode)
++	if _, err = io.Copy(w, response.Body); err != nil {
++		t.Fatal(err)
++	}
++	return w
++}
++func TestRootWorkflowTriggerConfigurationHTTPSRoundTrip(t *testing.T) {
++	s := rootWorkflowManagementSetup(t)
++	server := httptest.NewTLSServer(rootWorkflowHTTPHandler(s))
++	defer server.Close()
++	flow := uuid(t, s.f.owner)
++	body := rootWorkflowHTTPBody(t, s, s.f.actor)
++	configs := []any{map[string]any{"event": "record.created", "condition": map[string]any{"operator": "and", "children": []any{map[string]any{"fieldId": s.field, "operator": "eq", "value": "alpha"}}}}}
++	body["triggers"] = configs
++	rootWorkflowHTTPError(t, triggerTLSCall(t, s, server, flow, "PUT", body, false, true), 401, "AUTH_UNAUTHENTICATED")
++	rootWorkflowHTTPError(t, triggerTLSCall(t, s, server, flow, "PUT", body, true, false), 403, "COMMON_CSRF_REJECTED")
++	saved := data(t, triggerTLSCall(t, s, server, flow, "PUT", body, true, true), 201)
++	read := data(t, triggerTLSCall(t, s, server, flow, "GET", nil, true, true), 200)
++	if !reflect.DeepEqual(read["triggers"], configs) {
++		t.Fatalf("trigger config not returned: %+v", read["triggers"])
++	}
++	// Existing clients omit the additive setting; candidate configuration survives.
++	delete(body, "triggers")
++	body["operationId"] = uuid(t, s.f.owner)
++	body["expectedRevision"] = saved["revision"]
++	saved = data(t, triggerTLSCall(t, s, server, flow, "PUT", body, true, true), 200)
++	read = data(t, triggerTLSCall(t, s, server, flow, "GET", nil, true, true), 200)
++	if !reflect.DeepEqual(read["triggers"], configs) {
++		t.Fatal("old client omission cleared configuration")
++	}
++	body["triggers"] = []any{}
++	body["operationId"] = uuid(t, s.f.owner)
++	body["expectedRevision"] = saved["revision"]
++	data(t, triggerTLSCall(t, s, server, flow, "PUT", body, true, true), 200)
++	read = data(t, triggerTLSCall(t, s, server, flow, "GET", nil, true, true), 200)
++	got, ok := read["triggers"].([]any)
++	if !ok || len(got) != 0 {
++		t.Fatalf("explicit empty did not clear configuration: %+v", read)
++	}
++}
++func TestRootWorkflowTriggerConfigurationHTTPSLegacyAndMalformed(t *testing.T) {
++	s := rootWorkflowManagementSetup(t)
++	server := httptest.NewTLSServer(rootWorkflowHTTPHandler(s))
++	defer server.Close()
++	flow := uuid(t, s.f.owner)
++	body := rootWorkflowHTTPBody(t, s, s.f.actor)
++	data(t, triggerTLSCall(t, s, server, flow, "PUT", body, true, true), 201)
++	read := data(t, triggerTLSCall(t, s, server, flow, "GET", nil, true, true), 200)
++	if got, ok := read["triggers"].([]any); !ok || len(got) != 0 {
++		t.Fatalf("legacy config must be [], got %+v", read["triggers"])
++	}
++	for name, value := range map[string]any{
++		"null": nil, "object": map[string]any{},
++		"missing_condition": []any{map[string]any{"event": "manual"}},
++		"unknown_event":     []any{map[string]any{"event": "timer", "condition": nil}},
++		"unknown_key":       []any{map[string]any{"event": "manual", "condition": nil, "script": "x"}},
++		"duplicate_event":   []any{map[string]any{"event": "manual", "condition": nil}, map[string]any{"event": "manual", "condition": nil}},
++	} {
++		t.Run(name, func(t *testing.T) {
++			bad := rootWorkflowHTTPBody(t, s, s.f.actor)
++			bad["triggers"] = value
++			rootWorkflowHTTPError(t, triggerTLSCall(t, s, server, uuid(t, s.f.owner), "PUT", bad, true, true), 400, "COMMON_INVALID_ARGUMENT")
++		})
++	}
++}

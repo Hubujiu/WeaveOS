@@ -1,0 +1,377 @@
+diff --git a/db/migrations/00024_workflow_trigger_configuration.sql b/db/migrations/00024_workflow_trigger_configuration.sql
+index 9a6bca5..fdee93e 100644
+--- a/db/migrations/00024_workflow_trigger_configuration.sql
++++ b/db/migrations/00024_workflow_trigger_configuration.sql
+@@ -1,6 +1,23 @@
+ -- +goose Up
+--- Declaration-only no-op for the requirement-first schema RED run.
+-SELECT 1;
++-- Version metadata only; business records remain real typed columns.
++-- Existing definitions have no triggers until explicitly configured/published.
++ALTER TABLE applications.workflow_versions
++ ADD COLUMN triggers_json jsonb NOT NULL DEFAULT '[]'::jsonb,
++ ADD CONSTRAINT workflow_versions_triggers_shape CHECK (
++   jsonb_typeof(triggers_json)='array' AND jsonb_array_length(triggers_json)<=3
++ );
+ 
+ -- +goose Down
+-SELECT 1;
++-- +goose StatementBegin
++DO $$
++BEGIN
++ LOCK TABLE applications.workflow_versions IN ACCESS EXCLUSIVE MODE;
++ IF EXISTS (SELECT 1 FROM applications.workflow_versions WHERE triggers_json <> '[]'::jsonb) THEN
++  RAISE EXCEPTION 'cannot remove durable workflow trigger configuration' USING ERRCODE='55000';
++ END IF;
++END;
++$$;
++-- +goose StatementEnd
++ALTER TABLE applications.workflow_versions
++ DROP CONSTRAINT workflow_versions_triggers_shape,
++ DROP COLUMN triggers_json;
+diff --git a/services/bff/internal/appworkflows/http.go b/services/bff/internal/appworkflows/http.go
+index f78a295..3629dce 100644
+--- a/services/bff/internal/appworkflows/http.go
++++ b/services/bff/internal/appworkflows/http.go
+@@ -73,12 +73,13 @@ type workflowEdge struct {
+ }
+ 
+ type definitionRequest struct {
+-	OperationID           string          `json:"operationId"`
+-	Name                  string          `json:"name"`
+-	ExpectedRevision      int64           `json:"expectedRevision"`
+-	ExpectedSchemaVersion int64           `json:"expectedSchemaVersion"`
+-	Graph                 json.RawMessage `json:"graph"`
+-	AllowWithdraw         *bool           `json:"allowWithdraw"`
++	OperationID           string                     `json:"operationId"`
++	Name                  string                     `json:"name"`
++	ExpectedRevision      int64                      `json:"expectedRevision"`
++	ExpectedSchemaVersion int64                      `json:"expectedSchemaVersion"`
++	Graph                 json.RawMessage            `json:"graph"`
++	AllowWithdraw         *bool                      `json:"allowWithdraw"`
++	Triggers              *[]workflowcatalog.Trigger `json:"triggers,omitempty"`
+ }
+ 
+ type lifecycleRequest struct {
+@@ -87,15 +88,16 @@ type lifecycleRequest struct {
+ }
+ 
+ type definitionView struct {
+-	ID               string        `json:"id"`
+-	Name             string        `json:"name"`
+-	Revision         int64         `json:"revision"`
+-	CurrentVersion   int64         `json:"currentVersion"`
+-	CandidateVersion int64         `json:"candidateVersion"`
+-	State            string        `json:"state"`
+-	SchemaVersion    int64         `json:"schemaVersion"`
+-	AllowWithdraw    bool          `json:"allowWithdraw"`
+-	Graph            workflowGraph `json:"graph"`
++	ID               string                    `json:"id"`
++	Name             string                    `json:"name"`
++	Revision         int64                     `json:"revision"`
++	CurrentVersion   int64                     `json:"currentVersion"`
++	CandidateVersion int64                     `json:"candidateVersion"`
++	State            string                    `json:"state"`
++	SchemaVersion    int64                     `json:"schemaVersion"`
++	AllowWithdraw    bool                      `json:"allowWithdraw"`
++	Graph            workflowGraph             `json:"graph"`
++	Triggers         []workflowcatalog.Trigger `json:"triggers"`
+ }
+ 
+ type mutationData struct {
+@@ -332,7 +334,7 @@ func decodeDefinition(w http.ResponseWriter, r *http.Request) (definitionRequest
+ 	if err != nil {
+ 		return definitionRequest{}, flowgraph.Graph{}, err
+ 	}
+-	fields, err := exactObject(raw, []string{"operationId", "name", "expectedRevision", "expectedSchemaVersion", "graph", "allowWithdraw"}, nil)
++	fields, err := exactObject(raw, []string{"operationId", "name", "expectedRevision", "expectedSchemaVersion", "graph", "allowWithdraw"}, []string{"triggers"})
+ 	if err != nil {
+ 		return definitionRequest{}, flowgraph.Graph{}, err
+ 	}
+@@ -343,6 +345,19 @@ func decodeDefinition(w http.ResponseWriter, r *http.Request) (definitionRequest
+ 	if decodeErr != nil || in.AllowWithdraw == nil || !validID(in.OperationID) || strings.TrimSpace(in.Name) == "" || in.ExpectedRevision < 0 || in.ExpectedRevision > maxSafeInteger || in.ExpectedSchemaVersion < 1 || in.ExpectedSchemaVersion > maxSafeInteger {
+ 		return definitionRequest{}, flowgraph.Graph{}, errInvalid
+ 	}
++	if rawTriggers, exists := fields["triggers"]; exists {
++		var entries []map[string]json.RawMessage
++		if json.Unmarshal(rawTriggers, &entries) != nil || entries == nil || len(entries) > 3 {
++			return definitionRequest{}, flowgraph.Graph{}, errInvalid
++		}
++		for _, entry := range entries {
++			_, hasEvent := entry["event"]
++			_, hasCondition := entry["condition"]
++			if len(entry) != 2 || !hasEvent || !hasCondition {
++				return definitionRequest{}, flowgraph.Graph{}, errInvalid
++			}
++		}
++	}
+ 	graph, err := decodeGraph(fields["graph"])
+ 	if err != nil {
+ 		return definitionRequest{}, flowgraph.Graph{}, err
+@@ -534,6 +549,11 @@ func (s *Service) getDefinition(w http.ResponseWriter, r *http.Request, p sessio
+ 		fail(w, r, err, "")
+ 		return
+ 	}
++	triggers, err := (workflowcatalog.Catalog{}).TriggersForVersionInTx(ctx, tx, appID, flowID, head.CandidateVersion)
++	if err != nil {
++		fail(w, r, err, "")
++		return
++	}
+ 	graph, err := workflowcatalogGraph(graphJSON)
+ 	if err != nil {
+ 		fail(w, r, err, "")
+@@ -549,7 +569,7 @@ func (s *Service) getDefinition(w http.ResponseWriter, r *http.Request, p sessio
+ 	}
+ 	writeEnvelope(w, r, http.StatusOK, "OK", definitionView{ID: flowID, Name: head.Name, Revision: head.Revision,
+ 		CurrentVersion: head.CurrentVersion, CandidateVersion: head.CandidateVersion, State: head.State,
+-		SchemaVersion: schemaVersion, AllowWithdraw: allowWithdraw, Graph: toGraphDTO(graph)})
++		SchemaVersion: schemaVersion, AllowWithdraw: allowWithdraw, Graph: toGraphDTO(graph), Triggers: triggers})
+ }
+ 
+ func workflowcatalogGraph(raw []byte) (flowgraph.Graph, error) {
+@@ -631,7 +651,7 @@ func (s *Service) mutate(w http.ResponseWriter, r *http.Request, p session.Princ
+ 		}
+ 		head, err = catalog.PutVersionInTx(r.Context(), tx, workflowcatalog.VersionInput{AppID: appID, TableID: tableID, ViewID: viewID, FlowID: flowID,
+ 			ActorID: p.UserID, Name: save.Name, ExpectedRevision: save.ExpectedRevision, ExpectedSchemaVersion: save.ExpectedSchemaVersion,
+-			Graph: graph, AllowWithdraw: *save.AllowWithdraw})
++			Graph: graph, AllowWithdraw: *save.AllowWithdraw, Triggers: save.Triggers})
+ 	case "enable":
+ 		head, err = catalog.GetInTx(r.Context(), tx, appID, flowID)
+ 		if err == nil && head.ViewID != viewID {
+diff --git a/services/bff/internal/workflowcatalog/catalog.go b/services/bff/internal/workflowcatalog/catalog.go
+index bd7a873..46f865c 100644
+--- a/services/bff/internal/workflowcatalog/catalog.go
++++ b/services/bff/internal/workflowcatalog/catalog.go
+@@ -94,7 +94,11 @@ func (Catalog) PublicationVersionInTx(ctx context.Context, tx pgx.Tx, appID, flo
+ 	}
+ 	if resources.ready {
+ 		_, validation := flowgraph.Validate(v.Graph, resources.fields)
+-		v.Compatible = validation == nil
++		triggerValidation := validateStoredTriggers(ctx, tx, appID, flowID, version, resources.fields)
++		if triggerValidation != nil && !errors.Is(triggerValidation, ErrConflict) {
++			return v, triggerValidation
++		}
++		v.Compatible = validation == nil && triggerValidation == nil
+ 	}
+ 	return v, nil
+ }
+@@ -139,6 +143,24 @@ func (Catalog) PutVersionInTx(ctx context.Context, tx pgx.Tx, in VersionInput) (
+ 		return Head{}, ErrConflict
+ 	}
+ 
++	var requested []Trigger
++	if in.Triggers != nil {
++		requested = *in.Triggers
++	} else if exists {
++		requested, err = (Catalog{}).TriggersForVersionInTx(ctx, tx, in.AppID, in.FlowID, old.CandidateVersion)
++		if err != nil {
++			return Head{}, err
++		}
++	}
++	triggers, err := NormalizeTriggers(requested, resources.fields)
++	if err != nil {
++		return Head{}, ErrInvalid
++	}
++	triggerJSON, err := json.Marshal(triggers)
++	if err != nil {
++		return Head{}, ErrInvalid
++	}
++
+ 	if _, err := flowgraph.Validate(in.Graph, resources.fields); err != nil {
+ 		return Head{}, ErrInvalid
+ 	}
+@@ -181,9 +203,9 @@ func (Catalog) PutVersionInTx(ctx context.Context, tx pgx.Tx, in VersionInput) (
+ 		}
+ 	}
+ 	_, err = tx.Exec(ctx, `INSERT INTO applications.workflow_versions
+-		(app_id,flow_id,version,version_id,schema_version,graph_json,bpmn_xml,allow_withdraw,created_by)
+-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`, in.AppID, in.FlowID, version, versionID,
+-		resources.schemaVersion, graphJSON, string(bpmn), in.AllowWithdraw, in.ActorID)
++		(app_id,flow_id,version,version_id,schema_version,graph_json,bpmn_xml,allow_withdraw,created_by,triggers_json)
++		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, in.AppID, in.FlowID, version, versionID,
++		resources.schemaVersion, graphJSON, string(bpmn), in.AllowWithdraw, in.ActorID, triggerJSON)
+ 	if err != nil {
+ 		return Head{}, mapDBError(err)
+ 	}
+@@ -226,6 +248,9 @@ func (Catalog) ConfirmDeploymentInTx(ctx context.Context, tx pgx.Tx, appID, flow
+ 		return Head{}, ErrNotReady
+ 	}
+ 	if version == h.CandidateVersion {
++		if err := validateStoredTriggers(ctx, tx, appID, flowID, version, resources.fields); err != nil {
++			return Head{}, err
++		}
+ 		if _, err := flowgraph.Validate(graph, resources.fields); err != nil {
+ 			return Head{}, ErrConflict
+ 		}
+@@ -459,7 +484,9 @@ func (Catalog) CheckCompatibilityInTx(ctx context.Context, tx pgx.Tx, appID, tab
+ 			FROM applications.workflow_instances i
+ 			WHERE i.app_id=$1 AND i.table_id=$2 AND i.state IN ('starting','active')
+ 		)
+-		SELECT live.flow_id::text,v.version,v.graph_json
++		SELECT live.flow_id::text,v.version,v.graph_json,v.triggers_json,
++        EXISTS(SELECT 1 FROM applications.workflow_definitions d WHERE d.app_id=live.app_id
++          AND d.id=live.flow_id AND d.current_version=live.version AND d.state IN ('enabled','closing'))
+ 		FROM live_versions live
+ 		JOIN applications.workflow_versions v
+ 			ON v.app_id=live.app_id AND v.flow_id=live.flow_id AND v.version=live.version
+@@ -472,8 +499,9 @@ func (Catalog) CheckCompatibilityInTx(ctx context.Context, tx pgx.Tx, appID, tab
+ 	for rows.Next() {
+ 		var flowID string
+ 		var version int64
+-		var graphJSON []byte
+-		if err := rows.Scan(&flowID, &version, &graphJSON); err != nil {
++		var graphJSON, triggerJSON []byte
++		var checkTriggers bool
++		if err := rows.Scan(&flowID, &version, &graphJSON, &triggerJSON, &checkTriggers); err != nil {
+ 			return nil, mapDBError(err)
+ 		}
+ 		graph, err := decodeGraph(graphJSON)
+@@ -481,6 +509,13 @@ func (Catalog) CheckCompatibilityInTx(ctx context.Context, tx pgx.Tx, appID, tab
+ 			return nil, ErrNotReady
+ 		}
+ 		conflicts = append(conflicts, graphConflicts(flowID, version, graph, proposed)...)
++		if checkTriggers {
++			triggers, err := decodeTriggers(triggerJSON)
++			if err != nil {
++				return nil, err
++			}
++			conflicts = append(conflicts, triggerConflicts(flowID, version, graph, triggers, proposed)...)
++		}
+ 	}
+ 	if err := rows.Err(); err != nil {
+ 		return nil, mapDBError(err)
+@@ -624,7 +659,7 @@ func validateStoredVersion(ctx context.Context, tx pgx.Tx, appID, flowID string,
+ 	if _, err := flowgraph.Validate(graph, fields); err != nil {
+ 		return ErrConflict
+ 	}
+-	return nil
++	return validateStoredTriggers(ctx, tx, appID, flowID, version, fields)
+ }
+ 
+ func hasInFlight(ctx context.Context, tx pgx.Tx, appID, flowID string) (bool, error) {
+diff --git a/services/bff/internal/workflowcatalog/trigger_configuration.go b/services/bff/internal/workflowcatalog/trigger_configuration.go
+index 2e97891..47d05a9 100644
+--- a/services/bff/internal/workflowcatalog/trigger_configuration.go
++++ b/services/bff/internal/workflowcatalog/trigger_configuration.go
+@@ -1,21 +1,118 @@
+ package workflowcatalog
+ 
+ import (
++	"bytes"
+ 	"context"
+ 	"encoding/json"
++	"errors"
++	"io"
++	"sort"
++
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
+ 	"github.com/jackc/pgx/v5"
+ )
+ 
++// Trigger belongs to an immutable definition version. It does not itself
++// authorize a user or dispatch an engine command.
+ type Trigger struct {
+ 	Event     string          `json:"event"`
+ 	Condition json.RawMessage `json:"condition"`
+ }
+ 
+-// Declaration-only placeholders for the requirement-first RED run.
+ func NormalizeTriggers(in []Trigger, fields []appquery.Field) ([]Trigger, error) {
+-	return nil, ErrNotReady
++	if len(in) > 3 || !validFieldContext(fields) {
++		return nil, ErrInvalid
++	}
++	out := make([]Trigger, 0, len(in))
++	seen := map[string]bool{}
++	for _, trigger := range in {
++		switch trigger.Event {
++		case "manual", "record.created", "record.updated":
++		default:
++			return nil, ErrInvalid
++		}
++		if seen[trigger.Event] {
++			return nil, ErrInvalid
++		}
++		seen[trigger.Event] = true
++		plan, err := appquery.Compile(trigger.Condition, nil, fields, 1)
++		if err != nil {
++			return nil, ErrInvalid
++		}
++		raw := bytes.Clone(plan.Canonical)
++		if len(raw) == 0 {
++			raw = json.RawMessage("null")
++		}
++		out = append(out, Trigger{Event: trigger.Event, Condition: raw})
++	}
++	sort.Slice(out, func(i, j int) bool { return out[i].Event < out[j].Event })
++	return out, nil
++}
++
++func decodeTriggers(raw []byte) ([]Trigger, error) {
++	if len(raw) > 262144 || len(bytes.TrimSpace(raw)) == 0 || bytes.TrimSpace(raw)[0] != '[' {
++		return nil, ErrNotReady
++	}
++	var out []Trigger
++	decoder := json.NewDecoder(bytes.NewReader(raw))
++	decoder.DisallowUnknownFields()
++	if decoder.Decode(&out) != nil || len(out) > 3 {
++		return nil, ErrNotReady
++	}
++	var extra any
++	if decoder.Decode(&extra) != io.EOF {
++		return nil, ErrNotReady
++	}
++	return out, nil
+ }
++
+ func (Catalog) TriggersForVersionInTx(ctx context.Context, tx pgx.Tx, appID, flowID string, version int64) ([]Trigger, error) {
+-	return nil, ErrNotReady
++	if tx == nil || !validIDs(appID, flowID) || version < 1 || version > maxSafeInteger {
++		return nil, ErrInvalid
++	}
++	var raw []byte
++	err := tx.QueryRow(ctx, `SELECT triggers_json FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2 AND version=$3`, appID, flowID, version).Scan(&raw)
++	if errors.Is(err, pgx.ErrNoRows) {
++		return nil, ErrMissing
++	}
++	if err != nil {
++		return nil, mapDBError(err)
++	}
++	return decodeTriggers(raw)
++}
++
++func validateStoredTriggers(ctx context.Context, tx pgx.Tx, appID, flowID string, version int64, fields []appquery.Field) error {
++	triggers, err := (Catalog{}).TriggersForVersionInTx(ctx, tx, appID, flowID, version)
++	if err != nil {
++		return err
++	}
++	if _, err = NormalizeTriggers(triggers, fields); err != nil {
++		return ErrConflict
++	}
++	return nil
++}
++
++func triggerConflicts(flowID string, version int64, graph flowgraph.Graph, triggers []Trigger, fields []appquery.Field) []Conflict {
++	var startID string
++	for _, node := range graph.Nodes {
++		if node.Kind == "start" {
++			startID = node.ID
++			break
++		}
++	}
++	seen := map[Conflict]bool{}
++	out := []Conflict{}
++	for _, trigger := range triggers {
++		// Reuse the same leaf/type compatibility rules as graph conditions, with
++		// the real start node identifying the trigger's dependency in the API.
++		synthetic := flowgraph.Graph{Nodes: []flowgraph.Node{{ID: startID, Kind: "condition", Condition: trigger.Condition}}}
++		for _, conflict := range graphConflicts(flowID, version, synthetic, fields) {
++			if !seen[conflict] {
++				seen[conflict] = true
++				out = append(out, conflict)
++			}
++		}
++	}
++	return out
+ }

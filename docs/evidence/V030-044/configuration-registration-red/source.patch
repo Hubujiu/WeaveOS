@@ -1,0 +1,36 @@
+diff --git a/contracts/workflow-trigger-configuration.contract.test.mjs b/contracts/workflow-trigger-configuration.contract.test.mjs
+index e33e06e..9f682fe 100644
+--- a/contracts/workflow-trigger-configuration.contract.test.mjs
++++ b/contracts/workflow-trigger-configuration.contract.test.mjs
+@@ -1,4 +1,5 @@
+ import test from 'node:test';
++import {createHash} from 'node:crypto';
+ import assert from 'node:assert/strict';
+ import {readFileSync} from 'node:fs';
+ const api=JSON.parse(readFileSync(new URL('./openapi/openapi.json',import.meta.url)));
+@@ -17,3 +18,12 @@ test('V044: closed event-condition configuration has three bounded event kinds',
+  assert.deepEqual([...item.properties.event.enum].sort(),['manual','record.created','record.updated']);
+  assert.deepEqual(item.properties.condition.anyOf,[{$ref:'#/components/schemas/RecordFilterGroup'},{type:'null'}]);
+ });
++
++test('V044: migration 24 is registered once after 23 with exact immutable bytes',()=>{
++ const manifest=JSON.parse(readFileSync(new URL('../infra/server/deploy/compatibility.json',import.meta.url)));
++ const path='migrations/00024_workflow_trigger_configuration.sql';
++ const matches=manifest.migrations.filter(item=>item.path===path);
++ assert.equal(matches.length,1,'migration 24 must be registered exactly once');
++ assert.equal(matches[0].sha256,createHash('sha256').update(readFileSync(new URL('../db/'+path,import.meta.url))).digest('hex'));
++ assert.ok(manifest.migrations.findIndex(item=>item.path===path)>manifest.migrations.findIndex(item=>item.path==='migrations/00023_workflow_record_order_index.sql'));
++});
+diff --git a/docs/tasks/V030-044.md b/docs/tasks/V030-044.md
+index 4639057..d88d9b4 100644
+--- a/docs/tasks/V030-044.md
++++ b/docs/tasks/V030-044.md
+@@ -1,7 +1,7 @@
+ # V030-044 · 记录触发与并行流程
+ 
+ <!-- task-meta
+-{"id": "V030-044", "title": "记录触发与并行流程", "branch": "task/V030-044-record-triggers", "worktree": "../WeaveOS-worktrees/V030-044", "pr": null, "owner": "主助手在自己的环境直接计划、编写、测试和验收；不委派", "dependsOn": ["V030-041"], "allowedPaths": ["services/bff/internal/workflowcatalog/trigger_reservation.go", "services/bff/internal/apprecordservice/root_workflow_trigger_reservation_test.go", "docs/tasks/V030-044.md", "docs/tasks/index.md", "docs/evidence/V030-044/", "services/bff/internal/workflowcatalog/", "services/bff/internal/appworkflows/", "services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go", "services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go", "services/bff/internal/persistence/workflow_trigger_configuration_test.go", "db/migrations/00024_workflow_trigger_configuration.sql", "contracts/openapi/openapi.json", "contracts/workflow-trigger-configuration.contract.test.mjs", "infra/runtime/roles.sql", "infra/runtime/backup-test.mjs", "docs/compatibility/"], "deliveryState": "in_progress"}
++{"id": "V030-044", "title": "记录触发与并行流程", "branch": "task/V030-044-record-triggers", "worktree": "../WeaveOS-worktrees/V030-044", "pr": null, "owner": "主助手在自己的环境直接计划、编写、测试和验收；不委派", "dependsOn": ["V030-041"], "allowedPaths": ["services/bff/internal/workflowcatalog/trigger_reservation.go", "services/bff/internal/apprecordservice/root_workflow_trigger_reservation_test.go", "docs/tasks/V030-044.md", "docs/tasks/index.md", "docs/evidence/V030-044/", "services/bff/internal/workflowcatalog/", "services/bff/internal/appworkflows/", "services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go", "services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go", "services/bff/internal/persistence/workflow_trigger_configuration_test.go", "db/migrations/00024_workflow_trigger_configuration.sql", "contracts/openapi/openapi.json", "contracts/workflow-trigger-configuration.contract.test.mjs", "infra/runtime/roles.sql", "infra/runtime/backup.test.mjs", "infra/server/deploy/compatibility.json"], "deliveryState": "in_progress"}
+ -->
+ 
+ ## Sources

@@ -21149,6 +21149,10 @@
           },
           "allowWithdraw": {
             "type": "boolean"
+          },
+          "triggers": {
+            "$ref": "#/components/schemas/WorkflowTriggers",
+            "description": "Omitted on create means []; omitted on update preserves current candidate configuration. Explicit [] clears the new candidate. Configuration takes effect after publish/enable."
           }
         }
       },
@@ -21327,7 +21331,8 @@
           "state",
           "schemaVersion",
           "allowWithdraw",
-          "graph"
+          "graph",
+          "triggers"
         ],
         "properties": {
           "id": {
@@ -21357,6 +21362,9 @@
           },
           "graph": {
             "$ref": "#/components/schemas/WorkflowGraph"
+          },
+          "triggers": {
+            "$ref": "#/components/schemas/WorkflowTriggers"
           }
         }
       },
@@ -22399,6 +22407,44 @@
             }
           }
         ]
+      },
+      "WorkflowTriggers": {
+        "type": "array",
+        "maxItems": 3,
+        "items": {
+          "$ref": "#/components/schemas/WorkflowTrigger"
+        },
+        "description": "At most one entry per event. Applied to the entire logical table, using the confirmed published definition version. Empty array disables all triggers.",
+        "x-unique-by": "event"
+      },
+      "WorkflowTrigger": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "event",
+          "condition"
+        ],
+        "properties": {
+          "event": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "record.created",
+              "record.updated"
+            ]
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecordFilterGroup"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "description": "Null condition always matches. record.updated runs only for actual changed values and tests the resulting record, not only false-to-true transitions. Node Save does not implicitly trigger."
       }
     },
     "responses": {
