@@ -25,3 +25,7 @@ The archive script snapshots the execution folder before later final checks. Exa
 The standalone governance job has no installed TypeScript dependency. The new test is therefore in top-level `contracts/`, included by existing installed-dependency preflight, browser and product checks. No missing-dependency skip or workflow modification is used. The product container's Node version and compatibility must be established by its actual execution, not inferred from the host `.node-version`.
 
 At this snapshot, exact final HEAD scanning and complete CI are pending. Development integration, main approval and deployment remain separate facts.
+
+## Safe-base replay after PR66
+
+安全基线 d9c2e60b 同步后，原六项及新五项基线/恢复通过，四个隔离变异仍各4PASS/1FAIL且精确落盘计数断言命中；Node396项、typecheck、Redocly lint、build、任务/结构/diff均通过。补充安全基线重测原件77条，文件safe-base-replay.json 312005字节/SHA256 4e87b73d440bf0d1d6f50165cb963801d41b380331d6324f1cad38e57d5ab80d。这是真实后续重测，不把它冒充最初RED时间；新head完整CI仍待。

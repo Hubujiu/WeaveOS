@@ -45,7 +45,7 @@ privateFile('runtime.env', `WEAVEOS_DATABASE_URL=${database('weaveos_acceptance'
 privateFile('seed.env', `WEAVEOS_TEST_DATABASE_URL=${database('weaveos_acceptance')}\nWEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/acceptance/fixtures.json\n`);
 const openssl = process.platform === 'win32' ? 'C:/Program Files/Git/usr/bin/openssl.exe' : 'openssl';
 call(openssl, ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '2', '-keyout', resolve(dir, 'tls/key.pem'), '-out', resolve(dir, 'tls/cert.pem'), '-subj', '/CN=localhost', '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1'], { stdio: 'pipe' });
-const goImage = 'golang:1.27.1@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244';
+const goImage = 'golang:1.27.2@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c';
 const playwrightImage = 'mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27';
 const mount = ['--mount', `type=bind,src=${root},dst=/repo`];
 const go = (script, envFile = 'test.env') => call('docker', ['run', '--rm', '--network', `container:${id('postgres')}`, ...mount, ...(envFile === 'test.env' ? ['--mount', `type=bind,src=${b2Fixture.socket},dst=${b2Fixture.socket},readonly`] : []), ...goCacheMounts, '--env-file', resolve(dir, envFile), '-e', 'GOTOOLCHAIN=local', '-e', 'GOFLAGS=-buildvcs=false', '-e', 'GOBIN=/repo/.work/acceptance/tools', '-w', '/repo/services/bff', goImage, 'sh', '-ec', script]);

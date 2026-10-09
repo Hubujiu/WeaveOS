@@ -3,7 +3,7 @@ import {unresolvedAdvisories} from './advisory-review.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import {spawnSync} from 'node:child_process';import {resolve} from 'node:path';
 import {mkdirSync} from 'node:fs';
 test('Go source and dependencies have no reachable published vulnerabilities',()=>{
- const result=spawnSync('docker',['run','--rm','--mount',`type=bind,src=${resolve('.')},dst=/repo,readonly`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build','-e','GOFLAGS=-buildvcs=false','-w','/repo/services/bff','golang:1.27.1@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244','go','run','golang.org/x/vuln/cmd/govulncheck@v1.8.0','./...'],{encoding:'utf8',timeout:300000,maxBuffer:4*1024*1024});
+ const result=spawnSync('docker',['run','--rm','--mount',`type=bind,src=${resolve('.')},dst=/repo,readonly`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build','-e','GOFLAGS=-buildvcs=false','-w','/repo/services/bff','golang:1.27.2@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c','go','run','golang.org/x/vuln/cmd/govulncheck@v1.8.0','./...'],{encoding:'utf8',timeout:300000,maxBuffer:4*1024*1024});
  assert.equal(result.status,0,result.stdout+result.stderr);
 });
 test('tracked source archive passes a redacted Gitleaks secret scan',()=>{
@@ -19,7 +19,7 @@ test('frontend dependency audit reports no published vulnerabilities',()=>{
  assert.equal(result.status,0,summary);
 });
 test('required Go modules have no fixable advisories and unsafe OpenPGP is absent from every application dependency',()=>{
- const result=spawnSync('docker',['run','--rm','--mount',`type=bind,src=${resolve('.')},dst=/repo,readonly`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build','-e','GOFLAGS=-buildvcs=false','-w','/repo/services/bff/cmd/bff','golang:1.27.1@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244','go','run','golang.org/x/vuln/cmd/govulncheck@v1.8.0','-scan','module'],{encoding:'utf8',timeout:300000,maxBuffer:4*1024*1024});
+ const result=spawnSync('docker',['run','--rm','--mount',`type=bind,src=${resolve('.')},dst=/repo,readonly`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build','-e','GOFLAGS=-buildvcs=false','-w','/repo/services/bff/cmd/bff','golang:1.27.2@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c','go','run','golang.org/x/vuln/cmd/govulncheck@v1.8.0','-scan','module'],{encoding:'utf8',timeout:300000,maxBuffer:4*1024*1024});
  const ids=[...result.stdout.matchAll(/More info: https:\/\/pkg.go.dev\/vuln\/(GO-[0-9-]+)/g)].map(m=>m[1]);
  assert.ok(result.status===0||result.status===1&&ids.length>0,'module scanner must complete successfully or report actual advisories');
  // ADR003/004 require known-vulnerability disposition. GO-2026-5932 has no
@@ -28,7 +28,7 @@ test('required Go modules have no fixable advisories and unsafe OpenPGP is absen
  let reviewedEvidence;
  if(ids.includes('GO-2026-6443')){
   // Root-approved review is tied to actual selected bytes and this run's behavioral evidence.
-  const inspect=(args)=>spawnSync('docker',['run','--rm','--mount',`type=bind,src=${resolve('.')},dst=/repo,readonly`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build','-e','GOFLAGS=-buildvcs=false','-w','/repo/services/bff','golang:1.27.1@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244',...args],{encoding:'utf8',timeout:180000,maxBuffer:8*1024*1024});
+  const inspect=(args)=>spawnSync('docker',['run','--rm','--mount',`type=bind,src=${resolve('.')},dst=/repo,readonly`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build','-e','GOFLAGS=-buildvcs=false','-w','/repo/services/bff','golang:1.27.2@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c',...args],{encoding:'utf8',timeout:180000,maxBuffer:8*1024*1024});
   const selected=inspect(['go','list','-m','-json','google.golang.org/grpc']);
   assert.equal(selected.status,0,'selected gRPC module must be inspectable');
   let module;assert.doesNotThrow(()=>{module=JSON.parse(selected.stdout)},'module metadata must be valid JSON');
@@ -43,7 +43,7 @@ test('required Go modules have no fixable advisories and unsafe OpenPGP is absen
   reviewedEvidence={modulePath:module.Path,version:module.Version,sum:module.Sum,goModSum:module.GoModSum,replacement:module.Replace!=null,transportSHA256:createHash('sha256').update(transport.stdout).digest('hex'),regression:{exitCode:regression.status,passed:events.filter(e=>e.Action==='pass'&&e.Test===name&&e.Package===pkg).length,failed:events.filter(e=>e.Action==='fail').length,skipped:events.filter(e=>e.Action==='skip').length}};
  }
  assert.deepEqual(unresolvedAdvisories(ids,reviewedEvidence).filter(id=>id!=='GO-2026-5932'),[],'all unresolved fixable module advisories must be removed');
- const deps=spawnSync('docker',['run','--rm','--mount',`type=bind,src=${resolve('.')},dst=/repo,readonly`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','-e','GOFLAGS=-buildvcs=false','-w','/repo/services/bff','golang:1.27.1','go','list','-deps','./...'],{encoding:'utf8',timeout:180000});
+ const deps=spawnSync('docker',['run','--rm','--mount',`type=bind,src=${resolve('.')},dst=/repo,readonly`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','-e','GOFLAGS=-buildvcs=false','-w','/repo/services/bff','golang:1.27.2@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c','go','list','-deps','./...'],{encoding:'utf8',timeout:180000});
  assert.equal(deps.status,0,'entire application dependency graph must load');
  assert.equal(deps.stdout.split('\n').some(p=>p==='golang.org/x/crypto/openpgp'||p.startsWith('golang.org/x/crypto/openpgp/')),false,'unsupported OpenPGP must never be linked');
 });

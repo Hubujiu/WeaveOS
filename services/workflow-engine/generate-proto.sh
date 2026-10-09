@@ -3,7 +3,7 @@ set -euo pipefail
 rpc_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 rpc_root=$(cd "$rpc_dir/../.." && pwd)
 rpc_go=${WEAVEOS_RPC_GO:-go}
-test "$($rpc_go version | cut -d ' ' -f 3)" = go1.27.1
+test "$($rpc_go version | cut -d ' ' -f 3)" = go1.27.2
 export GOTOOLCHAIN=local
 mkdir -p "$rpc_dir/.work/bin"
 GOBIN="$rpc_dir/.work/bin" "$rpc_go" install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12

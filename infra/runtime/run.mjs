@@ -19,7 +19,7 @@ const commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
 const artifacts=process.env.WEAVEOS_ARTIFACT_RECORD?JSON.parse(readFileSync(process.env.WEAVEOS_ARTIFACT_RECORD,'utf8')):packageImages({root,commit,outputDir:resolve(dir,'artifacts')});
 // Security-patched derivative of the previously verified 85c2ee snapshot.
 // This fixture must verify the new candidate; it is not a production rollback.
-const previous=packageImages({root,commit:'c37226731a6bdbf5c6187aad6cfe1ff9be5daadd',outputDir:resolve(dir,'previous-artifacts')});
+const previous=packageImages({root,commit:'1bf330852a600103d5a68edcc576a8df6136fcae',outputDir:resolve(dir,'previous-artifacts')});
 verifyArtifacts(artifacts);verifyArtifacts(previous);
 const project=`weaveos-v010-008-${Date.now()}`,generation=project;
 const env={...process.env,WEAVEOS_RUNTIME_DIR:dir,WEAVEOS_BFF_IMAGE:artifacts.bff.imageID,WEAVEOS_WEB_IMAGE:artifacts.web.imageID};
@@ -43,13 +43,13 @@ const openssl=process.platform==='win32'?'C:/Program Files/Git/usr/bin/openssl.e
 file('tls/key.pem',Buffer.alloc(0));
 call(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-days','2','-keyout',resolve(dir,'tls/key.pem'),'-out',resolve(dir,'tls/cert.pem'),'-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost,IP:127.0.0.1'],{stdio:'pipe'});
 writeFileSync(resolve(dir,'CURRENT.json'),JSON.stringify({project,generation,dir,artifacts,previous,classification:'local-development-only'}));
-const go=script=>call('docker',['run','--rm','--network',`container:${id('postgres')}`,'--mount',`type=bind,src=${root},dst=/repo`,...goCacheMounts,'--env-file',resolve(dir,'migration.env'),'-e','GOTOOLCHAIN=local','-e','GOFLAGS=-buildvcs=false','-e','GOBIN=/repo/.work/runtime/tools','-w','/repo/services/bff','golang:1.27.1@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244','sh','-ec',script]);
+const go=script=>call('docker',['run','--rm','--network',`container:${id('postgres')}`,'--mount',`type=bind,src=${root},dst=/repo`,...goCacheMounts,'--env-file',resolve(dir,'migration.env'),'-e','GOTOOLCHAIN=local','-e','GOFLAGS=-buildvcs=false','-e','GOBIN=/repo/.work/runtime/tools','-w','/repo/services/bff','golang:1.27.2@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c','sh','-ec',script]);
 const sql=(database,text)=>call('docker',['exec','-i',id('postgres'),'psql','-X','-v','ON_ERROR_STOP=1','-U','weaveos_owner','-d',database],{input:text,stdio:'pipe'});
 const start=Date.now();
 try{
  // Build tools before entering the closed runtime network. No runtime secrets
  // are supplied to this internet-capable build container.
- call('docker',['run','--rm','--mount',`type=bind,src=${root},dst=/repo`,...goCacheMounts,'-e','GOTOOLCHAIN=local','-e','GOFLAGS=-buildvcs=false','-e','GOBIN=/repo/.work/runtime/tools','-w','/repo/services/bff','golang:1.27.1@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244','sh','-ec','go install github.com/pressly/goose/v3/cmd/goose@v3.28.0; CGO_ENABLED=0 go build -o /repo/.work/runtime/tools/seed ./cmd/acceptance-seed']);
+ call('docker',['run','--rm','--mount',`type=bind,src=${root},dst=/repo`,...goCacheMounts,'-e','GOTOOLCHAIN=local','-e','GOFLAGS=-buildvcs=false','-e','GOBIN=/repo/.work/runtime/tools','-w','/repo/services/bff','golang:1.27.2@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c','sh','-ec','go install github.com/pressly/goose/v3/cmd/goose@v3.28.0; CGO_ENABLED=0 go build -o /repo/.work/runtime/tools/seed ./cmd/acceptance-seed']);
  // Linux private config belongs to the image's dedicated Redis reader.
  if(typeof process.getuid==='function')call('docker',['run','--rm','--mount',`type=bind,src=${dir},dst=/private`,'debian:bookworm-slim','chown','999:999','/private/redis.conf']);
  compose('up','-d','--wait','postgres','redis');sql('postgres','CREATE DATABASE weaveos_cold_archive;');

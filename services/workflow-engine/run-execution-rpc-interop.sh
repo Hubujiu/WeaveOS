@@ -3,7 +3,7 @@ set -euo pipefail
 rpc_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 rpc_root=$(cd "$rpc_dir/../.." && pwd)
 rpc_go=${WEAVEOS_RPC_GO:-go}
-test "$($rpc_go version | cut -d ' ' -f 3)" = go1.27.1
+test "$($rpc_go version | cut -d ' ' -f 3)" = go1.27.2
 rpc_name="weaveos-v032-$(date +%s)-$$"
 rpc_network="${rpc_name}-network"
 rpc_pg="${rpc_name}-postgres"
