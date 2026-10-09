@@ -31,6 +31,11 @@ class RootFlowDeletionRuntimeSchemaTest {
   f.admin.execute("REVOKE UPDATE(app_id) ON "+f.schema+".wf_flow_deletion_guards FROM "+role);assertDoesNotThrow(this::verify);
   f.admin.execute("GRANT DELETE ON "+f.schema+".wf_flow_deletion_guards TO "+role);assertThrows(IllegalStateException.class,this::verify);
  }
+ @Test void publicExecuteOnDeletionGuardFunctionIsRejected()throws Exception{
+  upgrade();assertDoesNotThrow(this::verify);
+  f.admin.execute("GRANT EXECUTE ON FUNCTION "+f.schema+".wf_flow_deletion_guard_immutable() TO PUBLIC");
+  assertThrows(IllegalStateException.class,this::verify,"public trigger function execution must not pass readiness");
+ }
  @Test void runtimeRoleActuallyTransitionsOnceAndCannotMutateIdentityOrHistory()throws Exception{
   upgrade();var j=new JdbcTemplate(runtime);j.update("INSERT INTO wf_flow_deletion_guards(app_id,flow_id) VALUES(?::uuid,?::uuid)",f.app,f.flow);
   j.update("UPDATE wf_flow_deletion_guards SET retired=true,operation_id=?::uuid,deleted_versions=0,deleted_at=clock_timestamp()",f.op);
