@@ -87,5 +87,26 @@ class RootFlowDeletionRegistryTest {
   assertEquals(0,f.count());assertEquals(0,f.deployments());assertEquals(result,deletion.delete(request()));
   assertThrows(DeploymentRegistry.DeploymentConflict.class,()->f.registry.deploy(n.request(n.V1,1,"all")));assertEquals(0,f.count());
  }
+ RootExecutionRegistryTest.Command startCommand(){
+  var cmd=new RootExecutionRegistryTest.Command();cmd.strings[1]=n.APP;cmd.strings[5]=n.FLOW;cmd.strings[6]=n.V1;return cmd;
+ }
+ @Test void newStartAfterDeletionReturnsOriginalProtocolNoEffectWithoutLoadingMissingBpmn()throws Exception {
+  f.registry.deploy(n.request(n.V1,1,"all"));assertNotNull(deletion.delete(request()));
+  var execution=new ExecutionRegistry(f.jdbc,f.tm,f.engine);var cmd=startCommand();
+  var result=assertDoesNotThrow(()->execution.execute(cmd.request()),"retired deployment must be recognized before BPMN resource lookup");
+  assertEquals("no_effect",result.outcome());assertEquals("deployment_missing",result.result().reason());
+  assertEquals(result,execution.execute(cmd.request()));assertEquals(0,f.engine.getRuntimeService().createProcessInstanceQuery().count());
+  assertEquals(0,f.jdbc.queryForObject("SELECT count(*) FROM wf_execution_instances",Long.class));
+ }
+ @Test void originalExecutionReceiptsReplayAfterWithdrawalAndDeletionUnchanged()throws Exception {
+  f.registry.deploy(n.request(n.V1,1,"all"));var execution=new ExecutionRegistry(f.jdbc,f.tm,f.engine);var cmd=startCommand();
+  var started=execution.execute(cmd.request());assertEquals("success",started.outcome());
+  var withdraw=RootExecutionRegistryTest.action(cmd,"withdraw",started,null,RootExecutionRegistryTest.INITIATOR);
+  var ended=execution.execute(withdraw.request());assertEquals("withdrawn",ended.result().state());
+  String before=f.jdbc.queryForObject("SELECT jsonb_agg(to_jsonb(c) ORDER BY command_id)::text FROM wf_execution_commands c",String.class);
+  assertNotNull(deletion.delete(request()));assertEquals(started,execution.execute(cmd.request()));assertEquals(ended,execution.execute(withdraw.request()));
+  assertEquals(before,f.jdbc.queryForObject("SELECT jsonb_agg(to_jsonb(c) ORDER BY command_id)::text FROM wf_execution_commands c",String.class));
+  assertEquals(0,f.deployments());
+ }
  static final class Injected extends RuntimeException {}
 }
