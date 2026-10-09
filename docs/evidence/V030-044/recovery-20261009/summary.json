@@ -1,0 +1,94 @@
+{
+  "local_source": "f360bc9",
+  "remote_equivalent_source": "d3da67da7cdbacc5a30636248d1048d97bdb1d9b",
+  "source_tree": "93a41cd291f780611186d8afbe5857672c510ea3",
+  "environment": {
+    "go": "1.27.2",
+    "postgres": "18.6",
+    "redis": "8.2.10",
+    "node": "24.19.0",
+    "isolation": "private loopback, auth_app role, migrations 1..23, separate archive database"
+  },
+  "runs": {
+    "trigger": {
+      "exit": 0,
+      "counts": {
+        "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice": {
+          "pass_top": 8,
+          "pass_sub": 11,
+          "pass_package": 1
+        }
+      }
+    },
+    "regression": {
+      "exit": 1,
+      "counts": {
+        "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice": {
+          "pass_top": 237,
+          "pass_sub": 114,
+          "pass_package": 1
+        },
+        "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog": {
+          "skip_package": 1
+        },
+        "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure": {
+          "pass_top": 117,
+          "pass_sub": 29,
+          "fail_top": 1,
+          "fail_package": 1
+        }
+      }
+    },
+    "utf8-regression": {
+      "exit": 0,
+      "counts": {
+        "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice": {
+          "pass_top": 237,
+          "pass_sub": 114,
+          "pass_package": 1
+        },
+        "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog": {
+          "skip_package": 1
+        },
+        "github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure": {
+          "pass_top": 118,
+          "pass_sub": 29,
+          "pass_package": 1
+        }
+      }
+    }
+  },
+  "fixture_correction": "Initial SQL_ASCII fixture failed existing 254-Unicode-character account test. Recreated UTF8 fixture, unchanged source/test assertions, full rerun passed. Initial failure retained.",
+  "verification_limits": [
+    "No public trigger entrypoint implemented",
+    "No new Flowable full-runtime run",
+    "No remote CI for this checkpoint",
+    "workflowcatalog has no local tests; integration tests reside in apprecordservice; no test-case skips in corrected run"
+  ],
+  "artifacts": {
+    "trigger.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "utf8-regression.stdout.jsonl.gz": "cfb6d31e98055704ecea97c93bba7da71953a54cfe8f6e1c96d2e87ff0695228",
+    "finished.txt": "614cd891495286b6abeb732f52ba113a4de13e05a43c3dc6a0c2c7c0c5c182e8",
+    "utf8-regression.started.txt": "4b2de0e84ad37ad7ccd170b4b7f02685b48a86217c729a9d3b673290079e7560",
+    "utf8-regression.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "regression.exit": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "initial-server-encoding.txt": "40825e3a20feec870cff619e8cf905ecdc42c6d4d940c320e5c587a3be849102",
+    "regression.stdout.jsonl.gz": "2a8a6135e03f482cd3590db12e4a685ef29e2d3396be6cba87cd7ddd80778e37",
+    "regression.started.txt": "23c624710bc902a45a9965e399f0a646f2316b484d1834275a3a0841b6599dda",
+    "governance.log": "96206694efc432674db823bed13eb222df6c8ce0d1ba005523011fbdcea3e2b2",
+    "source.txt": "31c42f054df8fab0b9055194512e383f4b9887d8db99c6e4721637ce71bfd065",
+    "trigger.stdout.jsonl.gz": "ab7fb00b3e668abf0ba602b09015cc92885d05d375dc35070ceb5f8d75ec6b4a",
+    "regression.finished.txt": "38c1a45ae53d81a65a75e749b837de6a478859048493e22be77c917bd5313289",
+    "regression.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "trigger.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "utf8-regression.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "corrected-server-encoding.txt": "8692e7acf1d6cacbb180fc364651c9efef7175e33b26d88c00a9f8ddb701b701",
+    "started.txt": "16a0a9865f9a47c7ecdb4e8470772d2a09bdc2d9d3ba08447bbbd31fb00c7d22",
+    "utf8-regression.finished.txt": "b035b5d200cbb760bbeb3b6ffb11d640da1d97a112bbe503e9ee220bcf42d4b9"
+  },
+  "raw_jsonl_sha256": {
+    "utf8-regression.stdout.jsonl": "5b3d786efbf96146fc764e2281f4f2f4dfd768180c71cba36577c4bcfe4eb953",
+    "trigger.stdout.jsonl": "98885fc006f6dd1064cac9b350ee6304cc5c588521b04819e3afff54fe5be710",
+    "regression.stdout.jsonl": "103f62c03cdab470e59339af923a631bac659c93dae935d39de23d2c3be4715b"
+  }
+}

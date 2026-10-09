@@ -1,0 +1,262 @@
+diff --git a/services/bff/internal/apprecordservice/root_workflow_manual_options_test.go b/services/bff/internal/apprecordservice/root_workflow_manual_options_test.go
+new file mode 100644
+index 0000000..125be9a
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/root_workflow_manual_options_test.go
+@@ -0,0 +1,219 @@
++package apprecordservice
++
++import (
++	"encoding/json"
++	"errors"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
++	"github.com/jackc/pgx/v5"
++	"sort"
++	"strings"
++	"testing"
++)
++
++func rootManualOptionsRequest(f recordFixture) WorkflowManualOptionsRequest {
++	return WorkflowManualOptionsRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, Page: 1}
++}
++func rootManualOptions(t *testing.T, f recordFixture, q WorkflowManualOptionsRequest) WorkflowManualOptionsResult {
++	t.Helper()
++	r, e := f.service.SearchManualWorkflowOptions(f.ctx, f.principal, q)
++	if e != nil {
++		t.Fatal(e)
++	}
++	return r
++}
++func TestRootManualOptionsCreatorCanDiscoverAndStartWithoutManagement(t *testing.T) {
++	f, req := rootManualSetup(t)
++	q := rootManualOptionsRequest(f)
++	got := rootManualOptions(t, f, q)
++	if got.Total != 1 || len(got.Items) != 1 || got.Page != 1 || got.PageSize != 20 || got.QueryVersion == "" {
++		t.Fatalf("missing safe candidate page %+v", got)
++	}
++	item := got.Items[0]
++	if item.FlowID != req.FlowID || item.Name == "" || item.WorkflowRevision != req.ExpectedWorkflowRevision || item.DefinitionVersion != 1 || item.SchemaVersion != 1 || item.RecordVersion != 1 {
++		t.Fatalf("wrong candidate %+v", item)
++	}
++	raw, _ := json.Marshal(item)
++	var keys map[string]any
++	_ = json.Unmarshal(raw, &keys)
++	if len(keys) != 6 {
++		t.Fatalf("extra definition details leaked %s", raw)
++	}
++	rootTriggeredCount(t, f, req.RecordID, 0)
++	rootManualNoReceipt(t, f, req.OperationID)
++	req.FlowID = item.FlowID
++	req.ExpectedWorkflowRevision = item.WorkflowRevision
++	req.ExpectedSchemaVersion = item.SchemaVersion
++	req.ExpectedRecordVersion = item.RecordVersion
++	rootManualStart(t, f, req)
++	q.QueryVersion = got.QueryVersion
++	if _, e := f.service.SearchManualWorkflowOptions(f.ctx, f.principal, q); !errors.Is(e, querycontext.ErrChanged) {
++		t.Fatalf("accepted history did not invalidate options %v", e)
++	}
++	q.QueryVersion = ""
++	if next := rootManualOptions(t, f, q); next.Total != 0 || len(next.Items) != 0 || next.Items == nil {
++		t.Fatalf("history remained candidate %+v", next)
++	}
++}
++func TestRootManualOptionsNonCreatorSeesEmptyEvenAsOwner(t *testing.T) {
++	f, _ := rootManualSetup(t)
++	q := rootManualOptionsRequest(f)
++	p := f.principal
++	p.UserID = f.other
++	p.SessionRef = recordOperationID(t, f)
++	got, e := f.service.SearchManualWorkflowOptions(f.ctx, p, q)
++	if e != nil || got.Total != 0 || got.Items == nil || len(got.Items) != 0 {
++		t.Fatalf("owner bypassed creator options %+v %v", got, e)
++	}
++	q.RecordID = f.otherRecord
++	got = rootManualOptions(t, f, q)
++	if got.Total != 0 || got.Items == nil || len(got.Items) != 0 {
++		t.Fatalf("reader discovered foreign options %+v", got)
++	}
++}
++func TestRootManualOptionsLiveRevocationWinsInvalidToken(t *testing.T) {
++	for _, action := range []string{"menu.enter", "data.read"} {
++		t.Run(action, func(t *testing.T) {
++			f, _ := rootManualSetup(t)
++			q := rootManualOptionsRequest(f)
++			first := rootManualOptions(t, f, q)
++			if _, e := f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN(SELECT id FROM applications.grants WHERE app_id=$1 AND action=$2)", f.app, action); e != nil {
++				t.Fatal(e)
++			}
++			if _, e := f.owner.Exec(f.ctx, "DELETE FROM applications.grants WHERE app_id=$1 AND action=$2", f.app, action); e != nil {
++				t.Fatal(e)
++			}
++			for _, token := range []string{first.QueryVersion, "invalid-token"} {
++				q.QueryVersion = token
++				got, e := f.service.SearchManualWorkflowOptions(f.ctx, f.principal, q)
++				if !errors.Is(e, applications.ErrDenied) || len(got.Items) != 0 {
++					t.Fatalf("revocation did not win %+v %v", got, e)
++				}
++			}
++		})
++	}
++}
++func TestRootManualOptionsOnlyPublishedMatchingEnabledManual(t *testing.T) {
++	f, r := rootManualSetup(t)
++	rootConfiguredTrigger(t, f, "record.updated", nil)
++	rootConfiguredTrigger(t, f, "manual", []byte(strings.Replace(string(rootTriggerCondition(f.public)), "alpha", "never-match", 1)))
++	old := rootConfiguredTrigger(t, f, "record.created", nil)
++	cfg := []workflowcatalog.Trigger{{Event: "manual"}}
++	in := rootCatalogInput(f, old.FlowID, old.Revision, rootCatalogGraph(t, f, false))
++	in.Triggers = &cfg
++	rootCatalogTx(t, f, func(tx pgx.Tx) error { _, e := (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in); return e })
++	closing := rootConfiguredTrigger(t, f, "manual", nil)
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		_, e := (workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx, tx, f.app, closing.FlowID, closing.Revision)
++		return e
++	})
++	got := rootManualOptions(t, f, rootManualOptionsRequest(f))
++	if got.Total != 1 || len(got.Items) != 1 || got.Items[0].FlowID != r.FlowID {
++		t.Fatalf("ineligible configuration exposed %+v", got)
++	}
++}
++func TestRootManualOptionsAllHistoryExcludedButOtherFlowsIndependent(t *testing.T) {
++	for _, state := range []string{"starting", "active", "completed", "rejected", "withdrawn", "no_effect"} {
++		t.Run(state, func(t *testing.T) {
++			f, r := rootManualSetup(t)
++			a := rootManualStart(t, f, r)
++			if _, e := f.owner.Exec(f.ctx, "UPDATE applications.workflow_instances SET state=$2 WHERE id=$1", a.InstanceID, state); e != nil {
++				t.Fatal(e)
++			}
++			b := rootConfiguredTrigger(t, f, "manual", nil)
++			got := rootManualOptions(t, f, rootManualOptionsRequest(f))
++			if got.Total != 1 || len(got.Items) != 1 || got.Items[0].FlowID != b.FlowID {
++				t.Fatalf("wrong history isolation %+v", got)
++			}
++		})
++	}
++}
++func TestRootManualOptionsStablePagesAndUnrelatedHistory(t *testing.T) {
++	f, r := rootManualSetup(t)
++	b := rootConfiguredTrigger(t, f, "manual", nil)
++	c := rootConfiguredTrigger(t, f, "manual", nil)
++	ids := []string{r.FlowID, b.FlowID, c.FlowID}
++	sort.Strings(ids)
++	q := rootManualOptionsRequest(f)
++	q.PageSize = 1
++	first := rootManualOptions(t, f, q)
++	q.QueryVersion = first.QueryVersion
++	for i, id := range ids {
++		q.Page = i + 1
++		got := rootManualOptions(t, f, q)
++		if got.Total != 3 || len(got.Items) != 1 || got.Items[0].FlowID != id || got.QueryVersion != first.QueryVersion {
++			t.Fatalf("page%d %+v want %s", q.Page, got, id)
++		}
++	}
++	// A reservation for a different row must not invalidate these options.
++	in := rootCatalogReserveInput(t, f, b)
++	in.RecordID = f.otherRecord
++	rootCatalogReserve(t, f, in)
++	q.Page = 4
++	got := rootManualOptions(t, f, q)
++	if got.Total != 3 || len(got.Items) != 0 || got.Items == nil {
++		t.Fatalf("unrelated history or beyond-last page %+v", got)
++	}
++}
++func TestRootManualOptionsRecordAndDefinitionChangeRequireRefresh(t *testing.T) {
++	for _, kind := range []string{"record", "name", "new_flow", "close"} {
++		t.Run(kind, func(t *testing.T) {
++			f, r := rootManualSetup(t)
++			q := rootManualOptionsRequest(f)
++			first := rootManualOptions(t, f, q)
++			switch kind {
++			case "record":
++				_, e := f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "changed"}}, applications.Metadata{RequestID: "manual-options-edit"})
++				if e != nil {
++					t.Fatal(e)
++				}
++			case "name":
++				if _, e := f.owner.Exec(f.ctx, "UPDATE applications.workflow_definitions SET name='new label',revision=revision+1 WHERE id=$1", r.FlowID); e != nil {
++					t.Fatal(e)
++				}
++			case "new_flow":
++				rootConfiguredTrigger(t, f, "manual", nil)
++			case "close":
++				rootCatalogTx(t, f, func(tx pgx.Tx) error {
++					_, e := (workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx, tx, f.app, r.FlowID, r.ExpectedWorkflowRevision)
++					return e
++				})
++			}
++			q.QueryVersion = first.QueryVersion
++			if _, e := f.service.SearchManualWorkflowOptions(f.ctx, f.principal, q); !errors.Is(e, querycontext.ErrChanged) {
++				t.Fatalf("%s not changed %v", kind, e)
++			}
++			q.QueryVersion = ""
++			got := rootManualOptions(t, f, q)
++			if kind == "record" && got.Items[0].RecordVersion != 2 {
++				t.Fatal("stale version on explicit refresh")
++			}
++		})
++	}
++}
++func TestRootManualOptionsRejectForeignTokenBindingsAndInvalidPages(t *testing.T) {
++	f, _ := rootManualSetup(t)
++	q := rootManualOptionsRequest(f)
++	first := rootManualOptions(t, f, q)
++	q.QueryVersion = first.QueryVersion
++	p := f.principal
++	p.SessionRef = recordOperationID(t, f)
++	if _, e := f.service.SearchManualWorkflowOptions(f.ctx, p, q); !errors.Is(e, querycontext.ErrExpired) {
++		t.Fatalf("foreign session %v", e)
++	}
++	q.RecordID = f.otherRecord
++	if _, e := f.service.SearchManualWorkflowOptions(f.ctx, f.principal, q); !errors.Is(e, querycontext.ErrExpired) {
++		t.Fatalf("foreign record %v", e)
++	}
++	q = rootManualOptionsRequest(f)
++	q.QueryVersion = "invalid-token"
++	if _, e := f.service.SearchManualWorkflowOptions(f.ctx, f.principal, q); e == nil {
++		t.Fatal("invalid token silently reset")
++	}
++	for _, v := range []WorkflowManualOptionsRequest{{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, Page: 0}, {AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, Page: 1, PageSize: 101}} {
++		if _, e := f.service.SearchManualWorkflowOptions(f.ctx, f.principal, v); e == nil {
++			t.Fatal("invalid page accepted")
++		}
++	}
++}
+diff --git a/services/bff/internal/apprecordservice/workflow_manual_options.go b/services/bff/internal/apprecordservice/workflow_manual_options.go
+new file mode 100644
+index 0000000..65d1ffb
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/workflow_manual_options.go
+@@ -0,0 +1,31 @@
++package apprecordservice
++
++import (
++	"context"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
++)
++
++type WorkflowManualOptionsRequest struct {
++	AppID, ViewID, RecordID, QueryVersion string
++	Page, PageSize                        int
++}
++type WorkflowManualOption struct {
++	FlowID            string `json:"flowId"`
++	Name              string `json:"name"`
++	WorkflowRevision  int64  `json:"workflowRevision"`
++	DefinitionVersion int64  `json:"definitionVersion"`
++	SchemaVersion     int64  `json:"schemaVersion"`
++	RecordVersion     int64  `json:"recordVersion"`
++}
++type WorkflowManualOptionsResult struct {
++	Items        []WorkflowManualOption `json:"items"`
++	Total        int64                  `json:"total"`
++	Page         int                    `json:"page"`
++	PageSize     int                    `json:"pageSize"`
++	QueryVersion string                 `json:"queryVersion"`
++}
++
++// Declaration-only placeholder for the independently specified read acceptance.
++func (s *Service) SearchManualWorkflowOptions(context.Context, session.Principal, WorkflowManualOptionsRequest) (WorkflowManualOptionsResult, error) {
++	return WorkflowManualOptionsResult{}, ErrUnavailable
++}

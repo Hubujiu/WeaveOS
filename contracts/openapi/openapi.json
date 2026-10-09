@@ -7886,7 +7886,7 @@
             }
           },
           "409": {
-            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values; WORKFLOW_RECORD_READ_ONLY when this record has a starting or active workflow. Ordinary edits, including empty changes, are blocked; authorized task Save is separate. Confirmed operation replay returns its original receipt.",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/RequestId"
@@ -12303,6 +12303,500 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WorkflowInstanceSearch"
+              }
+            }
+          }
+        },
+        "x-max-body-bytes": 4096
+      }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/records/{recordId}/workflow-starts": {
+      "post": {
+        "operationId": "startManualWorkflow",
+        "summary": "Accept the record creator’s first manual workflow start",
+        "description": "Current real Session, CSRF, expected actor, menu and actual row read access. Only the immutable record creator may start. Current enabled deployed manual configuration must match the typed record. Same flow in flight is ignored atomically; terminal history requires the dedicated resubmit/review action. Other flows are independent. Accepted means only a durable starting intent, never engine completion. Same actor and exact operation replays the original minimal receipt. No query parameters or business edits.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "x-max-body-bytes": 4096,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowManualStart"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Durable accepted intent or atomic duplicate ignore; Location is /api/v1/application-operations/{operationId}. Query record workflow instances for actual engine progress.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Location": {
+                "description": "Poll the same actor's minimum operation outcome.",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^/api/v1/application-workflow-operations/[0-9a-f-]{36}$"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "x-max-body-bytes": 4096
+      }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/records/{recordId}/workflow-start-options/search": {
+      "post": {
+        "operationId": "searchManualWorkflowOptions",
+        "summary": "Discover eligible first manual starts for the current record",
+        "description": "V030-044: live Session, menu and actual record read grants; only the creator receives enabled, deployed, matching manual workflows with no history for this record. Stable flowId order and bounded pages. Safe identity/CAS fields only; no graph, approvers, conditions or record values. RR query context is Session/resource bound. Changed candidate projection requires explicit refresh. Read-only POST retains CSRF. O(F) candidate matching, bounded request duration and O(pageSize) retained result memory. Manual POST independently revalidates and reserves.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualOptionsEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "APPLICATION_QUERY_CHANGED requires refresh; APPLICATION_QUERY_CONTEXT_EXPIRED requires a new query; WORKFLOW_NOT_READY rejects unavailable published configuration. Current authorization is always checked first.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualOptionsErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "x-max-body-bytes": 4096,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowManualOptionsSearch"
               }
             }
           }
@@ -20792,7 +21286,8 @@
                   "APPLICATION_QUERY_CHANGED",
                   "APPLICATION_QUERY_CONTEXT_EXPIRED",
                   "APPLICATION_DRAFT_CONFLICT",
-                  "APPLICATION_DRAFT_BASE_CONFLICT"
+                  "APPLICATION_DRAFT_BASE_CONFLICT",
+                  "WORKFLOW_RECORD_READ_ONLY"
                 ]
               },
               "data": {
@@ -21149,6 +21644,10 @@
           },
           "allowWithdraw": {
             "type": "boolean"
+          },
+          "triggers": {
+            "$ref": "#/components/schemas/WorkflowTriggers",
+            "description": "Omitted on create means []; omitted on update preserves current candidate configuration. Explicit [] clears the new candidate. Configuration takes effect after publish/enable."
           }
         }
       },
@@ -21327,7 +21826,8 @@
           "state",
           "schemaVersion",
           "allowWithdraw",
-          "graph"
+          "graph",
+          "triggers"
         ],
         "properties": {
           "id": {
@@ -21357,6 +21857,9 @@
           },
           "graph": {
             "$ref": "#/components/schemas/WorkflowGraph"
+          },
+          "triggers": {
+            "$ref": "#/components/schemas/WorkflowTriggers"
           }
         }
       },
@@ -22395,6 +22898,478 @@
               },
               "data": {
                 "$ref": "#/components/schemas/WorkflowInstancePage"
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowTriggers": {
+        "type": "array",
+        "maxItems": 3,
+        "items": {
+          "$ref": "#/components/schemas/WorkflowTrigger"
+        },
+        "description": "At most one entry per event. Applied to the entire logical table, using the confirmed published definition version. Empty array disables all triggers.",
+        "x-unique-by": "event"
+      },
+      "WorkflowTrigger": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "event",
+          "condition"
+        ],
+        "properties": {
+          "event": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "record.created",
+              "record.updated"
+            ]
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecordFilterGroup"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "description": "Null condition always matches. record.updated runs only for actual changed values and tests the resulting record, not only false-to-true transitions. Node Save does not implicitly trigger."
+      },
+      "WorkflowManualStart": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "flowId",
+          "expectedWorkflowRevision",
+          "expectedSchemaVersion",
+          "expectedRecordVersion"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "flowId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "expectedWorkflowRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expectedSchemaVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expectedRecordVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "WorkflowManualStartResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "flowId",
+          "instanceId",
+          "status",
+          "ignored"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "flowId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "instanceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "ignored"
+            ]
+          },
+          "ignored": {
+            "type": "boolean"
+          }
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "status": {
+                "const": "accepted"
+              },
+              "ignored": {
+                "const": false
+              }
+            }
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "ignored"
+              },
+              "ignored": {
+                "const": true
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowManualStartResultEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/WorkflowManualStartResult"
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowManualStartErrorEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "COMMON_INVALID_ARGUMENT",
+                  "COMMON_VALIDATION_FAILED",
+                  "AUTH_INVALID_CREDENTIALS",
+                  "AUTH_UNAUTHENTICATED",
+                  "AUTH_SESSION_EXPIRED",
+                  "COMMON_PERMISSION_DENIED",
+                  "COMMON_CSRF_REJECTED",
+                  "USER_ACCOUNT_ALREADY_EXISTS",
+                  "USER_NOT_FOUND",
+                  "INVITATION_INVALID",
+                  "INVITATION_ALREADY_USED",
+                  "COMMON_UNSUPPORTED_MEDIA_TYPE",
+                  "COMMON_SERVICE_UNAVAILABLE",
+                  "COMMON_DEADLINE_EXCEEDED",
+                  "COMMON_INTERNAL_ERROR",
+                  "PERSONNEL_CONFLICT",
+                  "PERSONNEL_NOT_FOUND",
+                  "COMMON_QUERY_CHANGED",
+                  "COMMON_QUERY_CONTEXT_EXPIRED",
+                  "PERSONNEL_DRAFT_CONFLICT",
+                  "PERSONNEL_DRAFT_LIMIT_REACHED",
+                  "PERSONNEL_PRESET_NAME_CONFLICT",
+                  "PERSONNEL_PRESET_LIMIT_REACHED",
+                  "PERSONNEL_PRESET_CONFLICT",
+                  "APPLICATION_NOT_FOUND",
+                  "APPLICATION_FORBIDDEN",
+                  "APPLICATION_POLICY_CONFLICT",
+                  "APPLICATION_OPERATION_CONFLICT",
+                  "APPLICATION_OPERATION_UNCONFIRMED",
+                  "APPLICATION_RESOURCE_INVALID",
+                  "APPLICATION_STRUCTURE_CONFLICT",
+                  "APPLICATION_SCHEMA_CONFLICT",
+                  "APPLICATION_VIEW_CONFLICT",
+                  "APPLICATION_SCHEMA_DEPENDENCY_BLOCKED",
+                  "APPLICATION_SCHEMA_REQUIRED_BACKFILL",
+                  "APPLICATION_SCHEMA_CONVERSION_FAILED",
+                  "APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED",
+                  "APPLICATION_SCHEMA_CONFIRMATION_REQUIRED",
+                  "APPLICATION_SCHEMA_CONFIRMATION_STALE",
+                  "AUTH_SESSION_CHANGED",
+                  "APPLICATION_SCHEMA_NOT_READY",
+                  "APPLICATION_RECORD_CONFLICT",
+                  "APPLICATION_RECORD_FENCED",
+                  "APPLICATION_QUERY_CHANGED",
+                  "APPLICATION_QUERY_CONTEXT_EXPIRED",
+                  "APPLICATION_DRAFT_CONFLICT",
+                  "APPLICATION_DRAFT_BASE_CONFLICT",
+                  "WORKFLOW_RECORD_READ_ONLY",
+                  "WORKFLOW_CONFLICT",
+                  "WORKFLOW_NOT_READY",
+                  "WORKFLOW_CLOSING"
+                ]
+              },
+              "data": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ValidationErrorData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordSchemaConflictData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordVersionConflictData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordDraftConflictData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordUnconfirmedData"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowManualOptionsSearch": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page"
+        ],
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "queryVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      },
+      "WorkflowManualOption": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "flowId",
+          "name",
+          "workflowRevision",
+          "definitionVersion",
+          "schemaVersion",
+          "recordVersion"
+        ],
+        "properties": {
+          "flowId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "workflowRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "definitionVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "recordVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "WorkflowManualOptionsResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize",
+          "queryVersion"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/WorkflowManualOption"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "queryVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      },
+      "WorkflowManualOptionsEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/WorkflowManualOptionsResult"
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowManualOptionsErrorEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "COMMON_INVALID_ARGUMENT",
+                  "COMMON_VALIDATION_FAILED",
+                  "AUTH_INVALID_CREDENTIALS",
+                  "AUTH_UNAUTHENTICATED",
+                  "AUTH_SESSION_EXPIRED",
+                  "COMMON_PERMISSION_DENIED",
+                  "COMMON_CSRF_REJECTED",
+                  "USER_ACCOUNT_ALREADY_EXISTS",
+                  "USER_NOT_FOUND",
+                  "INVITATION_INVALID",
+                  "INVITATION_ALREADY_USED",
+                  "COMMON_UNSUPPORTED_MEDIA_TYPE",
+                  "COMMON_SERVICE_UNAVAILABLE",
+                  "COMMON_DEADLINE_EXCEEDED",
+                  "COMMON_INTERNAL_ERROR",
+                  "PERSONNEL_CONFLICT",
+                  "PERSONNEL_NOT_FOUND",
+                  "COMMON_QUERY_CHANGED",
+                  "COMMON_QUERY_CONTEXT_EXPIRED",
+                  "PERSONNEL_DRAFT_CONFLICT",
+                  "PERSONNEL_DRAFT_LIMIT_REACHED",
+                  "PERSONNEL_PRESET_NAME_CONFLICT",
+                  "PERSONNEL_PRESET_LIMIT_REACHED",
+                  "PERSONNEL_PRESET_CONFLICT",
+                  "APPLICATION_NOT_FOUND",
+                  "APPLICATION_FORBIDDEN",
+                  "APPLICATION_POLICY_CONFLICT",
+                  "APPLICATION_OPERATION_CONFLICT",
+                  "APPLICATION_OPERATION_UNCONFIRMED",
+                  "APPLICATION_RESOURCE_INVALID",
+                  "APPLICATION_STRUCTURE_CONFLICT",
+                  "APPLICATION_SCHEMA_CONFLICT",
+                  "APPLICATION_VIEW_CONFLICT",
+                  "APPLICATION_SCHEMA_DEPENDENCY_BLOCKED",
+                  "APPLICATION_SCHEMA_REQUIRED_BACKFILL",
+                  "APPLICATION_SCHEMA_CONVERSION_FAILED",
+                  "APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED",
+                  "APPLICATION_SCHEMA_CONFIRMATION_REQUIRED",
+                  "APPLICATION_SCHEMA_CONFIRMATION_STALE",
+                  "AUTH_SESSION_CHANGED",
+                  "APPLICATION_SCHEMA_NOT_READY",
+                  "APPLICATION_RECORD_CONFLICT",
+                  "APPLICATION_RECORD_FENCED",
+                  "APPLICATION_QUERY_CHANGED",
+                  "APPLICATION_QUERY_CONTEXT_EXPIRED",
+                  "APPLICATION_DRAFT_CONFLICT",
+                  "APPLICATION_DRAFT_BASE_CONFLICT",
+                  "WORKFLOW_RECORD_READ_ONLY",
+                  "WORKFLOW_NOT_READY"
+                ]
+              },
+              "data": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ValidationErrorData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordSchemaConflictData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordVersionConflictData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordDraftConflictData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordUnconfirmedData"
+                  }
+                ]
               }
             }
           }

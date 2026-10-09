@@ -1,0 +1,2 @@
+# Invalid fixture probe, not product RED
+Self-review tested zero UUID as a possible lowest key. Existing flowgraph.CompileScopedBPMN explicitly rejects zero UUID (root_scoped_version_test.go), so definition creation correctly refused it before trigger selection. This is not a missing-trigger defect. Before changing production code, corrected the fixture to the lowest nonzero accepted UUID and retain this attempt as invalid fixture evidence. No production cursor change is justified by this attempt.

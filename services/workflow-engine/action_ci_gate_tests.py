@@ -10,6 +10,8 @@ gate = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gate)
 PACKAGE = "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff"
 CASES = ["TestRootWorkflowActionJavaHTTPSAgreeRejectInterop","TestRootWorkflowActionJavaLostReplyKeepsPendingUntilRecoveryInterop","TestRootWorkflowActionJavaApplicationFaultRecoversOriginalReceiptInterop"]
+CASES += ["TestRootRecordTriggerJavaPublicCreateReachesApproval", "TestRootRecordTriggerJavaIndependentFlowsBothReachApproval", "TestRootRecordTriggerJavaClosingDrainsAlreadyAcceptedIntent", "TestRootRecordTriggerJavaHostRunsStartAdmission", "TestRootRecordTriggerJavaLostReplyRecoversOriginalStart"]
+CASES += ["TestRootRecordTriggerJavaManualCreatorReachesApproval", "TestRootRecordTriggerJavaManualLostReplyRecoversOriginalStart"]
 EXPECTED = CASES + [CASES[0] + "/agree", CASES[0] + "/reject"]
 class RootActionGateTest(unittest.TestCase):
     def setUp(self):
@@ -28,8 +30,17 @@ class RootActionGateTest(unittest.TestCase):
     def check(self):
         self.path.write_text("".join(json.dumps(x) + "\n" for x in self.events))
         return gate.validate(self.path)
-    def test_exact_three_scenarios_and_two_variants(self):
-        self.assertEqual(5, self.check())
+    def test_exact_ten_scenarios_and_two_variants(self):
+        self.assertEqual(12, self.check())
+    def test_runner_selects_all_public_trigger_tests(self):
+        source = Path(__file__).with_name("run-action-interop.mjs").read_text()
+        self.assertIn("TestRootRecordTriggerJava", source)
+        self.assertIn("tests.length!==10", source)
+        self.assertIn("summary.passed!==10", source)
+    def test_docker_fixture_supports_host_health(self):
+        source = Path(__file__).parent.joinpath("src/test/java/org/weaveos/workflow/RootExecutionRpcFixtureMain.java").read_text()
+        self.assertIn("HealthImplBase", source)
+        self.assertIn("SELECT 1", source)
     def test_each_missing_scenario_or_action_rejected(self):
         original = copy.deepcopy(self.events)
         for name in EXPECTED:

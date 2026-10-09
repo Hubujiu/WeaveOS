@@ -187,13 +187,20 @@ func TestRootWorkflowActionSameOperationDifferentRequestCannotMutate(t *testing.
 func TestRootWorkflowActionRejectsStaleRelatedEvidenceAndAcceptsUnrelatedSourceChange(t *testing.T) {
 	for _, change := range []string{"record", "reference", "visible-mask", "schema", "unrelated"} {
 		t.Run(change, func(t *testing.T) {
-			f := rootTaskSetup(t, false)
+			var f rootTaskFixture
+			if change == "record" {
+				f = rootSaveSetup(t, true)
+			} else {
+				f = rootTaskSetup(t, false)
+			}
 			req := rootActionRequest(t, f, "agree")
 			switch change {
 			case "record":
-				if _, e := f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: recordOperationID(t, f.recordFixture), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "changed"}}, applications.Metadata{RequestID: "before-approval"}); e != nil {
-					t.Fatal(e)
-				}
+				// Ordinary editing is read-only while a workflow is in flight.
+				// A separately authorized node Save changes the record after preview;
+				// the original stale-basis and zero-approval-side-effect oracles remain.
+				rootSave(t, f, rootSaveRequest(t, f, "changed"))
+				rootSaveRow(t, f, "changed", 2)
 			case "reference":
 				if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET account=$2 WHERE id=$1", f.other, "new-display-"+f.other); e != nil {
 					t.Fatal(e)

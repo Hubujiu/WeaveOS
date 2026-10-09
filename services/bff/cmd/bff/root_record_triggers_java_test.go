@@ -1,0 +1,259 @@
+//go:build workflowrpc_integration
+
+package main
+
+import (
+	"encoding/json"
+	ars "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
+	wc "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
+	we "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowexecution"
+	wr "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc"
+	pb "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc/pb"
+	"github.com/jackc/pgx/v5"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"net"
+	"os"
+	"testing"
+	"time"
+)
+
+// V044 PRD: accepted Create trigger must eventually start the published flow.
+// No synthetic reserve/command/fence is injected to conceal missing admission.
+func rootHTTPTriggerJavaConfigure(t *testing.T, f *rootTaskHTTPFixture, deployment *wr.Client, events ...string) {
+	t.Helper()
+	f.flow = f.id(t)
+	start, node, end := f.id(t), f.id(t), f.id(t)
+	if len(events) == 0 {
+		events = []string{"record.created", "record.updated"}
+	}
+	triggers := []any{}
+	for _, event := range events {
+		triggers = append(triggers, map[string]any{"event": event, "condition": nil})
+	}
+	body := map[string]any{"operationId": f.id(t), "name": "Record triggers", "expectedRevision": 0, "expectedSchemaVersion": 1, "allowWithdraw": true,
+		"triggers": triggers,
+		"graph":    map[string]any{"version": 1, "nodes": []any{map[string]any{"id": start, "kind": "start"}, map[string]any{"id": node, "kind": "approval", "approval": map[string]any{"mode": "all", "assigneeIds": []string{f.actor}, "editableFieldIds": []string{}}}, map[string]any{"id": end, "kind": "end"}}, "edges": []any{map[string]any{"from": start, "to": node}, map[string]any{"from": node, "to": end}}}}
+	raw, err := json.Marshal(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rootHTTPData(t, f.call(t, "PUT", "/api/v1/applications/"+f.app+"/forms/"+f.view+"/workflows/"+f.flow+"/definition", string(raw), nil), 201)
+
+	var version string
+	var bpmn []byte
+	if err := f.owner.QueryRow(f.ctx, "SELECT version_id::text,bpmn_xml FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2 AND version=1", f.app, f.flow).Scan(&version, &bpmn); err != nil {
+		t.Fatal(err)
+	}
+	receipt, err := deployment.Deploy(f.ctx, &pb.DeployRequest{AppId: f.app, FlowId: f.flow, VersionId: version, Version: 1, BpmnXml: bpmn})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.transaction(t, func(tx pgx.Tx) error {
+		h, err := (wc.Catalog{}).ConfirmDeploymentInTx(f.ctx, tx, f.app, f.flow, 1, receipt.EngineDeploymentId)
+		if err != nil {
+			return err
+		}
+		_, err = (wc.Catalog{}).EnableInTx(f.ctx, tx, f.app, f.flow, h.Revision)
+		return err
+	})
+}
+
+func TestRootRecordTriggerJavaPublicCreateReachesApproval(t *testing.T) {
+	rootPublicTriggerJavaContract(t, false, false, false)
+}
+func TestRootRecordTriggerJavaIndependentFlowsBothReachApproval(t *testing.T) {
+	rootPublicTriggerJavaContract(t, true, false, false)
+}
+func TestRootRecordTriggerJavaClosingDrainsAlreadyAcceptedIntent(t *testing.T) {
+	rootPublicTriggerJavaContract(t, false, true, false)
+}
+func TestRootRecordTriggerJavaLostReplyRecoversOriginalStart(t *testing.T) {
+	rootPublicTriggerJavaContract(t, false, false, true)
+}
+func TestRootRecordTriggerJavaManualCreatorReachesApproval(t *testing.T) {
+	rootPublicTriggerJavaContract(t, false, false, false, true)
+}
+func TestRootRecordTriggerJavaManualLostReplyRecoversOriginalStart(t *testing.T) {
+	rootPublicTriggerJavaContract(t, false, false, true, true)
+}
+func rootPublicTriggerJavaContract(t *testing.T, twoFlows, closeAfterCreate, loseReply bool, manual ...bool) {
+	t.Helper()
+	target := os.Getenv("WEAVEOS_RPC_TEST_TARGET")
+	host, _, err := net.SplitHostPort(target)
+	if err != nil || (host != "b3-workflow" && host != "127.0.0.1") {
+		t.Fatal("dedicated Docker or native loopback fixture required")
+	}
+	options := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDisableRetry()}
+	if token := os.Getenv("WEAVEOS_NATIVE_FIXTURE_TOKEN"); token != "" {
+		identity, e := wr.NewServiceIdentity(token)
+		if e != nil {
+			t.Fatal(e)
+		}
+		options = append(options, grpc.WithUnaryInterceptor(identity.UnaryInterceptor()))
+	}
+	connection, err := grpc.NewClient(target, options...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { connection.Close() })
+	deployment, err := wr.NewClient(connection, 15*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := wr.NewExecutionClient(connection, 15*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := rootHTTPResourceSetup(t)
+	manualStart := len(manual) > 0 && manual[0]
+	events := []string{}
+	if manualStart {
+		events = []string{"manual"}
+	}
+	rootHTTPTriggerJavaConfigure(t, f, deployment, events...)
+	flows := []string{f.flow}
+	if twoFlows {
+		rootHTTPTriggerJavaConfigure(t, f, deployment, events...)
+		flows = append(flows, f.flow)
+	}
+	path := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/records"
+	body := `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"values":{"` + f.field + `":"public record to actual approval"}}`
+	record := f.record
+	if manualStart {
+		// The ordinary user obtains safe identity/CAS values from the public
+		// read endpoint, not from a manager API or a fixture SQL query.
+		data := rootHTTPData(t, f.call(t, "POST", f.root()+"/workflow-start-options/search", `{"page":1}`, nil), 200)
+		var options []ars.WorkflowManualOption
+		if err := json.Unmarshal(data["items"], &options); err != nil || len(options) != len(flows) {
+			t.Fatalf("public manual options missing: %s %v", data["items"], err)
+		}
+		for _, flow := range flows {
+			found := false
+			for _, option := range options {
+				if option.FlowID != flow {
+					continue
+				}
+				found = true
+				request, err := json.Marshal(map[string]any{"operationId": f.id(t), "flowId": option.FlowID, "expectedWorkflowRevision": option.WorkflowRevision, "expectedSchemaVersion": option.SchemaVersion, "expectedRecordVersion": option.RecordVersion})
+				if err != nil {
+					t.Fatal(err)
+				}
+				rootHTTPData(t, f.call(t, "POST", f.root()+"/workflow-starts", string(request), nil), 202)
+			}
+			if !found {
+				t.Fatalf("eligible flow %s absent", flow)
+			}
+		}
+	} else {
+		record = rootHTTPString(t, rootHTTPData(t, f.call(t, "POST", path, body, nil), 201), "id")
+	}
+	for _, flow := range flows {
+		f.flow = flow
+		rootHTTPTriggerCount(t, f, record, 1)
+	}
+	if closeAfterCreate {
+		f.transaction(t, func(tx pgx.Tx) error {
+			var revision int64
+			if err := tx.QueryRow(f.ctx, "SELECT revision FROM applications.workflow_definitions WHERE app_id=$1 AND id=$2", f.app, f.flow).Scan(&revision); err != nil {
+				return err
+			}
+			head, err := (wc.Catalog{}).RequestCloseInTx(f.ctx, tx, f.app, f.flow, revision)
+			if err == nil && head.State != "closing" {
+				t.Fatalf("accepted starting intent must keep closing pending, got %s", head.State)
+			}
+			return err
+		})
+	}
+	service := &ars.Service{Pool: f.runtime, Limits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}}
+	transport := &rootHTTPRealClient{client: client, drop: loseReply}
+	worker := &we.Worker{AdmitStart: service.NewStartAdmitter(), Pool: f.runtime, Client: transport, RPCTimeout: 20 * time.Second, Limits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}}
+	recovered := false
+	// Drain the current runtime path until idle, without fabricating a start ledger entry.
+	for {
+		worked, err := worker.DispatchOne(f.ctx)
+		if err != nil {
+			if !loseReply || recovered || transport.executions != 1 {
+				t.Fatal(err)
+			}
+			var fences, commands int
+			if e := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_command_fences WHERE app_id=$1 AND record_id=$2", f.app, record).Scan(&fences); e != nil || fences != 1 {
+				t.Fatalf("unknown start lost fence: %d %v", fences, e)
+			}
+			if e := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_commands WHERE command_json->>'AppID'=$1 AND command_json->>'RecordID'=$2", f.app, record).Scan(&commands); e != nil || commands != 1 {
+				t.Fatalf("unknown start command count: %d %v", commands, e)
+			}
+			if _, e := f.owner.Exec(f.ctx, "UPDATE applications.workflow_dispatch d SET next_attempt_at=clock_timestamp()-interval '1 second' FROM applications.workflow_commands c WHERE c.command_id=d.command_id AND c.command_json->>'AppID'=$1", f.app); e != nil {
+				t.Fatal(e)
+			}
+			worker = &we.Worker{AdmitStart: service.NewStartAdmitter(), Pool: f.runtime, Client: transport, RPCTimeout: 20 * time.Second, Limits: service.Limits}
+			recovered = true
+			continue
+		}
+		if !worked {
+			break
+		}
+	}
+	if loseReply && (!recovered || transport.executions != 1 || transport.lookups < 2) {
+		t.Fatalf("recovery did not reuse original start: recovered=%v executions=%d lookups=%d", recovered, transport.executions, transport.lookups)
+	}
+	for _, flow := range flows {
+		f.flow = flow
+		var state string
+		var tasks int
+		if err := f.owner.QueryRow(f.ctx, "SELECT state FROM applications.workflow_instances WHERE app_id=$1 AND flow_id=$2 AND record_id=$3", f.app, f.flow, record).Scan(&state); err != nil {
+			t.Fatal(err)
+		}
+		if state != "active" {
+			t.Fatalf("public trigger persisted but never reached actual Flowable approval: state=%s, want active", state)
+		}
+		if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_tasks t JOIN applications.workflow_instances i ON i.id=t.instance_id WHERE i.app_id=$1 AND i.flow_id=$2 AND i.record_id=$3", f.app, f.flow, record).Scan(&tasks); err != nil {
+			t.Fatal(err)
+		}
+		if tasks != 1 {
+			t.Fatalf("actual approval task count=%d want 1", tasks)
+		}
+	}
+}
+
+// This case uses the actual configured BFF host lifecycle, not an injected
+// test worker. The native fixture also authenticates internal RPC; the existing
+// Docker transport fixture remains on its isolated, unpublished test network.
+func TestRootRecordTriggerJavaHostRunsStartAdmission(t *testing.T) {
+	target := os.Getenv("WEAVEOS_RPC_TEST_TARGET")
+	token := os.Getenv("WEAVEOS_NATIVE_FIXTURE_TOKEN")
+	if token == "" {
+		token = "synthetic_v044_loopback_service_identity_01"
+	}
+	identity, err := wr.NewServiceIdentity(token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	connection, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDisableRetry(), grpc.WithUnaryInterceptor(identity.UnaryInterceptor()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { connection.Close() })
+	deployment, err := wr.NewClient(connection, 15*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := rootHTTPResourceSetupRuntime(t, workflowRuntimeConfig{Enabled: true, Identity: identity, Target: target, RPCTimeout: 15 * time.Second})
+	rootHTTPTriggerJavaConfigure(t, f, deployment)
+	path := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/records"
+	body := `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"values":{"` + f.field + `":"host dispatched record"}}`
+	record := rootHTTPString(t, rootHTTPData(t, f.call(t, "POST", path, body, nil), 201), "id")
+	deadline := time.Now().Add(5 * time.Second)
+	state := ""
+	for time.Now().Before(deadline) {
+		if err := f.owner.QueryRow(f.ctx, "SELECT state FROM applications.workflow_instances WHERE app_id=$1 AND flow_id=$2 AND record_id=$3", f.app, f.flow, record).Scan(&state); err != nil {
+			t.Fatal(err)
+		}
+		if state == "active" {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("actual host never dispatched accepted public start: state=%s want active", state)
+}

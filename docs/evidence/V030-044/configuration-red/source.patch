@@ -1,0 +1,276 @@
+diff --git a/db/migrations/00024_workflow_trigger_configuration.sql b/db/migrations/00024_workflow_trigger_configuration.sql
+new file mode 100644
+index 0000000..9a6bca5
+--- /dev/null
++++ b/db/migrations/00024_workflow_trigger_configuration.sql
+@@ -0,0 +1,6 @@
++-- +goose Up
++-- Declaration-only no-op for the requirement-first schema RED run.
++SELECT 1;
++
++-- +goose Down
++SELECT 1;
+diff --git a/services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go b/services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go
+new file mode 100644
+index 0000000..5ca89f8
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go
+@@ -0,0 +1,120 @@
++package apprecordservice
++
++import (
++	"encoding/json"
++	"errors"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
++	"github.com/jackc/pgx/v5"
++	"reflect"
++	"testing"
++)
++
++func rootTriggerCondition(field string) json.RawMessage {
++	return json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + field + `","operator":"eq","value":"alpha"}]}`)
++}
++func rootReadTriggers(t *testing.T, f recordFixture, h workflowcatalog.Head, version int64) []workflowcatalog.Trigger {
++	t.Helper()
++	var got []workflowcatalog.Trigger
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var err error
++		got, err = (workflowcatalog.Catalog{}).TriggersForVersionInTx(f.ctx, tx, f.app, h.FlowID, version)
++		return err
++	})
++	return got
++}
++func TestRootTriggerConfigurationVersionImmutabilityAndInheritance(t *testing.T) {
++	f := newRecordFixture(t)
++	g := rootCatalogGraph(t, f, false)
++	configs := []workflowcatalog.Trigger{{Event: "record.created", Condition: rootTriggerCondition(f.public)}}
++	in := rootCatalogInput(f, recordOperationID(t, f), 0, g)
++	in.Triggers = &configs
++	var h workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var err error
++		h, err = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in)
++		return err
++	})
++	got := rootReadTriggers(t, f, h, 1)
++	if !reflect.DeepEqual(got, configs) {
++		t.Fatalf("config not persisted: got=%+v want=%+v", got, configs)
++	}
++	h = rootCatalogEnable(t, f, rootCatalogDeploy(t, f, h))
++	h2 := rootCatalogPut(t, f, h.FlowID, h.Revision, g) // older client omits new optional field
++	if h2.CurrentVersion != 1 || h2.CandidateVersion != 2 {
++		t.Fatalf("draft changed published version: %+v", h2)
++	}
++	if !reflect.DeepEqual(rootReadTriggers(t, f, h2, 2), configs) {
++		t.Fatal("omitted config lost existing candidate settings")
++	}
++	empty := []workflowcatalog.Trigger{}
++	in = rootCatalogInput(f, h.FlowID, h2.Revision, g)
++	in.Triggers = &empty
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var err error
++		h2, err = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in)
++		return err
++	})
++	if got := rootReadTriggers(t, f, h2, 3); got == nil || len(got) != 0 {
++		t.Fatalf("explicit empty must clear new candidate only: %+v", got)
++	}
++	if !reflect.DeepEqual(rootReadTriggers(t, f, h2, 1), configs) {
++		t.Fatal("published config was overwritten")
++	}
++	if h2.CurrentVersion != 1 {
++		t.Fatal("unpublished config activated")
++	}
++}
++func TestRootTriggerConfigurationInvalidSaveRollsBack(t *testing.T) {
++	f := newRecordFixture(t)
++	g := rootCatalogGraph(t, f, false)
++	in := rootCatalogInput(f, recordOperationID(t, f), 0, g)
++	configs := []workflowcatalog.Trigger{{Event: "record.updated", Condition: rootTriggerCondition(recordOperationID(t, f))}}
++	in.Triggers = &configs
++	rootCatalogWantError(t, f, workflowcatalog.ErrInvalid, func(tx pgx.Tx) error { _, err := (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in); return err })
++	var n int
++	if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_definitions WHERE id=$1", in.FlowID).Scan(&n); err != nil || n != 0 {
++		t.Fatalf("invalid configuration left a flow: %d %v", n, err)
++	}
++}
++func TestRootTriggerConfigurationCompatibleSchemaAndPublishGuard(t *testing.T) {
++	f := newRecordFixture(t)
++	g := rootCatalogGraph(t, f, false)
++	configs := []workflowcatalog.Trigger{{Event: "record.updated", Condition: rootTriggerCondition(f.public)}}
++	in := rootCatalogInput(f, recordOperationID(t, f), 0, g)
++	in.Triggers = &configs
++	var h workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var err error
++		h, err = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in)
++		return err
++	})
++	h = rootCatalogEnable(t, f, rootCatalogDeploy(t, f, h))
++	// The graph itself has no condition or editable fields; this dependency is
++	// exclusively from the configured trigger, not copied from the implementation.
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		got, err := (workflowcatalog.Catalog{}).CheckCompatibilityInTx(f.ctx, tx, f.app, f.table, []appquery.Field{{ID: f.secret, Kind: appquery.Text}, {ID: f.reference, Kind: appquery.Member}})
++		if err != nil {
++			return err
++		}
++		if len(got) != 1 || got[0].FieldID != f.public || got[0].FlowID != h.FlowID || got[0].NodeID != g.Nodes[0].ID {
++			t.Fatalf("missing trigger field not reported: %+v", got)
++		}
++		return nil
++	})
++}
++func TestRootTriggerConfigurationMissingVersionAndLegacyEmpty(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
++	got := rootReadTriggers(t, f, h, 1)
++	if got == nil || len(got) != 0 {
++		t.Fatalf("legacy config should be []: %+v", got)
++	}
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		_, err := (workflowcatalog.Catalog{}).TriggersForVersionInTx(f.ctx, tx, f.app, h.FlowID, 99)
++		if !errors.Is(err, workflowcatalog.ErrMissing) {
++			t.Fatalf("missing version: %v", err)
++		}
++		return nil
++	})
++}
+diff --git a/services/bff/internal/persistence/workflow_trigger_configuration_test.go b/services/bff/internal/persistence/workflow_trigger_configuration_test.go
+new file mode 100644
+index 0000000..a62eea9
+--- /dev/null
++++ b/services/bff/internal/persistence/workflow_trigger_configuration_test.go
+@@ -0,0 +1,25 @@
++package persistence_test
++
++import (
++	"context"
++	"testing"
++)
++
++func TestWorkflowTriggerConfigurationColumnContract(t *testing.T) {
++	conn := testConn(t)
++	ctx := context.Background()
++	var count int
++	if err := conn.QueryRow(ctx, `SELECT count(*) FROM information_schema.columns WHERE table_schema='applications' AND table_name='workflow_versions' AND column_name='triggers_json' AND data_type='jsonb' AND is_nullable='NO' AND column_default='''[]''::jsonb'`).Scan(&count); err != nil {
++		t.Fatal(err)
++	}
++	if count != 1 {
++		t.Fatal("versioned trigger configuration column/default/required contract is missing")
++	}
++	var canRead, canInsert, canUpdate bool
++	if err := conn.QueryRow(ctx, `SELECT has_column_privilege('auth_app','applications.workflow_versions','triggers_json','SELECT'),has_column_privilege('auth_app','applications.workflow_versions','triggers_json','INSERT'),has_column_privilege('auth_app','applications.workflow_versions','triggers_json','UPDATE')`).Scan(&canRead, &canInsert, &canUpdate); err != nil {
++		t.Fatal(err)
++	}
++	if !canRead || !canInsert || canUpdate {
++		t.Fatalf("immutable version permissions violated: read=%v insert=%v update=%v", canRead, canInsert, canUpdate)
++	}
++}
+diff --git a/services/bff/internal/workflowcatalog/catalog.go b/services/bff/internal/workflowcatalog/catalog.go
+index 8871828..bd7a873 100644
+--- a/services/bff/internal/workflowcatalog/catalog.go
++++ b/services/bff/internal/workflowcatalog/catalog.go
+@@ -37,6 +37,7 @@ type VersionInput struct {
+ 	ExpectedRevision, ExpectedSchemaVersion       int64
+ 	Graph                                         flowgraph.Graph
+ 	AllowWithdraw                                 bool
++	Triggers                                      *[]Trigger
+ }
+ 
+ type Head struct {
+diff --git a/services/bff/internal/workflowcatalog/trigger_configuration.go b/services/bff/internal/workflowcatalog/trigger_configuration.go
+new file mode 100644
+index 0000000..2e97891
+--- /dev/null
++++ b/services/bff/internal/workflowcatalog/trigger_configuration.go
+@@ -0,0 +1,21 @@
++package workflowcatalog
++
++import (
++	"context"
++	"encoding/json"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
++	"github.com/jackc/pgx/v5"
++)
++
++type Trigger struct {
++	Event     string          `json:"event"`
++	Condition json.RawMessage `json:"condition"`
++}
++
++// Declaration-only placeholders for the requirement-first RED run.
++func NormalizeTriggers(in []Trigger, fields []appquery.Field) ([]Trigger, error) {
++	return nil, ErrNotReady
++}
++func (Catalog) TriggersForVersionInTx(ctx context.Context, tx pgx.Tx, appID, flowID string, version int64) ([]Trigger, error) {
++	return nil, ErrNotReady
++}
+diff --git a/services/bff/internal/workflowcatalog/trigger_configuration_test.go b/services/bff/internal/workflowcatalog/trigger_configuration_test.go
+new file mode 100644
+index 0000000..8eb46d1
+--- /dev/null
++++ b/services/bff/internal/workflowcatalog/trigger_configuration_test.go
+@@ -0,0 +1,62 @@
++package workflowcatalog
++
++import (
++	"encoding/json"
++	"errors"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
++	"reflect"
++	"testing"
++)
++
++const triggerField = "00000000-0000-4000-8000-000000000001"
++
++var triggerFields = []appquery.Field{{ID: triggerField, Kind: appquery.Text}}
++
++func TestTriggerConfigurationNormalizedEventsAndNull(t *testing.T) {
++	in := []Trigger{{Event: "record.updated"}, {Event: "manual", Condition: json.RawMessage(" null ")}, {Event: "record.created"}}
++	got, err := NormalizeTriggers(in, triggerFields)
++	want := []Trigger{{Event: "manual", Condition: json.RawMessage("null")}, {Event: "record.created", Condition: json.RawMessage("null")}, {Event: "record.updated", Condition: json.RawMessage("null")}}
++	if err != nil || !reflect.DeepEqual(got, want) {
++		t.Fatalf("normalized=%+v error=%v", got, err)
++	}
++	if in[0].Event != "record.updated" {
++		t.Fatal("input order mutated")
++	}
++	empty, err := NormalizeTriggers(nil, triggerFields)
++	if err != nil || empty == nil || len(empty) != 0 {
++		t.Fatalf("legacy configuration must normalize to [], got=%+v err=%v", empty, err)
++	}
++}
++func TestTriggerConfigurationConditionPreservesIndependentPredicate(t *testing.T) {
++	raw := json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + triggerField + `","operator":"eq","value":"alpha"}]}`)
++	got, err := NormalizeTriggers([]Trigger{{Event: "record.updated", Condition: raw}}, triggerFields)
++	if err != nil || len(got) != 1 {
++		t.Fatalf("valid condition: %+v %v", got, err)
++	}
++	var actual, expected any
++	if json.Unmarshal(got[0].Condition, &actual) != nil || json.Unmarshal(raw, &expected) != nil || !reflect.DeepEqual(actual, expected) {
++		t.Fatalf("condition changed: %s", got[0].Condition)
++	}
++	got[0].Condition[0] = '!'
++	if raw[0] != '{' {
++		t.Fatal("normalized condition aliases caller memory")
++	}
++}
++func TestTriggerConfigurationRejectsInvalidEventsAndPredicates(t *testing.T) {
++	for name, in := range map[string][]Trigger{
++		"unknown_event":      {{Event: "timer"}},
++		"empty_event":        {{Event: ""}},
++		"duplicate":          {{Event: "manual"}, {Event: "manual"}},
++		"too_many":           {{Event: "manual"}, {Event: "record.created"}, {Event: "record.updated"}, {Event: "manual"}},
++		"scalar_condition":   {{Event: "manual", Condition: json.RawMessage(`true`)}},
++		"unknown_field":      {{Event: "record.created", Condition: json.RawMessage(`{"operator":"and","children":[{"fieldId":"00000000-0000-4000-8000-000000000099","operator":"eq","value":"x"}]}`)}},
++		"text_ordering":      {{Event: "record.created", Condition: json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + triggerField + `","operator":"gt","value":"x"}]}`)}},
++		"unknown_filter_key": {{Event: "manual", Condition: json.RawMessage(`{"operator":"and","children":[],"execute":"anything"}`)}},
++	} {
++		t.Run(name, func(t *testing.T) {
++			if _, err := NormalizeTriggers(in, triggerFields); !errors.Is(err, ErrInvalid) {
++				t.Fatalf("invalid config accepted or wrong error: %v", err)
++			}
++		})
++	}
++}

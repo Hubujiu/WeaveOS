@@ -21,6 +21,7 @@ type ExecutionClient interface {
 	Execute(context.Context, flowcommands.Command, flowcommands.ExecutionPayload) (*workflowrpc.ExecutionConfirmed, error)
 }
 type Worker struct {
+	AdmitStart func(context.Context) (bool, error)
 	Pool       *pgxpool.Pool
 	Client     ExecutionClient
 	RPCTimeout time.Duration
@@ -44,6 +45,9 @@ func (w *Worker) DispatchOne(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	if !worked {
+		if w.AdmitStart != nil {
+			return w.AdmitStart(ctx)
+		}
 		return false, nil
 	}
 	command, payload, pending, err := w.load(ctx, claim.commandID)

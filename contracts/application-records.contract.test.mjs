@@ -59,3 +59,10 @@ test('runtime and history expose only frozen safe DTO and record errors',()=>{
  assert.ok(schema.ApplicationDataGrant.properties.action.enum.includes('data.history'));
  assert.ok(schema.SchemaDependency.properties.kind.enum.includes('data_grant'),'field removal must report the actual grant dependency');
 });
+test('FLOW07 ordinary edits of in-flight records have a registered read-only conflict',()=>{
+ assert.equal(codes.WORKFLOW_RECORD_READ_ONLY?.httpStatus,409);
+ assert.equal(codes.WORKFLOW_RECORD_READ_ONLY?.public,true);
+ assert.ok(schema.RecordErrorEnvelope.allOf[1].properties.code.enum.includes('WORKFLOW_RECORD_READ_ONLY'));
+ const op=api.paths['/api/v1/applications/{appId}/forms/{viewId}/records/{recordId}'].patch;
+ assert.match(op.responses['409'].description,/WORKFLOW_RECORD_READ_ONLY/);
+});

@@ -37,6 +37,7 @@ type VersionInput struct {
 	ExpectedRevision, ExpectedSchemaVersion       int64
 	Graph                                         flowgraph.Graph
 	AllowWithdraw                                 bool
+	Triggers                                      *[]Trigger
 }
 
 type Head struct {
@@ -93,7 +94,11 @@ func (Catalog) PublicationVersionInTx(ctx context.Context, tx pgx.Tx, appID, flo
 	}
 	if resources.ready {
 		_, validation := flowgraph.Validate(v.Graph, resources.fields)
-		v.Compatible = validation == nil
+		triggerValidation := validateStoredTriggers(ctx, tx, appID, flowID, version, resources.fields)
+		if triggerValidation != nil && !errors.Is(triggerValidation, ErrConflict) {
+			return v, triggerValidation
+		}
+		v.Compatible = validation == nil && triggerValidation == nil
 	}
 	return v, nil
 }
@@ -138,6 +143,24 @@ func (Catalog) PutVersionInTx(ctx context.Context, tx pgx.Tx, in VersionInput) (
 		return Head{}, ErrConflict
 	}
 
+	var requested []Trigger
+	if in.Triggers != nil {
+		requested = *in.Triggers
+	} else if exists {
+		requested, err = (Catalog{}).TriggersForVersionInTx(ctx, tx, in.AppID, in.FlowID, old.CandidateVersion)
+		if err != nil {
+			return Head{}, err
+		}
+	}
+	triggers, err := NormalizeTriggers(requested, resources.fields)
+	if err != nil {
+		return Head{}, ErrInvalid
+	}
+	triggerJSON, err := json.Marshal(triggers)
+	if err != nil {
+		return Head{}, ErrInvalid
+	}
+
 	if _, err := flowgraph.Validate(in.Graph, resources.fields); err != nil {
 		return Head{}, ErrInvalid
 	}
@@ -180,9 +203,9 @@ func (Catalog) PutVersionInTx(ctx context.Context, tx pgx.Tx, in VersionInput) (
 		}
 	}
 	_, err = tx.Exec(ctx, `INSERT INTO applications.workflow_versions
-		(app_id,flow_id,version,version_id,schema_version,graph_json,bpmn_xml,allow_withdraw,created_by)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`, in.AppID, in.FlowID, version, versionID,
-		resources.schemaVersion, graphJSON, string(bpmn), in.AllowWithdraw, in.ActorID)
+		(app_id,flow_id,version,version_id,schema_version,graph_json,bpmn_xml,allow_withdraw,created_by,triggers_json)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, in.AppID, in.FlowID, version, versionID,
+		resources.schemaVersion, graphJSON, string(bpmn), in.AllowWithdraw, in.ActorID, triggerJSON)
 	if err != nil {
 		return Head{}, mapDBError(err)
 	}
@@ -225,6 +248,9 @@ func (Catalog) ConfirmDeploymentInTx(ctx context.Context, tx pgx.Tx, appID, flow
 		return Head{}, ErrNotReady
 	}
 	if version == h.CandidateVersion {
+		if err := validateStoredTriggers(ctx, tx, appID, flowID, version, resources.fields); err != nil {
+			return Head{}, err
+		}
 		if _, err := flowgraph.Validate(graph, resources.fields); err != nil {
 			return Head{}, ErrConflict
 		}
@@ -458,7 +484,9 @@ func (Catalog) CheckCompatibilityInTx(ctx context.Context, tx pgx.Tx, appID, tab
 			FROM applications.workflow_instances i
 			WHERE i.app_id=$1 AND i.table_id=$2 AND i.state IN ('starting','active')
 		)
-		SELECT live.flow_id::text,v.version,v.graph_json
+		SELECT live.flow_id::text,v.version,v.graph_json,v.triggers_json,
+        EXISTS(SELECT 1 FROM applications.workflow_definitions d WHERE d.app_id=live.app_id
+          AND d.id=live.flow_id AND d.current_version=live.version AND d.state IN ('enabled','closing'))
 		FROM live_versions live
 		JOIN applications.workflow_versions v
 			ON v.app_id=live.app_id AND v.flow_id=live.flow_id AND v.version=live.version
@@ -471,8 +499,9 @@ func (Catalog) CheckCompatibilityInTx(ctx context.Context, tx pgx.Tx, appID, tab
 	for rows.Next() {
 		var flowID string
 		var version int64
-		var graphJSON []byte
-		if err := rows.Scan(&flowID, &version, &graphJSON); err != nil {
+		var graphJSON, triggerJSON []byte
+		var checkTriggers bool
+		if err := rows.Scan(&flowID, &version, &graphJSON, &triggerJSON, &checkTriggers); err != nil {
 			return nil, mapDBError(err)
 		}
 		graph, err := decodeGraph(graphJSON)
@@ -480,6 +509,13 @@ func (Catalog) CheckCompatibilityInTx(ctx context.Context, tx pgx.Tx, appID, tab
 			return nil, ErrNotReady
 		}
 		conflicts = append(conflicts, graphConflicts(flowID, version, graph, proposed)...)
+		if checkTriggers {
+			triggers, err := decodeTriggers(triggerJSON)
+			if err != nil {
+				return nil, err
+			}
+			conflicts = append(conflicts, triggerConflicts(flowID, version, graph, triggers, proposed)...)
+		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, mapDBError(err)
@@ -623,7 +659,7 @@ func validateStoredVersion(ctx context.Context, tx pgx.Tx, appID, flowID string,
 	if _, err := flowgraph.Validate(graph, fields); err != nil {
 		return ErrConflict
 	}
-	return nil
+	return validateStoredTriggers(ctx, tx, appID, flowID, version, fields)
 }
 
 func hasInFlight(ctx context.Context, tx pgx.Tx, appID, flowID string) (bool, error) {

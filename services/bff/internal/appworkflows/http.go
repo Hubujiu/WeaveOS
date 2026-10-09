@@ -73,12 +73,13 @@ type workflowEdge struct {
 }
 
 type definitionRequest struct {
-	OperationID           string          `json:"operationId"`
-	Name                  string          `json:"name"`
-	ExpectedRevision      int64           `json:"expectedRevision"`
-	ExpectedSchemaVersion int64           `json:"expectedSchemaVersion"`
-	Graph                 json.RawMessage `json:"graph"`
-	AllowWithdraw         *bool           `json:"allowWithdraw"`
+	OperationID           string                     `json:"operationId"`
+	Name                  string                     `json:"name"`
+	ExpectedRevision      int64                      `json:"expectedRevision"`
+	ExpectedSchemaVersion int64                      `json:"expectedSchemaVersion"`
+	Graph                 json.RawMessage            `json:"graph"`
+	AllowWithdraw         *bool                      `json:"allowWithdraw"`
+	Triggers              *[]workflowcatalog.Trigger `json:"triggers,omitempty"`
 }
 
 type lifecycleRequest struct {
@@ -87,15 +88,16 @@ type lifecycleRequest struct {
 }
 
 type definitionView struct {
-	ID               string        `json:"id"`
-	Name             string        `json:"name"`
-	Revision         int64         `json:"revision"`
-	CurrentVersion   int64         `json:"currentVersion"`
-	CandidateVersion int64         `json:"candidateVersion"`
-	State            string        `json:"state"`
-	SchemaVersion    int64         `json:"schemaVersion"`
-	AllowWithdraw    bool          `json:"allowWithdraw"`
-	Graph            workflowGraph `json:"graph"`
+	ID               string                    `json:"id"`
+	Name             string                    `json:"name"`
+	Revision         int64                     `json:"revision"`
+	CurrentVersion   int64                     `json:"currentVersion"`
+	CandidateVersion int64                     `json:"candidateVersion"`
+	State            string                    `json:"state"`
+	SchemaVersion    int64                     `json:"schemaVersion"`
+	AllowWithdraw    bool                      `json:"allowWithdraw"`
+	Graph            workflowGraph             `json:"graph"`
+	Triggers         []workflowcatalog.Trigger `json:"triggers"`
 }
 
 type mutationData struct {
@@ -332,7 +334,7 @@ func decodeDefinition(w http.ResponseWriter, r *http.Request) (definitionRequest
 	if err != nil {
 		return definitionRequest{}, flowgraph.Graph{}, err
 	}
-	fields, err := exactObject(raw, []string{"operationId", "name", "expectedRevision", "expectedSchemaVersion", "graph", "allowWithdraw"}, nil)
+	fields, err := exactObject(raw, []string{"operationId", "name", "expectedRevision", "expectedSchemaVersion", "graph", "allowWithdraw"}, []string{"triggers"})
 	if err != nil {
 		return definitionRequest{}, flowgraph.Graph{}, err
 	}
@@ -342,6 +344,19 @@ func decodeDefinition(w http.ResponseWriter, r *http.Request) (definitionRequest
 	decodeErr := decoder.Decode(&in)
 	if decodeErr != nil || in.AllowWithdraw == nil || !validID(in.OperationID) || strings.TrimSpace(in.Name) == "" || in.ExpectedRevision < 0 || in.ExpectedRevision > maxSafeInteger || in.ExpectedSchemaVersion < 1 || in.ExpectedSchemaVersion > maxSafeInteger {
 		return definitionRequest{}, flowgraph.Graph{}, errInvalid
+	}
+	if rawTriggers, exists := fields["triggers"]; exists {
+		var entries []map[string]json.RawMessage
+		if json.Unmarshal(rawTriggers, &entries) != nil || entries == nil || len(entries) > 3 {
+			return definitionRequest{}, flowgraph.Graph{}, errInvalid
+		}
+		for _, entry := range entries {
+			_, hasEvent := entry["event"]
+			_, hasCondition := entry["condition"]
+			if len(entry) != 2 || !hasEvent || !hasCondition {
+				return definitionRequest{}, flowgraph.Graph{}, errInvalid
+			}
+		}
 	}
 	graph, err := decodeGraph(fields["graph"])
 	if err != nil {
@@ -534,6 +549,11 @@ func (s *Service) getDefinition(w http.ResponseWriter, r *http.Request, p sessio
 		fail(w, r, err, "")
 		return
 	}
+	triggers, err := (workflowcatalog.Catalog{}).TriggersForVersionInTx(ctx, tx, appID, flowID, head.CandidateVersion)
+	if err != nil {
+		fail(w, r, err, "")
+		return
+	}
 	graph, err := workflowcatalogGraph(graphJSON)
 	if err != nil {
 		fail(w, r, err, "")
@@ -549,7 +569,7 @@ func (s *Service) getDefinition(w http.ResponseWriter, r *http.Request, p sessio
 	}
 	writeEnvelope(w, r, http.StatusOK, "OK", definitionView{ID: flowID, Name: head.Name, Revision: head.Revision,
 		CurrentVersion: head.CurrentVersion, CandidateVersion: head.CandidateVersion, State: head.State,
-		SchemaVersion: schemaVersion, AllowWithdraw: allowWithdraw, Graph: toGraphDTO(graph)})
+		SchemaVersion: schemaVersion, AllowWithdraw: allowWithdraw, Graph: toGraphDTO(graph), Triggers: triggers})
 }
 
 func workflowcatalogGraph(raw []byte) (flowgraph.Graph, error) {
@@ -631,7 +651,7 @@ func (s *Service) mutate(w http.ResponseWriter, r *http.Request, p session.Princ
 		}
 		head, err = catalog.PutVersionInTx(r.Context(), tx, workflowcatalog.VersionInput{AppID: appID, TableID: tableID, ViewID: viewID, FlowID: flowID,
 			ActorID: p.UserID, Name: save.Name, ExpectedRevision: save.ExpectedRevision, ExpectedSchemaVersion: save.ExpectedSchemaVersion,
-			Graph: graph, AllowWithdraw: *save.AllowWithdraw})
+			Graph: graph, AllowWithdraw: *save.AllowWithdraw, Triggers: save.Triggers})
 	case "enable":
 		head, err = catalog.GetInTx(r.Context(), tx, appID, flowID)
 		if err == nil && head.ViewID != viewID {

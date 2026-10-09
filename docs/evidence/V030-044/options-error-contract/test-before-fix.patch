@@ -1,0 +1,20 @@
+diff --git a/contracts/workflow-manual-options.contract.test.mjs b/contracts/workflow-manual-options.contract.test.mjs
+index 891495c..a8809ea 100644
+--- a/contracts/workflow-manual-options.contract.test.mjs
++++ b/contracts/workflow-manual-options.contract.test.mjs
+@@ -24,3 +24,15 @@ test('manual options reveal only six safe identity and CAS fields',()=>{
+  assert.equal(page.properties.items.items.$ref,'#/components/schemas/WorkflowManualOption');
+  assert.equal(page.properties.items.maxItems,100);
+ });
++test('manual discovery conflict contract includes unavailable configuration without broadening record errors',()=>{
++ const response=api.paths[path].post.responses['409'];
++ const schema=schemas[response.content['application/json'].schema.$ref.split('/').at(-1)];
++ const codes=schema.allOf.flatMap(part=>part.properties?.code?.enum??[]);
++ for(const code of ['WORKFLOW_NOT_READY','APPLICATION_QUERY_CHANGED','APPLICATION_QUERY_CONTEXT_EXPIRED'])assert.ok(codes.includes(code),`missing safe discovery error ${code}`);
++ assert.ok(!schemas.RecordErrorEnvelope.allOf.flatMap(part=>part.properties?.code?.enum??[]).includes('WORKFLOW_NOT_READY'));
++});
++test('manual discovery documents the registered expiry error name',()=>{
++ const description=api.paths[path].post.responses['409'].description;
++ assert.ok(description.includes('APPLICATION_QUERY_CONTEXT_EXPIRED'));
++ assert.ok(!description.includes('APPLICATION_QUERY_EXPIRED'));
++});

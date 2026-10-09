@@ -1,0 +1,59 @@
+#!/bin/bash
+set -e
+LABEL=$1; PATTERN=$2; shift 2
+[[ "$LABEL" =~ ^[a-z0-9-]+$ ]] || exit 2
+ROOT=/workspace/scratch/75c2273f6a80
+REPO=$ROOT/WeaveOS-worktrees/V030-044
+PG=$ROOT/restored-tools/pg/bin
+FIX=$ROOT/v044-fixture/$LABEL
+OUT=$REPO/docs/evidence/V030-044/$LABEL
+[[ ! -e "$FIX" ]] || { echo 'Refusing to overwrite existing fixture'; exit 2; }
+mkdir -p "$FIX/redis" "$OUT"
+"$PG/initdb" -D "$FIX/pgdata" -U weaveos_test -A trust --no-locale --encoding=UTF8 > "$FIX/initdb.log"
+"$PG/pg_ctl" -D "$FIX/pgdata" -l "$FIX/postgres.log" -o "-h 127.0.0.1 -p 55444 -k ''" start >/dev/null
+"$ROOT/restored-tools/redis/bin/redis-server" --bind 127.0.0.1 --port 56444 --dir "$FIX/redis" --pidfile "$FIX/redis.pid" --logfile "$FIX/redis.log" --daemonize yes
+JAVA_PID=""
+trap 'if [[ -n "$JAVA_PID" ]]; then kill "$JAVA_PID" 2>/dev/null || true; wait "$JAVA_PID" || true; fi; "$ROOT/restored-tools/redis/bin/redis-cli" -p 56444 shutdown nosave; "$PG/pg_ctl" -D "$FIX/pgdata" stop -m fast >/dev/null' EXIT
+"$PG/createdb" -h 127.0.0.1 -p 55444 -U weaveos_test weaveos_v044
+"$PG/createdb" -h 127.0.0.1 -p 55444 -U weaveos_test weaveos_v044_archive
+export WEAVEOS_TEST_DATABASE_URL='postgres://weaveos_test@127.0.0.1:55444/weaveos_v044?sslmode=disable'
+export WEAVEOS_TEST_ARCHIVE_DATABASE_URL='postgres://weaveos_test@127.0.0.1:55444/weaveos_v044_archive?sslmode=disable'
+export WEAVEOS_TEST_REDIS_URL='redis://127.0.0.1:56444/15'
+export PATH="$ROOT/restored-tools/go/bin:$PATH" GOPATH="$ROOT/restored-tools/gopath" GOCACHE="$ROOT/restored-tools/go-cache" GOTOOLCHAIN=local
+cd "$REPO"
+"$GOPATH/bin/goose" -dir db/archive-migrations postgres "$WEAVEOS_TEST_ARCHIVE_DATABASE_URL" up > "$FIX/archive-migrations.log" 2>&1
+"$GOPATH/bin/goose" -dir db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up > "$FIX/migrations.log" 2>&1
+"$PG/psql" "$WEAVEOS_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/runtime/roles.sql > "$FIX/roles.log" 2>&1
+
+"$PG/psql" "$WEAVEOS_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "CREATE ROLE b3_fixture LOGIN PASSWORD 'b3_fixture_only';" -c 'CREATE DATABASE b3_flowable_fixture OWNER b3_fixture;' > "$FIX/java-db.log"
+JHOME=$(cat "$ROOT/restored-tools/jdk17-path.txt")
+CP="$ROOT/restored-tools/native-java-classes:$REPO/services/workflow-engine/target/classes:$REPO/services/workflow-engine/target/test-classes:$(cat "$ROOT/restored-tools/workflow-classpath.txt")"
+"$JHOME/bin/java" -cp "$CP" org.weaveos.workflow.NativeExecutionRpcFixtureMain jdbc:postgresql://127.0.0.1:55444/b3_flowable_fixture "$FIX/ready" > "$OUT/java.log" 2>&1 & JAVA_PID=$!
+for i in $(seq 1 120); do
+ [[ -s "$FIX/ready" ]] && break
+ if ! kill -0 "$JAVA_PID" 2>/dev/null; then tail -80 "$OUT/java.log"; exit 1; fi
+ sleep 1
+done
+[[ -s "$FIX/ready" ]] || exit 1
+export WEAVEOS_RPC_TEST_TARGET="127.0.0.1:$(cat "$FIX/ready")"
+cp "$ROOT/NativeExecutionRpcFixtureMain.java" "$OUT/native-harness.java.txt"
+git rev-parse HEAD > "$OUT/source-head.txt"
+git diff --binary HEAD -- services/bff db/migrations > "$OUT/uncommitted-source.patch"
+date -u +%FT%TZ > "$OUT/started.txt"
+printf '%q ' go test -tags=workflowrpc_integration -race -p 1 -count=1 -json -run "$PATTERN" "$@" > "$OUT/command.txt"
+set +e
+(cd services/bff && go test -tags=workflowrpc_integration -race -p 1 -count=1 -json -run "$PATTERN" "$@") > "$OUT/tests.jsonl" 2> "$OUT/tests.stderr"
+code=$?;echo "$code" > "$OUT/tests.exit"
+date -u +%FT%TZ > "$OUT/finished.txt"
+python - "$OUT" <<'PY'
+import pathlib,sys,json,collections
+p=pathlib.Path(sys.argv[1]);cs=collections.defaultdict(collections.Counter)
+for l in (p/'tests.jsonl').read_text().splitlines():
+ e=json.loads(l)
+ if e.get('Action') in ['pass','fail','skip']:
+  cs[e['Package']][e['Action']+(' sub' if '/' in e.get('Test','') else ' top' if e.get('Test') else ' package')]+=1
+  if e['Action']!='pass':print(e)
+ if '.go:' in e.get('Output',''):print(e['Output'].strip())
+print(dict(cs));print('exit',(p/'tests.exit').read_text().strip())
+PY
+exit "$code"

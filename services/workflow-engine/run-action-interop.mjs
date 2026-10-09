@@ -61,7 +61,7 @@ try{
  if(isolation.networkInternal!=='true')throw Error('network is not internal');
  for(const name of owned){const info=JSON.parse(call('docker',['inspect',name],{encoding:'utf8'}))[0];if(info.HostConfig.PortBindings&&Object.keys(info.HostConfig.PortBindings).length)throw Error('unexpected published ports');isolation.containers.push({name,ports:info.HostConfig.PortBindings,network:info.HostConfig.NetworkMode});}
  writeFileSync(resolve(dir,'isolation.json'),JSON.stringify(isolation,null,2),{mode:0o600});
- const r=spawnSync('docker',['exec','-w',resolve('services/bff'),'-e','NO_PROXY=b3-workflow,b3-postgres,127.0.0.1,localhost','-e','no_proxy=b3-workflow,b3-postgres,127.0.0.1,localhost','-e','WEAVEOS_RPC_TEST_TARGET=b3-workflow:'+port,'-e','WEAVEOS_TEST_DATABASE_URL='+pg.url,'-e','WEAVEOS_TEST_ARCHIVE_DATABASE_URL='+archive.href,'-e','WEAVEOS_TEST_REDIS_URL=unix://'+redisSocket+'/redis.sock?db=15',java,'/proof/.work/action-interop.test','-test.v=test2json','-test.run','^TestRootWorkflowActionJava.*Interop$','-test.timeout=150s'],{cwd:root,env,encoding:'utf8',maxBuffer:32*1024*1024});
+ const r=spawnSync('docker',['exec','-w',resolve('services/bff'),'-e','NO_PROXY=b3-workflow,b3-postgres,127.0.0.1,localhost','-e','no_proxy=b3-workflow,b3-postgres,127.0.0.1,localhost','-e','WEAVEOS_RPC_TEST_TARGET=b3-workflow:'+port,'-e','WEAVEOS_TEST_DATABASE_URL='+pg.url,'-e','WEAVEOS_TEST_ARCHIVE_DATABASE_URL='+archive.href,'-e','WEAVEOS_TEST_REDIS_URL=unix://'+redisSocket+'/redis.sock?db=15',java,'/proof/.work/action-interop.test','-test.v=test2json','-test.run','^(TestRootWorkflowActionJava.*Interop|TestRootRecordTriggerJava.*)$','-test.timeout=150s'],{cwd:root,env,encoding:'utf8',maxBuffer:32*1024*1024});
  writeFileSync(resolve(dir,'test.stdout'),r.stdout??'',{mode:0o600});writeFileSync(resolve(dir,'test.stderr'),r.stderr??'',{mode:0o600});writeFileSync(resolve(dir,'test.exit'),String(r.status??1),{mode:0o600});
  const convert=step('convert',go,['tool','test2json','-t','-p','github.com/Hubujiu/WeaveOS/services/bff/cmd/bff'],{input:r.stdout??''});
  if(process.env.WEAVEOS_ACTIONS_JSON_REPORT){
@@ -69,9 +69,9 @@ try{
  }
  const events=convert.stdout.split('\n').filter(Boolean).map(s=>JSON.parse(s));
  const tests=events.filter(x=>x.Test&&!x.Test.includes('/')&&['pass','fail','skip'].includes(x.Action)).map(x=>({name:x.Test,status:x.Action,elapsed:x.Elapsed}));
- const summary={head:call('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),exit:r.status??1,tests,passed:tests.filter(x=>x.status==='pass').length,failed:tests.filter(x=>x.status==='fail').length,skipped:tests.filter(x=>x.status==='skip').length,scope:'real Java Flowable/gRPC + separate engine/app PostgreSQL; real HTTPS existing-task approval chain; not new-instance triggers or complete backend acceptance'};
+ const summary={head:call('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),exit:r.status??1,tests,passed:tests.filter(x=>x.status==='pass').length,failed:tests.filter(x=>x.status==='fail').length,skipped:tests.filter(x=>x.status==='skip').length,scope:'real Java Flowable/gRPC + separate engine/app PostgreSQL; real HTTPS existing-task approvals and five automatic and two manual public-record start/admission/recovery scenarios; not complete backend acceptance'};
  writeFileSync(resolve(dir,'summary.json'),JSON.stringify(summary,null,2),{mode:0o600});console.log(JSON.stringify({directory:dir,...summary}));
- process.exitCode=r.status??1;if(tests.length!==3||summary.passed!==3||summary.failed||summary.skipped)process.exitCode=1;
+ process.exitCode=r.status??1;if(tests.length!==10||summary.passed!==10||summary.failed||summary.skipped)process.exitCode=1;
 }finally{
  if(javaStarted){
   try{writeFileSync(resolve(dir,'java.log'),call('docker',['logs',java]),{mode:0o600})}catch{}

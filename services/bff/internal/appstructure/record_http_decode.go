@@ -15,7 +15,9 @@ import (
 func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[string]json.RawMessage, error) {
 	required, optional, nullable := []string{}, []string{}, []string{}
 	switch kind {
-	case "workflow.instances.search":
+	case "workflow.manual.start":
+		required = []string{"operationId", "flowId", "expectedWorkflowRevision", "expectedSchemaVersion", "expectedRecordVersion"}
+	case "workflow.instances.search", "workflow.manual.options.search":
 		required = []string{"page"}
 		optional = []string{"pageSize", "queryVersion"}
 	case "workflow.lifecycle.action":
@@ -51,7 +53,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 	if kind == "record.search" {
 		limit = 64 << 10
 	}
-	if kind == "workflow.task.action" || kind == "workflow.lifecycle.action" || kind == "workflow.instances.search" {
+	if kind == "workflow.manual.start" || kind == "workflow.task.action" || kind == "workflow.lifecycle.action" || kind == "workflow.instances.search" || kind == "workflow.manual.options.search" {
 		limit = 4096
 	}
 	raw, e := io.ReadAll(http.MaxBytesReader(w, r.Body, limit))
@@ -68,6 +70,21 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 	m, e := object(raw, required, optional, nullable)
 	if e != nil {
 		return nil, recordBodyInvalid()
+	}
+
+	if kind == "workflow.manual.start" {
+		for _, key := range []string{"operationId", "flowId"} {
+			var id string
+			if json.Unmarshal(m[key], &id) != nil || !appfields.ValidID(id) || id == "00000000-0000-0000-0000-000000000000" {
+				return nil, recordBodyInvalid()
+			}
+		}
+		for _, key := range []string{"expectedWorkflowRevision", "expectedSchemaVersion", "expectedRecordVersion"} {
+			var n int64
+			if json.Unmarshal(m[key], &n) != nil || n < 1 || n > maxVersion {
+				return nil, recordBodyInvalid()
+			}
+		}
 	}
 	if kind == "workflow.task.action" {
 		var operation, action, token string
