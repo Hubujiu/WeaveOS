@@ -27,6 +27,12 @@ import (
 // locked write lifecycle. It does not commit, store, authorize a workflow task,
 // or expose this complete bundle through HTTP.
 func captureWorkflowEvidence(ctx context.Context, tx pgx.Tx, facts applications.RecordContext, recordID string) (ev.Bundle, error) {
+	return captureWorkflowEvidenceMode(ctx, tx, facts, recordID, false)
+}
+
+// System-start evidence never represents a user reading the record. This
+// internal mode is reachable only after durable starting identity/locks resolve.
+func captureWorkflowEvidenceMode(ctx context.Context, tx pgx.Tx, facts applications.RecordContext, recordID string, systemStart bool) (ev.Bundle, error) {
 	if captureNilPort(ctx) || captureNilPort(tx) || facts.SchemaVersion < 1 {
 		return ev.Bundle{}, ev.ErrInvalid
 	}
@@ -39,7 +45,7 @@ func captureWorkflowEvidence(ctx context.Context, tx pgx.Tx, facts applications.
 		return ev.Bundle{}, ev.ErrTooLarge
 	}
 	policy, menu := policyFor(facts)
-	if !menu || policy.VisibleScope() == appaccess.None {
+	if !systemStart && (!menu || policy.VisibleScope() == appaccess.None) {
 		return ev.Bundle{}, applications.ErrDenied
 	}
 	var schema int64
@@ -99,7 +105,7 @@ func captureWorkflowEvidence(ctx context.Context, tx pgx.Tx, facts applications.
 	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(facts.TableID, "-", "")}.Sanitize()
 	rowClause := " FROM " + relation + " r WHERE r.id=$1::uuid"
 	args := []any{recordID}
-	if policy.VisibleScope() == appaccess.Own {
+	if !systemStart && policy.VisibleScope() == appaccess.Own {
 		rowClause += " AND r.created_by=$2::uuid"
 		args = append(args, facts.Actor.ID)
 	}
@@ -267,7 +273,11 @@ func captureWorkflowEvidence(ctx context.Context, tx pgx.Tx, facts applications.
 	}
 	header := ev.Header{AppID: facts.App.ID, TableID: facts.TableID, ViewID: facts.ViewID, RecordID: actualID, CreatedBy: createdBy,
 		SchemaVersion: schema, RecordVersion: version, CreatedAt: createdAt.UTC().Format(time.RFC3339Nano), UpdatedAt: updatedAt.UTC().Format(time.RFC3339Nano)}
-	bundle, err := ev.Build(header, fields, policy.ReadFields(createdBy, ids))
+	visible := policy.ReadFields(createdBy, ids)
+	if systemStart {
+		visible = []string{}
+	}
+	bundle, err := ev.Build(header, fields, visible)
 	if err != nil {
 		if errors.Is(err, ev.ErrTooLarge) {
 			return ev.Bundle{}, err

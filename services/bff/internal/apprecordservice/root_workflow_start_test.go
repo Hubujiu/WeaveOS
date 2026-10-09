@@ -5,13 +5,16 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	fc "github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
 	wc "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
+	ev "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowevidence"
 	"github.com/jackc/pgx/v5"
+	"strings"
 	"sync"
 	"testing"
 )
 
 func rootStartIntent(t *testing.T, f recordFixture, approver string) (string, string) {
 	t.Helper()
+	rootTaskKeepDispatchPrivate(t, f)
 	graph := rootCatalogGraph(t, f, false)
 	graph.Nodes[1].Approval.AssigneeIDs = []string{approver}
 	cfg := []wc.Trigger{{Event: "record.created"}}
@@ -51,7 +54,7 @@ func rootStartCommand(t *testing.T, f recordFixture, instance string) (fc.Comman
 	return command, p
 }
 func TestRootWorkflowStartAcceptsDurableIntentOnce(t *testing.T) {
-	f := newRecordFixture(t)
+	f := rootCaptureSetup(t).recordFixture
 	instance, record := rootStartIntent(t, f, f.actor)
 	worked, err := f.service.acceptWorkflowStart(f.ctx, instance)
 	if err != nil || !worked {
@@ -70,7 +73,7 @@ func TestRootWorkflowStartAcceptsDurableIntentOnce(t *testing.T) {
 	}
 }
 func TestRootWorkflowStartConcurrentAdmitters(t *testing.T) {
-	f := newRecordFixture(t)
+	f := rootCaptureSetup(t).recordFixture
 	instance, _ := rootStartIntent(t, f, f.actor)
 	var wg sync.WaitGroup
 	results := make(chan bool, 4)
@@ -103,7 +106,7 @@ func TestRootWorkflowStartConcurrentAdmitters(t *testing.T) {
 	}
 }
 func TestRootWorkflowStartAcceptedInitiatorDeactivationDoesNotLoseIntent(t *testing.T) {
-	f := newRecordFixture(t)
+	f := rootCaptureSetup(t).recordFixture
 	instance, _ := rootStartIntent(t, f, f.other)
 	if _, err := f.owner.Exec(f.ctx, "UPDATE auth.users SET status='disabled',auth_version=auth_version+1 WHERE id=$1", f.actor); err != nil {
 		t.Fatal(err)
@@ -118,7 +121,7 @@ func TestRootWorkflowStartAcceptedInitiatorDeactivationDoesNotLoseIntent(t *test
 	}
 }
 func TestRootWorkflowStartApproverRevokedThenRestored(t *testing.T) {
-	f := newRecordFixture(t)
+	f := rootCaptureSetup(t).recordFixture
 	instance, _ := rootStartIntent(t, f, f.actor)
 	if _, err := f.owner.Exec(f.ctx, "UPDATE applications.permission_groups SET enabled=false WHERE app_id=$1", f.app); err != nil {
 		t.Fatal(err)
@@ -135,5 +138,112 @@ func TestRootWorkflowStartApproverRevokedThenRestored(t *testing.T) {
 	}
 	if ok, err := f.service.acceptWorkflowStart(f.ctx, instance); err != nil || !ok {
 		t.Fatalf("restored intent cannot resume: %v %v", ok, err)
+	}
+}
+
+func TestRootWorkflowStartSystemEvidenceHasNoUserVisibleMask(t *testing.T) {
+	f := rootCaptureSetup(t).recordFixture
+	instance, _ := rootStartIntent(t, f, f.other)
+	// Creation needs no data.read grant. Removing read after acceptance cannot
+	// manufacture a user-visible read mask for system background evidence.
+	if _, err := f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields gf USING applications.grants g WHERE gf.app_id=g.app_id AND gf.grant_id=g.id AND g.app_id=$1 AND g.action='data.read'", f.app); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.owner.Exec(f.ctx, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.read'", f.app); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := f.service.acceptWorkflowStart(f.ctx, instance); err != nil || !ok {
+		t.Fatalf("create-only intent blocked %v %v", ok, err)
+	}
+	_, payload := rootStartCommand(t, f, instance)
+	var body []byte
+	if err := f.owner.QueryRow(f.ctx, "SELECT body FROM applications.workflow_evidence_documents WHERE app_id=$1 AND evidence_hash=$2", f.app, payload.EvidenceHash[:]).Scan(&body); err != nil {
+		t.Fatal(err)
+	}
+	manifest, err := ev.DecodeManifest(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(manifest.VisibleFieldIDs) != 0 || len(manifest.Fields) != 3 {
+		t.Fatalf("system evidence changed user read access or omitted audit fields: %+v", manifest)
+	}
+}
+func TestRootWorkflowStartOwnReadCannotApproveForeignRecord(t *testing.T) {
+	f := rootCaptureSetup(t).recordFixture
+	// Keep the existing own grant; remove all-scope reads to avoid duplicate tuples.
+	if _, err := f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields gf USING applications.grants g WHERE gf.app_id=g.app_id AND gf.grant_id=g.id AND g.app_id=$1 AND g.action='data.read' AND g.row_scope='all'", f.app); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.owner.Exec(f.ctx, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.read' AND row_scope='all'", f.app); err != nil {
+		t.Fatal(err)
+	}
+	f.principal.UserID = f.other
+	instance, _ := rootStartIntent(t, f, f.actor)
+	if ok, _ := f.service.acceptWorkflowStart(f.ctx, instance); ok {
+		t.Fatal("own-scope approver admitted on foreign-owned record")
+	}
+	if _, err := f.owner.Exec(f.ctx, "UPDATE applications.grants SET row_scope='all' WHERE app_id=$1 AND action='data.read'", f.app); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := f.service.acceptWorkflowStart(f.ctx, instance); err != nil || !ok {
+		t.Fatalf("restored foreign read did not resume %v %v", ok, err)
+	}
+}
+func TestRootWorkflowStartUsesLatestRecordEvidence(t *testing.T) {
+	f := rootCaptureSetup(t).recordFixture
+	instance, record := rootStartIntent(t, f, f.actor)
+	// The owner fixture models a later authorized save from another workflow.
+	// It does not assert that ordinary editing is permitted while in flight.
+	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
+	col := pgx.Identifier{"f_" + strings.ReplaceAll(f.public, "-", "")}.Sanitize()
+	if _, err := f.owner.Exec(f.ctx, "UPDATE "+relation+" SET "+col+"='latest',record_version=2 WHERE id=$1", record); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := f.service.acceptWorkflowStart(f.ctx, instance); err != nil || !ok {
+		t.Fatalf("latest acceptance %v %v", ok, err)
+	}
+	command, payload := rootStartCommand(t, f, instance)
+	var body []byte
+	if err := f.owner.QueryRow(f.ctx, "SELECT body FROM applications.workflow_evidence_documents WHERE app_id=$1 AND evidence_hash=$2", f.app, payload.EvidenceHash[:]).Scan(&body); err != nil {
+		t.Fatal(err)
+	}
+	manifest, err := ev.DecodeManifest(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if command.RecordVersion != 2 || manifest.Header.RecordVersion != 2 {
+		t.Fatal("start pinned stale business record")
+	}
+}
+func TestRootWorkflowStartCommitFailureLeavesRecoverableIntent(t *testing.T) {
+	f := rootCaptureSetup(t).recordFixture
+	instance, _ := rootStartIntent(t, f, f.actor)
+	name := "v044_start_fault_" + strings.ReplaceAll(f.app, "-", "")
+	fn := pgx.Identifier{"applications", name}.Sanitize()
+	trigger := pgx.Identifier{name}.Sanitize()
+	sql := "CREATE FUNCTION " + fn + "() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.command_json->>'AppID'='" + f.app + "' THEN RAISE EXCEPTION 'isolated start commit fault' USING ERRCODE='P0001'; END IF; RETURN NEW; END $$"
+	if _, err := f.owner.Exec(f.ctx, sql); err != nil {
+		t.Fatal(err)
+	}
+	defer f.owner.Exec(f.ctx, "DROP FUNCTION "+fn+"() CASCADE")
+	if _, err := f.owner.Exec(f.ctx, "CREATE CONSTRAINT TRIGGER "+trigger+" AFTER INSERT ON applications.workflow_commands DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION "+fn+"()"); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := f.service.acceptWorkflowStart(f.ctx, instance); ok || err == nil {
+		t.Fatalf("commit fault was treated as accepted %v %v", ok, err)
+	}
+	for _, table := range []string{"record_command_fences", "workflow_evidence_documents", "workflow_evidence_blobs"} {
+		var n int
+		if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications."+table+" WHERE app_id=$1", f.app).Scan(&n); err != nil || n != 0 {
+			t.Fatalf("%s escaped rollback: %d %v", table, n, err)
+		}
+	}
+	var n int
+	if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_commands WHERE command_json->>'InstanceID'=$1", instance).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("ledger escaped rollback %d %v", n, err)
+	}
+	var state string
+	if err := f.owner.QueryRow(f.ctx, "SELECT state FROM applications.workflow_instances WHERE id=$1", instance).Scan(&state); err != nil || state != "starting" {
+		t.Fatalf("accepted intent lost: %s %v", state, err)
 	}
 }

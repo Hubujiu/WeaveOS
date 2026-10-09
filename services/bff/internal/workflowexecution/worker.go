@@ -45,6 +45,9 @@ func (w *Worker) DispatchOne(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	if !worked {
+		if w.AdmitStart != nil {
+			return w.AdmitStart(ctx)
+		}
 		return false, nil
 	}
 	command, payload, pending, err := w.load(ctx, claim.commandID)

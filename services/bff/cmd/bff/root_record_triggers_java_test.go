@@ -54,15 +54,18 @@ func rootHTTPTriggerJavaConfigure(t *testing.T, f *rootTaskHTTPFixture, deployme
 }
 
 func TestRootRecordTriggerJavaPublicCreateReachesApproval(t *testing.T) {
-	rootPublicTriggerJavaContract(t, false, false)
+	rootPublicTriggerJavaContract(t, false, false, false)
 }
 func TestRootRecordTriggerJavaIndependentFlowsBothReachApproval(t *testing.T) {
-	rootPublicTriggerJavaContract(t, true, false)
+	rootPublicTriggerJavaContract(t, true, false, false)
 }
 func TestRootRecordTriggerJavaClosingDrainsAlreadyAcceptedIntent(t *testing.T) {
-	rootPublicTriggerJavaContract(t, false, true)
+	rootPublicTriggerJavaContract(t, false, true, false)
 }
-func rootPublicTriggerJavaContract(t *testing.T, twoFlows, closeAfterCreate bool) {
+func TestRootRecordTriggerJavaLostReplyRecoversOriginalStart(t *testing.T) {
+	rootPublicTriggerJavaContract(t, false, false, true)
+}
+func rootPublicTriggerJavaContract(t *testing.T, twoFlows, closeAfterCreate, loseReply bool) {
 	t.Helper()
 	target := os.Getenv("WEAVEOS_RPC_TEST_TARGET")
 	host, _, err := net.SplitHostPort(target)
@@ -118,16 +121,36 @@ func rootPublicTriggerJavaContract(t *testing.T, twoFlows, closeAfterCreate bool
 		})
 	}
 	service := &ars.Service{Pool: f.runtime, Limits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}}
-	worker := &we.Worker{AdmitStart: service.NewStartAdmitter(), Pool: f.runtime, Client: client, RPCTimeout: 20 * time.Second, Limits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}}
+	transport := &rootHTTPRealClient{client: client, drop: loseReply}
+	worker := &we.Worker{AdmitStart: service.NewStartAdmitter(), Pool: f.runtime, Client: transport, RPCTimeout: 20 * time.Second, Limits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}}
+	recovered := false
 	// Drain the current runtime path until idle, without fabricating a start ledger entry.
 	for {
 		worked, err := worker.DispatchOne(f.ctx)
 		if err != nil {
-			t.Fatal(err)
+			if !loseReply || recovered || transport.executions != 1 {
+				t.Fatal(err)
+			}
+			var fences, commands int
+			if e := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_command_fences WHERE app_id=$1 AND record_id=$2", f.app, record).Scan(&fences); e != nil || fences != 1 {
+				t.Fatalf("unknown start lost fence: %d %v", fences, e)
+			}
+			if e := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_commands WHERE command_json->>'AppID'=$1 AND command_json->>'RecordID'=$2", f.app, record).Scan(&commands); e != nil || commands != 1 {
+				t.Fatalf("unknown start command count: %d %v", commands, e)
+			}
+			if _, e := f.owner.Exec(f.ctx, "UPDATE applications.workflow_dispatch d SET next_attempt_at=clock_timestamp()-interval '1 second' FROM applications.workflow_commands c WHERE c.command_id=d.command_id AND c.command_json->>'AppID'=$1", f.app); e != nil {
+				t.Fatal(e)
+			}
+			worker = &we.Worker{AdmitStart: service.NewStartAdmitter(), Pool: f.runtime, Client: transport, RPCTimeout: 20 * time.Second, Limits: service.Limits}
+			recovered = true
+			continue
 		}
 		if !worked {
 			break
 		}
+	}
+	if loseReply && (!recovered || transport.executions != 1 || transport.lookups < 2) {
+		t.Fatalf("recovery did not reuse original start: recovered=%v executions=%d lookups=%d", recovered, transport.executions, transport.lookups)
 	}
 	for _, flow := range flows {
 		f.flow = flow
@@ -149,7 +172,8 @@ func rootPublicTriggerJavaContract(t *testing.T, twoFlows, closeAfterCreate bool
 }
 
 // This case uses the actual configured BFF host lifecycle, not an injected
-// test worker. The isolated Java process authenticates the internal RPC.
+// test worker. The native fixture also authenticates internal RPC; the existing
+// Docker transport fixture remains on its isolated, unpublished test network.
 func TestRootRecordTriggerJavaHostRunsStartAdmission(t *testing.T) {
 	target := os.Getenv("WEAVEOS_RPC_TEST_TARGET")
 	token := os.Getenv("WEAVEOS_NATIVE_FIXTURE_TOKEN")
