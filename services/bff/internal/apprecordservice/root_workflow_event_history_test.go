@@ -119,6 +119,7 @@ func TestRootEventHistoryAuthorityAndResourceIsolation(t *testing.T) {
 		t.Fatal("other record inherited events", r)
 	}
 	q.RecordID = f.ownRecord
+	eventSQL(t, f, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.read')", f.app)
 	eventSQL(t, f, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.read'", f.app)
 	if _, e := f.service.ReadWorkflowEventHistory(f.ctx, f.principal, q); !errors.Is(e, applications.ErrMissing) {
 		t.Fatal("revoked actor read events", e)
