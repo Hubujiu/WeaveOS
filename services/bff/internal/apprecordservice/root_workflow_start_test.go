@@ -37,7 +37,7 @@ func rootStartIntent(t *testing.T, f recordFixture, approver string) (string, st
 func rootStartCommand(t *testing.T, f recordFixture, instance string) (fc.Command, fc.ExecutionPayload) {
 	t.Helper()
 	var raw, payload []byte
-	if err := f.owner.QueryRow(f.ctx, "SELECT command_json,execution_payload FROM applications.workflow_commands WHERE protocol_version=2 AND command_json->>'InstanceID'=$1 AND command_json->>'Action'='start'", instance).Scan(&raw, &payload); err != nil {
+	if err := f.owner.QueryRow(f.ctx, "SELECT command_json,execution_payload FROM applications.workflow_commands WHERE command_json->>'ProtocolVersion'='2' AND command_json->>'InstanceID'=$1 AND command_json->>'Action'='start'", instance).Scan(&raw, &payload); err != nil {
 		t.Fatal(err)
 	}
 	var command fc.Command
