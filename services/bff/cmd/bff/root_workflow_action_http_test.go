@@ -384,10 +384,11 @@ func TestRootWorkflowActionHTTPClosedBodyAndExactRoutes(t *testing.T) {
 	}
 }
 func TestRootWorkflowActionHTTPStaleBasisRequiresRefresh(t *testing.T) {
-	f := rootHTTPTaskSetup(t)
+	f := rootHTTPTaskSetupEditable(t, true)
 	preview := rootHTTPData(t, f.call(t, "GET", f.taskPath(), "", nil), 200)
 	token := rootHTTPString(t, preview, "basisToken")
-	rootHTTPData(t, f.call(t, "PATCH", f.root(), `{"operationId":"`+f.id(t)+`","expectedSchemaVersion":1,"expectedRecordVersion":1,"changes":{"`+f.field+`":"changed after viewing"}}`, nil), 200)
+	// An authorized node Save changes the record; ordinary PATCH is read-only.
+	rootHTTPData(t, f.call(t, "PATCH", f.taskPath()+"/record", rootHTTPSaveBody(f.id(t), token, f.field, "changed after viewing"), nil), 200)
 	rootHTTPError(t, f.call(t, "POST", f.taskPath()+"/actions", rootHTTPActionBody(f.id(t), "agree", token), nil), 409, "WORKFLOW_BASIS_CHANGED")
 	rootHTTPError(t, f.call(t, "POST", f.taskPath()+"/actions", rootHTTPActionBody(f.id(t), "agree", strings.Repeat("A", 43)), nil), 409, "WORKFLOW_BASIS_EXPIRED")
 	fresh := rootHTTPData(t, f.call(t, "GET", f.taskPath(), "", nil), 200)

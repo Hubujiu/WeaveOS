@@ -71,6 +71,8 @@ func failure(w http.ResponseWriter, r *http.Request, e error, operation string) 
 	status, code, data := 503, "COMMON_SERVICE_UNAVAILABLE", any(nil)
 	var domain *appstructure.Error
 	switch {
+	case errors.Is(e, apprecordservice.ErrWorkflowRecordReadOnly):
+		status, code = 409, "WORKFLOW_RECORD_READ_ONLY"
 	case errors.Is(e, apprecordservice.ErrWorkflowTaskChanged):
 		status, code = 409, "WORKFLOW_TASK_CHANGED"
 	case errors.Is(e, apprecordservice.ErrWorkflowBasisChanged):

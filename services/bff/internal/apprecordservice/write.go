@@ -65,6 +65,28 @@ func (a recordAuthorization) Check(_ context.Context, _ pgx.Tx, action, owner st
 	return applications.ErrDenied
 }
 
+// ordinaryEditAuthorization is used only by the ordinary record endpoint.
+// Writer invokes it after locking and validating the actual row, including for
+// empty PATCHes. A node Save retains its separate task/whitelist authorization.
+type ordinaryEditAuthorization struct {
+	recordAuthorization
+	appID, tableID, recordID string
+}
+
+func (a ordinaryEditAuthorization) Check(ctx context.Context, tx pgx.Tx, action, owner string, ids []string) error {
+	if err := a.recordAuthorization.Check(ctx, tx, action, owner, ids); err != nil {
+		return err
+	}
+	var inFlight bool
+	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM applications.workflow_instances WHERE app_id=$1 AND table_id=$2 AND record_id=$3 AND state IN ('starting','active'))", a.appID, a.tableID, a.recordID).Scan(&inFlight); err != nil {
+		return err
+	}
+	if inFlight {
+		return ErrWorkflowRecordReadOnly
+	}
+	return nil
+}
+
 type recordAudit struct{ port appstructure.RecordAudit }
 
 func (a recordAudit) Append(ctx context.Context, tx pgx.Tx, result apprecords.MutationResult, kind string, ids []string) error {
@@ -506,7 +528,7 @@ func (s *Service) Edit(ctx context.Context, principal session.Principal, req Edi
 		return result, fmt.Errorf("apply edit: %w", err)
 	}
 	var actuallyChanged bool
-	writer := apprecords.Writer{Gate: appstructure.RecordGate{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID}, Authorization: recordAuthorization{policy: policy}, Fence: appstructure.RecordFence{AppID: req.AppID, TableID: facts.TableID}, Audit: recordAudit{port: appstructure.RecordAudit{Context: facts, OperationID: req.OperationID, BeforeRecordVersion: req.ExpectedRecordVersion, Metadata: metadata}}, DML: controlledDML{actualChange: &actuallyChanged}}
+	writer := apprecords.Writer{Gate: appstructure.RecordGate{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID}, Authorization: ordinaryEditAuthorization{recordAuthorization: recordAuthorization{policy: policy}, appID: req.AppID, tableID: facts.TableID, recordID: req.RecordID}, Fence: appstructure.RecordFence{AppID: req.AppID, TableID: facts.TableID}, Audit: recordAudit{port: appstructure.RecordAudit{Context: facts, OperationID: req.OperationID, BeforeRecordVersion: req.ExpectedRecordVersion, Metadata: metadata}}, DML: controlledDML{actualChange: &actuallyChanged}}
 	stored, err := writer.EditInTx(ctx, write.Tx(), apprecords.Table{AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID, Namespace: "appdata", SchemaVersion: facts.SchemaVersion, Ready: facts.SchemaReady, ActiveFieldIDs: active}, apprecords.Edit{OperationID: req.OperationID, ID: req.RecordID, ActorID: facts.Actor.ID, ExpectedSchemaVersion: req.ExpectedSchemaVersion, ExpectedRecordVersion: req.ExpectedRecordVersion, Changes: values})
 	if err != nil {
 		return result, fmt.Errorf("apply edit: %w", err)

@@ -7886,7 +7886,7 @@
             }
           },
           "409": {
-            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values; WORKFLOW_RECORD_READ_ONLY when this record has a starting or active workflow. Ordinary edits, including empty changes, are blocked; authorized task Save is separate. Confirmed operation replay returns its original receipt.",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/RequestId"
@@ -20792,7 +20792,8 @@
                   "APPLICATION_QUERY_CHANGED",
                   "APPLICATION_QUERY_CONTEXT_EXPIRED",
                   "APPLICATION_DRAFT_CONFLICT",
-                  "APPLICATION_DRAFT_BASE_CONFLICT"
+                  "APPLICATION_DRAFT_BASE_CONFLICT",
+                  "WORKFLOW_RECORD_READ_ONLY"
                 ]
               },
               "data": {

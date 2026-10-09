@@ -1,0 +1,146 @@
+diff --git a/contracts/application-records.contract.test.mjs b/contracts/application-records.contract.test.mjs
+index 77e9b88..1006d80 100644
+--- a/contracts/application-records.contract.test.mjs
++++ b/contracts/application-records.contract.test.mjs
+@@ -59,3 +59,10 @@ test('runtime and history expose only frozen safe DTO and record errors',()=>{
+  assert.ok(schema.ApplicationDataGrant.properties.action.enum.includes('data.history'));
+  assert.ok(schema.SchemaDependency.properties.kind.enum.includes('data_grant'),'field removal must report the actual grant dependency');
+ });
++test('FLOW07 ordinary edits of in-flight records have a registered read-only conflict',()=>{
++ assert.equal(codes.WORKFLOW_RECORD_READ_ONLY?.httpStatus,409);
++ assert.equal(codes.WORKFLOW_RECORD_READ_ONLY?.public,true);
++ assert.ok(schema.RecordErrorEnvelope.allOf[1].properties.code.enum.includes('WORKFLOW_RECORD_READ_ONLY'));
++ const op=api.paths['/api/v1/applications/{appId}/forms/{viewId}/records/{recordId}'].patch;
++ assert.match(op.responses['409'].description,/WORKFLOW_RECORD_READ_ONLY/);
++});
+diff --git a/docs/tasks/V030-044.md b/docs/tasks/V030-044.md
+index 75da4ce..5d0524b 100644
+--- a/docs/tasks/V030-044.md
++++ b/docs/tasks/V030-044.md
+@@ -1,7 +1,7 @@
+ # V030-044 · 记录触发与并行流程
+ 
+ <!-- task-meta
+-{"id": "V030-044", "title": "记录触发与并行流程", "branch": "task/V030-044-record-triggers", "worktree": "../WeaveOS-worktrees/V030-044", "pr": 69, "owner": "主助手在自己的环境直接计划、编写、测试和验收；不委派", "dependsOn": ["V030-041"], "allowedPaths": ["services/workflow-engine/action_ci_gate.py", "services/workflow-engine/action_ci_gate_tests.py", "services/workflow-engine/run-action-interop.mjs", "services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRpcFixtureMain.java", ".github/workflows/ci.yml","services/bff/cmd/bff/root_workflow_action_http_test.go","services/bff/internal/applications/workflow_context.go", "services/bff/internal/apprecordservice/workflow_start.go", "services/bff/internal/apprecordservice/root_workflow_start_test.go", "services/bff/internal/apprecordservice/evidence_capture.go", "services/bff/internal/workflowexecution/worker.go", "services/bff/cmd/bff/config.go","services/bff/cmd/bff/root_record_triggers_java_test.go","services/bff/cmd/bff/root_record_triggers_http_test.go", "services/bff/internal/apprecordservice/write.go", "services/bff/internal/apprecordservice/workflow_triggers.go", "services/bff/internal/workflowcatalog/record_triggers.go", "services/bff/internal/apprecordservice/root_record_triggers_test.go", "services/bff/internal/workflowcatalog/trigger_reservation.go", "services/bff/internal/apprecordservice/root_workflow_trigger_reservation_test.go", "docs/tasks/V030-044.md", "docs/tasks/index.md", "docs/evidence/V030-044/", "services/bff/internal/workflowcatalog/", "services/bff/internal/appworkflows/", "services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go", "services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go", "services/bff/internal/persistence/workflow_trigger_configuration_test.go", "db/migrations/00024_workflow_trigger_configuration.sql", "contracts/openapi/openapi.json", "contracts/workflow-trigger-configuration.contract.test.mjs", "infra/runtime/roles.sql", "infra/runtime/backup.test.mjs", "infra/server/deploy/compatibility.json"], "deliveryState": "in_progress"}
++{"id": "V030-044", "title": "记录触发与并行流程", "branch": "task/V030-044-record-triggers", "worktree": "../WeaveOS-worktrees/V030-044", "pr": 69, "owner": "主助手在自己的环境直接计划、编写、测试和验收；不委派", "dependsOn": ["V030-041"], "allowedPaths": ["contracts/application-records.contract.test.mjs", "contracts/errors/codes.json","services/bff/internal/apprecordservice/root_workflow_readonly_test.go", "services/bff/internal/apprecordservice/root_workflow_action_test.go", "services/bff/internal/apprecordhttp/http.go","services/workflow-engine/action_ci_gate.py", "services/workflow-engine/action_ci_gate_tests.py", "services/workflow-engine/run-action-interop.mjs", "services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRpcFixtureMain.java", ".github/workflows/ci.yml","services/bff/cmd/bff/root_workflow_action_http_test.go","services/bff/internal/applications/workflow_context.go", "services/bff/internal/apprecordservice/workflow_start.go", "services/bff/internal/apprecordservice/root_workflow_start_test.go", "services/bff/internal/apprecordservice/evidence_capture.go", "services/bff/internal/workflowexecution/worker.go", "services/bff/cmd/bff/config.go","services/bff/cmd/bff/root_record_triggers_java_test.go","services/bff/cmd/bff/root_record_triggers_http_test.go", "services/bff/internal/apprecordservice/write.go", "services/bff/internal/apprecordservice/workflow_triggers.go", "services/bff/internal/workflowcatalog/record_triggers.go", "services/bff/internal/apprecordservice/root_record_triggers_test.go", "services/bff/internal/workflowcatalog/trigger_reservation.go", "services/bff/internal/apprecordservice/root_workflow_trigger_reservation_test.go", "docs/tasks/V030-044.md", "docs/tasks/index.md", "docs/evidence/V030-044/", "services/bff/internal/workflowcatalog/", "services/bff/internal/appworkflows/", "services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go", "services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go", "services/bff/internal/persistence/workflow_trigger_configuration_test.go", "db/migrations/00024_workflow_trigger_configuration.sql", "contracts/openapi/openapi.json", "contracts/workflow-trigger-configuration.contract.test.mjs", "infra/runtime/roles.sql", "infra/runtime/backup.test.mjs", "infra/server/deploy/compatibility.json"], "deliveryState": "in_progress"}
+ -->
+ 
+ ## Sources
+@@ -85,3 +85,10 @@ PRD、ADR 及数据设计 P2c 已追加并读回冻结合同。triggers 数组
+ - 最新六包race501顶层/227子例通过，0失败/跳过；其中新增接受器8项含并发唯一、失活发起人恢复、撤权/恢复、own外部记录拒绝、空系统mask、最新记录及提交故障全回滚。Node512、go vet、Java test-compile、源格式/范围及Gitleaks通过。本地无Docker，不把本地5例当作CI完整8例运行。
+ - 如实保留中间失败：直接typed-table FOR UPDATE缺少权限，改用原有owner capability，未扩大角色；stored graph的JSON null归一化修正；旧record-only测试夹具缺default/maxLength改为既有真实capture夹具；撤权夹具先删FK子项；首次全回归受新测试未隔离的pending dispatch干扰，复用现有私有夹具到期隔离后原队列断言与全回归通过。
+ - 手动按钮的角色/历史边界已在PRD记为待答，提问Sentinel_fb5e01cd4b708191bdd082343d76bb4c；未暗定。返工重提、重审及其它后端缺口仍未完成，PR继续draft；接下来推送此已测检查点并核对精确CI，同时继续已明确范围。
++
++## 第五切片：已确认的在途普通编辑只读
++FLOW07/08对应最小门禁PLAN已同步三页并读回；先亲写starting/active真实DB和HTTPS拒绝测试，节点Save/终态/其它记录保留。手动按钮产品问题仍待答，不影响此既定默认规则。
++
++## 手动边界已确认与第五切片审查
++用户Sentinel_eb82c0933ff48191a7766fa19997982a于10:10明确答复“可以”：创建人首次手动发起，已有同流程历史后按原发起人重提／原图节点审批人重审；三页正文已同步并读回，先前待答解除。
++第五切片真实starting/active与HTTP RED后实现。首轮focused暴露旧审批测试用普通Edit制造并改，改用真实授权Node Save，保持原旧依据拒绝和零审批副作用断言；focused30顶层/22子例通过。完整六包回归又发现HTTP旧依据夹具相同假设，改为已存在正式节点Save HTTP；不是放宽预期。审查发现空PATCH绕过DML门禁，追加明确真实RED测试及错误契约RED后移动到普通编辑专属授权适配器。此前失败日志保留。
+diff --git a/services/bff/cmd/bff/root_record_triggers_http_test.go b/services/bff/cmd/bff/root_record_triggers_http_test.go
+index 5860d04..522ba0e 100644
+--- a/services/bff/cmd/bff/root_record_triggers_http_test.go
++++ b/services/bff/cmd/bff/root_record_triggers_http_test.go
+@@ -74,3 +74,12 @@ func TestRootRecordTriggersHTTPSEditSameValueThenChanged(t *testing.T) {
+ 	rootHTTPData(t, f.call(t, "PATCH", path, string(bytes), nil), 200)
+ 	rootHTTPTriggerCount(t, f, f.record, 1)
+ }
++
++func TestRootRecordTriggersHTTPSOrdinaryEditIsReadOnlyWhileStarting(t *testing.T) {
++	f := rootHTTPTriggerSetup(t)
++	path := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/records"
++	created := rootHTTPData(t, f.call(t, "POST", path, `{"operationId":"`+f.id(t)+`","expectedSchemaVersion":1,"values":{"`+f.field+`":"submitted"}}`, nil), 201)
++	record := rootHTTPString(t, created, "id")
++	raw := `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"expectedRecordVersion":1,"changes":{"` + f.field + `":"ordinary bypass"}}`
++	rootHTTPError(t, f.call(t, "PATCH", path+"/"+record, raw, nil), 409, "WORKFLOW_RECORD_READ_ONLY")
++}
+diff --git a/services/bff/internal/apprecordservice/root_workflow_readonly_test.go b/services/bff/internal/apprecordservice/root_workflow_readonly_test.go
+new file mode 100644
+index 0000000..e01b601
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/root_workflow_readonly_test.go
+@@ -0,0 +1,63 @@
++package apprecordservice
++
++import (
++	"errors"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	"testing"
++)
++
++func TestRootOrdinaryEditRejectsInFlightWorkflow(t *testing.T) {
++	for _, state := range []string{"starting", "active"} {
++		t.Run(state, func(t *testing.T) {
++			f := rootCaptureSetup(t).recordFixture
++			instance, record := rootStartIntent(t, f, f.actor)
++			// Pure application policy fixture; actual engine states are tested separately.
++			if _, err := f.owner.Exec(f.ctx, "UPDATE applications.workflow_instances SET state=$2 WHERE id=$1", instance, state); err != nil {
++				t.Fatal(err)
++			}
++			req := EditRequest{AppID: f.app, ViewID: f.view, RecordID: record, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "forbidden ordinary change"}}
++			result, err := f.service.Edit(f.ctx, f.principal, req, applications.Metadata{RequestID: "in-flight-read-only"})
++			if !errors.Is(err, ErrWorkflowRecordReadOnly) || result.RecordVersion != 0 {
++				t.Fatalf("ordinary editor bypassed workflow: %+v %v", result, err)
++			}
++			var n int
++			if err = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE app_id=$1 AND operation_id=$2", f.app, req.OperationID).Scan(&n); err != nil || n != 0 {
++				t.Fatalf("failed edit receipt committed %d %v", n, err)
++			}
++		})
++	}
++}
++func TestRootOrdinaryEditOtherRecordAndTerminalRemainEditable(t *testing.T) {
++	for _, terminal := range []bool{false, true} {
++		t.Run(map[bool]string{false: "other_record", true: "completed"}[terminal], func(t *testing.T) {
++			f := rootCaptureSetup(t).recordFixture
++			instance, record := rootStartIntent(t, f, f.actor)
++			if terminal {
++				if _, err := f.owner.Exec(f.ctx, "UPDATE applications.workflow_instances SET state='completed' WHERE id=$1", instance); err != nil {
++					t.Fatal(err)
++				}
++			} else {
++				record = f.ownRecord
++			}
++			req := EditRequest{AppID: f.app, ViewID: f.view, RecordID: record, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "allowed ordinary change"}}
++			result, err := f.service.Edit(f.ctx, f.principal, req, applications.Metadata{RequestID: "outside-in-flight"})
++			if err != nil || result.RecordVersion != 2 {
++				t.Fatalf("unrelated or terminal record blocked %+v %v", result, err)
++			}
++		})
++	}
++}
++
++func TestRootOrdinaryEditEmptyPatchCannotWriteReceiptWhileInFlight(t *testing.T) {
++	f := rootCaptureSetup(t).recordFixture
++	_, record := rootStartIntent(t, f, f.actor)
++	req := EditRequest{AppID: f.app, ViewID: f.view, RecordID: record, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{}}
++	got, err := f.service.Edit(f.ctx, f.principal, req, applications.Metadata{RequestID: "empty-in-flight"})
++	if !errors.Is(err, ErrWorkflowRecordReadOnly) || got.RecordVersion != 0 {
++		t.Fatalf("empty edit bypassed readonly: %+v %v", got, err)
++	}
++	var n int
++	if err = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE app_id=$1 AND operation_id=$2", f.app, req.OperationID).Scan(&n); err != nil || n != 0 {
++		t.Fatalf("empty edit committed receipt %d %v", n, err)
++	}
++}
+diff --git a/services/bff/internal/apprecordservice/workflow_triggers.go b/services/bff/internal/apprecordservice/workflow_triggers.go
+index ca94a17..1dfaa64 100644
+--- a/services/bff/internal/apprecordservice/workflow_triggers.go
++++ b/services/bff/internal/apprecordservice/workflow_triggers.go
+@@ -3,6 +3,7 @@ package apprecordservice
+ import (
+ 	"context"
+ 	"encoding/json"
++	"errors"
+ 	"strings"
+ 
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
+@@ -12,6 +13,8 @@ import (
+ 	"github.com/jackc/pgx/v5"
+ )
+ 
++var ErrWorkflowRecordReadOnly = errors.New("record is read-only while workflow is in flight")
++
+ func retainRecordTriggers(ctx context.Context, tx pgx.Tx, facts applications.RecordContext, stored apprecords.MutationResult, event string) error {
+ 	_, err := (workflowcatalog.Catalog{}).ReserveRecordTriggersInTx(ctx, tx, workflowcatalog.RecordTriggerInput{
+ 		AppID: facts.App.ID, TableID: facts.TableID, ViewID: facts.ViewID, RecordID: stored.ID, ActorID: facts.Actor.ID, Event: event,
