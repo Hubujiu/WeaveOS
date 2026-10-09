@@ -1,0 +1,68 @@
+diff --git a/services/workflow-engine/schema/migrations/00002_flow_deletion_guards.sql b/services/workflow-engine/schema/migrations/00002_flow_deletion_guards.sql
+new file mode 100644
+index 00000000..91a6e217
+--- /dev/null
++++ b/services/workflow-engine/schema/migrations/00002_flow_deletion_guards.sql
+@@ -0,0 +1,62 @@
++-- V030-067: stop/drain old engine processes before this explicit upgrade.
++-- Keep 00001 and original deployment/execution facts byte-for-byte unchanged.
++-- +goose Up
++-- +goose StatementBegin
++DO $$
++BEGIN
++ IF EXISTS (SELECT 1 FROM wf_deployments WHERE app_id='00000000-0000-0000-0000-000000000000'::uuid OR flow_id='00000000-0000-0000-0000-000000000000'::uuid)
++ OR EXISTS (SELECT 1 FROM wf_execution_instances WHERE app_id='00000000-0000-0000-0000-000000000000'::uuid OR flow_id='00000000-0000-0000-0000-000000000000'::uuid) THEN
++  RAISE EXCEPTION 'legacy flow identity is invalid' USING ERRCODE='23514';
++ END IF;
++END;
++$$;
++-- +goose StatementEnd
++CREATE TABLE wf_flow_deletion_guards (
++ app_id uuid NOT NULL,
++ flow_id uuid NOT NULL,
++ retired boolean NOT NULL DEFAULT false,
++ operation_id uuid,
++ deleted_versions bigint,
++ deleted_at timestamptz,
++ created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
++ CONSTRAINT pk_wf_flow_deletion_guards PRIMARY KEY(app_id,flow_id),
++ CONSTRAINT uq_wf_flow_deletion_operation UNIQUE(operation_id),
++ CONSTRAINT ck_wf_flow_deletion_identity CHECK(app_id<>'00000000-0000-0000-0000-000000000000'::uuid AND flow_id<>'00000000-0000-0000-0000-000000000000'::uuid),
++ CONSTRAINT ck_wf_flow_deletion_operation CHECK(operation_id IS NULL OR operation_id<>'00000000-0000-0000-0000-000000000000'::uuid),
++ CONSTRAINT ck_wf_flow_deletion_result CHECK(
++  (NOT retired AND operation_id IS NULL AND deleted_versions IS NULL AND deleted_at IS NULL)
++  OR (retired AND operation_id IS NOT NULL AND deleted_versions IS NOT NULL AND deleted_versions BETWEEN 0 AND 9007199254740991 AND deleted_at IS NOT NULL))
++);
++INSERT INTO wf_flow_deletion_guards(app_id,flow_id)
++ SELECT app_id,flow_id FROM wf_deployments UNION SELECT app_id,flow_id FROM wf_execution_instances;
++-- +goose StatementBegin
++CREATE FUNCTION wf_flow_deletion_guard_immutable() RETURNS trigger
++ LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog AS $$
++BEGIN
++ IF TG_OP='INSERT' THEN
++  IF NEW.retired THEN RAISE EXCEPTION 'flow identity must be established live' USING ERRCODE='23514'; END IF;
++ ELSE
++  IF OLD.retired OR NEW.app_id IS DISTINCT FROM OLD.app_id OR NEW.flow_id IS DISTINCT FROM OLD.flow_id OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
++   RAISE EXCEPTION 'flow deletion identity is immutable' USING ERRCODE='55000';
++  END IF;
++ END IF;
++ RETURN NEW;
++END;
++$$;
++-- +goose StatementEnd
++REVOKE ALL ON FUNCTION wf_flow_deletion_guard_immutable() FROM PUBLIC;
++CREATE TRIGGER wf_flow_deletion_guard_immutable BEFORE INSERT OR UPDATE ON wf_flow_deletion_guards
++ FOR EACH ROW EXECUTE FUNCTION wf_flow_deletion_guard_immutable();
++
++-- +goose Down
++-- +goose StatementBegin
++DO $$
++BEGIN
++ IF EXISTS(SELECT 1 FROM wf_flow_deletion_guards WHERE retired) THEN
++  RAISE EXCEPTION 'retired flow identity prevents downgrade' USING ERRCODE='55000';
++ END IF;
++END;
++$$;
++-- +goose StatementEnd
++DROP TABLE wf_flow_deletion_guards;
++DROP FUNCTION wf_flow_deletion_guard_immutable();
