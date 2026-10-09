@@ -219,3 +219,22 @@ func TestRootTriggerConfigurationDownGuard(t *testing.T) {
 		})
 	}
 }
+
+// A storage failure is retryable infrastructure failure, not a valid snapshot
+// whose product configuration happened to be incompatible.
+func TestRootTriggerConfigurationPublicationPropagatesStorageFailure(t *testing.T) {
+	f := newRecordFixture(t)
+	h := rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
+	tx, err := f.owner.Begin(f.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(f.ctx)
+	if _, err = tx.Exec(f.ctx, "ALTER TABLE applications.workflow_versions RENAME COLUMN triggers_json TO unavailable_trigger_fixture"); err != nil {
+		t.Fatal(err)
+	}
+	_, err = (workflowcatalog.Catalog{}).PublicationVersionInTx(f.ctx, tx, f.app, h.FlowID, 1)
+	if err == nil {
+		t.Fatal("storage failure was silently returned as an incompatible publication snapshot")
+	}
+}
