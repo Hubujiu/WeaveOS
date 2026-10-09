@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/json"
+	ars "github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
 	wc "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
 	we "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowexecution"
@@ -108,7 +109,8 @@ func rootPublicTriggerJavaContract(t *testing.T, twoFlows, closeAfterCreate bool
 			return err
 		})
 	}
-	worker := &we.Worker{Pool: f.runtime, Client: client, RPCTimeout: 20 * time.Second, Limits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}}
+	service := &ars.Service{Pool: f.runtime, Limits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}}
+	worker := &we.Worker{AdmitStart: service.NewStartAdmitter(), Pool: f.runtime, Client: client, RPCTimeout: 20 * time.Second, Limits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}}
 	// Drain the current runtime path until idle, without fabricating a start ledger entry.
 	for {
 		worked, err := worker.DispatchOne(f.ctx)

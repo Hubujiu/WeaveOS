@@ -21,6 +21,7 @@ type ExecutionClient interface {
 	Execute(context.Context, flowcommands.Command, flowcommands.ExecutionPayload) (*workflowrpc.ExecutionConfirmed, error)
 }
 type Worker struct {
+	AdmitStart func(context.Context) (bool, error)
 	Pool       *pgxpool.Pool
 	Client     ExecutionClient
 	RPCTimeout time.Duration
