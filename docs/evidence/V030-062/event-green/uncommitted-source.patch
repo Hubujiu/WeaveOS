@@ -1,0 +1,180 @@
+diff --git a/services/bff/internal/apprecordservice/workflow_event.go b/services/bff/internal/apprecordservice/workflow_event.go
+index e802789..e44b3b6 100644
+--- a/services/bff/internal/apprecordservice/workflow_event.go
++++ b/services/bff/internal/apprecordservice/workflow_event.go
+@@ -1,9 +1,20 @@
+ package apprecordservice
+ 
+ import (
++	"bytes"
+ 	"context"
++	"crypto/sha256"
+ 	"encoding/json"
++	"errors"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appaccess"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
++	fc "github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
++	ev "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowevidence"
++	"github.com/jackc/pgx/v5"
++	"strings"
++	"time"
+ )
+ 
+ type WorkflowEventRequest struct{ AppID, ViewID, RecordID, EventID string }
+@@ -42,5 +53,153 @@ type WorkflowEventResult struct {
+ }
+ 
+ func (s *Service) ReadWorkflowEvent(ctx context.Context, p session.Principal, q WorkflowEventRequest) (WorkflowEventResult, error) {
+-	return WorkflowEventResult{}, ErrUnavailable
++	empty := WorkflowEventResult{}
++	if s == nil || s.Pool == nil {
++		return empty, ErrUnavailable
++	}
++	if captureNilPort(ctx) {
++		return empty, applications.ErrInvalid
++	}
++	for _, id := range []string{q.AppID, q.ViewID, q.RecordID, q.EventID} {
++		if !workflowID(id) {
++			return empty, applications.ErrInvalid
++		}
++	}
++	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
++	defer cancel()
++	tx, facts, err := (&applications.Application{Pool: s.Pool}).BeginRecordRead(ctx, p, q.AppID, q.ViewID)
++	if err != nil {
++		return empty, err
++	}
++	defer tx.Rollback(context.Background())
++	policy, menu := policyFor(facts)
++	if !menu {
++		return empty, applications.ErrDenied
++	}
++	if policy.VisibleScope() == appaccess.None {
++		return empty, applications.ErrMissing
++	}
++	if !facts.SchemaReady {
++		return empty, &appstructure.Error{Code: "APPLICATION_SCHEMA_NOT_READY"}
++	}
++	_, currentIDs, err := fieldsInContext(facts)
++	if err != nil {
++		return empty, ErrUnavailable
++	}
++	var creator string
++	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(facts.TableID, "-", "")}.Sanitize()
++	err = tx.QueryRow(ctx, "SELECT created_by::text FROM "+relation+" WHERE id=$1::uuid", q.RecordID).Scan(&creator)
++	if errors.Is(err, pgx.ErrNoRows) {
++		return empty, applications.ErrMissing
++	}
++	if err != nil {
++		return empty, ErrUnavailable
++	}
++	full := facts.Actor.BootstrapAdmin || facts.Actor.ID == facts.App.OwnerUserID
++	if len(policy.ReadFields(creator, currentIDs)) == 0 && !full {
++		return empty, applications.ErrMissing
++	}
++	if policy.HistoryScope() == appaccess.None || len(policy.HistoryFields(creator, currentIDs)) == 0 && !full {
++		return empty, applications.ErrDenied
++	}
++	result, err := readWorkflowEventInTx(ctx, tx, facts, q, creator, policy, currentIDs, full)
++	if err != nil {
++		return empty, err
++	}
++	if err = tx.Commit(ctx); err != nil {
++		return empty, ErrUnavailable
++	}
++	return result, nil
++}
++
++func readWorkflowEventInTx(ctx context.Context, tx pgx.Tx, facts applications.RecordContext, q WorkflowEventRequest, creator string, policy appaccess.Policy, currentIDs []string, full bool) (WorkflowEventResult, error) {
++	empty := WorkflowEventResult{}
++	out := WorkflowEventResult{Basis: WorkflowEventBasis{Status: "unavailable", Fields: []WorkflowHistoricalField{}}}
++	e := &out.Event
++	var sourceView, proof string
++	var definitionVersion int64
++	var occurred time.Time
++	var hash, payloadRaw, resultRaw []byte
++	err := tx.QueryRow(ctx, `SELECT e.command_id::text,e.instance_id::text,i.flow_id::text,i.view_id::text,
++ i.definition_version,e.actor_id::text,e.action,e.outcome,e.sequence,e.schema_version,e.record_version,
++ e.created_at,e.evidence_hash,e.payload_bytes,e.result_bytes,e.proof_id::text
++ FROM applications.workflow_execution_events e JOIN applications.workflow_instances i ON i.app_id=e.app_id AND i.id=e.instance_id
++ WHERE e.app_id=$1::uuid AND e.command_id=$2::uuid AND i.table_id=$3::uuid AND i.record_id=$4::uuid`, q.AppID, q.EventID, facts.TableID, q.RecordID).Scan(
++		&e.ID, &e.InstanceID, &e.FlowID, &sourceView, &definitionVersion, &e.ActorID, &e.Action, &e.Outcome, &e.Sequence, &e.SchemaVersion, &e.RecordVersion, &occurred, &hash, &payloadRaw, &resultRaw, &proof)
++	if errors.Is(err, pgx.ErrNoRows) {
++		return empty, applications.ErrMissing
++	}
++	if err != nil {
++		return empty, ErrUnavailable
++	}
++	entry, err := (fc.Ledger{Namespace: "applications"}).GetInTx(ctx, tx, q.EventID)
++	if err != nil {
++		return empty, ErrUnavailable
++	}
++	c, r := entry.Command, entry.Receipt
++	if c.ProtocolVersion != 2 || c.AppID != q.AppID || c.TableID != facts.TableID || c.ViewID != sourceView || c.RecordID != q.RecordID || c.InstanceID != e.InstanceID || c.FlowID != e.FlowID || c.DefinitionVersion != definitionVersion || c.ActorID != e.ActorID || c.Action != e.Action || c.SchemaVersion != e.SchemaVersion || c.RecordVersion != e.RecordVersion || r == nil || entry.State != e.Outcome || r.Outcome != e.Outcome || r.Sequence != e.Sequence || r.ProofID != proof || len(hash) != 32 || occurred.IsZero() {
++		return empty, ErrUnavailable
++	}
++	if sha256.Sum256(payloadRaw) != c.PayloadHash {
++		return empty, ErrUnavailable
++	}
++	payload, err := fc.DecodeExecutionPayload(c.Action, payloadRaw)
++	if err != nil || !bytes.Equal(hash, payload.EvidenceHash[:]) {
++		return empty, ErrUnavailable
++	}
++	if _, err = fc.DecodeExecutionResult(c, *r, resultRaw); err != nil {
++		return empty, ErrUnavailable
++	}
++	if c.TaskID != "" {
++		var node string
++		err = tx.QueryRow(ctx, `SELECT node_id::text FROM applications.workflow_tasks WHERE app_id=$1 AND instance_id=$2 AND id=$3 AND assignee_id=$4 AND activation_epoch=$5`, q.AppID, c.InstanceID, c.TaskID, c.ActorID, c.TaskEpoch).Scan(&node)
++		if err != nil || !workflowID(node) {
++			return empty, ErrUnavailable
++		}
++		e.NodeID = &node
++	}
++	if c.TargetNodeID != "" {
++		node := c.TargetNodeID
++		e.TargetNodeID = &node
++	}
++	e.OccurredAt = occurred.UTC().Format(time.RFC3339Nano)
++	store := ev.Store{}
++	m, err := store.ManifestInTx(ctx, tx, q.AppID, payload.EvidenceHash)
++	if errors.Is(err, ev.ErrMissing) {
++		return out, nil
++	}
++	if err != nil {
++		return empty, ErrUnavailable
++	}
++	h := m.Header
++	if h.AppID != q.AppID || h.TableID != facts.TableID || h.ViewID != sourceView || h.RecordID != q.RecordID || h.CreatedBy != creator || h.SchemaVersion != e.SchemaVersion || h.RecordVersion != e.RecordVersion {
++		return empty, ErrUnavailable
++	}
++	current := make(map[string]bool, len(currentIDs))
++	for _, id := range currentIDs {
++		current[id] = true
++	}
++	eligible := make([]string, 0, len(m.VisibleFieldIDs))
++	for _, id := range m.VisibleFieldIDs {
++		if full || current[id] {
++			eligible = append(eligible, id)
++		}
++	}
++	ids := policy.HistoryFields(creator, eligible)
++	fields, err := store.FieldsInTx(ctx, tx, q.AppID, payload.EvidenceHash, ids)
++	if err != nil {
++		return empty, ErrUnavailable
++	}
++	out.Basis.Status = "available"
++	for _, f := range fields {
++		v := WorkflowHistoricalField{FieldID: f.Definition.ID, FieldName: f.Definition.Name, FieldKind: f.Definition.Kind, Value: f.Value, ValueLabels: map[string]WorkflowHistoricalLabel{}}
++		if f.Reference != nil {
++			v.ValueLabels[f.Reference.ID] = WorkflowHistoricalLabel{Label: f.Reference.Label, Deleted: f.Reference.Deleted}
++		}
++		for _, label := range f.OptionDisplays {
++			v.ValueLabels[label.ID] = WorkflowHistoricalLabel{Label: label.Label, Deleted: label.Deleted}
++		}
++		out.Basis.Fields = append(out.Basis.Fields, v)
++	}
++	return out, nil
+ }

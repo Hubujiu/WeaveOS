@@ -82,7 +82,7 @@ func (p Policy) VisibleScope() Scope { return p.grants(Read, "", false) }
 // FieldScope never combines a field from one action with another action's
 // scope. Own uses immutable createdBy supplied by the row loader.
 func (p Policy) FieldScope(action Action, fieldID string) Scope {
-	if fieldID == "" || action != Read && action != Edit && action != Create && action != History {
+	if fieldID == "" || action != Read && action != Edit && action != Create {
 		return None
 	}
 	return p.grants(action, fieldID, true)
