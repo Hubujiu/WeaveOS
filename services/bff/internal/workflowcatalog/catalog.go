@@ -37,6 +37,7 @@ type VersionInput struct {
 	ExpectedRevision, ExpectedSchemaVersion       int64
 	Graph                                         flowgraph.Graph
 	AllowWithdraw                                 bool
+	Triggers                                      *[]Trigger
 }
 
 type Head struct {
