@@ -6,6 +6,7 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -146,5 +147,114 @@ func TestRootPublicationHistoryRejectsStaleWriteSnapshots(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestRootPublicationHistoryConcurrentInsertAndCleanup(t *testing.T) {
+	for _, insertFirst := range []bool{true, false} {
+		t.Run(map[bool]string{true: "insert-first", false: "delete-first"}[insertFirst], func(t *testing.T) {
+			p := rootPublicationSetup(t)
+			original := uuid(t, p.s.f.owner)
+			p.publish(t, original, 1)
+			p.dispatch(t)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			writer, err := p.s.f.runtime.Begin(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer writer.Rollback(context.Background())
+			cleaner, err := p.s.f.owner.Begin(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer cleaner.Rollback(context.Background())
+			var writerPID, cleanerPID int
+			if err = writer.QueryRow(ctx, "SELECT pg_backend_pid()").Scan(&writerPID); err != nil {
+				t.Fatal(err)
+			}
+			if err = cleaner.QueryRow(ctx, "SELECT pg_backend_pid()").Scan(&cleanerPID); err != nil {
+				t.Fatal(err)
+			}
+			operation := uuid(t, p.s.f.owner)
+			insert := func() error {
+				_, e := writer.Exec(ctx, `INSERT INTO applications.workflow_publications
+     (actor_user_id,operation_id,app_id,view_id,flow_id,version,version_id,bpmn_sha256,actor_auth_version,accepted_close_epoch,expected_revision,expected_schema_version,fingerprint)
+     SELECT actor_user_id,$3,app_id,view_id,flow_id,version,version_id,bpmn_sha256,actor_auth_version,accepted_close_epoch,expected_revision,expected_schema_version,fingerprint
+     FROM applications.workflow_publications WHERE actor_user_id=$1 AND operation_id=$2`, p.s.f.actor, original, operation)
+				return e
+			}
+			remove := func() error {
+				_, e := cleaner.Exec(ctx, "DELETE FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2", p.s.f.app, p.flow)
+				return e
+			}
+			blocker, waiter := writerPID, cleanerPID
+			done := make(chan error, 1)
+			if insertFirst {
+				if err = insert(); err != nil {
+					t.Fatal(err)
+				}
+				go func() { done <- remove() }()
+			} else {
+				if err = remove(); err != nil {
+					t.Fatal(err)
+				}
+				blocker, waiter = cleanerPID, writerPID
+				go func() { done <- insert() }()
+			}
+			// Observe an actual PostgreSQL wait edge, not merely elapsed time.
+			for {
+				var blocked bool
+				if err = p.s.f.owner.QueryRow(ctx, "SELECT $1=ANY(pg_blocking_pids($2))", blocker, waiter).Scan(&blocked); err != nil {
+					t.Fatal(err)
+				}
+				if blocked {
+					break
+				}
+				select {
+				case err = <-done:
+					t.Fatalf("concurrent operation did not wait: %v", err)
+				case <-ctx.Done():
+					t.Fatal(ctx.Err())
+				case <-time.After(5 * time.Millisecond):
+				}
+			}
+			want := "23503"
+			if insertFirst {
+				err = writer.Commit(ctx)
+				want = "55000"
+			} else {
+				err = cleaner.Commit(ctx)
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			select {
+			case err = <-done:
+			case <-ctx.Done():
+				t.Fatal(ctx.Err())
+			}
+			var pg *pgconn.PgError
+			if !errors.As(err, &pg) || pg.Code != want {
+				t.Fatalf("fresh post-wait snapshot expected %s: %v", want, err)
+			}
+			// Release the failed transaction before assertions or fixture teardown.
+			_ = writer.Rollback(ctx)
+			_ = cleaner.Rollback(ctx)
+			var intents, versions int
+			if err = p.s.f.owner.QueryRow(ctx, "SELECT count(*) FROM applications.workflow_publications WHERE actor_user_id=$1 AND operation_id=$2", p.s.f.actor, operation).Scan(&intents); err != nil {
+				t.Fatal(err)
+			}
+			if err = p.s.f.owner.QueryRow(ctx, "SELECT count(*) FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2", p.s.f.app, p.flow).Scan(&versions); err != nil {
+				t.Fatal(err)
+			}
+			expected := 0
+			if insertFirst {
+				expected = 1
+			}
+			if intents != expected || versions != expected {
+				t.Fatalf("orphaned intent or unsafe cleanup: intents=%d versions=%d", intents, versions)
+			}
+		})
 	}
 }
