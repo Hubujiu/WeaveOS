@@ -1,0 +1,2 @@
+The real RR regression failed because its callback matched the old event JOIN SQL suffix, while the independent read no longer joins instances. Change only callback match to the same event-table SELECT boundary; keep mandatory changed flag, real concurrent authority revocation/corruption, original alpha assertion, next-request denial and fresh corruption detection unchanged. This is a fixture locator adaptation to J03, not a weakened concurrency oracle.
+New journal.go was untracked during initial green runner; original exact file is retained in c5a0835 before later changes.

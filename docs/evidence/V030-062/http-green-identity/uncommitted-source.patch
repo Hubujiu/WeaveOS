@@ -1,0 +1,49 @@
+diff --git a/services/bff/cmd/bff/root_workflow_event_http_test.go b/services/bff/cmd/bff/root_workflow_event_http_test.go
+index 6e89a5c..0287bf0 100644
+--- a/services/bff/cmd/bff/root_workflow_event_http_test.go
++++ b/services/bff/cmd/bff/root_workflow_event_http_test.go
+@@ -1,6 +1,7 @@
+ package main
+ 
+ import (
++	"context"
+ 	"crypto/sha256"
+ 	"encoding/json"
+ 	"fmt"
+@@ -8,6 +9,7 @@ import (
+ 	"testing"
+ 
+ 	fc "github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowprojection"
+ 	"github.com/jackc/pgx/v5"
+ )
+@@ -82,8 +84,13 @@ func TestRootWorkflowEventHTTPSClosedReadAndIdentity(t *testing.T) {
+ 		rootHTTPError(t, f.call(t, method, path, "", nil), 404, "API_NOT_FOUND")
+ 	}
+ 	rootHTTPError(t, f.call(t, "GET", path+"/", "", nil), 404, "API_NOT_FOUND")
+-	if _, e := f.owner.Exec(f.ctx, "UPDATE applications.apps SET owner_user_id=$2 WHERE id=$1", f.app, f.other); e != nil {
++	sid, _, e := f.store.Create(f.ctx, session.Record{UserID: f.other, SessionRef: f.id(t), AuthVersion: "1"})
++	if e != nil {
+ 		t.Fatal(e)
+ 	}
+-	rootHTTPError(t, f.call(t, "GET", path, "", nil), 403, "APPLICATION_FORBIDDEN")
++	t.Cleanup(func() { f.store.Revoke(context.Background(), sid) })
++	rootHTTPError(t, f.call(t, "GET", path, "", func(r *http.Request) {
++		r.Header.Del("Cookie")
++		r.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: sid})
++	}), 403, "APPLICATION_FORBIDDEN")
+ }
+diff --git a/services/bff/internal/apprecordhttp/http.go b/services/bff/internal/apprecordhttp/http.go
+index c82a3d3..2159634 100644
+--- a/services/bff/internal/apprecordhttp/http.go
++++ b/services/bff/internal/apprecordhttp/http.go
+@@ -212,7 +212,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		failure(w, r, apprecordservice.ErrUnavailable, "")
+ 		return
+ 	}
+-	if s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
++	if s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
+ 		return
+ 	}
+ 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
