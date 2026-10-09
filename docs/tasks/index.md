@@ -1,6 +1,8 @@
 # v0.1.0 任务索引
 
-- [V030-058 · Go安全补丁与独立回滚候选](V030-058.md) — 独立安全修补，基线 develop `a29cd550`；V057等待此修补后重新验收，当前 in_progress。
+- [V030-057 · 发布统计实际落盘验证](V030-057.md) — 同步安全基线 develop `d9c2e60b`，新增报告到结果文件的真实行为测试，PR65 重新验收中。
+
+- [V030-058 · Go安全补丁与独立回滚候选](V030-058.md) — [PR #66](https://github.com/Hubujiu/WeaveOS/pull/66) 已合入 develop `d9c2e60b`；Go1.27.2与必要依赖修补、独立回滚候选及完整CI已验收。
 
 - [V030-056 · BPMN 固定图边完整映射验证](V030-056.md) — task/V030-056-bpmn-edge-oracle / ../WeaveOS-worktrees/V030-056；基线 develop `a6f04840`，只加强既有固定样例的边/default集合，当前 in_progress。
 
