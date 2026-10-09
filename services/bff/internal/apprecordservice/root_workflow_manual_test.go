@@ -220,3 +220,95 @@ func TestRootManualStartRequiresPublishedManualMatch(t *testing.T) {
 		})
 	}
 }
+
+func TestRootManualStartRevokedMenuOrReadCannotCreateIntent(t *testing.T) {
+	for _, action := range []string{"menu.enter", "data.read"} {
+		t.Run(action, func(t *testing.T) {
+			f, r := rootManualSetup(t)
+			if _, e := f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN(SELECT id FROM applications.grants WHERE app_id=$1 AND action=$2)", f.app, action); e != nil {
+				t.Fatal(e)
+			}
+			if _, e := f.owner.Exec(f.ctx, "DELETE FROM applications.grants WHERE app_id=$1 AND action=$2", f.app, action); e != nil {
+				t.Fatal(e)
+			}
+			if _, e := f.service.StartManualWorkflow(f.ctx, f.principal, r, applications.Metadata{RequestID: "manual-live-access"}); !errors.Is(e, applications.ErrDenied) {
+				t.Fatalf("revoked %s admitted %v", action, e)
+			}
+			rootTriggeredCount(t, f, r.RecordID, 0)
+			rootManualNoReceipt(t, f, r.OperationID)
+		})
+	}
+}
+func TestRootManualStartConflictingOperationCannotReplaceOriginal(t *testing.T) {
+	f, r := rootManualSetup(t)
+	original := rootManualStart(t, f, r)
+	changed := r
+	changed.RecordID = f.otherRecord
+	if _, e := f.service.StartManualWorkflow(f.ctx, f.principal, changed, applications.Metadata{RequestID: "manual-conflicting-replay"}); !errors.Is(e, applications.ErrOperationConflict) {
+		t.Fatalf("conflicting operation not rejected %v", e)
+	}
+	if got := rootManualStart(t, f, r); got != original {
+		t.Fatal("conflict overwrote receipt")
+	}
+	rootTriggeredCount(t, f, f.otherRecord, 0)
+}
+func TestRootManualStartCommitFaultRollsBackIntentAndReceipt(t *testing.T) {
+	f, r := rootManualSetup(t)
+	name := "manual_fault_" + strings.ReplaceAll(f.app, "-", "")
+	function := pgx.Identifier{"applications", name}.Sanitize()
+	trigger := pgx.Identifier{name}.Sanitize()
+	if _, e := f.owner.Exec(f.ctx, "CREATE FUNCTION "+function+"() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.app_id='"+f.app+"'::uuid THEN RAISE EXCEPTION 'isolated manual final commit fault' USING ERRCODE='P0001'; END IF; RETURN NEW; END $$"); e != nil {
+		t.Fatal(e)
+	}
+	defer f.owner.Exec(f.ctx, "DROP FUNCTION "+function+"() CASCADE")
+	if _, e := f.owner.Exec(f.ctx, "CREATE CONSTRAINT TRIGGER "+trigger+" AFTER INSERT ON applications.workflow_instances DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION "+function+"()"); e != nil {
+		t.Fatal(e)
+	}
+	if got, e := f.service.StartManualWorkflow(f.ctx, f.principal, r, applications.Metadata{RequestID: "manual-atomic-fault"}); e == nil || got.InstanceID != "" {
+		t.Fatalf("failed commit reported accepted %+v %v", got, e)
+	}
+	rootTriggeredCount(t, f, r.RecordID, 0)
+	rootManualNoReceipt(t, f, r.OperationID)
+}
+func TestRootManualStartOtherViewSameTableAndForeignTableBoundaries(t *testing.T) {
+	f, r := rootManualSetup(t)
+	// Give the existing creator a real menu/read grant on a second view.
+	view := recordOperationID(t, f)
+	if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.form_views(id,app_id,table_id,name,position,view_version) VALUES($1,$2,$3,'other manual view',1,1)", view, f.app, f.table); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.menu_resources VALUES($1,'form',$2)", f.app, view); e != nil {
+		t.Fatal(e)
+	}
+
+	var group string
+	if e := f.owner.QueryRow(f.ctx, "SELECT group_id::text FROM applications.group_members WHERE app_id=$1 AND user_id=$2 LIMIT 1", f.app, f.actor).Scan(&group); e != nil {
+		t.Fatal(e)
+	}
+	for _, action := range []string{"menu.enter", "data.read"} {
+		var grant string
+		if e := f.owner.QueryRow(f.ctx, "INSERT INTO applications.grants(app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,'form',$3,$4,'all') RETURNING id::text", f.app, group, view, action).Scan(&grant); e != nil {
+			t.Fatal(e)
+		}
+		if action == "data.read" {
+			if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.grant_fields(app_id,grant_id,field_id,table_id) VALUES($1,$2,$3,$4)", f.app, grant, f.public, f.table); e != nil {
+				t.Fatal(e)
+			}
+		}
+	}
+	r.ViewID = view
+	got := rootManualStart(t, f, r)
+	var bound string
+	if e := f.owner.QueryRow(f.ctx, "SELECT view_id::text FROM applications.workflow_instances WHERE id=$1", got.InstanceID).Scan(&bound); e != nil || bound != f.view {
+		t.Fatalf("manual changed definition view %s %v", bound, e)
+	}
+	foreign, other := rootManualSetup(t)
+	r.OperationID = recordOperationID(t, f)
+	r.FlowID = other.FlowID
+	r.ExpectedWorkflowRevision = other.ExpectedWorkflowRevision
+	if _, e := f.service.StartManualWorkflow(f.ctx, f.principal, r, applications.Metadata{RequestID: "cross-app-manual"}); !errors.Is(e, workflowcatalog.ErrMissing) {
+		t.Fatalf("foreign flow crossed scope %v", e)
+	}
+	rootTriggeredCount(t, foreign, other.RecordID, 0)
+	rootManualNoReceipt(t, f, r.OperationID)
+}

@@ -2,6 +2,7 @@ package workflowcatalog
 
 import (
 	"context"
+	"errors"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
 	"github.com/jackc/pgx/v5"
 	"strings"
@@ -22,6 +23,9 @@ func (catalog Catalog) ReserveManualInTx(ctx context.Context, tx pgx.Tx, in Manu
 	// The caller holds its application/table gate. Reject another table before
 	// attempting its locks; an arbitrary flow ID cannot reverse table lock order.
 	current, err := headRead(ctx, tx, in.AppID, in.FlowID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return TriggerReservation{}, ErrMissing
+	}
 	if err != nil {
 		return TriggerReservation{}, mapDBError(err)
 	}
@@ -76,7 +80,7 @@ func (catalog Catalog) ReserveManualInTx(ctx context.Context, tx pgx.Tx, in Manu
 		return TriggerReservation{}, ErrNotReady
 	}
 	var history, live bool
-	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.workflow_instances WHERE app_id=$1 AND flow_id=$2 AND record_id=$3),EXISTS(SELECT 1 FROM applications.workflow_instances WHERE app_id=$1 AND flow_id=$2 AND record_id=$3 AND state IN ('starting','active'))`, in.AppID, in.FlowID, in.RecordID).Scan(&history, &live)
+	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.workflow_instances WHERE app_id=$1 AND flow_id=$2 AND record_id=$3 AND table_id=$4),EXISTS(SELECT 1 FROM applications.workflow_instances WHERE app_id=$1 AND flow_id=$2 AND record_id=$3 AND table_id=$4 AND state IN ('starting','active'))`, in.AppID, in.FlowID, in.RecordID, in.TableID).Scan(&history, &live)
 	if err != nil {
 		return TriggerReservation{}, mapDBError(err)
 	}

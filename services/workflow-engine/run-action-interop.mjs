@@ -69,9 +69,9 @@ try{
  }
  const events=convert.stdout.split('\n').filter(Boolean).map(s=>JSON.parse(s));
  const tests=events.filter(x=>x.Test&&!x.Test.includes('/')&&['pass','fail','skip'].includes(x.Action)).map(x=>({name:x.Test,status:x.Action,elapsed:x.Elapsed}));
- const summary={head:call('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),exit:r.status??1,tests,passed:tests.filter(x=>x.status==='pass').length,failed:tests.filter(x=>x.status==='fail').length,skipped:tests.filter(x=>x.status==='skip').length,scope:'real Java Flowable/gRPC + separate engine/app PostgreSQL; real HTTPS existing-task approvals and five public-record start/admission/recovery scenarios; not complete backend acceptance'};
+ const summary={head:call('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),exit:r.status??1,tests,passed:tests.filter(x=>x.status==='pass').length,failed:tests.filter(x=>x.status==='fail').length,skipped:tests.filter(x=>x.status==='skip').length,scope:'real Java Flowable/gRPC + separate engine/app PostgreSQL; real HTTPS existing-task approvals and five automatic and two manual public-record start/admission/recovery scenarios; not complete backend acceptance'};
  writeFileSync(resolve(dir,'summary.json'),JSON.stringify(summary,null,2),{mode:0o600});console.log(JSON.stringify({directory:dir,...summary}));
- process.exitCode=r.status??1;if(tests.length!==8||summary.passed!==8||summary.failed||summary.skipped)process.exitCode=1;
+ process.exitCode=r.status??1;if(tests.length!==10||summary.passed!==10||summary.failed||summary.skipped)process.exitCode=1;
 }finally{
  if(javaStarted){
   try{writeFileSync(resolve(dir,'java.log'),call('docker',['logs',java]),{mode:0o600})}catch{}

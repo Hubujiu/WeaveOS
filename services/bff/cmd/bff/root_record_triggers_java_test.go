@@ -21,12 +21,19 @@ import (
 
 // V044 PRD: accepted Create trigger must eventually start the published flow.
 // No synthetic reserve/command/fence is injected to conceal missing admission.
-func rootHTTPTriggerJavaConfigure(t *testing.T, f *rootTaskHTTPFixture, deployment *wr.Client) {
+func rootHTTPTriggerJavaConfigure(t *testing.T, f *rootTaskHTTPFixture, deployment *wr.Client, events ...string) {
 	t.Helper()
 	f.flow = f.id(t)
 	start, node, end := f.id(t), f.id(t), f.id(t)
+	if len(events) == 0 {
+		events = []string{"record.created", "record.updated"}
+	}
+	triggers := []any{}
+	for _, event := range events {
+		triggers = append(triggers, map[string]any{"event": event, "condition": nil})
+	}
 	body := map[string]any{"operationId": f.id(t), "name": "Record triggers", "expectedRevision": 0, "expectedSchemaVersion": 1, "allowWithdraw": true,
-		"triggers": []any{map[string]any{"event": "record.created", "condition": nil}, map[string]any{"event": "record.updated", "condition": nil}},
+		"triggers": triggers,
 		"graph":    map[string]any{"version": 1, "nodes": []any{map[string]any{"id": start, "kind": "start"}, map[string]any{"id": node, "kind": "approval", "approval": map[string]any{"mode": "all", "assigneeIds": []string{f.actor}, "editableFieldIds": []string{}}}, map[string]any{"id": end, "kind": "end"}}, "edges": []any{map[string]any{"from": start, "to": node}, map[string]any{"from": node, "to": end}}}}
 	raw, err := json.Marshal(body)
 	if err != nil {
@@ -65,7 +72,13 @@ func TestRootRecordTriggerJavaClosingDrainsAlreadyAcceptedIntent(t *testing.T) {
 func TestRootRecordTriggerJavaLostReplyRecoversOriginalStart(t *testing.T) {
 	rootPublicTriggerJavaContract(t, false, false, true)
 }
-func rootPublicTriggerJavaContract(t *testing.T, twoFlows, closeAfterCreate, loseReply bool) {
+func TestRootRecordTriggerJavaManualCreatorReachesApproval(t *testing.T) {
+	rootPublicTriggerJavaContract(t, false, false, false, true)
+}
+func TestRootRecordTriggerJavaManualLostReplyRecoversOriginalStart(t *testing.T) {
+	rootPublicTriggerJavaContract(t, false, false, true, true)
+}
+func rootPublicTriggerJavaContract(t *testing.T, twoFlows, closeAfterCreate, loseReply bool, manual ...bool) {
 	t.Helper()
 	target := os.Getenv("WEAVEOS_RPC_TEST_TARGET")
 	host, _, err := net.SplitHostPort(target)
@@ -94,15 +107,28 @@ func rootPublicTriggerJavaContract(t *testing.T, twoFlows, closeAfterCreate, los
 		t.Fatal(err)
 	}
 	f := rootHTTPResourceSetup(t)
-	rootHTTPTriggerJavaConfigure(t, f, deployment)
+	manualStart := len(manual) > 0 && manual[0]
+	events := []string{}
+	if manualStart {
+		events = []string{"manual"}
+	}
+	rootHTTPTriggerJavaConfigure(t, f, deployment, events...)
 	flows := []string{f.flow}
 	if twoFlows {
-		rootHTTPTriggerJavaConfigure(t, f, deployment)
+		rootHTTPTriggerJavaConfigure(t, f, deployment, events...)
 		flows = append(flows, f.flow)
 	}
 	path := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/records"
 	body := `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"values":{"` + f.field + `":"public record to actual approval"}}`
-	record := rootHTTPString(t, rootHTTPData(t, f.call(t, "POST", path, body, nil), 201), "id")
+	record := f.record
+	if manualStart {
+		for _, flow := range flows {
+			f.flow = flow
+			rootHTTPData(t, f.call(t, "POST", f.root()+"/workflow-starts", rootHTTPManualBody(t, f, f.id(t)), nil), 202)
+		}
+	} else {
+		record = rootHTTPString(t, rootHTTPData(t, f.call(t, "POST", path, body, nil), 201), "id")
+	}
 	for _, flow := range flows {
 		f.flow = flow
 		rootHTTPTriggerCount(t, f, record, 1)

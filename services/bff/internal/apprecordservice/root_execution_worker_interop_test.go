@@ -15,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
 	fc "github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
 	fg "github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
@@ -34,10 +33,19 @@ func rootJavaWorkerFixture(t *testing.T) (rootProjection, *wr.ExecutionClient) {
 	t.Helper()
 	target := os.Getenv("WEAVEOS_RPC_TEST_TARGET")
 	host, _, e := net.SplitHostPort(target)
-	if e != nil || host != "b3-workflow" {
-		t.Fatal("dedicated unexposed b3-workflow fixture required")
+	native := host == "127.0.0.1" && os.Getenv("WEAVEOS_NATIVE_FIXTURE_TOKEN") != ""
+	if e != nil || (host != "b3-workflow" && !native) {
+		t.Fatal("dedicated Docker fixture or authenticated native loopback fixture required")
 	}
-	conn, e := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDisableRetry())
+	options := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDisableRetry()}
+	if native {
+		identity, err := wr.NewServiceIdentity(os.Getenv("WEAVEOS_NATIVE_FIXTURE_TOKEN"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		options = append(options, grpc.WithUnaryInterceptor(identity.UnaryInterceptor()))
+	}
+	conn, e := grpc.NewClient(target, options...)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -50,7 +58,7 @@ func rootJavaWorkerFixture(t *testing.T) (rootProjection, *wr.ExecutionClient) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	f := newRecordFixture(t)
+	f := rootCaptureSetup(t).recordFixture
 	g := rootCatalogGraph(t, f, true)
 	next := recordOperationID(t, f)
 	g.Nodes = append(g.Nodes, fg.Node{ID: next, Kind: "approval", Approval: &fg.Approval{Mode: "all", AssigneeIDs: []string{f.actor, f.other}}})
@@ -169,11 +177,14 @@ func TestRootRecoveryJavaLifecycleInterop(t *testing.T) {
 	if r.Result.State != "active" || len(r.Result.Tasks) != 1 {
 		t.Fatal("real first node did not activate")
 	}
-	// Exercise the existing authorized record-edit path between two decisions.
-	// Node-specific user command admission remains a separate integration layer.
-	edit, e := f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: recordOperationID(t, f.recordFixture), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "revised before next approval"}}, applications.Metadata{RequestID: "root-real-worker-edit"})
-	if e != nil || edit.RecordVersion != 2 {
-		t.Fatalf("record edit failed: %+v %v", edit, e)
+	// A genuine current approval task authorizes this field save. Ordinary
+	// record editing is read-only while the instance is active. Preserve the
+	// latest-record and historical-decision assertions below without bypassing it.
+	taskFixture := rootTaskFixture{rootProjection: f, task: r.Result.Tasks[0]}
+	saveRequest := rootSaveRequest(t, taskFixture, "revised before next approval")
+	edit := rootSave(t, taskFixture, saveRequest)
+	if edit.RecordVersion != 2 {
+		t.Fatalf("authorized node Save failed: %+v", edit)
 	}
 	for i, want := range []int{2, 1, 0} {
 		if len(r.Result.Tasks) == 0 {
@@ -210,7 +221,7 @@ func TestRootRecoveryJavaLifecycleInterop(t *testing.T) {
 	if worked, e := rootJavaWorker(f, client).DispatchOne(f.ctx); e != nil || worked {
 		t.Fatal("completed command remained queued")
 	}
-	t.Logf("real deployment + durable start + record edit + three decisions + application projection elapsed=%s", time.Since(begin))
+	t.Logf("real deployment + durable start + authorized node Save + three decisions + application projection elapsed=%s", time.Since(begin))
 }
 
 func TestRootRecoveryJavaDroppedResponseInterop(t *testing.T) {

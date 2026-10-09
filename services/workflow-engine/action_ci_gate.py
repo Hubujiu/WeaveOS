@@ -1,4 +1,4 @@
-"""Require eight real HTTPS/Java action/start scenarios plus both action variants without skips."""
+"""Require ten real HTTPS/Java action/start scenarios plus both action variants without skips."""
 import argparse
 import importlib.util
 from pathlib import Path
@@ -12,6 +12,8 @@ _PACKAGE = "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff"
 _EXPECTED = ("TestRootWorkflowActionJavaHTTPSAgreeRejectInterop", "TestRootWorkflowActionJavaLostReplyKeepsPendingUntilRecoveryInterop", "TestRootWorkflowActionJavaApplicationFaultRecoversOriginalReceiptInterop", "TestRootWorkflowActionJavaHTTPSAgreeRejectInterop/agree", "TestRootWorkflowActionJavaHTTPSAgreeRejectInterop/reject")
 
 _EXPECTED += ("TestRootRecordTriggerJavaPublicCreateReachesApproval", "TestRootRecordTriggerJavaIndependentFlowsBothReachApproval", "TestRootRecordTriggerJavaClosingDrainsAlreadyAcceptedIntent", "TestRootRecordTriggerJavaHostRunsStartAdmission", "TestRootRecordTriggerJavaLostReplyRecoversOriginalStart")
+
+_EXPECTED += ("TestRootRecordTriggerJavaManualCreatorReachesApproval", "TestRootRecordTriggerJavaManualLostReplyRecoversOriginalStart")
 
 def validate(path):
     _legacy._go(path, _PACKAGE, _EXPECTED)

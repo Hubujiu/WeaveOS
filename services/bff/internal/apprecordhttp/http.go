@@ -22,6 +22,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowevidence"
 	"github.com/jackc/pgx/v5"
 )
@@ -71,6 +72,16 @@ func failure(w http.ResponseWriter, r *http.Request, e error, operation string) 
 	status, code, data := 503, "COMMON_SERVICE_UNAVAILABLE", any(nil)
 	var domain *appstructure.Error
 	switch {
+	case errors.Is(e, workflowcatalog.ErrClosing):
+		status, code = 409, "WORKFLOW_CLOSING"
+	case errors.Is(e, workflowcatalog.ErrNotReady):
+		status, code = 409, "WORKFLOW_NOT_READY"
+	case errors.Is(e, workflowcatalog.ErrConflict):
+		status, code = 409, "WORKFLOW_CONFLICT"
+	case errors.Is(e, workflowcatalog.ErrMissing):
+		status, code = 404, "APPLICATION_NOT_FOUND"
+	case errors.Is(e, workflowcatalog.ErrInvalid):
+		status, code = 400, "COMMON_VALIDATION_FAILED"
 	case errors.Is(e, apprecordservice.ErrWorkflowRecordReadOnly):
 		status, code = 409, "WORKFLOW_RECORD_READ_ONLY"
 	case errors.Is(e, apprecordservice.ErrWorkflowTaskChanged):
@@ -201,7 +212,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		failure(w, r, apprecordservice.ErrUnavailable, "")
 		return
 	}
-	if s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
+	if s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
 		return
 	}
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")

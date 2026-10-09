@@ -1,0 +1,361 @@
+diff --git a/docs/tasks/V030-044.md b/docs/tasks/V030-044.md
+index fc794b9..1e71b2e 100644
+--- a/docs/tasks/V030-044.md
++++ b/docs/tasks/V030-044.md
+@@ -1,7 +1,7 @@
+ # V030-044 · 记录触发与并行流程
+ 
+ <!-- task-meta
+-{"id": "V030-044", "title": "记录触发与并行流程", "branch": "task/V030-044-record-triggers", "worktree": "../WeaveOS-worktrees/V030-044", "pr": 69, "owner": "主助手在自己的环境直接计划、编写、测试和验收；不委派", "dependsOn": ["V030-041"], "allowedPaths": ["contracts/application-records.contract.test.mjs", "contracts/errors/codes.json","services/bff/internal/apprecordservice/root_workflow_readonly_test.go", "services/bff/internal/apprecordservice/root_workflow_action_test.go", "services/bff/internal/apprecordhttp/http.go","services/workflow-engine/action_ci_gate.py", "services/workflow-engine/action_ci_gate_tests.py", "services/workflow-engine/run-action-interop.mjs", "services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRpcFixtureMain.java", ".github/workflows/ci.yml","services/bff/cmd/bff/root_workflow_action_http_test.go","services/bff/internal/applications/workflow_context.go", "services/bff/internal/apprecordservice/workflow_start.go", "services/bff/internal/apprecordservice/root_workflow_start_test.go", "services/bff/internal/apprecordservice/evidence_capture.go", "services/bff/internal/workflowexecution/worker.go", "services/bff/cmd/bff/config.go","services/bff/cmd/bff/root_record_triggers_java_test.go","services/bff/cmd/bff/root_record_triggers_http_test.go", "services/bff/internal/apprecordservice/write.go", "services/bff/internal/apprecordservice/workflow_triggers.go", "services/bff/internal/workflowcatalog/record_triggers.go", "services/bff/internal/apprecordservice/root_record_triggers_test.go", "services/bff/internal/workflowcatalog/trigger_reservation.go", "services/bff/internal/apprecordservice/root_workflow_trigger_reservation_test.go", "docs/tasks/V030-044.md", "docs/tasks/index.md", "docs/evidence/V030-044/", "services/bff/internal/workflowcatalog/", "services/bff/internal/appworkflows/", "services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go", "services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go", "services/bff/internal/persistence/workflow_trigger_configuration_test.go", "db/migrations/00024_workflow_trigger_configuration.sql", "contracts/openapi/openapi.json", "contracts/workflow-trigger-configuration.contract.test.mjs", "infra/runtime/roles.sql", "infra/runtime/backup.test.mjs", "infra/server/deploy/compatibility.json"], "deliveryState": "in_progress"}
++{"id": "V030-044", "title": "记录触发与并行流程", "branch": "task/V030-044-record-triggers", "worktree": "../WeaveOS-worktrees/V030-044", "pr": 69, "owner": "主助手在自己的环境直接计划、编写、测试和验收；不委派", "dependsOn": ["V030-041"], "allowedPaths": ["services/bff/internal/workflowcatalog/manual_trigger.go", "services/bff/internal/apprecordservice/workflow_manual.go", "services/bff/internal/apprecordservice/root_workflow_manual_test.go", "services/bff/internal/apprecordservice/root_workflow_manual_constraints_test.go", "services/bff/internal/applications/transactions.go", "db/migrations/00025_workflow_manual_start_operations.sql","contracts/application-records.contract.test.mjs", "contracts/errors/codes.json","services/bff/internal/apprecordservice/root_workflow_readonly_test.go", "services/bff/internal/apprecordservice/root_workflow_action_test.go", "services/bff/internal/apprecordhttp/http.go","services/workflow-engine/action_ci_gate.py", "services/workflow-engine/action_ci_gate_tests.py", "services/workflow-engine/run-action-interop.mjs", "services/workflow-engine/src/test/java/org/weaveos/workflow/RootExecutionRpcFixtureMain.java", ".github/workflows/ci.yml","services/bff/cmd/bff/root_workflow_action_http_test.go","services/bff/internal/applications/workflow_context.go", "services/bff/internal/apprecordservice/workflow_start.go", "services/bff/internal/apprecordservice/root_workflow_start_test.go", "services/bff/internal/apprecordservice/evidence_capture.go", "services/bff/internal/workflowexecution/worker.go", "services/bff/cmd/bff/config.go","services/bff/cmd/bff/root_record_triggers_java_test.go","services/bff/cmd/bff/root_record_triggers_http_test.go", "services/bff/internal/apprecordservice/write.go", "services/bff/internal/apprecordservice/workflow_triggers.go", "services/bff/internal/workflowcatalog/record_triggers.go", "services/bff/internal/apprecordservice/root_record_triggers_test.go", "services/bff/internal/workflowcatalog/trigger_reservation.go", "services/bff/internal/apprecordservice/root_workflow_trigger_reservation_test.go", "docs/tasks/V030-044.md", "docs/tasks/index.md", "docs/evidence/V030-044/", "services/bff/internal/workflowcatalog/", "services/bff/internal/appworkflows/", "services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go", "services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go", "services/bff/internal/persistence/workflow_trigger_configuration_test.go", "db/migrations/00024_workflow_trigger_configuration.sql", "contracts/openapi/openapi.json", "contracts/workflow-trigger-configuration.contract.test.mjs", "infra/runtime/roles.sql", "infra/runtime/backup.test.mjs", "infra/server/deploy/compatibility.json"], "deliveryState": "in_progress"}
+ -->
+ 
+ ## Sources
+@@ -97,3 +97,7 @@ FLOW07/08对应最小门禁PLAN已同步三页并读回；先亲写starting/acti
+ 普通Edit的starting/active只读门禁已覆盖空保存、同值与实际修改，节点Save保留。确认旧operation重放仍恢复原回执；拒绝操作不改typed row/version/历史/审计/receipt。原服务和HTTP旧依据测试改用真实授权node Save，原拒绝断言未减。空保存和错误登记均先实际RED再修复；证据见docs/evidence/V030-044/ordinary-edit-readonly-report/。
+ 完整六包race505顶层/226子例与本地真实Java公开触发5项通过，Node513、vet、结构/范围、Gitleaks通过；OpenAPI离线开关验证通过并保留12警告。首次默认遥测lint被审查拒绝，未把无退出码日志冒称成功；检查源码和本地refs后使用明确禁遥测/禁更新提示的支持开关重验成功。
+ 第四切片远端ba77c297的workflow-actions已经真实8场景/10身份全通过，Go与引擎等任务通过；整轮浏览器/product仍在运行，不冒称完整CI。第五切片尚待本检查点推送后的精确CI；第六切片manual计划已回写三页并读回，尚未实现。当前继续工作，不合develop/main或部署。
++
++## 第五切片推送与第六切片开工
++第五切片远端79d9e2fdc82c62e6bb85374977c724f70947c8aa与本地tree1d6570dca4b310382aed0c00064a8235bf57fdfa已精确核验；三次提交保留TDD真实顺序。CI37917300801/product37917300871等待，governance37917300621成功。先前ba77各后端job成功但推送时浏览器/product未完成，不冒称全绿。
++第六切片manual正文合同已在三页同步并实际读回。先写StartManualWorkflow声明占位、真实服务验收和新增operation结果约束测试，观察缺行为RED；尚无生产manual逻辑、迁移25或HTTP接线。主助手继续直接完成，不派发。
+diff --git a/services/bff/internal/apprecordservice/root_workflow_manual_constraints_test.go b/services/bff/internal/apprecordservice/root_workflow_manual_constraints_test.go
+new file mode 100644
+index 0000000..ceb346e
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/root_workflow_manual_constraints_test.go
+@@ -0,0 +1,76 @@
++package apprecordservice
++
++import (
++	"context"
++	"encoding/json"
++	"errors"
++	"github.com/jackc/pgx/v5/pgconn"
++	"os"
++	"strings"
++	"testing"
++)
++
++func rootManualReceiptRow(t *testing.T, f recordFixture) string {
++	t.Helper()
++	op := recordOperationID(t, f)
++	raw, _ := json.Marshal(map[string]any{"operationId": op, "flowId": recordOperationID(t, f), "instanceId": recordOperationID(t, f), "status": "accepted", "ignored": false})
++	_, e := f.owner.Exec(f.ctx, `INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location) VALUES($1,$2,$3,'workflow.manual.start',$4,$5::jsonb,202,$6)`, f.actor, op, f.app, make([]byte, 32), raw, "/api/v1/application-operations/"+op)
++	if e != nil {
++		t.Fatalf("valid durable manual acceptance receipt not supported: %v", e)
++	}
++	return op
++}
++func TestRootManualReceiptClosedShapeAndAcceptedStatus(t *testing.T) {
++	f := rootCaptureSetup(t).recordFixture
++	op := rootManualReceiptRow(t, f)
++	for _, mutation := range []string{
++		`result_json=jsonb_set(result_json,'{status}','"success"'::jsonb)`,
++		`result_json=jsonb_set(result_json,'{status}','"ignored"'::jsonb)`,
++		`result_json=jsonb_set(result_json,'{ignored}','true'::jsonb)`,
++		`result_json=jsonb_set(result_json,'{ignored}','"false"'::jsonb)`,
++		`result_json=result_json-'flowId'`,
++		`result_json=result_json||'{"values":{"hidden":"no"}}'::jsonb`,
++		`result_json=jsonb_set(result_json,'{instanceId}','"00000000-0000-0000-0000-000000000000"'::jsonb)`,
++		`result_json=jsonb_set(result_json,'{flowId}','"INVALID"'::jsonb)`,
++		`result_json=jsonb_set(result_json,'{operationId}','null'::jsonb)`,
++		`http_status=200`, `location='/wrong'`,
++	} {
++		_, e := f.owner.Exec(f.ctx, "UPDATE applications.operations SET "+mutation+" WHERE actor_user_id=$1 AND operation_id=$2", f.actor, op)
++		var pgerr *pgconn.PgError
++		if !errors.As(e, &pgerr) || pgerr.Code != "23514" {
++			t.Fatalf("manual receipt allowed %s: %v", mutation, e)
++		}
++	}
++	if _, e := f.owner.Exec(f.ctx, `UPDATE applications.operations SET result_json=result_json||'{"status":"ignored","ignored":true}'::jsonb WHERE actor_user_id=$1 AND operation_id=$2`, f.actor, op); e != nil {
++		t.Fatalf("valid duplicate-ignore result rejected %v", e)
++	}
++}
++func TestRootManualReceiptDownRefusesHistory(t *testing.T) {
++	f := rootCaptureSetup(t).recordFixture
++	op := rootManualReceiptRow(t, f)
++	raw, e := os.ReadFile("../../../../db/migrations/00025_workflow_manual_start_operations.sql")
++	if e != nil {
++		t.Fatal(e)
++	}
++	parts := strings.Split(string(raw), "-- +goose Down")
++	if len(parts) != 2 {
++		t.Fatal("exact Down missing")
++	}
++	tx, e := f.owner.Begin(f.ctx)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer tx.Rollback(context.Background())
++	_, e = tx.Exec(f.ctx, parts[1])
++	var pgerr *pgconn.PgError
++	if !errors.As(e, &pgerr) || pgerr.Code != "55000" {
++		t.Fatalf("Down did not refuse stored manual history %v", e)
++	}
++	if e = tx.Rollback(f.ctx); e != nil {
++		t.Fatal(e)
++	}
++	var n int
++	if e = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE actor_user_id=$1 AND operation_id=$2", f.actor, op).Scan(&n); e != nil || n != 1 {
++		t.Fatalf("Down changed retained history %d %v", n, e)
++	}
++}
+diff --git a/services/bff/internal/apprecordservice/root_workflow_manual_test.go b/services/bff/internal/apprecordservice/root_workflow_manual_test.go
+new file mode 100644
+index 0000000..149701a
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/root_workflow_manual_test.go
+@@ -0,0 +1,222 @@
++package apprecordservice
++
++import (
++	"errors"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
++	"github.com/jackc/pgx/v5"
++	"strings"
++	"sync"
++	"testing"
++)
++
++func rootManualSetup(t *testing.T) (recordFixture, WorkflowManualStartRequest) {
++	t.Helper()
++	f := rootCaptureSetup(t).recordFixture
++	rootTaskKeepDispatchPrivate(t, f)
++	h := rootConfiguredTrigger(t, f, "manual", nil)
++	return f, WorkflowManualStartRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, FlowID: h.FlowID, OperationID: recordOperationID(t, f), ExpectedWorkflowRevision: h.Revision, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1}
++}
++func rootManualStart(t *testing.T, f recordFixture, r WorkflowManualStartRequest) WorkflowManualStartResult {
++	t.Helper()
++	got, e := f.service.StartManualWorkflow(f.ctx, f.principal, r, applications.Metadata{RequestID: "manual-start"})
++	if e != nil {
++		t.Fatal(e)
++	}
++	return got
++}
++func rootManualNoReceipt(t *testing.T, f recordFixture, op string) {
++	t.Helper()
++	var n int
++	if e := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE app_id=$1 AND operation_id=$2", f.app, op).Scan(&n); e != nil || n != 0 {
++		t.Fatalf("rejected manual request persisted receipt %d %v", n, e)
++	}
++}
++func TestRootManualStartCreatorAcceptsDurableIntentAndRecoversReceipt(t *testing.T) {
++	f, r := rootManualSetup(t)
++	got := rootManualStart(t, f, r)
++	if got.OperationID != r.OperationID || got.FlowID != r.FlowID || got.InstanceID == "" || got.Status != "accepted" || got.Ignored {
++		t.Fatalf("not an accepted minimal intent: %+v", got)
++	}
++	var state, actor, record string
++	var version int64
++	if e := f.owner.QueryRow(f.ctx, "SELECT state,initiator_id::text,record_id::text,definition_version FROM applications.workflow_instances WHERE id=$1", got.InstanceID).Scan(&state, &actor, &record, &version); e != nil || state != "starting" || actor != f.actor || record != r.RecordID || version != 1 {
++		t.Fatalf("wrong durable identity %s/%s/%s/v%d %v", state, actor, record, version, e)
++	}
++	if replay := rootManualStart(t, f, r); replay != got {
++		t.Fatal("replay replaced original intent")
++	}
++	rootTriggeredCount(t, f, r.RecordID, 1)
++	// Revocation blocks new action, but not recovery of a confirmed minimum result.
++	if _, e := f.owner.Exec(f.ctx, "UPDATE applications.permission_groups SET enabled=false WHERE app_id=$1", f.app); e != nil {
++		t.Fatal(e)
++	}
++	if replay := rootManualStart(t, f, r); replay != got {
++		t.Fatal("revocation lost confirmed minimum receipt")
++	}
++	r.OperationID = recordOperationID(t, f)
++	if _, e := f.service.StartManualWorkflow(f.ctx, f.principal, r, applications.Metadata{RequestID: "manual-revoked"}); !errors.Is(e, applications.ErrDenied) {
++		t.Fatalf("revoked new request accepted %v", e)
++	}
++	rootManualNoReceipt(t, f, r.OperationID)
++}
++func TestRootManualStartOwnerCannotBypassRecordCreator(t *testing.T) {
++	f, r := rootManualSetup(t)
++	p := f.principal
++	p.UserID = f.other
++	p.SessionRef = recordOperationID(t, f)
++	if _, e := f.service.StartManualWorkflow(f.ctx, p, r, applications.Metadata{RequestID: "manual-owner"}); !errors.Is(e, applications.ErrDenied) {
++		t.Fatalf("app owner bypassed creator requirement %v", e)
++	}
++	rootTriggeredCount(t, f, r.RecordID, 0)
++	rootManualNoReceipt(t, f, r.OperationID)
++}
++func TestRootManualStartForeignRecordCannotBypassCreator(t *testing.T) {
++	f, r := rootManualSetup(t)
++	r.RecordID = f.otherRecord
++	if _, e := f.service.StartManualWorkflow(f.ctx, f.principal, r, applications.Metadata{RequestID: "manual-foreign"}); !errors.Is(e, applications.ErrDenied) {
++		t.Fatalf("reader bypassed creator requirement %v", e)
++	}
++	rootTriggeredCount(t, f, r.RecordID, 0)
++	rootManualNoReceipt(t, f, r.OperationID)
++}
++func TestRootManualStartIgnoresInFlightButRejectsTerminalHistory(t *testing.T) {
++	for _, state := range []string{"starting", "active", "completed", "rejected", "withdrawn", "no_effect"} {
++		t.Run(state, func(t *testing.T) {
++			f, r := rootManualSetup(t)
++			original := rootManualStart(t, f, r)
++			// Owner only models confirmed states for admission policy; no engine proof claimed.
++			if _, e := f.owner.Exec(f.ctx, "UPDATE applications.workflow_instances SET state=$2 WHERE id=$1", original.InstanceID, state); e != nil {
++				t.Fatal(e)
++			}
++			r.OperationID = recordOperationID(t, f)
++			got, e := f.service.StartManualWorkflow(f.ctx, f.principal, r, applications.Metadata{RequestID: "manual-history"})
++			if state == "starting" || state == "active" {
++				if e != nil || !got.Ignored || got.Status != "ignored" || got.InstanceID != original.InstanceID {
++					t.Fatalf("duplicate not ignored %+v %v", got, e)
++				}
++			} else {
++				if !errors.Is(e, workflowcatalog.ErrConflict) || got.InstanceID != "" {
++					t.Fatalf("ordinary manual bypassed rework/review role gate %+v %v", got, e)
++				}
++				rootManualNoReceipt(t, f, r.OperationID)
++			}
++			rootTriggeredCount(t, f, r.RecordID, 1)
++		})
++	}
++}
++func TestRootManualStartDifferentFlowsIndependent(t *testing.T) {
++	f, r := rootManualSetup(t)
++	a := rootManualStart(t, f, r)
++	h := rootConfiguredTrigger(t, f, "manual", nil)
++	r.FlowID = h.FlowID
++	r.ExpectedWorkflowRevision = h.Revision
++	r.OperationID = recordOperationID(t, f)
++	b := rootManualStart(t, f, r)
++	if b.Ignored || b.InstanceID == a.InstanceID {
++		t.Fatal("A history incorrectly blocked B")
++	}
++	rootTriggeredCount(t, f, r.RecordID, 2)
++}
++func TestRootManualStartConcurrentRequestsReserveOnce(t *testing.T) {
++	f, r := rootManualSetup(t)
++	requests := []WorkflowManualStartRequest{r, r, r, r}
++	for i := 1; i < len(requests); i++ {
++		requests[i].OperationID = recordOperationID(t, f)
++	}
++	var wg sync.WaitGroup
++	results := make([]WorkflowManualStartResult, 4)
++	errs := make([]error, 4)
++	for i := range requests {
++		wg.Add(1)
++		go func(i int) {
++			defer wg.Done()
++			results[i], errs[i] = f.service.StartManualWorkflow(f.ctx, f.principal, requests[i], applications.Metadata{RequestID: "concurrent-manual"})
++		}(i)
++	}
++	wg.Wait()
++	n := 0
++	id := ""
++	for i, g := range results {
++		if errs[i] != nil {
++			t.Fatal(errs[i])
++		}
++		if !g.Ignored {
++			n++
++		}
++		if id == "" {
++			id = g.InstanceID
++		}
++		if id != g.InstanceID {
++			t.Fatal("concurrent requests created distinct instances")
++		}
++	}
++	if n != 1 {
++		t.Fatalf("accepted %d want 1", n)
++	}
++	rootTriggeredCount(t, f, r.RecordID, 1)
++}
++func TestRootManualStartCurrentRevisionAndRecordCASAreRequired(t *testing.T) {
++	for _, part := range []string{"flow", "schema", "record"} {
++		t.Run(part, func(t *testing.T) {
++			f, r := rootManualSetup(t)
++			switch part {
++			case "flow":
++				r.ExpectedWorkflowRevision++
++			case "schema":
++				r.ExpectedSchemaVersion++
++			case "record":
++				r.ExpectedRecordVersion++
++			}
++			_, e := f.service.StartManualWorkflow(f.ctx, f.principal, r, applications.Metadata{RequestID: "manual-cas"})
++			if !errors.Is(e, workflowcatalog.ErrConflict) {
++				t.Fatalf("stale %s did not conflict %v", part, e)
++			}
++			rootTriggeredCount(t, f, r.RecordID, 0)
++			rootManualNoReceipt(t, f, r.OperationID)
++		})
++	}
++}
++func TestRootManualStartRequiresPublishedManualMatch(t *testing.T) {
++	for _, kind := range []string{"no_manual", "no_match", "closing", "candidate_only"} {
++		t.Run(kind, func(t *testing.T) {
++			f, r := rootManualSetup(t)
++			if kind == "no_manual" || kind == "no_match" || kind == "candidate_only" {
++				event := "record.updated"
++				var condition []byte
++				if kind == "no_match" {
++					event = "manual"
++				}
++				// Build the condition from the independently defined existing DSL fixture shape.
++				if kind == "no_match" {
++					condition = []byte(strings.Replace(string(rootTriggerCondition(f.public)), "alpha", "never-match", 1))
++				}
++				h := rootConfiguredTrigger(t, f, event, condition)
++				r.FlowID = h.FlowID
++				r.ExpectedWorkflowRevision = h.Revision
++				if kind == "candidate_only" {
++					cfg := []workflowcatalog.Trigger{{Event: "manual"}}
++					in := rootCatalogInput(f, h.FlowID, h.Revision, rootCatalogGraph(t, f, false))
++					in.Triggers = &cfg
++					rootCatalogTx(t, f, func(tx pgx.Tx) error {
++						next, e := (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in)
++						r.ExpectedWorkflowRevision = next.Revision
++						return e
++					})
++				}
++			} else {
++				rootCatalogTx(t, f, func(tx pgx.Tx) error {
++					h, e := (workflowcatalog.Catalog{}).RequestCloseInTx(f.ctx, tx, f.app, r.FlowID, r.ExpectedWorkflowRevision)
++					r.ExpectedWorkflowRevision = h.Revision
++					return e
++				})
++			}
++			_, e := f.service.StartManualWorkflow(f.ctx, f.principal, r, applications.Metadata{RequestID: "manual-config"})
++			if !errors.Is(e, workflowcatalog.ErrNotReady) && !errors.Is(e, workflowcatalog.ErrClosing) {
++				t.Fatalf("%s admission not rejected %v", kind, e)
++			}
++			rootTriggeredCount(t, f, r.RecordID, 0)
++			rootManualNoReceipt(t, f, r.OperationID)
++		})
++	}
++}
+diff --git a/services/bff/internal/apprecordservice/workflow_manual.go b/services/bff/internal/apprecordservice/workflow_manual.go
+new file mode 100644
+index 0000000..87089f4
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/workflow_manual.go
+@@ -0,0 +1,24 @@
++package apprecordservice
++
++import (
++	"context"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
++)
++
++type WorkflowManualStartRequest struct {
++	AppID, ViewID, RecordID, FlowID, OperationID                           string
++	ExpectedWorkflowRevision, ExpectedSchemaVersion, ExpectedRecordVersion int64
++}
++type WorkflowManualStartResult struct {
++	OperationID string `json:"operationId"`
++	FlowID      string `json:"flowId"`
++	InstanceID  string `json:"instanceId"`
++	Status      string `json:"status"`
++	Ignored     bool   `json:"ignored"`
++}
++
++// Declaration-only TDD placeholder; no admission behavior is implemented.
++func (s *Service) StartManualWorkflow(context.Context, session.Principal, WorkflowManualStartRequest, applications.Metadata) (WorkflowManualStartResult, error) {
++	return WorkflowManualStartResult{}, ErrUnavailable
++}
