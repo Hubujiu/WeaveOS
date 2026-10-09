@@ -69,7 +69,7 @@ func TestRootWorkflowEventHistoryHTTPSClosedInput(t *testing.T) {
 	for _, body := range []string{"{}", "null", " "} {
 		rootHTTPError(t, f.call(t, "GET", path, body, nil), 400, "COMMON_VALIDATION_FAILED")
 	}
-	rootHTTPError(t, f.call(t, "GET", path+"?pageToken=bad", "", nil), 409, "QUERY_CONTEXT_EXPIRED")
+	rootHTTPError(t, f.call(t, "GET", path+"?pageToken=bad", "", nil), 409, "APPLICATION_QUERY_CONTEXT_EXPIRED")
 	for _, method := range []string{"POST", "DELETE", "PATCH"} {
 		rootHTTPError(t, f.call(t, method, path, "", nil), 404, "API_NOT_FOUND")
 	}

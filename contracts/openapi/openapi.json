@@ -13024,6 +13024,235 @@
           }
         }
       }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/records/{recordId}/workflow-events": {
+      "get": {
+        "operationId": "readRecordWorkflowEventHistory",
+        "summary": "List confirmed workflow events for an authorized record",
+        "description": "V030-063 current live Session/menu/read/history authorization in one read-only RR; strict current field intersection before enumeration. Stable createdAt DESC/commandId DESC cursor pages across flows. Default20/max100; opaque session/actor/resource/pageSize/policy/schema binding with fixed10-minute expiry, reauthorization every page. Safe confirmed metadata only; pending commands excluded, no total or basis values. Batch original ledger/receipt and historical task identity verification, no per-event detail reads. Newer events appear on a fresh first page, not within old cursor chain. No body; reject unknown, repeated, empty query values and bare query marker. Only confirmed metadata, not full basis payload integrity.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Confirmed event metadata and original field basis, filtered by current history authority.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowEventHistoryEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -23863,6 +24092,55 @@
               },
               "data": {
                 "$ref": "#/components/schemas/WorkflowEventResult"
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowEventHistoryItems": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/WorkflowEventSummary"
+            }
+          }
+        }
+      },
+      "WorkflowEventHistoryEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/WorkflowEventHistoryItems"
+              },
+              "meta": {
+                "type": "object",
+                "required": [
+                  "requestId",
+                  "pagination"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "$ref": "#/components/schemas/CursorPagination"
+                  }
+                }
               }
             }
           }

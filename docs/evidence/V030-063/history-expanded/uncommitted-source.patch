@@ -1,0 +1,285 @@
+diff --git a/services/bff/cmd/bff/root_workflow_event_history_http_test.go b/services/bff/cmd/bff/root_workflow_event_history_http_test.go
+index 5190805..ab4e66a 100644
+--- a/services/bff/cmd/bff/root_workflow_event_history_http_test.go
++++ b/services/bff/cmd/bff/root_workflow_event_history_http_test.go
+@@ -69,7 +69,7 @@ func TestRootWorkflowEventHistoryHTTPSClosedInput(t *testing.T) {
+ 	for _, body := range []string{"{}", "null", " "} {
+ 		rootHTTPError(t, f.call(t, "GET", path, body, nil), 400, "COMMON_VALIDATION_FAILED")
+ 	}
+-	rootHTTPError(t, f.call(t, "GET", path+"?pageToken=bad", "", nil), 409, "QUERY_CONTEXT_EXPIRED")
++	rootHTTPError(t, f.call(t, "GET", path+"?pageToken=bad", "", nil), 409, "APPLICATION_QUERY_CONTEXT_EXPIRED")
+ 	for _, method := range []string{"POST", "DELETE", "PATCH"} {
+ 		rootHTTPError(t, f.call(t, method, path, "", nil), 404, "API_NOT_FOUND")
+ 	}
+diff --git a/services/bff/internal/apprecordhttp/http.go b/services/bff/internal/apprecordhttp/http.go
+index 2159634..51d3683 100644
+--- a/services/bff/internal/apprecordhttp/http.go
++++ b/services/bff/internal/apprecordhttp/http.go
+@@ -212,7 +212,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		failure(w, r, apprecordservice.ErrUnavailable, "")
+ 		return
+ 	}
+-	if s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
++	if s.workflowEventHistoryHTTP(w, r, p) || s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
+ 		return
+ 	}
+ 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
+diff --git a/services/bff/internal/apprecordservice/root_workflow_event_history_test.go b/services/bff/internal/apprecordservice/root_workflow_event_history_test.go
+index 31e07a3..4232303 100644
+--- a/services/bff/internal/apprecordservice/root_workflow_event_history_test.go
++++ b/services/bff/internal/apprecordservice/root_workflow_event_history_test.go
+@@ -1,14 +1,23 @@
+ package apprecordservice
+ 
+ import (
++	"context"
+ 	"encoding/json"
+ 	"errors"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	fc "github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
++	"github.com/jackc/pgx/v5"
++	"github.com/jackc/pgx/v5/pgxpool"
++	"github.com/redis/go-redis/v9"
++	"os"
+ 	"reflect"
+ 	"sort"
++	"strings"
++	"sync"
+ 	"testing"
++	"time"
+ )
+ 
+ func historyRequest(f rootTaskFixture, size int) WorkflowEventHistoryRequest {
+@@ -171,3 +180,230 @@ func TestRootEventHistoryCorruptLedgerFailsNoPartialPage(t *testing.T) {
+ 		t.Fatal("corrupt ledger partial page", r, e)
+ 	}
+ }
++
++func TestRootEventHistoryExplicitExpiryAndDomainIsolation(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	eventGrant(t, f, "all", f.public)
++	historyNoEffect(t, f)
++	q := historyRequest(f, 1)
++	first := historyRead(t, f, f.principal, q)
++	q.PageToken = *first.NextPageToken
++	m, e := f.service.WorkflowEventHistory.Load(f.ctx, f.principal.SessionRef, q.PageToken)
++	if e != nil {
++		t.Fatal(e)
++	}
++	var c eventHistoryCursor
++	if json.Unmarshal(m.Criteria, &c) != nil {
++		t.Fatal("cursor fixture")
++	}
++	ttl := c.Expires - time.Now().Unix()
++	if ttl < 590 || ttl > 600 {
++		t.Fatal("not fixed ten minute expiry", ttl)
++	}
++	// Explicit past expiry, not a wall-clock sleep or a fake successful TTL test.
++	c.Expires = 1
++	m.Criteria, _ = json.Marshal(c)
++	m.Fingerprint = eventHistoryFingerprint(m.Criteria)
++	expired, e := f.service.WorkflowEventHistory.Create(f.ctx, f.principal.SessionRef, m)
++	if e != nil {
++		t.Fatal(e)
++	}
++	bad := q
++	bad.PageToken = expired
++	if _, e = f.service.ReadWorkflowEventHistory(f.ctx, f.principal, bad); !errors.Is(e, querycontext.ErrExpired) {
++		t.Fatal("explicitly expired cursor accepted", e)
++	}
++	opts, e := redis.ParseURL(os.Getenv("WEAVEOS_TEST_REDIS_URL"))
++	if e != nil {
++		t.Fatal(e)
++	}
++	client := redis.NewClient(opts)
++	defer client.Close()
++	foreign := querycontext.NewStore(client, "foreign-history", "consumer-"+strings.ReplaceAll(f.app, "-", ""), querycontext.Policy{Validate: func(querycontext.Metadata) bool { return true }})
++	m, e = f.service.WorkflowEventHistory.Load(f.ctx, f.principal.SessionRef, q.PageToken)
++	if e != nil {
++		t.Fatal(e)
++	}
++	token, e := foreign.Create(f.ctx, f.principal.SessionRef, m)
++	if e != nil {
++		t.Fatal(e)
++	}
++	bad.PageToken = token
++	if _, e = f.service.ReadWorkflowEventHistory(f.ctx, f.principal, bad); !errors.Is(e, querycontext.ErrExpired) {
++		t.Fatal("other token namespace crossed", e)
++	}
++	// Re-reading a token must not rewrite its application-level expiration.
++	again, e := f.service.WorkflowEventHistory.Load(f.ctx, f.principal.SessionRef, q.PageToken)
++	if e != nil || !reflect.DeepEqual(again.Criteria, m.Criteria) {
++		t.Fatal("touch extended cursor expiry", e)
++	}
++}
++func TestRootEventHistoryRedisFailureNoPartialSuccess(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	eventGrant(t, f, "all", f.public)
++	historyNoEffect(t, f)
++	opts, e := redis.ParseURL(os.Getenv("WEAVEOS_TEST_REDIS_URL"))
++	if e != nil {
++		t.Fatal(e)
++	}
++	client := redis.NewClient(opts)
++	if e = client.Close(); e != nil {
++		t.Fatal(e)
++	}
++	s := *f.service
++	s.WorkflowEventHistory = newWorkflowEventHistoryStore(client, "closed-history")
++	r, e := s.ReadWorkflowEventHistory(f.ctx, f.principal, historyRequest(f, 1))
++	if e == nil || len(r.Items) != 0 || r.NextPageToken != nil {
++		t.Fatal("failed cursor storage returned partial page", r, e)
++	}
++}
++func TestRootEventHistoryCrossFlowAndPending(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	eventGrant(t, f, "all", f.public)
++	graph := rootCatalogGraph(t, f.recordFixture, false)
++	h := rootCatalogReady(t, f.recordFixture, graph)
++	instance := rootCatalogReserve(t, f.recordFixture, rootCatalogReserveInput(t, f.recordFixture, h))
++	var version string
++	if e := f.owner.QueryRow(f.ctx, "SELECT version_id::text FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2 AND version=1", f.app, h.FlowID).Scan(&version); e != nil {
++		t.Fatal(e)
++	}
++	p := rootProjection{recordFixture: f.recordFixture, head: h, instance: instance, version: version, first: graph.Nodes[1].ID, second: graph.Nodes[1].ID}
++	c, payload := rootRecoveryAccept(t, p)
++	r := historyRead(t, f, f.principal, historyRequest(f, 20))
++	if len(r.Items) != 1 {
++		t.Fatal("pending second flow became confirmed")
++	}
++	task := p.task(t, p.first, p.actor, 1)
++	receipt, body := p.receipt(t, c, "active", "", task)
++	p.apply(t, c, payload, receipt, body, true)
++	r = historyRead(t, f, f.principal, historyRequest(f, 20))
++	if len(r.Items) != 2 || r.Items[0].ID != c.CommandID || r.Items[0].FlowID != h.FlowID || r.Items[1].FlowID != f.head.FlowID {
++		t.Fatal("cross-flow history wrong", r)
++	}
++}
++func TestRootEventHistoryWithdrawReturnSummary(t *testing.T) {
++	for _, action := range []string{"withdraw", "return"} {
++		t.Run(action, func(t *testing.T) {
++			f := rootTaskSetup(t, false)
++			eventGrant(t, f, "all", f.public)
++			op := rootLifecycleAccept(t, f, rootLifecycleActionReq(t, f, action))
++			c, payload := rootActionRead(t, f, op)
++			state := "withdrawn"
++			var tasks []fc.ExecutionTask
++			if action == "return" {
++				state = "active"
++				tasks = []fc.ExecutionTask{f.rootProjection.task(t, f.first, f.actor, 2)}
++			}
++			receipt, body := f.receipt(t, c, state, "", tasks...)
++			f.apply(t, c, payload, receipt, body, true)
++			list := historyRead(t, f, f.principal, historyRequest(f, 20))
++			if len(list.Items) != 2 || list.Items[0].ID != c.CommandID || list.Items[0].Action != action || list.Items[0].Outcome != "success" {
++				t.Fatal("wrong confirmed lifecycle", list)
++			}
++			event := list.Items[0]
++			if action == "withdraw" && (event.NodeID != nil || event.TargetNodeID != nil) {
++				t.Fatal("withdraw invented node")
++			}
++			if action == "return" && (event.NodeID == nil || *event.NodeID != f.first || event.TargetNodeID == nil || *event.TargetNodeID != f.first) {
++				t.Fatal("return lost source/target")
++			}
++			detail := eventRead(t, f, f.principal, WorkflowEventRequest{f.app, f.view, f.ownRecord, c.CommandID})
++			if !reflect.DeepEqual(detail.Event, event) {
++				t.Fatal("detail/list lifecycle mismatch")
++			}
++		})
++	}
++}
++func TestRootEventHistoryOneSnapshotAndLiveNextRequest(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	eventGrant(t, f, "all", f.public)
++	id := historyNoEffect(t, f)
++	trace := &eventSnapshotTrace{change: func() error {
++		_, e := f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.history')", f.app)
++		if e != nil {
++			return e
++		}
++		_, e = f.owner.Exec(f.ctx, "UPDATE applications.workflow_commands SET command_hash=decode(repeat('00',32),'hex') WHERE command_id=$1", id)
++		return e
++	}}
++	cfg := f.runtime.Config()
++	cfg.ConnConfig.Tracer = trace
++	cfg.MaxConns = 1
++	pool, e := pgxpool.NewWithConfig(f.ctx, cfg)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer pool.Close()
++	s := *f.service
++	s.Pool = pool
++	r, e := s.ReadWorkflowEventHistory(f.ctx, f.principal, historyRequest(f, 20))
++	if !trace.changed || trace.err != nil || e != nil || len(r.Items) != 2 {
++		t.Fatal("mixed history/ledger snapshots", e, trace.err)
++	}
++	if _, e = s.ReadWorkflowEventHistory(f.ctx, f.principal, historyRequest(f, 20)); !errors.Is(e, applications.ErrDenied) {
++		t.Fatal("next request used old authority", e)
++	}
++	owner := f.principal
++	owner.UserID = f.other
++	owner.SessionRef = f.other
++	if _, e = s.ReadWorkflowEventHistory(f.ctx, owner, historyRequest(f, 20)); !errors.Is(e, ErrUnavailable) {
++		t.Fatal("fresh owner did not observe corrupt ledger", e)
++	}
++}
++
++type historyCostTrace struct {
++	mu      sync.Mutex
++	queries []string
++}
++
++func (t *historyCostTrace) TraceQueryStart(ctx context.Context, _ *pgx.Conn, d pgx.TraceQueryStartData) context.Context {
++	t.mu.Lock()
++	t.queries = append(t.queries, d.SQL)
++	t.mu.Unlock()
++	return ctx
++}
++func (*historyCostTrace) TraceQueryEnd(context.Context, *pgx.Conn, pgx.TraceQueryEndData) {}
++func TestRootEventHistoryBoundedBatchCost(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	eventGrant(t, f, "all", f.public)
++	for i := 0; i < 100; i++ {
++		historyNoEffect(t, f)
++	}
++	trace := &historyCostTrace{}
++	cfg := f.runtime.Config()
++	cfg.ConnConfig.Tracer = trace
++	cfg.MaxConns = 1
++	pool, e := pgxpool.NewWithConfig(f.ctx, cfg)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer pool.Close()
++	if e = pool.Ping(f.ctx); e != nil {
++		t.Fatal(e)
++	}
++	s := *f.service
++	s.Pool = pool
++	for _, size := range []int{1, 20, 100} {
++		trace.mu.Lock()
++		trace.queries = nil
++		trace.mu.Unlock()
++		start := time.Now()
++		r, e := s.ReadWorkflowEventHistory(f.ctx, f.principal, historyRequest(f, size))
++		elapsed := time.Since(start)
++		if e != nil || len(r.Items) != size || !r.HasMore {
++			t.Fatal("bounded page missing", size, e)
++		}
++		trace.mu.Lock()
++		queries := append([]string(nil), trace.queries...)
++		trace.mu.Unlock()
++		if len(queries) > 20 {
++			t.Fatal("per-event SQL growth", size, len(queries))
++		}
++		for _, q := range queries {
++			if strings.Contains(q, "workflow_evidence_") || strings.Contains(q, "graph_json") || strings.Contains(q, "payload_bytes") || strings.Contains(q, "result_bytes") {
++				t.Fatal("metadata page loaded full evidence", q)
++			}
++		}
++		t.Logf("V063_COST page=%d confirmedCandidates=101 statementsIncludingTx=%d elapsed=%s isolated warm fixture, not production throughput", size, len(queries), elapsed)
++	}
++}
