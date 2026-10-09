@@ -161,3 +161,34 @@ func TestRootRecordTriggersEditAgainWhileConditionRemainsTrue(t *testing.T) {
 		}
 	}
 }
+
+func TestRootRecordTriggersCommitFailureRollsBackRecordIntentsAuditAndReceipt(t *testing.T) {
+	f := newRecordFixture(t)
+	rootConfiguredTrigger(t, f, "record.created", nil)
+	rootConfiguredTrigger(t, f, "record.created", nil)
+	name := "v044_trigger_fault_" + strings.ReplaceAll(f.app, "-", "")
+	function := pgx.Identifier{"applications", name}.Sanitize()
+	trigger := pgx.Identifier{name}.Sanitize()
+	sql := "CREATE FUNCTION " + function + "() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.app_id='" + f.app + "'::uuid THEN RAISE EXCEPTION 'isolated V044 final-commit fault' USING ERRCODE='P0001'; END IF; RETURN NEW; END $$"
+	if _, err := f.owner.Exec(f.ctx, sql); err != nil {
+		t.Fatal(err)
+	}
+	defer f.owner.Exec(f.ctx, "DROP FUNCTION "+function+"() CASCADE")
+	if _, err := f.owner.Exec(f.ctx, "CREATE CONSTRAINT TRIGGER "+trigger+" AFTER INSERT ON applications.workflow_instances DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION "+function+"()"); err != nil {
+		t.Fatal(err)
+	}
+	req := rootTriggerCreateRequest(t, f, "alpha")
+	if _, err := f.service.Create(f.ctx, f.principal, req, applications.Metadata{RequestID: "v044-atomic-commit-fault"}); err == nil {
+		t.Fatal("record save falsely succeeded without committing all matching trigger intents")
+	}
+	physical := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.table, "-", "")}.Sanitize()
+	var count int
+	if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM "+physical).Scan(&count); err != nil || count != 2 {
+		t.Fatalf("record escaped transaction rollback: %d %v", count, err)
+	}
+	for _, table := range []string{"workflow_instances", "record_write_audit", "operations"} {
+		if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications."+table+" WHERE app_id=$1", f.app).Scan(&count); err != nil || count != 0 {
+			t.Fatalf("%s escaped transaction rollback: %d %v", table, count, err)
+		}
+	}
+}
