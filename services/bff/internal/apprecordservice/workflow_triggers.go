@@ -3,6 +3,7 @@ package apprecordservice
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
@@ -11,6 +12,8 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
 	"github.com/jackc/pgx/v5"
 )
+
+var ErrWorkflowRecordReadOnly = errors.New("record is read-only while workflow is in flight")
 
 func retainRecordTriggers(ctx context.Context, tx pgx.Tx, facts applications.RecordContext, stored apprecords.MutationResult, event string) error {
 	_, err := (workflowcatalog.Catalog{}).ReserveRecordTriggersInTx(ctx, tx, workflowcatalog.RecordTriggerInput{

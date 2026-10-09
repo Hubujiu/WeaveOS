@@ -74,3 +74,12 @@ func TestRootRecordTriggersHTTPSEditSameValueThenChanged(t *testing.T) {
 	rootHTTPData(t, f.call(t, "PATCH", path, string(bytes), nil), 200)
 	rootHTTPTriggerCount(t, f, f.record, 1)
 }
+
+func TestRootRecordTriggersHTTPSOrdinaryEditIsReadOnlyWhileStarting(t *testing.T) {
+	f := rootHTTPTriggerSetup(t)
+	path := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/records"
+	created := rootHTTPData(t, f.call(t, "POST", path, `{"operationId":"`+f.id(t)+`","expectedSchemaVersion":1,"values":{"`+f.field+`":"submitted"}}`, nil), 201)
+	record := rootHTTPString(t, created, "id")
+	raw := `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"expectedRecordVersion":1,"changes":{"` + f.field + `":"ordinary bypass"}}`
+	rootHTTPError(t, f.call(t, "PATCH", path+"/"+record, raw, nil), 409, "WORKFLOW_RECORD_READ_ONLY")
+}
