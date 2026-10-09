@@ -2,6 +2,9 @@ package apprecordservice
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowprojection"
+	"github.com/jackc/pgx/v5/pgconn"
 	"reflect"
 	"strings"
 	"testing"
@@ -177,5 +180,89 @@ func TestRootWorkflowJournalDirectRecordAccessPath(t *testing.T) {
 	}
 	if !valid || !ready || !strings.Contains(definition, "(app_id, table_id, record_id, created_at DESC, command_id DESC)") {
 		t.Fatal("wrong independent history access path", definition)
+	}
+}
+
+func TestRootWorkflowJournalReplayPreservesNewFenceAndRejectsTampering(t *testing.T) {
+	f := rootTaskSetup(t, true)
+	op := rootAction(t, f, rootActionRequest(t, f, "reject"))
+	c, p := rootActionRead(t, f, op)
+	r, body := f.receipt(t, c, "rejected", "")
+	f.apply(t, c, p, r, body, true)
+	next := f.rootProjection
+	next.instance = rootCatalogReserve(t, f.recordFixture, rootCatalogReserveInput(t, f.recordFixture, f.head))
+	pending, _ := next.accept(t, "start", "", "", 0, 0)
+	eventSQL(t, f, "DELETE FROM applications.workflow_tasks WHERE app_id=$1 AND instance_id=$2", f.app, f.instance.ID)
+	eventSQL(t, f, "DELETE FROM applications.workflow_instances WHERE app_id=$1 AND id=$2 AND state='rejected'", f.app, f.instance.ID)
+	if !f.apply(t, c, p, r, body, true).Duplicate {
+		t.Fatal("original replay lost duplicate identity")
+	}
+	checkFence := func() {
+		t.Helper()
+		var id, state string
+		var epoch int64
+		if err := f.owner.QueryRow(f.ctx, "SELECT command_id::text,state,fence_epoch FROM applications.record_command_fences WHERE app_id=$1 AND table_id=$2 AND record_id=$3", f.app, f.table, f.ownRecord).Scan(&id, &state, &epoch); err != nil || id != pending.CommandID || state != "pending" || epoch != pending.FenceEpoch {
+			t.Fatal("old replay changed new command fence", id, state, epoch, err)
+		}
+	}
+	checkFence()
+	changed := r
+	changed.ProofID = recordOperationID(t, f.recordFixture)
+	tx, err := f.runtime.Begin(f.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := (workflowprojection.Store{}).ApplyInTx(f.ctx, tx, c, p, changed, body)
+	if err == nil || !reflect.DeepEqual(got, workflowprojection.Applied{}) {
+		t.Fatal("changed receipt passed terminal shortcut", err)
+	}
+	if err = tx.Commit(f.ctx); err != nil {
+		t.Fatal(err)
+	}
+	checkFence()
+	eventSQL(t, f, "UPDATE applications.workflow_execution_events SET record_id=$2 WHERE command_id=$1", c.CommandID, f.otherRecord)
+	tx, err = f.runtime.Begin(f.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err = (workflowprojection.Store{}).ApplyInTx(f.ctx, tx, c, p, r, body)
+	if err == nil || !reflect.DeepEqual(got, workflowprojection.Applied{}) {
+		t.Fatal("wrong durable record binding passed terminal shortcut", err)
+	}
+	if err = tx.Commit(f.ctx); err != nil {
+		t.Fatal(err)
+	}
+	checkFence()
+}
+
+func TestRootWorkflowJournalAppendOnlyRolesAndCallerMetadata(t *testing.T) {
+	f := rootTaskSetup(t, true)
+	q := eventConfirmed(t, f, "reject")
+	for _, sql := range []string{"UPDATE applications.workflow_execution_events SET flow_name='forged' WHERE command_id=$1", "DELETE FROM applications.workflow_execution_events WHERE command_id=$1"} {
+		_, err := f.runtime.Exec(f.ctx, sql, q.EventID)
+		var pg *pgconn.PgError
+		if !errors.As(err, &pg) || pg.Code != "42501" {
+			t.Fatalf("runtime must not change permanent journal: %v", err)
+		}
+	}
+	_, err := f.runtime.Exec(f.ctx, `INSERT INTO applications.workflow_execution_events
+ (command_id,app_id,instance_id,actor_id,action,outcome,sequence,schema_version,record_version,evidence_hash,payload_bytes,result_bytes,proof_id,flow_name)
+ SELECT command_id,app_id,instance_id,actor_id,action,outcome,sequence,schema_version,record_version,evidence_hash,payload_bytes,result_bytes,proof_id,'forged'
+ FROM applications.workflow_execution_events WHERE command_id=$1`, q.EventID)
+	var pg *pgconn.PgError
+	if !errors.As(err, &pg) || pg.Code != "23514" {
+		t.Fatalf("conflicting caller snapshot must reject before insertion: %v", err)
+	}
+	tx, err := f.owner.Begin(f.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(f.ctx)
+	if _, err = tx.Exec(f.ctx, "SET LOCAL ROLE auth_backup"); err != nil {
+		t.Fatal(err)
+	}
+	var record, name, source string
+	if err = tx.QueryRow(f.ctx, "SELECT record_id::text,flow_name,flow_name_source FROM applications.workflow_execution_events WHERE command_id=$1", q.EventID).Scan(&record, &name, &source); err != nil || record != f.ownRecord || name == "" || name == "forged" || source != "captured" {
+		t.Fatal("backup cannot read unchanged new journal metadata", err)
 	}
 }
