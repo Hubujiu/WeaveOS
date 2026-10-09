@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appaccess"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
@@ -217,7 +218,7 @@ func (s *inboxStrategy) authorized(ctx context.Context, tx pgx.Tx, c *inboxCandi
 		return false, err
 	}
 	policy, menu := policyFor(facts)
-	if !menu {
+	if !menu || policy.VisibleScope() == appaccess.None {
 		return false, nil
 	}
 	if facts.Actor.ID != s.binding.ActorID || facts.TableID != c.tableID || !facts.SchemaReady {
