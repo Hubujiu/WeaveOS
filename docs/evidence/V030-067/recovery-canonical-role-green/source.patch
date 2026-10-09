@@ -1,0 +1,11 @@
+diff --git a/services/workflow-engine/schema/formal-runtime-fixture-role.sql b/services/workflow-engine/schema/formal-runtime-fixture-role.sql
+index ee11c323..fb5347f6 100644
+--- a/services/workflow-engine/schema/formal-runtime-fixture-role.sql
++++ b/services/workflow-engine/schema/formal-runtime-fixture-role.sql
+@@ -14,3 +14,6 @@ GRANT UPDATE(outcome,result_sequence,proof_id,result_hash,result_bytes) ON workf
+ GRANT UPDATE(engine_process_id,state,sequence,fence_epoch,schema_version,record_version,activation_epoch,updated_at)
+  ON workflow.wf_execution_instances TO v041_runtime;
+ GRANT UPDATE(state,decision) ON workflow.wf_execution_tasks TO v041_runtime;
++GRANT SELECT,INSERT ON workflow.wf_flow_deletion_guards TO v041_runtime;
++GRANT UPDATE(retired,operation_id,deleted_versions,deleted_at)
++ ON workflow.wf_flow_deletion_guards TO v041_runtime;
