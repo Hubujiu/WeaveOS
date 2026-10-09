@@ -102,7 +102,8 @@ func TestRootDeletionClientLookupBranchesAndTransportFailure(t *testing.T) {
 			if m != "/weaveos.workflow.v1.DeploymentService/LookupFlowDeletion" {
 				t.Fatal(m)
 			}
-			proto.Merge(out.(proto.Message), v)
+			// Preserve deliberately malformed nil oneof payloads; proto.Merge normalizes them.
+			out.(*pb.FlowDeletionLookupResponse).Result = v.Result
 			return nil
 		}}
 		r, e := client(t, conn).LookupFlowDeletion(context.Background(), deletionRequest())

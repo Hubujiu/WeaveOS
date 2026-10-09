@@ -97,6 +97,7 @@ public final class WorkflowRuntime implements AutoCloseable {
         var jdbc = new JdbcTemplate(pool);
         var deployments = new DeploymentRegistry(jdbc, transactionManager, engine);
         var executions = new ExecutionRegistry(jdbc, transactionManager, engine);
+        var deletions = new FlowDeletionRegistry(jdbc, transactionManager, engine);
         var threadNumber = new AtomicInteger();
         workers = new ThreadPoolExecutor(configuration.rpcThreads(), configuration.rpcThreads(),
             0, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(configuration.queueCapacity()),
@@ -113,7 +114,7 @@ public final class WorkflowRuntime implements AutoCloseable {
             .maxInboundMetadataSize(MAX_METADATA)
             .intercept(dispatcher)
             .intercept(configuration.serviceIdentity())
-            .addService(new DeploymentGrpcService(deployments))
+            .addService(new DeploymentGrpcService(deployments, deletions))
             .addService(new ExecutionGrpcService(executions))
             .addService(new DatabaseHealth())
             .build();
