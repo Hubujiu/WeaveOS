@@ -12,12 +12,19 @@ import (
 // Real HTTPS configuration + record writes. Only engine deployment confirmation
 // is a synthetic catalog fixture: this proves entry/transaction wiring, not RPC.
 func rootHTTPTriggerSetup(t *testing.T) *rootTaskHTTPFixture {
+	return rootHTTPTriggerSetupEvents(t, "record.created", "record.updated")
+}
+func rootHTTPTriggerSetupEvents(t *testing.T, events ...string) *rootTaskHTTPFixture {
 	t.Helper()
 	f := rootHTTPResourceSetup(t)
 	f.flow = f.id(t)
 	start, node, end := f.id(t), f.id(t), f.id(t)
+	triggers := []any{}
+	for _, event := range events {
+		triggers = append(triggers, map[string]any{"event": event, "condition": nil})
+	}
 	body := map[string]any{"operationId": f.id(t), "name": "Record triggers", "expectedRevision": 0, "expectedSchemaVersion": 1, "allowWithdraw": true,
-		"triggers": []any{map[string]any{"event": "record.created", "condition": nil}, map[string]any{"event": "record.updated", "condition": nil}},
+		"triggers": triggers,
 		"graph":    map[string]any{"version": 1, "nodes": []any{map[string]any{"id": start, "kind": "start"}, map[string]any{"id": node, "kind": "approval", "approval": map[string]any{"mode": "all", "assigneeIds": []string{f.actor}, "editableFieldIds": []string{}}}, map[string]any{"id": end, "kind": "end"}}, "edges": []any{map[string]any{"from": start, "to": node}, map[string]any{"from": node, "to": end}}}}
 	raw, err := json.Marshal(body)
 	if err != nil {
