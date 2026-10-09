@@ -152,7 +152,7 @@ func TestRootWorkflowEventMissingResourceAndCorruptEvidence(t *testing.T) {
 	if _, e := f.service.ReadWorkflowEvent(f.ctx, f.principal, wrong); !errors.Is(e, applications.ErrMissing) {
 		t.Fatal("missing event exposed", e)
 	}
-	eventSQL(t, f, "UPDATE applications.workflow_evidence_documents SET body=set_byte(body,0,0) WHERE app_id=$1", f.app)
+	eventSQL(t, f, "UPDATE applications.workflow_evidence_documents SET body=set_byte(body,8,0) WHERE app_id=$1", f.app)
 	got, e := f.service.ReadWorkflowEvent(f.ctx, f.principal, q)
 	if !errors.Is(e, ErrUnavailable) || len(got.Basis.Fields) != 0 || got.Event.ID != "" {
 		t.Fatal("corrupt evidence returned partial success", e)
