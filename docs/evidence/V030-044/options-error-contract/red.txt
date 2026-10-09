@@ -1,0 +1,53 @@
+✔ manual option discovery is a guarded read-only POST with bounded closed paging (2.102305ms)
+✔ manual options reveal only six safe identity and CAS fields (0.211231ms)
+✖ manual discovery conflict contract includes unavailable configuration without broadening record errors (0.767469ms)
+✖ manual discovery documents the registered expiry error name (3.977425ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 98.349312
+
+✖ failing tests:
+
+test at contracts/workflow-manual-options.contract.test.mjs:27:1
+✖ manual discovery conflict contract includes unavailable configuration without broadening record errors (0.767469ms)
+  AssertionError [ERR_ASSERTION]: missing safe discovery error WORKFLOW_NOT_READY
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-044/contracts/workflow-manual-options.contract.test.mjs:31:114)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at contracts/workflow-manual-options.contract.test.mjs:34:1
+✖ manual discovery documents the registered expiry error name (3.977425ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(description.includes('APPLICATION_QUERY_CONTEXT_EXPIRED'))
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-044/contracts/workflow-manual-options.contract.test.mjs:36:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
