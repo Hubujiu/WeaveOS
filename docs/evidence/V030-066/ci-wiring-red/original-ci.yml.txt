@@ -323,23 +323,6 @@ jobs:
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootNativeHistoryTest -Dworkflow.reports=ci-logs/native-history-reports test 2>&1 | tee services/workflow-engine/ci-logs/native-history-tests.txt
       - name: Require eight native history cases without skips
         run: python3 services/workflow-engine/native_history_ci_gate.py services/workflow-engine/ci-logs/native-history-reports
-      - name: Native deletion resource and receipt lifetime contract
-        run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootNativeDeletionContractTest -Dworkflow.reports=ci-logs/native-deletion-reports test 2>&1 | tee services/workflow-engine/ci-logs/native-deletion-tests.txt
-      - name: Require six native deletion cases without skips
-        run: |
-          python3 - <<'PYCODE'
-          import sys
-          sys.path.insert(0,"services/workflow-engine")
-          from rpc_ci_gate import _java
-          _java("services/workflow-engine/ci-logs/native-deletion-reports", "org.weaveos.workflow.RootNativeDeletionContractTest", [
-              "nonCascadeRefusesRunningInstanceAndTaskCanStillContinue",
-              "nonCascadeRemovesFinishedDefinitionButRetainsNativeHistory",
-              "drainedCascadeRemovesOnlyTargetResourcesAndPreservesIndependentReceipts",
-              "nativeCascadeRollbackRestoresDefinitionResourcesAndHistory",
-              "deletingAllNativeVersionsKeepsOriginalReplayAcrossEngineReopen",
-              "nativeCleanupAloneDoesNotReserveDeletedFlowIdentity",
-          ])
-          PYCODE
       - name: Clean verify against dedicated internal PostgreSQL
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootDeploymentRegistryTest verify 2>&1 | tee services/workflow-engine/ci-logs/verify.txt
       - name: Require all 18 Root-owned cases without skips
