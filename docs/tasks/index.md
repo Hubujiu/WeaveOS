@@ -117,4 +117,4 @@ Flowable原生版本与流程层精简：[V030-038](V030-038.md)，Root本人设
 
 - [V030-062 · 已确认审批事件与历史依据详情](V030-062.md) — [PR #71](https://github.com/Hubujiu/WeaveOS/pull/71) 最终264b73b全部适用CI通过，已squash develop cf27eaa；main未推广。
 
-- [V030-063 · 已确认流程事件游标列表](V030-063.md) — 整合已验证的PR71，保留共享当前授权与独立游标列表；最终候选回归/CI待跑。
+- [V030-063 · 已确认流程事件游标列表](V030-063.md) — 实际PR71已整合，712顶层/548子及Node527通过；[draft PR73](https://github.com/Hubujiu/WeaveOS/pull/73)待精确CI。
