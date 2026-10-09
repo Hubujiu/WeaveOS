@@ -47,3 +47,17 @@ func TestRootOrdinaryEditOtherRecordAndTerminalRemainEditable(t *testing.T) {
 		})
 	}
 }
+
+func TestRootOrdinaryEditEmptyPatchCannotWriteReceiptWhileInFlight(t *testing.T) {
+	f := rootCaptureSetup(t).recordFixture
+	_, record := rootStartIntent(t, f, f.actor)
+	req := EditRequest{AppID: f.app, ViewID: f.view, RecordID: record, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{}}
+	got, err := f.service.Edit(f.ctx, f.principal, req, applications.Metadata{RequestID: "empty-in-flight"})
+	if !errors.Is(err, ErrWorkflowRecordReadOnly) || got.RecordVersion != 0 {
+		t.Fatalf("empty edit bypassed readonly: %+v %v", got, err)
+	}
+	var n int
+	if err = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.operations WHERE app_id=$1 AND operation_id=$2", f.app, req.OperationID).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("empty edit committed receipt %d %v", n, err)
+	}
+}
