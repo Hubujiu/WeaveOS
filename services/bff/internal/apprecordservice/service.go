@@ -25,6 +25,7 @@ type Service struct {
 	WorkflowBases          *querycontext.Store
 	WorkflowLifecycleBases *querycontext.Store
 	WorkflowReads          *querycontext.Store
+	WorkflowInbox          *querycontext.Store
 	WorkflowManualOptions  *querycontext.Store
 	Limits                 appschema.Limits
 }
@@ -57,7 +58,7 @@ func New(pool *pgxpool.Pool, client redis.UniversalClient, generation string) *S
 				b.Data >= a.Data && b.Dependency >= a.Dependency && b.Schema >= a.Schema && b.View >= a.View && b.Policy >= a.Policy && b.Source >= a.Source
 		},
 	}
-	return &Service{Pool: pool, Queries: querycontext.NewStore(client, "applications", generation, policy), WorkflowBases: newWorkflowBasisStore(client, generation), WorkflowLifecycleBases: newWorkflowLifecycleStore(client, generation), WorkflowReads: newWorkflowReadStore(client, generation), WorkflowManualOptions: newManualOptionsStore(client, generation)}
+	return &Service{Pool: pool, Queries: querycontext.NewStore(client, "applications", generation, policy), WorkflowBases: newWorkflowBasisStore(client, generation), WorkflowLifecycleBases: newWorkflowLifecycleStore(client, generation), WorkflowReads: newWorkflowReadStore(client, generation), WorkflowInbox: newWorkflowInboxStore(client, generation), WorkflowManualOptions: newManualOptionsStore(client, generation)}
 }
 
 func closedJSON(raw json.RawMessage, out any) bool {

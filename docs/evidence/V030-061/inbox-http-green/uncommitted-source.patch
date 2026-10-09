@@ -1,0 +1,61 @@
+diff --git a/services/bff/internal/applications/http.go b/services/bff/internal/applications/http.go
+index 8d8fdbc..82e82c2 100644
+--- a/services/bff/internal/applications/http.go
++++ b/services/bff/internal/applications/http.go
+@@ -241,7 +241,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		}
+ 	}
+ 	if s.Records != nil {
+-		if strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/") {
++		if r.URL.Path == "/api/v1/workflow-tasks/search" || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/") {
+ 			s.Records.ServeHTTP(w, r)
+ 			return
+ 		}
+diff --git a/services/bff/internal/apprecordhttp/http.go b/services/bff/internal/apprecordhttp/http.go
+index c82a3d3..367f656 100644
+--- a/services/bff/internal/apprecordhttp/http.go
++++ b/services/bff/internal/apprecordhttp/http.go
+@@ -212,7 +212,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		failure(w, r, apprecordservice.ErrUnavailable, "")
+ 		return
+ 	}
+-	if s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
++	if s.workflowInboxHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
+ 		return
+ 	}
+ 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
+diff --git a/services/bff/internal/appstructure/record_http_decode.go b/services/bff/internal/appstructure/record_http_decode.go
+index 64d99e9..05ec6ed 100644
+--- a/services/bff/internal/appstructure/record_http_decode.go
++++ b/services/bff/internal/appstructure/record_http_decode.go
+@@ -17,7 +17,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
+ 	switch kind {
+ 	case "workflow.manual.start":
+ 		required = []string{"operationId", "flowId", "expectedWorkflowRevision", "expectedSchemaVersion", "expectedRecordVersion"}
+-	case "workflow.instances.search", "workflow.manual.options.search":
++	case "workflow.instances.search", "workflow.manual.options.search", "workflow.inbox.search":
+ 		required = []string{"page"}
+ 		optional = []string{"pageSize", "queryVersion"}
+ 	case "workflow.lifecycle.action":
+@@ -53,7 +53,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
+ 	if kind == "record.search" {
+ 		limit = 64 << 10
+ 	}
+-	if kind == "workflow.manual.start" || kind == "workflow.task.action" || kind == "workflow.lifecycle.action" || kind == "workflow.instances.search" || kind == "workflow.manual.options.search" {
++	if kind == "workflow.manual.start" || kind == "workflow.task.action" || kind == "workflow.lifecycle.action" || kind == "workflow.instances.search" || kind == "workflow.manual.options.search" || kind == "workflow.inbox.search" {
+ 		limit = 4096
+ 	}
+ 	raw, e := io.ReadAll(http.MaxBytesReader(w, r.Body, limit))
+diff --git a/services/bff/internal/auth/service.go b/services/bff/internal/auth/service.go
+index 58fefdc..afe0a48 100644
+--- a/services/bff/internal/auth/service.go
++++ b/services/bff/internal/auth/service.go
+@@ -27,7 +27,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		s.Personnel.ServeHTTP(w, r)
+ 		return
+ 	}
+-	if s.Applications != nil && (r.URL.Path == "/api/v1/applications" || strings.HasPrefix(r.URL.Path, "/api/v1/applications/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-operations/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/")) {
++	if s.Applications != nil && (r.URL.Path == "/api/v1/workflow-tasks/search" || r.URL.Path == "/api/v1/applications" || strings.HasPrefix(r.URL.Path, "/api/v1/applications/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-operations/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/")) {
+ 		s.Applications.ServeHTTP(w, r)
+ 		return
+ 	}
