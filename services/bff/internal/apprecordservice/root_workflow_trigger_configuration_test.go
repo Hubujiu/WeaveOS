@@ -126,3 +126,48 @@ func rootSameTriggerConfiguration(a, b []workflowcatalog.Trigger) bool {
 	var left, right any
 	return errA == nil && errB == nil && json.Unmarshal(rawA, &left) == nil && json.Unmarshal(rawB, &right) == nil && reflect.DeepEqual(left, right)
 }
+
+func TestRootTriggerConfigurationPublishAndEnableRecheckFields(t *testing.T) {
+	for _, action := range []string{"publication_snapshot", "confirm", "enable"} {
+		t.Run(action, func(t *testing.T) {
+			f := newRecordFixture(t)
+			configs := []workflowcatalog.Trigger{{Event: "record.created", Condition: rootTriggerCondition(f.public)}}
+			in := rootCatalogInput(f, recordOperationID(t, f), 0, rootCatalogGraph(t, f, false))
+			in.Triggers = &configs
+			var h workflowcatalog.Head
+			rootCatalogTx(t, f, func(tx pgx.Tx) error {
+				var err error
+				h, err = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in)
+				return err
+			})
+			if action == "enable" {
+				h = rootCatalogDeploy(t, f, h)
+			}
+			if _, err := f.owner.Exec(f.ctx, "UPDATE applications.logical_tables SET fields_json=fields_json-0,schema_version=schema_version+1 WHERE id=$1", f.table); err != nil {
+				t.Fatal(err)
+			}
+			if action == "publication_snapshot" {
+				rootCatalogTx(t, f, func(tx pgx.Tx) error {
+					v, err := (workflowcatalog.Catalog{}).PublicationVersionInTx(f.ctx, tx, f.app, h.FlowID, 1)
+					if err != nil {
+						return err
+					}
+					if v.Compatible {
+						t.Fatal("publication advertised compatibility after trigger field removal")
+					}
+					return nil
+				})
+			} else {
+				rootCatalogWantError(t, f, workflowcatalog.ErrConflict, func(tx pgx.Tx) error {
+					var err error
+					if action == "confirm" {
+						_, err = (workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx, tx, f.app, h.FlowID, 1, "engine-trigger-guard")
+					} else {
+						_, err = (workflowcatalog.Catalog{}).EnableInTx(f.ctx, tx, f.app, h.FlowID, h.Revision)
+					}
+					return err
+				})
+			}
+		})
+	}
+}
