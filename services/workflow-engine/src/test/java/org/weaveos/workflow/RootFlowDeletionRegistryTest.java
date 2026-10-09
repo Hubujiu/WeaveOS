@@ -3,6 +3,9 @@ package org.weaveos.workflow;
 import static org.junit.jupiter.api.Assertions.*;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -107,6 +110,52 @@ class RootFlowDeletionRegistryTest {
   assertNotNull(deletion.delete(request()));assertEquals(started,execution.execute(cmd.request()));assertEquals(ended,execution.execute(withdraw.request()));
   assertEquals(before,f.jdbc.queryForObject("SELECT jsonb_agg(to_jsonb(c) ORDER BY command_id)::text FROM wf_execution_commands c",String.class));
   assertEquals(0,f.deployments());
+ }
+ void await(CountDownLatch latch){try{assertTrue(latch.await(10,TimeUnit.SECONDS));}catch(InterruptedException e){Thread.currentThread().interrupt();throw new AssertionError(e);}}
+ void waitBlocked(AtomicInteger waiter,AtomicInteger owner)throws Exception {
+  long until=System.nanoTime()+TimeUnit.SECONDS.toNanos(5);
+  while(System.nanoTime()<until){
+   if(waiter.get()!=0&&Boolean.TRUE.equals(f.jdbc.queryForObject("SELECT ? = ANY(pg_blocking_pids(?))",Boolean.class,owner.get(),waiter.get())))return;
+   Thread.sleep(10);
+  }
+  fail("second real connection did not wait for the first transaction's identity lock");
+ }
+ @ParameterizedTest @ValueSource(strings={"delete-publish","publish-delete","delete-start","start-delete"})
+ void realTwoConnectionAdmissionArbitration(String order)throws Exception {
+  var first=f.registry.deploy(n.request(n.V1,1,"all"));var next=n.request(n.V2,2,"all");var execution=new ExecutionRegistry(f.jdbc,f.tm,f.engine);var cmd=startCommand();
+  var entered=new CountDownLatch(1);var release=new CountDownLatch(1);var owner=new AtomicInteger();var waiter=new AtomicInteger();
+  var pool=Executors.newFixedThreadPool(2);
+  try{
+   var a=pool.submit(()->new TransactionTemplate(f.tm).execute(tx->{
+    owner.set(f.jdbc.queryForObject("SELECT pg_backend_pid()",Integer.class));
+    if(order.startsWith("delete"))return deletion.delete(request(),s->{if(s==FlowDeletionRegistry.Stage.AFTER_CHECK){entered.countDown();await(release);}});
+    if(order.startsWith("publish"))return f.registry.deploy(next,s->{if(s==DeploymentRegistry.Stage.AFTER_ENGINE){entered.countDown();await(release);}});
+    return execution.execute(cmd.request(),s->{if(s==ExecutionRegistry.Stage.AFTER_ENGINE){entered.countDown();await(release);}});
+   }));
+   await(entered);
+   var b=pool.submit(()->{
+    try{return new TransactionTemplate(f.tm).execute(tx->{
+     waiter.set(f.jdbc.queryForObject("SELECT pg_backend_pid()",Integer.class));
+     if(order.endsWith("publish"))return f.registry.deploy(next);
+     if(order.endsWith("start"))return execution.execute(cmd.request());
+     return deletion.delete(request());
+    });}catch(DeploymentRegistry.DeploymentConflict|FlowDeletionRegistry.NotDrained expected){return expected;}
+   });
+   waitBlocked(waiter,owner);assertFalse(b.isDone());release.countDown();assertNotNull(a.get(10,TimeUnit.SECONDS));Object result=b.get(10,TimeUnit.SECONDS);
+   switch(order){
+    case "delete-publish"->{assertInstanceOf(DeploymentRegistry.DeploymentConflict.class,result);assertEquals(1,f.count());c.absent(first);}
+    case "publish-delete"->{assertEquals(2,assertInstanceOf(FlowDeletionRegistry.Receipt.class,result).deletedVersions());assertEquals(0,f.deployments());}
+    case "delete-start"->{var receipt=assertInstanceOf(ExecutionRegistry.Receipt.class,result);assertEquals("no_effect",receipt.outcome());assertEquals("deployment_missing",receipt.result().reason());assertEquals(0,f.engine.getRuntimeService().createProcessInstanceQuery().count());}
+    case "start-delete"->{assertInstanceOf(FlowDeletionRegistry.NotDrained.class,result);assertTrue(deletion.lookup(request()).isEmpty());assertEquals(1,f.engine.getRuntimeService().createProcessInstanceQuery().count());c.present(first);}
+    default->fail("unknown case");
+   }
+  }finally{release.countDown();pool.shutdownNow();assertTrue(pool.awaitTermination(10,TimeUnit.SECONDS));}
+ }
+ @Test void invalidIdentityAndMissingLookupHaveNoWriteSideEffects(){
+  for(var r:java.util.List.of(new FlowDeletionRegistry.Request("",n.FLOW,OP),new FlowDeletionRegistry.Request(n.APP,"00000000-0000-0000-0000-000000000000",OP),new FlowDeletionRegistry.Request(n.APP,n.FLOW,"not-a-uuid"))){
+   assertThrows(IllegalArgumentException.class,()->deletion.delete(r));assertThrows(IllegalArgumentException.class,()->deletion.lookup(r));
+  }
+  assertTrue(deletion.lookup(request()).isEmpty());assertEquals(0,f.jdbc.queryForObject("SELECT count(*) FROM wf_flow_deletion_guards",Long.class));
  }
  static final class Injected extends RuntimeException {}
 }
