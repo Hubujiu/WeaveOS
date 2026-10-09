@@ -170,3 +170,70 @@ func TestRootTriggerReservationCallerRollbackAndStaleVersion(t *testing.T) {
 	})
 }
 
+// FLOW-01/05/11: only starting and active reservations suppress another start.
+// This exercises the catalog boundary, not permission to publicly reopen a flow.
+func TestRootTriggerReservationActiveAndTerminalStates(t *testing.T) {
+	for _, state := range []string{"active", "completed", "rejected", "withdrawn", "no_effect"} {
+		t.Run(state, func(t *testing.T) {
+			f := newRecordFixture(t)
+			h := rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
+			first := rootTriggerReserve(t, f, rootCatalogReserveInput(t, f, h))
+			if _, err := f.owner.Exec(f.ctx, "UPDATE applications.workflow_instances SET state=$2 WHERE id=$1", first.Instance.ID, state); err != nil {
+				t.Fatal(err)
+			}
+			in := rootCatalogReserveInput(t, f, h)
+			got := rootTriggerReserve(t, f, in)
+			if state == "active" {
+				if !got.Ignored || got.Instance.ID != first.Instance.ID || got.Instance.State != "active" {
+					t.Fatalf("active instance must suppress duplicate: %+v", got)
+				}
+			} else if got.Ignored || got.Instance.ID != in.InstanceID || got.Instance.State != "starting" {
+				t.Fatalf("terminal instance must not suppress a separately admitted start: %+v", got)
+			}
+			var preserved string
+			if err := f.runtime.QueryRow(f.ctx, "SELECT state FROM applications.workflow_instances WHERE id=$1", first.Instance.ID).Scan(&preserved); err != nil || preserved != state {
+				t.Fatalf("prior instance rewritten: state=%s err=%v", preserved, err)
+			}
+		})
+	}
+}
+
+// V044 ADR: finding an in-flight instance must not hide stale admission inputs.
+func TestRootTriggerReservationDuplicateStillChecksAdmission(t *testing.T) {
+	for _, dimension := range []string{"revision", "schema", "record", "missing_record", "actor_replay", "flow_replay"} {
+		t.Run(dimension, func(t *testing.T) {
+			f := newRecordFixture(t)
+			h := rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
+			original := rootCatalogReserveInput(t, f, h)
+			rootTriggerReserve(t, f, original)
+			in := rootCatalogReserveInput(t, f, h)
+			want := workflowcatalog.ErrConflict
+			switch dimension {
+			case "revision":
+				in.ExpectedRevision++
+			case "schema":
+				in.ExpectedSchemaVersion++
+			case "record":
+				in.ExpectedRecordVersion++
+			case "missing_record":
+				in.RecordID = recordOperationID(t, f)
+				want = workflowcatalog.ErrMissing
+			case "actor_replay":
+				in = original
+				in.ActorID = f.other
+			case "flow_replay":
+				other := rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
+				in = rootCatalogReserveInput(t, f, other)
+				in.InstanceID = original.InstanceID
+			}
+			rootCatalogWantError(t, f, want, func(tx pgx.Tx) error {
+				_, err := (workflowcatalog.Catalog{}).ReserveTriggeredInTx(f.ctx, tx, in)
+				return err
+			})
+			var count int
+			if err := f.runtime.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_instances WHERE app_id=$1", f.app).Scan(&count); err != nil || count != 1 {
+				t.Fatalf("rejected admission inserted instance: count=%d err=%v", count, err)
+			}
+		})
+	}
+}

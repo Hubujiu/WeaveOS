@@ -98,7 +98,7 @@ Flowable原生版本与流程层精简：[V030-038](V030-038.md)，Root本人设
 
 - [V030-041 · 独立Flowable启动与后台生命周期](V030-041.md) — 内部不使用TLS；Root先行runner八项RED，身份无关切片实施中，正式服务与迁移仍待后续验收
 
-- [V030-044 · 记录触发与并行流程](V030-044.md) — Root六项真实PG测试待RED，原子去重第一切片
+- [V030-044 · 记录触发与并行流程](V030-044.md) — 保留原始 reservation RED/GREEN；主助手自有环境恢复复验，公开触发仍待完成
 - [V030-043 · 审批节点局部保存](V030-043.md) — 基于已合develop的8ecd39a2；Root亲写RED与验收，节点局部Save、六身份正式引擎组合及同记录多流程/并发审批已实测通过；develop [draft PR#53](https://github.com/Hubujiu/WeaveOS/pull/53)与精确head CI待审，公开触发/返工重审为后续，前端暂停。
 
 - [V030-045 · 撤回与实际节点退回](V030-045.md) — 当前资格、原子命令接受及HTTP分层通过；真实Flowable和最终CI待验收
