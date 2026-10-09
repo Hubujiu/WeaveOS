@@ -12724,7 +12724,7 @@
             }
           },
           "409": {
-            "description": "APPLICATION_QUERY_CHANGED requires refresh; APPLICATION_QUERY_EXPIRED requires a new query. Current authorization is always checked first.",
+            "description": "APPLICATION_QUERY_CHANGED requires refresh; APPLICATION_QUERY_CONTEXT_EXPIRED requires a new query; WORKFLOW_NOT_READY rejects unavailable published configuration. Current authorization is always checked first.",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/RequestId"
@@ -12740,7 +12740,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                  "$ref": "#/components/schemas/WorkflowManualOptionsErrorEnvelope"
                 }
               }
             }
@@ -23282,6 +23282,94 @@
               },
               "data": {
                 "$ref": "#/components/schemas/WorkflowManualOptionsResult"
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowManualOptionsErrorEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "COMMON_INVALID_ARGUMENT",
+                  "COMMON_VALIDATION_FAILED",
+                  "AUTH_INVALID_CREDENTIALS",
+                  "AUTH_UNAUTHENTICATED",
+                  "AUTH_SESSION_EXPIRED",
+                  "COMMON_PERMISSION_DENIED",
+                  "COMMON_CSRF_REJECTED",
+                  "USER_ACCOUNT_ALREADY_EXISTS",
+                  "USER_NOT_FOUND",
+                  "INVITATION_INVALID",
+                  "INVITATION_ALREADY_USED",
+                  "COMMON_UNSUPPORTED_MEDIA_TYPE",
+                  "COMMON_SERVICE_UNAVAILABLE",
+                  "COMMON_DEADLINE_EXCEEDED",
+                  "COMMON_INTERNAL_ERROR",
+                  "PERSONNEL_CONFLICT",
+                  "PERSONNEL_NOT_FOUND",
+                  "COMMON_QUERY_CHANGED",
+                  "COMMON_QUERY_CONTEXT_EXPIRED",
+                  "PERSONNEL_DRAFT_CONFLICT",
+                  "PERSONNEL_DRAFT_LIMIT_REACHED",
+                  "PERSONNEL_PRESET_NAME_CONFLICT",
+                  "PERSONNEL_PRESET_LIMIT_REACHED",
+                  "PERSONNEL_PRESET_CONFLICT",
+                  "APPLICATION_NOT_FOUND",
+                  "APPLICATION_FORBIDDEN",
+                  "APPLICATION_POLICY_CONFLICT",
+                  "APPLICATION_OPERATION_CONFLICT",
+                  "APPLICATION_OPERATION_UNCONFIRMED",
+                  "APPLICATION_RESOURCE_INVALID",
+                  "APPLICATION_STRUCTURE_CONFLICT",
+                  "APPLICATION_SCHEMA_CONFLICT",
+                  "APPLICATION_VIEW_CONFLICT",
+                  "APPLICATION_SCHEMA_DEPENDENCY_BLOCKED",
+                  "APPLICATION_SCHEMA_REQUIRED_BACKFILL",
+                  "APPLICATION_SCHEMA_CONVERSION_FAILED",
+                  "APPLICATION_SCHEMA_OPTION_MAPPING_REQUIRED",
+                  "APPLICATION_SCHEMA_CONFIRMATION_REQUIRED",
+                  "APPLICATION_SCHEMA_CONFIRMATION_STALE",
+                  "AUTH_SESSION_CHANGED",
+                  "APPLICATION_SCHEMA_NOT_READY",
+                  "APPLICATION_RECORD_CONFLICT",
+                  "APPLICATION_RECORD_FENCED",
+                  "APPLICATION_QUERY_CHANGED",
+                  "APPLICATION_QUERY_CONTEXT_EXPIRED",
+                  "APPLICATION_DRAFT_CONFLICT",
+                  "APPLICATION_DRAFT_BASE_CONFLICT",
+                  "WORKFLOW_RECORD_READ_ONLY",
+                  "WORKFLOW_NOT_READY"
+                ]
+              },
+              "data": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ValidationErrorData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordSchemaConflictData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordVersionConflictData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordDraftConflictData"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecordUnconfirmedData"
+                  }
+                ]
               }
             }
           }
