@@ -67,6 +67,17 @@ func (Store) ApplyInTx(ctx context.Context, tx pgx.Tx, command flowcommands.Comm
 		}
 	}()
 
+	if replay, handled, replayErr := replayJournal(ctx, nested, command, payload, receipt, encoded, body, result); handled || replayErr != nil {
+		if replayErr != nil {
+			return Applied{}, replayErr
+		}
+		if err = nested.Commit(ctx); err != nil {
+			return Applied{}, err
+		}
+		committed = true
+		return replay, nil
+	}
+
 	instance, schema, ready, graph, err := lockInstance(ctx, nested, command)
 	if err != nil {
 		return Applied{}, err

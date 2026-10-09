@@ -1,0 +1,248 @@
+diff --git a/services/bff/internal/apprecordservice/workflow_event.go b/services/bff/internal/apprecordservice/workflow_event.go
+index c17a443..642abe1 100644
+--- a/services/bff/internal/apprecordservice/workflow_event.go
++++ b/services/bff/internal/apprecordservice/workflow_event.go
+@@ -19,18 +19,20 @@ import (
+ 
+ type WorkflowEventRequest struct{ AppID, ViewID, RecordID, EventID string }
+ type WorkflowEventSummary struct {
+-	ID            string  `json:"id"`
+-	InstanceID    string  `json:"instanceId"`
+-	FlowID        string  `json:"flowId"`
+-	NodeID        *string `json:"nodeId"`
+-	TargetNodeID  *string `json:"targetNodeId"`
+-	ActorID       string  `json:"actorId"`
+-	Action        string  `json:"action"`
+-	Outcome       string  `json:"outcome"`
+-	Sequence      int64   `json:"sequence"`
+-	SchemaVersion int64   `json:"schemaVersion"`
+-	RecordVersion int64   `json:"recordVersion"`
+-	OccurredAt    string  `json:"occurredAt"`
++	FlowName       string  `json:"flowName"`
++	FlowNameSource string  `json:"flowNameSource"`
++	ID             string  `json:"id"`
++	InstanceID     string  `json:"instanceId"`
++	FlowID         string  `json:"flowId"`
++	NodeID         *string `json:"nodeId"`
++	TargetNodeID   *string `json:"targetNodeId"`
++	ActorID        string  `json:"actorId"`
++	Action         string  `json:"action"`
++	Outcome        string  `json:"outcome"`
++	Sequence       int64   `json:"sequence"`
++	SchemaVersion  int64   `json:"schemaVersion"`
++	RecordVersion  int64   `json:"recordVersion"`
++	OccurredAt     string  `json:"occurredAt"`
+ }
+ type WorkflowHistoricalLabel struct {
+ 	Label   string `json:"label"`
+@@ -141,16 +143,19 @@ func readWorkflowEventInTx(ctx context.Context, tx pgx.Tx, facts applications.Re
+ 	empty := WorkflowEventResult{}
+ 	out := WorkflowEventResult{Basis: WorkflowEventBasis{Status: "unavailable", Fields: []WorkflowHistoricalField{}}}
+ 	e := &out.Event
+-	var sourceView, proof string
++	var sourceView, proof, versionID string
++	var taskID *string
++	var taskEpoch int64
+ 	var definitionVersion int64
+ 	var occurred time.Time
+ 	var hash, payloadRaw, resultRaw []byte
+-	err := tx.QueryRow(ctx, `SELECT e.command_id::text,e.instance_id::text,i.flow_id::text,i.view_id::text,
+- i.definition_version,e.actor_id::text,e.action,e.outcome,e.sequence,e.schema_version,e.record_version,
+- e.created_at,e.evidence_hash,e.payload_bytes,e.result_bytes,e.proof_id::text
+- FROM applications.workflow_execution_events e JOIN applications.workflow_instances i ON i.app_id=e.app_id AND i.id=e.instance_id
+- WHERE e.app_id=$1::uuid AND e.command_id=$2::uuid AND i.table_id=$3::uuid AND i.record_id=$4::uuid`, q.AppID, q.EventID, facts.TableID, q.RecordID).Scan(
+-		&e.ID, &e.InstanceID, &e.FlowID, &sourceView, &definitionVersion, &e.ActorID, &e.Action, &e.Outcome, &e.Sequence, &e.SchemaVersion, &e.RecordVersion, &occurred, &hash, &payloadRaw, &resultRaw, &proof)
++	err := tx.QueryRow(ctx, `SELECT e.command_id::text,e.instance_id::text,e.flow_id::text,e.view_id::text,
++ e.definition_version,e.actor_id::text,e.action,e.outcome,e.sequence,e.schema_version,e.record_version,
++ e.created_at,e.evidence_hash,e.payload_bytes,e.result_bytes,e.proof_id::text,
++ e.version_id::text,e.task_id::text,e.task_epoch,e.node_id::text,e.target_node_id::text,e.flow_name,e.flow_name_source
++ FROM applications.workflow_execution_events e
++ WHERE e.app_id=$1::uuid AND e.command_id=$2::uuid AND e.table_id=$3::uuid AND e.record_id=$4::uuid`, q.AppID, q.EventID, facts.TableID, q.RecordID).Scan(
++		&e.ID, &e.InstanceID, &e.FlowID, &sourceView, &definitionVersion, &e.ActorID, &e.Action, &e.Outcome, &e.Sequence, &e.SchemaVersion, &e.RecordVersion, &occurred, &hash, &payloadRaw, &resultRaw, &proof, &versionID, &taskID, &taskEpoch, &e.NodeID, &e.TargetNodeID, &e.FlowName, &e.FlowNameSource)
+ 	if errors.Is(err, pgx.ErrNoRows) {
+ 		return empty, applications.ErrMissing
+ 	}
+@@ -162,7 +167,7 @@ func readWorkflowEventInTx(ctx context.Context, tx pgx.Tx, facts applications.Re
+ 		return empty, ErrUnavailable
+ 	}
+ 	c, r := entry.Command, entry.Receipt
+-	if c.ProtocolVersion != 2 || c.AppID != q.AppID || c.TableID != facts.TableID || c.ViewID != sourceView || c.RecordID != q.RecordID || c.InstanceID != e.InstanceID || c.FlowID != e.FlowID || c.DefinitionVersion != definitionVersion || c.ActorID != e.ActorID || c.Action != e.Action || c.SchemaVersion != e.SchemaVersion || c.RecordVersion != e.RecordVersion || r == nil || entry.State != e.Outcome || r.Outcome != e.Outcome || r.Sequence != e.Sequence || r.ProofID != proof || len(hash) != 32 || occurred.IsZero() {
++	if !validWorkflowJournalMetadata(*e, c, versionID, taskID, taskEpoch) || c.ProtocolVersion != 2 || c.AppID != q.AppID || c.TableID != facts.TableID || c.ViewID != sourceView || c.RecordID != q.RecordID || c.InstanceID != e.InstanceID || c.FlowID != e.FlowID || c.DefinitionVersion != definitionVersion || c.ActorID != e.ActorID || c.Action != e.Action || c.SchemaVersion != e.SchemaVersion || c.RecordVersion != e.RecordVersion || r == nil || entry.State != e.Outcome || r.Outcome != e.Outcome || r.Sequence != e.Sequence || r.ProofID != proof || len(hash) != 32 || occurred.IsZero() {
+ 		return empty, ErrUnavailable
+ 	}
+ 	if sha256.Sum256(payloadRaw) != c.PayloadHash {
+@@ -175,18 +180,6 @@ func readWorkflowEventInTx(ctx context.Context, tx pgx.Tx, facts applications.Re
+ 	if _, err = fc.DecodeExecutionResult(c, *r, resultRaw); err != nil {
+ 		return empty, ErrUnavailable
+ 	}
+-	if c.TaskID != "" {
+-		var node string
+-		err = tx.QueryRow(ctx, `SELECT node_id::text FROM applications.workflow_tasks WHERE app_id=$1 AND instance_id=$2 AND id=$3 AND assignee_id=$4 AND activation_epoch=$5`, q.AppID, c.InstanceID, c.TaskID, c.ActorID, c.TaskEpoch).Scan(&node)
+-		if err != nil || !workflowID(node) {
+-			return empty, ErrUnavailable
+-		}
+-		e.NodeID = &node
+-	}
+-	if c.TargetNodeID != "" {
+-		node := c.TargetNodeID
+-		e.TargetNodeID = &node
+-	}
+ 	e.OccurredAt = occurred.UTC().Format(time.RFC3339Nano)
+ 	store := ev.Store{}
+ 	m, err := store.ManifestInTx(ctx, tx, q.AppID, payload.EvidenceHash)
+@@ -228,3 +221,31 @@ func readWorkflowEventInTx(ctx context.Context, tx pgx.Tx, facts applications.Re
+ 	}
+ 	return out, nil
+ }
++
++// Checks stable journal metadata against the original canonical command. Current
++// catalog/task rows are deliberately not part of historical interpretation.
++func validWorkflowJournalMetadata(e WorkflowEventSummary, c fc.Command, version string, task *string, epoch int64) bool {
++	if c.VersionID != version || !workflowID(version) || epoch != c.TaskEpoch || strings.TrimSpace(e.FlowName) == "" || len([]rune(e.FlowName)) > 100 || (e.FlowNameSource != "captured" && e.FlowNameSource != "legacy_last_known") {
++		return false
++	}
++	if c.TaskID == "" {
++		if task != nil || e.NodeID != nil || epoch != 0 {
++			return false
++		}
++	} else {
++		if task == nil || *task != c.TaskID || !workflowID(*task) || epoch < 1 {
++			return false
++		}
++		if e.NodeID == nil {
++			if e.Outcome != "no_effect" {
++				return false
++			}
++		} else if !workflowID(*e.NodeID) {
++			return false
++		}
++	}
++	if c.TargetNodeID == "" {
++		return e.TargetNodeID == nil
++	}
++	return e.TargetNodeID != nil && *e.TargetNodeID == c.TargetNodeID && workflowID(*e.TargetNodeID)
++}
+diff --git a/services/bff/internal/apprecordservice/workflow_event_history.go b/services/bff/internal/apprecordservice/workflow_event_history.go
+index adfff8c..8704e82 100644
+--- a/services/bff/internal/apprecordservice/workflow_event_history.go
++++ b/services/bff/internal/apprecordservice/workflow_event_history.go
+@@ -136,17 +136,19 @@ func (s *Service) ReadWorkflowEventHistory(ctx context.Context, p session.Princi
+ }
+ 
+ type historyEventRow struct {
+-	event             WorkflowEventSummary
+-	sourceView, proof string
+-	definition        int64
+-	at                time.Time
++	event                      WorkflowEventSummary
++	sourceView, proof, version string
++	task                       *string
++	epoch                      int64
++	definition                 int64
++	at                         time.Time
+ }
+ 
+ func eventHistoryPage(ctx context.Context, tx pgx.Tx, q WorkflowEventHistoryRequest, table string, afterTime *time.Time, afterID *string) ([]WorkflowEventSummary, error) {
+-	rows, err := tx.Query(ctx, `SELECT e.command_id::text,e.instance_id::text,i.flow_id::text,i.view_id::text,i.definition_version,
+- e.actor_id::text,e.action,e.outcome,e.sequence,e.schema_version,e.record_version,e.created_at,e.proof_id::text
+- FROM applications.workflow_execution_events e JOIN applications.workflow_instances i ON i.app_id=e.app_id AND i.id=e.instance_id
+- WHERE e.app_id=$1::uuid AND i.table_id=$2::uuid AND i.record_id=$3::uuid
++	rows, err := tx.Query(ctx, `SELECT e.command_id::text,e.instance_id::text,e.flow_id::text,e.view_id::text,e.definition_version,
++ e.actor_id::text,e.action,e.outcome,e.sequence,e.schema_version,e.record_version,e.created_at,e.proof_id::text,e.version_id::text,e.task_id::text,e.task_epoch,e.node_id::text,e.target_node_id::text,e.flow_name,e.flow_name_source
++ FROM applications.workflow_execution_events e
++ WHERE e.app_id=$1::uuid AND e.table_id=$2::uuid AND e.record_id=$3::uuid
+  AND ($4::timestamptz IS NULL OR (e.created_at,e.command_id)<($4,$5::uuid))
+  ORDER BY e.created_at DESC,e.command_id DESC LIMIT $6`, q.AppID, table, q.RecordID, afterTime, afterID, q.PageSize+1)
+ 	if err != nil {
+@@ -157,7 +159,7 @@ func eventHistoryPage(ctx context.Context, tx pgx.Tx, q WorkflowEventHistoryRequ
+ 	for rows.Next() {
+ 		var row historyEventRow
+ 		e := &row.event
+-		if err = rows.Scan(&e.ID, &e.InstanceID, &e.FlowID, &row.sourceView, &row.definition, &e.ActorID, &e.Action, &e.Outcome, &e.Sequence, &e.SchemaVersion, &e.RecordVersion, &row.at, &row.proof); err != nil {
++		if err = rows.Scan(&e.ID, &e.InstanceID, &e.FlowID, &row.sourceView, &row.definition, &e.ActorID, &e.Action, &e.Outcome, &e.Sequence, &e.SchemaVersion, &e.RecordVersion, &row.at, &row.proof, &row.version, &row.task, &row.epoch, &e.NodeID, &e.TargetNodeID, &e.FlowName, &e.FlowNameSource); err != nil {
+ 			rows.Close()
+ 			return nil, ErrUnavailable
+ 		}
+@@ -173,59 +175,14 @@ func eventHistoryPage(ctx context.Context, tx pgx.Tx, q WorkflowEventHistoryRequ
+ 	if err != nil {
+ 		return nil, ErrUnavailable
+ 	}
+-	taskIDs := []string{}
+-	seen := map[string]bool{}
+-	for _, entry := range entries {
+-		if id := entry.Command.TaskID; id != "" && !seen[id] {
+-			seen[id] = true
+-			taskIDs = append(taskIDs, id)
+-		}
+-	}
+-	type task struct {
+-		instance, node, actor string
+-		epoch                 int64
+-	}
+-	tasks := map[string]task{}
+-	if len(taskIDs) > 0 {
+-		rs, e := tx.Query(ctx, `SELECT id::text,instance_id::text,node_id::text,assignee_id::text,activation_epoch FROM applications.workflow_tasks WHERE app_id=$1 AND id=ANY($2::uuid[])`, q.AppID, taskIDs)
+-		if e != nil {
+-			return nil, ErrUnavailable
+-		}
+-		for rs.Next() {
+-			var id string
+-			var t task
+-			if rs.Scan(&id, &t.instance, &t.node, &t.actor, &t.epoch) != nil {
+-				rs.Close()
+-				return nil, ErrUnavailable
+-			}
+-			tasks[id] = t
+-		}
+-		e = rs.Err()
+-		rs.Close()
+-		if e != nil {
+-			return nil, ErrUnavailable
+-		}
+-	}
+ 	out := make([]WorkflowEventSummary, 0, len(list))
+ 	for _, row := range list {
+ 		e := row.event
+ 		entry := entries[e.ID]
+ 		c, r := entry.Command, entry.Receipt
+-		if c.ProtocolVersion != 2 || c.AppID != q.AppID || c.TableID != table || c.RecordID != q.RecordID || c.ViewID != row.sourceView || c.InstanceID != e.InstanceID || c.FlowID != e.FlowID || c.DefinitionVersion != row.definition || c.ActorID != e.ActorID || c.Action != e.Action || c.SchemaVersion != e.SchemaVersion || c.RecordVersion != e.RecordVersion || r == nil || entry.State != e.Outcome || r.Outcome != e.Outcome || r.Sequence != e.Sequence || r.ProofID != row.proof || row.at.IsZero() {
++		if !validWorkflowJournalMetadata(e, c, row.version, row.task, row.epoch) || c.ProtocolVersion != 2 || c.AppID != q.AppID || c.TableID != table || c.RecordID != q.RecordID || c.ViewID != row.sourceView || c.InstanceID != e.InstanceID || c.FlowID != e.FlowID || c.DefinitionVersion != row.definition || c.ActorID != e.ActorID || c.Action != e.Action || c.SchemaVersion != e.SchemaVersion || c.RecordVersion != e.RecordVersion || r == nil || entry.State != e.Outcome || r.Outcome != e.Outcome || r.Sequence != e.Sequence || r.ProofID != row.proof || row.at.IsZero() {
+ 			return nil, ErrUnavailable
+ 		}
+-		if c.TaskID != "" {
+-			t, ok := tasks[c.TaskID]
+-			if !ok || t.instance != c.InstanceID || t.actor != c.ActorID || t.epoch != c.TaskEpoch || !workflowID(t.node) {
+-				return nil, ErrUnavailable
+-			}
+-			node := t.node
+-			e.NodeID = &node
+-		}
+-		if c.TargetNodeID != "" {
+-			node := c.TargetNodeID
+-			e.TargetNodeID = &node
+-		}
+ 		e.OccurredAt = row.at.UTC().Format(time.RFC3339Nano)
+ 		out = append(out, e)
+ 	}
+diff --git a/services/bff/internal/workflowprojection/projection.go b/services/bff/internal/workflowprojection/projection.go
+index bf36120..a4ceb5c 100644
+--- a/services/bff/internal/workflowprojection/projection.go
++++ b/services/bff/internal/workflowprojection/projection.go
+@@ -67,6 +67,17 @@ func (Store) ApplyInTx(ctx context.Context, tx pgx.Tx, command flowcommands.Comm
+ 		}
+ 	}()
+ 
++	if replay, handled, replayErr := replayJournal(ctx, nested, command, payload, receipt, encoded, body, result); handled || replayErr != nil {
++		if replayErr != nil {
++			return Applied{}, replayErr
++		}
++		if err = nested.Commit(ctx); err != nil {
++			return Applied{}, err
++		}
++		committed = true
++		return replay, nil
++	}
++
+ 	instance, schema, ready, graph, err := lockInstance(ctx, nested, command)
+ 	if err != nil {
+ 		return Applied{}, err
