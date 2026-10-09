@@ -17,3 +17,5 @@ Supplemental concurrency, node-Save exclusion, denied writes, lowest valid UUID 
 
 ## Boundary
 Public record saves now durably retain matching starts. Actual start-command admission/background dispatch, public manual entry, rework/re-review and complete backend delivery remain unfinished. No merge or deployment is authorized by this checkpoint. Prior remote CI at 113579e0 was all successful with five existing WebKit animation skips; it does not verify these later source changes.
+
+Formatting clarification: the source/task-only committed diff passes git diff --check. An all-artifact cached diff check flags literal whitespace in preserved raw patch context lines and shell command captures; those are original evidence bytes, not source formatting defects. They were not rewritten to conceal the observation.
