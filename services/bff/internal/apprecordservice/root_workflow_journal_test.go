@@ -109,3 +109,43 @@ func TestRootWorkflowJournalSurvivesTerminalProjectionRemoval(t *testing.T) {
 		t.Fatal("original command ledger changed", err)
 	}
 }
+
+func TestRootWorkflowJournalListDoesNotLoseRemovedProjection(t *testing.T) {
+	f := rootTaskSetup(t, true)
+	eventGrant(t, f, "all", f.public, f.reference)
+	q := eventConfirmed(t, f, "reject")
+	eventSQL(t, f, "DELETE FROM applications.workflow_tasks WHERE app_id=$1 AND instance_id=$2", f.app, f.instance.ID)
+	eventSQL(t, f, "DELETE FROM applications.workflow_instances WHERE app_id=$1 AND id=$2 AND state='rejected'", f.app, f.instance.ID)
+	got, err := f.service.ReadWorkflowEventHistory(f.ctx, f.principal, WorkflowEventHistoryRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, PageSize: 20})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, v := range got.Items {
+		if v.ID == q.EventID {
+			return
+		}
+	}
+	t.Fatalf("confirmed event silently lost after projection removal: %+v", got)
+}
+
+func TestRootWorkflowJournalConfirmedReplayWithoutProjection(t *testing.T) {
+	f := rootTaskSetup(t, true)
+	op := rootAction(t, f, rootActionRequest(t, f, "reject"))
+	c, p := rootActionRead(t, f, op)
+	r, body := f.receipt(t, c, "rejected", "")
+	f.apply(t, c, p, r, body, true)
+	eventSQL(t, f, "DELETE FROM applications.workflow_tasks WHERE app_id=$1 AND instance_id=$2", f.app, f.instance.ID)
+	eventSQL(t, f, "DELETE FROM applications.workflow_instances WHERE app_id=$1 AND id=$2 AND state='rejected'", f.app, f.instance.ID)
+	eventSQL(t, f, "UPDATE applications.workflow_versions SET graph_json='{}',bpmn_xml='<removed-test-fixture/>' WHERE app_id=$1 AND flow_id=$2", f.app, f.head.FlowID)
+	got := f.apply(t, c, p, r, body, true)
+	if !got.Duplicate || got.Entry.Command != c || got.Entry.Receipt == nil || *got.Entry.Receipt != r {
+		t.Fatal("did not return original confirmed receipt")
+	}
+	var events, instances int
+	if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_execution_events WHERE command_id=$1", c.CommandID).Scan(&events); err != nil || events != 1 {
+		t.Fatal("replay created/replaced event", err)
+	}
+	if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_instances WHERE app_id=$1 AND id=$2", f.app, f.instance.ID).Scan(&instances); err != nil || instances != 0 {
+		t.Fatal("replay recreated execution instance", err)
+	}
+}
