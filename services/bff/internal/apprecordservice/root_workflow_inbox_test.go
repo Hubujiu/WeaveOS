@@ -291,3 +291,38 @@ func TestRootWorkflowInboxUnavailableDoesNotPublishPartialContext(t *testing.T) 
 		t.Fatal("partial success on storage failure", e)
 	}
 }
+
+func TestRootWorkflowInboxUsesFixedVersionAndRejectsCorruptRoster(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	graph := rootCatalogGraph(t, f.recordFixture, false)
+	graph.Nodes[1].Approval.AssigneeIDs = []string{f.other}
+	head := rootCatalogPut(t, f.recordFixture, f.head.FlowID, f.head.Revision, graph)
+	head = rootCatalogDeploy(t, f.recordFixture, head)
+	rootCatalogEnable(t, f.recordFixture, head)
+	r := inboxSearch(t, f, inboxRequest())
+	if r.Total != 1 || r.Items[0].DefinitionVersion != 1 || r.Items[0].NodeID != f.first {
+		t.Fatal("new publication replaced in-flight roster")
+	}
+	// Only isolated owner injects a corrupt immutable version; public/runtime
+	// writers cannot do this. A damaged accepted roster must fail closed.
+	inboxSQL(t, f, "UPDATE applications.workflow_versions SET graph_json='{}'::jsonb WHERE app_id=$1 AND flow_id=$2 AND version=1", f.app, f.head.FlowID)
+	got, e := f.service.SearchWorkflowInbox(f.ctx, f.principal, inboxRequest())
+	if !errors.Is(e, ErrUnavailable) || len(got.Items) != 0 || got.QueryVersion != "" {
+		t.Fatal("corrupt fixed version returned a partial queue", e)
+	}
+}
+func TestRootWorkflowInboxUnrelatedOtherUserAndBusinessValues(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	q := inboxRequest()
+	a := inboxSearch(t, f, q)
+	q.QueryVersion = a.QueryVersion
+	other := rootTaskSetup(t, false)
+	inboxSQL(t, other, "UPDATE applications.workflow_definitions SET name='Unrelated' WHERE app_id=$1", other.app)
+	relation := rootCaptureRelation(rootEvidenceStoreFixture{recordFixture: f.recordFixture})
+	column := rootCaptureColumn(f.public)
+	inboxSQL(t, f, "UPDATE "+relation+" SET "+column+"='unrelated business value' WHERE id=$1", f.ownRecord)
+	b := inboxSearch(t, f, q)
+	if b.QueryVersion != a.QueryVersion || !reflect.DeepEqual(b.Items, a.Items) || b.Total != a.Total {
+		t.Fatal("unrelated invisible projection forced refresh")
+	}
+}
