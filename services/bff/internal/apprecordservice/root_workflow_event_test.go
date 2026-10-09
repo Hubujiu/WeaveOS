@@ -424,7 +424,7 @@ func (s *eventSnapshotTrace) TraceQueryStart(ctx context.Context, _ *pgx.Conn, d
 	return ctx
 }
 func (s *eventSnapshotTrace) TraceQueryEnd(_ context.Context, _ *pgx.Conn, _ pgx.TraceQueryEndData) {
-	if !s.changed && strings.Contains(s.sql, "FROM applications.workflow_execution_events e JOIN") {
+	if !s.changed && strings.Contains(s.sql, "FROM applications.workflow_execution_events e") {
 		s.changed = true
 		s.err = s.change()
 	}
