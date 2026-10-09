@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
 	"github.com/jackc/pgx/v5"
@@ -129,7 +130,7 @@ func TestRootRecordTriggersEditOnlyActualChanges(t *testing.T) {
 			case "same_text":
 				changes[f.public] = "alpha"
 			case "same_typed_uuid":
-				changes[f.reference] = strings.ToUpper(f.other)
+				changes[f.reference] = f.other
 			case "different_matching_field":
 				changes[f.reference] = f.actor
 				want = 1
@@ -190,5 +191,43 @@ func TestRootRecordTriggersCommitFailureRollsBackRecordIntentsAuditAndReceipt(t 
 		if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications."+table+" WHERE app_id=$1", f.app).Scan(&count); err != nil || count != 0 {
 			t.Fatalf("%s escaped transaction rollback: %d %v", table, count, err)
 		}
+	}
+}
+
+func TestRootRecordTriggersTypedNumericAndNullChangeDetection(t *testing.T) {
+	for _, c := range []struct {
+		name, stored string
+		input        any
+		want         int
+	}{{"same_numeric_value", "1.00", "1.000", 0}, {"different_numeric_value", "1.00", "1.01", 1}, {"null_to_null", "", nil, 0}, {"null_to_number", "", "0.00", 1}} {
+		t.Run(c.name, func(t *testing.T) {
+			f := newRecordFixture(t)
+			base := rootEvidenceStoreFixture{recordFixture: f}
+			var raw []byte
+			if err := f.owner.QueryRow(f.ctx, "SELECT fields_json FROM applications.logical_tables WHERE id=$1", f.table).Scan(&raw); err != nil {
+				t.Fatal(err)
+			}
+			var defs []appfields.Field
+			if err := json.Unmarshal(raw, &defs); err != nil {
+				t.Fatal(err)
+			}
+			amount := appfields.Field{ID: recordOperationID(t, f), Name: "Amount", Kind: "number", Default: json.RawMessage("null"), Config: json.RawMessage(`{"precision":38,"scale":2,"roundingPlaces":2,"roundingMode":"HALF_UP"}`)}
+			rootCaptureAddField(t, base, amount, map[string]any{"Type": "numeric", "Precision": 38, "Scale": 2})
+			rootCaptureDefinitions(t, base, append(defs, amount))
+			if c.stored != "" {
+				if _, err := f.owner.Exec(f.ctx, "UPDATE "+rootCaptureRelation(base)+" SET "+rootCaptureColumn(amount.ID)+"=$2::numeric WHERE id=$1", f.ownRecord, c.stored); err != nil {
+					t.Fatal(err)
+				}
+			}
+			rootConfiguredTrigger(t, f, "record.updated", nil)
+			owner := f.principal
+			owner.UserID = f.other
+			owner.SessionRef = recordOperationID(t, f)
+			_, err := f.service.Edit(f.ctx, owner, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{amount.ID: c.input}}, applications.Metadata{RequestID: "v044-typed-" + c.name})
+			if err != nil {
+				t.Fatal(err)
+			}
+			rootTriggeredCount(t, f, f.ownRecord, c.want)
+		})
 	}
 }
