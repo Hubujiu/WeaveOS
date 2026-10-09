@@ -1,12 +1,15 @@
 package apprecordservice
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -161,5 +164,130 @@ func TestRootWorkflowInboxSessionAndInput(t *testing.T) {
 	b := inboxSearch(t, f, q)
 	if b.Total != 1 || len(b.Items) != 0 || b.Items == nil {
 		t.Fatal("beyond-total page incorrectly clamped")
+	}
+}
+
+// Construct a second independently registered application before publishing
+// its graph. No immutable version or task roster is rewritten to fake access.
+func inboxForActor(t *testing.T, actor string) rootTaskFixture {
+	t.Helper()
+	base := rootCaptureSetup(t)
+	f := base.recordFixture
+	if actor != "" {
+		if _, e := f.owner.Exec(f.ctx, "UPDATE applications.group_members SET user_id=$2 WHERE app_id=$1 AND user_id=$3", f.app, actor, f.actor); e != nil {
+			t.Fatal(e)
+		}
+		f.actor = actor
+		f.principal.UserID = actor
+	}
+	rootTaskKeepDispatchPrivate(t, f)
+	graph := rootCatalogGraph(t, f, false)
+	h := rootCatalogReady(t, f, graph)
+	i := rootCatalogReserve(t, f, rootCatalogReserveInput(t, f, h))
+	var version string
+	if e := f.owner.QueryRow(f.ctx, "SELECT version_id::text FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2 AND version=1", f.app, h.FlowID).Scan(&version); e != nil {
+		t.Fatal(e)
+	}
+	p := rootProjection{recordFixture: f, head: h, instance: i, version: version, first: graph.Nodes[1].ID, second: graph.Nodes[1].ID}
+	c, payload := rootRecoveryAccept(t, p)
+	task := p.task(t, p.first, p.actor, 1)
+	receipt, body := p.receipt(t, c, "active", "", task)
+	p.apply(t, c, payload, receipt, body, true)
+	return rootTaskFixture{rootProjection: p, task: task}
+}
+func TestRootWorkflowInboxCrossApplicationStableBatchAndHiddenCount(t *testing.T) {
+	f := inboxForActor(t, "")
+	visible := []string{f.task.ID}
+	inboxSQL(t, f, "UPDATE applications.workflow_tasks SET created_at='2026-01-01T00:00:00Z' WHERE id=$1", f.task.ID)
+	for i := 0; i < 66; i++ {
+		t.Run("prepare-"+strconv.Itoa(i), func(t *testing.T) {
+			g := inboxForActor(t, f.actor)
+			inboxSQL(t, g, "UPDATE applications.workflow_tasks SET created_at='2026-01-01T00:00:00Z' WHERE id=$1", g.task.ID)
+			if i%3 == 0 {
+				inboxSQL(t, g, "UPDATE applications.permission_groups SET enabled=false WHERE app_id=$1", g.app)
+			} else {
+				visible = append(visible, g.task.ID)
+			}
+		})
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(visible)))
+	if len(visible) != 45 {
+		t.Fatal("fixture count")
+	}
+	q := WorkflowInboxRequest{Page: 1, PageSize: 20}
+	seen := []string{}
+	for page := 1; page <= 4; page++ {
+		q.Page = page
+		r := inboxSearch(t, f, q)
+		if r.Total != 45 || r.Items == nil {
+			t.Fatal("hidden candidates affected total")
+		}
+		q.QueryVersion = r.QueryVersion
+		for _, v := range r.Items {
+			seen = append(seen, v.ID)
+		}
+		if page == 4 && len(r.Items) != 0 {
+			t.Fatal("beyond-total clamped")
+		}
+	}
+	if !reflect.DeepEqual(seen, visible) {
+		t.Fatalf("lost, duplicated, sparse or unstable authorized pages: got %v want %v", seen, visible)
+	}
+}
+func TestRootWorkflowInboxPersonalReadOneSnapshot(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	r, e := (&applications.Application{Pool: f.runtime}).BeginPersonalRead(f.ctx, f.principal)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer r.Rollback(context.Background())
+	var iso, ro string
+	if e = r.QueryRow(f.ctx, "SHOW transaction_isolation").Scan(&iso); e != nil {
+		t.Fatal(e)
+	}
+	if e = r.QueryRow(f.ctx, "SHOW transaction_read_only").Scan(&ro); e != nil {
+		t.Fatal(e)
+	}
+	if iso != "repeatable read" || ro != "on" {
+		t.Fatal("not one read-only RR", iso, ro)
+	}
+	before, e := r.RecordContext(f.ctx, f.app, f.view)
+	if e != nil {
+		t.Fatal(e)
+	}
+	inboxSQL(t, f, "UPDATE applications.permission_groups SET enabled=false WHERE app_id=$1", f.app)
+	after, e := r.RecordContext(f.ctx, f.app, f.view)
+	if e != nil || !reflect.DeepEqual(before.Grants, after.Grants) || after.Actor.ID != f.actor {
+		t.Fatal("transaction mixed snapshots or actor", e)
+	}
+	if e = r.Commit(f.ctx); e != nil {
+		t.Fatal(e)
+	}
+	fresh := inboxSearch(t, f, inboxRequest())
+	if fresh.Total != 0 {
+		t.Fatal("next request ignored live revocation")
+	}
+}
+func TestRootWorkflowInboxClosingKeepsActiveTaskAndPendingNotSuccess(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	inboxSQL(t, f, "UPDATE applications.workflow_definitions SET state='closing' WHERE app_id=$1 AND id=$2", f.app, f.head.FlowID)
+	r := inboxSearch(t, f, inboxRequest())
+	if r.Total != 1 {
+		t.Fatal("closing removed active work")
+	}
+	f.accept(t, "agree", f.task.ID, "", 1, 1)
+	r = inboxSearch(t, f, inboxRequest())
+	if r.Total != 1 || r.Items[0].Sequence != 1 {
+		t.Fatal("accepted but unconfirmed command prematurely removed task")
+	}
+}
+func TestRootWorkflowInboxUnavailableDoesNotPublishPartialContext(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	g := inboxForActor(t, f.actor)
+	// A nonexistent physical relation is a real storage failure, never an empty page.
+	inboxSQL(t, g, "ALTER TABLE "+rootCaptureRelation(rootEvidenceStoreFixture{recordFixture: g.recordFixture})+" RENAME TO inbox_missing_"+strings.ReplaceAll(g.table, "-", ""))
+	r, e := f.service.SearchWorkflowInbox(f.ctx, f.principal, inboxRequest())
+	if e == nil || r.QueryVersion != "" || len(r.Items) != 0 || r.Total != 0 {
+		t.Fatal("partial success on storage failure", e)
 	}
 }
