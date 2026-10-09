@@ -406,3 +406,49 @@ func TestRootPublicationHistoryMigrationRejectsBadOriginalBindingAtomically(t *t
 		t.Fatal("failed migration left trigger function", err)
 	}
 }
+
+func TestRootPublicationHistoryRuntimeScopeAndLeastPrivilege(t *testing.T) {
+	p := rootPublicationSetup(t)
+	p.publish(t, uuid(t, p.s.f.owner), 1)
+	p.dispatch(t)
+	before := publicationHistoryRows(t, p)
+	ctx := context.Background()
+	for _, tc := range []struct {
+		table, key string
+		value      any
+	}{
+		{"workflow_publications", "view_id", uuid(t, p.s.f.owner)},
+		{"workflow_publications", "version_id", uuid(t, p.s.f.owner)},
+		{"workflow_engine_receipts", "version_id", uuid(t, p.s.f.owner)},
+		{"workflow_deployments", "version", 2},
+	} {
+		patch, _ := json.Marshal(map[string]any{tc.key: tc.value})
+		q := "INSERT INTO applications." + tc.table + " SELECT (jsonb_populate_record(NULL::applications." + tc.table + ",to_jsonb(h)||$3::jsonb)).* FROM applications." + tc.table + " h WHERE app_id=$1 AND flow_id=$2"
+		_, err := p.s.f.runtime.Exec(ctx, q, p.s.f.app, p.flow, patch)
+		var pg *pgconn.PgError
+		if !errors.As(err, &pg) || pg.Code != "23503" {
+			t.Fatalf("%s wrong %s not rejected by binding: %v", tc.table, tc.key, err)
+		}
+	}
+	for _, q := range []string{
+		"UPDATE applications.workflow_versions SET bpmn_xml=bpmn_xml WHERE app_id=$1 AND flow_id=$2",
+		"DELETE FROM applications.workflow_publications WHERE app_id=$1 AND flow_id=$2",
+		"DELETE FROM applications.workflow_engine_receipts WHERE app_id=$1 AND flow_id=$2",
+		"DELETE FROM applications.workflow_deployments WHERE app_id=$1 AND flow_id=$2",
+	} {
+		_, err := p.s.f.runtime.Exec(ctx, q, p.s.f.app, p.flow)
+		var pg *pgconn.PgError
+		if !errors.As(err, &pg) || pg.Code != "42501" {
+			t.Fatalf("runtime immutable privilege expanded: %v", err)
+		}
+	}
+	for _, fn := range []string{"bind_publication_history_insert", "guard_workflow_catalog_cleanup"} {
+		var elevated, callable bool
+		if err := p.s.f.owner.QueryRow(ctx, "SELECT prosecdef,has_function_privilege('auth_app',oid,'EXECUTE') FROM pg_proc WHERE oid=$1::regprocedure", "applications."+fn+"()").Scan(&elevated, &callable); err != nil || elevated || callable {
+			t.Fatal("trigger privilege expanded", fn, elevated, callable, err)
+		}
+	}
+	if !reflect.DeepEqual(before, publicationHistoryRows(t, p)) {
+		t.Fatal("rejected runtime writes changed history")
+	}
+}
