@@ -130,6 +130,7 @@ public final class RuntimeSchema {
                     verifyColumnPrivileges(connection, schema, timeoutMs);
                     verifySequencePrivileges(connection, schema, timeoutMs);
                     verifyNoRegrant(connection, schema, timeoutMs);
+                    verifyDeletionFunctionPrivilege(connection, schema, timeoutMs);
                 } finally {
                     connection.rollback();
                 }
@@ -368,6 +369,19 @@ public final class RuntimeSchema {
                   'USAGE WITH GRANT OPTION,SELECT WITH GRANT OPTION,UPDATE WITH GRANT OPTION'))
             """;
         requireBoolean(connection, sequences, timeoutMs, schema);
+    }
+
+    private static void verifyDeletionFunctionPrivilege(Connection connection, String schema,
+            int timeoutMs) throws SQLException {
+        String sql = """
+            SELECT NOT EXISTS (
+              SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+              CROSS JOIN pg_roles r WHERE n.nspname=?
+                AND p.proname='wf_flow_deletion_guard_immutable' AND
+            """ + REACHABLE_ROLE + """
+                AND has_function_privilege(r.oid,p.oid,'EXECUTE'))
+            """;
+        requireBoolean(connection, sql, timeoutMs, schema);
     }
 
     private static void requireBoolean(Connection connection, String sql, int timeoutMs,
