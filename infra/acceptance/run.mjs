@@ -1,14 +1,30 @@
 // Reproducible isolated Linux product acceptance. No production account or data.
+import {dependencyMounts} from '../ci/dependency-cache.mjs';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, existsSync, readFileSync, mkdtempSync, chmodSync, lstatSync, realpathSync, rmSync, unlinkSync, appendFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-import { resolve, dirname, basename, isAbsolute, join } from 'node:path';
+import { resolve, dirname, basename, isAbsolute, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {countAPIReport,countBrowserReport} from './result-counts.mjs';
+import {loadComponentArtifacts} from '../../scripts/verify-component-artifacts.mjs';
 
 export async function runAcceptance(options = {}) {
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const dir = options.directory ?? resolve(root, '.work/acceptance');
+const dependencyCacheRoot = process.env.WEAVEOS_DEPENDENCY_CACHE_DIR;
+const goCacheMounts = dependencyCacheRoot === undefined ? ['--mount', 'type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod', '--mount', 'type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build'] : dependencyMounts(dependencyCacheRoot, 'go');
+const nodeCacheMounts = dependencyCacheRoot === undefined ? [] : dependencyMounts(dependencyCacheRoot, 'node');
+if (dependencyCacheRoot !== undefined) for (const name of ['go-mod', 'go-build', 'pnpm-store']) mkdirSync(resolve(dependencyCacheRoot, name), {recursive: true});
+let componentSummary;
+if (process.env.WEAVEOS_COMPONENT_SHARD_DIR !== undefined) {
+  if (!process.env.WEAVEOS_COMPONENT_SHARD_DIR) throw new Error('Component shard directory must be explicit and nonempty');
+  const shardDirectory = realpathSync(resolve(process.env.WEAVEOS_COMPONENT_SHARD_DIR));
+  const privateDirectory = resolve(dir);
+  if (shardDirectory === privateDirectory || shardDirectory.startsWith(privateDirectory + sep) || privateDirectory.startsWith(shardDirectory + sep)) throw new Error('Component reports must be isolated from the private acceptance environment');
+  const expectedSha = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
+  const allowedSkips = JSON.parse(readFileSync(resolve(root, 'scripts/component-skips.json'), 'utf8'));
+  componentSummary = loadComponentArtifacts({directory: shardDirectory, expectedSha, allowedSkips});
+}
 if (existsSync(resolve(dir, 'runtime.env'))) throw new Error('Existing private environment: inspect it before rerunning; no overwrite');
 mkdirSync(resolve(dir, 'tls'), { recursive: true });
 mkdirSync(resolve(dir, 'public'), { recursive: true });
@@ -29,11 +45,11 @@ privateFile('runtime.env', `WEAVEOS_DATABASE_URL=${database('weaveos_acceptance'
 privateFile('seed.env', `WEAVEOS_TEST_DATABASE_URL=${database('weaveos_acceptance')}\nWEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/acceptance/fixtures.json\n`);
 const openssl = process.platform === 'win32' ? 'C:/Program Files/Git/usr/bin/openssl.exe' : 'openssl';
 call(openssl, ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '2', '-keyout', resolve(dir, 'tls/key.pem'), '-out', resolve(dir, 'tls/cert.pem'), '-subj', '/CN=localhost', '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1'], { stdio: 'pipe' });
-const goImage = 'golang:1.25.7';
+const goImage = 'golang:1.27.2@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c';
 const playwrightImage = 'mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27';
 const mount = ['--mount', `type=bind,src=${root},dst=/repo`];
-const go = (script, envFile = 'test.env') => call('docker', ['run', '--rm', '--network', `container:${id('postgres')}`, ...mount, ...(envFile === 'test.env' ? ['--mount', `type=bind,src=${b2Fixture.socket},dst=${b2Fixture.socket},readonly`] : []), '--mount', 'type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod', '--mount', 'type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build', '--env-file', resolve(dir, envFile), '-e', 'GOTOOLCHAIN=auto', '-e', 'GOFLAGS=-buildvcs=false', '-e', 'GOBIN=/repo/.work/acceptance/tools', '-w', '/repo/services/bff', goImage, 'sh', '-ec', script]);
-const node = (script, network) => call('docker', ['run', '--rm', '--init', '--shm-size=1g', ...(network ? ['--network', `container:${network}`] : []), ...mount, '--mount', 'type=volume,src=weaveos-v010-linux-node,dst=/repo/node_modules', '--mount', 'type=volume,src=weaveos-v010-linux-web-node,dst=/repo/apps/web/node_modules', '-e', 'CI=true', '-e', 'WEAVEOS_API_URL=https://localhost:19443', '-e', 'WEAVEOS_WEB_URL=https://localhost:19443', '-e', 'WEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/acceptance/fixtures.json', '-e', 'NODE_EXTRA_CA_CERTS=/repo/.work/acceptance/tls/cert.pem', '-w', '/repo', playwrightImage, 'bash', '-euc', `npm install --global pnpm@10.28.2 --ignore-scripts; ${script}`]);
+const go = (script, envFile = 'test.env') => call('docker', ['run', '--rm', '--network', `container:${id('postgres')}`, ...mount, ...(envFile === 'test.env' ? ['--mount', `type=bind,src=${b2Fixture.socket},dst=${b2Fixture.socket},readonly`] : []), ...goCacheMounts, '--env-file', resolve(dir, envFile), '-e', 'GOTOOLCHAIN=local', '-e', 'GOFLAGS=-buildvcs=false', '-e', 'GOBIN=/repo/.work/acceptance/tools', '-w', '/repo/services/bff', goImage, 'sh', '-ec', script]);
+const node = (script, network) => call('docker', ['run', '--rm', '--init', '--shm-size=1g', ...(network ? ['--network', `container:${network}`] : []), ...mount, ...nodeCacheMounts, '--mount', 'type=volume,src=weaveos-v010-linux-node,dst=/repo/node_modules', '--mount', 'type=volume,src=weaveos-v010-linux-web-node,dst=/repo/apps/web/node_modules', '-e', 'CI=true', '-e', 'WEAVEOS_API_URL=https://localhost:19443', '-e', 'WEAVEOS_WEB_URL=https://localhost:19443', '-e', 'WEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/acceptance/fixtures.json', '-e', 'NODE_EXTRA_CA_CERTS=/repo/.work/acceptance/tls/cert.pem', '-w', '/repo', playwrightImage, 'bash', '-euc', `npm install --global pnpm@10.28.2 --ignore-scripts; ${script}`]);
 const started = Date.now();
 writeFileSync(resolve(dir, 'public/result.json'), JSON.stringify({ result: 'running', project, target: 'isolated Linux HTTPS' }));
 try {
@@ -53,7 +69,13 @@ try {
     // Seed runs as container root; preserve0600 while assigning the sole authorized host reader.
     call('docker', ['run', '--rm', ...mount, goImage, 'chown', `${process.getuid()}:${process.getgid()}`, '/repo/.work/acceptance/fixtures.json']);
   }
-  node('pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; node --test contracts/*.test.mjs tests/governance/*.test.mjs tests/foundation/*.test.mjs tests/acceptance/topology.test.mjs; pnpm exec redocly lint contracts/openapi/openapi.json; pnpm typecheck; pnpm build; cd apps/web; PLAYWRIGHT_JSON_OUTPUT_NAME=/repo/.work/acceptance/components.json pnpm exec playwright test --config playwright.component.config.ts --reporter=line,json');
+  const frontendChecks = 'pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; node --test contracts/*.test.mjs tests/governance/*.test.mjs tests/foundation/*.test.mjs tests/acceptance/topology.test.mjs; pnpm exec redocly lint contracts/openapi/openapi.json; pnpm typecheck; pnpm build';
+  if (componentSummary) {
+    node(frontendChecks);
+    writeFileSync(resolve(dir, 'components.json'), JSON.stringify(componentSummary, null, 2) + '\n');
+  } else {
+    node(frontendChecks + '; cd apps/web; PLAYWRIGHT_JSON_OUTPUT_NAME=/repo/.work/acceptance/components.json pnpm exec playwright test --config playwright.component.config.ts --reporter=line,json');
+  }
   compose('up', '-d', 'bff', 'nginx');
   call(process.execPath, ['--test', 'infra/acceptance/ingress.test.mjs'], { env: { ...env,
     WEAVEOS_API_URL: 'https://localhost:19443',

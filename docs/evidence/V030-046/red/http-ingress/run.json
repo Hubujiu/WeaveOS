@@ -1,0 +1,87 @@
+{
+  "source_commit": "82b26ef09ca8561cd2718a6066e0bbee2755bc83",
+  "worktree": "/workspace/WeaveOS-worktrees/V030-046",
+  "hashes_before": {
+    "services/bff/cmd/bff/root_workflow_read_http_test.go": "52dcb1d50807ad7757ed9f662bcb5ef982eafba441a47f26b58243740456a8b6",
+    "services/bff/internal/apprecordservice/root_workflow_read_test.go": "ff4490e9e868dc82c7f61cccf7e7bbe8993d3da349d75ead58141982591f182b",
+    "services/bff/internal/apprecordservice/workflow_read.go": "19ded974602e1a8c47025df41b10c7ef4719238193a21bc367371671487db437",
+    "services/bff/internal/apprecordservice/service.go": "d2cc579654a72da4345677800f76acc3bd769c8684b52982b8501c33534b2612",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "started_at": "2026-10-07T04:42:34.451080+00:00",
+  "environment": {
+    "Go": "1.27.1",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "sum.golang.org",
+    "CGO_ENABLED": "1",
+    "storage": "Same authorized original private real PG18.6/Redis8.2.10 and archive; sequential after V044 RED completed"
+  },
+  "argv": [
+    "/workspace/.weaveos-tools/go/bin/go",
+    "test",
+    "-race",
+    "-p",
+    "1",
+    "-count=1",
+    "-json",
+    "-run",
+    "^TestRootWorkflowReadHTTPS",
+    "./cmd/bff"
+  ],
+  "exit_code": 1,
+  "finished_at": "2026-10-07T04:42:39.134670+00:00",
+  "hashes_after": {
+    "services/bff/cmd/bff/root_workflow_read_http_test.go": "52dcb1d50807ad7757ed9f662bcb5ef982eafba441a47f26b58243740456a8b6",
+    "services/bff/internal/apprecordservice/root_workflow_read_test.go": "ff4490e9e868dc82c7f61cccf7e7bbe8993d3da349d75ead58141982591f182b",
+    "services/bff/internal/apprecordservice/workflow_read.go": "19ded974602e1a8c47025df41b10c7ef4719238193a21bc367371671487db437",
+    "services/bff/internal/apprecordservice/service.go": "d2cc579654a72da4345677800f76acc3bd769c8684b52982b8501c33534b2612",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "worktree_clean_after": true,
+  "cases": [
+    {
+      "name": "TestRootWorkflowReadHTTPSCurrentSummaryAndClosedProjection",
+      "result": "fail",
+      "elapsed_seconds": 0.13,
+      "failure_outputs": [
+        "root_workflow_read_http_test.go:15: want200 actual404 {\"code\":\"API_NOT_FOUND\",\"message\":\"\u8bf7\u6c42\u672a\u5b8c\u6210\",\"data\":null,\"meta\":{\"requestId\":\"4f3d737785643e191c4a9f82ea06b2ee\"}}"
+      ]
+    },
+    {
+      "name": "TestRootWorkflowReadHTTPSClosedBody",
+      "result": "fail",
+      "elapsed_seconds": 0.12,
+      "failure_outputs": [
+        "root_workflow_read_http_test.go:33: want200 actual404 {\"code\":\"API_NOT_FOUND\",\"message\":\"\u8bf7\u6c42\u672a\u5b8c\u6210\",\"data\":null,\"meta\":{\"requestId\":\"ef75686c27bb1a860b144ca49dfef9f4\"}}"
+      ]
+    },
+    {
+      "name": "TestRootWorkflowReadHTTPSIdentityAndCSRFAreRequired",
+      "result": "fail",
+      "elapsed_seconds": 0.12,
+      "failure_outputs": [
+        "root_workflow_read_http_test.go:47: want200 actual404 {\"code\":\"API_NOT_FOUND\",\"message\":\"\u8bf7\u6c42\u672a\u5b8c\u6210\",\"data\":null,\"meta\":{\"requestId\":\"1d8f648909c2a8140d88861391209304\"}}"
+      ]
+    },
+    {
+      "name": "TestRootWorkflowReadHTTPSChangedSummaryRequiresRefresh",
+      "result": "fail",
+      "elapsed_seconds": 0.13,
+      "failure_outputs": [
+        "root_workflow_read_http_test.go:60: want200 actual404 {\"code\":\"API_NOT_FOUND\",\"message\":\"\u8bf7\u6c42\u672a\u5b8c\u6210\",\"data\":null,\"meta\":{\"requestId\":\"87f19f5b538653823504d3f55385a8ac\"}}"
+      ]
+    }
+  ],
+  "hashes_unchanged": true,
+  "artifact_hashes": {
+    "test.stdout.jsonl": "0af969c39ae085ef50e1bbae872b491223f378466abfadf203ba9ff0931091e1",
+    "test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test.exit": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "root_workflow_read_http_test.go": "52dcb1d50807ad7757ed9f662bcb5ef982eafba441a47f26b58243740456a8b6"
+  },
+  "status": "ACTUAL_FOUR_HTTPS_ROUTE_MISSING_RED",
+  "interpretation": "Real HTTPS fixtures and valid authenticated requests succeeded in reaching router: all first valid requests return404 API_NOT_FOUND instead of200. Closed-body/auth/CSRF/stale-summary later assertions not yet reached; no fixture/compiler/environment error."
+}

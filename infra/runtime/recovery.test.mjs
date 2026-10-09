@@ -4,18 +4,19 @@ import { recoverRuntime } from './recovery.mjs';
 // ADR004/Redis recovery: a database rollback must not carry the original Session
 // namespace into the recovered deployment. Full runtime checks use actual Cookies.
 test('recovery must rotate shared generation after verified restore before resuming traffic',()=>{
- let restored=false,updated=false,resumed=false;
+ const events=[];
  const current='accepted-before-recovery';
  const result=recoverRuntime({generation:current,
-  pause(){},restore(){restored=true;},
-  switchGeneration(generation){assert.ok(restored);assert.notEqual(generation,current);updated=true;},
-  resume(){assert.ok(updated);resumed=true;},
+  pause(){events.push(['pause']);},restore(){events.push(['restore']);},
+  switchGeneration(generation){events.push(['switch',generation]);},
+  resume(){events.push(['resume']);},
  });
- assert.ok(restored&&updated&&resumed,'recovery must actually execute the ordered restoration and generation transition');
- assert.notEqual(result.generation,current);
+ assert.equal(typeof result.generation,'string');assert.ok(result.generation.length>0);
+ assert.notEqual(result.generation,current,'the previous Session namespace must be invalidated');
+ assert.deepEqual(events,[['pause'],['restore'],['switch',result.generation],['resume']],'returned generation must be the one actually activated between restore and resume');
 });
 test('failed restore leaves traffic paused and does not publish a new generation',()=>{
- let generation=false,resumed=false;
- assert.throws(()=>recoverRuntime({generation:'old',pause(){},restore(){throw new Error('synthetic restore failure');},switchGeneration(){generation=true;},resume(){resumed=true;}}));
- assert.equal(generation,false);assert.equal(resumed,false);
+ const events=[],failure=new Error('synthetic restore failure');
+ assert.throws(()=>recoverRuntime({generation:'old',pause(){events.push('pause');},restore(){events.push('restore');throw failure;},switchGeneration(){events.push('switch');},resume(){events.push('resume');}}),error=>error===failure);
+ assert.deepEqual(events,['pause','restore'],'failed restoration must stop with traffic paused');
 });

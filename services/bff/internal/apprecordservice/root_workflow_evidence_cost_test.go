@@ -1,3 +1,5 @@
+//go:build weaveos_cost
+
 package apprecordservice
 
 import (

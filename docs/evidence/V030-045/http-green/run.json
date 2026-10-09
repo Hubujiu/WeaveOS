@@ -1,0 +1,1729 @@
+{
+  "source_commit": "31d94ee7300fb941e9c5d55c90923a7381d8bc8a",
+  "worktree": "/workspace/WeaveOS-worktrees/V030-045",
+  "hashes_before": [
+    [
+      "services/bff/cmd/bff/root_workflow_lifecycle_http_test.go",
+      "1b50a59eaac41c98af1ed4c5966ff6df8c8bed17c92f1acb19b346d948ff596c"
+    ],
+    [
+      "services/bff/internal/apprecordhttp/workflow_lifecycle.go",
+      "57a9f3eb5cf293ba3f71611f98fb4d155d570f1e422449dae506bf1270514277"
+    ],
+    [
+      "services/bff/internal/apprecordhttp/http.go",
+      "dfc9a8b3ca7651d7853fe5745159364e96ca662b068c656e5fe9be92f6b4003c"
+    ],
+    [
+      "services/bff/internal/appstructure/record_http_decode.go",
+      "ec2290390565e876eef805e4aaa1042fd56253a4dc4c38dc602e8cf5729ea991"
+    ],
+    [
+      "services/bff/internal/apprecordservice/workflow_lifecycle_action.go",
+      "975efcb8d3b5bd49afaeadab075041640630bd20224cbf5ce7e7cc689025a407"
+    ],
+    [
+      "services/bff/internal/apprecordservice/workflow_lifecycle_preview.go",
+      "948a164015b19a0807b933de77aa4c411bf72ce3d03ed1bb7f91e27a3effa390"
+    ],
+    [
+      "contracts/openapi/openapi.json",
+      "82230106539684296a97902d0bbfa46a208d49665fc54ee50fef2aa7ed22ec92"
+    ],
+    [
+      "services/bff/go.mod",
+      "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632"
+    ],
+    [
+      "services/bff/go.sum",
+      "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+    ]
+  ],
+  "environment": {
+    "Go": "1.27.1",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "sum.golang.org",
+    "CGO_ENABLED": "1",
+    "storage": "Verified original V045 isolated hot database version22 via real psql; original archive and Redis reused sequentially after V046 separate hot21/archive6 completed. No migration action."
+  },
+  "runs": [
+    {
+      "label": "lifecycle-https",
+      "argv": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "-run",
+        "^TestRootLifecycleHTTPS",
+        "./cmd/bff"
+      ],
+      "started_at": "2026-10-07T05:37:03.930762+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T05:37:09.868100+00:00",
+      "cases": [
+        {
+          "name": "TestRootLifecycleHTTPSPreviewAcceptAndOperation/withdraw",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "name": "TestRootLifecycleHTTPSPreviewAcceptAndOperation/return",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestRootLifecycleHTTPSPreviewAcceptAndOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.33
+        },
+        {
+          "name": "TestRootLifecycleHTTPSRejectsClosedBodyAndQuery",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootLifecycleHTTPSIdentityAndCSRF",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootLifecycleHTTPSOldPreviewCannotApproveChangedInstance",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        }
+      ],
+      "failure_outputs": []
+    },
+    {
+      "label": "old-workflow-action-http",
+      "argv": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "-run",
+        "^TestRootWorkflowActionHTTP",
+        "./cmd/bff"
+      ],
+      "started_at": "2026-10-07T05:37:09.868380+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T05:37:13.655465+00:00",
+      "cases": [
+        {
+          "name": "TestRootWorkflowActionHTTPRealHostPreviewAcceptedAndStatus/agree",
+          "result": "pass",
+          "elapsed_seconds": 0.19
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRealHostPreviewAcceptedAndStatus/reject",
+          "result": "pass",
+          "elapsed_seconds": 0.21
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRealHostPreviewAcceptedAndStatus",
+          "result": "pass",
+          "elapsed_seconds": 0.41
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch/no-session",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch/csrf",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch/actor",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/0",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/1",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/2",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/3",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/4",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/5",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/6",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/7",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/8",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/9",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes",
+          "result": "pass",
+          "elapsed_seconds": 0.68
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPStaleBasisRequiresRefresh",
+          "result": "pass",
+          "elapsed_seconds": 0.22
+        }
+      ],
+      "failure_outputs": []
+    },
+    {
+      "label": "race-bff-http",
+      "argv": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "./cmd/bff"
+      ],
+      "started_at": "2026-10-07T05:37:13.655851+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T05:37:28.476556+00:00",
+      "cases": [
+        {
+          "name": "TestB5CompositionWiresApplicationsWithSameSession",
+          "result": "pass",
+          "elapsed_seconds": 0.04
+        },
+        {
+          "name": "TestReadAuthenticationConfiguration",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestCompositionWiresRealAuthenticationAndReadiness",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "name": "TestCompositionRejectsIncompleteAuthenticationConfig",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestDefinitionConfigRequiresDedicatedExplicitKeyAndLimits",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestBFFCompositionExposesDefinitionWithSameSession/draft_list_is_the_frozen_items_object",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestBFFCompositionExposesDefinitionWithSameSession/record_HTTP_and_atomic_history",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "name": "TestBFFCompositionExposesDefinitionWithSameSession/draft_HTTP_remains_separate_from_records",
+          "result": "pass",
+          "elapsed_seconds": 0.04
+        },
+        {
+          "name": "TestBFFCompositionExposesDefinitionWithSameSession/ordinary_runtime_uses_registered_form_tuple/field_scoped_ordinary_reference_candidates",
+          "result": "pass",
+          "elapsed_seconds": 0.04
+        },
+        {
+          "name": "TestBFFCompositionExposesDefinitionWithSameSession/ordinary_runtime_uses_registered_form_tuple",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "name": "TestBFFCompositionExposesDefinitionWithSameSession",
+          "result": "pass",
+          "elapsed_seconds": 0.32
+        },
+        {
+          "name": "TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/own_access",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "name": "TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/ordinary_invitation",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "name": "TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/invitation_query_uses_production_guard_wiring",
+          "result": "pass",
+          "elapsed_seconds": 1.52
+        },
+        {
+          "name": "TestCompositionWiresPersonnelAndOrdinaryInvitationQ25/password_reset_remains_Root",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestCompositionWiresPersonnelAndOrdinaryInvitationQ25",
+          "result": "pass",
+          "elapsed_seconds": 1.56
+        },
+        {
+          "name": "TestConfiguredProxyHostsAreReadAndInvalidHostsRejected",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootHostAdmissionRejectsNewTaskWhenEngineBecomesUnavailable",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "name": "TestRootHostAdmissionRejectsNewPublicationWhenEngineBecomesUnavailable",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootMainProcessSigtermStopsClaimsBeforeWaitingForActiveHttp",
+          "result": "pass",
+          "elapsed_seconds": 5.82
+        },
+        {
+          "name": "TestRootMainProcessInvalidIdentityExitsWithoutSecrets",
+          "result": "pass",
+          "elapsed_seconds": 1.06
+        },
+        {
+          "name": "TestRootMainProcessOccupiedAddressExitsAndReleasesInitializedDependencies",
+          "result": "pass",
+          "elapsed_seconds": 1.06
+        },
+        {
+          "name": "TestRootServeStopsWorkersBeforeDrainingAndKeepsStorageUntilRequestsFinish",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootServeForcesTimedOutHttpDrainAndReportsFailure",
+          "result": "pass",
+          "elapsed_seconds": 0.04
+        },
+        {
+          "name": "TestRootServeUnexpectedWorkerFailureStopsHttpWithoutExposingCause",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootServeListenerFailureStillStopsWorkersAndClosesResources",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootServeCanceledBeforeStartNeverAcceptsButCleansHost",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootServeRejectsMissingInputsAndUnboundedGrace",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRealHostPreviewAcceptedAndStatus/agree",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRealHostPreviewAcceptedAndStatus/reject",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRealHostPreviewAcceptedAndStatus",
+          "result": "pass",
+          "elapsed_seconds": 0.36
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch/no-session",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch/csrf",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch/actor",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPRejectsAuthenticationCSRFAndActorMismatch",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/0",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/1",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/2",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/3",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/4",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/5",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/6",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/7",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/8",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes/9",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPClosedBodyAndExactRoutes",
+          "result": "pass",
+          "elapsed_seconds": 0.64
+        },
+        {
+          "name": "TestRootWorkflowActionHTTPStaleBasisRequiresRefresh",
+          "result": "pass",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "name": "TestRootHostEnabledWiresRealDependenciesAndKeepsAuthentication",
+          "result": "pass",
+          "elapsed_seconds": 0.02
+        },
+        {
+          "name": "TestRootHostStartupCancellationDoesNotOwnWorkerLifetime",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "name": "TestRootHostProcessCancellationStopsBothWorkers",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "name": "TestRootHostUnhealthyEngineFailsStartupAndCleansDependencies",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "name": "TestRootHostWrongIdentityFailsStartupWithoutEcho",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "name": "TestRootHostReadinessTracksEngineFailureAndRecovery",
+          "result": "pass",
+          "elapsed_seconds": 0.02
+        },
+        {
+          "name": "TestRootHostCloseWaitsWorkersAndReleasesStorageIdempotently",
+          "result": "pass",
+          "elapsed_seconds": 0.02
+        },
+        {
+          "name": "TestRootHostDisabledModePreservesExistingReadiness",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        },
+        {
+          "name": "TestRootHostRejectsIncompleteLifecycleAndWriteLimits",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowIdentityRequiredWhenEnabled",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowIdentityRejectedWhenDisabled",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowIdentityValidatesWithoutEchoingInvalidValues",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowIdentityActuallyFeedsExistingRpcInterceptor",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowIdentityConfigurationRemainsRedacted",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootLifecycleHTTPSPreviewAcceptAndOperation/withdraw",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestRootLifecycleHTTPSPreviewAcceptAndOperation/return",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestRootLifecycleHTTPSPreviewAcceptAndOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.32
+        },
+        {
+          "name": "TestRootLifecycleHTTPSRejectsClosedBodyAndQuery",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootLifecycleHTTPSIdentityAndCSRF",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootLifecycleHTTPSOldPreviewCannotApproveChangedInstance",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootRPCConnectAuthenticatedBothServices",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCRejectWrongIdentityAndRelease",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCRejectOneUnhealthyService",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCReadyTracksRecoveryAndStartupContext",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCStartupHealthHasDeadline",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "name": "TestRootRPCInvalidConfigurationNeverDials/disabled",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCInvalidConfigurationNeverDials/nil-context",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCInvalidConfigurationNeverDials/canceled",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCInvalidConfigurationNeverDials/target",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCInvalidConfigurationNeverDials/identity",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCInvalidConfigurationNeverDials/timeout-zero",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCInvalidConfigurationNeverDials/timeout-high",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCInvalidConfigurationNeverDials",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCDialFailureIsSanitized",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCCloseIsConcurrentAndIdempotent",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootRPCBothBusinessClientsUseSameAuthenticatedConnection",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowConfigDisabledByDefault",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowConfigRequiresExplicitCompleteEnable",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowConfigParsesPlaintextInternalTargets",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowConfigRejectsUnsafeTargetSyntax",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowConfigBoundsDeadline",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootReadConfigWiresWorkflowValidation",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowEnabledCannotSilentlyUseUnconfiguredHandler",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkersRejectInvalidInputsBeforeStarting",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkersStartExactlyOneOfEachUntilStopped",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkersFollowProcessCancellation",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkersDoneWaitsForBothBoundedCleanupPaths",
+          "result": "pass",
+          "elapsed_seconds": 0.03
+        },
+        {
+          "name": "TestRootWorkersUnexpectedFailureCancelsSiblingAndRedactsCause",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkersUnexpectedNilReturnIsNotSuccess",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkersConcurrentStopAndWaitAreIdempotent",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkersInvalidWaitDoesNotStopRunningWorkers",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootHTTPSRecordVersionContract",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        }
+      ],
+      "failure_outputs": []
+    },
+    {
+      "label": "decoder-full",
+      "argv": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "./internal/appstructure"
+      ],
+      "started_at": "2026-10-07T05:37:28.477896+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T05:37:49.171912+00:00",
+      "cases": [
+        {
+          "name": "TestExpectedActorRejectsSwitchedSessionBeforeDefinitionClaim",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestExpectedActorGuardCoversOriginalOperationAndReads",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "name": "TestExpectedActorHeaderStrictnessAndLegacyCompatibility",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction/metadata",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction/layout",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction/audit",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction/result",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestSaveMetadataLayoutAuditAndResultFaultsRollbackOneRealTransaction",
+          "result": "pass",
+          "elapsed_seconds": 0.42
+        },
+        {
+          "name": "TestAtomicNewFormFailureLeavesNoTableOrView",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "name": "TestExactStoredDefaultsAndLayoutOnlyPreservesRows",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestNewReferenceDefaultNeedsActiveSource",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "name": "TestNormalizedDefaultsReplaySameOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestOptionsMappingChangesRealValuesAndPreflightIsReadOnly",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestConfirmationSameCountChangeExpiryAndReplay",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRequiredAndConversionFailureRollBack",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestTwoSessionsSchemaViewCASAndIdenticalOperationSerialize/schema",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestTwoSessionsSchemaViewCASAndIdenticalOperationSerialize/view",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestTwoSessionsSchemaViewCASAndIdenticalOperationSerialize/same_operation",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestTwoSessionsSchemaViewCASAndIdenticalOperationSerialize",
+          "result": "pass",
+          "elapsed_seconds": 0.36
+        },
+        {
+          "name": "TestExpiredTamperedWrongViewAndChangedPlanConfirmation",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestLiveFlowRegistryBlocksAndDependencyOnlyChangeStalesToken",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestDirectoryCycleCrossAppAndVersionGate",
+          "result": "pass",
+          "elapsed_seconds": 0.19
+        },
+        {
+          "name": "TestNumericPolicyChangeKeepsConfiguredDefault",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestLayoutOnlyNeverDeduplicatesExistingMultiColumn",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestExplicitMultiMappingDeduplicatesRealUUIDArray",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestExplicitZeroSpanAndUnknownMappingsReject",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "name": "TestTimestampToTextUsesCanonicalUTC",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRealRestrictedRoleCannotAlterDropOrExecuteViaPublic",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestDepartmentCandidatesAreLiveMinimalAndCursorScoped",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestDepartmentCandidatesUseSharedDispatchAuthorizationAndActorGuard",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestDefinitionAuditCorrelatesActualHTTPRequest",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestMissingConfirmationReportsActualNonNullImpact",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRealDefinitionCommitAckLossUsesOriginalOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestHistoryLabelsUseCurrentTombstoneAndExplicitUnavailable",
+          "result": "pass",
+          "elapsed_seconds": 0.29
+        },
+        {
+          "name": "TestRealPGStructureMigrationAndRestrictedDDL",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "name": "TestAtomicFormCreateAndGridSave",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestOrdinaryRootMenuDoesNotGrantDefinition",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "name": "TestMemberAssignmentRejectsNewInactiveAndPreservesExistingInactive",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestMemberAssignmentLocksSourceStatusBeforeAppGate",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "name": "TestOwnerMemberCandidatesUseOpaqueBoundCursorAndMinimalLiveData",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "name": "TestActualGroupMembersRetainIdsAndInactiveDisplay",
+          "result": "pass",
+          "elapsed_seconds": 0.07
+        },
+        {
+          "name": "TestCandidateCursorBindsActorAppExpiryAndLiveAuthorization",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestCandidateSearchTreatsWildcardCharactersAsLiteralPrefix",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "name": "TestActualMenuGranteeCannotManageChildDefinitionsOrEnumerateCandidates",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestCreateOnlyExpectedActorGuardAndOwnerBootstrapManagement",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestOtherViewRemovalAndTypeConversionHaveDifferentGuards",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestOtherViewLayoutChangesDependencyRevision",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRequiredSelectionCannotBeClearedAndMultiToSingleCannotHideCardinality",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestDependencyUnavailableDoesNotPretendEmpty",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestPreflightReferenceSourceAndStrictCompleteDTO",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "name": "TestHistoryHTTPRealOwnerCursorAndDeletedFieldTombstone",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestPublishedRecordDMLIncludesRequiredSameTxHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRequiredCreateHistoryBeforeIsAbsentNull",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestHistoryTypedWriteCanonicalRollbackNoopAndScopedPage",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestHistoryMigrationPreservesOptionLabelsAndRestrictsAuditReader",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestDataGrantBlocksFieldRemovalAndChangesDependencyRevision",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestHistoryCreateCapturesActualSQLDefaultAndStorageFailureRollsBack",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/record.create",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/record.edit",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/record.search",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/draft.create",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies/draft.update",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderAcceptsSparseAndIncompleteBodies",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderRejectsDuplicateUnknownNullAndNumericValues",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestFrozenRecordHTTPDecoderBoundsRawBodiesAndMedia",
+          "result": "pass",
+          "elapsed_seconds": 0.03
+        },
+        {
+          "name": "TestRecordHTTPQueryTokenMaximumMatchesFrozenDTO",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRealRecordGateFenceAuditAndMinimumOperationLifecycle",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestTypedDefaultsOnlyCreateRejectsInactiveReferencesAtomically/member",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestTypedDefaultsOnlyCreateRejectsInactiveReferencesAtomically/department",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestTypedDefaultsOnlyCreateRejectsInactiveReferencesAtomically",
+          "result": "pass",
+          "elapsed_seconds": 0.26
+        },
+        {
+          "name": "TestNativeTypedCapabilityRejectsInactiveReferenceDefault",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestNativeReferenceGuardRequiresRealRegistryAndCounter/registry",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestNativeReferenceGuardRequiresRealRegistryAndCounter/counter",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestNativeReferenceGuardRequiresRealRegistryAndCounter",
+          "result": "pass",
+          "elapsed_seconds": 0.22
+        },
+        {
+          "name": "TestNativeGuardValidatesActualPostgreSQLReferenceDefault",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestNativeNullableReferenceWithoutConstantCreatesNull",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestNonManagerRecordTransactionResolvesActualResourcesAndSession",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestDataGrantReplacementPersistsExactMasksAndRegisteredFormMenu",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRecordSourcesPreserveMultiDepartmentEdgesAndDeletedIdentity",
+          "result": "pass",
+          "elapsed_seconds": 0.09
+        },
+        {
+          "name": "TestNativeRecordCapabilityRejectsNonCanonicalAndSystemKeys",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestNativeRecordCapabilityRequiresFiniteOperationAndSchemaCAS",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestRecordSharedMigrationRelationsAreReal",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestControlledRecordDMLWritesNativeValuesAndProtectsSystemAndCAS",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootPublicationSchemaAndRestrictedRoles",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootPublicationAcceptsDurablyWithoutPublishingOnSave",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootPublicationReplayAndFingerprint",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootPublicationRPCDoesNotHoldApplicationOrFlowLocks",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootPublicationLostResponseRecoversSameIntent",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootPublicationNewCandidateCannotBeOverwrittenByLateReceipt",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootPublicationSchemaChangeBlocksActivationPermanently",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootPublicationCloseEpochRejectsLateReceipt",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "name": "TestRootPublicationRequiresSessionCsrfAndExactActor",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootPublicationStrictPayloadRejectsExtraAndDuplicateKeys",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootPublicationAuthorityReturnRequiresFreshExplicitIntent",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootPublicationBadReceiptNeverAdvancesVersion",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootPublicationExpiredLeaseCannotDoubleConfirm",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootPublicationAuditFailureRollsBackActivationAndRecovers",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestRootPublicationBackgroundLoopRetriesWithoutBrowserResubmission",
+          "result": "pass",
+          "elapsed_seconds": 1.18
+        },
+        {
+          "name": "TestRootPublicationAuditUsesExactIdentityAndFiniteStates",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootPublicationMigrationDownRefusesDurableHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootRuntimeAdmissionUnavailablePublicationCreatesNothingAndCanRetry",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootRuntimeAdmissionPublicationProbePrecedesBusinessTransaction",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootRuntimeAdmissionPublicationReplayRemainsAvailableDuringOutage",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootRuntimeAdmissionPublicationStillChecksRevisionBeforeOutage",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootWorkflowHTTPAuditRetainsExactManagementIdentity",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/not-a-uuid",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/#00",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/00000000-0000-0000-0000-000000000000",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic/11111111-1111-4111-8111-111111111111_",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRootWorkflowHTTPInvalidAssigneeIdentityIsClientErrorAndAtomic",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootWorkflowHTTPPersistAndReadCanonicalDefinition",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootWorkflowHTTPReplayIsAtomicAndPayloadBound",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootWorkflowHTTPRequiresRealSessionCSRFAndExpectedActor",
+          "result": "pass",
+          "elapsed_seconds": 0.1
+        },
+        {
+          "name": "TestRootWorkflowHTTPOrdinaryDataAccessDoesNotGrantManagement",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootWorkflowHTTPRejectsCandidateWithoutExistingPermission",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRootWorkflowHTTPOwnScopeCandidateAndRevocationRechecked",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootWorkflowHTTPEnableRequiresConfirmedDeployment",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootWorkflowHTTPCloseReportsClosingWithAcceptedInstance",
+          "result": "pass",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic/schema",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic/revision",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic/graph",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootWorkflowHTTPStaleRevisionSchemaAndInvalidGraphAreAtomic",
+          "result": "pass",
+          "elapsed_seconds": 0.39
+        },
+        {
+          "name": "TestRootWorkflowHTTPClosedJSONAndNoClientDeploymentProof",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootWorkflowHTTPRevokedAccountCannotReplayOrRead",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootWorkflowHTTPHostRoutesBeforeGenericForms",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestRootWorkflowSchemaSaveRejectsAndRollsBackAllChanges",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootWorkflowSchemaPreflightReportsConflictWithoutConfirmation",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind/text",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind/multiline",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootWorkflowSchemaAllowsCompatibleRenameAndTextKind",
+          "result": "pass",
+          "elapsed_seconds": 0.26
+        },
+        {
+          "name": "TestRootWorkflowSchemaRechecksAfterPreviouslyAllowedPreflight",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootWorkflowSchemaClosedUnusedHistoryAllowsRemoval",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootWorkflowSchemaInFlightOldDefinitionStillProtectsField",
+          "result": "pass",
+          "elapsed_seconds": 0.14
+        },
+        {
+          "name": "TestRootWorkflowSchemaSaveSerializesWithEnable",
+          "result": "pass",
+          "elapsed_seconds": 0.16
+        },
+        {
+          "name": "TestRecordReadResolvesLiveNonManagerInOneReadOnlyRR",
+          "result": "pass",
+          "elapsed_seconds": 0.2
+        },
+        {
+          "name": "TestOwnerRuntimeHTTPUsesRealResourceAndSafeMinuteInput",
+          "result": "pass",
+          "elapsed_seconds": 0.11
+        },
+        {
+          "name": "TestRuntimeProjectionPrunesHiddenFieldsDefaultsAndEmptyGroups",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestRuntimeHistoryHintRequiresSameFieldReadHistoryIntersection",
+          "result": "pass",
+          "elapsed_seconds": 0
+        },
+        {
+          "name": "TestReferenceSourcePreserves254CharacterAuthoritativeAccount",
+          "result": "pass",
+          "elapsed_seconds": 0.08
+        },
+        {
+          "name": "TestActiveAuthoritativeReferenceDefaultsAndInactiveRejection",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        },
+        {
+          "name": "TestUnauthorizedDefinitionWriteCannotInspectReferenceAvailability",
+          "result": "pass",
+          "elapsed_seconds": 0.17
+        },
+        {
+          "name": "TestAllCommonKindsProduceTypedPGColumnsAndConstantDefaults",
+          "result": "pass",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestNewStructureAuditArchivesWithActualMaintenanceRoles",
+          "result": "pass",
+          "elapsed_seconds": 0.12
+        }
+      ],
+      "failure_outputs": []
+    }
+  ],
+  "preliminary_runs": [
+    {
+      "label": "generator",
+      "argv": [
+        "node",
+        "scripts/v030-045/register-lifecycle.mjs"
+      ],
+      "started_at": "2026-10-07T05:37:00.645014+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T05:37:00.689104+00:00"
+    },
+    {
+      "label": "contracts",
+      "argv": [
+        "node",
+        "--test",
+        "contracts/application-records.contract.test.mjs",
+        "contracts/application-structure.contract.test.mjs",
+        "contracts/ci.test.mjs",
+        "contracts/openapi.contract.test.mjs",
+        "contracts/password-ascii.contract.test.mjs",
+        "contracts/personnel-responses.contract.test.mjs",
+        "contracts/personnel.contract.test.mjs",
+        "contracts/query-drafts-responses.contract.test.mjs",
+        "contracts/query-drafts.contract.test.mjs",
+        "contracts/query-post.contract.test.mjs",
+        "contracts/table-presets.contract.test.mjs",
+        "contracts/workflow-actions.contract.test.mjs",
+        "contracts/workflow-lifecycle.contract.test.mjs",
+        "contracts/workflow-publication.test.mjs"
+      ],
+      "started_at": "2026-10-07T05:37:00.706181+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T05:37:01.097255+00:00"
+    }
+  ],
+  "fixture_verification": [
+    {
+      "label": "database-and-goose-version",
+      "argv": [
+        "docker",
+        "run",
+        "--rm",
+        "--pull=never",
+        "--network",
+        "none",
+        "--mount",
+        "type=bind,source=/tmp/weaveos-v030-043-red-2LAJaOtw/pg,target=/tmp/weaveos-v030-043-red-2LAJaOtw/pg,readonly",
+        "--env",
+        "PGDATABASE",
+        "--entrypoint",
+        "sh",
+        "sha256:662db3da228c2ea2649b3ae04db4b4479e85fea5979f6a917a7f6d5cb1e7ec39",
+        "-c",
+        "exec psql --dbname=\"$PGDATABASE\" -At -v ON_ERROR_STOP=1 -c \"SELECT current_database(), max(version_id) FROM public.goose_db_version WHERE is_applied\""
+      ],
+      "started_at": "2026-10-07T05:37:01.114703+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T05:37:03.909214+00:00"
+    },
+    {
+      "label": "goose-status",
+      "argv": [
+        "/workspace/.weaveos-tools/gopath/bin/goose",
+        "-dir",
+        "/workspace/WeaveOS-worktrees/V030-045/db/migrations",
+        "status"
+      ],
+      "started_at": "2026-10-07T05:37:03.909308+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T05:37:03.930716+00:00"
+    }
+  ],
+  "hashes_after": [
+    [
+      "services/bff/cmd/bff/root_workflow_lifecycle_http_test.go",
+      "1b50a59eaac41c98af1ed4c5966ff6df8c8bed17c92f1acb19b346d948ff596c"
+    ],
+    [
+      "services/bff/internal/apprecordhttp/workflow_lifecycle.go",
+      "57a9f3eb5cf293ba3f71611f98fb4d155d570f1e422449dae506bf1270514277"
+    ],
+    [
+      "services/bff/internal/apprecordhttp/http.go",
+      "dfc9a8b3ca7651d7853fe5745159364e96ca662b068c656e5fe9be92f6b4003c"
+    ],
+    [
+      "services/bff/internal/appstructure/record_http_decode.go",
+      "ec2290390565e876eef805e4aaa1042fd56253a4dc4c38dc602e8cf5729ea991"
+    ],
+    [
+      "services/bff/internal/apprecordservice/workflow_lifecycle_action.go",
+      "975efcb8d3b5bd49afaeadab075041640630bd20224cbf5ce7e7cc689025a407"
+    ],
+    [
+      "services/bff/internal/apprecordservice/workflow_lifecycle_preview.go",
+      "948a164015b19a0807b933de77aa4c411bf72ce3d03ed1bb7f91e27a3effa390"
+    ],
+    [
+      "contracts/openapi/openapi.json",
+      "82230106539684296a97902d0bbfa46a208d49665fc54ee50fef2aa7ed22ec92"
+    ],
+    [
+      "services/bff/go.mod",
+      "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632"
+    ],
+    [
+      "services/bff/go.sum",
+      "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+    ]
+  ],
+  "hashes_unchanged": true,
+  "worktree_status_after": "M contracts/openapi/openapi.json",
+  "only_expected_generated_api_dirty": true,
+  "artifact_hashes": [
+    [
+      "contracts.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "contracts.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "contracts.stdout",
+      "6f761dfe7e980bbe799bf79e80a890201456b3b1c19bdaf0bc089369c37aa990"
+    ],
+    [
+      "database-and-goose-version.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "database-and-goose-version.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "database-and-goose-version.stdout",
+      "da1ad12b05fe2d4fbb09917ea04e1f77237a0d6422314cf2fd548a8adc2738df"
+    ],
+    [
+      "decoder-full.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "decoder-full.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "decoder-full.stdout.jsonl",
+      "5f6ff3547ccac056e40a63f88815e77d0320cc6fd8a036a743f75b3292f6780b"
+    ],
+    [
+      "generator-run.json",
+      "e1e46bde4d4c0e446eb292f45f0c0324d214a90a1114962d14b4057f48972957"
+    ],
+    [
+      "generator.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "generator.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "generator.stdout",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "go.mod",
+      "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632"
+    ],
+    [
+      "go.sum",
+      "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+    ],
+    [
+      "goose-status.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "goose-status.stderr",
+      "8abb973bf480ff0e82f6c4fa9779138e11f6f9ca61484b5ccc5da8f2c6577336"
+    ],
+    [
+      "goose-status.stdout",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "http.go",
+      "dfc9a8b3ca7651d7853fe5745159364e96ca662b068c656e5fe9be92f6b4003c"
+    ],
+    [
+      "lifecycle-https.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "lifecycle-https.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "lifecycle-https.stdout.jsonl",
+      "f0decddebe90235e8113e8db041880b0d0f211fc03fe34a3f9854a7deb635204"
+    ],
+    [
+      "old-workflow-action-http.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "old-workflow-action-http.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "old-workflow-action-http.stdout.jsonl",
+      "0697f23d3fc64092ad6236ea846fc8d3b8056f7c3cb3652f022672e807c16565"
+    ],
+    [
+      "openapi.before.json",
+      "85f009a54de04e5f627b42343dfcaf770f4bf852bc9a903f93340c10833e01ee"
+    ],
+    [
+      "openapi.json",
+      "82230106539684296a97902d0bbfa46a208d49665fc54ee50fef2aa7ed22ec92"
+    ],
+    [
+      "race-bff-http.exit",
+      "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    ],
+    [
+      "race-bff-http.stderr",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "race-bff-http.stdout.jsonl",
+      "c83b75a34cf02d18a9b3908c45596f10fadfc940899c4040efd47981c87c4402"
+    ],
+    [
+      "record_http_decode.go",
+      "ec2290390565e876eef805e4aaa1042fd56253a4dc4c38dc602e8cf5729ea991"
+    ],
+    [
+      "root_workflow_lifecycle_http_test.go",
+      "1b50a59eaac41c98af1ed4c5966ff6df8c8bed17c92f1acb19b346d948ff596c"
+    ],
+    [
+      "workflow_lifecycle.go",
+      "57a9f3eb5cf293ba3f71611f98fb4d155d570f1e422449dae506bf1270514277"
+    ],
+    [
+      "workflow_lifecycle_action.go",
+      "975efcb8d3b5bd49afaeadab075041640630bd20224cbf5ce7e7cc689025a407"
+    ],
+    [
+      "workflow_lifecycle_preview.go",
+      "948a164015b19a0807b933de77aa4c411bf72ce3d03ed1bb7f91e27a3effa390"
+    ]
+  ],
+  "status": "ROOT_LIFECYCLE_HTTPS_CANDIDATE_GREEN"
+}

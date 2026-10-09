@@ -1,0 +1,115 @@
+{
+  "source_commit": "e44268c2ac0b31e2dda1864ef633f69770b82c40",
+  "worktree": "/workspace/WeaveOS-worktrees/V030-045",
+  "hashes_before": {
+    "services/bff/internal/apprecordservice/root_lifecycle_migration_test.go": "a9ae9825ce6cbdd9f4b9d1166e50ccf4eeabea7530762f944b50c7738aea5ec0",
+    "db/migrations/00022_workflow_lifecycle_operations.sql": "5a38fc4838235ce262a7f7b766a66683103163575e6f486f988dbcd45e89f62b",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "environment": {
+    "Go": "1.27.1",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "sum.golang.org",
+    "CGO_ENABLED": "1",
+    "storage": "Verified original V045 isolated hot database version22 via real psql; original archive and Redis reused sequentially after V046 separate hot21/archive6 completed. No migration action."
+  },
+  "runs": [
+    {
+      "label": "migration-protection",
+      "argv": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "-run",
+        "^TestRootLifecycleMigration",
+        "./internal/apprecordservice"
+      ],
+      "started_at": "2026-10-07T06:18:48.013215+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T06:18:52.929237+00:00",
+      "cases": [
+        {
+          "name": "TestRootLifecycleMigrationEmptyDownUpAndHistoryProtection",
+          "result": "pass",
+          "elapsed_seconds": 0.02
+        },
+        {
+          "name": "TestRootLifecycleMigrationDownSeesConcurrentHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        }
+      ],
+      "failure_outputs": []
+    }
+  ],
+  "fixture_verification": [
+    {
+      "label": "database-and-goose-version",
+      "argv": [
+        "docker",
+        "run",
+        "--rm",
+        "--pull=never",
+        "--network",
+        "none",
+        "--mount",
+        "type=bind,source=/tmp/weaveos-v030-043-red-2LAJaOtw/pg,target=/tmp/weaveos-v030-043-red-2LAJaOtw/pg,readonly",
+        "--env",
+        "PGDATABASE",
+        "--entrypoint",
+        "sh",
+        "sha256:662db3da228c2ea2649b3ae04db4b4479e85fea5979f6a917a7f6d5cb1e7ec39",
+        "-c",
+        "exec psql --dbname=\"$PGDATABASE\" -At -v ON_ERROR_STOP=1 -c \"SELECT current_database(), max(version_id) FROM public.goose_db_version WHERE is_applied\""
+      ],
+      "started_at": "2026-10-07T06:18:44.473206+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T06:18:47.984995+00:00"
+    },
+    {
+      "label": "goose-status",
+      "argv": [
+        "/workspace/.weaveos-tools/gopath/bin/goose",
+        "-dir",
+        "/workspace/WeaveOS-worktrees/V030-045/db/migrations",
+        "status"
+      ],
+      "started_at": "2026-10-07T06:18:47.985085+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T06:18:48.013164+00:00"
+    }
+  ],
+  "hashes_after": {
+    "services/bff/internal/apprecordservice/root_lifecycle_migration_test.go": "a9ae9825ce6cbdd9f4b9d1166e50ccf4eeabea7530762f944b50c7738aea5ec0",
+    "db/migrations/00022_workflow_lifecycle_operations.sql": "5a38fc4838235ce262a7f7b766a66683103163575e6f486f988dbcd45e89f62b",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "hashes_unchanged": true,
+  "worktree_clean_after": false,
+  "artifact_hashes": {
+    "00022_workflow_lifecycle_operations.sql": "5a38fc4838235ce262a7f7b766a66683103163575e6f486f988dbcd45e89f62b",
+    "database-and-goose-version.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "database-and-goose-version.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "database-and-goose-version.stdout": "da1ad12b05fe2d4fbb09917ea04e1f77237a0d6422314cf2fd548a8adc2738df",
+    "go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f",
+    "goose-status.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "goose-status.stderr": "789d4b4c3b285d9aa957c45102b64c2fbc0c8b9fee2f797826b104e1f017c440",
+    "goose-status.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "migration-protection.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "migration-protection.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "migration-protection.stdout.jsonl": "45db16d224634fe073af2bf024624fd636bd98464fa14184bba968ba16752ee0",
+    "root_lifecycle_migration_test.go": "a9ae9825ce6cbdd9f4b9d1166e50ccf4eeabea7530762f944b50c7738aea5ec0",
+    "root_lifecycle_migration_test.gofmt.go": "a9ae9825ce6cbdd9f4b9d1166e50ccf4eeabea7530762f944b50c7738aea5ec0",
+    "root_lifecycle_migration_test.source.go": "026494cc913ae508c1a1f215d4310561d262aa0511f9299c67e94babf3ae09d9",
+    "source-preparation.json": "f69f19dcd391df260e4dc2ace4c05d213a0a065a18417904398daf10c50ddc5e"
+  },
+  "status": "ROOT_MIGRATION_PROTECTION_RESULT_FOR_REVIEW"
+}

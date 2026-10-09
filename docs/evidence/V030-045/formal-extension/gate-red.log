@@ -1,0 +1,30 @@
+.FE....
+======================================================================
+ERROR: test_exact_scenarios_and_action_variants (__main__.RootFormalRuntimeGateTest.test_exact_scenarios_and_action_variants)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-045/services/workflow-engine/formal_runtime_gate_tests.py", line 34, in test_exact_scenarios_and_action_variants
+    self.assertEqual(6, self.check())
+                        ^^^^^^^^^^^^
+  File "/workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-045/services/workflow-engine/formal_runtime_gate_tests.py", line 32, in check
+    return gate.validate(self.path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-045/services/workflow-engine/formal_runtime_gate.py", line 14, in validate
+    _go(path, PACKAGE, CASES)
+  File "/workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-045/services/workflow-engine/rpc_ci_gate.py", line 84, in _go
+    raise GateError("unexpected interop case")
+rpc_ci_gate.GateError: unexpected interop case
+
+======================================================================
+FAIL: test_each_missing_case_rejected (__main__.RootFormalRuntimeGateTest.test_each_missing_case_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-045/services/workflow-engine/formal_runtime_gate_tests.py", line 39, in test_each_missing_case_rejected
+    with self.assertRaises(gate.GateError): self.check()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: GateError not raised
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.004s
+
+FAILED (failures=1, errors=1)

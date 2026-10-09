@@ -1,0 +1,146 @@
+{
+  "source_commit": "2ae9feb4175573f7abcd44470ab9a69c1d46938d",
+  "worktree": "/workspace/WeaveOS-worktrees/V030-045",
+  "hashes_before": {
+    "services/bff/internal/apprecordservice/root_workflow_lifecycle_action_test.go": "18ea399fb34faf9499d4276a4142bdfa4463b05e88c7970c149184d5d21f5bd0",
+    "services/bff/internal/apprecordservice/workflow_lifecycle_action.go": "4cbdb7f09a9bc56cf0034932926069deb0a48fe06ce2d7a1e6511d901f8e3a09",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "started_at": "2026-10-07T05:03:11.822695+00:00",
+  "environment": {
+    "Go": "1.27.1",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "sum.golang.org",
+    "CGO_ENABLED": "1",
+    "storage": "Same authorized original private real hot/archivePG18.6/Redis8.2.10; sequential after V046 reproduction; original migration1..21, no022 applied"
+  },
+  "argv": [
+    "/workspace/.weaveos-tools/go/bin/go",
+    "test",
+    "-race",
+    "-p",
+    "1",
+    "-count=1",
+    "-json",
+    "-run",
+    "^TestRootLifecycle(Action|Operation)",
+    "./internal/apprecordservice"
+  ],
+  "exit_code": 1,
+  "finished_at": "2026-10-07T05:03:16.436402+00:00",
+  "hashes_after": {
+    "services/bff/internal/apprecordservice/root_workflow_lifecycle_action_test.go": "18ea399fb34faf9499d4276a4142bdfa4463b05e88c7970c149184d5d21f5bd0",
+    "services/bff/internal/apprecordservice/workflow_lifecycle_action.go": "4cbdb7f09a9bc56cf0034932926069deb0a48fe06ce2d7a1e6511d901f8e3a09",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "worktree_clean_after": true,
+  "cases": [
+    {
+      "name": "TestRootLifecycleActionAcceptedIdentityAndNoEarlyTransition/withdraw",
+      "result": "fail",
+      "elapsed_seconds": 0.1,
+      "failure_outputs": [
+        "root_workflow_lifecycle_action_test.go:40: record service unavailable"
+      ]
+    },
+    {
+      "name": "TestRootLifecycleActionAcceptedIdentityAndNoEarlyTransition/return",
+      "result": "fail",
+      "elapsed_seconds": 0.1,
+      "failure_outputs": [
+        "root_workflow_lifecycle_action_test.go:40: record service unavailable"
+      ]
+    },
+    {
+      "name": "TestRootLifecycleActionAcceptedIdentityAndNoEarlyTransition",
+      "result": "fail",
+      "elapsed_seconds": 0.2,
+      "failure_outputs": []
+    },
+    {
+      "name": "TestRootLifecycleActionReplayAndChangedPayload",
+      "result": "fail",
+      "elapsed_seconds": 0.1,
+      "failure_outputs": [
+        "root_workflow_lifecycle_action_test.go:65: record service unavailable"
+      ]
+    },
+    {
+      "name": "TestRootLifecycleActionRejectsUnvisitedTargetWithoutWrites",
+      "result": "fail",
+      "elapsed_seconds": 0.1,
+      "failure_outputs": [
+        "root_workflow_lifecycle_action_test.go:83: unvisited target {OperationID: CommandID: InstanceID: Status: InstanceState: Reason: Sequence:0} record service unavailable"
+      ]
+    },
+    {
+      "name": "TestRootLifecycleActionLatestBasisAndRevokedPermission/version",
+      "result": "fail",
+      "elapsed_seconds": 0.1,
+      "failure_outputs": [
+        "root_workflow_lifecycle_action_test.go:110: stale acceptance {OperationID: CommandID: InstanceID: Status: InstanceState: Reason: Sequence:0} record service unavailable"
+      ]
+    },
+    {
+      "name": "TestRootLifecycleActionLatestBasisAndRevokedPermission/revoke",
+      "result": "fail",
+      "elapsed_seconds": 0.1,
+      "failure_outputs": [
+        "root_workflow_lifecycle_action_test.go:110: stale acceptance {OperationID: CommandID: InstanceID: Status: InstanceState: Reason: Sequence:0} record service unavailable"
+      ]
+    },
+    {
+      "name": "TestRootLifecycleActionLatestBasisAndRevokedPermission",
+      "result": "fail",
+      "elapsed_seconds": 0.2,
+      "failure_outputs": []
+    },
+    {
+      "name": "TestRootLifecycleActionWriteFailureRollsBackEverything",
+      "result": "fail",
+      "elapsed_seconds": 0.09,
+      "failure_outputs": [
+        "root_workflow_lifecycle_action_test.go:130: did not reach actual injection record service unavailable"
+      ]
+    },
+    {
+      "name": "TestRootLifecycleOperationKindsAndClosedReceipt/workflow.instance.withdraw",
+      "result": "fail",
+      "elapsed_seconds": 0,
+      "failure_outputs": [
+        "root_workflow_lifecycle_action_test.go:155: ERROR: new row for relation \"operations\" violates check constraint \"ck_operation_kind\" (SQLSTATE 23514)"
+      ]
+    },
+    {
+      "name": "TestRootLifecycleOperationKindsAndClosedReceipt/workflow.task.return",
+      "result": "fail",
+      "elapsed_seconds": 0,
+      "failure_outputs": [
+        "root_workflow_lifecycle_action_test.go:155: ERROR: new row for relation \"operations\" violates check constraint \"ck_operation_kind\" (SQLSTATE 23514)"
+      ]
+    },
+    {
+      "name": "TestRootLifecycleOperationKindsAndClosedReceipt",
+      "result": "fail",
+      "elapsed_seconds": 0.05,
+      "failure_outputs": []
+    }
+  ],
+  "counts": {
+    "fail_sub": 6,
+    "fail_top": 6
+  },
+  "hashes_unchanged": true,
+  "artifact_hashes": {
+    "test.exit": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test.stdout.jsonl": "ff4a03faf16d63a67e10a20c39c380035b106aabc5e17bae19f7171c3b36b241",
+    "workflow_lifecycle_action.go": "4cbdb7f09a9bc56cf0034932926069deb0a48fe06ce2d7a1e6511d901f8e3a09",
+    "root_workflow_lifecycle_action_test.go": "18ea399fb34faf9499d4276a4142bdfa4463b05e88c7970c149184d5d21f5bd0"
+  },
+  "status": "ACTUAL_ACTION_DECLARATION_AND_DB_KIND_CONSTRAINT_RED",
+  "interpretation": "Five Action families fail declaration ErrUnavailable after preview/setup. OperationKinds two subcases fail intended legacy CHECK ck_operation_kind SQLSTATE23514 on new kinds, not environment failure. Write-fault assertion explicitly shows injection not reached; malformed receipt later assertions not reached. No022 migration/source/test edits performed."
+}

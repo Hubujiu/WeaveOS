@@ -28,7 +28,9 @@ export function TablePresetManager(props:Props){
  const [reducedMotion,setReducedMotion]=useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches);
  const trigger=useRef<HTMLButtonElement>(null),firstControl=useRef<HTMLButtonElement>(null),nameControl=useRef<HTMLInputElement>(null),actions=useRef<Popover.Root.Actions|null>(null);
  const intent=useRef(false),everOpened=useRef(false),generation=useRef(0),animation=useRef<Animation[]>([]),sharedGeneration=useRef(0),sharedFrame=useRef(0),sharedTimer=useRef(0),requests=useRef(0);
+ const outsideClose=useRef<(()=>void)|null>(null);
  const focusLifecycle=useRef(0),closeFocus=useRef<{token:number;popup:HTMLDivElement|null}|null>(null);
+ const openingFocus=useRef(false);
  const sharedVersion=sharedGeneration.current,focusVersion=focusLifecycle.current,panelId=useId(),sharedName=`q36-preset-shell-${panelId.replace(/[^a-zA-Z0-9_-]/g,'-')}`;
  const sharedMotion=!reducedMotion&&typeof document.startViewTransition==='function'&&navigator.vendor!=='Apple Computer, Inc.';
  const columns=view==='resource'?resource!.columns:view==='members'?memberBusinessColumns:eventBusinessColumns;
@@ -55,8 +57,31 @@ export function TablePresetManager(props:Props){
  // Returning a target lets Base UI queue another focus transfer. Perform the
  // restoration under the shared authority here, then suppress that extra move.
  const finalFocus:Popover.Popup.Props['finalFocus']=closeType=>{restoreCloseFocus(focusLifecycle.current,closeType==='keyboard');return false;};
+ function focusReadyControl(){
+  const control=firstControl.current;
+  if(!openingFocus.current||!intent.current||!control?.isConnected||control.disabled||control.closest('[inert]'))return;
+  const active=document.activeElement;
+  if(active===control){openingFocus.current=false;return;}
+  if(active!==document.body&&active!==document.documentElement&&active!==trigger.current&&active!==popup)return;
+  control.focus({preventScroll:true});
+  if(document.activeElement===control)openingFocus.current=false;
+ }
+ // Initial focus can run while the popup is inert or the list is loading.
+ // Retry only when the real control is ready and this opening still owns focus.
+ useLayoutEffect(()=>{
+  if(!open||!expanded||listLoading)return;
+  const frame=requestAnimationFrame(focusReadyControl);
+  return()=>cancelAnimationFrame(frame);
+ },[open,expanded,listLoading,popup]);
  useLayoutEffect(()=>{
   function newerInteraction(event:Event){
+   if(openingFocus.current){
+    if(event.type==='focusin'){
+     const target=event.target as Node|null,first=firstControl.current;
+     if(target===first)openingFocus.current=false;
+     else if(target!==document.body&&target!==document.documentElement&&target!==trigger.current&&target!==first?.closest('.preset-popup'))openingFocus.current=false;
+    }else if(event.type!=='keydown'||!['Escape','Shift','Control','Alt','Meta'].includes((event as KeyboardEvent).key))openingFocus.current=false;
+   }
    const pending=closeFocus.current;if(!pending)return;
    if(event.type==='focusin'){
     const target=event.target as Node|null;
@@ -73,12 +98,15 @@ export function TablePresetManager(props:Props){
  }
  function sharedComplete(version:number,focusToken:number){
   if(version!==sharedGeneration.current)return;requestAnimationFrame(()=>{if(version!==sharedGeneration.current)return;
-   if(intent.current&&(document.activeElement===popup||!popup?.contains(document.activeElement)))firstControl.current?.focus({preventScroll:true});
+   focusReadyControl();
    const motions=document.getAnimations().filter(a=>a.effect instanceof KeyframeEffect&&a.effect.pseudoElement?.startsWith('::view-transition'));
    Promise.allSettled(motions.map(a=>a.finished)).then(()=>finishShared(version,focusToken));
   });
  }
  function changeOpen(next:boolean,restoreFocus=true){
+  outsideClose.current?.();
+  if(next&&!intent.current)openingFocus.current=true;
+  if(!next)openingFocus.current=false;
   if(next||next!==intent.current){invalidateCloseFocus();if(!next&&restoreFocus)closeFocus.current={token:focusLifecycle.current,popup};}else if(!restoreFocus)invalidateCloseFocus();
   intent.current=next;if(next)everOpened.current=true;const focusToken=focusLifecycle.current;
   if(sharedMotion){const version=++sharedGeneration.current;cancelAnimationFrame(sharedFrame.current);clearTimeout(sharedTimer.current);
@@ -88,6 +116,29 @@ export function TablePresetManager(props:Props){
   }else{setExpanded(next);setOpen(next);}
  }
  function requestClose(restore=true){if(busy||confirmation)return;if(dirty){setConfirmation({kind:'leave'});return;}setEdit(null);setError('');changeOpen(false,restore);}
+ function deferOutsideClose(event:Event){
+  outsideClose.current?.();invalidateCloseFocus();
+  let active=true,timer=0;
+  // Starting a React ViewTransition on mousedown can suppress React's later
+  // click dispatch during its async commit. Let the real outside gesture finish;
+  // never redispatch a synthetic click or change the user's target.
+  const cleanup=()=>{active=false;clearTimeout(timer);document.removeEventListener('click',queue);document.removeEventListener('pointerup',queue);document.removeEventListener('pointercancel',queue);window.removeEventListener('blur',queue);if(outsideClose.current===cleanup)outsideClose.current=null;};
+  const complete=()=>{if(!active)return;cleanup();if(intent.current)requestClose(false);};
+  const queue=()=>{clearTimeout(timer);timer=window.setTimeout(complete,0);};
+  outsideClose.current=cleanup;
+  document.addEventListener('click',queue);document.addEventListener('pointerup',queue);document.addEventListener('pointercancel',queue);window.addEventListener('blur',queue);
+  if(!['mousedown','pointerdown','touchstart'].includes(event.type))queue();
+ }
+ useLayoutEffect(()=>{
+  function beginOutsideGesture(event:PointerEvent){
+   if(!sharedMotion||dirty||busy||confirmation||!intent.current)return;
+   const target=event.target;
+   if(target instanceof Node&&!popup?.contains(target)&&!trigger.current?.contains(target))deferOutsideClose(event);
+  }
+  // Native capture precedes focus-out, which can arrive before outside-press.
+  document.addEventListener('pointerdown',beginOutsideGesture,true);
+  return()=>document.removeEventListener('pointerdown',beginOutsideGesture,true);
+ },[sharedMotion,dirty,busy,confirmation,popup]);
  useLayoutEffect(()=>{const media=matchMedia('(prefers-reduced-motion: reduce)');const sync=()=>setReducedMotion(media.matches);media.addEventListener('change',sync);return()=>media.removeEventListener('change',sync);},[]);
  useLayoutEffect(()=>{
   if(!popup||sharedMotion||!everOpened.current)return;const version=++generation.current,focusToken=focusLifecycle.current;
@@ -101,7 +152,7 @@ export function TablePresetManager(props:Props){
    if(content)animation.current.push(content.animate([{opacity:previous.length?opacity:open?0:1},{opacity:open?1:0}],{duration:open?160:80,delay:open?100:0,fill:'both',easing:'ease-out'}));motion.finished.then(complete,()=>{});
   });return()=>{generation.current++;cancelAnimationFrame(frame);};
  },[open,popup,sharedMotion,reducedMotion]);
- useLayoutEffect(()=>()=>{invalidateCloseFocus();requests.current++;generation.current++;sharedGeneration.current++;animation.current.forEach(a=>a.cancel());cancelAnimationFrame(sharedFrame.current);clearTimeout(sharedTimer.current);document.documentElement.classList.remove('q36-filter-transition-active','q36-preset-transition-active');},[]);
+ useLayoutEffect(()=>()=>{openingFocus.current=false;outsideClose.current?.();invalidateCloseFocus();requests.current++;generation.current++;sharedGeneration.current++;animation.current.forEach(a=>a.cancel());cancelAnimationFrame(sharedFrame.current);clearTimeout(sharedTimer.current);document.documentElement.classList.remove('q36-filter-transition-active','q36-preset-transition-active');},[]);
  function begin(preset:ManagedPreset|null){const invalid=resource&&preset&&'invalid'in preset&&preset.invalid;const next={preset,name:preset?.name??'',blocks:presetBlocks(invalid?null:preset?.filter,filterKey),hidden:[...(invalid?hiddenColumnIds:(preset?.hiddenColumnIds??hiddenColumnIds))],initial:''};next.initial=contentKey(next,filterKey);setEdit(next);setConflict(false);setError('');setHiddenSearch('');setShownSearch('');}
  async function readEdit(item:ManagedPreset){if(busy)return;setBusy(true);setError('');try{if(resource&&'invalid'in item&&item.invalid){begin(item);return;}const latest=resource?await resource.repository.read(item.id):await workspaceApi<TablePreset>('personnel/table-presets/'+item.id);if(resource&&'invalid'in latest&&latest.invalid){begin(latest);return;}if(!editablePresetFilter(latest.filter))throw new Error('方案包含当前编辑器无法表达的筛选树，已保留原条件；不能静默转换或保存。');begin(latest);}catch(e){failed(e);}finally{setBusy(false);}}
  function patchRow(blockId:string,rowId:string,patch:Partial<PresetRow>){setEdit(e=>e?{...e,blocks:e.blocks.map(b=>b.id===blockId?{...b,rows:b.rows.map(r=>r.id===rowId?{...r,...patch}:r)}:b)}:e);}
@@ -157,7 +208,7 @@ export function TablePresetManager(props:Props){
   {edit&&<footer className="preset-footer"><span>{leaves} / 20 条件</span><button type="button" disabled={busy} onClick={()=>{if(dirty)setConfirmation({kind:'leave',returnToManager:true});else{setEdit(null);setError('');}}}>取消</button><button type="button" className="preset-primary" disabled={busy} onClick={()=>void save()}>{busy?'保存中…':'确定'}</button></footer>}
  </div>;
  return <>
-  <Popover.Root open={open} onOpenChange={(next,details)=>{const requested=details.reason==='trigger-press'?!intent.current:next;if(!requested){details.preventUnmountOnClose();requestClose(details.reason!=='outside-press');}else changeOpen(true);}} actionsRef={actions}>
+  <Popover.Root open={open} onOpenChange={(next,details)=>{const requested=details.reason==='trigger-press'?!intent.current:next;if(!requested){details.preventUnmountOnClose();if(outsideClose.current&&(details.reason==='outside-press'||details.reason==='focus-out')){details.cancel();return;}if(details.reason==='outside-press'&&sharedMotion&&!dirty&&!busy&&!confirmation){details.cancel();deferOutsideClose(details.event);}else requestClose(details.reason!=='outside-press');}else changeOpen(true);}} actionsRef={actions}>
    <Popover.Trigger ref={trigger} className="q36-filter-trigger" aria-label={active?'自定义筛选，已应用':'自定义筛选'}><ViewTransition default="none" update={expanded?'q36-filter-trigger-out':'q36-filter-trigger-in'}><span className="q36-filter-trigger-content" style={{visibility:sharedMotion&&expanded?'hidden':undefined}}><Funnel size={16} weight={active?'fill':'regular'}/><span>自定义筛选</span>{active&&<span className="q36-filter-count">1</span>}</span></ViewTransition>{sharedMotion&&!expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={()=>sharedComplete(sharedVersion,focusVersion)} onEnter={()=>sharedComplete(sharedVersion,focusVersion)} onExit={()=>sharedComplete(sharedVersion,focusVersion)}><span className="q36-filter-trigger-frame" aria-hidden="true"/></ViewTransition>}</Popover.Trigger>
    <Popover.Portal keepMounted><Popover.Positioner className="preset-positioner" side="bottom" align="start" collisionPadding={12}><Popover.Popup ref={setPopup} id={panelId} className={'preset-popup '+(edit?'preset-editor':'preset-manager')} aria-label={title} aria-hidden={sharedMotion?!expanded:!open} inert={sharedMotion?!expanded:!open} initialFocus={firstControl} finalFocus={finalFocus}>
     {sharedMotion?expanded&&<ViewTransition name={sharedName} default="none" share="q36-filter-shell-motion" enter="q36-filter-shell-motion" exit="q36-filter-shell-motion" onShare={()=>sharedComplete(sharedVersion,focusVersion)} onEnter={()=>sharedComplete(sharedVersion,focusVersion)} onExit={()=>sharedComplete(sharedVersion,focusVersion)}><div className="q36-filter-shell" aria-hidden="true"/></ViewTransition>:<div className="q36-filter-shell" aria-hidden="true"/>}

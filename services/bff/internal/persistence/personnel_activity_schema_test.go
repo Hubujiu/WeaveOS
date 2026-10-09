@@ -2,6 +2,7 @@ package persistence_test
 
 import (
 	"context"
+	"reflect"
 	"testing"
 )
 
@@ -28,12 +29,13 @@ func TestPersonnelActivityViewQ25(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var count int
-	if err := tx.QueryRow(ctx, "SELECT count(*) FROM personnel.activity_events WHERE id IN ('00000000-0000-4000-8000-000000000081','00000000-0000-4000-8000-000000000083','00000000-0000-4000-8000-000000000084')").Scan(&count); err != nil {
+	var ids []string
+	if err := tx.QueryRow(ctx, "SELECT array_agg(id::text ORDER BY id) FROM personnel.activity_events WHERE id IN ('00000000-0000-4000-8000-000000000081','00000000-0000-4000-8000-000000000083','00000000-0000-4000-8000-000000000084')").Scan(&ids); err != nil {
 		t.Fatal(err)
 	}
-	if count != 2 {
-		t.Fatalf("only personnel and invitation activity visible, got %d", count)
+	wantIDs := []string{"00000000-0000-4000-8000-000000000081", "00000000-0000-4000-8000-000000000084"}
+	if !reflect.DeepEqual(ids, wantIDs) {
+		t.Fatalf("expected personnel and invitation identities %v, got %v", wantIDs, ids)
 	}
 	rows, err := tx.Query(ctx, "SELECT column_name FROM information_schema.columns WHERE table_schema='personnel' AND table_name='activity_events' ORDER BY ordinal_position")
 	if err != nil {

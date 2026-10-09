@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/jackc/pgx/v5/pgconn"
 	"testing"
 )
 
@@ -78,8 +79,9 @@ func TestDefinitionAuditFailureRollsBackQ25(t *testing.T) {
 	f := setup(t)
 	ctx := context.Background()
 	_, err := f.app.SaveDefinition(ctx, f.actor, Identity, "", DefinitionInput{Name: "must-rollback", PermissionCodes: []string{}, TemplateIDs: []string{}}, RequestMetadata{})
-	if err == nil || errors.Is(err, ErrNotImplemented) {
-		t.Fatalf("audit constraint failure must be reached: %v", err)
+	var pgerr *pgconn.PgError
+	if !errors.As(err, &pgerr) || pgerr.Code != "23514" || pgerr.ConstraintName != "ck_authentication_events_request_id" {
+		t.Fatalf("expected the audit request-id CHECK failure, got %v", err)
 	}
 	var count int
 	if err := f.owner.QueryRow(ctx, "SELECT count(*) FROM personnel.identities WHERE name='must-rollback'").Scan(&count); err != nil {

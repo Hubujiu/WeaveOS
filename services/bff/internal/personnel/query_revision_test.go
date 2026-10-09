@@ -28,10 +28,14 @@ func TestQ36RevisionActualWriterCoverageAndNoops(t *testing.T) {
 		}
 		after := queryRevisionsForTest(t, f.owner)
 		expected := map[string]bool{"people": scope == "people", "configuration": scope == "configuration", "activity": scope == "activity"}
-		changed := map[string]bool{"people": after.People > before.People, "configuration": after.Configuration > before.Configuration, "activity": after.Activity > before.Activity}
-		for k, want := range expected {
-			if changed[k] != want {
-				t.Errorf("%s: %s revision changed=%v want %v; before=%+v after=%+v", name, k, changed[k], want, before, after)
+		previous := map[string]int64{"people": before.People, "configuration": before.Configuration, "activity": before.Activity}
+		current := map[string]int64{"people": after.People, "configuration": after.Configuration, "activity": after.Activity}
+		for k, wantIncrease := range expected {
+			if wantIncrease && current[k] <= previous[k] {
+				t.Errorf("%s: %s revision must increase; before=%d after=%d", name, k, previous[k], current[k])
+			}
+			if !wantIncrease && current[k] != previous[k] {
+				t.Errorf("%s: %s revision must remain exactly unchanged; before=%d after=%d", name, k, previous[k], current[k])
 			}
 		}
 	}

@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -177,8 +179,17 @@ func TestRootMainProcessSigtermStopsClaimsBeforeWaitingForActiveHttp(t *testing.
 	go func() {
 		r, e := (&http.Client{Timeout: 15 * time.Second}).Do(request)
 		if e == nil {
-			_, e = io.Copy(io.Discard, r.Body)
+			var raw []byte
+			raw, e = io.ReadAll(r.Body)
 			_ = r.Body.Close()
+			if e == nil {
+				var envelope struct {
+					Code string `json:"code"`
+				}
+				if e = json.Unmarshal(raw, &envelope); e == nil && (r.StatusCode != 401 || envelope.Code != "AUTH_INVALID_CREDENTIALS") {
+					e = fmt.Errorf("drained login must complete as 401 AUTH_INVALID_CREDENTIALS; got %d %s", r.StatusCode, envelope.Code)
+				}
+			}
 		}
 		response <- e
 	}()
@@ -235,7 +246,10 @@ func TestRootMainProcessSigtermStopsClaimsBeforeWaitingForActiveHttp(t *testing.
 		t.Fatal(e)
 	}
 	select {
-	case <-response:
+	case err := <-response:
+		if err != nil {
+			t.Fatalf("accepted in-flight HTTP request did not complete its expected response: %v", err)
+		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("held HTTP request failed to finish after unlock")
 	}

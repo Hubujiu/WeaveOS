@@ -1,0 +1,24 @@
+{
+  "container": "weaveos-b2-ci-43ec721505ab78beea8745a4cc40bd51",
+  "image": "postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722",
+  "running": true,
+  "network": "none",
+  "port_bindings": {},
+  "unix_socket_mount": [
+    {
+      "Type": "bind",
+      "Source": "/tmp/weaveos-b2-ci-ntJLyR/socket",
+      "Destination": "/var/run/postgresql",
+      "Mode": "",
+      "RW": true,
+      "Propagation": "rprivate"
+    }
+  ],
+  "state_retained": "/workspace/.weaveos-v030-048/b2-state.json",
+  "stop_command": [
+    "node",
+    "infra/acceptance/run.mjs",
+    "b2-fixture-stop",
+    "/workspace/.weaveos-v030-048/b2-state.json"
+  ]
+}

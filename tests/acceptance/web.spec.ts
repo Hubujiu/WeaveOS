@@ -81,7 +81,6 @@ test('FR-017: successful registration returns to login without a session', async
   await page.getByLabel('确认密码', { exact: true }).fill('Synthetic@123');
   await page.getByRole('button', { name: '注册', exact: true }).click();
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
-  expect((await context.cookies()).filter(cookie => cookie.httpOnly).length).toBe(0);
   expect((await context.cookies()).filter(cookie => cookie.httpOnly)).toHaveLength(0);
   await page.goto('/app');
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
@@ -268,14 +267,21 @@ test('WEB-12 PRD login: network failure differs from credential failure and perm
   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
-  const credentialsError = await page.getByRole('alert').textContent();
+  await expect(page.getByRole('alert').getByText('邮箱或密码不正确',{exact:true})).toBeVisible();
   // Real transport fault injection, not a mocked business response.
   await page.route('**/api/v1/sessions', route => route.abort('connectionfailed'));
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
-  await expect.poll(async () => (await page.getByRole('alert').textContent()) !== credentialsError).toBe(true);
+  await expect(page.getByRole('alert').getByText('网络连接失败，请检查网络后重试',{exact:true})).toBeVisible();
+  await expect(page.getByLabel('账号',{exact:true})).toHaveValue('synthetic-unknown-user');
+  await expect(page.getByLabel('密码',{exact:true})).toHaveValue('Synthetic@123');
   await expect(page.getByRole('button', { name: '登录', exact: true })).toBeEnabled();
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
+  await page.unroute('**/api/v1/sessions');
+  await page.getByLabel('账号',{exact:true}).fill(fixtures().user.account);
+  await page.getByLabel('密码',{exact:true}).fill(fixtures().user.password);
+  await page.getByRole('button',{name:'登录',exact:true}).click();
+  await expect(page).toHaveURL(/\/app(?:\/|\?|$)/);
 });
 
 async function fillRegistration(page: Page, account: string, code: string) {
@@ -457,7 +463,55 @@ async function personnelLogin(page:Page,credentials:{account:string;password:str
 test('R2/Q25 real ordinary Home, own account and direct admin denial',async({page})=>{
  const f=fixtures();await personnelLogin(page,f.user);await expect(page.getByRole('button',{name:'设置',exact:true})).toBeHidden();await expect(page.getByText('暂无可用应用',{exact:true})).toBeVisible();await page.getByRole('button',{name:'账号',exact:true}).click();await expect(page.getByText('尚未分配身份',{exact:true})).toBeVisible();await page.goto('/app/admin');await expect(page.getByRole('alert')).toContainText('没有人员管理权限');await expect(page.getByRole('tab',{name:'身份',exact:true})).toBeHidden();
 });
+async function observeR3(page: Page) {
+ const started = performance.now();
+ const emit = (phase: string, fields: Record<string,string|number|boolean> = {}) => console.log('R3_PHASE ' + JSON.stringify({phase, elapsedMs:Math.round(performance.now()-started), ...fields}));
+ const route = (url: string) => {
+  const path = new URL(url).pathname;
+  if(path === '/api/v1/personnel/members/search') return 'member-search';
+  if(path === '/api/v1/personnel/events/search') return 'event-search';
+  if(path === '/api/v1/personnel/templates') return 'templates';
+  if(path === '/api/v1/personnel/identities') return 'identities';
+  return null;
+ };
+ const requests = new Map<object,number>(); let sequence = 0;
+ page.on('request', request => {
+  const kind = route(request.url()); if(!kind) return;
+  const id = ++sequence; requests.set(request,id);
+  let hasQueryVersion = false;
+  try {hasQueryVersion = !!request.postDataJSON()?.queryVersion;} catch {}
+  emit('request',{id,kind,method:request.method(),hasQueryVersion});
+ });
+ page.on('response', response => {
+  const request=response.request(),id=requests.get(request); if(id===undefined)return;
+  emit('response',{id,kind:route(response.url())!,status:response.status()});
+ });
+ page.on('requestfailed', request => {
+  const id=requests.get(request);if(id===undefined)return;emit('request-failed',{id,kind:route(request.url())!});
+ });
+ page.on('pageerror',()=>emit('page-error'));
+ page.on('crash',()=>emit('page-crash'));
+ page.on('console',message=>{
+  if(!message.text().startsWith('R3_CLICK '))return;
+  try {
+   const item=JSON.parse(message.text().slice(9));
+   const names=['刷新查询','成员与部门','权限模板','身份','保存','确认保存'];
+   if(!names.includes(item.name))return;
+   emit('browser-click',{name:item.name,disabled:item.disabled===true,defaultPrevented:item.defaultPrevented===true});
+  } catch {}
+ });
+ await page.addInitScript(()=>{
+  document.addEventListener('click',event=>{
+   const target=event.target instanceof Element?event.target.closest('button,[role="tab"]'):null;
+   const name=target?.textContent?.trim();
+   if(!name||!['刷新查询','成员与部门','权限模板','身份','保存','确认保存'].includes(name))return;
+   console.log('R3_CLICK '+JSON.stringify({name,disabled:target instanceof HTMLButtonElement&&target.disabled,defaultPrevented:event.defaultPrevented}));
+  },true);
+ });
+ emit('diagnostic-start');return emit;
+}
 test('R3 real Root UI creates shared template/identity and assigns a new non-Root manager',async({page,context},info)=>{
+ const emit=await observeR3(page);
  const f=fixtures(),label='browser-'+info.project.name+'-'+Date.now();await personnelLogin(page,f.admin);await page.getByRole('button',{name:'设置',exact:true}).click();
  const csrf=(await context.cookies()).find(c=>c.name==='__Host-csrf')?.value;expect(Boolean(csrf)).toBe(true);const origin=new URL(process.env.WEAVEOS_WEB_URL!).origin;
  const inviteResponse=await context.request.post('/api/v1/invitations',{headers:{Origin:origin,'X-CSRF-Token':csrf!},data:{}});expect(inviteResponse.status()).toBe(201);const invitation=(await inviteResponse.json()).data;
@@ -467,8 +521,9 @@ test('R3 real Root UI creates shared template/identity and assigns a new non-Roo
  await page.getByRole('tab',{name:'成员与部门',exact:true}).click();
  // The API registration above changed the complete member result after admin entry.
  // Q36 requires the real user's explicit refresh before searching that new member.
+ emit('before-refresh-wait');
  const refreshed=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/v1/personnel/members/search'&&r.request().method()==='POST'&&!r.request().postDataJSON().queryVersion);
- await page.getByRole('button',{name:'刷新查询',exact:true}).click();expect((await refreshed).status()).toBe(200);
+ emit('before-refresh-click');await page.getByRole('button',{name:'刷新查询',exact:true}).click();emit('after-refresh-click');expect((await refreshed).status()).toBe(200);emit('after-refresh-response');
  const searched=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/v1/personnel/members/search'&&r.request().method()==='POST'&&r.request().postDataJSON().search===label);
  await page.getByLabel('搜索成员',{exact:true}).fill(label);const searchResponse=await searched;expect(searchResponse.status()).toBe(200);const query=(await searchResponse.json()).data;expect(typeof query.queryVersion).toBe('string');expect(query.queryVersion.length).toBeGreaterThan(0);
  const row=page.getByRole('row').filter({hasText:label});await expect(row).toHaveCount(1);await row.getByRole('button',{name:'配置身份',exact:true}).click();await page.getByLabel('身份：'+label+'-身份',{exact:true}).check();
@@ -479,4 +534,41 @@ test('R3 real Root UI creates shared template/identity and assigns a new non-Roo
  await page.getByRole('button',{name:'设置',exact:true}).click();await page.getByRole('button',{name:'邀请成员',exact:true}).click();await page.getByRole('button',{name:'生成邀请码',exact:true}).click();await expect(page.getByLabel('邀请码',{exact:true})).not.toHaveValue('');await page.getByRole('button',{name:'关闭',exact:true}).click();
  await page.getByRole('tab',{name:'权限模板',exact:true}).click();await page.getByLabel('搜索权限模板',{exact:true}).fill(label+'-模板');await page.getByRole('button',{name:label+'-模板',exact:true}).click();await page.getByLabel('中央权限：人员管理',{exact:true}).uncheck();await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('1 位成员');await page.getByRole('button',{name:'确认保存',exact:true}).click();
  await page.getByRole('button',{name:'退出',exact:true}).click();await expect(page.getByRole('button',{name:'设置',exact:true})).toBeHidden();await page.goto('/app/admin');await expect(page.getByRole('alert')).toContainText('没有人员管理权限');
+});
+
+test('R3 real refresh survives a stale-query response between pointer press and release',async({page,context},info)=>{
+ const f=fixtures(),label='refresh-press-'+info.project.name+'-'+Date.now();
+ const isMembers=(url:string,method:string)=>new URL(url).pathname==='/api/v1/personnel/members/search'&&method==='POST';
+ await personnelLogin(page,f.admin);
+ const initial=page.waitForResponse(r=>isMembers(r.url(),r.request().method())&&!r.request().postDataJSON().queryVersion);
+ await page.getByRole('button',{name:'设置',exact:true}).click();expect((await initial).status()).toBe(200);
+ const loading=page.getByRole('status').filter({hasText:'正在加载…'});
+ await expect(loading).toBeHidden();
+ const csrf=(await context.cookies()).find(c=>c.name==='__Host-csrf')?.value;expect(Boolean(csrf)).toBe(true);
+ const origin=new URL(process.env.WEAVEOS_WEB_URL!).origin;
+ const invite=await context.request.post('/api/v1/invitations',{headers:{Origin:origin,'X-CSRF-Token':csrf!},data:{}});expect(invite.status()).toBe(201);
+ const invitation=(await invite.json()).data;
+ const registered=await context.request.post('/api/v1/registrations',{headers:{Origin:origin},data:{account:label,password:'Synthetic@123',invitationCode:invitation.invitationCode}});expect(registered.status()).toBe(201);
+ let release!:()=>void,entered!:()=>void,held=false;
+ const gate=new Promise<void>(r=>{release=r;}),intercepted=new Promise<void>(r=>{entered=r;});
+ await page.route('**/api/v1/personnel/members/search',async route=>{
+  const body=route.request().postDataJSON();
+  if(held||!body?.queryVersion||body.search){await route.continue();return;}
+  held=true;
+  // This is the real BFF response; only its delivery timing is controlled.
+  const response=await route.fetch();
+  expect(response.status()).toBe(409);expect((await response.json()).code).toBe('COMMON_QUERY_CHANGED');
+  entered();await gate;if(!page.isClosed())await route.fulfill({response});
+ });
+ try{
+  await page.getByRole('tab',{name:'身份',exact:true}).click();
+  await page.getByRole('tab',{name:'成员与部门',exact:true}).click();await intercepted;
+  const refresh=page.getByRole('button',{name:'刷新查询',exact:true}),box=await refresh.boundingBox();expect(box).not.toBeNull();
+  await page.mouse.move(box!.x+box!.width/2,box!.y+box!.height/2);await page.mouse.down();
+  release();await expect(page.getByRole('alert').filter({hasText:'查询结果已变化'})).toBeVisible();await expect(loading).toBeHidden();
+  const refreshed=page.waitForResponse(r=>isMembers(r.url(),r.request().method())&&!r.request().postDataJSON().queryVersion);
+  await page.mouse.up();const response=await refreshed;expect(response.status()).toBe(200);
+  const data=(await response.json()).data;expect(typeof data.queryVersion).toBe('string');expect(data.queryVersion.length).toBeGreaterThan(0);
+  await expect(page.getByRole('alert').filter({hasText:'查询结果已变化'})).toBeHidden();
+ }finally{release();if(!page.isClosed())await page.mouse.up();}
 });

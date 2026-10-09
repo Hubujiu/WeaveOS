@@ -1,0 +1,115 @@
+{
+  "source_commit": "141754a07a9dac3827edc28ce0c2de502c7c6d1a",
+  "prior_run": "/tmp/weaveos-v030-046-red-efo0c1si",
+  "prior_artifact_sha256": {
+    "test.stdout.jsonl": "772392c793a8b49a2ef7d4ca55e87ed579364a19204b678ca39f7e58f6dc3238",
+    "test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test.exit": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "root_workflow_read_test.go": "c96c3e756c27b9b5bee7c572e9b64e22f72dd845a6d11224ead611ab3b77e38a"
+  },
+  "worktree": "/workspace/WeaveOS-worktrees/V030-046",
+  "hashes_before": {
+    "services/bff/internal/apprecordservice/root_workflow_read_test.go": "ff4490e9e868dc82c7f61cccf7e7bbe8993d3da349d75ead58141982591f182b",
+    "services/bff/internal/apprecordservice/workflow_read.go": "91a4121615e672a7ee4da22283ac1d2a50351290b8c6ac97059e7c8dc9828e03",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "started_at": "2026-10-07T04:32:52.216899+00:00",
+  "environment": {
+    "Go": "1.27.1",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "sum.golang.org",
+    "CGO_ENABLED": "1",
+    "storage": "Same authorized original private real PG18.6/Redis8.2.10; no reset; migrations1..21 already applied"
+  },
+  "argv": [
+    "/workspace/.weaveos-tools/go/bin/go",
+    "test",
+    "-race",
+    "-p",
+    "1",
+    "-count=1",
+    "-json",
+    "-run",
+    "^TestRootWorkflowRead",
+    "./internal/apprecordservice"
+  ],
+  "exit_code": 1,
+  "finished_at": "2026-10-07T04:32:56.220323+00:00",
+  "hashes_after": {
+    "services/bff/internal/apprecordservice/root_workflow_read_test.go": "ff4490e9e868dc82c7f61cccf7e7bbe8993d3da349d75ead58141982591f182b",
+    "services/bff/internal/apprecordservice/workflow_read.go": "91a4121615e672a7ee4da22283ac1d2a50351290b8c6ac97059e7c8dc9828e03",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "worktree_clean_after": true,
+  "cases": [
+    {
+      "name": "TestRootWorkflowReadCurrentRecordSummary",
+      "result": "fail",
+      "elapsed_seconds": 0.08,
+      "failure_outputs": [
+        "root_workflow_read_test.go:17: record service unavailable"
+      ]
+    },
+    {
+      "name": "TestRootWorkflowReadOwnScopeRejectsForeignRecord",
+      "result": "fail",
+      "elapsed_seconds": 0.08,
+      "failure_outputs": [
+        "root_workflow_read_test.go:39: foreign row visible: {Items:[] Total:0 Page:0 PageSize:0 QueryVersion:} record service unavailable"
+      ]
+    },
+    {
+      "name": "TestRootWorkflowReadRevocationIsLive",
+      "result": "fail",
+      "elapsed_seconds": 0.08,
+      "failure_outputs": [
+        "root_workflow_read_test.go:47: record service unavailable"
+      ]
+    },
+    {
+      "name": "TestRootWorkflowReadTwoFlowsPageWithoutDuplicates",
+      "result": "fail",
+      "elapsed_seconds": 0.08,
+      "failure_outputs": [
+        "root_workflow_read_test.go:66: record service unavailable"
+      ]
+    },
+    {
+      "name": "TestRootWorkflowReadRelatedChangeRequiresRefresh",
+      "result": "fail",
+      "elapsed_seconds": 0.09,
+      "failure_outputs": [
+        "root_workflow_read_test.go:83: record service unavailable"
+      ]
+    },
+    {
+      "name": "TestRootWorkflowReadUnrelatedRecordDoesNotExpire",
+      "result": "fail",
+      "elapsed_seconds": 0.08,
+      "failure_outputs": [
+        "root_workflow_read_test.go:99: record service unavailable"
+      ]
+    },
+    {
+      "name": "TestRootWorkflowReadRejectsInvalidPageAndForeignSession",
+      "result": "fail",
+      "elapsed_seconds": 0.07,
+      "failure_outputs": [
+        "root_workflow_read_test.go:129: record service unavailable"
+      ]
+    }
+  ],
+  "hashes_unchanged": true,
+  "artifact_hashes": {
+    "test.stdout.jsonl": "53ccb7146950dd9eb55aff466e3df90c15ca2966abc94ecb6cbea7d8b72286ef",
+    "test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test.exit": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "root_workflow_read_test.go": "ff4490e9e868dc82c7f61cccf7e7bbe8993d3da349d75ead58141982591f182b",
+    "workflow_read.go": "91a4121615e672a7ee4da22283ac1d2a50351290b8c6ac97059e7c8dc9828e03"
+  },
+  "prior_artifacts_unchanged": true,
+  "status": "ACTUAL_SEVEN_DECLARATION_BEHAVIOR_RED"
+}

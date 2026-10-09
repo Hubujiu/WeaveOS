@@ -1,0 +1,1738 @@
+{
+  "source_commit": "3c826aae3d2ad88fd127ae1db4824187989926b5",
+  "worktree": "/workspace/WeaveOS-worktrees/V030-046",
+  "hashes_before": {
+    "services/bff/internal/apprecordservice/root_workflow_read_test.go": "ff4490e9e868dc82c7f61cccf7e7bbe8993d3da349d75ead58141982591f182b",
+    "services/bff/internal/apprecordservice/workflow_read.go": "19ded974602e1a8c47025df41b10c7ef4719238193a21bc367371671487db437",
+    "services/bff/internal/apprecordservice/service.go": "d2cc579654a72da4345677800f76acc3bd769c8684b52982b8501c33534b2612",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "started_at": "2026-10-07T04:38:39.405879+00:00",
+  "environment": {
+    "Go": "1.27.1",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "sum.golang.org",
+    "CGO_ENABLED": "1",
+    "storage": "Same authorized original private real hot/archive PG18.6 and Redis8.2.10; no reset; original migrations applied"
+  },
+  "runs": {
+    "workflow-read": {
+      "argv": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "-run",
+        "^TestRootWorkflowRead",
+        "./internal/apprecordservice"
+      ],
+      "started_at": "2026-10-07T04:38:39.420733+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T04:38:44.695656+00:00",
+      "cases": [
+        {
+          "name": "TestRootWorkflowReadCurrentRecordSummary",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowReadOwnScopeRejectsForeignRecord",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowReadRevocationIsLive",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowReadTwoFlowsPageWithoutDuplicates",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowReadRelatedChangeRequiresRefresh",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowReadUnrelatedRecordDoesNotExpire",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowReadRejectsInvalidPageAndForeignSession",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        }
+      ],
+      "counts": {
+        "pass_top": 7
+      },
+      "new_workflow_read_counts": {
+        "pass_top": 7
+      },
+      "existing_case_counts": {},
+      "stderr_bytes": 0
+    },
+    "race-apprecordservice": {
+      "argv": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "./internal/apprecordservice"
+      ],
+      "started_at": "2026-10-07T04:38:44.710194+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T04:39:36.204481+00:00",
+      "cases": [
+        {
+          "name": "TestRestrictedLostCommitAckRecoversExactRecordDraftAuditOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedDefinitePreCommitRollbackKeepsDraftAndOriginalKey",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceMetadataExists",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceAcquireReplayAndRelease",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceOtherCommandCannotReplace",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceOldTokenCannotReleaseNewOccupant",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceAcquireCallerRollback",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceReleaseCallerRollback",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceStaleVersionsAndForeignResources",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceNullAndZeroInputsFailClosed",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceBlocksRealEditButNotOtherRecord",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceSchemaChangeRollsBackDDL",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceRuntimeHasNoDirectWritePrivilege",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceReleaseRequiresPositiveExactToken",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceCounterExhaustionDoesNotWrap",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCommandFenceDoesNotBlockViewOnlyLayout",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryAcceptPersistsOriginalPayloadAndSchedulingIdentity",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryAcceptCallerRollbackDropsPayloadLedgerQueueAndFence",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryAcceptSavepointPreventsPartialCommandAfterQueueFailure",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryAcceptExactReplayConflictAndTerminalReplay",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryLegacyV2CannotBePromotedOrHavePayloadGuessed",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryPayloadBindingCorruptionAndMissingCommand",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryPayloadImmutableRuntimeAndNarrowSchedulerGrants",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryConcurrentExactAcceptanceKeepsOneQueue",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionStartCommitsBoundTasksEventAndFence",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionCallerRollbackKeepsPending",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionDuplicateDoesNotReleaseNewFence",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionTransitionsPreserveTaskHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionTerminalActionsRemoveOnlyActiveTasks/agree",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionTerminalActionsRemoveOnlyActiveTasks/reject",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionTerminalActionsRemoveOnlyActiveTasks/withdraw",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionTerminalActionsRemoveOnlyActiveTasks",
+          "result": "pass",
+          "elapsed_seconds": 0.22,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionConfirmedNoEffectLeavesActiveState",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionCancelledStartDrainsReservation",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionReturnCreatesNewActivation",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionHistoricalReturnBindsTarget",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionNoEffectUnknownStartCannotHideExistingEngine",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/payload",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/body",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/receipt",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/instance",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/sequence",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/schema",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/record",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/action_state",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionInvalidBindingsNeverWrite/process",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionInvalidBindingsNeverWrite",
+          "result": "pass",
+          "elapsed_seconds": 0.62,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit/event",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit/task",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit/instance",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit/ledger",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit/dispatch",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit/fence",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionFailureSavepointPreventsPartialCommit",
+          "result": "pass",
+          "elapsed_seconds": 0.4,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionConcurrentExactReceiptHasOneEffect",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionNilPortsAndInvalidVersion",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionMissingFenceCannotPublish",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionTaskIdentityCannotBeRewrittenOrReactivated/assignee",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionTaskIdentityCannotBeRewrittenOrReactivated/engine",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionTaskIdentityCannotBeRewrittenOrReactivated/epoch",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionTaskIdentityCannotBeRewrittenOrReactivated/reactivate",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionTaskIdentityCannotBeRewrittenOrReactivated/foreign_node",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionTaskIdentityCannotBeRewrittenOrReactivated",
+          "result": "pass",
+          "elapsed_seconds": 0.4,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionIndependentFlowsKeepSeparateResults",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionRuntimeEventsAreAppendOnly",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionAssigneeMustBelongToVersionNode",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionForeignInstanceDoesNotAcquireItsLock",
+          "result": "pass",
+          "elapsed_seconds": 0.11,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootProjectionVisitedNodeHasScopedIndex",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerExecuteAndProjectWithoutDatabaseTransactionAcrossRPC",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerLookupConfirmedNeverReexecutes",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerLookupFailureStaysPending",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerLostExecuteResponseRestartsWithSameIdentity",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerRejectsMalformedOrContradictoryReplies/nil-confirmed",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerRejectsMalformedOrContradictoryReplies/contradictory-absent",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerRejectsMalformedOrContradictoryReplies/wrong-body-hash",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerRejectsMalformedOrContradictoryReplies/nil-execute",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerRejectsMalformedOrContradictoryReplies",
+          "result": "pass",
+          "elapsed_seconds": 0.26,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerProjectionFailureKeepsFenceThenRecovers",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerClaimPreventsDuplicateLiveDispatch",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerExpiredLeaseCannotAffectLaterFence/false",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerExpiredLeaseCannotAffectLaterFence/true",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerExpiredLeaseCannotAffectLaterFence",
+          "result": "pass",
+          "elapsed_seconds": 0.15,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerAcceptedCommandSurvivesAuthorityRevocation",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerLegacyQueueAndFutureDueAreNotExecuted",
+          "result": "pass",
+          "elapsed_seconds": 0.12,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerCorruptStoredPayloadFailsBeforeRPC",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerOtherRecordContinuesDuringUnknownRPC",
+          "result": "pass",
+          "elapsed_seconds": 0.14,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRecoveryWorkerConfirmedNoEffectUsesExistingAtomicProjection",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootFormalLedgerTablesExist",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootFormalLedgerAcceptAndFenceCommitTogether",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootFormalLedgerAcceptAndFenceRollbackTogether",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootFormalLedgerApplyReleaseAtomicAndReplay",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootFormalLedgerRuntimeCannotRewriteIdentityOrDeleteHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootFormalLedgerDatabaseConstraints",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootFormalLedgerCurrentRolesLeastPrivilege",
+          "result": "pass",
+          "elapsed_seconds": 0.03,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootNativeCatalogStableKeyAndImmutablePriorVersion",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootNativeCatalogBindsEachApplicationScope",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRuntimeAdmissionRejectsUnavailableWithoutConsumingAction/agree",
+          "result": "pass",
+          "elapsed_seconds": 0.12,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRuntimeAdmissionRejectsUnavailableWithoutConsumingAction/reject",
+          "result": "pass",
+          "elapsed_seconds": 0.12,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRuntimeAdmissionRejectsUnavailableWithoutConsumingAction",
+          "result": "pass",
+          "elapsed_seconds": 0.24,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRuntimeAdmissionChecksHealthOutsideBusinessTransaction",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRuntimeAdmissionKeepsAcceptedReplayDuringOutage",
+          "result": "pass",
+          "elapsed_seconds": 0.13,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootRuntimeAdmissionPreservesActualRowVisibilityPriority",
+          "result": "pass",
+          "elapsed_seconds": 0.11,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionLostActualRowAccessDoesNotRevealClosedTask",
+          "result": "pass",
+          "elapsed_seconds": 0.11,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionSQLNullIsFalseButMissingConditionIsNotTrue/actual-null-value",
+          "result": "pass",
+          "elapsed_seconds": 0.11,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionSQLNullIsFalseButMissingConditionIsNotTrue/corrupt-null-predicate",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionSQLNullIsFalseButMissingConditionIsNotTrue",
+          "result": "pass",
+          "elapsed_seconds": 0.22,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionLostActualCommitReplyRecoversOnePendingCommand",
+          "result": "pass",
+          "elapsed_seconds": 0.14,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionActualCommitRollbackLeavesNoPartialAcceptance",
+          "result": "pass",
+          "elapsed_seconds": 0.17,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionAcceptedReceiptIsPendingMinimalAnd202Only",
+          "result": "pass",
+          "elapsed_seconds": 0.12,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionMigrationDownNeverDeletesAcceptedHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.12,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionAcceptsOriginalEvidenceCommandQueueFenceAndMinimumReceipt/agree",
+          "result": "pass",
+          "elapsed_seconds": 0.14,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionAcceptsOriginalEvidenceCommandQueueFenceAndMinimumReceipt/reject",
+          "result": "pass",
+          "elapsed_seconds": 0.19,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionAcceptsOriginalEvidenceCommandQueueFenceAndMinimumReceipt",
+          "result": "pass",
+          "elapsed_seconds": 0.33,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionReplayIgnoresExpiredTokenAndRevokedDataButChecksLiveActor",
+          "result": "pass",
+          "elapsed_seconds": 0.14,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionSameOperationDifferentRequestCannotMutate/action",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionSameOperationDifferentRequestCannotMutate/record",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionSameOperationDifferentRequestCannotMutate/instance",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionSameOperationDifferentRequestCannotMutate/task",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionSameOperationDifferentRequestCannotMutate/token",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionSameOperationDifferentRequestCannotMutate",
+          "result": "pass",
+          "elapsed_seconds": 0.14,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionRejectsStaleRelatedEvidenceAndAcceptsUnrelatedSourceChange/record",
+          "result": "pass",
+          "elapsed_seconds": 0.12,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionRejectsStaleRelatedEvidenceAndAcceptsUnrelatedSourceChange/reference",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionRejectsStaleRelatedEvidenceAndAcceptsUnrelatedSourceChange/visible-mask",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionRejectsStaleRelatedEvidenceAndAcceptsUnrelatedSourceChange/schema",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionRejectsStaleRelatedEvidenceAndAcceptsUnrelatedSourceChange/unrelated",
+          "result": "pass",
+          "elapsed_seconds": 0.11,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionRejectsStaleRelatedEvidenceAndAcceptsUnrelatedSourceChange",
+          "result": "pass",
+          "elapsed_seconds": 0.54,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionExpiredCrossSessionAndWrongTaskTokensCreateNothing/expired",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionExpiredCrossSessionAndWrongTaskTokensCreateNothing/different-session",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionExpiredCrossSessionAndWrongTaskTokensCreateNothing/different-task",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionExpiredCrossSessionAndWrongTaskTokensCreateNothing/different-record",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionExpiredCrossSessionAndWrongTaskTokensCreateNothing",
+          "result": "pass",
+          "elapsed_seconds": 0.38,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionRevokedDataOrTaskNeverGrantsAuthority/data",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionRevokedDataOrTaskNeverGrantsAuthority/assignee",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionRevokedDataOrTaskNeverGrantsAuthority/epoch",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionRevokedDataOrTaskNeverGrantsAuthority/closed",
+          "result": "pass",
+          "elapsed_seconds": 0.11,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionRevokedDataOrTaskNeverGrantsAuthority",
+          "result": "pass",
+          "elapsed_seconds": 0.4,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionConcurrentExactRequestsCreateOneCommand",
+          "result": "pass",
+          "elapsed_seconds": 0.19,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionDistinctConcurrentKeysCannotBypassRecordFence",
+          "result": "pass",
+          "elapsed_seconds": 0.13,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionEveryDatabaseFailureRollsBackAllNewState/workflow_evidence_documents",
+          "result": "pass",
+          "elapsed_seconds": 0.13,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionEveryDatabaseFailureRollsBackAllNewState/workflow_commands",
+          "result": "pass",
+          "elapsed_seconds": 0.13,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionEveryDatabaseFailureRollsBackAllNewState/workflow_dispatch",
+          "result": "pass",
+          "elapsed_seconds": 0.14,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionEveryDatabaseFailureRollsBackAllNewState/operations",
+          "result": "pass",
+          "elapsed_seconds": 0.13,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionEveryDatabaseFailureRollsBackAllNewState",
+          "result": "pass",
+          "elapsed_seconds": 0.52,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionConfirmedStatusRequiresOriginalAppliedEvent/agree",
+          "result": "pass",
+          "elapsed_seconds": 0.13,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionConfirmedStatusRequiresOriginalAppliedEvent/reject",
+          "result": "pass",
+          "elapsed_seconds": 0.15,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionConfirmedStatusRequiresOriginalAppliedEvent",
+          "result": "pass",
+          "elapsed_seconds": 0.28,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionNoEffectIsConfirmedOnlyAfterApplicationProjection",
+          "result": "pass",
+          "elapsed_seconds": 0.14,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionEvaluatesPinnedConditionsOnActualHiddenTypedFields",
+          "result": "pass",
+          "elapsed_seconds": 0.13,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionFenceProtectsOnlyTargetAndDoesNotImplicitlySave",
+          "result": "pass",
+          "elapsed_seconds": 0.15,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowActionInvalidOrNonWorkflowOperationsNeverReturnStatus",
+          "result": "pass",
+          "elapsed_seconds": 0.11,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogCompatibilityDoesNotScanArchivedVersions",
+          "result": "pass",
+          "elapsed_seconds": 0.49,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogVersionIsDurableAndCallerRollback",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogUndeployedCannotEnableOrStart",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogDeploymentReceiptIdempotentAndBound",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogOldDeploymentCannotReplaceNewCandidate",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogInstancesKeepStructureWhileNextUsesConfirmedVersion",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogCloseWaitsForAcceptedStartAndRejectsNewStart",
+          "result": "pass",
+          "elapsed_seconds": 0.12,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogCloseWithoutInstancesAndLateCloseCAS",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogIndependentFlowsSameRecord",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogCASAndResourceScope",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogInvalidGraphHasNoPersistentVersion",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogCompatibilityIsPrecise",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogOldInFlightVersionBlocksUntilTerminal",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogDisabledHistoryDoesNotBlockSchema",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogDeploymentRechecksChangedSchema",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogConcurrentVersionCAS",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootCatalogImmutableVersionsAndMinimumRoles",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceCaptureRejectsOversizeBeforeTransferringValue",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceCaptureUsesRealValuesAndOriginalVisibleMask",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceCaptureRetainsRRSourceSnapshotThenSeesRefresh",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceCaptureRejectsDeniedAndMissingRows",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceCaptureDeletedMemberUsesRetainedRegistry",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceCaptureTypedValuesAndRemovedOptionLabels",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceCaptureWriteLifecycleSharesOuterRollback",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceCaptureRejectsUnboundScopeAndInvalidPorts",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceCaptureReferenceQueriesAreBatched",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceCostComparison",
+          "result": "pass",
+          "elapsed_seconds": 30.96,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreEmptyFormHasImmutableDirectory",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreResourceBudgetRejectsBeforeSQL/manifest",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreResourceBudgetRejectsBeforeSQL/field-count",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreResourceBudgetRejectsBeforeSQL/field-body",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreResourceBudgetRejectsBeforeSQL/aggregate",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreResourceBudgetRejectsBeforeSQL",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreRoundtripReplayAndSelectedFields",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreOuterTransactionControlsVisibilityAndRollback",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreChangedFieldReusesOtherContent",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreSavepointRollsBackEveryPartialStage/workflow_evidence_blobs",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreSavepointRollsBackEveryPartialStage/workflow_evidence_documents",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreSavepointRollsBackEveryPartialStage/workflow_evidence_members",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreSavepointRollsBackEveryPartialStage",
+          "result": "pass",
+          "elapsed_seconds": 0.16,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller/manifest-hash",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller/body-hash",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller/wrong-field",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller/missing-blob",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller/duplicate-blob",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller/noncanonical-manifest",
+          "result": "pass",
+          "elapsed_seconds": 0,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreInvalidBundlesNeverWriteOrPoisonCaller",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreScopeAndForeignResourceBinding",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreCorruptionFailsClosedAndIsNotSilentlyRepaired/manifest-bytes",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreCorruptionFailsClosedAndIsNotSilentlyRepaired/metadata",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreCorruptionFailsClosedAndIsNotSilentlyRepaired/member",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreCorruptionFailsClosedAndIsNotSilentlyRepaired/field-bytes",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreCorruptionFailsClosedAndIsNotSilentlyRepaired",
+          "result": "pass",
+          "elapsed_seconds": 0.21,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreBlobCollisionCannotOverwriteEarlierBytes",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreConcurrentFirstAcceptanceHasOneDocument",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreHistoryDoesNotJoinCurrentValuesOrReferenceLabels",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreInvalidPortsMissingAndUnknownSelection",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreRolesAreAppendOnlyAndBackupReadOnly",
+          "result": "pass",
+          "elapsed_seconds": 0.04,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreDownRefusesExistingHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootEvidenceStoreQueriesAreBoundedRatherThanPerField",
+          "result": "pass",
+          "elapsed_seconds": 0.12,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRevokedPermissionDoesNotRevealClosedTask",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewExposesOnlyCurrentReadableFields",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewTokenBindsActualEvidenceTaskAndSession",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRequiresCurrentSessionMenuAndActualRowScope/inactive",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRequiresCurrentSessionMenuAndActualRowScope/no-menu",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRequiresCurrentSessionMenuAndActualRowScope/no-data",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRequiresCurrentSessionMenuAndActualRowScope/own-on-foreign",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRequiresCurrentSessionMenuAndActualRowScope",
+          "result": "pass",
+          "elapsed_seconds": 0.31,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewTaskAssignmentIsNotOverriddenByAppOwner",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask/app",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask/view",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask/record",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask/instance",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask/task",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask/closed",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRejectsWrongResourceAndClosedTask",
+          "result": "pass",
+          "elapsed_seconds": 0.5,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRefreshTracksRelatedDisplaysButNotUnrelatedChanges",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewClosedDefinitionDoesNotBlockExistingTask",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewLRUAndRedisFailureNeverMutateBusinessState",
+          "result": "pass",
+          "elapsed_seconds": 0.2,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowPreviewRetainsVisibleRemovedOptionAndExactNumber",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowReadCurrentRecordSummary",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowReadOwnScopeRejectsForeignRecord",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowReadRevocationIsLive",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowReadTwoFlowsPageWithoutDuplicates",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowReadRelatedChangeRequiresRefresh",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowReadUnrelatedRecordDoesNotExpire",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRootWorkflowReadRejectsInvalidPageAndForeignSession",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedRecordCreateReplaysMinimumAndUsesControlledDML",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedCreateNotReadyAfterLiveAuthorization/authorized",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedCreateNotReadyAfterLiveAuthorization/unauthorized",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedCreateNotReadyAfterLiveAuthorization",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedReadAndEditNotReadyAfterLiveAuthorization",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedEmptyEditRequiresActionAndActualRowScope/menu_only_not_ready",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedEmptyEditRequiresActionAndActualRowScope/own_scope_other_row",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedEmptyEditRequiresActionAndActualRowScope",
+          "result": "pass",
+          "elapsed_seconds": 0.12,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedEditCASAndPendingFence",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedConcurrentEditsCommitOneVersionAndAudit",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedReferenceWriteRequiresActiveAuthoritativeSource",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedOmittedReferenceDefaultMustStillBeActive",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedDefaultReferenceSerializesWithSourceDisable",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedDraftCreateIsExplicitAndDoesNotMutateRecord",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedDraftSubmitConsumesWithRecordAndOperation",
+          "result": "pass",
+          "elapsed_seconds": 0.08,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedDraftPatchNoopAndDiscardLedger",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedDraftExplicitRemovalAfterSchemaAndBaseConflict",
+          "result": "pass",
+          "elapsed_seconds": 0.09,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedDraftExplicitRemovalAfterFieldGrantRevoke",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedDraftReadOwnerCursorAndRecordDetail",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedBoundDraftListUsesEditGrantForItsTarget",
+          "result": "pass",
+          "elapsed_seconds": 0.07,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedQueryOnlyObservableChangesInvalidate",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission/removed",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission/revoked",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission/invalid_incoming",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedSavedQuickSearchRemovedFieldVsRevokedPermission",
+          "result": "pass",
+          "elapsed_seconds": 0.17,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedReferencePredicateMissingRegistryIsUnavailable",
+          "result": "pass",
+          "elapsed_seconds": 0.05,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedListWriteChecksSavedProjectionBeforeClaim",
+          "result": "pass",
+          "elapsed_seconds": 0.12,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedAdvanceFailureOnlyReplaysConfirmedOriginalKey",
+          "result": "pass",
+          "elapsed_seconds": 0.1,
+          "failure_outputs": []
+        },
+        {
+          "name": "TestRestrictedRealRecordSearchMasksBeforeCountAndReusesContext",
+          "result": "pass",
+          "elapsed_seconds": 0.06,
+          "failure_outputs": []
+        }
+      ],
+      "counts": {
+        "pass_top": 173,
+        "pass_sub": 93
+      },
+      "new_workflow_read_counts": {
+        "pass_top": 7
+      },
+      "existing_case_counts": {
+        "pass_top": 166,
+        "pass_sub": 93
+      },
+      "stderr_bytes": 0
+    }
+  },
+  "finished_at": "2026-10-07T04:39:36.204633+00:00",
+  "hashes_after": {
+    "services/bff/internal/apprecordservice/root_workflow_read_test.go": "ff4490e9e868dc82c7f61cccf7e7bbe8993d3da349d75ead58141982591f182b",
+    "services/bff/internal/apprecordservice/workflow_read.go": "19ded974602e1a8c47025df41b10c7ef4719238193a21bc367371671487db437",
+    "services/bff/internal/apprecordservice/service.go": "d2cc579654a72da4345677800f76acc3bd769c8684b52982b8501c33534b2612",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "worktree_clean_after": true,
+  "hashes_unchanged": true,
+  "artifact_hashes": {
+    "race-apprecordservice.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "race-apprecordservice.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "race-apprecordservice.stdout.jsonl": "d615753a358daa24f79a6e5874c7d7b1fe4bba668b865f3e6e9de1fa48a68e98",
+    "workflow-read.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "workflow-read.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "workflow-read.stdout.jsonl": "589f3100265f9d4d65744ac690183c8ba9db61a3a8166ef75f2154e42ecf3b98",
+    "service.go": "d2cc579654a72da4345677800f76acc3bd769c8684b52982b8501c33534b2612",
+    "workflow_read.go": "19ded974602e1a8c47025df41b10c7ef4719238193a21bc367371671487db437",
+    "root_workflow_read_test.go": "ff4490e9e868dc82c7f61cccf7e7bbe8993d3da349d75ead58141982591f182b"
+  },
+  "status": "FROZEN_WORKFLOW_READ_7_AND_FULL_SERVICE_GREEN"
+}

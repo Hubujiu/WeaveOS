@@ -1,0 +1,15 @@
+# V030-047 formal eight-identity runtime GREEN
+
+Actually tested exact source: 57e8b9aabd5647407e307b304e3667a56276e054, parents 805f2213c35c9d087959b4811b855ecaa2c1bf07 and accepted develop 240b4a2df40e9b66b81f24f44167817bd5d64d5a.
+
+Whole BFF module gofmt -l output is empty. Contracts, task check, full BFF go vet/build all exit0. The unchanged existing run-formal-runtime.mjs ran actual BFF and WorkflowEngineMain OS processes against its separately owned isolated real application/engine PostgreSQL and Redis fixtures, real HTTPS ingress and authenticated loopback gRPC. Runner exit0 and strict formal_runtime_gate.py exit0: 8 exact identities PASS, no FAIL/SKIP. Six top-level cases plus PublishAndApprove agree/reject subcases are preserved, including NodeSaveThenApproveLatest, ReturnThenWithdrawRecovery and the new CloseWaitsForConfirmedProjection.
+
+The new Close case asserted real HTTPS closing while active, genuine engine completion with a deliberately lost Execute response while the application remained closing, BFF restart plus Lookup recovery, confirmed application completed/disabled projection with exactly one closing revision increment, and no repeated Execute on replay. The test was not changed or independently debugged by the executor.
+
+544 tracked source/contract/migration/task file hashes stayed unchanged during execution. Official pinned images were already cached; 3100 pre-existing official Maven cache files and pinned Goose were copied and verified byte-identical from V045. V045 caches and unrelated fixtures were not cleaned. The existing runner cleaned only its own successfully created containers/network.
+
+Original JSONL, summary/isolation reports, execution stdout/stderr/exit files, runner stdout/stderr/container logs and nine core source snapshots are byte-identical copies, recorded by ordered [path,digest] hashes. Original private run.json is retained privately; run.sanitized.json explicitly omits private runner locations, normalizes local argv paths and relabels general observed test log lines, so it is not claimed byte-identical. No environment dumps, fixture app-state/DSNs, private keys, credentials, dependency caches or compiled binaries are exported. Step stdout/stderr files are originals; no per-step exit files were invented where the runner did not create them. Source snapshots contain Root's existing frozen test/source bytes, not generated fixture secrets.
+
+This proves the eight declared formal identities at the exact source above. It does not claim final GitHub CI, Root acceptance, a PR/merge/deployment or full deletion semantics. TDD:N/A for mechanical evidence preservation.
+
+Four raw logs containing original trailing whitespace or terminal blank lines are stored as deterministic gzip, verified to decompress byte-identically. lossless-compression.json records original/stored paths and ordered original/compressed hashes. The other62 raw files remain ordinary byte-identical copies. No whitespace exclusion is added and no original log bytes were trimmed.

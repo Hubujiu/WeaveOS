@@ -77,17 +77,21 @@ test('PRD UX: login loading prevents a second submission and restores after fail
   await expect(page.getByLabel('账号', { exact: true })).toHaveValue('synthetic-user');
 });
 
-test('PRD FR-017: successful registration returns to login without restoring a Session', async ({ page }) => {
+test('PRD FR-017/018: four-character strong password submits and registration returns to login without a Session', async ({ page }) => {
   let sessionReads = 0;
+  let registration:Record<string,unknown>|undefined;
   await page.route('**/api/v1/sessions/current', route => { sessionReads += 1; return route.fulfill({ status: 401, body: '{}' }); });
-  await page.route('**/api/v1/registrations', route => route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ code: 'OK', message: 'ok', data: { id: 'synthetic-id', account: 'Alice' }, meta: null }) }));
+  await page.route('**/api/v1/registrations', route => {registration=route.request().postDataJSON();return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ code: 'OK', message: 'ok', data: { id: 'synthetic-id', account: 'Alice' }, meta: null }) });});
   await page.goto('/register?invitationCode=synthetic-invitation');
   await page.getByLabel('账号', { exact: true }).fill('Alice');
   await page.getByLabel('密码', { exact: true }).fill('A@1a');
   await page.getByLabel('确认密码', { exact: true }).fill('A@1a');
+  const strength=page.getByRole('progressbar',{name:'密码强度'});
+  await expect(strength).toBeVisible();await expect(strength).toHaveAttribute('aria-valuenow','4');await expect(strength).toHaveAttribute('aria-valuemax','4');
   await page.getByRole('button', { name: '注册', exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
   expect(sessionReads).toBe(0);
+  expect(registration).toEqual({account:'Alice',password:'A@1a',invitationCode:'synthetic-invitation'});
 });
 
 test('Q7: logout sends the frontend-readable host CSRF cookie in the header', async ({ page, context }) => {
@@ -194,17 +198,7 @@ test('FR-002: registration rejects an account containing spaces before submissio
   expect(registrations).toBe(0);
 });
 
-test('FR-018: four required character classes suffice without a length hint', async ({ page }) => {
-  await page.goto('/register?invitationCode=synthetic-prefill-value');
-  await expect(page.getByText('至少 10 位')).toHaveCount(0);
-  await page.getByLabel('密码', { exact: true }).fill('A@1a');
-  await expect(page.getByRole('progressbar', { name: '密码强度' })).toBeVisible();
-});
-test('FR-018: registration exposes accessible password-strength feedback', async ({ page }) => {
-  await page.goto('/register');
-  await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
-  await expect(page.getByRole('progressbar', { name: '密码强度' })).toBeVisible();
-});
+// FR-018 strength and valid short-password submission are asserted together above.
 test('FR-007: an anonymous browser cannot enter the protected app', async ({ page }) => {
   await page.route('**/api/v1/sessions/current', route => route.fulfill({ status: 401, body: '{"code":"AUTH_UNAUTHENTICATED","message":"login required","data":null,"meta":null}', contentType: 'application/json' }));
   await page.goto('/app');

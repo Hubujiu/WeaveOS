@@ -1,0 +1,259 @@
+--- a/services/workflow-engine/src/test/java/org/weaveos/workflow/RootRuntimeLoggingTest.java
++++ b/services/workflow-engine/src/test/java/org/weaveos/workflow/RootRuntimeLoggingTest.java
+@@ -5,6 +5,9 @@
+ import java.nio.file.Path;
+ import java.sql.SQLException;
+ import java.util.concurrent.TimeUnit;
++import java.util.List;
++import java.util.ArrayList;
++import java.util.regex.Pattern;
+ import java.util.logging.Level;
+ import org.junit.jupiter.api.Test;
+ import org.slf4j.LoggerFactory;
+@@ -36,24 +39,32 @@
+         for (String forbidden : new String[]{SECRET, "INSERT INTO", "<bpmn>", "forged-line", "SQLException", "Caused by:", "private-debug"})
+             assertFalse(output.contains(forbidden), "free-form library payload escaped: " + forbidden);
+     }
++    void exactSignals(String output,List<String> expected) {
++        var safe=Pattern.compile("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3} (WARN|ERROR) +([A-Za-z0-9_.$]+) event=runtime_library_log$");
++        var events=new ArrayList<String>();int completed=0;
++        for(String line:output.lines().toList()) {
++            if(line.equals("probe-complete")){completed++;continue;}
++            var match=safe.matcher(line);
++            assertTrue(match.matches(),"every line must be a bounded diagnostic record: "+line);
++            events.add(match.group(1)+" "+match.group(2));
++        }
++        assertEquals(1,completed);assertEquals(expected,events);
++    }
+     @Test void slf4jLibraryFailuresKeepSignalWithoutPayloadOrStack() throws Exception {
+         String output = run("slf"); noPayload(output);
+-        assertTrue(output.contains(SLF_LOGGER)); assertTrue(output.contains("ERROR"));
++        exactSignals(output,List.of("ERROR "+SLF_LOGGER));
+     }
+     @Test void julLibraryFailuresUseTheSameSafeBoundary() throws Exception {
+         String output = run("jul"); noPayload(output);
+-        assertTrue(output.contains(JUL_LOGGER)); assertTrue(output.contains("ERROR"));
++        exactSignals(output,List.of("ERROR "+JUL_LOGGER));
+     }
+     @Test void verboseLibraryMessagesAreNotEnabledByDefault() throws Exception {
+         String output = run("verbose"); noPayload(output);
+-        assertFalse(output.contains("org.flowable.verboseprobe"));
+-        assertTrue(output.contains(SLF_LOGGER)); assertTrue(output.contains("WARN"));
++        exactSignals(output,List.of("WARN "+SLF_LOGGER));
+     }
+     @Test void repeatedInitializationDoesNotSilenceOrDuplicateWarnings() throws Exception {
+         String output = run("repeat"); noPayload(output);
+-        assertEquals(1, output.split(java.util.regex.Pattern.quote(SLF_LOGGER), -1).length - 1);
+-        assertEquals(1, output.split(java.util.regex.Pattern.quote(JUL_LOGGER), -1).length - 1);
+-        assertTrue(output.contains("WARN"));
++        exactSignals(output,List.of("WARN "+SLF_LOGGER,"WARN "+JUL_LOGGER));
+     }
+     public static final class Probe {
+         public static void main(String[] args) {
+--- a/services/bff/cmd/bff/root_workflow_read_http_test.go
++++ b/services/bff/cmd/bff/root_workflow_read_http_test.go
+@@ -4,8 +4,24 @@
+ 	"encoding/json"
+ 	"fmt"
+ 	"net/http"
++	"reflect"
++	"sort"
+ 	"testing"
++	"time"
+ )
++
++func rootHTTPFieldSet(t *testing.T, data map[string]json.RawMessage, want []string) {
++	t.Helper()
++	got := make([]string, 0, len(data))
++	for key := range data {
++		got = append(got, key)
++	}
++	sort.Strings(got)
++	sort.Strings(want)
++	if !reflect.DeepEqual(got, want) {
++		t.Fatalf("exact public fields got %v want %v", got, want)
++	}
++}
+ 
+ func rootWorkflowReadPath(f *rootTaskHTTPFixture) string {
+ 	return fmt.Sprintf("/api/v1/applications/%s/forms/%s/records/%s/workflow-instances/search", f.app, f.view, f.record)
+@@ -13,15 +29,25 @@
+ func TestRootWorkflowReadHTTPSCurrentSummaryAndClosedProjection(t *testing.T) {
+ 	f := rootHTTPTaskSetup(t)
+ 	data := rootHTTPData(t, f.call(t, "POST", rootWorkflowReadPath(f), `{"page":1}`, nil), 200)
+-	if len(data) != 5 {
+-		t.Fatalf("page keys %v", data)
+-	}
++	rootHTTPFieldSet(t, data, []string{"items", "page", "pageSize", "queryVersion", "total"})
+ 	var items []map[string]json.RawMessage
+ 	if e := json.Unmarshal(data["items"], &items); e != nil || len(items) != 1 {
+ 		t.Fatalf("items %s %v", data["items"], e)
+ 	}
+-	if len(items[0]) != 9 {
+-		t.Fatalf("private or missing projection keys %v", items[0])
++	rootHTTPFieldSet(t, items[0], []string{"id", "flowId", "initiatorId", "name", "definitionVersion", "sequence", "state", "createdAt", "updatedAt"})
++	for key, want := range map[string]string{"id": f.instance, "flowId": f.flow, "initiatorId": f.actor, "name": "Approval", "state": "active"} {
++		if rootHTTPString(t, items[0], key) != want {
++			t.Fatalf("summary %s must equal fixture identity/value", key)
++		}
++	}
++	if string(data["page"]) != "1" || string(data["total"]) != "1" || string(items[0]["definitionVersion"]) != "1" || string(items[0]["sequence"]) != "1" {
++		t.Fatal("wrong summary version/sequence or page totals")
++	}
++	for _, key := range []string{"createdAt", "updatedAt"} {
++		at, err := time.Parse(time.RFC3339Nano, rootHTTPString(t, items[0], key))
++		if err != nil || at.IsZero() {
++			t.Fatalf("valid %s timestamp required", key)
++		}
+ 	}
+ 	if rootHTTPString(t, items[0], "id") != f.instance || rootHTTPString(t, items[0], "state") != "active" || string(data["pageSize"]) != "20" || rootHTTPString(t, data, "queryVersion") == "" {
+ 		t.Fatalf("wrong summary %v", data)
+--- a/services/bff/cmd/bff/root_workflow_save_http_test.go
++++ b/services/bff/cmd/bff/root_workflow_save_http_test.go
+@@ -3,6 +3,7 @@
+ import (
+ 	"encoding/json"
+ 	"net/http"
++	"reflect"
+ 	"strings"
+ 	"testing"
+ )
+@@ -22,12 +23,13 @@
+ 	op := f.id(t)
+ 	body := rootHTTPSaveBody(op, token, f.field, "saved by node")
+ 	saved := rootHTTPData(t, f.call(t, "PATCH", f.taskPath()+"/record", body, nil), 200)
+-	if len(saved) != 6 || rootHTTPString(t, saved, "id") != f.record || rootHTTPString(t, saved, "operationId") != op || string(saved["recordVersion"]) != "2" {
++	rootHTTPFieldSet(t, saved, []string{"operationId", "id", "recordVersion", "schemaVersion", "createdAt", "updatedAt"})
++	if rootHTTPString(t, saved, "id") != f.record || rootHTTPString(t, saved, "operationId") != op || string(saved["recordVersion"]) != "2" {
+ 		t.Fatal("save response not original record result")
+ 	}
+ 	repeated := rootHTTPData(t, f.call(t, "PATCH", f.taskPath()+"/record", body, nil), 200)
+-	if string(repeated["recordVersion"]) != "2" {
+-		t.Fatal("duplicate HTTP save wrote twice")
++	if !reflect.DeepEqual(repeated, saved) {
++		t.Fatal("duplicate HTTP save must return the complete original receipt without writing twice")
+ 	}
+ 	result := rootHTTPData(t, f.call(t, "GET", "/api/v1/application-operations/"+op, "", nil), 200)
+ 	if string(result["httpStatus"]) != "200" {
+--- a/services/bff/cmd/bff/root_main_process_test.go
++++ b/services/bff/cmd/bff/root_main_process_test.go
+@@ -4,6 +4,8 @@
+ 	"context"
+ 	"crypto/sha256"
+ 	"encoding/base64"
++	"encoding/json"
++	"fmt"
+ 	"io"
+ 	"net"
+ 	"net/http"
+@@ -177,8 +179,17 @@
+ 	go func() {
+ 		r, e := (&http.Client{Timeout: 15 * time.Second}).Do(request)
+ 		if e == nil {
+-			_, e = io.Copy(io.Discard, r.Body)
++			var raw []byte
++			raw, e = io.ReadAll(r.Body)
+ 			_ = r.Body.Close()
++			if e == nil {
++				var envelope struct {
++					Code string `json:"code"`
++				}
++				if e = json.Unmarshal(raw, &envelope); e == nil && (r.StatusCode != 401 || envelope.Code != "AUTH_INVALID_CREDENTIALS") {
++					e = fmt.Errorf("drained login must complete as 401 AUTH_INVALID_CREDENTIALS; got %d %s", r.StatusCode, envelope.Code)
++				}
++			}
+ 		}
+ 		response <- e
+ 	}()
+@@ -235,7 +246,10 @@
+ 		t.Fatal(e)
+ 	}
+ 	select {
+-	case <-response:
++	case err := <-response:
++		if err != nil {
++			t.Fatalf("accepted in-flight HTTP request did not complete its expected response: %v", err)
++		}
+ 	case <-time.After(5 * time.Second):
+ 		t.Fatal("held HTTP request failed to finish after unlock")
+ 	}
+--- a/services/bff/internal/appschema/save_test.go
++++ b/services/bff/internal/appschema/save_test.go
+@@ -446,8 +446,20 @@
+ 	}
+ 	assertState(t, f, []string{column1}, "0")
+ 	var fields []byte
+-	if err = f.pool.QueryRow(context.Background(), "SELECT fields FROM "+pgx.Identifier{f.namespace, "fixture_metadata"}.Sanitize()).Scan(&fields); err != nil || !strings.Contains(string(fields), "old") {
+-		t.Fatal("metadata must roll back too")
++	if err = f.pool.QueryRow(context.Background(), "SELECT fields FROM "+pgx.Identifier{f.namespace, "fixture_metadata"}.Sanitize()).Scan(&fields); err != nil {
++		t.Fatal(err)
++	}
++	var actual []Field
++	if err = json.Unmarshal(fields, &actual); err != nil {
++		t.Fatal(err)
++	}
++	expected := []Field{{ID: fieldID1, Name: "old", Type: Text}}
++	if !reflect.DeepEqual(actual, expected) {
++		t.Fatalf("metadata rollback got %+v want %+v", actual, expected)
++	}
++	var oldValue string
++	if err = f.pool.QueryRow(context.Background(), "SELECT "+column1+" FROM "+f.table()).Scan(&oldValue); err != nil || oldValue != "old value" {
++		t.Fatalf("rollback must preserve original stored value: %q %v", oldValue, err)
+ 	}
+ }
+ 
+--- a/services/bff/internal/appschema/transaction_test.go
++++ b/services/bff/internal/appschema/transaction_test.go
+@@ -2,6 +2,7 @@
+ 
+ import (
+ 	"context"
++	"github.com/jackc/pgx/v5"
+ 	"testing"
+ )
+ 
+@@ -23,4 +24,11 @@
+ 	if e = f.pool.QueryRow(context.Background(), "SELECT to_regclass($1) IS NOT NULL", f.namespace+"."+tableName).Scan(&present); e != nil || present {
+ 		t.Fatal("rollback must remove real DDL", present, e)
+ 	}
++	var metadataPresent bool
++	var revision int64
++	var fields []byte
++	if e = f.pool.QueryRow(context.Background(), "SELECT present,revision,fields FROM "+pgx.Identifier{f.namespace, "fixture_metadata"}.Sanitize()+" WHERE id=$1", tableID).Scan(&metadataPresent, &revision, &fields); e != nil || metadataPresent || revision != 0 || string(fields) != "null" {
++		t.Fatalf("caller rollback must preserve original absent-table metadata: present=%v revision=%d fields=%s err=%v", metadataPresent, revision, fields, e)
++	}
++
+ }
+--- a/services/bff/internal/appschema/primitives_test.go
++++ b/services/bff/internal/appschema/primitives_test.go
+@@ -2,6 +2,7 @@
+ 
+ import (
+ 	"context"
++	"github.com/jackc/pgx/v5"
+ 	"testing"
+ )
+ 
+@@ -15,8 +16,19 @@
+ 	if r.Revision != "1" {
+ 		t.Fatal("save revision")
+ 	}
+-	var typ string
+-	if e = f.pool.QueryRow(context.Background(), "SELECT format_type(atttypid,atttypmod) FROM pg_attribute WHERE attrelid=to_regclass($1) AND attname=$2", f.namespace+"."+tableName, physicalID("f_", fieldID1)).Scan(&typ); e != nil || typ != "numeric(38,2)" {
+-		t.Fatal("typed numeric oracle", typ, e)
++	for _, expected := range []struct{ id, sqlType string }{{fieldID1, "numeric(38,2)"}, {fieldID2, "date"}, {fieldID3, "timestamp with time zone"}} {
++		var typ string
++		if e = f.pool.QueryRow(context.Background(), "SELECT format_type(atttypid,atttypmod) FROM pg_attribute WHERE attrelid=to_regclass($1) AND attname=$2", f.namespace+"."+tableName, physicalID("f_", expected.id)).Scan(&typ); e != nil || typ != expected.sqlType {
++			t.Fatalf("field %s physical type %q want %q: %v", expected.id, typ, expected.sqlType, e)
++		}
++	}
++	if _, e = f.pool.Exec(context.Background(), "INSERT INTO "+f.table()+" DEFAULT VALUES"); e != nil {
++		t.Fatal(e)
++	}
++	var amount, date string
++	var timestampAbsent bool
++	columns := []string{pgx.Identifier{physicalID("f_", fieldID1)}.Sanitize(), pgx.Identifier{physicalID("f_", fieldID2)}.Sanitize(), pgx.Identifier{physicalID("f_", fieldID3)}.Sanitize()}
++	if e = f.pool.QueryRow(context.Background(), "SELECT "+columns[0]+"::text,"+columns[1]+"::text,"+columns[2]+" IS NULL FROM "+f.table()).Scan(&amount, &date, &timestampAbsent); e != nil || amount != "1.24" || date != "2024-02-29" || !timestampAbsent {
++		t.Fatalf("real native defaults must preserve decimal, leap date and NULL: %q %q %v %v", amount, date, timestampAbsent, e)
+ 	}
+ }

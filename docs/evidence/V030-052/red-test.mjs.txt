@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { test } from 'node:test';
+const api = JSON.parse(readFileSync(new URL('./openapi/openapi.json', import.meta.url)));
+const properties = path => api.paths[path].post.requestBody.content['application/json'].schema.properties;
+// Independent JSON Schema string checks; expected fixtures come from approved Q13.
+function accepts(schema, value) {
+  if (schema.minLength !== undefined && Array.from(value).length < schema.minLength) return false;
+  if (schema.pattern && !new RegExp(schema.pattern, 'u').test(value)) return false;
+  if (schema.not?.pattern && new RegExp(schema.not.pattern, 'u').test(value)) return false;
+  return (schema.allOf ?? []).every(part => accepts(part, value));
+}
+test('Q13: registration schema accepts only printable ASCII with four classes', () => {
+  const schema = properties('/api/v1/registrations').password;
+  for (const [value, expected] of [['Aa1!', true], [' Aa1! ', true], ['Aa1~', true], ['Aa1!中', false], ['Aa1!\t', false], ['Aa1!\n', false], ['Aa1!\x7f', false], ['Aa1 ', false], ['aa1!', false], ['AA1!', false], ['Aa!!', false], [['A', 'a', '1', '!'], false], [null, false], [true, false], [1234, false], [{}, false]]) {
+    assert.equal(accepts(schema, value), expected, 'approved synthetic password fixture must match schema');
+  }
+});
+test('approved account length applies after ordinary-space trimming, not to raw input', () => {
+  for (const path of ['/api/v1/registrations', '/api/v1/sessions']) {
+    const account = properties(path).account;
+    assert.equal(account.maxLength, undefined, 'raw length cannot reject approved edge-space normalization');
+    assert.equal(account['x-max-length-after-trim'], 254);
+    assert.match(account.description, /ordinary.*space/i);
+  }
+  assert.equal(properties('/api/v1/registrations').account['x-account-normalization'].rejectInternalOrdinarySpaces, true);
+});

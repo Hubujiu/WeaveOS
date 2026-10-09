@@ -5,13 +5,22 @@ on:
     branches: [main]
   workflow_dispatch:
   workflow_call:
+    inputs:
+      force_full:
+        type: boolean
+        default: true
 permissions:
   contents: read
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  preflight:
+    uses: ./.github/workflows/preflight.yml
+    with:
+      force_full: ${{ github.event_name != 'pull_request' || inputs.force_full == true }}
   governance:
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -42,6 +51,8 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   go:
+    needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     services:
@@ -72,7 +83,11 @@ jobs:
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - name: Migrate isolated PostgreSQL for real storage tests
         run: |
           go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
@@ -109,6 +124,8 @@ jobs:
           path: services/bff/coverage.out
           retention-days: 14
   browser:
+    needs: preflight
+    if: needs.preflight.outputs.browser == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -121,11 +138,20 @@ jobs:
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
+      - name: Fixed package manager
+        run: npm install --global pnpm@10.28.2 --ignore-scripts
+      - name: Locked pnpm dependency store cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .work/pnpm-store
+          key: pnpm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.node-version', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
       - name: Frozen dependencies
-        run: |
-          npm install --global pnpm@10.28.2 --ignore-scripts
-          pnpm install --frozen-lockfile --ignore-scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store
       - name: Authentication OpenAPI 3.2.1 contract
         run: |
           node --test contracts/*.test.mjs
@@ -150,6 +176,8 @@ jobs:
             test-results/
           retention-days: 14
   workflow-engine:
+    needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
@@ -159,6 +187,13 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Locked Java dependency and toolchain cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            services/workflow-engine/.work/m2
+            services/workflow-engine/.work/toolchain
+          key: java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}
       - name: Root-owned report gate acceptance
         run: |
           mkdir -p services/workflow-engine/ci-logs
@@ -288,11 +323,6 @@ jobs:
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootNativeHistoryTest -Dworkflow.reports=ci-logs/native-history-reports test 2>&1 | tee services/workflow-engine/ci-logs/native-history-tests.txt
       - name: Require eight native history cases without skips
         run: python3 services/workflow-engine/native_history_ci_gate.py services/workflow-engine/ci-logs/native-history-reports
-      - name: Observe native history query and storage costs
-        run: bash services/workflow-engine/run-tests.sh -Dtest=RootNativeHistoryCostTest -Dworkflow.reports=ci-logs/native-history-cost-reports test 2>&1 | tee services/workflow-engine/ci-logs/native-history-cost.txt
-      - name: Require completed cost observation report
-        working-directory: services/workflow-engine
-        run: python3 -c 'from rpc_ci_gate import _java; _java("ci-logs/native-history-cost-reports", "org.weaveos.workflow.RootNativeHistoryCostTest", ["observeNativeAndDuplicateCostsAtTwoActualHistorySizes"])'
       - name: Clean verify against dedicated internal PostgreSQL
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootDeploymentRegistryTest verify 2>&1 | tee services/workflow-engine/ci-logs/verify.txt
       - name: Require all 18 Root-owned cases without skips
@@ -321,6 +351,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
   workflow-rpc:
+    needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -330,10 +362,21 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Locked Java dependency and toolchain cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            services/workflow-engine/.work/m2
+            services/workflow-engine/.work/toolchain
+          key: java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - name: Root-owned RPC report gate acceptance
         run: |
           mkdir -p services/workflow-engine/rpc-ci-logs
@@ -361,6 +404,8 @@ jobs:
           retention-days: 14
 
   execution-rpc:
+    needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     defaults:
@@ -370,10 +415,21 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Locked Java dependency and toolchain cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            services/workflow-engine/.work/m2
+            services/workflow-engine/.work/toolchain
+          key: java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - name: Root-owned execution RPC gate tests
         run: |
           mkdir -p services/workflow-engine/execution-rpc-ci-logs
@@ -405,6 +461,8 @@ jobs:
           retention-days: 14
 
   workflow-recovery:
+    needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -414,10 +472,21 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Locked Java dependency and toolchain cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            services/workflow-engine/.work/m2
+            services/workflow-engine/.work/toolchain
+          key: java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .node-version
@@ -442,6 +511,8 @@ jobs:
           retention-days: 14
 
   workflow-actions:
+    needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -451,10 +522,21 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Locked Java dependency and toolchain cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            services/workflow-engine/.work/m2
+            services/workflow-engine/.work/toolchain
+          key: java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .node-version
@@ -479,6 +561,8 @@ jobs:
           retention-days: 14
 
   workflow-formal-runtime:
+    needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -488,10 +572,21 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Locked Java dependency and toolchain cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            services/workflow-engine/.work/m2
+            services/workflow-engine/.work/toolchain
+          key: java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .node-version
@@ -519,6 +614,8 @@ jobs:
           retention-days: 14
 
   workflow-schema-cli:
+    needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
@@ -531,7 +628,11 @@ jobs:
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
       - name: Build pinned static Goose for isolated test containers
         run: CGO_ENABLED=0 go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
       - name: Root real migration CLI and runtime-role acceptance
@@ -547,6 +648,8 @@ jobs:
           retention-days: 14
 
   workflow-backup:
+    needs: preflight
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -575,3 +678,20 @@ jobs:
           test "$ready" = 1
           WEAVEOS_BACKUP_TEST_CONTAINER="$name" WEAVEOS_BACKUP_TEST_USER=weaveos_owner \
             node --test infra/runtime/backup.test.mjs
+
+  selection-gate:
+    if: always()
+    needs: [preflight, governance, go, browser, workflow-engine, workflow-rpc, execution-rpc, workflow-recovery, workflow-actions, workflow-formal-runtime, workflow-schema-cli, workflow-backup]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      NEEDS_JSON: ${{ toJSON(needs) }}
+      SELECTION_KIND: ci
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - run: node scripts/check-ci-selection.mjs

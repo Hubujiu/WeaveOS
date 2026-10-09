@@ -105,13 +105,20 @@ class RootWorkflowRuntimeTest {
   try(var owner=new DriverManagerDataSource(database.fixture.url+"?currentSchema="+database.fixture.schema,"b3_fixture","b3_fixture_only").getConnection()){
    owner.setAutoCommit(false);try(var lock=owner.createStatement()){
     lock.execute("LOCK TABLE wf_deployments IN ACCESS EXCLUSIVE MODE");
-    for(int i=0;i<8;i++)futures.add(senders.submit(()->{try{deployments().lookup(request);return Status.Code.OK;}catch(StatusRuntimeException failure){return failure.getStatus().getCode();}}));
+    Callable<Status.Code> lookup=()->{try{deployments().lookup(request);return Status.Code.OK;}catch(StatusRuntimeException failure){return failure.getStatus().getCode();}};
+    futures.add(senders.submit(lookup));
+    long admissionDeadline=System.nanoTime()+2_000_000_000L;int admitted;
+    do{admitted=database.fixture.admin.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE usename=? AND wait_event_type='Lock'",Integer.class,database.fixture.role);if(admitted==1)break;Thread.sleep(10);}while(System.nanoTime()<admissionDeadline);
+    assertEquals(1,admitted,"the first authorized request must actually reach the database barrier");
+    for(int i=1;i<8;i++)futures.add(senders.submit(lookup));
     boolean rejected=false;long until=System.nanoTime()+5_000_000_000L;
     do{for(var future:futures)if(future.isDone()&&future.get()==Status.Code.RESOURCE_EXHAUSTED)rejected=true;if(rejected)break;Thread.sleep(10);}while(System.nanoTime()<until);
     assertTrue(rejected,"bounded call capacity must explicitly reject excess work");
     int blocked=database.fixture.admin.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE usename=? AND wait_event_type='Lock'",Integer.class,database.fixture.role);assertTrue(blocked<=1,"one configured RPC worker must not run many blocked queries");
    }finally{owner.rollback();}
+   assertEquals(Status.Code.OK,futures.get(0).get(10,TimeUnit.SECONDS),"the admitted request must complete after releasing the barrier");
    for(var future:futures)assertTrue(Set.of(Status.Code.OK,Status.Code.RESOURCE_EXHAUSTED).contains(future.get(10,TimeUnit.SECONDS)));
+   assertDoesNotThrow(()->deployments().lookup(request),"capacity must recover for a later request");
   }finally{senders.shutdownNow();senders.awaitTermination(5,TimeUnit.SECONDS);}
  }
  @Test void inflightCloseRollsBackPendingWriteAndSameRequestCanRecover()throws Exception{

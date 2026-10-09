@@ -1,0 +1,163 @@
+{
+  "source_commit": "e44268c2ac0b31e2dda1864ef633f69770b82c40",
+  "worktree": "/workspace/WeaveOS-worktrees/V030-045",
+  "hashes_before": {
+    "services/bff/internal/apprecordservice/root_lifecycle_boundary_test.go": "8f015ed4f55dc2e3bcac12aae45efc9db28d22414dd3fb6005e6b2a1aa882517",
+    "services/bff/internal/apprecordservice/root_lifecycle_migration_test.go": "a9ae9825ce6cbdd9f4b9d1166e50ccf4eeabea7530762f944b50c7738aea5ec0",
+    "services/bff/internal/apprecordservice/workflow_lifecycle_action.go": "975efcb8d3b5bd49afaeadab075041640630bd20224cbf5ce7e7cc689025a407",
+    "db/migrations/00022_workflow_lifecycle_operations.sql": "5a38fc4838235ce262a7f7b766a66683103163575e6f486f988dbcd45e89f62b",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "environment": {
+    "Go": "1.27.1",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "sum.golang.org",
+    "CGO_ENABLED": "1",
+    "storage": "Verified original V045 isolated hot database version22 via real psql; original archive and Redis reused sequentially after V046 separate hot21/archive6 completed. No migration action."
+  },
+  "runs": [
+    {
+      "label": "lifecycle-boundary-migration",
+      "argv": [
+        "/workspace/.weaveos-tools/go/bin/go",
+        "test",
+        "-race",
+        "-p",
+        "1",
+        "-count=1",
+        "-json",
+        "-run",
+        "^TestRootLifecycle(ReplayExpired|ConcurrentExact|DistinctConcurrent|CommitUncertainty|Migration)",
+        "./internal/apprecordservice"
+      ],
+      "started_at": "2026-10-07T06:20:06.713336+00:00",
+      "exit_code": 1,
+      "finished_at": "2026-10-07T06:20:11.527127+00:00",
+      "cases": [
+        {
+          "name": "TestRootLifecycleReplayExpiredBasisOfflineSingleConnection",
+          "result": "fail",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootLifecycleConcurrentExactRequestsKeepSingleCommand",
+          "result": "fail",
+          "elapsed_seconds": 0.18
+        },
+        {
+          "name": "TestRootLifecycleDistinctConcurrentActionsRespectRecordFence",
+          "result": "fail",
+          "elapsed_seconds": 0.15
+        },
+        {
+          "name": "TestRootLifecycleCommitUncertaintyPreservesAtomicity/rollback",
+          "result": "fail",
+          "elapsed_seconds": 0.19
+        },
+        {
+          "name": "TestRootLifecycleCommitUncertaintyPreservesAtomicity/lost-reply",
+          "result": "fail",
+          "elapsed_seconds": 0.13
+        },
+        {
+          "name": "TestRootLifecycleCommitUncertaintyPreservesAtomicity",
+          "result": "fail",
+          "elapsed_seconds": 0.31
+        },
+        {
+          "name": "TestRootLifecycleMigrationEmptyDownUpAndHistoryProtection",
+          "result": "pass",
+          "elapsed_seconds": 0.02
+        },
+        {
+          "name": "TestRootLifecycleMigrationDownSeesConcurrentHistory",
+          "result": "pass",
+          "elapsed_seconds": 0.01
+        }
+      ],
+      "failure_outputs": [
+        "root_lifecycle_boundary_test.go:46: wrong atomic count got0 want1 SELECT count(*) FROM applications.operations WHERE app_id=$1 AND operation_kind IN('workflow.task.agree','workflow.task.reject'): <nil>",
+        "--- FAIL: TestRootLifecycleReplayExpiredBasisOfflineSingleConnection (0.13s)",
+        "root_lifecycle_boundary_test.go:88: wrong atomic count got0 want1 SELECT count(*) FROM applications.operations WHERE app_id=$1 AND operation_kind IN('workflow.task.agree','workflow.task.reject'): <nil>",
+        "--- FAIL: TestRootLifecycleConcurrentExactRequestsKeepSingleCommand (0.18s)",
+        "root_lifecycle_boundary_test.go:124: wrong atomic count got0 want1 SELECT count(*) FROM applications.operations WHERE app_id=$1 AND operation_kind IN('workflow.task.agree','workflow.task.reject'): <nil>",
+        "--- FAIL: TestRootLifecycleDistinctConcurrentActionsRespectRecordFence (0.15s)",
+        "root_lifecycle_boundary_test.go:157: wrong atomic count got0 want1 SELECT count(*) FROM applications.operations WHERE app_id=$1 AND operation_kind IN('workflow.task.agree','workflow.task.reject'): <nil>",
+        "--- FAIL: TestRootLifecycleCommitUncertaintyPreservesAtomicity/rollback (0.19s)",
+        "root_lifecycle_boundary_test.go:152: wrong atomic count got0 want1 SELECT count(*) FROM applications.operations WHERE app_id=$1 AND operation_kind IN('workflow.task.agree','workflow.task.reject'): <nil>",
+        "--- FAIL: TestRootLifecycleCommitUncertaintyPreservesAtomicity/lost-reply (0.13s)",
+        "--- FAIL: TestRootLifecycleCommitUncertaintyPreservesAtomicity (0.31s)"
+      ]
+    }
+  ],
+  "fixture_verification": [
+    {
+      "label": "database-and-goose-version",
+      "argv": [
+        "docker",
+        "run",
+        "--rm",
+        "--pull=never",
+        "--network",
+        "none",
+        "--mount",
+        "type=bind,source=/tmp/weaveos-v030-043-red-2LAJaOtw/pg,target=/tmp/weaveos-v030-043-red-2LAJaOtw/pg,readonly",
+        "--env",
+        "PGDATABASE",
+        "--entrypoint",
+        "sh",
+        "sha256:662db3da228c2ea2649b3ae04db4b4479e85fea5979f6a917a7f6d5cb1e7ec39",
+        "-c",
+        "exec psql --dbname=\"$PGDATABASE\" -At -v ON_ERROR_STOP=1 -c \"SELECT current_database(), max(version_id) FROM public.goose_db_version WHERE is_applied\""
+      ],
+      "started_at": "2026-10-07T06:20:03.043115+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T06:20:06.695391+00:00"
+    },
+    {
+      "label": "goose-status",
+      "argv": [
+        "/workspace/.weaveos-tools/gopath/bin/goose",
+        "-dir",
+        "/workspace/WeaveOS-worktrees/V030-045/db/migrations",
+        "status"
+      ],
+      "started_at": "2026-10-07T06:20:06.695501+00:00",
+      "exit_code": 0,
+      "finished_at": "2026-10-07T06:20:06.713286+00:00"
+    }
+  ],
+  "hashes_after": {
+    "services/bff/internal/apprecordservice/root_lifecycle_boundary_test.go": "8f015ed4f55dc2e3bcac12aae45efc9db28d22414dd3fb6005e6b2a1aa882517",
+    "services/bff/internal/apprecordservice/root_lifecycle_migration_test.go": "a9ae9825ce6cbdd9f4b9d1166e50ccf4eeabea7530762f944b50c7738aea5ec0",
+    "services/bff/internal/apprecordservice/workflow_lifecycle_action.go": "975efcb8d3b5bd49afaeadab075041640630bd20224cbf5ce7e7cc689025a407",
+    "db/migrations/00022_workflow_lifecycle_operations.sql": "5a38fc4838235ce262a7f7b766a66683103163575e6f486f988dbcd45e89f62b",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "hashes_unchanged": true,
+  "worktree_clean_after": false,
+  "artifact_hashes": {
+    "00022_workflow_lifecycle_operations.sql": "5a38fc4838235ce262a7f7b766a66683103163575e6f486f988dbcd45e89f62b",
+    "database-and-goose-version.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "database-and-goose-version.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "database-and-goose-version.stdout": "da1ad12b05fe2d4fbb09917ea04e1f77237a0d6422314cf2fd548a8adc2738df",
+    "go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f",
+    "goose-status.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "goose-status.stderr": "faf50f11d1f1393b1c6de3814aa8bdb9b760b1845b33cb861f4bdf973c6c0d94",
+    "goose-status.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lifecycle-boundary-migration.exit": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "lifecycle-boundary-migration.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lifecycle-boundary-migration.stdout.jsonl": "59b4b383fa773d7a1dc5a5b92fc2eb5e5cdcfa1a7935c357884ff0d37ad6a806",
+    "root_lifecycle_boundary_test.go": "8f015ed4f55dc2e3bcac12aae45efc9db28d22414dd3fb6005e6b2a1aa882517",
+    "root_lifecycle_boundary_test.gofmt.go": "8f015ed4f55dc2e3bcac12aae45efc9db28d22414dd3fb6005e6b2a1aa882517",
+    "root_lifecycle_boundary_test.source.go": "fc335d5cfb1d50a46c53cd6d83ffce923eb88e2d7e9ce836d9e81906f378b7de",
+    "root_lifecycle_migration_test.go": "a9ae9825ce6cbdd9f4b9d1166e50ccf4eeabea7530762f944b50c7738aea5ec0",
+    "source-preparation.json": "131ca5b860d6d9cb6ed07a30e51736e1da512f609d3a1bd8afe5d0b92de059e6",
+    "workflow_lifecycle_action.go": "975efcb8d3b5bd49afaeadab075041640630bd20224cbf5ce7e7cc689025a407"
+  },
+  "status": "ROOT_LIFECYCLE_BOUNDARY_AND_MIGRATION_RESULT_FOR_REVIEW"
+}

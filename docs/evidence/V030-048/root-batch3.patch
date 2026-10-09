@@ -1,0 +1,126 @@
+--- a/infra/runtime/monitor.test.mjs
++++ b/infra/runtime/monitor.test.mjs
+@@ -4,10 +4,10 @@
+ const good={ready:true,live:true,database:true,redis:true,redisUsedBytes:10,redisLimitBytes:100,containerMemoryRatios:[0.1],diskFreeRatio:0.9,certificateRemainingMs:10*86400000,backupFailed:false};
+ test('operational faults produce fixed safe alarms from independently defined samples',()=>{
+  assert.deepEqual(alarms(good),[]);
+- for(const [key,value,code] of [['ready',false,'READINESS'],['live',false,'LIVENESS'],['database',false,'DATABASE'],['redis',false,'REDIS'],['redisUsedBytes',90,'REDIS_CAPACITY'],['containerMemoryRatios',[0.91],'MEMORY'],['diskFreeRatio',0.05,'DISK'],['certificateRemainingMs',86400000,'CERTIFICATE'],['backupFailed',true,'BACKUP']])assert.ok(alarms({...good,[key]:value}).includes(code),code);
++ for(const [key,value,code] of [['ready',false,'READINESS'],['live',false,'LIVENESS'],['database',false,'DATABASE'],['redis',false,'REDIS'],['redisUsedBytes',90,'REDIS_CAPACITY'],['containerMemoryRatios',[0.91],'MEMORY'],['diskFreeRatio',0.05,'DISK'],['certificateRemainingMs',86400000,'CERTIFICATE'],['backupFailed',true,'BACKUP']])assert.deepEqual(alarms({...good,[key]:value}),[code],code);
+ });
+ test('local receiver actually persists redacted alerts, including backup failure',()=>{
+  const dir=resolve('.work/monitor-test',String(Date.now()));mkdirSync(dir,{recursive:true});const file=resolve(dir,'alerts.jsonl');
+  receiveAlarms(file,{...good,backupFailed:true,password:'must-not-be-copied',cookie:'must-not-be-copied'});
+- const receipt=JSON.parse(readFileSync(file,'utf8'));assert.deepEqual(receipt.codes,['BACKUP']);assert.equal(receipt.receiver,'local operator review');assert.equal(Object.keys(receipt).length,3);
++ const receipt=JSON.parse(readFileSync(file,'utf8'));assert.deepEqual(receipt.codes,['BACKUP']);assert.equal(receipt.receiver,'local operator review');assert.deepEqual(Object.keys(receipt).sort(),['at','codes','receiver']);assert.match(receipt.at,/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);assert.ok(Number.isFinite(Date.parse(receipt.at)));
+ });
+--- a/services/bff/internal/appstructure/record_http_decode_test.go
++++ b/services/bff/internal/appstructure/record_http_decode_test.go
+@@ -57,10 +57,23 @@
+ 	for _, sample := range []struct {
+ 		kind string
+ 		size int
+-	}{{"record.search", 64 * 1024}, {"record.create", 1024 * 1024}, {"draft.create", 1024 * 1024}} {
+-		if e := decodeRecordBody(t, sample.kind, strings.Repeat(" ", sample.size+1)); e == nil {
+-			t.Fatal("raw bound ignored", sample.kind)
+-		}
++		raw  string
++	}{
++		{"record.search", 64 * 1024, `{"page":1,"pageSize":20,"filter":null,"sort":null}`},
++		{"record.create", 1024 * 1024, `{"operationId":"` + recordDecodeID + `","expectedSchemaVersion":1,"values":{}}`},
++		{"draft.create", 1024 * 1024, `{"operationId":"` + recordDecodeID + `","targetRecordId":null,"schemaVersion":1,"baseRecordVersion":null,"values":{}}`},
++	} {
++		t.Run(sample.kind, func(t *testing.T) {
++			boundary := sample.raw + strings.Repeat(" ", sample.size-len(sample.raw))
++			if e := decodeRecordBody(t, sample.kind, boundary); e != nil {
++				t.Fatalf("valid JSON at raw byte boundary rejected: %v", e)
++			}
++			e := decodeRecordBody(t, sample.kind, boundary+" ")
++			var domain *Error
++			if !errors.As(e, &domain) || domain.Code != "COMMON_INVALID_ARGUMENT" {
++				t.Fatalf("otherwise valid JSON one byte over limit must reject: %v", e)
++			}
++		})
+ 	}
+ 	r := httptest.NewRequest("POST", "https://weaveos.test", strings.NewReader(`{}`))
+ 	r.Header.Set("Content-Type", "text/plain")
+--- a/services/bff/internal/appstructure/behavior_test.go
++++ b/services/bff/internal/appstructure/behavior_test.go
+@@ -86,7 +86,7 @@
+ 		t.Fatal("layout rewrote business values")
+ 	}
+ }
+-func TestNewReferenceDefaultNeedsActiveSource(t *testing.T) {
++func TestNewReferenceDefaultFailsClosedWithoutSourceValidator(t *testing.T) {
+ 	f := setup(t)
+ 	view, _ := newForm(t, f)
+ 	member := field(t, f, "member", uuid(t, f.owner), map[string]any{})
+--- a/tests/acceptance/applications-web.spec.ts
++++ b/tests/acceptance/applications-web.spec.ts
+@@ -232,7 +232,9 @@
+  const directoryWrite = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/directories'));
+  await page.getByRole('button', { name: '创建目录', exact: true }).click();
+  const directoryResponse = await directoryWrite;
+- expect(directoryResponse.status(), (await directoryResponse.json()).code).toBe(201);
++ const directoryReceipt=await directoryResponse.json();
++ expect(directoryResponse.status(),directoryReceipt.code).toBe(201);
++ expect(directoryReceipt.data.id).toEqual(expect.any(String));
+  await expect(page.getByRole('treeitem', { name: folderName, exact: true })).toBeVisible();
+  if (info.project.name === 'chromium') await page.screenshot({ path: info.outputPath('form-directory-created.png'), fullPage: true });
+  await page.getByRole('treeitem', { name: folderName, exact: true }).getByRole('button').first().click();
+@@ -245,7 +247,7 @@
+  expect(savedStructure.status).toBe(200);
+  const forms = savedStructure.data.forms as { id: string; name: string; directoryId: string | null }[];
+  const form = forms.find(value => value.name === formName);
+- expect(form?.directoryId).toBeTruthy();
++ expect(form?.directoryId).toBe(directoryReceipt.data.id);
+  await page.getByRole('button', { name: '配置表单 ' + formName }).click();
+  await expect(page).toHaveURL(new RegExp('/app/applications/' + app.id + '/forms/' + form!.id + '/design$'));
+  await expect(page.getByRole('region', { name: '表单设计器' })).toBeVisible();
+--- a/tests/acceptance/web.spec.ts
++++ b/tests/acceptance/web.spec.ts
+@@ -268,14 +268,21 @@
+   await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+   await page.getByRole('button', { name: '登录', exact: true }).click();
+   await expect(page.getByRole('alert')).toBeVisible();
+-  const credentialsError = await page.getByRole('alert').textContent();
++  await expect(page.getByRole('alert')).toHaveText('邮箱或密码不正确');
+   // Real transport fault injection, not a mocked business response.
+   await page.route('**/api/v1/sessions', route => route.abort('connectionfailed'));
+   await page.getByRole('button', { name: '登录', exact: true }).click();
+   await expect(page.getByRole('alert')).toBeVisible();
+-  await expect.poll(async () => (await page.getByRole('alert').textContent()) !== credentialsError).toBe(true);
++  await expect(page.getByRole('alert')).toHaveText('网络连接失败，请检查网络后重试');
++  await expect(page.getByLabel('账号',{exact:true})).toHaveValue('synthetic-unknown-user');
++  await expect(page.getByLabel('密码',{exact:true})).toHaveValue('Synthetic@123');
+   await expect(page.getByRole('button', { name: '登录', exact: true })).toBeEnabled();
+   await expect(page).toHaveURL(/\/login(?:\?|$)/);
++  await page.unroute('**/api/v1/sessions');
++  await page.getByLabel('账号',{exact:true}).fill(fixtures().user.account);
++  await page.getByLabel('密码',{exact:true}).fill(fixtures().user.password);
++  await page.getByRole('button',{name:'登录',exact:true}).click();
++  await expect(page).toHaveURL(/\/app(?:\/|\?|$)/);
+ });
+ 
+ async function fillRegistration(page: Page, account: string, code: string) {
+--- a/tests/acceptance/filter-manager-web.spec.ts
++++ b/tests/acceptance/filter-manager-web.spec.ts
+@@ -68,7 +68,18 @@
+  // Read a current event context before asserting a successful apply; stale-context
+  // rejection is exercised separately with the original server contract.
+  await page.getByRole('button',{name:'刷新查询',exact:true}).click();await expect(page.locator('.activity-table table')).toHaveAttribute('aria-busy','false');
+- const panel=await manager(page);await apply(panel,p);await expect(page.locator('.activity-table thead')).not.toContainText('时间');await close(panel);await page.getByRole('button',{name:'刷新查询',exact:true}).click();await expect(page.locator('.activity-table table')).toHaveAttribute('aria-busy','false');const values=await page.locator('.activity-table tbody tr[data-row-id]').evaluateAll(rows=>rows.map(r=>r.textContent));expect(values.length).toBeGreaterThan(0);
++ const panel=await manager(page);await apply(panel,p);await expect(page.locator('.activity-table thead')).not.toContainText('时间');await close(panel);
++ const responsePromise=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/personnel/events/search');
++ await page.getByRole('button',{name:'刷新查询',exact:true}).click();
++ const sortedResponse=await responsePromise;expect(sortedResponse.status()).toBe(200);
++ expect(sortedResponse.request().postDataJSON()).toMatchObject({sortBy:'occurredAt',sortDirection:'asc'});
++ const eventPage=(await sortedResponse.json()).data as {items:{id:string;occurredAt:string}[]};
++ expect(eventPage.items.length).toBeGreaterThan(0);
++ for(let i=1;i<eventPage.items.length;i++)expect(Date.parse(eventPage.items[i].occurredAt)).toBeGreaterThanOrEqual(Date.parse(eventPage.items[i-1].occurredAt));
++ await expect(page.locator('.activity-table table')).toHaveAttribute('aria-busy','false');
++ // The host supplies the independently observed response; the UI must render
++ // that exact ordered page even though its sort column is hidden.
++ await expect.poll(()=>page.locator('.activity-table tbody tr[data-row-id]').evaluateAll(rows=>rows.map(r=>r.getAttribute('data-row-id')))).toEqual(eventPage.items.map(row=>row.id));
+  const again=await manager(page),d=await newEditor(page,again);await d.getByLabel('自定义筛选名称',{exact:true}).fill(name('时间比较'));await d.getByRole('button',{name:'或条件',exact:true}).click();await d.getByLabel('条件 1.1 字段',{exact:true}).selectOption('occurredAt');await expect(d.getByLabel('条件 1.1 字段',{exact:true})).toContainText('时间（已隐藏）');await d.getByLabel('条件 1.1 比较',{exact:true}).selectOption('gte');await d.getByLabel('条件 1.1 值类型',{exact:true}).selectOption('date');await d.getByLabel('条件 1.1 日期',{exact:true}).fill('2026-10-02');await d.getByLabel('条件 1.1 时区',{exact:true}).fill('Asia/Shanghai');await d.getByRole('button',{name:'组 1 且条件',exact:true}).click();await d.getByLabel('条件 1.2 字段',{exact:true}).selectOption('actorAccount');await d.getByLabel('条件 1.2 值类型',{exact:true}).selectOption('null');await shot(page,'events-time-null');
+  await expect(d.getByLabel('条件 1.1 比较',{exact:true}).locator('option')).toHaveText(['等于','不等于','晚于','不早于','早于','不晚于']);await d.getByLabel('条件 1.1 比较',{exact:true}).click();await page.screenshot({path:resolve(evidence,test.info().project.name+'-operators-menu.png'),fullPage:true});await d.getByLabel('自定义筛选名称',{exact:true}).click();await d.getByLabel('条件 1.1 比较',{exact:true}).selectOption('gte');await page.setViewportSize({width:390,height:844});await shot(page,'editor-narrow');const box=(await d.boundingBox())!;expect(box.x).toBeGreaterThanOrEqual(12);expect(box.x+box.width).toBeLessThanOrEqual(378);await expect(d.getByRole('button',{name:'确定',exact:true})).toBeInViewport();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);const stored=await save(page,d);expect(stored.filter).toEqual({operator:'and',children:[{field:'occurredAt',operator:'gte',value:{date:'2026-10-02',timeZone:'Asia/Shanghai'}},{field:'actorAccount',operator:'eq',value:null}]});
+ });

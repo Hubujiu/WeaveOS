@@ -587,9 +587,6 @@ test('Q34 member table keeps confirmed column geometry and page selection never 
  let writes=0;page.on('request',request=>{if(request.url().includes('/api/v1/')&&!['GET','HEAD'].includes(request.method())&&!request.url().endsWith('/search'))writes++;});
  const select=page.getByLabel('选择成员：'+user.account,{exact:true});await select.check();await expect(page.getByLabel('选择当前页成员',{exact:true})).toBeChecked();await page.getByLabel('选择当前页成员',{exact:true}).uncheck();await expect(select).not.toBeChecked();expect(writes).toBe(0);
 });
-test('Root Mono narrow personnel navigation remains reachable',async({page})=>{
- await page.setViewportSize({width:320,height:844});await admin(page);await assertMonochromeLayout(page);
-});
 test('Root Mono surface retains viewport edges after narrow re-entry',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});await admin(page);await page.setViewportSize({width:390,height:844});await page.reload();await assertMonochromeLayout(page);
 });

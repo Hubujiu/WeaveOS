@@ -9,6 +9,7 @@ test('HTTP-01 FR-007: anonymous current-session access is denied', async () => {
 });
 for (const [label, headers] of [
   ['user', { 'X-User-Id': 'bootstrap-admin' }], ['role', { 'X-Role': 'ALL' }],
+  ['user and role together', { 'X-User-Id': 'bootstrap-admin', 'X-Role': 'ALL' }],
   ['tenant', { 'X-Tenant-Id': 'test-tenant', 'X-User-Id': 'admin' }],
   ['bearer', { Authorization: 'Bearer synthetic-not-a-session' }],
   ['trace', { 'X-Request-Id': 'bootstrap-admin', traceparent: '00-11111111111111111111111111111111-1111111111111111-01' }],

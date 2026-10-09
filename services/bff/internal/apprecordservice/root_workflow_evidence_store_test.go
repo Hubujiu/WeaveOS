@@ -463,6 +463,16 @@ func TestRootEvidenceStoreHistoryDoesNotJoinCurrentValuesOrReferenceLabels(t *te
 		t.Fatal(e)
 	}
 	m, fields := rootEvidenceStoreRead(t, f, f.bundle.Hash, []string{f.public, f.reference})
+	gotIDs := make([]string, len(fields))
+	for i, field := range fields {
+		gotIDs[i] = field.Definition.ID
+	}
+	wantIDs := []string{f.public, f.reference}
+	sort.Strings(gotIDs)
+	sort.Strings(wantIDs)
+	if !reflect.DeepEqual(gotIDs, wantIDs) {
+		t.Fatalf("complete historical selection got %v, want %v", gotIDs, wantIDs)
+	}
 	if m.Header.RecordVersion != 1 {
 		t.Fatal("history followed current record version")
 	}

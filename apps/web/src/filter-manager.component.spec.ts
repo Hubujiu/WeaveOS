@@ -1,4 +1,4 @@
-import {test,expect,type Page,type Locator} from '@playwright/test';
+import {test,expect,type Page,type Locator,type TestInfo} from '@playwright/test';
 
 const memberId='00000000-0000-4000-8000-000000000001';
 const presetA='00000000-0000-4000-8000-000000000011';
@@ -9,7 +9,7 @@ const eq={operator:'and',children:[{field:'account',operator:'eq',value:'preset-
 type Preset={id:string;view:string;name:string;filter:unknown;hiddenColumnIds:string[];schemaVersion:number;version:number;createdAt:string;updatedAt:string};
 const saved=(id=presetA,name='方案甲',hiddenColumnIds:string[]=['departments'],filter:unknown=eq):Preset=>({id,view:'members',name,filter,hiddenColumnIds,schemaVersion:1,version:1,createdAt:'2026-10-02T03:00:00Z',updatedAt:'2026-10-02T03:00:00Z'});
 const envelope=(data:unknown)=>({code:'OK',message:'success',data,meta:null});
-async function fixture(page:Page,initial:Preset[]=[]){
+async function fixture(page:Page,initial:Preset[]=[],identities:{id:string;name:string}[]=[]){
  const state={presets:structuredClone(initial),queries:[] as Record<string,unknown>[],writes:[] as {method:string;body:Record<string,unknown>}[],conflict:'',queryError:'',reads:[] as string[]};
  await page.route('**/api/v1/**',async route=>{
   const req=route.request(),url=new URL(req.url()),path=url.pathname.replace('/api/v1/',''),method=req.method();
@@ -30,7 +30,8 @@ async function fixture(page:Page,initial:Preset[]=[]){
   }
   const data=path==='sessions/current'?user:path==='me/access'?{user,bootstrapAdmin:true,personnelManage:true,identities:[],permissions:[],applications:[]}:
    path==='personnel/departments'||path==='personnel/permissions'||path==='personnel/drafts'?{items:[]}:
-   path==='personnel/identities'||path==='personnel/templates'?{items:[],total:0,page:1,pageSize:20}:{};
+   path==='personnel/identities'?{items:identities,total:identities.length,page:1,pageSize:20}:
+   path==='personnel/templates'?{items:[],total:0,page:1,pageSize:20}:{};
   return route.fulfill({json:envelope(data)});
  });
  await page.goto('/app/admin');await expect(page.locator('.member-table table')).toHaveAttribute('aria-busy','false');return state;
@@ -125,4 +126,239 @@ test('deleted reference and unknown fields fail apply before any search request'
 test('narrow typed condition retains a readable field name beside NULL controls',async({page})=>{
  await fixture(page);await page.getByRole('tab',{name:'操作记录',exact:true}).click();await page.setViewportSize({width:390,height:844});const d=await editor(page,await manager(page));await d.getByRole('button',{name:'或条件',exact:true}).click();await d.getByLabel('条件 1.1 值类型',{exact:true}).selectOption('null');
  const size=await d.getByLabel('条件 1.1 字段',{exact:true}).evaluate((el:HTMLSelectElement)=>{const context=document.createElement('canvas').getContext('2d')!;context.font=getComputedStyle(el).font;return {actual:el.clientWidth,required:context.measureText('操作者账号').width+32};});expect(size.actual).toBeGreaterThanOrEqual(size.required);await expect(d.getByRole('button',{name:'确定',exact:true})).toBeInViewport();
+});
+
+// V030-051: target the production manager, not the retired recursive panel.
+// Independent oracle: ADR-008 A6 retains the last-intent and shared-motion
+// contract; the historical opening race is distinct from B2 closing gates.
+for(const hold of [0,650] as const)test(`V051 production manager delayed opening ${hold}ms honors trusted Escape`,async({page})=>{
+ await page.addInitScript(()=>{
+  const native=document.startViewTransition?.bind(document);
+  let release!:()=>void;
+  const gate=new Promise<void>(resolve=>{release=resolve;});
+  const state={waiting:false,released:false,committed:false,escapes:0,release:()=>{state.released=true;release();}};
+  Object.defineProperty(window,'__v051Opening',{value:state});
+  document.addEventListener('keydown',event=>{if(event.isTrusted&&event.key==='Escape')state.escapes++;},true);
+  if(native)document.startViewTransition=((input:Parameters<Document['startViewTransition']>[0])=>{
+   const opening=document.documentElement.classList.contains('q36-preset-transition-active')&&document.documentElement.style.getPropertyValue('--q36-filter-shell-duration')==='300ms';
+   if(!opening||state.released)return native(input);
+   const update=typeof input==='function'?input:input?.update;
+   const delayed=async()=>{state.waiting=true;await gate;await update?.();state.committed=true;};
+   return native(typeof input==='function'?delayed:{...input,update:delayed});
+  }) as Document['startViewTransition'];
+ });
+ await fixture(page);
+ test.skip(!await page.evaluate(()=>typeof document.startViewTransition==='function'&&navigator.vendor!=='Apple Computer, Inc.'),'native shared transition unavailable or unsafe in this engine');
+ const trigger=page.getByRole('button',{name:'自定义筛选',exact:true});
+ await trigger.click();
+ await expect.poll(()=>page.evaluate(()=>(window as unknown as {__v051Opening:{waiting:boolean}}).__v051Opening.waiting)).toBe(true);
+ if(hold)await page.waitForTimeout(hold); // Deliberately cross the existing 600ms fallback.
+ await page.keyboard.press('Escape');
+ expect(await page.evaluate(()=>(window as unknown as {__v051Opening:{escapes:number}}).__v051Opening.escapes)).toBe(1);
+ await page.evaluate(()=>(window as unknown as {__v051Opening:{release:()=>void}}).__v051Opening.release());
+ await page.waitForFunction(()=>(window as unknown as {__v051Opening:{committed:boolean}}).__v051Opening.committed);
+ await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+ await expect(page.getByRole('dialog',{name:'管理自定义筛选',exact:true})).toBeHidden();
+ await expect(trigger).toBeFocused();
+ await expect(trigger).toHaveAttribute('aria-expanded','false');
+ await expect(page.locator('.preset-popup')).toHaveAttribute('aria-hidden','true');
+ await expect.poll(()=>page.evaluate(()=>document.documentElement.classList.contains('q36-filter-transition-active')||document.documentElement.classList.contains('q36-preset-transition-active'))).toBe(false);
+});
+
+test('V051 production manager uses native shared geometry at 300ms open and 220ms close',async({page})=>{
+ await page.addInitScript(()=>{
+  const native=document.startViewTransition?.bind(document);
+  const state={count:0,motions:[] as {duration:unknown;shared:boolean}[][]};
+  Object.defineProperty(window,'__v051Geometry',{value:state});
+  if(native)document.startViewTransition=((...args:Parameters<Document['startViewTransition']>)=>{
+   const manager=document.documentElement.classList.contains('q36-preset-transition-active');
+   const transition=native(...args);
+   if(manager){
+    state.count++;
+    void transition.ready.then(()=>state.motions.push(document.getAnimations().filter(a=>a.effect instanceof KeyframeEffect&&a.effect.pseudoElement?.includes('q36-preset-shell')).map(a=>({duration:a.effect?.getTiming().duration??null,shared:a.effect instanceof KeyframeEffect&&a.effect.pseudoElement?.startsWith('::view-transition-group(')||false}))),()=>{});
+   }
+   return transition;
+  }) as Document['startViewTransition'];
+ });
+ await fixture(page);
+ test.skip(!await page.evaluate(()=>typeof document.startViewTransition==='function'&&navigator.vendor!=='Apple Computer, Inc.'),'native shared transition unavailable or unsafe in this engine');
+ const panel=await manager(page);
+ await expect.poll(()=>page.evaluate(()=>(window as unknown as {__v051Geometry:{motions:{duration:number;shared:boolean}[][]}}).__v051Geometry.motions[0])).toContainEqual({duration:300,shared:true});
+ await page.keyboard.press('Escape');
+ await expect(panel).toBeHidden();
+ await expect.poll(()=>page.evaluate(()=>(window as unknown as {__v051Geometry:{motions:{duration:number;shared:boolean}[][]}}).__v051Geometry.motions.at(-1))).toContainEqual({duration:220,shared:true});
+ expect(await page.evaluate(()=>(window as unknown as {__v051Geometry:{count:number}}).__v051Geometry.count)).toBeGreaterThanOrEqual(2);
+});
+
+async function managerTriggerPixels(page:Page,info:TestInfo,label:string){
+ const trigger=page.getByRole('button',{name:'自定义筛选',exact:true});
+ await page.mouse.move(0,0);
+ await trigger.focus();
+ // Programmatic focus preserves pointer modality after outside close. Compare
+ // the same real keyboard-focus state without hiding styles or masking pixels.
+ await page.keyboard.press('Tab');await trigger.focus();
+ await expect(trigger).toBeFocused();
+ expect(await trigger.evaluate(el=>el.matches(':focus-visible'))).toBe(true);
+ const image=await trigger.screenshot();
+ await info.attach(label,{body:image,contentType:'image/png'});
+ return image;
+}
+
+for(const mode of ['native','fallback','reduced','quick','fallback-quick','reduced-quick'] as const){
+ test(`V051 production manager ${mode} restores trigger pixels after Escape and outside close`,async({page},info)=>{
+  if(mode.startsWith('fallback'))await page.addInitScript(()=>Object.defineProperty(document,'startViewTransition',{value:undefined,configurable:true}));
+  if(mode.startsWith('reduced'))await page.emulateMedia({reducedMotion:'reduce'});
+  await page.addInitScript(()=>{
+   const native=document.startViewTransition?.bind(document),animate=Element.prototype.animate;
+   const state={native:0,pending:0,popupAnimations:0};
+   Object.defineProperty(window,'__v051Pixels',{value:state});
+   if(native)document.startViewTransition=((...args:Parameters<Document['startViewTransition']>)=>{
+    const manager=document.documentElement.classList.contains('q36-preset-transition-active');
+    const transition=native(...args);
+    if(manager){state.native++;state.pending++;void transition.finished.then(()=>state.pending--,()=>state.pending--);}
+    return transition;
+   }) as Document['startViewTransition'];
+   Element.prototype.animate=function(...args){if(this.matches('.q36-filter-shell')&&this.closest('.preset-popup'))state.popupAnimations++;return animate.apply(this,args);};
+  });
+  await fixture(page);
+  if(mode==='native'||mode==='quick')test.skip(!await page.evaluate(()=>typeof document.startViewTransition==='function'&&navigator.vendor!=='Apple Computer, Inc.'),'native shared transition unavailable or unsafe in this engine');
+  await page.evaluate(()=>document.fonts.ready);
+  const before=await managerTriggerPixels(page,info,'initial-manager-trigger');
+  const trigger=page.getByRole('button',{name:'自定义筛选',exact:true});
+  const panel=await manager(page);
+  if(mode.startsWith('fallback'))await expect.poll(()=>page.evaluate(()=>(window as unknown as {__v051Pixels:{popupAnimations:number}}).__v051Pixels.popupAnimations)).toBeGreaterThan(0);
+  await page.keyboard.press('Escape');
+  if(mode.endsWith('quick')){
+   await trigger.click();await expect(panel).toBeVisible();await page.keyboard.press('Escape');
+  }
+  await expect(panel).toBeHidden();
+  await expect(trigger).toBeFocused();
+  if(mode==='native'||mode==='quick'){
+   await expect.poll(()=>page.evaluate(()=>(window as unknown as {__v051Pixels:{native:number}}).__v051Pixels.native)).toBeGreaterThanOrEqual(2);
+   await page.waitForFunction(()=>(window as unknown as {__v051Pixels:{pending:number}}).__v051Pixels.pending===0);
+  }
+  await page.evaluate(()=>Promise.allSettled(document.getAnimations().filter(a=>a.effect instanceof KeyframeEffect&&a.effect.target instanceof Element&&a.effect.target.closest('.preset-popup')).map(a=>a.finished)));
+  await page.waitForTimeout(1000); // Preserve the historical late-frame observation window.
+  const content=trigger.locator('.q36-filter-trigger-content');
+  await expect(content).toBeVisible();await expect(content).toHaveCSS('opacity','1');await expect(content).toHaveCSS('visibility','visible');await expect(content.locator('svg')).toBeVisible();
+  await expect.poll(()=>page.evaluate(()=>document.documentElement.classList.contains('q36-filter-transition-active')||document.documentElement.classList.contains('q36-preset-transition-active'))).toBe(false);
+  expect((await managerTriggerPixels(page,info,'closed-manager-trigger')).equals(before),'closed production trigger must restore the original icon and text pixels').toBe(true);
+  await trigger.click();await expect(panel).toBeVisible();
+  await page.getByRole('heading',{name:'人员管理',exact:true}).click();
+  await expect(panel).toBeHidden();
+  await page.waitForTimeout(1000); // Keep the original outside-close late-frame window too.
+  expect((await managerTriggerPixels(page,info,'outside-closed-manager-trigger')).equals(before),'outside close must restore stable production trigger pixels').toBe(true);
+ });
+}
+
+test('V051 production manager fallback safely edits finite AND OR groups including WebKit',async({page})=>{
+ await page.addInitScript(()=>{
+  // Exercise the actual Apple fallback; use an explicit unsupported-native
+  // environment in other engines instead of a non-WebKit skipped identity.
+  if(navigator.vendor!=='Apple Computer, Inc.')Object.defineProperty(document,'startViewTransition',{value:undefined,configurable:true});
+  const native=document.startViewTransition?.bind(document),animate=Element.prototype.animate;
+  const state={native:0,popupAnimations:0};
+  Object.defineProperty(window,'__v051SafeEdit',{value:state});
+  if(native)document.startViewTransition=((...args:Parameters<Document['startViewTransition']>)=>{
+   if(document.documentElement.classList.contains('q36-preset-transition-active'))state.native++;
+   return native(...args);
+  }) as Document['startViewTransition'];
+  Element.prototype.animate=function(...args){if(this.matches('.q36-filter-shell')&&this.closest('.preset-popup'))state.popupAnimations++;return animate.apply(this,args);};
+ });
+ const state=await fixture(page);
+ const p=await manager(page);
+ await expect.poll(()=>page.evaluate(()=>(window as unknown as {__v051SafeEdit:{popupAnimations:number}}).__v051SafeEdit.popupAnimations)).toBeGreaterThan(0);
+ const d=await editor(page,p);
+ await d.getByLabel('自定义筛选名称',{exact:true}).fill('安全编辑');
+ await addRow(d,'Alice');
+ await d.getByRole('button',{name:'或条件',exact:true}).click();
+ await d.getByLabel('条件 2.1 值',{exact:true}).fill('Bob');
+ await expect(d.getByRole('group',{name:/且条件组/})).toHaveCount(2);
+ await expect(d.getByLabel('条件 1.1 值',{exact:true})).toHaveValue('Alice');
+ await expect(d.getByLabel('条件 2.1 值',{exact:true})).toHaveValue('Bob');
+ expect(await page.evaluate(()=>(window as unknown as {__v051SafeEdit:{native:number}}).__v051SafeEdit.native)).toBe(0);
+ expect(state.writes).toEqual([]);
+});
+
+test('V051 production manager keyboard entry gives the first control focus without manual refocusing',async({page})=>{
+ await fixture(page);
+ const trigger=page.getByRole('button',{name:'自定义筛选',exact:true});
+ await trigger.focus();await page.keyboard.press('Enter');
+ const p=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});
+ await expect(p).toBeVisible();
+ await expect(p.getByRole('button',{name:'新增筛选',exact:true})).toBeFocused();
+ await page.keyboard.press('Escape');
+ await expect(p).toBeHidden();await expect(trigger).toBeFocused();
+});
+
+test('V051 production manager deleting a condition restores the shared AND OR twenty-leaf capacity',async({page})=>{
+ const filter={operator:'and',children:Array.from({length:20},(_,i)=>({field:'account',operator:'eq',value:'Member'+i}))};
+ await fixture(page,[saved(presetA,'满额条件',[],filter)]);
+ const p=await manager(page);await p.getByRole('button',{name:'编辑满额条件',exact:true}).click();
+ const d=page.getByRole('dialog',{name:'编辑自定义筛选',exact:true});
+ await expect(d.locator('.preset-condition')).toHaveCount(20);
+ await expect(d.getByRole('button',{name:'组 1 且条件',exact:true})).toBeDisabled();
+ await expect(d.getByRole('button',{name:'或条件',exact:true})).toBeDisabled();
+ await d.getByRole('button',{name:'删除条件 1.1',exact:true}).click();
+ await expect(d.locator('.preset-condition')).toHaveCount(19);
+ await expect(d.getByRole('button',{name:'组 1 且条件',exact:true})).toBeEnabled();
+ await expect(d.getByRole('button',{name:'或条件',exact:true})).toBeEnabled();
+ await expect(d.getByLabel('条件 1.1 值',{exact:true})).toHaveValue('Member1');
+ await d.getByRole('button',{name:'或条件',exact:true}).click();
+ await expect(d.locator('.preset-condition')).toHaveCount(20);
+ await expect(d.getByRole('button',{name:'组 1 且条件',exact:true})).toBeDisabled();
+ await expect(d.getByRole('button',{name:'组 2 且条件',exact:true})).toBeDisabled();
+ await expect(d.getByRole('button',{name:'或条件',exact:true})).toBeDisabled();
+});
+
+test('V051 production manager preserves exact text and relation inequality in the approved DTO',async({page})=>{
+ const identity={id:'00000000-0000-4000-8000-000000000099',name:'研发人员'};
+ const state=await fixture(page,[],[identity]);
+ const d=await editor(page,await manager(page));
+ await d.getByLabel('自定义筛选名称',{exact:true}).fill('精确关系');
+ await addRow(d,'Alice');
+ await d.getByRole('button',{name:'组 1 且条件',exact:true}).click();
+ await d.getByLabel('条件 1.2 字段',{exact:true}).selectOption('identityIds');
+ await d.getByLabel('条件 1.2 比较',{exact:true}).selectOption('neq');
+ await d.getByLabel('条件 1.2 值',{exact:true}).selectOption(identity.id);
+ await d.getByRole('button',{name:'确定',exact:true}).click();
+ await expect.poll(()=>state.writes.length).toBe(1);
+ expect(state.writes).toEqual([{method:'POST',body:{name:'精确关系',filter:{operator:'and',children:[{field:'account',operator:'eq',value:'Alice'},{field:'identityIds',operator:'neq',value:identity.id}]},hiddenColumnIds:[],schemaVersion:1,view:'members'}}]);
+});
+
+test('V051 production manager keeps typed operator menus and exact zoned microsecond input',async({page})=>{
+ const state=await fixture(page);
+ await page.getByRole('tab',{name:'操作记录',exact:true}).click();
+ const d=await editor(page,await manager(page));
+ await d.getByLabel('自定义筛选名称',{exact:true}).fill('精确时刻');
+ await d.getByRole('button',{name:'或条件',exact:true}).click();
+ await d.getByLabel('条件 1.1 字段',{exact:true}).selectOption('actorAccount');
+ const operators=d.getByLabel('条件 1.1 比较',{exact:true});
+ expect(await operators.locator('option').evaluateAll(nodes=>nodes.map(n=>(n as HTMLOptionElement).value))).toEqual(['eq','neq']);
+ await d.getByLabel('条件 1.1 字段',{exact:true}).selectOption('occurredAt');
+ expect(await operators.locator('option').evaluateAll(nodes=>nodes.map(n=>(n as HTMLOptionElement).value))).toEqual(['eq','neq','gt','gte','lt','lte']);
+ await operators.selectOption('gte');
+ const value='2026-10-01T10:00:00.123456+08:00';
+ await d.getByLabel('条件 1.1 值',{exact:true}).fill(value);
+ await d.getByRole('button',{name:'确定',exact:true}).click();
+ await expect.poll(()=>state.writes.length).toBe(1);
+ expect(state.writes).toEqual([{method:'POST',body:{name:'精确时刻',filter:{operator:'and',children:[{field:'occurredAt',operator:'gte',value}]},hiddenColumnIds:[],schemaVersion:1,view:'events'}}]);
+});
+
+for(const newerFocus of [false,true])test(`V051 production manager delayed list focus ${newerFocus?'respects newer focus':'reaches the first enabled control'}`,async({page})=>{
+ await fixture(page);
+ let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});let requested=false;
+ await page.route('**/api/v1/personnel/table-presets?view=members',async route=>{requested=true;await gate;await route.fulfill({json:envelope({items:[]})});});
+ try{
+  const trigger=page.getByRole('button',{name:'自定义筛选',exact:true});
+  await trigger.focus();await page.keyboard.press('Enter');
+  const panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true}),first=panel.getByRole('button',{name:'新增筛选',exact:true}),close=panel.getByRole('button',{name:'关闭筛选管理',exact:true});
+  await expect(panel).toBeVisible();await expect.poll(()=>requested).toBe(true);await expect(first).toBeDisabled();
+  await page.waitForFunction(()=>!document.documentElement.classList.contains('q36-preset-transition-active'));
+  if(newerFocus){await close.focus();await expect(close).toBeFocused();}
+  const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/v1/personnel/table-presets'&&r.request().method()==='GET');
+  release();await response;await expect(first).toBeEnabled();
+  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+  await expect(newerFocus?close:first).toBeFocused();
+ }finally{release();}
 });

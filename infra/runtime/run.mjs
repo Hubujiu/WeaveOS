@@ -1,4 +1,5 @@
 // Q5/Q6: isolated local Linux simulation only. Never a production deploy command.
+import {dependencyMounts} from '../ci/dependency-cache.mjs';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -8,13 +9,17 @@ import { privateFile } from './backup.mjs';
 import {runAuditTask} from './audit-task.mjs';
 import {countAPIReport,countBrowserReport} from '../acceptance/result-counts.mjs';
 const root=resolve('.'),dir=resolve('.work/runtime');
+const dependencyCacheRoot=process.env.WEAVEOS_DEPENDENCY_CACHE_DIR;
+const goCacheMounts=dependencyCacheRoot===undefined?['--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build']:dependencyMounts(dependencyCacheRoot,'go');
+const nodeCacheMounts=dependencyCacheRoot===undefined?[]:dependencyMounts(dependencyCacheRoot,'node');
+if(dependencyCacheRoot!==undefined)for(const name of ['go-mod','go-build','pnpm-store'])mkdirSync(resolve(dependencyCacheRoot,name),{recursive:true});
 if(existsSync(resolve(dir,'CURRENT.json')))throw new Error('Existing runtime: preserve and inspect before rerun');
 for(const sub of ['tls','secrets','backups','public'])mkdirSync(resolve(dir,sub),{recursive:true});
 const commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
 const artifacts=process.env.WEAVEOS_ARTIFACT_RECORD?JSON.parse(readFileSync(process.env.WEAVEOS_ARTIFACT_RECORD,'utf8')):packageImages({root,commit,outputDir:resolve(dir,'artifacts')});
 // Security-patched derivative of the previously verified 85c2ee snapshot.
 // This fixture must verify the new candidate; it is not a production rollback.
-const previous=packageImages({root,commit:'c37226731a6bdbf5c6187aad6cfe1ff9be5daadd',outputDir:resolve(dir,'previous-artifacts')});
+const previous=packageImages({root,commit:'1bf330852a600103d5a68edcc576a8df6136fcae',outputDir:resolve(dir,'previous-artifacts')});
 verifyArtifacts(artifacts);verifyArtifacts(previous);
 const project=`weaveos-v010-008-${Date.now()}`,generation=project;
 const env={...process.env,WEAVEOS_RUNTIME_DIR:dir,WEAVEOS_BFF_IMAGE:artifacts.bff.imageID,WEAVEOS_WEB_IMAGE:artifacts.web.imageID};
@@ -38,13 +43,13 @@ const openssl=process.platform==='win32'?'C:/Program Files/Git/usr/bin/openssl.e
 file('tls/key.pem',Buffer.alloc(0));
 call(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-days','2','-keyout',resolve(dir,'tls/key.pem'),'-out',resolve(dir,'tls/cert.pem'),'-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost,IP:127.0.0.1'],{stdio:'pipe'});
 writeFileSync(resolve(dir,'CURRENT.json'),JSON.stringify({project,generation,dir,artifacts,previous,classification:'local-development-only'}));
-const go=script=>call('docker',['run','--rm','--network',`container:${id('postgres')}`,'--mount',`type=bind,src=${root},dst=/repo`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build','--env-file',resolve(dir,'migration.env'),'-e','GOFLAGS=-buildvcs=false','-e','GOBIN=/repo/.work/runtime/tools','-w','/repo/services/bff','golang:1.27.1','sh','-ec',script]);
+const go=script=>call('docker',['run','--rm','--network',`container:${id('postgres')}`,'--mount',`type=bind,src=${root},dst=/repo`,...goCacheMounts,'--env-file',resolve(dir,'migration.env'),'-e','GOTOOLCHAIN=local','-e','GOFLAGS=-buildvcs=false','-e','GOBIN=/repo/.work/runtime/tools','-w','/repo/services/bff','golang:1.27.2@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c','sh','-ec',script]);
 const sql=(database,text)=>call('docker',['exec','-i',id('postgres'),'psql','-X','-v','ON_ERROR_STOP=1','-U','weaveos_owner','-d',database],{input:text,stdio:'pipe'});
 const start=Date.now();
 try{
  // Build tools before entering the closed runtime network. No runtime secrets
  // are supplied to this internet-capable build container.
- call('docker',['run','--rm','--mount',`type=bind,src=${root},dst=/repo`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build','-e','GOFLAGS=-buildvcs=false','-e','GOBIN=/repo/.work/runtime/tools','-w','/repo/services/bff','golang:1.27.1','sh','-ec','go install github.com/pressly/goose/v3/cmd/goose@v3.28.0; CGO_ENABLED=0 go build -o /repo/.work/runtime/tools/seed ./cmd/acceptance-seed']);
+ call('docker',['run','--rm','--mount',`type=bind,src=${root},dst=/repo`,...goCacheMounts,'-e','GOTOOLCHAIN=local','-e','GOFLAGS=-buildvcs=false','-e','GOBIN=/repo/.work/runtime/tools','-w','/repo/services/bff','golang:1.27.2@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c','sh','-ec','go install github.com/pressly/goose/v3/cmd/goose@v3.28.0; CGO_ENABLED=0 go build -o /repo/.work/runtime/tools/seed ./cmd/acceptance-seed']);
  // Linux private config belongs to the image's dedicated Redis reader.
  if(typeof process.getuid==='function')call('docker',['run','--rm','--mount',`type=bind,src=${dir},dst=/private`,'debian:bookworm-slim','chown','999:999','/private/redis.conf']);
  compose('up','-d','--wait','postgres','redis');sql('postgres','CREATE DATABASE weaveos_cold_archive;');
@@ -69,7 +74,7 @@ try{
  call(process.execPath,['--test','infra/runtime/backup.test.mjs'],{env:{...testEnv,WEAVEOS_BACKUP_TEST_CONTAINER:call('docker',['inspect',id('postgres'),'--format','{{.Name}}'],{encoding:'utf8',stdio:'pipe'}).trim().slice(1),WEAVEOS_BACKUP_TEST_USER:'weaveos_owner'}});
  call(process.execPath,['--test','infra/runtime/artifact-integrity.test.mjs','infra/runtime/artifact-transfer.test.mjs','infra/runtime/image-scan.test.mjs'],{env:{...testEnv,WEAVEOS_ARTIFACT_RECORD:artifacts.recordFile,WEAVEOS_IMAGE_SCAN_DIR:resolve(dir,'public/image-scan')}});
  // Validate the exact promoted artifacts, using the already-frozen test runner.
- call('docker',['run','--rm','--init','--shm-size=1g','--network',`container:${id('nginx')}`,'--mount',`type=bind,src=${root},dst=/repo`,'--mount','type=volume,src=weaveos-v010-linux-node,dst=/repo/node_modules','--mount','type=volume,src=weaveos-v010-linux-web-node,dst=/repo/apps/web/node_modules','-e','CI=true','-e','WEAVEOS_API_URL=https://localhost:19443','-e','WEAVEOS_WEB_URL=https://localhost:19443','-e','WEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/runtime/fixtures.json','-e','NODE_EXTRA_CA_CERTS=/repo/.work/runtime/tls/cert.pem','-w','/repo','mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27','bash','-euc','npm install --global pnpm@10.28.2 --ignore-scripts; pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=/repo/.work/runtime/api.tap tests/acceptance/api.test.mjs; PLAYWRIGHT_JSON_OUTPUT_NAME=/repo/.work/runtime/browser.json pnpm exec playwright test --config apps/web/playwright.integration.config.ts --reporter=line,json']);
+ call('docker',['run','--rm','--init','--shm-size=1g','--network',`container:${id('nginx')}`,'--mount',`type=bind,src=${root},dst=/repo`,...nodeCacheMounts,'--mount','type=volume,src=weaveos-v010-linux-node,dst=/repo/node_modules','--mount','type=volume,src=weaveos-v010-linux-web-node,dst=/repo/apps/web/node_modules','-e','CI=true','-e','WEAVEOS_API_URL=https://localhost:19443','-e','WEAVEOS_WEB_URL=https://localhost:19443','-e','WEAVEOS_ACCEPTANCE_FIXTURES=/repo/.work/runtime/fixtures.json','-e','NODE_EXTRA_CA_CERTS=/repo/.work/runtime/tls/cert.pem','-w','/repo','mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27','bash','-euc','npm install --global pnpm@10.28.2 --ignore-scripts; pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=/repo/.work/runtime/api.tap tests/acceptance/api.test.mjs; PLAYWRIGHT_JSON_OUTPUT_NAME=/repo/.work/runtime/browser.json pnpm exec playwright test --config apps/web/playwright.integration.config.ts --reporter=line,json']);
  exportArtifacts(artifacts,resolve(dir,'export'));
  writeFileSync(resolve(dir,'public/result.json'),JSON.stringify({result:'passed',source:artifacts.commit,artifacts:{bff:artifacts.bff.manifestDigest,web:artifacts.web.manifestDigest},imageIDs:{bff:artifacts.bff.imageID,web:artifacts.web.imageID},previousSource:previous.commit,operations:6,dns:1,monitor:1,tls:2,backup:4,artifactIntegrity:3,api:countAPIReport(readFileSync(resolve(dir,'api.tap'),'utf8')),browser:countBrowserReport(JSON.parse(readFileSync(resolve(dir,'browser.json'),'utf8'))),elapsedSeconds:(Date.now()-start)/1000,target:'local WSL Linux only; same-machine restore simulation; not production'}));
 }catch{writeFileSync(resolve(dir,'public/result.json'),JSON.stringify({result:'failed',source:artifacts.commit,elapsedSeconds:(Date.now()-start)/1000}));throw new Error('Isolated runtime verification failed; preserve private environment and inspect safe results');}

@@ -1,0 +1,5 @@
+BEGIN READ ONLY;
+SELECT json_build_object('observed_at',clock_timestamp(),'database',current_database(),'workflow_versions_total',(SELECT count(*) FROM applications.workflow_versions),'test_app_id','dfc07ba8-b019-4c28-a931-b8413addb2a9','test_app_versions',(SELECT count(*) FROM applications.workflow_versions WHERE app_id='dfc07ba8-b019-4c28-a931-b8413addb2a9'::uuid),'test_app_flows',(SELECT count(DISTINCT flow_id) FROM applications.workflow_versions WHERE app_id='dfc07ba8-b019-4c28-a931-b8413addb2a9'::uuid));
+SELECT json_agg(row_to_json(t)) FROM (SELECT schemaname,relname,n_live_tup,n_dead_tup,last_analyze,last_autoanalyze,analyze_count,autoanalyze_count,last_vacuum,last_autovacuum FROM pg_stat_all_tables WHERE schemaname='applications' AND relname IN ('workflow_definitions','workflow_versions','workflow_instances') ORDER BY relname) t;
+SELECT json_agg(row_to_json(t)) FROM (SELECT c.relname,c.reltuples,c.relpages FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='applications' AND c.relname IN ('workflow_definitions','workflow_versions','workflow_instances') ORDER BY c.relname) t;
+COMMIT;

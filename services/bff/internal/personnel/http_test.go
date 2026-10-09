@@ -138,10 +138,8 @@ func TestHTTPStrictBodyAndQueryQ25(t *testing.T) {
 	if w := f.request("POST", "/api/v1/personnel/identities", `{"name":"x","description":"","templateIds":[],"permissionCodes":[],"version":0}`, true, true); w.Code != 400 {
 		t.Fatalf("create must reject edit-only version even zero, got %d", w.Code)
 	}
-	root := rootDepartment(t, f.fixture)
-	if w := f.requestCurrentQuery(t, "POST", "/api/v1/personnel/members/"+f.actor.UserID+"/groups", `{"operation":"add","departmentId":"`+root+`","sourceDepartmentId":null,"version":0}`, true, true); w.Code != 400 {
-		t.Fatalf("optional UUID may be absent but not null, got %d", w.Code)
-	}
+	// Optional sourceDepartmentId=null is covered by the dedicated
+	// TestHTTPOptionalUUIDMustNotBeNullQ25 with the same real query baseline.
 	for _, query := range []string{"?page=0", "?pageSize=101", "?page=1&page=2", "?bootstrapAdmin=true"} {
 		if w := f.request("GET", "/api/v1/personnel/members"+query, "", true, false); w.Code != 400 {
 			t.Fatalf("strict query %s: %d", query, w.Code)

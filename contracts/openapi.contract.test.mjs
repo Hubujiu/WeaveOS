@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import Ajv2020 from 'ajv/dist/2020.js';
 
 // Oracles: v0.1.0 PRD FR-001..018 and accepted ADR-001/002 §§5.1, 5.2, 5.6, 5.8.
 // An absent document is an empty, unimplemented contract so RED reaches a behavioral assertion.
@@ -38,7 +39,35 @@ test('API-10: login delivers separate host cookies and protected writes require 
   assert.match(cookie, /__Host-session/);
   assert.match(cookie, /__Host-csrf/);
   assert.match(cookie, /non-HttpOnly/);
-  assert.match(login.description, /JSON does not return csrfToken/);
+  // Cookie prose above documents delivery; real HTTP tests prove the headers.
+  // Q7 / ADR-002 §5.6 require secrets to stay out of the actual JSON contract.
+  // Relocate references only; every Schema keyword/value remains authoritative.
+  const schema = JSON.parse(JSON.stringify({
+    $defs: api.components.schemas,
+    allOf: [login.responses['201'].content['application/json'].schema],
+  }), (key, value) => key === '$ref' && typeof value === 'string'
+    ? value.replace(/^#\/components\/schemas\//, '#/$defs/') : value);
+  const accepts = new Ajv2020({
+    strict: true, coerceTypes: false, useDefaults: false, removeAdditional: false,
+  }).compile(schema);
+  const basic = { code: 'OK', message: '成功', data: { id: 'synthetic-user', account: 'Alice' }, meta: null };
+  const withMeta = { ...basic, meta: { requestId: 'synthetic-request', pagination: { nextPageToken: null, hasMore: false } } };
+  for (const value of [basic, withMeta]) {
+    const original = structuredClone(value);
+    assert.equal(accepts(value), true, 'independent ordinary login envelope must be accepted');
+    assert.deepEqual(value, original, 'response validation must not rewrite input');
+  }
+  for (const location of ['top', 'data', 'meta', 'pagination']) {
+    for (const field of ['csrfToken', 'sessionId', 'token', 'password']) {
+      const value = structuredClone(withMeta);
+      const target = location === 'top' ? value : location === 'data' ? value.data
+        : location === 'meta' ? value.meta : value.meta.pagination;
+      target[field] = 'synthetic-not-a-secret';
+      const original = structuredClone(value);
+      assert.equal(accepts(value), false, location + ' must reject the forbidden ' + field + ' field');
+      assert.deepEqual(value, original, 'response validation must not silently remove a forbidden field');
+    }
+  }
   for (const [path, method] of [
     ['/api/v1/sessions/current', 'delete'], ['/api/v1/invitations', 'post'],
     ['/api/v1/users/{userId}/password-reset', 'post'],

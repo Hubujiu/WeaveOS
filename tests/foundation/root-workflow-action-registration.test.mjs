@@ -123,10 +123,5 @@ test('Root V037: all earlier migration bytes and installed roles remain unchange
  for(const old of previous){assert.deepEqual(manifest.migrations.filter(x=>x.path===old.path),[old]);assert.equal(hash(read('db/'+old.path)),old.sha256);}
  assert.equal(hash(read('infra/runtime/roles.sql')),'0c274ae29afbe2a5c802491328358992abeb1361c56e6d6222265873e46c2e6c');
 });
-test('Root V037: backup retains pending operation receipt and new guarded schema',()=>{
- const s=read('infra/runtime/backup.test.mjs').toString('utf8');
- assert.ok(s.includes("readFileSync('db/migrations/00021_workflow_task_operations.sql'"));
- assert.ok(s.includes('workflow.task.agree'));
- assert.ok(s.includes('ck_workflow_task_operation_result'));
- assert.ok(s.includes('pending operation receipt bytes must survive restricted backup'));
-});
+// Backup/restore receipt and role invariants are executed by infra/runtime/backup.test.mjs.
+// Source-token presence is not evidence of a successful restore.

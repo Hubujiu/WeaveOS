@@ -1,4 +1,5 @@
-import {test,expect,type Page,type Route} from '@playwright/test';
+import {writeFile} from 'node:fs/promises';
+import {test,expect,type Page,type Route,type Request} from '@playwright/test';
 
 // Prepare only the browser engine, outside each unchanged business-test budget.
 // No app navigation or shared context: the normal page fixture stays isolated.
@@ -104,10 +105,18 @@ for(const code of ['COMMON_QUERY_CHANGED','COMMON_QUERY_CONTEXT_EXPIRED'])test('
 
 test('Q36 B2 late responses cannot overwrite the newest search',async({page})=>{
  await fixture(page);let release:((r:Route)=>Promise<void>)|undefined;let oldRoute:Route|undefined;
+ let settledOlder!:()=>void;const olderFinished=new Promise<void>(resolve=>{settledOlder=resolve;});
+ const observeOlder=(request:Request)=>{if(request.method()==='POST'&&request.url().endsWith('/personnel/members/search')&&request.postDataJSON()?.search==='older')settledOlder();};
+ page.on('requestfinished',observeOlder);page.on('requestfailed',observeOlder);
  await page.route('**/personnel/members/search',async r=>{const input=r.request().postDataJSON();if(input.search==='older'){oldRoute=r;release=async route=>{await route.fulfill({json:envelope(paging([{...member,account:'late-old-response'}],input))}).catch(()=>{});};return;}await r.fulfill({json:envelope(paging([{...member,account:input.search==='newer'?'newest-response':member.account}],input))});});
  await admin(page);await page.getByLabel('搜索成员',{exact:true}).fill('older');await expect.poll(()=>!!oldRoute).toBe(true);
  await page.getByLabel('搜索成员',{exact:true}).fill('newer');await expect(page.locator('.member-table')).toContainText('newest-response');
- if(release&&oldRoute)await release(oldRoute);await page.waitForTimeout(200);await expect(page.locator('.member-table')).not.toContainText('late-old-response');
+ const rows=page.locator('.member-table tbody tr[data-row-id]');await expect(rows).toHaveCount(1);
+ const newestRows=await rows.allTextContents();
+ if(release&&oldRoute)await release(oldRoute);await olderFinished;
+ await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+ await expect(rows).toHaveCount(1);await expect(page.getByLabel('选择成员：newest-response',{exact:true})).toBeVisible();
+ expect(await rows.allTextContents()).toEqual(newestRows);
 });
 
 test('Q36 B2 unused template card save keeps member page and validates its existing context on return',async({page})=>{
@@ -391,4 +400,20 @@ test.describe('Q36 B2 focus review evidence',()=>{
   await page.keyboard.press('Escape');await expect(editor).toBeHidden();await expect(trigger).toBeFocused();await capture(browserName+'-closed-trigger-focus.png');
   await trigger.click();await expect(manager).toBeVisible();await page.keyboard.press('Escape');const all=page.getByLabel('选择当前页成员',{exact:true});await all.focus();await settle();await expect(all).toBeFocused();await page.keyboard.press('Space');await expect(all).toBeChecked();await expect(manager).toBeHidden();await capture(browserName+'-checkbox-space-focus.png');
  });
+});
+
+// Root diagnostic: observe native event delivery without changing timing or handlers.
+for(const pressDuration of [0,100,300])test(`Root Q36 outside tab click after reopening records native event delivery ${pressDuration}ms`,async({page})=>{
+ await holdFilterExit(page,'engine');await focusFixture(page);
+ await page.evaluate(()=>{
+  const events:unknown[]=[];Object.defineProperty(window,'__q36OutsideClickEvidence',{value:events});
+  const describe=(node:EventTarget|null)=>node instanceof Element?{tag:node.tagName,id:node.id,role:node.getAttribute('role'),label:node.getAttribute('aria-label'),text:node.textContent?.slice(0,45)}:null;
+  for(const type of ['pointerdown','mousedown','pointerup','mouseup','click','focusin'])for(const capture of [true,false])document.addEventListener(type,event=>events.push({type,capture,time:performance.now(),target:describe(event.target),active:describe(document.activeElement),prevented:event.defaultPrevented,rootClass:document.documentElement.className,duration:document.documentElement.style.getPropertyValue('--q36-filter-shell-duration')}),capture);
+ });
+ try{
+  const trigger=page.getByRole('button',{name:'自定义筛选',exact:true}),panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});
+  await trigger.click();await expect(panel).toBeVisible();await panel.getByRole('button',{name:'关闭筛选管理',exact:true}).click();await waitHeldExit(page);
+  await trigger.click();await expect(panel).toBeVisible();const first=panel.getByRole('button',{name:'新增筛选',exact:true});await first.focus();await releaseHeldExit(page);await expect(first).toBeFocused();await expect(panel).toBeVisible();
+  await page.getByRole('tab',{name:'身份',exact:true}).click({delay:pressDuration});await expect(page.getByLabel('搜索身份',{exact:true})).toBeVisible();await expect(panel).toBeHidden();
+ }finally{const path=test.info().outputPath('native-outside-click.json');await writeFile(path,JSON.stringify(await page.evaluate(()=>(window as unknown as {__q36OutsideClickEvidence:unknown[]}).__q36OutsideClickEvidence),null,2));await test.info().attach('native-outside-click.json',{path,contentType:'application/json'});}
 });

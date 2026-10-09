@@ -86,7 +86,7 @@ func TestExactStoredDefaultsAndLayoutOnlyPreservesRows(t *testing.T) {
 		t.Fatal("layout rewrote business values")
 	}
 }
-func TestNewReferenceDefaultNeedsActiveSource(t *testing.T) {
+func TestNewReferenceDefaultFailsClosedWithoutSourceValidator(t *testing.T) {
 	f := setup(t)
 	view, _ := newForm(t, f)
 	member := field(t, f, "member", uuid(t, f.owner), map[string]any{})

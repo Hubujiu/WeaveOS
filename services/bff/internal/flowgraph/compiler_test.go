@@ -114,6 +114,44 @@ func TestRootBPMNMapsGraphAndClosedEdges(t *testing.T) {
 			t.Fatalf("dangling XML edge %+v", f)
 		}
 	}
+
+	// V019 fixes this fixture's full graph mapping, not just valid endpoints.
+	// Keep the expected graph independent of the compiler and input-edge walk.
+	type edgeShape struct {
+		Source, Target string
+		Conditions     []string
+	}
+	gotEdges := map[string]edgeShape{}
+	for _, flow := range flows {
+		id := flow.attr("id")
+		if _, exists := gotEdges[id]; exists {
+			t.Fatal("duplicate observed edge", id)
+		}
+		var conditions []string
+		for _, expression := range flow.names("conditionExpression") {
+			conditions = append(conditions, strings.TrimSpace(expression.Text))
+		}
+		gotEdges[id] = edgeShape{flow.attr("sourceRef"), flow.attr("targetRef"), conditions}
+	}
+	wantEdges := map[string]edgeShape{
+		"e_0":            {nodeID(1), nodeID(2), nil},
+		"e_1":            {innerID("g_", 2), nodeID(3), nil},
+		"e_2":            {nodeID(3), nodeID(4), []string{"${" + innerID("route_", 3) + " == true}"}},
+		"e_3":            {nodeID(3), nodeID(5), nil},
+		innerID("u_", 2): {nodeID(2), innerID("g_", 2), nil},
+		innerID("r_", 2): {innerID("g_", 2), "reject_end", []string{"${wf_rejected == true}"}},
+	}
+	if !reflect.DeepEqual(gotEdges, wantEdges) {
+		t.Fatalf("compiled edge mapping differs: got %#v want %#v", gotEdges, wantEdges)
+	}
+	gotDefaults := map[string]string{}
+	for _, gateway := range doc.names("exclusiveGateway") {
+		gotDefaults[gateway.attr("id")] = gateway.attr("default")
+	}
+	wantDefaults := map[string]string{nodeID(3): "e_3", innerID("g_", 2): "e_1"}
+	if !reflect.DeepEqual(gotDefaults, wantDefaults) {
+		t.Fatalf("compiled gateway defaults differ: got %#v want %#v", gotDefaults, wantDefaults)
+	}
 }
 func TestRootBPMNConditionUsesBooleanAndDefault(t *testing.T) {
 	doc := compiled(t, graph())

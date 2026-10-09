@@ -1,0 +1,107 @@
+--- a/apps/web/src/root-monochrome-shell.component.spec.ts
++++ b/apps/web/src/root-monochrome-shell.component.spec.ts
+@@ -90,7 +90,11 @@
+ test('Root Mono P1 no invented business data when real catalogue is empty',async({page})=>{
+  await fixture(page);await page.route('**/api/v1/applications',r=>r.fulfill({json:ok({items:[]})}));await page.goto('/app');await expect(shell(page)).toBeVisible();
+  await expect(page.getByText('暂无可用应用',{exact:true})).toBeVisible();
+- for(const text of ['上海出差 · 差旅报销','产品周会','林晓','核对差旅报销']) await expect(page.getByText(text,{exact:true})).toHaveCount(0);
++ const main=page.getByRole('main');
++ await expect(main.getByRole('heading')).toHaveText(['主页','我的应用','暂无可用应用']);
++ await expect(main.locator('.app-tile')).toHaveCount(0);
++ await expect(main.getByRole('table')).toHaveCount(0);
++ await expect(main).toHaveText('主页 我的应用 暂无可用应用 获得应用访问权限后，将在这里显示。 打开应用中心',{useInnerText:true});
+ });
+ test('Root Mono P1 confirmed record save still uses authoritative value after visual migration',async({page})=>{
+  const api=await fixture(page);await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
+--- a/apps/web/src/auth.component.spec.ts
++++ b/apps/web/src/auth.component.spec.ts
+@@ -77,17 +77,21 @@
+   await expect(page.getByLabel('账号', { exact: true })).toHaveValue('synthetic-user');
+ });
+ 
+-test('PRD FR-017: successful registration returns to login without restoring a Session', async ({ page }) => {
++test('PRD FR-017/018: four-character strong password submits and registration returns to login without a Session', async ({ page }) => {
+   let sessionReads = 0;
++  let registration:Record<string,unknown>|undefined;
+   await page.route('**/api/v1/sessions/current', route => { sessionReads += 1; return route.fulfill({ status: 401, body: '{}' }); });
+-  await page.route('**/api/v1/registrations', route => route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ code: 'OK', message: 'ok', data: { id: 'synthetic-id', account: 'Alice' }, meta: null }) }));
++  await page.route('**/api/v1/registrations', route => {registration=route.request().postDataJSON();return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ code: 'OK', message: 'ok', data: { id: 'synthetic-id', account: 'Alice' }, meta: null }) });});
+   await page.goto('/register?invitationCode=synthetic-invitation');
+   await page.getByLabel('账号', { exact: true }).fill('Alice');
+   await page.getByLabel('密码', { exact: true }).fill('A@1a');
+   await page.getByLabel('确认密码', { exact: true }).fill('A@1a');
++  const strength=page.getByRole('progressbar',{name:'密码强度'});
++  await expect(strength).toBeVisible();await expect(strength).toHaveAttribute('aria-valuenow','4');await expect(strength).toHaveAttribute('aria-valuemax','4');
+   await page.getByRole('button', { name: '注册', exact: true }).click();
+   await expect(page).toHaveURL(/\/login$/);
+   expect(sessionReads).toBe(0);
++  expect(registration).toEqual({account:'Alice',password:'A@1a',invitationCode:'synthetic-invitation'});
+ });
+ 
+ test('Q7: logout sends the frontend-readable host CSRF cookie in the header', async ({ page, context }) => {
+@@ -194,17 +198,7 @@
+   expect(registrations).toBe(0);
+ });
+ 
+-test('FR-018: four required character classes suffice without a length hint', async ({ page }) => {
+-  await page.goto('/register?invitationCode=synthetic-prefill-value');
+-  await expect(page.getByText('至少 10 位')).toHaveCount(0);
+-  await page.getByLabel('密码', { exact: true }).fill('A@1a');
+-  await expect(page.getByRole('progressbar', { name: '密码强度' })).toBeVisible();
+-});
+-test('FR-018: registration exposes accessible password-strength feedback', async ({ page }) => {
+-  await page.goto('/register');
+-  await page.getByLabel('密码', { exact: true }).fill('Synthetic@123');
+-  await expect(page.getByRole('progressbar', { name: '密码强度' })).toBeVisible();
+-});
++// FR-018 strength and valid short-password submission are asserted together above.
+ test('FR-007: an anonymous browser cannot enter the protected app', async ({ page }) => {
+   await page.route('**/api/v1/sessions/current', route => route.fulfill({ status: 401, body: '{"code":"AUTH_UNAUTHENTICATED","message":"login required","data":null,"meta":null}', contentType: 'application/json' }));
+   await page.goto('/app');
+--- a/apps/web/src/applications.form-shell.component.spec.ts
++++ b/apps/web/src/applications.form-shell.component.spec.ts
+@@ -81,7 +81,10 @@
+  await guard.getByRole('button', { name: '放弃修改' }).click();
+  await expect(page).toHaveURL(new RegExp('/app/applications/' + appId + '$'));
+  await page.getByRole('button', { name: '配置表单 请假申请' }).click();
+- await expect(page.getByRole('region', { name: '表单画布' })).not.toContainText('放弃的字段');
++ const canvas=page.getByRole('region',{name:'表单画布'});
++ await expect(canvas.locator('.forms-canvas-node')).toHaveCount(0);
++ await expect(canvas.getByRole('heading')).toHaveText(form.name);
++ await expect(canvas).toHaveText(form.name+' 拖拽或用键盘添加字段，保存后才会生效 从左侧选择字段，或拖入这里开始设计表单',{useInnerText:true});
+  expect(backend.writes).toEqual([]);
+ });
+ 
+@@ -104,7 +107,10 @@
+  await expect(close).toHaveCount(0);
+  await page.getByRole('main').getByRole('button', { name: application.name, exact: true }).click();
+  await page.getByRole('button', { name: '配置表单 请假申请' }).click();
+- await expect(page.getByRole('region', { name: '表单画布' })).not.toContainText('关闭前字段');
++ const canvas=page.getByRole('region',{name:'表单画布'});
++ await expect(canvas.locator('.forms-canvas-node')).toHaveCount(0);
++ await expect(canvas.getByRole('heading')).toHaveText(form.name);
++ await expect(canvas).toHaveText(form.name+' 拖拽或用键盘添加字段，保存后才会生效 从左侧选择字段，或拖入这里开始设计表单',{useInnerText:true});
+  expect(backend.writes).toEqual([]);
+ });
+ 
+--- a/apps/web/src/q36-b2.component.spec.ts
++++ b/apps/web/src/q36-b2.component.spec.ts
+@@ -105,10 +105,17 @@
+ 
+ test('Q36 B2 late responses cannot overwrite the newest search',async({page})=>{
+  await fixture(page);let release:((r:Route)=>Promise<void>)|undefined;let oldRoute:Route|undefined;
++ let settledOlder!:()=>void;const olderFinished=new Promise<void>(resolve=>{settledOlder=resolve;});
++ for(const event of ['requestfinished','requestfailed'] as const)page.on(event,request=>{if(request.method()==='POST'&&request.url().endsWith('/personnel/members/search')&&request.postDataJSON()?.search==='older')settledOlder();});
+  await page.route('**/personnel/members/search',async r=>{const input=r.request().postDataJSON();if(input.search==='older'){oldRoute=r;release=async route=>{await route.fulfill({json:envelope(paging([{...member,account:'late-old-response'}],input))}).catch(()=>{});};return;}await r.fulfill({json:envelope(paging([{...member,account:input.search==='newer'?'newest-response':member.account}],input))});});
+  await admin(page);await page.getByLabel('搜索成员',{exact:true}).fill('older');await expect.poll(()=>!!oldRoute).toBe(true);
+  await page.getByLabel('搜索成员',{exact:true}).fill('newer');await expect(page.locator('.member-table')).toContainText('newest-response');
+- if(release&&oldRoute)await release(oldRoute);await page.waitForTimeout(200);await expect(page.locator('.member-table')).not.toContainText('late-old-response');
++ const rows=page.locator('.member-table tbody tr[data-row-id]');await expect(rows).toHaveCount(1);
++ const newestRows=await rows.allTextContents();
++ if(release&&oldRoute)await release(oldRoute);await olderFinished;
++ await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
++ await expect(rows).toHaveCount(1);await expect(page.getByLabel('选择成员：newest-response',{exact:true})).toBeVisible();
++ expect(await rows.allTextContents()).toEqual(newestRows);
+ });
+ 
+ test('Q36 B2 unused template card save keeps member page and validates its existing context on return',async({page})=>{

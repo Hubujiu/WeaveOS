@@ -6,6 +6,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"os"
+	"reflect"
+	"sort"
 	"testing"
 	"time"
 )
@@ -61,7 +63,17 @@ func TestControlledMaintenanceAndReaderUseTheirActualRestrictedRoles(t *testing.
 	reader.Authentication.DB = reader.Live
 	events, err := reader.List(request, 100)
 	if err != nil || len(events) != 1 {
-		t.Fatal("restricted reader must read current hot events only")
+		t.Fatalf("restricted reader must read one current hot event: count=%d err=%v", len(events), err)
+	}
+	var hot struct {
+		ID        string `json:"id"`
+		RequestID string `json:"request_id"`
+	}
+	if err := json.Unmarshal(events[0], &hot); err != nil {
+		t.Fatal(err)
+	}
+	if hot.ID != "10000000-0000-4000-8000-000000000002" || hot.RequestID != "reader" {
+		t.Fatalf("wrong hot event: %+v", hot)
 	}
 }
 func clean(t *testing.T) (*pgxpool.Pool, *pgxpool.Pool) {
@@ -168,8 +180,13 @@ func TestLeapYearRetentionUsesCalendarYear(t *testing.T) {
 	if _, err := Maintain(context.Background(), l, c, time.Date(2024, 2, 29, 12, 0, 0, 0, time.UTC)); err != nil {
 		t.Fatal(err)
 	}
-	if count(t, c, "archive.authentication_events") != 1 {
-		t.Fatal("one year is a calendar interval, including leap-day boundary")
+	var retained []string
+	if err := c.QueryRow(context.Background(), "SELECT array_agg(id::text ORDER BY id) FROM archive.authentication_events").Scan(&retained); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"10000000-0000-4000-8000-000000000002"}
+	if !reflect.DeepEqual(retained, want) {
+		t.Fatalf("calendar year boundary retained %v, want %v", retained, want)
 	}
 }
 func TestAuditReadRequiresCurrentBootstrapAndDoesNotReadCold(t *testing.T) {
@@ -188,8 +205,17 @@ func TestAuditReadRequiresCurrentBootstrapAndDoesNotReadCold(t *testing.T) {
 	if err := json.Unmarshal(events[0], &e); err != nil {
 		t.Fatal(err)
 	}
-	if len(e) != 12 {
-		t.Fatal("audit output must contain only twelve approved fields")
+	keys := make([]string, 0, len(e))
+	for key := range e {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	wantKeys := []string{"account_fingerprint", "actor_user_id", "client_ip", "event_type", "id", "occurred_at", "outcome", "reason_code", "request_id", "session_ref", "subject_user_id", "user_agent"}
+	if !reflect.DeepEqual(keys, wantKeys) {
+		t.Fatalf("approved audit fields got %v, want %v", keys, wantKeys)
+	}
+	if string(e["id"]) != `"10000000-0000-4000-8000-000000000001"` || string(e["request_id"]) != `"hot-only"` {
+		t.Fatalf("expected exact hot event, got %s", events[0])
 	}
 	if _, err := l.Exec(context.Background(), "UPDATE auth.users SET is_bootstrap_admin=false"); err != nil {
 		t.Fatal(err)

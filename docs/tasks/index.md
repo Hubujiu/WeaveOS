@@ -1,5 +1,25 @@
 # v0.1.0 任务索引
 
+- [V030-057 · 发布统计实际落盘验证](V030-057.md) — 同步安全基线 develop `d9c2e60b`，新增报告到结果文件的真实行为测试，PR65 重新验收中。
+
+- [V030-058 · Go安全补丁与独立回滚候选](V030-058.md) — [PR #66](https://github.com/Hubujiu/WeaveOS/pull/66) 已合入 develop `d9c2e60b`；Go1.27.2与必要依赖修补、独立回滚候选及完整CI已验收。
+
+- [V030-056 · BPMN 固定图边完整映射验证](V030-056.md) — task/V030-056-bpmn-edge-oracle / ../WeaveOS-worktrees/V030-056；基线 develop `a6f04840`，只加强既有固定样例的边/default集合，当前 in_progress。
+
+- [V030-055 · 磁盘准备真实拒绝与调用边界](V030-055.md) — [PR #63](https://github.com/Hubujiu/WeaveOS/pull/63) 已合入 develop `a6f04840`；四个原文字漏检已由真实Bash调用矩阵检出，最终三workflow20jobs首轮通过，原安全守卫保留。
+
+- [V030-054 · 登录响应敏感字段契约校验](V030-054.md) — [PR #62](https://github.com/Hubujiu/WeaveOS/pull/62) 已合入 develop `0ab6986c`；真实 Schema 校验、四层反例及完整 CI 已验收，首轮 WebKit 准备失败与同头复跑保留，冻结文档保留验收前状态。
+
+- [V030-053 · BFF 构建成本测量](https://app.notion.com/p/3f32f5a9e648818eb300f21b1f4ccbf2) — 无代码改动/PR；九次暖构建实测后两次重复合计中位约 3.620 秒，当前保留原独立 fixture。完整脚本与原始结果已在 Notion 归档，不宣称端到端 CI 提速。
+
+- [V030-052 · 完整密码 Schema 校验](V030-052.md) — [PR #61](https://github.com/Hubujiu/WeaveOS/pull/61) 已合入 develop `c54c5402`；标准校验器、JSON 类型矩阵及完整 CI 已验收，首次字体超时与限定同头复跑证据保留。
+
+- [V030-051 · 生产筛选管理器覆盖迁移与旧测试退役](V030-051.md) — [PR #60](https://github.com/Hubujiu/WeaveOS/pull/60) 已合入 develop `440d171e`；完整CI及两轮真实产品验收通过，默认组件490项，最终事实与归档见本批Notion。冻结任务保留验收前记录。
+
+- [V030-050 · 剩余重复测试删减与回执分层](V030-050.md) — [PR #59](https://github.com/Hubujiu/WeaveOS/pull/59) 已于 2026-10-08 合入 develop `3a33e710`，最终 source `e41ab9e0`；重复人员布局与创建回执矩阵已精简，冻结任务保留合入前记录。剩余生产筛选覆盖迁移见 V030-051。
+
+- [V030-049 · CI 提速与完整测试身份汇总](V030-049.md) — [PR #58](https://github.com/Hubujiu/WeaveOS/pull/58) 已于 2026-10-08 合入 develop `771732e9`，最终 source `e404b4cc`；缓存/preflight/组件四片及实际指针刷新回归已交付，冻结任务保留合入前记录。
+
 Java 审批命令身份 A 段：[V030-030](V030-030.md)，task/V030-030-engine-execution / ../WeaveOS-worktrees/V030-030；精确 V029 80e4151 基线及 Root f869911 测试，[draft PR40](https://github.com/Hubujiu/WeaveOS/pull/40) 叠在 V029。云环境真实 Java8/独立门禁12 RED→GREEN，旧部署18/RPC9/互操作1/proof24通过；Root 提供全部测试及 CI 枚举，执行者仅实现 CommandEnvelope 和受测独立门禁，复用指定安全补丁。最终远端 CI 待查询，B/C 合同待 Root，前端暂停，无 main 合并或部署。
 
 后台外壳修复：[V010-020](V010-020.md)，依赖已验收019；task/V010-020-admin-shell / ../WeaveOS-worktrees/V010-020。用户2026-09-30要求全视口背景、图标水平折叠及arca-ui动效参考，单Agent。
@@ -79,3 +99,16 @@ Flowable原生版本与流程层精简：[V030-038](V030-038.md)，Root本人设
 - [V030-041 · 独立Flowable启动与后台生命周期](V030-041.md) — 内部不使用TLS；Root先行runner八项RED，身份无关切片实施中，正式服务与迁移仍待后续验收
 
 - [V030-044 · 记录触发与并行流程](V030-044.md) — Root六项真实PG测试待RED，原子去重第一切片
+- [V030-043 · 审批节点局部保存](V030-043.md) — 基于已合develop的8ecd39a2；Root亲写RED与验收，节点局部Save、六身份正式引擎组合及同记录多流程/并发审批已实测通过；develop [draft PR#53](https://github.com/Hubujiu/WeaveOS/pull/53)与精确head CI待审，公开触发/返工重审为后续，前端暂停。
+
+- [V030-045 · 撤回与实际节点退回](V030-045.md) — 当前资格、原子命令接受及HTTP分层通过；真实Flowable和最终CI待验收
+
+- [V030-046 · 记录关联流程摘要查询](V030-046.md) — 服务8项、HTTPS4项及完整service174主/93子通过，Root复核无关编辑权限不刷新；等待完整CI/性能索引
+
+- [V030-047 · 最后实例确认后的自动关闭收尾](V030-047.md) — 七项真实PG、累计八身份正式进程及最终13项CI通过，PR56已合develop0a65e58f；完整删除仍后续
+
+- [V030-048 · 精确行为断言与测试成本整改](V030-048.md) — [PR #57](https://github.com/Hubujiu/WeaveOS/pull/57) 已于 2026-10-08 合入 develop `3272446d`。本批覆盖原 84 组中的 58 组整改，其余 26 组保留/暂缓/历史范围，不能称 84 组全部完成；冻结任务内的待验收文字是合入前记录。
+
+- [V030-059 · 按改动影响范围分流 CI](V030-059.md) — 用户明确要求建立分流；Root 先行测试与失败闭合，main/发布全量，不部署。
+
+- [V030-060 · 实测纯文档 CI 分流](V030-060.md) — V059 全量已通过并合 develop；仅 Markdown 的真实 PR 验证重测试跳过及汇总门禁，结果待实跑。

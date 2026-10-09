@@ -90,7 +90,11 @@ test('Root Mono P1 administration and back preserve shell and opened application
 test('Root Mono P1 no invented business data when real catalogue is empty',async({page})=>{
  await fixture(page);await page.route('**/api/v1/applications',r=>r.fulfill({json:ok({items:[]})}));await page.goto('/app');await expect(shell(page)).toBeVisible();
  await expect(page.getByText('暂无可用应用',{exact:true})).toBeVisible();
- for(const text of ['上海出差 · 差旅报销','产品周会','林晓','核对差旅报销']) await expect(page.getByText(text,{exact:true})).toHaveCount(0);
+ const main=page.getByRole('main');
+ await expect(main.getByRole('heading')).toHaveText(['主页','我的应用','暂无可用应用']);
+ await expect(main.locator('.app-tile')).toHaveCount(0);
+ await expect(main.getByRole('table')).toHaveCount(0);
+ await expect(main).toHaveText('主页 我的应用 暂无可用应用 获得应用访问权限后，将在这里显示。 打开应用中心',{useInnerText:true});
 });
 test('Root Mono P1 confirmed record save still uses authoritative value after visual migration',async({page})=>{
  const api=await fixture(page);await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();

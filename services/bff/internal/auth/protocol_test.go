@@ -161,13 +161,17 @@ func TestResetAndInvitationAuditFailureRollBack(t *testing.T) {
 	checkStatus(t, a.request("POST", "/api/v1/users/"+id+"/password-reset", map[string]string{}, admin, nil), 503)
 	var afterHash string
 	var afterVersion int64
-	a.pool.QueryRow(ctx, "SELECT c.password_hash,u.auth_version FROM auth.users u JOIN auth.password_credentials c ON c.user_id=u.id WHERE u.id=$1", id).Scan(&afterHash, &afterVersion)
+	if err := a.pool.QueryRow(ctx, "SELECT c.password_hash,u.auth_version FROM auth.users u JOIN auth.password_credentials c ON c.user_id=u.id WHERE u.id=$1", id).Scan(&afterHash, &afterVersion); err != nil {
+		t.Fatal(err)
+	}
 	if beforeHash != afterHash || beforeVersion != afterVersion {
 		t.Fatal("audit failure committed credential/version mutation")
 	}
 	checkStatus(t, a.request("POST", "/api/v1/invitations", map[string]string{}, admin, nil), 503)
 	var count int
-	a.pool.QueryRow(ctx, "SELECT count(*) FROM auth.invitations").Scan(&count)
+	if err := a.pool.QueryRow(ctx, "SELECT count(*) FROM auth.invitations").Scan(&count); err != nil {
+		t.Fatal(err)
+	}
 	if count != 0 {
 		t.Fatal("audit failure committed invitation")
 	}
