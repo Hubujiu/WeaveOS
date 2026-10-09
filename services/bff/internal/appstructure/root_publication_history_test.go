@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -256,5 +258,151 @@ func TestRootPublicationHistoryConcurrentInsertAndCleanup(t *testing.T) {
 				t.Fatalf("orphaned intent or unsafe cleanup: intents=%d versions=%d", intents, versions)
 			}
 		})
+	}
+}
+
+// Rehearse the actual migration in a private old-shape schema; only qualified
+// schema names are redirected. No shared migrated database is rolled back.
+func publicationMigrationFixture(t *testing.T, p rootPublicationFixture, populated bool) (*pgx.Conn, string, string, string) {
+	t.Helper()
+	ctx := context.Background()
+	c, err := pgx.Connect(ctx, os.Getenv("WEAVEOS_TEST_DATABASE_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { c.Close(context.Background()) })
+	schema := pgx.Identifier{"publication_migration_" + strings.ReplaceAll(uuid(t, p.s.f.owner), "-", "")}.Sanitize()
+	if _, err = c.Exec(ctx, "CREATE SCHEMA "+schema); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if _, e := c.Exec(context.Background(), "DROP SCHEMA "+schema+" CASCADE"); e != nil {
+			t.Error(e)
+		}
+	})
+	for _, table := range []string{"apps", "workflow_definitions", "workflow_versions", "workflow_instances", "workflow_commands", "workflow_publications", "workflow_engine_receipts", "workflow_deployments"} {
+		if _, err = c.Exec(ctx, "CREATE TABLE "+schema+"."+table+" (LIKE applications."+table+" INCLUDING ALL)"); err != nil {
+			t.Fatal(err)
+		}
+		if !populated && (table == "workflow_publications" || table == "workflow_engine_receipts" || table == "workflow_deployments") {
+			continue
+		}
+		where := "app_id=$1"
+		if table == "apps" {
+			where = "id=$1"
+		}
+		if table == "workflow_commands" {
+			where = "command_json->>'AppID'=$1"
+		}
+		if _, err = c.Exec(ctx, "INSERT INTO "+schema+"."+table+" SELECT * FROM applications."+table+" WHERE "+where, p.s.f.app); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, q := range []string{
+		"ALTER TABLE %s.workflow_publications ADD CONSTRAINT workflow_publications_app_id_flow_id_view_id_fkey FOREIGN KEY(app_id,flow_id,view_id) REFERENCES %s.workflow_definitions(app_id,id,view_id) ON DELETE RESTRICT",
+		"ALTER TABLE %s.workflow_publications ADD CONSTRAINT workflow_publications_app_id_flow_id_version_version_id_fkey FOREIGN KEY(app_id,flow_id,version,version_id) REFERENCES %s.workflow_versions(app_id,flow_id,version,version_id) ON DELETE RESTRICT",
+		"ALTER TABLE %s.workflow_engine_receipts ADD CONSTRAINT workflow_engine_receipts_app_id_flow_id_version_version_id_fkey FOREIGN KEY(app_id,flow_id,version,version_id) REFERENCES %s.workflow_versions(app_id,flow_id,version,version_id) ON DELETE RESTRICT",
+		"ALTER TABLE %s.workflow_deployments ADD CONSTRAINT workflow_deployments_app_id_flow_id_version_fkey FOREIGN KEY(app_id,flow_id,version) REFERENCES %s.workflow_versions(app_id,flow_id,version) ON DELETE RESTRICT",
+	} {
+		if _, err = c.Exec(ctx, strings.ReplaceAll(q, "%s", schema)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	raw, err := os.ReadFile("../../../../db/migrations/00028_workflow_publication_history.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	parts := strings.Split(string(raw), "-- +goose Down")
+	if len(parts) != 2 {
+		t.Fatal("exact Up/Down required")
+	}
+	return c, schema, strings.ReplaceAll(parts[0], "applications.", schema+"."), strings.ReplaceAll(parts[1], "applications.", schema+".")
+}
+func publicationMigrationApply(c *pgx.Conn, sql string) error {
+	ctx := context.Background()
+	tx, e := c.Begin(ctx)
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback(ctx)
+	if _, e = tx.Exec(ctx, sql); e != nil {
+		return e
+	}
+	return tx.Commit(ctx)
+}
+func publicationCloneRows(t *testing.T, c *pgx.Conn, schema string) map[string]string {
+	t.Helper()
+	out := map[string]string{}
+	for _, table := range []string{"workflow_publications", "workflow_engine_receipts", "workflow_deployments"} {
+		var raw string
+		if e := c.QueryRow(context.Background(), "SELECT coalesce(jsonb_agg(to_jsonb(h) ORDER BY to_jsonb(h)::text),'[]'::jsonb)::text FROM "+schema+"."+table+" h").Scan(&raw); e != nil {
+			t.Fatal(e)
+		}
+		out[table] = raw
+	}
+	return out
+}
+func TestRootPublicationHistoryMigrationPreservesBytesAndRefusesNonemptyDown(t *testing.T) {
+	p := rootPublicationSetup(t)
+	p.publish(t, uuid(t, p.s.f.owner), 1)
+	p.dispatch(t)
+	c, schema, up, down := publicationMigrationFixture(t, p, true)
+	before := publicationCloneRows(t, c, schema)
+	if err := publicationMigrationApply(c, up); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(before, publicationCloneRows(t, c, schema)) {
+		t.Fatal("migration rewrote original history")
+	}
+	err := publicationMigrationApply(c, down)
+	var pg *pgconn.PgError
+	if !errors.As(err, &pg) || pg.Code != "55000" {
+		t.Fatalf("nonempty Down not refused: %v", err)
+	}
+	if !reflect.DeepEqual(before, publicationCloneRows(t, c, schema)) {
+		t.Fatal("refused Down changed history")
+	}
+}
+func TestRootPublicationHistoryMigrationEmptyDownAndReexpand(t *testing.T) {
+	p := rootPublicationSetup(t)
+	c, schema, up, down := publicationMigrationFixture(t, p, false)
+	if err := publicationMigrationApply(c, up); err != nil {
+		t.Fatal(err)
+	}
+	if err := publicationMigrationApply(c, down); err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	if err := c.QueryRow(context.Background(), "SELECT count(*) FROM pg_constraint WHERE connamespace=$1::regnamespace AND contype='f'", strings.Trim(schema, "\"")).Scan(&n); err != nil || n != 4 {
+		t.Fatal("original four FKs not restored", n, err)
+	}
+	if err := publicationMigrationApply(c, up); err != nil {
+		t.Fatal("reexpand", err)
+	}
+}
+func TestRootPublicationHistoryMigrationRejectsBadOriginalBindingAtomically(t *testing.T) {
+	p := rootPublicationSetup(t)
+	p.publish(t, uuid(t, p.s.f.owner), 1)
+	p.dispatch(t)
+	c, schema, up, _ := publicationMigrationFixture(t, p, true)
+	ctx := context.Background()
+	if _, err := c.Exec(ctx, "ALTER TABLE "+schema+".workflow_engine_receipts DROP CONSTRAINT workflow_engine_receipts_app_id_flow_id_version_version_id_fkey"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Exec(ctx, "UPDATE "+schema+".workflow_engine_receipts SET version_id=$1", uuid(t, p.s.f.owner)); err != nil {
+		t.Fatal(err)
+	}
+	before := publicationCloneRows(t, c, schema)
+	err := publicationMigrationApply(c, up)
+	var pg *pgconn.PgError
+	if !errors.As(err, &pg) || pg.Code != "23503" {
+		t.Fatalf("bad history not rejected: %v", err)
+	}
+	if !reflect.DeepEqual(before, publicationCloneRows(t, c, schema)) {
+		t.Fatal("bad history repaired or deleted")
+	}
+	var exists bool
+	if err = c.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_proc WHERE pronamespace=$1::regnamespace AND proname='bind_publication_history_insert')", strings.Trim(schema, "\"")).Scan(&exists); err != nil || exists {
+		t.Fatal("failed migration left trigger function", err)
 	}
 }
