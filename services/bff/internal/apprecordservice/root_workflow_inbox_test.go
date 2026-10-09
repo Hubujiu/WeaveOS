@@ -57,7 +57,7 @@ func TestRootWorkflowInboxExactPersonalProjection(t *testing.T) {
 func TestRootWorkflowInboxOwnerCannotReadOthersQueue(t *testing.T) {
 	f := rootTaskSetup(t, false)
 	f.principal.UserID = f.other
-	f.principal.SessionRef = "inbox-owner-session"
+	f.principal.SessionRef = f.other
 	r := inboxSearch(t, f, inboxRequest())
 	if r.Total != 0 || r.Items == nil || len(r.Items) != 0 {
 		t.Fatal("owner saw other's assigned task")
@@ -140,7 +140,7 @@ func TestRootWorkflowInboxSessionAndInput(t *testing.T) {
 	q := inboxRequest()
 	a := inboxSearch(t, f, q)
 	p := f.principal
-	p.SessionRef = "another-inbox-session"
+	p.SessionRef = recordOperationID(t, f.recordFixture)
 	q.QueryVersion = a.QueryVersion
 	if _, e := f.service.SearchWorkflowInbox(f.ctx, p, q); !errors.Is(e, querycontext.ErrExpired) {
 		t.Fatal("cross-session token accepted", e)
