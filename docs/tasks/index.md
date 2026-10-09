@@ -115,4 +115,4 @@ Flowable原生版本与流程层精简：[V030-038](V030-038.md)，Root本人设
 
 - [V030-061 · 当前用户跨应用审批待办](V030-061.md) — 主助手直接执行；个人待办服务/封闭HTTP/索引及安全补强本地回归通过；[draft PR #70](https://github.com/Hubujiu/WeaveOS/pull/70) 等待最终精确CI与develop集成，未最终验收。
 
-- [V030-066 · 原生流程删除安全性验证](V030-066.md) — 主助手亲自在隔离引擎先验证物理清理、历史/回执边界和回滚；不是产品删除入口。
+- [V030-066 · 原生流程删除安全性验证](V030-066.md) — 真实Flowable六项通过，精确CI接线RED→GREEN；[draft PR72](https://github.com/Hubujiu/WeaveOS/pull/72)待最终CI，不是产品删除入口。
