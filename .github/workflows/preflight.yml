@@ -1,10 +1,28 @@
 name: Fast preflight
 on:
   workflow_call:
+    inputs:
+      force_full:
+        type: boolean
+        default: true
+    outputs:
+      plan:
+        value: ${{ jobs.preflight.outputs.plan }}
+      backend:
+        value: ${{ jobs.preflight.outputs.backend }}
+      browser:
+        value: ${{ jobs.preflight.outputs.browser }}
+      product:
+        value: ${{ jobs.preflight.outputs.product }}
 permissions:
   contents: read
 jobs:
   preflight:
+    outputs:
+      plan: ${{ steps.routing.outputs.plan }}
+      backend: ${{ steps.routing.outputs.backend }}
+      browser: ${{ steps.routing.outputs.browser }}
+      product: ${{ steps.routing.outputs.product }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -15,6 +33,11 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .node-version
+      - name: Determine complete candidate impact
+        id: routing
+        env:
+          FORCE_FULL: ${{ inputs.force_full }}
+        run: node scripts/ci-routing.mjs
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version-file: .go-version
@@ -45,5 +68,7 @@ jobs:
           "$RUNNER_TEMP/weaveos-preflight-venv/bin/python" -m pip install --isolated --index-url https://pypi.org/simple --cache-dir .work/pip-cache -r scripts/ci-requirements.txt
       - name: Root workflow scheduler and cache contracts
         run: '"$RUNNER_TEMP/weaveos-preflight-venv/bin/python" tests/governance/root_ci_throughput_test.py'
+      - name: Root CI selection wiring contracts
+        run: '"$RUNNER_TEMP/weaveos-preflight-venv/bin/python" tests/governance/root_ci_routing_test.py'
       - name: Required fast checks in failure-stopping order
         run: node scripts/preflight.mjs

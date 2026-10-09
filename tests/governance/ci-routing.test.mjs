@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,mkdirSync,writeFileSync,rmSync,renameSync} from 'node:fs';
+import {mkdtempSync,mkdirSync,writeFileSync,rmSync,renameSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join,dirname} from 'node:path';
-import {execFileSync} from 'node:child_process';
+import {execFileSync,spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {classifyChanges,planForCheckout} from '../../scripts/ci-routing.mjs';
 const full={backend:true,browser:true,product:true};
 const docs={backend:false,browser:false,product:false};
@@ -68,4 +69,25 @@ test('V059 main target, manual, forced release, missing refs, symlink and unboun
  const f=fixture(t);f.put('README.md','topic');const head=f.commit();
  for(const extra of [{eventName:'workflow_dispatch'},{forceFull:true},{event:{pull_request:{base:{ref:'main',sha:f.base},head:{sha:head}}}},{event:{pull_request:{base:{ref:'develop',sha:'f'.repeat(40)},head:{sha:head}}}},{sourceSha:'0'.repeat(40)}]) assert.deepEqual(lanes(plan(f,head,f.base,extra)),full);
  f.git('update-index','--chmod=+x','README.md');f.git('commit','-qm','mode');assert.deepEqual(lanes(plan(f,f.git('rev-parse','HEAD'))),full);
+});
+
+test('V059 exact source metadata rejects symlinks even with prose names',async t=>{
+ const f=fixture(t);const {symlinkSync}=await import('node:fs');symlinkSync('../README.md',join(f.root,'link.md'));const head=f.commit();assert.deepEqual(lanes(plan(f,head)),full);
+});
+test('V059 deleted backend source keeps its affected checks selected',t=>{
+ const f=fixture(t);rmSync(join(f.root,'services/bff/internal/flowgraph/compiler.go'));const head=f.commit();assert.deepEqual(lanes(plan(f,head)),backend);
+});
+test('V059 real CLI publishes reusable outputs and refuses a stale candidate',t=>{
+ const f=fixture(t);f.put('README.md','prose');const head=f.commit();
+ const cli=fileURLToPath(new URL('../../scripts/ci-routing.mjs',import.meta.url));
+ const event=join(f.root,'event.json'), output=join(f.root,'outputs');
+ writeFileSync(event,JSON.stringify({pull_request:{base:{sha:f.base,ref:'develop'},head:{sha:head}}}));
+ const env={...process.env,GITHUB_EVENT_NAME:'pull_request',GITHUB_EVENT_PATH:event,GITHUB_SHA:head,FORCE_FULL:'false',GITHUB_OUTPUT:output,GITHUB_STEP_SUMMARY:''};
+ const good=spawnSync(process.execPath,[cli],{cwd:f.root,env,encoding:'utf8'});assert.equal(good.status,0,good.stderr);
+ const lines=readFileSync(output,'utf8').trim().split('\n');assert.equal(lines.length,4);
+ const out=Object.fromEntries(lines.map(line=>{const i=line.indexOf('=');return [line.slice(0,i),line.slice(i+1)];}));
+ assert.deepEqual(lanes(JSON.parse(out.plan)),docs);assert.equal(out.backend,'false');assert.equal(out.browser,'false');assert.equal(out.product,'false');
+ const before=readFileSync(output,'utf8');
+ const bad=spawnSync(process.execPath,[cli],{cwd:f.root,env:{...env,GITHUB_SHA:'0'.repeat(40)},encoding:'utf8'});
+ assert.equal(bad.status,1);assert.equal(readFileSync(output,'utf8'),before);
 });

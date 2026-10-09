@@ -1,6 +1,7 @@
 """V059 independent scheduler output wiring; does not emulate GitHub's scheduler."""
 import unittest
-from root_ci_throughput_test import workflow, ROOT
+from root_ci_throughput_test import workflow, ROOT, assert_gate_graph
+import copy
 class Routing(unittest.TestCase):
     def test_entrypoints_have_fixed_fail_closed_aggregate(self):
         for file in ['ci.yml', 'acceptance.yml']:
@@ -21,6 +22,18 @@ class Routing(unittest.TestCase):
                 self.assertIn('preflight', job['needs'] if isinstance(job['needs'],list) else [job['needs']])
                 lane = 'product' if file == 'acceptance.yml' else 'browser' if name == 'browser' else 'backend'
                 self.assertEqual(job['if'], "needs.preflight.outputs." + lane + " == 'true'")
+    def test_only_result_verifier_can_use_always(self):
+        valid={'jobs':{'preflight':{'uses':'./.github/workflows/preflight.yml'},
+          'build':{'needs':'preflight'},'selection-gate':{'needs':['preflight','build'],
+          'if':'always()','steps':[{'run':'node scripts/check-ci-selection.mjs'}]}}}
+        assert_gate_graph(self, valid)
+        for mutate in [lambda d:d['jobs']['selection-gate']['steps'].append({'run':'pnpm build'}),
+                       lambda d:d['jobs']['selection-gate'].update({'needs':['preflight']}),
+                       lambda d:d['jobs']['build'].update({'if':'always()'}),
+                       lambda d:d['jobs']['selection-gate'].update({'continue-on-error':'true'})]:
+            bad=copy.deepcopy(valid);mutate(bad)
+            with self.assertRaises(AssertionError): assert_gate_graph(self,bad)
+
     def test_reusable_outputs_and_release_override_are_explicit(self):
         doc = workflow(ROOT, 'preflight.yml')
         for key in ['plan','backend','browser','product']:
