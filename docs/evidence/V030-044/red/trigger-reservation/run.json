@@ -1,0 +1,118 @@
+{
+  "source_commit": "0c5daf0c32ca98f9013347358904afddd530a041",
+  "worktree": "/workspace/WeaveOS-worktrees/V030-044",
+  "hashes_before": {
+    "services/bff/internal/apprecordservice/root_workflow_trigger_reservation_test.go": "1fa4277e0370f70d2258a5c1033411cd9163fcca4223a96ee3b3058268fc9c0d",
+    "services/bff/internal/workflowcatalog/trigger_reservation.go": "801540856120a8c1955393d411de226befe6b027a49219c92a71fa60d193b586",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "started_at": "2026-10-07T04:41:17.219500+00:00",
+  "preceding_V046_completed_at": "2026-10-07T04:39:36.204633+00:00",
+  "no_fixture_test_overlap": true,
+  "environment": {
+    "Go": "1.27.1",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "sum.golang.org",
+    "CGO_ENABLED": "1",
+    "storage": "Same authorized original private real PG18.6/Redis8.2.10 and archive; sequential after V046 completed; migrations1..21 applied"
+  },
+  "argv": [
+    "/workspace/.weaveos-tools/go/bin/go",
+    "test",
+    "-race",
+    "-p",
+    "1",
+    "-count=1",
+    "-json",
+    "-run",
+    "^TestRootTriggerReservation",
+    "./internal/apprecordservice"
+  ],
+  "exit_code": 1,
+  "finished_at": "2026-10-07T04:41:26.421495+00:00",
+  "hashes_after": {
+    "services/bff/internal/apprecordservice/root_workflow_trigger_reservation_test.go": "1fa4277e0370f70d2258a5c1033411cd9163fcca4223a96ee3b3058268fc9c0d",
+    "services/bff/internal/workflowcatalog/trigger_reservation.go": "801540856120a8c1955393d411de226befe6b027a49219c92a71fa60d193b586",
+    "services/bff/go.mod": "aed642571afb8f38fedf75b2ca402f1464cd577799b9ea8cb7c6fd05072a2632",
+    "services/bff/go.sum": "66c155748037a2c08e671e844ab359e500b86775a3304a86bea239835b3da99f"
+  },
+  "worktree_clean_after": true,
+  "cases": [
+    {
+      "name": "TestRootTriggerReservationFirstAndDuplicate",
+      "result": "fail",
+      "elapsed_seconds": 0.08,
+      "failure_outputs": [
+        "root_workflow_trigger_reservation_test.go:24: workflow catalog not ready"
+      ]
+    },
+    {
+      "name": "TestRootTriggerReservationReplayAndIdentityConflict",
+      "result": "fail",
+      "elapsed_seconds": 0.19,
+      "failure_outputs": [
+        "root_workflow_trigger_reservation_test.go:42: workflow catalog not ready"
+      ]
+    },
+    {
+      "name": "TestRootTriggerReservationIndependentFlowsAndRecords",
+      "result": "fail",
+      "elapsed_seconds": 0.06,
+      "failure_outputs": [
+        "root_workflow_trigger_reservation_test.go:56: workflow catalog not ready"
+      ]
+    },
+    {
+      "name": "TestRootTriggerReservationConcurrentExactlyOne",
+      "result": "fail",
+      "elapsed_seconds": 0.05,
+      "failure_outputs": [
+        "root_workflow_trigger_reservation_test.go:105: concurrent reservation: workflow catalog not ready",
+        "root_workflow_trigger_reservation_test.go:105: concurrent reservation: workflow catalog not ready",
+        "root_workflow_trigger_reservation_test.go:105: concurrent reservation: workflow catalog not ready",
+        "root_workflow_trigger_reservation_test.go:105: concurrent reservation: workflow catalog not ready",
+        "root_workflow_trigger_reservation_test.go:105: concurrent reservation: workflow catalog not ready",
+        "root_workflow_trigger_reservation_test.go:105: concurrent reservation: workflow catalog not ready",
+        "root_workflow_trigger_reservation_test.go:105: concurrent reservation: workflow catalog not ready",
+        "root_workflow_trigger_reservation_test.go:105: concurrent reservation: workflow catalog not ready",
+        "root_workflow_trigger_reservation_test.go:116: created=0 identities=map[]"
+      ]
+    },
+    {
+      "name": "TestRootTriggerReservationClosingRejectsNewAndCountsStarting",
+      "result": "fail",
+      "elapsed_seconds": 0.22,
+      "failure_outputs": [
+        "root_workflow_trigger_reservation_test.go:122: workflow catalog not ready"
+      ]
+    },
+    {
+      "name": "TestRootTriggerReservationCallerRollbackAndStaleVersion",
+      "result": "fail",
+      "elapsed_seconds": 0.05,
+      "failure_outputs": [
+        "root_workflow_trigger_reservation_test.go:149: workflow catalog not ready"
+      ]
+    }
+  ],
+  "hashes_unchanged": true,
+  "artifact_hashes": {
+    "test.stdout.jsonl": "f229b41f7a3732b41f390ea2eb1928c4162a7fde340b9b467f6de855c5822149",
+    "test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test.exit": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "root_workflow_trigger_reservation_test.go": "1fa4277e0370f70d2258a5c1033411cd9163fcca4223a96ee3b3058268fc9c0d",
+    "trigger_reservation.go": "801540856120a8c1955393d411de226befe6b027a49219c92a71fa60d193b586"
+  },
+  "status": "ACTUAL_SIX_DECLARATION_BEHAVIOR_RED",
+  "counts": {
+    "fail": 6,
+    "pass": 0,
+    "skip": 0,
+    "behavior_red": 6,
+    "fixture_failure": 0,
+    "environment_failure": 0
+  },
+  "interpretation": "Real PG fixture/deployment setup succeeded. Declaration ReserveTriggeredInTx returns ErrNotReady: five cases stop at first reservation; concurrent case receives eight ErrNotReady and creates zero identities. Later duplicate/replay/close/rollback/stale assertions are not reached at declaration stage."
+}

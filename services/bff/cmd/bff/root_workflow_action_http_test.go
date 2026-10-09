@@ -153,6 +153,9 @@ func rootHTTPResultBytes(result fc.ExecutionResult) []byte {
 // This fixture creates a confirmed existing task through trusted internal ports.
 // It is HTTP ingress coverage, not evidence of a public start trigger or real engine.
 func rootHTTPResourceSetup(t *testing.T) *rootTaskHTTPFixture {
+	return rootHTTPResourceSetupRuntime(t, workflowRuntimeConfig{})
+}
+func rootHTTPResourceSetupRuntime(t *testing.T, runtimeCfg workflowRuntimeConfig) *rootTaskHTTPFixture {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	t.Cleanup(cancel)
@@ -199,7 +202,7 @@ func rootHTTPResourceSetup(t *testing.T) *rootTaskHTTPFixture {
 	}
 	t.Cleanup(func() { f.store.Revoke(context.Background(), f.sid) })
 	f.server = httptest.NewUnstartedServer(nil)
-	cfg := config{DatabaseURL: runtimeURL.String(), RedisURL: os.Getenv("WEAVEOS_TEST_REDIS_URL"), Origin: "https://" + f.server.Listener.Addr().String(), Generation: generation, AuditKeyID: "test", AuditKey: []byte("synthetic-audit-key-32-bytes-only!"), DefinitionKeyID: "test", DefinitionKey: []byte("isolated-definition-test-32bytes!"), SchemaLimits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}}
+	cfg := config{WorkflowRuntime: runtimeCfg, DatabaseURL: runtimeURL.String(), RedisURL: os.Getenv("WEAVEOS_TEST_REDIS_URL"), Origin: "https://" + f.server.Listener.Addr().String(), Generation: generation, AuditKeyID: "test", AuditKey: []byte("synthetic-audit-key-32-bytes-only!"), DefinitionKeyID: "test", DefinitionKey: []byte("isolated-definition-test-32bytes!"), SchemaLimits: appschema.Limits{LockTimeout: time.Second, StatementTimeout: 5 * time.Second}}
 	h, close, e := buildHandler(ctx, cfg)
 	if e != nil {
 		t.Fatal(e)
@@ -381,10 +384,11 @@ func TestRootWorkflowActionHTTPClosedBodyAndExactRoutes(t *testing.T) {
 	}
 }
 func TestRootWorkflowActionHTTPStaleBasisRequiresRefresh(t *testing.T) {
-	f := rootHTTPTaskSetup(t)
+	f := rootHTTPTaskSetupEditable(t, true)
 	preview := rootHTTPData(t, f.call(t, "GET", f.taskPath(), "", nil), 200)
 	token := rootHTTPString(t, preview, "basisToken")
-	rootHTTPData(t, f.call(t, "PATCH", f.root(), `{"operationId":"`+f.id(t)+`","expectedSchemaVersion":1,"expectedRecordVersion":1,"changes":{"`+f.field+`":"changed after viewing"}}`, nil), 200)
+	// An authorized node Save changes the record; ordinary PATCH is read-only.
+	rootHTTPData(t, f.call(t, "PATCH", f.taskPath()+"/record", rootHTTPSaveBody(f.id(t), token, f.field, "changed after viewing"), nil), 200)
 	rootHTTPError(t, f.call(t, "POST", f.taskPath()+"/actions", rootHTTPActionBody(f.id(t), "agree", token), nil), 409, "WORKFLOW_BASIS_CHANGED")
 	rootHTTPError(t, f.call(t, "POST", f.taskPath()+"/actions", rootHTTPActionBody(f.id(t), "agree", strings.Repeat("A", 43)), nil), 409, "WORKFLOW_BASIS_EXPIRED")
 	fresh := rootHTTPData(t, f.call(t, "GET", f.taskPath(), "", nil), 200)

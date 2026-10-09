@@ -550,7 +550,7 @@ jobs:
         env:
           WEAVEOS_ACTIONS_JSON_REPORT: services/workflow-engine/actions-ci-reports/interop.jsonl
         run: WEAVEOS_ACTIONS_GOOSE="$(go env GOPATH)/bin/goose" node services/workflow-engine/run-action-interop.mjs
-      - name: Require three real scenarios and both action variants without skips
+      - name: Require ten real action/start scenarios and both action variants without skips
         run: python3 services/workflow-engine/action_ci_gate.py services/workflow-engine/actions-ci-reports/interop.jsonl
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: always()

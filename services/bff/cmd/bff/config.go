@@ -157,7 +157,7 @@ func buildHost(startupCtx, processCtx context.Context, cfg config) (*bffHost, er
 		}
 		host.rpc = rpc
 		workflows.DeploymentClient = rpc.Deployment
-		execution := &workflowexecution.Worker{Pool: pool, Client: rpc.Execution, RPCTimeout: cfg.WorkflowRuntime.RPCTimeout, Limits: cfg.SchemaLimits}
+		execution := &workflowexecution.Worker{AdmitStart: records.NewStartAdmitter(), Pool: pool, Client: rpc.Execution, RPCTimeout: cfg.WorkflowRuntime.RPCTimeout, Limits: cfg.SchemaLimits}
 		if startupCtx.Err() != nil {
 			return host.failStartup(errBFFHostUnavailable)
 		}

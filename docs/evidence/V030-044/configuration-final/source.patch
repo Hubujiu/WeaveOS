@@ -1,0 +1,980 @@
+diff --git a/contracts/openapi/openapi.json b/contracts/openapi/openapi.json
+index b3191ea..04c402c 100644
+--- a/contracts/openapi/openapi.json
++++ b/contracts/openapi/openapi.json
+@@ -21149,6 +21149,10 @@
+           },
+           "allowWithdraw": {
+             "type": "boolean"
++          },
++          "triggers": {
++            "$ref": "#/components/schemas/WorkflowTriggers",
++            "description": "Omitted on create means []; omitted on update preserves current candidate configuration. Explicit [] clears the new candidate. Configuration takes effect after publish/enable."
+           }
+         }
+       },
+@@ -21327,7 +21331,8 @@
+           "state",
+           "schemaVersion",
+           "allowWithdraw",
+-          "graph"
++          "graph",
++          "triggers"
+         ],
+         "properties": {
+           "id": {
+@@ -21357,6 +21362,9 @@
+           },
+           "graph": {
+             "$ref": "#/components/schemas/WorkflowGraph"
++          },
++          "triggers": {
++            "$ref": "#/components/schemas/WorkflowTriggers"
+           }
+         }
+       },
+@@ -22399,6 +22407,44 @@
+             }
+           }
+         ]
++      },
++      "WorkflowTriggers": {
++        "type": "array",
++        "maxItems": 3,
++        "items": {
++          "$ref": "#/components/schemas/WorkflowTrigger"
++        },
++        "description": "At most one entry per event. Applied to the entire logical table, using the confirmed published definition version. Empty array disables all triggers.",
++        "x-unique-by": "event"
++      },
++      "WorkflowTrigger": {
++        "type": "object",
++        "additionalProperties": false,
++        "required": [
++          "event",
++          "condition"
++        ],
++        "properties": {
++          "event": {
++            "type": "string",
++            "enum": [
++              "manual",
++              "record.created",
++              "record.updated"
++            ]
++          },
++          "condition": {
++            "anyOf": [
++              {
++                "$ref": "#/components/schemas/RecordFilterGroup"
++              },
++              {
++                "type": "null"
++              }
++            ]
++          }
++        },
++        "description": "Null condition always matches. record.updated runs only for actual changed values and tests the resulting record, not only false-to-true transitions. Node Save does not implicitly trigger."
+       }
+     },
+     "responses": {
+diff --git a/contracts/workflow-trigger-configuration.contract.test.mjs b/contracts/workflow-trigger-configuration.contract.test.mjs
+new file mode 100644
+index 0000000..9f682fe
+--- /dev/null
++++ b/contracts/workflow-trigger-configuration.contract.test.mjs
+@@ -0,0 +1,29 @@
++import test from 'node:test';
++import {createHash} from 'node:crypto';
++import assert from 'node:assert/strict';
++import {readFileSync} from 'node:fs';
++const api=JSON.parse(readFileSync(new URL('./openapi/openapi.json',import.meta.url)));
++const schemas=api.components.schemas;
++test('V044: definition triggers are optional on save and required on read',()=>{
++ assert.equal(schemas.WorkflowDefinitionSave.properties.triggers?.$ref,'#/components/schemas/WorkflowTriggers');
++ assert.equal(schemas.WorkflowDefinitionSave.required.includes('triggers'),false);
++ assert.equal(schemas.WorkflowDefinition.properties.triggers?.$ref,'#/components/schemas/WorkflowTriggers');
++ assert.ok(schemas.WorkflowDefinition.required.includes('triggers'));
++});
++test('V044: closed event-condition configuration has three bounded event kinds',()=>{
++ const list=schemas.WorkflowTriggers;assert.ok(list);assert.equal(list.type,'array');assert.equal(list.maxItems,3);
++ assert.equal(list.items.$ref,'#/components/schemas/WorkflowTrigger');
++ const item=schemas.WorkflowTrigger;assert.equal(item.additionalProperties,false);
++ assert.deepEqual([...item.required].sort(),['condition','event']);
++ assert.deepEqual([...item.properties.event.enum].sort(),['manual','record.created','record.updated']);
++ assert.deepEqual(item.properties.condition.anyOf,[{$ref:'#/components/schemas/RecordFilterGroup'},{type:'null'}]);
++});
++
++test('V044: migration 24 is registered once after 23 with exact immutable bytes',()=>{
++ const manifest=JSON.parse(readFileSync(new URL('../infra/server/deploy/compatibility.json',import.meta.url)));
++ const path='migrations/00024_workflow_trigger_configuration.sql';
++ const matches=manifest.migrations.filter(item=>item.path===path);
++ assert.equal(matches.length,1,'migration 24 must be registered exactly once');
++ assert.equal(matches[0].sha256,createHash('sha256').update(readFileSync(new URL('../db/'+path,import.meta.url))).digest('hex'));
++ assert.ok(manifest.migrations.findIndex(item=>item.path===path)>manifest.migrations.findIndex(item=>item.path==='migrations/00023_workflow_record_order_index.sql'));
++});
+diff --git a/db/migrations/00024_workflow_trigger_configuration.sql b/db/migrations/00024_workflow_trigger_configuration.sql
+new file mode 100644
+index 0000000..fdee93e
+--- /dev/null
++++ b/db/migrations/00024_workflow_trigger_configuration.sql
+@@ -0,0 +1,23 @@
++-- +goose Up
++-- Version metadata only; business records remain real typed columns.
++-- Existing definitions have no triggers until explicitly configured/published.
++ALTER TABLE applications.workflow_versions
++ ADD COLUMN triggers_json jsonb NOT NULL DEFAULT '[]'::jsonb,
++ ADD CONSTRAINT workflow_versions_triggers_shape CHECK (
++   jsonb_typeof(triggers_json)='array' AND jsonb_array_length(triggers_json)<=3
++ );
++
++-- +goose Down
++-- +goose StatementBegin
++DO $$
++BEGIN
++ LOCK TABLE applications.workflow_versions IN ACCESS EXCLUSIVE MODE;
++ IF EXISTS (SELECT 1 FROM applications.workflow_versions WHERE triggers_json <> '[]'::jsonb) THEN
++  RAISE EXCEPTION 'cannot remove durable workflow trigger configuration' USING ERRCODE='55000';
++ END IF;
++END;
++$$;
++-- +goose StatementEnd
++ALTER TABLE applications.workflow_versions
++ DROP CONSTRAINT workflow_versions_triggers_shape,
++ DROP COLUMN triggers_json;
+diff --git a/infra/server/deploy/compatibility.json b/infra/server/deploy/compatibility.json
+index 9cfc8ae..3b67953 100644
+--- a/infra/server/deploy/compatibility.json
++++ b/infra/server/deploy/compatibility.json
+@@ -1,6 +1,6 @@
+ {
+   "backwardCompatible": true,
+-  "source": "ADR-004 Q18, ADR-006 R3/Q25, ADR-007 Q36 query drafts/revision writers and accepted ADR-008 A1/A7 personal table presets. The administrator-installed fixed receiver/role policy must be upgraded together before migration promotion. Cold before hot; published migrations unchanged; compatible expansion and artifact rollback retain auth/personnel data and personal presets. B5a frozen limited applications expansion: cold00003 before hot00006; exact reviewed role pin; no production authorization. Accepted V030-013 structure/fields and V030-015 ADR11/13 shared expansion: cold00004 before hot00007-00012; typed records and save history, authoritative254 labels and actual active new-reference defaults. Accepted V030-018 P2a record-command fence expansion: hot00013 only; exact reviewed role pin; Down refuses after epoch use. P2b formal workflow command ledger: hot00014 after hot00013; exact reviewed role pin; Down refuses when durable ledger history exists; no production authorization. V030-018 P2c formal workflow catalog: hot00015 adds immutable definition versions/deployment receipts, bounded instance lifecycle and a guarded nonempty Down; exact reviewed runtime role pin. V030-020 P2e adds hot00016 workflow management operation kinds after hot00015; exact reviewed runtime role pin; Down refuses once workflow-management operation history exists. V030-020 cold00005 extends archive workflow-management audit checks before hot00016; hot00016 adds the exact workflow audit branch and operation kinds; both Downs refuse after matching durable history, and preserve all pre-existing checks and records. Accepted V030-027 reliable explicit publication: cold00006 before hot00017; finite immutable identity and full receipt history, leased dispatch, exact reviewed runtime role pin; Downs refuse durable publication or closing history. Source registration only; no production authorization. V030-033 execution projection expansion: hot00018 after hot00017; append-only events, bounded task projection and unique instance start identity. Down refuses durable projection/start history; duplicate prior v2 instance-start identities cause a safe migration refusal, never silent deletion. Exact reviewed role pin must be installed separately by the administrator; no production authorization. V030-036 immutable approval evidence expansion: hot00020 after hot00019; field-content reuse and complete immutable manifests/members. Nonempty Down refuses rather than deleting history. Exact reviewed append-only runtime/read-only backup role pin; source registration only, no production authorization. V030-037 existing-task actions: hot00021 adds only agree/reject operation kinds and guarded pending HTTP202 receipts; old operation kinds retain prior result rules, roles unchanged, Down refuses accepted action history. V030-045 lifecycle expansion: hot00022 adds only instance.withdraw/task.return operation kinds and same closed pending202 receipts; existing constraints preserved, roles unchanged, Down refuses new operation history. No deployment authorization. V030-046 read access path: hot00023 after hot00022 adds non-partial record-scoped stable-order index; no data/role changes; Down drops only that index. No deployment authorization.",
++  "source": "ADR-004 Q18, ADR-006 R3/Q25, ADR-007 Q36 query drafts/revision writers and accepted ADR-008 A1/A7 personal table presets. The administrator-installed fixed receiver/role policy must be upgraded together before migration promotion. Cold before hot; published migrations unchanged; compatible expansion and artifact rollback retain auth/personnel data and personal presets. B5a frozen limited applications expansion: cold00003 before hot00006; exact reviewed role pin; no production authorization. Accepted V030-013 structure/fields and V030-015 ADR11/13 shared expansion: cold00004 before hot00007-00012; typed records and save history, authoritative254 labels and actual active new-reference defaults. Accepted V030-018 P2a record-command fence expansion: hot00013 only; exact reviewed role pin; Down refuses after epoch use. P2b formal workflow command ledger: hot00014 after hot00013; exact reviewed role pin; Down refuses when durable ledger history exists; no production authorization. V030-018 P2c formal workflow catalog: hot00015 adds immutable definition versions/deployment receipts, bounded instance lifecycle and a guarded nonempty Down; exact reviewed runtime role pin. V030-020 P2e adds hot00016 workflow management operation kinds after hot00015; exact reviewed runtime role pin; Down refuses once workflow-management operation history exists. V030-020 cold00005 extends archive workflow-management audit checks before hot00016; hot00016 adds the exact workflow audit branch and operation kinds; both Downs refuse after matching durable history, and preserve all pre-existing checks and records. Accepted V030-027 reliable explicit publication: cold00006 before hot00017; finite immutable identity and full receipt history, leased dispatch, exact reviewed runtime role pin; Downs refuse durable publication or closing history. Source registration only; no production authorization. V030-033 execution projection expansion: hot00018 after hot00017; append-only events, bounded task projection and unique instance start identity. Down refuses durable projection/start history; duplicate prior v2 instance-start identities cause a safe migration refusal, never silent deletion. Exact reviewed role pin must be installed separately by the administrator; no production authorization. V030-036 immutable approval evidence expansion: hot00020 after hot00019; field-content reuse and complete immutable manifests/members. Nonempty Down refuses rather than deleting history. Exact reviewed append-only runtime/read-only backup role pin; source registration only, no production authorization. V030-037 existing-task actions: hot00021 adds only agree/reject operation kinds and guarded pending HTTP202 receipts; old operation kinds retain prior result rules, roles unchanged, Down refuses accepted action history. V030-045 lifecycle expansion: hot00022 adds only instance.withdraw/task.return operation kinds and same closed pending202 receipts; existing constraints preserved, roles unchanged, Down refuses new operation history. No deployment authorization. V030-046 read access path: hot00023 after hot00022 adds non-partial record-scoped stable-order index; no data/role changes; Down drops only that index. No deployment authorization. V030-044 versioned trigger configuration: hot00024 after hot00023 adds bounded immutable trigger metadata; legacy versions remain empty, existing role grants unchanged. Down refuses any nonempty trigger configuration. Source registration only; no deployment authorization.",
+   "migrations": [
+     {
+       "path": "migrations/00001_auth.sql",
+@@ -117,6 +117,10 @@
+     {
+       "path": "migrations/00023_workflow_record_order_index.sql",
+       "sha256": "0e538c94639be43e85027fc4d368c3d7da019baa8bd991595a05751247aef3ae"
++    },
++    {
++      "path": "migrations/00024_workflow_trigger_configuration.sql",
++      "sha256": "7dcdc38c3c0ed7bcfbcff5567c21d40bd5d2a5007ceda8c418dc1e967a80a554"
+     }
+   ],
+   "config": {
+diff --git a/services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go b/services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go
+new file mode 100644
+index 0000000..7464b3b
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/root_workflow_trigger_configuration_test.go
+@@ -0,0 +1,240 @@
++package apprecordservice
++
++import (
++	"encoding/json"
++	"errors"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
++	"github.com/jackc/pgx/v5"
++	"github.com/jackc/pgx/v5/pgconn"
++	"os"
++	"reflect"
++	"strings"
++	"testing"
++)
++
++func rootTriggerCondition(field string) json.RawMessage {
++	return json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + field + `","operator":"eq","value":"alpha"}]}`)
++}
++func rootReadTriggers(t *testing.T, f recordFixture, h workflowcatalog.Head, version int64) []workflowcatalog.Trigger {
++	t.Helper()
++	var got []workflowcatalog.Trigger
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var err error
++		got, err = (workflowcatalog.Catalog{}).TriggersForVersionInTx(f.ctx, tx, f.app, h.FlowID, version)
++		return err
++	})
++	return got
++}
++func TestRootTriggerConfigurationVersionImmutabilityAndInheritance(t *testing.T) {
++	f := newRecordFixture(t)
++	g := rootCatalogGraph(t, f, false)
++	configs := []workflowcatalog.Trigger{{Event: "record.created", Condition: rootTriggerCondition(f.public)}}
++	in := rootCatalogInput(f, recordOperationID(t, f), 0, g)
++	in.Triggers = &configs
++	var h workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var err error
++		h, err = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in)
++		return err
++	})
++	got := rootReadTriggers(t, f, h, 1)
++	if !rootSameTriggerConfiguration(got, configs) {
++		t.Fatalf("config not persisted: got=%+v want=%+v", got, configs)
++	}
++	h = rootCatalogEnable(t, f, rootCatalogDeploy(t, f, h))
++	h2 := rootCatalogPut(t, f, h.FlowID, h.Revision, g) // older client omits new optional field
++	if h2.CurrentVersion != 1 || h2.CandidateVersion != 2 {
++		t.Fatalf("draft changed published version: %+v", h2)
++	}
++	if !rootSameTriggerConfiguration(rootReadTriggers(t, f, h2, 2), configs) {
++		t.Fatal("omitted config lost existing candidate settings")
++	}
++	empty := []workflowcatalog.Trigger{}
++	in = rootCatalogInput(f, h.FlowID, h2.Revision, g)
++	in.Triggers = &empty
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var err error
++		h2, err = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in)
++		return err
++	})
++	if got := rootReadTriggers(t, f, h2, 3); got == nil || len(got) != 0 {
++		t.Fatalf("explicit empty must clear new candidate only: %+v", got)
++	}
++	if !rootSameTriggerConfiguration(rootReadTriggers(t, f, h2, 1), configs) {
++		t.Fatal("published config was overwritten")
++	}
++	if h2.CurrentVersion != 1 {
++		t.Fatal("unpublished config activated")
++	}
++}
++func TestRootTriggerConfigurationInvalidSaveRollsBack(t *testing.T) {
++	f := newRecordFixture(t)
++	g := rootCatalogGraph(t, f, false)
++	in := rootCatalogInput(f, recordOperationID(t, f), 0, g)
++	configs := []workflowcatalog.Trigger{{Event: "record.updated", Condition: rootTriggerCondition(recordOperationID(t, f))}}
++	in.Triggers = &configs
++	rootCatalogWantError(t, f, workflowcatalog.ErrInvalid, func(tx pgx.Tx) error { _, err := (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in); return err })
++	var n int
++	if err := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_definitions WHERE id=$1", in.FlowID).Scan(&n); err != nil || n != 0 {
++		t.Fatalf("invalid configuration left a flow: %d %v", n, err)
++	}
++}
++func TestRootTriggerConfigurationCompatibleSchemaAndPublishGuard(t *testing.T) {
++	f := newRecordFixture(t)
++	g := rootCatalogGraph(t, f, false)
++	configs := []workflowcatalog.Trigger{{Event: "record.updated", Condition: rootTriggerCondition(f.public)}}
++	in := rootCatalogInput(f, recordOperationID(t, f), 0, g)
++	in.Triggers = &configs
++	var h workflowcatalog.Head
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		var err error
++		h, err = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in)
++		return err
++	})
++	h = rootCatalogEnable(t, f, rootCatalogDeploy(t, f, h))
++	// The graph itself has no condition or editable fields; this dependency is
++	// exclusively from the configured trigger, not copied from the implementation.
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		got, err := (workflowcatalog.Catalog{}).CheckCompatibilityInTx(f.ctx, tx, f.app, f.table, []appquery.Field{{ID: f.secret, Kind: appquery.Text}, {ID: f.reference, Kind: appquery.Member}})
++		if err != nil {
++			return err
++		}
++		if len(got) != 1 || got[0].FieldID != f.public || got[0].FlowID != h.FlowID || got[0].NodeID != g.Nodes[0].ID {
++			t.Fatalf("missing trigger field not reported: %+v", got)
++		}
++		return nil
++	})
++}
++func TestRootTriggerConfigurationMissingVersionAndLegacyEmpty(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
++	got := rootReadTriggers(t, f, h, 1)
++	if got == nil || len(got) != 0 {
++		t.Fatalf("legacy config should be []: %+v", got)
++	}
++	rootCatalogTx(t, f, func(tx pgx.Tx) error {
++		_, err := (workflowcatalog.Catalog{}).TriggersForVersionInTx(f.ctx, tx, f.app, h.FlowID, 99)
++		if !errors.Is(err, workflowcatalog.ErrMissing) {
++			t.Fatalf("missing version: %v", err)
++		}
++		return nil
++	})
++}
++
++// Conditions are JSON values; object key serialization order is not behavior.
++func rootSameTriggerConfiguration(a, b []workflowcatalog.Trigger) bool {
++	rawA, errA := json.Marshal(a)
++	rawB, errB := json.Marshal(b)
++	var left, right any
++	return errA == nil && errB == nil && json.Unmarshal(rawA, &left) == nil && json.Unmarshal(rawB, &right) == nil && reflect.DeepEqual(left, right)
++}
++
++func TestRootTriggerConfigurationPublishAndEnableRecheckFields(t *testing.T) {
++	for _, action := range []string{"publication_snapshot", "confirm", "enable"} {
++		t.Run(action, func(t *testing.T) {
++			f := newRecordFixture(t)
++			configs := []workflowcatalog.Trigger{{Event: "record.created", Condition: rootTriggerCondition(f.public)}}
++			in := rootCatalogInput(f, recordOperationID(t, f), 0, rootCatalogGraph(t, f, false))
++			in.Triggers = &configs
++			var h workflowcatalog.Head
++			rootCatalogTx(t, f, func(tx pgx.Tx) error {
++				var err error
++				h, err = (workflowcatalog.Catalog{}).PutVersionInTx(f.ctx, tx, in)
++				return err
++			})
++			if action == "enable" {
++				h = rootCatalogDeploy(t, f, h)
++			}
++			if _, err := f.owner.Exec(f.ctx, "UPDATE applications.logical_tables SET fields_json=fields_json-0,schema_version=schema_version+1 WHERE id=$1", f.table); err != nil {
++				t.Fatal(err)
++			}
++			if action == "publication_snapshot" {
++				rootCatalogTx(t, f, func(tx pgx.Tx) error {
++					v, err := (workflowcatalog.Catalog{}).PublicationVersionInTx(f.ctx, tx, f.app, h.FlowID, 1)
++					if err != nil {
++						return err
++					}
++					if v.Compatible {
++						t.Fatal("publication advertised compatibility after trigger field removal")
++					}
++					return nil
++				})
++			} else {
++				rootCatalogWantError(t, f, workflowcatalog.ErrConflict, func(tx pgx.Tx) error {
++					var err error
++					if action == "confirm" {
++						_, err = (workflowcatalog.Catalog{}).ConfirmDeploymentInTx(f.ctx, tx, f.app, h.FlowID, 1, "engine-trigger-guard")
++					} else {
++						_, err = (workflowcatalog.Catalog{}).EnableInTx(f.ctx, tx, f.app, h.FlowID, h.Revision)
++					}
++					return err
++				})
++			}
++		})
++	}
++}
++
++func TestRootTriggerConfigurationDownGuard(t *testing.T) {
++	raw, err := os.ReadFile("../../../../db/migrations/00024_workflow_trigger_configuration.sql")
++	if err != nil {
++		t.Fatal(err)
++	}
++	pieces := strings.Split(string(raw), "-- +goose Down")
++	if len(pieces) != 2 {
++		t.Fatal("missing Down contract")
++	}
++	for _, nonempty := range []bool{false, true} {
++		t.Run(map[bool]string{false: "empty", true: "configured"}[nonempty], func(t *testing.T) {
++			f := newRecordFixture(t)
++			rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
++			tx, err := f.owner.Begin(f.ctx)
++			if err != nil {
++				t.Fatal(err)
++			}
++			defer tx.Rollback(f.ctx)
++			// Private isolated database; rollback restores every row and DDL change.
++			config := `[]`
++			if nonempty {
++				config = `[{"event":"manual","condition":null}]`
++			}
++			if _, err = tx.Exec(f.ctx, "UPDATE applications.workflow_versions SET triggers_json=$1", config); err != nil {
++				t.Fatal(err)
++			}
++			_, err = tx.Exec(f.ctx, pieces[1])
++			if nonempty {
++				var pgErr *pgconn.PgError
++				if !errors.As(err, &pgErr) || pgErr.Code != "55000" {
++					t.Fatalf("configured Down must refuse without data loss, got %v", err)
++				}
++				return
++			}
++			if err != nil {
++				t.Fatal(err)
++			}
++			var count int
++			if err = tx.QueryRow(f.ctx, "SELECT count(*) FROM information_schema.columns WHERE table_schema='applications' AND table_name='workflow_versions' AND column_name='triggers_json'").Scan(&count); err != nil || count != 0 {
++				t.Fatalf("empty configuration Down did not remove column: %d %v", count, err)
++			}
++		})
++	}
++}
++
++// A storage failure is retryable infrastructure failure, not a valid snapshot
++// whose product configuration happened to be incompatible.
++func TestRootTriggerConfigurationPublicationPropagatesStorageFailure(t *testing.T) {
++	f := newRecordFixture(t)
++	h := rootCatalogReady(t, f, rootCatalogGraph(t, f, false))
++	tx, err := f.owner.Begin(f.ctx)
++	if err != nil {
++		t.Fatal(err)
++	}
++	defer tx.Rollback(f.ctx)
++	if _, err = tx.Exec(f.ctx, "ALTER TABLE applications.workflow_versions RENAME COLUMN triggers_json TO unavailable_trigger_fixture"); err != nil {
++		t.Fatal(err)
++	}
++	_, err = (workflowcatalog.Catalog{}).PublicationVersionInTx(f.ctx, tx, f.app, h.FlowID, 1)
++	if err == nil {
++		t.Fatal("storage failure was silently returned as an incompatible publication snapshot")
++	}
++}
+diff --git a/services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go b/services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go
+new file mode 100644
+index 0000000..2f5d448
+--- /dev/null
++++ b/services/bff/internal/appstructure/root_workflow_trigger_configuration_test.go
+@@ -0,0 +1,110 @@
++package appstructure
++
++import (
++	"encoding/json"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
++	"io"
++	"net/http"
++	"net/http/httptest"
++	"reflect"
++	"strings"
++	"testing"
++)
++
++func triggerTLSCall(t *testing.T, s rootWorkflowManagementFixture, server *httptest.Server, flow, method string, body any, login, csrf bool) *httptest.ResponseRecorder {
++	t.Helper()
++	raw, err := json.Marshal(body)
++	if err != nil {
++		t.Fatal(err)
++	}
++	req, err := http.NewRequest(method, server.URL+rootWorkflowHTTPPath(s, flow, "definition"), strings.NewReader(string(raw)))
++	if err != nil {
++		t.Fatal(err)
++	}
++	req.Host = "weaveos.test"
++	req.Header.Set("Content-Type", "application/json")
++	req.Header.Set("Origin", "https://weaveos.test")
++	if login {
++		req.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: s.f.sid})
++		req.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: s.f.csrf})
++	}
++	if csrf {
++		req.Header.Set("X-CSRF-Token", s.f.csrf)
++	}
++	response, err := server.Client().Do(req)
++	if err != nil {
++		t.Fatal(err)
++	}
++	defer response.Body.Close()
++	if response.TLS == nil {
++		t.Fatal("fixture must use real TLS transport")
++	}
++	w := httptest.NewRecorder()
++	for k, v := range response.Header {
++		w.Header()[k] = v
++	}
++	w.WriteHeader(response.StatusCode)
++	if _, err = io.Copy(w, response.Body); err != nil {
++		t.Fatal(err)
++	}
++	return w
++}
++func TestRootWorkflowTriggerConfigurationHTTPSRoundTrip(t *testing.T) {
++	s := rootWorkflowManagementSetup(t)
++	server := httptest.NewTLSServer(rootWorkflowHTTPHandler(s))
++	defer server.Close()
++	flow := uuid(t, s.f.owner)
++	body := rootWorkflowHTTPBody(t, s, s.f.actor)
++	configs := []any{map[string]any{"event": "record.created", "condition": map[string]any{"operator": "and", "children": []any{map[string]any{"fieldId": s.field, "operator": "eq", "value": "alpha"}}}}}
++	body["triggers"] = configs
++	rootWorkflowHTTPError(t, triggerTLSCall(t, s, server, flow, "PUT", body, false, true), 401, "AUTH_UNAUTHENTICATED")
++	rootWorkflowHTTPError(t, triggerTLSCall(t, s, server, flow, "PUT", body, true, false), 403, "COMMON_CSRF_REJECTED")
++	saved := data(t, triggerTLSCall(t, s, server, flow, "PUT", body, true, true), 201)
++	read := data(t, triggerTLSCall(t, s, server, flow, "GET", nil, true, true), 200)
++	if !reflect.DeepEqual(read["triggers"], configs) {
++		t.Fatalf("trigger config not returned: %+v", read["triggers"])
++	}
++	// Existing clients omit the additive setting; candidate configuration survives.
++	delete(body, "triggers")
++	body["operationId"] = uuid(t, s.f.owner)
++	body["expectedRevision"] = saved["revision"]
++	saved = data(t, triggerTLSCall(t, s, server, flow, "PUT", body, true, true), 200)
++	read = data(t, triggerTLSCall(t, s, server, flow, "GET", nil, true, true), 200)
++	if !reflect.DeepEqual(read["triggers"], configs) {
++		t.Fatal("old client omission cleared configuration")
++	}
++	body["triggers"] = []any{}
++	body["operationId"] = uuid(t, s.f.owner)
++	body["expectedRevision"] = saved["revision"]
++	data(t, triggerTLSCall(t, s, server, flow, "PUT", body, true, true), 200)
++	read = data(t, triggerTLSCall(t, s, server, flow, "GET", nil, true, true), 200)
++	got, ok := read["triggers"].([]any)
++	if !ok || len(got) != 0 {
++		t.Fatalf("explicit empty did not clear configuration: %+v", read)
++	}
++}
++func TestRootWorkflowTriggerConfigurationHTTPSLegacyAndMalformed(t *testing.T) {
++	s := rootWorkflowManagementSetup(t)
++	server := httptest.NewTLSServer(rootWorkflowHTTPHandler(s))
++	defer server.Close()
++	flow := uuid(t, s.f.owner)
++	body := rootWorkflowHTTPBody(t, s, s.f.actor)
++	data(t, triggerTLSCall(t, s, server, flow, "PUT", body, true, true), 201)
++	read := data(t, triggerTLSCall(t, s, server, flow, "GET", nil, true, true), 200)
++	if got, ok := read["triggers"].([]any); !ok || len(got) != 0 {
++		t.Fatalf("legacy config must be [], got %+v", read["triggers"])
++	}
++	for name, value := range map[string]any{
++		"null": nil, "object": map[string]any{},
++		"missing_condition": []any{map[string]any{"event": "manual"}},
++		"unknown_event":     []any{map[string]any{"event": "timer", "condition": nil}},
++		"unknown_key":       []any{map[string]any{"event": "manual", "condition": nil, "script": "x"}},
++		"duplicate_event":   []any{map[string]any{"event": "manual", "condition": nil}, map[string]any{"event": "manual", "condition": nil}},
++	} {
++		t.Run(name, func(t *testing.T) {
++			bad := rootWorkflowHTTPBody(t, s, s.f.actor)
++			bad["triggers"] = value
++			rootWorkflowHTTPError(t, triggerTLSCall(t, s, server, uuid(t, s.f.owner), "PUT", bad, true, true), 400, "COMMON_INVALID_ARGUMENT")
++		})
++	}
++}
+diff --git a/services/bff/internal/appworkflows/http.go b/services/bff/internal/appworkflows/http.go
+index f78a295..3629dce 100644
+--- a/services/bff/internal/appworkflows/http.go
++++ b/services/bff/internal/appworkflows/http.go
+@@ -73,12 +73,13 @@ type workflowEdge struct {
+ }
+ 
+ type definitionRequest struct {
+-	OperationID           string          `json:"operationId"`
+-	Name                  string          `json:"name"`
+-	ExpectedRevision      int64           `json:"expectedRevision"`
+-	ExpectedSchemaVersion int64           `json:"expectedSchemaVersion"`
+-	Graph                 json.RawMessage `json:"graph"`
+-	AllowWithdraw         *bool           `json:"allowWithdraw"`
++	OperationID           string                     `json:"operationId"`
++	Name                  string                     `json:"name"`
++	ExpectedRevision      int64                      `json:"expectedRevision"`
++	ExpectedSchemaVersion int64                      `json:"expectedSchemaVersion"`
++	Graph                 json.RawMessage            `json:"graph"`
++	AllowWithdraw         *bool                      `json:"allowWithdraw"`
++	Triggers              *[]workflowcatalog.Trigger `json:"triggers,omitempty"`
+ }
+ 
+ type lifecycleRequest struct {
+@@ -87,15 +88,16 @@ type lifecycleRequest struct {
+ }
+ 
+ type definitionView struct {
+-	ID               string        `json:"id"`
+-	Name             string        `json:"name"`
+-	Revision         int64         `json:"revision"`
+-	CurrentVersion   int64         `json:"currentVersion"`
+-	CandidateVersion int64         `json:"candidateVersion"`
+-	State            string        `json:"state"`
+-	SchemaVersion    int64         `json:"schemaVersion"`
+-	AllowWithdraw    bool          `json:"allowWithdraw"`
+-	Graph            workflowGraph `json:"graph"`
++	ID               string                    `json:"id"`
++	Name             string                    `json:"name"`
++	Revision         int64                     `json:"revision"`
++	CurrentVersion   int64                     `json:"currentVersion"`
++	CandidateVersion int64                     `json:"candidateVersion"`
++	State            string                    `json:"state"`
++	SchemaVersion    int64                     `json:"schemaVersion"`
++	AllowWithdraw    bool                      `json:"allowWithdraw"`
++	Graph            workflowGraph             `json:"graph"`
++	Triggers         []workflowcatalog.Trigger `json:"triggers"`
+ }
+ 
+ type mutationData struct {
+@@ -332,7 +334,7 @@ func decodeDefinition(w http.ResponseWriter, r *http.Request) (definitionRequest
+ 	if err != nil {
+ 		return definitionRequest{}, flowgraph.Graph{}, err
+ 	}
+-	fields, err := exactObject(raw, []string{"operationId", "name", "expectedRevision", "expectedSchemaVersion", "graph", "allowWithdraw"}, nil)
++	fields, err := exactObject(raw, []string{"operationId", "name", "expectedRevision", "expectedSchemaVersion", "graph", "allowWithdraw"}, []string{"triggers"})
+ 	if err != nil {
+ 		return definitionRequest{}, flowgraph.Graph{}, err
+ 	}
+@@ -343,6 +345,19 @@ func decodeDefinition(w http.ResponseWriter, r *http.Request) (definitionRequest
+ 	if decodeErr != nil || in.AllowWithdraw == nil || !validID(in.OperationID) || strings.TrimSpace(in.Name) == "" || in.ExpectedRevision < 0 || in.ExpectedRevision > maxSafeInteger || in.ExpectedSchemaVersion < 1 || in.ExpectedSchemaVersion > maxSafeInteger {
+ 		return definitionRequest{}, flowgraph.Graph{}, errInvalid
+ 	}
++	if rawTriggers, exists := fields["triggers"]; exists {
++		var entries []map[string]json.RawMessage
++		if json.Unmarshal(rawTriggers, &entries) != nil || entries == nil || len(entries) > 3 {
++			return definitionRequest{}, flowgraph.Graph{}, errInvalid
++		}
++		for _, entry := range entries {
++			_, hasEvent := entry["event"]
++			_, hasCondition := entry["condition"]
++			if len(entry) != 2 || !hasEvent || !hasCondition {
++				return definitionRequest{}, flowgraph.Graph{}, errInvalid
++			}
++		}
++	}
+ 	graph, err := decodeGraph(fields["graph"])
+ 	if err != nil {
+ 		return definitionRequest{}, flowgraph.Graph{}, err
+@@ -534,6 +549,11 @@ func (s *Service) getDefinition(w http.ResponseWriter, r *http.Request, p sessio
+ 		fail(w, r, err, "")
+ 		return
+ 	}
++	triggers, err := (workflowcatalog.Catalog{}).TriggersForVersionInTx(ctx, tx, appID, flowID, head.CandidateVersion)
++	if err != nil {
++		fail(w, r, err, "")
++		return
++	}
+ 	graph, err := workflowcatalogGraph(graphJSON)
+ 	if err != nil {
+ 		fail(w, r, err, "")
+@@ -549,7 +569,7 @@ func (s *Service) getDefinition(w http.ResponseWriter, r *http.Request, p sessio
+ 	}
+ 	writeEnvelope(w, r, http.StatusOK, "OK", definitionView{ID: flowID, Name: head.Name, Revision: head.Revision,
+ 		CurrentVersion: head.CurrentVersion, CandidateVersion: head.CandidateVersion, State: head.State,
+-		SchemaVersion: schemaVersion, AllowWithdraw: allowWithdraw, Graph: toGraphDTO(graph)})
++		SchemaVersion: schemaVersion, AllowWithdraw: allowWithdraw, Graph: toGraphDTO(graph), Triggers: triggers})
+ }
+ 
+ func workflowcatalogGraph(raw []byte) (flowgraph.Graph, error) {
+@@ -631,7 +651,7 @@ func (s *Service) mutate(w http.ResponseWriter, r *http.Request, p session.Princ
+ 		}
+ 		head, err = catalog.PutVersionInTx(r.Context(), tx, workflowcatalog.VersionInput{AppID: appID, TableID: tableID, ViewID: viewID, FlowID: flowID,
+ 			ActorID: p.UserID, Name: save.Name, ExpectedRevision: save.ExpectedRevision, ExpectedSchemaVersion: save.ExpectedSchemaVersion,
+-			Graph: graph, AllowWithdraw: *save.AllowWithdraw})
++			Graph: graph, AllowWithdraw: *save.AllowWithdraw, Triggers: save.Triggers})
+ 	case "enable":
+ 		head, err = catalog.GetInTx(r.Context(), tx, appID, flowID)
+ 		if err == nil && head.ViewID != viewID {
+diff --git a/services/bff/internal/persistence/workflow_trigger_configuration_test.go b/services/bff/internal/persistence/workflow_trigger_configuration_test.go
+new file mode 100644
+index 0000000..a62eea9
+--- /dev/null
++++ b/services/bff/internal/persistence/workflow_trigger_configuration_test.go
+@@ -0,0 +1,25 @@
++package persistence_test
++
++import (
++	"context"
++	"testing"
++)
++
++func TestWorkflowTriggerConfigurationColumnContract(t *testing.T) {
++	conn := testConn(t)
++	ctx := context.Background()
++	var count int
++	if err := conn.QueryRow(ctx, `SELECT count(*) FROM information_schema.columns WHERE table_schema='applications' AND table_name='workflow_versions' AND column_name='triggers_json' AND data_type='jsonb' AND is_nullable='NO' AND column_default='''[]''::jsonb'`).Scan(&count); err != nil {
++		t.Fatal(err)
++	}
++	if count != 1 {
++		t.Fatal("versioned trigger configuration column/default/required contract is missing")
++	}
++	var canRead, canInsert, canUpdate bool
++	if err := conn.QueryRow(ctx, `SELECT has_column_privilege('auth_app','applications.workflow_versions','triggers_json','SELECT'),has_column_privilege('auth_app','applications.workflow_versions','triggers_json','INSERT'),has_column_privilege('auth_app','applications.workflow_versions','triggers_json','UPDATE')`).Scan(&canRead, &canInsert, &canUpdate); err != nil {
++		t.Fatal(err)
++	}
++	if !canRead || !canInsert || canUpdate {
++		t.Fatalf("immutable version permissions violated: read=%v insert=%v update=%v", canRead, canInsert, canUpdate)
++	}
++}
+diff --git a/services/bff/internal/workflowcatalog/catalog.go b/services/bff/internal/workflowcatalog/catalog.go
+index 8871828..46f865c 100644
+--- a/services/bff/internal/workflowcatalog/catalog.go
++++ b/services/bff/internal/workflowcatalog/catalog.go
+@@ -37,6 +37,7 @@ type VersionInput struct {
+ 	ExpectedRevision, ExpectedSchemaVersion       int64
+ 	Graph                                         flowgraph.Graph
+ 	AllowWithdraw                                 bool
++	Triggers                                      *[]Trigger
+ }
+ 
+ type Head struct {
+@@ -93,7 +94,11 @@ func (Catalog) PublicationVersionInTx(ctx context.Context, tx pgx.Tx, appID, flo
+ 	}
+ 	if resources.ready {
+ 		_, validation := flowgraph.Validate(v.Graph, resources.fields)
+-		v.Compatible = validation == nil
++		triggerValidation := validateStoredTriggers(ctx, tx, appID, flowID, version, resources.fields)
++		if triggerValidation != nil && !errors.Is(triggerValidation, ErrConflict) {
++			return v, triggerValidation
++		}
++		v.Compatible = validation == nil && triggerValidation == nil
+ 	}
+ 	return v, nil
+ }
+@@ -138,6 +143,24 @@ func (Catalog) PutVersionInTx(ctx context.Context, tx pgx.Tx, in VersionInput) (
+ 		return Head{}, ErrConflict
+ 	}
+ 
++	var requested []Trigger
++	if in.Triggers != nil {
++		requested = *in.Triggers
++	} else if exists {
++		requested, err = (Catalog{}).TriggersForVersionInTx(ctx, tx, in.AppID, in.FlowID, old.CandidateVersion)
++		if err != nil {
++			return Head{}, err
++		}
++	}
++	triggers, err := NormalizeTriggers(requested, resources.fields)
++	if err != nil {
++		return Head{}, ErrInvalid
++	}
++	triggerJSON, err := json.Marshal(triggers)
++	if err != nil {
++		return Head{}, ErrInvalid
++	}
++
+ 	if _, err := flowgraph.Validate(in.Graph, resources.fields); err != nil {
+ 		return Head{}, ErrInvalid
+ 	}
+@@ -180,9 +203,9 @@ func (Catalog) PutVersionInTx(ctx context.Context, tx pgx.Tx, in VersionInput) (
+ 		}
+ 	}
+ 	_, err = tx.Exec(ctx, `INSERT INTO applications.workflow_versions
+-		(app_id,flow_id,version,version_id,schema_version,graph_json,bpmn_xml,allow_withdraw,created_by)
+-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`, in.AppID, in.FlowID, version, versionID,
+-		resources.schemaVersion, graphJSON, string(bpmn), in.AllowWithdraw, in.ActorID)
++		(app_id,flow_id,version,version_id,schema_version,graph_json,bpmn_xml,allow_withdraw,created_by,triggers_json)
++		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, in.AppID, in.FlowID, version, versionID,
++		resources.schemaVersion, graphJSON, string(bpmn), in.AllowWithdraw, in.ActorID, triggerJSON)
+ 	if err != nil {
+ 		return Head{}, mapDBError(err)
+ 	}
+@@ -225,6 +248,9 @@ func (Catalog) ConfirmDeploymentInTx(ctx context.Context, tx pgx.Tx, appID, flow
+ 		return Head{}, ErrNotReady
+ 	}
+ 	if version == h.CandidateVersion {
++		if err := validateStoredTriggers(ctx, tx, appID, flowID, version, resources.fields); err != nil {
++			return Head{}, err
++		}
+ 		if _, err := flowgraph.Validate(graph, resources.fields); err != nil {
+ 			return Head{}, ErrConflict
+ 		}
+@@ -458,7 +484,9 @@ func (Catalog) CheckCompatibilityInTx(ctx context.Context, tx pgx.Tx, appID, tab
+ 			FROM applications.workflow_instances i
+ 			WHERE i.app_id=$1 AND i.table_id=$2 AND i.state IN ('starting','active')
+ 		)
+-		SELECT live.flow_id::text,v.version,v.graph_json
++		SELECT live.flow_id::text,v.version,v.graph_json,v.triggers_json,
++        EXISTS(SELECT 1 FROM applications.workflow_definitions d WHERE d.app_id=live.app_id
++          AND d.id=live.flow_id AND d.current_version=live.version AND d.state IN ('enabled','closing'))
+ 		FROM live_versions live
+ 		JOIN applications.workflow_versions v
+ 			ON v.app_id=live.app_id AND v.flow_id=live.flow_id AND v.version=live.version
+@@ -471,8 +499,9 @@ func (Catalog) CheckCompatibilityInTx(ctx context.Context, tx pgx.Tx, appID, tab
+ 	for rows.Next() {
+ 		var flowID string
+ 		var version int64
+-		var graphJSON []byte
+-		if err := rows.Scan(&flowID, &version, &graphJSON); err != nil {
++		var graphJSON, triggerJSON []byte
++		var checkTriggers bool
++		if err := rows.Scan(&flowID, &version, &graphJSON, &triggerJSON, &checkTriggers); err != nil {
+ 			return nil, mapDBError(err)
+ 		}
+ 		graph, err := decodeGraph(graphJSON)
+@@ -480,6 +509,13 @@ func (Catalog) CheckCompatibilityInTx(ctx context.Context, tx pgx.Tx, appID, tab
+ 			return nil, ErrNotReady
+ 		}
+ 		conflicts = append(conflicts, graphConflicts(flowID, version, graph, proposed)...)
++		if checkTriggers {
++			triggers, err := decodeTriggers(triggerJSON)
++			if err != nil {
++				return nil, err
++			}
++			conflicts = append(conflicts, triggerConflicts(flowID, version, graph, triggers, proposed)...)
++		}
+ 	}
+ 	if err := rows.Err(); err != nil {
+ 		return nil, mapDBError(err)
+@@ -623,7 +659,7 @@ func validateStoredVersion(ctx context.Context, tx pgx.Tx, appID, flowID string,
+ 	if _, err := flowgraph.Validate(graph, fields); err != nil {
+ 		return ErrConflict
+ 	}
+-	return nil
++	return validateStoredTriggers(ctx, tx, appID, flowID, version, fields)
+ }
+ 
+ func hasInFlight(ctx context.Context, tx pgx.Tx, appID, flowID string) (bool, error) {
+diff --git a/services/bff/internal/workflowcatalog/trigger_configuration.go b/services/bff/internal/workflowcatalog/trigger_configuration.go
+new file mode 100644
+index 0000000..47d05a9
+--- /dev/null
++++ b/services/bff/internal/workflowcatalog/trigger_configuration.go
+@@ -0,0 +1,118 @@
++package workflowcatalog
++
++import (
++	"bytes"
++	"context"
++	"encoding/json"
++	"errors"
++	"io"
++	"sort"
++
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
++	"github.com/jackc/pgx/v5"
++)
++
++// Trigger belongs to an immutable definition version. It does not itself
++// authorize a user or dispatch an engine command.
++type Trigger struct {
++	Event     string          `json:"event"`
++	Condition json.RawMessage `json:"condition"`
++}
++
++func NormalizeTriggers(in []Trigger, fields []appquery.Field) ([]Trigger, error) {
++	if len(in) > 3 || !validFieldContext(fields) {
++		return nil, ErrInvalid
++	}
++	out := make([]Trigger, 0, len(in))
++	seen := map[string]bool{}
++	for _, trigger := range in {
++		switch trigger.Event {
++		case "manual", "record.created", "record.updated":
++		default:
++			return nil, ErrInvalid
++		}
++		if seen[trigger.Event] {
++			return nil, ErrInvalid
++		}
++		seen[trigger.Event] = true
++		plan, err := appquery.Compile(trigger.Condition, nil, fields, 1)
++		if err != nil {
++			return nil, ErrInvalid
++		}
++		raw := bytes.Clone(plan.Canonical)
++		if len(raw) == 0 {
++			raw = json.RawMessage("null")
++		}
++		out = append(out, Trigger{Event: trigger.Event, Condition: raw})
++	}
++	sort.Slice(out, func(i, j int) bool { return out[i].Event < out[j].Event })
++	return out, nil
++}
++
++func decodeTriggers(raw []byte) ([]Trigger, error) {
++	if len(raw) > 262144 || len(bytes.TrimSpace(raw)) == 0 || bytes.TrimSpace(raw)[0] != '[' {
++		return nil, ErrNotReady
++	}
++	var out []Trigger
++	decoder := json.NewDecoder(bytes.NewReader(raw))
++	decoder.DisallowUnknownFields()
++	if decoder.Decode(&out) != nil || len(out) > 3 {
++		return nil, ErrNotReady
++	}
++	var extra any
++	if decoder.Decode(&extra) != io.EOF {
++		return nil, ErrNotReady
++	}
++	return out, nil
++}
++
++func (Catalog) TriggersForVersionInTx(ctx context.Context, tx pgx.Tx, appID, flowID string, version int64) ([]Trigger, error) {
++	if tx == nil || !validIDs(appID, flowID) || version < 1 || version > maxSafeInteger {
++		return nil, ErrInvalid
++	}
++	var raw []byte
++	err := tx.QueryRow(ctx, `SELECT triggers_json FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2 AND version=$3`, appID, flowID, version).Scan(&raw)
++	if errors.Is(err, pgx.ErrNoRows) {
++		return nil, ErrMissing
++	}
++	if err != nil {
++		return nil, mapDBError(err)
++	}
++	return decodeTriggers(raw)
++}
++
++func validateStoredTriggers(ctx context.Context, tx pgx.Tx, appID, flowID string, version int64, fields []appquery.Field) error {
++	triggers, err := (Catalog{}).TriggersForVersionInTx(ctx, tx, appID, flowID, version)
++	if err != nil {
++		return err
++	}
++	if _, err = NormalizeTriggers(triggers, fields); err != nil {
++		return ErrConflict
++	}
++	return nil
++}
++
++func triggerConflicts(flowID string, version int64, graph flowgraph.Graph, triggers []Trigger, fields []appquery.Field) []Conflict {
++	var startID string
++	for _, node := range graph.Nodes {
++		if node.Kind == "start" {
++			startID = node.ID
++			break
++		}
++	}
++	seen := map[Conflict]bool{}
++	out := []Conflict{}
++	for _, trigger := range triggers {
++		// Reuse the same leaf/type compatibility rules as graph conditions, with
++		// the real start node identifying the trigger's dependency in the API.
++		synthetic := flowgraph.Graph{Nodes: []flowgraph.Node{{ID: startID, Kind: "condition", Condition: trigger.Condition}}}
++		for _, conflict := range graphConflicts(flowID, version, synthetic, fields) {
++			if !seen[conflict] {
++				seen[conflict] = true
++				out = append(out, conflict)
++			}
++		}
++	}
++	return out
++}
+diff --git a/services/bff/internal/workflowcatalog/trigger_configuration_test.go b/services/bff/internal/workflowcatalog/trigger_configuration_test.go
+new file mode 100644
+index 0000000..8eb46d1
+--- /dev/null
++++ b/services/bff/internal/workflowcatalog/trigger_configuration_test.go
+@@ -0,0 +1,62 @@
++package workflowcatalog
++
++import (
++	"encoding/json"
++	"errors"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
++	"reflect"
++	"testing"
++)
++
++const triggerField = "00000000-0000-4000-8000-000000000001"
++
++var triggerFields = []appquery.Field{{ID: triggerField, Kind: appquery.Text}}
++
++func TestTriggerConfigurationNormalizedEventsAndNull(t *testing.T) {
++	in := []Trigger{{Event: "record.updated"}, {Event: "manual", Condition: json.RawMessage(" null ")}, {Event: "record.created"}}
++	got, err := NormalizeTriggers(in, triggerFields)
++	want := []Trigger{{Event: "manual", Condition: json.RawMessage("null")}, {Event: "record.created", Condition: json.RawMessage("null")}, {Event: "record.updated", Condition: json.RawMessage("null")}}
++	if err != nil || !reflect.DeepEqual(got, want) {
++		t.Fatalf("normalized=%+v error=%v", got, err)
++	}
++	if in[0].Event != "record.updated" {
++		t.Fatal("input order mutated")
++	}
++	empty, err := NormalizeTriggers(nil, triggerFields)
++	if err != nil || empty == nil || len(empty) != 0 {
++		t.Fatalf("legacy configuration must normalize to [], got=%+v err=%v", empty, err)
++	}
++}
++func TestTriggerConfigurationConditionPreservesIndependentPredicate(t *testing.T) {
++	raw := json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + triggerField + `","operator":"eq","value":"alpha"}]}`)
++	got, err := NormalizeTriggers([]Trigger{{Event: "record.updated", Condition: raw}}, triggerFields)
++	if err != nil || len(got) != 1 {
++		t.Fatalf("valid condition: %+v %v", got, err)
++	}
++	var actual, expected any
++	if json.Unmarshal(got[0].Condition, &actual) != nil || json.Unmarshal(raw, &expected) != nil || !reflect.DeepEqual(actual, expected) {
++		t.Fatalf("condition changed: %s", got[0].Condition)
++	}
++	got[0].Condition[0] = '!'
++	if raw[0] != '{' {
++		t.Fatal("normalized condition aliases caller memory")
++	}
++}
++func TestTriggerConfigurationRejectsInvalidEventsAndPredicates(t *testing.T) {
++	for name, in := range map[string][]Trigger{
++		"unknown_event":      {{Event: "timer"}},
++		"empty_event":        {{Event: ""}},
++		"duplicate":          {{Event: "manual"}, {Event: "manual"}},
++		"too_many":           {{Event: "manual"}, {Event: "record.created"}, {Event: "record.updated"}, {Event: "manual"}},
++		"scalar_condition":   {{Event: "manual", Condition: json.RawMessage(`true`)}},
++		"unknown_field":      {{Event: "record.created", Condition: json.RawMessage(`{"operator":"and","children":[{"fieldId":"00000000-0000-4000-8000-000000000099","operator":"eq","value":"x"}]}`)}},
++		"text_ordering":      {{Event: "record.created", Condition: json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + triggerField + `","operator":"gt","value":"x"}]}`)}},
++		"unknown_filter_key": {{Event: "manual", Condition: json.RawMessage(`{"operator":"and","children":[],"execute":"anything"}`)}},
++	} {
++		t.Run(name, func(t *testing.T) {
++			if _, err := NormalizeTriggers(in, triggerFields); !errors.Is(err, ErrInvalid) {
++				t.Fatalf("invalid config accepted or wrong error: %v", err)
++			}
++		})
++	}
++}

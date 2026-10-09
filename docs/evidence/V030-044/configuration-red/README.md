@@ -1,0 +1,5 @@
+# Versioned trigger configuration RED
+
+Initial source 927858e, declaration-only NormalizeTriggers/TriggersForVersionInTx and no-op migration24. Three unit functions/eight subcases failed the explicit missing behavior. Fresh UTF8 PostgreSQL18.6/Redis8.2.10, migrations1..24 (24 intentionally no-op) and auth_app roles loaded; four catalog integration functions failed missing configuration persistence/validation/compatibility, one schema test failed required-column assertion. Storage exit1, stderr empty. No environment or compile failure used as RED.
+
+source.patch preserves the exact declaration/test source from base53e4de7. Before implementation, storage comparison was corrected to semantic JSON equality rather than raw object key order, matching the canonicalization contract; this is not relaxing a business expectation. The missing-behavior failure remains independently reproduced before implementation. Tests and implementation are written directly by the main assistant, with no delegation.
