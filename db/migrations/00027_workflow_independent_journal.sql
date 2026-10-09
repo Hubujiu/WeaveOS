@@ -129,6 +129,9 @@ ALTER TABLE applications.workflow_execution_events
  ADD CONSTRAINT fk_workflow_journal_table FOREIGN KEY(app_id,table_id) REFERENCES applications.logical_tables(app_id,id) ON DELETE RESTRICT;
 ALTER TABLE applications.workflow_execution_events DROP CONSTRAINT workflow_execution_events_app_id_instance_id_fkey;
 
+CREATE INDEX ix_workflow_events_record_history ON applications.workflow_execution_events
+ (app_id,table_id,record_id,created_at DESC,command_id DESC);
+
 -- +goose Down
 -- +goose StatementBegin
 DO $$ BEGIN
@@ -136,6 +139,7 @@ DO $$ BEGIN
  IF EXISTS(SELECT 1 FROM applications.workflow_execution_events) THEN
   RAISE EXCEPTION 'independent workflow history exists; Down refused' USING ERRCODE='55000';
  END IF;
+ DROP INDEX applications.ix_workflow_events_record_history;
  DROP TRIGGER capture_workflow_event_journal ON applications.workflow_execution_events;
  DROP FUNCTION applications.capture_workflow_event_journal();
  ALTER TABLE applications.workflow_execution_events
