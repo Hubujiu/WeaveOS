@@ -27,3 +27,11 @@ test('V044: migration 24 is registered once after 23 with exact immutable bytes'
  assert.equal(matches[0].sha256,createHash('sha256').update(readFileSync(new URL('../db/'+path,import.meta.url))).digest('hex'));
  assert.ok(manifest.migrations.findIndex(item=>item.path===path)>manifest.migrations.findIndex(item=>item.path==='migrations/00023_workflow_record_order_index.sql'));
 });
+test('V044: manual start migration 25 is registered after 24 with immutable bytes',()=>{
+ const manifest=JSON.parse(readFileSync(new URL('../infra/server/deploy/compatibility.json',import.meta.url)));
+ const path='migrations/00025_workflow_manual_start_operations.sql';
+ const matches=manifest.migrations.filter(item=>item.path===path);
+ assert.equal(matches.length,1,'manual receipt migration must be registered exactly once');
+ assert.equal(matches[0].sha256,createHash('sha256').update(readFileSync(new URL('../db/'+path,import.meta.url))).digest('hex'));
+ assert.ok(manifest.migrations.findIndex(item=>item.path===path)>manifest.migrations.findIndex(item=>item.path==='migrations/00024_workflow_trigger_configuration.sql'));
+});
