@@ -118,3 +118,5 @@ Flowable原生版本与流程层精简：[V030-038](V030-038.md)，Root本人设
 - [V030-062 · 已确认审批事件与历史依据详情](V030-062.md) — [PR #71](https://github.com/Hubujiu/WeaveOS/pull/71) 最终264b73b适用CI全绿并squash develop cf27eaa；main未推广。
 
 - [V030-066 · 原生流程删除安全性验证](V030-066.md) — 真实Flowable六项通过，精确CI接线RED→GREEN；[draft PR72](https://github.com/Hubujiu/WeaveOS/pull/72)待最终CI，不是产品删除入口。
+
+- [V030-067 · 受控引擎流程删除与身份保留](V030-067.md) — 主助手独立执行，来源已实际读回，R1真实RED先行；生产删除入口尚未交付。
