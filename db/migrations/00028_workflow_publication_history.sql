@@ -32,15 +32,20 @@ CREATE FUNCTION applications.bind_publication_history_insert() RETURNS trigger
 LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog AS $$
 DECLARE original_view uuid; original_version uuid;
 BEGIN
- -- Definition before version, with FK-equivalent parent row protection until
- -- the inserting transaction commits. A plain EXISTS would race with deletion.
+ -- Row locking needs UPDATE on immutable versions, which runtime must not have.
+ -- VOLATILE trigger statements acquire fresh RC snapshots after the shared lock.
+ IF pg_catalog.current_setting('transaction_isolation') <> 'read committed' THEN
+  RAISE EXCEPTION 'publication history writes require read committed' USING ERRCODE='25001';
+ END IF;
+ PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
+  'weaveos:publication-history:' || NEW.app_id::text || ':' || NEW.flow_id::text,0));
  SELECT view_id INTO original_view FROM applications.workflow_definitions
- WHERE app_id=NEW.app_id AND id=NEW.flow_id FOR KEY SHARE;
+ WHERE app_id=NEW.app_id AND id=NEW.flow_id;
  IF NOT FOUND THEN
   RAISE EXCEPTION 'publication history definition missing' USING ERRCODE='23503';
  END IF;
  SELECT version_id INTO original_version FROM applications.workflow_versions
- WHERE app_id=NEW.app_id AND flow_id=NEW.flow_id AND version=NEW.version FOR KEY SHARE;
+ WHERE app_id=NEW.app_id AND flow_id=NEW.flow_id AND version=NEW.version;
  IF NOT FOUND THEN
   RAISE EXCEPTION 'publication history version missing' USING ERRCODE='23503';
  END IF;
@@ -75,6 +80,11 @@ BEGIN
  ELSIF TG_TABLE_NAME='workflow_versions' THEN target_flow:=OLD.flow_id;
  ELSE RAISE EXCEPTION 'unsupported workflow cleanup relation' USING ERRCODE='55000';
  END IF;
+ IF pg_catalog.current_setting('transaction_isolation') <> 'read committed' THEN
+  RAISE EXCEPTION 'workflow catalog cleanup requires read committed' USING ERRCODE='25001';
+ END IF;
+ PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
+  'weaveos:publication-history:' || OLD.app_id::text || ':' || target_flow::text,0));
  IF EXISTS(SELECT 1 FROM applications.workflow_instances i
    WHERE i.app_id=OLD.app_id AND i.flow_id=target_flow AND i.state IN ('starting','active'))
  OR EXISTS(SELECT 1 FROM applications.workflow_publications p
