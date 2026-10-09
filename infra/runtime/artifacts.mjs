@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, existsSync, readFileSync, writeFileSync, copyFileSync, cpSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
-const goImage='golang:1.27.1@sha256:3680233e3204827fbdc66088528ae6d4b3d034f51d03a99d454f6de034888244';
+const goImage='golang:1.27.2@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c';
 const debian='debian:bookworm-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251';
 const nginx='nginx:1.30.5@sha256:b972f831f200b19ef0767938224f9711e74cd783718738cd7405d5cabf75c442';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -49,7 +49,7 @@ export function packageImages(o){
  const run=(cmd,args,options={})=>execFileSync(cmd,args,{cwd:o.root,stdio:'inherit',...options});
  const sourceTar=resolve(out,'source.tar');run('git',['archive','--format=tar','--prefix=src/','--output',sourceTar,o.commit]);run('tar',['-xf',sourceTar,'-C',out]);
  const src=resolve(out,'src');
- if(readFileSync(resolve(src,'.go-version'),'utf8').trim()!=='1.27.1'||readFileSync(resolve(src,'.node-version'),'utf8').trim()!=='24.14.0')throw new Error('Recheck locked builder versions');
+ if(readFileSync(resolve(src,'.go-version'),'utf8').trim()!=='1.27.2'||readFileSync(resolve(src,'.node-version'),'utf8').trim()!=='24.14.0')throw new Error('Recheck locked builder versions');
  run('docker',['run','--rm','--platform','linux/amd64','--mount',`type=bind,src=${src},dst=/repo`,'--mount','type=volume,src=weaveos-v010-go-cache,dst=/go/pkg/mod','--mount','type=volume,src=weaveos-v010-go-build-cache,dst=/root/.cache/go-build','-e','GOFLAGS=-buildvcs=false','-w','/repo/services/bff',goImage,'sh','-ec','mkdir -p /repo/.work/bin; CGO_ENABLED=0 go build -trimpath -o /repo/.work/bin/bff ./cmd/bff; CGO_ENABLED=0 go build -trimpath -o /repo/.work/bin/audit-read ./cmd/audit-read; CGO_ENABLED=0 go build -trimpath -o /repo/.work/bin/audit-maintenance ./cmd/audit-maintenance']);
  run('docker',['run','--rm','--platform','linux/amd64','--mount',`type=bind,src=${src},dst=/repo`,'--mount','type=volume,src=weaveos-v010-artifact-node,dst=/repo/node_modules','--mount','type=volume,src=weaveos-v010-artifact-web-node,dst=/repo/apps/web/node_modules','-e','CI=true','-w','/repo','node:24.14.0-bookworm-slim','sh','-ec','npm install --global pnpm@10.28.2 --ignore-scripts; pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store; pnpm build']);
  const context=resolve(out,'context');mkdirSync(context);
