@@ -26,7 +26,7 @@ const pgImage='docker.io/library/postgres@sha256:5a5a84b19854a9ffaa54082c166ff4e
 const mvnImage='mirror.gcr.io/library/maven@sha256:fa7aa19829157d299ff05f631b51697a388dcd2f6955e84249ecc652015f217b';
 let pg,javaStarted=false;const owned=[];
 try{
- if(!call(go,['version'],{encoding:'utf8'}).includes('go1.27.1 '))throw Error('wrong Go compiler');
+ if(!call(go,['version'],{encoding:'utf8'}).includes('go1.27.2 '))throw Error('wrong Go compiler');
  step('compile',go,['test','-tags','workflowrpc_integration','-c','-o',resolve(engine,'.work/action-interop.test'),'./cmd/bff'],{cwd:resolve('services/bff'),env:{...env,CGO_ENABLED:'0',GOOS:'linux',GOARCH:'amd64'}});
  if(process.env.WEAVEOS_ACTIONS_REUSE_STATE){
   const statePath=resolve(process.env.WEAVEOS_ACTIONS_REUSE_STATE);

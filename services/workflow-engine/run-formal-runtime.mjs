@@ -40,7 +40,7 @@ async function waitFor(probe, description) {
   throw Error(`${description} did not become ready`);
 }
 try {
-  if (!call(go, ['version'], { encoding: 'utf8' }).includes('go1.27.1 ')) throw Error('Pinned Go compiler required');
+  if (!call(go, ['version'], { encoding: 'utf8' }).includes('go1.27.2 ')) throw Error('Pinned Go compiler required');
   step('build-bff', go, ['build', '-o', resolve(engine, '.work/formal-bff'), './cmd/bff'], { cwd: resolve('services/bff'), env: { ...env, CGO_ENABLED: '0', GOOS: 'linux', GOARCH: 'amd64' } });
   step('build-tests', go, ['test', '-tags', 'workflowruntime_integration,workflowrpc_integration', '-c', '-o', resolve(engine, '.work/formal-runtime.test'), './cmd/bff'], { cwd: resolve('services/bff'), env: { ...env, CGO_ENABLED: '0', GOOS: 'linux', GOARCH: 'amd64' } });
   const { startB2TestDatabase } = await import(pathToFileURL(resolve('infra/acceptance/run.mjs')).href);

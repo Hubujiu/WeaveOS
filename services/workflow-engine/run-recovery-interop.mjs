@@ -23,7 +23,7 @@ const pgImage='docker.io/library/postgres@sha256:5a5a84b19854a9ffaa54082c166ff4e
 const mvnImage='mirror.gcr.io/library/maven@sha256:fa7aa19829157d299ff05f631b51697a388dcd2f6955e84249ecc652015f217b';
 let pg,javaStarted=false;const owned=[];
 try{
- if(!call(go,['version'],{encoding:'utf8'}).includes('go1.27.1 '))throw Error('wrong Go compiler');
+ if(!call(go,['version'],{encoding:'utf8'}).includes('go1.27.2 '))throw Error('wrong Go compiler');
  step('compile',go,['test','-tags','workflowrpc_integration','-c','-o',resolve(engine,'.work/recovery-interop.test'),'./internal/apprecordservice'],{cwd:resolve('services/bff'),env:{...env,CGO_ENABLED:'0',GOOS:'linux',GOARCH:'amd64'}});
  pg=await startB2TestDatabase({stateFile:resolve(dir,'pg-state.json')});owned.push(pg.container);
  let ready=false;for(let i=0;i<120;i++){

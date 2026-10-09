@@ -1,5 +1,7 @@
 # v0.1.0 任务索引
 
+- [V030-058 · Go安全补丁与独立回滚候选](V030-058.md) — 独立安全修补，基线 develop `a29cd550`；V057等待此修补后重新验收，当前 in_progress。
+
 - [V030-056 · BPMN 固定图边完整映射验证](V030-056.md) — task/V030-056-bpmn-edge-oracle / ../WeaveOS-worktrees/V030-056；基线 develop `a6f04840`，只加强既有固定样例的边/default集合，当前 in_progress。
 
 - [V030-055 · 磁盘准备真实拒绝与调用边界](V030-055.md) — [PR #63](https://github.com/Hubujiu/WeaveOS/pull/63) 已合入 develop `a6f04840`；四个原文字漏检已由真实Bash调用矩阵检出，最终三workflow20jobs首轮通过，原安全守卫保留。
