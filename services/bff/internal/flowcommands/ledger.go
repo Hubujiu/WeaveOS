@@ -209,7 +209,14 @@ func (ledger Ledger) selectEntry(ctx context.Context, tx pgx.Tx, commandID strin
 	if err != nil {
 		return Entry{}, [32]byte{}, err
 	}
-	if storedCommandID != commandID || len(commandHash) != sha256.Size {
+	if storedCommandID != commandID {
+		return Entry{}, [32]byte{}, ErrConflict
+	}
+	return decodeStoredEntry(storedCommandID, commandJSON, commandHash, state, receiptJSON)
+}
+
+func decodeStoredEntry(storedCommandID string, commandJSON, commandHash []byte, state string, receiptJSON []byte) (Entry, [32]byte, error) {
+	if !isCanonicalNonzeroUUID(storedCommandID) || len(commandHash) != sha256.Size {
 		return Entry{}, [32]byte{}, ErrConflict
 	}
 

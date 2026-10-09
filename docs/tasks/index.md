@@ -115,8 +115,11 @@ Flowable原生版本与流程层精简：[V030-038](V030-038.md)，Root本人设
 
 - [V030-061 · 当前用户跨应用审批待办](V030-061.md) — 主助手直接执行；个人待办服务/封闭HTTP/索引及安全补强本地回归通过；[PR #70](https://github.com/Hubujiu/WeaveOS/pull/70) 最终cc811636全部适用CI通过，已squash develop a13e73b；未用户main批准。
 
-- [V030-062 · 已确认审批事件与历史依据详情](V030-062.md) — [PR #71](https://github.com/Hubujiu/WeaveOS/pull/71) 最终264b73b适用CI全绿并squash develop cf27eaa；main未推广。
+- [V030-062 · 已确认审批事件与历史依据详情](V030-062.md) — PR71最终264b73b全部适用CI通过，已squash develop cf27eaa；main未推广。
 
-- [V030-066 · 原生流程删除安全性验证](V030-066.md) — 真实Flowable六项通过，精确CI接线RED→GREEN；[draft PR72](https://github.com/Hubujiu/WeaveOS/pull/72)待最终CI，不是产品删除入口。
+- [V030-063 · 已确认流程事件游标列表](V030-063.md) — PR73候选11ca378全部CI通过，整合最新develop后核验最终head；未main批准。
 
-- [V030-067 · 受控引擎流程删除与身份保留](V030-067.md) — 主助手独立执行，来源已实际读回，R1真实RED先行；生产删除入口尚未交付。
+- [V030-066 · 原生流程删除安全性验证](V030-066.md) — PR72最终3cb8aaf全部CI通过，已squash develop 0a7fa861；不是产品删除入口。
+
+
+- [V030-067 · 受控引擎流程删除与身份保留](V030-067.md) — Root独立完成内部删除/显式迁移/受认证RPC与Go客户端；238项Java回归、真实Go→Java联调通过，最终CI待核，不是公开产品删除入口。

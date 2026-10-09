@@ -1,0 +1,1 @@
+初次TLS RED均为缺路由404。实现前核对现有OpenAPI错误登记：准确既有游标错误名是APPLICATION_QUERY_CONTEXT_EXPIRED，测试未执行到的后续断言原误写QUERY_CONTEXT_EXPIRED，现纠正拼写；原源码保留，不改变409或过期语义，不修改实现制造新错误。
