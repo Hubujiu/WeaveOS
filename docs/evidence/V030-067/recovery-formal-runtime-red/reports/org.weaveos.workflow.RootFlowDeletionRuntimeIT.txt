@@ -1,0 +1,12 @@
+-------------------------------------------------------------------------------
+Test set: org.weaveos.workflow.RootFlowDeletionRuntimeIT
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 4.722 s <<< FAILURE! -- in org.weaveos.workflow.RootFlowDeletionRuntimeIT
+org.weaveos.workflow.RootFlowDeletionRuntimeIT.formalRuntimeDeletesWithLeastPrivilegeThenRestartsAndReplaysWithoutResurrection -- Time elapsed: 3.653 s <<< ERROR!
+io.grpc.StatusRuntimeException: UNAVAILABLE: flow deletion result unavailable
+	at io.grpc.stub.ClientCalls.toStatusRuntimeException(ClientCalls.java:368)
+	at io.grpc.stub.ClientCalls.getUnchecked(ClientCalls.java:349)
+	at io.grpc.stub.ClientCalls.blockingUnaryCall(ClientCalls.java:174)
+	at org.weaveos.workflow.v1.DeploymentServiceGrpc$DeploymentServiceBlockingStub.lookupFlowDeletion(DeploymentServiceGrpc.java:376)
+	at org.weaveos.workflow.RootFlowDeletionRuntimeIT.formalRuntimeDeletesWithLeastPrivilegeThenRestartsAndReplaysWithoutResurrection(RootFlowDeletionRuntimeIT.java:31)
+

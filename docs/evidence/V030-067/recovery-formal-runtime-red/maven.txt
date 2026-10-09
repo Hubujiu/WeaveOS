@@ -1,0 +1,63 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< org.weaveos:workflow-engine >---------------------
+[INFO] Building WeaveOS controlled workflow engine core 0.3.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ workflow-engine ---
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ workflow-engine ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ workflow-engine ---
+[INFO] Copying 6 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ workflow-engine ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 27 source files with javac [debug parameters release 17] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ workflow-engine ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running org.weaveos.workflow.RootFlowDeletionRuntimeIT
+2026-10-09 11:27:12,619 WARN  io.grpc.netty.shaded.io.netty.util.internal.MacAddressUtil event=runtime_library_log
+[ERROR] Tests run: 2, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 4.722 s <<< FAILURE! -- in org.weaveos.workflow.RootFlowDeletionRuntimeIT
+[ERROR] org.weaveos.workflow.RootFlowDeletionRuntimeIT.formalRuntimeDeletesWithLeastPrivilegeThenRestartsAndReplaysWithoutResurrection -- Time elapsed: 3.653 s <<< ERROR!
+io.grpc.StatusRuntimeException: UNAVAILABLE: flow deletion result unavailable
+	at io.grpc.stub.ClientCalls.toStatusRuntimeException(ClientCalls.java:368)
+	at io.grpc.stub.ClientCalls.getUnchecked(ClientCalls.java:349)
+	at io.grpc.stub.ClientCalls.blockingUnaryCall(ClientCalls.java:174)
+	at org.weaveos.workflow.v1.DeploymentServiceGrpc$DeploymentServiceBlockingStub.lookupFlowDeletion(DeploymentServiceGrpc.java:376)
+	at org.weaveos.workflow.RootFlowDeletionRuntimeIT.formalRuntimeDeletesWithLeastPrivilegeThenRestartsAndReplaysWithoutResurrection(RootFlowDeletionRuntimeIT.java:31)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Errors: 
+[ERROR]   RootFlowDeletionRuntimeIT.formalRuntimeDeletesWithLeastPrivilegeThenRestartsAndReplaysWithoutResurrection:31 » StatusRuntime UNAVAILABLE: flow deletion result unavailable
+[INFO] 
+[ERROR] Tests run: 2, Failures: 0, Errors: 1, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  9.686 s
+[INFO] Finished at: 2026-10-09T11:27:14-07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.4:test (default-test) on project workflow-engine: 
+[ERROR] 
+[ERROR] See /workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-067/docs/evidence/V030-067/recovery-formal-runtime-red/reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
