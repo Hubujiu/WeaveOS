@@ -268,3 +268,53 @@ func TestRootWorkflowJournalAppendOnlyRolesAndCallerMetadata(t *testing.T) {
 		t.Fatal("backup cannot read unchanged new journal metadata", err)
 	}
 }
+
+func TestRootWorkflowJournalNoEffectUnknownTaskKeepsNullSource(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	eventGrant(t, f, "all", f.public)
+	missing := recordOperationID(t, f.recordFixture)
+	c, p := f.accept(t, "agree", missing, "", 1, 1)
+	r, body := f.receipt(t, c, "unchanged", "task_inactive")
+	f.apply(t, c, p, r, body, true)
+	q := WorkflowEventRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, EventID: c.CommandID}
+	got := eventRead(t, f, f.principal, q)
+	if got.Event.NodeID != nil || got.Event.Outcome != "no_effect" || got.Event.FlowNameSource != "captured" {
+		t.Fatal("unknown original task was fabricated", got.Event)
+	}
+	var task string
+	var node *string
+	if err := f.runtime.QueryRow(f.ctx, "SELECT task_id::text,node_id::text FROM applications.workflow_execution_events WHERE command_id=$1", c.CommandID).Scan(&task, &node); err != nil || task != missing || node != nil {
+		t.Fatal("lost original stable task identity", err)
+	}
+}
+
+func TestRootWorkflowJournalWrongExistingTaskRollsBackWholeProjection(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	foreign := rootTaskSetup(t, false)
+	c, p := f.accept(t, "agree", foreign.task.ID, "", 1, 1)
+	r, body := f.receipt(t, c, "unchanged", "task_inactive")
+	tx, err := f.runtime.Begin(f.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(f.ctx)
+	got, err := (workflowprojection.Store{}).ApplyInTx(f.ctx, tx, c, p, r, body)
+	var pg *pgconn.PgError
+	if !errors.As(err, &pg) || pg.Code != "23514" || !reflect.DeepEqual(got, workflowprojection.Applied{}) {
+		t.Fatalf("existing wrong-scope task must reject journal atomically: %v", err)
+	}
+	if err = tx.Commit(f.ctx); err != nil {
+		t.Fatal(err)
+	}
+	var state, owner string
+	var events int
+	if err = f.owner.QueryRow(f.ctx, "SELECT state FROM applications.workflow_commands WHERE command_id=$1", c.CommandID).Scan(&state); err != nil || state != "pending" {
+		t.Fatal("failed projection confirmed ledger", err)
+	}
+	if err = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_execution_events WHERE command_id=$1", c.CommandID).Scan(&events); err != nil || events != 0 {
+		t.Fatal("failed projection retained partial event", err)
+	}
+	if err = f.owner.QueryRow(f.ctx, "SELECT command_id::text FROM applications.record_command_fences WHERE app_id=$1 AND table_id=$2 AND record_id=$3 AND state='pending'", f.app, f.table, f.ownRecord).Scan(&owner); err != nil || owner != c.CommandID {
+		t.Fatal("failed projection released original fence", err)
+	}
+}
