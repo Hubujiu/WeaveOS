@@ -1,5 +1,5 @@
 """Apply the frozen V030-070 template HTTP schemas without changing existing contracts."""
-import json
+import json,copy
 from pathlib import Path
 p=Path('contracts/openapi/openapi.json');api=json.loads(p.read_text());s=api['components']['schemas']
 def ref(n):return {'$ref':'#/components/schemas/'+n}
@@ -17,7 +17,7 @@ s['TemplateForm']=obj({'id':uuid,'tableId':uuid,'name':name,'directoryId':nullab
 s['TemplateGraph']=obj({'version':{'type':'integer','const':1},'nodes':arr(ref('TemplateNode'),100),'edges':arr(ref('TemplateEdge'),200)})
 s['TemplateGraph']['properties']['nodes']['minItems']=2;s['TemplateGraph']['properties']['edges']['minItems']=1
 s['TemplateNode']=obj({'id':uuid,'kind':{'type':'string','enum':['start','end','approval','condition']},'approval':{'anyOf':[ref('WorkflowApproval'),{'type':'null'}]},'condition':ref('RecordFilterGroup')});s['TemplateNode']['required']=['id','kind']
-s['TemplateEdge']=obj({'from':uuid,'to':uuid,'branch':{'type':'string','enum':['true','false']}});s['TemplateEdge']['required']=['from','to']
+s['TemplateEdge']=obj({'from':uuid,'to':uuid,'branch':{'type':'string','enum':['','true','false']}});s['TemplateEdge']['required']=['from','to']
 s['TemplateWorkflow']=obj({'id':uuid,'tableId':uuid,'viewId':uuid,'name':name,'graph':ref('TemplateGraph'),'allowWithdraw':{'type':'boolean'},'triggers':ref('WorkflowTriggers')})
 s['TemplateGrant']=obj({'resourceKind':{'type':'string','enum':['application','directory','form']},'resourceId':uuid,'action':{'type':'string','enum':['menu.enter','data.create','data.read','data.edit','data.history']},'rowScope':{'type':'string','enum':['all','own']},'fields':arr(uuid,200)})
 s['TemplateGrant']['oneOf']=[ref('ApplicationMenuGrant'),ref('ApplicationChildMenuGrant'),ref('ApplicationDataGrant')]
@@ -25,7 +25,11 @@ s['TemplatePermissionGroup']=obj({'id':uuid,'name':name,'enabled':{'type':'boole
 s['TemplateManifest']=obj({'format':{'type':'string','const':'weaveos.structure-template'},'version':{'type':'integer','const':1},'application':ref('TemplateApplication'),'directories':arr(ref('TemplateDirectory'),1000),'tables':arr(ref('TemplateTable'),128),'forms':arr(ref('TemplateForm'),256),'workflows':arr(ref('TemplateWorkflow'),128),'permissionGroups':arr(ref('TemplatePermissionGroup'),128)})
 s['TemplateManifest']['description']='Structure only; raw UTF-8 manifest <=1048576 bytes, depth<=32. Reject duplicate/unknown keys and dangling or cross-resource references. No owner, records, attachments, instances, evidence, sessions or secrets. External references require explicit typed mappings; imports regenerate all internal identities and never deploy or enable workflows.'
 s['TemplateBinding']=obj({'kind':{'type':'string','enum':['user','department']},'sourceId':uuid,'targetId':uuid})
-s['TemplatePreflightRequest']=obj({'manifest':ref('TemplateManifest'),'bindings':arr(ref('TemplateBinding'))})
+s['TemplateInputField']=copy.deepcopy(s['FieldInput'])
+for variant in s['TemplateInputField']['oneOf']:variant['properties']['presentation']=ref('FieldPresentation')
+s['TemplateInputTable']=copy.deepcopy(s['TemplateTable']);s['TemplateInputTable']['properties']['fields']=arr(ref('TemplateInputField'),200)
+s['TemplateManifestInput']=copy.deepcopy(s['TemplateManifest']);s['TemplateManifestInput']['properties']['tables']=arr(ref('TemplateInputTable'),128)
+s['TemplatePreflightRequest']=obj({'manifest':ref('TemplateManifestInput'),'bindings':arr(ref('TemplateBinding'))})
 s['TemplateCounts']=obj({k:{'type':'integer','minimum':0} for k in ['directories','tables','fields','forms','workflows','permissionGroups']})
 s['TemplatePreflightResult']=obj({'valid':{'type':'boolean','const':True},'counts':ref('TemplateCounts')})
 for key,data in [('TemplateManifestEnvelope','TemplateManifest'),('TemplatePreflightEnvelope','TemplatePreflightResult')]:s[key]={'allOf':[ref('Envelope'),{'type':'object','properties':{'code':{'const':'OK'},'data':ref(data)}}]}
