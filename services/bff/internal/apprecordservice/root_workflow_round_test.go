@@ -290,3 +290,62 @@ func TestRootRoundServiceReplayBoundToExactOriginalRequest(t *testing.T) {
 	}
 	rootTriggeredCount(t, f, q.RecordID, 2)
 }
+
+func TestRootRoundServiceReviewUsesOriginalRoleAndNewPublishedDefinition(t *testing.T) {
+	f, q, r := rootRoundSetup(t, "completed")
+	g := rootCatalogGraph(t, f, false)
+	for i := range g.Nodes {
+		if g.Nodes[i].Approval != nil {
+			g.Nodes[i].Approval.AssigneeIDs = []string{f.other}
+		}
+	}
+	h := rootCatalogPut(t, f, r.FlowID, r.ExpectedWorkflowRevision, g)
+	h = rootCatalogDeploy(t, f, h)
+	h = rootCatalogEnable(t, f, h)
+	preview, e := f.service.PreviewWorkflowRound(f.ctx, f.principal, q)
+	if e != nil || !preview.CanReview || preview.DefinitionVersion != 1 {
+		t.Fatal("new graph erased old configured approver qualification", e)
+	}
+	owner := f.principal
+	owner.UserID = f.other
+	owner.SessionRef = recordOperationID(t, f)
+	req := rootRoundStartRequest(t, f, q, r, "review")
+	req.ExpectedWorkflowRevision = h.Revision
+	if _, e = f.service.StartWorkflowRound(f.ctx, owner, req, applications.Metadata{RequestID: "round-new-role-denied"}); !errors.Is(e, applications.ErrDenied) {
+		t.Fatal("new-only approver/app owner gained old-round role", e)
+	}
+	rootManualNoReceipt(t, f, req.OperationID)
+	got, e := f.service.StartWorkflowRound(f.ctx, f.principal, req, applications.Metadata{RequestID: "round-old-role"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	var version int64
+	if e = f.owner.QueryRow(f.ctx, "SELECT definition_version FROM applications.workflow_instances WHERE id=$1", got.InstanceID).Scan(&version); e != nil || version != 2 {
+		t.Fatal("review did not bind new published definition", version, e)
+	}
+}
+func TestRootRoundServiceClosingAndDisabledStartBarriers(t *testing.T) {
+	for _, state := range []string{"closing", "disabled"} {
+		t.Run(state, func(t *testing.T) {
+			f, q, r := rootRoundSetup(t, "rejected")
+			if _, e := f.owner.Exec(f.ctx, "UPDATE applications.workflow_definitions SET state=$2 WHERE id=$1", r.FlowID, state); e != nil {
+				t.Fatal(e)
+			}
+			p, e := f.service.PreviewWorkflowRound(f.ctx, f.principal, q)
+			if e != nil || p.CanResubmit || p.CanReview {
+				t.Fatal("closed flow exposes start", e)
+			}
+			req := rootRoundStartRequest(t, f, q, r, "resubmit")
+			_, e = f.service.StartWorkflowRound(f.ctx, f.principal, req, applications.Metadata{RequestID: "round-disabled"})
+			want := workflowcatalog.ErrNotReady
+			if state == "closing" {
+				want = workflowcatalog.ErrClosing
+			}
+			if !errors.Is(e, want) {
+				t.Fatal("start crossed close barrier", e)
+			}
+			rootManualNoReceipt(t, f, req.OperationID)
+			rootTriggeredCount(t, f, q.RecordID, 1)
+		})
+	}
+}
