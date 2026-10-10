@@ -1,0 +1,40 @@
+-------------------------------------------------------------------------------
+Test set: org.weaveos.workflow.RootFlowDeletionRuntimeSchemaTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 2.537 s <<< FAILURE! -- in org.weaveos.workflow.RootFlowDeletionRuntimeSchemaTest
+org.weaveos.workflow.RootFlowDeletionRuntimeSchemaTest.explicitlyUpgradedSchemaAndMinimalNewRoleAreReady -- Time elapsed: 1.022 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Unexpected exception thrown: java.lang.IllegalStateException: workflow runtime schema is not ready
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertDoesNotThrow.createAssertionFailedError(AssertDoesNotThrow.java:90)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:56)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:39)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3295)
+	at org.weaveos.workflow.RootFlowDeletionRuntimeSchemaTest.explicitlyUpgradedSchemaAndMinimalNewRoleAreReady(RootFlowDeletionRuntimeSchemaTest.java:28)
+Caused by: java.lang.IllegalStateException: workflow runtime schema is not ready
+	at org.weaveos.workflow.RuntimeSchema.verify(RuntimeSchema.java:139)
+	at org.weaveos.workflow.RootFlowDeletionRuntimeSchemaTest.verify(RootFlowDeletionRuntimeSchemaTest.java:25)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:52)
+	... 3 more
+
+org.weaveos.workflow.RootFlowDeletionRuntimeSchemaTest.oldSchemaWithoutPersistentIdentityIsNoLongerReady -- Time elapsed: 0.477 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: runtime must not accept pre-guard schema ==> Expected java.lang.IllegalStateException to be thrown, but nothing was thrown.
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:74)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:40)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3249)
+	at org.weaveos.workflow.RootFlowDeletionRuntimeSchemaTest.oldSchemaWithoutPersistentIdentityIsNoLongerReady(RootFlowDeletionRuntimeSchemaTest.java:27)
+
+org.weaveos.workflow.RootFlowDeletionRuntimeSchemaTest.guardIdentityUpdatesAndDeletionAuthorityAreRejected -- Time elapsed: 0.448 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Unexpected exception thrown: java.lang.IllegalStateException: workflow runtime schema is not ready
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertDoesNotThrow.createAssertionFailedError(AssertDoesNotThrow.java:90)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:56)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:39)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3295)
+	at org.weaveos.workflow.RootFlowDeletionRuntimeSchemaTest.guardIdentityUpdatesAndDeletionAuthorityAreRejected(RootFlowDeletionRuntimeSchemaTest.java:30)
+Caused by: java.lang.IllegalStateException: workflow runtime schema is not ready
+	at org.weaveos.workflow.RuntimeSchema.verify(RuntimeSchema.java:139)
+	at org.weaveos.workflow.RootFlowDeletionRuntimeSchemaTest.verify(RootFlowDeletionRuntimeSchemaTest.java:25)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:52)
+	... 3 more
+

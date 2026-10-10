@@ -1,0 +1,90 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< org.weaveos:workflow-engine >---------------------
+[INFO] Building WeaveOS controlled workflow engine core 0.3.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ workflow-engine ---
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ workflow-engine ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ workflow-engine ---
+[INFO] Copying 6 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ workflow-engine ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 22 source files with javac [debug parameters release 17] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ workflow-engine ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running org.weaveos.workflow.RootFlowDeletionRegistryTest
+[ERROR] Tests run: 12, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 9.060 s <<< FAILURE! -- in org.weaveos.workflow.RootFlowDeletionRegistryTest
+[ERROR] org.weaveos.workflow.RootFlowDeletionRegistryTest.newStartAfterDeletionReturnsOriginalProtocolNoEffectWithoutLoadingMissingBpmn -- Time elapsed: 0.409 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: retired deployment must be recognized before BPMN resource lookup ==> Unexpected exception thrown: org.flowable.common.engine.api.FlowableObjectNotFoundException: no deployed process definition found with id '3'
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertDoesNotThrow.createAssertionFailedError(AssertDoesNotThrow.java:90)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:80)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:65)
+	at org.junit.jupiter.api.Assertions.assertDoesNotThrow(Assertions.java:3377)
+	at org.weaveos.workflow.RootFlowDeletionRegistryTest.newStartAfterDeletionReturnsOriginalProtocolNoEffectWithoutLoadingMissingBpmn(RootFlowDeletionRegistryTest.java:96)
+Caused by: org.flowable.common.engine.api.FlowableObjectNotFoundException: no deployed process definition found with id '3'
+	at org.flowable.engine.impl.persistence.deploy.DeploymentManager.findDeployedProcessDefinitionById(DeploymentManager.java:78)
+	at org.flowable.engine.impl.util.ProcessDefinitionUtil.getBpmnModel(ProcessDefinitionUtil.java:105)
+	at org.flowable.engine.impl.cmd.GetBpmnModelCmd.execute(GetBpmnModelCmd.java:42)
+	at org.flowable.engine.impl.cmd.GetBpmnModelCmd.execute(GetBpmnModelCmd.java:26)
+	at org.flowable.engine.impl.interceptor.CommandInvoker$1.run(CommandInvoker.java:75)
+	at org.flowable.engine.impl.interceptor.CommandInvoker.executeOperation(CommandInvoker.java:198)
+	at org.flowable.engine.impl.interceptor.CommandInvoker.executeOperations(CommandInvoker.java:128)
+	at org.flowable.engine.impl.interceptor.CommandInvoker.execute(CommandInvoker.java:80)
+	at org.flowable.engine.impl.interceptor.BpmnOverrideContextInterceptor.execute(BpmnOverrideContextInterceptor.java:26)
+	at org.flowable.common.engine.impl.interceptor.TransactionContextInterceptor.execute(TransactionContextInterceptor.java:53)
+	at org.flowable.common.engine.impl.interceptor.CommandContextInterceptor.execute(CommandContextInterceptor.java:105)
+	at org.flowable.common.spring.SpringTransactionInterceptor.execute(SpringTransactionInterceptor.java:52)
+	at org.flowable.common.engine.impl.interceptor.LogInterceptor.execute(LogInterceptor.java:30)
+	at org.flowable.common.engine.impl.cfg.CommandExecutorImpl.execute(CommandExecutorImpl.java:56)
+	at org.flowable.common.engine.impl.cfg.CommandExecutorImpl.execute(CommandExecutorImpl.java:51)
+	at org.flowable.engine.impl.RepositoryServiceImpl.getBpmnModel(RepositoryServiceImpl.java:189)
+	at org.weaveos.workflow.ExecutionRegistry.validateNodes(ExecutionRegistry.java:145)
+	at org.weaveos.workflow.ExecutionRegistry.start(ExecutionRegistry.java:169)
+	at org.weaveos.workflow.ExecutionRegistry.lambda$run$3(ExecutionRegistry.java:94)
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:137)
+	at org.weaveos.workflow.ExecutionRegistry.run(ExecutionRegistry.java:75)
+	at org.weaveos.workflow.ExecutionRegistry.execute(ExecutionRegistry.java:59)
+	at org.weaveos.workflow.ExecutionRegistry.execute(ExecutionRegistry.java:58)
+	at org.weaveos.workflow.RootFlowDeletionRegistryTest.lambda$newStartAfterDeletionReturnsOriginalProtocolNoEffectWithoutLoadingMissingBpmn$8(RootFlowDeletionRegistryTest.java:96)
+	at org.junit.jupiter.api.AssertDoesNotThrow.assertDoesNotThrow(AssertDoesNotThrow.java:76)
+	... 3 more
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   RootFlowDeletionRegistryTest.newStartAfterDeletionReturnsOriginalProtocolNoEffectWithoutLoadingMissingBpmn:96 retired deployment must be recognized before BPMN resource lookup ==> Unexpected exception thrown: org.flowable.common.engine.api.FlowableObjectNotFoundException: no deployed process definition found with id '3'
+[INFO] 
+[ERROR] Tests run: 12, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  13.226 s
+[INFO] Finished at: 2026-10-09T09:27:59-07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.4:test (default-test) on project workflow-engine: There are test failures.
+[ERROR] 
+[ERROR] See /workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-067/docs/evidence/V030-067/start-protection-red/reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

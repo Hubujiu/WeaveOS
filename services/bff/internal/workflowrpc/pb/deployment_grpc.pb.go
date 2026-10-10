@@ -19,8 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	DeploymentService_Deploy_FullMethodName = "/weaveos.workflow.v1.DeploymentService/Deploy"
-	DeploymentService_Lookup_FullMethodName = "/weaveos.workflow.v1.DeploymentService/Lookup"
+	DeploymentService_Deploy_FullMethodName             = "/weaveos.workflow.v1.DeploymentService/Deploy"
+	DeploymentService_Lookup_FullMethodName             = "/weaveos.workflow.v1.DeploymentService/Lookup"
+	DeploymentService_DeleteFlow_FullMethodName         = "/weaveos.workflow.v1.DeploymentService/DeleteFlow"
+	DeploymentService_LookupFlowDeletion_FullMethodName = "/weaveos.workflow.v1.DeploymentService/LookupFlowDeletion"
 )
 
 // DeploymentServiceClient is the client API for DeploymentService service.
@@ -29,6 +31,8 @@ const (
 type DeploymentServiceClient interface {
 	Deploy(ctx context.Context, in *DeployRequest, opts ...grpc.CallOption) (*DeploymentReceipt, error)
 	Lookup(ctx context.Context, in *LookupRequest, opts ...grpc.CallOption) (*LookupResponse, error)
+	DeleteFlow(ctx context.Context, in *FlowDeletionRequest, opts ...grpc.CallOption) (*FlowDeletionReceipt, error)
+	LookupFlowDeletion(ctx context.Context, in *FlowDeletionRequest, opts ...grpc.CallOption) (*FlowDeletionLookupResponse, error)
 }
 
 type deploymentServiceClient struct {
@@ -59,12 +63,34 @@ func (c *deploymentServiceClient) Lookup(ctx context.Context, in *LookupRequest,
 	return out, nil
 }
 
+func (c *deploymentServiceClient) DeleteFlow(ctx context.Context, in *FlowDeletionRequest, opts ...grpc.CallOption) (*FlowDeletionReceipt, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FlowDeletionReceipt)
+	err := c.cc.Invoke(ctx, DeploymentService_DeleteFlow_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deploymentServiceClient) LookupFlowDeletion(ctx context.Context, in *FlowDeletionRequest, opts ...grpc.CallOption) (*FlowDeletionLookupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FlowDeletionLookupResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_LookupFlowDeletion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DeploymentServiceServer is the server API for DeploymentService service.
 // All implementations must embed UnimplementedDeploymentServiceServer
 // for forward compatibility.
 type DeploymentServiceServer interface {
 	Deploy(context.Context, *DeployRequest) (*DeploymentReceipt, error)
 	Lookup(context.Context, *LookupRequest) (*LookupResponse, error)
+	DeleteFlow(context.Context, *FlowDeletionRequest) (*FlowDeletionReceipt, error)
+	LookupFlowDeletion(context.Context, *FlowDeletionRequest) (*FlowDeletionLookupResponse, error)
 	mustEmbedUnimplementedDeploymentServiceServer()
 }
 
@@ -80,6 +106,12 @@ func (UnimplementedDeploymentServiceServer) Deploy(context.Context, *DeployReque
 }
 func (UnimplementedDeploymentServiceServer) Lookup(context.Context, *LookupRequest) (*LookupResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Lookup not implemented")
+}
+func (UnimplementedDeploymentServiceServer) DeleteFlow(context.Context, *FlowDeletionRequest) (*FlowDeletionReceipt, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteFlow not implemented")
+}
+func (UnimplementedDeploymentServiceServer) LookupFlowDeletion(context.Context, *FlowDeletionRequest) (*FlowDeletionLookupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method LookupFlowDeletion not implemented")
 }
 func (UnimplementedDeploymentServiceServer) mustEmbedUnimplementedDeploymentServiceServer() {}
 func (UnimplementedDeploymentServiceServer) testEmbeddedByValue()                           {}
@@ -138,6 +170,42 @@ func _DeploymentService_Lookup_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DeploymentService_DeleteFlow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FlowDeletionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).DeleteFlow(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_DeleteFlow_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).DeleteFlow(ctx, req.(*FlowDeletionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeploymentService_LookupFlowDeletion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FlowDeletionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).LookupFlowDeletion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_LookupFlowDeletion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).LookupFlowDeletion(ctx, req.(*FlowDeletionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DeploymentService_ServiceDesc is the grpc.ServiceDesc for DeploymentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +220,14 @@ var DeploymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Lookup",
 			Handler:    _DeploymentService_Lookup_Handler,
+		},
+		{
+			MethodName: "DeleteFlow",
+			Handler:    _DeploymentService_DeleteFlow_Handler,
+		},
+		{
+			MethodName: "LookupFlowDeletion",
+			Handler:    _DeploymentService_LookupFlowDeletion_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

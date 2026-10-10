@@ -1,0 +1,107 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< org.weaveos:workflow-engine >---------------------
+[INFO] Building WeaveOS controlled workflow engine core 0.3.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ workflow-engine ---
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ workflow-engine ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 38 source files with javac [debug parameters release 17] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ workflow-engine ---
+[INFO] Copying 6 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ workflow-engine ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 23 source files with javac [debug parameters release 17] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ workflow-engine ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running org.weaveos.workflow.RootFlowDeletionSchemaTest
+[ERROR] Tests run: 5, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 5.272 s <<< FAILURE! -- in org.weaveos.workflow.RootFlowDeletionSchemaTest
+[ERROR] org.weaveos.workflow.RootFlowDeletionSchemaTest.retiredIdentityAndCreationFactsCannotBeRewrittenOrForged -- Time elapsed: 1.950 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: explicit upgrade must install persistent flow identity guards ==> expected: not <null>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertNotNull.failNull(AssertNotNull.java:55)
+	at org.junit.jupiter.api.AssertNotNull.assertNotNull(AssertNotNull.java:40)
+	at org.junit.jupiter.api.Assertions.assertNotNull(Assertions.java:334)
+	at org.weaveos.workflow.RootFlowDeletionSchemaTest.present(RootFlowDeletionSchemaTest.java:29)
+	at org.weaveos.workflow.RootFlowDeletionSchemaTest.retiredIdentityAndCreationFactsCannotBeRewrittenOrForged(RootFlowDeletionSchemaTest.java:42)
+
+[ERROR] org.weaveos.workflow.RootFlowDeletionSchemaTest.invalidLegacyIdentityRefusesWholeUpgradeWithoutDiscardingHistory -- Time elapsed: 1.509 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: zero legacy identity must fail migration ==> Expected java.lang.Exception to be thrown, but nothing was thrown.
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:74)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:40)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3249)
+	at org.weaveos.workflow.RootFlowDeletionSchemaTest.invalidLegacyIdentityRefusesWholeUpgradeWithoutDiscardingHistory(RootFlowDeletionSchemaTest.java:38)
+
+[ERROR] org.weaveos.workflow.RootFlowDeletionSchemaTest.newGateUsesInvokerPinnedSearchPathAndNoPublicExecute -- Time elapsed: 0.700 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: explicit upgrade must install persistent flow identity guards ==> expected: not <null>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertNotNull.failNull(AssertNotNull.java:55)
+	at org.junit.jupiter.api.AssertNotNull.assertNotNull(AssertNotNull.java:40)
+	at org.junit.jupiter.api.Assertions.assertNotNull(Assertions.java:334)
+	at org.weaveos.workflow.RootFlowDeletionSchemaTest.present(RootFlowDeletionSchemaTest.java:29)
+	at org.weaveos.workflow.RootFlowDeletionSchemaTest.newGateUsesInvokerPinnedSearchPathAndNoPublicExecute(RootFlowDeletionSchemaTest.java:56)
+
+[ERROR] org.weaveos.workflow.RootFlowDeletionSchemaTest.downgradeRefusesRetiredHistoryButAllowsReconstructibleLiveRows -- Time elapsed: 0.558 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: explicit upgrade must install persistent flow identity guards ==> expected: not <null>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertNotNull.failNull(AssertNotNull.java:55)
+	at org.junit.jupiter.api.AssertNotNull.assertNotNull(AssertNotNull.java:40)
+	at org.junit.jupiter.api.Assertions.assertNotNull(Assertions.java:334)
+	at org.weaveos.workflow.RootFlowDeletionSchemaTest.present(RootFlowDeletionSchemaTest.java:29)
+	at org.weaveos.workflow.RootFlowDeletionSchemaTest.downgradeRefusesRetiredHistoryButAllowsReconstructibleLiveRows(RootFlowDeletionSchemaTest.java:52)
+
+[ERROR] org.weaveos.workflow.RootFlowDeletionSchemaTest.explicitUpgradeBackfillsOldIdentityWithoutRewritingOriginalReceipt -- Time elapsed: 0.472 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: explicit upgrade must install persistent flow identity guards ==> expected: not <null>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertNotNull.failNull(AssertNotNull.java:55)
+	at org.junit.jupiter.api.AssertNotNull.assertNotNull(AssertNotNull.java:40)
+	at org.junit.jupiter.api.Assertions.assertNotNull(Assertions.java:334)
+	at org.weaveos.workflow.RootFlowDeletionSchemaTest.present(RootFlowDeletionSchemaTest.java:29)
+	at org.weaveos.workflow.RootFlowDeletionSchemaTest.explicitUpgradeBackfillsOldIdentityWithoutRewritingOriginalReceipt(RootFlowDeletionSchemaTest.java:34)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   RootFlowDeletionSchemaTest.downgradeRefusesRetiredHistoryButAllowsReconstructibleLiveRows:52->present:29 explicit upgrade must install persistent flow identity guards ==> expected: not <null>
+[ERROR]   RootFlowDeletionSchemaTest.explicitUpgradeBackfillsOldIdentityWithoutRewritingOriginalReceipt:34->present:29 explicit upgrade must install persistent flow identity guards ==> expected: not <null>
+[ERROR]   RootFlowDeletionSchemaTest.invalidLegacyIdentityRefusesWholeUpgradeWithoutDiscardingHistory:38 zero legacy identity must fail migration ==> Expected java.lang.Exception to be thrown, but nothing was thrown.
+[ERROR]   RootFlowDeletionSchemaTest.newGateUsesInvokerPinnedSearchPathAndNoPublicExecute:56->present:29 explicit upgrade must install persistent flow identity guards ==> expected: not <null>
+[ERROR]   RootFlowDeletionSchemaTest.retiredIdentityAndCreationFactsCannotBeRewrittenOrForged:42->present:29 explicit upgrade must install persistent flow identity guards ==> expected: not <null>
+[INFO] 
+[ERROR] Tests run: 5, Failures: 5, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  39.388 s
+[INFO] Finished at: 2026-10-09T11:11:40-07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.4:test (default-test) on project workflow-engine: There are test failures.
+[ERROR] 
+[ERROR] See /workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-067/docs/evidence/V030-067/recovery-explicit-schema-red/reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

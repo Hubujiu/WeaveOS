@@ -28,7 +28,7 @@ class RootExplicitSchemaTest {
   jdbc=new JdbcTemplate(ds);manager=new DataSourceTransactionManager(ds);
   String file=Files.readString(Path.of("schema/migrations/00001_flowable8.sql"));
   String[] parts=file.split("-- \\+goose Down",-1);assertEquals(2,parts.length,"one explicit Down boundary");
-  assertTrue(parts[0].contains("-- +goose Up"));up=parts[0];down=parts[1];
+  assertTrue(parts[0].contains("-- +goose Up"));up=parts[0]+"\n"+Files.readString(Path.of("schema/migrations/00002_flow_deletion_guards.sql")).split("-- \\+goose Down",-1)[0];down=parts[1];
  }
  @AfterEach void cleanup(){if(admin!=null&&schema!=null)admin.execute("DROP SCHEMA "+schema+" CASCADE");}
  String rootMessage(Throwable error){while(error.getCause()!=null)error=error.getCause();return error.getMessage();}
@@ -53,7 +53,7 @@ class RootExplicitSchemaTest {
  @Test void nativeVersionMetadataIsPinned(){migrate();requireTable("act_ge_property");assertEquals("8.0.0.0",jdbc.queryForObject("SELECT value_ FROM act_ge_property WHERE name_='schema.version'",String.class));assertEquals("8.0.0.0",jdbc.queryForObject("SELECT value_ FROM act_ge_property WHERE name_='common.schema.version'",String.class));assertEquals("create(8.0.0.0)",jdbc.queryForObject("SELECT value_ FROM act_ge_property WHERE name_='schema.history'",String.class));}
  @Test void protocolLedgerCatalogMatchesReviewedContract() throws Exception {
   RootExecutionRegistryTest baseline=new RootExecutionRegistryTest();
-  try {baseline.setup();migrate();assertEquals(List.of("wf_deployments","wf_execution_commands","wf_execution_instances","wf_execution_tasks"),tables(schema,"wf_"));assertEquals(catalog(baseline.schema,"wf_"),catalog(schema,"wf_"));}
+  try {baseline.setup();migrate();assertEquals(List.of("wf_deployments","wf_execution_commands","wf_execution_instances","wf_execution_tasks","wf_flow_deletion_guards"),tables(schema,"wf_"));assertEquals(catalog(baseline.schema,"wf_"),catalog(schema,"wf_"));}
   finally {baseline.cleanup();}
  }
  @Test void pendingCommandCannotCommit(){

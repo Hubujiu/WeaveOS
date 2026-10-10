@@ -6,6 +6,8 @@ option go_package = "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrp
 service DeploymentService {
  rpc Deploy(DeployRequest) returns (DeploymentReceipt);
  rpc Lookup(LookupRequest) returns (LookupResponse);
+ rpc DeleteFlow(FlowDeletionRequest) returns (FlowDeletionReceipt);
+ rpc LookupFlowDeletion(FlowDeletionRequest) returns (FlowDeletionLookupResponse);
 }
 message DeployRequest {
  string app_id = 1;
@@ -35,6 +37,27 @@ message NotObserved {}
 message LookupResponse {
  oneof result {
   DeploymentReceipt confirmed = 1;
+  NotObserved not_observed = 2;
+ }
+}
+
+// Bounded internal deletion identity; all UUIDs are canonical and nonzero.
+message FlowDeletionRequest {
+ string app_id = 1;
+ string flow_id = 2;
+ string operation_id = 3;
+}
+message FlowDeletionReceipt {
+ string app_id = 1;
+ string flow_id = 2;
+ string operation_id = 3;
+ uint64 deleted_versions = 4;
+ int64 deleted_at_seconds = 5;
+ int32 deleted_at_nanos = 6;
+}
+message FlowDeletionLookupResponse {
+ oneof result {
+  FlowDeletionReceipt confirmed = 1;
   NotObserved not_observed = 2;
  }
 }

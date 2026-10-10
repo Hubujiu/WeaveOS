@@ -1,0 +1,1 @@
+PR74 initial c430b1bf fast preflight failed task identity because the draft PR number was not yet recorded (task.pr=null); governance passed and heavy jobs were correctly skipped. The immediately following task-only commit records actual PR74. No product/test/budget/selection rule changed. Original remote job log retained; final exact-head result must be rechecked.\n
