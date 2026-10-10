@@ -490,7 +490,7 @@ func (Catalog) CheckCompatibilityInTx(ctx context.Context, tx pgx.Tx, appID, tab
 		return nil, ErrInvalid
 	}
 	var exists bool
-	if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.logical_tables WHERE app_id=$1 AND id=$2)`,
+	if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.logical_tables WHERE app_id=$1 AND id=$2 AND deleted_at IS NULL)`,
 		appID, tableID).Scan(&exists); err != nil {
 		return nil, mapDBError(err)
 	}
@@ -573,7 +573,7 @@ func lockResources(ctx context.Context, tx pgx.Tx, appID, tableID, viewID string
 	var snapshot resourceSnapshot
 	var fieldsJSON []byte
 	err = tx.QueryRow(ctx, `SELECT schema_version,schema_ready,fields_json FROM applications.logical_tables
-		WHERE app_id=$1 AND id=$2 FOR UPDATE`, appID, tableID).Scan(&snapshot.schemaVersion, &snapshot.ready, &fieldsJSON)
+		WHERE app_id=$1 AND id=$2 AND deleted_at IS NULL FOR UPDATE`, appID, tableID).Scan(&snapshot.schemaVersion, &snapshot.ready, &fieldsJSON)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return resourceSnapshot{}, ErrMissing
 	}
@@ -581,7 +581,7 @@ func lockResources(ctx context.Context, tx pgx.Tx, appID, tableID, viewID string
 		return resourceSnapshot{}, mapDBError(err)
 	}
 	var viewExists bool
-	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.form_views WHERE app_id=$1 AND table_id=$2 AND id=$3)`,
+	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.form_views WHERE app_id=$1 AND table_id=$2 AND id=$3 AND deleted_at IS NULL)`,
 		appID, tableID, viewID).Scan(&viewExists)
 	if err != nil {
 		return resourceSnapshot{}, mapDBError(err)

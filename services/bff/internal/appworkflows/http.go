@@ -524,7 +524,7 @@ func (s *Service) getDefinition(w http.ResponseWriter, r *http.Request, p sessio
 	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.form_views v
 		JOIN applications.logical_tables t ON t.app_id=v.app_id AND t.id=v.table_id
 		JOIN applications.menu_resources m ON m.app_id=v.app_id AND m.resource_kind='form' AND m.resource_id=v.id
-		WHERE v.app_id=$1 AND v.id=$2)`, appID, viewID).Scan(&exists)
+		WHERE v.app_id=$1 AND v.id=$2 AND v.deleted_at IS NULL AND t.deleted_at IS NULL)`, appID, viewID).Scan(&exists)
 	if err != nil || !exists {
 		if err == nil {
 			err = applications.ErrMissing
@@ -642,7 +642,7 @@ func (s *Service) mutate(w http.ResponseWriter, r *http.Request, p session.Princ
 	switch action {
 	case "save":
 		var tableID string
-		err = tx.QueryRow(r.Context(), `SELECT table_id::text FROM applications.form_views WHERE app_id=$1 AND id=$2`, appID, viewID).Scan(&tableID)
+		err = tx.QueryRow(r.Context(), `SELECT table_id::text FROM applications.form_views WHERE app_id=$1 AND id=$2 AND deleted_at IS NULL`, appID, viewID).Scan(&tableID)
 		if errors.Is(err, pgx.ErrNoRows) {
 			err = applications.ErrMissing
 			break
@@ -802,7 +802,7 @@ func authorizeAssignees(ctx context.Context, tx pgx.Tx, appID, viewID string, gr
 	var fieldsJSON []byte
 	err = tx.QueryRow(ctx, `SELECT a.owner_user_id::text,t.fields_json FROM applications.apps a
 		JOIN applications.form_views v ON v.app_id=a.id AND v.id=$2
-		JOIN applications.logical_tables t ON t.app_id=v.app_id AND t.id=v.table_id WHERE a.id=$1`, appID, viewID).Scan(&owner, &fieldsJSON)
+		JOIN applications.logical_tables t ON t.app_id=v.app_id AND t.id=v.table_id WHERE a.id=$1 AND a.deleted_at IS NULL AND v.deleted_at IS NULL AND t.deleted_at IS NULL`, appID, viewID).Scan(&owner, &fieldsJSON)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return applications.ErrMissing
 	}

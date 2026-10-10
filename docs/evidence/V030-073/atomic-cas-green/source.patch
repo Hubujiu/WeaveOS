@@ -1,0 +1,140 @@
+diff --git a/db/migrations/00035_structure_deletion.sql b/db/migrations/00035_structure_deletion.sql
+index d47590ca..c47b0aa0 100644
+--- a/db/migrations/00035_structure_deletion.sql
++++ b/db/migrations/00035_structure_deletion.sql
+@@ -84,10 +84,10 @@ BEGIN
+   SELECT view_version INTO rv FROM applications.form_views WHERE app_id=app_uuid AND id=resource_uuid AND deleted_at IS NULL FOR UPDATE;
+   IF NOT FOUND THEN RAISE EXCEPTION 'view missing' USING ERRCODE='P0002';END IF;
+  ELSE rv:=pv;END IF;
+- IF sv<>expected_structure THEN RAISE EXCEPTION 'structure conflict' USING ERRCODE='W0038';END IF;
++ IF sv<>expected_structure THEN RAISE EXCEPTION 'structure conflict' USING ERRCODE='W0038',DETAIL=sv::text;END IF;
+  IF rv<>expected_resource THEN
+-  IF resource_kind='table' THEN RAISE EXCEPTION 'schema conflict' USING ERRCODE='W0002';
+-  ELSIF resource_kind='form' THEN RAISE EXCEPTION 'view conflict' USING ERRCODE='W0039';
++  IF resource_kind='table' THEN RAISE EXCEPTION 'schema conflict' USING ERRCODE='W0002',DETAIL=rv::text;
++  ELSIF resource_kind='form' THEN RAISE EXCEPTION 'view conflict' USING ERRCODE='W0039',DETAIL=rv::text;
+   ELSE RAISE EXCEPTION 'policy conflict' USING ERRCODE='W0040';END IF;
+  END IF;
+  IF resource_kind IN ('application','directory') THEN
+diff --git a/services/bff/cmd/bff/root_structure_deletion_http_test.go b/services/bff/cmd/bff/root_structure_deletion_http_test.go
+index 61badec6..6dedac56 100644
+--- a/services/bff/cmd/bff/root_structure_deletion_http_test.go
++++ b/services/bff/cmd/bff/root_structure_deletion_http_test.go
+@@ -56,7 +56,7 @@ func TestRootStructureDeletionHTTPClosedResourceRoutes(t *testing.T) {
+ 		{"definition", "GET", view + "/definition", ""},
+ 		{"presets", "GET", view + "/table-presets", ""},
+ 		{"drafts", "GET", view + "/drafts?pageSize=20", ""},
+-		{"workflows", "GET", view + "/workflows/" + f.id(t)+"/definition", ""},
++		{"workflows", "GET", view + "/workflows/" + f.id(t) + "/definition", ""},
+ 		{"search", "POST", view + "/records/search", `{"page":1,"pageSize":20,"filter":null,"sort":null}`},
+ 		{"record-create", "POST", view + "/records", `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"values":{}}`},
+ 		{"record-edit", "PATCH", view + "/records/" + f.record, `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"expectedRecordVersion":1,"changes":{}}`},
+diff --git a/services/bff/internal/apprecordservice/search.go b/services/bff/internal/apprecordservice/search.go
+index 15120e34..6c4dcaa1 100644
+--- a/services/bff/internal/apprecordservice/search.go
++++ b/services/bff/internal/apprecordservice/search.go
+@@ -103,7 +103,7 @@ func (s *recordStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
+  JOIN applications.form_views v ON v.app_id=a.id
+  JOIN applications.logical_tables t ON t.app_id=v.app_id AND t.id=v.table_id
+  JOIN applications.menu_resources m ON m.app_id=v.app_id AND m.resource_kind='form' AND m.resource_id=v.id
+- WHERE a.id=$1 AND v.id=$2`, s.appID, s.viewID).Scan(&s.ownerID, &s.control.Policy, &s.tableID, &s.control.Schema, &s.control.Dependency, &s.control.Data, &ready, &s.control.View)
++ WHERE a.id=$1 AND v.id=$2 AND a.deleted_at IS NULL AND v.deleted_at IS NULL AND t.deleted_at IS NULL`, s.appID, s.viewID).Scan(&s.ownerID, &s.control.Policy, &s.tableID, &s.control.Schema, &s.control.Dependency, &s.control.Data, &ready, &s.control.View)
+ 	if errors.Is(err, pgx.ErrNoRows) {
+ 		return fail(applications.ErrMissing)
+ 	}
+diff --git a/services/bff/internal/appstructure/root_structure_deletion_test.go b/services/bff/internal/appstructure/root_structure_deletion_test.go
+index 3d08a8cd..de09558a 100644
+--- a/services/bff/internal/appstructure/root_structure_deletion_test.go
++++ b/services/bff/internal/appstructure/root_structure_deletion_test.go
+@@ -289,7 +289,7 @@ func TestRootStructureDeletionVersionConflictData(t *testing.T) {
+ 	} {
+ 		t.Run(tc.key, func(t *testing.T) {
+ 			d := rootDeletionError(t, f.call(t, "POST", tc.path, rootDeletionInput(t, f, tc.structure, tc.resource)), 409, tc.code)
+-			if tc.key=="" && d!=nil || tc.key!="" && !reflect.DeepEqual(d, map[string]any{tc.key: float64(tc.want)}) {
++			if tc.key == "" && d != nil || tc.key != "" && !reflect.DeepEqual(d, map[string]any{tc.key: float64(tc.want)}) {
+ 				t.Fatalf("existing closed conflict contract %#v", d)
+ 			}
+ 		})
+diff --git a/services/bff/internal/appstructure/structure_deletion.go b/services/bff/internal/appstructure/structure_deletion.go
+index 01b33a7d..c43925ac 100644
+--- a/services/bff/internal/appstructure/structure_deletion.go
++++ b/services/bff/internal/appstructure/structure_deletion.go
+@@ -13,6 +13,7 @@ import (
+ 	"io"
+ 	"mime"
+ 	"net/http"
++	"strconv"
+ 	"unicode/utf8"
+ )
+ 
+@@ -133,11 +134,23 @@ func structureDeletionError(e error) error {
+ 			}
+ 			return &Error{Code: "APPLICATION_STRUCTURE_NOT_EMPTY", Data: map[string]any{"dependencies": deps}}
+ 		case "W0038":
+-			return &Error{Code: "APPLICATION_STRUCTURE_CONFLICT"}
++			version, err := strconv.ParseInt(p.Detail, 10, 64)
++			if err != nil || version < 0 || version > maxVersion {
++				return ErrUnavailable
++			}
++			return &Error{Code: "APPLICATION_STRUCTURE_CONFLICT", Data: map[string]int64{"currentStructureVersion": version}}
+ 		case "W0039":
+-			return &Error{Code: "APPLICATION_VIEW_CONFLICT"}
++			version, err := strconv.ParseInt(p.Detail, 10, 64)
++			if err != nil || version < 0 || version > maxVersion {
++				return ErrUnavailable
++			}
++			return &Error{Code: "APPLICATION_VIEW_CONFLICT", Data: map[string]int64{"currentViewVersion": version}}
+ 		case "W0002":
+-			return &Error{Code: "APPLICATION_SCHEMA_CONFLICT"}
++			version, err := strconv.ParseInt(p.Detail, 10, 64)
++			if err != nil || version < 0 || version > maxVersion {
++				return ErrUnavailable
++			}
++			return &Error{Code: "APPLICATION_SCHEMA_CONFLICT", Data: map[string]int64{"currentSchemaVersion": version}}
+ 		case "W0040":
+ 			return &Error{Code: "APPLICATION_POLICY_CONFLICT"}
+ 		case "23514", "22P02":
+diff --git a/services/bff/internal/apptemplates/export.go b/services/bff/internal/apptemplates/export.go
+index afc8ad32..099efb16 100644
+--- a/services/bff/internal/apptemplates/export.go
++++ b/services/bff/internal/apptemplates/export.go
+@@ -74,7 +74,11 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
+ 		max   int
+ 	}{{"directories", 1000}, {"logical_tables", 128}, {"form_views", 256}, {"workflow_definitions", 128}, {"permission_groups", 128}} {
+ 		var n int
+-		q := "SELECT count(*) FROM (SELECT 1 FROM applications." + limit.table + " WHERE app_id=$1 LIMIT $2) bounded"
++		active := ""
++		if limit.table == "directories" || limit.table == "logical_tables" || limit.table == "form_views" {
++			active = " AND deleted_at IS NULL"
++		}
++		q := "SELECT count(*) FROM (SELECT 1 FROM applications." + limit.table + " WHERE app_id=$1" + active + " LIMIT $2) bounded"
+ 		if e = tx.QueryRow(ctx, q, id, limit.max+1).Scan(&n); e != nil {
+ 			return empty, e
+ 		}
+@@ -106,7 +110,7 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
+ 		}
+ 		return rows.Err()
+ 	}
+-	e = scan("SELECT id::text,name,parent_id::text,position FROM applications.directories WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
++	e = scan("SELECT id::text,name,parent_id::text,position FROM applications.directories WHERE app_id=$1 AND deleted_at IS NULL ORDER BY id", func(rows pgx.Rows) error {
+ 		var d Directory
+ 		if e := rows.Scan(&d.ID, &d.Name, &d.ParentID, &d.Position); e != nil {
+ 			return e
+@@ -120,7 +124,7 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
+ 	if e != nil {
+ 		return empty, e
+ 	}
+-	e = scan("SELECT id::text,name,directory_id::text,position,fields_json FROM applications.logical_tables WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
++	e = scan("SELECT id::text,name,directory_id::text,position,fields_json FROM applications.logical_tables WHERE app_id=$1 AND deleted_at IS NULL ORDER BY id", func(rows pgx.Rows) error {
+ 		var t Table
+ 		var raw []byte
+ 		if e := rows.Scan(&t.ID, &t.Name, &t.DirectoryID, &t.Position, &raw); e != nil {
+@@ -138,7 +142,7 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
+ 	if e != nil {
+ 		return empty, e
+ 	}
+-	e = scan("SELECT id::text,table_id::text,name,directory_id::text,position,layout FROM applications.form_views WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
++	e = scan("SELECT id::text,table_id::text,name,directory_id::text,position,layout FROM applications.form_views WHERE app_id=$1 AND deleted_at IS NULL ORDER BY id", func(rows pgx.Rows) error {
+ 		var f Form
+ 		var raw []byte
+ 		if e := rows.Scan(&f.ID, &f.TableID, &f.Name, &f.DirectoryID, &f.Position, &raw); e != nil {

@@ -84,10 +84,10 @@ BEGIN
   SELECT view_version INTO rv FROM applications.form_views WHERE app_id=app_uuid AND id=resource_uuid AND deleted_at IS NULL FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'view missing' USING ERRCODE='P0002';END IF;
  ELSE rv:=pv;END IF;
- IF sv<>expected_structure THEN RAISE EXCEPTION 'structure conflict' USING ERRCODE='W0038';END IF;
+ IF sv<>expected_structure THEN RAISE EXCEPTION 'structure conflict' USING ERRCODE='W0038',DETAIL=sv::text;END IF;
  IF rv<>expected_resource THEN
-  IF resource_kind='table' THEN RAISE EXCEPTION 'schema conflict' USING ERRCODE='W0002';
-  ELSIF resource_kind='form' THEN RAISE EXCEPTION 'view conflict' USING ERRCODE='W0039';
+  IF resource_kind='table' THEN RAISE EXCEPTION 'schema conflict' USING ERRCODE='W0002',DETAIL=rv::text;
+  ELSIF resource_kind='form' THEN RAISE EXCEPTION 'view conflict' USING ERRCODE='W0039',DETAIL=rv::text;
   ELSE RAISE EXCEPTION 'policy conflict' USING ERRCODE='W0040';END IF;
  END IF;
  IF resource_kind IN ('application','directory') THEN

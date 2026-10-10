@@ -13,6 +13,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"strconv"
 	"unicode/utf8"
 )
 
@@ -133,11 +134,23 @@ func structureDeletionError(e error) error {
 			}
 			return &Error{Code: "APPLICATION_STRUCTURE_NOT_EMPTY", Data: map[string]any{"dependencies": deps}}
 		case "W0038":
-			return &Error{Code: "APPLICATION_STRUCTURE_CONFLICT"}
+			version, err := strconv.ParseInt(p.Detail, 10, 64)
+			if err != nil || version < 0 || version > maxVersion {
+				return ErrUnavailable
+			}
+			return &Error{Code: "APPLICATION_STRUCTURE_CONFLICT", Data: map[string]int64{"currentStructureVersion": version}}
 		case "W0039":
-			return &Error{Code: "APPLICATION_VIEW_CONFLICT"}
+			version, err := strconv.ParseInt(p.Detail, 10, 64)
+			if err != nil || version < 0 || version > maxVersion {
+				return ErrUnavailable
+			}
+			return &Error{Code: "APPLICATION_VIEW_CONFLICT", Data: map[string]int64{"currentViewVersion": version}}
 		case "W0002":
-			return &Error{Code: "APPLICATION_SCHEMA_CONFLICT"}
+			version, err := strconv.ParseInt(p.Detail, 10, 64)
+			if err != nil || version < 0 || version > maxVersion {
+				return ErrUnavailable
+			}
+			return &Error{Code: "APPLICATION_SCHEMA_CONFLICT", Data: map[string]int64{"currentSchemaVersion": version}}
 		case "W0040":
 			return &Error{Code: "APPLICATION_POLICY_CONFLICT"}
 		case "23514", "22P02":
