@@ -185,19 +185,13 @@ func TestRootTemplateHTTPImportClosedPayloadBeforeAnyWrite(t *testing.T) {
 	body := rootTemplateImportHTTPBody(t, op, m, b)
 	path := "/api/v1/application-templates/import"
 	before := rootTemplateReadCounts(t, f)
-	var nullInput map[string]json.RawMessage
-	if e := json.Unmarshal([]byte(body), &nullInput); e != nil {
-		t.Fatal(e)
-	}
-	nullInput["bindings"] = json.RawMessage("null")
-	nullBody, _ := json.Marshal(nullInput)
 	for name, raw := range map[string]string{
 		"missing-operation": rootTemplateHTTPBody(t, m, b),
 		"zero-operation":    strings.Replace(body, op, "00000000-0000-0000-0000-000000000000", 1),
 		"extra":             strings.TrimSuffix(body, "}") + `,"records":[]}`,
 		"duplicate":         `{"operationId":"` + op + `",` + body[1:],
 		"case":              strings.Replace(body, `"operationId":`, `"OperationId":`, 1),
-		"null-bindings":     string(nullBody),
+		"null-bindings":     strings.Replace(body, `"bindings":[`, `"bindings":null,"unused":[`, 1),
 		"trailing":          body + `{}`,
 	} {
 		t.Run(name, func(t *testing.T) { rootTemplateHTTPError(t, f.call(t, "POST", path, raw, nil), 400) })
