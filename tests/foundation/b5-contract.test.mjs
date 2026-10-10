@@ -37,7 +37,7 @@ test('B5a six public error codes retain frozen HTTP status',()=>{
  for(const [code,status] of Object.entries({APPLICATION_NOT_FOUND:404,APPLICATION_FORBIDDEN:403,APPLICATION_POLICY_CONFLICT:409,APPLICATION_OPERATION_CONFLICT:409,APPLICATION_OPERATION_UNCONFIRMED:503,APPLICATION_RESOURCE_INVALID:400})){assert.equal(codes[code]?.httpStatus,status,code);assert.equal(codes[code].public,true)}
 });
 test('B5a new migrations have exact reviewed compatibility hashes and runtime role pin',()=>{
- const manifest=JSON.parse(readFileSync('infra/server/deploy/compatibility.json','utf8'));assert.equal(manifest.backwardCompatible,true);
+ const manifest=JSON.parse(readFileSync('infra/server/deploy/compatibility.json','utf8'));assert.equal(manifest.backwardCompatible,false,'V068 paired deletion upgrade is not automatically promotable; old migration digests remain unchanged');
  for(const path of ['archive-migrations/00003_apps_audit.sql','migrations/00006_apps_policy.sql']){const expected=createHash('sha256').update(readFileSync('db/'+path,'utf8').replace(/\r\n/g,'\n')).digest('hex');assert.equal(manifest.migrations.find(m=>m.path===path)?.sha256,expected,path)}
  assert.doesNotThrow(()=>validateInstalledPersonnelRoles(readFileSync('infra/runtime/roles.sql','utf8')));
 });

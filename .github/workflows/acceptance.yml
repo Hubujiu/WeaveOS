@@ -157,7 +157,7 @@ jobs:
           WEAVEOS_TEST_GOOSE: .work/runtime/tools/goose
         run: node --test infra/server/deploy/migrate.test.mjs infra/server/deploy/personnel-upgrade.test.mjs
       - name: Verify deployment packaging from the same accepted OCI artifacts
-        run: node infra/server/deploy/package.mjs .work/runtime/export/BUILD.json .work/deployment
+        run: node infra/server/deploy/verify-package.mjs .work/runtime/export/BUILD.json .work/deployment
       - name: Complete check-release gate including user signoff
         if: inputs.verify_release == true
         run: node scripts/check-release.mjs

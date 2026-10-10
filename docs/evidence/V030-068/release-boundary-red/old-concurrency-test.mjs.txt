@@ -22,7 +22,7 @@ test('product concurrency keeps the existing full verification stages unconditio
     ['Runtime configuration, crypto, failure handling and dependency security', 'run: node --test infra/runtime/rollback-security.test.mjs'],
     ['Build once and verify immutable runtime, restore, rollback and browsers', 'node infra/runtime/run.mjs'],
     ['Automatic deployment migrations with isolated real PostgreSQL', 'node --test infra/server/deploy/migrate.test.mjs infra/server/deploy/personnel-upgrade.test.mjs'],
-    ['Verify deployment packaging from the same accepted OCI artifacts', 'node infra/server/deploy/verify-package.mjs .work/runtime/export/BUILD.json .work/deployment'],
+    ['Verify deployment packaging from the same accepted OCI artifacts', 'node infra/server/deploy/package.mjs .work/runtime/export/BUILD.json .work/deployment'],
   ];
   let prior = -1;
   for (const [name, command] of stages) {
