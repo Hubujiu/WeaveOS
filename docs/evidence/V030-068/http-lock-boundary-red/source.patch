@@ -1,0 +1,40 @@
+diff --git a/services/bff/internal/appstructure/root_workflow_deletion_http_test.go b/services/bff/internal/appstructure/root_workflow_deletion_http_test.go
+index 644efb90..ed3d32e8 100644
+--- a/services/bff/internal/appstructure/root_workflow_deletion_http_test.go
++++ b/services/bff/internal/appstructure/root_workflow_deletion_http_test.go
+@@ -188,3 +188,35 @@ func TestRootDeletionHTTPRejectsStaleScopeAndUnavailableRuntime(t *testing.T) {
+ 		})
+ 	}
+ }
++
++func TestRootDeletionHTTPRuntimeProbeHasNoDomainLocks(t *testing.T) {
++	p := deletionFixture(t)
++	p.app.DeletionClient = &deletionPeer{}
++	p.app.RuntimeReady = func(ctx context.Context) error {
++		tx, e := p.s.f.owner.Begin(ctx)
++		if e != nil {
++			return e
++		}
++		defer tx.Rollback(ctx)
++		_, e = tx.Exec(ctx, "SELECT id FROM applications.apps WHERE id=$1 FOR UPDATE NOWAIT", p.s.f.app)
++		return e
++	}
++	raw, _ := deletionHTTPBody(t, p)
++	data(t, rootWorkflowHTTPRequest(t, p.s, p.handler, "POST", rootWorkflowHTTPPath(p.s, p.flow, "delete"), raw, true, true, "", nil), 202)
++}
++func TestRootDeletionHTTPSafeRevisionExhaustionIsConflict(t *testing.T) {
++	p := deletionFixture(t)
++	p.app.DeletionClient = &deletionPeer{}
++	if _, e := p.s.f.owner.Exec(context.Background(), "UPDATE applications.workflow_definitions SET revision=9007199254740991 WHERE id=$1", p.flow); e != nil {
++		t.Fatal(e)
++	}
++	raw, _ := deletionHTTPBody(t, p)
++	got := rootWorkflowHTTPRequest(t, p.s, p.handler, "POST", rootWorkflowHTTPPath(p.s, p.flow, "delete"), raw, true, true, "", nil)
++	if got.Code != 409 {
++		t.Fatal("valid safe-integer revision cannot advance and must conflict", got.Code, got.Body.String())
++	}
++	var n int
++	if e := p.s.f.owner.QueryRow(context.Background(), "SELECT count(*) FROM applications.workflow_deletions WHERE flow_id=$1", p.flow).Scan(&n); e != nil || n != 0 {
++		t.Fatal("revision exhaustion left deletion intent", e)
++	}
++}
