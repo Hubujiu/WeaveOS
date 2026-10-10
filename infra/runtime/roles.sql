@@ -150,3 +150,6 @@ GRANT SELECT,INSERT ON applications.workflow_deletions TO auth_app;
 GRANT UPDATE(status,reason,engine_deleted_versions,engine_deleted_at,lease_token,lease_until,attempts,next_attempt_at,updated_at,completed_at)
  ON applications.workflow_deletions TO auth_app;
 GRANT SELECT ON applications.workflow_deletions TO auth_backup;
+REVOKE ALL ON FUNCTION applications.workflow_deletion_has_work(uuid,uuid),applications.complete_workflow_deletion(uuid,uuid,uuid,uuid)
+ FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+GRANT EXECUTE ON FUNCTION applications.workflow_deletion_has_work(uuid,uuid),applications.complete_workflow_deletion(uuid,uuid,uuid,uuid) TO auth_app;
