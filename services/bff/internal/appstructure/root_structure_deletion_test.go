@@ -421,6 +421,26 @@ func TestRootStructureDeletionReplayAfterLostManager(t *testing.T) {
 	if e := f.owner.QueryRow(c, "INSERT INTO auth.users(account) VALUES('other-'||gen_random_uuid()) RETURNING id::text").Scan(&other); e != nil {
 		t.Fatal(e)
 	}
+	// Other serial integration fixtures may already own the single Bootstrap slot.
+	// Save and restore that isolated identity; never weaken the unique constraint.
+	var prior *string
+	if e := f.owner.QueryRow(c, "SELECT (SELECT id::text FROM auth.users WHERE is_bootstrap_admin)").Scan(&prior); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.owner.Exec(c, "UPDATE auth.users SET is_bootstrap_admin=false WHERE is_bootstrap_admin"); e != nil {
+		t.Fatal(e)
+	}
+	t.Cleanup(func() {
+		if _, e := f.owner.Exec(context.Background(), "UPDATE auth.users SET is_bootstrap_admin=false WHERE id=$1", f.actor); e != nil {
+			t.Error(e)
+		}
+		if prior != nil {
+			if _, e := f.owner.Exec(context.Background(), "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", *prior); e != nil {
+				t.Error(e)
+			}
+		}
+	})
+
 	if _, e := f.owner.Exec(c, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", f.actor); e != nil {
 		t.Fatal(e)
 	}
