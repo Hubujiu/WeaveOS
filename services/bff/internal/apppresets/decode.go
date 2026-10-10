@@ -127,3 +127,51 @@ func unicodeJSON(raw []byte) bool {
 	}
 	return true
 }
+
+// DecodeRequest preserves original request identity independently of live
+// authorization; all permissions and schema CAS are checked by the service.
+func DecodeRequest(raw []byte, update bool) (Request, error) {
+	if len(raw) > 65536 || !unicodeJSON(raw) {
+		return Request{}, ErrInvalid
+	}
+	d := json.NewDecoder(bytes.NewReader(raw))
+	d.UseNumber()
+	if walkJSON(d, 0) != nil {
+		return Request{}, ErrInvalid
+	}
+	if _, e := d.Token(); e != io.EOF {
+		return Request{}, ErrInvalid
+	}
+	var object map[string]json.RawMessage
+	if json.Unmarshal(raw, &object) != nil {
+		return Request{}, ErrInvalid
+	}
+	expected := 8
+	if update {
+		expected = 9
+	}
+	if len(object) != expected {
+		return Request{}, ErrInvalid
+	}
+	var request Request
+	if json.Unmarshal(object["operationId"], &request.OperationID) != nil || !validID(request.OperationID) || json.Unmarshal(object["expectedSchemaVersion"], &request.ExpectedSchemaVersion) != nil || request.ExpectedSchemaVersion < 1 || request.ExpectedSchemaVersion > maxVersion {
+		return Request{}, ErrInvalid
+	}
+	delete(object, "operationId")
+	delete(object, "expectedSchemaVersion")
+	if update {
+		if json.Unmarshal(object["expectedVersion"], &request.ExpectedVersion) != nil || request.ExpectedVersion < 1 || request.ExpectedVersion > maxVersion {
+			return Request{}, ErrInvalid
+		}
+		delete(object, "expectedVersion")
+	}
+	stateRaw, e := json.Marshal(object)
+	if e != nil {
+		return Request{}, ErrInvalid
+	}
+	request.State, e = DecodeState(stateRaw)
+	if e != nil {
+		return Request{}, e
+	}
+	return request, nil
+}
