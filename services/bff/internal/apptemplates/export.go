@@ -66,6 +66,7 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
 		}
 		return nil
 	}
+	workflowCount := 0
 	// This fixed table list is never derived from request identifiers. Count at
 	// most bound+1 rows, before loading configurations or building output arrays.
 	for _, limit := range []struct {
@@ -76,6 +77,9 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
 		q := "SELECT count(*) FROM (SELECT 1 FROM applications." + limit.table + " WHERE app_id=$1 LIMIT $2) bounded"
 		if e = tx.QueryRow(ctx, q, id, limit.max+1).Scan(&n); e != nil {
 			return empty, e
+		}
+		if limit.table == "workflow_definitions" {
+			workflowCount = n
 		}
 		if n > limit.max {
 			return empty, ErrNotExportable
@@ -160,7 +164,7 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
 			return e
 		}
 		var g flowgraph.Graph
-		if len(graph)+len(trigger) > 1048576 || json.Unmarshal(graph, &g) != nil || json.Unmarshal(trigger, &w.Triggers) != nil {
+		if len(graph)+len(trigger) > 1048576 || decodeStoredGraph(graph, &g) != nil || !shape(trigger, reflect.TypeOf(w.Triggers), 0) || json.Unmarshal(trigger, &w.Triggers) != nil {
 			return ErrNotExportable
 		}
 		w.Graph = fromGraph(g)
@@ -172,6 +176,9 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
 	})
 	if e != nil {
 		return empty, e
+	}
+	if len(out.Workflows) != workflowCount {
+		return empty, ErrNotExportable
 	}
 	groups := map[string]int{}
 	e = scan("SELECT id::text,name,enabled FROM applications.permission_groups WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
@@ -244,4 +251,12 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
 		return empty, e
 	}
 	return result, nil
+}
+
+// Persisted graphs use the internal schema. Reject unsupported members before
+// conversion, so a newer configuration cannot be silently lost in an export.
+func decodeStoredGraph(raw []byte, g *flowgraph.Graph) error {
+	d := json.NewDecoder(bytes.NewReader(raw))
+	d.DisallowUnknownFields()
+	return d.Decode(g)
 }
