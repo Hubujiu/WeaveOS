@@ -18,3 +18,5 @@ Review confirms scoped invoker INSERT guards and RC advisory serialization; no v
 ## Remaining gate
 
 Publishing through GitHub connector is paused after review treated it as prohibited Codex Cloud. Clarification requested20:54, no reply yet; no alternate write route used. V064 must finish exact remote CI and real develop merge, then V065 rebase/merge actual develop and verify its own exact-head PR CI. Local success is not develop delivery, main approval or deployment. Task remains in_progress. Latest-round policy remains pending, and full product deletion service remains a separate unfinished slice.
+
+Whole actual Git HEAD0f36912e archive scanned with pinned Gitleaks8.30.1:103.26MB, exit0, no leaks; candidate test output separately scanned before compression.
