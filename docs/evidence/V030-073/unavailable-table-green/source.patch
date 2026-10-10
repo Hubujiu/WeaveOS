@@ -1,0 +1,13 @@
+diff --git a/db/migrations/00035_structure_deletion.sql b/db/migrations/00035_structure_deletion.sql
+index 94c2fd14..d0c4e0cb 100644
+--- a/db/migrations/00035_structure_deletion.sql
++++ b/db/migrations/00035_structure_deletion.sql
+@@ -105,6 +105,8 @@ BEGIN
+   IF EXISTS(SELECT 1 FROM applications.record_command_fences f LEFT JOIN applications.workflow_commands c ON c.command_id=f.command_id WHERE f.app_id=app_uuid AND f.table_id=table_uuid AND f.state='pending' AND (resource_kind='table' OR c.command_json->>'ViewID'=resource_uuid::text OR c.command_json->>'ViewID' IS NULL)) THEN deps:=array_append(deps,'pending_commands');END IF;
+  END IF;
+  IF resource_kind IN ('directory','form') AND EXISTS(SELECT 1 FROM applications.grants g WHERE g.app_id=app_uuid AND g.resource_kind=delete_structure_resource.resource_kind AND g.resource_id=resource_uuid) THEN deps:=array_append(deps,'grants');END IF;
++ IF resource_kind='table' AND EXISTS(SELECT 1 FROM applications.logical_tables WHERE id=table_uuid AND schema_ready)
++ AND to_regclass(format('appdata.%I','t_'||replace(table_uuid::text,'-',''))) IS NULL THEN RAISE EXCEPTION 'typed storage unavailable' USING ERRCODE='55000';END IF;
+  IF resource_kind='table' AND to_regclass(format('appdata.%I','t_'||replace(table_uuid::text,'-',''))) IS NOT NULL THEN
+   EXECUTE format('LOCK TABLE appdata.%I IN SHARE ROW EXCLUSIVE MODE','t_'||replace(table_uuid::text,'-',''));
+   EXECUTE format('SELECT EXISTS(SELECT 1 FROM appdata.%I)','t_'||replace(table_uuid::text,'-','')) INTO has_rows;

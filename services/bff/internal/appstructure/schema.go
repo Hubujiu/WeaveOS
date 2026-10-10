@@ -233,7 +233,7 @@ func (a *Application) dependencies(c context.Context, tx pgx.Tx, d Definition, i
 			return nil, e
 		}
 	}
-	rows, e = tx.Query(c, "SELECT id::text,layout FROM applications.form_views WHERE app_id=$1 AND table_id=$2 AND id<>$3 ORDER BY id", d.AppID, d.Table.ID, d.Form.ID)
+	rows, e = tx.Query(c, "SELECT id::text,layout FROM applications.form_views WHERE app_id=$1 AND table_id=$2 AND id<>$3 AND deleted_at IS NULL ORDER BY id", d.AppID, d.Table.ID, d.Form.ID)
 	if e != nil {
 		return nil, e
 	}

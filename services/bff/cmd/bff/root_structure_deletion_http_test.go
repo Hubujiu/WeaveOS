@@ -33,6 +33,7 @@ func TestRootStructureDeletionHTTPRoutingAndSharedData(t *testing.T) {
 	}
 	op := f.id(t)
 	got := rootHTTPData(t, f.call(t, "POST", base+"/forms/"+f.view+"/deletion", rootStructureDeleteBody(op, 2, 1), nil), 200)
+	t.Log("V073_SCHEMA StructureDeletionResult " + string(mustLifecycleJSON(t, got)))
 	if len(got) != 6 || string(got["deleted"]) != "true" || rootHTTPString(t, got, "resourceKind") != "form" {
 		t.Fatal("six-key receipt", got)
 	}
@@ -124,6 +125,7 @@ func TestRootStructureDeletionHTTPTableRetainsBusinessRows(t *testing.T) {
 			rootHTTPData(t, f.call(t, "POST", base+"/forms/"+f.view+"/deletion", rootStructureDeleteBody(f.id(t), 1, 1), nil), 200)
 			w := f.call(t, "POST", base+"/tables/"+f.table+"/deletion", rootStructureDeleteBody(f.id(t), 2, 1), nil)
 			rootHTTPError(t, w, 409, "APPLICATION_STRUCTURE_NOT_EMPTY")
+			t.Log("V073_SCHEMA StructureDeletionErrorEnvelope " + w.Body.String())
 			var env struct {
 				Data struct{ Dependencies []string }
 			}
@@ -196,6 +198,7 @@ func TestRootStructureDeletionHTTPUnknownCommitAndPostcommitRevocation(t *testin
 				t.Fatal("invalid real HTTPS response", string(raw))
 			}
 			if mode == "unknown" {
+				t.Log("V073_SCHEMA StructureDeletionErrorEnvelope " + string(raw))
 				if !dropped.Load() || response.StatusCode != 503 || env.Code != "APPLICATION_OPERATION_UNCONFIRMED" || len(env.Data) != 1 || rootHTTPString(t, env.Data, "operationId") != op || response.Header.Get("Location") != "" || len(response.Cookies()) != 0 {
 					t.Fatal("ambiguous commit falsely successful", response.StatusCode, string(raw))
 				}

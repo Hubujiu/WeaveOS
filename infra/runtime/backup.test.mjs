@@ -77,6 +77,7 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00032_application_template_import.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00033_application_table_presets.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00034_record_lifecycle.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00035_structure_deletion.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,"SELECT setval('applications.record_command_fence_epoch_seq',41,true);");
  sql(live,`INSERT INTO auth.users(id,account) VALUES('77777777-7777-4777-8777-777777777777','preset-backup-synthetic');
  INSERT INTO personnel.table_presets(id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at)
@@ -135,6 +136,15 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  VALUES('${h.appId}','${h.tableId}','${h.recordId}',true,2,'${h.createdBy}','2026-10-10T00:00:00Z');
  INSERT INTO applications.record_lifecycle_events(app_id,table_id,record_id,view_id,actor_user_id,operation_id,action,before_record_version,after_record_version,occurred_at)
  VALUES('${h.appId}','${h.tableId}','${h.recordId}','${h.viewId}','${h.createdBy}','${lifecycleOperation}','delete',1,2,'2026-10-10T00:00:00Z');`);
+ // A real finite transition on a separate empty app preserves its identity,
+ // event and six-key operation result without touching the populated shared app.
+ const structureDeletionApp=recoveryID(950),structureDeletionOperation=recoveryID(951);
+ sql(live,`INSERT INTO applications.apps(id,name,owner_user_id) VALUES('${structureDeletionApp}','Retained empty app','${h.createdBy}');
+ SELECT applications.register_catalog_entry('${structureDeletionApp}');
+ WITH changed AS (SELECT applications.delete_structure_resource('${structureDeletionApp}','application','${structureDeletionApp}','${h.createdBy}','${structureDeletionOperation}',0,1) AS result)
+ INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location)
+ SELECT '${h.createdBy}','${structureDeletionOperation}','${structureDeletionApp}','application.delete',decode('${'23'.repeat(32)}','hex'),result,200,'' FROM changed;`);
+ const structureDeletionQuery="SELECT to_jsonb(a) FROM applications.apps a ORDER BY id; SELECT to_jsonb(d) FROM applications.directories d ORDER BY id; SELECT to_jsonb(t) FROM applications.logical_tables t ORDER BY id; SELECT to_jsonb(v) FROM applications.form_views v ORDER BY id; SELECT to_jsonb(e) FROM applications.structure_deletions e ORDER BY app_id,resource_kind,resource_id;";
  const lifecycleQuery="SELECT to_jsonb(l) FROM applications.record_lifecycle l ORDER BY app_id,table_id,record_id; SELECT to_jsonb(e) FROM applications.record_lifecycle_events e ORDER BY id;";
  const privateQuery="SELECT id,owner_user_id,app_id,view_id,name,slot,encode(convert_to(definition_json,'UTF8'),'hex'),field_kinds,version,created_at,updated_at FROM applications.table_presets ORDER BY id;";
  sql(live,"CREATE TABLE public.goose_db_version(id serial PRIMARY KEY,version_id bigint); INSERT INTO public.goose_db_version(version_id) VALUES(0),(1);");
@@ -148,6 +158,8 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  assert.ok(sql(restored,operationQuery).includes(actionOperation));
  assert.equal(sql(restored,privateQuery),sql(live,privateQuery),'private configuration and immutable scope survive restricted backup exactly');
  assert.equal(sql(restored,lifecycleQuery),sql(live,lifecycleQuery),'retained deletion and permanent lifecycle events survive restricted backup exactly');
+ assert.equal(sql(restored,structureDeletionQuery),sql(live,structureDeletionQuery),'retained structure metadata and deletion events survive restricted backup exactly');
+ assert.ok(sql(restored,operationQuery).includes(structureDeletionOperation),'closed structure deletion receipt survives restore');
  assert.ok(sql(restored,privateQuery).includes(Buffer.from(privateState).toString('hex')),'actual canonical private settings survive restore');
  assert.ok(sql(restored,operationQuery).includes(privateOperation),'actual minimum private receipt survives restore');
  // PostgreSQL may deparse equivalent casts differently after pg_restore.

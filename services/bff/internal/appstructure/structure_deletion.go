@@ -24,6 +24,10 @@ type StructureDeletionInput struct {
 }
 
 func (s *Service) structureDeletion(w http.ResponseWriter, r *http.Request, p session.Principal, app, kind, id string) {
+	if r.URL.ForceQuery {
+		fail(w, r, invalid(), "")
+		return
+	}
 	media, _, e := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if e != nil || media != "application/json" {
 		respond(w, r, 415, "COMMON_UNSUPPORTED_MEDIA_TYPE", nil)

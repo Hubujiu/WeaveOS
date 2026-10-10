@@ -492,3 +492,48 @@ func TestRootStructureDeletionLayoutIsRetainedButNotActiveDependency(t *testing.
 		t.Fatal("deleted view original layout lost", n, e)
 	}
 }
+
+func TestRootStructureDeletionSameOperationConcurrent(t *testing.T) {
+	f := setup(t)
+	id := rootDeletionDirectory(t, f, nil, 0)
+	in := rootDeletionInput(t, f, 1, 0)
+	start := make(chan struct{})
+	out := make(chan *httptest.ResponseRecorder, 6)
+	for i := 0; i < 6; i++ {
+		go func() { <-start; out <- f.call(t, "POST", "/directories/"+id+"/deletion", in) }()
+	}
+	close(start)
+	for i := 0; i < 6; i++ {
+		rootDeletionReceipt(t, <-out, in["operationId"].(string), f.app, "directory", id, 2)
+	}
+	var events int
+	if e := f.owner.QueryRow(context.Background(), "SELECT count(*) FROM applications.structure_deletions WHERE app_id=$1", f.app).Scan(&events); e != nil || events != 1 {
+		t.Fatal("concurrent replay duplicated deletion", events, e)
+	}
+}
+func TestRootStructureDeletionGrantsAndPendingFence(t *testing.T) {
+	for _, dependency := range []string{"grants", "pending_commands"} {
+		t.Run(dependency, func(t *testing.T) {
+			f := setup(t)
+			view, table := rootDeletionForm(t, f, map[string]any{"kind": "new_table"}, 0)
+			c := context.Background()
+			if dependency == "grants" {
+				var group string
+				if e := f.owner.QueryRow(c, "INSERT INTO applications.permission_groups(app_id,name) VALUES($1,'protected') RETURNING id::text", f.app).Scan(&group); e != nil {
+					t.Fatal(e)
+				}
+				if _, e := f.runtime.Exec(c, "INSERT INTO applications.grants(app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,'form',$3,'menu.enter','all')", f.app, group, view); e != nil {
+					t.Fatal(e)
+				}
+			} else {
+				if _, e := f.owner.Exec(c, "INSERT INTO applications.record_command_fences(app_id,table_id,record_id,command_id,expected_record_version,state) VALUES($1,$2,$3,$4,1,'pending')", f.app, table, uuid(t, f.owner), uuid(t, f.owner)); e != nil {
+					t.Fatal(e)
+				}
+			}
+			d := rootDeletionError(t, f.call(t, "POST", "/forms/"+view+"/deletion", rootDeletionInput(t, f, 1, 0)), 409, "APPLICATION_STRUCTURE_NOT_EMPTY")
+			if !reflect.DeepEqual(d, map[string]any{"dependencies": []any{dependency}}) {
+				t.Fatalf("dependency lost: %#v", d)
+			}
+		})
+	}
+}
