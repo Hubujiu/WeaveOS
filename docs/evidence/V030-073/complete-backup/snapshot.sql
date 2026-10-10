@@ -1,0 +1,3 @@
+SELECT format('SELECT %L,COALESCE(jsonb_agg(to_jsonb(r) ORDER BY to_jsonb(r)::text),%L) FROM %I.%I r;',schemaname||'.'||tablename,'[]',schemaname,tablename) FROM pg_tables WHERE schemaname IN ('auth','personnel','appdata','applications') ORDER BY schemaname,tablename
+\gexec
+SELECT 'roles',jsonb_build_array(has_table_privilege('auth_backup','applications.structure_deletions','SELECT'),has_table_privilege('auth_app','applications.structure_deletions','SELECT'),has_table_privilege('auth_app','applications.structure_deletions','UPDATE'),has_table_privilege('auth_reader','applications.structure_deletions','SELECT'),has_column_privilege('auth_app','applications.apps','deleted_at','UPDATE'),has_column_privilege('auth_app','applications.form_views','deleted_at','UPDATE'));
