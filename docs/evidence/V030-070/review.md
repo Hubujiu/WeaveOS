@@ -46,3 +46,6 @@ Each task commit preserves actual order, and docs/evidence retains recoverable R
 ## Readiness and final external gate
 
 All local template acceptance is verified; task state ready means reviewable, not accepted or CI-green. The final documentation head must pass its own applicable CI before expected-head squash into develop. The initial PR head 79aa5a46 failed fast task identity because the PR number did not exist at publication; heavy jobs were not run. PR79 is now bound and the same scope check with its verified base/head metadata passes. Final CI verification is recorded on the PR after observing that actual SHA; no claim of future checks passing is embedded in this source. Main and deployment remain separately blocked.
+
+
+09:38追加复核：公开operation GET的导入回执Schema缺口已先RED后修复。唯一契约增量是ApplicationOperation.result追加TemplateImportResult封闭分支；其余旧值逐项一致，548契约/治理通过。旧079d961c非最终head，新最终CI仍强制等待，不合main/部署。

@@ -59,6 +59,10 @@ import_responses['201']['description']='Confirmed atomic import, or the original
 import_responses['201']['headers']['Location']={'schema':{'type':'string','pattern':'^/api/v1/applications/[0-9a-f-]+$'}}
 api['paths']['/api/v1/application-templates/import']={'post':{'operationId':'importApplicationStructureTemplate','summary':'Atomically import complete empty application structure','description':'Same strict shape and size bounds as preflight, with a required nonzero canonical operationId. Current create authority and mapped targets are checked inside one bounded write transaction. All internal IDs are regenerated, current actor owns the new application, tables are empty and workflows are disabled/unpublished. Original kind/body/key recovers the same minimal receipt after create permission revocation; changed body conflicts. Unknown COMMIT is 503 APPLICATION_OPERATION_UNCONFIRMED with only operationId, no successful Location or renewed Cookies. After confirmed commit, renewal failure clears Cookies but does not disguise the committed 201. No query or compressed body.','x-max-body-bytes':4194304,'security':[{'WebSession':[]}],'parameters':[{'$ref':'#/components/parameters/ExpectedActor'},{'$ref':'#/components/parameters/CsrfToken'}],'requestBody':{'required':True,'content':{'application/json':{'schema':ref('TemplateImportRequest')}}},'responses':import_responses}}
 
+recovery=ref('TemplateImportResult')
+if recovery not in s['ApplicationOperation']['properties']['result']['oneOf']:
+ s['ApplicationOperation']['properties']['result']['oneOf'].append(recovery)
+
 p.write_text(json.dumps(api,ensure_ascii=False,indent=2)+'\n')
 p=Path('contracts/errors/codes.json');codes=json.loads(p.read_text())
 for k,status,grpc in [('APPLICATION_TEMPLATE_NOT_EXPORTABLE',409,'FAILED_PRECONDITION'),('APPLICATION_TEMPLATE_TOO_LARGE',413,'RESOURCE_EXHAUSTED'),('COMMON_METHOD_NOT_ALLOWED',405,'UNIMPLEMENTED')]:codes[k]={'httpStatus':status,'grpcStatus':grpc,'public':True}
