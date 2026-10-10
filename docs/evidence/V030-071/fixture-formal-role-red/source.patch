@@ -1,0 +1,50 @@
+diff --git a/services/bff/cmd/bff/root_private_presets_schema_test.go b/services/bff/cmd/bff/root_private_presets_schema_test.go
+index 6f1bad02..7a2acc0b 100644
+--- a/services/bff/cmd/bff/root_private_presets_schema_test.go
++++ b/services/bff/cmd/bff/root_private_presets_schema_test.go
+@@ -4,6 +4,7 @@ import (
+ 	"encoding/json"
+ 	"errors"
+ 	"github.com/jackc/pgx/v5/pgconn"
++	"os"
+ 	"testing"
+ )
+ 
+@@ -69,3 +70,37 @@ func TestRootPrivatePresetsSchemaClosedRowsReceiptsAndMinimumRole(t *testing.T)
+ 		t.Fatal("incorrect minimal read roles", backup, reader, maintenance, e)
+ 	}
+ }
++
++// The deployment script is intentionally reapplied by the composition suite.
++// New configuration permissions must survive that idempotent reset without
++// relying on an extra test-only GRANT after the real script.
++func TestRootPrivatePresetsSchemaFormalRoleReapplication(t *testing.T) {
++	f := rootHTTPResourceSetup(t)
++	roles, err := os.ReadFile("../../../../infra/runtime/roles.sql")
++	if err != nil {
++		t.Fatal(err)
++	}
++	tx, err := f.owner.Begin(f.ctx)
++	if err != nil {
++		t.Fatal(err)
++	}
++	defer tx.Rollback(f.ctx)
++	for pass := 0; pass < 2; pass++ {
++		if _, err = tx.Exec(f.ctx, string(roles)); err != nil {
++			t.Fatal(err)
++		}
++		var read, insert, remove, writeName, writeOwner, backup, reader, maintenance bool
++		err = tx.QueryRow(f.ctx, `SELECT
++   has_table_privilege('auth_app','applications.table_presets','SELECT'),
++   has_table_privilege('auth_app','applications.table_presets','INSERT'),
++   has_table_privilege('auth_app','applications.table_presets','DELETE'),
++   has_column_privilege('auth_app','applications.table_presets','name','UPDATE'),
++   has_column_privilege('auth_app','applications.table_presets','owner_user_id','UPDATE'),
++   has_table_privilege('auth_backup','applications.table_presets','SELECT'),
++   has_table_privilege('auth_reader','applications.table_presets','SELECT'),
++   has_table_privilege('auth_maintenance','applications.table_presets','SELECT')`).Scan(&read, &insert, &remove, &writeName, &writeOwner, &backup, &reader, &maintenance)
++		if err != nil || !read || !insert || !remove || !writeName || writeOwner || !backup || reader || maintenance {
++			t.Fatalf("formal role reset lost minimum preset capabilities pass=%d read=%v insert=%v delete=%v name=%v owner=%v backup=%v reader=%v maintenance=%v err=%v", pass, read, insert, remove, writeName, writeOwner, backup, reader, maintenance, err)
++		}
++	}
++}
