@@ -1,0 +1,49 @@
+✖ approved lifecycle commands expose bounded CAS input and minimal confirmed output (1.847867ms)
+✖ lifecycle recovery state is documented without business values (5.271647ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 104.571789
+
+✖ failing tests:
+
+test at WeaveOS-worktrees/V030-072/contracts/record-lifecycle.contract.test.mjs:7:1
+✖ approved lifecycle commands expose bounded CAS input and minimal confirmed output (1.847867ms)
+  AssertionError [ERR_ASSERTION]: deletion must be a documented command
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-072/contracts/record-lifecycle.contract.test.mjs:10:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at WeaveOS-worktrees/V030-072/contracts/record-lifecycle.contract.test.mjs:26:1
+✖ lifecycle recovery state is documented without business values (5.271647ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(api.paths[`${path}/lifecycle`]?.get)
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-072/contracts/record-lifecycle.contract.test.mjs:27:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
