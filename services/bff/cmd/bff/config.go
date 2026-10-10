@@ -157,11 +157,12 @@ func buildHost(startupCtx, processCtx context.Context, cfg config) (*bffHost, er
 		}
 		host.rpc = rpc
 		workflows.DeploymentClient = rpc.Deployment
+		workflows.DeletionClient = rpc.Deployment
 		execution := &workflowexecution.Worker{AdmitStart: records.NewStartAdmitter(), Pool: pool, Client: rpc.Execution, RPCTimeout: cfg.WorkflowRuntime.RPCTimeout, Limits: cfg.SchemaLimits}
 		if startupCtx.Err() != nil {
 			return host.failStartup(errBFFHostUnavailable)
 		}
-		workers, err := startWorkflowWorkers(processCtx, workflows.RunPublications, execution.Run)
+		workers, err := startWorkflowWorkers(processCtx, workflows.RunPublications, execution.Run, workflows.RunDeletions)
 		if err != nil {
 			return host.failStartup(errors.New("workflow workers unavailable"))
 		}

@@ -1,0 +1,31 @@
+diff --git a/services/bff/cmd/bff/config.go b/services/bff/cmd/bff/config.go
+index f9fdbb1a..e9690615 100644
+--- a/services/bff/cmd/bff/config.go
++++ b/services/bff/cmd/bff/config.go
+@@ -157,11 +157,12 @@ func buildHost(startupCtx, processCtx context.Context, cfg config) (*bffHost, er
+ 		}
+ 		host.rpc = rpc
+ 		workflows.DeploymentClient = rpc.Deployment
++		workflows.DeletionClient = rpc.Deployment
+ 		execution := &workflowexecution.Worker{AdmitStart: records.NewStartAdmitter(), Pool: pool, Client: rpc.Execution, RPCTimeout: cfg.WorkflowRuntime.RPCTimeout, Limits: cfg.SchemaLimits}
+ 		if startupCtx.Err() != nil {
+ 			return host.failStartup(errBFFHostUnavailable)
+ 		}
+-		workers, err := startWorkflowWorkers(processCtx, workflows.RunPublications, execution.Run)
++		workers, err := startWorkflowWorkers(processCtx, workflows.RunPublications, execution.Run, workflows.RunDeletions)
+ 		if err != nil {
+ 			return host.failStartup(errors.New("workflow workers unavailable"))
+ 		}
+diff --git a/services/bff/cmd/bff/root_formal_deletion_test.go b/services/bff/cmd/bff/root_formal_deletion_test.go
+index d7d69d60..c98e53e8 100644
+--- a/services/bff/cmd/bff/root_formal_deletion_test.go
++++ b/services/bff/cmd/bff/root_formal_deletion_test.go
+@@ -79,7 +79,7 @@ func TestRootFormalRuntimeDeletionDrainsAndRecoversOriginalReceipt(t *testing.T)
+  (SELECT count(*) FROM applications.workflow_versions WHERE flow_id=$1),
+  (SELECT count(*) FROM applications.workflow_instances WHERE flow_id=$1),
+  (SELECT count(*) FROM applications.workflow_tasks WHERE instance_id=$2),
+- (SELECT count(*) FROM applications.workflow_events WHERE instance_id=$2),
++ (SELECT count(*) FROM applications.workflow_execution_events WHERE instance_id=$2),
+  (SELECT count(*) FROM applications.workflow_publications WHERE flow_id=$1)`, f.flow, f.instance).Scan(&defs, &versions, &instances, &tasks, &events, &publications); e != nil {
+ 		t.Fatal(e)
+ 	}

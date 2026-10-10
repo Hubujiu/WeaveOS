@@ -27,7 +27,7 @@ func TestRootFormalRuntimeDeletionDrainsAndRecoversOriginalReceipt(t *testing.T)
 	}
 	rootFormalEventually(t, f.ctx, func() (bool, error) {
 		var waiting bool
-		e := f.owner.QueryRow(f.ctx, "SELECT reason='waiting_work' FROM applications.workflow_deletions WHERE flow_id=$1", f.flow).Scan(&waiting)
+		e := f.owner.QueryRow(f.ctx, "SELECT COALESCE(reason='waiting_work',false) FROM applications.workflow_deletions WHERE flow_id=$1", f.flow).Scan(&waiting)
 		return waiting, e
 	})
 	if x.proxy.deletes.Load() != 0 {
@@ -79,7 +79,7 @@ func TestRootFormalRuntimeDeletionDrainsAndRecoversOriginalReceipt(t *testing.T)
  (SELECT count(*) FROM applications.workflow_versions WHERE flow_id=$1),
  (SELECT count(*) FROM applications.workflow_instances WHERE flow_id=$1),
  (SELECT count(*) FROM applications.workflow_tasks WHERE instance_id=$2),
- (SELECT count(*) FROM applications.workflow_events WHERE instance_id=$2),
+ (SELECT count(*) FROM applications.workflow_execution_events WHERE instance_id=$2),
  (SELECT count(*) FROM applications.workflow_publications WHERE flow_id=$1)`, f.flow, f.instance).Scan(&defs, &versions, &instances, &tasks, &events, &publications); e != nil {
 		t.Fatal(e)
 	}
