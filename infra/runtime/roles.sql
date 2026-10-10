@@ -158,3 +158,9 @@ GRANT EXECUTE ON FUNCTION applications.workflow_deletion_has_work(uuid,uuid),app
 REVOKE ALL ON applications.workflow_rounds FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
 GRANT SELECT,INSERT ON applications.workflow_rounds TO auth_app;
 GRANT SELECT ON applications.workflow_rounds TO auth_backup;
+
+-- V030-071: private per-actor/per-view configuration, no authority to move ownership.
+REVOKE ALL ON applications.table_presets FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+GRANT SELECT,INSERT,DELETE ON applications.table_presets TO auth_app;
+GRANT UPDATE(name,definition_json,field_kinds,version,updated_at) ON applications.table_presets TO auth_app;
+GRANT SELECT ON applications.table_presets TO auth_backup;
