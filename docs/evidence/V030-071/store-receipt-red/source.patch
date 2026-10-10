@@ -1,0 +1,39 @@
+diff --git a/services/bff/cmd/bff/root_private_presets_store_test.go b/services/bff/cmd/bff/root_private_presets_store_test.go
+index 8ff933a8..5e939a14 100644
+--- a/services/bff/cmd/bff/root_private_presets_store_test.go
++++ b/services/bff/cmd/bff/root_private_presets_store_test.go
+@@ -5,6 +5,7 @@ import (
+ 	"encoding/json"
+ 	"errors"
+ 	"fmt"
++	"reflect"
+ 	"strings"
+ 	"sync"
+ 	"testing"
+@@ -74,7 +75,7 @@ func TestRootPrivatePresetsStoreRoundTripCASAndOriginalRecovery(t *testing.T) {
+ 		t.Fatal("wrong Location", created.Location)
+ 	}
+ 	replay, e := s.Create(f.ctx, p, req)
+-	if e != nil || !bytes.Equal(replay.Data, created.Data) {
++	if e != nil || !rootPresetEqualJSON(replay.Data, created.Data) {
+ 		t.Fatal("same request duplicated or changed receipt", e, string(replay.Data))
+ 	}
+ 	raw, e := s.Get(f.ctx, p, f.app, f.view, id)
+@@ -114,7 +115,7 @@ func TestRootPrivatePresetsStoreRoundTripCASAndOriginalRecovery(t *testing.T) {
+ 		t.Fatal("deleted configuration still returned", e)
+ 	}
+ 	original, e := s.Delete(f.ctx, p, req)
+-	if e != nil || !bytes.Equal(original.Data, deleted.Data) {
++	if e != nil || !rootPresetEqualJSON(original.Data, deleted.Data) {
+ 		t.Fatal("discard retry lost confirmation", e)
+ 	}
+ 	op, e := (&applications.Application{Pool: f.runtime}).Operation(f.ctx, p, req.OperationID)
+@@ -293,3 +294,8 @@ func TestRootPrivatePresetsStoreNameSchemaAndOperationConflicts(t *testing.T) {
+ 		t.Fatal("failed write leaked claim", n, e)
+ 	}
+ }
++
++func rootPresetEqualJSON(a, b []byte) bool {
++	var x, y any
++	return json.Unmarshal(a, &x) == nil && json.Unmarshal(b, &y) == nil && reflect.DeepEqual(x, y)
++}
