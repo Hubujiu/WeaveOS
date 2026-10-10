@@ -12,8 +12,8 @@ import (
 func TestRootDeletionSchemaRejectsUnboundIntent(t *testing.T) {
 	for _, kind := range []string{"not-closing", "wrong-app", "wrong-view", "wrong-name", "wrong-revision"} {
 		t.Run(kind, func(t *testing.T) {
-			p := rootPublicationSetup(t)
-			other := rootPublicationSetup(t)
+			p := deletionFixture(t)
+			other := deletionFixture(t)
 			ctx := context.Background()
 			app, table, view, actor := p.s.f.app, p.s.table, p.s.view, p.s.f.actor
 			var name string
@@ -48,7 +48,7 @@ func TestRootDeletionSchemaRejectsUnboundIntent(t *testing.T) {
 	}
 }
 func TestRootDeletionNonemptyDownRefusesIdentityLoss(t *testing.T) {
-	p := rootPublicationSetup(t)
+	p := deletionFixture(t)
 	acceptDeletion(t, p, deletionInput(t, p))
 	raw, e := os.ReadFile("../../../../db/migrations/00029_workflow_deletions.sql")
 	if e != nil {

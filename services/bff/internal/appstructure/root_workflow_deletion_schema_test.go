@@ -10,7 +10,7 @@ import (
 )
 
 func TestRootDeletionSchemaAndRuntimeBoundary(t *testing.T) {
-	p := rootPublicationSetup(t)
+	p := deletionFixture(t)
 	ctx := context.Background()
 	var present bool
 	if e := p.s.f.owner.QueryRow(ctx, "SELECT to_regclass('applications.workflow_deletions') IS NOT NULL").Scan(&present); e != nil {
@@ -85,7 +85,7 @@ func TestRootDeletionSchemaAndRuntimeBoundary(t *testing.T) {
 	}
 }
 func TestRootDeletionCatalogEnableRejectsAfterCloseFinalization(t *testing.T) {
-	p := rootPublicationSetup(t)
+	p := deletionFixture(t)
 	p.publish(t, uuid(t, p.s.f.owner), 1)
 	p.dispatch(t)
 	in := deletionInput(t, p)

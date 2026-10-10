@@ -14,7 +14,7 @@ import (
 func TestRootDeletionConfigurationHTTPRejectsAfterFinalization(t *testing.T) {
 	for _, action := range []string{"definition", "publish"} {
 		t.Run(action, func(t *testing.T) {
-			p := rootPublicationSetup(t)
+			p := deletionFixture(t)
 			p.publish(t, uuid(t, p.s.f.owner), 1)
 			p.dispatch(t)
 			in := deletionInput(t, p)
@@ -47,7 +47,7 @@ func TestRootDeletionConfigurationHTTPRejectsAfterFinalization(t *testing.T) {
 }
 
 func TestRootDeletionConcurrentNewVersionWaitsForAcceptance(t *testing.T) {
-	p := rootPublicationSetup(t)
+	p := deletionFixture(t)
 	in := deletionInput(t, p)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

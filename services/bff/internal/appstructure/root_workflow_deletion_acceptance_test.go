@@ -43,7 +43,7 @@ func deletionCallError(t *testing.T, p rootPublicationFixture, in wc.DeletionInp
 func TestRootDeletionAcceptanceClosesWithoutDeletingConfiguration(t *testing.T) {
 	for _, enabled := range []bool{false, true} {
 		t.Run(map[bool]string{false: "unpublished-disabled", true: "published-enabled"}[enabled], func(t *testing.T) {
-			p := rootPublicationSetup(t)
+			p := deletionFixture(t)
 			if enabled {
 				p.publish(t, uuid(t, p.s.f.owner), 1)
 				p.dispatch(t)
@@ -86,7 +86,7 @@ func TestRootDeletionAcceptanceClosesWithoutDeletingConfiguration(t *testing.T) 
 	}
 }
 func TestRootDeletionAcceptanceRejectsChangedRequestAndScope(t *testing.T) {
-	p := rootPublicationSetup(t)
+	p := deletionFixture(t)
 	in := deletionInput(t, p)
 	acceptDeletion(t, p, in)
 	for _, kind := range []string{"revision", "operation", "view", "actor"} {
@@ -109,7 +109,7 @@ func TestRootDeletionAcceptanceRejectsChangedRequestAndScope(t *testing.T) {
 	}
 }
 func TestRootDeletionAcceptanceRollbackPreservesOriginalDefinition(t *testing.T) {
-	p := rootPublicationSetup(t)
+	p := deletionFixture(t)
 	in := deletionInput(t, p)
 	ctx := context.Background()
 	tx, e := p.s.f.runtime.Begin(ctx)
@@ -137,7 +137,7 @@ func TestRootDeletionAcceptanceRollbackPreservesOriginalDefinition(t *testing.T)
 func TestRootDeletionAcceptanceRejectsStaleRevisionAndWrongViewWithoutMutation(t *testing.T) {
 	for _, kind := range []string{"stale-revision", "wrong-view", "invalid-operation"} {
 		t.Run(kind, func(t *testing.T) {
-			p := rootPublicationSetup(t)
+			p := deletionFixture(t)
 			in := deletionInput(t, p)
 			expected := wc.ErrConflict
 			switch kind {
@@ -161,7 +161,7 @@ func TestRootDeletionAcceptanceRejectsStaleRevisionAndWrongViewWithoutMutation(t
 	}
 }
 func TestRootDeletionIdentityGuardsConfigurationAndAllowsCloseCompletion(t *testing.T) {
-	p := rootPublicationSetup(t)
+	p := deletionFixture(t)
 	p.publish(t, uuid(t, p.s.f.owner), 1)
 	p.dispatch(t)
 	in := deletionInput(t, p)
@@ -192,7 +192,7 @@ func TestRootDeletionIdentityGuardsConfigurationAndAllowsCloseCompletion(t *test
 			t.Fatal(e)
 		}
 	}
-	other := rootPublicationSetup(t)
+	other := deletionFixture(t)
 	_, e := other.s.f.owner.Exec(ctx, "INSERT INTO applications.workflow_definitions(id,app_id,table_id,view_id,name,revision,state,candidate_version) VALUES($1,$2,$3,$4,'New name',1,'disabled',1)", p.flow, other.s.f.app, other.s.table, other.s.view)
 	var pg *pgconn.PgError
 	if !errors.As(e, &pg) || pg.Code != "55000" {
@@ -202,4 +202,25 @@ func TestRootDeletionIdentityGuardsConfigurationAndAllowsCloseCompletion(t *test
 	if replay.Status != "pending" || replay.OperationID != in.OperationID {
 		t.Fatal("missing catalog changed original accepted operation")
 	}
+}
+
+// Each test owns these synthetic apps; cleanup excludes their intents from a
+// later global queue worker. This is owner-only test teardown, never product code.
+func deletionFixture(t *testing.T) rootPublicationFixture {
+	t.Helper()
+	p := rootPublicationSetup(t)
+	t.Cleanup(func() {
+		var exists bool
+		ctx := context.Background()
+		if e := p.s.f.owner.QueryRow(ctx, "SELECT to_regclass('applications.workflow_deletions') IS NOT NULL").Scan(&exists); e != nil {
+			t.Error(e)
+			return
+		}
+		if exists {
+			if _, e := p.s.f.owner.Exec(ctx, "DELETE FROM applications.workflow_deletions WHERE app_id=$1", p.s.f.app); e != nil {
+				t.Error(e)
+			}
+		}
+	})
+	return p
 }
