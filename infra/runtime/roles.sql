@@ -153,3 +153,8 @@ GRANT SELECT ON applications.workflow_deletions TO auth_backup;
 REVOKE ALL ON FUNCTION applications.workflow_deletion_has_work(uuid,uuid),applications.complete_workflow_deletion(uuid,uuid,uuid,uuid)
  FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
 GRANT EXECUTE ON FUNCTION applications.workflow_deletion_has_work(uuid,uuid),applications.complete_workflow_deletion(uuid,uuid,uuid,uuid) TO auth_app;
+
+-- V030-069: immutable round identity survives runnable catalog deletion.
+REVOKE ALL ON applications.workflow_rounds FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+GRANT SELECT,INSERT ON applications.workflow_rounds TO auth_app;
+GRANT SELECT ON applications.workflow_rounds TO auth_backup;
