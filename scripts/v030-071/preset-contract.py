@@ -47,8 +47,9 @@ for suffix,methods in [('',{'get':('listApplicationPresets',200,'ApplicationPres
   if method in ['post','put']:op['requestBody']={'required':True,'content':{'application/json':{'schema':ref('ApplicationPresetCreate' if method=='post' else 'ApplicationPresetUpdate')}}};op['x-max-body-bytes']=65536
   routes[method]=op
  api['paths'][base+suffix]=routes
-recovery=ref('ApplicationPresetMutationResult')
-if recovery not in s['ApplicationOperation']['properties']['result']['oneOf']:s['ApplicationOperation']['properties']['result']['oneOf'].append(recovery)
+for name in ['ApplicationPresetMutationResult','WorkflowMutationResult','WorkflowManualStartResult','WorkflowRoundStartResult','WorkflowDeletionResult']:
+ recovery=ref(name)
+ if recovery not in s['ApplicationOperation']['properties']['result']['oneOf']:s['ApplicationOperation']['properties']['result']['oneOf'].append(recovery)
 path.write_text(json.dumps(api,ensure_ascii=False,indent=2)+'\n')
 p=Path('contracts/errors/codes.json');codes=json.loads(p.read_text())
 for name in ['APPLICATION_PRESET_NAME_CONFLICT','APPLICATION_PRESET_LIMIT_REACHED','APPLICATION_PRESET_CONFLICT']:codes[name]={'httpStatus':409,'grpcStatus':'ABORTED' if name=='APPLICATION_PRESET_CONFLICT' else 'RESOURCE_EXHAUSTED' if name=='APPLICATION_PRESET_LIMIT_REACHED' else 'ALREADY_EXISTS','public':True}
