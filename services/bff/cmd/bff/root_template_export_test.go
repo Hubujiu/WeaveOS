@@ -72,9 +72,7 @@ func TestRootTemplateExportCurrentManagementIdentity(t *testing.T) {
 				p.BootstrapAdmin = true
 			case "actual-root":
 				p.UserID = f.other
-				if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", f.other); e != nil {
-					t.Fatal(e)
-				}
+				rootTemplateBootstrap(t, f, f.other)
 				want = nil
 			case "stale-account":
 				if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET auth_version=auth_version+1 WHERE id=$1", f.actor); e != nil {
@@ -207,4 +205,16 @@ func TestRootTemplateExportRejectsLostWorkflowConfiguration(t *testing.T) {
 			}
 		})
 	}
+}
+
+func rootTemplateBootstrap(t *testing.T, f *rootTaskHTTPFixture, id string) {
+	t.Helper()
+	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", id); e != nil {
+		t.Fatal(e)
+	}
+	t.Cleanup(func() {
+		if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=false WHERE id=$1", id); e != nil {
+			t.Error("restore isolated fixture Bootstrap", e)
+		}
+	})
 }

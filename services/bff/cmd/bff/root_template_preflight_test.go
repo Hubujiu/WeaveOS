@@ -115,9 +115,7 @@ func TestRootTemplatePreflightRejectsCurrentRevocationsAndInvalidTargets(t *test
 func TestRootTemplatePreflightActualBootstrapAndMappingFailure(t *testing.T) {
 	f, m, b, _ := rootTemplatePreflightSource(t)
 	p := rootTemplatePrincipal(f)
-	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", f.actor); e != nil {
-		t.Fatal(e)
-	}
+	rootTemplateBootstrap(t, f, f.actor)
 	s := &apptemplates.Service{Pool: f.runtime}
 	if got, e := s.Preflight(f.ctx, p, m, b); e != nil || !got.Valid {
 		t.Fatal("actual Bootstrap rejected", e)
