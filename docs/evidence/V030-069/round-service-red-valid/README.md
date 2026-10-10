@@ -1,0 +1,1 @@
+Initial run had incorrect test-only GetRecord field access, not valid RED. Corrected source reached six top-level/seven subcase unavailable-stub behavior assertions. Full service behavior still absent.
