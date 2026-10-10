@@ -23,7 +23,9 @@ for action in ['deletion','restoration']:
 op=copy.deepcopy(a['paths'][base]['get']);op['operationId']='getRecordLifecycle';op['summary']='Read minimal retained record lifecycle'
 op['description']='Current owner or Bootstrap, one read-only snapshot. No business values or historical actor disclosure. Retained records are included for explicit restoration.'
 op['responses']['200']['content']['application/json']['schema']=ref('RecordLifecycleStateEnvelope')
-a['paths'][base+'/lifecycle']={'get':op}
+head=copy.deepcopy(op);head['operationId']='headRecordLifecycle'
+for response in head['responses'].values():response.pop('content',None)
+a['paths'][base+'/lifecycle']={'get':op,'head':head}
 items=s['ApplicationOperation']['properties']['result']['oneOf'];item=ref('RecordLifecycleResult')
 if item not in items:items.append(item)
 error='APPLICATION_RECORD_LIFECYCLE_CONFLICT';codes=s['RecordErrorEnvelope']['allOf'][1]['properties']['code']['enum']

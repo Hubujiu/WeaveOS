@@ -35,6 +35,10 @@ func TestRootRecordLifecycleHTTPDeleteRestore(t *testing.T) {
 	rootHTTPData(t, f.call(t, "POST", path+"/deletion", body, nil), 200)
 	rootHTTPError(t, f.call(t, "GET", path, "", nil), 404, "APPLICATION_NOT_FOUND")
 	state := rootHTTPData(t, f.call(t, "GET", path+"/lifecycle", "", nil), 200)
+	head := f.call(t, "HEAD", path+"/lifecycle", "", nil)
+	if head.Code != 200 || head.Body.Len() != 0 {
+		t.Fatalf("HEAD leaked body or failed: %d %s", head.Code, head.Body.String())
+	}
 	t.Log("V072_SCHEMA RecordLifecycleState " + string(mustLifecycleJSON(t, state)))
 	if len(state) != 4 || string(state["deleted"]) != "true" {
 		t.Fatal("incorrect bounded state", state)
