@@ -10,6 +10,8 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
 	"github.com/jackc/pgx/v5"
+	"strings"
+	"sync"
 	"testing"
 )
 
@@ -17,6 +19,126 @@ func lifecycleManager(f recordFixture) session.Principal {
 	p := f.principal
 	p.UserID = f.other
 	return p
+}
+
+func TestRootRecordLifecycleAtomicFailureAndConcurrentReplay(t *testing.T) {
+	for _, stage := range []string{"event", "receipt"} {
+		t.Run(stage, func(t *testing.T) {
+			f := newRecordFixture(t)
+			req := lifecycleRequest(t, f, 1, true)
+			p := lifecycleManager(f)
+			name := "lifecycle_fault_" + strings.ReplaceAll(req.OperationID, "-", "")
+			fn := pgx.Identifier{"public", name}.Sanitize()
+			trigger := pgx.Identifier{name}.Sanitize()
+			table := "applications.record_lifecycle_events"
+			when := "INSERT"
+			if stage == "receipt" {
+				table = "applications.operations"
+				when = "UPDATE"
+			}
+			if _, e := f.owner.Exec(f.ctx, "CREATE FUNCTION "+fn+"() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.operation_id='"+req.OperationID+"'::uuid THEN RAISE EXCEPTION 'isolated lifecycle fault'; END IF; RETURN NEW; END $$; CREATE TRIGGER "+trigger+" BEFORE "+when+" ON "+table+" FOR EACH ROW EXECUTE FUNCTION "+fn+"()"); e != nil {
+				t.Fatal(e)
+			}
+			defer f.owner.Exec(f.ctx, "DROP TRIGGER "+trigger+" ON "+table+"; DROP FUNCTION "+fn+"()")
+			var before int64
+			if e := f.owner.QueryRow(f.ctx, "SELECT data_revision FROM applications.logical_tables WHERE id=$1", f.table).Scan(&before); e != nil {
+				t.Fatal(e)
+			}
+			_, e := f.service.ChangeRecordLifecycle(f.ctx, p, req)
+			if e == nil || errors.Is(e, applications.ErrUnconfirmed) {
+				t.Fatalf("known precommit failure wrong classification: %v", e)
+			}
+			row, e := f.service.GetRecord(f.ctx, p, f.app, f.view, f.ownRecord)
+			if e != nil || row.RecordVersion != 1 || row.Values[f.public] != "alpha" {
+				t.Fatalf("late fault changed typed row: %+v %v", row, e)
+			}
+			var revision int64
+			var states, events, ops int
+			e = f.owner.QueryRow(f.ctx, `SELECT data_revision,(SELECT count(*) FROM applications.record_lifecycle WHERE app_id=$1),(SELECT count(*) FROM applications.record_lifecycle_events WHERE app_id=$1),(SELECT count(*) FROM applications.operations WHERE actor_user_id=$3 AND operation_id=$4) FROM applications.logical_tables WHERE app_id=$1 AND id=$2`, f.app, f.table, f.other, req.OperationID).Scan(&revision, &states, &events, &ops)
+			if e != nil || revision != before || states != 0 || events != 0 || ops != 0 {
+				t.Fatalf("late fault persisted partial state: rev%d/%d state%d event%d op%d %v", revision, before, states, events, ops, e)
+			}
+		})
+	}
+	t.Run("same_key", func(t *testing.T) {
+		f := newRecordFixture(t)
+		req := lifecycleRequest(t, f, 1, true)
+		p := lifecycleManager(f)
+		var wg sync.WaitGroup
+		var results [2]RecordLifecycleResult
+		var errs [2]error
+		start := make(chan struct{})
+		for i := range 2 {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				<-start
+				results[i], errs[i] = f.service.ChangeRecordLifecycle(f.ctx, p, req)
+			}(i)
+		}
+		close(start)
+		wg.Wait()
+		if errs[0] != nil || errs[1] != nil || results[0] != results[1] || results[0].RecordVersion != 2 {
+			t.Fatalf("duplicate mutation: %+v %v", results, errs)
+		}
+		var n int
+		if e := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_lifecycle_events WHERE app_id=$1", f.app).Scan(&n); e != nil || n != 1 {
+			t.Fatalf("duplicate permanent events: %d %v", n, e)
+		}
+	})
+}
+
+func TestRootRecordLifecycleSharedViewAndRecoveryAfterAuthorityLoss(t *testing.T) {
+	f := newRecordFixture(t)
+	p := f.principal
+	var prior *string
+	if e := f.owner.QueryRow(f.ctx, "SELECT (SELECT id::text FROM auth.users WHERE is_bootstrap_admin)").Scan(&prior); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=false WHERE is_bootstrap_admin"); e != nil {
+		t.Fatal(e)
+	}
+	t.Cleanup(func() {
+		_, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=false WHERE id=$1", f.actor)
+		if e != nil {
+			t.Error(e)
+		}
+		if prior != nil {
+			_, e = f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", *prior)
+			if e != nil {
+				t.Error(e)
+			}
+		}
+	})
+	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", f.actor); e != nil {
+		t.Fatal(e)
+	}
+	view := recordOperationID(t, f)
+	if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.form_views(id,app_id,table_id,name,position,view_version) VALUES($1,$2,$3,'same data',1,1)", view, f.app, f.table); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.menu_resources VALUES($1,'form',$2)", f.app, view); e != nil {
+		t.Fatal(e)
+	}
+	req := lifecycleRequest(t, f, 1, true)
+	deleted, e := f.service.ChangeRecordLifecycle(f.ctx, p, req)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e = f.service.GetRecord(f.ctx, p, f.app, view, f.ownRecord); !errors.Is(e, applications.ErrMissing) {
+		t.Fatalf("shared view bypassed deletion: %v", e)
+	}
+	if _, e = f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=false WHERE id=$1", f.actor); e != nil {
+		t.Fatal(e)
+	}
+	replay, e := f.service.ChangeRecordLifecycle(f.ctx, p, req)
+	if e != nil || replay != deleted {
+		t.Fatalf("confirmed minimum recovery lost after authority removal: %+v %v", replay, e)
+	}
+	_, e = f.service.ChangeRecordLifecycle(f.ctx, p, lifecycleRequest(t, f, 2, false))
+	if !errors.Is(e, applications.ErrDenied) {
+		t.Fatalf("former Bootstrap restored without current authority: %v", e)
+	}
 }
 
 func TestRootRecordLifecycleDeletedRecordRejectsOrdinaryEdits(t *testing.T) {
@@ -254,5 +376,134 @@ func TestRootRecordLifecycleClosedReceipts(t *testing.T) {
 				})
 			}
 		})
+	}
+}
+
+func TestRootRecordLifecycleRetainsDraftAndConflictsAfterRestore(t *testing.T) {
+	f := newRecordFixture(t)
+	base := int64(1)
+	draft, e := f.service.CreateDraft(f.ctx, f.principal, DraftCreateRequest{AppID: f.app, ViewID: f.view, OperationID: recordOperationID(t, f), SchemaVersion: 1, TargetRecordID: &f.ownRecord, BaseRecordVersion: &base, Values: map[string]any{f.public: "unfinished"}}, applications.Metadata{RequestID: "v072-draft-retention"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	for _, deleted := range []bool{true, false} {
+		version := int64(1)
+		if !deleted {
+			version = 2
+		}
+		if _, e = f.service.ChangeRecordLifecycle(f.ctx, lifecycleManager(f), lifecycleRequest(t, f, version, deleted)); e != nil {
+			t.Fatal(e)
+		}
+		kept, e := f.service.GetDraft(f.ctx, f.principal, f.app, f.view, draft.ID)
+		if e != nil || kept.Values[f.public] != "unfinished" || !kept.HasConflicts || kept.BaseRecordVersion == nil || *kept.BaseRecordVersion != 1 || kept.DraftVersion != 1 {
+			t.Fatalf("draft lost or rebound after deleted=%v: %+v %v", deleted, kept, e)
+		}
+		_, e = f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "unfinished"}, DraftRef: &DraftRef{ID: draft.ID, DraftVersion: 1}}, applications.Metadata{RequestID: "v072-stale-draft"})
+		if e == nil {
+			t.Fatal("stale draft submitted")
+		}
+		var n int
+		if e = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_drafts WHERE id=$1", draft.ID).Scan(&n); e != nil || n != 1 {
+			t.Fatalf("failed submit consumed draft %d %v", n, e)
+		}
+	}
+}
+
+func TestRootRecordLifecycleRaceAgainstWorkflowReservation(t *testing.T) {
+	for i := 0; i < 8; i++ {
+		t.Run(string(rune('a'+i)), func(t *testing.T) {
+			f := newRecordFixture(t)
+			h := rootConfiguredTrigger(t, f, "manual", nil)
+			request := lifecycleRequest(t, f, 1, true)
+			instance := recordOperationID(t, f)
+			var wg sync.WaitGroup
+			var deletion, reservation error
+			start := make(chan struct{})
+			wg.Add(2)
+			go func() {
+				defer wg.Done()
+				<-start
+				_, deletion = f.service.ChangeRecordLifecycle(f.ctx, lifecycleManager(f), request)
+			}()
+			go func() {
+				defer wg.Done()
+				<-start
+				tx, e := f.runtime.Begin(f.ctx)
+				if e != nil {
+					reservation = e
+					return
+				}
+				defer tx.Rollback(f.ctx)
+				_, e = (workflowcatalog.Catalog{}).ReserveInTx(f.ctx, tx, workflowcatalog.ReserveInput{AppID: f.app, FlowID: h.FlowID, InstanceID: instance, RecordID: f.ownRecord, ActorID: f.other, ExpectedRevision: h.Revision, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1})
+				if e == nil {
+					e = tx.Commit(f.ctx)
+				}
+				reservation = e
+			}()
+			close(start)
+			wg.Wait()
+			if (deletion == nil) == (reservation == nil) {
+				t.Fatalf("exactly one must commit: delete=%v reserve=%v", deletion, reservation)
+			}
+			var deleted bool
+			var active int
+			e := f.owner.QueryRow(f.ctx, `SELECT COALESCE((SELECT deleted FROM applications.record_lifecycle WHERE app_id=$1 AND table_id=$2 AND record_id=$3),false),(SELECT count(*) FROM applications.workflow_instances WHERE app_id=$1 AND table_id=$2 AND record_id=$3 AND state IN ('starting','active'))`, f.app, f.table, f.ownRecord).Scan(&deleted, &active)
+			if e != nil || (deleted && active != 0) || deleted != (deletion == nil) || (reservation == nil && active != 1) {
+				t.Fatalf("inconsistent concurrent state deleted=%v active=%d %v", deleted, active, e)
+			}
+		})
+	}
+}
+
+func TestRootRecordLifecyclePrivateImplementationsNotCallable(t *testing.T) {
+	f := newRecordFixture(t)
+	for _, role := range []string{"auth_app", "auth_reader", "auth_backup", "auth_maintenance"} {
+		for _, fn := range []string{"applications.apply_record_change_before_lifecycle(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb)", "applications.acquire_record_command_fence_before_lifecycle(uuid,uuid,uuid,uuid,uuid,bigint,bigint)"} {
+			var allowed bool
+			if e := f.owner.QueryRow(f.ctx, "SELECT has_function_privilege($1,$2,'EXECUTE')", role, fn).Scan(&allowed); e != nil || allowed {
+				t.Fatalf("private bypass %s %s %v %v", role, fn, allowed, e)
+			}
+		}
+	}
+	var seq bool
+	if e := f.owner.QueryRow(f.ctx, "SELECT has_sequence_privilege('auth_app','applications.record_lifecycle_events_id_seq','USAGE')").Scan(&seq); e != nil || seq {
+		t.Fatalf("event sequence exposed %v %v", seq, e)
+	}
+}
+
+func TestRootRecordLifecycleScopeAndRepeatedCommands(t *testing.T) {
+	f := newRecordFixture(t)
+	p := lifecycleManager(f)
+	if _, e := f.service.GetRecordLifecycle(f.ctx, f.principal, f.app, f.view, f.ownRecord); !errors.Is(e, applications.ErrDenied) {
+		t.Fatalf("ordinary editor read management state %v", e)
+	}
+	req := lifecycleRequest(t, f, 1, true)
+	for _, kind := range []string{"record", "view", "app"} {
+		bad := req
+		id := recordOperationID(t, f)
+		switch kind {
+		case "record":
+			bad.RecordID = id
+		case "view":
+			bad.ViewID = id
+		case "app":
+			bad.AppID = id
+		}
+		if _, e := f.service.ChangeRecordLifecycle(f.ctx, p, bad); e == nil {
+			t.Fatalf("wrong %s accepted", kind)
+		}
+	}
+	if _, e := f.service.ChangeRecordLifecycle(f.ctx, p, req); e != nil {
+		t.Fatal(e)
+	}
+	changed := req
+	changed.ExpectedRecordVersion = 2
+	if _, e := f.service.ChangeRecordLifecycle(f.ctx, p, changed); !errors.Is(e, applications.ErrOperationConflict) {
+		t.Fatalf("changed fingerprint reused %v", e)
+	}
+	_, e := f.service.ChangeRecordLifecycle(f.ctx, p, lifecycleRequest(t, f, 2, true))
+	var ae *appstructure.Error
+	if !errors.As(e, &ae) || ae.Code != "APPLICATION_RECORD_LIFECYCLE_CONFLICT" {
+		t.Fatalf("same target must conflict %v", e)
 	}
 }

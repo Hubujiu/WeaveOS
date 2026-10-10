@@ -76,6 +76,7 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00031_workflow_round_operations.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00032_application_template_import.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00033_application_table_presets.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00034_record_lifecycle.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,"SELECT setval('applications.record_command_fence_epoch_seq',41,true);");
  sql(live,`INSERT INTO auth.users(id,account) VALUES('77777777-7777-4777-8777-777777777777','preset-backup-synthetic');
  INSERT INTO personnel.table_presets(id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at)
@@ -127,6 +128,14 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  VALUES('${privatePresetId}','${h.createdBy}','${h.appId}','${h.viewId}','应用私人方案😀',20,$preset$${privateState}$preset$,'{}',7,'2026-10-01T00:00:00Z','2026-10-02T00:00:00Z');
  INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location)
  VALUES('${h.createdBy}','${privateOperation}','${h.appId}','preset.update',decode('${'19'.repeat(32)}','hex'),$receipt$${JSON.stringify(privateReceipt)}$receipt$,200,'');`);
+ // Synthetic retained lifecycle metadata; actual typed-record transitions are
+ // independently exercised through real service and HTTPS tests in V072.
+ const lifecycleOperation=recoveryID(940);
+ sql(live,`INSERT INTO applications.record_lifecycle(app_id,table_id,record_id,deleted,record_version,changed_by,changed_at)
+ VALUES('${h.appId}','${h.tableId}','${h.recordId}',true,2,'${h.createdBy}','2026-10-10T00:00:00Z');
+ INSERT INTO applications.record_lifecycle_events(app_id,table_id,record_id,view_id,actor_user_id,operation_id,action,before_record_version,after_record_version,occurred_at)
+ VALUES('${h.appId}','${h.tableId}','${h.recordId}','${h.viewId}','${h.createdBy}','${lifecycleOperation}','delete',1,2,'2026-10-10T00:00:00Z');`);
+ const lifecycleQuery="SELECT to_jsonb(l) FROM applications.record_lifecycle l ORDER BY app_id,table_id,record_id; SELECT to_jsonb(e) FROM applications.record_lifecycle_events e ORDER BY id;";
  const privateQuery="SELECT id,owner_user_id,app_id,view_id,name,slot,encode(convert_to(definition_json,'UTF8'),'hex'),field_kinds,version,created_at,updated_at FROM applications.table_presets ORDER BY id;";
  sql(live,"CREATE TABLE public.goose_db_version(id serial PRIMARY KEY,version_id bigint); INSERT INTO public.goose_db_version(version_id) VALUES(0),(1);");
  sql(live,readFileSync('infra/runtime/roles.sql','utf8'));
@@ -138,6 +147,7 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  assert.equal(sql(restored,operationQuery),sql(live,operationQuery),'pending operation receipt bytes must survive restricted backup');
  assert.ok(sql(restored,operationQuery).includes(actionOperation));
  assert.equal(sql(restored,privateQuery),sql(live,privateQuery),'private configuration and immutable scope survive restricted backup exactly');
+ assert.equal(sql(restored,lifecycleQuery),sql(live,lifecycleQuery),'retained deletion and permanent lifecycle events survive restricted backup exactly');
  assert.ok(sql(restored,privateQuery).includes(Buffer.from(privateState).toString('hex')),'actual canonical private settings survive restore');
  assert.ok(sql(restored,operationQuery).includes(privateOperation),'actual minimum private receipt survives restore');
  // PostgreSQL may deparse equivalent casts differently after pg_restore.
