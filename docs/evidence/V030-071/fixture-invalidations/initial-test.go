@@ -349,7 +349,7 @@ func TestRootPrivatePresetsStoreDeletedFieldsAndPartialPermissionAreWhollyRedact
 				if _, e = f.owner.Exec(f.ctx, "UPDATE applications.logical_tables SET fields_json=$2,schema_version=schema_version+1 WHERE id=$1", f.table, remaining); e != nil {
 					t.Fatal(e)
 				}
-				if _, e = f.owner.Exec(f.ctx, "UPDATE applications.fields SET removed=true WHERE app_id=$1 AND id=$2", f.app, f.field); e != nil {
+				if _, e = f.owner.Exec(f.ctx, "DELETE FROM applications.fields WHERE app_id=$1 AND id=$2", f.app, f.field); e != nil {
 					t.Fatal(e)
 				}
 			}

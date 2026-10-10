@@ -1,0 +1,84 @@
+diff --git a/services/bff/cmd/bff/root_private_presets_store_test.go b/services/bff/cmd/bff/root_private_presets_store_test.go
+index 5e939a14..63a3bbeb 100644
+--- a/services/bff/cmd/bff/root_private_presets_store_test.go
++++ b/services/bff/cmd/bff/root_private_presets_store_test.go
+@@ -299,3 +299,79 @@ func rootPresetEqualJSON(a, b []byte) bool {
+ 	var x, y any
+ 	return json.Unmarshal(a, &x) == nil && json.Unmarshal(b, &y) == nil && reflect.DeepEqual(x, y)
+ }
++
++func TestRootPrivatePresetsStoreDeletedFieldsAndPartialPermissionAreWhollyRedacted(t *testing.T) {
++	for _, mode := range []string{"deleted", "revoked"} {
++		t.Run(mode, func(t *testing.T) {
++			f := rootHTTPResourceSetup(t)
++			second := f.id(t)
++			var raw json.RawMessage
++			if e := f.owner.QueryRow(f.ctx, "SELECT fields_json FROM applications.logical_tables WHERE id=$1", f.table).Scan(&raw); e != nil {
++				t.Fatal(e)
++			}
++			var fields []map[string]any
++			if json.Unmarshal(raw, &fields) != nil {
++				t.Fatal("fixture fields")
++			}
++			secondDefinition := map[string]any{"id": second, "name": "Other field", "kind": "text", "required": false, "default": nil, "config": map[string]any{"maxLength": nil}, "presentation": map[string]any{"helpText": nil, "displayTimeZone": nil}}
++			fields = append(fields, secondDefinition)
++			raw, _ = json.Marshal(fields)
++			single, _ := json.Marshal(secondDefinition)
++			if _, e := f.owner.Exec(f.ctx, "UPDATE applications.logical_tables SET fields_json=$2 WHERE id=$1", f.table, raw); e != nil {
++				t.Fatal(e)
++			}
++			if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.fields(id,app_id,table_id,definition) VALUES($1,$2,$3,$4)", second, f.app, f.table, single); e != nil {
++				t.Fatal(e)
++			}
++			group := rootPresetGrant(t, f, f.other, f.view)
++			if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.grant_fields(app_id,grant_id,field_id,table_id) SELECT app_id,id,$2,$3 FROM applications.grants WHERE app_id=$1 AND group_id=$4 AND action='data.read'", f.app, second, f.table, group); e != nil {
++				t.Fatal(e)
++			}
++			service := rootPresetService(f)
++			p := rootPresetActor(f, f.other)
++			r := rootPresetRequest(t, f, "保留名称")
++			result, e := service.Create(f.ctx, p, r)
++			if e != nil {
++				t.Fatal(e)
++			}
++			id := rootPresetReceipt(t, result, r.OperationID, 201, 1)
++			var original string
++			if e = f.owner.QueryRow(f.ctx, "SELECT definition_json FROM applications.table_presets WHERE id=$1", id).Scan(&original); e != nil {
++				t.Fatal(e)
++			}
++			reason := "PERMISSION_CHANGED"
++			if _, e = f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND field_id=$2", f.app, f.field); e != nil {
++				t.Fatal(e)
++			}
++			if mode == "deleted" {
++				reason = "FIELD_UNAVAILABLE"
++				remaining, _ := json.Marshal([]map[string]any{secondDefinition})
++				if _, e = f.owner.Exec(f.ctx, "UPDATE applications.logical_tables SET fields_json=$2,schema_version=schema_version+1 WHERE id=$1", f.table, remaining); e != nil {
++					t.Fatal(e)
++				}
++				if _, e = f.owner.Exec(f.ctx, "DELETE FROM applications.fields WHERE app_id=$1 AND id=$2", f.app, f.field); e != nil {
++					t.Fatal(e)
++				}
++			}
++			items, e := service.List(f.ctx, p, f.app, f.view)
++			if e != nil || len(items) != 1 {
++				t.Fatal("remaining read permission should permit redacted list", e, len(items))
++			}
++			var item map[string]any
++			json.Unmarshal(items[0], &item)
++			if len(item) != 5 || item["invalid"] != true || item["reason"] != reason || bytes.Contains(items[0], []byte(f.field)) || bytes.Contains(items[0], []byte("PRIVATE-FILTER")) {
++				t.Fatal("private fields leaked through invalid list", string(items[0]))
++			}
++			var retained string
++			if e = f.owner.QueryRow(f.ctx, "SELECT definition_json FROM applications.table_presets WHERE id=$1", id).Scan(&retained); e != nil || retained != original {
++				t.Fatal("invalid list rebased stored definition", e)
++			}
++			r.ID = id
++			r.ExpectedVersion = 1
++			r.OperationID = f.id(t)
++			if _, e = service.Delete(f.ctx, p, r); e != nil {
++				t.Fatal("current menu+some read must allow explicit invalid discard", e)
++			}
++		})
++	}
++}
