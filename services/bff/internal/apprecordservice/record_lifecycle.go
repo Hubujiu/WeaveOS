@@ -12,6 +12,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"strings"
 )
 
 type RecordLifecycleRequest struct {
@@ -25,6 +26,52 @@ type RecordLifecycleResult struct {
 	RecordVersion int64  `json:"recordVersion"`
 	SchemaVersion int64  `json:"schemaVersion"`
 	Deleted       bool   `json:"deleted"`
+}
+
+type RecordLifecycleState struct {
+	ID            string `json:"id"`
+	RecordVersion int64  `json:"recordVersion"`
+	SchemaVersion int64  `json:"schemaVersion"`
+	Deleted       bool   `json:"deleted"`
+}
+
+func (s *Service) GetRecordLifecycle(ctx context.Context, p session.Principal, app, view, id string) (RecordLifecycleState, error) {
+	var out RecordLifecycleState
+	if s == nil || s.Pool == nil {
+		return out, ErrUnavailable
+	}
+	for _, value := range []string{app, view, id} {
+		if !appfields.ValidID(value) {
+			return out, applications.ErrResourceInvalid
+		}
+	}
+	tx, f, e := (&applications.Application{Pool: s.Pool}).BeginRecordRead(ctx, p, app, view)
+	if e != nil {
+		return out, e
+	}
+	defer tx.Rollback(context.Background())
+	if e = lifecycleManagerAuthorization(ctx, tx, f); e != nil {
+		return out, e
+	}
+	if !f.SchemaReady {
+		return out, apprecords.ErrNotReady
+	}
+	if !appfields.ValidID(f.TableID) {
+		return out, ErrUnavailable
+	}
+	table := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.TableID, "-", "")}.Sanitize()
+	e = tx.QueryRow(ctx, "SELECT r.id::text,r.record_version,COALESCE(l.deleted,false) FROM "+table+" r LEFT JOIN applications.record_lifecycle l ON l.app_id=$1 AND l.table_id=$2 AND l.record_id=r.id WHERE r.id=$3", app, f.TableID, id).Scan(&out.ID, &out.RecordVersion, &out.Deleted)
+	if errors.Is(e, pgx.ErrNoRows) {
+		return out, applications.ErrMissing
+	}
+	if e != nil {
+		return out, ErrUnavailable
+	}
+	out.SchemaVersion = f.SchemaVersion
+	if e = tx.Commit(ctx); e != nil {
+		return RecordLifecycleState{}, e
+	}
+	return out, nil
 }
 
 func lifecycleManagerAuthorization(_ context.Context, _ pgx.Tx, f applications.RecordContext) error {

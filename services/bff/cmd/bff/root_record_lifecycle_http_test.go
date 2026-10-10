@@ -21,7 +21,7 @@ func TestRootRecordLifecycleHTTPDeleteRestore(t *testing.T) {
 		t.Fatal("incorrect closed delete receipt", w.Body.String())
 	}
 	rootHTTPData(t, f.call(t, "POST", path+"/deletion", body, nil), 200)
-	rootHTTPData(t, f.call(t, "GET", path, "", nil), 404)
+	rootHTTPError(t, f.call(t, "GET", path, "", nil), 404, "APPLICATION_NOT_FOUND")
 	state := rootHTTPData(t, f.call(t, "GET", path+"/lifecycle", "", nil), 200)
 	if len(state) != 4 || string(state["deleted"]) != "true" {
 		t.Fatal("incorrect bounded state", state)
