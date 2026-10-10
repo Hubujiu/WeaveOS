@@ -85,6 +85,7 @@ public final class DeploymentRegistry {
                 }
                 return prior;
             }
+            if (FlowIdentityGate.lock(jdbc, request.appId(), request.flowId())) throw new DeploymentConflict();
             probe.accept(Stage.AFTER_LEDGER);
             var repository = engine.getRepositoryService();
             var deployment = repository.createDeployment().name(request.versionId())

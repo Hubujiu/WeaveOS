@@ -1,0 +1,75 @@
+diff --git a/services/workflow-engine/src/main/java/org/weaveos/workflow/DeploymentGrpcService.java b/services/workflow-engine/src/main/java/org/weaveos/workflow/DeploymentGrpcService.java
+index 442c4cde..5bc690ec 100644
+--- a/services/workflow-engine/src/main/java/org/weaveos/workflow/DeploymentGrpcService.java
++++ b/services/workflow-engine/src/main/java/org/weaveos/workflow/DeploymentGrpcService.java
+@@ -11,10 +11,67 @@ public final class DeploymentGrpcService extends DeploymentServiceGrpc.Deploymen
+     private static final int MAX_XML = 1024 * 1024;
+     private static final int MAX_MESSAGE = MAX_XML + 16384;
+     private final DeploymentRegistry registry;
+-    public DeploymentGrpcService(DeploymentRegistry registry) { this.registry = Objects.requireNonNull(registry); }
++    private final FlowDeletionRegistry deletion;
++    public DeploymentGrpcService(DeploymentRegistry registry) {
++        this.registry = Objects.requireNonNull(registry); this.deletion = null;
++    }
++    public DeploymentGrpcService(DeploymentRegistry registry, FlowDeletionRegistry deletion) {
++        this.registry = Objects.requireNonNull(registry); this.deletion = Objects.requireNonNull(deletion);
++    }
++
++    @Override public void deleteFlow(FlowDeletionRequest request, StreamObserver<FlowDeletionReceipt> output) {
++        if (outsideTransaction(output)) return;
++        FlowDeletionReceipt response;
++        try {
++            var identity = deletionIdentity(request);
++            if (deletion == null) throw new IllegalStateException();
++            response = deletionWire(deletion.delete(identity));
++        } catch (IllegalArgumentException invalid) {
++            fail(output, Status.INVALID_ARGUMENT, "invalid flow deletion request"); return;
++        } catch (FlowDeletionRegistry.Conflict conflict) {
++            fail(output, Status.ALREADY_EXISTS, "flow deletion identity conflict"); return;
++        } catch (FlowDeletionRegistry.NotDrained active) {
++            fail(output, Status.FAILED_PRECONDITION, "flow is not drained"); return;
++        } catch (RuntimeException unexpected) {
++            fail(output, Status.UNAVAILABLE, "flow deletion result unavailable"); return;
++        }
++        output.onNext(response); output.onCompleted();
++    }
+ 
+-    // Compile-only R3 declaration; generated methods remain UNIMPLEMENTED until observed RED.
+-    public DeploymentGrpcService(DeploymentRegistry registry, FlowDeletionRegistry deletion) { this(registry); }
++    @Override public void lookupFlowDeletion(FlowDeletionRequest request,
++            StreamObserver<FlowDeletionLookupResponse> output) {
++        if (outsideTransaction(output)) return;
++        FlowDeletionLookupResponse response;
++        try {
++            var identity = deletionIdentity(request);
++            if (deletion == null) throw new IllegalStateException();
++            var found = deletion.lookup(identity);
++            response = found.isPresent()
++                ? FlowDeletionLookupResponse.newBuilder().setConfirmed(deletionWire(found.get())).build()
++                : FlowDeletionLookupResponse.newBuilder().setNotObserved(NotObserved.getDefaultInstance()).build();
++        } catch (IllegalArgumentException invalid) {
++            fail(output, Status.INVALID_ARGUMENT, "invalid flow deletion lookup"); return;
++        } catch (RuntimeException unexpected) {
++            fail(output, Status.UNAVAILABLE, "flow deletion result unavailable"); return;
++        }
++        output.onNext(response); output.onCompleted();
++    }
++
++    private static FlowDeletionRegistry.Request deletionIdentity(FlowDeletionRequest request) {
++        if (request == null || request.getSerializedSize() > 1024) throw new IllegalArgumentException();
++        ControlledBpmn.requireUuid(request.getAppId()); ControlledBpmn.requireUuid(request.getFlowId());
++        ControlledBpmn.requireUuid(request.getOperationId());
++        return new FlowDeletionRegistry.Request(request.getAppId(), request.getFlowId(), request.getOperationId());
++    }
++    private static FlowDeletionReceipt deletionWire(FlowDeletionRegistry.Receipt receipt) {
++        long seconds = receipt.deletedAt().getEpochSecond(); int nanos = receipt.deletedAt().getNano();
++        if (receipt.deletedVersions() < 0 || receipt.deletedVersions() > 9007199254740991L
++            || seconds < 1 || seconds > 253402300799L || nanos < 0 || nanos > 999999999 || nanos % 1000 != 0)
++            throw new IllegalStateException();
++        return FlowDeletionReceipt.newBuilder().setAppId(receipt.appId()).setFlowId(receipt.flowId())
++            .setOperationId(receipt.operationId()).setDeletedVersions(receipt.deletedVersions())
++            .setDeletedAtSeconds(seconds).setDeletedAtNanos(nanos).build();
++    }
+ 
+     @Override public void deploy(DeployRequest request, StreamObserver<DeploymentReceipt> output) {
+         if (outsideTransaction(output)) return;

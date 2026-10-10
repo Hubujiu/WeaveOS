@@ -27,7 +27,7 @@ public final class RuntimeSchema {
     private static final int MAX_ITEM_BYTES = 8192;
     private static final int MAX_TOTAL_BYTES = 2 * 1024 * 1024;
     private static final String REFERENCE_SHA256 =
-        "660bf78ab94353b05b4c37e602aa29b18ff5a730b26a34754f13f0667fd74674";
+        "3a160a0c590cbe09c6f8ae4c46316dc8c3deaabc53f2548bacaf184f8bdb10e8";
     private static final String SCOPE =
         "(left(c.relname,4) IN ('act_','flw_') OR left(c.relname,3)='wf_')";
 
@@ -47,7 +47,8 @@ public final class RuntimeSchema {
         "wf_execution_instances", Set.of(
             "engine_process_id", "state", "sequence", "fence_epoch", "schema_version",
             "record_version", "activation_epoch", "updated_at"),
-        "wf_execution_tasks", Set.of("state", "decision"));
+        "wf_execution_tasks", Set.of("state", "decision"),
+        "wf_flow_deletion_guards", Set.of("retired", "operation_id", "deleted_versions", "deleted_at"));
 
     // These projections match the independently captured vendor/protocol reference.
     // They contain no dynamic sequence values or application/history record reads.
@@ -129,6 +130,7 @@ public final class RuntimeSchema {
                     verifyColumnPrivileges(connection, schema, timeoutMs);
                     verifySequencePrivileges(connection, schema, timeoutMs);
                     verifyNoRegrant(connection, schema, timeoutMs);
+                    verifyDeletionFunctionPrivilege(connection, schema, timeoutMs);
                 } finally {
                     connection.rollback();
                 }
@@ -367,6 +369,19 @@ public final class RuntimeSchema {
                   'USAGE WITH GRANT OPTION,SELECT WITH GRANT OPTION,UPDATE WITH GRANT OPTION'))
             """;
         requireBoolean(connection, sequences, timeoutMs, schema);
+    }
+
+    private static void verifyDeletionFunctionPrivilege(Connection connection, String schema,
+            int timeoutMs) throws SQLException {
+        String sql = """
+            SELECT NOT EXISTS (
+              SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+              CROSS JOIN pg_roles r WHERE n.nspname=?
+                AND p.proname='wf_flow_deletion_guard_immutable' AND
+            """ + REACHABLE_ROLE + """
+                AND has_function_privilege(r.oid,p.oid,'EXECUTE'))
+            """;
+        requireBoolean(connection, sql, timeoutMs, schema);
     }
 
     private static void requireBoolean(Connection connection, String sql, int timeoutMs,

@@ -1,0 +1,57 @@
+diff --git a/services/bff/cmd/bff/root_formal_runtime_test.go b/services/bff/cmd/bff/root_formal_runtime_test.go
+index 85ebb95d..e6954cab 100644
+--- a/services/bff/cmd/bff/root_formal_runtime_test.go
++++ b/services/bff/cmd/bff/root_formal_runtime_test.go
+@@ -119,6 +119,12 @@ func rootFormalStartChild(t *testing.T, name, binary string, args []string, env
+ 	}
+ 	p := &rootBFFProcess{command: cmd, done: make(chan struct{}), output: path}
+ 	go func() { p.err = cmd.Wait(); _ = file.Close(); close(p.done) }()
++	// Register after TempDir: stop and read owned logs before its cleanup removes
++	// them. The fixture's earlier cleanup cannot safely read this later directory.
++	t.Cleanup(func() {
++		rootFormalStop(p, false)
++		rootFormalLog(t, name, p)
++	})
+ 	return p
+ }
+ func rootFormalStop(p *rootBFFProcess, kill bool) {
+@@ -147,10 +153,16 @@ func rootFormalLog(t *testing.T, name string, p *rootBFFProcess) {
+ 	if p == nil {
+ 		return
+ 	}
+-	b, _ := os.ReadFile(p.output)
++	b, readErr := os.ReadFile(p.output)
+ 	safe := strings.NewReplacer(rootRPCToken, "[fixture-token]", "v041_synthetic_only", "[fixture-password]").Replace(string(b))
+ 	if t.Failed() {
++		if readErr != nil {
++			t.Log(name + " child diagnostic file unavailable")
++		}
+ 		t.Log(name + " child output: " + safe)
++		if p.command.ProcessState != nil {
++			t.Logf("FORMAL_EXIT process=%s status=%s", name, p.command.ProcessState.String())
++		}
+ 	}
+ 	if p.command.ProcessState != nil {
+ 		if usage, ok := p.command.ProcessState.SysUsage().(*syscall.Rusage); ok {
+@@ -238,8 +250,6 @@ func rootFormalSetupEditable(t *testing.T, editable bool) *rootFormalFixture {
+ 			_ = x.conn.Close()
+ 		}
+ 		rootFormalStop(x.java, false)
+-		rootFormalLog(t, "bff", x.bff)
+-		rootFormalLog(t, "java", x.java)
+ 	})
+ 	engineAddr := rootMainAddress(t)
+ 	_, enginePort, _ := net.SplitHostPort(engineAddr)
+diff --git a/services/workflow-engine/formal_runtime_gate.py b/services/workflow-engine/formal_runtime_gate.py
+index 4e2004e1..510edc36 100644
+--- a/services/workflow-engine/formal_runtime_gate.py
++++ b/services/workflow-engine/formal_runtime_gate.py
+@@ -7,7 +7,7 @@ import sys
+ from rpc_ci_gate import GateError, _go
+ 
+ PACKAGE = "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff"
+-CASES = {"TestRootFormalRuntimePublishAndApprove", "TestRootFormalRuntimeLostReplyBffRestart", "TestRootFormalRuntimeEngineRestart", "TestRootFormalRuntimeNodeSaveThenApproveLatest", "TestRootFormalRuntimeReturnThenWithdrawRecovery", "TestRootFormalRuntimeCloseWaitsForConfirmedProjection"}
++CASES = {"TestRootFormalRuntimePublishAndApprove", "TestRootFormalRuntimeLostReplyBffRestart", "TestRootFormalRuntimeEngineRestart", "TestRootFormalRuntimeNodeSaveThenApproveLatest", "TestRootFormalRuntimeReturnThenWithdrawRecovery", "TestRootFormalRuntimeCloseWaitsForConfirmedProjection", "TestRootFormalRuntimeChildFailureDiagnosticsSurviveCleanup"}
+ EXPECTED = CASES | {"TestRootFormalRuntimePublishAndApprove/agree", "TestRootFormalRuntimePublishAndApprove/reject"}
+ 
+ def validate(path):

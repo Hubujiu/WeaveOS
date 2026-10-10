@@ -31,7 +31,9 @@ class RootWorkflowMainProcessTest {
   }
  }
  void launch(Map<String,String> values,String...args)throws Exception{
-  List<String> command=new ArrayList<>(List.of(Path.of(System.getProperty("java.home"),"bin","java").toString(),"-cp",System.getProperty("java.class.path"),"org.weaveos.workflow.WorkflowEngineMain"));command.addAll(Arrays.asList(args));
+  List<String> command=new ArrayList<>(List.of(Path.of(System.getProperty("java.home"),"bin","java").toString(),"-cp",System.getProperty("java.class.path"),"org.weaveos.workflow.WorkflowEngineMain"));// Local isolated runners may provide a JVM-only hosts map; retain it in this child too.
+  String hosts=System.getProperty("jdk.net.hosts.file");if(hosts!=null)command.add(1,"-Djdk.net.hosts.file="+hosts);
+  command.addAll(Arrays.asList(args));
   var builder=new ProcessBuilder(command);builder.environment().clear();builder.environment().putAll(values);
   builder.environment().put("LANG","C.UTF-8");builder.redirectErrorStream(true);builder.redirectOutput(output.toFile());process=builder.start();
  }

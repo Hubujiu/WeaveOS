@@ -384,6 +384,233 @@ func (*LookupResponse_Confirmed) isLookupResponse_Result() {}
 
 func (*LookupResponse_NotObserved) isLookupResponse_Result() {}
 
+// Bounded internal deletion identity; all UUIDs are canonical and nonzero.
+type FlowDeletionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AppId         string                 `protobuf:"bytes,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
+	FlowId        string                 `protobuf:"bytes,2,opt,name=flow_id,json=flowId,proto3" json:"flow_id,omitempty"`
+	OperationId   string                 `protobuf:"bytes,3,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FlowDeletionRequest) Reset() {
+	*x = FlowDeletionRequest{}
+	mi := &file_weaveos_workflow_v1_deployment_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FlowDeletionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FlowDeletionRequest) ProtoMessage() {}
+
+func (x *FlowDeletionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_weaveos_workflow_v1_deployment_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FlowDeletionRequest.ProtoReflect.Descriptor instead.
+func (*FlowDeletionRequest) Descriptor() ([]byte, []int) {
+	return file_weaveos_workflow_v1_deployment_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *FlowDeletionRequest) GetAppId() string {
+	if x != nil {
+		return x.AppId
+	}
+	return ""
+}
+
+func (x *FlowDeletionRequest) GetFlowId() string {
+	if x != nil {
+		return x.FlowId
+	}
+	return ""
+}
+
+func (x *FlowDeletionRequest) GetOperationId() string {
+	if x != nil {
+		return x.OperationId
+	}
+	return ""
+}
+
+type FlowDeletionReceipt struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	AppId            string                 `protobuf:"bytes,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
+	FlowId           string                 `protobuf:"bytes,2,opt,name=flow_id,json=flowId,proto3" json:"flow_id,omitempty"`
+	OperationId      string                 `protobuf:"bytes,3,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
+	DeletedVersions  uint64                 `protobuf:"varint,4,opt,name=deleted_versions,json=deletedVersions,proto3" json:"deleted_versions,omitempty"`
+	DeletedAtSeconds int64                  `protobuf:"varint,5,opt,name=deleted_at_seconds,json=deletedAtSeconds,proto3" json:"deleted_at_seconds,omitempty"`
+	DeletedAtNanos   int32                  `protobuf:"varint,6,opt,name=deleted_at_nanos,json=deletedAtNanos,proto3" json:"deleted_at_nanos,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *FlowDeletionReceipt) Reset() {
+	*x = FlowDeletionReceipt{}
+	mi := &file_weaveos_workflow_v1_deployment_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FlowDeletionReceipt) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FlowDeletionReceipt) ProtoMessage() {}
+
+func (x *FlowDeletionReceipt) ProtoReflect() protoreflect.Message {
+	mi := &file_weaveos_workflow_v1_deployment_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FlowDeletionReceipt.ProtoReflect.Descriptor instead.
+func (*FlowDeletionReceipt) Descriptor() ([]byte, []int) {
+	return file_weaveos_workflow_v1_deployment_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *FlowDeletionReceipt) GetAppId() string {
+	if x != nil {
+		return x.AppId
+	}
+	return ""
+}
+
+func (x *FlowDeletionReceipt) GetFlowId() string {
+	if x != nil {
+		return x.FlowId
+	}
+	return ""
+}
+
+func (x *FlowDeletionReceipt) GetOperationId() string {
+	if x != nil {
+		return x.OperationId
+	}
+	return ""
+}
+
+func (x *FlowDeletionReceipt) GetDeletedVersions() uint64 {
+	if x != nil {
+		return x.DeletedVersions
+	}
+	return 0
+}
+
+func (x *FlowDeletionReceipt) GetDeletedAtSeconds() int64 {
+	if x != nil {
+		return x.DeletedAtSeconds
+	}
+	return 0
+}
+
+func (x *FlowDeletionReceipt) GetDeletedAtNanos() int32 {
+	if x != nil {
+		return x.DeletedAtNanos
+	}
+	return 0
+}
+
+type FlowDeletionLookupResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Result:
+	//
+	//	*FlowDeletionLookupResponse_Confirmed
+	//	*FlowDeletionLookupResponse_NotObserved
+	Result        isFlowDeletionLookupResponse_Result `protobuf_oneof:"result"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FlowDeletionLookupResponse) Reset() {
+	*x = FlowDeletionLookupResponse{}
+	mi := &file_weaveos_workflow_v1_deployment_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FlowDeletionLookupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FlowDeletionLookupResponse) ProtoMessage() {}
+
+func (x *FlowDeletionLookupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_weaveos_workflow_v1_deployment_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FlowDeletionLookupResponse.ProtoReflect.Descriptor instead.
+func (*FlowDeletionLookupResponse) Descriptor() ([]byte, []int) {
+	return file_weaveos_workflow_v1_deployment_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FlowDeletionLookupResponse) GetResult() isFlowDeletionLookupResponse_Result {
+	if x != nil {
+		return x.Result
+	}
+	return nil
+}
+
+func (x *FlowDeletionLookupResponse) GetConfirmed() *FlowDeletionReceipt {
+	if x != nil {
+		if x, ok := x.Result.(*FlowDeletionLookupResponse_Confirmed); ok {
+			return x.Confirmed
+		}
+	}
+	return nil
+}
+
+func (x *FlowDeletionLookupResponse) GetNotObserved() *NotObserved {
+	if x != nil {
+		if x, ok := x.Result.(*FlowDeletionLookupResponse_NotObserved); ok {
+			return x.NotObserved
+		}
+	}
+	return nil
+}
+
+type isFlowDeletionLookupResponse_Result interface {
+	isFlowDeletionLookupResponse_Result()
+}
+
+type FlowDeletionLookupResponse_Confirmed struct {
+	Confirmed *FlowDeletionReceipt `protobuf:"bytes,1,opt,name=confirmed,proto3,oneof"`
+}
+
+type FlowDeletionLookupResponse_NotObserved struct {
+	NotObserved *NotObserved `protobuf:"bytes,2,opt,name=not_observed,json=notObserved,proto3,oneof"`
+}
+
+func (*FlowDeletionLookupResponse_Confirmed) isFlowDeletionLookupResponse_Result() {}
+
+func (*FlowDeletionLookupResponse_NotObserved) isFlowDeletionLookupResponse_Result() {}
+
 var File_weaveos_workflow_v1_deployment_proto protoreflect.FileDescriptor
 
 const file_weaveos_workflow_v1_deployment_proto_rawDesc = "" +
@@ -418,10 +645,28 @@ const file_weaveos_workflow_v1_deployment_proto_rawDesc = "" +
 	"\x0eLookupResponse\x12F\n" +
 	"\tconfirmed\x18\x01 \x01(\v2&.weaveos.workflow.v1.DeploymentReceiptH\x00R\tconfirmed\x12E\n" +
 	"\fnot_observed\x18\x02 \x01(\v2 .weaveos.workflow.v1.NotObservedH\x00R\vnotObservedB\b\n" +
-	"\x06result2\xbc\x01\n" +
+	"\x06result\"h\n" +
+	"\x13FlowDeletionRequest\x12\x15\n" +
+	"\x06app_id\x18\x01 \x01(\tR\x05appId\x12\x17\n" +
+	"\aflow_id\x18\x02 \x01(\tR\x06flowId\x12!\n" +
+	"\foperation_id\x18\x03 \x01(\tR\voperationId\"\xeb\x01\n" +
+	"\x13FlowDeletionReceipt\x12\x15\n" +
+	"\x06app_id\x18\x01 \x01(\tR\x05appId\x12\x17\n" +
+	"\aflow_id\x18\x02 \x01(\tR\x06flowId\x12!\n" +
+	"\foperation_id\x18\x03 \x01(\tR\voperationId\x12)\n" +
+	"\x10deleted_versions\x18\x04 \x01(\x04R\x0fdeletedVersions\x12,\n" +
+	"\x12deleted_at_seconds\x18\x05 \x01(\x03R\x10deletedAtSeconds\x12(\n" +
+	"\x10deleted_at_nanos\x18\x06 \x01(\x05R\x0edeletedAtNanos\"\xb7\x01\n" +
+	"\x1aFlowDeletionLookupResponse\x12H\n" +
+	"\tconfirmed\x18\x01 \x01(\v2(.weaveos.workflow.v1.FlowDeletionReceiptH\x00R\tconfirmed\x12E\n" +
+	"\fnot_observed\x18\x02 \x01(\v2 .weaveos.workflow.v1.NotObservedH\x00R\vnotObservedB\b\n" +
+	"\x06result2\x8f\x03\n" +
 	"\x11DeploymentService\x12T\n" +
 	"\x06Deploy\x12\".weaveos.workflow.v1.DeployRequest\x1a&.weaveos.workflow.v1.DeploymentReceipt\x12Q\n" +
-	"\x06Lookup\x12\".weaveos.workflow.v1.LookupRequest\x1a#.weaveos.workflow.v1.LookupResponseB\\\n" +
+	"\x06Lookup\x12\".weaveos.workflow.v1.LookupRequest\x1a#.weaveos.workflow.v1.LookupResponse\x12`\n" +
+	"\n" +
+	"DeleteFlow\x12(.weaveos.workflow.v1.FlowDeletionRequest\x1a(.weaveos.workflow.v1.FlowDeletionReceipt\x12o\n" +
+	"\x12LookupFlowDeletion\x12(.weaveos.workflow.v1.FlowDeletionRequest\x1a/.weaveos.workflow.v1.FlowDeletionLookupResponseB\\\n" +
 	"\x17org.weaveos.workflow.v1P\x01Z?github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc/pbb\x06proto3"
 
 var (
@@ -436,26 +681,35 @@ func file_weaveos_workflow_v1_deployment_proto_rawDescGZIP() []byte {
 	return file_weaveos_workflow_v1_deployment_proto_rawDescData
 }
 
-var file_weaveos_workflow_v1_deployment_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_weaveos_workflow_v1_deployment_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_weaveos_workflow_v1_deployment_proto_goTypes = []any{
-	(*DeployRequest)(nil),     // 0: weaveos.workflow.v1.DeployRequest
-	(*DeploymentReceipt)(nil), // 1: weaveos.workflow.v1.DeploymentReceipt
-	(*LookupRequest)(nil),     // 2: weaveos.workflow.v1.LookupRequest
-	(*NotObserved)(nil),       // 3: weaveos.workflow.v1.NotObserved
-	(*LookupResponse)(nil),    // 4: weaveos.workflow.v1.LookupResponse
+	(*DeployRequest)(nil),              // 0: weaveos.workflow.v1.DeployRequest
+	(*DeploymentReceipt)(nil),          // 1: weaveos.workflow.v1.DeploymentReceipt
+	(*LookupRequest)(nil),              // 2: weaveos.workflow.v1.LookupRequest
+	(*NotObserved)(nil),                // 3: weaveos.workflow.v1.NotObserved
+	(*LookupResponse)(nil),             // 4: weaveos.workflow.v1.LookupResponse
+	(*FlowDeletionRequest)(nil),        // 5: weaveos.workflow.v1.FlowDeletionRequest
+	(*FlowDeletionReceipt)(nil),        // 6: weaveos.workflow.v1.FlowDeletionReceipt
+	(*FlowDeletionLookupResponse)(nil), // 7: weaveos.workflow.v1.FlowDeletionLookupResponse
 }
 var file_weaveos_workflow_v1_deployment_proto_depIdxs = []int32{
 	1, // 0: weaveos.workflow.v1.LookupResponse.confirmed:type_name -> weaveos.workflow.v1.DeploymentReceipt
 	3, // 1: weaveos.workflow.v1.LookupResponse.not_observed:type_name -> weaveos.workflow.v1.NotObserved
-	0, // 2: weaveos.workflow.v1.DeploymentService.Deploy:input_type -> weaveos.workflow.v1.DeployRequest
-	2, // 3: weaveos.workflow.v1.DeploymentService.Lookup:input_type -> weaveos.workflow.v1.LookupRequest
-	1, // 4: weaveos.workflow.v1.DeploymentService.Deploy:output_type -> weaveos.workflow.v1.DeploymentReceipt
-	4, // 5: weaveos.workflow.v1.DeploymentService.Lookup:output_type -> weaveos.workflow.v1.LookupResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	6, // 2: weaveos.workflow.v1.FlowDeletionLookupResponse.confirmed:type_name -> weaveos.workflow.v1.FlowDeletionReceipt
+	3, // 3: weaveos.workflow.v1.FlowDeletionLookupResponse.not_observed:type_name -> weaveos.workflow.v1.NotObserved
+	0, // 4: weaveos.workflow.v1.DeploymentService.Deploy:input_type -> weaveos.workflow.v1.DeployRequest
+	2, // 5: weaveos.workflow.v1.DeploymentService.Lookup:input_type -> weaveos.workflow.v1.LookupRequest
+	5, // 6: weaveos.workflow.v1.DeploymentService.DeleteFlow:input_type -> weaveos.workflow.v1.FlowDeletionRequest
+	5, // 7: weaveos.workflow.v1.DeploymentService.LookupFlowDeletion:input_type -> weaveos.workflow.v1.FlowDeletionRequest
+	1, // 8: weaveos.workflow.v1.DeploymentService.Deploy:output_type -> weaveos.workflow.v1.DeploymentReceipt
+	4, // 9: weaveos.workflow.v1.DeploymentService.Lookup:output_type -> weaveos.workflow.v1.LookupResponse
+	6, // 10: weaveos.workflow.v1.DeploymentService.DeleteFlow:output_type -> weaveos.workflow.v1.FlowDeletionReceipt
+	7, // 11: weaveos.workflow.v1.DeploymentService.LookupFlowDeletion:output_type -> weaveos.workflow.v1.FlowDeletionLookupResponse
+	8, // [8:12] is the sub-list for method output_type
+	4, // [4:8] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_weaveos_workflow_v1_deployment_proto_init() }
@@ -467,13 +721,17 @@ func file_weaveos_workflow_v1_deployment_proto_init() {
 		(*LookupResponse_Confirmed)(nil),
 		(*LookupResponse_NotObserved)(nil),
 	}
+	file_weaveos_workflow_v1_deployment_proto_msgTypes[7].OneofWrappers = []any{
+		(*FlowDeletionLookupResponse_Confirmed)(nil),
+		(*FlowDeletionLookupResponse_NotObserved)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_weaveos_workflow_v1_deployment_proto_rawDesc), len(file_weaveos_workflow_v1_deployment_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
