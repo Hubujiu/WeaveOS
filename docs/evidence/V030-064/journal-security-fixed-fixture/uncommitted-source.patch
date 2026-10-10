@@ -1,0 +1,26 @@
+diff --git a/services/bff/internal/apprecordservice/root_workflow_journal_test.go b/services/bff/internal/apprecordservice/root_workflow_journal_test.go
+index eba29b9..00acb07 100644
+--- a/services/bff/internal/apprecordservice/root_workflow_journal_test.go
++++ b/services/bff/internal/apprecordservice/root_workflow_journal_test.go
+@@ -212,6 +212,7 @@ func TestRootWorkflowJournalReplayPreservesNewFenceAndRejectsTampering(t *testin
+ 	if err != nil {
+ 		t.Fatal(err)
+ 	}
++	defer tx.Rollback(f.ctx)
+ 	got, err := (workflowprojection.Store{}).ApplyInTx(f.ctx, tx, c, p, changed, body)
+ 	if err == nil || !reflect.DeepEqual(got, workflowprojection.Applied{}) {
+ 		t.Fatal("changed receipt passed terminal shortcut", err)
+@@ -220,11 +221,12 @@ func TestRootWorkflowJournalReplayPreservesNewFenceAndRejectsTampering(t *testin
+ 		t.Fatal(err)
+ 	}
+ 	checkFence()
+-	eventSQL(t, f, "UPDATE applications.workflow_execution_events SET record_id=$2 WHERE command_id=$1", c.CommandID, f.otherRecord)
++	eventSQL(t, f, "UPDATE applications.workflow_execution_events SET record_id=$2 WHERE command_id=$1", c.CommandID, recordOperationID(t, f.recordFixture))
+ 	tx, err = f.runtime.Begin(f.ctx)
+ 	if err != nil {
+ 		t.Fatal(err)
+ 	}
++	defer tx.Rollback(f.ctx)
+ 	got, err = (workflowprojection.Store{}).ApplyInTx(f.ctx, tx, c, p, r, body)
+ 	if err == nil || !reflect.DeepEqual(got, workflowprojection.Applied{}) {
+ 		t.Fatal("wrong durable record binding passed terminal shortcut", err)

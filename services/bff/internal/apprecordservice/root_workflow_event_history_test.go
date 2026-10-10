@@ -75,7 +75,7 @@ func TestRootEventHistoryDeterministicPagesAndSafeSummary(t *testing.T) {
 			raw, _ := json.Marshal(v)
 			var obj map[string]any
 			json.Unmarshal(raw, &obj)
-			if len(obj) != 12 {
+			if len(obj) != 14 {
 				t.Fatal("unsafe DTO", obj)
 			}
 		}

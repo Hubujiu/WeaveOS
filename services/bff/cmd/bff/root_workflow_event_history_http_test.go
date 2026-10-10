@@ -25,7 +25,7 @@ func TestRootWorkflowEventHistoryHTTPSPages(t *testing.T) {
 		if json.Unmarshal(data["items"], &items) != nil || len(items) != 1 {
 			t.Fatal("wrong list")
 		}
-		rootHTTPFieldSet(t, items[0], []string{"id", "instanceId", "flowId", "nodeId", "targetNodeId", "actorId", "action", "outcome", "sequence", "schemaVersion", "recordVersion", "occurredAt"})
+		rootHTTPFieldSet(t, items[0], []string{"flowName", "flowNameSource", "id", "instanceId", "flowId", "nodeId", "targetNodeId", "actorId", "action", "outcome", "sequence", "schemaVersion", "recordVersion", "occurredAt"})
 		id := rootHTTPString(t, items[0], "id")
 		if seen[id] {
 			t.Fatal("duplicate cursor event")
