@@ -1,0 +1,112 @@
+diff --git a/db/migrations/00034_record_lifecycle.sql b/db/migrations/00034_record_lifecycle.sql
+index d45a7617..ad13f1c3 100644
+--- a/db/migrations/00034_record_lifecycle.sql
++++ b/db/migrations/00034_record_lifecycle.sql
+@@ -146,7 +146,56 @@ ALTER TABLE applications.operations ADD CONSTRAINT ck_record_lifecycle_result CH
+  AND jsonb_typeof(result_json->'deleted')='boolean' AND (result_json->>'deleted')::boolean=(operation_kind='record.delete'),false));
+ 
+ -- +goose Down
+--- Declaration-only until independent real Down tests.
++LOCK TABLE applications.record_lifecycle_events,applications.record_lifecycle,applications.operations IN ACCESS EXCLUSIVE MODE;
+ -- +goose StatementBegin
+-DO $$ BEGIN RAISE EXCEPTION 'lifecycle down not implemented' USING ERRCODE='55000';END $$;
++DO $$ BEGIN
++ IF EXISTS(SELECT 1 FROM applications.record_lifecycle) OR EXISTS(SELECT 1 FROM applications.record_lifecycle_events)
++ OR EXISTS(SELECT 1 FROM applications.operations WHERE operation_kind IN ('record.delete','record.restore')) THEN
++ RAISE EXCEPTION 'record lifecycle history prevents downgrade' USING ERRCODE='55000';END IF;
++END $$;
++-- +goose StatementEnd
++DROP TRIGGER protect_deleted_record_start ON applications.workflow_instances;
++DROP FUNCTION applications.protect_deleted_record_start();
++DROP FUNCTION applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean);
++DROP FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb);
++DROP FUNCTION applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint);
++ALTER FUNCTION applications.apply_record_change_before_lifecycle(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb) RENAME TO apply_record_change;
++ALTER FUNCTION applications.acquire_record_command_fence_before_lifecycle(uuid,uuid,uuid,uuid,uuid,bigint,bigint) RENAME TO acquire_record_command_fence;
++-- +goose StatementBegin
++DO $$ BEGIN
++ IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='auth_app') THEN
++ GRANT EXECUTE ON FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb),applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint) TO auth_app;
++ END IF;
++END $$;
+ -- +goose StatementEnd
++ALTER TABLE applications.operations DROP CONSTRAINT ck_record_lifecycle_result;
++ALTER TABLE applications.operations
++ DROP CONSTRAINT ck_operation_kind,
++ ADD CONSTRAINT ck_operation_kind CHECK(operation_kind IN (
++  'application.create',
++  'group.create',
++  'group.update',
++  'members.replace',
++  'grants.replace',
++  'directory.create',
++  'directory.update',
++  'table.create',
++  'table.update',
++  'form.create',
++  'form.update',
++  'definition.save',
++  'record.create',
++  'record.edit',
++  'draft.create',
++  'draft.update',
++  'draft.discard',
++  'workflow.definition.save',
++  'workflow.enable',
++  'workflow.close',
++  'workflow.task.agree',
++  'workflow.task.reject',
++  'workflow.instance.withdraw',
++  'workflow.task.return','workflow.manual.start','workflow.delete','workflow.round.resubmit','workflow.round.review','application.template.import','preset.create','preset.update','preset.discard'
++ ));
++DROP TABLE applications.record_lifecycle_events;
++DROP TABLE applications.record_lifecycle;
+diff --git a/services/bff/cmd/bff/root_record_lifecycle_http_test.go b/services/bff/cmd/bff/root_record_lifecycle_http_test.go
+index 8f68b1ed..24164f8b 100644
+--- a/services/bff/cmd/bff/root_record_lifecycle_http_test.go
++++ b/services/bff/cmd/bff/root_record_lifecycle_http_test.go
+@@ -62,3 +62,18 @@ func TestRootRecordLifecycleHTTPClosedInputAndIdentity(t *testing.T) {
+ 		})
+ 	}
+ }
++
++func TestRootRecordLifecycleHTTPPreservesReadableHistory(t *testing.T) {
++	f := rootHTTPResourceSetup(t)
++	path := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/records/" + f.record
++	before := rootHTTPData(t, f.call(t, "GET", path+"/history", "", nil), 200)
++	var items []json.RawMessage
++	if e := json.Unmarshal(before["items"], &items); e != nil || len(items) == 0 {
++		t.Fatalf("actual create history missing: %v", e)
++	}
++	rootHTTPData(t, f.call(t, "POST", path+"/deletion", rootLifecycleBody(f.id(t), "1"), nil), 200)
++	after := rootHTTPData(t, f.call(t, "GET", path+"/history", "", nil), 200)
++	if string(after["items"]) != string(before["items"]) {
++		t.Fatalf("deletion changed retained history: %s -> %s", before["items"], after["items"])
++	}
++}
+diff --git a/services/bff/internal/applications/set_cost_test.go b/services/bff/internal/applications/set_cost_test.go
+index a44a5029..91bbcdf2 100644
+--- a/services/bff/internal/applications/set_cost_test.go
++++ b/services/bff/internal/applications/set_cost_test.go
+@@ -60,7 +60,7 @@ func resetScaleApps(t *testing.T, f *webFixture) {
+ 	_, err := f.owner.Exec(context.Background(), `DELETE FROM personnel.identity_permissions WHERE permission_code IN (SELECT 'app.'||id::text||'.access' FROM applications.apps);
+  DELETE FROM personnel.template_permissions WHERE permission_code IN (SELECT 'app.'||id::text||'.access' FROM applications.apps);
+  DELETE FROM personnel.permission_catalog WHERE app_id IN (SELECT id::text FROM applications.apps);
+- DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE applications.table_presets,applications.workflow_rounds,applications.workflow_deletions,applications.workflow_evidence_members,applications.workflow_evidence_documents,applications.workflow_evidence_blobs,applications.workflow_tasks,applications.workflow_execution_events,applications.workflow_publications,applications.workflow_engine_receipts,applications.workflow_instances,applications.workflow_deployments,applications.workflow_versions,applications.workflow_definitions,applications.record_change_values,applications.record_change_events,applications.field_option_tombstones,applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$`)
++ DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE applications.record_lifecycle_events,applications.record_lifecycle,applications.table_presets,applications.workflow_rounds,applications.workflow_deletions,applications.workflow_evidence_members,applications.workflow_evidence_documents,applications.workflow_evidence_blobs,applications.workflow_tasks,applications.workflow_execution_events,applications.workflow_publications,applications.workflow_engine_receipts,applications.workflow_instances,applications.workflow_deployments,applications.workflow_versions,applications.workflow_definitions,applications.record_change_values,applications.record_change_events,applications.field_option_tombstones,applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$`)
+ 	if err != nil {
+ 		t.Fatal(err)
+ 	}
+diff --git a/services/bff/internal/audit/maintenance_test.go b/services/bff/internal/audit/maintenance_test.go
+index a93f521a..28256bd0 100644
+--- a/services/bff/internal/audit/maintenance_test.go
++++ b/services/bff/internal/audit/maintenance_test.go
+@@ -83,7 +83,7 @@ func clean(t *testing.T) (*pgxpool.Pool, *pgxpool.Pool) {
+ 	for _, v := range []struct {
+ 		p *pgxpool.Pool
+ 		q string
+-	}{{l, "DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE applications.table_presets,applications.workflow_rounds,applications.workflow_deletions,applications.workflow_evidence_members,applications.workflow_evidence_documents,applications.workflow_evidence_blobs,applications.workflow_tasks,applications.workflow_execution_events,applications.workflow_publications,applications.workflow_engine_receipts,applications.workflow_instances,applications.workflow_deployments,applications.workflow_versions,applications.workflow_definitions,applications.record_change_values,applications.record_change_events,applications.field_option_tombstones,applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,auth.authentication_events,auth.invitations,auth.password_credentials,auth.users,personnel.department_members,personnel.member_configuration,personnel.member_identities,personnel.drafts,personnel.table_presets,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$"}, {c, "TRUNCATE archive.authentication_events"}} {
++	}{{l, "DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE applications.record_lifecycle_events,applications.record_lifecycle,applications.table_presets,applications.workflow_rounds,applications.workflow_deletions,applications.workflow_evidence_members,applications.workflow_evidence_documents,applications.workflow_evidence_blobs,applications.workflow_tasks,applications.workflow_execution_events,applications.workflow_publications,applications.workflow_engine_receipts,applications.workflow_instances,applications.workflow_deployments,applications.workflow_versions,applications.workflow_definitions,applications.record_change_values,applications.record_change_events,applications.field_option_tombstones,applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,auth.authentication_events,auth.invitations,auth.password_credentials,auth.users,personnel.department_members,personnel.member_configuration,personnel.member_identities,personnel.drafts,personnel.table_presets,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$"}, {c, "TRUNCATE archive.authentication_events"}} {
+ 		if _, err := v.p.Exec(context.Background(), v.q); err != nil {
+ 			t.Fatal(err)
+ 		}

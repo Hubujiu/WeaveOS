@@ -1,0 +1,108 @@
+package apprecordservice
+
+import (
+	"errors"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"testing"
+)
+
+func lifecycleManager(f recordFixture) session.Principal {
+	p := f.principal
+	p.UserID = f.other
+	return p
+}
+func lifecycleRequest(t *testing.T, f recordFixture, version int64, deleted bool) RecordLifecycleRequest {
+	t.Helper()
+	return RecordLifecycleRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: version, Deleted: deleted}
+}
+func TestRootRecordLifecycleDeleteRestorePreservesValues(t *testing.T) {
+	f := newRecordFixture(t)
+	p := lifecycleManager(f)
+	before, e := f.service.GetRecord(f.ctx, p, f.app, f.view, f.ownRecord)
+	if e != nil {
+		t.Fatal(e)
+	}
+	req := lifecycleRequest(t, f, 1, true)
+	got, e := f.service.ChangeRecordLifecycle(f.ctx, p, req)
+	if e != nil || !got.Deleted || got.ID != f.ownRecord || got.RecordVersion != 2 || got.SchemaVersion != 1 || got.OperationID != req.OperationID {
+		t.Fatalf("delete must confirm bounded receipt: %+v %v", got, e)
+	}
+	if _, e = f.service.GetRecord(f.ctx, p, f.app, f.view, f.ownRecord); !errors.Is(e, applications.ErrMissing) {
+		t.Fatalf("deleted record remains visible: %v", e)
+	}
+	replay, e := f.service.ChangeRecordLifecycle(f.ctx, p, req)
+	if e != nil || replay != got {
+		t.Fatalf("exact retry: %+v %v", replay, e)
+	}
+	restored, e := f.service.ChangeRecordLifecycle(f.ctx, p, lifecycleRequest(t, f, 2, false))
+	if e != nil || restored.Deleted || restored.RecordVersion != 3 {
+		t.Fatalf("restore: %+v %v", restored, e)
+	}
+	after, e := f.service.GetRecord(f.ctx, p, f.app, f.view, f.ownRecord)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if after.ID != before.ID || after.CreatedBy != before.CreatedBy || after.CreatedAt != before.CreatedAt || after.Values[f.public] != before.Values[f.public] || after.Values[f.secret] != before.Values[f.secret] || after.RecordVersion != 3 {
+		t.Fatalf("restore changed original identity/values: before%+v after%+v", before, after)
+	}
+	var n int
+	if e = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_lifecycle_events WHERE app_id=$1 AND table_id=$2 AND record_id=$3", f.app, f.table, f.ownRecord).Scan(&n); e != nil || n != 2 {
+		t.Fatalf("two permanent lifecycle events required: %d %v", n, e)
+	}
+}
+func TestRootRecordLifecycleEditGrantDoesNotAuthorizeDelete(t *testing.T) {
+	f := newRecordFixture(t)
+	_, e := f.service.ChangeRecordLifecycle(f.ctx, f.principal, lifecycleRequest(t, f, 1, true))
+	if !errors.Is(e, applications.ErrDenied) {
+		t.Fatalf("data.edit must not imply delete: %v", e)
+	}
+	row, e := f.service.GetRecord(f.ctx, f.principal, f.app, f.view, f.ownRecord)
+	if e != nil || row.RecordVersion != 1 {
+		t.Fatalf("denied attempt changed row: %+v %v", row, e)
+	}
+}
+func TestRootRecordLifecyclePendingCommandBlocksDelete(t *testing.T) {
+	f := newRecordFixture(t)
+	rootFenceAcquire(t, f, recordOperationID(t, f))
+	_, e := f.service.ChangeRecordLifecycle(f.ctx, lifecycleManager(f), lifecycleRequest(t, f, 1, true))
+	if e == nil || errors.Is(e, ErrUnavailable) {
+		t.Fatalf("pending command must give explicit blocked outcome: %v", e)
+	}
+	row, e := f.service.GetRecord(f.ctx, lifecycleManager(f), f.app, f.view, f.ownRecord)
+	if e != nil || row.RecordVersion != 1 {
+		t.Fatalf("blocked delete changed row: %+v %v", row, e)
+	}
+	rootFenceCount(t, f, 1)
+}
+
+func TestRootRecordLifecycleDurableMetadata(t *testing.T) {
+	f := newRecordFixture(t)
+	for _, name := range []string{"applications.record_lifecycle", "applications.record_lifecycle_events"} {
+		var exists bool
+		if e := f.owner.QueryRow(f.ctx, "SELECT to_regclass($1) IS NOT NULL", name).Scan(&exists); e != nil || !exists {
+			t.Errorf("durable lifecycle relation %s absent: %v", name, e)
+		}
+	}
+}
+
+func TestRootRecordLifecycleMinimalRoles(t *testing.T) {
+	f := newRecordFixture(t)
+	for _, role := range []string{"auth_app", "auth_backup", "auth_reader", "auth_maintenance"} {
+		for _, table := range []string{"applications.record_lifecycle", "applications.record_lifecycle_events"} {
+			for _, action := range []string{"SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE"} {
+				var got bool
+				e := f.owner.QueryRow(f.ctx, "SELECT has_table_privilege($1,$2,$3)", role, table, action).Scan(&got)
+				want := action == "SELECT" && (role == "auth_app" || role == "auth_backup")
+				if e != nil || got != want {
+					t.Errorf("%s %s %s got%v want%v: %v", role, table, action, got, want, e)
+				}
+			}
+		}
+	}
+	var allowed bool
+	e := f.owner.QueryRow(f.ctx, "SELECT has_function_privilege('auth_app','applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean)','EXECUTE')").Scan(&allowed)
+	if e != nil || !allowed {
+		t.Errorf("runtime needs only finite capability: %v %v", allowed, e)
+	}
+}

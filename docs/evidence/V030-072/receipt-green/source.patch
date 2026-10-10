@@ -1,0 +1,124 @@
+diff --git a/db/migrations/00034_record_lifecycle.sql b/db/migrations/00034_record_lifecycle.sql
+index 07b84889..d45a7617 100644
+--- a/db/migrations/00034_record_lifecycle.sql
++++ b/db/migrations/00034_record_lifecycle.sql
+@@ -133,6 +133,18 @@ END $$;
+ REVOKE ALL ON FUNCTION applications.protect_deleted_record_start() FROM PUBLIC;
+ CREATE TRIGGER protect_deleted_record_start BEFORE INSERT OR UPDATE OF state,app_id,table_id,record_id ON applications.workflow_instances FOR EACH ROW EXECUTE FUNCTION applications.protect_deleted_record_start();
+ 
++ALTER TABLE applications.operations ADD CONSTRAINT ck_record_lifecycle_result CHECK(
++ result_json IS NULL OR operation_kind NOT IN ('record.delete','record.restore') OR COALESCE(
++ http_status=200 AND location=''
++ AND result_json ?& ARRAY['operationId','id','recordVersion','schemaVersion','deleted']
++ AND result_json-ARRAY['operationId','id','recordVersion','schemaVersion','deleted']='{}'::jsonb
++ AND jsonb_typeof(result_json->'operationId')='string' AND result_json->>'operationId'=operation_id::text
++ AND jsonb_typeof(result_json->'id')='string' AND result_json->>'id'~'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
++ AND result_json->>'id'<>'00000000-0000-0000-0000-000000000000'
++ AND jsonb_typeof(result_json->'recordVersion')='number' AND result_json->>'recordVersion'~'^[1-9][0-9]{0,15}$' AND (result_json->>'recordVersion')::numeric BETWEEN 2 AND 9007199254740991
++ AND jsonb_typeof(result_json->'schemaVersion')='number' AND result_json->>'schemaVersion'~'^[1-9][0-9]{0,15}$' AND (result_json->>'schemaVersion')::numeric BETWEEN 1 AND 9007199254740991
++ AND jsonb_typeof(result_json->'deleted')='boolean' AND (result_json->>'deleted')::boolean=(operation_kind='record.delete'),false));
++
+ -- +goose Down
+ -- Declaration-only until independent real Down tests.
+ -- +goose StatementBegin
+diff --git a/services/bff/internal/apprecordhttp/http.go b/services/bff/internal/apprecordhttp/http.go
+index d4a73082..ec0d0136 100644
+--- a/services/bff/internal/apprecordhttp/http.go
++++ b/services/bff/internal/apprecordhttp/http.go
+@@ -223,7 +223,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		failure(w, r, apprecordservice.ErrUnavailable, "")
+ 		return
+ 	}
+-	if s.privatePresetsHTTP(w, r, p) || s.workflowRoundHTTP(w, r, p) || s.workflowInboxHTTP(w, r, p) || s.workflowEventHistoryHTTP(w, r, p) || s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
++	if s.recordLifecycleHTTP(w, r, p) || s.privatePresetsHTTP(w, r, p) || s.workflowRoundHTTP(w, r, p) || s.workflowInboxHTTP(w, r, p) || s.workflowEventHistoryHTTP(w, r, p) || s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
+ 		return
+ 	}
+ 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
+diff --git a/services/bff/internal/apprecordservice/record_lifecycle.go b/services/bff/internal/apprecordservice/record_lifecycle.go
+index 845cf741..f8f31cbf 100644
+--- a/services/bff/internal/apprecordservice/record_lifecycle.go
++++ b/services/bff/internal/apprecordservice/record_lifecycle.go
+@@ -12,6 +12,7 @@ import (
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+ 	"github.com/jackc/pgx/v5"
+ 	"github.com/jackc/pgx/v5/pgconn"
++	"strings"
+ )
+ 
+ type RecordLifecycleRequest struct {
+@@ -27,6 +28,52 @@ type RecordLifecycleResult struct {
+ 	Deleted       bool   `json:"deleted"`
+ }
+ 
++type RecordLifecycleState struct {
++	ID            string `json:"id"`
++	RecordVersion int64  `json:"recordVersion"`
++	SchemaVersion int64  `json:"schemaVersion"`
++	Deleted       bool   `json:"deleted"`
++}
++
++func (s *Service) GetRecordLifecycle(ctx context.Context, p session.Principal, app, view, id string) (RecordLifecycleState, error) {
++	var out RecordLifecycleState
++	if s == nil || s.Pool == nil {
++		return out, ErrUnavailable
++	}
++	for _, value := range []string{app, view, id} {
++		if !appfields.ValidID(value) {
++			return out, applications.ErrResourceInvalid
++		}
++	}
++	tx, f, e := (&applications.Application{Pool: s.Pool}).BeginRecordRead(ctx, p, app, view)
++	if e != nil {
++		return out, e
++	}
++	defer tx.Rollback(context.Background())
++	if e = lifecycleManagerAuthorization(ctx, tx, f); e != nil {
++		return out, e
++	}
++	if !f.SchemaReady {
++		return out, apprecords.ErrNotReady
++	}
++	if !appfields.ValidID(f.TableID) {
++		return out, ErrUnavailable
++	}
++	table := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(f.TableID, "-", "")}.Sanitize()
++	e = tx.QueryRow(ctx, "SELECT r.id::text,r.record_version,COALESCE(l.deleted,false) FROM "+table+" r LEFT JOIN applications.record_lifecycle l ON l.app_id=$1 AND l.table_id=$2 AND l.record_id=r.id WHERE r.id=$3", app, f.TableID, id).Scan(&out.ID, &out.RecordVersion, &out.Deleted)
++	if errors.Is(e, pgx.ErrNoRows) {
++		return out, applications.ErrMissing
++	}
++	if e != nil {
++		return out, ErrUnavailable
++	}
++	out.SchemaVersion = f.SchemaVersion
++	if e = tx.Commit(ctx); e != nil {
++		return RecordLifecycleState{}, e
++	}
++	return out, nil
++}
++
+ func lifecycleManagerAuthorization(_ context.Context, _ pgx.Tx, f applications.RecordContext) error {
+ 	if !f.Actor.BootstrapAdmin && f.Actor.ID != f.App.OwnerUserID {
+ 		return applications.ErrDenied
+diff --git a/services/bff/internal/appstructure/record_http_decode.go b/services/bff/internal/appstructure/record_http_decode.go
+index a9313677..d0f70f01 100644
+--- a/services/bff/internal/appstructure/record_http_decode.go
++++ b/services/bff/internal/appstructure/record_http_decode.go
+@@ -15,6 +15,8 @@ import (
+ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[string]json.RawMessage, error) {
+ 	required, optional, nullable := []string{}, []string{}, []string{}
+ 	switch kind {
++	case "record.lifecycle":
++		required = []string{"operationId", "expectedSchemaVersion", "expectedRecordVersion"}
+ 	case "workflow.round.start":
+ 		required = []string{"operationId", "kind", "expectedWorkflowRevision", "expectedSchemaVersion", "expectedRecordVersion"}
+ 	case "workflow.round.rework":
+@@ -54,6 +56,9 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
+ 		return nil, &Error{Code: "COMMON_UNSUPPORTED_MEDIA_TYPE"}
+ 	}
+ 	limit := int64(1 << 20)
++	if kind == "record.lifecycle" {
++		limit = 4096
++	}
+ 	if kind == "record.search" {
+ 		limit = 64 << 10
+ 	}

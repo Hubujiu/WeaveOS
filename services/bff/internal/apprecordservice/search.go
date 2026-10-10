@@ -284,6 +284,12 @@ func (s *recordStrategy) sql(c criteria) (appquery.SearchSQL, string, []any, err
 	}
 	args := append([]any{}, plan.Arguments...)
 	predicate := plan.Access.RowPredicate + " AND " + plan.Filter.Predicate
+	if !appfields.ValidID(s.appID) || !appfields.ValidID(s.tableID) {
+		return plan, "", nil, ErrUnavailable
+	}
+	// Registered, canonical UUIDs are trusted context, never request SQL. Apply
+	// lifecycle before page, reference integrity and the full projection digest.
+	predicate += " AND NOT EXISTS(SELECT 1 FROM applications.record_lifecycle life WHERE life.app_id='" + s.appID + "'::uuid AND life.table_id='" + s.tableID + "'::uuid AND life.record_id=r.id AND life.deleted)"
 	if len(c.Quick) > 0 {
 		q, e := appquery.CompileQuickSearch(c.Quick, s.fields, s.policy, len(args)+1)
 		if e != nil {

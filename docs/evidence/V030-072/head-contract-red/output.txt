@@ -1,0 +1,33 @@
+✔ approved lifecycle commands expose bounded CAS input and minimal confirmed output (1.395345ms)
+✔ lifecycle recovery state is documented without business values (0.16616ms)
+✔ lifecycle public schemas reject independent malformed values and payload leakage (5.170319ms)
+✖ lifecycle read documents standard HEAD without a response body (0.794859ms)
+✔ lifecycle minimal operation recovery remains closed (88.857162ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 293.831897
+
+✖ failing tests:
+
+test at contracts/record-lifecycle.contract.test.mjs:50:1
+✖ lifecycle read documents standard HEAD without a response body (0.794859ms)
+  AssertionError [ERR_ASSERTION]: implemented HEAD must be in the public contract
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-072/contracts/record-lifecycle.contract.test.mjs:52:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

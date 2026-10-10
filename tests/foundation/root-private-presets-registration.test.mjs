@@ -7,11 +7,11 @@ const read=p=>readFileSync(p,'utf8');
 const hash=s=>createHash('sha256').update(s).digest('hex');
 test('Root V071: only the reviewed private configuration role suffix extends unchanged old policy',()=>{
  const suffix='\n-- V030-071: private per-actor/per-view configuration, no authority to move ownership.\nREVOKE ALL ON applications.table_presets FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;\nGRANT SELECT,INSERT,DELETE ON applications.table_presets TO auth_app;\nGRANT UPDATE(name,definition_json,field_kinds,version,updated_at) ON applications.table_presets TO auth_app;\nGRANT SELECT ON applications.table_presets TO auth_backup;\n';
- const sql=read('infra/runtime/roles.sql');assert.ok(sql.endsWith(suffix));
+ const current=read('infra/runtime/roles.sql');const marker=current.indexOf('\n-- V030-072:');assert.ok(marker>0);const sql=current.slice(0,marker);assert.ok(sql.endsWith(suffix));
  assert.equal(hash(sql.slice(0,-suffix.length)),'8b0e70f9a3708039d87d7848c0fba43d3ba240f018080c6a5d3a997efecf395f');
  assert.equal(hash(sql),'2a185862296a9178866a2554419b12163f25e2aae2a4fec2972002152a6305c1');
- assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql));
- for(const extra of ['GRANT UPDATE(owner_user_id) ON applications.table_presets TO auth_app;','GRANT SELECT ON applications.table_presets TO auth_reader;','GRANT DELETE ON applications.table_presets TO auth_backup;'])assert.throws(()=>validateInstalledPersonnelRoles(sql+'\n'+extra));
+ assert.doesNotThrow(()=>validateInstalledPersonnelRoles(current));
+ for(const extra of ['GRANT UPDATE(owner_user_id) ON applications.table_presets TO auth_app;','GRANT SELECT ON applications.table_presets TO auth_reader;','GRANT DELETE ON applications.table_presets TO auth_backup;'])assert.throws(()=>validateInstalledPersonnelRoles(current+'\n'+extra));
 });
 test('Root V071: exact hot33 and populated private backup are registered without promotion bypass',()=>{
  const manifest=JSON.parse(read('infra/server/deploy/compatibility.json'));

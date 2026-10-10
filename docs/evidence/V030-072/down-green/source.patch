@@ -1,0 +1,63 @@
+diff --git a/db/migrations/00034_record_lifecycle.sql b/db/migrations/00034_record_lifecycle.sql
+index d45a7617..ad13f1c3 100644
+--- a/db/migrations/00034_record_lifecycle.sql
++++ b/db/migrations/00034_record_lifecycle.sql
+@@ -146,7 +146,56 @@ ALTER TABLE applications.operations ADD CONSTRAINT ck_record_lifecycle_result CH
+  AND jsonb_typeof(result_json->'deleted')='boolean' AND (result_json->>'deleted')::boolean=(operation_kind='record.delete'),false));
+ 
+ -- +goose Down
+--- Declaration-only until independent real Down tests.
++LOCK TABLE applications.record_lifecycle_events,applications.record_lifecycle,applications.operations IN ACCESS EXCLUSIVE MODE;
+ -- +goose StatementBegin
+-DO $$ BEGIN RAISE EXCEPTION 'lifecycle down not implemented' USING ERRCODE='55000';END $$;
++DO $$ BEGIN
++ IF EXISTS(SELECT 1 FROM applications.record_lifecycle) OR EXISTS(SELECT 1 FROM applications.record_lifecycle_events)
++ OR EXISTS(SELECT 1 FROM applications.operations WHERE operation_kind IN ('record.delete','record.restore')) THEN
++ RAISE EXCEPTION 'record lifecycle history prevents downgrade' USING ERRCODE='55000';END IF;
++END $$;
++-- +goose StatementEnd
++DROP TRIGGER protect_deleted_record_start ON applications.workflow_instances;
++DROP FUNCTION applications.protect_deleted_record_start();
++DROP FUNCTION applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean);
++DROP FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb);
++DROP FUNCTION applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint);
++ALTER FUNCTION applications.apply_record_change_before_lifecycle(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb) RENAME TO apply_record_change;
++ALTER FUNCTION applications.acquire_record_command_fence_before_lifecycle(uuid,uuid,uuid,uuid,uuid,bigint,bigint) RENAME TO acquire_record_command_fence;
++-- +goose StatementBegin
++DO $$ BEGIN
++ IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='auth_app') THEN
++ GRANT EXECUTE ON FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb),applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint) TO auth_app;
++ END IF;
++END $$;
+ -- +goose StatementEnd
++ALTER TABLE applications.operations DROP CONSTRAINT ck_record_lifecycle_result;
++ALTER TABLE applications.operations
++ DROP CONSTRAINT ck_operation_kind,
++ ADD CONSTRAINT ck_operation_kind CHECK(operation_kind IN (
++  'application.create',
++  'group.create',
++  'group.update',
++  'members.replace',
++  'grants.replace',
++  'directory.create',
++  'directory.update',
++  'table.create',
++  'table.update',
++  'form.create',
++  'form.update',
++  'definition.save',
++  'record.create',
++  'record.edit',
++  'draft.create',
++  'draft.update',
++  'draft.discard',
++  'workflow.definition.save',
++  'workflow.enable',
++  'workflow.close',
++  'workflow.task.agree',
++  'workflow.task.reject',
++  'workflow.instance.withdraw',
++  'workflow.task.return','workflow.manual.start','workflow.delete','workflow.round.resubmit','workflow.round.review','application.template.import','preset.create','preset.update','preset.discard'
++ ));
++DROP TABLE applications.record_lifecycle_events;
++DROP TABLE applications.record_lifecycle;
