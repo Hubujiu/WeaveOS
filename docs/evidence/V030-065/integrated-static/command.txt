@@ -1,0 +1,6 @@
+pnpm install --frozen-lockfile --ignore-scripts --offline --store-dir <existing pinned store>
+node --test tests/governance/*.test.mjs tests/foundation/*.test.mjs contracts/*.test.mjs
+REDOCLY_TELEMETRY=off pnpm exec redocly lint contracts/openapi/openapi.json
+node scripts/check-tasks.mjs
+node scripts/verify-repo.mjs
+(cd services/bff && go vet ./... && go build ./...)
