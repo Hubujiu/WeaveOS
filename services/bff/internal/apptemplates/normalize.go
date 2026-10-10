@@ -6,6 +6,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
+	"reflect"
 	"strings"
 	"unicode/utf8"
 )
@@ -61,6 +62,9 @@ func layoutMembers(ns []appfields.LayoutNode, depth int) bool {
 }
 func NormalizeManifest(in Manifest) (Manifest, error) {
 	bad := func() (Manifest, error) { return Manifest{}, ErrInvalid }
+	if !validStrings(reflect.ValueOf(in), 0) {
+		return bad()
+	}
 	if in.Format != "weaveos.structure-template" || in.Version != 1 || !validID(in.Application.ID) || in.Directories == nil || in.Tables == nil || in.Forms == nil || in.Workflows == nil || in.PermissionGroups == nil || len(in.Directories) > 1000 || len(in.Tables) > 128 || len(in.Forms) > 256 || len(in.Workflows) > 128 || len(in.PermissionGroups) > 128 {
 		return bad()
 	}
@@ -234,4 +238,32 @@ func NormalizeManifest(in Manifest) (Manifest, error) {
 		}
 	}
 	return out, nil
+}
+
+func validStrings(v reflect.Value, depth int) bool {
+	if depth > 32 {
+		return false
+	}
+	switch v.Kind() {
+	case reflect.String:
+		return utf8.ValidString(v.String())
+	case reflect.Pointer:
+		return v.IsNil() || validStrings(v.Elem(), depth+1)
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			if !validStrings(v.Field(i), depth+1) {
+				return false
+			}
+		}
+	case reflect.Slice:
+		if v.Type() == rawType {
+			return utf8.Valid(v.Bytes())
+		}
+		for i := 0; i < v.Len(); i++ {
+			if !validStrings(v.Index(i), depth+1) {
+				return false
+			}
+		}
+	}
+	return true
 }
