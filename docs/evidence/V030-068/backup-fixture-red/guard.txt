@@ -1,0 +1,27 @@
+✖ restricted backup fixture builds the complete reviewed schema before installing canonical roles (4.009244ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 190.427325
+
+✖ failing tests:
+
+test at tests/foundation/root-backup-current-schema.test.mjs:5:1
+✖ restricted backup fixture builds the complete reviewed schema before installing canonical roles (4.009244ms)
+  AssertionError [ERR_ASSERTION]: 00022_workflow_lifecycle_operations.sql must be applied in order before canonical roles
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-068/tests/foundation/root-backup-current-schema.test.mjs:22:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
