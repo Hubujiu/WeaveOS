@@ -18,6 +18,39 @@ CREATE TABLE applications.structure_deletions (
 CREATE INDEX ix_structure_deletions_app ON applications.structure_deletions(app_id,deleted_at,resource_kind,resource_id);
 REVOKE ALL ON applications.structure_deletions FROM PUBLIC;
 -- +goose StatementBegin
+CREATE FUNCTION applications.protect_structure_identity() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE app_uuid uuid;directory_uuid uuid;
+BEGIN
+ IF TG_OP='INSERT' AND NEW.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'new resource must be active' USING ERRCODE='23514';END IF;
+ IF TG_OP='UPDATE' THEN
+  IF OLD.deleted_at IS NOT NULL THEN RAISE EXCEPTION 'retained resource is immutable' USING ERRCODE='P0002';END IF;
+  IF NEW.id<>OLD.id THEN RAISE EXCEPTION 'resource identity immutable' USING ERRCODE='23514';END IF;
+ END IF;
+ IF TG_TABLE_NAME='apps' THEN RETURN NEW;END IF;
+ app_uuid:=NEW.app_id;
+ IF TG_OP='UPDATE' AND NEW.app_id<>OLD.app_id THEN RAISE EXCEPTION 'application identity immutable' USING ERRCODE='23514';END IF;
+ PERFORM 1 FROM applications.apps WHERE id=app_uuid AND deleted_at IS NULL FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'application missing' USING ERRCODE='P0002';END IF;
+ IF TG_TABLE_NAME='directories' THEN directory_uuid:=NEW.parent_id;ELSE directory_uuid:=NEW.directory_id;END IF;
+ IF directory_uuid IS NOT NULL THEN
+  PERFORM 1 FROM applications.directories WHERE app_id=app_uuid AND id=directory_uuid AND deleted_at IS NULL;
+  IF NOT FOUND THEN RAISE EXCEPTION 'directory missing' USING ERRCODE='23514';END IF;
+ END IF;
+ IF TG_TABLE_NAME='form_views' THEN
+  IF TG_OP='UPDATE' AND NEW.table_id<>OLD.table_id THEN RAISE EXCEPTION 'table identity immutable' USING ERRCODE='23514';END IF;
+  PERFORM 1 FROM applications.logical_tables WHERE app_id=app_uuid AND id=NEW.table_id AND deleted_at IS NULL FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'table missing' USING ERRCODE='P0002';END IF;
+ END IF;
+ RETURN NEW;
+END $$;
+-- +goose StatementEnd
+REVOKE ALL ON FUNCTION applications.protect_structure_identity() FROM PUBLIC;
+CREATE TRIGGER structure_identity BEFORE INSERT OR UPDATE ON applications.apps FOR EACH ROW EXECUTE FUNCTION applications.protect_structure_identity();
+CREATE TRIGGER structure_identity BEFORE INSERT OR UPDATE ON applications.directories FOR EACH ROW EXECUTE FUNCTION applications.protect_structure_identity();
+CREATE TRIGGER structure_identity BEFORE INSERT OR UPDATE ON applications.logical_tables FOR EACH ROW EXECUTE FUNCTION applications.protect_structure_identity();
+CREATE TRIGGER structure_identity BEFORE INSERT OR UPDATE ON applications.form_views FOR EACH ROW EXECUTE FUNCTION applications.protect_structure_identity();
+-- +goose StatementBegin
 CREATE FUNCTION applications.delete_structure_resource(app_uuid uuid,resource_kind text,resource_uuid uuid,actor_uuid uuid,operation_uuid uuid,expected_structure bigint,expected_resource bigint) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
 DECLARE owner_uuid uuid;root boolean;sv bigint;pv bigint;rv bigint;table_uuid uuid;deps text[]:='{}';has_rows boolean;at_time timestamptz;
@@ -80,7 +113,7 @@ BEGIN
  IF cardinality(deps)>0 THEN RAISE EXCEPTION 'resource not empty' USING ERRCODE='W0037',DETAIL=to_json(deps)::text;END IF;
  at_time:=clock_timestamp();
  IF resource_kind='application' THEN
-  UPDATE applications.apps SET deleted_at=at_time,policy_revision=policy_revision+1 WHERE id=app_uuid;
+  UPDATE applications.apps SET deleted_at=at_time,policy_revision=policy_revision+1,structure_version=structure_version+1 WHERE id=app_uuid;
   UPDATE personnel.permission_catalog SET enabled=false WHERE code='app.'||app_uuid::text||'.access';
  ELSIF resource_kind='directory' THEN UPDATE applications.directories SET deleted_at=at_time WHERE app_id=app_uuid AND id=resource_uuid;
  ELSIF resource_kind='table' THEN UPDATE applications.logical_tables SET deleted_at=at_time WHERE app_id=app_uuid AND id=resource_uuid;
@@ -88,7 +121,7 @@ BEGIN
   UPDATE applications.form_views SET deleted_at=at_time WHERE app_id=app_uuid AND id=resource_uuid;
   UPDATE applications.logical_tables SET dependency_revision=dependency_revision+1 WHERE app_id=app_uuid AND id=table_uuid;
  END IF;
- UPDATE applications.apps SET structure_version=structure_version+1 WHERE id=app_uuid;
+ IF resource_kind<>'application' THEN UPDATE applications.apps SET structure_version=structure_version+1 WHERE id=app_uuid;END IF;
  INSERT INTO applications.structure_deletions(app_id,resource_kind,resource_id,actor_user_id,operation_id,before_structure_version,after_structure_version,resource_version,deleted_at)
  VALUES(app_uuid,resource_kind,resource_uuid,actor_uuid,operation_uuid,sv,sv+1,rv,at_time);
  RETURN jsonb_build_object('operationId',operation_uuid,'appId',app_uuid,'resourceKind',resource_kind,'id',resource_uuid,'structureVersion',sv+1,'deleted',true);
@@ -174,6 +207,12 @@ ALTER TABLE applications.operations
   'workflow.instance.withdraw',
   'workflow.task.return','workflow.manual.start','workflow.delete','workflow.round.resubmit','workflow.round.review','application.template.import','preset.create','preset.update','preset.discard','record.delete','record.restore'
  ));
+DROP TRIGGER structure_identity ON applications.apps;
+DROP TRIGGER structure_identity ON applications.directories;
+DROP TRIGGER structure_identity ON applications.logical_tables;
+DROP TRIGGER structure_identity ON applications.form_views;
+DROP FUNCTION applications.protect_structure_identity();
+GRANT UPDATE ON applications.directories,applications.logical_tables,applications.form_views TO auth_app;
 DROP FUNCTION applications.delete_structure_resource(uuid,text,uuid,uuid,uuid,bigint,bigint);
 DROP TABLE applications.structure_deletions;
 ALTER TABLE applications.form_views DROP COLUMN deleted_at;

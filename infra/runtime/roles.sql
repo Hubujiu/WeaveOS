@@ -176,3 +176,9 @@ REVOKE ALL ON applications.structure_deletions FROM PUBLIC,auth_app,auth_reader,
 GRANT SELECT ON applications.structure_deletions TO auth_app,auth_backup;
 REVOKE ALL ON FUNCTION applications.delete_structure_resource(uuid,text,uuid,uuid,uuid,bigint,bigint) FROM PUBLIC,auth_reader,auth_maintenance,auth_backup;
 GRANT EXECUTE ON FUNCTION applications.delete_structure_resource(uuid,text,uuid,uuid,uuid,bigint,bigint) TO auth_app;
+
+REVOKE UPDATE,DELETE ON applications.directories,applications.logical_tables,applications.form_views FROM auth_app;
+REVOKE DELETE ON applications.apps FROM auth_app;
+GRANT UPDATE(id,app_id,name,parent_id,position) ON applications.directories TO auth_app;
+GRANT UPDATE(id,app_id,name,directory_id,position,schema_version,data_revision,dependency_revision,schema_ready,fields_json) ON applications.logical_tables TO auth_app;
+GRANT UPDATE(id,app_id,table_id,name,directory_id,position,view_version,layout) ON applications.form_views TO auth_app;

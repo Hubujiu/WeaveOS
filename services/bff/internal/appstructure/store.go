@@ -182,7 +182,7 @@ func structure(c context.Context, tx pgx.Tx, app string) (Structure, error) {
 	if e != nil {
 		return s, e
 	}
-	rows, e := tx.Query(c, "SELECT id::text,name,parent_id::text,position FROM applications.directories WHERE app_id=$1 ORDER BY position,id", app)
+	rows, e := tx.Query(c, "SELECT id::text,name,parent_id::text,position FROM applications.directories WHERE app_id=$1 AND deleted_at IS NULL ORDER BY position,id", app)
 	if e != nil {
 		return s, e
 	}
@@ -198,7 +198,7 @@ func structure(c context.Context, tx pgx.Tx, app string) (Structure, error) {
 	if e != nil {
 		return s, e
 	}
-	rows, e = tx.Query(c, "SELECT id::text,name,directory_id::text,position,schema_version,schema_ready FROM applications.logical_tables WHERE app_id=$1 ORDER BY position,id", app)
+	rows, e = tx.Query(c, "SELECT id::text,name,directory_id::text,position,schema_version,schema_ready FROM applications.logical_tables WHERE app_id=$1 AND deleted_at IS NULL ORDER BY position,id", app)
 	if e != nil {
 		return s, e
 	}
@@ -214,7 +214,7 @@ func structure(c context.Context, tx pgx.Tx, app string) (Structure, error) {
 	if e != nil {
 		return s, e
 	}
-	rows, e = tx.Query(c, "SELECT id::text,table_id::text,name,directory_id::text,position,view_version FROM applications.form_views WHERE app_id=$1 ORDER BY position,id", app)
+	rows, e = tx.Query(c, "SELECT id::text,table_id::text,name,directory_id::text,position,view_version FROM applications.form_views WHERE app_id=$1 AND deleted_at IS NULL ORDER BY position,id", app)
 	if e != nil {
 		return s, e
 	}
@@ -234,7 +234,7 @@ func checkDirectory(c context.Context, tx pgx.Tx, app string, id *string) error 
 		return nil
 	}
 	var yes bool
-	e := tx.QueryRow(c, "SELECT EXISTS(SELECT 1 FROM applications.directories WHERE app_id=$1 AND id=$2)", app, *id).Scan(&yes)
+	e := tx.QueryRow(c, "SELECT EXISTS(SELECT 1 FROM applications.directories WHERE app_id=$1 AND id=$2 AND deleted_at IS NULL)", app, *id).Scan(&yes)
 	if e != nil {
 		return e
 	}
@@ -367,7 +367,7 @@ func (a *Application) write(c context.Context, p session.Principal, app, id, kin
 			_, e = tx.Exec(c, "INSERT INTO applications.directories(id,app_id,name,parent_id,position) VALUES($1,$2,$3,$4,$5)", id, app, in.Name, in.ParentID, in.Position)
 		} else {
 			var tag interface{ RowsAffected() int64 }
-			tag, e = tx.Exec(c, "UPDATE applications.directories SET name=$3,parent_id=$4,position=$5 WHERE id=$1 AND app_id=$2", id, app, in.Name, in.ParentID, in.Position)
+			tag, e = tx.Exec(c, "UPDATE applications.directories SET name=$3,parent_id=$4,position=$5 WHERE id=$1 AND app_id=$2 AND deleted_at IS NULL", id, app, in.Name, in.ParentID, in.Position)
 			if e == nil && tag.RowsAffected() != 1 {
 				e = applications.ErrMissing
 			}
@@ -380,7 +380,7 @@ func (a *Application) write(c context.Context, p session.Principal, app, id, kin
 		if status == 201 {
 			_, e = tx.Exec(c, "INSERT INTO applications.logical_tables(id,app_id,name,directory_id,position) VALUES($1,$2,$3,$4,$5)", id, app, in.Name, in.DirectoryID, in.Position)
 		} else {
-			tag, err := tx.Exec(c, "UPDATE applications.logical_tables SET name=$3,directory_id=$4,position=$5 WHERE id=$1 AND app_id=$2", id, app, in.Name, in.DirectoryID, in.Position)
+			tag, err := tx.Exec(c, "UPDATE applications.logical_tables SET name=$3,directory_id=$4,position=$5 WHERE id=$1 AND app_id=$2 AND deleted_at IS NULL", id, app, in.Name, in.DirectoryID, in.Position)
 			e = err
 			if e == nil && tag.RowsAffected() != 1 {
 				e = applications.ErrMissing
@@ -414,7 +414,7 @@ func (a *Application) write(c context.Context, p session.Principal, app, id, kin
 			e = err
 			tableID = v.TableID
 			if e == nil {
-				_, e = tx.Exec(c, "UPDATE applications.form_views SET name=$3,directory_id=$4,position=$5 WHERE id=$1 AND app_id=$2", id, app, in.Name, in.DirectoryID, in.Position)
+				_, e = tx.Exec(c, "UPDATE applications.form_views SET name=$3,directory_id=$4,position=$5 WHERE id=$1 AND app_id=$2 AND deleted_at IS NULL", id, app, in.Name, in.DirectoryID, in.Position)
 			}
 		}
 		if e == nil {
