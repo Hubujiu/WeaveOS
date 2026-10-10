@@ -1,0 +1,76 @@
+diff --git a/services/bff/cmd/bff/root_template_table_test.go b/services/bff/cmd/bff/root_template_table_test.go
+index 648abd12..19fa9fd8 100644
+--- a/services/bff/cmd/bff/root_template_table_test.go
++++ b/services/bff/cmd/bff/root_template_table_test.go
+@@ -68,6 +68,25 @@ func TestRootTemplateTableInitializesRealRestrictedTypedColumns(t *testing.T) {
+ 	if e = tx.Commit(f.ctx); e != nil {
+ 		t.Fatal(e)
+ 	}
++	probe, e := f.owner.Begin(f.ctx)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer probe.Rollback(f.ctx)
++	tableSQL := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(id, "-", "")}.Sanitize()
++	columns := []string{}
++	for _, field := range fields {
++		columns = append(columns, pgx.Identifier{"f_" + strings.ReplaceAll(field.ID, "-", "")}.Sanitize()+"::text")
++	}
++	var text, number, boolean, date, datetime, member, options string
++	e = probe.QueryRow(f.ctx, "INSERT INTO "+tableSQL+"(id,created_by) VALUES($1,$2) RETURNING "+strings.Join(columns, ","), f.id(t), f.actor).Scan(&text, &number, &boolean, &date, &datetime, &member, &options)
++	if e != nil || text != "literal'); DROP SCHEMA auth CASCADE;--" || number != "12.30" || boolean != "true" || date != "2026-10-10" || member != f.other || options != "{"+option+"}" || !strings.HasPrefix(datetime, "2026-10-10 01:02:03") {
++		t.Fatal("actual typed defaults changed", text, number, boolean, date, datetime, member, options, e)
++	}
++	if e = probe.Rollback(f.ctx); e != nil {
++		t.Fatal(e)
++	}
++
+ 	var rows int
+ 	if e = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM "+pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(id, "-", "")}.Sanitize()).Scan(&rows); e != nil || rows != 0 {
+ 		t.Fatal("import table contains rows", rows, e)
+@@ -131,3 +150,45 @@ func TestRootTemplateTableRejectsWrongAuthorityScopeOrExistingTable(t *testing.T
+ 		})
+ 	}
+ }
++
++func TestRootTemplateTableMidDDLAndMetadataFailureRollback(t *testing.T) {
++	for _, phase := range []string{"ddl", "metadata"} {
++		t.Run(phase, func(t *testing.T) {
++			f := rootHTTPResourceSetup(t)
++			id := rootTemplateEmptyTable(t, f)
++			fields := []appfields.Field{rootTemplateField(t, f, "text", `null`, `{"maxLength":null}`), rootTemplateField(t, f, "text", `null`, `{"maxLength":null}`)}
++			if phase == "ddl" {
++				fields[1].ID = f.field
++			} else {
++				suffix := strings.ReplaceAll(id, "-", "")
++				fn := pgx.Identifier{"public", "template_fail_" + suffix}.Sanitize()
++				trigger := pgx.Identifier{"template_fail_" + suffix}.Sanitize()
++				sql := "CREATE FUNCTION " + fn + "() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.id='" + id + "'::uuid THEN RAISE EXCEPTION 'isolated metadata failure'; END IF; RETURN NEW; END $$; CREATE TRIGGER " + trigger + " BEFORE UPDATE ON applications.logical_tables FOR EACH ROW EXECUTE FUNCTION " + fn + "()"
++				if _, e := f.owner.Exec(f.ctx, sql); e != nil {
++					t.Fatal(e)
++				}
++				t.Cleanup(func() {
++					if _, e := f.owner.Exec(f.ctx, "DROP TRIGGER "+trigger+" ON applications.logical_tables; DROP FUNCTION "+fn+"()"); e != nil {
++						t.Error(e)
++					}
++				})
++			}
++			tx, e := f.runtime.Begin(f.ctx)
++			if e != nil {
++				t.Fatal(e)
++			}
++			defer tx.Rollback(f.ctx)
++			if e = appstructure.InitializeTemplateTableInTx(f.ctx, tx, rootTemplatePrincipal(f), f.app, id, fields, rootTemplateTableLimits()); e == nil {
++				t.Fatal("injected mid-transaction failure ignored")
++			}
++			if e = tx.Rollback(f.ctx); e != nil {
++				t.Fatal(e)
++			}
++			var exists, ready bool
++			var version, count int
++			if e = f.owner.QueryRow(f.ctx, "SELECT to_regclass($1) IS NOT NULL,schema_ready,schema_version,(SELECT count(*) FROM applications.fields WHERE table_id=$2) FROM applications.logical_tables WHERE id=$2", "appdata.t_"+strings.ReplaceAll(id, "-", ""), id).Scan(&exists, &ready, &version, &count); e != nil || exists || ready || version != 0 || count != 0 {
++				t.Fatal("failure left partial DDL or metadata", exists, ready, version, count, e)
++			}
++		})
++	}
++}
