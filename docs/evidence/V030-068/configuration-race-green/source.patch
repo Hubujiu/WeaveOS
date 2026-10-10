@@ -1,0 +1,43 @@
+diff --git a/db/migrations/00029_workflow_deletions.sql b/db/migrations/00029_workflow_deletions.sql
+index 5bb8bcef..afb1756f 100644
+--- a/db/migrations/00029_workflow_deletions.sql
++++ b/db/migrations/00029_workflow_deletions.sql
+@@ -64,7 +64,12 @@ LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog AS $$
+ DECLARE target_flow uuid;
+ BEGIN
+  IF TG_TABLE_NAME='workflow_definitions' THEN target_flow:=NEW.id;
+- ELSE target_flow:=NEW.flow_id; END IF;
++ ELSE
++  target_flow:=NEW.flow_id;
++  -- The immutable version FK only takes KEY SHARE and does not serialize
++  -- against a concurrent non-key state update. Lock the definition first.
++  PERFORM 1 FROM applications.workflow_definitions WHERE id=target_flow FOR UPDATE;
++ END IF;
+  IF EXISTS(SELECT 1 FROM applications.workflow_deletions WHERE flow_id=target_flow) THEN
+   IF TG_TABLE_NAME='workflow_definitions' AND TG_OP='UPDATE' THEN
+    IF OLD.state='closing' AND NEW.state='disabled' AND NEW.revision=OLD.revision+1
+diff --git a/services/bff/internal/workflowcatalog/catalog.go b/services/bff/internal/workflowcatalog/catalog.go
+index a58ec0db..db7841ff 100644
+--- a/services/bff/internal/workflowcatalog/catalog.go
++++ b/services/bff/internal/workflowcatalog/catalog.go
+@@ -78,6 +78,9 @@ func (Catalog) PublicationVersionInTx(ctx context.Context, tx pgx.Tx, appID, flo
+ 		return PublicationVersion{}, err
+ 	}
+ 	if version == 0 {
++		if err := rejectDeletion(ctx, tx, flowID); err != nil {
++			return PublicationVersion{}, err
++		}
+ 		version = h.CandidateVersion
+ 	}
+ 	v := PublicationVersion{Head: h, SchemaVersion: resources.schemaVersion, Version: version}
+@@ -124,6 +127,10 @@ func (Catalog) PutVersionInTx(ctx context.Context, tx pgx.Tx, in VersionInput) (
+ 		return Head{}, ErrConflict
+ 	}
+ 
++	if err := rejectDeletion(ctx, tx, in.FlowID); err != nil {
++		return Head{}, err
++	}
++
+ 	old, err := headForUpdate(ctx, tx, in.AppID, in.FlowID)
+ 	exists := err == nil
+ 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {

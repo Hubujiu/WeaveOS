@@ -78,6 +78,9 @@ func (Catalog) PublicationVersionInTx(ctx context.Context, tx pgx.Tx, appID, flo
 		return PublicationVersion{}, err
 	}
 	if version == 0 {
+		if err := rejectDeletion(ctx, tx, flowID); err != nil {
+			return PublicationVersion{}, err
+		}
 		version = h.CandidateVersion
 	}
 	v := PublicationVersion{Head: h, SchemaVersion: resources.schemaVersion, Version: version}
@@ -122,6 +125,10 @@ func (Catalog) PutVersionInTx(ctx context.Context, tx pgx.Tx, in VersionInput) (
 	}
 	if resources.schemaVersion != in.ExpectedSchemaVersion {
 		return Head{}, ErrConflict
+	}
+
+	if err := rejectDeletion(ctx, tx, in.FlowID); err != nil {
+		return Head{}, err
 	}
 
 	old, err := headForUpdate(ctx, tx, in.AppID, in.FlowID)
