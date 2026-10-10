@@ -3,7 +3,11 @@ package apprecordservice
 import (
 	"errors"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -175,4 +179,114 @@ func TestRootRoundServiceReworkIsIndependentSaveWithOtherFlowActive(t *testing.T
 		t.Fatal("stale rework overwrote newer values")
 	}
 	rootManualNoReceipt(t, f, req.OperationID)
+}
+
+// Supplemental adversarial qualification of the already RED-first service.
+func TestRootRoundServiceCommitFaultRollsBackAllEffects(t *testing.T) {
+	for _, kind := range []string{"resubmit", "rework"} {
+		t.Run(kind, func(t *testing.T) {
+			f, q, r := rootRoundSetup(t, "rejected")
+			name := "round_fault_" + strings.ReplaceAll(f.app, "-", "")
+			function := pgx.Identifier{"applications", name}.Sanitize()
+			trigger := pgx.Identifier{name}.Sanitize()
+			if _, e := f.owner.Exec(f.ctx, "CREATE FUNCTION "+function+"() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.app_id='"+f.app+"'::uuid THEN RAISE EXCEPTION 'isolated round commit fault' USING ERRCODE='P0001'; END IF; RETURN NEW; END $$"); e != nil {
+				t.Fatal(e)
+			}
+			defer f.owner.Exec(f.ctx, "DROP FUNCTION "+function+"() CASCADE")
+			if _, e := f.owner.Exec(f.ctx, "CREATE CONSTRAINT TRIGGER "+trigger+" AFTER INSERT ON applications.operations DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION "+function+"()"); e != nil {
+				t.Fatal(e)
+			}
+			op := recordOperationID(t, f)
+			var e error
+			if kind == "resubmit" {
+				in := rootRoundStartRequest(t, f, q, r, kind)
+				in.OperationID = op
+				_, e = f.service.StartWorkflowRound(f.ctx, f.principal, in, applications.Metadata{RequestID: "round-commit-fault"})
+			} else {
+				_, e = f.service.ReworkWorkflowRound(f.ctx, f.principal, WorkflowRoundReworkRequest{WorkflowRoundRequest: q, OperationID: op, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "must rollback"}}, applications.Metadata{RequestID: "round-commit-fault"})
+			}
+			var pg *pgconn.PgError
+			if !errors.As(e, &pg) || pg.Code != "P0001" || !strings.Contains(pg.Message, "isolated round commit fault") {
+				t.Fatalf("fault not reached %v", e)
+			}
+			rootManualNoReceipt(t, f, op)
+			rootTriggeredCount(t, f, q.RecordID, 1)
+			var rounds int
+			if e = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_rounds WHERE app_id=$1", f.app).Scan(&rounds); e != nil || rounds != 1 {
+				t.Fatal("failed commit left round", rounds, e)
+			}
+			preview, e := f.service.PreviewWorkflowRound(f.ctx, f.principal, q)
+			if e != nil || preview.RecordVersion != 1 {
+				t.Fatal("failed commit changed record", e)
+			}
+		})
+	}
+}
+func TestRootRoundServiceReworkBoundariesAndUnknownFence(t *testing.T) {
+	for _, mode := range []string{"completed", "old", "field", "revoked-edit", "fence"} {
+		t.Run(mode, func(t *testing.T) {
+			f, q, r := rootRoundSetup(t, "rejected")
+			req := WorkflowRoundReworkRequest{WorkflowRoundRequest: q, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "denied"}}
+			var want error = applications.ErrDenied
+			switch mode {
+			case "completed":
+				rootRoundTerminal(t, f, q.InstanceID, "completed")
+			case "old":
+				rootCatalogReserve(t, f, rootCatalogReserveInput(t, f, workflowcatalog.Head{FlowID: r.FlowID, Revision: r.ExpectedWorkflowRevision}))
+				want = workflowcatalog.ErrConflict
+			case "field":
+				req.Changes[f.secret] = "forbidden"
+			case "revoked-edit":
+				if _, e := f.owner.Exec(f.ctx, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN(SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.edit')", f.app); e != nil {
+					t.Fatal(e)
+				}
+			case "fence":
+				rootFenceAcquire(t, f, recordOperationID(t, f))
+				want = nil
+			}
+			_, e := f.service.ReworkWorkflowRound(f.ctx, f.principal, req, applications.Metadata{RequestID: "round-boundary"})
+			if mode == "fence" {
+				var fence *appstructure.Error
+				if !errors.As(e, &fence) || fence.Code != "APPLICATION_RECORD_FENCED" {
+					t.Fatal("unknown fence bypassed", e)
+				}
+			} else if !errors.Is(e, want) {
+				t.Fatalf("%s want %v got %v", mode, want, e)
+			}
+			rootManualNoReceipt(t, f, req.OperationID)
+			p, e := f.service.PreviewWorkflowRound(f.ctx, f.principal, q)
+			if e != nil || p.RecordVersion != 1 {
+				t.Fatal("denied edit changed row", e)
+			}
+			if mode == "fence" {
+				_, e = f.service.StartWorkflowRound(f.ctx, f.principal, rootRoundStartRequest(t, f, q, r, "review"), applications.Metadata{RequestID: "fenced-round-start"})
+				var fence *appstructure.Error
+				if !errors.As(e, &fence) || fence.Code != "APPLICATION_RECORD_FENCED" {
+					t.Fatal("fenced start accepted", e)
+				}
+				rootFenceCount(t, f, 1)
+			}
+		})
+	}
+}
+func TestRootRoundServiceReplayBoundToExactOriginalRequest(t *testing.T) {
+	f, q, r := rootRoundSetup(t, "rejected")
+	req := rootRoundStartRequest(t, f, q, r, "resubmit")
+	got, e := f.service.StartWorkflowRound(f.ctx, f.principal, req, applications.Metadata{RequestID: "round-replay"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	bad := req
+	bad.ExpectedRecordVersion++
+	if _, e = f.service.StartWorkflowRound(f.ctx, f.principal, bad, applications.Metadata{RequestID: "round-collision"}); !errors.Is(e, applications.ErrOperationConflict) {
+		t.Fatal("same key changed request", e)
+	}
+	if _, e = f.owner.Exec(f.ctx, "UPDATE applications.permission_groups SET enabled=false WHERE app_id=$1", f.app); e != nil {
+		t.Fatal(e)
+	}
+	again, e := f.service.StartWorkflowRound(f.ctx, f.principal, req, applications.Metadata{RequestID: "round-recovery"})
+	if e != nil || again != got {
+		t.Fatal("minimal original receipt unrecoverable", e)
+	}
+	rootTriggeredCount(t, f, q.RecordID, 2)
 }
