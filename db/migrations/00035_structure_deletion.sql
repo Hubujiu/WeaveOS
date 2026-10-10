@@ -258,6 +258,71 @@ END $$;
 -- +goose StatementEnd
 REVOKE ALL ON FUNCTION applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean) FROM PUBLIC;
 
+-- +goose StatementBegin
+CREATE FUNCTION applications.protect_active_structure_reference() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE table_uuid uuid;view_uuid uuid;directory_uuid uuid;
+BEGIN
+ PERFORM 1 FROM applications.apps WHERE id=NEW.app_id AND deleted_at IS NULL FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'application missing' USING ERRCODE='P0002';END IF;
+ IF TG_TABLE_NAME IN ('workflow_definitions','record_drafts') THEN table_uuid:=NEW.table_id;view_uuid:=NEW.view_id;
+ ELSIF TG_TABLE_NAME IN ('fields','table_field_dependencies','record_command_fences') THEN table_uuid:=NEW.table_id;
+ ELSIF TG_TABLE_NAME='table_presets' THEN view_uuid:=NEW.view_id;
+ ELSIF TG_TABLE_NAME IN ('grants','menu_resources') THEN
+  IF NEW.resource_kind='form' THEN view_uuid:=NEW.resource_id;
+  ELSIF NEW.resource_kind='directory' THEN directory_uuid:=NEW.resource_id;END IF;
+ END IF;
+ IF view_uuid IS NOT NULL AND table_uuid IS NULL THEN
+  SELECT table_id INTO table_uuid FROM applications.form_views WHERE app_id=NEW.app_id AND id=view_uuid AND deleted_at IS NULL;
+  IF NOT FOUND THEN RAISE EXCEPTION 'view missing' USING ERRCODE='P0002';END IF;
+ END IF;
+ IF table_uuid IS NOT NULL THEN
+  PERFORM 1 FROM applications.logical_tables WHERE app_id=NEW.app_id AND id=table_uuid AND deleted_at IS NULL FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'table missing' USING ERRCODE='P0002';END IF;
+ END IF;
+ IF view_uuid IS NOT NULL THEN
+  PERFORM 1 FROM applications.form_views WHERE app_id=NEW.app_id AND table_id=table_uuid AND id=view_uuid AND deleted_at IS NULL;
+  IF NOT FOUND THEN RAISE EXCEPTION 'view missing' USING ERRCODE='P0002';END IF;
+ END IF;
+ IF directory_uuid IS NOT NULL THEN
+  PERFORM 1 FROM applications.directories WHERE app_id=NEW.app_id AND id=directory_uuid AND deleted_at IS NULL;
+  IF NOT FOUND THEN RAISE EXCEPTION 'directory missing' USING ERRCODE='P0002';END IF;
+ END IF;
+ RETURN NEW;
+END $$;
+-- +goose StatementEnd
+REVOKE ALL ON FUNCTION applications.protect_active_structure_reference() FROM PUBLIC;
+CREATE TRIGGER active_structure_reference BEFORE INSERT OR UPDATE ON applications.permission_groups FOR EACH ROW EXECUTE FUNCTION applications.protect_active_structure_reference();
+CREATE TRIGGER active_structure_reference BEFORE INSERT OR UPDATE ON applications.group_members FOR EACH ROW EXECUTE FUNCTION applications.protect_active_structure_reference();
+CREATE TRIGGER active_structure_reference BEFORE INSERT OR UPDATE ON applications.grants FOR EACH ROW EXECUTE FUNCTION applications.protect_active_structure_reference();
+CREATE TRIGGER active_structure_reference BEFORE INSERT OR UPDATE ON applications.menu_resources FOR EACH ROW EXECUTE FUNCTION applications.protect_active_structure_reference();
+CREATE TRIGGER active_structure_reference BEFORE INSERT OR UPDATE ON applications.workflow_definitions FOR EACH ROW EXECUTE FUNCTION applications.protect_active_structure_reference();
+CREATE TRIGGER active_structure_reference BEFORE INSERT OR UPDATE ON applications.record_drafts FOR EACH ROW EXECUTE FUNCTION applications.protect_active_structure_reference();
+CREATE TRIGGER active_structure_reference BEFORE INSERT OR UPDATE ON applications.table_presets FOR EACH ROW EXECUTE FUNCTION applications.protect_active_structure_reference();
+CREATE TRIGGER active_structure_reference BEFORE INSERT OR UPDATE ON applications.fields FOR EACH ROW EXECUTE FUNCTION applications.protect_active_structure_reference();
+CREATE TRIGGER active_structure_reference BEFORE INSERT OR UPDATE ON applications.table_field_dependencies FOR EACH ROW EXECUTE FUNCTION applications.protect_active_structure_reference();
+CREATE TRIGGER active_structure_reference BEFORE INSERT OR UPDATE ON applications.record_command_fences FOR EACH ROW EXECUTE FUNCTION applications.protect_active_structure_reference();
+ALTER FUNCTION applications.apply_option_mapping(uuid,uuid,uuid,uuid,text,jsonb,jsonb) RENAME TO apply_option_mapping_before_structure_deletion;
+REVOKE ALL ON FUNCTION applications.apply_option_mapping_before_structure_deletion(uuid,uuid,uuid,uuid,text,jsonb,jsonb) FROM PUBLIC;
+-- +goose StatementBegin
+DO $$ DECLARE principal text;BEGIN
+ FOREACH principal IN ARRAY ARRAY['auth_app','auth_reader','auth_maintenance','auth_backup'] LOOP
+ IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=principal) THEN EXECUTE format('REVOKE ALL ON FUNCTION applications.apply_option_mapping_before_structure_deletion(uuid,uuid,uuid,uuid,text,jsonb,jsonb) FROM %I',principal);END IF;END LOOP;
+END $$;
+-- +goose StatementEnd
+-- +goose StatementBegin
+CREATE FUNCTION applications.apply_option_mapping(actor_uuid uuid,app_uuid uuid,table_uuid uuid,field_uuid uuid,old_kind text,next_config jsonb,mappings jsonb) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+BEGIN
+ PERFORM 1 FROM applications.apps WHERE id=app_uuid AND deleted_at IS NULL FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'application missing' USING ERRCODE='P0002';END IF;
+ PERFORM 1 FROM applications.logical_tables WHERE app_id=app_uuid AND id=table_uuid AND deleted_at IS NULL FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'table missing' USING ERRCODE='P0002';END IF;
+ PERFORM applications.apply_option_mapping_before_structure_deletion(actor_uuid,app_uuid,table_uuid,field_uuid,old_kind,next_config,mappings);
+END $$;
+-- +goose StatementEnd
+REVOKE ALL ON FUNCTION applications.apply_option_mapping(uuid,uuid,uuid,uuid,text,jsonb,jsonb) FROM PUBLIC;
+
 -- +goose Down
 LOCK TABLE applications.apps,applications.directories,applications.logical_tables,applications.form_views,applications.structure_deletions,applications.operations IN ACCESS EXCLUSIVE MODE;
 -- +goose StatementBegin
@@ -313,6 +378,23 @@ DROP FUNCTION applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid
 ALTER FUNCTION applications.change_record_lifecycle_before_structure_deletion(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean) RENAME TO change_record_lifecycle;
 -- +goose StatementBegin
 DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='auth_app') THEN GRANT EXECUTE ON FUNCTION applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean) TO auth_app;END IF;END $$;
+-- +goose StatementEnd
+
+DROP TRIGGER active_structure_reference ON applications.permission_groups;
+DROP TRIGGER active_structure_reference ON applications.group_members;
+DROP TRIGGER active_structure_reference ON applications.grants;
+DROP TRIGGER active_structure_reference ON applications.menu_resources;
+DROP TRIGGER active_structure_reference ON applications.workflow_definitions;
+DROP TRIGGER active_structure_reference ON applications.record_drafts;
+DROP TRIGGER active_structure_reference ON applications.table_presets;
+DROP TRIGGER active_structure_reference ON applications.fields;
+DROP TRIGGER active_structure_reference ON applications.table_field_dependencies;
+DROP TRIGGER active_structure_reference ON applications.record_command_fences;
+DROP FUNCTION applications.protect_active_structure_reference();
+DROP FUNCTION applications.apply_option_mapping(uuid,uuid,uuid,uuid,text,jsonb,jsonb);
+ALTER FUNCTION applications.apply_option_mapping_before_structure_deletion(uuid,uuid,uuid,uuid,text,jsonb,jsonb) RENAME TO apply_option_mapping;
+-- +goose StatementBegin
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='auth_app') THEN GRANT EXECUTE ON FUNCTION applications.apply_option_mapping(uuid,uuid,uuid,uuid,text,jsonb,jsonb) TO auth_app;END IF;END $$;
 -- +goose StatementEnd
 
 DROP TRIGGER structure_identity ON applications.apps;
