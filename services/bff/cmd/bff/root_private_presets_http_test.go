@@ -26,12 +26,14 @@ func TestRootPrivatePresetsHTTPClosedCRUDAndBodylessDiscard(t *testing.T) {
 	body := rootPresetHTTPBody(t, f, op)
 	response := f.call(t, "POST", path, body, nil)
 	created := rootHTTPData(t, response, 201)
+	rootPresetContractCapture(t, "POST", path, response.Code, response.Body.Bytes(), response.Header().Get("X-Request-Id"))
 	id := rootHTTPString(t, created, "id")
 	if len(created) != 3 || rootHTTPString(t, created, "operationId") != op || response.Header().Get("Location") != path+"/"+id {
 		t.Fatal("create receipt not minimum", response.Body.String())
 	}
 	raw := f.call(t, "GET", path+"/"+id, "", nil)
 	got := rootHTTPData(t, raw, 200)
+	rootPresetContractCapture(t, "GET", path+"/"+id, raw.Code, raw.Body.Bytes(), raw.Header().Get("X-Request-Id"))
 	if len(got) != 13 || rootHTTPString(t, got, "name") != "HTTP方案" || string(got["invalid"]) != "false" {
 		t.Fatal("incomplete persistent configuration", raw.Body.String())
 	}
@@ -84,4 +86,13 @@ func TestRootPrivatePresetsHTTPInputAndLiveIdentityGuards(t *testing.T) {
 			}
 		})
 	}
+}
+
+func rootPresetContractCapture(t *testing.T, method, path string, status int, body []byte, requestID string) {
+	t.Helper()
+	raw, e := json.Marshal(map[string]any{"method": method, "path": path, "status": status, "body": json.RawMessage(body), "requestId": requestID})
+	if e != nil {
+		t.Fatal(e)
+	}
+	t.Logf("V071_CONTRACT_RESPONSE %s", raw)
 }
