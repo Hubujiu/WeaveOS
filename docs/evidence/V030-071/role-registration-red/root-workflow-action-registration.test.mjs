@@ -1,11 +1,12 @@
-// Root-authored V033 registration contract; no production deployment.
+// Root-owned workflow action migration and backup registration.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {validateInstalledPersonnelRoles} from '../../infra/server/deploy/personnel-upgrade.mjs';
-const manifest=JSON.parse(readFileSync(new URL('../../infra/server/deploy/compatibility.json',import.meta.url),'utf8'));
-const prior=[
+const read=p=>readFileSync(new URL('../../'+p,import.meta.url));
+const hash=b=>createHash('sha256').update(b).digest('hex');
+const manifest=JSON.parse(read('infra/server/deploy/compatibility.json'));
+const previous=[
   {
     "path": "migrations/00001_auth.sql",
     "sha256": "ab5c96db2fb775501df3fc2c55a16f9ffd6c8630c6e9f875aa238230b6b522b4"
@@ -97,25 +98,30 @@ const prior=[
   {
     "path": "migrations/00017_workflow_publications.sql",
     "sha256": "26dc61e4b3811862b66fd5db5ad0bff872e20284c83159744c3eb280486eb4fb"
+  },
+  {
+    "path": "migrations/00018_workflow_execution_projection.sql",
+    "sha256": "70b73412bccd5b95ede435f8c1142496dd0c4c53e60163e15a9591b784527f6b"
+  },
+  {
+    "path": "migrations/00019_workflow_execution_recovery.sql",
+    "sha256": "c7fc65a5b0437e73245490804237fe3189428a33e4329f40c16b45aa9e2d3d34"
+  },
+  {
+    "path": "migrations/00020_workflow_evidence.sql",
+    "sha256": "6699d65269ddbeeddc429486038865e09b35a857b407639487ade4aaaf8cb4d9"
   }
 ];
-const path='migrations/00018_workflow_execution_projection.sql';
-const expected='70b73412bccd5b95ede435f8c1142496dd0c4c53e60163e15a9591b784527f6b';
-test('Root V033: hot18 has one exact reviewed registration after publication migrations',()=>{
- const found=manifest.migrations.filter(x=>x.path===path);assert.deepEqual(found,[{path,sha256:expected}]);
- const paths=manifest.migrations.map(x=>x.path);assert.ok(paths.indexOf(path)>paths.indexOf('migrations/00017_workflow_publications.sql'));
- assert.ok(paths.indexOf(path)>paths.indexOf('archive-migrations/00006_workflow_publication_audit.sql'));
- const sql=readFileSync(new URL('../../db/'+path,import.meta.url));assert.equal(createHash('sha256').update(sql).digest('hex'),expected);
+const path='migrations/00021_workflow_task_operations.sql';
+const expected='9075fdc77a15d31e44a6247c4d1ced4e7afbd35607f4fd334eee0ceab5c6220a';
+test('Root V037: exactly reviewed action migration follows immutable evidence',()=>{
+ assert.deepEqual(manifest.migrations.filter(x=>x.path===path),[{path,sha256:expected}]);
+ const names=manifest.migrations.map(x=>x.path);assert.ok(names.indexOf(path)>names.indexOf('migrations/00020_workflow_evidence.sql'));
+ assert.equal(hash(read('db/'+path)),expected);
 });
-test('Root V033: all previous migration identities remain unchanged',()=>{
- for(const before of prior)assert.deepEqual(manifest.migrations.filter(x=>x.path===before.path),[before]);
+test('Root V037: all earlier migration bytes and installed roles remain unchanged',()=>{
+ for(const old of previous){assert.deepEqual(manifest.migrations.filter(x=>x.path===old.path),[old]);assert.equal(hash(read('db/'+old.path)),old.sha256);}
+ assert.equal(hash(read('infra/runtime/roles.sql')),'8b0e70f9a3708039d87d7848c0fba43d3ba240f018080c6a5d3a997efecf395f');
 });
-test('Root V033: reviewed least-privilege role source is accepted exactly',()=>{
- const sql=readFileSync(new URL('../../infra/runtime/roles.sql',import.meta.url),'utf8');
- assert.equal(createHash('sha256').update(sql).digest('hex'),'2a185862296a9178866a2554419b12163f25e2aae2a4fec2972002152a6305c1');
- assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql));assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql.replace(/\n/g,'\r\n')));
-});
-test('Root V033: role policy still rejects unreviewed extra privileges',()=>{
- const sql=readFileSync(new URL('../../infra/runtime/roles.sql',import.meta.url),'utf8');
- assert.throws(()=>validateInstalledPersonnelRoles(sql+'\nGRANT UPDATE ON applications.workflow_execution_events TO auth_app;\n'));
-});
+// Backup/restore receipt and role invariants are executed by infra/runtime/backup.test.mjs.
+// Source-token presence is not evidence of a successful restore.
