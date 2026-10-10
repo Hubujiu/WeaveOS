@@ -1,0 +1,450 @@
+diff --git a/db/migrations/00034_record_lifecycle.sql b/db/migrations/00034_record_lifecycle.sql
+index d45a7617..ad13f1c3 100644
+--- a/db/migrations/00034_record_lifecycle.sql
++++ b/db/migrations/00034_record_lifecycle.sql
+@@ -146,7 +146,56 @@ ALTER TABLE applications.operations ADD CONSTRAINT ck_record_lifecycle_result CH
+  AND jsonb_typeof(result_json->'deleted')='boolean' AND (result_json->>'deleted')::boolean=(operation_kind='record.delete'),false));
+ 
+ -- +goose Down
+--- Declaration-only until independent real Down tests.
++LOCK TABLE applications.record_lifecycle_events,applications.record_lifecycle,applications.operations IN ACCESS EXCLUSIVE MODE;
+ -- +goose StatementBegin
+-DO $$ BEGIN RAISE EXCEPTION 'lifecycle down not implemented' USING ERRCODE='55000';END $$;
++DO $$ BEGIN
++ IF EXISTS(SELECT 1 FROM applications.record_lifecycle) OR EXISTS(SELECT 1 FROM applications.record_lifecycle_events)
++ OR EXISTS(SELECT 1 FROM applications.operations WHERE operation_kind IN ('record.delete','record.restore')) THEN
++ RAISE EXCEPTION 'record lifecycle history prevents downgrade' USING ERRCODE='55000';END IF;
++END $$;
++-- +goose StatementEnd
++DROP TRIGGER protect_deleted_record_start ON applications.workflow_instances;
++DROP FUNCTION applications.protect_deleted_record_start();
++DROP FUNCTION applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean);
++DROP FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb);
++DROP FUNCTION applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint);
++ALTER FUNCTION applications.apply_record_change_before_lifecycle(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb) RENAME TO apply_record_change;
++ALTER FUNCTION applications.acquire_record_command_fence_before_lifecycle(uuid,uuid,uuid,uuid,uuid,bigint,bigint) RENAME TO acquire_record_command_fence;
++-- +goose StatementBegin
++DO $$ BEGIN
++ IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='auth_app') THEN
++ GRANT EXECUTE ON FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb),applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint) TO auth_app;
++ END IF;
++END $$;
+ -- +goose StatementEnd
++ALTER TABLE applications.operations DROP CONSTRAINT ck_record_lifecycle_result;
++ALTER TABLE applications.operations
++ DROP CONSTRAINT ck_operation_kind,
++ ADD CONSTRAINT ck_operation_kind CHECK(operation_kind IN (
++  'application.create',
++  'group.create',
++  'group.update',
++  'members.replace',
++  'grants.replace',
++  'directory.create',
++  'directory.update',
++  'table.create',
++  'table.update',
++  'form.create',
++  'form.update',
++  'definition.save',
++  'record.create',
++  'record.edit',
++  'draft.create',
++  'draft.update',
++  'draft.discard',
++  'workflow.definition.save',
++  'workflow.enable',
++  'workflow.close',
++  'workflow.task.agree',
++  'workflow.task.reject',
++  'workflow.instance.withdraw',
++  'workflow.task.return','workflow.manual.start','workflow.delete','workflow.round.resubmit','workflow.round.review','application.template.import','preset.create','preset.update','preset.discard'
++ ));
++DROP TABLE applications.record_lifecycle_events;
++DROP TABLE applications.record_lifecycle;
+diff --git a/services/bff/cmd/bff/root_record_lifecycle_http_test.go b/services/bff/cmd/bff/root_record_lifecycle_http_test.go
+index 8f68b1ed..d1d5f9a8 100644
+--- a/services/bff/cmd/bff/root_record_lifecycle_http_test.go
++++ b/services/bff/cmd/bff/root_record_lifecycle_http_test.go
+@@ -1,9 +1,20 @@
+ package main
+ 
+ import (
++	"context"
+ 	"encoding/json"
++	"errors"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordhttp"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
++	"github.com/jackc/pgx/v5/pgxpool"
++	"io"
++	"net"
+ 	"net/http"
++	"net/http/httptest"
+ 	"strings"
++	"sync/atomic"
+ 	"testing"
+ )
+ 
+@@ -62,3 +73,115 @@ func TestRootRecordLifecycleHTTPClosedInputAndIdentity(t *testing.T) {
+ 		})
+ 	}
+ }
++
++func TestRootRecordLifecycleHTTPPreservesReadableHistory(t *testing.T) {
++	f := rootHTTPResourceSetup(t)
++	path := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/records/" + f.record
++	before := rootHTTPData(t, f.call(t, "GET", path+"/history", "", nil), 200)
++	var items []json.RawMessage
++	if e := json.Unmarshal(before["items"], &items); e != nil || len(items) == 0 {
++		t.Fatalf("actual create history missing: %v", e)
++	}
++	rootHTTPData(t, f.call(t, "POST", path+"/deletion", rootLifecycleBody(f.id(t), "1"), nil), 200)
++	after := rootHTTPData(t, f.call(t, "GET", path+"/history", "", nil), 200)
++	if string(after["items"]) != string(before["items"]) {
++		t.Fatalf("deletion changed retained history: %s -> %s", before["items"], after["items"])
++	}
++}
++
++func TestRootRecordLifecycleHTTPUnknownCommitAndPostcommitRevocation(t *testing.T) {
++	for _, mode := range []string{"unknown", "revoke"} {
++		t.Run(mode, func(t *testing.T) {
++			f := rootHTTPResourceSetup(t)
++			op := f.id(t)
++			cfg := f.runtime.Config()
++			var dropped atomic.Bool
++			revoked := make(chan error, 1)
++			if mode == "unknown" {
++				cfg.ConnConfig.DialFunc = func(ctx context.Context, network, address string) (net.Conn, error) {
++					c, e := (&net.Dialer{}).DialContext(ctx, network, address)
++					if e != nil {
++						return nil, e
++					}
++					return &rootPresetLostCommit{Conn: c, dropped: &dropped}, nil
++				}
++			} else {
++				cfg.ConnConfig.Tracer = &rootPresetCommitHook{fn: func(ctx context.Context) {
++					ok, e := f.store.Revoke(ctx, f.sid)
++					if !ok && e == nil {
++						e = errors.New("expected current session revoke")
++					}
++					revoked <- e
++				}}
++			}
++			pool, e := pgxpool.NewWithConfig(f.ctx, cfg)
++			if e != nil {
++				t.Fatal(e)
++			}
++			defer pool.Close()
++			handler := &apprecordhttp.Service{Records: &apprecordservice.Service{Pool: pool, Limits: rootPresetService(f).Limits}, Authenticator: session.Authenticator{Sessions: f.store, DB: f.runtime}}
++			server := httptest.NewTLSServer(handler)
++			defer server.Close()
++			handler.Authenticator.Origin = server.URL
++			request, e := http.NewRequestWithContext(f.ctx, "POST", server.URL+"/api/v1/applications/"+f.app+"/forms/"+f.view+"/records/"+f.record+"/deletion", strings.NewReader(rootLifecycleBody(op, "1")))
++			if e != nil {
++				t.Fatal(e)
++			}
++			request.Header.Set("Origin", server.URL)
++			request.Header.Set("Content-Type", "application/json")
++			request.Header.Set("X-CSRF-Token", f.csrf)
++			request.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: f.sid})
++			request.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: f.csrf})
++			response, e := server.Client().Do(request)
++			if e != nil {
++				t.Fatal(e)
++			}
++			defer response.Body.Close()
++			raw, e := io.ReadAll(response.Body)
++			if e != nil {
++				t.Fatal(e)
++			}
++			var env struct {
++				Code string
++				Data map[string]json.RawMessage
++				Meta map[string]string
++			}
++			if json.Unmarshal(raw, &env) != nil || env.Meta["requestId"] == "" || response.Header.Get("Cache-Control") != "no-store" || response.TLS == nil {
++				t.Fatal("invalid real HTTPS response", string(raw))
++			}
++			if mode == "unknown" {
++				if !dropped.Load() || response.StatusCode != 503 || env.Code != "APPLICATION_OPERATION_UNCONFIRMED" || len(env.Data) != 1 || rootHTTPString(t, env.Data, "operationId") != op || response.Header.Get("Location") != "" || len(response.Cookies()) != 0 {
++					t.Fatal("ambiguous commit falsely successful", response.StatusCode, string(raw))
++				}
++			} else {
++				if response.StatusCode != 200 || env.Code != "OK" || len(env.Data) != 5 || response.Header.Get("Location") != "" {
++					t.Fatal("confirmed commit disguised as failure", response.StatusCode, string(raw))
++				}
++				select {
++				case e := <-revoked:
++					if e != nil {
++						t.Fatal(e)
++					}
++				default:
++					t.Fatal("successful response without synchronous postcommit revoke hook")
++				}
++				if len(response.Cookies()) != 2 {
++					t.Fatal("revoked session not cleared")
++				}
++				for _, cookie := range response.Cookies() {
++					if cookie.MaxAge >= 0 {
++						t.Fatal("revoked session renewed")
++					}
++				}
++			}
++			saved, e := (&applications.Application{Pool: f.runtime}).Operation(f.ctx, rootPresetActor(f, f.actor), op)
++			if e != nil || saved.Status != "confirmed" {
++				t.Fatal("actual committed result missing", e)
++			}
++			var n int
++			if e = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_lifecycle WHERE changed_by=$1 AND app_id=$2", f.actor, f.app).Scan(&n); e != nil || n != 1 {
++				t.Fatal("actual commit count", n, e)
++			}
++		})
++	}
++}
+diff --git a/services/bff/internal/applications/set_cost_test.go b/services/bff/internal/applications/set_cost_test.go
+index a44a5029..91bbcdf2 100644
+--- a/services/bff/internal/applications/set_cost_test.go
++++ b/services/bff/internal/applications/set_cost_test.go
+@@ -60,7 +60,7 @@ func resetScaleApps(t *testing.T, f *webFixture) {
+ 	_, err := f.owner.Exec(context.Background(), `DELETE FROM personnel.identity_permissions WHERE permission_code IN (SELECT 'app.'||id::text||'.access' FROM applications.apps);
+  DELETE FROM personnel.template_permissions WHERE permission_code IN (SELECT 'app.'||id::text||'.access' FROM applications.apps);
+  DELETE FROM personnel.permission_catalog WHERE app_id IN (SELECT id::text FROM applications.apps);
+- DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE applications.table_presets,applications.workflow_rounds,applications.workflow_deletions,applications.workflow_evidence_members,applications.workflow_evidence_documents,applications.workflow_evidence_blobs,applications.workflow_tasks,applications.workflow_execution_events,applications.workflow_publications,applications.workflow_engine_receipts,applications.workflow_instances,applications.workflow_deployments,applications.workflow_versions,applications.workflow_definitions,applications.record_change_values,applications.record_change_events,applications.field_option_tombstones,applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$`)
++ DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE applications.record_lifecycle_events,applications.record_lifecycle,applications.table_presets,applications.workflow_rounds,applications.workflow_deletions,applications.workflow_evidence_members,applications.workflow_evidence_documents,applications.workflow_evidence_blobs,applications.workflow_tasks,applications.workflow_execution_events,applications.workflow_publications,applications.workflow_engine_receipts,applications.workflow_instances,applications.workflow_deployments,applications.workflow_versions,applications.workflow_definitions,applications.record_change_values,applications.record_change_events,applications.field_option_tombstones,applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$`)
+ 	if err != nil {
+ 		t.Fatal(err)
+ 	}
+diff --git a/services/bff/internal/apprecordservice/root_record_lifecycle_test.go b/services/bff/internal/apprecordservice/root_record_lifecycle_test.go
+index 00832f4b..829abe63 100644
+--- a/services/bff/internal/apprecordservice/root_record_lifecycle_test.go
++++ b/services/bff/internal/apprecordservice/root_record_lifecycle_test.go
+@@ -10,6 +10,8 @@ import (
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
+ 	"github.com/jackc/pgx/v5"
++	"strings"
++	"sync"
+ 	"testing"
+ )
+ 
+@@ -19,6 +21,126 @@ func lifecycleManager(f recordFixture) session.Principal {
+ 	return p
+ }
+ 
++func TestRootRecordLifecycleAtomicFailureAndConcurrentReplay(t *testing.T) {
++	for _, stage := range []string{"event", "receipt"} {
++		t.Run(stage, func(t *testing.T) {
++			f := newRecordFixture(t)
++			req := lifecycleRequest(t, f, 1, true)
++			p := lifecycleManager(f)
++			name := "lifecycle_fault_" + strings.ReplaceAll(req.OperationID, "-", "")
++			fn := pgx.Identifier{"public", name}.Sanitize()
++			trigger := pgx.Identifier{name}.Sanitize()
++			table := "applications.record_lifecycle_events"
++			when := "INSERT"
++			if stage == "receipt" {
++				table = "applications.operations"
++				when = "UPDATE"
++			}
++			if _, e := f.owner.Exec(f.ctx, "CREATE FUNCTION "+fn+"() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.operation_id='"+req.OperationID+"'::uuid THEN RAISE EXCEPTION 'isolated lifecycle fault'; END IF; RETURN NEW; END $$; CREATE TRIGGER "+trigger+" BEFORE "+when+" ON "+table+" FOR EACH ROW EXECUTE FUNCTION "+fn+"()"); e != nil {
++				t.Fatal(e)
++			}
++			defer f.owner.Exec(f.ctx, "DROP TRIGGER "+trigger+" ON "+table+"; DROP FUNCTION "+fn+"()")
++			var before int64
++			if e := f.owner.QueryRow(f.ctx, "SELECT data_revision FROM applications.logical_tables WHERE id=$1", f.table).Scan(&before); e != nil {
++				t.Fatal(e)
++			}
++			_, e := f.service.ChangeRecordLifecycle(f.ctx, p, req)
++			if e == nil || errors.Is(e, applications.ErrUnconfirmed) {
++				t.Fatalf("known precommit failure wrong classification: %v", e)
++			}
++			row, e := f.service.GetRecord(f.ctx, p, f.app, f.view, f.ownRecord)
++			if e != nil || row.RecordVersion != 1 || row.Values[f.public] != "alpha" {
++				t.Fatalf("late fault changed typed row: %+v %v", row, e)
++			}
++			var revision int64
++			var states, events, ops int
++			e = f.owner.QueryRow(f.ctx, `SELECT data_revision,(SELECT count(*) FROM applications.record_lifecycle WHERE app_id=$1),(SELECT count(*) FROM applications.record_lifecycle_events WHERE app_id=$1),(SELECT count(*) FROM applications.operations WHERE actor_user_id=$3 AND operation_id=$4) FROM applications.logical_tables WHERE app_id=$1 AND id=$2`, f.app, f.table, f.other, req.OperationID).Scan(&revision, &states, &events, &ops)
++			if e != nil || revision != before || states != 0 || events != 0 || ops != 0 {
++				t.Fatalf("late fault persisted partial state: rev%d/%d state%d event%d op%d %v", revision, before, states, events, ops, e)
++			}
++		})
++	}
++	t.Run("same_key", func(t *testing.T) {
++		f := newRecordFixture(t)
++		req := lifecycleRequest(t, f, 1, true)
++		p := lifecycleManager(f)
++		var wg sync.WaitGroup
++		var results [2]RecordLifecycleResult
++		var errs [2]error
++		start := make(chan struct{})
++		for i := range 2 {
++			wg.Add(1)
++			go func(i int) {
++				defer wg.Done()
++				<-start
++				results[i], errs[i] = f.service.ChangeRecordLifecycle(f.ctx, p, req)
++			}(i)
++		}
++		close(start)
++		wg.Wait()
++		if errs[0] != nil || errs[1] != nil || results[0] != results[1] || results[0].RecordVersion != 2 {
++			t.Fatalf("duplicate mutation: %+v %v", results, errs)
++		}
++		var n int
++		if e := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_lifecycle_events WHERE app_id=$1", f.app).Scan(&n); e != nil || n != 1 {
++			t.Fatalf("duplicate permanent events: %d %v", n, e)
++		}
++	})
++}
++
++func TestRootRecordLifecycleSharedViewAndRecoveryAfterAuthorityLoss(t *testing.T) {
++	f := newRecordFixture(t)
++	p := f.principal
++	var prior *string
++	if e := f.owner.QueryRow(f.ctx, "SELECT (SELECT id::text FROM auth.users WHERE is_bootstrap_admin)").Scan(&prior); e != nil {
++		t.Fatal(e)
++	}
++	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=false WHERE is_bootstrap_admin"); e != nil {
++		t.Fatal(e)
++	}
++	t.Cleanup(func() {
++		_, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=false WHERE id=$1", f.actor)
++		if e != nil {
++			t.Error(e)
++		}
++		if prior != nil {
++			_, e = f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", *prior)
++			if e != nil {
++				t.Error(e)
++			}
++		}
++	})
++	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", f.actor); e != nil {
++		t.Fatal(e)
++	}
++	view := recordOperationID(t, f)
++	if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.form_views(id,app_id,table_id,name,position,view_version) VALUES($1,$2,$3,'same data',1,1)", view, f.app, f.table); e != nil {
++		t.Fatal(e)
++	}
++	if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.menu_resources VALUES($1,'form',$2)", f.app, view); e != nil {
++		t.Fatal(e)
++	}
++	req := lifecycleRequest(t, f, 1, true)
++	deleted, e := f.service.ChangeRecordLifecycle(f.ctx, p, req)
++	if e != nil {
++		t.Fatal(e)
++	}
++	if _, e = f.service.GetRecord(f.ctx, p, f.app, view, f.ownRecord); !errors.Is(e, applications.ErrMissing) {
++		t.Fatalf("shared view bypassed deletion: %v", e)
++	}
++	if _, e = f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=false WHERE id=$1", f.actor); e != nil {
++		t.Fatal(e)
++	}
++	replay, e := f.service.ChangeRecordLifecycle(f.ctx, p, req)
++	if e != nil || replay != deleted {
++		t.Fatalf("confirmed minimum recovery lost after authority removal: %+v %v", replay, e)
++	}
++	_, e = f.service.ChangeRecordLifecycle(f.ctx, p, lifecycleRequest(t, f, 2, false))
++	if !errors.Is(e, applications.ErrDenied) {
++		t.Fatalf("former Bootstrap restored without current authority: %v", e)
++	}
++}
++
+ func TestRootRecordLifecycleDeletedRecordRejectsOrdinaryEdits(t *testing.T) {
+ 	for _, empty := range []bool{false, true} {
+ 		t.Run(map[bool]string{false: "value", true: "empty"}[empty], func(t *testing.T) {
+@@ -256,3 +378,79 @@ func TestRootRecordLifecycleClosedReceipts(t *testing.T) {
+ 		})
+ 	}
+ }
++
++func TestRootRecordLifecycleRetainsDraftAndConflictsAfterRestore(t *testing.T) {
++	f := newRecordFixture(t)
++	base := int64(1)
++	draft, e := f.service.CreateDraft(f.ctx, f.principal, DraftCreateRequest{AppID: f.app, ViewID: f.view, OperationID: recordOperationID(t, f), SchemaVersion: 1, TargetRecordID: &f.ownRecord, BaseRecordVersion: &base, Values: map[string]any{f.public: "unfinished"}}, applications.Metadata{RequestID: "v072-draft-retention"})
++	if e != nil {
++		t.Fatal(e)
++	}
++	for _, deleted := range []bool{true, false} {
++		version := int64(1)
++		if !deleted {
++			version = 2
++		}
++		if _, e = f.service.ChangeRecordLifecycle(f.ctx, lifecycleManager(f), lifecycleRequest(t, f, version, deleted)); e != nil {
++			t.Fatal(e)
++		}
++		kept, e := f.service.GetDraft(f.ctx, f.principal, f.app, f.view, draft.ID)
++		if e != nil || kept.Values[f.public] != "unfinished" || !kept.HasConflicts || kept.BaseRecordVersion == nil || *kept.BaseRecordVersion != 1 || kept.DraftVersion != 1 {
++			t.Fatalf("draft lost or rebound after deleted=%v: %+v %v", deleted, kept, e)
++		}
++		_, e = f.service.Edit(f.ctx, f.principal, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1, Changes: map[string]any{f.public: "unfinished"}, DraftRef: &DraftRef{ID: draft.ID, DraftVersion: 1}}, applications.Metadata{RequestID: "v072-stale-draft"})
++		if e == nil {
++			t.Fatal("stale draft submitted")
++		}
++		var n int
++		if e = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_drafts WHERE id=$1", draft.ID).Scan(&n); e != nil || n != 1 {
++			t.Fatalf("failed submit consumed draft %d %v", n, e)
++		}
++	}
++}
++
++func TestRootRecordLifecycleRaceAgainstWorkflowReservation(t *testing.T) {
++	for i := 0; i < 8; i++ {
++		t.Run(string(rune('a'+i)), func(t *testing.T) {
++			f := newRecordFixture(t)
++			h := rootConfiguredTrigger(t, f, "manual", nil)
++			request := lifecycleRequest(t, f, 1, true)
++			instance := recordOperationID(t, f)
++			var wg sync.WaitGroup
++			var deletion, reservation error
++			start := make(chan struct{})
++			wg.Add(2)
++			go func() {
++				defer wg.Done()
++				<-start
++				_, deletion = f.service.ChangeRecordLifecycle(f.ctx, lifecycleManager(f), request)
++			}()
++			go func() {
++				defer wg.Done()
++				<-start
++				tx, e := f.runtime.Begin(f.ctx)
++				if e != nil {
++					reservation = e
++					return
++				}
++				defer tx.Rollback(f.ctx)
++				_, e = (workflowcatalog.Catalog{}).ReserveInTx(f.ctx, tx, workflowcatalog.ReserveInput{AppID: f.app, FlowID: h.FlowID, InstanceID: instance, RecordID: f.ownRecord, ActorID: f.other, ExpectedRevision: h.Revision, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1})
++				if e == nil {
++					e = tx.Commit(f.ctx)
++				}
++				reservation = e
++			}()
++			close(start)
++			wg.Wait()
++			if (deletion == nil) == (reservation == nil) {
++				t.Fatalf("exactly one must commit: delete=%v reserve=%v", deletion, reservation)
++			}
++			var deleted bool
++			var active int
++			e := f.owner.QueryRow(f.ctx, `SELECT COALESCE((SELECT deleted FROM applications.record_lifecycle WHERE app_id=$1 AND table_id=$2 AND record_id=$3),false),(SELECT count(*) FROM applications.workflow_instances WHERE app_id=$1 AND table_id=$2 AND record_id=$3 AND state IN ('starting','active'))`, f.app, f.table, f.ownRecord).Scan(&deleted, &active)
++			if e != nil || (deleted && active != 0) || deleted != (deletion == nil) || (reservation == nil && active != 1) {
++				t.Fatalf("inconsistent concurrent state deleted=%v active=%d %v", deleted, active, e)
++			}
++		})
++	}
++}
+diff --git a/services/bff/internal/audit/maintenance_test.go b/services/bff/internal/audit/maintenance_test.go
+index a93f521a..28256bd0 100644
+--- a/services/bff/internal/audit/maintenance_test.go
++++ b/services/bff/internal/audit/maintenance_test.go
+@@ -83,7 +83,7 @@ func clean(t *testing.T) (*pgxpool.Pool, *pgxpool.Pool) {
+ 	for _, v := range []struct {
+ 		p *pgxpool.Pool
+ 		q string
+-	}{{l, "DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE applications.table_presets,applications.workflow_rounds,applications.workflow_deletions,applications.workflow_evidence_members,applications.workflow_evidence_documents,applications.workflow_evidence_blobs,applications.workflow_tasks,applications.workflow_execution_events,applications.workflow_publications,applications.workflow_engine_receipts,applications.workflow_instances,applications.workflow_deployments,applications.workflow_versions,applications.workflow_definitions,applications.record_change_values,applications.record_change_events,applications.field_option_tombstones,applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,auth.authentication_events,auth.invitations,auth.password_credentials,auth.users,personnel.department_members,personnel.member_configuration,personnel.member_identities,personnel.drafts,personnel.table_presets,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$"}, {c, "TRUNCATE archive.authentication_events"}} {
++	}{{l, "DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE applications.record_lifecycle_events,applications.record_lifecycle,applications.table_presets,applications.workflow_rounds,applications.workflow_deletions,applications.workflow_evidence_members,applications.workflow_evidence_documents,applications.workflow_evidence_blobs,applications.workflow_tasks,applications.workflow_execution_events,applications.workflow_publications,applications.workflow_engine_receipts,applications.workflow_instances,applications.workflow_deployments,applications.workflow_versions,applications.workflow_definitions,applications.record_change_values,applications.record_change_events,applications.field_option_tombstones,applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,auth.authentication_events,auth.invitations,auth.password_credentials,auth.users,personnel.department_members,personnel.member_configuration,personnel.member_identities,personnel.drafts,personnel.table_presets,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$"}, {c, "TRUNCATE archive.authentication_events"}} {
+ 		if _, err := v.p.Exec(context.Background(), v.q); err != nil {
+ 			t.Fatal(err)
+ 		}

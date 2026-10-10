@@ -1,0 +1,258 @@
+package apprecordservice
+
+import (
+	"encoding/json"
+	"errors"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
+	"github.com/jackc/pgx/v5"
+	"testing"
+)
+
+func lifecycleManager(f recordFixture) session.Principal {
+	p := f.principal
+	p.UserID = f.other
+	return p
+}
+
+func TestRootRecordLifecycleDeletedRecordRejectsOrdinaryEdits(t *testing.T) {
+	for _, empty := range []bool{false, true} {
+		t.Run(map[bool]string{false: "value", true: "empty"}[empty], func(t *testing.T) {
+			f := newRecordFixture(t)
+			p := lifecycleManager(f)
+			if _, e := f.service.ChangeRecordLifecycle(f.ctx, p, lifecycleRequest(t, f, 1, true)); e != nil {
+				t.Fatal(e)
+			}
+			changes := map[string]any{f.public: "must not overwrite"}
+			if empty {
+				changes = map[string]any{}
+			}
+			_, e := f.service.Edit(f.ctx, p, EditRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: 2, Changes: changes}, applications.Metadata{RequestID: "v072-deleted-edit"})
+			if !errors.Is(e, applications.ErrMissing) {
+				t.Fatalf("deleted row must reject even empty PATCH: %v", e)
+			}
+		})
+	}
+}
+func TestRootRecordLifecycleDeletedRecordRejectsFenceAndStart(t *testing.T) {
+	for _, kind := range []string{"fence", "start"} {
+		t.Run(kind, func(t *testing.T) {
+			f := newRecordFixture(t)
+			h := rootConfiguredTrigger(t, f, "manual", nil)
+			if _, e := f.service.ChangeRecordLifecycle(f.ctx, lifecycleManager(f), lifecycleRequest(t, f, 1, true)); e != nil {
+				t.Fatal(e)
+			}
+			if kind == "fence" {
+				var epoch int64
+				e := f.runtime.QueryRow(f.ctx, rootAcquireSQL, f.app, f.table, f.view, f.ownRecord, recordOperationID(t, f), int64(1), int64(2)).Scan(&epoch)
+				rootSQLState(t, e, "P0002")
+				rootFenceCount(t, f, 0)
+			} else {
+				tx, e := f.runtime.Begin(f.ctx)
+				if e != nil {
+					t.Fatal(e)
+				}
+				defer tx.Rollback(f.ctx)
+				_, e = (workflowcatalog.Catalog{}).ReserveInTx(f.ctx, tx, workflowcatalog.ReserveInput{AppID: f.app, FlowID: h.FlowID, InstanceID: recordOperationID(t, f), RecordID: f.ownRecord, ActorID: f.other, ExpectedRevision: h.Revision, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 2})
+				if e == nil {
+					t.Fatal("catalog reserved starting instance for deleted record")
+				}
+			}
+		})
+	}
+}
+func TestRootRecordLifecycleInflightAndCAS(t *testing.T) {
+	for _, state := range []string{"starting", "active"} {
+		t.Run(state, func(t *testing.T) {
+			f := newRecordFixture(t)
+			h := rootConfiguredTrigger(t, f, "manual", nil)
+			id := recordOperationID(t, f)
+			rootCatalogTx(t, f, func(tx pgx.Tx) error {
+				_, e := (workflowcatalog.Catalog{}).ReserveInTx(f.ctx, tx, workflowcatalog.ReserveInput{AppID: f.app, FlowID: h.FlowID, InstanceID: id, RecordID: f.ownRecord, ActorID: f.other, ExpectedRevision: h.Revision, ExpectedSchemaVersion: 1, ExpectedRecordVersion: 1})
+				return e
+			})
+			if state == "active" {
+				if _, e := f.owner.Exec(f.ctx, "UPDATE applications.workflow_instances SET state='active' WHERE id=$1", id); e != nil {
+					t.Fatal(e)
+				}
+			}
+			_, e := f.service.ChangeRecordLifecycle(f.ctx, lifecycleManager(f), lifecycleRequest(t, f, 1, true))
+			if !errors.Is(e, ErrWorkflowRecordReadOnly) {
+				t.Fatalf("inflight %s delete not blocked: %v", state, e)
+			}
+		})
+	}
+	f := newRecordFixture(t)
+	_, e := f.service.ChangeRecordLifecycle(f.ctx, lifecycleManager(f), lifecycleRequest(t, f, 2, true))
+	if !errors.Is(e, apprecords.ErrConflict) {
+		t.Fatalf("stale record CAS: %v", e)
+	}
+	req := lifecycleRequest(t, f, 1, true)
+	req.ExpectedSchemaVersion = 2
+	_, e = f.service.ChangeRecordLifecycle(f.ctx, lifecycleManager(f), req)
+	var domain *appstructure.Error
+	if !errors.As(e, &domain) || domain.Code != "APPLICATION_SCHEMA_CONFLICT" {
+		t.Fatalf("schema CAS: %v", e)
+	}
+}
+func TestRootRecordLifecycleQueriesRespectRelevantDeletion(t *testing.T) {
+	f := newRecordFixture(t)
+	p := lifecycleManager(f)
+	all := SearchRequest{AppID: f.app, ViewID: f.view, Filter: json.RawMessage(`null`), Sort: json.RawMessage(`null`), Page: 1, PageSize: 20}
+	initial, e := f.service.Search(f.ctx, p, all)
+	if e != nil || initial.Total != 2 {
+		t.Fatalf("initial: %+v %v", initial, e)
+	}
+	unrelated := all
+	unrelated.Filter = json.RawMessage(`{"operator":"and","children":[{"fieldId":"` + f.public + `","operator":"eq","value":"beta"}]}`)
+	stable, e := f.service.Search(f.ctx, p, unrelated)
+	if e != nil || stable.Total != 1 {
+		t.Fatalf("filtered: %+v %v", stable, e)
+	}
+	if _, e = f.service.ChangeRecordLifecycle(f.ctx, p, lifecycleRequest(t, f, 1, true)); e != nil {
+		t.Fatal(e)
+	}
+	all.QueryVersion = initial.QueryVersion
+	if _, e = f.service.Search(f.ctx, p, all); !errors.Is(e, querycontext.ErrChanged) {
+		t.Fatalf("relevant deletion kept old query valid: %v", e)
+	}
+	unrelated.QueryVersion = stable.QueryVersion
+	if got, e := f.service.Search(f.ctx, p, unrelated); e != nil || got.Total != 1 || got.Items[0].ID != f.otherRecord {
+		t.Fatalf("unrelated deletion invalidated query: %+v %v", got, e)
+	}
+	all.QueryVersion = ""
+	fresh, e := f.service.Search(f.ctx, p, all)
+	if e != nil || fresh.Total != 1 || len(fresh.Items) != 1 || fresh.Items[0].ID != f.otherRecord {
+		t.Fatalf("fresh query includes deleted row: %+v %v", fresh, e)
+	}
+}
+func lifecycleRequest(t *testing.T, f recordFixture, version int64, deleted bool) RecordLifecycleRequest {
+	t.Helper()
+	return RecordLifecycleRequest{AppID: f.app, ViewID: f.view, RecordID: f.ownRecord, OperationID: recordOperationID(t, f), ExpectedSchemaVersion: 1, ExpectedRecordVersion: version, Deleted: deleted}
+}
+func TestRootRecordLifecycleDeleteRestorePreservesValues(t *testing.T) {
+	f := newRecordFixture(t)
+	p := lifecycleManager(f)
+	before, e := f.service.GetRecord(f.ctx, p, f.app, f.view, f.ownRecord)
+	if e != nil {
+		t.Fatal(e)
+	}
+	req := lifecycleRequest(t, f, 1, true)
+	got, e := f.service.ChangeRecordLifecycle(f.ctx, p, req)
+	if e != nil || !got.Deleted || got.ID != f.ownRecord || got.RecordVersion != 2 || got.SchemaVersion != 1 || got.OperationID != req.OperationID {
+		t.Fatalf("delete must confirm bounded receipt: %+v %v", got, e)
+	}
+	if _, e = f.service.GetRecord(f.ctx, p, f.app, f.view, f.ownRecord); !errors.Is(e, applications.ErrMissing) {
+		t.Fatalf("deleted record remains visible: %v", e)
+	}
+	replay, e := f.service.ChangeRecordLifecycle(f.ctx, p, req)
+	if e != nil || replay != got {
+		t.Fatalf("exact retry: %+v %v", replay, e)
+	}
+	restored, e := f.service.ChangeRecordLifecycle(f.ctx, p, lifecycleRequest(t, f, 2, false))
+	if e != nil || restored.Deleted || restored.RecordVersion != 3 {
+		t.Fatalf("restore: %+v %v", restored, e)
+	}
+	after, e := f.service.GetRecord(f.ctx, p, f.app, f.view, f.ownRecord)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if after.ID != before.ID || after.CreatedBy != before.CreatedBy || after.CreatedAt != before.CreatedAt || after.Values[f.public] != before.Values[f.public] || after.Values[f.secret] != before.Values[f.secret] || after.RecordVersion != 3 {
+		t.Fatalf("restore changed original identity/values: before%+v after%+v", before, after)
+	}
+	var n int
+	if e = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_lifecycle_events WHERE app_id=$1 AND table_id=$2 AND record_id=$3", f.app, f.table, f.ownRecord).Scan(&n); e != nil || n != 2 {
+		t.Fatalf("two permanent lifecycle events required: %d %v", n, e)
+	}
+}
+func TestRootRecordLifecycleEditGrantDoesNotAuthorizeDelete(t *testing.T) {
+	f := newRecordFixture(t)
+	_, e := f.service.ChangeRecordLifecycle(f.ctx, f.principal, lifecycleRequest(t, f, 1, true))
+	if !errors.Is(e, applications.ErrDenied) {
+		t.Fatalf("data.edit must not imply delete: %v", e)
+	}
+	row, e := f.service.GetRecord(f.ctx, f.principal, f.app, f.view, f.ownRecord)
+	if e != nil || row.RecordVersion != 1 {
+		t.Fatalf("denied attempt changed row: %+v %v", row, e)
+	}
+}
+func TestRootRecordLifecyclePendingCommandBlocksDelete(t *testing.T) {
+	f := newRecordFixture(t)
+	rootFenceAcquire(t, f, recordOperationID(t, f))
+	_, e := f.service.ChangeRecordLifecycle(f.ctx, lifecycleManager(f), lifecycleRequest(t, f, 1, true))
+	if e == nil || errors.Is(e, ErrUnavailable) {
+		t.Fatalf("pending command must give explicit blocked outcome: %v", e)
+	}
+	row, e := f.service.GetRecord(f.ctx, lifecycleManager(f), f.app, f.view, f.ownRecord)
+	if e != nil || row.RecordVersion != 1 {
+		t.Fatalf("blocked delete changed row: %+v %v", row, e)
+	}
+	rootFenceCount(t, f, 1)
+}
+
+func TestRootRecordLifecycleDurableMetadata(t *testing.T) {
+	f := newRecordFixture(t)
+	for _, name := range []string{"applications.record_lifecycle", "applications.record_lifecycle_events"} {
+		var exists bool
+		if e := f.owner.QueryRow(f.ctx, "SELECT to_regclass($1) IS NOT NULL", name).Scan(&exists); e != nil || !exists {
+			t.Errorf("durable lifecycle relation %s absent: %v", name, e)
+		}
+	}
+}
+
+func TestRootRecordLifecycleMinimalRoles(t *testing.T) {
+	f := newRecordFixture(t)
+	for _, role := range []string{"auth_app", "auth_backup", "auth_reader", "auth_maintenance"} {
+		for _, table := range []string{"applications.record_lifecycle", "applications.record_lifecycle_events"} {
+			for _, action := range []string{"SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE"} {
+				var got bool
+				e := f.owner.QueryRow(f.ctx, "SELECT has_table_privilege($1,$2,$3)", role, table, action).Scan(&got)
+				want := action == "SELECT" && (role == "auth_app" || role == "auth_backup")
+				if e != nil || got != want {
+					t.Errorf("%s %s %s got%v want%v: %v", role, table, action, got, want, e)
+				}
+			}
+		}
+	}
+	var allowed bool
+	e := f.owner.QueryRow(f.ctx, "SELECT has_function_privilege('auth_app','applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean)','EXECUTE')").Scan(&allowed)
+	if e != nil || !allowed {
+		t.Errorf("runtime needs only finite capability: %v %v", allowed, e)
+	}
+}
+
+func TestRootRecordLifecycleClosedReceipts(t *testing.T) {
+	f := newRecordFixture(t)
+	for _, kind := range []string{"record.delete", "record.restore"} {
+		t.Run(kind, func(t *testing.T) {
+			for _, bad := range []string{"values", "wrong_state", "missing_version", "null", "wrong_status", "wrong_operation"} {
+				t.Run(bad, func(t *testing.T) {
+					op := recordOperationID(t, f)
+					m := map[string]any{"operationId": op, "id": f.ownRecord, "recordVersion": 2, "schemaVersion": 1, "deleted": kind == "record.delete"}
+					status := 200
+					switch bad {
+					case "values":
+						m["values"] = map[string]any{"secret": "never"}
+					case "wrong_state":
+						m["deleted"] = kind != "record.delete"
+					case "missing_version":
+						delete(m, "recordVersion")
+					case "null":
+						m["schemaVersion"] = nil
+					case "wrong_status":
+						status = 201
+					case "wrong_operation":
+						m["operationId"] = recordOperationID(t, f)
+					}
+					raw, _ := json.Marshal(m)
+					_, e := f.owner.Exec(f.ctx, `INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location) VALUES($1,$2,$3,$4,decode(repeat('ab',32),'hex'),$5,$6,'')`, f.other, op, f.app, kind, raw, status)
+					rootSQLState(t, e, "23514")
+				})
+			}
+		})
+	}
+}

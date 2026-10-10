@@ -1,0 +1,18 @@
+diff --git a/services/bff/internal/apprecordservice/root_record_lifecycle_test.go b/services/bff/internal/apprecordservice/root_record_lifecycle_test.go
+index f92fb61e..da2cc7ef 100644
+--- a/services/bff/internal/apprecordservice/root_record_lifecycle_test.go
++++ b/services/bff/internal/apprecordservice/root_record_lifecycle_test.go
+@@ -75,3 +75,13 @@ func TestRootRecordLifecyclePendingCommandBlocksDelete(t *testing.T) {
+ 	}
+ 	rootFenceCount(t, f, 1)
+ }
++
++func TestRootRecordLifecycleDurableMetadata(t *testing.T) {
++	f := newRecordFixture(t)
++	for _, name := range []string{"applications.record_lifecycle", "applications.record_lifecycle_events"} {
++		var exists bool
++		if e := f.owner.QueryRow(f.ctx, "SELECT to_regclass($1) IS NOT NULL", name).Scan(&exists); e != nil || !exists {
++			t.Errorf("durable lifecycle relation %s absent: %v", name, e)
++		}
++	}
++}

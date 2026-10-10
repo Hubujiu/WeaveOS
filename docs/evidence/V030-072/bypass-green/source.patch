@@ -1,0 +1,56 @@
+diff --git a/db/migrations/00034_record_lifecycle.sql b/db/migrations/00034_record_lifecycle.sql
+index a65b9f91..07b84889 100644
+--- a/db/migrations/00034_record_lifecycle.sql
++++ b/db/migrations/00034_record_lifecycle.sql
+@@ -88,6 +88,51 @@ ALTER TABLE applications.operations
+   'workflow.task.return','workflow.manual.start','workflow.delete','workflow.round.resubmit','workflow.round.review','application.template.import','preset.create','preset.update','preset.discard','record.delete','record.restore'
+  ));
+ 
++-- V072 preserves the previous reviewed DML implementation behind a private name.
++ALTER FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb) RENAME TO apply_record_change_before_lifecycle;
++ALTER FUNCTION applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint) RENAME TO acquire_record_command_fence_before_lifecycle;
++REVOKE ALL ON FUNCTION applications.apply_record_change_before_lifecycle(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb),applications.acquire_record_command_fence_before_lifecycle(uuid,uuid,uuid,uuid,uuid,bigint,bigint) FROM PUBLIC;
++-- +goose StatementBegin
++DO $$ DECLARE principal text;BEGIN
++ FOREACH principal IN ARRAY ARRAY['auth_app','auth_reader','auth_maintenance','auth_backup'] LOOP
++ IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=principal) THEN
++ EXECUTE format('REVOKE ALL ON FUNCTION applications.apply_record_change_before_lifecycle(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb),applications.acquire_record_command_fence_before_lifecycle(uuid,uuid,uuid,uuid,uuid,bigint,bigint) FROM %I',principal);
++ END IF;END LOOP;
++END $$;
++-- +goose StatementEnd
++-- +goose StatementBegin
++CREATE FUNCTION applications.apply_record_change(app_uuid uuid,view_uuid uuid,table_uuid uuid,record_uuid uuid,actor_uuid uuid,operation text,expected_schema bigint,expected_record bigint,field_values jsonb) RETURNS jsonb
++LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
++BEGIN
++ PERFORM 1 FROM applications.logical_tables WHERE app_id=app_uuid AND id=table_uuid FOR UPDATE;
++ IF EXISTS(SELECT 1 FROM applications.record_lifecycle WHERE app_id=app_uuid AND table_id=table_uuid AND record_id=record_uuid AND deleted) THEN RAISE EXCEPTION 'record missing' USING ERRCODE='P0002';END IF;
++ RETURN applications.apply_record_change_before_lifecycle(app_uuid,view_uuid,table_uuid,record_uuid,actor_uuid,operation,expected_schema,expected_record,field_values);
++END $$;
++-- +goose StatementEnd
++-- +goose StatementBegin
++CREATE FUNCTION applications.acquire_record_command_fence(app_uuid uuid,table_uuid uuid,view_uuid uuid,record_uuid uuid,command_uuid uuid,expected_schema bigint,expected_record bigint) RETURNS bigint
++LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
++BEGIN
++ PERFORM 1 FROM applications.logical_tables WHERE app_id=app_uuid AND id=table_uuid FOR UPDATE;
++ IF EXISTS(SELECT 1 FROM applications.record_lifecycle WHERE app_id=app_uuid AND table_id=table_uuid AND record_id=record_uuid AND deleted) THEN RAISE EXCEPTION 'record missing' USING ERRCODE='P0002';END IF;
++ RETURN applications.acquire_record_command_fence_before_lifecycle(app_uuid,table_uuid,view_uuid,record_uuid,command_uuid,expected_schema,expected_record);
++END $$;
++-- +goose StatementEnd
++REVOKE ALL ON FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb),applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint) FROM PUBLIC;
++-- +goose StatementBegin
++CREATE FUNCTION applications.protect_deleted_record_start() RETURNS trigger
++LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
++BEGIN
++ IF NEW.state IN ('starting','active') THEN
++ PERFORM 1 FROM applications.logical_tables WHERE app_id=NEW.app_id AND id=NEW.table_id FOR UPDATE;
++ IF EXISTS(SELECT 1 FROM applications.record_lifecycle WHERE app_id=NEW.app_id AND table_id=NEW.table_id AND record_id=NEW.record_id AND deleted) THEN RAISE EXCEPTION 'record missing' USING ERRCODE='P0002';END IF;
++ END IF;
++ RETURN NEW;
++END $$;
++-- +goose StatementEnd
++REVOKE ALL ON FUNCTION applications.protect_deleted_record_start() FROM PUBLIC;
++CREATE TRIGGER protect_deleted_record_start BEFORE INSERT OR UPDATE OF state,app_id,table_id,record_id ON applications.workflow_instances FOR EACH ROW EXECUTE FUNCTION applications.protect_deleted_record_start();
++
+ -- +goose Down
+ -- Declaration-only until independent real Down tests.
+ -- +goose StatementBegin

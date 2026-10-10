@@ -164,3 +164,9 @@ REVOKE ALL ON applications.table_presets FROM PUBLIC,auth_app,auth_reader,auth_m
 GRANT SELECT,INSERT,DELETE ON applications.table_presets TO auth_app;
 GRANT UPDATE(name,definition_json,field_kinds,version,updated_at) ON applications.table_presets TO auth_app;
 GRANT SELECT ON applications.table_presets TO auth_backup;
+
+-- V030-072: retain business rows; lifecycle changes only through a finite capability.
+REVOKE ALL ON applications.record_lifecycle,applications.record_lifecycle_events FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+GRANT SELECT ON applications.record_lifecycle,applications.record_lifecycle_events TO auth_app,auth_backup;
+REVOKE ALL ON FUNCTION applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean) FROM PUBLIC,auth_reader,auth_maintenance,auth_backup;
+GRANT EXECUTE ON FUNCTION applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean) TO auth_app;

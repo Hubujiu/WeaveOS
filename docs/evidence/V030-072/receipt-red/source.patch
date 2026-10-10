@@ -1,0 +1,40 @@
+diff --git a/services/bff/internal/apprecordservice/root_record_lifecycle_test.go b/services/bff/internal/apprecordservice/root_record_lifecycle_test.go
+index 06d2b3e1..00832f4b 100644
+--- a/services/bff/internal/apprecordservice/root_record_lifecycle_test.go
++++ b/services/bff/internal/apprecordservice/root_record_lifecycle_test.go
+@@ -224,3 +224,35 @@ func TestRootRecordLifecycleMinimalRoles(t *testing.T) {
+ 		t.Errorf("runtime needs only finite capability: %v %v", allowed, e)
+ 	}
+ }
++
++func TestRootRecordLifecycleClosedReceipts(t *testing.T) {
++	f := newRecordFixture(t)
++	for _, kind := range []string{"record.delete", "record.restore"} {
++		t.Run(kind, func(t *testing.T) {
++			for _, bad := range []string{"values", "wrong_state", "missing_version", "null", "wrong_status", "wrong_operation"} {
++				t.Run(bad, func(t *testing.T) {
++					op := recordOperationID(t, f)
++					m := map[string]any{"operationId": op, "id": f.ownRecord, "recordVersion": 2, "schemaVersion": 1, "deleted": kind == "record.delete"}
++					status := 200
++					switch bad {
++					case "values":
++						m["values"] = map[string]any{"secret": "never"}
++					case "wrong_state":
++						m["deleted"] = kind != "record.delete"
++					case "missing_version":
++						delete(m, "recordVersion")
++					case "null":
++						m["schemaVersion"] = nil
++					case "wrong_status":
++						status = 201
++					case "wrong_operation":
++						m["operationId"] = recordOperationID(t, f)
++					}
++					raw, _ := json.Marshal(m)
++					_, e := f.owner.Exec(f.ctx, `INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location) VALUES($1,$2,$3,$4,decode(repeat('ab',32),'hex'),$5,$6,'')`, f.other, op, f.app, kind, raw, status)
++					rootSQLState(t, e, "23514")
++				})
++			}
++		})
++	}
++}
