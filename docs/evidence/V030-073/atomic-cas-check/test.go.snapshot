@@ -285,11 +285,11 @@ func TestRootStructureDeletionVersionConflictData(t *testing.T) {
 		{"/forms/" + view + "/deletion", "APPLICATION_STRUCTURE_CONFLICT", "currentStructureVersion", 0, 0, 1},
 		{"/forms/" + view + "/deletion", "APPLICATION_VIEW_CONFLICT", "currentViewVersion", 1, 1, 0},
 		{"/tables/" + table + "/deletion", "APPLICATION_SCHEMA_CONFLICT", "currentSchemaVersion", 1, 1, 0},
-		{"/deletion", "APPLICATION_POLICY_CONFLICT", "", 1, 2, 1},
+		{"/deletion", "APPLICATION_POLICY_CONFLICT", "currentPolicyRevision", 1, 2, 1},
 	} {
 		t.Run(tc.key, func(t *testing.T) {
 			d := rootDeletionError(t, f.call(t, "POST", tc.path, rootDeletionInput(t, f, tc.structure, tc.resource)), 409, tc.code)
-			if tc.key=="" && d!=nil || tc.key!="" && !reflect.DeepEqual(d, map[string]any{tc.key: float64(tc.want)}) {
+			if !reflect.DeepEqual(d, map[string]any{tc.key: float64(tc.want)}) {
 				t.Fatalf("existing closed conflict contract %#v", d)
 			}
 		})

@@ -56,7 +56,7 @@ func TestRootStructureDeletionHTTPClosedResourceRoutes(t *testing.T) {
 		{"definition", "GET", view + "/definition", ""},
 		{"presets", "GET", view + "/table-presets", ""},
 		{"drafts", "GET", view + "/drafts?pageSize=20", ""},
-		{"workflows", "GET", view + "/workflows/"+f.id(t), ""},
+		{"workflows", "GET", view + "/workflows/" + f.id(t)+"/definition", ""},
 		{"search", "POST", view + "/records/search", `{"page":1,"pageSize":20,"filter":null,"sort":null}`},
 		{"record-create", "POST", view + "/records", `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"values":{}}`},
 		{"record-edit", "PATCH", view + "/records/" + f.record, `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"expectedRecordVersion":1,"changes":{}}`},
