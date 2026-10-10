@@ -1,18 +1,12 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 )
 
 // Independent closed receipt contract: data design V030-070, frozen before SQL.
@@ -111,63 +105,15 @@ func TestRootTemplateImportSchemaNonemptyDownProtectsReceipt(t *testing.T) {
 }
 func TestRootTemplateImportSchemaEmptyDownUpRestoresExactConstraints(t *testing.T) {
 	f := rootHTTPResourceSetup(t)
-	// This historical rollback belongs to hot32, not the latest shared schema.
-	// Use a fresh empty database so later migrations and their durable histories
-	// are neither erased nor illegally rolled through by this test.
-	name := "weaveos_v070_empty_" + strings.ReplaceAll(f.id(t), "-", "")
-	quoted := pgx.Identifier{name}.Sanitize()
-	if _, e := f.owner.Exec(f.ctx, "CREATE DATABASE "+quoted); e != nil {
-		t.Fatal(e)
-	}
-	u, e := url.Parse(os.Getenv("WEAVEOS_TEST_DATABASE_URL"))
-	if e != nil {
-		t.Fatal(e)
-	}
-	u.Path = "/" + name
-	isolated, e := pgxpool.New(f.ctx, u.String())
-	if e != nil {
-		t.Fatal(e)
-	}
-	t.Cleanup(func() {
-		isolated.Close()
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if _, e := f.owner.Exec(ctx, "DROP DATABASE "+quoted); e != nil {
-			t.Error(e)
-		}
-	})
-	files, e := filepath.Glob("../../../../db/migrations/[0-9]*.sql")
-	if e != nil {
-		t.Fatal(e)
-	}
-	for _, file := range files {
-		if filepath.Base(file) > "00032_application_template_import.sql" {
-			break
-		}
-		raw, e := os.ReadFile(file)
-		if e != nil {
-			t.Fatal(e)
-		}
-		migration, e := isolated.Begin(f.ctx)
-		if e != nil {
-			t.Fatal(e)
-		}
-		if _, e = migration.Exec(f.ctx, strings.SplitN(string(raw), "-- +goose Down", 2)[0]); e != nil {
-			migration.Rollback(f.ctx)
-			t.Fatalf("historical empty fixture %s: %v", filepath.Base(file), e)
-		}
-		if e = migration.Commit(f.ctx); e != nil {
-			t.Fatal(e)
-		}
-	}
 	up, down := rootTemplateImportMigration(t)
-	tx, e := isolated.Begin(f.ctx)
+	tx, e := f.owner.Begin(f.ctx)
 	if e != nil {
 		t.Fatal(e)
 	}
 	defer tx.Rollback(f.ctx)
-	// The dedicated historical fixture is empty. Retain the original test setup
-	// and rollback assertions; this never removes current-schema histories.
+	// Other tests in this isolated synthetic database may have confirmed imports.
+	// Only the owner transaction temporarily removes them to exercise the EMPTY
+	// precondition; rollback restores all rows and schema. Runtime policy is intact.
 	if _, e = tx.Exec(f.ctx, "DELETE FROM applications.operations WHERE operation_kind='application.template.import'"); e != nil {
 		t.Fatal(e)
 	}
