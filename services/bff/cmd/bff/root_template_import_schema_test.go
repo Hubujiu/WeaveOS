@@ -63,7 +63,7 @@ func TestRootTemplateImportSchemaRejectsNonminimalOrMismatchedReceipt(t *testing
 			raw, _ := json.Marshal(data)
 			_, e = tx.Exec(f.ctx, `INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location) VALUES($1,$2,$3,'application.template.import',decode(repeat('12',32),'hex'),$4,$5,$6)`, f.actor, op, f.app, raw, status, location)
 			var pg *pgconn.PgError
-			if !errors.As(e, &pg) || pg.Code != "23514" {
+			if !errors.As(e, &pg) || pg.Code != "23514" || pg.ConstraintName != "ck_template_import_result" {
 				t.Fatal("invalid import receipt accepted or unexpected failure", e)
 			}
 		})
