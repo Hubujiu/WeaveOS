@@ -46,6 +46,7 @@ type Head struct {
 }
 
 type ReserveInput struct {
+	PreviousInstanceID, RoundKind                string
 	AppID, FlowID, InstanceID, RecordID, ActorID string
 	ExpectedRevision, ExpectedSchemaVersion      int64
 	ExpectedRecordVersion                        int64
