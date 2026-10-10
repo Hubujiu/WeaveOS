@@ -15,6 +15,18 @@ func TestRootDeletionCompletionArchivesWithOriginalBytes(t *testing.T) {
 	acceptDeletion(t, p, deletionInput(t, p))
 	dispatchDeletion(t, deletionWorker(p, &deletionPeer{}))
 	ctx := context.Background()
+	coldOwner, e := pgxpool.New(ctx, os.Getenv("WEAVEOS_TEST_ARCHIVE_DATABASE_URL"))
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer coldOwner.Close()
+	coldRoles, e := os.ReadFile("../../../../infra/runtime/cold-roles.sql")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e = coldOwner.Exec(ctx, string(coldRoles)); e != nil {
+		t.Fatal(e)
+	}
 	if _, e := p.s.f.owner.Exec(ctx, "UPDATE auth.authentication_events SET occurred_at=date_trunc('month',now())-interval '1 day' WHERE reason_code='WORKFLOW_DELETION_COMPLETED' AND change_summary->>'flowId'=$1", p.flow); e != nil {
 		t.Fatal(e)
 	}
