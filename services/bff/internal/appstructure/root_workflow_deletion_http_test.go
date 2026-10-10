@@ -108,21 +108,29 @@ func TestRootDeletionHTTPCurrentIdentityAndOwnership(t *testing.T) {
 	if w.Code != 409 {
 		t.Fatal("expected actor not enforced", w.Code)
 	}
-	data(t, rootWorkflowHTTPRequest(t, p.s, p.handler, "POST", path, raw, true, true, "", nil), 202)
+	// Application ownership is immutable. Use the existing Bootstrap Admin
+	// capability to exercise actual loss of management without altering ownership.
 	var other string
-	if e := p.s.f.owner.QueryRow(context.Background(), "INSERT INTO auth.users(account) VALUES('deletion-owner-'||gen_random_uuid()) RETURNING id::text").Scan(&other); e != nil {
+	if e := p.s.f.owner.QueryRow(context.Background(), `WITH new_admin AS (
+ INSERT INTO auth.users(account,is_bootstrap_admin) SELECT 'deletion-admin-'||gen_random_uuid(),true
+ WHERE NOT EXISTS(SELECT 1 FROM auth.users WHERE is_bootstrap_admin) RETURNING id)
+ SELECT id::text FROM new_admin UNION ALL SELECT id::text FROM auth.users WHERE is_bootstrap_admin LIMIT 1`).Scan(&other); e != nil {
 		t.Fatal(e)
 	}
-	if _, e := p.s.f.owner.Exec(context.Background(), "UPDATE applications.apps SET owner_user_id=$2 WHERE id=$1", p.s.f.app, other); e != nil {
-		t.Fatal(e)
-	}
-	if got := rootWorkflowHTTPRequest(t, p.s, p.handler, "GET", statusPath, "", true, false, "", nil); got.Code != 403 {
-		t.Fatal("revoked manager could read original deletion", got.Code)
-	}
-	if got := rootWorkflowHTTPRequest(t, p.s, p.handler, "GET", statusPath, "", true, false, other, nil); got.Code != 404 {
+	data(t, rootWorkflowHTTPRequest(t, p.s, p.handler, "POST", path, raw, true, true, other, nil), 202)
+	if got := rootWorkflowHTTPRequest(t, p.s, p.handler, "GET", statusPath, "", true, false, "", nil); got.Code != 404 {
 		t.Fatal("another current manager stole original actor result", got.Code)
 	}
-	if _, e := p.s.f.owner.Exec(context.Background(), "UPDATE auth.users SET status='disabled',auth_version=auth_version+1 WHERE id=$1", p.s.f.actor); e != nil {
+	if _, e := p.s.f.owner.Exec(context.Background(), "UPDATE auth.users SET is_bootstrap_admin=false WHERE id=$1", other); e != nil {
+		t.Fatal(e)
+	}
+	t.Cleanup(func() {
+		_, _ = p.s.f.owner.Exec(context.Background(), "UPDATE auth.users SET is_bootstrap_admin=true,status='active' WHERE id=$1", other)
+	})
+	if got := rootWorkflowHTTPRequest(t, p.s, p.handler, "GET", statusPath, "", true, false, other, nil); got.Code != 403 {
+		t.Fatal("revoked manager could read original deletion", got.Code)
+	}
+	if _, e := p.s.f.owner.Exec(context.Background(), "UPDATE auth.users SET status='disabled' WHERE id=$1", other); e != nil {
 		t.Fatal(e)
 	}
 	dispatchDeletion(t, p.app)

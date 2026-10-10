@@ -1,0 +1,134 @@
+diff --git a/db/migrations/00029_workflow_deletions.sql b/db/migrations/00029_workflow_deletions.sql
+index ccab3595..06451cf2 100644
+--- a/db/migrations/00029_workflow_deletions.sql
++++ b/db/migrations/00029_workflow_deletions.sql
+@@ -1,4 +1,57 @@
+ -- +goose Up
++ALTER TABLE applications.operations
++ DROP CONSTRAINT ck_operation_kind,
++ ADD CONSTRAINT ck_operation_kind CHECK(operation_kind IN (
++  'application.create',
++  'group.create',
++  'group.update',
++  'members.replace',
++  'grants.replace',
++  'directory.create',
++  'directory.update',
++  'table.create',
++  'table.update',
++  'form.create',
++  'form.update',
++  'definition.save',
++  'record.create',
++  'record.edit',
++  'draft.create',
++  'draft.update',
++  'draft.discard',
++  'workflow.definition.save',
++  'workflow.enable',
++  'workflow.close',
++  'workflow.task.agree',
++  'workflow.task.reject',
++  'workflow.instance.withdraw',
++  'workflow.task.return','workflow.manual.start','workflow.delete'
++ ));
++
++
++ALTER TABLE applications.operations
++ DROP CONSTRAINT ck_operation_result,
++ ADD CONSTRAINT ck_operation_result CHECK(
++  (result_json IS NULL AND http_status IS NULL AND location IS NULL) OR
++  (result_json IS NOT NULL AND jsonb_typeof(result_json)='object' AND http_status IS NOT NULL
++   AND (http_status IN (200,201,204) OR
++        (http_status=202 AND operation_kind IN ('workflow.task.agree','workflow.task.reject','workflow.instance.withdraw','workflow.task.return','workflow.manual.start','workflow.delete')))
++   AND location IS NOT NULL));
++
++
++ALTER TABLE applications.operations ADD CONSTRAINT ck_workflow_delete_result CHECK(
++ result_json IS NULL OR operation_kind<>'workflow.delete' OR COALESCE(
++ operation_id<>'00000000-0000-0000-0000-000000000000'
++ AND result_json ?& ARRAY['operationId','flowId','status','reason','deletedVersions','deletedAt','completedAt']
++ AND result_json-ARRAY['operationId','flowId','status','reason','deletedVersions','deletedAt','completedAt']='{}'::jsonb
++ AND jsonb_typeof(result_json->'operationId')='string' AND result_json->>'operationId'=operation_id::text
++ AND jsonb_typeof(result_json->'flowId')='string'
++ AND (result_json->>'flowId') ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
++ AND result_json->>'flowId'<>'00000000-0000-0000-0000-000000000000'
++ AND result_json->>'status'='pending'
++ AND result_json->'reason'='null'::jsonb AND result_json->'deletedVersions'='null'::jsonb
++ AND result_json->'deletedAt'='null'::jsonb AND result_json->'completedAt'='null'::jsonb
++ AND http_status=202 AND location='/api/v1/application-operations/'||operation_id::text,false));
+ -- +goose StatementBegin
+ DO $$ DECLARE old_expression text; BEGIN
+  SELECT pg_get_expr(conbin,conrelid) INTO STRICT old_expression FROM pg_constraint
+@@ -173,11 +226,51 @@ REVOKE ALL ON FUNCTION applications.complete_workflow_deletion(uuid,uuid,uuid,uu
+ LOCK TABLE applications.workflow_deletions IN ACCESS EXCLUSIVE MODE;
+ -- +goose StatementBegin
+ DO $$ BEGIN
+- IF EXISTS(SELECT 1 FROM applications.workflow_deletions) OR EXISTS(SELECT 1 FROM auth.authentication_events WHERE reason_code='WORKFLOW_DELETION_COMPLETED') THEN
++ IF EXISTS(SELECT 1 FROM applications.operations WHERE operation_kind='workflow.delete') OR EXISTS(SELECT 1 FROM applications.workflow_deletions) OR EXISTS(SELECT 1 FROM auth.authentication_events WHERE reason_code='WORKFLOW_DELETION_COMPLETED') THEN
+   RAISE EXCEPTION 'cannot erase durable workflow deletion identity' USING ERRCODE='55000';
+  END IF;
+ END $$;
+ -- +goose StatementEnd
++ALTER TABLE applications.operations DROP CONSTRAINT ck_workflow_delete_result;
++ALTER TABLE applications.operations
++ DROP CONSTRAINT ck_operation_kind,
++ ADD CONSTRAINT ck_operation_kind CHECK(operation_kind IN (
++  'application.create',
++  'group.create',
++  'group.update',
++  'members.replace',
++  'grants.replace',
++  'directory.create',
++  'directory.update',
++  'table.create',
++  'table.update',
++  'form.create',
++  'form.update',
++  'definition.save',
++  'record.create',
++  'record.edit',
++  'draft.create',
++  'draft.update',
++  'draft.discard',
++  'workflow.definition.save',
++  'workflow.enable',
++  'workflow.close',
++  'workflow.task.agree',
++  'workflow.task.reject',
++  'workflow.instance.withdraw',
++  'workflow.task.return','workflow.manual.start'
++ ));
++
++
++ALTER TABLE applications.operations
++ DROP CONSTRAINT ck_operation_result,
++ ADD CONSTRAINT ck_operation_result CHECK(
++  (result_json IS NULL AND http_status IS NULL AND location IS NULL) OR
++  (result_json IS NOT NULL AND jsonb_typeof(result_json)='object' AND http_status IS NOT NULL
++   AND (http_status IN (200,201,204) OR
++        (http_status=202 AND operation_kind IN ('workflow.task.agree','workflow.task.reject','workflow.instance.withdraw','workflow.task.return','workflow.manual.start')))
++   AND location IS NOT NULL));
++
+ DROP FUNCTION applications.complete_workflow_deletion(uuid,uuid,uuid,uuid);
+ DROP FUNCTION applications.workflow_deletion_has_work(uuid,uuid);
+ DROP TRIGGER guard_deleted_workflow_version ON applications.workflow_versions;
+diff --git a/services/bff/internal/appworkflows/http.go b/services/bff/internal/appworkflows/http.go
+index 5c568142..a428a1ea 100644
+--- a/services/bff/internal/appworkflows/http.go
++++ b/services/bff/internal/appworkflows/http.go
+@@ -435,10 +435,14 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		return
+ 	}
+ 	switch {
++	case r.Method == http.MethodGet && len(parts) == 7 && action == "deletions":
++		s.deletionStatus(w, r, p, appID, viewID, flowID, parts[6])
+ 	case r.Method == http.MethodGet && len(parts) == 7 && action == "publications":
+ 		s.publicationStatus(w, r, p, appID, viewID, flowID, parts[6])
+ 	case len(parts) != 6:
+ 		writeEnvelope(w, r, http.StatusNotFound, "API_NOT_FOUND", nil)
++	case r.Method == http.MethodPost && action == "delete":
++		s.deleteWorkflow(w, r, p, appID, viewID, flowID)
+ 	case r.Method == http.MethodPost && action == "publish":
+ 		s.publish(w, r, p, appID, viewID, flowID)
+ 	case r.Method == http.MethodGet && action == "definition":
