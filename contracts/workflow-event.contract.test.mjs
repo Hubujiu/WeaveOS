@@ -13,7 +13,7 @@ test('historical event is session-bound body-free GET, never a write or raw engi
  assert.equal(op.responses['200'].content['application/json'].schema.$ref,'#/components/schemas/WorkflowEventResultEnvelope');
 });
 test('historical event and allowed field projection use closed exact DTOs',()=>{
- for(const [name,keys] of Object.entries({WorkflowEventResult:['event','basis'],WorkflowEventSummary:['id','instanceId','flowId','nodeId','targetNodeId','actorId','action','outcome','sequence','schemaVersion','recordVersion','occurredAt'],WorkflowHistoricalField:['fieldId','fieldName','fieldKind','value','valueLabels'],WorkflowHistoricalLabel:['label','deleted']})){
+ for(const [name,keys] of Object.entries({WorkflowEventResult:['event','basis'],WorkflowEventSummary:['flowName','flowNameSource','id','instanceId','flowId','nodeId','targetNodeId','actorId','action','outcome','sequence','schemaVersion','recordVersion','occurredAt'],WorkflowHistoricalField:['fieldId','fieldName','fieldKind','value','valueLabels'],WorkflowHistoricalLabel:['label','deleted']})){
   const s=schemas[name];assert.ok(s,name+' missing');assert.equal(s.additionalProperties,false);assert.deepEqual(Object.keys(s.properties).sort(),keys.toSorted());assert.deepEqual(s.required.toSorted(),keys.toSorted());
  }
  const event=schemas.WorkflowEventSummary;assert.deepEqual(event.properties.outcome.enum,['success','no_effect']);assert.deepEqual(event.properties.action.enum,['start','agree','reject','withdraw','return']);

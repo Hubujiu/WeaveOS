@@ -1,0 +1,1 @@
+Actual baseline: Limit -> top-N Sort -> Seq Scan, 201 matching / 401 removed rows, 38 shared hit blocks, 0.203ms one isolated warm sample. Existing instance indexes cannot provide direct record ordering. Implement the predeclared record keyset index in unpublished migration27 and remeasure; no production throughput claim.

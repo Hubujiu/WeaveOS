@@ -51,7 +51,7 @@ func TestRootWorkflowEventHTTPSExactSafeSnapshot(t *testing.T) {
 	if json.Unmarshal(data["event"], &event) != nil || json.Unmarshal(data["basis"], &basis) != nil {
 		t.Fatal("bad nested DTO")
 	}
-	rootHTTPFieldSet(t, event, []string{"id", "instanceId", "flowId", "nodeId", "targetNodeId", "actorId", "action", "outcome", "sequence", "schemaVersion", "recordVersion", "occurredAt"})
+	rootHTTPFieldSet(t, event, []string{"flowName", "flowNameSource", "id", "instanceId", "flowId", "nodeId", "targetNodeId", "actorId", "action", "outcome", "sequence", "schemaVersion", "recordVersion", "occurredAt"})
 	if rootHTTPString(t, event, "nodeId") != f.node || rootHTTPString(t, event, "actorId") != f.actor || rootHTTPString(t, event, "action") != "agree" || rootHTTPString(t, event, "outcome") != "success" || string(event["targetNodeId"]) != "null" {
 		t.Fatal("wrong actual confirmed event")
 	}
