@@ -1,0 +1,266 @@
+diff --git a/services/bff/cmd/bff/root_template_import_fault_test.go b/services/bff/cmd/bff/root_template_import_fault_test.go
+index 432c807a..3ad1880e 100644
+--- a/services/bff/cmd/bff/root_template_import_fault_test.go
++++ b/services/bff/cmd/bff/root_template_import_fault_test.go
+@@ -4,13 +4,17 @@ import (
+ 	"bytes"
+ 	"context"
+ 	"encoding/binary"
++	"encoding/json"
+ 	"errors"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apptemplates"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+ 	"github.com/jackc/pgx/v5"
+ 	"github.com/jackc/pgx/v5/pgxpool"
+ 	"io"
+ 	"net"
++	"net/http"
++	"net/http/httptest"
+ 	"reflect"
+ 	"strings"
+ 	"sync"
+@@ -182,3 +186,113 @@ func TestRootTemplateImportConcurrentSameKeyHasOneApplication(t *testing.T) {
+ 		t.Fatal("concurrent orphan or duplicate app", app, n, e)
+ 	}
+ }
++
++type rootTemplateCommitHook struct {
++	fn     func(context.Context)
++	called atomic.Bool
++}
++type rootTemplateCommitContext struct{}
++
++func (h *rootTemplateCommitHook) TraceQueryStart(ctx context.Context, _ *pgx.Conn, d pgx.TraceQueryStartData) context.Context {
++	return context.WithValue(ctx, rootTemplateCommitContext{}, strings.EqualFold(strings.TrimSpace(d.SQL), "commit"))
++}
++func (h *rootTemplateCommitHook) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, d pgx.TraceQueryEndData) {
++	if commit, _ := ctx.Value(rootTemplateCommitContext{}).(bool); commit && d.Err == nil && h.called.CompareAndSwap(false, true) {
++		h.fn(ctx)
++	}
++}
++func TestRootTemplateImportHTTPUnknownCommitAndConfirmedRenewalFailure(t *testing.T) {
++	for _, mode := range []string{"unknown-commit", "revoked-after-commit"} {
++		t.Run(mode, func(t *testing.T) {
++			f, m, b, _ := rootTemplatePreflightSource(t)
++			rootTemplateGrantCreate(t, f, f.actor)
++			op := f.id(t)
++			cfg := f.runtime.Config()
++			var dropped atomic.Bool
++			hookResult := make(chan error, 1)
++			var hook *rootTemplateCommitHook
++			if mode == "unknown-commit" {
++				cfg.ConnConfig.DialFunc = func(ctx context.Context, network, address string) (net.Conn, error) {
++					c, e := (&net.Dialer{}).DialContext(ctx, network, address)
++					if e != nil {
++						return nil, e
++					}
++					return &rootTemplateLostCommit{Conn: c, dropped: &dropped}, nil
++				}
++			} else {
++				hook = &rootTemplateCommitHook{fn: func(ctx context.Context) {
++					ok, e := f.store.Revoke(ctx, f.sid)
++					if e == nil && !ok {
++						e = errors.New("expected original session to be revoked")
++					}
++					hookResult <- e
++				}}
++				cfg.ConnConfig.Tracer = hook
++			}
++			pool, e := pgxpool.NewWithConfig(f.ctx, cfg)
++			if e != nil {
++				t.Fatal(e)
++			}
++			defer pool.Close()
++			h := &apptemplates.HTTP{Application: &apptemplates.Service{Pool: pool}, Authenticator: session.Authenticator{Sessions: f.store, DB: f.runtime}}
++			server := httptest.NewTLSServer(h)
++			defer server.Close()
++			h.Authenticator.Origin = server.URL
++			req, e := http.NewRequestWithContext(f.ctx, "POST", server.URL+"/api/v1/application-templates/import", strings.NewReader(rootTemplateImportHTTPBody(t, op, m, b)))
++			if e != nil {
++				t.Fatal(e)
++			}
++			req.Header.Set("Origin", server.URL)
++			req.Header.Set("Content-Type", "application/json")
++			req.Header.Set("X-CSRF-Token", f.csrf)
++			req.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: f.sid})
++			req.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: f.csrf})
++			response, e := server.Client().Do(req)
++			if e != nil {
++				t.Fatal(e)
++			}
++			defer response.Body.Close()
++			raw, e := io.ReadAll(response.Body)
++			if e != nil {
++				t.Fatal(e)
++			}
++			var env struct {
++				Code string
++				Data map[string]json.RawMessage
++				Meta map[string]string
++			}
++			if json.Unmarshal(raw, &env) != nil || env.Meta["requestId"] == "" || response.Header.Get("Cache-Control") != "no-store" {
++				t.Fatal("invalid HTTP envelope", string(raw))
++			}
++			if mode == "unknown-commit" {
++				if !dropped.Load() || response.StatusCode != 503 || env.Code != "APPLICATION_OPERATION_UNCONFIRMED" || len(env.Data) != 1 || rootHTTPString(t, env.Data, "operationId") != op || response.Header.Get("Location") != "" || len(response.Cookies()) != 0 {
++					t.Fatal("ambiguous HTTP exposed false success", response.StatusCode, string(raw))
++				}
++			} else {
++				if !hook.called.Load() {
++					t.Fatal("real commit hook not reached")
++				}
++				if e = <-hookResult; e != nil {
++					t.Fatal(e)
++				}
++				if response.StatusCode != 201 || env.Code != "OK" || len(env.Data) != 5 || response.Header.Get("Location") == "" {
++					t.Fatal("postcommit revoke disguised committed import", response.StatusCode, string(raw))
++				}
++				if len(response.Cookies()) != 2 {
++					t.Fatal("revoked session cookies were not cleared")
++				}
++				for _, cookie := range response.Cookies() {
++					if cookie.MaxAge >= 0 {
++						t.Fatal("renewed revoked session")
++					}
++				}
++			}
++			p := rootTemplatePrincipal(f)
++			p.SessionRef = ""
++			saved, e := (&applications.Application{Pool: f.runtime}).Operation(f.ctx, p, op)
++			if e != nil || saved.Status != "confirmed" {
++				t.Fatal("actual committed import missing", e)
++			}
++		})
++	}
++}
+diff --git a/services/bff/internal/apptemplates/http.go b/services/bff/internal/apptemplates/http.go
+index 97fbae7e..c4f548ff 100644
+--- a/services/bff/internal/apptemplates/http.go
++++ b/services/bff/internal/apptemplates/http.go
+@@ -2,6 +2,7 @@ package apptemplates
+ 
+ import (
+ 	"bytes"
++	"context"
+ 	"encoding/json"
+ 	"errors"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+@@ -12,6 +13,7 @@ import (
+ 	"net/http"
+ 	"reflect"
+ 	"strings"
++	"time"
+ 	"unicode/utf8"
+ )
+ 
+@@ -23,6 +25,12 @@ type HTTP struct {
+ 
+ var errTooLarge = errors.New("template payload exceeds limit")
+ 
++type importWire struct {
++	OperationID string          `json:"operationId"`
++	Manifest    json.RawMessage `json:"manifest"`
++	Bindings    []Binding       `json:"bindings"`
++}
++
+ type preflightWire struct {
+ 	Manifest json.RawMessage `json:"manifest"`
+ 	Bindings []Binding       `json:"bindings"`
+@@ -60,6 +68,10 @@ func templateFail(w http.ResponseWriter, r *http.Request, e error) {
+ 		status, code = 409, "AUTH_SESSION_CHANGED"
+ 	case errors.Is(e, applications.ErrDenied):
+ 		status, code = 403, "APPLICATION_FORBIDDEN"
++	case errors.Is(e, applications.ErrOperationConflict):
++		status, code = 409, "APPLICATION_OPERATION_CONFLICT"
++	case errors.Is(e, applications.ErrPolicyConflict):
++		status, code = 409, "APPLICATION_POLICY_CONFLICT"
+ 	case errors.Is(e, applications.ErrMissing):
+ 		status, code = 404, "APPLICATION_NOT_FOUND"
+ 	case errors.Is(e, applications.ErrResourceInvalid):
+@@ -101,6 +113,34 @@ func decodePreflight(raw []byte) (Manifest, []Binding, error) {
+ 	m, e := DecodeManifest(in.Manifest)
+ 	return m, in.Bindings, e
+ }
++func decodeImport(raw []byte) (string, Manifest, []Binding, error) {
++	if len(raw) > 4*1024*1024 {
++		return "", Manifest{}, nil, errTooLarge
++	}
++	if len(raw) == 0 || !utf8.Valid(raw) {
++		return "", Manifest{}, nil, ErrInvalid
++	}
++	d := json.NewDecoder(bytes.NewReader(raw))
++	d.UseNumber()
++	if tokens(d, 0) != nil {
++		return "", Manifest{}, nil, ErrInvalid
++	}
++	if _, e := d.Token(); e != io.EOF {
++		return "", Manifest{}, nil, ErrInvalid
++	}
++	if !shape(raw, reflect.TypeOf(importWire{}), 0) {
++		return "", Manifest{}, nil, ErrInvalid
++	}
++	var in importWire
++	if json.Unmarshal(raw, &in) != nil || !validID(in.OperationID) {
++		return "", Manifest{}, nil, ErrInvalid
++	}
++	if len(in.Manifest) > 1048576 {
++		return "", Manifest{}, nil, errTooLarge
++	}
++	m, e := DecodeManifest(in.Manifest)
++	return in.OperationID, m, in.Bindings, e
++}
+ func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 	var e error
+ 	r, e = httpserver.Prepare(w, r, s.TrustedProxyHosts)
+@@ -126,14 +166,15 @@ func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		return
+ 	}
+ 	preflight := r.URL.Path == "/api/v1/application-templates/preflight"
++	importing := r.URL.Path == "/api/v1/application-templates/import"
+ 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
+ 	parts := strings.Split(path, "/")
+ 	export := path != r.URL.Path && len(parts) == 2 && parts[1] == "structure-template"
+-	if !preflight && !export {
++	if !preflight && !export && !importing {
+ 		templateRespond(w, r, 404, "API_NOT_FOUND", nil)
+ 		return
+ 	}
+-	if preflight && r.Method != "POST" || export && r.Method != "GET" && r.Method != "HEAD" {
++	if (preflight || importing) && r.Method != "POST" || export && r.Method != "GET" && r.Method != "HEAD" {
+ 		allow := "POST"
+ 		if export {
+ 			allow = "GET, HEAD"
+@@ -157,6 +198,32 @@ func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 			templateFail(w, r, ErrInvalid)
+ 			return
+ 		}
++		if importing {
++			op, m, b, err := decodeImport(raw)
++			if err != nil {
++				templateFail(w, r, err)
++				return
++			}
++			meta := httpserver.Metadata(r.Context())
++			committed, err := s.Application.Import(r.Context(), p, op, m, b, applications.Metadata{RequestID: meta.RequestID, ClientIP: meta.ClientIP, UserAgent: meta.UserAgent})
++			if errors.Is(err, applications.ErrUnconfirmed) {
++				templateRespond(w, r, 503, "APPLICATION_OPERATION_UNCONFIRMED", map[string]string{"operationId": op})
++				return
++			}
++			if err != nil {
++				templateFail(w, r, err)
++				return
++			}
++			ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
++			err = s.Authenticator.Renew(ctx, w, r, p)
++			cancel()
++			if err != nil {
++				session.ClearCookies(w)
++			}
++			w.Header().Set("Location", committed.Location)
++			templateRespond(w, r, committed.Status, "OK", committed.Data)
++			return
++		}
+ 		m, b, err := decodePreflight(raw)
+ 		if err != nil {
+ 			templateFail(w, r, err)

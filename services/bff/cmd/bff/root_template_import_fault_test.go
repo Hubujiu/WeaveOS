@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apptemplates"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"io"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"strings"
 	"sync"
@@ -180,5 +184,115 @@ func TestRootTemplateImportConcurrentSameKeyHasOneApplication(t *testing.T) {
 	var n int
 	if e = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.apps WHERE owner_user_id=$1", p.UserID).Scan(&n); e != nil || n != 1 {
 		t.Fatal("concurrent orphan or duplicate app", app, n, e)
+	}
+}
+
+type rootTemplateCommitHook struct {
+	fn     func(context.Context)
+	called atomic.Bool
+}
+type rootTemplateCommitContext struct{}
+
+func (h *rootTemplateCommitHook) TraceQueryStart(ctx context.Context, _ *pgx.Conn, d pgx.TraceQueryStartData) context.Context {
+	return context.WithValue(ctx, rootTemplateCommitContext{}, strings.EqualFold(strings.TrimSpace(d.SQL), "commit"))
+}
+func (h *rootTemplateCommitHook) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, d pgx.TraceQueryEndData) {
+	if commit, _ := ctx.Value(rootTemplateCommitContext{}).(bool); commit && d.Err == nil && h.called.CompareAndSwap(false, true) {
+		h.fn(ctx)
+	}
+}
+func TestRootTemplateImportHTTPUnknownCommitAndConfirmedRenewalFailure(t *testing.T) {
+	for _, mode := range []string{"unknown-commit", "revoked-after-commit"} {
+		t.Run(mode, func(t *testing.T) {
+			f, m, b, _ := rootTemplatePreflightSource(t)
+			rootTemplateGrantCreate(t, f, f.actor)
+			op := f.id(t)
+			cfg := f.runtime.Config()
+			var dropped atomic.Bool
+			hookResult := make(chan error, 1)
+			var hook *rootTemplateCommitHook
+			if mode == "unknown-commit" {
+				cfg.ConnConfig.DialFunc = func(ctx context.Context, network, address string) (net.Conn, error) {
+					c, e := (&net.Dialer{}).DialContext(ctx, network, address)
+					if e != nil {
+						return nil, e
+					}
+					return &rootTemplateLostCommit{Conn: c, dropped: &dropped}, nil
+				}
+			} else {
+				hook = &rootTemplateCommitHook{fn: func(ctx context.Context) {
+					ok, e := f.store.Revoke(ctx, f.sid)
+					if e == nil && !ok {
+						e = errors.New("expected original session to be revoked")
+					}
+					hookResult <- e
+				}}
+				cfg.ConnConfig.Tracer = hook
+			}
+			pool, e := pgxpool.NewWithConfig(f.ctx, cfg)
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer pool.Close()
+			h := &apptemplates.HTTP{Application: &apptemplates.Service{Pool: pool}, Authenticator: session.Authenticator{Sessions: f.store, DB: f.runtime}}
+			server := httptest.NewTLSServer(h)
+			defer server.Close()
+			h.Authenticator.Origin = server.URL
+			req, e := http.NewRequestWithContext(f.ctx, "POST", server.URL+"/api/v1/application-templates/import", strings.NewReader(rootTemplateImportHTTPBody(t, op, m, b)))
+			if e != nil {
+				t.Fatal(e)
+			}
+			req.Header.Set("Origin", server.URL)
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("X-CSRF-Token", f.csrf)
+			req.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: f.sid})
+			req.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: f.csrf})
+			response, e := server.Client().Do(req)
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer response.Body.Close()
+			raw, e := io.ReadAll(response.Body)
+			if e != nil {
+				t.Fatal(e)
+			}
+			var env struct {
+				Code string
+				Data map[string]json.RawMessage
+				Meta map[string]string
+			}
+			if json.Unmarshal(raw, &env) != nil || env.Meta["requestId"] == "" || response.Header.Get("Cache-Control") != "no-store" {
+				t.Fatal("invalid HTTP envelope", string(raw))
+			}
+			if mode == "unknown-commit" {
+				if !dropped.Load() || response.StatusCode != 503 || env.Code != "APPLICATION_OPERATION_UNCONFIRMED" || len(env.Data) != 1 || rootHTTPString(t, env.Data, "operationId") != op || response.Header.Get("Location") != "" || len(response.Cookies()) != 0 {
+					t.Fatal("ambiguous HTTP exposed false success", response.StatusCode, string(raw))
+				}
+			} else {
+				if !hook.called.Load() {
+					t.Fatal("real commit hook not reached")
+				}
+				if e = <-hookResult; e != nil {
+					t.Fatal(e)
+				}
+				if response.StatusCode != 201 || env.Code != "OK" || len(env.Data) != 5 || response.Header.Get("Location") == "" {
+					t.Fatal("postcommit revoke disguised committed import", response.StatusCode, string(raw))
+				}
+				if len(response.Cookies()) != 2 {
+					t.Fatal("revoked session cookies were not cleared")
+				}
+				for _, cookie := range response.Cookies() {
+					if cookie.MaxAge >= 0 {
+						t.Fatal("renewed revoked session")
+					}
+				}
+			}
+			p := rootTemplatePrincipal(f)
+			p.SessionRef = ""
+			saved, e := (&applications.Application{Pool: f.runtime}).Operation(f.ctx, p, op)
+			if e != nil || saved.Status != "confirmed" {
+				t.Fatal("actual committed import missing", e)
+			}
+		})
 	}
 }

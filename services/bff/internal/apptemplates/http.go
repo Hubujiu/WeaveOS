@@ -2,6 +2,7 @@ package apptemplates
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
@@ -12,6 +13,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -22,6 +24,12 @@ type HTTP struct {
 }
 
 var errTooLarge = errors.New("template payload exceeds limit")
+
+type importWire struct {
+	OperationID string          `json:"operationId"`
+	Manifest    json.RawMessage `json:"manifest"`
+	Bindings    []Binding       `json:"bindings"`
+}
 
 type preflightWire struct {
 	Manifest json.RawMessage `json:"manifest"`
@@ -60,6 +68,10 @@ func templateFail(w http.ResponseWriter, r *http.Request, e error) {
 		status, code = 409, "AUTH_SESSION_CHANGED"
 	case errors.Is(e, applications.ErrDenied):
 		status, code = 403, "APPLICATION_FORBIDDEN"
+	case errors.Is(e, applications.ErrOperationConflict):
+		status, code = 409, "APPLICATION_OPERATION_CONFLICT"
+	case errors.Is(e, applications.ErrPolicyConflict):
+		status, code = 409, "APPLICATION_POLICY_CONFLICT"
 	case errors.Is(e, applications.ErrMissing):
 		status, code = 404, "APPLICATION_NOT_FOUND"
 	case errors.Is(e, applications.ErrResourceInvalid):
@@ -101,6 +113,34 @@ func decodePreflight(raw []byte) (Manifest, []Binding, error) {
 	m, e := DecodeManifest(in.Manifest)
 	return m, in.Bindings, e
 }
+func decodeImport(raw []byte) (string, Manifest, []Binding, error) {
+	if len(raw) > 4*1024*1024 {
+		return "", Manifest{}, nil, errTooLarge
+	}
+	if len(raw) == 0 || !utf8.Valid(raw) {
+		return "", Manifest{}, nil, ErrInvalid
+	}
+	d := json.NewDecoder(bytes.NewReader(raw))
+	d.UseNumber()
+	if tokens(d, 0) != nil {
+		return "", Manifest{}, nil, ErrInvalid
+	}
+	if _, e := d.Token(); e != io.EOF {
+		return "", Manifest{}, nil, ErrInvalid
+	}
+	if !shape(raw, reflect.TypeOf(importWire{}), 0) {
+		return "", Manifest{}, nil, ErrInvalid
+	}
+	var in importWire
+	if json.Unmarshal(raw, &in) != nil || !validID(in.OperationID) {
+		return "", Manifest{}, nil, ErrInvalid
+	}
+	if len(in.Manifest) > 1048576 {
+		return "", Manifest{}, nil, errTooLarge
+	}
+	m, e := DecodeManifest(in.Manifest)
+	return in.OperationID, m, in.Bindings, e
+}
 func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var e error
 	r, e = httpserver.Prepare(w, r, s.TrustedProxyHosts)
@@ -126,14 +166,15 @@ func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	preflight := r.URL.Path == "/api/v1/application-templates/preflight"
+	importing := r.URL.Path == "/api/v1/application-templates/import"
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
 	parts := strings.Split(path, "/")
 	export := path != r.URL.Path && len(parts) == 2 && parts[1] == "structure-template"
-	if !preflight && !export {
+	if !preflight && !export && !importing {
 		templateRespond(w, r, 404, "API_NOT_FOUND", nil)
 		return
 	}
-	if preflight && r.Method != "POST" || export && r.Method != "GET" && r.Method != "HEAD" {
+	if (preflight || importing) && r.Method != "POST" || export && r.Method != "GET" && r.Method != "HEAD" {
 		allow := "POST"
 		if export {
 			allow = "GET, HEAD"
@@ -155,6 +196,32 @@ func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		raw, err := io.ReadAll(io.LimitReader(r.Body, 4*1024*1024+1))
 		if err != nil {
 			templateFail(w, r, ErrInvalid)
+			return
+		}
+		if importing {
+			op, m, b, err := decodeImport(raw)
+			if err != nil {
+				templateFail(w, r, err)
+				return
+			}
+			meta := httpserver.Metadata(r.Context())
+			committed, err := s.Application.Import(r.Context(), p, op, m, b, applications.Metadata{RequestID: meta.RequestID, ClientIP: meta.ClientIP, UserAgent: meta.UserAgent})
+			if errors.Is(err, applications.ErrUnconfirmed) {
+				templateRespond(w, r, 503, "APPLICATION_OPERATION_UNCONFIRMED", map[string]string{"operationId": op})
+				return
+			}
+			if err != nil {
+				templateFail(w, r, err)
+				return
+			}
+			ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+			err = s.Authenticator.Renew(ctx, w, r, p)
+			cancel()
+			if err != nil {
+				session.ClearCookies(w)
+			}
+			w.Header().Set("Location", committed.Location)
+			templateRespond(w, r, committed.Status, "OK", committed.Data)
 			return
 		}
 		m, b, err := decodePreflight(raw)
