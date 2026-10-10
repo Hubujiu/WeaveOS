@@ -15,6 +15,8 @@ test('restricted backup fixture builds the complete reviewed schema before insta
   '00027_workflow_independent_journal.sql',
   '00028_workflow_publication_history.sql',
   '00029_workflow_deletions.sql',
+  '00030_workflow_rounds.sql',
+  '00031_workflow_round_operations.sql',
  ];
  let previous=source.indexOf('00021_workflow_task_operations.sql');
  for(const file of migrations){

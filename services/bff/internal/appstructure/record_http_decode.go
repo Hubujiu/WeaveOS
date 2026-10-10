@@ -15,6 +15,10 @@ import (
 func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[string]json.RawMessage, error) {
 	required, optional, nullable := []string{}, []string{}, []string{}
 	switch kind {
+	case "workflow.round.start":
+		required = []string{"operationId", "kind", "expectedWorkflowRevision", "expectedSchemaVersion", "expectedRecordVersion"}
+	case "workflow.round.rework":
+		required = []string{"operationId", "expectedSchemaVersion", "expectedRecordVersion", "changes"}
 	case "workflow.manual.start":
 		required = []string{"operationId", "flowId", "expectedWorkflowRevision", "expectedSchemaVersion", "expectedRecordVersion"}
 	case "workflow.instances.search", "workflow.manual.options.search", "workflow.inbox.search":
@@ -53,7 +57,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 	if kind == "record.search" {
 		limit = 64 << 10
 	}
-	if kind == "workflow.manual.start" || kind == "workflow.task.action" || kind == "workflow.lifecycle.action" || kind == "workflow.instances.search" || kind == "workflow.manual.options.search" || kind == "workflow.inbox.search" {
+	if kind == "workflow.round.start" || kind == "workflow.manual.start" || kind == "workflow.task.action" || kind == "workflow.lifecycle.action" || kind == "workflow.instances.search" || kind == "workflow.manual.options.search" || kind == "workflow.inbox.search" {
 		limit = 4096
 	}
 	raw, e := io.ReadAll(http.MaxBytesReader(w, r.Body, limit))
@@ -72,6 +76,26 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 		return nil, recordBodyInvalid()
 	}
 
+	if kind == "workflow.round.start" || kind == "workflow.round.rework" {
+		var op string
+		if json.Unmarshal(m["operationId"], &op) != nil || !appfields.ValidID(op) || op == "00000000-0000-0000-0000-000000000000" {
+			return nil, recordBodyInvalid()
+		}
+		versions := []string{"expectedSchemaVersion", "expectedRecordVersion"}
+		if kind == "workflow.round.start" {
+			var action string
+			if json.Unmarshal(m["kind"], &action) != nil || action != "resubmit" && action != "review" {
+				return nil, recordBodyInvalid()
+			}
+			versions = append(versions, "expectedWorkflowRevision")
+		}
+		for _, key := range versions {
+			var n int64
+			if json.Unmarshal(m[key], &n) != nil || n < 1 || n > maxVersion {
+				return nil, recordBodyInvalid()
+			}
+		}
+	}
 	if kind == "workflow.manual.start" {
 		for _, key := range []string{"operationId", "flowId"} {
 			var id string
@@ -143,7 +167,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 			if json.Unmarshal(b, &values) != nil || values == nil {
 				return nil, recordBodyInvalid()
 			}
-			if kind == "workflow.task.save" && (len(values) == 0 || len(values) > 200) {
+			if (kind == "workflow.task.save" || kind == "workflow.round.rework") && (len(values) == 0 || len(values) > 200) {
 				return nil, recordBodyInvalid()
 			}
 			for id, v := range values {

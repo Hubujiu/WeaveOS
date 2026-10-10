@@ -1,0 +1,134 @@
+✖ restricted backup fixture builds the complete reviewed schema before installing canonical roles (3.263624ms)
+✔ Root V036: one reviewed evidence migration follows recovery hot19 (5.74092ms)
+✔ Root V036: every older migration identity and source remains unchanged (3.065681ms)
+✖ Root V036: only reviewed append-only evidence roles are admitted (2.212381ms)
+✔ Root V036: encrypted backup fixture includes evidence migration and original wire vectors (0.537795ms)
+✔ Root V036: legacy fixture resets enumerate evidence dependencies without CASCADE (1.116187ms)
+✔ Root V033: hot18 has one exact reviewed registration after publication migrations (3.212614ms)
+✔ Root V033: all previous migration identities remain unchanged (0.449686ms)
+✖ Root V033: reviewed least-privilege role source is accepted exactly (1.808662ms)
+✔ Root V033: role policy still rejects unreviewed extra privileges (0.782137ms)
+✔ Root V035: exactly one reviewed recovery migration follows hot18 (3.000937ms)
+✔ Root V035: every prior migration identity and actual source is preserved (4.006057ms)
+✖ Root V035: reviewed scheduler-only role source is admitted exactly (3.473771ms)
+✔ Root V035: accepted payload and identity cannot gain unreviewed mutation grants (0.800948ms)
+✔ Root V037: exactly reviewed action migration follows immutable evidence (4.944309ms)
+✖ Root V037: all earlier migration bytes and installed roles remain unchanged (5.74786ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 11
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 232.952098
+
+✖ failing tests:
+
+test at tests/foundation/root-backup-current-schema.test.mjs:5:1
+✖ restricted backup fixture builds the complete reviewed schema before installing canonical roles (3.263624ms)
+  AssertionError [ERR_ASSERTION]: 00030_workflow_rounds.sql must be applied in order before canonical roles
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-069/tests/foundation/root-backup-current-schema.test.mjs:23:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/foundation/root-evidence-registration.test.mjs:122:1
+✖ Root V036: only reviewed append-only evidence roles are admitted (2.212381ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '8b0e70f9a3708039d87d7848c0fba43d3ba240f018080c6a5d3a997efecf395f'
+  - '7bd25e63e883501492532b97a951d182b8c953c743dd7bb656c38e7406f42267'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-069/tests/foundation/root-evidence-registration.test.mjs:123:68)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '8b0e70f9a3708039d87d7848c0fba43d3ba240f018080c6a5d3a997efecf395f',
+    expected: '7bd25e63e883501492532b97a951d182b8c953c743dd7bb656c38e7406f42267',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/root-execution-projection-registration.test.mjs:113:1
+✖ Root V033: reviewed least-privilege role source is accepted exactly (1.808662ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '8b0e70f9a3708039d87d7848c0fba43d3ba240f018080c6a5d3a997efecf395f'
+  - '7bd25e63e883501492532b97a951d182b8c953c743dd7bb656c38e7406f42267'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-069/tests/foundation/root-execution-projection-registration.test.mjs:115:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '8b0e70f9a3708039d87d7848c0fba43d3ba240f018080c6a5d3a997efecf395f',
+    expected: '7bd25e63e883501492532b97a951d182b8c953c743dd7bb656c38e7406f42267',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/root-execution-recovery-registration.test.mjs:122:1
+✖ Root V035: reviewed scheduler-only role source is admitted exactly (3.473771ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '8b0e70f9a3708039d87d7848c0fba43d3ba240f018080c6a5d3a997efecf395f'
+  - '7bd25e63e883501492532b97a951d182b8c953c743dd7bb656c38e7406f42267'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-069/tests/foundation/root-execution-recovery-registration.test.mjs:124:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '8b0e70f9a3708039d87d7848c0fba43d3ba240f018080c6a5d3a997efecf395f',
+    expected: '7bd25e63e883501492532b97a951d182b8c953c743dd7bb656c38e7406f42267',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/root-workflow-action-registration.test.mjs:122:1
+✖ Root V037: all earlier migration bytes and installed roles remain unchanged (5.74786ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '8b0e70f9a3708039d87d7848c0fba43d3ba240f018080c6a5d3a997efecf395f'
+  - '7bd25e63e883501492532b97a951d182b8c953c743dd7bb656c38e7406f42267'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-069/tests/foundation/root-workflow-action-registration.test.mjs:124:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '8b0e70f9a3708039d87d7848c0fba43d3ba240f018080c6a5d3a997efecf395f',
+    expected: '7bd25e63e883501492532b97a951d182b8c953c743dd7bb656c38e7406f42267',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

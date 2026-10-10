@@ -72,6 +72,8 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00027_workflow_independent_journal.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00028_workflow_publication_history.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00029_workflow_deletions.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00030_workflow_rounds.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00031_workflow_round_operations.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,"SELECT setval('applications.record_command_fence_epoch_seq',41,true);");
  sql(live,`INSERT INTO auth.users(id,account) VALUES('77777777-7777-4777-8777-777777777777','preset-backup-synthetic');
  INSERT INTO personnel.table_presets(id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at)
