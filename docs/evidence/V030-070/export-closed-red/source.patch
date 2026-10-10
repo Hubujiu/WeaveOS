@@ -1,0 +1,69 @@
+diff --git a/services/bff/cmd/bff/root_template_export_test.go b/services/bff/cmd/bff/root_template_export_test.go
+index 22689079..cd83ba86 100644
+--- a/services/bff/cmd/bff/root_template_export_test.go
++++ b/services/bff/cmd/bff/root_template_export_test.go
+@@ -122,3 +122,64 @@ func TestRootTemplateExportSingleConnectionAndDeterminism(t *testing.T) {
+ 		t.Fatal("export started workflow", e)
+ 	}
+ }
++
++func TestRootTemplateExportRejectsUnsupportedPersistedConfiguration(t *testing.T) {
++	for _, which := range []string{"unknown-field-member", "unknown-layout-member", "unknown-field-presentation"} {
++		t.Run(which, func(t *testing.T) {
++			f := rootHTTPResourceSetup(t)
++			var query string
++			switch which {
++			case "unknown-field-member":
++				query = `UPDATE applications.logical_tables SET fields_json=jsonb_set(fields_json,'{0,futureBehavior}','true') WHERE app_id=$1`
++			case "unknown-field-presentation":
++				query = `UPDATE applications.logical_tables SET fields_json=jsonb_set(fields_json,'{0,presentation,futureBehavior}','true') WHERE app_id=$1`
++			case "unknown-layout-member":
++				raw := `[{"id":"` + f.id(t) + `","kind":"divider","futureBehavior":true}]`
++				if _, e := f.owner.Exec(f.ctx, `UPDATE applications.form_views SET layout=$2::jsonb WHERE app_id=$1`, f.app, raw); e != nil {
++					t.Fatal(e)
++				}
++			}
++			if query != "" {
++				if _, e := f.owner.Exec(f.ctx, query, f.app); e != nil {
++					t.Fatal(e)
++				}
++			}
++			if _, e := (&apptemplates.Service{Pool: f.runtime}).ExportManifest(f.ctx, rootTemplatePrincipal(f), f.app); !errors.Is(e, apptemplates.ErrNotExportable) {
++				t.Fatal("silently discarded unsupported persisted configuration", e)
++			}
++		})
++	}
++}
++
++func TestRootTemplateExportManagerSnapshotIsReadOnlyRepeatableRead(t *testing.T) {
++	f := rootHTTPResourceSetup(t)
++	tx, app, e := (&applications.Application{Pool: f.runtime}).BeginManagerRead(f.ctx, rootTemplatePrincipal(f), f.app)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer tx.Rollback(f.ctx)
++	var isolation, readonly string
++	if e = tx.QueryRow(f.ctx, "SHOW transaction_isolation").Scan(&isolation); e != nil {
++		t.Fatal(e)
++	}
++	if e = tx.QueryRow(f.ctx, "SHOW transaction_read_only").Scan(&readonly); e != nil {
++		t.Fatal(e)
++	}
++	if isolation != "repeatable read" || readonly != "on" {
++		t.Fatal("unsafe read transaction", isolation, readonly)
++	}
++	if _, e = f.owner.Exec(f.ctx, "UPDATE applications.apps SET name='New concurrent name' WHERE id=$1", f.app); e != nil {
++		t.Fatal(e)
++	}
++	var got string
++	if e = tx.QueryRow(f.ctx, "SELECT name FROM applications.apps WHERE id=$1", f.app).Scan(&got); e != nil || got != app.Name {
++		t.Fatal("torn read snapshot", got, e)
++	}
++	if e = tx.Commit(f.ctx); e != nil {
++		t.Fatal(e)
++	}
++	next, e := (&apptemplates.Service{Pool: f.runtime}).ExportManifest(f.ctx, rootTemplatePrincipal(f), f.app)
++	if e != nil || next.Application.Name != "New concurrent name" {
++		t.Fatal("new request reused stale snapshot", e)
++	}
++}

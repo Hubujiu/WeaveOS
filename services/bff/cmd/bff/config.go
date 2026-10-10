@@ -9,6 +9,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/apptemplates"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appworkflows"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/auth"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/personnel"
@@ -127,6 +128,7 @@ func buildHost(startupCtx, processCtx context.Context, cfg config) (*bffHost, er
 	records := apprecordservice.New(pool, queryRedis, cfg.Generation)
 	records.Limits = cfg.SchemaLimits
 	apps.Records = &apprecordhttp.Service{Records: records, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
+	apps.Templates = &apptemplates.HTTP{Application: &apptemplates.Service{Pool: pool}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
 	s.Applications = apps
 	s.InvitationBegin = func(ctx context.Context, p session.Principal, version string) (pgx.Tx, error) {
 		tx, err := people.BeginQueryWrite(ctx, p, version)

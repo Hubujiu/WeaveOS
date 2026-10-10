@@ -435,7 +435,7 @@ func loadGroup(ctx context.Context, tx pgx.Tx, appID, id string) (Group, error) 
 func readableOperation(ctx context.Context, tx pgx.Tx, actor apppolicy.TrustedActor, appID, kind string) error {
 	// operation() already constrains the lookup to this live actor. New record/
 	// draft kinds store only minimum results, independently of current data grants.
-	if recordOperation(kind) {
+	if recordOperation(kind) || kind == TemplateImportKind {
 		return nil
 	}
 	app, err := loadApp(ctx, tx, appID, false)

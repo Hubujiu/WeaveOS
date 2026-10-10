@@ -1,0 +1,108 @@
+diff --git a/services/bff/cmd/bff/root_template_http_test.go b/services/bff/cmd/bff/root_template_http_test.go
+index a82981e3..5c317f3e 100644
+--- a/services/bff/cmd/bff/root_template_http_test.go
++++ b/services/bff/cmd/bff/root_template_http_test.go
+@@ -146,3 +146,83 @@ func rootTemplateHTTPError(t *testing.T, w *httptest.ResponseRecorder, status in
+ 		t.Fatal("missing request correlation")
+ 	}
+ }
++
++func rootTemplateImportHTTPBody(t *testing.T, op string, m apptemplates.Manifest, b []apptemplates.Binding) string {
++	t.Helper()
++	raw, e := json.Marshal(map[string]any{"operationId": op, "manifest": m, "bindings": b})
++	if e != nil {
++		t.Fatal(e)
++	}
++	return string(raw)
++}
++func TestRootTemplateHTTPImport201AndSameOperationRecovery(t *testing.T) {
++	f, m, b, _ := rootTemplatePreflightSource(t)
++	rootTemplateGrantCreate(t, f, f.actor)
++	op := f.id(t)
++	body := rootTemplateImportHTTPBody(t, op, m, b)
++	path := "/api/v1/application-templates/import"
++	w := f.call(t, "POST", path, body, nil)
++	d := rootHTTPData(t, w, 201)
++	app := rootHTTPString(t, d, "appId")
++	if len(d) != 5 || rootHTTPString(t, d, "operationId") != op || rootHTTPString(t, d, "status") != "imported" || w.Header().Get("Location") != "/api/v1/applications/"+app || app == f.app {
++		t.Fatal("wrong import receipt or Location")
++	}
++	again := rootHTTPData(t, f.call(t, "POST", path, body, nil), 201)
++	if rootHTTPString(t, again, "appId") != app {
++		t.Fatal("duplicate retry app")
++	}
++	recovered := rootHTTPData(t, f.call(t, "GET", "/api/v1/application-operations/"+op, "", nil), 200)
++	if rootHTTPString(t, recovered, "status") != "confirmed" {
++		t.Fatal("original operation not confirmed")
++	}
++	m.Application.Name = "different template"
++	rootTemplateHTTPError(t, f.call(t, "POST", path, rootTemplateImportHTTPBody(t, op, m, b), nil), 409)
++}
++func TestRootTemplateHTTPImportClosedPayloadBeforeAnyWrite(t *testing.T) {
++	f, m, b, _ := rootTemplatePreflightSource(t)
++	rootTemplateGrantCreate(t, f, f.actor)
++	op := f.id(t)
++	body := rootTemplateImportHTTPBody(t, op, m, b)
++	path := "/api/v1/application-templates/import"
++	before := rootTemplateReadCounts(t, f)
++	for name, raw := range map[string]string{
++		"missing-operation": rootTemplateHTTPBody(t, m, b),
++		"zero-operation":    strings.Replace(body, op, "00000000-0000-0000-0000-000000000000", 1),
++		"extra":             strings.TrimSuffix(body, "}") + `,"records":[]}`,
++		"duplicate":         `{"operationId":"` + op + `",` + body[1:],
++		"case":              strings.Replace(body, `"operationId":`, `"OperationId":`, 1),
++		"null-bindings":     strings.Replace(body, `"bindings":[`, `"bindings":null,"unused":[`, 1),
++		"trailing":          body + `{}`,
++	} {
++		t.Run(name, func(t *testing.T) { rootTemplateHTTPError(t, f.call(t, "POST", path, raw, nil), 400) })
++	}
++	rootTemplateHTTPError(t, f.call(t, "POST", path+"?dryRun=true", body, nil), 400)
++	rootTemplateHTTPError(t, f.call(t, "POST", path, strings.Repeat(" ", 4*1024*1024+1), nil), 413)
++	w := f.call(t, "GET", path, "", nil)
++	rootTemplateHTTPError(t, w, 405)
++	if w.Header().Get("Allow") != "POST" {
++		t.Fatal("missing Allow")
++	}
++	after := rootTemplateReadCounts(t, f)
++	for i, n := range before {
++		if n != after[i] {
++			t.Fatal("invalid HTTP import wrote data")
++		}
++	}
++}
++func TestRootTemplateHTTPImportCurrentSessionAndCSRF(t *testing.T) {
++	f, m, b, _ := rootTemplatePreflightSource(t)
++	body := rootTemplateImportHTTPBody(t, f.id(t), m, b)
++	path := "/api/v1/application-templates/import"
++	for _, tc := range []struct {
++		status int
++		edit   func(*http.Request)
++	}{
++		{401, func(r *http.Request) { r.Header.Del("Cookie") }},
++		{403, func(r *http.Request) { r.Header.Set("X-CSRF-Token", "wrong") }},
++		{409, func(r *http.Request) { r.Header.Set("X-Expected-Actor-Id", f.other) }},
++		{403, nil},
++	} {
++		rootTemplateHTTPError(t, f.call(t, "POST", path, body, tc.edit), tc.status)
++	}
++}
+diff --git a/services/bff/cmd/bff/root_template_import_schema_test.go b/services/bff/cmd/bff/root_template_import_schema_test.go
+index 9a90848c..51c71fb3 100644
+--- a/services/bff/cmd/bff/root_template_import_schema_test.go
++++ b/services/bff/cmd/bff/root_template_import_schema_test.go
+@@ -111,6 +111,15 @@ func TestRootTemplateImportSchemaEmptyDownUpRestoresExactConstraints(t *testing.
+ 		t.Fatal(e)
+ 	}
+ 	defer tx.Rollback(f.ctx)
++	// Other tests in this isolated synthetic database may have confirmed imports.
++	// Only the owner transaction temporarily removes them to exercise the EMPTY
++	// precondition; rollback restores all rows and schema. Runtime policy is intact.
++	if _, e = tx.Exec(f.ctx, "DELETE FROM applications.operations WHERE operation_kind='application.template.import'"); e != nil {
++		t.Fatal(e)
++	}
++	if _, e = tx.Exec(f.ctx, "SET CONSTRAINTS ALL IMMEDIATE"); e != nil {
++		t.Fatal(e)
++	}
+ 	var before, after string
+ 	q := `SELECT string_agg(conname||':'||pg_get_constraintdef(oid),'|' ORDER BY conname) FROM pg_constraint WHERE conrelid='applications.operations'::regclass`
+ 	if e = tx.QueryRow(f.ctx, q).Scan(&before); e != nil {

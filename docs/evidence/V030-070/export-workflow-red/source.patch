@@ -1,0 +1,33 @@
+diff --git a/services/bff/cmd/bff/root_template_export_test.go b/services/bff/cmd/bff/root_template_export_test.go
+index cd83ba86..8ae55fe2 100644
+--- a/services/bff/cmd/bff/root_template_export_test.go
++++ b/services/bff/cmd/bff/root_template_export_test.go
+@@ -183,3 +183,28 @@ func TestRootTemplateExportManagerSnapshotIsReadOnlyRepeatableRead(t *testing.T)
+ 		t.Fatal("new request reused stale snapshot", e)
+ 	}
+ }
++
++func TestRootTemplateExportRejectsLostWorkflowConfiguration(t *testing.T) {
++	for _, which := range []string{"missing-candidate", "unknown-graph", "unknown-approval", "unknown-trigger"} {
++		t.Run(which, func(t *testing.T) {
++			f := rootHTTPTaskSetup(t)
++			query := ""
++			switch which {
++			case "missing-candidate":
++				query = `UPDATE applications.workflow_definitions SET candidate_version=2 WHERE app_id=$1`
++			case "unknown-graph":
++				query = `UPDATE applications.workflow_versions SET graph_json=graph_json||'{"FutureBehavior":true}'::jsonb WHERE app_id=$1`
++			case "unknown-approval":
++				query = `UPDATE applications.workflow_versions SET graph_json=jsonb_set(graph_json,'{Nodes,1,Approval,FutureBehavior}','true') WHERE app_id=$1`
++			case "unknown-trigger":
++				query = `UPDATE applications.workflow_versions SET triggers_json='[{"event":"manual","condition":null,"futureBehavior":true}]'::jsonb WHERE app_id=$1`
++			}
++			if _, e := f.owner.Exec(f.ctx, query, f.app); e != nil {
++				t.Fatal("corrupt source fixture", e)
++			}
++			if _, e := (&apptemplates.Service{Pool: f.runtime}).ExportManifest(f.ctx, rootTemplatePrincipal(f), f.app); !errors.Is(e, apptemplates.ErrNotExportable) {
++				t.Fatal("incomplete workflow silently exported", e)
++			}
++		})
++	}
++}
