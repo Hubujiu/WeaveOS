@@ -27,7 +27,7 @@ type Deletion struct {
 // RequestDeletionInTx closes new work and captures the original authorized intent.
 // The caller must commit the transaction before reporting acceptance.
 func (Catalog) RequestDeletionInTx(ctx context.Context, tx pgx.Tx, in DeletionInput) (Deletion, error) {
-	if tx == nil || !validIDs(in.AppID, in.ViewID, in.FlowID, in.ActorID, in.OperationID) || in.ExpectedRevision < 1 || in.ExpectedRevision >= maxSafeInteger {
+	if tx == nil || !validIDs(in.AppID, in.ViewID, in.FlowID, in.ActorID, in.OperationID) || in.ExpectedRevision < 1 || in.ExpectedRevision > maxSafeInteger {
 		return Deletion{}, ErrInvalid
 	}
 	for _, id := range []string{in.AppID, in.ViewID, in.FlowID, in.ActorID, in.OperationID} {
@@ -68,9 +68,12 @@ func (Catalog) RequestDeletionInTx(ctx context.Context, tx pgx.Tx, in DeletionIn
 	if h.Revision != in.ExpectedRevision {
 		return Deletion{}, ErrConflict
 	}
-	_, e = tx.Exec(ctx, `UPDATE applications.workflow_definitions SET state='closing',revision=revision+1,close_epoch=close_epoch+1,updated_at=clock_timestamp() WHERE app_id=$1 AND id=$2`, in.AppID, in.FlowID)
+	tag, e := tx.Exec(ctx, `UPDATE applications.workflow_definitions SET state='closing',revision=revision+1,close_epoch=close_epoch+1,updated_at=clock_timestamp() WHERE app_id=$1 AND id=$2 AND revision<9007199254740991 AND close_epoch<9007199254740991`, in.AppID, in.FlowID)
 	if e != nil {
 		return Deletion{}, mapDBError(e)
+	}
+	if tag.RowsAffected() != 1 {
+		return Deletion{}, ErrConflict
 	}
 	e = tx.QueryRow(ctx, `INSERT INTO applications.workflow_deletions(flow_id,app_id,table_id,view_id,actor_user_id,operation_id,flow_name,expected_revision,fingerprint)
  VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING `+deletionColumns+`,fingerprint`, in.FlowID, in.AppID, h.TableID, in.ViewID, in.ActorID, in.OperationID, h.Name, in.ExpectedRevision, fingerprint[:]).Scan(deletionTargets(&d, &original)...)

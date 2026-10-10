@@ -44,6 +44,7 @@ func readDeletion(ctx context.Context, tx pgx.Tx, actor, app, view, flow, op str
 }
 func (a *Application) requestDeletion(ctx context.Context, p session.Principal, app, view, flow string, in lifecycleRequest) (workflowcatalog.Deletion, error) {
 	var d workflowcatalog.Deletion
+	runtimeReady := a.RuntimeReady == nil || a.RuntimeReady(ctx) == nil
 	manager, e := (&applications.Application{Pool: a.Pool}).BeginManagerWrite(ctx, p, app, a.managerOptions()...)
 	if e != nil {
 		return d, e
@@ -61,10 +62,8 @@ func (a *Application) requestDeletion(ctx context.Context, p session.Principal, 
 		if !a.deletionAvailable() {
 			return d, session.ErrUnavailable
 		}
-		if a.RuntimeReady != nil {
-			if e = a.RuntimeReady(ctx); e != nil {
-				return d, session.ErrUnavailable
-			}
+		if !runtimeReady {
+			return d, session.ErrUnavailable
 		}
 		if e = manager.Claim(ctx, in.OperationID, "workflow.delete", fingerprint); e != nil {
 			return d, e
