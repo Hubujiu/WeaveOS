@@ -325,6 +325,17 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, invalid(), "")
 		return
 	}
+	if r.Method == "POST" && (len(parts) == 2 && parts[1] == "deletion" || len(parts) == 4 && parts[3] == "deletion") {
+		kind, id := "application", app
+		if len(parts) == 4 {
+			kind = map[string]string{"directories": "directory", "tables": "table", "forms": "form"}[parts[1]]
+			id = parts[2]
+		}
+		if kind != "" {
+			s.structureDeletion(w, r, p, app, kind, id)
+			return
+		}
+	}
 	if len(parts) == 4 && parts[1] == "forms" && parts[3] == "reference-candidates" && r.Method == "GET" {
 		if !appfields.ValidID(parts[2]) {
 			fail(w, r, invalid(), "")
@@ -453,7 +464,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case parts[1] == "directories":
 		var dir Directory
 		var version int64
-		e = tx.QueryRow(r.Context(), "SELECT d.id::text,d.app_id::text,d.name,d.parent_id::text,d.position,a.structure_version FROM applications.directories d JOIN applications.apps a ON a.id=d.app_id WHERE d.app_id=$1 AND d.id=$2", app, id).Scan(&dir.ID, &dir.AppID, &dir.Name, &dir.ParentID, &dir.Position, &version)
+		e = tx.QueryRow(r.Context(), "SELECT d.id::text,d.app_id::text,d.name,d.parent_id::text,d.position,a.structure_version FROM applications.directories d JOIN applications.apps a ON a.id=d.app_id WHERE d.app_id=$1 AND d.id=$2 AND d.deleted_at IS NULL", app, id).Scan(&dir.ID, &dir.AppID, &dir.Name, &dir.ParentID, &dir.Position, &version)
 		e = missing(e)
 		value = map[string]any{"directory": dir, "structureVersion": version}
 	}

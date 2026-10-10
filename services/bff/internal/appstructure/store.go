@@ -109,7 +109,7 @@ func (a *Application) read(c context.Context, p session.Principal, app string) (
 	}
 	var owner string
 	var root bool
-	e = tx.QueryRow(c, "SELECT a.owner_user_id::text,u.is_bootstrap_admin FROM applications.apps a JOIN auth.users u ON u.id=$2 AND u.status='active' AND u.auth_version::text=$3 JOIN personnel.permission_catalog pc ON pc.code='app.'||a.id::text||'.access' AND pc.enabled WHERE a.id=$1", app, p.UserID, p.Record.AuthVersion).Scan(&owner, &root)
+	e = tx.QueryRow(c, "SELECT a.owner_user_id::text,u.is_bootstrap_admin FROM applications.apps a JOIN auth.users u ON u.id=$2 AND u.status='active' AND u.auth_version::text=$3 JOIN personnel.permission_catalog pc ON pc.code='app.'||a.id::text||'.access' AND pc.enabled WHERE a.id=$1 AND a.deleted_at IS NULL", app, p.UserID, p.Record.AuthVersion).Scan(&owner, &root)
 	if e == nil && owner != p.UserID && !root {
 		e = applications.ErrDenied
 	}
@@ -120,7 +120,7 @@ func (a *Application) read(c context.Context, p session.Principal, app string) (
 	return tx, nil
 }
 func loadTable(c context.Context, tx pgx.Tx, app, id string, lock bool) (Table, []appfields.Field, error) {
-	q := "SELECT id::text,app_id::text,name,directory_id::text,position,schema_version,schema_ready,fields_json FROM applications.logical_tables WHERE app_id=$1 AND id=$2"
+	q := "SELECT id::text,app_id::text,name,directory_id::text,position,schema_version,schema_ready,fields_json FROM applications.logical_tables WHERE app_id=$1 AND id=$2 AND deleted_at IS NULL"
 	if lock {
 		q += " FOR UPDATE"
 	}
@@ -134,7 +134,7 @@ func loadTable(c context.Context, tx pgx.Tx, app, id string, lock bool) (Table, 
 	return t, f, missing(e)
 }
 func loadForm(c context.Context, tx pgx.Tx, app, id string, lock bool) (Form, []appfields.LayoutNode, error) {
-	q := "SELECT id::text,app_id::text,table_id::text,name,directory_id::text,position,view_version,layout FROM applications.form_views WHERE app_id=$1 AND id=$2"
+	q := "SELECT id::text,app_id::text,table_id::text,name,directory_id::text,position,view_version,layout FROM applications.form_views WHERE app_id=$1 AND id=$2 AND deleted_at IS NULL"
 	if lock {
 		q += " FOR UPDATE"
 	}

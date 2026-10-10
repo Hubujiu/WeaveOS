@@ -308,3 +308,72 @@ func (w *ManagerWrite) Complete(c context.Context, id string, result Result) err
 }
 func (w *ManagerWrite) Commit(c context.Context) error   { return commitWrite(c, w.tx) }
 func (w *ManagerWrite) Rollback(c context.Context) error { return w.tx.Rollback(c) }
+
+// StructureDeletionOptions binds replay to one closed destructive command.
+type StructureDeletionOptions struct {
+	WriteOptions
+	OperationID, Kind string
+	Fingerprint       [32]byte
+}
+
+func structureDeletion(kind string) bool {
+	switch kind {
+	case "application.delete", "directory.delete", "table.delete", "form.delete":
+		return true
+	}
+	return false
+}
+
+// BeginStructureDeletion recovers a confirmed minimum receipt before current
+// resource eligibility. New commands still require the live manager/app gate.
+func (a *Application) BeginStructureDeletion(c context.Context, p session.Principal, id string, o StructureDeletionOptions) (*ManagerWrite, error) {
+	if a == nil || a.Pool == nil {
+		return nil, session.ErrUnavailable
+	}
+	for _, v := range []string{id, o.OperationID} {
+		canonical, ok := canonicalID(v)
+		if !ok || canonical != v || v == "00000000-0000-0000-0000-000000000000" {
+			return nil, ErrInvalid
+		}
+	}
+	if !structureDeletion(o.Kind) || o.LockTimeout < time.Millisecond || o.StatementTimeout < time.Millisecond {
+		return nil, ErrInvalid
+	}
+	tx, e := a.Pool.BeginTx(c, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	if e != nil {
+		return nil, e
+	}
+	fail := func(e error) (*ManagerWrite, error) { tx.Rollback(context.Background()); return nil, e }
+	if _, e = tx.Exec(c, "SELECT set_config('lock_timeout',$1,true),set_config('statement_timeout',$2,true)", strconv.FormatInt(o.LockTimeout.Milliseconds(), 10)+"ms", strconv.FormatInt(o.StatementTimeout.Milliseconds(), 10)+"ms"); e != nil {
+		return fail(e)
+	}
+	if _, e = tx.Exec(c, "SELECT personnel.lock_query_revisions()"); e != nil {
+		return fail(e)
+	}
+	access, e := (&personnel.Application{}).AccessForWrite(c, tx, p)
+	if e != nil {
+		return fail(e)
+	}
+	actor := apppolicy.TrustedActor{ID: access.User.ID, BootstrapAdmin: access.BootstrapAdmin}
+	_, oldApp, oldKind, oldHash, e := operation(c, tx, actor, o.OperationID)
+	if e == nil {
+		if oldApp != id || oldKind != o.Kind || !bytes.Equal(oldHash, o.Fingerprint[:]) {
+			return fail(ErrOperationConflict)
+		}
+		return &ManagerWrite{tx: tx, actor: actor, app: App{ID: id}}, nil
+	}
+	if !errors.Is(e, ErrMissing) {
+		return fail(e)
+	}
+	app, e := loadApp(c, tx, id, true)
+	if e != nil {
+		return fail(e)
+	}
+	if e = registered(c, tx, app); e != nil {
+		return fail(e)
+	}
+	if !manager(actor, app) {
+		return fail(ErrDenied)
+	}
+	return &ManagerWrite{tx: tx, actor: actor, app: app}, nil
+}

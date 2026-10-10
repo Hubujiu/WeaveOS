@@ -1,0 +1,161 @@
+diff --git a/services/bff/internal/applications/store.go b/services/bff/internal/applications/store.go
+index a0451187..8ebf1506 100644
+--- a/services/bff/internal/applications/store.go
++++ b/services/bff/internal/applications/store.go
+@@ -182,7 +182,7 @@ func (a *Application) read(ctx context.Context, p session.Principal) (pgx.Tx, ap
+ 	return tx, apppolicy.TrustedActor{ID: p.UserID, BootstrapAdmin: root}, nil
+ }
+ func loadApp(ctx context.Context, tx pgx.Tx, id string, lock bool) (App, error) {
+-	q := "SELECT id::text,name,owner_user_id::text,policy_revision FROM applications.apps WHERE id=$1"
++	q := "SELECT id::text,name,owner_user_id::text,policy_revision FROM applications.apps WHERE id=$1 AND deleted_at IS NULL"
+ 	if lock {
+ 		q += " FOR UPDATE"
+ 	}
+@@ -435,7 +435,7 @@ func loadGroup(ctx context.Context, tx pgx.Tx, appID, id string) (Group, error)
+ func readableOperation(ctx context.Context, tx pgx.Tx, actor apppolicy.TrustedActor, appID, kind string) error {
+ 	// operation() already constrains the lookup to this live actor. New record/
+ 	// draft kinds store only minimum results, independently of current data grants.
+-	if recordOperation(kind) || kind == TemplateImportKind {
++	if recordOperation(kind) || structureDeletion(kind) || kind == TemplateImportKind {
+ 		return nil
+ 	}
+ 	app, err := loadApp(ctx, tx, appID, false)
+diff --git a/services/bff/internal/applications/transactions.go b/services/bff/internal/applications/transactions.go
+index 8bb6db32..0017e4f5 100644
+--- a/services/bff/internal/applications/transactions.go
++++ b/services/bff/internal/applications/transactions.go
+@@ -308,3 +308,72 @@ func (w *ManagerWrite) Complete(c context.Context, id string, result Result) err
+ }
+ func (w *ManagerWrite) Commit(c context.Context) error   { return commitWrite(c, w.tx) }
+ func (w *ManagerWrite) Rollback(c context.Context) error { return w.tx.Rollback(c) }
++
++// StructureDeletionOptions binds replay to one closed destructive command.
++type StructureDeletionOptions struct {
++	WriteOptions
++	OperationID, Kind string
++	Fingerprint       [32]byte
++}
++
++func structureDeletion(kind string) bool {
++	switch kind {
++	case "application.delete", "directory.delete", "table.delete", "form.delete":
++		return true
++	}
++	return false
++}
++
++// BeginStructureDeletion recovers a confirmed minimum receipt before current
++// resource eligibility. New commands still require the live manager/app gate.
++func (a *Application) BeginStructureDeletion(c context.Context, p session.Principal, id string, o StructureDeletionOptions) (*ManagerWrite, error) {
++	if a == nil || a.Pool == nil {
++		return nil, session.ErrUnavailable
++	}
++	for _, v := range []string{id, o.OperationID} {
++		canonical, ok := canonicalID(v)
++		if !ok || canonical != v || v == "00000000-0000-0000-0000-000000000000" {
++			return nil, ErrInvalid
++		}
++	}
++	if !structureDeletion(o.Kind) || o.LockTimeout < time.Millisecond || o.StatementTimeout < time.Millisecond {
++		return nil, ErrInvalid
++	}
++	tx, e := a.Pool.BeginTx(c, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
++	if e != nil {
++		return nil, e
++	}
++	fail := func(e error) (*ManagerWrite, error) { tx.Rollback(context.Background()); return nil, e }
++	if _, e = tx.Exec(c, "SELECT set_config('lock_timeout',$1,true),set_config('statement_timeout',$2,true)", strconv.FormatInt(o.LockTimeout.Milliseconds(), 10)+"ms", strconv.FormatInt(o.StatementTimeout.Milliseconds(), 10)+"ms"); e != nil {
++		return fail(e)
++	}
++	if _, e = tx.Exec(c, "SELECT personnel.lock_query_revisions()"); e != nil {
++		return fail(e)
++	}
++	access, e := (&personnel.Application{}).AccessForWrite(c, tx, p)
++	if e != nil {
++		return fail(e)
++	}
++	actor := apppolicy.TrustedActor{ID: access.User.ID, BootstrapAdmin: access.BootstrapAdmin}
++	_, oldApp, oldKind, oldHash, e := operation(c, tx, actor, o.OperationID)
++	if e == nil {
++		if oldApp != id || oldKind != o.Kind || !bytes.Equal(oldHash, o.Fingerprint[:]) {
++			return fail(ErrOperationConflict)
++		}
++		return &ManagerWrite{tx: tx, actor: actor, app: App{ID: id}}, nil
++	}
++	if !errors.Is(e, ErrMissing) {
++		return fail(e)
++	}
++	app, e := loadApp(c, tx, id, true)
++	if e != nil {
++		return fail(e)
++	}
++	if e = registered(c, tx, app); e != nil {
++		return fail(e)
++	}
++	if !manager(actor, app) {
++		return fail(ErrDenied)
++	}
++	return &ManagerWrite{tx: tx, actor: actor, app: app}, nil
++}
+diff --git a/services/bff/internal/appstructure/http.go b/services/bff/internal/appstructure/http.go
+index 66447c1c..33f0a64a 100644
+--- a/services/bff/internal/appstructure/http.go
++++ b/services/bff/internal/appstructure/http.go
+@@ -325,6 +325,17 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		fail(w, r, invalid(), "")
+ 		return
+ 	}
++	if r.Method == "POST" && (len(parts) == 2 && parts[1] == "deletion" || len(parts) == 4 && parts[3] == "deletion") {
++		kind, id := "application", app
++		if len(parts) == 4 {
++			kind = map[string]string{"directories": "directory", "tables": "table", "forms": "form"}[parts[1]]
++			id = parts[2]
++		}
++		if kind != "" {
++			s.structureDeletion(w, r, p, app, kind, id)
++			return
++		}
++	}
+ 	if len(parts) == 4 && parts[1] == "forms" && parts[3] == "reference-candidates" && r.Method == "GET" {
+ 		if !appfields.ValidID(parts[2]) {
+ 			fail(w, r, invalid(), "")
+@@ -453,7 +464,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 	case parts[1] == "directories":
+ 		var dir Directory
+ 		var version int64
+-		e = tx.QueryRow(r.Context(), "SELECT d.id::text,d.app_id::text,d.name,d.parent_id::text,d.position,a.structure_version FROM applications.directories d JOIN applications.apps a ON a.id=d.app_id WHERE d.app_id=$1 AND d.id=$2", app, id).Scan(&dir.ID, &dir.AppID, &dir.Name, &dir.ParentID, &dir.Position, &version)
++		e = tx.QueryRow(r.Context(), "SELECT d.id::text,d.app_id::text,d.name,d.parent_id::text,d.position,a.structure_version FROM applications.directories d JOIN applications.apps a ON a.id=d.app_id WHERE d.app_id=$1 AND d.id=$2 AND d.deleted_at IS NULL", app, id).Scan(&dir.ID, &dir.AppID, &dir.Name, &dir.ParentID, &dir.Position, &version)
+ 		e = missing(e)
+ 		value = map[string]any{"directory": dir, "structureVersion": version}
+ 	}
+diff --git a/services/bff/internal/appstructure/store.go b/services/bff/internal/appstructure/store.go
+index 16d4c9fa..0e1d711d 100644
+--- a/services/bff/internal/appstructure/store.go
++++ b/services/bff/internal/appstructure/store.go
+@@ -109,7 +109,7 @@ func (a *Application) read(c context.Context, p session.Principal, app string) (
+ 	}
+ 	var owner string
+ 	var root bool
+-	e = tx.QueryRow(c, "SELECT a.owner_user_id::text,u.is_bootstrap_admin FROM applications.apps a JOIN auth.users u ON u.id=$2 AND u.status='active' AND u.auth_version::text=$3 JOIN personnel.permission_catalog pc ON pc.code='app.'||a.id::text||'.access' AND pc.enabled WHERE a.id=$1", app, p.UserID, p.Record.AuthVersion).Scan(&owner, &root)
++	e = tx.QueryRow(c, "SELECT a.owner_user_id::text,u.is_bootstrap_admin FROM applications.apps a JOIN auth.users u ON u.id=$2 AND u.status='active' AND u.auth_version::text=$3 JOIN personnel.permission_catalog pc ON pc.code='app.'||a.id::text||'.access' AND pc.enabled WHERE a.id=$1 AND a.deleted_at IS NULL", app, p.UserID, p.Record.AuthVersion).Scan(&owner, &root)
+ 	if e == nil && owner != p.UserID && !root {
+ 		e = applications.ErrDenied
+ 	}
+@@ -120,7 +120,7 @@ func (a *Application) read(c context.Context, p session.Principal, app string) (
+ 	return tx, nil
+ }
+ func loadTable(c context.Context, tx pgx.Tx, app, id string, lock bool) (Table, []appfields.Field, error) {
+-	q := "SELECT id::text,app_id::text,name,directory_id::text,position,schema_version,schema_ready,fields_json FROM applications.logical_tables WHERE app_id=$1 AND id=$2"
++	q := "SELECT id::text,app_id::text,name,directory_id::text,position,schema_version,schema_ready,fields_json FROM applications.logical_tables WHERE app_id=$1 AND id=$2 AND deleted_at IS NULL"
+ 	if lock {
+ 		q += " FOR UPDATE"
+ 	}
+@@ -134,7 +134,7 @@ func loadTable(c context.Context, tx pgx.Tx, app, id string, lock bool) (Table,
+ 	return t, f, missing(e)
+ }
+ func loadForm(c context.Context, tx pgx.Tx, app, id string, lock bool) (Form, []appfields.LayoutNode, error) {
+-	q := "SELECT id::text,app_id::text,table_id::text,name,directory_id::text,position,view_version,layout FROM applications.form_views WHERE app_id=$1 AND id=$2"
++	q := "SELECT id::text,app_id::text,table_id::text,name,directory_id::text,position,view_version,layout FROM applications.form_views WHERE app_id=$1 AND id=$2 AND deleted_at IS NULL"
+ 	if lock {
+ 		q += " FOR UPDATE"
+ 	}
