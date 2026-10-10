@@ -1,0 +1,73 @@
+diff --git a/services/bff/cmd/bff/root_template_import_test.go b/services/bff/cmd/bff/root_template_import_test.go
+index 757b81e4..b1614857 100644
+--- a/services/bff/cmd/bff/root_template_import_test.go
++++ b/services/bff/cmd/bff/root_template_import_test.go
+@@ -4,12 +4,14 @@ import (
+ 	"bytes"
+ 	"encoding/json"
+ 	"errors"
++	"fmt"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apptemplates"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+ 	"github.com/jackc/pgx/v5"
+ 	"github.com/jackc/pgx/v5/pgxpool"
+ 	"reflect"
++	"sort"
+ 	"strings"
+ 	"testing"
+ )
+@@ -186,3 +188,53 @@ func rootTemplateJSONEqual(a, b json.RawMessage) bool {
+ 	var x, y any
+ 	return json.Unmarshal(a, &x) == nil && json.Unmarshal(b, &y) == nil && reflect.DeepEqual(x, y)
+ }
++
++func rootTemplateCanonicalStructure(t *testing.T, m apptemplates.Manifest) apptemplates.Manifest {
++	t.Helper()
++	sort.Slice(m.Directories, func(i, j int) bool { return m.Directories[i].Name < m.Directories[j].Name })
++	sort.Slice(m.Tables, func(i, j int) bool { return m.Tables[i].Name < m.Tables[j].Name })
++	sort.Slice(m.Forms, func(i, j int) bool { return m.Forms[i].Name < m.Forms[j].Name })
++	sort.Slice(m.Workflows, func(i, j int) bool { return m.Workflows[i].Name < m.Workflows[j].Name })
++	sort.Slice(m.PermissionGroups, func(i, j int) bool { return m.PermissionGroups[i].Name < m.PermissionGroups[j].Name })
++	next := 0
++	m, e := apptemplates.RemapInternalIDs(m, func() (string, error) { next++; return fmt.Sprintf("00000000-0000-4000-8000-%012x", next), nil })
++	if e != nil {
++		t.Fatal(e)
++	}
++	return m
++}
++func TestRootTemplateImportRoundtripPreservesMappedConfigurationAfterTargetRevocation(t *testing.T) {
++	f, m, b, p, identity := rootTemplateImportSource(t)
++	s := apptemplates.Service{Pool: f.runtime}
++	op := f.id(t)
++	r, e := s.Import(f.ctx, p, op, m, b, applications.Metadata{RequestID: "roundtrip"})
++	if e != nil {
++		t.Fatal(e)
++	}
++	app := rootTemplateImportReceipt(t, r, op)
++	out, e := s.ExportManifest(f.ctx, p, app)
++	if e != nil {
++		t.Fatal(e)
++	}
++	expected, e := apptemplates.MapExternalReferences(m, b)
++	if e != nil {
++		t.Fatal(e)
++	}
++	want, got := rootTemplateCanonicalStructure(t, expected), rootTemplateCanonicalStructure(t, out)
++	a, _ := json.Marshal(want)
++	z, _ := json.Marshal(got)
++	if !rootTemplateJSONEqual(a, z) {
++		t.Fatalf("roundtrip lost supported configuration\nwant %s\ngot %s", a, z)
++	}
++	if _, e = f.owner.Exec(f.ctx, "UPDATE auth.users SET status='disabled' WHERE id=$1", f.actor); e != nil {
++		t.Fatal(e)
++	}
++	if _, e = f.owner.Exec(f.ctx, "DELETE FROM personnel.identity_permissions WHERE identity_id=$1", identity); e != nil {
++		t.Fatal(e)
++	}
++	reverse := []apptemplates.Binding{b[1], b[0]}
++	again, e := s.Import(f.ctx, p, op, m, reverse, applications.Metadata{})
++	if e != nil || !rootTemplateJSONEqual(r.Data, again.Data) {
++		t.Fatal("confirmed original cannot recover after target or create revocation", e)
++	}
++}

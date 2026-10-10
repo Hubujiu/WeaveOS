@@ -1,0 +1,53 @@
+✔ V070 structure export and advisory preflight have closed guarded HTTP contracts (2.663052ms)
+✔ V070 full template excludes records owner and runtime artifacts at every resource boundary (0.2617ms)
+✖ V070 input preserves approved field omission defaults while export is canonical (148.484944ms)
+✖ V070 existing graph permits explicit empty nonconditional edge branch (7.321571ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 525.602198
+
+✖ failing tests:
+
+test at contracts/application-templates.contract.test.mjs:36:1
+✖ V070 input preserves approved field omission defaults while export is canonical (148.484944ms)
+  AssertionError [ERR_ASSERTION]: [{"instancePath":"/manifest/tables/0/fields/0/kind","schemaPath":"#/oneOf/0/properties/kind/const","keyword":"const","params":{"allowedValue":"text"},"message":"must be equal to constant"},{"instancePath":"/manifest/tables/0/fields/0/kind","schemaPath":"#/oneOf/1/properties/kind/const","keyword":"const","params":{"allowedValue":"multiline"},"message":"must be equal to constant"},{"instancePath":"/manifest/tables/0/fields/0/kind","schemaPath":"#/oneOf/2/properties/kind/const","keyword":"const","params":{"allowedValue":"number"},"message":"must be equal to constant"},{"instancePath":"/manifest/tables/0/fields/0/config","schemaPath":"#/components/schemas/DecimalConfig/required","keyword":"required","params":{"missingProperty":"precision"},"message":"must have required property 'precision'"},{"instancePath":"/manifest/tables/0/fields/0/kind","schemaPath":"#/oneOf/4/properties/kind/const","keyword":"const","params":{"allowedValue":"date"},"message":"must be equal to constant"},{"instancePath":"/manifest/tables/0/fields/0/kind","schemaPath":"#/oneOf/5/properties/kind/const","keyword":"const","params":{"allowedValue":"datetime"},"message":"must be equal to constant"},{"instancePath":"/manifest/tables/0/fields/0/kind","schemaPath":"#/oneOf/6/properties/kind/const","keyword":"const","params":{"allowedValue":"single_select"},"message":"must be equal to constant"},{"instancePath":"/manifest/tables/0/fields/0/kind","schemaPath":"#/oneOf/7/properties/kind/const","keyword":"const","params":{"allowedValue":"multi_select"},"message":"must be equal to constant"},{"instancePath":"/manifest/tables/0/fields/0/kind","schemaPath":"#/oneOf/8/properties/kind/const","keyword":"const","params":{"allowedValue":"boolean"},"message":"must be equal to constant"},{"instancePath":"/manifest/tables/0/fields/0/kind","schemaPath":"#/oneOf/9/properties/kind/const","keyword":"const","params":{"allowedValue":"member"},"message":"must be equal to constant"},{"instancePath":"/manifest/tables/0/fields/0/kind","schemaPath":"#/oneOf/10/properties/kind/const","keyword":"const","params":{"allowedValue":"department"},"message":"must be equal to constant"},{"instancePath":"/manifest/tables/0/fields/0","schemaPath":"#/oneOf","keyword":"oneOf","params":{"passingSchemas":null},"message":"must match exactly one schema in oneOf"}]
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-070/contracts/application-templates.contract.test.mjs:40:61)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at contracts/application-templates.contract.test.mjs:46:1
+✖ V070 existing graph permits explicit empty nonconditional edge branch (7.321571ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(validates('TemplateEdge')({from:'00000000-0000-4000-8000-000000000001',to:'00000000-0000-4000-8000-000000000002',branch:''}))
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-070/contracts/application-templates.contract.test.mjs:47:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

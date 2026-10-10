@@ -1,0 +1,76 @@
+package apptemplates
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+)
+
+type Counts struct {
+	Directories      int `json:"directories"`
+	Tables           int `json:"tables"`
+	Fields           int `json:"fields"`
+	Forms            int `json:"forms"`
+	Workflows        int `json:"workflows"`
+	PermissionGroups int `json:"permissionGroups"`
+}
+type Preflight struct {
+	Valid  bool   `json:"valid"`
+	Counts Counts `json:"counts"`
+}
+
+func (s *Service) Preflight(ctx context.Context, p session.Principal, in Manifest, bindings []Binding) (Preflight, error) {
+	if s == nil || s.Pool == nil {
+		return Preflight{}, session.ErrUnavailable
+	}
+	m, e := MapExternalReferences(in, bindings)
+	if e != nil {
+		return Preflight{}, e
+	}
+	// This also verifies field-scoped option references before any real import.
+	// IDs allocated for validation are discarded and confer no future authority.
+	if _, e = RemapInternalIDs(m, randomID); e != nil {
+		return Preflight{}, e
+	}
+	refs, e := ExternalReferences(m)
+	if e != nil {
+		return Preflight{}, e
+	}
+	tx, e := (&applications.Application{Pool: s.Pool}).BeginCreateRead(ctx, p)
+	if e != nil {
+		return Preflight{}, e
+	}
+	defer tx.Rollback(context.Background())
+	sources := appstructure.CurrentSources{}
+	if len(refs.UserIDs) > 0 {
+		if e = sources.Validate(ctx, tx, "member", refs.UserIDs); e != nil {
+			return Preflight{}, e
+		}
+	}
+	if len(refs.DepartmentIDs) > 0 {
+		if e = sources.Validate(ctx, tx, "department", refs.DepartmentIDs); e != nil {
+			return Preflight{}, e
+		}
+	}
+	counts := Counts{Directories: len(m.Directories), Tables: len(m.Tables), Forms: len(m.Forms), Workflows: len(m.Workflows), PermissionGroups: len(m.PermissionGroups)}
+	for _, t := range m.Tables {
+		counts.Fields += len(t.Fields)
+	}
+	if e = tx.Commit(ctx); e != nil {
+		return Preflight{}, e
+	}
+	return Preflight{Valid: true, Counts: counts}, nil
+}
+func randomID() (string, error) {
+	var b [16]byte
+	if _, e := rand.Read(b[:]); e != nil {
+		return "", e
+	}
+	b[6] = b[6]&15 | 64
+	b[8] = b[8]&63 | 128
+	h := hex.EncodeToString(b[:])
+	return h[:8] + "-" + h[8:12] + "-" + h[12:16] + "-" + h[16:20] + "-" + h[20:], nil
+}

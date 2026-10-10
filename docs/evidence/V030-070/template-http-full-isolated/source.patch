@@ -1,0 +1,46 @@
+diff --git a/services/bff/cmd/bff/root_template_export_test.go b/services/bff/cmd/bff/root_template_export_test.go
+index 8ae55fe2..7cebe3bb 100644
+--- a/services/bff/cmd/bff/root_template_export_test.go
++++ b/services/bff/cmd/bff/root_template_export_test.go
+@@ -72,9 +72,7 @@ func TestRootTemplateExportCurrentManagementIdentity(t *testing.T) {
+ 				p.BootstrapAdmin = true
+ 			case "actual-root":
+ 				p.UserID = f.other
+-				if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", f.other); e != nil {
+-					t.Fatal(e)
+-				}
++				rootTemplateBootstrap(t, f, f.other)
+ 				want = nil
+ 			case "stale-account":
+ 				if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET auth_version=auth_version+1 WHERE id=$1", f.actor); e != nil {
+@@ -208,3 +206,15 @@ func TestRootTemplateExportRejectsLostWorkflowConfiguration(t *testing.T) {
+ 		})
+ 	}
+ }
++
++func rootTemplateBootstrap(t *testing.T, f *rootTaskHTTPFixture, id string) {
++	t.Helper()
++	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", id); e != nil {
++		t.Fatal(e)
++	}
++	t.Cleanup(func() {
++		if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=false WHERE id=$1", id); e != nil {
++			t.Error("restore isolated fixture Bootstrap", e)
++		}
++	})
++}
+diff --git a/services/bff/cmd/bff/root_template_preflight_test.go b/services/bff/cmd/bff/root_template_preflight_test.go
+index 8940f3ce..2a00a6a3 100644
+--- a/services/bff/cmd/bff/root_template_preflight_test.go
++++ b/services/bff/cmd/bff/root_template_preflight_test.go
+@@ -115,9 +115,7 @@ func TestRootTemplatePreflightRejectsCurrentRevocationsAndInvalidTargets(t *test
+ func TestRootTemplatePreflightActualBootstrapAndMappingFailure(t *testing.T) {
+ 	f, m, b, _ := rootTemplatePreflightSource(t)
+ 	p := rootTemplatePrincipal(f)
+-	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", f.actor); e != nil {
+-		t.Fatal(e)
+-	}
++	rootTemplateBootstrap(t, f, f.actor)
+ 	s := &apptemplates.Service{Pool: f.runtime}
+ 	if got, e := s.Preflight(f.ctx, p, m, b); e != nil || !got.Valid {
+ 		t.Fatal("actual Bootstrap rejected", e)

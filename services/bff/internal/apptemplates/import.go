@@ -1,0 +1,199 @@
+package apptemplates
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/json"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
+	"github.com/jackc/pgx/v5"
+	"sort"
+	"time"
+)
+
+// Import creates empty structure in one local transaction. It never contacts an
+// engine or retries an uncertain COMMIT; the original operation recovers results.
+func (s *Service) Import(ctx context.Context, p session.Principal, operationID string, in Manifest, bindings []Binding, metadata applications.Metadata) (applications.Result, error) {
+	empty := applications.Result{}
+	if s == nil || s.Pool == nil {
+		return empty, session.ErrUnavailable
+	}
+	if !validID(operationID) {
+		return empty, ErrInvalid
+	}
+	original, e := NormalizeManifest(in)
+	if e != nil {
+		return empty, e
+	}
+	mapped, e := MapExternalReferences(original, bindings)
+	if e != nil {
+		return empty, e
+	}
+	m, e := RemapInternalIDs(mapped, randomID)
+	if e != nil {
+		return empty, e
+	}
+	refs, e := ExternalReferences(mapped)
+	if e != nil {
+		return empty, e
+	}
+	sorted := append([]Binding{}, bindings...)
+	sort.Slice(sorted, func(i, j int) bool {
+		if sorted[i].Kind != sorted[j].Kind {
+			return sorted[i].Kind < sorted[j].Kind
+		}
+		return sorted[i].SourceID < sorted[j].SourceID
+	})
+	raw, e := json.Marshal(struct {
+		Version  int
+		Kind     string
+		Manifest Manifest
+		Bindings []Binding
+	}{1, applications.TemplateImportKind, original, sorted})
+	if e != nil {
+		return empty, e
+	}
+	fingerprint := sha256.Sum256(raw)
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	limits := appschema.Limits{LockTimeout: 2 * time.Second, StatementTimeout: 10 * time.Second}
+	guard := func(c context.Context, tx pgx.Tx) error {
+		source := appstructure.CurrentSources{}
+		if len(refs.UserIDs) > 0 {
+			if e := source.Validate(c, tx, "member", refs.UserIDs); e != nil {
+				return e
+			}
+		}
+		if len(refs.DepartmentIDs) > 0 {
+			if e := source.Validate(c, tx, "department", refs.DepartmentIDs); e != nil {
+				return e
+			}
+		}
+		return nil
+	}
+	w, replay, e := (&applications.Application{Pool: s.Pool}).BeginTemplateCreate(ctx, p, m.Application.ID, m.Application.Name, applications.TemplateCreateOptions{OperationID: operationID, Fingerprint: fingerprint, LockTimeout: limits.LockTimeout, StatementTimeout: limits.StatementTimeout, SourceGuard: guard})
+	if e != nil {
+		return empty, e
+	}
+	defer w.Rollback(context.Background())
+	if replay != nil {
+		if e = w.Commit(ctx); e != nil {
+			return empty, e
+		}
+		return *replay, nil
+	}
+	tx := w.Tx()
+	app := m.Application.ID
+	pending := append([]Directory{}, m.Directories...)
+	written := map[string]bool{}
+	for len(pending) > 0 {
+		next := []Directory{}
+		for _, d := range pending {
+			if d.ParentID != nil && !written[*d.ParentID] {
+				next = append(next, d)
+				continue
+			}
+			if _, e = tx.Exec(ctx, "INSERT INTO applications.directories(id,app_id,name,parent_id,position) VALUES($1,$2,$3,$4,$5)", d.ID, app, d.Name, d.ParentID, d.Position); e != nil {
+				return empty, e
+			}
+			if _, e = tx.Exec(ctx, "INSERT INTO applications.menu_resources(app_id,resource_kind,resource_id) VALUES($1,'directory',$2)", app, d.ID); e != nil {
+				return empty, e
+			}
+			written[d.ID] = true
+		}
+		if len(next) == len(pending) {
+			return empty, ErrInvalid
+		}
+		pending = next
+	}
+	for _, t := range m.Tables {
+		if _, e = tx.Exec(ctx, "INSERT INTO applications.logical_tables(id,app_id,name,directory_id,position) VALUES($1,$2,$3,$4,$5)", t.ID, app, t.Name, t.DirectoryID, t.Position); e != nil {
+			return empty, e
+		}
+		if e = appstructure.InitializeTemplateTableInTx(ctx, tx, p, app, t.ID, t.Fields, limits); e != nil {
+			return empty, e
+		}
+	}
+	for _, f := range m.Forms {
+		layout, e := json.Marshal(f.Layout)
+		if e != nil {
+			return empty, e
+		}
+		if _, e = tx.Exec(ctx, "INSERT INTO applications.form_views(id,app_id,table_id,name,directory_id,position,view_version,layout) VALUES($1,$2,$3,$4,$5,$6,1,$7)", f.ID, app, f.TableID, f.Name, f.DirectoryID, f.Position, layout); e != nil {
+			return empty, e
+		}
+		if _, e = tx.Exec(ctx, "INSERT INTO applications.menu_resources(app_id,resource_kind,resource_id) VALUES($1,'form',$2)", app, f.ID); e != nil {
+			return empty, e
+		}
+	}
+	formTables := map[string]string{}
+	for _, f := range m.Forms {
+		formTables[f.ID] = f.TableID
+	}
+	members, grants := 0, 0
+	for _, g := range m.PermissionGroups {
+		if _, e = tx.Exec(ctx, "INSERT INTO applications.permission_groups(id,app_id,name,enabled) VALUES($1,$2,$3,$4)", g.ID, app, g.Name, g.Enabled); e != nil {
+			return empty, e
+		}
+		for _, id := range g.MemberIDs {
+			if _, e = tx.Exec(ctx, "INSERT INTO applications.group_members(app_id,group_id,user_id) VALUES($1,$2,$3)", app, g.ID, id); e != nil {
+				return empty, e
+			}
+			members++
+		}
+		for _, grant := range g.Grants {
+			id, e := randomID()
+			if e != nil {
+				return empty, e
+			}
+			if _, e = tx.Exec(ctx, "INSERT INTO applications.grants(id,app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,$3,$4,$5,$6,$7)", id, app, g.ID, grant.ResourceKind, grant.ResourceID, grant.Action, grant.RowScope); e != nil {
+				return empty, e
+			}
+			for _, field := range grant.Fields {
+				if _, e = tx.Exec(ctx, "INSERT INTO applications.grant_fields(app_id,grant_id,field_id,table_id) VALUES($1,$2,$3,$4)", app, id, field, formTables[grant.ResourceID]); e != nil {
+					return empty, e
+				}
+			}
+			grants++
+		}
+	}
+	for _, flow := range m.Workflows {
+		graph := flowgraph.Graph{Version: flow.Graph.Version, Nodes: []flowgraph.Node{}, Edges: []flowgraph.Edge{}}
+		for _, node := range flow.Graph.Nodes {
+			n := flowgraph.Node{ID: node.ID, Kind: node.Kind, Condition: node.Condition}
+			if a := node.Approval; a != nil {
+				n.Approval = &flowgraph.Approval{Mode: a.Mode, AssigneeIDs: a.AssigneeIDs, EditableFieldIDs: a.EditableFieldIDs}
+			}
+			graph.Nodes = append(graph.Nodes, n)
+		}
+		for _, edge := range flow.Graph.Edges {
+			graph.Edges = append(graph.Edges, flowgraph.Edge{From: edge.From, To: edge.To, Branch: edge.Branch})
+		}
+		if _, e = (workflowcatalog.Catalog{}).PutVersionInTx(ctx, tx, workflowcatalog.VersionInput{AppID: app, TableID: flow.TableID, ViewID: flow.ViewID, FlowID: flow.ID, ActorID: p.UserID, Name: flow.Name, ExpectedRevision: 0, ExpectedSchemaVersion: 1, Graph: graph, AllowWithdraw: flow.AllowWithdraw, Triggers: &flow.Triggers}); e != nil {
+			return empty, e
+		}
+	}
+	summary, e := json.Marshal(map[string]any{"appId": app, "operationId": operationID, "beforePolicyRevision": 0, "afterPolicyRevision": 1, "changeCounts": map[string]int{"applications": 1, "groups": len(m.PermissionGroups), "members": members, "grants": grants}})
+	if e != nil {
+		return empty, e
+	}
+	if _, e = tx.Exec(ctx, `INSERT INTO auth.authentication_events(event_type,outcome,actor_user_id,session_ref,reason_code,request_id,client_ip,user_agent,object_type,object_id,change_summary) VALUES('application_changed','success',$1,NULLIF($2,'')::uuid,'APPLICATION_CREATED',$3,NULLIF($4,'')::inet,NULLIF($5,''),'application',$6,$7::jsonb)`, p.UserID, p.SessionRef, metadata.RequestID, metadata.ClientIP, metadata.UserAgent, app, summary); e != nil {
+		return empty, e
+	}
+	data, e := json.Marshal(map[string]any{"operationId": operationID, "appId": app, "policyRevision": 1, "structureVersion": 1, "status": "imported"})
+	if e != nil {
+		return empty, e
+	}
+	result := applications.Result{Status: 201, Location: "/api/v1/applications/" + app, Data: data}
+	if e = w.Complete(ctx, operationID, result); e != nil {
+		return empty, e
+	}
+	if e = w.Commit(ctx); e != nil {
+		return empty, e
+	}
+	return result, nil
+}
