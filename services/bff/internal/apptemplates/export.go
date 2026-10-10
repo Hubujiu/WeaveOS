@@ -1,9 +1,14 @@
 package apptemplates
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -11,6 +16,231 @@ var ErrNotExportable = errors.New("application configuration is not exportable")
 
 type Service struct{ Pool *pgxpool.Pool }
 
-func (s *Service) ExportManifest(context.Context, session.Principal, string) (Manifest, error) {
-	return Manifest{}, session.ErrUnavailable
+func fromGraph(g flowgraph.Graph) Graph {
+	out := Graph{Version: g.Version, Nodes: []Node{}, Edges: []Edge{}}
+	for _, node := range g.Nodes {
+		n := Node{ID: node.ID, Kind: node.Kind, Condition: node.Condition}
+		// The persisted internal graph encodes absent RawMessage as JSON null.
+		// Public graph configuration represents absence by an omitted condition.
+		if bytes.Equal(bytes.TrimSpace(n.Condition), []byte("null")) {
+			n.Condition = nil
+		}
+		if a := node.Approval; a != nil {
+			n.Approval = &Approval{Mode: a.Mode, AssigneeIDs: append([]string{}, a.AssigneeIDs...), EditableFieldIDs: append([]string{}, a.EditableFieldIDs...)}
+		}
+		out.Nodes = append(out.Nodes, n)
+	}
+	for _, edge := range g.Edges {
+		out.Edges = append(out.Edges, Edge{From: edge.From, To: edge.To, Branch: edge.Branch})
+	}
+	return out
+}
+func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id string) (Manifest, error) {
+	empty := Manifest{}
+	if s == nil || s.Pool == nil {
+		return empty, session.ErrUnavailable
+	}
+	if !validID(id) {
+		return empty, applications.ErrInvalid
+	}
+	tx, app, e := (&applications.Application{Pool: s.Pool}).BeginManagerRead(ctx, p, id)
+	if e != nil {
+		return empty, e
+	}
+	defer tx.Rollback(context.Background())
+	out := Manifest{Format: "weaveos.structure-template", Version: 1, Application: Application{ID: app.ID, Name: app.Name}, Directories: []Directory{}, Tables: []Table{}, Forms: []Form{}, Workflows: []Workflow{}, PermissionGroups: []PermissionGroup{}}
+	b, _ := json.Marshal(out)
+	used := len(b)
+	add := func(v any, prior int) error {
+		raw, e := json.Marshal(v)
+		if e != nil {
+			return ErrNotExportable
+		}
+		used += len(raw)
+		if prior > 0 {
+			used++
+		}
+		if used > 1048576 {
+			return ErrNotExportable
+		}
+		return nil
+	}
+	// This fixed table list is never derived from request identifiers. Count at
+	// most bound+1 rows, before loading configurations or building output arrays.
+	for _, limit := range []struct {
+		table string
+		max   int
+	}{{"directories", 1000}, {"logical_tables", 128}, {"form_views", 256}, {"workflow_definitions", 128}, {"permission_groups", 128}} {
+		var n int
+		q := "SELECT count(*) FROM (SELECT 1 FROM applications." + limit.table + " WHERE app_id=$1 LIMIT $2) bounded"
+		if e = tx.QueryRow(ctx, q, id, limit.max+1).Scan(&n); e != nil {
+			return empty, e
+		}
+		if n > limit.max {
+			return empty, ErrNotExportable
+		}
+	}
+	var deleting bool
+	if e = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM applications.workflow_definitions d JOIN applications.workflow_deletions x ON x.app_id=d.app_id AND x.flow_id=d.id WHERE d.app_id=$1)", id).Scan(&deleting); e != nil {
+		return empty, e
+	}
+	if deleting {
+		return empty, ErrNotExportable
+	}
+	// Every result set closes before the next query, including early failures.
+	scan := func(query string, consume func(pgx.Rows) error) error {
+		rows, e := tx.Query(ctx, query, id)
+		if e != nil {
+			return e
+		}
+		defer rows.Close()
+		for rows.Next() {
+			if e = consume(rows); e != nil {
+				return e
+			}
+		}
+		return rows.Err()
+	}
+	e = scan("SELECT id::text,name,parent_id::text,position FROM applications.directories WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
+		var d Directory
+		if e := rows.Scan(&d.ID, &d.Name, &d.ParentID, &d.Position); e != nil {
+			return e
+		}
+		if e := add(d, len(out.Directories)); e != nil {
+			return e
+		}
+		out.Directories = append(out.Directories, d)
+		return nil
+	})
+	if e != nil {
+		return empty, e
+	}
+	e = scan("SELECT id::text,name,directory_id::text,position,fields_json FROM applications.logical_tables WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
+		var t Table
+		var raw []byte
+		if e := rows.Scan(&t.ID, &t.Name, &t.DirectoryID, &t.Position, &raw); e != nil {
+			return e
+		}
+		if len(raw) > 1048576 || json.Unmarshal(raw, &t.Fields) != nil {
+			return ErrNotExportable
+		}
+		if e := add(t, len(out.Tables)); e != nil {
+			return e
+		}
+		out.Tables = append(out.Tables, t)
+		return nil
+	})
+	if e != nil {
+		return empty, e
+	}
+	e = scan("SELECT id::text,table_id::text,name,directory_id::text,position,layout FROM applications.form_views WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
+		var f Form
+		var raw []byte
+		if e := rows.Scan(&f.ID, &f.TableID, &f.Name, &f.DirectoryID, &f.Position, &raw); e != nil {
+			return e
+		}
+		if len(raw) > 1048576 || json.Unmarshal(raw, &f.Layout) != nil {
+			return ErrNotExportable
+		}
+		if e := add(f, len(out.Forms)); e != nil {
+			return e
+		}
+		out.Forms = append(out.Forms, f)
+		return nil
+	})
+	if e != nil {
+		return empty, e
+	}
+	e = scan(`SELECT d.id::text,d.table_id::text,d.view_id::text,d.name,v.graph_json,v.allow_withdraw,v.triggers_json
+ FROM applications.workflow_definitions d JOIN applications.workflow_versions v ON v.app_id=d.app_id AND v.flow_id=d.id AND v.version=d.candidate_version WHERE d.app_id=$1 ORDER BY d.id`, func(rows pgx.Rows) error {
+		var w Workflow
+		var graph, trigger []byte
+		if e := rows.Scan(&w.ID, &w.TableID, &w.ViewID, &w.Name, &graph, &w.AllowWithdraw, &trigger); e != nil {
+			return e
+		}
+		var g flowgraph.Graph
+		if len(graph)+len(trigger) > 1048576 || json.Unmarshal(graph, &g) != nil || json.Unmarshal(trigger, &w.Triggers) != nil {
+			return ErrNotExportable
+		}
+		w.Graph = fromGraph(g)
+		if e := add(w, len(out.Workflows)); e != nil {
+			return e
+		}
+		out.Workflows = append(out.Workflows, w)
+		return nil
+	})
+	if e != nil {
+		return empty, e
+	}
+	groups := map[string]int{}
+	e = scan("SELECT id::text,name,enabled FROM applications.permission_groups WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
+		g := PermissionGroup{MemberIDs: []string{}, Grants: []Grant{}}
+		if e := rows.Scan(&g.ID, &g.Name, &g.Enabled); e != nil {
+			return e
+		}
+		if e := add(g, len(out.PermissionGroups)); e != nil {
+			return e
+		}
+		groups[g.ID] = len(out.PermissionGroups)
+		out.PermissionGroups = append(out.PermissionGroups, g)
+		return nil
+	})
+	if e != nil {
+		return empty, e
+	}
+	e = scan("SELECT group_id::text,user_id::text FROM applications.group_members WHERE app_id=$1 ORDER BY group_id,user_id", func(rows pgx.Rows) error {
+		var group, user string
+		if e := rows.Scan(&group, &user); e != nil {
+			return e
+		}
+		index, ok := groups[group]
+		if !ok {
+			return ErrNotExportable
+		}
+		g := &out.PermissionGroups[index]
+		if len(g.MemberIDs) >= 10000 {
+			return ErrNotExportable
+		}
+		if e := add(user, len(g.MemberIDs)); e != nil {
+			return e
+		}
+		g.MemberIDs = append(g.MemberIDs, user)
+		return nil
+	})
+	if e != nil {
+		return empty, e
+	}
+	e = scan(`SELECT g.group_id::text,g.resource_kind,g.resource_id::text,g.action,g.row_scope,
+ ARRAY(SELECT f.field_id::text FROM applications.grant_fields f WHERE f.app_id=g.app_id AND f.grant_id=g.id ORDER BY f.field_id)
+ FROM applications.grants g WHERE g.app_id=$1 ORDER BY g.group_id,g.resource_kind,g.resource_id,g.action,g.row_scope,g.id`, func(rows pgx.Rows) error {
+		var group string
+		var grant Grant
+		if e := rows.Scan(&group, &grant.ResourceKind, &grant.ResourceID, &grant.Action, &grant.RowScope, &grant.Fields); e != nil {
+			return e
+		}
+		index, ok := groups[group]
+		if !ok {
+			return ErrNotExportable
+		}
+		g := &out.PermissionGroups[index]
+		if len(g.Grants) >= 10000 {
+			return ErrNotExportable
+		}
+		if e := add(grant, len(g.Grants)); e != nil {
+			return e
+		}
+		g.Grants = append(g.Grants, grant)
+		return nil
+	})
+	if e != nil {
+		return empty, e
+	}
+	result, e := NormalizeManifest(out)
+	if e != nil {
+		return empty, ErrNotExportable
+	}
+	if e = tx.Commit(ctx); e != nil {
+		return empty, e
+	}
+	return result, nil
 }
