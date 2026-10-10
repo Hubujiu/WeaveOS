@@ -215,11 +215,16 @@ func TestRootPrivatePresetsHTTPUnknownCommitAndPostcommitRevocation(t *testing.T
 					t.Fatal("ambiguous commit falsely successful", response.StatusCode, string(raw))
 				}
 			} else {
-				if e := <-revoked; e != nil {
-					t.Fatal(e)
-				}
 				if response.StatusCode != 201 || env.Code != "OK" || len(env.Data) != 3 || response.Header.Get("Location") == "" {
 					t.Fatal("confirmed commit disguised as failure", response.StatusCode, string(raw))
+				}
+				select {
+				case e := <-revoked:
+					if e != nil {
+						t.Fatal(e)
+					}
+				default:
+					t.Fatal("successful response without synchronous postcommit revoke hook")
 				}
 				if len(response.Cookies()) != 2 {
 					t.Fatal("revoked session not cleared")
