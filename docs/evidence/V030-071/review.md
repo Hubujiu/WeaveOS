@@ -1,6 +1,6 @@
-# V030-071 · Root delivery review (in progress)
+# V030-071 · Root delivery review (local ready)
 
-This is a live review, not a completion or promotion declaration. Root writes and tests directly in its own environment. No delegated executor, main merge, or deployment.
+Local acceptance is complete; final remote CI and develop merge are still pending. This is not a main promotion or deployment declaration. Root writes and tests directly in its own environment. No delegated executor, main merge, or deployment.
 
 ## Sources and product boundary
 
@@ -34,11 +34,18 @@ This is a live review, not a completion or promotion declaration. Root writes an
 - Formal role reapplication is an intentional remaining RED until production migration/roles are installed. Twelve other top-level +30 subtests remain passing in that run.
 - Full Go vet/build and formatting check passed before dependency integration.
 
-## Required before ready
+## Final integrated verification
 
-1. Verify PR79 exact b5872f40 final CI/product evidence, squash develop under the existing authorization, and integrate the actual result. Preserve TemplateImportResult and all preset/workflow recovery branches.
-2. Freeze the available official hot migration number in the data source, then implement forward schema, minimal roles and protected Down. The current isolated SQL is not a production migration.
-3. Verify real forward/empty-down/re-up; reject Down with private configurations or any of the three operation histories, retaining rows and Goose version. Preserve all preceding operation kinds/constraints.
-4. Update exact migration and role compatibility hashes, backup shape expectations, and keep backwardCompatible=false. No main promotion or deployment.
-5. Repeat real storage, HTTPS, backup/restore, all affected Go race packages, vet/build, Node checks and secret scan on frozen integrated source. Review any failure without weakening expectations.
-6. Publish a task PR, verify exact final remote head applicable CI, then squash develop only if complete. Report remaining product decisions honestly.
+- PR79 exact b5872f40: all 22 jobs passed; actual product logs confirm hot32/cold7, genuine restore/rollback, two 141-browser passes and expected promotion-blocked. Actual develop squash 4aa36255 was fetched and merged; main6ffba4d stayed unchanged. Both public recovery unions were preserved by semantic comparison.
+- Formal hot33 and minimal roles: 13 top-level/30 subtests passed. The exact role suffix is independently pinned, all previous role bytes retain their old hash, extra grants are rejected, and repeated role reset preserves only intended capabilities.
+- Real Goose five-case RED→GREEN: empty Down returns exactly32 and re-up33 succeeds; separate configuration and create/update/discard histories each reject55000 with unchanged rows/version. Published migrations1–32 remain byte-identical.
+- Formal auth_backup dump/restore preserves32 private configurations and49 minimum receipts plus existing data exactly, restored Goose33 and column-level role boundaries correct. Docker encrypted packaging remains remote CI; no local Docker substitute is claimed.
+- Final fixed code39699a64:14 affected packages,969 top-level +917 subtests pass, no failures;3 existing capacity skips are recorded, not hidden. Evidence: final-regression-corrected. The one previous failure was a historical32 rollback test running against populated33; a separate fresh32 database restores the original precondition and retains every original assertion. Product SQL/Go was not changed to make that test pass.
+- All560 Node contract/governance/foundation tests pass again, zero skips; full Go vet/build,14-warning valid OpenAPI, exact migration/role pins, altered-role rejection, actual HTTPS response schema checks and task checks pass.
+- Source secret scan:133.78MB plus2.83MB delta, no findings; final evidence/doc delta is checked before publication.
+
+## Remaining external gates and product boundary
+
+Publish the complete verified candidate to PR80, mark it reviewable, and verify every applicable CI run/job on its exact final remote SHA. Fix any real failure without relaxing requirements. Only then expected-head squash develop under standing authorization. No main merge, deployment, automatic compatibility override or premature accepted state.
+
+Record/container copy/delete rules remain the unanswered product question; this PR is complete for approved private presets, not a claim that those unapproved features exist. Before entering standby, report what is done and what decision is still needed.
