@@ -1,0 +1,28 @@
+diff --git a/db/migrations/00029_workflow_deletions.sql b/db/migrations/00029_workflow_deletions.sql
+index afb1756f..b0f49191 100644
+--- a/db/migrations/00029_workflow_deletions.sql
++++ b/db/migrations/00029_workflow_deletions.sql
+@@ -37,8 +37,23 @@ REVOKE ALL ON applications.workflow_deletions FROM PUBLIC;
+ -- +goose StatementBegin
+ CREATE FUNCTION applications.guard_workflow_deletion_identity() RETURNS trigger
+ LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog AS $$
++DECLARE original record;
+ BEGIN
+  IF TG_OP='INSERT' THEN
++  SELECT app_id,table_id,view_id,name,revision,state INTO original
++   FROM applications.workflow_definitions WHERE id=NEW.flow_id FOR UPDATE;
++  IF NOT FOUND OR ROW(NEW.app_id,NEW.table_id,NEW.view_id,NEW.flow_name,NEW.expected_revision+1)
++   IS DISTINCT FROM ROW(original.app_id,original.table_id,original.view_id,original.name,original.revision) THEN
++   -- Unclosed definitions are reported separately from mismatched identity.
++   IF FOUND AND original.state<>'closing' AND NEW.app_id=original.app_id
++    AND NEW.table_id=original.table_id AND NEW.view_id=original.view_id THEN
++    RAISE EXCEPTION 'deletion acceptance must close original catalog first' USING ERRCODE='55000';
++   END IF;
++   RAISE EXCEPTION 'deletion identity must bind original catalog' USING ERRCODE='23503';
++  END IF;
++  IF original.state<>'closing' THEN
++   RAISE EXCEPTION 'deletion acceptance must close original catalog first' USING ERRCODE='55000';
++  END IF;
+   IF NEW.status<>'pending' OR NEW.engine_deleted_at IS NOT NULL OR NEW.engine_deleted_versions IS NOT NULL
+    OR NEW.completed_at IS NOT NULL OR NEW.lease_token IS NOT NULL OR NEW.attempts<>0 OR NEW.reason IS NOT NULL THEN
+    RAISE EXCEPTION 'deletion must begin as an unconfirmed intent' USING ERRCODE='23514';
