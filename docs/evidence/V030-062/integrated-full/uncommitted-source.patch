@@ -1,0 +1,1024 @@
+diff --git a/db/migrations/00026_workflow_personal_inbox_index.sql b/db/migrations/00026_workflow_personal_inbox_index.sql
+new file mode 100644
+index 0000000..85f9a6a
+--- /dev/null
++++ b/db/migrations/00026_workflow_personal_inbox_index.sql
+@@ -0,0 +1,10 @@
++-- +goose Up
++-- Global personal inbox is assignee-scoped rather than app-scoped. Preserve
++-- the existing per-app index and use the exact unclosed candidate predicate.
++CREATE INDEX ix_workflow_tasks_personal_order
++ ON applications.workflow_tasks(assignee_id,created_at DESC,id DESC)
++ WHERE closed_command_id IS NULL;
++
++-- +goose Down
++-- Performance-only rollback: retain all tasks, instances and event history.
++DROP INDEX applications.ix_workflow_tasks_personal_order;
+diff --git a/services/bff/cmd/bff/root_workflow_inbox_http_test.go b/services/bff/cmd/bff/root_workflow_inbox_http_test.go
+new file mode 100644
+index 0000000..6ee6191
+--- /dev/null
++++ b/services/bff/cmd/bff/root_workflow_inbox_http_test.go
+@@ -0,0 +1,70 @@
++package main
++
++import (
++	"encoding/json"
++	"net/http"
++	"strings"
++	"testing"
++)
++
++const inboxHTTPPath = "/api/v1/workflow-tasks/search"
++
++func TestRootWorkflowInboxHTTPSRealAuthenticatedPage(t *testing.T) {
++	f := rootHTTPTaskSetup(t)
++	data := rootHTTPData(t, f.call(t, "POST", inboxHTTPPath, `{"page":1}`, nil), 200)
++	rootHTTPFieldSet(t, data, []string{"items", "total", "page", "pageSize", "queryVersion"})
++	if string(data["total"]) != "1" || string(data["pageSize"]) != "20" {
++		t.Fatal("bad page counters")
++	}
++	var items []map[string]json.RawMessage
++	if e := json.Unmarshal(data["items"], &items); e != nil || len(items) != 1 {
++		t.Fatal("missing actual assigned task", e)
++	}
++	rootHTTPFieldSet(t, items[0], []string{"id", "appId", "viewId", "recordId", "instanceId", "flowId", "nodeId", "flowName", "createdAt", "definitionVersion", "activationEpoch", "sequence"})
++	for key, want := range map[string]string{"id": f.task, "appId": f.app, "viewId": f.view, "recordId": f.record, "instanceId": f.instance, "flowId": f.flow, "nodeId": f.node, "flowName": "Approval"} {
++		if rootHTTPString(t, items[0], key) != want {
++			t.Fatal("incorrect identity", key)
++		}
++	}
++	token := rootHTTPString(t, data, "queryVersion")
++	if token == "" {
++		t.Fatal("missing context")
++	}
++	body := `{"page":2,"pageSize":1,"queryVersion":"` + token + `"}`
++	next := rootHTTPData(t, f.call(t, "POST", inboxHTTPPath, body, nil), 200)
++	if string(next["items"]) != "[]" || string(next["total"]) != "1" {
++		t.Fatal("beyond-total query not empty")
++	}
++	// Use the real existing task preview route, proving these locators connect.
++	rootHTTPData(t, f.call(t, "GET", f.taskPath(), "", nil), 200)
++	if _, e := f.owner.Exec(f.ctx, "UPDATE applications.workflow_definitions SET name='Changed' WHERE app_id=$1 AND id=$2", f.app, f.flow); e != nil {
++		t.Fatal(e)
++	}
++	rootHTTPError(t, f.call(t, "POST", inboxHTTPPath, body, nil), 409, "APPLICATION_QUERY_CHANGED")
++}
++func TestRootWorkflowInboxHTTPSIngressAndClosedJSON(t *testing.T) {
++	f := rootHTTPTaskSetup(t)
++	body := `{"page":1}`
++	for _, c := range []struct {
++		name   string
++		status int
++		code   string
++		edit   func(*http.Request)
++	}{
++		{"session", 401, "AUTH_UNAUTHENTICATED", func(r *http.Request) { r.Header.Del("Cookie") }},
++		{"csrf", 403, "COMMON_CSRF_REJECTED", func(r *http.Request) { r.Header.Del("X-CSRF-Token") }},
++		{"origin", 403, "COMMON_CSRF_REJECTED", func(r *http.Request) { r.Header.Set("Origin", "https://foreign.invalid") }},
++		{"actor", 409, "AUTH_SESSION_CHANGED", func(r *http.Request) { r.Header.Set("X-Expected-Actor-Id", f.other) }},
++	} {
++		t.Run(c.name, func(t *testing.T) { rootHTTPError(t, f.call(t, "POST", inboxHTTPPath, body, c.edit), c.status, c.code) })
++	}
++	for _, raw := range []string{"null", "[]", "{}", body + "{}", `{"page":1,"page":2}`, `{"page":1,"actorId":"` + f.actor + `"}`, `{"page":1,"appId":"` + f.app + `"}`, `{"page":null}`, `{"page":0}`, `{"page":1.5}`, `{"page":1,"pageSize":null}`, `{"page":1,"pageSize":0}`, `{"page":1,"pageSize":101}`, `{"page":9007199254740991,"pageSize":100}`, `{"page":1,"queryVersion":null}`, strings.Repeat(" ", 4097) + body} {
++		rootHTTPError(t, f.call(t, "POST", inboxHTTPPath, raw, nil), 400, "COMMON_VALIDATION_FAILED")
++	}
++	rootHTTPError(t, f.call(t, "POST", inboxHTTPPath+"?x=1", body, nil), 400, "COMMON_VALIDATION_FAILED")
++	rootHTTPError(t, f.call(t, "POST", inboxHTTPPath, body, func(r *http.Request) { r.Header.Set("Content-Type", "text/plain") }), 415, "COMMON_UNSUPPORTED_MEDIA_TYPE")
++	for _, method := range []string{"GET", "PATCH", "DELETE"} {
++		rootHTTPError(t, f.call(t, method, inboxHTTPPath, body, nil), 404, "API_NOT_FOUND")
++	}
++	rootHTTPError(t, f.call(t, "POST", inboxHTTPPath+"/", body, nil), 404, "API_NOT_FOUND")
++}
+diff --git a/services/bff/internal/applications/http.go b/services/bff/internal/applications/http.go
+index 8d8fdbc..82e82c2 100644
+--- a/services/bff/internal/applications/http.go
++++ b/services/bff/internal/applications/http.go
+@@ -241,7 +241,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		}
+ 	}
+ 	if s.Records != nil {
+-		if strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/") {
++		if r.URL.Path == "/api/v1/workflow-tasks/search" || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/") {
+ 			s.Records.ServeHTTP(w, r)
+ 			return
+ 		}
+diff --git a/services/bff/internal/applications/personal_read.go b/services/bff/internal/applications/personal_read.go
+new file mode 100644
+index 0000000..21c67b7
+--- /dev/null
++++ b/services/bff/internal/applications/personal_read.go
+@@ -0,0 +1,41 @@
++package applications
++
++import (
++	"context"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/apppolicy"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
++	"github.com/jackc/pgx/v5"
++)
++
++// PersonalRead retains the verified actor privately for all resource loads in
++// this one read-only RR transaction. No caller-supplied actor can replace it.
++type PersonalRead struct {
++	pgx.Tx
++	actor apppolicy.TrustedActor
++}
++
++func (a *Application) BeginPersonalRead(ctx context.Context, p session.Principal) (*PersonalRead, error) {
++	tx, actor, err := a.read(ctx, p)
++	if err != nil {
++		return nil, err
++	}
++	return &PersonalRead{Tx: tx, actor: actor}, nil
++}
++func (r *PersonalRead) RecordContext(ctx context.Context, appID, viewID string) (RecordContext, error) {
++	if r == nil || r.Tx == nil {
++		return RecordContext{}, ErrInvalid
++	}
++	for _, id := range []string{appID, viewID} {
++		if canonical, ok := canonicalID(id); !ok || canonical != id {
++			return RecordContext{}, ErrInvalid
++		}
++	}
++	app, err := loadApp(ctx, r.Tx, appID, false)
++	if err != nil {
++		return RecordContext{}, err
++	}
++	if err = registered(ctx, r.Tx, app); err != nil {
++		return RecordContext{}, err
++	}
++	return loadRecordContext(ctx, r.Tx, r.actor, app, viewID)
++}
+diff --git a/services/bff/internal/apprecordhttp/http.go b/services/bff/internal/apprecordhttp/http.go
+index 2159634..83dc11a 100644
+--- a/services/bff/internal/apprecordhttp/http.go
++++ b/services/bff/internal/apprecordhttp/http.go
+@@ -212,7 +212,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		failure(w, r, apprecordservice.ErrUnavailable, "")
+ 		return
+ 	}
+-	if s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
++	if s.workflowEventHTTP(w, r, p) || s.workflowInboxHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
+ 		return
+ 	}
+ 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
+diff --git a/services/bff/internal/apprecordhttp/workflow_inbox.go b/services/bff/internal/apprecordhttp/workflow_inbox.go
+new file mode 100644
+index 0000000..1bef4f3
+--- /dev/null
++++ b/services/bff/internal/apprecordhttp/workflow_inbox.go
+@@ -0,0 +1,37 @@
++package apprecordhttp
++
++import (
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
++	"net/http"
++)
++
++// Invoked only after live Session/CSRF/expected-actor validation. This search
++// does not accept actor identity or business mutation instructions.
++func (s *Service) workflowInboxHTTP(w http.ResponseWriter, r *http.Request, p session.Principal) bool {
++	if r.URL.Path != "/api/v1/workflow-tasks/search" {
++		return false
++	}
++	if r.Method != "POST" {
++		respond(w, r, 404, "API_NOT_FOUND", nil, nil)
++		return true
++	}
++	if r.URL.RawQuery != "" || r.URL.ForceQuery {
++		failure(w, r, applications.ErrInvalid, "")
++		return true
++	}
++	body, err := appstructure.DecodeRecordBody(w, r, "workflow.inbox.search")
++	if err != nil {
++		failure(w, r, err, "")
++		return true
++	}
++	result, err := s.Records.SearchWorkflowInbox(r.Context(), p, apprecordservice.WorkflowInboxRequest{Page: value[int](body, "page"), PageSize: value[int](body, "pageSize"), QueryVersion: value[string](body, "queryVersion")})
++	if err != nil {
++		failure(w, r, err, "")
++		return true
++	}
++	s.finish(w, r, p, 200, result, "", false, nil)
++	return true
++}
+diff --git a/services/bff/internal/apprecordservice/root_workflow_inbox_cost_test.go b/services/bff/internal/apprecordservice/root_workflow_inbox_cost_test.go
+new file mode 100644
+index 0000000..f686e44
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/root_workflow_inbox_cost_test.go
+@@ -0,0 +1,69 @@
++package apprecordservice
++
++import (
++	"context"
++	"encoding/json"
++	"fmt"
++	"reflect"
++	"testing"
++)
++
++// Synthetic candidate access path only. This does not measure authorization,
++// graph reads or production throughput. Temporary objects roll back in full.
++func TestRootWorkflowInboxCandidateAccessPaths(t *testing.T) {
++	f := newRecordFixture(t)
++	tx, e := f.owner.Begin(f.ctx)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer tx.Rollback(context.Background())
++	_, e = tx.Exec(f.ctx, `CREATE TEMP TABLE inbox_cost(id uuid PRIMARY KEY,app_id uuid NOT NULL,assignee_id uuid NOT NULL,created_at timestamptz NOT NULL,closed_command_id uuid) ON COMMIT DROP;
++ INSERT INTO inbox_cost SELECT md5('task-'||n)::uuid,md5('app-'||(n%37))::uuid,md5('actor-'||(n%1000))::uuid,'2026-01-01T00:00:00Z'::timestamptz+n*interval '1 second',CASE WHEN n%7=0 THEN md5('closed')::uuid ELSE NULL END FROM generate_series(1,100000)n;
++ CREATE INDEX inbox_cost_app_order ON inbox_cost(app_id,assignee_id,created_at,id) WHERE closed_command_id IS NULL;
++ ANALYZE inbox_cost;`)
++	if e != nil {
++		t.Fatal(e)
++	}
++	want := []string{}
++	for n := 100000; n >= 1 && len(want) < 20; n-- {
++		if n%1000 == 1 && n%7 != 0 {
++			want = append(want, fmt.Sprintf("2026-01-%02dT%02d:%02d:%02dZ", 1+n/86400, n/3600%24, n/60%60, n%60))
++		}
++	}
++	q := `SELECT to_char(created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"') FROM inbox_cost WHERE assignee_id=md5('actor-1')::uuid AND closed_command_id IS NULL ORDER BY created_at DESC,id DESC LIMIT 20`
++	for _, mode := range []string{"existing_app_prefix", "personal_actor_prefix"} {
++		if mode == "personal_actor_prefix" {
++			if _, e = tx.Exec(f.ctx, "CREATE INDEX inbox_cost_personal_order ON inbox_cost(assignee_id,created_at DESC,id DESC) WHERE closed_command_id IS NULL; ANALYZE inbox_cost"); e != nil {
++				t.Fatal(e)
++			}
++		}
++		rows, e := tx.Query(f.ctx, q)
++		if e != nil {
++			t.Fatal(e)
++		}
++		got := []string{}
++		for rows.Next() {
++			var v string
++			if e = rows.Scan(&v); e != nil {
++				t.Fatal(e)
++			}
++			got = append(got, v)
++		}
++		e = rows.Err()
++		rows.Close()
++		if e != nil || !reflect.DeepEqual(got, want) {
++			t.Fatal("candidate result changed", mode, got, want, e)
++		}
++		var plan json.RawMessage
++		if e = tx.QueryRow(f.ctx, "EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON) "+q).Scan(&plan); e != nil {
++			t.Fatal(e)
++		}
++		var bytes int64
++		if mode == "personal_actor_prefix" {
++			if e = tx.QueryRow(f.ctx, "SELECT pg_relation_size('inbox_cost_personal_order')").Scan(&bytes); e != nil {
++				t.Fatal(e)
++			}
++		}
++		t.Logf("candidate access path mode=%s rows=100000 actor_candidates=100 new_index_bytes=%d plan=%s", mode, bytes, plan)
++	}
++}
+diff --git a/services/bff/internal/apprecordservice/root_workflow_inbox_index_test.go b/services/bff/internal/apprecordservice/root_workflow_inbox_index_test.go
+new file mode 100644
+index 0000000..f8fbc89
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/root_workflow_inbox_index_test.go
+@@ -0,0 +1,55 @@
++package apprecordservice
++
++import (
++	"context"
++	"os"
++	"strings"
++	"testing"
++)
++
++func TestRootWorkflowInboxPersonalIndexReady(t *testing.T) {
++	f := newRecordFixture(t)
++	var def string
++	var valid, ready bool
++	e := f.owner.QueryRow(f.ctx, `SELECT pg_get_indexdef(i.indexrelid),i.indisvalid,i.indisready FROM pg_index i JOIN pg_class ix ON ix.oid=i.indexrelid WHERE ix.relnamespace='applications'::regnamespace AND ix.relname='ix_workflow_tasks_personal_order'`).Scan(&def, &valid, &ready)
++	if e != nil {
++		t.Fatalf("personal cross-application candidate access path missing: %v", e)
++	}
++	if !valid || !ready || !strings.Contains(def, "USING btree (assignee_id, created_at DESC, id DESC)") || !strings.Contains(def, "WHERE (closed_command_id IS NULL)") {
++		t.Fatal("wrong index scope/order/predicate", def)
++	}
++}
++
++func TestRootWorkflowInboxIndexRollbackRetainsTasks(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	raw, e := os.ReadFile("../../../../db/migrations/00026_workflow_personal_inbox_index.sql")
++	if e != nil {
++		t.Fatal(e)
++	}
++	parts := strings.Split(string(raw), "-- +goose Down")
++	if len(parts) != 2 {
++		t.Fatal("expected explicit Down")
++	}
++	tx, e := f.owner.Begin(f.ctx)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer tx.Rollback(context.Background())
++	if _, e = tx.Exec(f.ctx, parts[1]); e != nil {
++		t.Fatal(e)
++	}
++	var taskCount int
++	if e = tx.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_tasks WHERE app_id=$1 AND id=$2 AND closed_command_id IS NULL", f.app, f.task.ID).Scan(&taskCount); e != nil || taskCount != 1 {
++		t.Fatal("Down changed business task", e)
++	}
++	var gone bool
++	if e = tx.QueryRow(f.ctx, "SELECT to_regclass('applications.ix_workflow_tasks_personal_order') IS NULL").Scan(&gone); e != nil || !gone {
++		t.Fatal("Down did not remove only its index", e)
++	}
++	if _, e = tx.Exec(f.ctx, strings.TrimPrefix(parts[0], "-- +goose Up")); e != nil {
++		t.Fatal(e)
++	}
++	if e = tx.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_tasks WHERE app_id=$1 AND id=$2 AND closed_command_id IS NULL", f.app, f.task.ID).Scan(&taskCount); e != nil || taskCount != 1 {
++		t.Fatal("Up changed business task", e)
++	}
++}
+diff --git a/services/bff/internal/apprecordservice/root_workflow_inbox_test.go b/services/bff/internal/apprecordservice/root_workflow_inbox_test.go
+new file mode 100644
+index 0000000..f34a462
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/root_workflow_inbox_test.go
+@@ -0,0 +1,340 @@
++package apprecordservice
++
++import (
++	"context"
++	"encoding/json"
++	"errors"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
++	"reflect"
++	"sort"
++	"strconv"
++	"strings"
++	"testing"
++	"time"
++)
++
++func inboxRequest() WorkflowInboxRequest { return WorkflowInboxRequest{Page: 1} }
++func inboxSearch(t *testing.T, f rootTaskFixture, q WorkflowInboxRequest) WorkflowInboxResult {
++	t.Helper()
++	r, e := f.service.SearchWorkflowInbox(f.ctx, f.principal, q)
++	if e != nil {
++		t.Fatal(e)
++	}
++	return r
++}
++func inboxSQL(t *testing.T, f rootTaskFixture, q string, args ...any) {
++	t.Helper()
++	if _, e := f.owner.Exec(f.ctx, q, args...); e != nil {
++		t.Fatal(e)
++	}
++}
++func TestRootWorkflowInboxExactPersonalProjection(t *testing.T) {
++	f := rootTaskSetup(t, true)
++	r := inboxSearch(t, f, inboxRequest())
++	if r.Total != 1 || len(r.Items) != 1 || r.Page != 1 || r.PageSize != 20 || r.QueryVersion == "" {
++		t.Fatalf("bad personal page: %+v", r)
++	}
++	v := r.Items[0]
++	if v.ID != f.task.ID || v.AppID != f.app || v.ViewID != f.view || v.RecordID != f.ownRecord || v.InstanceID != f.instance.ID || v.FlowID != f.head.FlowID || v.NodeID != f.first || v.FlowName != "Expense" || v.ActivationEpoch != 1 || v.DefinitionVersion != 1 || v.Sequence != 1 {
++		t.Fatalf("wrong independent identity: %+v", v)
++	}
++	if _, e := time.Parse(time.RFC3339Nano, v.CreatedAt); e != nil || !strings.HasSuffix(v.CreatedAt, "Z") {
++		t.Fatal("invalid UTC time", v.CreatedAt, e)
++	}
++	raw, _ := json.Marshal(v)
++	var obj map[string]any
++	_ = json.Unmarshal(raw, &obj)
++	keys := []string{}
++	for k := range obj {
++		keys = append(keys, k)
++	}
++	sort.Strings(keys)
++	want := []string{"activationEpoch", "appId", "createdAt", "definitionVersion", "flowId", "flowName", "id", "instanceId", "nodeId", "recordId", "sequence", "viewId"}
++	if !reflect.DeepEqual(keys, want) {
++		t.Fatal("projection leaked or omitted fields", keys)
++	}
++	rootTaskNoEvidenceWrites(t, f)
++}
++func TestRootWorkflowInboxOwnerCannotReadOthersQueue(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	f.principal.UserID = f.other
++	f.principal.SessionRef = f.other
++	r := inboxSearch(t, f, inboxRequest())
++	if r.Total != 0 || r.Items == nil || len(r.Items) != 0 {
++		t.Fatal("owner saw other's assigned task")
++	}
++}
++func TestRootWorkflowInboxCurrentAccessBeforeCount(t *testing.T) {
++	for _, change := range []string{"menu", "groups", "own", "fields"} {
++		t.Run(change, func(t *testing.T) {
++			f := rootTaskSetup(t, true)
++			switch change {
++			case "menu":
++				inboxSQL(t, f, "DELETE FROM applications.grants WHERE app_id=$1 AND action='menu.enter'", f.app)
++			case "groups":
++				inboxSQL(t, f, "UPDATE applications.permission_groups SET enabled=false WHERE app_id=$1", f.app)
++			case "own":
++				inboxSQL(t, f, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.read' AND row_scope='all')", f.app)
++				inboxSQL(t, f, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.read' AND row_scope='all'", f.app)
++			case "fields":
++				inboxSQL(t, f, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.read')", f.app)
++			}
++			r := inboxSearch(t, f, inboxRequest())
++			if r.Total != 0 || r.Items == nil || len(r.Items) != 0 {
++				t.Fatal("invisible record counted or exposed")
++			}
++		})
++	}
++}
++func TestRootWorkflowInboxRevocationRequiresExplicitRefresh(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	q := inboxRequest()
++	a := inboxSearch(t, f, q)
++	inboxSQL(t, f, "UPDATE applications.permission_groups SET enabled=false WHERE app_id=$1", f.app)
++	q.QueryVersion = a.QueryVersion
++	r, e := f.service.SearchWorkflowInbox(f.ctx, f.principal, q)
++	if !errors.Is(e, querycontext.ErrChanged) || len(r.Items) != 0 {
++		t.Fatal("stale authorized page survived", e)
++	}
++	q.QueryVersion = ""
++	fresh := inboxSearch(t, f, q)
++	if fresh.Total != 0 {
++		t.Fatal("fresh revoked task leaked")
++	}
++}
++func TestRootWorkflowInboxRelatedAndUnrelatedChanges(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	q := inboxRequest()
++	a := inboxSearch(t, f, q)
++	q.QueryVersion = a.QueryVersion
++	inboxSQL(t, f, "UPDATE applications.apps SET policy_revision=policy_revision+1 WHERE id=$1", f.app)
++	b := inboxSearch(t, f, q)
++	if b.QueryVersion != a.QueryVersion || b.Total != 1 {
++		t.Fatal("unrelated policy revision refreshed")
++	}
++	inboxSQL(t, f, "UPDATE applications.workflow_definitions SET name='Renamed' WHERE app_id=$1 AND id=$2", f.app, f.head.FlowID)
++	r, e := f.service.SearchWorkflowInbox(f.ctx, f.principal, q)
++	if !errors.Is(e, querycontext.ErrChanged) || len(r.Items) != 0 {
++		t.Fatal("changed visible flow name was not rejected", e)
++	}
++}
++func TestRootWorkflowInboxClosedTaskRemoved(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	q := inboxRequest()
++	a := inboxSearch(t, f, q)
++	c, p := f.accept(t, "agree", f.task.ID, "", 1, 1)
++	r, b := f.receipt(t, c, "completed", "")
++	f.apply(t, c, p, r, b, true)
++	q.QueryVersion = a.QueryVersion
++	_, e := f.service.SearchWorkflowInbox(f.ctx, f.principal, q)
++	if !errors.Is(e, querycontext.ErrChanged) {
++		t.Fatal("completed task not invalidated", e)
++	}
++	q.QueryVersion = ""
++	fresh := inboxSearch(t, f, q)
++	if fresh.Total != 0 || len(fresh.Items) != 0 {
++		t.Fatal("closed task still visible")
++	}
++}
++func TestRootWorkflowInboxSessionAndInput(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	q := inboxRequest()
++	a := inboxSearch(t, f, q)
++	p := f.principal
++	p.SessionRef = recordOperationID(t, f.recordFixture)
++	q.QueryVersion = a.QueryVersion
++	if _, e := f.service.SearchWorkflowInbox(f.ctx, p, q); !errors.Is(e, querycontext.ErrExpired) {
++		t.Fatal("cross-session token accepted", e)
++	}
++	p = f.principal
++	p.Record.AuthVersion = "9999"
++	if _, e := f.service.SearchWorkflowInbox(f.ctx, p, inboxRequest()); !errors.Is(e, session.ErrUnauthorized) {
++		t.Fatal("revoked auth accepted", e)
++	}
++	for _, bad := range []WorkflowInboxRequest{{Page: 0}, {Page: -1}, {Page: 1, PageSize: 101}, {Page: 1, PageSize: -1}, {Page: 9007199254740991, PageSize: 100}} {
++		if _, e := f.service.SearchWorkflowInbox(f.ctx, f.principal, bad); e == nil {
++			t.Fatal("invalid page accepted", bad)
++		}
++	}
++	q = inboxRequest()
++	q.Page = 2
++	q.PageSize = 1
++	b := inboxSearch(t, f, q)
++	if b.Total != 1 || len(b.Items) != 0 || b.Items == nil {
++		t.Fatal("beyond-total page incorrectly clamped")
++	}
++}
++
++// Construct a second independently registered application before publishing
++// its graph. No immutable version or task roster is rewritten to fake access.
++func inboxForActor(t *testing.T, actor string) rootTaskFixture {
++	t.Helper()
++	base := rootCaptureSetup(t)
++	f := base.recordFixture
++	if actor != "" {
++		if _, e := f.owner.Exec(f.ctx, "UPDATE applications.group_members SET user_id=$2 WHERE app_id=$1 AND user_id=$3", f.app, actor, f.actor); e != nil {
++			t.Fatal(e)
++		}
++		f.actor = actor
++		f.principal.UserID = actor
++	}
++	rootTaskKeepDispatchPrivate(t, f)
++	graph := rootCatalogGraph(t, f, false)
++	h := rootCatalogReady(t, f, graph)
++	i := rootCatalogReserve(t, f, rootCatalogReserveInput(t, f, h))
++	var version string
++	if e := f.owner.QueryRow(f.ctx, "SELECT version_id::text FROM applications.workflow_versions WHERE app_id=$1 AND flow_id=$2 AND version=1", f.app, h.FlowID).Scan(&version); e != nil {
++		t.Fatal(e)
++	}
++	p := rootProjection{recordFixture: f, head: h, instance: i, version: version, first: graph.Nodes[1].ID, second: graph.Nodes[1].ID}
++	c, payload := rootRecoveryAccept(t, p)
++	task := p.task(t, p.first, p.actor, 1)
++	receipt, body := p.receipt(t, c, "active", "", task)
++	p.apply(t, c, payload, receipt, body, true)
++	return rootTaskFixture{rootProjection: p, task: task}
++}
++func TestRootWorkflowInboxCrossApplicationStableBatchAndHiddenCount(t *testing.T) {
++	f := inboxForActor(t, "")
++	visible := []string{f.task.ID}
++	inboxSQL(t, f, "UPDATE applications.workflow_tasks SET created_at='2026-01-01T00:00:00Z' WHERE id=$1", f.task.ID)
++	for i := 0; i < 66; i++ {
++		t.Run("prepare-"+strconv.Itoa(i), func(t *testing.T) {
++			g := inboxForActor(t, f.actor)
++			inboxSQL(t, g, "UPDATE applications.workflow_tasks SET created_at='2026-01-01T00:00:00Z' WHERE id=$1", g.task.ID)
++			if i%3 == 0 {
++				inboxSQL(t, g, "UPDATE applications.permission_groups SET enabled=false WHERE app_id=$1", g.app)
++			} else {
++				visible = append(visible, g.task.ID)
++			}
++		})
++	}
++	sort.Sort(sort.Reverse(sort.StringSlice(visible)))
++	if len(visible) != 45 {
++		t.Fatal("fixture count")
++	}
++	q := WorkflowInboxRequest{Page: 1, PageSize: 20}
++	seen := []string{}
++	for page := 1; page <= 4; page++ {
++		q.Page = page
++		r := inboxSearch(t, f, q)
++		if r.Total != 45 || r.Items == nil {
++			t.Fatal("hidden candidates affected total")
++		}
++		q.QueryVersion = r.QueryVersion
++		for _, v := range r.Items {
++			seen = append(seen, v.ID)
++		}
++		if page == 4 && len(r.Items) != 0 {
++			t.Fatal("beyond-total clamped")
++		}
++	}
++	if !reflect.DeepEqual(seen, visible) {
++		t.Fatalf("lost, duplicated, sparse or unstable authorized pages: got %v want %v", seen, visible)
++	}
++}
++func TestRootWorkflowInboxPersonalReadOneSnapshot(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	r, e := (&applications.Application{Pool: f.runtime}).BeginPersonalRead(f.ctx, f.principal)
++	if e != nil {
++		t.Fatal(e)
++	}
++	defer r.Rollback(context.Background())
++	var iso, ro string
++	if e = r.QueryRow(f.ctx, "SHOW transaction_isolation").Scan(&iso); e != nil {
++		t.Fatal(e)
++	}
++	if e = r.QueryRow(f.ctx, "SHOW transaction_read_only").Scan(&ro); e != nil {
++		t.Fatal(e)
++	}
++	if iso != "repeatable read" || ro != "on" {
++		t.Fatal("not one read-only RR", iso, ro)
++	}
++	before, e := r.RecordContext(f.ctx, f.app, f.view)
++	if e != nil {
++		t.Fatal(e)
++	}
++	inboxSQL(t, f, "UPDATE applications.permission_groups SET enabled=false WHERE app_id=$1", f.app)
++	after, e := r.RecordContext(f.ctx, f.app, f.view)
++	if e != nil || !reflect.DeepEqual(before.Grants, after.Grants) || after.Actor.ID != f.actor {
++		t.Fatal("transaction mixed snapshots or actor", e)
++	}
++	if e = r.Commit(f.ctx); e != nil {
++		t.Fatal(e)
++	}
++	fresh := inboxSearch(t, f, inboxRequest())
++	if fresh.Total != 0 {
++		t.Fatal("next request ignored live revocation")
++	}
++}
++func TestRootWorkflowInboxClosingKeepsActiveTaskAndPendingNotSuccess(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	inboxSQL(t, f, "UPDATE applications.workflow_definitions SET state='closing' WHERE app_id=$1 AND id=$2", f.app, f.head.FlowID)
++	r := inboxSearch(t, f, inboxRequest())
++	if r.Total != 1 {
++		t.Fatal("closing removed active work")
++	}
++	f.accept(t, "agree", f.task.ID, "", 1, 1)
++	r = inboxSearch(t, f, inboxRequest())
++	if r.Total != 1 || r.Items[0].Sequence != 1 {
++		t.Fatal("accepted but unconfirmed command prematurely removed task")
++	}
++}
++func TestRootWorkflowInboxUnavailableDoesNotPublishPartialContext(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	g := inboxForActor(t, f.actor)
++	// A nonexistent physical relation is a real storage failure, never an empty page.
++	inboxSQL(t, g, "ALTER TABLE "+rootCaptureRelation(rootEvidenceStoreFixture{recordFixture: g.recordFixture})+" RENAME TO inbox_missing_"+strings.ReplaceAll(g.table, "-", ""))
++	r, e := f.service.SearchWorkflowInbox(f.ctx, f.principal, inboxRequest())
++	if e == nil || r.QueryVersion != "" || len(r.Items) != 0 || r.Total != 0 {
++		t.Fatal("partial success on storage failure", e)
++	}
++}
++
++func TestRootWorkflowInboxUsesFixedVersionAndRejectsCorruptRoster(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	graph := rootCatalogGraph(t, f.recordFixture, false)
++	graph.Nodes[1].Approval.AssigneeIDs = []string{f.other}
++	head := rootCatalogPut(t, f.recordFixture, f.head.FlowID, f.head.Revision, graph)
++	head = rootCatalogDeploy(t, f.recordFixture, head)
++	rootCatalogEnable(t, f.recordFixture, head)
++	r := inboxSearch(t, f, inboxRequest())
++	if r.Total != 1 || r.Items[0].DefinitionVersion != 1 || r.Items[0].NodeID != f.first {
++		t.Fatal("new publication replaced in-flight roster")
++	}
++	// Only isolated owner injects a corrupt immutable version; public/runtime
++	// writers cannot do this. A damaged accepted roster must fail closed.
++	inboxSQL(t, f, "UPDATE applications.workflow_versions SET graph_json='{}'::jsonb WHERE app_id=$1 AND flow_id=$2 AND version=1", f.app, f.head.FlowID)
++	got, e := f.service.SearchWorkflowInbox(f.ctx, f.principal, inboxRequest())
++	if !errors.Is(e, ErrUnavailable) || len(got.Items) != 0 || got.QueryVersion != "" {
++		t.Fatal("corrupt fixed version returned a partial queue", e)
++	}
++}
++func TestRootWorkflowInboxUnrelatedOtherUserAndBusinessValues(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	q := inboxRequest()
++	a := inboxSearch(t, f, q)
++	q.QueryVersion = a.QueryVersion
++	other := rootTaskSetup(t, false)
++	inboxSQL(t, other, "UPDATE applications.workflow_definitions SET name='Unrelated' WHERE app_id=$1", other.app)
++	relation := rootCaptureRelation(rootEvidenceStoreFixture{recordFixture: f.recordFixture})
++	column := rootCaptureColumn(f.public)
++	inboxSQL(t, f, "UPDATE "+relation+" SET "+column+"='unrelated business value' WHERE id=$1", f.ownRecord)
++	b := inboxSearch(t, f, q)
++	if b.QueryVersion != a.QueryVersion || !reflect.DeepEqual(b.Items, a.Items) || b.Total != a.Total {
++		t.Fatal("unrelated invisible projection forced refresh")
++	}
++}
++
++func TestRootWorkflowInboxNoReadDoesNotProbePrivateStorage(t *testing.T) {
++	f := rootTaskSetup(t, false)
++	inboxSQL(t, f, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.read')", f.app)
++	inboxSQL(t, f, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.read'", f.app)
++	relation := rootCaptureRelation(rootEvidenceStoreFixture{recordFixture: f.recordFixture})
++	inboxSQL(t, f, "ALTER TABLE "+relation+" RENAME TO private_unreadable_"+strings.ReplaceAll(f.table, "-", ""))
++	r, e := f.service.SearchWorkflowInbox(f.ctx, f.principal, inboxRequest())
++	if e != nil || r.Total != 0 || r.Items == nil || len(r.Items) != 0 {
++		t.Fatalf("no-read actor learned private storage state instead of empty authorized queue: %v", e)
++	}
++}
+diff --git a/services/bff/internal/apprecordservice/service.go b/services/bff/internal/apprecordservice/service.go
+index 579ff8a..75f8d22 100644
+--- a/services/bff/internal/apprecordservice/service.go
++++ b/services/bff/internal/apprecordservice/service.go
+@@ -25,6 +25,7 @@ type Service struct {
+ 	WorkflowBases          *querycontext.Store
+ 	WorkflowLifecycleBases *querycontext.Store
+ 	WorkflowReads          *querycontext.Store
++	WorkflowInbox          *querycontext.Store
+ 	WorkflowManualOptions  *querycontext.Store
+ 	Limits                 appschema.Limits
+ }
+@@ -57,7 +58,7 @@ func New(pool *pgxpool.Pool, client redis.UniversalClient, generation string) *S
+ 				b.Data >= a.Data && b.Dependency >= a.Dependency && b.Schema >= a.Schema && b.View >= a.View && b.Policy >= a.Policy && b.Source >= a.Source
+ 		},
+ 	}
+-	return &Service{Pool: pool, Queries: querycontext.NewStore(client, "applications", generation, policy), WorkflowBases: newWorkflowBasisStore(client, generation), WorkflowLifecycleBases: newWorkflowLifecycleStore(client, generation), WorkflowReads: newWorkflowReadStore(client, generation), WorkflowManualOptions: newManualOptionsStore(client, generation)}
++	return &Service{Pool: pool, Queries: querycontext.NewStore(client, "applications", generation, policy), WorkflowBases: newWorkflowBasisStore(client, generation), WorkflowLifecycleBases: newWorkflowLifecycleStore(client, generation), WorkflowReads: newWorkflowReadStore(client, generation), WorkflowInbox: newWorkflowInboxStore(client, generation), WorkflowManualOptions: newManualOptionsStore(client, generation)}
+ }
+ 
+ func closedJSON(raw json.RawMessage, out any) bool {
+diff --git a/services/bff/internal/apprecordservice/workflow_inbox.go b/services/bff/internal/apprecordservice/workflow_inbox.go
+new file mode 100644
+index 0000000..894c33c
+--- /dev/null
++++ b/services/bff/internal/apprecordservice/workflow_inbox.go
+@@ -0,0 +1,272 @@
++package apprecordservice
++
++import (
++	"context"
++	"crypto/sha256"
++	"encoding/hex"
++	"encoding/json"
++	"errors"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appaccess"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
++	"github.com/jackc/pgx/v5"
++	"github.com/redis/go-redis/v9"
++	"strings"
++	"time"
++)
++
++type WorkflowInboxRequest struct {
++	Page, PageSize int
++	QueryVersion   string
++}
++type WorkflowInboxItem struct {
++	ID                string `json:"id"`
++	AppID             string `json:"appId"`
++	ViewID            string `json:"viewId"`
++	RecordID          string `json:"recordId"`
++	InstanceID        string `json:"instanceId"`
++	FlowID            string `json:"flowId"`
++	NodeID            string `json:"nodeId"`
++	FlowName          string `json:"flowName"`
++	CreatedAt         string `json:"createdAt"`
++	DefinitionVersion int64  `json:"definitionVersion"`
++	ActivationEpoch   int64  `json:"activationEpoch"`
++	Sequence          int64  `json:"sequence"`
++}
++type WorkflowInboxResult struct {
++	Items        []WorkflowInboxItem `json:"items"`
++	Total        int64               `json:"total"`
++	Page         int                 `json:"page"`
++	PageSize     int                 `json:"pageSize"`
++	QueryVersion string              `json:"queryVersion"`
++}
++
++func (s *Service) SearchWorkflowInbox(ctx context.Context, p session.Principal, q WorkflowInboxRequest) (WorkflowInboxResult, error) {
++	empty := WorkflowInboxResult{}
++	if s == nil || s.Pool == nil || s.WorkflowInbox == nil {
++		return empty, ErrUnavailable
++	}
++	if !workflowID(p.UserID) {
++		return empty, session.ErrUnauthorized
++	}
++	if q.PageSize == 0 {
++		q.PageSize = 20
++	}
++	if _, _, err := appquery.PageWindow(int64(q.Page), int64(q.PageSize)); err != nil {
++		return empty, err
++	}
++	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
++	defer cancel()
++	binding := inboxBinding{ActorID: p.UserID}
++	raw, _ := json.Marshal(binding)
++	strategy := &inboxStrategy{service: s, principal: p, binding: binding, page: querycontext.Page{Number: q.Page, Size: q.PageSize}}
++	r, err := querycontext.Execute(ctx, s.WorkflowInbox, p.SessionRef, q.QueryVersion, raw, strategy.page, strategy)
++	if err != nil {
++		return empty, err
++	}
++	return WorkflowInboxResult{Items: r.Items, Total: r.Total, Page: q.Page, PageSize: q.PageSize, QueryVersion: r.Version}, nil
++}
++
++type inboxBinding struct {
++	ActorID string `json:"actorId"`
++}
++type inboxRevision struct {
++	Fingerprint string `json:"fingerprint"`
++}
++
++func validInboxRevision(raw json.RawMessage) (inboxRevision, bool) {
++	var r inboxRevision
++	ok := workflowClosedMetadata(raw, 128, 1, &r) && workflowReadFingerprintValid(r.Fingerprint)
++	return r, ok
++}
++func newWorkflowInboxStore(client redis.UniversalClient, generation string) *querycontext.Store {
++	return querycontext.NewStore(client, "workflow-inbox", generation, querycontext.Policy{
++		Validate: func(m querycontext.Metadata) bool {
++			var b inboxBinding
++			r, ok := validInboxRevision(m.Revision)
++			return ok && workflowClosedMetadata(m.Criteria, 128, 1, &b) && workflowID(b.ActorID) && m.View == "workflow-inbox:"+b.ActorID && m.Fingerprint == r.Fingerprint
++		},
++		Forward: func(resource string, old, next json.RawMessage) bool {
++			_, a := validInboxRevision(old)
++			_, b := validInboxRevision(next)
++			return a && b && strings.HasPrefix(resource, "workflow-inbox:") && workflowID(strings.TrimPrefix(resource, "workflow-inbox:"))
++		},
++	})
++}
++
++type inboxStrategy struct {
++	service     *Service
++	principal   session.Principal
++	binding     inboxBinding
++	read        *applications.PersonalRead
++	page        querycontext.Page
++	observation querycontext.Observation[[]WorkflowInboxItem]
++}
++
++func (s *inboxStrategy) Resource() string { return "workflow-inbox:" + s.binding.ActorID }
++func (s *inboxStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
++	r, e := (&applications.Application{Pool: s.service.Pool}).BeginPersonalRead(ctx, s.principal)
++	if e != nil {
++		return nil, e
++	}
++	s.read = r
++	return r.Tx, nil
++}
++func (s *inboxStrategy) validCriteria(raw json.RawMessage) bool {
++	var b inboxBinding
++	return workflowClosedMetadata(raw, 128, 1, &b) && b == s.binding
++}
++func (s *inboxStrategy) Prepare(_ context.Context, _ pgx.Tx, saved, incoming json.RawMessage) (json.RawMessage, json.RawMessage, error) {
++	if len(saved) > 0 && !s.validCriteria(saved) {
++		return nil, nil, querycontext.ErrExpired
++	}
++	if !s.validCriteria(incoming) {
++		return nil, nil, querycontext.ErrInvalid
++	}
++	return saved, incoming, nil
++}
++
++type inboxCandidate struct {
++	item    WorkflowInboxItem
++	tableID string
++	created time.Time
++}
++
++func (s *inboxStrategy) Revisions(ctx context.Context, tx pgx.Tx) (json.RawMessage, error) {
++	_, offset, err := appquery.PageWindow(int64(s.page.Number), int64(s.page.Size))
++	if err != nil {
++		return nil, err
++	}
++	h := sha256.New()
++	_, _ = h.Write([]byte("weaveos/personal-inbox/v1\x00"))
++	_, _ = h.Write([]byte(s.binding.ActorID))
++	s.observation = querycontext.Observation[[]WorkflowInboxItem]{Items: make([]WorkflowInboxItem, 0, s.page.Size)}
++	var beforeID string
++	var beforeTime time.Time
++	for {
++		q := `SELECT t.id::text,t.app_id::text,i.view_id::text,i.table_id::text,i.record_id::text,
++ i.id::text,i.flow_id::text,t.node_id::text,t.created_at,i.definition_version,t.activation_epoch,i.sequence
++ FROM applications.workflow_tasks t JOIN applications.workflow_instances i ON i.app_id=t.app_id AND i.id=t.instance_id
++ WHERE t.assignee_id=$1::uuid AND t.closed_command_id IS NULL AND i.state='active'`
++		args := []any{s.binding.ActorID}
++		if beforeID != "" {
++			q += " AND (t.created_at,t.id)<($2::timestamptz,$3::uuid)"
++			args = append(args, beforeTime, beforeID)
++		}
++		q += " ORDER BY t.created_at DESC,t.id DESC LIMIT 64"
++		rows, e := tx.Query(ctx, q, args...)
++		if e != nil {
++			return nil, e
++		}
++		batch := make([]inboxCandidate, 0, 64)
++		for rows.Next() {
++			var c inboxCandidate
++			v := &c.item
++			if e = rows.Scan(&v.ID, &v.AppID, &v.ViewID, &c.tableID, &v.RecordID, &v.InstanceID, &v.FlowID, &v.NodeID, &c.created, &v.DefinitionVersion, &v.ActivationEpoch, &v.Sequence); e != nil {
++				rows.Close()
++				return nil, e
++			}
++			v.CreatedAt = c.created.UTC().Format(time.RFC3339Nano)
++			batch = append(batch, c)
++		}
++		e = rows.Err()
++		rows.Close()
++		if e != nil {
++			return nil, e
++		}
++		for _, c := range batch {
++			visible, e := s.authorized(ctx, tx, &c)
++			if e != nil {
++				return nil, e
++			}
++			if !visible {
++				continue
++			}
++			if s.observation.Total >= workflowMaxCounter {
++				return nil, ErrUnavailable
++			}
++			raw, e := json.Marshal(c.item)
++			if e != nil {
++				return nil, e
++			}
++			_, _ = h.Write(raw)
++			_, _ = h.Write([]byte{0})
++			n := s.observation.Total
++			s.observation.Total++
++			if n >= offset && int64(len(s.observation.Items)) < int64(s.page.Size) {
++				s.observation.Items = append(s.observation.Items, c.item)
++			}
++		}
++		if len(batch) < 64 {
++			break
++		}
++		last := batch[len(batch)-1]
++		beforeID, beforeTime = last.item.ID, last.created
++	}
++	s.observation.Fingerprint = hex.EncodeToString(h.Sum(nil))
++	return json.Marshal(inboxRevision{Fingerprint: s.observation.Fingerprint})
++}
++func (s *inboxStrategy) authorized(ctx context.Context, tx pgx.Tx, c *inboxCandidate) (bool, error) {
++	v := &c.item
++	facts, err := s.read.RecordContext(ctx, v.AppID, v.ViewID)
++	if errors.Is(err, applications.ErrDenied) || errors.Is(err, applications.ErrMissing) {
++		return false, nil
++	}
++	if err != nil {
++		return false, err
++	}
++	policy, menu := policyFor(facts)
++	if !menu || policy.VisibleScope() == appaccess.None {
++		return false, nil
++	}
++	if facts.Actor.ID != s.binding.ActorID || facts.TableID != c.tableID || !facts.SchemaReady {
++		return false, ErrUnavailable
++	}
++	_, ids, err := fieldsInContext(facts)
++	if err != nil {
++		return false, err
++	}
++	relation := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(c.tableID, "-", "")}.Sanitize()
++	var creator string
++	err = tx.QueryRow(ctx, "SELECT created_by::text FROM "+relation+" WHERE id=$1::uuid", v.RecordID).Scan(&creator)
++	if errors.Is(err, pgx.ErrNoRows) {
++		return false, nil
++	}
++	if err != nil {
++		return false, err
++	}
++	if len(policy.ReadFields(creator, ids)) == 0 {
++		return false, nil
++	}
++	if !workflowID(creator) || !workflowID(v.ID) || !workflowID(v.NodeID) || !workflowPositive(v.DefinitionVersion) || !workflowPositive(v.ActivationEpoch) || v.Sequence < 0 || v.Sequence > workflowMaxCounter {
++		return false, ErrUnavailable
++	}
++	var graph []byte
++	err = tx.QueryRow(ctx, `SELECT d.name,v.graph_json FROM applications.workflow_definitions d
++ JOIN applications.workflow_versions v ON v.app_id=d.app_id AND v.flow_id=d.id
++ WHERE d.app_id=$1 AND d.id=$2 AND v.version=$3`, v.AppID, v.FlowID, v.DefinitionVersion).Scan(&v.FlowName, &graph)
++	if err != nil {
++		return false, ErrUnavailable
++	}
++	if !workflowApprovalRoster(graph, v.NodeID, s.binding.ActorID) {
++		return false, ErrUnavailable
++	}
++	return true, nil
++}
++func (s *inboxStrategy) Page(_ context.Context, _ pgx.Tx, raw json.RawMessage, page querycontext.Page) ([]WorkflowInboxItem, error) {
++	if !s.validCriteria(raw) || page != s.page {
++		return nil, querycontext.ErrInvalid
++	}
++	return s.observation.Items, nil
++}
++func (s *inboxStrategy) Observe(ctx context.Context, tx pgx.Tx, raw json.RawMessage, page querycontext.Page) (querycontext.Observation[[]WorkflowInboxItem], error) {
++	items, err := s.Page(ctx, tx, raw, page)
++	if err != nil {
++		return querycontext.Observation[[]WorkflowInboxItem]{}, err
++	}
++	r := s.observation
++	r.Items = items
++	return r, nil
++}
+diff --git a/services/bff/internal/appstructure/record_http_decode.go b/services/bff/internal/appstructure/record_http_decode.go
+index 64d99e9..05ec6ed 100644
+--- a/services/bff/internal/appstructure/record_http_decode.go
++++ b/services/bff/internal/appstructure/record_http_decode.go
+@@ -17,7 +17,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
+ 	switch kind {
+ 	case "workflow.manual.start":
+ 		required = []string{"operationId", "flowId", "expectedWorkflowRevision", "expectedSchemaVersion", "expectedRecordVersion"}
+-	case "workflow.instances.search", "workflow.manual.options.search":
++	case "workflow.instances.search", "workflow.manual.options.search", "workflow.inbox.search":
+ 		required = []string{"page"}
+ 		optional = []string{"pageSize", "queryVersion"}
+ 	case "workflow.lifecycle.action":
+@@ -53,7 +53,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
+ 	if kind == "record.search" {
+ 		limit = 64 << 10
+ 	}
+-	if kind == "workflow.manual.start" || kind == "workflow.task.action" || kind == "workflow.lifecycle.action" || kind == "workflow.instances.search" || kind == "workflow.manual.options.search" {
++	if kind == "workflow.manual.start" || kind == "workflow.task.action" || kind == "workflow.lifecycle.action" || kind == "workflow.instances.search" || kind == "workflow.manual.options.search" || kind == "workflow.inbox.search" {
+ 		limit = 4096
+ 	}
+ 	raw, e := io.ReadAll(http.MaxBytesReader(w, r.Body, limit))
+diff --git a/services/bff/internal/auth/service.go b/services/bff/internal/auth/service.go
+index 58fefdc..afe0a48 100644
+--- a/services/bff/internal/auth/service.go
++++ b/services/bff/internal/auth/service.go
+@@ -27,7 +27,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		s.Personnel.ServeHTTP(w, r)
+ 		return
+ 	}
+-	if s.Applications != nil && (r.URL.Path == "/api/v1/applications" || strings.HasPrefix(r.URL.Path, "/api/v1/applications/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-operations/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/")) {
++	if s.Applications != nil && (r.URL.Path == "/api/v1/workflow-tasks/search" || r.URL.Path == "/api/v1/applications" || strings.HasPrefix(r.URL.Path, "/api/v1/applications/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-operations/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/")) {
+ 		s.Applications.ServeHTTP(w, r)
+ 		return
+ 	}
