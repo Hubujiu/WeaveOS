@@ -7,7 +7,7 @@ import sys
 from rpc_ci_gate import GateError, _go
 
 PACKAGE = "github.com/Hubujiu/WeaveOS/services/bff/cmd/bff"
-CASES = {"TestRootFormalRuntimePublishAndApprove", "TestRootFormalRuntimeLostReplyBffRestart", "TestRootFormalRuntimeEngineRestart", "TestRootFormalRuntimeNodeSaveThenApproveLatest", "TestRootFormalRuntimeReturnThenWithdrawRecovery", "TestRootFormalRuntimeCloseWaitsForConfirmedProjection"}
+CASES = {"TestRootFormalRuntimePublishAndApprove", "TestRootFormalRuntimeLostReplyBffRestart", "TestRootFormalRuntimeEngineRestart", "TestRootFormalRuntimeNodeSaveThenApproveLatest", "TestRootFormalRuntimeReturnThenWithdrawRecovery", "TestRootFormalRuntimeCloseWaitsForConfirmedProjection", "TestRootFormalRuntimeChildFailureDiagnosticsSurviveCleanup"}
 EXPECTED = CASES | {"TestRootFormalRuntimePublishAndApprove/agree", "TestRootFormalRuntimePublishAndApprove/reject"}
 
 def validate(path):
