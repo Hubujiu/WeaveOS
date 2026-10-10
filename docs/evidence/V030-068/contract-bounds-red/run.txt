@@ -1,0 +1,52 @@
+✖ deletion POST and original status GET retain current identity and safe statuses (4.807629ms)
+✔ deletion status is exact seven-field DTO without executable or internal state (0.513199ms)
+✖ deletion request constrains nonzero canonical identity and safe positive revision (0.4953ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 1
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 145.308588
+
+✖ failing tests:
+
+test at tests/foundation/root-workflow-deletion-contract.test.mjs:7:1
+✖ deletion POST and original status GET retain current identity and safe statuses (4.807629ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '#/components/schemas/WorkflowLifecycle'
+  - '#/components/schemas/WorkflowDeletionRequest'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-068/tests/foundation/root-workflow-deletion-contract.test.mjs:20:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '#/components/schemas/WorkflowLifecycle',
+    expected: '#/components/schemas/WorkflowDeletionRequest',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/root-workflow-deletion-contract.test.mjs:32:1
+✖ deletion request constrains nonzero canonical identity and safe positive revision (0.4953ms)
+  AssertionError [ERR_ASSERTION]: dedicated bounded deletion request missing
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-068/tests/foundation/root-workflow-deletion-contract.test.mjs:33:64)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

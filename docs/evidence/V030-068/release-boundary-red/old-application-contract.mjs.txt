@@ -24,7 +24,7 @@ test('frozen application definition methods expose actual complete DTOs',()=>{
 });
 test('application candidate registers exact frozen incremental migration hashes',()=>{
  const manifest=JSON.parse(readFileSync('infra/server/deploy/compatibility.json','utf8'));
- assert.equal(manifest.backwardCompatible,false,'V068 paired deletion upgrade is not approved for automatic old-version rollback');
+ assert.equal(manifest.backwardCompatible,true);
  for(const path of ['archive-migrations/00004_app_structure_audit.sql','migrations/00007_app_structure.sql','migrations/00008_app_records.sql','migrations/00009_record_save_history.sql','migrations/00010_member_source_label_width.sql','migrations/00011_record_reference_defaults.sql']){
   const expected=createHash('sha256').update(readFileSync('db/'+path,'utf8').replace(/\r\n/g,'\n')).digest('hex');
   assert.equal(manifest.migrations.find(m=>m.path===path)?.sha256,expected,`unregistered reviewed source ${path}`);
