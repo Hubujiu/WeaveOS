@@ -1,0 +1,377 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< org.weaveos:workflow-engine >---------------------
+[INFO] Building WeaveOS controlled workflow engine core 0.3.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ workflow-engine ---
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ workflow-engine ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ workflow-engine ---
+[INFO] Copying 6 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ workflow-engine ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 28 source files with javac [debug parameters release 17] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ workflow-engine ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running org.weaveos.workflow.RootNativeHistoryCostTest
+NATIVE_HISTORY_COST rounds=0 samples=100 nativeActivityRows=10 oldVisitRows=2 oldJdbcMedianNs=6698181 oldJdbcP95Ns=9242374 nativeApiMedianNs=8241813 nativeApiP95Ns=11242969 nativeExistingRelationBytes=98304 duplicateRelationBytes=40960 heapUsedBefore=59864240 heapUsedAfter=29928328 gcDelta=2
+NATIVE_HISTORY_PLAN rounds=0 [   {     "Plan": {       "Node Type": "Limit",       "Parallel Aware": false,       "Async Capable": false,       "Startup Cost": 0.14,       "Total Cost": 8.16,       "Plan Rows": 1,       "Plan Width": 4520,       "Actual Startup Time": 0.010,       "Actual Total Time": 0.010,       "Actual Rows": 1.00,       "Actual Loops": 1,       "Disabled": false,       "Shared Hit Blocks": 2,       "Shared Read Blocks": 0,       "Shared Dirtied Blocks": 0,       "Shared Written Blocks": 0,       "Local Hit Blocks": 0,       "Local Read Blocks": 0,       "Local Dirtied Blocks": 0,       "Local Written Blocks": 0,       "Temp Read Blocks": 0,       "Temp Written Blocks": 0,       "Plans": [         {           "Node Type": "Index Scan",           "Parent Relationship": "Outer",           "Parallel Aware": false,           "Async Capable": false,           "Scan Direction": "Forward",           "Index Name": "act_idx_hi_act_inst_procinst",           "Relation Name": "act_hi_actinst",           "Alias": "res",           "Startup Cost": 0.14,           "Total Cost": 8.16,           "Plan Rows": 1,           "Plan Width": 4520,           "Actual Startup Time": 0.009,           "Actual Total Time": 0.009,           "Actual Rows": 1.00,           "Actual Loops": 1,           "Disabled": false,           "Index Cond": "(((proc_inst_id_)::text = '4'::text) AND ((act_id_)::text = 'n_00000002000040008000000000000002'::text))",           "Rows Removed by Index Recheck": 0,           "Filter": "((act_type_)::text = 'userTask'::text)",           "Rows Removed by Filter": 0,           "Index Searches": 1,           "Shared Hit Blocks": 2,           "Shared Read Blocks": 0,           "Shared Dirtied Blocks": 0,           "Shared Written Blocks": 0,           "Local Hit Blocks": 0,           "Local Read Blocks": 0,           "Local Dirtied Blocks": 0,           "Local Written Blocks": 0,           "Temp Read Blocks": 0,           "Temp Written Blocks": 0         }       ]     },     "Planning": {       "Shared Hit Blocks": 152,       "Shared Read Blocks": 0,       "Shared Dirtied Blocks": 0,       "Shared Written Blocks": 0,       "Local Hit Blocks": 0,       "Local Read Blocks": 0,       "Local Dirtied Blocks": 0,       "Local Written Blocks": 0,       "Temp Read Blocks": 0,       "Temp Written Blocks": 0     },     "Planning Time": 0.381,     "Triggers": [     ],     "Execution Time": 0.028   } ]
+OLD_VISIT_PLAN rounds=0 [   {     "Plan": {       "Node Type": "Aggregate",       "Strategy": "Plain",       "Partial Mode": "Simple",       "Parallel Aware": false,       "Async Capable": false,       "Startup Cost": 8.17,       "Total Cost": 8.18,       "Plan Rows": 1,       "Plan Width": 8,       "Actual Startup Time": 0.012,       "Actual Total Time": 0.013,       "Actual Rows": 1.00,       "Actual Loops": 1,       "Disabled": false,       "Shared Hit Blocks": 2,       "Shared Read Blocks": 0,       "Shared Dirtied Blocks": 0,       "Shared Written Blocks": 0,       "Local Hit Blocks": 0,       "Local Read Blocks": 0,       "Local Dirtied Blocks": 0,       "Local Written Blocks": 0,       "Temp Read Blocks": 0,       "Temp Written Blocks": 0,       "Plans": [         {           "Node Type": "Index Only Scan",           "Parent Relationship": "Outer",           "Parallel Aware": false,           "Async Capable": false,           "Scan Direction": "Forward",           "Index Name": "wf_execution_visits_pkey",           "Relation Name": "wf_execution_visits",           "Alias": "wf_execution_visits",           "Startup Cost": 0.15,           "Total Cost": 8.17,           "Plan Rows": 1,           "Plan Width": 0,           "Actual Startup Time": 0.008,           "Actual Total Time": 0.009,           "Actual Rows": 1.00,           "Actual Loops": 1,           "Disabled": false,           "Index Cond": "((instance_id = 'fff79df0-af7a-4f31-a481-173a2ab6a341'::uuid) AND (node_id = '00000002-0000-4000-8000-000000000002'::uuid))",           "Rows Removed by Index Recheck": 0,           "Heap Fetches": 1,           "Index Searches": 1,           "Shared Hit Blocks": 2,           "Shared Read Blocks": 0,           "Shared Dirtied Blocks": 0,           "Shared Written Blocks": 0,           "Local Hit Blocks": 0,           "Local Read Blocks": 0,           "Local Dirtied Blocks": 0,           "Local Written Blocks": 0,           "Temp Read Blocks": 0,           "Temp Written Blocks": 0         }       ]     },     "Planning": {       "Shared Hit Blocks": 98,       "Shared Read Blocks": 0,       "Shared Dirtied Blocks": 0,       "Shared Written Blocks": 0,       "Local Hit Blocks": 0,       "Local Read Blocks": 0,       "Local Dirtied Blocks": 0,       "Local Written Blocks": 0,       "Temp Read Blocks": 0,       "Temp Written Blocks": 0     },     "Planning Time": 0.326,     "Triggers": [     ],     "Execution Time": 0.040   } ]
+NATIVE_HISTORY_COST rounds=100 samples=100 nativeActivityRows=810 oldVisitRows=202 oldJdbcMedianNs=5378513 oldJdbcP95Ns=7905918 nativeApiMedianNs=7887909 nativeApiP95Ns=17966578 nativeExistingRelationBytes=516096 duplicateRelationBytes=98304 heapUsedBefore=61747928 heapUsedAfter=78563208 gcDelta=1
+NATIVE_HISTORY_PLAN rounds=100 [   {     "Plan": {       "Node Type": "Limit",       "Parallel Aware": false,       "Async Capable": false,       "Startup Cost": 0.14,       "Total Cost": 8.16,       "Plan Rows": 1,       "Plan Width": 4520,       "Actual Startup Time": 0.015,       "Actual Total Time": 0.016,       "Actual Rows": 1.00,       "Actual Loops": 1,       "Disabled": false,       "Shared Hit Blocks": 2,       "Shared Read Blocks": 0,       "Shared Dirtied Blocks": 0,       "Shared Written Blocks": 0,       "Local Hit Blocks": 0,       "Local Read Blocks": 0,       "Local Dirtied Blocks": 0,       "Local Written Blocks": 0,       "Temp Read Blocks": 0,       "Temp Written Blocks": 0,       "Plans": [         {           "Node Type": "Index Scan",           "Parent Relationship": "Outer",           "Parallel Aware": false,           "Async Capable": false,           "Scan Direction": "Forward",           "Index Name": "act_idx_hi_act_inst_procinst",           "Relation Name": "act_hi_actinst",           "Alias": "res",           "Startup Cost": 0.14,           "Total Cost": 8.16,           "Plan Rows": 1,           "Plan Width": 4520,           "Actual Startup Time": 0.014,           "Actual Total Time": 0.014,           "Actual Rows": 1.00,           "Actual Loops": 1,           "Disabled": false,           "Index Cond": "(((proc_inst_id_)::text = '4'::text) AND ((act_id_)::text = 'n_00000002000040008000000000000002'::text))",           "Rows Removed by Index Recheck": 0,           "Filter": "((act_type_)::text = 'userTask'::text)",           "Rows Removed by Filter": 0,           "Index Searches": 1,           "Shared Hit Blocks": 2,           "Shared Read Blocks": 0,           "Shared Dirtied Blocks": 0,           "Shared Written Blocks": 0,           "Local Hit Blocks": 0,           "Local Read Blocks": 0,           "Local Dirtied Blocks": 0,           "Local Written Blocks": 0,           "Temp Read Blocks": 0,           "Temp Written Blocks": 0         }       ]     },     "Planning": {       "Shared Hit Blocks": 152,       "Shared Read Blocks": 0,       "Shared Dirtied Blocks": 0,       "Shared Written Blocks": 0,       "Local Hit Blocks": 0,       "Local Read Blocks": 0,       "Local Dirtied Blocks": 0,       "Local Written Blocks": 0,       "Temp Read Blocks": 0,       "Temp Written Blocks": 0     },     "Planning Time": 0.355,     "Triggers": [     ],     "Execution Time": 0.036   } ]
+OLD_VISIT_PLAN rounds=100 [   {     "Plan": {       "Node Type": "Aggregate",       "Strategy": "Plain",       "Partial Mode": "Simple",       "Parallel Aware": false,       "Async Capable": false,       "Startup Cost": 8.30,       "Total Cost": 8.31,       "Plan Rows": 1,       "Plan Width": 8,       "Actual Startup Time": 0.053,       "Actual Total Time": 0.053,       "Actual Rows": 1.00,       "Actual Loops": 1,       "Disabled": false,       "Shared Hit Blocks": 43,       "Shared Read Blocks": 0,       "Shared Dirtied Blocks": 0,       "Shared Written Blocks": 0,       "Local Hit Blocks": 0,       "Local Read Blocks": 0,       "Local Dirtied Blocks": 0,       "Local Written Blocks": 0,       "Temp Read Blocks": 0,       "Temp Written Blocks": 0,       "Plans": [         {           "Node Type": "Index Only Scan",           "Parent Relationship": "Outer",           "Parallel Aware": false,           "Async Capable": false,           "Scan Direction": "Forward",           "Index Name": "wf_execution_visits_pkey",           "Relation Name": "wf_execution_visits",           "Alias": "wf_execution_visits",           "Startup Cost": 0.28,           "Total Cost": 8.30,           "Plan Rows": 1,           "Plan Width": 0,           "Actual Startup Time": 0.020,           "Actual Total Time": 0.044,           "Actual Rows": 101.00,           "Actual Loops": 1,           "Disabled": false,           "Index Cond": "((instance_id = 'fff79df0-af7a-4f31-a481-173a2ab6a341'::uuid) AND (node_id = '00000002-0000-4000-8000-000000000002'::uuid))",           "Rows Removed by Index Recheck": 0,           "Heap Fetches": 101,           "Index Searches": 1,           "Shared Hit Blocks": 43,           "Shared Read Blocks": 0,           "Shared Dirtied Blocks": 0,           "Shared Written Blocks": 0,           "Local Hit Blocks": 0,           "Local Read Blocks": 0,           "Local Dirtied Blocks": 0,           "Local Written Blocks": 0,           "Temp Read Blocks": 0,           "Temp Written Blocks": 0         }       ]     },     "Planning": {       "Shared Hit Blocks": 98,       "Shared Read Blocks": 0,       "Shared Dirtied Blocks": 0,       "Shared Written Blocks": 0,       "Local Hit Blocks": 0,       "Local Read Blocks": 0,       "Local Dirtied Blocks": 0,       "Local Written Blocks": 0,       "Temp Read Blocks": 0,       "Temp Written Blocks": 0     },     "Planning Time": 0.350,     "Triggers": [     ],     "Execution Time": 0.083   } ]
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 25.18 s -- in org.weaveos.workflow.RootNativeHistoryCostTest
+[INFO] Running org.weaveos.workflow.RootDeploymentRegistryTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.48 s -- in org.weaveos.workflow.RootDeploymentRegistryTest
+[INFO] Running org.weaveos.workflow.RootStartupCatalogReferenceTest
+V041_CATALOG_META:rows=1251;bytes=142980;sha256=3a160a0c590cbe09c6f8ae4c46316dc8c3deaabc53f2548bacaf184f8bdb10e8
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.562 s -- in org.weaveos.workflow.RootStartupCatalogReferenceTest
+[INFO] Running org.weaveos.workflow.RootDeploymentGrpcIT
+2026-10-09 11:36:38,494 WARN  io.grpc.netty.shaded.io.netty.util.internal.MacAddressUtil event=runtime_library_log
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.740 s -- in org.weaveos.workflow.RootDeploymentGrpcIT
+[INFO] Running org.weaveos.workflow.RootFlowDeletionGrpcIT
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.804 s -- in org.weaveos.workflow.RootFlowDeletionGrpcIT
+[INFO] Running org.weaveos.workflow.RootExplicitSchemaTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.588 s -- in org.weaveos.workflow.RootExplicitSchemaTest
+[INFO] Running org.weaveos.workflow.RootFlowDeletionCatalogReferenceTest
+V041_CATALOG_META:rows=1251;bytes=142980;sha256=3a160a0c590cbe09c6f8ae4c46316dc8c3deaabc53f2548bacaf184f8bdb10e8
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.563 s -- in org.weaveos.workflow.RootFlowDeletionCatalogReferenceTest
+[INFO] Running org.weaveos.workflow.RootExecutionGrpcIT
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.640 s -- in org.weaveos.workflow.RootExecutionGrpcIT
+[INFO] Running org.weaveos.workflow.RootExecutionRegistryTest
+[INFO] Tests run: 36, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 27.25 s -- in org.weaveos.workflow.RootExecutionRegistryTest
+[INFO] Running org.weaveos.workflow.RootServiceTokenInterceptorTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.057 s -- in org.weaveos.workflow.RootServiceTokenInterceptorTest
+[INFO] Running org.weaveos.workflow.RootNativeDeletionContractTest
+2026-10-09 11:37:29,371 ERROR org.flowable.common.engine.impl.interceptor.CommandContext event=runtime_library_log
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.037 s -- in org.weaveos.workflow.RootNativeDeletionContractTest
+[INFO] Running org.weaveos.workflow.RootReturnCompatibilityTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.518 s -- in org.weaveos.workflow.RootReturnCompatibilityTest
+[INFO] Running org.weaveos.workflow.RootCommandEnvelopeTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in org.weaveos.workflow.RootCommandEnvelopeTest
+[INFO] Running org.weaveos.workflow.RootRuntimeLoggingTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.852 s -- in org.weaveos.workflow.RootRuntimeLoggingTest
+[INFO] Running org.weaveos.workflow.RootNativeVersioningTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.237 s -- in org.weaveos.workflow.RootNativeVersioningTest
+[INFO] Running org.weaveos.workflow.RootFlowDeletionRegistryTest
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.01 s -- in org.weaveos.workflow.RootFlowDeletionRegistryTest
+[INFO] Running org.weaveos.workflow.RootNativeHistoryTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.479 s -- in org.weaveos.workflow.RootNativeHistoryTest
+[INFO] Running org.weaveos.workflow.RootWorkflowMainProcessTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.898 s -- in org.weaveos.workflow.RootWorkflowMainProcessTest
+[INFO] Running org.weaveos.workflow.RootRuntimeDataSourceTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.210 s -- in org.weaveos.workflow.RootRuntimeDataSourceTest
+[INFO] Running org.weaveos.workflow.RootFlowDeletionRuntimeSchemaTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.293 s -- in org.weaveos.workflow.RootFlowDeletionRuntimeSchemaTest
+[INFO] Running org.weaveos.workflow.RootWorkflowRuntimeTest
+2026-10-09 11:38:19,765 WARN  com.zaxxer.hikari.pool.ProxyConnection event=runtime_library_log
+2026-10-09 11:38:23,881 WARN  com.zaxxer.hikari.pool.ProxyConnection event=runtime_library_log
+2026-10-09 11:38:23,883 ERROR org.springframework.transaction.support.TransactionTemplate event=runtime_library_log
+Oct 09, 2026 11:38:25 AM io.grpc.internal.SerializingExecutor run
+SEVERE: Exception while executing runnable io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup@1168b266
+io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED: workflow runtime capacity exhausted
+	at io.grpc.Status.asRuntimeException(Status.java:524)
+	at org.weaveos.workflow.WorkflowRuntime$Dispatcher.getExecutor(WorkflowRuntime.java:243)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.maySwitchExecutor(ServerImpl.java:589)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.runInternal(ServerImpl.java:562)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.runInContext(ServerImpl.java:535)
+	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
+	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
+	at io.grpc.internal.SerializingExecutor.schedule(SerializingExecutor.java:102)
+	at io.grpc.internal.SerializingExecutor.execute(SerializingExecutor.java:95)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl.streamCreatedInternal(ServerImpl.java:635)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl.streamCreated(ServerImpl.java:469)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler.onHeadersRead(NettyServerHandler.java:548)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler.access$1100(NettyServerHandler.java:118)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler$FrameListener.onHeadersRead(NettyServerHandler.java:975)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder$FrameReadListener.onHeadersRead(DefaultHttp2ConnectionDecoder.java:504)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder$FrameReadListener.onHeadersRead(DefaultHttp2ConnectionDecoder.java:415)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2InboundFrameLogger$1.onHeadersRead(Http2InboundFrameLogger.java:54)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader$2.processFragment(DefaultHttp2FrameReader.java:490)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.readHeadersFrame(DefaultHttp2FrameReader.java:498)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.processPayloadState(DefaultHttp2FrameReader.java:257)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.readFrame(DefaultHttp2FrameReader.java:174)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2InboundFrameLogger.readFrame(Http2InboundFrameLogger.java:39)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder.decodeFrame(DefaultHttp2ConnectionDecoder.java:221)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler$FrameDecoder.decode(Http2ConnectionHandler.java:413)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler.decode(Http2ConnectionHandler.java:473)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:545)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:484)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:296)
+	at io.grpc.netty.shaded.io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	at io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1429)
+	at io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:918)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.AbstractEpollStreamChannel$EpollStreamUnsafe.epollInReady(AbstractEpollStreamChannel.java:804)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.handle(AbstractEpollChannel.java:487)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler$DefaultEpollIoRegistration.handle(EpollIoHandler.java:349)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler.processReady(EpollIoHandler.java:548)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler.run(EpollIoHandler.java:491)
+	at io.grpc.netty.shaded.io.netty.channel.SingleThreadIoEventLoop.runIo(SingleThreadIoEventLoop.java:225)
+	at io.grpc.netty.shaded.io.netty.channel.SingleThreadIoEventLoop.run(SingleThreadIoEventLoop.java:196)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:1204)
+	at io.grpc.netty.shaded.io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+
+Oct 09, 2026 11:38:25 AM io.grpc.internal.SerializingExecutor run
+SEVERE: Exception while executing runnable io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup@52525d4f
+io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED: workflow runtime capacity exhausted
+	at io.grpc.Status.asRuntimeException(Status.java:524)
+	at org.weaveos.workflow.WorkflowRuntime$Dispatcher.getExecutor(WorkflowRuntime.java:243)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.maySwitchExecutor(ServerImpl.java:589)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.runInternal(ServerImpl.java:562)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.runInContext(ServerImpl.java:535)
+	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
+	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
+	at io.grpc.internal.SerializingExecutor.schedule(SerializingExecutor.java:102)
+	at io.grpc.internal.SerializingExecutor.execute(SerializingExecutor.java:95)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl.streamCreatedInternal(ServerImpl.java:635)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl.streamCreated(ServerImpl.java:469)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler.onHeadersRead(NettyServerHandler.java:548)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler.access$1100(NettyServerHandler.java:118)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler$FrameListener.onHeadersRead(NettyServerHandler.java:975)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder$FrameReadListener.onHeadersRead(DefaultHttp2ConnectionDecoder.java:504)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder$FrameReadListener.onHeadersRead(DefaultHttp2ConnectionDecoder.java:415)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2InboundFrameLogger$1.onHeadersRead(Http2InboundFrameLogger.java:54)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader$2.processFragment(DefaultHttp2FrameReader.java:490)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.readHeadersFrame(DefaultHttp2FrameReader.java:498)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.processPayloadState(DefaultHttp2FrameReader.java:257)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.readFrame(DefaultHttp2FrameReader.java:174)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2InboundFrameLogger.readFrame(Http2InboundFrameLogger.java:39)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder.decodeFrame(DefaultHttp2ConnectionDecoder.java:221)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler$FrameDecoder.decode(Http2ConnectionHandler.java:413)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler.decode(Http2ConnectionHandler.java:473)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:545)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:484)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:296)
+	at io.grpc.netty.shaded.io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	at io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1429)
+	at io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:918)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.AbstractEpollStreamChannel$EpollStreamUnsafe.epollInReady(AbstractEpollStreamChannel.java:804)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.handle(AbstractEpollChannel.java:487)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler$DefaultEpollIoRegistration.handle(EpollIoHandler.java:349)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler.processReady(EpollIoHandler.java:548)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler.run(EpollIoHandler.java:491)
+	at io.grpc.netty.shaded.io.netty.channel.SingleThreadIoEventLoop.runIo(SingleThreadIoEventLoop.java:225)
+	at io.grpc.netty.shaded.io.netty.channel.SingleThreadIoEventLoop.run(SingleThreadIoEventLoop.java:196)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:1204)
+	at io.grpc.netty.shaded.io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+
+Oct 09, 2026 11:38:25 AM io.grpc.internal.SerializingExecutor run
+SEVERE: Exception while executing runnable io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup@764c297f
+io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED: workflow runtime capacity exhausted
+	at io.grpc.Status.asRuntimeException(Status.java:524)
+	at org.weaveos.workflow.WorkflowRuntime$Dispatcher.getExecutor(WorkflowRuntime.java:243)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.maySwitchExecutor(ServerImpl.java:589)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.runInternal(ServerImpl.java:562)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.runInContext(ServerImpl.java:535)
+	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
+	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
+	at io.grpc.internal.SerializingExecutor.schedule(SerializingExecutor.java:102)
+	at io.grpc.internal.SerializingExecutor.execute(SerializingExecutor.java:95)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl.streamCreatedInternal(ServerImpl.java:635)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl.streamCreated(ServerImpl.java:469)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler.onHeadersRead(NettyServerHandler.java:548)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler.access$1100(NettyServerHandler.java:118)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler$FrameListener.onHeadersRead(NettyServerHandler.java:975)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder$FrameReadListener.onHeadersRead(DefaultHttp2ConnectionDecoder.java:504)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder$FrameReadListener.onHeadersRead(DefaultHttp2ConnectionDecoder.java:415)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2InboundFrameLogger$1.onHeadersRead(Http2InboundFrameLogger.java:54)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader$2.processFragment(DefaultHttp2FrameReader.java:490)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.readHeadersFrame(DefaultHttp2FrameReader.java:498)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.processPayloadState(DefaultHttp2FrameReader.java:257)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.readFrame(DefaultHttp2FrameReader.java:174)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2InboundFrameLogger.readFrame(Http2InboundFrameLogger.java:39)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder.decodeFrame(DefaultHttp2ConnectionDecoder.java:221)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler$FrameDecoder.decode(Http2ConnectionHandler.java:413)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler.decode(Http2ConnectionHandler.java:473)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:545)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:484)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:296)
+	at io.grpc.netty.shaded.io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	at io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1429)
+	at io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:918)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.AbstractEpollStreamChannel$EpollStreamUnsafe.epollInReady(AbstractEpollStreamChannel.java:804)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.handle(AbstractEpollChannel.java:487)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler$DefaultEpollIoRegistration.handle(EpollIoHandler.java:349)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler.processReady(EpollIoHandler.java:548)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler.run(EpollIoHandler.java:491)
+	at io.grpc.netty.shaded.io.netty.channel.SingleThreadIoEventLoop.runIo(SingleThreadIoEventLoop.java:225)
+	at io.grpc.netty.shaded.io.netty.channel.SingleThreadIoEventLoop.run(SingleThreadIoEventLoop.java:196)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:1204)
+	at io.grpc.netty.shaded.io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+
+Oct 09, 2026 11:38:25 AM io.grpc.internal.SerializingExecutor run
+SEVERE: Exception while executing runnable io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup@6b14a85e
+io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED: workflow runtime capacity exhausted
+	at io.grpc.Status.asRuntimeException(Status.java:524)
+	at org.weaveos.workflow.WorkflowRuntime$Dispatcher.getExecutor(WorkflowRuntime.java:243)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.maySwitchExecutor(ServerImpl.java:589)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.runInternal(ServerImpl.java:562)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.runInContext(ServerImpl.java:535)
+	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
+	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
+	at io.grpc.internal.SerializingExecutor.schedule(SerializingExecutor.java:102)
+	at io.grpc.internal.SerializingExecutor.execute(SerializingExecutor.java:95)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl.streamCreatedInternal(ServerImpl.java:635)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl.streamCreated(ServerImpl.java:469)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler.onHeadersRead(NettyServerHandler.java:548)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler.access$1100(NettyServerHandler.java:118)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler$FrameListener.onHeadersRead(NettyServerHandler.java:975)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder$FrameReadListener.onHeadersRead(DefaultHttp2ConnectionDecoder.java:504)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder$FrameReadListener.onHeadersRead(DefaultHttp2ConnectionDecoder.java:415)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2InboundFrameLogger$1.onHeadersRead(Http2InboundFrameLogger.java:54)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader$2.processFragment(DefaultHttp2FrameReader.java:490)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.readHeadersFrame(DefaultHttp2FrameReader.java:498)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.processPayloadState(DefaultHttp2FrameReader.java:257)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.readFrame(DefaultHttp2FrameReader.java:174)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2InboundFrameLogger.readFrame(Http2InboundFrameLogger.java:39)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder.decodeFrame(DefaultHttp2ConnectionDecoder.java:221)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler$FrameDecoder.decode(Http2ConnectionHandler.java:413)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler.decode(Http2ConnectionHandler.java:473)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:545)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:484)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:296)
+	at io.grpc.netty.shaded.io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	at io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1429)
+	at io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:918)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.AbstractEpollStreamChannel$EpollStreamUnsafe.epollInReady(AbstractEpollStreamChannel.java:804)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.handle(AbstractEpollChannel.java:487)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler$DefaultEpollIoRegistration.handle(EpollIoHandler.java:349)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler.processReady(EpollIoHandler.java:548)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler.run(EpollIoHandler.java:491)
+	at io.grpc.netty.shaded.io.netty.channel.SingleThreadIoEventLoop.runIo(SingleThreadIoEventLoop.java:225)
+	at io.grpc.netty.shaded.io.netty.channel.SingleThreadIoEventLoop.run(SingleThreadIoEventLoop.java:196)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:1204)
+	at io.grpc.netty.shaded.io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+
+Oct 09, 2026 11:38:25 AM io.grpc.internal.SerializingExecutor run
+SEVERE: Exception while executing runnable io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup@6df47908
+io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED: workflow runtime capacity exhausted
+	at io.grpc.Status.asRuntimeException(Status.java:524)
+	at org.weaveos.workflow.WorkflowRuntime$Dispatcher.getExecutor(WorkflowRuntime.java:243)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.maySwitchExecutor(ServerImpl.java:589)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.runInternal(ServerImpl.java:562)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.runInContext(ServerImpl.java:535)
+	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
+	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
+	at io.grpc.internal.SerializingExecutor.schedule(SerializingExecutor.java:102)
+	at io.grpc.internal.SerializingExecutor.execute(SerializingExecutor.java:95)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl.streamCreatedInternal(ServerImpl.java:635)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl.streamCreated(ServerImpl.java:469)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler.onHeadersRead(NettyServerHandler.java:548)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler.access$1100(NettyServerHandler.java:118)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler$FrameListener.onHeadersRead(NettyServerHandler.java:975)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder$FrameReadListener.onHeadersRead(DefaultHttp2ConnectionDecoder.java:504)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder$FrameReadListener.onHeadersRead(DefaultHttp2ConnectionDecoder.java:415)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2InboundFrameLogger$1.onHeadersRead(Http2InboundFrameLogger.java:54)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader$2.processFragment(DefaultHttp2FrameReader.java:490)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.readHeadersFrame(DefaultHttp2FrameReader.java:498)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.processPayloadState(DefaultHttp2FrameReader.java:257)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.readFrame(DefaultHttp2FrameReader.java:174)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2InboundFrameLogger.readFrame(Http2InboundFrameLogger.java:39)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder.decodeFrame(DefaultHttp2ConnectionDecoder.java:221)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler$FrameDecoder.decode(Http2ConnectionHandler.java:413)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler.decode(Http2ConnectionHandler.java:473)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:545)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:484)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:296)
+	at io.grpc.netty.shaded.io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	at io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1429)
+	at io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:918)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.AbstractEpollStreamChannel$EpollStreamUnsafe.epollInReady(AbstractEpollStreamChannel.java:804)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.handle(AbstractEpollChannel.java:487)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler$DefaultEpollIoRegistration.handle(EpollIoHandler.java:349)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler.processReady(EpollIoHandler.java:548)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler.run(EpollIoHandler.java:491)
+	at io.grpc.netty.shaded.io.netty.channel.SingleThreadIoEventLoop.runIo(SingleThreadIoEventLoop.java:225)
+	at io.grpc.netty.shaded.io.netty.channel.SingleThreadIoEventLoop.run(SingleThreadIoEventLoop.java:196)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:1204)
+	at io.grpc.netty.shaded.io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+
+Oct 09, 2026 11:38:25 AM io.grpc.internal.SerializingExecutor run
+SEVERE: Exception while executing runnable io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup@6948687b
+io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED: workflow runtime capacity exhausted
+	at io.grpc.Status.asRuntimeException(Status.java:524)
+	at org.weaveos.workflow.WorkflowRuntime$Dispatcher.getExecutor(WorkflowRuntime.java:243)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.maySwitchExecutor(ServerImpl.java:589)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.runInternal(ServerImpl.java:562)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl$1MethodLookup.runInContext(ServerImpl.java:535)
+	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
+	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
+	at io.grpc.internal.SerializingExecutor.schedule(SerializingExecutor.java:102)
+	at io.grpc.internal.SerializingExecutor.execute(SerializingExecutor.java:95)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl.streamCreatedInternal(ServerImpl.java:635)
+	at io.grpc.internal.ServerImpl$ServerTransportListenerImpl.streamCreated(ServerImpl.java:469)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler.onHeadersRead(NettyServerHandler.java:548)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler.access$1100(NettyServerHandler.java:118)
+	at io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler$FrameListener.onHeadersRead(NettyServerHandler.java:975)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder$FrameReadListener.onHeadersRead(DefaultHttp2ConnectionDecoder.java:504)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder$FrameReadListener.onHeadersRead(DefaultHttp2ConnectionDecoder.java:415)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2InboundFrameLogger$1.onHeadersRead(Http2InboundFrameLogger.java:54)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader$2.processFragment(DefaultHttp2FrameReader.java:490)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.readHeadersFrame(DefaultHttp2FrameReader.java:498)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.processPayloadState(DefaultHttp2FrameReader.java:257)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2FrameReader.readFrame(DefaultHttp2FrameReader.java:174)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2InboundFrameLogger.readFrame(Http2InboundFrameLogger.java:39)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2ConnectionDecoder.decodeFrame(DefaultHttp2ConnectionDecoder.java:221)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler$FrameDecoder.decode(Http2ConnectionHandler.java:413)
+	at io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler.decode(Http2ConnectionHandler.java:473)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:545)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:484)
+	at io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:296)
+	at io.grpc.netty.shaded.io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	at io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1429)
+	at io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:918)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.AbstractEpollStreamChannel$EpollStreamUnsafe.epollInReady(AbstractEpollStreamChannel.java:804)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.handle(AbstractEpollChannel.java:487)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler$DefaultEpollIoRegistration.handle(EpollIoHandler.java:349)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler.processReady(EpollIoHandler.java:548)
+	at io.grpc.netty.shaded.io.netty.channel.epoll.EpollIoHandler.run(EpollIoHandler.java:491)
+	at io.grpc.netty.shaded.io.netty.channel.SingleThreadIoEventLoop.runIo(SingleThreadIoEventLoop.java:225)
+	at io.grpc.netty.shaded.io.netty.channel.SingleThreadIoEventLoop.run(SingleThreadIoEventLoop.java:196)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:1204)
+	at io.grpc.netty.shaded.io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.grpc.netty.shaded.io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.38 s -- in org.weaveos.workflow.RootWorkflowRuntimeTest
+[INFO] Running org.weaveos.workflow.RootFlowDeletionSchemaTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.688 s -- in org.weaveos.workflow.RootFlowDeletionSchemaTest
+[INFO] Running org.weaveos.workflow.RootRuntimeSchemaTest
+[INFO] Tests run: 34, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 24.27 s -- in org.weaveos.workflow.RootRuntimeSchemaTest
+[INFO] Running org.weaveos.workflow.RootFlowDeletionRuntimeIT
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.165 s -- in org.weaveos.workflow.RootFlowDeletionRuntimeIT
+[INFO] Running org.weaveos.workflow.RootRuntimeConfigurationTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in org.weaveos.workflow.RootRuntimeConfigurationTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 238, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  03:09 min
+[INFO] Finished at: 2026-10-09T11:39:01-07:00
+[INFO] ------------------------------------------------------------------------

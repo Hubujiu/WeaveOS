@@ -1,0 +1,116 @@
+diff --git a/services/workflow-engine/src/main/java/org/weaveos/workflow/DeploymentRegistry.java b/services/workflow-engine/src/main/java/org/weaveos/workflow/DeploymentRegistry.java
+index c10b81d..e77a11c 100644
+--- a/services/workflow-engine/src/main/java/org/weaveos/workflow/DeploymentRegistry.java
++++ b/services/workflow-engine/src/main/java/org/weaveos/workflow/DeploymentRegistry.java
+@@ -85,6 +85,7 @@ public final class DeploymentRegistry {
+                 }
+                 return prior;
+             }
++            if (FlowIdentityGate.lock(jdbc, request.appId(), request.flowId())) throw new DeploymentConflict();
+             probe.accept(Stage.AFTER_LEDGER);
+             var repository = engine.getRepositoryService();
+             var deployment = repository.createDeployment().name(request.versionId())
+diff --git a/services/workflow-engine/src/main/java/org/weaveos/workflow/FlowDeletionRegistry.java b/services/workflow-engine/src/main/java/org/weaveos/workflow/FlowDeletionRegistry.java
+index e7445fe..68cdc33 100644
+--- a/services/workflow-engine/src/main/java/org/weaveos/workflow/FlowDeletionRegistry.java
++++ b/services/workflow-engine/src/main/java/org/weaveos/workflow/FlowDeletionRegistry.java
+@@ -1,21 +1,72 @@
+ package org.weaveos.workflow;
+ 
+ import java.time.Instant;
++import java.util.HashSet;
++import java.util.Objects;
+ import java.util.Optional;
+ import java.util.function.Consumer;
++import javax.sql.DataSource;
+ import org.flowable.engine.ProcessEngine;
++import org.flowable.spring.SpringProcessEngineConfiguration;
++import org.springframework.dao.DuplicateKeyException;
+ import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.jdbc.core.RowMapper;
++import org.springframework.jdbc.datasource.DataSourceTransactionManager;
++import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
+ import org.springframework.transaction.PlatformTransactionManager;
++import org.springframework.transaction.TransactionDefinition;
++import org.springframework.transaction.support.TransactionTemplate;
+ 
+-/** Compile-only R1 declaration. No deletion behavior implemented yet. */
++/** Trusted internal port. Receipt remains provisional until an enclosing REQUIRED transaction commits. */
+ public final class FlowDeletionRegistry {
+  public record Request(String appId, String flowId, String operationId) {}
+  public record Receipt(String appId, String flowId, String operationId, long deletedVersions, Instant deletedAt) {}
+  public enum Stage { AFTER_CHECK, AFTER_DELETION, AFTER_RECEIPT }
+- public static final class Conflict extends RuntimeException {}
+- public static final class NotDrained extends RuntimeException {}
+- public FlowDeletionRegistry(JdbcTemplate jdbc, PlatformTransactionManager manager, ProcessEngine engine) {}
++ public static final class Conflict extends RuntimeException { public Conflict(){super("flow deletion identity conflict");} }
++ public static final class NotDrained extends RuntimeException { public NotDrained(){super("flow is not drained");} }
++ private final JdbcTemplate jdbc;
++ private final ProcessEngine engine;
++ private final TransactionTemplate transaction;
++ private static final RowMapper<Receipt> RECEIPT=(row,index)->new Receipt(row.getString("app_id"),row.getString("flow_id"),
++  row.getString("operation_id"),row.getLong("deleted_versions"),row.getTimestamp("deleted_at").toInstant());
++ public FlowDeletionRegistry(JdbcTemplate jdbc, PlatformTransactionManager manager, ProcessEngine engine) {
++  this.jdbc=Objects.requireNonNull(jdbc);this.engine=Objects.requireNonNull(engine);
++  if(!(engine.getProcessEngineConfiguration() instanceof SpringProcessEngineConfiguration c)
++   ||c.getTransactionManager()!=manager||!(manager instanceof DataSourceTransactionManager m)
++   ||underlying(jdbc.getDataSource())!=underlying(m.getDataSource())
++   ||underlying(jdbc.getDataSource())!=underlying(c.getDataSource()))
++   throw new IllegalArgumentException("registry and engine require the same Spring JDBC transaction boundary");
++  transaction=new TransactionTemplate(manager);transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
++ }
++ private static DataSource underlying(DataSource ds){while(ds instanceof TransactionAwareDataSourceProxy p)ds=p.getTargetDataSource();return Objects.requireNonNull(ds);}
++ private static void validate(Request r){Objects.requireNonNull(r);ControlledBpmn.requireUuid(r.appId());ControlledBpmn.requireUuid(r.flowId());ControlledBpmn.requireUuid(r.operationId());}
+  public Receipt delete(Request request) { return delete(request, stage -> {}); }
+- public Receipt delete(Request request, Consumer<Stage> probe) { return null; }
+- public Optional<Receipt> lookup(Request request) { return Optional.empty(); }
++ public Receipt delete(Request r, Consumer<Stage> probe) {
++  validate(r);Objects.requireNonNull(probe);
++  try{return transaction.execute(status->{
++   if(FlowIdentityGate.lock(jdbc,r.appId(),r.flowId()))return lookup(r).orElseThrow(Conflict::new);
++   if(Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM wf_flow_deletion_guards WHERE operation_id=?::uuid)",Boolean.class,r.operationId())))throw new Conflict();
++   var rows=jdbc.queryForList("SELECT * FROM wf_deployments WHERE app_id=?::uuid AND flow_id=?::uuid ORDER BY version,version_id",r.appId(),r.flowId());
++   var repository=engine.getRepositoryService();var definitions=new HashSet<String>();
++   for(var row:rows){
++    if(!"confirmed".equals(row.get("status")))throw new IllegalStateException("unconfirmed controlled deployment");
++    String deployment=(String)row.get("engine_deployment_id"),definition=(String)row.get("process_definition_id");
++    var actual=repository.createProcessDefinitionQuery().deploymentId(deployment).list();
++    if(actual.size()!=1||!actual.get(0).getId().equals(definition)||!definitions.add(definition))
++     throw new IllegalStateException("controlled deletion binding mismatch");
++   }
++   if(!definitions.isEmpty()&&engine.getRuntimeService().createProcessInstanceQuery().processDefinitionIds(definitions).count()!=0)throw new NotDrained();
++   if(Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM wf_execution_instances WHERE app_id=?::uuid AND flow_id=?::uuid AND state IN ('starting','active'))",Boolean.class,r.appId(),r.flowId())))throw new NotDrained();
++   probe.accept(Stage.AFTER_CHECK);
++   for(var row:rows){repository.deleteDeployment((String)row.get("engine_deployment_id"));probe.accept(Stage.AFTER_DELETION);}
++   int changed=jdbc.update("UPDATE wf_flow_deletion_guards SET retired=true,operation_id=?::uuid,deleted_versions=?,deleted_at=clock_timestamp() WHERE app_id=?::uuid AND flow_id=?::uuid AND NOT retired",r.operationId(),(long)rows.size(),r.appId(),r.flowId());
++   if(changed!=1)throw new IllegalStateException("deletion receipt not recorded");
++   var result=lookup(r).orElseThrow(()->new IllegalStateException("deletion receipt missing"));
++   probe.accept(Stage.AFTER_RECEIPT);return result;
++  });}catch(DuplicateKeyException conflict){throw new Conflict();}
++ }
++ /** Missing is a read result, never proof that an in-flight deletion failed. */
++ public Optional<Receipt> lookup(Request r) {
++  validate(r);return jdbc.query("SELECT * FROM wf_flow_deletion_guards WHERE app_id=?::uuid AND flow_id=?::uuid AND operation_id=?::uuid AND retired",RECEIPT,r.appId(),r.flowId(),r.operationId()).stream().findFirst();
++ }
+ }
+diff --git a/services/workflow-engine/src/test/resources/deployment-registry-fixture.sql b/services/workflow-engine/src/test/resources/deployment-registry-fixture.sql
+index e1ec173..c963f63 100644
+--- a/services/workflow-engine/src/test/resources/deployment-registry-fixture.sql
++++ b/services/workflow-engine/src/test/resources/deployment-registry-fixture.sql
+@@ -12,3 +12,16 @@ CREATE TABLE wf_deployments (
+  CHECK((status='pending' AND engine_deployment_id IS NULL AND process_definition_id IS NULL)
+  OR(status='confirmed' AND engine_deployment_id IS NOT NULL AND process_definition_id IS NOT NULL))
+ );
++
++-- V067 R1 isolated fixture only; explicit production migration is a separate acceptance stage.
++CREATE TABLE wf_flow_deletion_guards (
++ app_id uuid NOT NULL, flow_id uuid NOT NULL,
++ retired boolean NOT NULL DEFAULT false,
++ operation_id uuid UNIQUE,
++ deleted_versions bigint,
++ deleted_at timestamptz,
++ created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
++ PRIMARY KEY(app_id,flow_id),
++ CHECK ((NOT retired AND operation_id IS NULL AND deleted_versions IS NULL AND deleted_at IS NULL)
++ OR (retired AND operation_id IS NOT NULL AND deleted_versions BETWEEN 0 AND 9007199254740991 AND deleted_at IS NOT NULL))
++);

@@ -1,0 +1,7 @@
+# Real diagnostic reproduction, not product acceptance
+
+2026-10-09 20:59 UTC. Source b61de621. Root alone, Go1.27.2, actual existing rootFormalStartChild called through an extra test-only Go overlay; no repository Go source changed. Command: go test -overlay=<local diagnostic mapping> -tags workflowruntime_integration,workflowrpc_integration -run '^TestRootDiagnosticChildLogLivesThroughOwningCleanup$' -count=1 -json ./cmd/bff.
+
+The owned synthetic /bin/sh successfully prints diagnostic-child-output and exits. Owner cleanup registered before rootFormalStartChild matches actual rootFormalSetupEditable ordering. The later t.TempDir cleanup removes the child's log before owner cleanup reads it. Actual expected diagnostic preservation fails with file-not-found; raw output retained. Installed Go1.27.2 testing.go confirms TempDir's first allocation registers removal using Cleanup, which executes in reverse order. Actual rootFormalLog ignores the file-read error, explaining why the failed CI startup showed blank child outputs.
+
+This reproduces a diagnostic loss, NOT the reason the BFF process originally exited. No startup deadline, business assertion or product code changed. An exact-source five-repetition actual process run is separately in progress; final CI remains failed. A future repair must preserve logs through owning cleanup and record child exit status safely, then rerun actual container acceptance; a local pass alone cannot turn the failed exact-head CI green.

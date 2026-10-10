@@ -340,6 +340,22 @@ jobs:
               "nativeCleanupAloneDoesNotReserveDeletedFlowIdentity",
           ])
           PYCODE
+      - name: Root controlled deletion and explicit identity schema
+        run: |
+          for suite in RootFlowDeletionRegistryTest RootFlowDeletionSchemaTest RootFlowDeletionRuntimeSchemaTest RootFlowDeletionCatalogReferenceTest RootFlowDeletionGrpcIT RootFlowDeletionRuntimeIT; do
+            bash services/workflow-engine/run-tests.sh clean -Dtest="$suite" -Dworkflow.reports="ci-logs/controlled-deletion/$suite" test
+          done
+          python3 - <<'PYCODE'
+          import sys
+          sys.path.insert(0, "services/workflow-engine")
+          from rpc_ci_gate import _java
+          _java("services/workflow-engine/ci-logs/controlled-deletion/RootFlowDeletionRegistryTest", "org.weaveos.workflow.RootFlowDeletionRegistryTest", ["deletesAllTargetDefinitionsAndResourcesButKeepsHistoryAndOriginalReceipts", "exactReplayAndReadOnlyLookupSurviveEngineReopenWithoutRecreatingDefinitions", "changedOperationOrCrossScopeReuseCannotDeleteAnythingElse", "liveNativeInstanceIsRefusedAndCanStillComplete", "everyFailurePointRollsBackResourcesAndDeletionIdentity(Stage)[1]", "everyFailurePointRollsBackResourcesAndDeletionIdentity(Stage)[2]", "everyFailurePointRollsBackResourcesAndDeletionIdentity(Stage)[3]", "outerRequiredRollbackDoesNotLeaveSuccessfulDeletion", "deletedIdentityBlocksNewVersionButAllowsOriginalPublicationReplay", "neverPublishedIdentityCanBeRetiredWithoutForgedDeployment", "newStartAfterDeletionReturnsOriginalProtocolNoEffectWithoutLoadingMissingBpmn", "originalExecutionReceiptsReplayAfterWithdrawalAndDeletionUnchanged", "realTwoConnectionAdmissionArbitration(String)[1]", "realTwoConnectionAdmissionArbitration(String)[2]", "realTwoConnectionAdmissionArbitration(String)[3]", "realTwoConnectionAdmissionArbitration(String)[4]", "invalidIdentityAndMissingLookupHaveNoWriteSideEffects"])
+          _java("services/workflow-engine/ci-logs/controlled-deletion/RootFlowDeletionSchemaTest", "org.weaveos.workflow.RootFlowDeletionSchemaTest", ["explicitUpgradeBackfillsOldIdentityWithoutRewritingOriginalReceipt", "invalidLegacyIdentityRefusesWholeUpgradeWithoutDiscardingHistory", "retiredIdentityAndCreationFactsCannotBeRewrittenOrForged", "downgradeRefusesRetiredHistoryButAllowsReconstructibleLiveRows", "newGateUsesInvokerPinnedSearchPathAndNoPublicExecute"])
+          _java("services/workflow-engine/ci-logs/controlled-deletion/RootFlowDeletionRuntimeSchemaTest", "org.weaveos.workflow.RootFlowDeletionRuntimeSchemaTest", ["oldSchemaWithoutPersistentIdentityIsNoLongerReady", "explicitlyUpgradedSchemaAndMinimalNewRoleAreReady", "guardIdentityUpdatesAndDeletionAuthorityAreRejected", "runtimeRoleActuallyTransitionsOnceAndCannotMutateIdentityOrHistory", "publicExecuteOnDeletionGuardFunctionIsRejected"])
+          _java("services/workflow-engine/ci-logs/controlled-deletion/RootFlowDeletionCatalogReferenceTest", "org.weaveos.workflow.RootFlowDeletionCatalogReferenceTest", ["captureOfficialNativeAndProtocolCatalog"])
+          _java("services/workflow-engine/ci-logs/controlled-deletion/RootFlowDeletionGrpcIT", "org.weaveos.workflow.RootFlowDeletionGrpcIT", ["authenticatedDeleteAndLookupReturnOriginalCommittedIdentityAndTime", "bothNewMethodsRejectMissingIdentityBeforeBusinessDispatch", "missingAndCrossScopeLookupAreExplicitNotObservedAndReadOnly", "invalidUUIDAndOversizedUnknownFieldsAreInvalidArgument", "activeInstanceAndChangedOperationHaveDistinctSafeStatus", "outerTransactionCannotSendProvisionalDeletionSuccess", "responseLossAfterCommitRecoversSameOperation"])
+          _java("services/workflow-engine/ci-logs/controlled-deletion/RootFlowDeletionRuntimeIT", "org.weaveos.workflow.RootFlowDeletionRuntimeIT", ["formalRuntimeDeletesWithLeastPrivilegeThenRestartsAndReplaysWithoutResurrection", "formalRuntimeRequiresIdentityForBothNewMethods"])
+          PYCODE
       - name: Clean verify against dedicated internal PostgreSQL
         run: bash services/workflow-engine/run-tests.sh clean -Dtest=RootDeploymentRegistryTest verify 2>&1 | tee services/workflow-engine/ci-logs/verify.txt
       - name: Require all 18 Root-owned cases without skips
@@ -410,6 +426,18 @@ jobs:
         run: bash services/workflow-engine/run-rpc-interop.sh 2>&1 | tee services/workflow-engine/rpc-ci-logs/interop.txt
       - name: Require all nine Java cases and genuine Go interop completion
         run: python3 services/workflow-engine/rpc_ci_gate.py services/workflow-engine/target/rpc-ci-reports services/workflow-engine/expected-rpc-tests.json services/workflow-engine/rpc-ci-logs/interop.jsonl 2>&1 | tee services/workflow-engine/rpc-ci-logs/report-gate.txt
+      - name: Root Go deletion client and actual runtime interop
+        run: |
+          go -C services/bff test -race -count=1 -json -run '^TestRootDeletionClient' ./internal/workflowrpc | tee services/workflow-engine/rpc-ci-logs/deletion-unit.jsonl
+          WEAVEOS_RPC_JSON_REPORT=services/workflow-engine/rpc-ci-logs/deletion-interop.jsonl bash services/workflow-engine/run-deletion-rpc-interop.sh
+          python3 - <<'PYCODE'
+          import sys
+          sys.path.insert(0, "services/workflow-engine")
+          from rpc_ci_gate import _go
+          package = "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc"
+          _go("services/workflow-engine/rpc-ci-logs/deletion-unit.jsonl", package, ["TestRootDeletionClientBoundResultCopiesRequestAndPreservesEarlierDeadline", "TestRootDeletionClientInvalidInputsNeverCallTransport", "TestRootDeletionClientRejectsEveryUnboundOrInvalidReceipt", "TestRootDeletionClientLookupBranchesAndTransportFailure"])
+          _go("services/workflow-engine/rpc-ci-logs/deletion-interop.jsonl", package, ["TestRootGoJavaActualDeletionRuntimeInterop"])
+          PYCODE
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: always()
         with:

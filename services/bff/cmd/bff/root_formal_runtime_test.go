@@ -119,6 +119,12 @@ func rootFormalStartChild(t *testing.T, name, binary string, args []string, env 
 	}
 	p := &rootBFFProcess{command: cmd, done: make(chan struct{}), output: path}
 	go func() { p.err = cmd.Wait(); _ = file.Close(); close(p.done) }()
+	// Register after TempDir: stop and read owned logs before its cleanup removes
+	// them. The fixture's earlier cleanup cannot safely read this later directory.
+	t.Cleanup(func() {
+		rootFormalStop(p, false)
+		rootFormalLog(t, name, p)
+	})
 	return p
 }
 func rootFormalStop(p *rootBFFProcess, kill bool) {
@@ -147,10 +153,16 @@ func rootFormalLog(t *testing.T, name string, p *rootBFFProcess) {
 	if p == nil {
 		return
 	}
-	b, _ := os.ReadFile(p.output)
+	b, readErr := os.ReadFile(p.output)
 	safe := strings.NewReplacer(rootRPCToken, "[fixture-token]", "v041_synthetic_only", "[fixture-password]").Replace(string(b))
 	if t.Failed() {
+		if readErr != nil {
+			t.Log(name + " child diagnostic file unavailable")
+		}
 		t.Log(name + " child output: " + safe)
+		if p.command.ProcessState != nil {
+			t.Logf("FORMAL_EXIT process=%s status=%s", name, p.command.ProcessState.String())
+		}
 	}
 	if p.command.ProcessState != nil {
 		if usage, ok := p.command.ProcessState.SysUsage().(*syscall.Rusage); ok {
@@ -238,8 +250,6 @@ func rootFormalSetupEditable(t *testing.T, editable bool) *rootFormalFixture {
 			_ = x.conn.Close()
 		}
 		rootFormalStop(x.java, false)
-		rootFormalLog(t, "bff", x.bff)
-		rootFormalLog(t, "java", x.java)
 	})
 	engineAddr := rootMainAddress(t)
 	_, enginePort, _ := net.SplitHostPort(engineAddr)

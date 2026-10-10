@@ -1,0 +1,73 @@
+diff --git a/services/bff/internal/workflowrpc/deletion_client.go b/services/bff/internal/workflowrpc/deletion_client.go
+index 91e961df..b5a1e1d0 100644
+--- a/services/bff/internal/workflowrpc/deletion_client.go
++++ b/services/bff/internal/workflowrpc/deletion_client.go
+@@ -3,12 +3,65 @@ package workflowrpc
+ import (
+ 	"context"
+ 	pb "github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc/pb"
++	"google.golang.org/protobuf/proto"
++	"time"
+ )
+ 
+-// Compile-only declarations before the frozen R3 client oracle is run.
++const maxDeletionMessage = 1024
++
++func validDeletionRequest(q *pb.FlowDeletionRequest) bool {
++	return q != nil && proto.Size(q) <= maxDeletionMessage && validIdentity(q.AppId, q.FlowId, q.OperationId, 1)
++}
++func boundDeletion(r *pb.FlowDeletionReceipt, app, flow, operation string) bool {
++	return r != nil && proto.Size(r) <= maxDeletionMessage && r.AppId == app && r.FlowId == flow && r.OperationId == operation && r.DeletedVersions <= maxVersion && r.DeletedAtSeconds >= 1 && r.DeletedAtSeconds <= 253402300799 && r.DeletedAtNanos >= 0 && r.DeletedAtNanos <= 999999999 && r.DeletedAtNanos%1000 == 0
++}
++
++// DeleteFlow sends once; an uncertain transport outcome must be recovered by the original identity.
+ func (c *Client) DeleteFlow(ctx context.Context, in *pb.FlowDeletionRequest) (*pb.FlowDeletionReceipt, error) {
+-	return nil, nil
++	if c == nil || c.service == nil || ctx == nil || c.timeout <= 0 || c.timeout > 30*time.Second || !validDeletionRequest(in) {
++		return nil, errInvalid
++	}
++	q := proto.Clone(in).(*pb.FlowDeletionRequest)
++	app, flow, operation := q.AppId, q.FlowId, q.OperationId
++	call, cancel := context.WithTimeout(ctx, c.timeout)
++	defer cancel()
++	r, err := c.service.DeleteFlow(call, q)
++	if err != nil {
++		return nil, err
++	}
++	if !boundDeletion(r, app, flow, operation) {
++		return nil, errReceipt
++	}
++	return r, nil
+ }
++
++// LookupFlowDeletion preserves explicit not-observed without inferring rollback or retrying.
+ func (c *Client) LookupFlowDeletion(ctx context.Context, in *pb.FlowDeletionRequest) (*pb.FlowDeletionLookupResponse, error) {
+-	return nil, nil
++	if c == nil || c.service == nil || ctx == nil || c.timeout <= 0 || c.timeout > 30*time.Second || !validDeletionRequest(in) {
++		return nil, errInvalid
++	}
++	q := proto.Clone(in).(*pb.FlowDeletionRequest)
++	app, flow, operation := q.AppId, q.FlowId, q.OperationId
++	call, cancel := context.WithTimeout(ctx, c.timeout)
++	defer cancel()
++	r, err := c.service.LookupFlowDeletion(call, q)
++	if err != nil {
++		return nil, err
++	}
++	if r == nil || proto.Size(r) > maxDeletionMessage {
++		return nil, errReceipt
++	}
++	switch result := r.Result.(type) {
++	case *pb.FlowDeletionLookupResponse_Confirmed:
++		if result == nil || !boundDeletion(result.Confirmed, app, flow, operation) {
++			return nil, errReceipt
++		}
++	case *pb.FlowDeletionLookupResponse_NotObserved:
++		if result == nil || result.NotObserved == nil {
++			return nil, errReceipt
++		}
++	default:
++		return nil, errReceipt
++	}
++	return r, nil
+ }
