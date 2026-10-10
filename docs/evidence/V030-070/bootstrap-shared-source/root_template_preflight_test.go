@@ -114,7 +114,8 @@ func TestRootTemplatePreflightRejectsCurrentRevocationsAndInvalidTargets(t *test
 }
 func TestRootTemplatePreflightActualBootstrapAndMappingFailure(t *testing.T) {
 	f, m, b, _ := rootTemplatePreflightSource(t)
-	p := rootTemplateCurrentBootstrap(t, f, f.actor)
+	p := rootTemplatePrincipal(f)
+	rootTemplateBootstrap(t, f, f.actor)
 	s := &apptemplates.Service{Pool: f.runtime}
 	if got, e := s.Preflight(f.ctx, p, m, b); e != nil || !got.Valid {
 		t.Fatal("actual Bootstrap rejected", e)

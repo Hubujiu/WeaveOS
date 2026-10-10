@@ -6,7 +6,6 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apptemplates"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"strings"
 	"testing"
@@ -73,7 +72,7 @@ func TestRootTemplateExportCurrentManagementIdentity(t *testing.T) {
 				p.BootstrapAdmin = true
 			case "actual-root":
 				p.UserID = f.other
-				p = rootTemplateCurrentBootstrap(t, f, f.other)
+				rootTemplateBootstrap(t, f, f.other)
 				want = nil
 			case "stale-account":
 				if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET auth_version=auth_version+1 WHERE id=$1", f.actor); e != nil {
@@ -208,27 +207,14 @@ func TestRootTemplateExportRejectsLostWorkflowConfiguration(t *testing.T) {
 	}
 }
 
-// Reuse an existing active Bootstrap in a shared integration database instead
-// of violating the one-Bootstrap constraint or mutating another fixture's user.
-func rootTemplateCurrentBootstrap(t *testing.T, f *rootTaskHTTPFixture, preferred string) session.Principal {
+func rootTemplateBootstrap(t *testing.T, f *rootTaskHTTPFixture, id string) {
 	t.Helper()
-	var id, version, status string
-	e := f.owner.QueryRow(f.ctx, "SELECT id::text,auth_version::text,status FROM auth.users WHERE is_bootstrap_admin").Scan(&id, &version, &status)
-	if errors.Is(e, pgx.ErrNoRows) {
-		if _, e = f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", preferred); e != nil {
-			t.Fatal(e)
-		}
-		id, version, status = preferred, "1", "active"
-		t.Cleanup(func() {
-			if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=false WHERE id=$1", preferred); e != nil {
-				t.Error("restore isolated fixture Bootstrap", e)
-			}
-		})
-	} else if e != nil {
+	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", id); e != nil {
 		t.Fatal(e)
 	}
-	if status != "active" {
-		t.Fatal("existing test Bootstrap is inactive")
-	}
-	return session.Principal{UserID: id, Record: session.Record{UserID: id, AuthVersion: version}}
+	t.Cleanup(func() {
+		if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=false WHERE id=$1", id); e != nil {
+			t.Error("restore isolated fixture Bootstrap", e)
+		}
+	})
 }
