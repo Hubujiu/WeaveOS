@@ -1,0 +1,54 @@
+✖ compatible package still must finish successfully (0.966776ms)
+✖ unapproved compatibility requires original receiver policy rejection (0.368497ms)
+✖ V068 does not falsely certify automatic rollback to pre-deletion application (2.060779ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 132.26004
+
+✖ failing tests:
+
+test at infra/server/deploy/verify-package.test.mjs:4:1
+✖ compatible package still must finish successfully (0.966776ms)
+  Error: package verification not implemented
+      at verifyPackageResult (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-068/infra/server/deploy/verify-package.mjs:1:62)
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-068/infra/server/deploy/verify-package.test.mjs:5:15)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at infra/server/deploy/verify-package.test.mjs:8:1
+✖ unapproved compatibility requires original receiver policy rejection (0.368497ms)
+  Error: package verification not implemented
+      at verifyPackageResult (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-068/infra/server/deploy/verify-package.mjs:1:62)
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-068/infra/server/deploy/verify-package.test.mjs:9:15)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at tests/foundation/root-deletion-release-boundary.test.mjs:6:1
+✖ V068 does not falsely certify automatic rollback to pre-deletion application (2.060779ms)
+  AssertionError [ERR_ASSERTION]: paired deletion upgrade has no whole-old-application compatibility proof
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-068/tests/foundation/root-deletion-release-boundary.test.mjs:7:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
