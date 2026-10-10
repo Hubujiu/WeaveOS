@@ -1,0 +1,61 @@
+diff --git a/services/bff/cmd/bff/root_structure_deletion_http_test.go b/services/bff/cmd/bff/root_structure_deletion_http_test.go
+index 0b784f35..25288296 100644
+--- a/services/bff/cmd/bff/root_structure_deletion_http_test.go
++++ b/services/bff/cmd/bff/root_structure_deletion_http_test.go
+@@ -1,6 +1,7 @@
+ package main
+ 
+ import (
++	"bytes"
+ 	"encoding/json"
+ 	"fmt"
+ 	"testing"
+@@ -42,3 +43,48 @@ func TestRootStructureDeletionHTTPEmptyApplicationRoute(t *testing.T) {
+ 	}
+ 	rootHTTPData(t, f.call(t, "POST", "/api/v1/applications/"+app+"/deletion", rootStructureDeleteBody(f.id(t), 0, 1), nil), 200)
+ }
++
++func TestRootStructureDeletionHTTPClosedResourceRoutes(t *testing.T) {
++	f := rootHTTPResourceSetup(t)
++	base := "/api/v1/applications/" + f.app
++	view := base + "/forms/" + f.view
++	rootHTTPData(t, f.call(t, "POST", view+"/deletion", rootStructureDeleteBody(f.id(t), 1, 1), nil), 200)
++	for _, tc := range []struct{ name, method, path, body string }{
++		{"record", "GET", view + "/records/" + f.record, ""},
++		{"history", "GET", view + "/records/" + f.record + "/history", ""},
++		{"runtime", "GET", view + "/runtime", ""},
++		{"definition", "GET", view + "/definition", ""},
++		{"presets", "GET", view + "/table-presets", ""},
++		{"drafts", "GET", view + "/drafts?pageSize=20", ""},
++		{"workflows", "GET", view + "/workflows", ""},
++		{"search", "POST", view + "/records/search", `{"page":1,"pageSize":20,"filter":null,"sort":null}`},
++		{"record-create", "POST", view + "/records", `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"values":{}}`},
++		{"record-edit", "PATCH", view + "/records/" + f.record, `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"expectedRecordVersion":1,"changes":{}}`},
++	} {
++		t.Run(tc.name, func(t *testing.T) {
++			rootHTTPError(t, f.call(t, tc.method, tc.path, tc.body, nil), 404, "APPLICATION_NOT_FOUND")
++		})
++	}
++	t.Run("export-excludes-deleted-view", func(t *testing.T) {
++		w := f.call(t, "GET", base+"/structure-template", "", nil)
++		if w.Code != 200 {
++			t.Fatalf("active table export %d %s", w.Code, w.Body.String())
++		}
++		var env struct {
++			Data struct {
++				Manifest struct{ Forms []any }
++				Forms    []any
++			}
++		}
++		if json.Unmarshal(w.Body.Bytes(), &env) != nil {
++			t.Fatal("invalid export")
++		}
++		// Inspect the public manifest independently, regardless of envelope wrapper.
++		var raw map[string]json.RawMessage
++		json.Unmarshal(w.Body.Bytes(), &raw)
++		t.Log("export payload " + string(w.Body.Bytes()))
++		if bytes.Contains(w.Body.Bytes(), []byte(f.view)) {
++			t.Fatal("deleted view leaked into structure export")
++		}
++	})
++}

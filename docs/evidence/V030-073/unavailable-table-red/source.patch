@@ -1,0 +1,18 @@
+diff --git a/services/bff/internal/appstructure/root_structure_deletion_test.go b/services/bff/internal/appstructure/root_structure_deletion_test.go
+index 6dfbc793..2b9e3c1c 100644
+--- a/services/bff/internal/appstructure/root_structure_deletion_test.go
++++ b/services/bff/internal/appstructure/root_structure_deletion_test.go
+@@ -403,3 +403,13 @@ func TestRootStructureDeletionSQLReferenceGuards(t *testing.T) {
+ 		})
+ 	}
+ }
++
++func TestRootStructureDeletionMissingPhysicalTableIsNotEmpty(t *testing.T) {
++	f := setup(t)
++	view, table := rootDeletionForm(t, f, map[string]any{"kind": "new_table"}, 0)
++	if _, e := f.owner.Exec(context.Background(), "UPDATE applications.logical_tables SET schema_ready=true,schema_version=1 WHERE id=$1", table); e != nil {
++		t.Fatal(e)
++	}
++	data(t, f.call(t, "POST", "/forms/"+view+"/deletion", rootDeletionInput(t, f, 1, 0)), 200)
++	rootDeletionError(t, f.call(t, "POST", "/tables/"+table+"/deletion", rootDeletionInput(t, f, 2, 1)), 503, "COMMON_SERVICE_UNAVAILABLE")
++}

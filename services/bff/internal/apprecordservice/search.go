@@ -103,7 +103,7 @@ func (s *recordStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
  JOIN applications.form_views v ON v.app_id=a.id
  JOIN applications.logical_tables t ON t.app_id=v.app_id AND t.id=v.table_id
  JOIN applications.menu_resources m ON m.app_id=v.app_id AND m.resource_kind='form' AND m.resource_id=v.id
- WHERE a.id=$1 AND v.id=$2`, s.appID, s.viewID).Scan(&s.ownerID, &s.control.Policy, &s.tableID, &s.control.Schema, &s.control.Dependency, &s.control.Data, &ready, &s.control.View)
+ WHERE a.id=$1 AND v.id=$2 AND a.deleted_at IS NULL AND v.deleted_at IS NULL AND t.deleted_at IS NULL`, s.appID, s.viewID).Scan(&s.ownerID, &s.control.Policy, &s.tableID, &s.control.Schema, &s.control.Dependency, &s.control.Data, &ready, &s.control.View)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return fail(applications.ErrMissing)
 	}

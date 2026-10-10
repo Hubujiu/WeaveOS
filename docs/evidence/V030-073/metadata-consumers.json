@@ -1,0 +1,625 @@
+{
+  "scope": "Read-only source inventory, not behavior coverage or a frozen implementation plan. Existing read/write/history consumers must be classified before adding deletion.",
+  "baseline": "ee8b4082652c047eaedddfede098d71b36df773b",
+  "consumers": [
+    {
+      "path": "services/bff/internal/applications/store.go",
+      "line": 185,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "q := \"SELECT id::text,name,owner_user_id::text,policy_revision FROM applications.apps WHERE id=$1\""
+    },
+    {
+      "path": "services/bff/internal/applications/store.go",
+      "line": 286,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "FROM applications.apps a"
+    },
+    {
+      "path": "services/bff/internal/applications/store.go",
+      "line": 618,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "if _, err = tx.Exec(ctx, \"INSERT INTO applications.apps(id,name,owner_user_id) VALUES($1,$2,$3)\", appID, in.Name, actor.ID); err != nil {"
+    },
+    {
+      "path": "services/bff/internal/applications/store.go",
+      "line": 687,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "SELECT id FROM applications.logical_tables WHERE app_id=$1 AND id IN ("
+    },
+    {
+      "path": "services/bff/internal/applications/store.go",
+      "line": 688,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "SELECT v.table_id FROM applications.form_views v WHERE v.app_id=$1 AND v.id IN (SELECT resource_id FROM applications.grants WHERE app_id=$1 AND group_id=$7)"
+    },
+    {
+      "path": "services/bff/internal/applications/store.go",
+      "line": 689,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "UNION SELECT v.table_id FROM applications.form_views v WHERE v.app_id=$1 AND v.id=ANY($3::uuid[])) ORDER BY id FOR UPDATE"
+    },
+    {
+      "path": "services/bff/internal/applications/store.go",
+      "line": 696,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "LEFT JOIN applications.form_views v ON v.app_id=$1 AND v.id=submitted.resource_id"
+    },
+    {
+      "path": "services/bff/internal/applications/store.go",
+      "line": 718,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "JOIN applications.form_views v ON v.app_id=g.app_id AND v.id=g.resource_id AND g.resource_kind='form'"
+    },
+    {
+      "path": "services/bff/internal/applications/store.go",
+      "line": 730,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "if _, err := tx.Exec(ctx, \"UPDATE applications.apps SET policy_revision=policy_revision+1,updated_at=now() WHERE id=$1\", appID); err != nil {"
+    },
+    {
+      "path": "services/bff/internal/applications/template_create.go",
+      "line": 88,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "if _, e = tx.Exec(ctx, \"INSERT INTO applications.apps(id,name,owner_user_id,structure_version) VALUES($1,$2,$3,1)\", appID, name, actor.ID); e != nil {"
+    },
+    {
+      "path": "services/bff/internal/applications/transactions.go",
+      "line": 99,
+      "relations": [
+        "applications.logical_tables",
+        "applications.form_views"
+      ],
+      "source": "FROM applications.form_views f JOIN applications.logical_tables t ON t.app_id=f.app_id AND t.id=f.table_id"
+    },
+    {
+      "path": "services/bff/internal/applications/workflow_context.go",
+      "line": 46,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "if err = tx.QueryRow(ctx, `SELECT id::text FROM applications.logical_tables WHERE app_id=$1 AND id=$2 FOR UPDATE`, appID, tableID).Scan(&locked); err != nil {"
+    },
+    {
+      "path": "services/bff/internal/apprecordservice/evidence_capture.go",
+      "line": 54,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "FROM applications.apps a"
+    },
+    {
+      "path": "services/bff/internal/apprecordservice/evidence_capture.go",
+      "line": 55,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "JOIN applications.form_views v ON v.app_id=a.id"
+    },
+    {
+      "path": "services/bff/internal/apprecordservice/evidence_capture.go",
+      "line": 56,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "JOIN applications.logical_tables t ON t.app_id=v.app_id AND t.id=v.table_id"
+    },
+    {
+      "path": "services/bff/internal/apprecordservice/search.go",
+      "line": 102,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "t.schema_ready,v.view_version FROM applications.apps a"
+    },
+    {
+      "path": "services/bff/internal/apprecordservice/search.go",
+      "line": 103,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "JOIN applications.form_views v ON v.app_id=a.id"
+    },
+    {
+      "path": "services/bff/internal/apprecordservice/search.go",
+      "line": 104,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "JOIN applications.logical_tables t ON t.app_id=v.app_id AND t.id=v.table_id"
+    },
+    {
+      "path": "services/bff/internal/apprecordservice/write_receipt.go",
+      "line": 89,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "FROM applications.apps a"
+    },
+    {
+      "path": "services/bff/internal/apprecordservice/write_receipt.go",
+      "line": 90,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "JOIN applications.form_views v ON v.app_id=a.id AND v.id=$2"
+    },
+    {
+      "path": "services/bff/internal/apprecordservice/write_receipt.go",
+      "line": 91,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "JOIN applications.logical_tables t ON t.app_id=a.id AND t.id=v.table_id AND t.id=$3"
+    },
+    {
+      "path": "services/bff/internal/appstructure/http.go",
+      "line": 449,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "e = tx.QueryRow(r.Context(), \"SELECT structure_version FROM applications.apps WHERE id=$1\", app).Scan(&version)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/http.go",
+      "line": 456,
+      "relations": [
+        "applications.apps",
+        "applications.directories"
+      ],
+      "source": "e = tx.QueryRow(r.Context(), \"SELECT d.id::text,d.app_id::text,d.name,d.parent_id::text,d.position,a.structure_version FROM applications.directories d JOIN applications.apps a ON a.id=d.app_id WHERE d.app_id=$1 AND d.id=$2\", app, id).Scan(&dir.ID, &dir.AppID, &dir.Name, &dir.ParentID, &dir.Position, &version)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/models.go",
+      "line": 29,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "e := tx.QueryRow(c, \"SELECT EXISTS(SELECT 1 FROM applications.logical_tables WHERE id=$1) AND to_regclass('applications.table_field_dependencies') IS NOT NULL\", id).Scan(&ready)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/preflight.go",
+      "line": 32,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "e := tx.QueryRow(c, \"SELECT data_revision,dependency_revision FROM applications.logical_tables WHERE id=$1\", id).Scan(&data, &dep)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/record_history_store.go",
+      "line": 100,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "AND EXISTS(SELECT 1 FROM applications.form_views fv JOIN applications.menu_resources mr ON mr.app_id=fv.app_id AND mr.resource_kind='form' AND mr.resource_id=fv.id WHERE fv.app_id=$1 AND fv.table_id=$2 AND fv.id=$9)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/record_ports.go",
+      "line": 26,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "e := tx.QueryRow(c, `SELECT t.schema_ready,t.schema_version FROM applications.logical_tables t"
+    },
+    {
+      "path": "services/bff/internal/appstructure/record_ports.go",
+      "line": 27,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "JOIN applications.form_views v ON v.app_id=t.app_id AND v.table_id=t.id AND v.id=$3"
+    },
+    {
+      "path": "services/bff/internal/appstructure/record_ports.go",
+      "line": 55,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "e := tx.QueryRow(c, \"SELECT id::text FROM applications.logical_tables WHERE app_id=$1 AND id=$2 FOR UPDATE\", f.AppID, table).Scan(&actual)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/schema.go",
+      "line": 83,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "e := tx.QueryRow(c, \"SELECT EXISTS(SELECT 1 FROM auth.users u JOIN applications.apps a ON a.id=$2 WHERE u.id=$1 AND u.status='active' AND u.auth_version::text=$3 AND (u.is_bootstrap_admin OR a.owner_user_id=u.id))\", m.p.UserID, m.app, m.p.Record.AuthVersion).Scan(&ok)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/schema.go",
+      "line": 128,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "if _, e := tx.Exec(c, \"UPDATE applications.logical_tables SET fields_json=$3,schema_version=$4,schema_ready=true WHERE app_id=$1 AND id=$2\", m.app, id, raw, schema); e != nil {"
+    },
+    {
+      "path": "services/bff/internal/appstructure/schema.go",
+      "line": 132,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "if _, e := tx.Exec(c, \"UPDATE applications.form_views SET layout=$3,view_version=$4 WHERE app_id=$1 AND id=$2\", m.app, m.before.Form.ID, layout, view); e != nil {"
+    },
+    {
+      "path": "services/bff/internal/appstructure/schema.go",
+      "line": 136,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "if e := tx.QueryRow(c, \"SELECT structure_version FROM applications.apps WHERE id=$1\", m.app).Scan(&version); e != nil {"
+    },
+    {
+      "path": "services/bff/internal/appstructure/schema.go",
+      "line": 236,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "rows, e = tx.Query(c, \"SELECT id::text,layout FROM applications.form_views WHERE app_id=$1 AND table_id=$2 AND id<>$3 ORDER BY id\", d.AppID, d.Table.ID, d.Form.ID)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 112,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "e = tx.QueryRow(c, \"SELECT a.owner_user_id::text,u.is_bootstrap_admin FROM applications.apps a JOIN auth.users u ON u.id=$2 AND u.status='active' AND u.auth_version::text=$3 JOIN personnel.permission_catalog pc ON pc.code='app.'||a.id::text||'.access' AND pc.enabled WHERE a.id=$1\", app, p.UserID, p.Record.AuthVersion).Scan(&owner, &root)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 123,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "q := \"SELECT id::text,app_id::text,name,directory_id::text,position,schema_version,schema_ready,fields_json FROM applications.logical_tables WHERE app_id=$1 AND id=$2\""
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 137,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "q := \"SELECT id::text,app_id::text,table_id::text,name,directory_id::text,position,view_version,layout FROM applications.form_views WHERE app_id=$1 AND id=$2\""
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 160,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "if _, e = tx.Exec(c, \"SELECT id FROM applications.form_views WHERE app_id=$1 AND table_id=$2 ORDER BY id FOR UPDATE\", app, v.TableID); e != nil {"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 181,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "e := tx.QueryRow(c, \"SELECT structure_version FROM applications.apps WHERE id=$1\", app).Scan(&s.StructureVersion)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 185,
+      "relations": [
+        "applications.directories"
+      ],
+      "source": "rows, e := tx.Query(c, \"SELECT id::text,name,parent_id::text,position FROM applications.directories WHERE app_id=$1 ORDER BY position,id\", app)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 201,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "rows, e = tx.Query(c, \"SELECT id::text,name,directory_id::text,position,schema_version,schema_ready FROM applications.logical_tables WHERE app_id=$1 ORDER BY position,id\", app)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 217,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "rows, e = tx.Query(c, \"SELECT id::text,table_id::text,name,directory_id::text,position,view_version FROM applications.form_views WHERE app_id=$1 ORDER BY position,id\", app)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 237,
+      "relations": [
+        "applications.directories"
+      ],
+      "source": "e := tx.QueryRow(c, \"SELECT EXISTS(SELECT 1 FROM applications.directories WHERE app_id=$1 AND id=$2)\", app, *id).Scan(&yes)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 337,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "if e = tx.QueryRow(c, \"SELECT structure_version FROM applications.apps WHERE id=$1\", app).Scan(&version); e != nil {"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 367,
+      "relations": [
+        "applications.directories"
+      ],
+      "source": "_, e = tx.Exec(c, \"INSERT INTO applications.directories(id,app_id,name,parent_id,position) VALUES($1,$2,$3,$4,$5)\", id, app, in.Name, in.ParentID, in.Position)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 370,
+      "relations": [
+        "applications.directories"
+      ],
+      "source": "tag, e = tx.Exec(c, \"UPDATE applications.directories SET name=$3,parent_id=$4,position=$5 WHERE id=$1 AND app_id=$2\", id, app, in.Name, in.ParentID, in.Position)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 381,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "_, e = tx.Exec(c, \"INSERT INTO applications.logical_tables(id,app_id,name,directory_id,position) VALUES($1,$2,$3,$4,$5)\", id, app, in.Name, in.DirectoryID, in.Position)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 383,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "tag, err := tx.Exec(c, \"UPDATE applications.logical_tables SET name=$3,directory_id=$4,position=$5 WHERE id=$1 AND app_id=$2\", id, app, in.Name, in.DirectoryID, in.Position)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 400,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "_, e = tx.Exec(c, \"INSERT INTO applications.logical_tables(id,app_id,name,directory_id,position) VALUES($1,$2,$3,$4,$5)\", tableID, app, in.Name, in.DirectoryID, in.Position)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 407,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "_, e = tx.Exec(c, \"INSERT INTO applications.form_views(id,app_id,table_id,name,directory_id,position) VALUES($1,$2,$3,$4,$5,$6)\", id, app, tableID, in.Name, in.DirectoryID, in.Position)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 417,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "_, e = tx.Exec(c, \"UPDATE applications.form_views SET name=$3,directory_id=$4,position=$5 WHERE id=$1 AND app_id=$2\", id, app, in.Name, in.DirectoryID, in.Position)"
+    },
+    {
+      "path": "services/bff/internal/appstructure/store.go",
+      "line": 435,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "if _, e = tx.Exec(c, \"UPDATE applications.apps SET structure_version=structure_version+1 WHERE id=$1\", app); e != nil {"
+    },
+    {
+      "path": "services/bff/internal/appstructure/template_table.go",
+      "line": 96,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "tag, e := tx.Exec(ctx, \"UPDATE applications.logical_tables SET fields_json=$3,schema_version=1,schema_ready=true WHERE app_id=$1 AND id=$2 AND schema_version=0 AND NOT schema_ready\", m.app, id, raw)"
+    },
+    {
+      "path": "services/bff/internal/apptemplates/export.go",
+      "line": 109,
+      "relations": [
+        "applications.directories"
+      ],
+      "source": "e = scan(\"SELECT id::text,name,parent_id::text,position FROM applications.directories WHERE app_id=$1 ORDER BY id\", func(rows pgx.Rows) error {"
+    },
+    {
+      "path": "services/bff/internal/apptemplates/export.go",
+      "line": 123,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "e = scan(\"SELECT id::text,name,directory_id::text,position,fields_json FROM applications.logical_tables WHERE app_id=$1 ORDER BY id\", func(rows pgx.Rows) error {"
+    },
+    {
+      "path": "services/bff/internal/apptemplates/export.go",
+      "line": 141,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "e = scan(\"SELECT id::text,table_id::text,name,directory_id::text,position,layout FROM applications.form_views WHERE app_id=$1 ORDER BY id\", func(rows pgx.Rows) error {"
+    },
+    {
+      "path": "services/bff/internal/apptemplates/import.go",
+      "line": 100,
+      "relations": [
+        "applications.directories"
+      ],
+      "source": "if _, e = tx.Exec(ctx, \"INSERT INTO applications.directories(id,app_id,name,parent_id,position) VALUES($1,$2,$3,$4,$5)\", d.ID, app, d.Name, d.ParentID, d.Position); e != nil {"
+    },
+    {
+      "path": "services/bff/internal/apptemplates/import.go",
+      "line": 114,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "if _, e = tx.Exec(ctx, \"INSERT INTO applications.logical_tables(id,app_id,name,directory_id,position) VALUES($1,$2,$3,$4,$5)\", t.ID, app, t.Name, t.DirectoryID, t.Position); e != nil {"
+    },
+    {
+      "path": "services/bff/internal/apptemplates/import.go",
+      "line": 126,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "if _, e = tx.Exec(ctx, \"INSERT INTO applications.form_views(id,app_id,table_id,name,directory_id,position,view_version,layout) VALUES($1,$2,$3,$4,$5,$6,1,$7)\", f.ID, app, f.TableID, f.Name, f.DirectoryID, f.Position, layout); e != nil {"
+    },
+    {
+      "path": "services/bff/internal/appworkflows/deletion.go",
+      "line": 85,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "{`SELECT 1 FROM applications.apps WHERE id=$1 FOR UPDATE`, []any{in.AppID}},"
+    },
+    {
+      "path": "services/bff/internal/appworkflows/deletion.go",
+      "line": 86,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "{`SELECT 1 FROM applications.logical_tables WHERE app_id=$1 AND id=$2 FOR UPDATE`, []any{in.AppID, in.TableID}},"
+    },
+    {
+      "path": "services/bff/internal/appworkflows/http.go",
+      "line": 501,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "err = tx.QueryRow(ctx, \"SELECT owner_user_id::text FROM applications.apps WHERE id=$1\", appID).Scan(&owner)"
+    },
+    {
+      "path": "services/bff/internal/appworkflows/http.go",
+      "line": 524,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.form_views v"
+    },
+    {
+      "path": "services/bff/internal/appworkflows/http.go",
+      "line": 525,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "JOIN applications.logical_tables t ON t.app_id=v.app_id AND t.id=v.table_id"
+    },
+    {
+      "path": "services/bff/internal/appworkflows/http.go",
+      "line": 645,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "err = tx.QueryRow(r.Context(), `SELECT table_id::text FROM applications.form_views WHERE app_id=$1 AND id=$2`, appID, viewID).Scan(&tableID)"
+    },
+    {
+      "path": "services/bff/internal/appworkflows/http.go",
+      "line": 803,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "err = tx.QueryRow(ctx, `SELECT a.owner_user_id::text,t.fields_json FROM applications.apps a"
+    },
+    {
+      "path": "services/bff/internal/appworkflows/http.go",
+      "line": 804,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "JOIN applications.form_views v ON v.app_id=a.id AND v.id=$2"
+    },
+    {
+      "path": "services/bff/internal/appworkflows/http.go",
+      "line": 805,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "JOIN applications.logical_tables t ON t.app_id=v.app_id AND t.id=v.table_id WHERE a.id=$1`, appID, viewID).Scan(&owner, &fieldsJSON)"
+    },
+    {
+      "path": "services/bff/internal/appworkflows/publication.go",
+      "line": 355,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "if e = tx.QueryRow(ctx, `SELECT owner_user_id::text FROM applications.apps WHERE id=$1 FOR UPDATE`, in.AppID).Scan(&owner); e != nil {"
+    },
+    {
+      "path": "services/bff/internal/workflowcatalog/catalog.go",
+      "line": 493,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.logical_tables WHERE app_id=$1 AND id=$2)`,"
+    },
+    {
+      "path": "services/bff/internal/workflowcatalog/catalog.go",
+      "line": 566,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "err := tx.QueryRow(ctx, `SELECT id::text FROM applications.apps WHERE id=$1 FOR UPDATE`, appID).Scan(&id)"
+    },
+    {
+      "path": "services/bff/internal/workflowcatalog/catalog.go",
+      "line": 575,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "err = tx.QueryRow(ctx, `SELECT schema_version,schema_ready,fields_json FROM applications.logical_tables"
+    },
+    {
+      "path": "services/bff/internal/workflowcatalog/catalog.go",
+      "line": 584,
+      "relations": [
+        "applications.form_views"
+      ],
+      "source": "err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.form_views WHERE app_id=$1 AND table_id=$2 AND id=$3)`,"
+    },
+    {
+      "path": "services/bff/internal/workflowcatalog/deletion.go",
+      "line": 43,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "if e := tx.QueryRow(ctx, `SELECT id::text FROM applications.apps WHERE id=$1 FOR UPDATE`, in.AppID).Scan(&app); e != nil {"
+    },
+    {
+      "path": "services/bff/internal/workflowprojection/journal.go",
+      "line": 26,
+      "relations": [
+        "applications.apps",
+        "applications.logical_tables"
+      ],
+      "source": "for _, q := range []string{\"SELECT id::text FROM applications.apps WHERE id=$1 FOR UPDATE\", \"SELECT id::text FROM applications.logical_tables WHERE app_id=$1 AND id=$2 FOR UPDATE\"} {"
+    },
+    {
+      "path": "services/bff/internal/workflowprojection/projection.go",
+      "line": 244,
+      "relations": [
+        "applications.apps"
+      ],
+      "source": "if err := tx.QueryRow(ctx, `SELECT id::text FROM applications.apps WHERE id=$1 FOR UPDATE`, command.AppID).Scan(&id); err != nil {"
+    },
+    {
+      "path": "services/bff/internal/workflowprojection/projection.go",
+      "line": 249,
+      "relations": [
+        "applications.logical_tables"
+      ],
+      "source": "if err := tx.QueryRow(ctx, `SELECT schema_version,schema_ready FROM applications.logical_tables"
+    }
+  ]
+}

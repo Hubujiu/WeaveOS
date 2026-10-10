@@ -1,0 +1,246 @@
+diff --git a/db/migrations/00035_structure_deletion.sql b/db/migrations/00035_structure_deletion.sql
+index d47590ca..c47b0aa0 100644
+--- a/db/migrations/00035_structure_deletion.sql
++++ b/db/migrations/00035_structure_deletion.sql
+@@ -84,10 +84,10 @@ BEGIN
+   SELECT view_version INTO rv FROM applications.form_views WHERE app_id=app_uuid AND id=resource_uuid AND deleted_at IS NULL FOR UPDATE;
+   IF NOT FOUND THEN RAISE EXCEPTION 'view missing' USING ERRCODE='P0002';END IF;
+  ELSE rv:=pv;END IF;
+- IF sv<>expected_structure THEN RAISE EXCEPTION 'structure conflict' USING ERRCODE='W0038';END IF;
++ IF sv<>expected_structure THEN RAISE EXCEPTION 'structure conflict' USING ERRCODE='W0038',DETAIL=sv::text;END IF;
+  IF rv<>expected_resource THEN
+-  IF resource_kind='table' THEN RAISE EXCEPTION 'schema conflict' USING ERRCODE='W0002';
+-  ELSIF resource_kind='form' THEN RAISE EXCEPTION 'view conflict' USING ERRCODE='W0039';
++  IF resource_kind='table' THEN RAISE EXCEPTION 'schema conflict' USING ERRCODE='W0002',DETAIL=rv::text;
++  ELSIF resource_kind='form' THEN RAISE EXCEPTION 'view conflict' USING ERRCODE='W0039',DETAIL=rv::text;
+   ELSE RAISE EXCEPTION 'policy conflict' USING ERRCODE='W0040';END IF;
+  END IF;
+  IF resource_kind IN ('application','directory') THEN
+diff --git a/services/bff/internal/apprecordservice/search.go b/services/bff/internal/apprecordservice/search.go
+index 15120e34..6c4dcaa1 100644
+--- a/services/bff/internal/apprecordservice/search.go
++++ b/services/bff/internal/apprecordservice/search.go
+@@ -103,7 +103,7 @@ func (s *recordStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
+  JOIN applications.form_views v ON v.app_id=a.id
+  JOIN applications.logical_tables t ON t.app_id=v.app_id AND t.id=v.table_id
+  JOIN applications.menu_resources m ON m.app_id=v.app_id AND m.resource_kind='form' AND m.resource_id=v.id
+- WHERE a.id=$1 AND v.id=$2`, s.appID, s.viewID).Scan(&s.ownerID, &s.control.Policy, &s.tableID, &s.control.Schema, &s.control.Dependency, &s.control.Data, &ready, &s.control.View)
++ WHERE a.id=$1 AND v.id=$2 AND a.deleted_at IS NULL AND v.deleted_at IS NULL AND t.deleted_at IS NULL`, s.appID, s.viewID).Scan(&s.ownerID, &s.control.Policy, &s.tableID, &s.control.Schema, &s.control.Dependency, &s.control.Data, &ready, &s.control.View)
+ 	if errors.Is(err, pgx.ErrNoRows) {
+ 		return fail(applications.ErrMissing)
+ 	}
+diff --git a/services/bff/internal/appstructure/root_structure_deletion_test.go b/services/bff/internal/appstructure/root_structure_deletion_test.go
+index 3d08a8cd..6dfbc793 100644
+--- a/services/bff/internal/appstructure/root_structure_deletion_test.go
++++ b/services/bff/internal/appstructure/root_structure_deletion_test.go
+@@ -289,7 +289,7 @@ func TestRootStructureDeletionVersionConflictData(t *testing.T) {
+ 	} {
+ 		t.Run(tc.key, func(t *testing.T) {
+ 			d := rootDeletionError(t, f.call(t, "POST", tc.path, rootDeletionInput(t, f, tc.structure, tc.resource)), 409, tc.code)
+-			if tc.key=="" && d!=nil || tc.key!="" && !reflect.DeepEqual(d, map[string]any{tc.key: float64(tc.want)}) {
++			if tc.key == "" && d != nil || tc.key != "" && !reflect.DeepEqual(d, map[string]any{tc.key: float64(tc.want)}) {
+ 				t.Fatalf("existing closed conflict contract %#v", d)
+ 			}
+ 		})
+@@ -350,3 +350,56 @@ func TestRootStructureDeletionConcurrentCreate(t *testing.T) {
+ 		}
+ 	}
+ }
++
++func TestRootStructureDeletionSQLReferenceGuards(t *testing.T) {
++	for _, target := range []string{"draft", "preset", "workflow", "grant", "menu", "field", "option-mapping", "group-after-app"} {
++		t.Run(target, func(t *testing.T) {
++			f := setup(t)
++			c := context.Background()
++			view, table := rootDeletionForm(t, f, map[string]any{"kind": "new_table"}, 0)
++			var group string
++			if e := f.owner.QueryRow(c, "INSERT INTO applications.permission_groups(app_id,name) VALUES($1,'keep') RETURNING id::text", f.app).Scan(&group); e != nil {
++				t.Fatal(e)
++			}
++			data(t, f.call(t, "POST", "/forms/"+view+"/deletion", rootDeletionInput(t, f, 1, 0)), 200)
++			if target == "field" || target == "option-mapping" {
++				data(t, f.call(t, "POST", "/tables/"+table+"/deletion", rootDeletionInput(t, f, 2, 0)), 200)
++			}
++			var e error
++			switch target {
++			case "draft":
++				_, e = f.runtime.Exec(c, `INSERT INTO applications.record_drafts(owner_user_id,app_id,table_id,view_id,schema_version,values_json) VALUES($1,$2,$3,$4,0,'{}')`, f.actor, f.app, table, view)
++			case "preset":
++				_, e = f.runtime.Exec(c, `INSERT INTO applications.table_presets(owner_user_id,app_id,view_id,name,slot,definition_json,field_kinds) VALUES($1,$2,$3,'late',1,'{"name":"late","filter":null,"sort":null,"hiddenColumnIds":[],"columnOrder":[],"columnWidths":{}}','{}')`, f.actor, f.app, view)
++			case "workflow":
++				_, e = f.runtime.Exec(c, `INSERT INTO applications.workflow_definitions(id,app_id,table_id,view_id,name,revision,state,current_version,candidate_version) VALUES($1,$2,$3,$4,'late',1,'disabled',0,1)`, uuid(t, f.owner), f.app, table, view)
++			case "grant":
++				_, e = f.runtime.Exec(c, `INSERT INTO applications.grants(app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,'form',$3,'menu.enter','all')`, f.app, group, view)
++			case "menu":
++				_, e = f.runtime.Exec(c, `INSERT INTO applications.menu_resources(app_id,resource_kind,resource_id) VALUES($1,'form',$2) ON CONFLICT DO NOTHING`, f.app, view)
++			case "field":
++				_, e = f.runtime.Exec(c, `INSERT INTO applications.fields(id,app_id,table_id,definition) VALUES($1,$2,$3,'{}')`, uuid(t, f.owner), f.app, table)
++			case "option-mapping":
++				_, e = f.runtime.Exec(c, `SELECT applications.apply_option_mapping($1,$2,$3,$4,'text','{}','[]')`, f.actor, f.app, table, uuid(t, f.owner))
++			case "group-after-app":
++				// Independent empty app: existing groups on the first app are not removed.
++				empty := uuid(t, f.owner)
++				if _, err := f.owner.Exec(c, `INSERT INTO applications.apps(id,name,owner_user_id) VALUES($1,'empty',$2)`, empty, f.actor); err != nil {
++					t.Fatal(err)
++				}
++				if _, err := f.owner.Exec(c, `SELECT applications.register_catalog_entry($1)`, empty); err != nil {
++					t.Fatal(err)
++				}
++				old := f.app
++				f.app = empty
++				data(t, f.call(t, "POST", "/deletion", rootDeletionInput(t, f, 0, 1)), 200)
++				f.app = old
++				_, e = f.runtime.Exec(c, `INSERT INTO applications.permission_groups(app_id,name) VALUES($1,'late')`, empty)
++			}
++			var pe *pgconn.PgError
++			if !errors.As(e, &pe) || pe.Code != "P0002" {
++				t.Fatalf("new reference must reject inactive scope, got %v", e)
++			}
++		})
++	}
++}
+diff --git a/services/bff/internal/appstructure/structure_deletion.go b/services/bff/internal/appstructure/structure_deletion.go
+index 01b33a7d..c43925ac 100644
+--- a/services/bff/internal/appstructure/structure_deletion.go
++++ b/services/bff/internal/appstructure/structure_deletion.go
+@@ -13,6 +13,7 @@ import (
+ 	"io"
+ 	"mime"
+ 	"net/http"
++	"strconv"
+ 	"unicode/utf8"
+ )
+ 
+@@ -133,11 +134,23 @@ func structureDeletionError(e error) error {
+ 			}
+ 			return &Error{Code: "APPLICATION_STRUCTURE_NOT_EMPTY", Data: map[string]any{"dependencies": deps}}
+ 		case "W0038":
+-			return &Error{Code: "APPLICATION_STRUCTURE_CONFLICT"}
++			version, err := strconv.ParseInt(p.Detail, 10, 64)
++			if err != nil || version < 0 || version > maxVersion {
++				return ErrUnavailable
++			}
++			return &Error{Code: "APPLICATION_STRUCTURE_CONFLICT", Data: map[string]int64{"currentStructureVersion": version}}
+ 		case "W0039":
+-			return &Error{Code: "APPLICATION_VIEW_CONFLICT"}
++			version, err := strconv.ParseInt(p.Detail, 10, 64)
++			if err != nil || version < 0 || version > maxVersion {
++				return ErrUnavailable
++			}
++			return &Error{Code: "APPLICATION_VIEW_CONFLICT", Data: map[string]int64{"currentViewVersion": version}}
+ 		case "W0002":
+-			return &Error{Code: "APPLICATION_SCHEMA_CONFLICT"}
++			version, err := strconv.ParseInt(p.Detail, 10, 64)
++			if err != nil || version < 0 || version > maxVersion {
++				return ErrUnavailable
++			}
++			return &Error{Code: "APPLICATION_SCHEMA_CONFLICT", Data: map[string]int64{"currentSchemaVersion": version}}
+ 		case "W0040":
+ 			return &Error{Code: "APPLICATION_POLICY_CONFLICT"}
+ 		case "23514", "22P02":
+diff --git a/services/bff/internal/apptemplates/export.go b/services/bff/internal/apptemplates/export.go
+index afc8ad32..099efb16 100644
+--- a/services/bff/internal/apptemplates/export.go
++++ b/services/bff/internal/apptemplates/export.go
+@@ -74,7 +74,11 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
+ 		max   int
+ 	}{{"directories", 1000}, {"logical_tables", 128}, {"form_views", 256}, {"workflow_definitions", 128}, {"permission_groups", 128}} {
+ 		var n int
+-		q := "SELECT count(*) FROM (SELECT 1 FROM applications." + limit.table + " WHERE app_id=$1 LIMIT $2) bounded"
++		active := ""
++		if limit.table == "directories" || limit.table == "logical_tables" || limit.table == "form_views" {
++			active = " AND deleted_at IS NULL"
++		}
++		q := "SELECT count(*) FROM (SELECT 1 FROM applications." + limit.table + " WHERE app_id=$1" + active + " LIMIT $2) bounded"
+ 		if e = tx.QueryRow(ctx, q, id, limit.max+1).Scan(&n); e != nil {
+ 			return empty, e
+ 		}
+@@ -106,7 +110,7 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
+ 		}
+ 		return rows.Err()
+ 	}
+-	e = scan("SELECT id::text,name,parent_id::text,position FROM applications.directories WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
++	e = scan("SELECT id::text,name,parent_id::text,position FROM applications.directories WHERE app_id=$1 AND deleted_at IS NULL ORDER BY id", func(rows pgx.Rows) error {
+ 		var d Directory
+ 		if e := rows.Scan(&d.ID, &d.Name, &d.ParentID, &d.Position); e != nil {
+ 			return e
+@@ -120,7 +124,7 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
+ 	if e != nil {
+ 		return empty, e
+ 	}
+-	e = scan("SELECT id::text,name,directory_id::text,position,fields_json FROM applications.logical_tables WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
++	e = scan("SELECT id::text,name,directory_id::text,position,fields_json FROM applications.logical_tables WHERE app_id=$1 AND deleted_at IS NULL ORDER BY id", func(rows pgx.Rows) error {
+ 		var t Table
+ 		var raw []byte
+ 		if e := rows.Scan(&t.ID, &t.Name, &t.DirectoryID, &t.Position, &raw); e != nil {
+@@ -138,7 +142,7 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
+ 	if e != nil {
+ 		return empty, e
+ 	}
+-	e = scan("SELECT id::text,table_id::text,name,directory_id::text,position,layout FROM applications.form_views WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
++	e = scan("SELECT id::text,table_id::text,name,directory_id::text,position,layout FROM applications.form_views WHERE app_id=$1 AND deleted_at IS NULL ORDER BY id", func(rows pgx.Rows) error {
+ 		var f Form
+ 		var raw []byte
+ 		if e := rows.Scan(&f.ID, &f.TableID, &f.Name, &f.DirectoryID, &f.Position, &raw); e != nil {
+diff --git a/services/bff/internal/appworkflows/http.go b/services/bff/internal/appworkflows/http.go
+index a428a1ea..3f3acf72 100644
+--- a/services/bff/internal/appworkflows/http.go
++++ b/services/bff/internal/appworkflows/http.go
+@@ -524,7 +524,7 @@ func (s *Service) getDefinition(w http.ResponseWriter, r *http.Request, p sessio
+ 	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.form_views v
+ 		JOIN applications.logical_tables t ON t.app_id=v.app_id AND t.id=v.table_id
+ 		JOIN applications.menu_resources m ON m.app_id=v.app_id AND m.resource_kind='form' AND m.resource_id=v.id
+-		WHERE v.app_id=$1 AND v.id=$2)`, appID, viewID).Scan(&exists)
++		WHERE v.app_id=$1 AND v.id=$2 AND v.deleted_at IS NULL AND t.deleted_at IS NULL)`, appID, viewID).Scan(&exists)
+ 	if err != nil || !exists {
+ 		if err == nil {
+ 			err = applications.ErrMissing
+@@ -642,7 +642,7 @@ func (s *Service) mutate(w http.ResponseWriter, r *http.Request, p session.Princ
+ 	switch action {
+ 	case "save":
+ 		var tableID string
+-		err = tx.QueryRow(r.Context(), `SELECT table_id::text FROM applications.form_views WHERE app_id=$1 AND id=$2`, appID, viewID).Scan(&tableID)
++		err = tx.QueryRow(r.Context(), `SELECT table_id::text FROM applications.form_views WHERE app_id=$1 AND id=$2 AND deleted_at IS NULL`, appID, viewID).Scan(&tableID)
+ 		if errors.Is(err, pgx.ErrNoRows) {
+ 			err = applications.ErrMissing
+ 			break
+@@ -802,7 +802,7 @@ func authorizeAssignees(ctx context.Context, tx pgx.Tx, appID, viewID string, gr
+ 	var fieldsJSON []byte
+ 	err = tx.QueryRow(ctx, `SELECT a.owner_user_id::text,t.fields_json FROM applications.apps a
+ 		JOIN applications.form_views v ON v.app_id=a.id AND v.id=$2
+-		JOIN applications.logical_tables t ON t.app_id=v.app_id AND t.id=v.table_id WHERE a.id=$1`, appID, viewID).Scan(&owner, &fieldsJSON)
++		JOIN applications.logical_tables t ON t.app_id=v.app_id AND t.id=v.table_id WHERE a.id=$1 AND a.deleted_at IS NULL AND v.deleted_at IS NULL AND t.deleted_at IS NULL`, appID, viewID).Scan(&owner, &fieldsJSON)
+ 	if errors.Is(err, pgx.ErrNoRows) {
+ 		return applications.ErrMissing
+ 	}
+diff --git a/services/bff/internal/workflowcatalog/catalog.go b/services/bff/internal/workflowcatalog/catalog.go
+index f887a11d..43ec4eb8 100644
+--- a/services/bff/internal/workflowcatalog/catalog.go
++++ b/services/bff/internal/workflowcatalog/catalog.go
+@@ -490,7 +490,7 @@ func (Catalog) CheckCompatibilityInTx(ctx context.Context, tx pgx.Tx, appID, tab
+ 		return nil, ErrInvalid
+ 	}
+ 	var exists bool
+-	if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.logical_tables WHERE app_id=$1 AND id=$2)`,
++	if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.logical_tables WHERE app_id=$1 AND id=$2 AND deleted_at IS NULL)`,
+ 		appID, tableID).Scan(&exists); err != nil {
+ 		return nil, mapDBError(err)
+ 	}
+@@ -573,7 +573,7 @@ func lockResources(ctx context.Context, tx pgx.Tx, appID, tableID, viewID string
+ 	var snapshot resourceSnapshot
+ 	var fieldsJSON []byte
+ 	err = tx.QueryRow(ctx, `SELECT schema_version,schema_ready,fields_json FROM applications.logical_tables
+-		WHERE app_id=$1 AND id=$2 FOR UPDATE`, appID, tableID).Scan(&snapshot.schemaVersion, &snapshot.ready, &fieldsJSON)
++		WHERE app_id=$1 AND id=$2 AND deleted_at IS NULL FOR UPDATE`, appID, tableID).Scan(&snapshot.schemaVersion, &snapshot.ready, &fieldsJSON)
+ 	if errors.Is(err, pgx.ErrNoRows) {
+ 		return resourceSnapshot{}, ErrMissing
+ 	}
+@@ -581,7 +581,7 @@ func lockResources(ctx context.Context, tx pgx.Tx, appID, tableID, viewID string
+ 		return resourceSnapshot{}, mapDBError(err)
+ 	}
+ 	var viewExists bool
+-	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.form_views WHERE app_id=$1 AND table_id=$2 AND id=$3)`,
++	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM applications.form_views WHERE app_id=$1 AND table_id=$2 AND id=$3 AND deleted_at IS NULL)`,
+ 		appID, tableID, viewID).Scan(&viewExists)
+ 	if err != nil {
+ 		return resourceSnapshot{}, mapDBError(err)

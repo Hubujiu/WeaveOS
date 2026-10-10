@@ -182,7 +182,7 @@ func (a *Application) read(ctx context.Context, p session.Principal) (pgx.Tx, ap
 	return tx, apppolicy.TrustedActor{ID: p.UserID, BootstrapAdmin: root}, nil
 }
 func loadApp(ctx context.Context, tx pgx.Tx, id string, lock bool) (App, error) {
-	q := "SELECT id::text,name,owner_user_id::text,policy_revision FROM applications.apps WHERE id=$1"
+	q := "SELECT id::text,name,owner_user_id::text,policy_revision FROM applications.apps WHERE id=$1 AND deleted_at IS NULL"
 	if lock {
 		q += " FOR UPDATE"
 	}
@@ -435,7 +435,7 @@ func loadGroup(ctx context.Context, tx pgx.Tx, appID, id string) (Group, error) 
 func readableOperation(ctx context.Context, tx pgx.Tx, actor apppolicy.TrustedActor, appID, kind string) error {
 	// operation() already constrains the lookup to this live actor. New record/
 	// draft kinds store only minimum results, independently of current data grants.
-	if recordOperation(kind) || kind == TemplateImportKind {
+	if recordOperation(kind) || structureDeletion(kind) || kind == TemplateImportKind {
 		return nil
 	}
 	app, err := loadApp(ctx, tx, appID, false)

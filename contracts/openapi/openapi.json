@@ -17728,6 +17728,717 @@
           }
         }
       }
+    },
+    "/api/v1/applications/{appId}/deletion": {
+      "post": {
+        "operationId": "deleteApplicationNonCascade",
+        "summary": "Delete active application without cascade",
+        "description": "V073 approved noncascade deletion. Closed 4096-byte JSON; current owner or Bootstrap and live Session/CSRF/expected actor. Retain stable metadata identities, typed business rows and all history/private presets. Reject active dependencies; unavailable is not empty. Same actor/key/fingerprint replays only the six-key minimum receipt before current resource eligibility. No resurrection, expiry or purge. Unknown COMMIT is 503 with original operationId; confirmed commit with failed renewal is 200 with cookies cleared. expectedResourceVersion is policyRevision for application, fixed 0 for directory, schemaVersion for table, viewVersion for form.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Atomic minimum confirmed deletion receipt",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationDeletionRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/directories/{directoryId}/deletion": {
+      "post": {
+        "operationId": "deleteDirectoryNonCascade",
+        "summary": "Delete active directory without cascade",
+        "description": "V073 approved noncascade deletion. Closed 4096-byte JSON; current owner or Bootstrap and live Session/CSRF/expected actor. Retain stable metadata identities, typed business rows and all history/private presets. Reject active dependencies; unavailable is not empty. Same actor/key/fingerprint replays only the six-key minimum receipt before current resource eligibility. No resurrection, expiry or purge. Unknown COMMIT is 503 with original operationId; confirmed commit with failed renewal is 200 with cookies cleared. expectedResourceVersion is policyRevision for application, fixed 0 for directory, schemaVersion for table, viewVersion for form.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "directoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Atomic minimum confirmed deletion receipt",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DirectoryDeletionRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/tables/{tableId}/deletion": {
+      "post": {
+        "operationId": "deleteTableNonCascade",
+        "summary": "Delete active table without cascade",
+        "description": "V073 approved noncascade deletion. Closed 4096-byte JSON; current owner or Bootstrap and live Session/CSRF/expected actor. Retain stable metadata identities, typed business rows and all history/private presets. Reject active dependencies; unavailable is not empty. Same actor/key/fingerprint replays only the six-key minimum receipt before current resource eligibility. No resurrection, expiry or purge. Unknown COMMIT is 503 with original operationId; confirmed commit with failed renewal is 200 with cookies cleared. expectedResourceVersion is policyRevision for application, fixed 0 for directory, schemaVersion for table, viewVersion for form.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "tableId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Atomic minimum confirmed deletion receipt",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StructureDeletionRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/deletion": {
+      "post": {
+        "operationId": "deleteFormNonCascade",
+        "summary": "Delete active form without cascade",
+        "description": "V073 approved noncascade deletion. Closed 4096-byte JSON; current owner or Bootstrap and live Session/CSRF/expected actor. Retain stable metadata identities, typed business rows and all history/private presets. Reject active dependencies; unavailable is not empty. Same actor/key/fingerprint replays only the six-key minimum receipt before current resource eligibility. No resurrection, expiry or purge. Unknown COMMIT is 503 with original operationId; confirmed commit with failed renewal is 200 with cookies cleared. expectedResourceVersion is policyRevision for application, fixed 0 for directory, schemaVersion for table, viewVersion for form.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Atomic minimum confirmed deletion receipt",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Closed current-resource, authorization, CAS, dependency or unconfirmed error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureDeletionErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StructureDeletionRequest"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -21385,6 +22096,9 @@
               },
               {
                 "$ref": "#/components/schemas/RecordLifecycleResult"
+              },
+              {
+                "$ref": "#/components/schemas/StructureDeletionResult"
               }
             ]
           }
@@ -31748,6 +32462,368 @@
                 "$ref": "#/components/schemas/RecordLifecycleState"
               }
             }
+          }
+        ]
+      },
+      "StructureDeletionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "expectedStructureVersion",
+          "expectedResourceVersion"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "expectedStructureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "expectedResourceVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "ApplicationDeletionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "expectedStructureVersion",
+          "expectedResourceVersion"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "expectedStructureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "expectedResourceVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "DirectoryDeletionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "expectedStructureVersion",
+          "expectedResourceVersion"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "expectedStructureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "expectedResourceVersion": {
+            "type": "integer",
+            "const": 0
+          }
+        }
+      },
+      "StructureDeletionResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "appId",
+          "resourceKind",
+          "id",
+          "structureVersion",
+          "deleted"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "appId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "resourceKind": {
+            "type": "string",
+            "enum": [
+              "application",
+              "directory",
+              "table",
+              "form"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "structureVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "deleted": {
+            "type": "boolean",
+            "const": true
+          }
+        }
+      },
+      "StructureDeletionResultEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/StructureDeletionResult"
+              }
+            }
+          }
+        ]
+      },
+      "StructureDeletionDependencies": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dependencies"
+        ],
+        "properties": {
+          "dependencies": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "directories",
+                "tables",
+                "forms",
+                "permission_groups",
+                "workflows",
+                "drafts",
+                "pending_commands",
+                "grants",
+                "records"
+              ]
+            }
+          }
+        }
+      },
+      "StructureDeletionErrorEnvelope": {
+        "oneOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "COMMON_VALIDATION_FAILED"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/ValidationErrorData"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_STRUCTURE_CONFLICT"
+                  },
+                  "data": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "currentStructureVersion"
+                    ],
+                    "properties": {
+                      "currentStructureVersion": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_SCHEMA_CONFLICT"
+                  },
+                  "data": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "currentSchemaVersion"
+                    ],
+                    "properties": {
+                      "currentSchemaVersion": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_VIEW_CONFLICT"
+                  },
+                  "data": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "currentViewVersion"
+                    ],
+                    "properties": {
+                      "currentViewVersion": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_OPERATION_UNCONFIRMED"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/ApplicationUnconfirmedData"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorEnvelope"
+              },
+              {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "COMMON_INVALID_ARGUMENT",
+                      "COMMON_CSRF_REJECTED",
+                      "COMMON_UNSUPPORTED_MEDIA_TYPE",
+                      "AUTH_UNAUTHENTICATED",
+                      "APPLICATION_FORBIDDEN",
+                      "APPLICATION_NOT_FOUND",
+                      "APPLICATION_RESOURCE_INVALID",
+                      "APPLICATION_OPERATION_CONFLICT",
+                      "COMMON_SERVICE_UNAVAILABLE",
+                      "APPLICATION_POLICY_CONFLICT"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "$ref": "#/components/schemas/ActorChangedEnvelope"
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_STRUCTURE_NOT_EMPTY"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/StructureDeletionDependencies"
+                  }
+                }
+              }
+            ]
           }
         ]
       }

@@ -1,0 +1,130 @@
+diff --git a/services/bff/internal/appstructure/root_structure_deletion_test.go b/services/bff/internal/appstructure/root_structure_deletion_test.go
+index de2d67ed..e275e164 100644
+--- a/services/bff/internal/appstructure/root_structure_deletion_test.go
++++ b/services/bff/internal/appstructure/root_structure_deletion_test.go
+@@ -99,3 +99,125 @@ func TestRootStructureDeletionApplicationRejectsCustomGroup(t *testing.T) {
+ 		t.Fatalf("group not implicitly removed %#v", d)
+ 	}
+ }
++
++func TestRootStructureDeletionClosedInputs(t *testing.T) {
++	for _, tc := range []struct {
++		name   string
++		change func(map[string]any)
++	}{
++		{"unknown", func(m map[string]any) { m["cascade"] = true }},
++		{"missing", func(m map[string]any) { delete(m, "expectedResourceVersion") }},
++		{"negative", func(m map[string]any) { m["expectedStructureVersion"] = -1 }},
++		{"unsafe", func(m map[string]any) { m["expectedStructureVersion"] = 9007199254740992 }},
++		{"zero-key", func(m map[string]any) { m["operationId"] = "00000000-0000-0000-0000-000000000000" }},
++		{"string-version", func(m map[string]any) { m["expectedStructureVersion"] = "0" }},
++		{"null", func(m map[string]any) { m["expectedResourceVersion"] = nil }},
++	} {
++		t.Run(tc.name, func(t *testing.T) {
++			f := setup(t)
++			in := rootDeletionInput(t, f, 0, 1)
++			tc.change(in)
++			rootDeletionError(t, f.call(t, "POST", "/deletion", in), 400, "COMMON_VALIDATION_FAILED")
++		})
++	}
++}
++func TestRootStructureDeletionCASAndReplay(t *testing.T) {
++	f := setup(t)
++	dir := rootDeletionDirectory(t, f, nil, 0)
++	rootDeletionError(t, f.call(t, "POST", "/directories/"+dir+"/deletion", rootDeletionInput(t, f, 0, 0)), 409, "APPLICATION_STRUCTURE_CONFLICT")
++	in := rootDeletionInput(t, f, 1, 0)
++	rootDeletionReceipt(t, f.call(t, "POST", "/directories/"+dir+"/deletion", in), in["operationId"].(string), f.app, "directory", dir, 2)
++	in["expectedStructureVersion"] = 2
++	rootDeletionError(t, f.call(t, "POST", "/directories/"+dir+"/deletion", in), 409, "APPLICATION_OPERATION_CONFLICT")
++	var count int
++	if e := f.owner.QueryRow(context.Background(), "SELECT count(*) FROM applications.structure_deletions WHERE app_id=$1", f.app).Scan(&count); e != nil || count != 1 {
++		t.Fatal("one committed event", count, e)
++	}
++}
++func TestRootStructureDeletionDirectoryClosedEntrypoints(t *testing.T) {
++	for _, endpoint := range []string{"list", "update", "parent", "table-parent", "direct-parent"} {
++		t.Run(endpoint, func(t *testing.T) {
++			f := setup(t)
++			id := rootDeletionDirectory(t, f, nil, 0)
++			in := rootDeletionInput(t, f, 1, 0)
++			data(t, f.call(t, "POST", "/directories/"+id+"/deletion", in), 200)
++			switch endpoint {
++			case "list":
++				d := data(t, f.call(t, "GET", "/structure", nil), 200)
++				if a, ok := d["directories"].([]any); !ok || len(a) != 0 {
++					t.Fatalf("deleted directory still in active structure %#v", d)
++				}
++			case "update":
++				rootDeletionError(t, f.call(t, "PUT", "/directories/"+id, map[string]any{"operationId": uuid(t, f.owner), "name": "revived", "parentId": nil, "position": 0, "expectedStructureVersion": 2}), 404, "APPLICATION_NOT_FOUND")
++			case "parent":
++				rootDeletionError(t, f.call(t, "POST", "/directories", map[string]any{"operationId": uuid(t, f.owner), "name": "child", "parentId": id, "position": 0, "expectedStructureVersion": 2}), 400, "APPLICATION_RESOURCE_INVALID")
++			case "table-parent":
++				rootDeletionError(t, f.call(t, "POST", "/tables", map[string]any{"operationId": uuid(t, f.owner), "name": "table", "directoryId": id, "position": 0, "expectedStructureVersion": 2}), 400, "APPLICATION_RESOURCE_INVALID")
++			case "direct-parent":
++				if _, e := f.runtime.Exec(context.Background(), "INSERT INTO applications.directories(app_id,name,parent_id,position) VALUES($1,'late',$2,0)", f.app, id); e == nil {
++					t.Fatal("runtime direct child of deleted directory accepted")
++				}
++			}
++		})
++	}
++}
++func TestRootStructureDeletionImmutableMarkersAndRoles(t *testing.T) {
++	for _, kind := range []string{"directory", "table", "form"} {
++		t.Run(kind, func(t *testing.T) {
++			f := setup(t)
++			var id, relation string
++			switch kind {
++			case "directory":
++				id = rootDeletionDirectory(t, f, nil, 0)
++				relation = "directories"
++			case "table":
++				d := data(t, f.call(t, "POST", "/tables", map[string]any{"operationId": uuid(t, f.owner), "name": "empty", "directoryId": nil, "position": 0, "expectedStructureVersion": 0}), 201)
++				id = d["table"].(map[string]any)["id"].(string)
++				relation = "logical_tables"
++			case "form":
++				id, _ = rootDeletionForm(t, f, map[string]any{"kind": "new_table"}, 0)
++				relation = "form_views"
++			}
++			if _, e := f.runtime.Exec(context.Background(), "UPDATE applications."+relation+" SET deleted_at=now() WHERE id=$1", id); e == nil {
++				t.Fatal("runtime may directly set marker")
++			}
++			path := map[string]string{"directory": "directories", "table": "tables", "form": "forms"}[kind]
++			data(t, f.call(t, "POST", "/"+path+"/"+id+"/deletion", rootDeletionInput(t, f, 1, 0)), 200)
++			if _, e := f.runtime.Exec(context.Background(), "UPDATE applications."+relation+" SET name='revived' WHERE id=$1", id); e == nil {
++				t.Fatal("retained deleted metadata modified")
++			}
++			if _, e := f.runtime.Exec(context.Background(), "DELETE FROM applications."+relation+" WHERE id=$1", id); e == nil {
++				t.Fatal("runtime physical deletion")
++			}
++		})
++	}
++}
++func TestRootStructureDeletionDraftAndPrivatePreset(t *testing.T) {
++	for _, dependency := range []string{"draft", "preset"} {
++		t.Run(dependency, func(t *testing.T) {
++			f := setup(t)
++			view, table := rootDeletionForm(t, f, map[string]any{"kind": "new_table"}, 0)
++			c := context.Background()
++			if dependency == "draft" {
++				_, e := f.owner.Exec(c, `INSERT INTO applications.record_drafts(owner_user_id,app_id,table_id,view_id,schema_version,values_json) VALUES($1,$2,$3,$4,0,'{}')`, f.actor, f.app, table, view)
++				if e != nil {
++					t.Fatal(e)
++				}
++				d := rootDeletionError(t, f.call(t, "POST", "/forms/"+view+"/deletion", rootDeletionInput(t, f, 1, 0)), 409, "APPLICATION_STRUCTURE_NOT_EMPTY")
++				if !reflect.DeepEqual(d, map[string]any{"dependencies": []any{"drafts"}}) {
++					t.Fatalf("draft dependency %#v", d)
++				}
++			} else {
++				_, e := f.owner.Exec(c, `INSERT INTO applications.table_presets(owner_user_id,app_id,view_id,name,slot,definition_json,field_kinds) VALUES($1,$2,$3,'mine',1,'{"name":"mine","filter":null,"sort":null,"hiddenColumnIds":[],"columnOrder":[],"columnWidths":{}}','{}')`, f.actor, f.app, view)
++				if e != nil {
++					t.Fatal(e)
++				}
++				data(t, f.call(t, "POST", "/forms/"+view+"/deletion", rootDeletionInput(t, f, 1, 0)), 200)
++				var count int
++				if e = f.owner.QueryRow(c, "SELECT count(*) FROM applications.table_presets WHERE app_id=$1 AND view_id=$2", f.app, view).Scan(&count); e != nil || count != 1 {
++					t.Fatal("private configuration lost", count, e)
++				}
++			}
++		})
++	}
++}

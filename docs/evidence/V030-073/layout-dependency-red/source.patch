@@ -1,0 +1,161 @@
+diff --git a/db/migrations/00035_structure_deletion.sql b/db/migrations/00035_structure_deletion.sql
+index 94c2fd14..9d01829e 100644
+--- a/db/migrations/00035_structure_deletion.sql
++++ b/db/migrations/00035_structure_deletion.sql
+@@ -105,6 +105,8 @@ BEGIN
+   IF EXISTS(SELECT 1 FROM applications.record_command_fences f LEFT JOIN applications.workflow_commands c ON c.command_id=f.command_id WHERE f.app_id=app_uuid AND f.table_id=table_uuid AND f.state='pending' AND (resource_kind='table' OR c.command_json->>'ViewID'=resource_uuid::text OR c.command_json->>'ViewID' IS NULL)) THEN deps:=array_append(deps,'pending_commands');END IF;
+  END IF;
+  IF resource_kind IN ('directory','form') AND EXISTS(SELECT 1 FROM applications.grants g WHERE g.app_id=app_uuid AND g.resource_kind=delete_structure_resource.resource_kind AND g.resource_id=resource_uuid) THEN deps:=array_append(deps,'grants');END IF;
++ IF resource_kind='table' AND EXISTS(SELECT 1 FROM applications.logical_tables WHERE id=table_uuid AND schema_ready)
++ AND to_regclass(format('appdata.%I','t_'||replace(table_uuid::text,'-',''))) IS NULL THEN RAISE EXCEPTION 'typed storage unavailable' USING ERRCODE='55000';END IF;
+  IF resource_kind='table' AND to_regclass(format('appdata.%I','t_'||replace(table_uuid::text,'-',''))) IS NOT NULL THEN
+   EXECUTE format('LOCK TABLE appdata.%I IN SHARE ROW EXCLUSIVE MODE','t_'||replace(table_uuid::text,'-',''));
+   EXECUTE format('SELECT EXISTS(SELECT 1 FROM appdata.%I)','t_'||replace(table_uuid::text,'-','')) INTO has_rows;
+@@ -225,12 +227,16 @@ END $$;
+ CREATE FUNCTION applications.acquire_record_command_fence(app_uuid uuid,table_uuid uuid,view_uuid uuid,record_uuid uuid,command_uuid uuid,expected_schema bigint,expected_record bigint) RETURNS bigint
+ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+ BEGIN
++ IF app_uuid IS NULL OR table_uuid IS NULL OR view_uuid IS NULL OR record_uuid IS NULL OR command_uuid IS NULL
++ OR '00000000-0000-0000-0000-000000000000'::uuid=ANY(ARRAY[app_uuid,table_uuid,view_uuid,record_uuid,command_uuid])
++ OR expected_schema IS NULL OR expected_schema NOT BETWEEN 0 AND 9007199254740991
++ OR expected_record IS NULL OR expected_record NOT BETWEEN 1 AND 9007199254740991 THEN RAISE EXCEPTION 'invalid record command fence input' USING ERRCODE='23514';END IF;
+  PERFORM 1 FROM applications.apps WHERE id=app_uuid AND deleted_at IS NULL FOR UPDATE;
+- IF NOT FOUND THEN RAISE EXCEPTION 'application missing' USING ERRCODE='P0002';END IF;
++ IF NOT FOUND THEN IF EXISTS(SELECT 1 FROM applications.apps WHERE id=app_uuid AND deleted_at IS NOT NULL) THEN RAISE EXCEPTION 'application missing' USING ERRCODE='P0002';ELSE RAISE EXCEPTION 'record command fence application not found' USING ERRCODE='23503';END IF;END IF;
+  PERFORM 1 FROM applications.logical_tables WHERE app_id=app_uuid AND id=table_uuid AND deleted_at IS NULL FOR UPDATE;
+- IF NOT FOUND THEN RAISE EXCEPTION 'table missing' USING ERRCODE='P0002';END IF;
++ IF NOT FOUND THEN IF EXISTS(SELECT 1 FROM applications.logical_tables WHERE app_id=app_uuid AND id=table_uuid AND deleted_at IS NOT NULL) THEN RAISE EXCEPTION 'table missing' USING ERRCODE='P0002';ELSE RAISE EXCEPTION 'record command fence table not found' USING ERRCODE='23503';END IF;END IF;
+  PERFORM 1 FROM applications.form_views WHERE app_id=app_uuid AND table_id=table_uuid AND id=view_uuid AND deleted_at IS NULL;
+- IF NOT FOUND THEN RAISE EXCEPTION 'view missing' USING ERRCODE='P0002';END IF;
++ IF NOT FOUND THEN IF EXISTS(SELECT 1 FROM applications.form_views WHERE app_id=app_uuid AND table_id=table_uuid AND id=view_uuid AND deleted_at IS NOT NULL) THEN RAISE EXCEPTION 'view missing' USING ERRCODE='P0002';ELSE RAISE EXCEPTION 'record command fence view not found' USING ERRCODE='23503';END IF;END IF;
+  RETURN applications.acquire_record_command_fence_before_structure_deletion(app_uuid,table_uuid,view_uuid,record_uuid,command_uuid,expected_schema,expected_record);
+ END $$;
+ -- +goose StatementEnd
+diff --git a/services/bff/internal/applications/set_cost_test.go b/services/bff/internal/applications/set_cost_test.go
+index 91bbcdf2..6f1efcbc 100644
+--- a/services/bff/internal/applications/set_cost_test.go
++++ b/services/bff/internal/applications/set_cost_test.go
+@@ -60,7 +60,7 @@ func resetScaleApps(t *testing.T, f *webFixture) {
+ 	_, err := f.owner.Exec(context.Background(), `DELETE FROM personnel.identity_permissions WHERE permission_code IN (SELECT 'app.'||id::text||'.access' FROM applications.apps);
+  DELETE FROM personnel.template_permissions WHERE permission_code IN (SELECT 'app.'||id::text||'.access' FROM applications.apps);
+  DELETE FROM personnel.permission_catalog WHERE app_id IN (SELECT id::text FROM applications.apps);
+- DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE applications.record_lifecycle_events,applications.record_lifecycle,applications.table_presets,applications.workflow_rounds,applications.workflow_deletions,applications.workflow_evidence_members,applications.workflow_evidence_documents,applications.workflow_evidence_blobs,applications.workflow_tasks,applications.workflow_execution_events,applications.workflow_publications,applications.workflow_engine_receipts,applications.workflow_instances,applications.workflow_deployments,applications.workflow_versions,applications.workflow_definitions,applications.record_change_values,applications.record_change_events,applications.field_option_tombstones,applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$`)
++ DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE applications.structure_deletions, applications.record_lifecycle_events,applications.record_lifecycle,applications.table_presets,applications.workflow_rounds,applications.workflow_deletions,applications.workflow_evidence_members,applications.workflow_evidence_documents,applications.workflow_evidence_blobs,applications.workflow_tasks,applications.workflow_execution_events,applications.workflow_publications,applications.workflow_engine_receipts,applications.workflow_instances,applications.workflow_deployments,applications.workflow_versions,applications.workflow_definitions,applications.record_change_values,applications.record_change_events,applications.field_option_tombstones,applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$`)
+ 	if err != nil {
+ 		t.Fatal(err)
+ 	}
+diff --git a/services/bff/internal/appstructure/root_structure_deletion_test.go b/services/bff/internal/appstructure/root_structure_deletion_test.go
+index 2b9e3c1c..084faec6 100644
+--- a/services/bff/internal/appstructure/root_structure_deletion_test.go
++++ b/services/bff/internal/appstructure/root_structure_deletion_test.go
+@@ -413,3 +413,82 @@ func TestRootStructureDeletionMissingPhysicalTableIsNotEmpty(t *testing.T) {
+ 	data(t, f.call(t, "POST", "/forms/"+view+"/deletion", rootDeletionInput(t, f, 1, 0)), 200)
+ 	rootDeletionError(t, f.call(t, "POST", "/tables/"+table+"/deletion", rootDeletionInput(t, f, 2, 1)), 503, "COMMON_SERVICE_UNAVAILABLE")
+ }
++
++func TestRootStructureDeletionReplayAfterLostManager(t *testing.T) {
++	f := setup(t)
++	c := context.Background()
++	var other string
++	if e := f.owner.QueryRow(c, "INSERT INTO auth.users(account) VALUES('other-'||gen_random_uuid()) RETURNING id::text").Scan(&other); e != nil {
++		t.Fatal(e)
++	}
++	if _, e := f.owner.Exec(c, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", f.actor); e != nil {
++		t.Fatal(e)
++	}
++	f.app = uuid(t, f.owner)
++	if _, e := f.owner.Exec(c, "INSERT INTO applications.apps(id,name,owner_user_id) VALUES($1,'Other owner',$2)", f.app, other); e != nil {
++		t.Fatal(e)
++	}
++	if _, e := f.owner.Exec(c, "INSERT INTO applications.menu_resources VALUES($1,'application',$1)", f.app); e != nil {
++		t.Fatal(e)
++	}
++	if _, e := f.owner.Exec(c, "SELECT applications.register_catalog_entry($1)", f.app); e != nil {
++		t.Fatal(e)
++	}
++	id := rootDeletionDirectory(t, f, nil, 0)
++	in := rootDeletionInput(t, f, 1, 0)
++	rootDeletionReceipt(t, f.call(t, "POST", "/directories/"+id+"/deletion", in), in["operationId"].(string), f.app, "directory", id, 2)
++	if _, e := f.owner.Exec(c, "UPDATE auth.users SET is_bootstrap_admin=false WHERE id=$1", f.actor); e != nil {
++		t.Fatal(e)
++	}
++	rootDeletionReceipt(t, f.call(t, "POST", "/directories/"+id+"/deletion", in), in["operationId"].(string), f.app, "directory", id, 2)
++	rootDeletionError(t, f.call(t, "POST", "/directories/"+id+"/deletion", rootDeletionInput(t, f, 2, 0)), 403, "APPLICATION_FORBIDDEN")
++}
++func TestRootStructureDeletionSQLNoScopeSpoof(t *testing.T) {
++	f := setup(t)
++	id := rootDeletionDirectory(t, f, nil, 0)
++	c := context.Background()
++	var other string
++	if e := f.owner.QueryRow(c, "INSERT INTO auth.users(account) VALUES('outsider-'||gen_random_uuid()) RETURNING id::text").Scan(&other); e != nil {
++		t.Fatal(e)
++	}
++	for _, tc := range []struct{ app, id, actor, kind, state string }{
++		{f.app, id, other, "directory", "42501"}, {uuid(t, f.owner), id, f.actor, "directory", "P0002"}, {f.app, uuid(t, f.owner), f.actor, "directory", "P0002"}, {f.app, id, f.actor, "workflow", "23514"},
++	} {
++		_, e := f.runtime.Exec(c, "SELECT applications.delete_structure_resource($1,$2,$3,$4,$5,1,0)", tc.app, tc.kind, tc.id, tc.actor, uuid(t, f.owner))
++		var pe *pgconn.PgError
++		if !errors.As(e, &pe) || pe.Code != tc.state {
++			t.Fatalf("scope/actor guard wanted %s, %v", tc.state, e)
++		}
++	}
++	for _, signature := range []string{"apply_schema_change_before_structure_deletion(uuid,uuid,uuid,text,jsonb,jsonb)", "apply_option_mapping_before_structure_deletion(uuid,uuid,uuid,uuid,text,jsonb,jsonb)", "apply_record_change_before_structure_deletion(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb)", "acquire_record_command_fence_before_structure_deletion(uuid,uuid,uuid,uuid,uuid,bigint,bigint)", "change_record_lifecycle_before_structure_deletion(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean)"} {
++		for _, role := range []string{"auth_app", "auth_backup", "auth_reader", "auth_maintenance"} {
++			var yes bool
++			if e := f.owner.QueryRow(c, "SELECT has_function_privilege($1,$2,'EXECUTE')", role, "applications."+signature).Scan(&yes); e != nil || yes {
++				t.Fatalf("private previous function exposed %s %s %v", role, signature, e)
++			}
++		}
++	}
++}
++
++func TestRootStructureDeletionLayoutIsRetainedButNotActiveDependency(t *testing.T) {
++	f := setup(t)
++	view, table := rootDeletionForm(t, f, map[string]any{"kind": "new_table"}, 0)
++	field := uuid(t, f.owner)
++	def := map[string]any{"operationId": uuid(t, f.owner), "expectedSchemaVersion": 0, "expectedViewVersion": 0, "fields": []any{map[string]any{"id": field, "name": "label", "kind": "text", "required": false, "default": nil, "config": map[string]any{"maxLength": nil}, "presentation": map[string]any{"helpText": nil, "displayTimeZone": nil}}}, "layout": []any{map[string]any{"id": uuid(t, f.owner), "kind": "field", "fieldId": field, "span": 6}}, "optionMappings": []any{}, "confirmationToken": nil}
++	data(t, f.call(t, "PUT", "/forms/"+view+"/definition", def), 200)
++	second, _ := rootDeletionForm(t, f, map[string]any{"kind": "existing_table", "tableId": table}, 1)
++	proposed := map[string]any{"expectedSchemaVersion": 1, "expectedViewVersion": 0, "fields": []any{}, "layout": []any{}, "optionMappings": []any{}}
++	before := data(t, f.call(t, "POST", "/forms/"+second+"/definition/preflight", proposed), 200)
++	if deps, ok := before["dependencies"].([]any); !ok || len(deps) != 1 {
++		t.Fatalf("control active other-view layout must protect field %#v", before)
++	}
++	data(t, f.call(t, "POST", "/forms/"+view+"/deletion", rootDeletionInput(t, f, 2, 1)), 200)
++	after := data(t, f.call(t, "POST", "/forms/"+second+"/definition/preflight", proposed), 200)
++	if deps, ok := after["dependencies"].([]any); !ok || len(deps) != 0 {
++		t.Fatalf("inactive retained layout incorrectly blocks current schema %#v", after)
++	}
++	var n int
++	if e := f.owner.QueryRow(context.Background(), "SELECT jsonb_array_length(layout) FROM applications.form_views WHERE id=$1", view).Scan(&n); e != nil || n != 1 {
++		t.Fatal("deleted view original layout lost", n, e)
++	}
++}
+diff --git a/services/bff/internal/appstructure/structure_deletion.go b/services/bff/internal/appstructure/structure_deletion.go
+index c43925ac..59e68152 100644
+--- a/services/bff/internal/appstructure/structure_deletion.go
++++ b/services/bff/internal/appstructure/structure_deletion.go
+@@ -24,6 +24,10 @@ type StructureDeletionInput struct {
+ }
+ 
+ func (s *Service) structureDeletion(w http.ResponseWriter, r *http.Request, p session.Principal, app, kind, id string) {
++	if r.URL.ForceQuery {
++		fail(w, r, invalid(), "")
++		return
++	}
+ 	media, _, e := mime.ParseMediaType(r.Header.Get("Content-Type"))
+ 	if e != nil || media != "application/json" {
+ 		respond(w, r, 415, "COMMON_UNSUPPORTED_MEDIA_TYPE", nil)
+diff --git a/services/bff/internal/audit/maintenance_test.go b/services/bff/internal/audit/maintenance_test.go
+index 28256bd0..51c777a4 100644
+--- a/services/bff/internal/audit/maintenance_test.go
++++ b/services/bff/internal/audit/maintenance_test.go
+@@ -83,7 +83,7 @@ func clean(t *testing.T) (*pgxpool.Pool, *pgxpool.Pool) {
+ 	for _, v := range []struct {
+ 		p *pgxpool.Pool
+ 		q string
+-	}{{l, "DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE applications.record_lifecycle_events,applications.record_lifecycle,applications.table_presets,applications.workflow_rounds,applications.workflow_deletions,applications.workflow_evidence_members,applications.workflow_evidence_documents,applications.workflow_evidence_blobs,applications.workflow_tasks,applications.workflow_execution_events,applications.workflow_publications,applications.workflow_engine_receipts,applications.workflow_instances,applications.workflow_deployments,applications.workflow_versions,applications.workflow_definitions,applications.record_change_values,applications.record_change_events,applications.field_option_tombstones,applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,auth.authentication_events,auth.invitations,auth.password_credentials,auth.users,personnel.department_members,personnel.member_configuration,personnel.member_identities,personnel.drafts,personnel.table_presets,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$"}, {c, "TRUNCATE archive.authentication_events"}} {
++	}{{l, "DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE applications.structure_deletions, applications.record_lifecycle_events,applications.record_lifecycle,applications.table_presets,applications.workflow_rounds,applications.workflow_deletions,applications.workflow_evidence_members,applications.workflow_evidence_documents,applications.workflow_evidence_blobs,applications.workflow_tasks,applications.workflow_execution_events,applications.workflow_publications,applications.workflow_engine_receipts,applications.workflow_instances,applications.workflow_deployments,applications.workflow_versions,applications.workflow_definitions,applications.record_change_values,applications.record_change_events,applications.field_option_tombstones,applications.record_drafts,applications.record_write_audit,applications.record_command_fences,applications.table_field_dependencies,applications.form_views,applications.fields,applications.logical_tables,applications.directories,auth.authentication_events,auth.invitations,auth.password_credentials,auth.users,personnel.department_members,personnel.member_configuration,personnel.member_identities,personnel.drafts,personnel.table_presets,applications.operations,applications.grant_fields,applications.grants,applications.menu_resources,applications.group_members,applications.permission_groups,applications.apps; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$"}, {c, "TRUNCATE archive.authentication_events"}} {
+ 		if _, err := v.p.Exec(context.Background(), v.q); err != nil {
+ 			t.Fatal(err)
+ 		}

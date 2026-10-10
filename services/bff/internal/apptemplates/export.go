@@ -74,7 +74,11 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
 		max   int
 	}{{"directories", 1000}, {"logical_tables", 128}, {"form_views", 256}, {"workflow_definitions", 128}, {"permission_groups", 128}} {
 		var n int
-		q := "SELECT count(*) FROM (SELECT 1 FROM applications." + limit.table + " WHERE app_id=$1 LIMIT $2) bounded"
+		active := ""
+		if limit.table == "directories" || limit.table == "logical_tables" || limit.table == "form_views" {
+			active = " AND deleted_at IS NULL"
+		}
+		q := "SELECT count(*) FROM (SELECT 1 FROM applications." + limit.table + " WHERE app_id=$1" + active + " LIMIT $2) bounded"
 		if e = tx.QueryRow(ctx, q, id, limit.max+1).Scan(&n); e != nil {
 			return empty, e
 		}
@@ -106,7 +110,7 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
 		}
 		return rows.Err()
 	}
-	e = scan("SELECT id::text,name,parent_id::text,position FROM applications.directories WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
+	e = scan("SELECT id::text,name,parent_id::text,position FROM applications.directories WHERE app_id=$1 AND deleted_at IS NULL ORDER BY id", func(rows pgx.Rows) error {
 		var d Directory
 		if e := rows.Scan(&d.ID, &d.Name, &d.ParentID, &d.Position); e != nil {
 			return e
@@ -120,7 +124,7 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
 	if e != nil {
 		return empty, e
 	}
-	e = scan("SELECT id::text,name,directory_id::text,position,fields_json FROM applications.logical_tables WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
+	e = scan("SELECT id::text,name,directory_id::text,position,fields_json FROM applications.logical_tables WHERE app_id=$1 AND deleted_at IS NULL ORDER BY id", func(rows pgx.Rows) error {
 		var t Table
 		var raw []byte
 		if e := rows.Scan(&t.ID, &t.Name, &t.DirectoryID, &t.Position, &raw); e != nil {
@@ -138,7 +142,7 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
 	if e != nil {
 		return empty, e
 	}
-	e = scan("SELECT id::text,table_id::text,name,directory_id::text,position,layout FROM applications.form_views WHERE app_id=$1 ORDER BY id", func(rows pgx.Rows) error {
+	e = scan("SELECT id::text,table_id::text,name,directory_id::text,position,layout FROM applications.form_views WHERE app_id=$1 AND deleted_at IS NULL ORDER BY id", func(rows pgx.Rows) error {
 		var f Form
 		var raw []byte
 		if e := rows.Scan(&f.ID, &f.TableID, &f.Name, &f.DirectoryID, &f.Position, &raw); e != nil {

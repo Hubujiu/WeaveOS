@@ -1,0 +1,262 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"io"
+	"net"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"sync/atomic"
+	"testing"
+)
+
+func rootStructureDeleteBody(op string, structure, resource int64) string {
+	return fmt.Sprintf(`{"operationId":%q,"expectedStructureVersion":%d,"expectedResourceVersion":%d}`, op, structure, resource)
+}
+func TestRootStructureDeletionHTTPRoutingAndSharedData(t *testing.T) {
+	f := rootHTTPResourceSetup(t)
+	base := "/api/v1/applications/" + f.app
+	// Create the second view after schema initialization; a new view starts at 0.
+	d := rootHTTPData(t, f.call(t, "POST", base+"/forms", `{"operationId":"`+f.id(t)+`","name":"Other","source":{"kind":"existing_table","tableId":"`+f.table+`"},"directoryId":null,"position":0,"expectedStructureVersion":1}`, nil), 201)
+	var v struct{ ID string }
+	if json.Unmarshal(d["form"], &v) != nil || v.ID == "" {
+		t.Fatal("second view setup")
+	}
+	op := f.id(t)
+	got := rootHTTPData(t, f.call(t, "POST", base+"/forms/"+f.view+"/deletion", rootStructureDeleteBody(op, 2, 1), nil), 200)
+	t.Log("V073_SCHEMA StructureDeletionResult " + string(mustLifecycleJSON(t, got)))
+	if len(got) != 6 || string(got["deleted"]) != "true" || rootHTTPString(t, got, "resourceKind") != "form" {
+		t.Fatal("six-key receipt", got)
+	}
+	rootHTTPData(t, f.call(t, "GET", base+"/forms/"+v.ID+"/records/"+f.record, "", nil), 200)
+	rootHTTPData(t, f.call(t, "GET", base+"/forms/"+v.ID+"/records/"+f.record+"/history", "", nil), 200)
+	rootHTTPData(t, f.call(t, "GET", "/api/v1/application-operations/"+op, "", nil), 200)
+}
+
+func TestRootStructureDeletionHTTPEmptyApplicationRoute(t *testing.T) {
+	f := rootHTTPResourceSetup(t)
+	app := f.id(t)
+	if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.apps(id,name,owner_user_id) VALUES($1,'Empty',$2)", app, f.actor); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.menu_resources VALUES($1,'application',$1)", app); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.owner.Exec(f.ctx, "SELECT applications.register_catalog_entry($1)", app); e != nil {
+		t.Fatal(e)
+	}
+	rootHTTPData(t, f.call(t, "POST", "/api/v1/applications/"+app+"/deletion", rootStructureDeleteBody(f.id(t), 0, 1), nil), 200)
+}
+
+func TestRootStructureDeletionHTTPClosedResourceRoutes(t *testing.T) {
+	f := rootHTTPResourceSetup(t)
+	base := "/api/v1/applications/" + f.app
+	view := base + "/forms/" + f.view
+	rootHTTPData(t, f.call(t, "POST", view+"/deletion", rootStructureDeleteBody(f.id(t), 1, 1), nil), 200)
+	for _, tc := range []struct{ name, method, path, body string }{
+		{"record", "GET", view + "/records/" + f.record, ""},
+		{"history", "GET", view + "/records/" + f.record + "/history", ""},
+		{"runtime", "GET", view + "/runtime", ""},
+		{"definition", "GET", view + "/definition", ""},
+		{"presets", "GET", view + "/table-presets", ""},
+		{"drafts", "GET", view + "/drafts?pageSize=20", ""},
+		{"workflows", "GET", view + "/workflows/" + f.id(t) + "/definition", ""},
+		{"search", "POST", view + "/records/search", `{"page":1,"pageSize":20,"filter":null,"sort":null}`},
+		{"record-create", "POST", view + "/records", `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"values":{}}`},
+		{"record-edit", "PATCH", view + "/records/" + f.record, `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":1,"expectedRecordVersion":1,"changes":{}}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rootHTTPError(t, f.call(t, tc.method, tc.path, tc.body, nil), 404, "APPLICATION_NOT_FOUND")
+		})
+	}
+	t.Run("export-excludes-deleted-view", func(t *testing.T) {
+		w := f.call(t, "GET", base+"/structure-template", "", nil)
+		if w.Code != 200 {
+			t.Fatalf("active table export %d %s", w.Code, w.Body.String())
+		}
+		var env struct {
+			Data struct {
+				Manifest struct{ Forms []any }
+				Forms    []any
+			}
+		}
+		if json.Unmarshal(w.Body.Bytes(), &env) != nil {
+			t.Fatal("invalid export")
+		}
+		// Inspect the public manifest independently, regardless of envelope wrapper.
+		var raw map[string]json.RawMessage
+		json.Unmarshal(w.Body.Bytes(), &raw)
+		t.Log("export payload " + string(w.Body.Bytes()))
+		if bytes.Contains(w.Body.Bytes(), []byte(f.view)) {
+			t.Fatal("deleted view leaked into structure export")
+		}
+	})
+}
+
+func TestRootStructureDeletionHTTPWorkflowCreationClosed(t *testing.T) {
+	f := rootHTTPResourceSetup(t)
+	base := "/api/v1/applications/" + f.app + "/forms/" + f.view
+	rootHTTPData(t, f.call(t, "POST", base+"/deletion", rootStructureDeleteBody(f.id(t), 1, 1), nil), 200)
+	start, node, end := f.id(t), f.id(t), f.id(t)
+	body := map[string]any{"operationId": f.id(t), "name": "must reject", "expectedRevision": 0, "expectedSchemaVersion": 1, "allowWithdraw": true, "triggers": []any{}, "graph": map[string]any{"version": 1, "nodes": []any{map[string]any{"id": start, "kind": "start"}, map[string]any{"id": node, "kind": "approval", "approval": map[string]any{"mode": "all", "assigneeIds": []string{f.actor}, "editableFieldIds": []string{}}}, map[string]any{"id": end, "kind": "end"}}, "edges": []any{map[string]any{"from": start, "to": node}, map[string]any{"from": node, "to": end}}}}
+	raw, e := json.Marshal(body)
+	if e != nil {
+		t.Fatal(e)
+	}
+	rootHTTPError(t, f.call(t, "PUT", base+"/workflows/"+f.id(t)+"/definition", string(raw), nil), 404, "APPLICATION_NOT_FOUND")
+}
+func TestRootStructureDeletionHTTPTableRetainsBusinessRows(t *testing.T) {
+	for _, deleted := range []bool{false, true} {
+		t.Run(fmt.Sprint(deleted), func(t *testing.T) {
+			f := rootHTTPResourceSetup(t)
+			base := "/api/v1/applications/" + f.app
+			if deleted {
+				rootHTTPData(t, f.call(t, "POST", base+"/forms/"+f.view+"/records/"+f.record+"/deletion", rootLifecycleBody(f.id(t), "1"), nil), 200)
+			}
+			rootHTTPData(t, f.call(t, "POST", base+"/forms/"+f.view+"/deletion", rootStructureDeleteBody(f.id(t), 1, 1), nil), 200)
+			w := f.call(t, "POST", base+"/tables/"+f.table+"/deletion", rootStructureDeleteBody(f.id(t), 2, 1), nil)
+			rootHTTPError(t, w, 409, "APPLICATION_STRUCTURE_NOT_EMPTY")
+			t.Log("V073_SCHEMA StructureDeletionErrorEnvelope " + w.Body.String())
+			var env struct {
+				Data struct{ Dependencies []string }
+			}
+			json.Unmarshal(w.Body.Bytes(), &env)
+			if len(env.Data.Dependencies) != 1 || env.Data.Dependencies[0] != "records" {
+				t.Fatal("typed rows are not disposable", w.Body.String())
+			}
+		})
+	}
+}
+
+func TestRootStructureDeletionHTTPUnknownCommitAndPostcommitRevocation(t *testing.T) {
+	for _, mode := range []string{"unknown", "revoke"} {
+		t.Run(mode, func(t *testing.T) {
+			f := rootHTTPResourceSetup(t)
+			op := f.id(t)
+			cfg := f.runtime.Config()
+			var dropped atomic.Bool
+			revoked := make(chan error, 1)
+			if mode == "unknown" {
+				cfg.ConnConfig.DialFunc = func(ctx context.Context, network, address string) (net.Conn, error) {
+					c, e := (&net.Dialer{}).DialContext(ctx, network, address)
+					if e != nil {
+						return nil, e
+					}
+					return &rootPresetLostCommit{Conn: c, dropped: &dropped}, nil
+				}
+			} else {
+				cfg.ConnConfig.Tracer = &rootPresetCommitHook{fn: func(ctx context.Context) {
+					ok, e := f.store.Revoke(ctx, f.sid)
+					if !ok && e == nil {
+						e = errors.New("expected current session revoke")
+					}
+					revoked <- e
+				}}
+			}
+			pool, e := pgxpool.NewWithConfig(f.ctx, cfg)
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer pool.Close()
+			handler := &appstructure.Service{Application: &appstructure.Application{Pool: pool, Limits: rootPresetService(f).Limits}, Authenticator: session.Authenticator{Sessions: f.store, DB: f.runtime}}
+			server := httptest.NewTLSServer(handler)
+			defer server.Close()
+			handler.Authenticator.Origin = server.URL
+			request, e := http.NewRequestWithContext(f.ctx, "POST", server.URL+"/api/v1/applications/"+f.app+"/forms/"+f.view+"/deletion", strings.NewReader(rootStructureDeleteBody(op, 1, 1)))
+			if e != nil {
+				t.Fatal(e)
+			}
+			request.Header.Set("Origin", server.URL)
+			request.Header.Set("Content-Type", "application/json")
+			request.Header.Set("X-CSRF-Token", f.csrf)
+			request.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: f.sid})
+			request.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: f.csrf})
+			response, e := server.Client().Do(request)
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer response.Body.Close()
+			raw, e := io.ReadAll(response.Body)
+			if e != nil {
+				t.Fatal(e)
+			}
+			var env struct {
+				Code string
+				Data map[string]json.RawMessage
+				Meta map[string]string
+			}
+			if json.Unmarshal(raw, &env) != nil || env.Meta["requestId"] == "" || response.Header.Get("Cache-Control") != "no-store" || response.TLS == nil {
+				t.Fatal("invalid real HTTPS response", string(raw))
+			}
+			if mode == "unknown" {
+				t.Log("V073_SCHEMA StructureDeletionErrorEnvelope " + string(raw))
+				if !dropped.Load() || response.StatusCode != 503 || env.Code != "APPLICATION_OPERATION_UNCONFIRMED" || len(env.Data) != 1 || rootHTTPString(t, env.Data, "operationId") != op || response.Header.Get("Location") != "" || len(response.Cookies()) != 0 {
+					t.Fatal("ambiguous commit falsely successful", response.StatusCode, string(raw))
+				}
+			} else {
+				if response.StatusCode != 200 || env.Code != "OK" || len(env.Data) != 6 || response.Header.Get("Location") != "" {
+					t.Fatal("confirmed commit disguised as failure", response.StatusCode, string(raw))
+				}
+				select {
+				case e := <-revoked:
+					if e != nil {
+						t.Fatal(e)
+					}
+				default:
+					t.Fatal("successful response without synchronous postcommit revoke hook")
+				}
+				if len(response.Cookies()) != 2 {
+					t.Fatal("revoked session not cleared")
+				}
+				for _, cookie := range response.Cookies() {
+					if cookie.MaxAge >= 0 {
+						t.Fatal("revoked session renewed")
+					}
+				}
+			}
+			saved, e := (&applications.Application{Pool: f.runtime}).Operation(f.ctx, rootPresetActor(f, f.actor), op)
+			if e != nil || saved.Status != "confirmed" {
+				t.Fatal("actual committed result missing", e)
+			}
+			var n int
+			if e = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.structure_deletions WHERE actor_user_id=$1 AND app_id=$2", f.actor, f.app).Scan(&n); e != nil || n != 1 {
+				t.Fatal("actual commit count", n, e)
+			}
+		})
+	}
+}
+
+func TestRootStructureDeletionHTTPClosedWireAndIdentity(t *testing.T) {
+	f := rootHTTPResourceSetup(t)
+	path := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/deletion"
+	body := rootStructureDeleteBody(f.id(t), 1, 1)
+	for _, tc := range []struct {
+		name, body, suffix string
+		edit               func(*http.Request)
+		status             int
+		code               string
+	}{
+		{"duplicate", strings.Replace(body, `"expectedStructureVersion":1`, `"expectedStructureVersion":1,"expectedStructureVersion":1`, 1), "", nil, 400, "COMMON_VALIDATION_FAILED"},
+		{"oversize", strings.Repeat(" ", 4096) + body, "", nil, 400, "COMMON_VALIDATION_FAILED"},
+		{"invalid-utf8", strings.Replace(body, "operationId", "operationId"+string([]byte{0xff}), 1), "", nil, 400, "COMMON_VALIDATION_FAILED"},
+		{"query", body, "?unexpected=1", nil, 400, "COMMON_VALIDATION_FAILED"},
+		{"empty-query", body, "?", nil, 400, "COMMON_VALIDATION_FAILED"},
+		{"csrf", body, "", func(r *http.Request) { r.Header.Del("X-CSRF-Token") }, 403, "COMMON_CSRF_REJECTED"},
+		{"session", body, "", func(r *http.Request) { r.Header.Del("Cookie") }, 401, "AUTH_UNAUTHENTICATED"},
+		{"actor", body, "", func(r *http.Request) { r.Header.Set("X-Expected-Actor-Id", f.other) }, 409, "AUTH_SESSION_CHANGED"},
+		{"media", body, "", func(r *http.Request) { r.Header.Set("Content-Type", "text/plain") }, 415, "COMMON_UNSUPPORTED_MEDIA_TYPE"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rootHTTPError(t, f.call(t, "POST", path+tc.suffix, tc.body, tc.edit), tc.status, tc.code)
+		})
+	}
+}
