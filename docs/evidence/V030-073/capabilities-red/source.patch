@@ -1,0 +1,67 @@
+diff --git a/services/bff/internal/appstructure/root_structure_deletion_test.go b/services/bff/internal/appstructure/root_structure_deletion_test.go
+index e275e164..f30759b8 100644
+--- a/services/bff/internal/appstructure/root_structure_deletion_test.go
++++ b/services/bff/internal/appstructure/root_structure_deletion_test.go
+@@ -3,6 +3,11 @@ package appstructure
+ import (
+ 	"context"
+ 	"encoding/json"
++	"errors"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
++	"github.com/jackc/pgx/v5/pgconn"
++	"net/http"
+ 	"net/http/httptest"
+ 	"reflect"
+ 	"testing"
+@@ -221,3 +226,50 @@ func TestRootStructureDeletionDraftAndPrivatePreset(t *testing.T) {
+ 		})
+ 	}
+ }
++
++func TestRootStructureDeletionRecordContextClosed(t *testing.T) {
++	f := setup(t)
++	view, _ := rootDeletionForm(t, f, map[string]any{"kind": "new_table"}, 0)
++	data(t, f.call(t, "POST", "/forms/"+view+"/deletion", rootDeletionInput(t, f, 1, 0)), 200)
++	r := httptest.NewRequest("GET", "https://weaveos.test/api/v1/applications/"+f.app, nil)
++	r.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: f.sid})
++	p, e := f.service.Authenticator.Authenticate(r, false)
++	if e != nil {
++		t.Fatal(e)
++	}
++	tx, _, e := (&applications.Application{Pool: f.runtime}).BeginRecordRead(context.Background(), p, f.app, view)
++	if tx != nil {
++		tx.Rollback(context.Background())
++	}
++	if !errors.Is(e, applications.ErrMissing) {
++		t.Fatalf("deleted view acquired live record context: %v", e)
++	}
++}
++func TestRootStructureDeletionSQLCapabilitiesClosed(t *testing.T) {
++	for _, capability := range []string{"schema", "record", "fence", "lifecycle"} {
++		t.Run(capability, func(t *testing.T) {
++			f := setup(t)
++			view, table := rootDeletionForm(t, f, map[string]any{"kind": "new_table"}, 0)
++			c := context.Background()
++			data(t, f.call(t, "POST", "/forms/"+view+"/deletion", rootDeletionInput(t, f, 1, 0)), 200)
++			if capability == "schema" {
++				data(t, f.call(t, "POST", "/tables/"+table+"/deletion", rootDeletionInput(t, f, 2, 0)), 200)
++			}
++			var e error
++			switch capability {
++			case "schema":
++				_, e = f.runtime.Exec(c, "SELECT applications.apply_schema_change($1,$2,$3,'create_table',NULL,NULL)", f.actor, f.app, table)
++			case "record":
++				_, e = f.runtime.Exec(c, "SELECT applications.apply_record_change($1,$2,$3,$4,$5,'create',0,NULL,'{}')", f.app, view, table, uuid(t, f.owner), f.actor)
++			case "fence":
++				_, e = f.runtime.Exec(c, "SELECT applications.acquire_record_command_fence($1,$2,$3,$4,$5,0,1)", f.app, table, view, uuid(t, f.owner), uuid(t, f.owner))
++			case "lifecycle":
++				_, e = f.runtime.Exec(c, "SELECT applications.change_record_lifecycle($1,$2,$3,$4,$5,$6,0,1,true)", f.app, view, table, uuid(t, f.owner), f.actor, uuid(t, f.owner))
++			}
++			var pe *pgconn.PgError
++			if !errors.As(e, &pe) || pe.Code != "P0002" {
++				t.Fatalf("deleted capability must reject at current-resource guard, got %v", e)
++			}
++		})
++	}
++}
