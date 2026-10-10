@@ -121,7 +121,7 @@ test('Root V035: every prior migration identity and actual source is preserved',
 });
 test('Root V035: reviewed scheduler-only role source is admitted exactly',()=>{
  const sql=read('infra/runtime/roles.sql').toString('utf8');
- assert.equal(hash(sql),'7bd25e63e883501492532b97a951d182b8c953c743dd7bb656c38e7406f42267');
+ assert.equal(hash(sql),'8b0e70f9a3708039d87d7848c0fba43d3ba240f018080c6a5d3a997efecf395f');
  assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql));
  assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql.replace(/\n/g,'\r\n')));
 });

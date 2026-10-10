@@ -1,0 +1,24 @@
+import json,copy
+from pathlib import Path
+p=Path('contracts/openapi/openapi.json');api=json.loads(p.read_text());s=api['components']['schemas'];base='/api/v1/applications/{appId}/forms/{viewId}/records/{recordId}'
+manual=copy.deepcopy(api['paths'][base+'/workflow-starts']['post']);preview=copy.deepcopy(api['paths'][base+'/workflow-instances/{instanceId}/lifecycle']['get'])
+uuid=copy.deepcopy(s['WorkflowManualStart']['properties']['operationId']);counter={'type':'integer','minimum':1,'maximum':9007199254740991}
+def closed(props):return {'type':'object','additionalProperties':False,'required':list(props),'properties':props}
+s['WorkflowRoundStart']=closed({'operationId':uuid,'kind':{'type':'string','enum':['resubmit','review']},'expectedWorkflowRevision':counter,'expectedSchemaVersion':counter,'expectedRecordVersion':counter})
+s['WorkflowRoundStartResult']=closed({'operationId':uuid,'flowId':uuid,'previousInstanceId':uuid,'instanceId':uuid,'roundKind':{'type':'string','enum':['resubmit','review']},'roundNumber':counter,'status':{'type':'string','enum':['accepted']}})
+s['WorkflowRoundRework']=closed({'operationId':uuid,'expectedSchemaVersion':counter,'expectedRecordVersion':counter,'changes':copy.deepcopy(s['RecordEdit']['properties']['changes'])})
+s['WorkflowRoundRework']['properties']['changes'].update({'minProperties':1,'maxProperties':200})
+s['WorkflowRoundPreview']=closed({'instanceId':uuid,'flowId':uuid,'roundNumber':counter,'latestInstanceId':uuid,'state':{'type':'string','enum':['starting','active','completed','rejected','withdrawn','no_effect']},'definitionVersion':counter,'workflowRevision':counter,'schemaVersion':counter,'recordVersion':counter,'canRework':{'type':'boolean'},'canResubmit':{'type':'boolean'},'canReview':{'type':'boolean'},'editableFieldIds':{'type':'array','items':uuid,'uniqueItems':True}})
+for name,template in [('WorkflowRoundStartResult','WorkflowManualStartResultEnvelope'),('WorkflowRoundPreview','WorkflowLifecyclePreviewEnvelope')]:
+ envelope=copy.deepcopy(s[template]);envelope['allOf'][1]['properties']['data']={'$ref':'#/components/schemas/'+name};s[name+'Envelope']=envelope
+manual.update(operationId='startWorkflowRound',summary='Accept a linked resubmit or review of the latest round',description='Current role and record permissions; exact latest parent, schema/record/workflow CAS. Durable starting intent only, never engine success. Resubmit uses the original initiator; review uses any configured approver of the original fixed definition. No business edits, no other flow restart. Original operation replays the same minimum receipt.')
+manual['parameters'].insert(3,copy.deepcopy(preview['parameters'][3]));manual['requestBody']['content']['application/json']['schema']={'$ref':'#/components/schemas/WorkflowRoundStart'}
+manual['responses']['202']['content']['application/json']['schema']={'$ref':'#/components/schemas/WorkflowRoundStartResultEnvelope'}
+manual['responses']['202']['description']='Durable linked starting intent accepted; query the original operation or workflow history for progress.'
+manual['responses']['202']['headers']['Location']['schema']['pattern']='^/api/v1/application-operations/[0-9a-f-]{36}$'
+preview.update(operationId='previewWorkflowRound',summary='Preview current latest-round qualification',description='Current Session/menu/record authorization in one consistent read. Only latest round may grant capabilities. No graph, approver list or business values. No query parameters. Later writes recheck all facts and CAS.')
+preview['responses']['200']['content']['application/json']['schema']={'$ref':'#/components/schemas/WorkflowRoundPreviewEnvelope'};preview['responses']['200']['description']='Minimum current role, latest round identity and CAS counters.'
+rework=copy.deepcopy(manual);rework.update(operationId='reworkWorkflowRound',summary='Save original-initiator rework without starting any flow',description='Only the latest rejected or withdrawn round original initiator with current row and selected-field edit permission. Actual Save/CAS/history are one local transaction. Other active flows keep running; pending command fences still protect the record. No query parameters.',**{'x-max-body-bytes':1048576})
+rework['requestBody']['x-max-body-bytes']=1048576;rework['requestBody']['content']['application/json']['schema']={'$ref':'#/components/schemas/WorkflowRoundRework'};ok=rework['responses'].pop('202');ok['headers'].pop('Location',None);ok['description']='Confirmed saved record version; no workflow advancement.';ok['content']['application/json']['schema']={'$ref':'#/components/schemas/RecordMutationResultEnvelope'};rework['responses']['200']=ok
+api['paths'][base+'/workflows/{instanceId}/round-actions']={'get':preview,'post':manual};api['paths'][base+'/workflows/{instanceId}/rework']={'post':rework}
+p.write_text(json.dumps(api,ensure_ascii=False,indent=2)+'\n')
