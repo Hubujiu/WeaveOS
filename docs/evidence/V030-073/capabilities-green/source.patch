@@ -1,0 +1,152 @@
+diff --git a/db/migrations/00035_structure_deletion.sql b/db/migrations/00035_structure_deletion.sql
+index 2cff12e9..d47590ca 100644
+--- a/db/migrations/00035_structure_deletion.sql
++++ b/db/migrations/00035_structure_deletion.sql
+@@ -171,6 +171,93 @@ ALTER TABLE applications.operations ADD CONSTRAINT ck_structure_deletion_result
+  AND (operation_kind<>'application.delete' OR result_json->>'id'=app_id::text)
+  AND jsonb_typeof(result_json->'structureVersion')='number' AND result_json->>'structureVersion'~'^[1-9][0-9]{0,15}$' AND (result_json->>'structureVersion')::numeric BETWEEN 1 AND 9007199254740991
+  AND result_json->'deleted'='true'::jsonb,false));
++ALTER FUNCTION applications.apply_schema_change(uuid,uuid,uuid,text,jsonb,jsonb) RENAME TO apply_schema_change_before_structure_deletion;
++REVOKE ALL ON FUNCTION applications.apply_schema_change_before_structure_deletion(uuid,uuid,uuid,text,jsonb,jsonb) FROM PUBLIC;
++-- +goose StatementBegin
++DO $$ DECLARE principal text;BEGIN
++ FOREACH principal IN ARRAY ARRAY['auth_app','auth_reader','auth_maintenance','auth_backup'] LOOP
++ IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=principal) THEN EXECUTE format('REVOKE ALL ON FUNCTION applications.apply_schema_change_before_structure_deletion(uuid,uuid,uuid,text,jsonb,jsonb) FROM %I',principal);END IF;END LOOP;
++END $$;
++-- +goose StatementEnd
++-- +goose StatementBegin
++CREATE FUNCTION applications.apply_schema_change(actor_uuid uuid,app_uuid uuid,table_uuid uuid,operation text,before_field jsonb,after_field jsonb) RETURNS void
++LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
++BEGIN
++ PERFORM 1 FROM applications.apps WHERE id=app_uuid AND deleted_at IS NULL FOR UPDATE;
++ IF NOT FOUND THEN RAISE EXCEPTION 'application missing' USING ERRCODE='P0002';END IF;
++ PERFORM 1 FROM applications.logical_tables WHERE app_id=app_uuid AND id=table_uuid AND deleted_at IS NULL FOR UPDATE;
++ IF NOT FOUND THEN RAISE EXCEPTION 'table missing' USING ERRCODE='P0002';END IF;
++ PERFORM applications.apply_schema_change_before_structure_deletion(actor_uuid,app_uuid,table_uuid,operation,before_field,after_field);
++END $$;
++-- +goose StatementEnd
++REVOKE ALL ON FUNCTION applications.apply_schema_change(uuid,uuid,uuid,text,jsonb,jsonb) FROM PUBLIC;
++ALTER FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb) RENAME TO apply_record_change_before_structure_deletion;
++REVOKE ALL ON FUNCTION applications.apply_record_change_before_structure_deletion(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb) FROM PUBLIC;
++-- +goose StatementBegin
++DO $$ DECLARE principal text;BEGIN
++ FOREACH principal IN ARRAY ARRAY['auth_app','auth_reader','auth_maintenance','auth_backup'] LOOP
++ IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=principal) THEN EXECUTE format('REVOKE ALL ON FUNCTION applications.apply_record_change_before_structure_deletion(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb) FROM %I',principal);END IF;END LOOP;
++END $$;
++-- +goose StatementEnd
++-- +goose StatementBegin
++CREATE FUNCTION applications.apply_record_change(app_uuid uuid,view_uuid uuid,table_uuid uuid,record_uuid uuid,actor_uuid uuid,operation text,expected_schema bigint,expected_record bigint,field_values jsonb) RETURNS jsonb
++LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
++BEGIN
++ PERFORM 1 FROM applications.apps WHERE id=app_uuid AND deleted_at IS NULL FOR UPDATE;
++ IF NOT FOUND THEN RAISE EXCEPTION 'application missing' USING ERRCODE='P0002';END IF;
++ PERFORM 1 FROM applications.logical_tables WHERE app_id=app_uuid AND id=table_uuid AND deleted_at IS NULL FOR UPDATE;
++ IF NOT FOUND THEN RAISE EXCEPTION 'table missing' USING ERRCODE='P0002';END IF;
++ PERFORM 1 FROM applications.form_views WHERE app_id=app_uuid AND table_id=table_uuid AND id=view_uuid AND deleted_at IS NULL;
++ IF NOT FOUND THEN RAISE EXCEPTION 'view missing' USING ERRCODE='P0002';END IF;
++ RETURN applications.apply_record_change_before_structure_deletion(app_uuid,view_uuid,table_uuid,record_uuid,actor_uuid,operation,expected_schema,expected_record,field_values);
++END $$;
++-- +goose StatementEnd
++REVOKE ALL ON FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb) FROM PUBLIC;
++ALTER FUNCTION applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint) RENAME TO acquire_record_command_fence_before_structure_deletion;
++REVOKE ALL ON FUNCTION applications.acquire_record_command_fence_before_structure_deletion(uuid,uuid,uuid,uuid,uuid,bigint,bigint) FROM PUBLIC;
++-- +goose StatementBegin
++DO $$ DECLARE principal text;BEGIN
++ FOREACH principal IN ARRAY ARRAY['auth_app','auth_reader','auth_maintenance','auth_backup'] LOOP
++ IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=principal) THEN EXECUTE format('REVOKE ALL ON FUNCTION applications.acquire_record_command_fence_before_structure_deletion(uuid,uuid,uuid,uuid,uuid,bigint,bigint) FROM %I',principal);END IF;END LOOP;
++END $$;
++-- +goose StatementEnd
++-- +goose StatementBegin
++CREATE FUNCTION applications.acquire_record_command_fence(app_uuid uuid,table_uuid uuid,view_uuid uuid,record_uuid uuid,command_uuid uuid,expected_schema bigint,expected_record bigint) RETURNS bigint
++LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
++BEGIN
++ PERFORM 1 FROM applications.apps WHERE id=app_uuid AND deleted_at IS NULL FOR UPDATE;
++ IF NOT FOUND THEN RAISE EXCEPTION 'application missing' USING ERRCODE='P0002';END IF;
++ PERFORM 1 FROM applications.logical_tables WHERE app_id=app_uuid AND id=table_uuid AND deleted_at IS NULL FOR UPDATE;
++ IF NOT FOUND THEN RAISE EXCEPTION 'table missing' USING ERRCODE='P0002';END IF;
++ PERFORM 1 FROM applications.form_views WHERE app_id=app_uuid AND table_id=table_uuid AND id=view_uuid AND deleted_at IS NULL;
++ IF NOT FOUND THEN RAISE EXCEPTION 'view missing' USING ERRCODE='P0002';END IF;
++ RETURN applications.acquire_record_command_fence_before_structure_deletion(app_uuid,table_uuid,view_uuid,record_uuid,command_uuid,expected_schema,expected_record);
++END $$;
++-- +goose StatementEnd
++REVOKE ALL ON FUNCTION applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint) FROM PUBLIC;
++ALTER FUNCTION applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean) RENAME TO change_record_lifecycle_before_structure_deletion;
++REVOKE ALL ON FUNCTION applications.change_record_lifecycle_before_structure_deletion(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean) FROM PUBLIC;
++-- +goose StatementBegin
++DO $$ DECLARE principal text;BEGIN
++ FOREACH principal IN ARRAY ARRAY['auth_app','auth_reader','auth_maintenance','auth_backup'] LOOP
++ IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=principal) THEN EXECUTE format('REVOKE ALL ON FUNCTION applications.change_record_lifecycle_before_structure_deletion(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean) FROM %I',principal);END IF;END LOOP;
++END $$;
++-- +goose StatementEnd
++-- +goose StatementBegin
++CREATE FUNCTION applications.change_record_lifecycle(app_uuid uuid,view_uuid uuid,table_uuid uuid,record_uuid uuid,actor_uuid uuid,operation_uuid uuid,expected_schema bigint,expected_record bigint,target_deleted boolean) RETURNS jsonb
++LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
++BEGIN
++ PERFORM 1 FROM applications.apps WHERE id=app_uuid AND deleted_at IS NULL FOR UPDATE;
++ IF NOT FOUND THEN RAISE EXCEPTION 'application missing' USING ERRCODE='P0002';END IF;
++ PERFORM 1 FROM applications.logical_tables WHERE app_id=app_uuid AND id=table_uuid AND deleted_at IS NULL FOR UPDATE;
++ IF NOT FOUND THEN RAISE EXCEPTION 'table missing' USING ERRCODE='P0002';END IF;
++ PERFORM 1 FROM applications.form_views WHERE app_id=app_uuid AND table_id=table_uuid AND id=view_uuid AND deleted_at IS NULL;
++ IF NOT FOUND THEN RAISE EXCEPTION 'view missing' USING ERRCODE='P0002';END IF;
++ RETURN applications.change_record_lifecycle_before_structure_deletion(app_uuid,view_uuid,table_uuid,record_uuid,actor_uuid,operation_uuid,expected_schema,expected_record,target_deleted);
++END $$;
++-- +goose StatementEnd
++REVOKE ALL ON FUNCTION applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean) FROM PUBLIC;
++
+ -- +goose Down
+ LOCK TABLE applications.apps,applications.directories,applications.logical_tables,applications.form_views,applications.structure_deletions,applications.operations IN ACCESS EXCLUSIVE MODE;
+ -- +goose StatementBegin
+@@ -207,6 +294,27 @@ ALTER TABLE applications.operations
+   'workflow.instance.withdraw',
+   'workflow.task.return','workflow.manual.start','workflow.delete','workflow.round.resubmit','workflow.round.review','application.template.import','preset.create','preset.update','preset.discard','record.delete','record.restore'
+  ));
++DROP FUNCTION applications.apply_schema_change(uuid,uuid,uuid,text,jsonb,jsonb);
++ALTER FUNCTION applications.apply_schema_change_before_structure_deletion(uuid,uuid,uuid,text,jsonb,jsonb) RENAME TO apply_schema_change;
++-- +goose StatementBegin
++DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='auth_app') THEN GRANT EXECUTE ON FUNCTION applications.apply_schema_change(uuid,uuid,uuid,text,jsonb,jsonb) TO auth_app;END IF;END $$;
++-- +goose StatementEnd
++DROP FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb);
++ALTER FUNCTION applications.apply_record_change_before_structure_deletion(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb) RENAME TO apply_record_change;
++-- +goose StatementBegin
++DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='auth_app') THEN GRANT EXECUTE ON FUNCTION applications.apply_record_change(uuid,uuid,uuid,uuid,uuid,text,bigint,bigint,jsonb) TO auth_app;END IF;END $$;
++-- +goose StatementEnd
++DROP FUNCTION applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint);
++ALTER FUNCTION applications.acquire_record_command_fence_before_structure_deletion(uuid,uuid,uuid,uuid,uuid,bigint,bigint) RENAME TO acquire_record_command_fence;
++-- +goose StatementBegin
++DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='auth_app') THEN GRANT EXECUTE ON FUNCTION applications.acquire_record_command_fence(uuid,uuid,uuid,uuid,uuid,bigint,bigint) TO auth_app;END IF;END $$;
++-- +goose StatementEnd
++DROP FUNCTION applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean);
++ALTER FUNCTION applications.change_record_lifecycle_before_structure_deletion(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean) RENAME TO change_record_lifecycle;
++-- +goose StatementBegin
++DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='auth_app') THEN GRANT EXECUTE ON FUNCTION applications.change_record_lifecycle(uuid,uuid,uuid,uuid,uuid,uuid,bigint,bigint,boolean) TO auth_app;END IF;END $$;
++-- +goose StatementEnd
++
+ DROP TRIGGER structure_identity ON applications.apps;
+ DROP TRIGGER structure_identity ON applications.directories;
+ DROP TRIGGER structure_identity ON applications.logical_tables;
+diff --git a/services/bff/internal/applications/http.go b/services/bff/internal/applications/http.go
+index 493e1811..7a9d0329 100644
+--- a/services/bff/internal/applications/http.go
++++ b/services/bff/internal/applications/http.go
+@@ -265,7 +265,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 	if s.Definitions != nil {
+ 		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
+ 		parts := strings.Split(path, "/")
+-		if path != r.URL.Path && len(parts) >= 2 && (parts[1] == "structure" || parts[1] == "directories" || parts[1] == "tables" || parts[1] == "forms" || parts[1] == "member-candidates" || parts[1] == "department-candidates") {
++		if path != r.URL.Path && len(parts) >= 2 && (parts[1] == "deletion" || parts[1] == "structure" || parts[1] == "directories" || parts[1] == "tables" || parts[1] == "forms" || parts[1] == "member-candidates" || parts[1] == "department-candidates") {
+ 			s.Definitions.ServeHTTP(w, r)
+ 			return
+ 		}
+diff --git a/services/bff/internal/applications/transactions.go b/services/bff/internal/applications/transactions.go
+index 0017e4f5..41e7f762 100644
+--- a/services/bff/internal/applications/transactions.go
++++ b/services/bff/internal/applications/transactions.go
+@@ -98,7 +98,7 @@ func loadRecordContext(c context.Context, tx pgx.Tx, actor apppolicy.TrustedActo
+ 	e := tx.QueryRow(c, `SELECT f.table_id::text,t.schema_version,t.schema_ready,t.fields_json,f.view_version,f.layout
+  FROM applications.form_views f JOIN applications.logical_tables t ON t.app_id=f.app_id AND t.id=f.table_id
+  JOIN applications.menu_resources r ON r.app_id=f.app_id AND r.resource_kind='form' AND r.resource_id=f.id
+- WHERE f.app_id=$1 AND f.id=$2`, app.ID, viewID).Scan(&facts.TableID, &facts.SchemaVersion, &facts.SchemaReady, &facts.Fields, &facts.ViewVersion, &facts.Layout)
++ WHERE f.app_id=$1 AND f.id=$2 AND f.deleted_at IS NULL AND t.deleted_at IS NULL`, app.ID, viewID).Scan(&facts.TableID, &facts.SchemaVersion, &facts.SchemaReady, &facts.Fields, &facts.ViewVersion, &facts.Layout)
+ 	if errors.Is(e, pgx.ErrNoRows) {
+ 		return RecordContext{}, ErrMissing
+ 	}

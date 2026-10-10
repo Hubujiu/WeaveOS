@@ -265,7 +265,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if s.Definitions != nil {
 		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
 		parts := strings.Split(path, "/")
-		if path != r.URL.Path && len(parts) >= 2 && (parts[1] == "structure" || parts[1] == "directories" || parts[1] == "tables" || parts[1] == "forms" || parts[1] == "member-candidates" || parts[1] == "department-candidates") {
+		if path != r.URL.Path && len(parts) >= 2 && (parts[1] == "deletion" || parts[1] == "structure" || parts[1] == "directories" || parts[1] == "tables" || parts[1] == "forms" || parts[1] == "member-candidates" || parts[1] == "department-candidates") {
 			s.Definitions.ServeHTTP(w, r)
 			return
 		}

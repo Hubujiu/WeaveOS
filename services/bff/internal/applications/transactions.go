@@ -98,7 +98,7 @@ func loadRecordContext(c context.Context, tx pgx.Tx, actor apppolicy.TrustedActo
 	e := tx.QueryRow(c, `SELECT f.table_id::text,t.schema_version,t.schema_ready,t.fields_json,f.view_version,f.layout
  FROM applications.form_views f JOIN applications.logical_tables t ON t.app_id=f.app_id AND t.id=f.table_id
  JOIN applications.menu_resources r ON r.app_id=f.app_id AND r.resource_kind='form' AND r.resource_id=f.id
- WHERE f.app_id=$1 AND f.id=$2`, app.ID, viewID).Scan(&facts.TableID, &facts.SchemaVersion, &facts.SchemaReady, &facts.Fields, &facts.ViewVersion, &facts.Layout)
+ WHERE f.app_id=$1 AND f.id=$2 AND f.deleted_at IS NULL AND t.deleted_at IS NULL`, app.ID, viewID).Scan(&facts.TableID, &facts.SchemaVersion, &facts.SchemaReady, &facts.Fields, &facts.ViewVersion, &facts.Layout)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return RecordContext{}, ErrMissing
 	}
