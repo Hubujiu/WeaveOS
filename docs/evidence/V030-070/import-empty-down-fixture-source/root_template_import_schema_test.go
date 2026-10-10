@@ -111,15 +111,6 @@ func TestRootTemplateImportSchemaEmptyDownUpRestoresExactConstraints(t *testing.
 		t.Fatal(e)
 	}
 	defer tx.Rollback(f.ctx)
-	// Other tests in this isolated synthetic database may have confirmed imports.
-	// Only the owner transaction temporarily removes them to exercise the EMPTY
-	// precondition; rollback restores all rows and schema. Runtime policy is intact.
-	if _, e = tx.Exec(f.ctx, "DELETE FROM applications.operations WHERE operation_kind='application.template.import'"); e != nil {
-		t.Fatal(e)
-	}
-	if _, e = tx.Exec(f.ctx, "SET CONSTRAINTS ALL IMMEDIATE"); e != nil {
-		t.Fatal(e)
-	}
 	var before, after string
 	q := `SELECT string_agg(conname||':'||pg_get_constraintdef(oid),'|' ORDER BY conname) FROM pg_constraint WHERE conrelid='applications.operations'::regclass`
 	if e = tx.QueryRow(f.ctx, q).Scan(&before); e != nil {
