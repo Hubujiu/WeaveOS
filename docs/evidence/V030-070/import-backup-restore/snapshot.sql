@@ -1,0 +1,14 @@
+CREATE TEMP TABLE imported AS SELECT app_id FROM applications.operations WHERE operation_kind='application.template.import';
+SELECT 'apps',COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]') FROM applications.apps t WHERE t.id IN(SELECT app_id FROM imported);
+SELECT 'receipts',COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.operation_id),'[]') FROM applications.operations t WHERE t.operation_kind='application.template.import';
+SELECT 'directories',COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]') FROM applications.directories t WHERE t.app_id IN(SELECT app_id FROM imported);
+SELECT 'tables',COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]') FROM applications.logical_tables t WHERE t.app_id IN(SELECT app_id FROM imported);
+SELECT 'fields',COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]') FROM applications.fields t WHERE t.app_id IN(SELECT app_id FROM imported);
+SELECT 'forms',COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]') FROM applications.form_views t WHERE t.app_id IN(SELECT app_id FROM imported);
+SELECT 'groups',COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]') FROM applications.permission_groups t WHERE t.app_id IN(SELECT app_id FROM imported);
+SELECT 'members',COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.app_id,t.group_id,t.user_id),'[]') FROM applications.group_members t WHERE t.app_id IN(SELECT app_id FROM imported);
+SELECT 'grants',COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]') FROM applications.grants t WHERE t.app_id IN(SELECT app_id FROM imported);
+SELECT 'grant_fields',COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.app_id,t.grant_id,t.field_id),'[]') FROM applications.grant_fields t WHERE t.app_id IN(SELECT app_id FROM imported);
+SELECT 'flows',COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]') FROM applications.workflow_definitions t WHERE t.app_id IN(SELECT app_id FROM imported);
+SELECT 'versions',COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.flow_id,t.version),'[]') FROM applications.workflow_versions t WHERE t.app_id IN(SELECT app_id FROM imported);
+SELECT 'physical',COALESCE(jsonb_agg(jsonb_build_array(t.id,a.attname,format_type(a.atttypid,a.atttypmod),a.attnotnull,pg_get_expr(d.adbin,d.adrelid)) ORDER BY t.id,a.attnum),'[]') FROM applications.logical_tables t JOIN pg_attribute a ON a.attrelid=to_regclass('appdata.t_'||replace(t.id::text,'-','')) AND a.attnum>0 AND NOT a.attisdropped LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum WHERE t.app_id IN(SELECT app_id FROM imported);

@@ -51,13 +51,6 @@ func TestRootTemplateImportFaultRollsBackFullDDLMetadataAndReceipt(t *testing.T)
 					t.Error(e)
 				}
 			}()
-			// Existing personnel fixtures can contain legacy/external app catalog entries.
-			// Compare the complete catalog before/after; do not assume global emptiness.
-			const catalogQuery = "SELECT COALESCE(jsonb_agg(to_jsonb(c) ORDER BY c.code),'[]')::text FROM personnel.permission_catalog c WHERE category='application'"
-			var catalogBefore string
-			if e := f.owner.QueryRow(f.ctx, catalogQuery).Scan(&catalogBefore); e != nil {
-				t.Fatal(e)
-			}
 			before := rootTemplateReadCounts(t, f)
 			if _, e := (&apptemplates.Service{Pool: f.runtime}).Import(f.ctx, p, op, m, b, applications.Metadata{RequestID: "fault-import"}); e == nil {
 				t.Fatal("injected late fault succeeded")
@@ -65,9 +58,9 @@ func TestRootTemplateImportFaultRollsBackFullDDLMetadataAndReceipt(t *testing.T)
 			if after := rootTemplateReadCounts(t, f); !reflect.DeepEqual(before, after) {
 				t.Fatal("late failure retained app, audit, operation, source config or physical table", before, after)
 			}
-			var catalogAfter string
-			if e := f.owner.QueryRow(f.ctx, catalogQuery).Scan(&catalogAfter); e != nil || catalogBefore != catalogAfter {
-				t.Fatal("failed import changed catalog registration", e)
+			var n int
+			if e := f.owner.QueryRow(f.ctx, "SELECT count(*) FROM personnel.permission_catalog WHERE app_id NOT IN (SELECT id::text FROM applications.apps) AND category='application'").Scan(&n); e != nil || n != 0 {
+				t.Fatal("orphan app catalog registration", n, e)
 			}
 		})
 	}

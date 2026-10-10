@@ -40,7 +40,7 @@ test('V070 input preserves approved field omission defaults while export is cano
  const request=validates('TemplatePreflightRequest');assert.ok(request({manifest,bindings:[]}),JSON.stringify(request.errors));
  const output=validates('TemplateManifest');assert.equal(output(manifest),false,'export still requires normalized field config');
  field.config={precision:38,scale:2,roundingPlaces:2,roundingMode:'HALF_UP'};assert.ok(output(manifest),JSON.stringify(output.errors));
- 
+
 });
 
 test('V070 existing graph permits explicit empty nonconditional edge branch',()=>{
