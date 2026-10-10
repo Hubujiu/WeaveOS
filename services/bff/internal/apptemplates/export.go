@@ -10,6 +10,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"reflect"
 )
 
 var ErrNotExportable = errors.New("application configuration is not exportable")
@@ -121,7 +122,7 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
 		if e := rows.Scan(&t.ID, &t.Name, &t.DirectoryID, &t.Position, &raw); e != nil {
 			return e
 		}
-		if len(raw) > 1048576 || json.Unmarshal(raw, &t.Fields) != nil {
+		if len(raw) > 1048576 || !shape(raw, reflect.TypeOf(t.Fields), 0) || json.Unmarshal(raw, &t.Fields) != nil {
 			return ErrNotExportable
 		}
 		if e := add(t, len(out.Tables)); e != nil {
@@ -139,7 +140,7 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
 		if e := rows.Scan(&f.ID, &f.TableID, &f.Name, &f.DirectoryID, &f.Position, &raw); e != nil {
 			return e
 		}
-		if len(raw) > 1048576 || json.Unmarshal(raw, &f.Layout) != nil {
+		if len(raw) > 1048576 || !shape(raw, reflect.TypeOf(f.Layout), 0) || json.Unmarshal(raw, &f.Layout) != nil {
 			return ErrNotExportable
 		}
 		if e := add(f, len(out.Forms)); e != nil {
