@@ -15628,6 +15628,1501 @@
           }
         }
       }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/table-presets": {
+      "get": {
+        "operationId": "listApplicationPresets",
+        "summary": "listApplicationPresets",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current private configuration or original confirmed minimum receipt. Invalid configurations are redacted as a whole.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetListEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "description": "Trusted Session owner plus real application and form-view scope. Same-table views do not share presets. Current menu.enter and data.read required; original confirmed write recovery returns only operationId/id/version. Save is not apply; no automatic query refresh or projection narrowing. No unknown query or compressed body."
+      },
+      "head": {
+        "operationId": "headApplicationPresets",
+        "summary": "headApplicationPresets",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current private configuration or original confirmed minimum receipt. Invalid configurations are redacted as a whole.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            }
+          },
+          "403": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        },
+        "description": "Trusted Session owner plus real application and form-view scope. Same-table views do not share presets. Current menu.enter and data.read required; original confirmed write recovery returns only operationId/id/version. Save is not apply; no automatic query refresh or projection narrowing. No unknown query or compressed body."
+      },
+      "post": {
+        "operationId": "createApplicationPreset",
+        "summary": "createApplicationPreset",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Current private configuration or original confirmed minimum receipt. Invalid configurations are redacted as a whole.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Created private preset URL"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetMutationEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "description": "Trusted Session owner plus real application and form-view scope. Same-table views do not share presets. Current menu.enter and data.read required; original confirmed write recovery returns only operationId/id/version. Save is not apply; no automatic query refresh or projection narrowing. No unknown query or compressed body.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationPresetCreate"
+              }
+            }
+          }
+        },
+        "x-max-body-bytes": 65536
+      }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/table-presets/{presetId}": {
+      "get": {
+        "operationId": "getApplicationPreset",
+        "summary": "getApplicationPreset",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "presetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current private configuration or original confirmed minimum receipt. Invalid configurations are redacted as a whole.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetItemEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "description": "Trusted Session owner plus real application and form-view scope. Same-table views do not share presets. Current menu.enter and data.read required; original confirmed write recovery returns only operationId/id/version. Save is not apply; no automatic query refresh or projection narrowing. No unknown query or compressed body."
+      },
+      "head": {
+        "operationId": "headApplicationPreset",
+        "summary": "headApplicationPreset",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "presetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current private configuration or original confirmed minimum receipt. Invalid configurations are redacted as a whole.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            }
+          },
+          "403": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        },
+        "description": "Trusted Session owner plus real application and form-view scope. Same-table views do not share presets. Current menu.enter and data.read required; original confirmed write recovery returns only operationId/id/version. Save is not apply; no automatic query refresh or projection narrowing. No unknown query or compressed body."
+      },
+      "put": {
+        "operationId": "updateApplicationPreset",
+        "summary": "updateApplicationPreset",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "presetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current private configuration or original confirmed minimum receipt. Invalid configurations are redacted as a whole.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetMutationEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "description": "Trusted Session owner plus real application and form-view scope. Same-table views do not share presets. Current menu.enter and data.read required; original confirmed write recovery returns only operationId/id/version. Save is not apply; no automatic query refresh or projection narrowing. No unknown query or compressed body.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationPresetUpdate"
+              }
+            }
+          }
+        },
+        "x-max-body-bytes": 65536
+      },
+      "delete": {
+        "operationId": "discardApplicationPreset",
+        "summary": "discardApplicationPreset",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "presetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "name": "operationId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "expectedVersion",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Current private configuration or original confirmed minimum receipt. Invalid configurations are redacted as a whole.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe private preset, current Session, schema/CAS or unknown-commit error; no private operands or internal SQL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPresetErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "description": "Trusted Session owner plus real application and form-view scope. Same-table views do not share presets. Current menu.enter and data.read required; original confirmed write recovery returns only operationId/id/version. Save is not apply; no automatic query refresh or projection narrowing. No unknown query or compressed body."
+      }
     }
   },
   "components": {
@@ -19267,6 +20762,21 @@
               },
               {
                 "$ref": "#/components/schemas/TemplateImportResult"
+              },
+              {
+                "$ref": "#/components/schemas/ApplicationPresetMutationResult"
+              },
+              {
+                "$ref": "#/components/schemas/WorkflowMutationResult"
+              },
+              {
+                "$ref": "#/components/schemas/WorkflowManualStartResult"
+              },
+              {
+                "$ref": "#/components/schemas/WorkflowRoundStartResult"
+              },
+              {
+                "$ref": "#/components/schemas/WorkflowDeletionResult"
               }
             ]
           }
@@ -28682,6 +30192,813 @@
           },
           {
             "$ref": "#/components/schemas/TemplateUnconfirmedEnvelope"
+          }
+        ]
+      },
+      "ApplicationPresetAnd": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operator",
+          "children"
+        ],
+        "properties": {
+          "operator": {
+            "const": "and",
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/RecordFilterCondition"
+            }
+          }
+        }
+      },
+      "ApplicationPresetOr": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operator",
+          "children"
+        ],
+        "properties": {
+          "operator": {
+            "const": "or",
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/ApplicationPresetAnd"
+            }
+          }
+        }
+      },
+      "ApplicationPresetFilter": {
+        "oneOf": [
+          {
+            "type": "null"
+          },
+          {
+            "$ref": "#/components/schemas/ApplicationPresetAnd"
+          },
+          {
+            "$ref": "#/components/schemas/ApplicationPresetOr"
+          }
+        ],
+        "x-max-canonical-bytes": 16384,
+        "description": "At most20 leaves total; no empty intermediate groups or automatic DNF conversion. Existing typed comparisons and whole-visible-row read coverage remain mandatory."
+      },
+      "ApplicationPresetState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "filter",
+          "sort",
+          "hiddenColumnIds",
+          "columnOrder",
+          "columnWidths"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "filter": {
+            "$ref": "#/components/schemas/ApplicationPresetFilter"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/RecordSort"
+          },
+          "hiddenColumnIds": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "not": {
+                    "const": "00000000-0000-0000-0000-000000000000"
+                  }
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "id",
+                    "createdBy",
+                    "createdAt",
+                    "updatedAt",
+                    "recordVersion"
+                  ]
+                }
+              ]
+            },
+            "uniqueItems": true,
+            "maxItems": 205
+          },
+          "columnOrder": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "not": {
+                    "const": "00000000-0000-0000-0000-000000000000"
+                  }
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "id",
+                    "createdBy",
+                    "createdAt",
+                    "updatedAt",
+                    "recordVersion"
+                  ]
+                }
+              ]
+            },
+            "uniqueItems": true,
+            "maxItems": 205
+          },
+          "columnWidths": {
+            "type": "object",
+            "maxProperties": 205,
+            "propertyNames": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "not": {
+                    "const": "00000000-0000-0000-0000-000000000000"
+                  }
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "id",
+                    "createdBy",
+                    "createdAt",
+                    "updatedAt",
+                    "recordVersion"
+                  ]
+                }
+              ]
+            },
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "x-max-canonical-bytes": 32768,
+        "description": "Canonical private configuration, not rows or active/query state. At least one currently readable business column remains visible; hidden affects display only. No filtering/sorting without complete visible-row coverage. Widths are positive safe integer CSS pixels; order is partial and duplicate-free."
+      },
+      "ApplicationPresetCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "expectedSchemaVersion",
+          "name",
+          "filter",
+          "sort",
+          "hiddenColumnIds",
+          "columnOrder",
+          "columnWidths"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "expectedSchemaVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "x-max-length-after-trim": 100,
+            "description": "TrimSpace before validating1–100 Unicode code points; no NUL. Exact case-sensitive uniqueness in current private scope."
+          },
+          "filter": {
+            "$ref": "#/components/schemas/ApplicationPresetFilter"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/RecordSort"
+          },
+          "hiddenColumnIds": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "not": {
+                    "const": "00000000-0000-0000-0000-000000000000"
+                  }
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "id",
+                    "createdBy",
+                    "createdAt",
+                    "updatedAt",
+                    "recordVersion"
+                  ]
+                }
+              ]
+            },
+            "uniqueItems": true,
+            "maxItems": 205
+          },
+          "columnOrder": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "not": {
+                    "const": "00000000-0000-0000-0000-000000000000"
+                  }
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "id",
+                    "createdBy",
+                    "createdAt",
+                    "updatedAt",
+                    "recordVersion"
+                  ]
+                }
+              ]
+            },
+            "uniqueItems": true,
+            "maxItems": 205
+          },
+          "columnWidths": {
+            "type": "object",
+            "maxProperties": 205,
+            "propertyNames": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "not": {
+                    "const": "00000000-0000-0000-0000-000000000000"
+                  }
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "id",
+                    "createdBy",
+                    "createdAt",
+                    "updatedAt",
+                    "recordVersion"
+                  ]
+                }
+              ]
+            },
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "x-max-raw-body-bytes": 65536
+      },
+      "ApplicationPresetUpdate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "expectedSchemaVersion",
+          "expectedVersion",
+          "name",
+          "filter",
+          "sort",
+          "hiddenColumnIds",
+          "columnOrder",
+          "columnWidths"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "expectedSchemaVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "x-max-length-after-trim": 100,
+            "description": "TrimSpace before validating1–100 Unicode code points; no NUL. Exact case-sensitive uniqueness in current private scope."
+          },
+          "filter": {
+            "$ref": "#/components/schemas/ApplicationPresetFilter"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/RecordSort"
+          },
+          "hiddenColumnIds": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "not": {
+                    "const": "00000000-0000-0000-0000-000000000000"
+                  }
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "id",
+                    "createdBy",
+                    "createdAt",
+                    "updatedAt",
+                    "recordVersion"
+                  ]
+                }
+              ]
+            },
+            "uniqueItems": true,
+            "maxItems": 205
+          },
+          "columnOrder": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "not": {
+                    "const": "00000000-0000-0000-0000-000000000000"
+                  }
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "id",
+                    "createdBy",
+                    "createdAt",
+                    "updatedAt",
+                    "recordVersion"
+                  ]
+                }
+              ]
+            },
+            "uniqueItems": true,
+            "maxItems": 205
+          },
+          "columnWidths": {
+            "type": "object",
+            "maxProperties": 205,
+            "propertyNames": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "not": {
+                    "const": "00000000-0000-0000-0000-000000000000"
+                  }
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "id",
+                    "createdBy",
+                    "createdAt",
+                    "updatedAt",
+                    "recordVersion"
+                  ]
+                }
+              ]
+            },
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "x-max-raw-body-bytes": 65536
+      },
+      "ApplicationPresetValid": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "filter",
+          "sort",
+          "hiddenColumnIds",
+          "columnOrder",
+          "columnWidths",
+          "id",
+          "appId",
+          "viewId",
+          "version",
+          "invalid",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "filter": {
+            "$ref": "#/components/schemas/ApplicationPresetFilter"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/RecordSort"
+          },
+          "hiddenColumnIds": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "not": {
+                    "const": "00000000-0000-0000-0000-000000000000"
+                  }
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "id",
+                    "createdBy",
+                    "createdAt",
+                    "updatedAt",
+                    "recordVersion"
+                  ]
+                }
+              ]
+            },
+            "uniqueItems": true,
+            "maxItems": 205
+          },
+          "columnOrder": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "not": {
+                    "const": "00000000-0000-0000-0000-000000000000"
+                  }
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "id",
+                    "createdBy",
+                    "createdAt",
+                    "updatedAt",
+                    "recordVersion"
+                  ]
+                }
+              ]
+            },
+            "uniqueItems": true,
+            "maxItems": 205
+          },
+          "columnWidths": {
+            "type": "object",
+            "maxProperties": 205,
+            "propertyNames": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "not": {
+                    "const": "00000000-0000-0000-0000-000000000000"
+                  }
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "id",
+                    "createdBy",
+                    "createdAt",
+                    "updatedAt",
+                    "recordVersion"
+                  ]
+                }
+              ]
+            },
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "appId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "viewId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "invalid": {
+            "type": "boolean",
+            "const": false
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApplicationPresetInvalid": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "version",
+          "invalid",
+          "reason"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "invalid": {
+            "type": "boolean",
+            "const": true
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "FIELD_UNAVAILABLE",
+              "PERMISSION_CHANGED",
+              "DEFINITION_CHANGED"
+            ]
+          }
+        }
+      },
+      "ApplicationPresetItem": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ApplicationPresetValid"
+          },
+          {
+            "$ref": "#/components/schemas/ApplicationPresetInvalid"
+          }
+        ]
+      },
+      "ApplicationPresetList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/ApplicationPresetItem"
+            }
+          }
+        }
+      },
+      "ApplicationPresetMutationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "id",
+          "version"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "ApplicationPresetItemEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ApplicationPresetItem"
+              }
+            }
+          }
+        ]
+      },
+      "ApplicationPresetListEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ApplicationPresetList"
+              }
+            }
+          }
+        ]
+      },
+      "ApplicationPresetMutationEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ApplicationPresetMutationResult"
+              }
+            }
+          }
+        ]
+      },
+      "ApplicationPresetErrorEnvelope": {
+        "oneOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "COMMON_VALIDATION_FAILED",
+                      "COMMON_UNSUPPORTED_MEDIA_TYPE",
+                      "COMMON_SERVICE_UNAVAILABLE",
+                      "AUTH_UNAUTHENTICATED",
+                      "COMMON_CSRF_REJECTED",
+                      "AUTH_SESSION_CHANGED",
+                      "APPLICATION_NOT_FOUND",
+                      "APPLICATION_FORBIDDEN",
+                      "APPLICATION_SCHEMA_NOT_READY",
+                      "APPLICATION_SCHEMA_CONFLICT",
+                      "APPLICATION_OPERATION_CONFLICT",
+                      "APPLICATION_PRESET_NAME_CONFLICT",
+                      "APPLICATION_PRESET_LIMIT_REACHED",
+                      "APPLICATION_PRESET_CONFLICT"
+                    ]
+                  },
+                  "data": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/ValidationErrorData"
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_OPERATION_UNCONFIRMED"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/RecordUnconfirmedData"
+                  }
+                }
+              }
+            ]
           }
         ]
       }

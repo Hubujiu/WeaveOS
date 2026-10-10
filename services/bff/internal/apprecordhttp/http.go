@@ -15,6 +15,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appdrafts"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/apppresets"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice"
@@ -72,6 +73,16 @@ func failure(w http.ResponseWriter, r *http.Request, e error, operation string) 
 	status, code, data := 503, "COMMON_SERVICE_UNAVAILABLE", any(nil)
 	var domain *appstructure.Error
 	switch {
+	case errors.Is(e, apppresets.ErrNameConflict):
+		status, code = 409, "APPLICATION_PRESET_NAME_CONFLICT"
+	case errors.Is(e, apppresets.ErrLimit):
+		status, code = 409, "APPLICATION_PRESET_LIMIT_REACHED"
+	case errors.Is(e, apppresets.ErrConflict):
+		status, code = 409, "APPLICATION_PRESET_CONFLICT"
+	case errors.Is(e, apppresets.ErrPermission):
+		status, code = 403, "APPLICATION_FORBIDDEN"
+	case errors.Is(e, apppresets.ErrInvalid):
+		status, code = 400, "COMMON_VALIDATION_FAILED"
 	case errors.Is(e, workflowcatalog.ErrClosing):
 		status, code = 409, "WORKFLOW_CLOSING"
 	case errors.Is(e, workflowcatalog.ErrNotReady):
@@ -212,7 +223,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		failure(w, r, apprecordservice.ErrUnavailable, "")
 		return
 	}
-	if s.workflowRoundHTTP(w, r, p) || s.workflowInboxHTTP(w, r, p) || s.workflowEventHistoryHTTP(w, r, p) || s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
+	if s.privatePresetsHTTP(w, r, p) || s.workflowRoundHTTP(w, r, p) || s.workflowInboxHTTP(w, r, p) || s.workflowEventHistoryHTTP(w, r, p) || s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
 		return
 	}
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")

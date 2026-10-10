@@ -74,6 +74,8 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00029_workflow_deletions.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00030_workflow_rounds.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00031_workflow_round_operations.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00032_application_template_import.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00033_application_table_presets.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,"SELECT setval('applications.record_command_fence_epoch_seq',41,true);");
  sql(live,`INSERT INTO auth.users(id,account) VALUES('77777777-7777-4777-8777-777777777777','preset-backup-synthetic');
  INSERT INTO personnel.table_presets(id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at)
@@ -116,6 +118,16 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  const actionReceipt={operationId:actionOperation,commandId:recoveryID(911),instanceId:recoveryID(912),status:'pending'};
  sql(live,`INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location)
  VALUES('${h.createdBy}','${actionOperation}','${h.appId}','workflow.task.agree',decode('${'17'.repeat(32)}','hex'),$receipt$${JSON.stringify(actionReceipt)}$receipt$::jsonb,202,'/api/v1/application-workflow-operations/${actionOperation}');`);
+ // Independent synthetic private configuration; restore must retain original
+ // canonical text, immutable owner/view identity and the minimum mutation receipt.
+ const privatePresetId=recoveryID(930),privateOperation=recoveryID(931);
+ const privateState=JSON.stringify({name:'应用私人方案😀',filter:null,sort:null,hiddenColumnIds:[],columnOrder:['createdAt'],columnWidths:{createdAt:180}});
+ const privateReceipt={operationId:privateOperation,id:privatePresetId,version:7};
+ sql(live,`INSERT INTO applications.table_presets(id,owner_user_id,app_id,view_id,name,slot,definition_json,field_kinds,version,created_at,updated_at)
+ VALUES('${privatePresetId}','${h.createdBy}','${h.appId}','${h.viewId}','应用私人方案😀',20,$preset$${privateState}$preset$,'{}',7,'2026-10-01T00:00:00Z','2026-10-02T00:00:00Z');
+ INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location)
+ VALUES('${h.createdBy}','${privateOperation}','${h.appId}','preset.update',decode('${'19'.repeat(32)}','hex'),$receipt$${JSON.stringify(privateReceipt)}$receipt$,200,'');`);
+ const privateQuery="SELECT id,owner_user_id,app_id,view_id,name,slot,encode(convert_to(definition_json,'UTF8'),'hex'),field_kinds,version,created_at,updated_at FROM applications.table_presets ORDER BY id;";
  sql(live,"CREATE TABLE public.goose_db_version(id serial PRIMARY KEY,version_id bigint); INSERT INTO public.goose_db_version(version_id) VALUES(0),(1);");
  sql(live,readFileSync('infra/runtime/roles.sql','utf8'));
  sql('postgres',"DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='weaveos_backup_probe') THEN CREATE ROLE weaveos_backup_probe LOGIN; END IF; END $$; GRANT auth_backup TO weaveos_backup_probe;");
@@ -125,6 +137,9 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  const operationQuery="SELECT actor_user_id,operation_id,app_id,operation_kind,encode(fingerprint,'hex'),result_json,http_status,location,created_at FROM applications.operations ORDER BY actor_user_id,operation_id;";
  assert.equal(sql(restored,operationQuery),sql(live,operationQuery),'pending operation receipt bytes must survive restricted backup');
  assert.ok(sql(restored,operationQuery).includes(actionOperation));
+ assert.equal(sql(restored,privateQuery),sql(live,privateQuery),'private configuration and immutable scope survive restricted backup exactly');
+ assert.ok(sql(restored,privateQuery).includes(Buffer.from(privateState).toString('hex')),'actual canonical private settings survive restore');
+ assert.ok(sql(restored,operationQuery).includes(privateOperation),'actual minimum private receipt survives restore');
  // PostgreSQL may deparse equivalent casts differently after pg_restore.
  // Validate catalog flags and actual behavior, not rendered expression text.
  const checks="SELECT count(*)=3 AND bool_and(contype='c' AND convalidated AND conenforced AND NOT condeferrable) AS guards_valid FROM pg_constraint WHERE conrelid='applications.operations'::regclass AND conname IN ('ck_operation_kind','ck_operation_result','ck_workflow_task_operation_result');";
@@ -182,7 +197,7 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  for(const query of evidenceQueries)assert.equal(sql(restored,query),sql(live,query),'restricted backup must preserve immutable evidence bytes, metadata and membership exactly');
  assert.ok(sql(restored,evidenceQueries[0]).includes(fieldBody.toString('hex')),'actual original field bytes must survive restore');
  assert.ok(sql(restored,evidenceQueries[1]).includes(manifestBody.toString('hex')),'actual original manifest bytes must survive restore');
- const guardedQueries=[...evidenceQueries,recoveryQuery,operationQuery,"SELECT last_value,is_called FROM public.goose_db_version_id_seq;","SELECT last_value,is_called FROM applications.record_command_fence_epoch_seq;"];
+ const guardedQueries=[...evidenceQueries,recoveryQuery,operationQuery,privateQuery,"SELECT last_value,is_called FROM public.goose_db_version_id_seq;","SELECT last_value,is_called FROM applications.record_command_fence_epoch_seq;"];
  const guardedBefore=guardedQueries.map(query=>sql(live,query));
  const denied=(statement,message)=>assert.throws(()=>sql(live,statement),error=>{
   assert.equal(error.status,3,'psql must reach a SQL error rather than fail to connect');

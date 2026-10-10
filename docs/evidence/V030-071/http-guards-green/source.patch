@@ -1,0 +1,107 @@
+diff --git a/services/bff/internal/applications/http.go b/services/bff/internal/applications/http.go
+index 82e82c26..d59dce44 100644
+--- a/services/bff/internal/applications/http.go
++++ b/services/bff/internal/applications/http.go
+@@ -247,7 +247,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		}
+ 		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
+ 		parts := strings.Split(path, "/")
+-		if path != r.URL.Path && len(parts) >= 4 && parts[1] == "forms" && (parts[3] == "records" || parts[3] == "drafts") && !(len(parts) == 6 && parts[3] == "records" && parts[5] == "history") {
++		if path != r.URL.Path && len(parts) >= 4 && parts[1] == "forms" && (parts[3] == "records" || parts[3] == "drafts" || parts[3] == "table-presets") && !(len(parts) == 6 && parts[3] == "records" && parts[5] == "history") {
+ 			s.Records.ServeHTTP(w, r)
+ 			return
+ 		}
+diff --git a/services/bff/internal/apppresets/decode.go b/services/bff/internal/apppresets/decode.go
+index 7c4ed5ae..178952c2 100644
+--- a/services/bff/internal/apppresets/decode.go
++++ b/services/bff/internal/apppresets/decode.go
+@@ -127,3 +127,51 @@ func unicodeJSON(raw []byte) bool {
+ 	}
+ 	return true
+ }
++
++// DecodeRequest preserves original request identity independently of live
++// authorization; all permissions and schema CAS are checked by the service.
++func DecodeRequest(raw []byte, update bool) (Request, error) {
++	if len(raw) > 65536 || !unicodeJSON(raw) {
++		return Request{}, ErrInvalid
++	}
++	d := json.NewDecoder(bytes.NewReader(raw))
++	d.UseNumber()
++	if walkJSON(d, 0) != nil {
++		return Request{}, ErrInvalid
++	}
++	if _, e := d.Token(); e != io.EOF {
++		return Request{}, ErrInvalid
++	}
++	var object map[string]json.RawMessage
++	if json.Unmarshal(raw, &object) != nil {
++		return Request{}, ErrInvalid
++	}
++	expected := 8
++	if update {
++		expected = 9
++	}
++	if len(object) != expected {
++		return Request{}, ErrInvalid
++	}
++	var request Request
++	if json.Unmarshal(object["operationId"], &request.OperationID) != nil || !validID(request.OperationID) || json.Unmarshal(object["expectedSchemaVersion"], &request.ExpectedSchemaVersion) != nil || request.ExpectedSchemaVersion < 1 || request.ExpectedSchemaVersion > maxVersion {
++		return Request{}, ErrInvalid
++	}
++	delete(object, "operationId")
++	delete(object, "expectedSchemaVersion")
++	if update {
++		if json.Unmarshal(object["expectedVersion"], &request.ExpectedVersion) != nil || request.ExpectedVersion < 1 || request.ExpectedVersion > maxVersion {
++			return Request{}, ErrInvalid
++		}
++		delete(object, "expectedVersion")
++	}
++	stateRaw, e := json.Marshal(object)
++	if e != nil {
++		return Request{}, ErrInvalid
++	}
++	request.State, e = DecodeState(stateRaw)
++	if e != nil {
++		return Request{}, e
++	}
++	return request, nil
++}
+diff --git a/services/bff/internal/apprecordhttp/http.go b/services/bff/internal/apprecordhttp/http.go
+index 3c3ac2d2..d4a73082 100644
+--- a/services/bff/internal/apprecordhttp/http.go
++++ b/services/bff/internal/apprecordhttp/http.go
+@@ -15,6 +15,7 @@ import (
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appdrafts"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/apppresets"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice"
+@@ -72,6 +73,16 @@ func failure(w http.ResponseWriter, r *http.Request, e error, operation string)
+ 	status, code, data := 503, "COMMON_SERVICE_UNAVAILABLE", any(nil)
+ 	var domain *appstructure.Error
+ 	switch {
++	case errors.Is(e, apppresets.ErrNameConflict):
++		status, code = 409, "APPLICATION_PRESET_NAME_CONFLICT"
++	case errors.Is(e, apppresets.ErrLimit):
++		status, code = 409, "APPLICATION_PRESET_LIMIT_REACHED"
++	case errors.Is(e, apppresets.ErrConflict):
++		status, code = 409, "APPLICATION_PRESET_CONFLICT"
++	case errors.Is(e, apppresets.ErrPermission):
++		status, code = 403, "APPLICATION_FORBIDDEN"
++	case errors.Is(e, apppresets.ErrInvalid):
++		status, code = 400, "COMMON_VALIDATION_FAILED"
+ 	case errors.Is(e, workflowcatalog.ErrClosing):
+ 		status, code = 409, "WORKFLOW_CLOSING"
+ 	case errors.Is(e, workflowcatalog.ErrNotReady):
+@@ -212,7 +223,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		failure(w, r, apprecordservice.ErrUnavailable, "")
+ 		return
+ 	}
+-	if s.workflowRoundHTTP(w, r, p) || s.workflowInboxHTTP(w, r, p) || s.workflowEventHistoryHTTP(w, r, p) || s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
++	if s.privatePresetsHTTP(w, r, p) || s.workflowRoundHTTP(w, r, p) || s.workflowInboxHTTP(w, r, p) || s.workflowEventHistoryHTTP(w, r, p) || s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
+ 		return
+ 	}
+ 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")

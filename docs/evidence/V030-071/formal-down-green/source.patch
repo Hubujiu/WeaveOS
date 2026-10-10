@@ -1,0 +1,50 @@
+diff --git a/db/migrations/00033_application_table_presets.sql b/db/migrations/00033_application_table_presets.sql
+index 6696aa44..2dc851f5 100644
+--- a/db/migrations/00033_application_table_presets.sql
++++ b/db/migrations/00033_application_table_presets.sql
+@@ -76,5 +76,43 @@ ALTER TABLE applications.operations ADD CONSTRAINT ck_application_preset_result
+   OR (operation_kind='preset.discard' AND http_status=204 AND location='')),false));
+ 
+ -- +goose Down
+--- Behaviorless rollback placeholder for independent RED; not ready for release.
+-SELECT 1;
++-- Refuse durable configuration or receipts; never erase history to downgrade.
++LOCK TABLE applications.table_presets,applications.operations IN ACCESS EXCLUSIVE MODE;
++-- +goose StatementBegin
++DO $$ BEGIN
++ IF EXISTS(SELECT 1 FROM applications.table_presets)
++  OR EXISTS(SELECT 1 FROM applications.operations WHERE operation_kind IN ('preset.create','preset.update','preset.discard')) THEN
++  RAISE EXCEPTION 'private preset configuration or operation history prevents rollback' USING ERRCODE='55000';
++ END IF;
++END $$;
++-- +goose StatementEnd
++ALTER TABLE applications.operations DROP CONSTRAINT ck_application_preset_result;
++ALTER TABLE applications.operations
++ DROP CONSTRAINT ck_operation_kind,
++ ADD CONSTRAINT ck_operation_kind CHECK(operation_kind IN (
++  'application.create',
++  'group.create',
++  'group.update',
++  'members.replace',
++  'grants.replace',
++  'directory.create',
++  'directory.update',
++  'table.create',
++  'table.update',
++  'form.create',
++  'form.update',
++  'definition.save',
++  'record.create',
++  'record.edit',
++  'draft.create',
++  'draft.update',
++  'draft.discard',
++  'workflow.definition.save',
++  'workflow.enable',
++  'workflow.close',
++  'workflow.task.agree',
++  'workflow.task.reject',
++  'workflow.instance.withdraw',
++  'workflow.task.return','workflow.manual.start','workflow.delete','workflow.round.resubmit','workflow.round.review','application.template.import'
++ ));
++DROP TABLE applications.table_presets;
