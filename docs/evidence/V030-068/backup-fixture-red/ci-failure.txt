@@ -1,0 +1,40 @@
+✔ real encrypted logical backup restores into an isolated empty database (356.141143ms)
+2026-10-10T05:15:45.2996314Z ✔ missing source produces a failure and no successful backup file (76.307381ms)
+2026-10-10T05:15:45.3011698Z ✔ wrong-key restore fails before any database mutation (186.43992ms)
+2026-10-10T05:15:45.3016603Z ✖ restricted backup preserves migration ledger sequence and remains unable to advance it (2606.481023ms)
+2026-10-10T05:15:45.3134033Z ℹ tests 4
+2026-10-10T05:15:45.3134525Z ℹ suites 0
+2026-10-10T05:15:45.3135177Z ℹ pass 3
+2026-10-10T05:15:45.3135607Z ℹ fail 1
+2026-10-10T05:15:45.3135942Z ℹ cancelled 0
+2026-10-10T05:15:45.3136182Z ℹ skipped 0
+2026-10-10T05:15:45.3136391Z ℹ todo 0
+2026-10-10T05:15:45.3136632Z ℹ duration_ms 3549.181451
+2026-10-10T05:15:45.3136795Z 
+2026-10-10T05:15:45.3136908Z ✖ failing tests:
+2026-10-10T05:15:45.3137040Z 
+2026-10-10T05:15:45.3137229Z test at infra/runtime/backup.test.mjs:42:1
+2026-10-10T05:15:45.3137944Z ✖ restricted backup preserves migration ledger sequence and remains unable to advance it (2606.481023ms)
+2026-10-10T05:15:45.3139053Z   Error: Command failed: docker exec -i weaveos-v010-backup-38026792698-1 psql -X -A -t -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -U weaveos_owner -d weaveos_backup_ledger_1791609341805
+2026-10-10T05:15:45.3139954Z   ERROR:  42P01: relation "applications.workflow_deletions" does not exist
+2026-10-10T05:15:45.3140431Z   LOCATION:  RangeVarGetRelidExtended, namespace.c:631
+2026-10-10T05:15:45.3140740Z   
+2026-10-10T05:15:45.3141011Z       at genericNodeError (node:internal/errors:985:15)
+2026-10-10T05:15:45.3141378Z       at wrappedFn (node:internal/errors:539:14)
+2026-10-10T05:15:45.3142178Z       at checkExecSyncError (node:child_process:925:11)
+2026-10-10T05:15:45.3142540Z       at execFileSync (node:child_process:961:15)
+2026-10-10T05:15:45.3143051Z       at sql (file:///home/runner/work/WeaveOS/WeaveOS/infra/runtime/backup.test.mjs:13:28)
+2026-10-10T05:15:45.3143836Z       at TestContext.<anonymous> (file:///home/runner/work/WeaveOS/WeaveOS/infra/runtime/backup.test.mjs:109:2)
+2026-10-10T05:15:45.3144433Z       at Test.runInAsyncScope (node:async_hooks:228:14)
+2026-10-10T05:15:45.3145279Z       at Test.run (node:internal/test_runner/test:1118:25)
+2026-10-10T05:15:45.3146110Z       at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+2026-10-10T05:15:45.3146656Z       at Test.postRun (node:internal/test_runner/test:1247:19) {
+2026-10-10T05:15:45.3146997Z     status: 3,
+2026-10-10T05:15:45.3147206Z     signal: null,
+2026-10-10T05:15:45.3150413Z     output: [ null, 'DO\nREVOKE\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\n', 'ERROR:  42P01: relation "applications.workflow_deletions" does not exist\nLOCATION:  RangeVarGetRelidExtended, namespace.c:631\n' ],
+2026-10-10T05:15:45.3153457Z     pid: 3736,
+2026-10-10T05:15:45.3156480Z     stdout: 'DO\nREVOKE\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nREVOKE\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\nGRANT\nGRANT\nGRANT\nREVOKE\nGRANT\nGRANT\n',
+2026-10-10T05:15:45.3159409Z     stderr: 'ERROR:  42P01: relation "applications.workflow_deletions" does not exist\nLOCATION:  RangeVarGetRelidExtended, namespace.c:631\n'
+2026-10-10T05:15:45.3160109Z   }
+2026-10-10T05:15:45.5506114Z ##[error]Process completed with exit code 1.
+2026-10-10T05:15:45.5666541Z 

@@ -1,0 +1,33 @@
+diff --git a/services/bff/internal/appworkflows/deletion.go b/services/bff/internal/appworkflows/deletion.go
+index 9aa16270..0e004060 100644
+--- a/services/bff/internal/appworkflows/deletion.go
++++ b/services/bff/internal/appworkflows/deletion.go
+@@ -232,4 +232,27 @@ func (a *Application) DispatchDeletion(ctx context.Context) (bool, error) {
+ }
+ 
+ // RunDeletions is the required process-owned deletion recovery loop.
+-func (a *Application) RunDeletions(ctx context.Context) error { return workflowcatalog.ErrNotReady }
++func (a *Application) RunDeletions(ctx context.Context) error {
++	if a == nil || a.Pool == nil || !a.deletionAvailable() {
++		return workflowcatalog.ErrNotReady
++	}
++	for {
++		if e := ctx.Err(); e != nil {
++			return e
++		}
++		worked, e := a.DispatchDeletion(ctx)
++		if e != nil && ctx.Err() != nil {
++			return ctx.Err()
++		}
++		if worked && e == nil {
++			continue
++		}
++		timer := time.NewTimer(200 * time.Millisecond)
++		select {
++		case <-ctx.Done():
++			timer.Stop()
++			return ctx.Err()
++		case <-timer.C:
++		}
++	}
++}

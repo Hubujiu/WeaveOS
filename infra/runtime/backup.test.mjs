@@ -63,6 +63,15 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  sql(live,readFileSync('db/migrations/00019_workflow_execution_recovery.sql','utf8').split('-- +goose Down')[0]);
  sql(live,readFileSync('db/migrations/00020_workflow_evidence.sql','utf8').split('-- +goose Down')[0]);
  sql(live,readFileSync('db/migrations/00021_workflow_task_operations.sql','utf8').split('-- +goose Down')[0]);
+ // Later schema expansions include LOCK TABLE; keep each migration atomic.
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00022_workflow_lifecycle_operations.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00023_workflow_record_order_index.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00024_workflow_trigger_configuration.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00025_workflow_manual_start_operations.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00026_workflow_personal_inbox_index.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00027_workflow_independent_journal.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00028_workflow_publication_history.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00029_workflow_deletions.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,"SELECT setval('applications.record_command_fence_epoch_seq',41,true);");
  sql(live,`INSERT INTO auth.users(id,account) VALUES('77777777-7777-4777-8777-777777777777','preset-backup-synthetic');
  INSERT INTO personnel.table_presets(id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at)

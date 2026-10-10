@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-// workflowWorkers owns the shared lifetime of the two existing worker loops.
+// workflowWorkers owns the shared lifetime of the configured workflow worker loops.
 type workflowWorkers struct {
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -14,10 +14,11 @@ type workflowWorkers struct {
 
 	mu        sync.Mutex
 	remaining int
+	total     int
 	err       error
 }
 
-func startWorkflowWorkers(processCtx context.Context, runPublications, runExecution func(context.Context) error) (*workflowWorkers, error) {
+func startWorkflowWorkers(processCtx context.Context, runPublications, runExecution func(context.Context) error, runDeletion ...func(context.Context) error) (*workflowWorkers, error) {
 	if processCtx == nil || processCtx.Err() != nil {
 		return nil, errors.New("workflow workers require an active process context")
 	}
@@ -25,15 +26,24 @@ func startWorkflowWorkers(processCtx context.Context, runPublications, runExecut
 		return nil, errors.New("workflow worker functions are required")
 	}
 
+	loops := append([]func(context.Context) error{runPublications, runExecution}, runDeletion...)
+	for _, loop := range loops {
+		if loop == nil {
+			return nil, errors.New("workflow worker functions are required")
+		}
+	}
+
 	ctx, cancel := context.WithCancel(processCtx)
 	w := &workflowWorkers{
 		ctx:       ctx,
 		cancel:    cancel,
 		done:      make(chan struct{}),
-		remaining: 2,
+		remaining: len(loops),
+		total:     len(loops),
 	}
-	go w.run(runPublications)
-	go w.run(runExecution)
+	for _, loop := range loops {
+		go w.run(loop)
+	}
 	return w, nil
 }
 
@@ -65,7 +75,7 @@ func (w *workflowWorkers) Done() <-chan struct{} {
 func (w *workflowWorkers) Ready() bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	return w.ctx.Err() == nil && w.remaining == 2 && w.err == nil
+	return w.ctx.Err() == nil && w.remaining == w.total && w.err == nil
 }
 
 func (w *workflowWorkers) Err() error {

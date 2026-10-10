@@ -1,0 +1,53 @@
+diff --git a/services/bff/internal/appworkflows/deletion_http.go b/services/bff/internal/appworkflows/deletion_http.go
+index 53c1146b..375c4e57 100644
+--- a/services/bff/internal/appworkflows/deletion_http.go
++++ b/services/bff/internal/appworkflows/deletion_http.go
+@@ -44,6 +44,7 @@ func readDeletion(ctx context.Context, tx pgx.Tx, actor, app, view, flow, op str
+ }
+ func (a *Application) requestDeletion(ctx context.Context, p session.Principal, app, view, flow string, in lifecycleRequest) (workflowcatalog.Deletion, error) {
+ 	var d workflowcatalog.Deletion
++	runtimeReady := a.RuntimeReady == nil || a.RuntimeReady(ctx) == nil
+ 	manager, e := (&applications.Application{Pool: a.Pool}).BeginManagerWrite(ctx, p, app, a.managerOptions()...)
+ 	if e != nil {
+ 		return d, e
+@@ -61,10 +62,8 @@ func (a *Application) requestDeletion(ctx context.Context, p session.Principal,
+ 		if !a.deletionAvailable() {
+ 			return d, session.ErrUnavailable
+ 		}
+-		if a.RuntimeReady != nil {
+-			if e = a.RuntimeReady(ctx); e != nil {
+-				return d, session.ErrUnavailable
+-			}
++		if !runtimeReady {
++			return d, session.ErrUnavailable
+ 		}
+ 		if e = manager.Claim(ctx, in.OperationID, "workflow.delete", fingerprint); e != nil {
+ 			return d, e
+diff --git a/services/bff/internal/workflowcatalog/deletion.go b/services/bff/internal/workflowcatalog/deletion.go
+index 3cf86250..81df3b9f 100644
+--- a/services/bff/internal/workflowcatalog/deletion.go
++++ b/services/bff/internal/workflowcatalog/deletion.go
+@@ -27,7 +27,7 @@ type Deletion struct {
+ // RequestDeletionInTx closes new work and captures the original authorized intent.
+ // The caller must commit the transaction before reporting acceptance.
+ func (Catalog) RequestDeletionInTx(ctx context.Context, tx pgx.Tx, in DeletionInput) (Deletion, error) {
+-	if tx == nil || !validIDs(in.AppID, in.ViewID, in.FlowID, in.ActorID, in.OperationID) || in.ExpectedRevision < 1 || in.ExpectedRevision >= maxSafeInteger {
++	if tx == nil || !validIDs(in.AppID, in.ViewID, in.FlowID, in.ActorID, in.OperationID) || in.ExpectedRevision < 1 || in.ExpectedRevision > maxSafeInteger {
+ 		return Deletion{}, ErrInvalid
+ 	}
+ 	for _, id := range []string{in.AppID, in.ViewID, in.FlowID, in.ActorID, in.OperationID} {
+@@ -68,10 +68,13 @@ func (Catalog) RequestDeletionInTx(ctx context.Context, tx pgx.Tx, in DeletionIn
+ 	if h.Revision != in.ExpectedRevision {
+ 		return Deletion{}, ErrConflict
+ 	}
+-	_, e = tx.Exec(ctx, `UPDATE applications.workflow_definitions SET state='closing',revision=revision+1,close_epoch=close_epoch+1,updated_at=clock_timestamp() WHERE app_id=$1 AND id=$2`, in.AppID, in.FlowID)
++	tag, e := tx.Exec(ctx, `UPDATE applications.workflow_definitions SET state='closing',revision=revision+1,close_epoch=close_epoch+1,updated_at=clock_timestamp() WHERE app_id=$1 AND id=$2 AND revision<9007199254740991 AND close_epoch<9007199254740991`, in.AppID, in.FlowID)
+ 	if e != nil {
+ 		return Deletion{}, mapDBError(e)
+ 	}
++	if tag.RowsAffected() != 1 {
++		return Deletion{}, ErrConflict
++	}
+ 	e = tx.QueryRow(ctx, `INSERT INTO applications.workflow_deletions(flow_id,app_id,table_id,view_id,actor_user_id,operation_id,flow_name,expected_revision,fingerprint)
+  VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING `+deletionColumns+`,fingerprint`, in.FlowID, in.AppID, h.TableID, in.ViewID, in.ActorID, in.OperationID, h.Name, in.ExpectedRevision, fingerprint[:]).Scan(deletionTargets(&d, &original)...)
+ 	return d, mapDBError(e)

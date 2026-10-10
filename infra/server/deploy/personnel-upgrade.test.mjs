@@ -13,7 +13,7 @@ test('ADR008 exact migration 00005 is registered for compatible packaging',()=>{
  const expected=createHash('sha256').update(readFileSync('db/migrations/00005_table_presets.sql','utf8').replace(/\r\n/g,'\n')).digest('hex');
  const entry=manifest.migrations.find(x=>x.path==='migrations/00005_table_presets.sql');
  assert.equal(entry?.sha256,expected,'new preset migration must be an exact reviewed expansion, not a wildcard');
- assert.equal(manifest.backwardCompatible,true);
+ assert.equal(manifest.backwardCompatible,false,'V068 paired deletion upgrade is not automatically promotable; old migration digests remain unchanged');
 });
 test('Q25 fixed installed role policy accepts reviewed bytes and rejects arbitrary uploaded SQL',()=>{
  assert.doesNotThrow(()=>validateInstalledPersonnelRoles(roleSQL));

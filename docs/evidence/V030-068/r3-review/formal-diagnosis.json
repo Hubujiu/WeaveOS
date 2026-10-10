@@ -1,0 +1,12 @@
+{
+  "source": "9cd977c09d58439c16e896bc19348529f4d9d710",
+  "firstFull": "formal-all-regression: 8 top + 2 sub pass",
+  "repeat": "formal-final-source: 6 top + 2 sub pass, 2 prior lifecycle scenarios fail at Java initialization/readiness",
+  "actualErrors": [
+    "ReturnThenWithdrawRecovery: Java initialization failed, exit1",
+    "NodeSaveThenApproveLatest: restarted Java remained alive without ready within existing20s bound; terminated143 during fixture cleanup"
+  ],
+  "context": "This repetition overlapped the full Go race fixture run. No cgroup resource counters were available to establish a resource-contention cause. PostgreSQL log contains no matching database failure. The deletion scenario itself passed.",
+  "controlledReproduction": "Same source and unchanged timeouts; after full Go run ended, both failed scenarios repeated3 times sequentially: all6 pass. This does not establish original failure cause or justify erasing it.",
+  "next": "Run complete exact10-case formal group sequentially once, then keep original failure and CI formal gate mandatory."
+}

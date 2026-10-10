@@ -1,0 +1,69 @@
+diff --git a/services/bff/cmd/bff/workflow_workers.go b/services/bff/cmd/bff/workflow_workers.go
+index b21871eb..b81061c3 100644
+--- a/services/bff/cmd/bff/workflow_workers.go
++++ b/services/bff/cmd/bff/workflow_workers.go
+@@ -6,7 +6,7 @@ import (
+ 	"sync"
+ )
+ 
+-// workflowWorkers owns the shared lifetime of the two existing worker loops.
++// workflowWorkers owns the shared lifetime of the configured workflow worker loops.
+ type workflowWorkers struct {
+ 	ctx    context.Context
+ 	cancel context.CancelFunc
+@@ -14,6 +14,7 @@ type workflowWorkers struct {
+ 
+ 	mu        sync.Mutex
+ 	remaining int
++	total     int
+ 	err       error
+ }
+ 
+@@ -25,15 +26,24 @@ func startWorkflowWorkers(processCtx context.Context, runPublications, runExecut
+ 		return nil, errors.New("workflow worker functions are required")
+ 	}
+ 
++	loops := append([]func(context.Context) error{runPublications, runExecution}, runDeletion...)
++	for _, loop := range loops {
++		if loop == nil {
++			return nil, errors.New("workflow worker functions are required")
++		}
++	}
++
+ 	ctx, cancel := context.WithCancel(processCtx)
+ 	w := &workflowWorkers{
+ 		ctx:       ctx,
+ 		cancel:    cancel,
+ 		done:      make(chan struct{}),
+-		remaining: 2,
++		remaining: len(loops),
++		total:     len(loops),
++	}
++	for _, loop := range loops {
++		go w.run(loop)
+ 	}
+-	go w.run(runPublications)
+-	go w.run(runExecution)
+ 	return w, nil
+ }
+ 
+@@ -65,7 +75,7 @@ func (w *workflowWorkers) Done() <-chan struct{} {
+ func (w *workflowWorkers) Ready() bool {
+ 	w.mu.Lock()
+ 	defer w.mu.Unlock()
+-	return w.ctx.Err() == nil && w.remaining == 2 && w.err == nil
++	return w.ctx.Err() == nil && w.remaining == w.total && w.err == nil
+ }
+ 
+ func (w *workflowWorkers) Err() error {
+diff --git a/services/bff/internal/appworkflows/deletion.go b/services/bff/internal/appworkflows/deletion.go
+index bdc4265e..9aa16270 100644
+--- a/services/bff/internal/appworkflows/deletion.go
++++ b/services/bff/internal/appworkflows/deletion.go
+@@ -230,3 +230,6 @@ func (a *Application) DispatchDeletion(ctx context.Context) (bool, error) {
+ 	}
+ 	return true, nil
+ }
++
++// RunDeletions is the required process-owned deletion recovery loop.
++func (a *Application) RunDeletions(ctx context.Context) error { return workflowcatalog.ErrNotReady }

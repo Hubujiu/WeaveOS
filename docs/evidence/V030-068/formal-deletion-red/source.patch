@@ -1,0 +1,88 @@
+diff --git a/services/bff/cmd/bff/root_formal_runtime_test.go b/services/bff/cmd/bff/root_formal_runtime_test.go
+index e6954cab..862633eb 100644
+--- a/services/bff/cmd/bff/root_formal_runtime_test.go
++++ b/services/bff/cmd/bff/root_formal_runtime_test.go
+@@ -58,12 +58,15 @@ func (rootFormalCodec) Unmarshal(b []byte, v any) error {
+ }
+ 
+ type rootFormalProxy struct {
+-	upstream    *grpc.ClientConn
+-	server      *grpc.Server
+-	listener    net.Listener
+-	armed, held atomic.Bool
+-	executions  atomic.Int32
+-	dropped     chan *pb.ExecutionReceipt
++	upstream                *grpc.ClientConn
++	server                  *grpc.Server
++	listener                net.Listener
++	armed, held             atomic.Bool
++	executions              atomic.Int32
++	dropped                 chan *pb.ExecutionReceipt
++	deleteArmed, deleteHeld atomic.Bool
++	deletes                 atomic.Int32
++	deleteDropped           chan *pb.FlowDeletionReceipt
+ }
+ 
+ func (p *rootFormalProxy) forward(_ any, stream grpc.ServerStream) error {
+@@ -82,6 +85,12 @@ func (p *rootFormalProxy) forward(_ any, stream grpc.ServerStream) error {
+ 	if method == "/weaveos.workflow.v1.ExecutionService/Lookup" && p.held.Load() {
+ 		return status.Error(codes.Unavailable, "fixture holds recovery")
+ 	}
++	if method == "/weaveos.workflow.v1.DeploymentService/LookupFlowDeletion" && p.deleteHeld.Load() {
++		return status.Error(codes.Unavailable, "fixture holds deletion recovery")
++	}
++	if method == "/weaveos.workflow.v1.DeploymentService/DeleteFlow" {
++		p.deletes.Add(1)
++	}
+ 	if method == "/weaveos.workflow.v1.ExecutionService/Execute" {
+ 		p.executions.Add(1)
+ 	}
+@@ -97,6 +106,15 @@ func (p *rootFormalProxy) forward(_ any, stream grpc.ServerStream) error {
+ 		p.dropped <- r
+ 		return status.Error(codes.Unavailable, "fixture discarded committed reply")
+ 	}
++	if method == "/weaveos.workflow.v1.DeploymentService/DeleteFlow" && p.deleteArmed.CompareAndSwap(true, false) {
++		r := new(pb.FlowDeletionReceipt)
++		if e := proto.Unmarshal(response, r); e != nil {
++			return status.Error(codes.Internal, "fixture deletion receipt decode")
++		}
++		p.deleteHeld.Store(true)
++		p.deleteDropped <- r
++		return status.Error(codes.Unavailable, "fixture discarded committed deletion reply")
++	}
+ 	return stream.SendMsg(&response)
+ }
+ func rootFormalStartChild(t *testing.T, name, binary string, args []string, env map[string]string) *rootBFFProcess {
+diff --git a/services/bff/internal/appworkflows/deletion.go b/services/bff/internal/appworkflows/deletion.go
+index 9aa16270..0e004060 100644
+--- a/services/bff/internal/appworkflows/deletion.go
++++ b/services/bff/internal/appworkflows/deletion.go
+@@ -232,4 +232,27 @@ func (a *Application) DispatchDeletion(ctx context.Context) (bool, error) {
+ }
+ 
+ // RunDeletions is the required process-owned deletion recovery loop.
+-func (a *Application) RunDeletions(ctx context.Context) error { return workflowcatalog.ErrNotReady }
++func (a *Application) RunDeletions(ctx context.Context) error {
++	if a == nil || a.Pool == nil || !a.deletionAvailable() {
++		return workflowcatalog.ErrNotReady
++	}
++	for {
++		if e := ctx.Err(); e != nil {
++			return e
++		}
++		worked, e := a.DispatchDeletion(ctx)
++		if e != nil && ctx.Err() != nil {
++			return ctx.Err()
++		}
++		if worked && e == nil {
++			continue
++		}
++		timer := time.NewTimer(200 * time.Millisecond)
++		select {
++		case <-ctx.Done():
++			timer.Stop()
++			return ctx.Err()
++		case <-timer.C:
++		}
++	}
++}

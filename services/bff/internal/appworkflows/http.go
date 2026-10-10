@@ -29,6 +29,7 @@ type Application struct {
 	Pool             *pgxpool.Pool
 	Limits           appschema.Limits
 	DeploymentClient DeploymentClient
+	DeletionClient   DeletionClient
 }
 
 type Service struct {
@@ -434,10 +435,14 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch {
+	case r.Method == http.MethodGet && len(parts) == 7 && action == "deletions":
+		s.deletionStatus(w, r, p, appID, viewID, flowID, parts[6])
 	case r.Method == http.MethodGet && len(parts) == 7 && action == "publications":
 		s.publicationStatus(w, r, p, appID, viewID, flowID, parts[6])
 	case len(parts) != 6:
 		writeEnvelope(w, r, http.StatusNotFound, "API_NOT_FOUND", nil)
+	case r.Method == http.MethodPost && action == "delete":
+		s.deleteWorkflow(w, r, p, appID, viewID, flowID)
 	case r.Method == http.MethodPost && action == "publish":
 		s.publish(w, r, p, appID, viewID, flowID)
 	case r.Method == http.MethodGet && action == "definition":

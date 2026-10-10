@@ -120,7 +120,7 @@ test('Root V036: every older migration identity and source remains unchanged',()
  for(const old of prior){assert.deepEqual(manifest.migrations.filter(x=>x.path===old.path),[old]);assert.equal(hash(read('db/'+old.path)),old.sha256);}
 });
 test('Root V036: only reviewed append-only evidence roles are admitted',()=>{
- const sql=read('infra/runtime/roles.sql').toString('utf8');assert.equal(hash(sql),'0c274ae29afbe2a5c802491328358992abeb1361c56e6d6222265873e46c2e6c');
+ const sql=read('infra/runtime/roles.sql').toString('utf8');assert.equal(hash(sql),'7bd25e63e883501492532b97a951d182b8c953c743dd7bb656c38e7406f42267');
  assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql));assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql.replace(/\n/g,'\r\n')));
  for(const extra of ['GRANT UPDATE ON applications.workflow_evidence_blobs TO auth_app;','GRANT DELETE ON applications.workflow_evidence_documents TO auth_backup;','GRANT SELECT ON applications.workflow_evidence_members TO auth_reader;'])assert.throws(()=>validateInstalledPersonnelRoles(sql+'\n'+extra+'\n'));
 });
