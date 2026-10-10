@@ -100,11 +100,17 @@ func TestRootTemplateHTTPClosedPayloadAndSize(t *testing.T) {
 	f, m, b, _ := rootTemplatePreflightSource(t)
 	rootTemplateGrantCreate(t, f, f.actor)
 	body := rootTemplateHTTPBody(t, m, b)
+	var nullObject map[string]json.RawMessage
+	if json.Unmarshal([]byte(body), &nullObject) != nil {
+		t.Fatal("bad fixture")
+	}
+	nullObject["bindings"] = json.RawMessage("null")
+	nullBody, _ := json.Marshal(nullObject)
 	cases := map[string]string{
 		"unknown":         strings.TrimSuffix(body, "}") + `,"records":[]}`,
 		"duplicate":       `{"bindings":[],` + body[1:],
 		"case":            strings.Replace(body, `"manifest":`, `"Manifest":`, 1),
-		"null-bindings":   strings.Replace(body, `"bindings":[`, `"bindings":null,"discard":[`, 1),
+		"null-bindings":   string(nullBody),
 		"unknown-binding": strings.Replace(body, `"sourceId":`, `"extra":true,"sourceId":`, 1),
 		"trailing":        body + `{}`,
 		"utf8":            string([]byte{255}) + body,

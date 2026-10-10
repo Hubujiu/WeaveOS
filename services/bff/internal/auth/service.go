@@ -27,7 +27,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.Personnel.ServeHTTP(w, r)
 		return
 	}
-	if s.Applications != nil && (r.URL.Path == "/api/v1/workflow-tasks/search" || r.URL.Path == "/api/v1/applications" || strings.HasPrefix(r.URL.Path, "/api/v1/applications/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-operations/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/")) {
+	if s.Applications != nil && (strings.HasPrefix(r.URL.Path, "/api/v1/application-templates/") || r.URL.Path == "/api/v1/workflow-tasks/search" || r.URL.Path == "/api/v1/applications" || strings.HasPrefix(r.URL.Path, "/api/v1/applications/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-operations/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/")) {
 		s.Applications.ServeHTTP(w, r)
 		return
 	}

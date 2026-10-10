@@ -1,0 +1,84 @@
+diff --git a/services/bff/cmd/bff/config.go b/services/bff/cmd/bff/config.go
+index e9690615..9c6c0079 100644
+--- a/services/bff/cmd/bff/config.go
++++ b/services/bff/cmd/bff/config.go
+@@ -9,6 +9,7 @@ import (
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
++	"github.com/Hubujiu/WeaveOS/services/bff/internal/apptemplates"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appworkflows"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/auth"
+ 	"github.com/Hubujiu/WeaveOS/services/bff/internal/personnel"
+@@ -127,6 +128,7 @@ func buildHost(startupCtx, processCtx context.Context, cfg config) (*bffHost, er
+ 	records := apprecordservice.New(pool, queryRedis, cfg.Generation)
+ 	records.Limits = cfg.SchemaLimits
+ 	apps.Records = &apprecordhttp.Service{Records: records, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
++	apps.Templates = &apptemplates.HTTP{Application: &apptemplates.Service{Pool: pool}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
+ 	s.Applications = apps
+ 	s.InvitationBegin = func(ctx context.Context, p session.Principal, version string) (pgx.Tx, error) {
+ 		tx, err := people.BeginQueryWrite(ctx, p, version)
+diff --git a/services/bff/cmd/bff/root_template_http_test.go b/services/bff/cmd/bff/root_template_http_test.go
+index 96dc2164..a82981e3 100644
+--- a/services/bff/cmd/bff/root_template_http_test.go
++++ b/services/bff/cmd/bff/root_template_http_test.go
+@@ -100,11 +100,17 @@ func TestRootTemplateHTTPClosedPayloadAndSize(t *testing.T) {
+ 	f, m, b, _ := rootTemplatePreflightSource(t)
+ 	rootTemplateGrantCreate(t, f, f.actor)
+ 	body := rootTemplateHTTPBody(t, m, b)
++	var nullObject map[string]json.RawMessage
++	if json.Unmarshal([]byte(body), &nullObject) != nil {
++		t.Fatal("bad fixture")
++	}
++	nullObject["bindings"] = json.RawMessage("null")
++	nullBody, _ := json.Marshal(nullObject)
+ 	cases := map[string]string{
+ 		"unknown":         strings.TrimSuffix(body, "}") + `,"records":[]}`,
+ 		"duplicate":       `{"bindings":[],` + body[1:],
+ 		"case":            strings.Replace(body, `"manifest":`, `"Manifest":`, 1),
+-		"null-bindings":   strings.Replace(body, `"bindings":[`, `"bindings":null,"discard":[`, 1),
++		"null-bindings":   string(nullBody),
+ 		"unknown-binding": strings.Replace(body, `"sourceId":`, `"extra":true,"sourceId":`, 1),
+ 		"trailing":        body + `{}`,
+ 		"utf8":            string([]byte{255}) + body,
+diff --git a/services/bff/internal/applications/http.go b/services/bff/internal/applications/http.go
+index 82e82c26..907d4323 100644
+--- a/services/bff/internal/applications/http.go
++++ b/services/bff/internal/applications/http.go
+@@ -24,6 +24,7 @@ type Service struct {
+ 	Definitions       http.Handler
+ 	Records           http.Handler
+ 	Workflows         http.Handler
++	Templates         http.Handler
+ }
+ 
+ func (s *Service) TrustedProxies() []string { return append([]string(nil), s.TrustedProxyHosts...) }
+@@ -232,6 +233,15 @@ func (s *Service) write(w http.ResponseWriter, r *http.Request, p session.Princi
+ 	s.finish(w, r, p, result)
+ }
+ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
++	if s.Templates != nil {
++		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
++		parts := strings.Split(path, "/")
++		if strings.HasPrefix(r.URL.Path, "/api/v1/application-templates/") || path != r.URL.Path && len(parts) == 2 && parts[1] == "structure-template" {
++			s.Templates.ServeHTTP(w, r)
++			return
++		}
++	}
++
+ 	if s.Workflows != nil {
+ 		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
+ 		parts := strings.Split(path, "/")
+diff --git a/services/bff/internal/auth/service.go b/services/bff/internal/auth/service.go
+index afe0a489..e2c3b2d2 100644
+--- a/services/bff/internal/auth/service.go
++++ b/services/bff/internal/auth/service.go
+@@ -27,7 +27,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		s.Personnel.ServeHTTP(w, r)
+ 		return
+ 	}
+-	if s.Applications != nil && (r.URL.Path == "/api/v1/workflow-tasks/search" || r.URL.Path == "/api/v1/applications" || strings.HasPrefix(r.URL.Path, "/api/v1/applications/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-operations/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/")) {
++	if s.Applications != nil && (strings.HasPrefix(r.URL.Path, "/api/v1/application-templates/") || r.URL.Path == "/api/v1/workflow-tasks/search" || r.URL.Path == "/api/v1/applications" || strings.HasPrefix(r.URL.Path, "/api/v1/applications/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-operations/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/")) {
+ 		s.Applications.ServeHTTP(w, r)
+ 		return
+ 	}

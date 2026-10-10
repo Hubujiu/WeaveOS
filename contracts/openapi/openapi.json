@@ -14001,6 +14001,615 @@
           }
         }
       }
+    },
+    "/api/v1/applications/{appId}/structure-template": {
+      "get": {
+        "operationId": "exportApplicationStructureTemplate",
+        "summary": "Export complete application structure without business data",
+        "description": "Current active owner or database Bootstrap; one read-only RR snapshot. Pending deletion, missing candidate or unknown stored configuration rejects the entire export. No query parameters. Session renewal is required before success.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Read-only result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateManifestEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "headApplicationStructureTemplate",
+        "summary": "Export complete application structure without business data",
+        "description": "Current active owner or database Bootstrap; one read-only RR snapshot. Pending deletion, missing candidate or unknown stored configuration rejects the entire export. No query parameters. Session renewal is required before success.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Read-only result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            }
+          },
+          "403": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application-templates/preflight": {
+      "post": {
+        "operationId": "preflightApplicationTemplate",
+        "summary": "Validate explicit template mappings without importing",
+        "description": "Advisory read-only validation: current active create permission or real Bootstrap, current target users and departments, complete internal remapping feasibility. Does not create application, physical table, operation, audit or personnel configuration. Import must recheck authority and targets. Strict exact-case JSON, no duplicate/unknown keys or query, no compressed encoding; 4MiB whole body and 1MiB manifest.",
+        "x-max-body-bytes": 4194304,
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplatePreflightRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Read-only result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplatePreflightEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -25205,6 +25814,710 @@
             "maximum": 9007199254740991
           }
         }
+      },
+      "TemplateApplication": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        }
+      },
+      "TemplateDirectory": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "parentId",
+          "position"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "parentId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "not": {
+                  "const": "00000000-0000-0000-0000-000000000000"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        }
+      },
+      "TemplateTable": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "directoryId",
+          "position",
+          "fields"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "directoryId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "not": {
+                  "const": "00000000-0000-0000-0000-000000000000"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Field"
+            },
+            "maxItems": 200
+          }
+        }
+      },
+      "TemplateForm": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "tableId",
+          "name",
+          "directoryId",
+          "position",
+          "layout"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "tableId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "directoryId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "not": {
+                  "const": "00000000-0000-0000-0000-000000000000"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "layout": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LayoutNodeInput"
+            }
+          }
+        }
+      },
+      "TemplateGraph": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "nodes",
+          "edges"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "const": 1
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateNode"
+            },
+            "maxItems": 100,
+            "minItems": 2
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateEdge"
+            },
+            "maxItems": 200,
+            "minItems": 1
+          }
+        }
+      },
+      "TemplateNode": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "start",
+              "end",
+              "approval",
+              "condition"
+            ]
+          },
+          "approval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkflowApproval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "condition": {
+            "$ref": "#/components/schemas/RecordFilterGroup"
+          }
+        }
+      },
+      "TemplateEdge": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "from",
+          "to"
+        ],
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "to": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "branch": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ]
+          }
+        }
+      },
+      "TemplateWorkflow": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "tableId",
+          "viewId",
+          "name",
+          "graph",
+          "allowWithdraw",
+          "triggers"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "tableId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "viewId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "graph": {
+            "$ref": "#/components/schemas/TemplateGraph"
+          },
+          "allowWithdraw": {
+            "type": "boolean"
+          },
+          "triggers": {
+            "$ref": "#/components/schemas/WorkflowTriggers"
+          }
+        }
+      },
+      "TemplateGrant": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resourceKind",
+          "resourceId",
+          "action",
+          "rowScope",
+          "fields"
+        ],
+        "properties": {
+          "resourceKind": {
+            "type": "string",
+            "enum": [
+              "application",
+              "directory",
+              "form"
+            ]
+          },
+          "resourceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "menu.enter",
+              "data.create",
+              "data.read",
+              "data.edit",
+              "data.history"
+            ]
+          },
+          "rowScope": {
+            "type": "string",
+            "enum": [
+              "all",
+              "own"
+            ]
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            },
+            "maxItems": 200
+          }
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ApplicationMenuGrant"
+          },
+          {
+            "$ref": "#/components/schemas/ApplicationChildMenuGrant"
+          },
+          {
+            "$ref": "#/components/schemas/ApplicationDataGrant"
+          }
+        ]
+      },
+      "TemplatePermissionGroup": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "enabled",
+          "memberIds",
+          "grants"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "memberIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            },
+            "maxItems": 10000
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateGrant"
+            },
+            "maxItems": 10000
+          }
+        }
+      },
+      "TemplateManifest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "format",
+          "version",
+          "application",
+          "directories",
+          "tables",
+          "forms",
+          "workflows",
+          "permissionGroups"
+        ],
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "weaveos.structure-template"
+          },
+          "version": {
+            "type": "integer",
+            "const": 1
+          },
+          "application": {
+            "$ref": "#/components/schemas/TemplateApplication"
+          },
+          "directories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateDirectory"
+            },
+            "maxItems": 1000
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateTable"
+            },
+            "maxItems": 128
+          },
+          "forms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateForm"
+            },
+            "maxItems": 256
+          },
+          "workflows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateWorkflow"
+            },
+            "maxItems": 128
+          },
+          "permissionGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplatePermissionGroup"
+            },
+            "maxItems": 128
+          }
+        },
+        "description": "Structure only; raw UTF-8 manifest <=1048576 bytes, depth<=32. Reject duplicate/unknown keys and dangling or cross-resource references. No owner, records, attachments, instances, evidence, sessions or secrets. External references require explicit typed mappings; imports regenerate all internal identities and never deploy or enable workflows."
+      },
+      "TemplateBinding": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "sourceId",
+          "targetId"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "user",
+              "department"
+            ]
+          },
+          "sourceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "targetId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          }
+        }
+      },
+      "TemplatePreflightRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "manifest",
+          "bindings"
+        ],
+        "properties": {
+          "manifest": {
+            "$ref": "#/components/schemas/TemplateManifest"
+          },
+          "bindings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateBinding"
+            }
+          }
+        }
+      },
+      "TemplateCounts": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "directories",
+          "tables",
+          "fields",
+          "forms",
+          "workflows",
+          "permissionGroups"
+        ],
+        "properties": {
+          "directories": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "tables": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "fields": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "forms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "workflows": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "permissionGroups": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "TemplatePreflightResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "valid",
+          "counts"
+        ],
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "const": true
+          },
+          "counts": {
+            "$ref": "#/components/schemas/TemplateCounts"
+          }
+        }
+      },
+      "TemplateManifestEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/TemplateManifest"
+              }
+            }
+          }
+        ]
+      },
+      "TemplatePreflightEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/TemplatePreflightResult"
+              }
+            }
+          }
+        ]
+      },
+      "TemplateErrorEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "COMMON_INVALID_ARGUMENT",
+                  "COMMON_VALIDATION_FAILED",
+                  "COMMON_UNSUPPORTED_MEDIA_TYPE",
+                  "COMMON_METHOD_NOT_ALLOWED",
+                  "AUTH_UNAUTHENTICATED",
+                  "COMMON_CSRF_REJECTED",
+                  "AUTH_SESSION_CHANGED",
+                  "APPLICATION_FORBIDDEN",
+                  "APPLICATION_NOT_FOUND",
+                  "APPLICATION_RESOURCE_INVALID",
+                  "APPLICATION_TEMPLATE_NOT_EXPORTABLE",
+                  "APPLICATION_TEMPLATE_TOO_LARGE",
+                  "COMMON_SERVICE_UNAVAILABLE",
+                  "API_NOT_FOUND"
+                ]
+              },
+              "data": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ValidationErrorData"
+                  }
+                ]
+              }
+            }
+          }
+        ]
       }
     },
     "responses": {
