@@ -14610,6 +14610,767 @@
           }
         }
       }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/records/{recordId}/workflows/{instanceId}/round-actions": {
+      "get": {
+        "operationId": "previewWorkflowRound",
+        "summary": "Preview current latest-round qualification",
+        "description": "Current Session/menu/record authorization in one consistent read. Only latest round may grant capabilities. No graph, approver list or business values. No query parameters. Later writes recheck all facts and CAS.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "instanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Minimum current role, latest round identity and CAS counters.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowRoundPreviewEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowTaskErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "startWorkflowRound",
+        "summary": "Accept a linked resubmit or review of the latest round",
+        "description": "Current role and record permissions; exact latest parent, schema/record/workflow CAS. Durable starting intent only, never engine success. Resubmit uses the original initiator; review uses any configured approver of the original fixed definition. No business edits, no other flow restart. Original operation replays the same minimum receipt.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "instanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "x-max-body-bytes": 4096,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowRoundStart"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Durable linked starting intent accepted; query the original operation or workflow history for progress.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Location": {
+                "description": "Poll the same actor's minimum operation outcome.",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^/api/v1/application-operations/[0-9a-f-]{36}$"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowRoundStartResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "x-max-body-bytes": 4096
+      }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/records/{recordId}/workflows/{instanceId}/rework": {
+      "post": {
+        "operationId": "reworkWorkflowRound",
+        "summary": "Save original-initiator rework without starting any flow",
+        "description": "Only the latest rejected or withdrawn round original initiator with current row and selected-field edit permission. Actual Save/CAS/history are one local transaction. Other active flows keep running; pending command fences still protect the record. No query parameters.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "name": "instanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "x-max-body-bytes": 1048576,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowRoundRework"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Safe error; no raw SQL, hidden fields, or guessed workflow outcome.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowManualStartErrorEnvelope"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Confirmed saved record version; no workflow advancement.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordMutationResultEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "x-max-body-bytes": 1048576
+      }
     }
   },
   "components": {
@@ -27248,6 +28009,287 @@
           }
         },
         "description": "Structure only; raw UTF-8 manifest <=1048576 bytes, depth<=32. Reject duplicate/unknown keys and dangling or cross-resource references. No owner, records, attachments, instances, evidence, sessions or secrets. External references require explicit typed mappings; imports regenerate all internal identities and never deploy or enable workflows."
+      },
+      "WorkflowRoundStart": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "kind",
+          "expectedWorkflowRevision",
+          "expectedSchemaVersion",
+          "expectedRecordVersion"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "resubmit",
+              "review"
+            ]
+          },
+          "expectedWorkflowRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expectedSchemaVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expectedRecordVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "WorkflowRoundStartResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "flowId",
+          "previousInstanceId",
+          "instanceId",
+          "roundKind",
+          "roundNumber",
+          "status"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "flowId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "previousInstanceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "instanceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "roundKind": {
+            "type": "string",
+            "enum": [
+              "resubmit",
+              "review"
+            ]
+          },
+          "roundNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "accepted"
+            ]
+          }
+        }
+      },
+      "WorkflowRoundRework": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "expectedSchemaVersion",
+          "expectedRecordVersion",
+          "changes"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "expectedSchemaVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expectedRecordVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "changes": {
+            "$ref": "#/components/schemas/RecordValues",
+            "minProperties": 1,
+            "maxProperties": 200
+          }
+        }
+      },
+      "WorkflowRoundPreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "instanceId",
+          "flowId",
+          "roundNumber",
+          "latestInstanceId",
+          "state",
+          "definitionVersion",
+          "workflowRevision",
+          "schemaVersion",
+          "recordVersion",
+          "canRework",
+          "canResubmit",
+          "canReview",
+          "editableFieldIds"
+        ],
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "flowId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "roundNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "latestInstanceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "starting",
+              "active",
+              "completed",
+              "rejected",
+              "withdrawn",
+              "no_effect"
+            ]
+          },
+          "definitionVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "workflowRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "recordVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "canRework": {
+            "type": "boolean"
+          },
+          "canResubmit": {
+            "type": "boolean"
+          },
+          "canReview": {
+            "type": "boolean"
+          },
+          "editableFieldIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "WorkflowRoundStartResultEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/WorkflowRoundStartResult"
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowRoundPreviewEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/WorkflowRoundPreview"
+              }
+            }
+          }
+        ]
       }
     },
     "responses": {

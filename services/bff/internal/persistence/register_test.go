@@ -23,12 +23,12 @@ func registrationPool(t *testing.T) *pgxpool.Pool {
 		t.Fatal(err)
 	}
 	t.Cleanup(pool.Close)
-	_, err = pool.Exec(context.Background(), "TRUNCATE auth.authentication_events, auth.invitations, auth.password_credentials, auth.users CASCADE")
+	_, err = pool.Exec(context.Background(), "DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE auth.authentication_events, auth.invitations, auth.password_credentials, auth.users CASCADE; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$")
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_, _ = pool.Exec(context.Background(), "TRUNCATE auth.authentication_events, auth.invitations, auth.password_credentials, auth.users CASCADE")
+		_, _ = pool.Exec(context.Background(), "DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE auth.authentication_events, auth.invitations, auth.password_credentials, auth.users CASCADE; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$")
 	})
 	return pool
 }

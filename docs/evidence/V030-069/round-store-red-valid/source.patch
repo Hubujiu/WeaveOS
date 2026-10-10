@@ -1,0 +1,12 @@
+diff --git a/services/bff/internal/workflowcatalog/catalog.go b/services/bff/internal/workflowcatalog/catalog.go
+index db7841ff..f3e61785 100644
+--- a/services/bff/internal/workflowcatalog/catalog.go
++++ b/services/bff/internal/workflowcatalog/catalog.go
+@@ -46,6 +46,7 @@ type Head struct {
+ }
+ 
+ type ReserveInput struct {
++	PreviousInstanceID, RoundKind                string
+ 	AppID, FlowID, InstanceID, RecordID, ActorID string
+ 	ExpectedRevision, ExpectedSchemaVersion      int64
+ 	ExpectedRecordVersion                        int64

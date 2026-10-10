@@ -36,7 +36,7 @@ func TestAcceptanceSeedProducesIsolatedUsableFixtures(t *testing.T) {
 		t.Fatalf("refusing fixture cleanup outside a weaveos_ test database: %q", databaseName)
 	}
 	clearFixtures := func() {
-		if _, err := pool.Exec(ctx, "TRUNCATE auth.authentication_events, auth.invitations, auth.password_credentials, auth.users CASCADE"); err != nil {
+		if _, err := pool.Exec(ctx, "DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds DISABLE TRIGGER guard_workflow_round_truncate; END IF; END $$; TRUNCATE auth.authentication_events, auth.invitations, auth.password_credentials, auth.users CASCADE; DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid=to_regclass('applications.workflow_rounds') AND tgname='guard_workflow_round_truncate') THEN ALTER TABLE applications.workflow_rounds ENABLE TRIGGER guard_workflow_round_truncate; END IF; END $$"); err != nil {
 			t.Fatal(err)
 		}
 	}

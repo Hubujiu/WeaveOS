@@ -1,0 +1,1 @@
+Initial run had an unused test import and is not valid RED. The corrected tests compiled and created real fixtures, then five top-level/eight subcases failed the explicit durable-round schema requirement before implementation. These do not independently demonstrate every later assertion.

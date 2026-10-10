@@ -46,6 +46,7 @@ type Head struct {
 }
 
 type ReserveInput struct {
+	PreviousInstanceID, RoundKind                string
 	AppID, FlowID, InstanceID, RecordID, ActorID string
 	ExpectedRevision, ExpectedSchemaVersion      int64
 	ExpectedRecordVersion                        int64
@@ -410,20 +411,30 @@ func (Catalog) ReserveInTx(ctx context.Context, tx pgx.Tx, in ReserveInput) (Ins
 		in.ExpectedRecordVersion < 1 || in.ExpectedRecordVersion > maxSafeInteger {
 		return Instance{}, ErrInvalid
 	}
+	if in.RoundKind == "" {
+		in.RoundKind = "initial"
+	}
+	if in.RoundKind != "initial" && in.RoundKind != "resubmit" && in.RoundKind != "review" ||
+		in.RoundKind == "initial" && in.PreviousInstanceID != "" ||
+		in.RoundKind != "initial" && !validIDs(in.PreviousInstanceID) {
+		return Instance{}, ErrInvalid
+	}
 	h, resources, err := lockFlow(ctx, tx, in.AppID, in.FlowID, true)
 	if err != nil {
 		return Instance{}, err
 	}
 	var existing Instance
+	var previousID *string
+	var roundKind string
 	err = tx.QueryRow(ctx, `SELECT id::text,flow_id::text,app_id::text,table_id::text,view_id::text,
-		record_id::text,initiator_id::text,state,definition_version,sequence
+		record_id::text,initiator_id::text,state,definition_version,sequence,previous_instance_id::text,round_kind
 		FROM applications.workflow_instances WHERE app_id=$1 AND flow_id=$2 AND id=$3`,
 		in.AppID, in.FlowID, in.InstanceID).Scan(&existing.ID, &existing.FlowID, &existing.AppID,
 		&existing.TableID, &existing.ViewID, &existing.RecordID, &existing.InitiatorID,
-		&existing.State, &existing.DefinitionVersion, &existing.Sequence)
+		&existing.State, &existing.DefinitionVersion, &existing.Sequence, &previousID, &roundKind)
 	if err == nil {
 		if existing.AppID != in.AppID || existing.FlowID != in.FlowID || existing.TableID != h.TableID ||
-			existing.ViewID != h.ViewID || existing.RecordID != in.RecordID || existing.InitiatorID != in.ActorID {
+			existing.ViewID != h.ViewID || existing.RecordID != in.RecordID || existing.InitiatorID != in.ActorID || roundKind != in.RoundKind || (previousID == nil && in.PreviousInstanceID != "") || (previousID != nil && *previousID != in.PreviousInstanceID) {
 			return Instance{}, ErrConflict
 		}
 		return existing, nil
@@ -463,9 +474,9 @@ func (Catalog) ReserveInTx(ctx context.Context, tx pgx.Tx, in ReserveInput) (Ins
 		return Instance{}, ErrConflict
 	}
 	_, err = tx.Exec(ctx, `INSERT INTO applications.workflow_instances
-		(id,app_id,flow_id,table_id,view_id,record_id,initiator_id,definition_version,state,sequence)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,'starting',0)`, in.InstanceID, in.AppID, in.FlowID,
-		h.TableID, h.ViewID, in.RecordID, in.ActorID, h.CurrentVersion)
+		(id,app_id,flow_id,table_id,view_id,record_id,initiator_id,definition_version,state,sequence,previous_instance_id,round_kind)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,'starting',0,NULLIF($9,'')::uuid,$10)`, in.InstanceID, in.AppID, in.FlowID,
+		h.TableID, h.ViewID, in.RecordID, in.ActorID, h.CurrentVersion, in.PreviousInstanceID, in.RoundKind)
 	if err != nil {
 		return Instance{}, mapDBError(err)
 	}
