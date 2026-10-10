@@ -24,6 +24,7 @@ class RootRuntimeSchemaTest {
   jdbc=new JdbcTemplate(new DriverManagerDataSource(url+"?currentSchema="+schema,"b3_fixture","b3_fixture_only"));
   String up=Files.readString(Path.of("schema/migrations/00001_flowable8.sql")).split("-- \\+goose Down",-1)[0];
   jdbc.execute(up);
+  jdbc.execute(Files.readString(Path.of("schema/migrations/00002_flow_deletion_guards.sql")).split("-- \\+goose Down",-1)[0]);
   admin.execute("CREATE ROLE "+role+" LOGIN PASSWORD 'v041_synthetic_only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT");
   admin.execute("REVOKE TEMPORARY ON DATABASE b3_flowable_fixture FROM PUBLIC");
   admin.execute("GRANT USAGE ON SCHEMA "+schema+" TO "+role);
@@ -31,12 +32,13 @@ class RootRuntimeSchemaTest {
    admin.execute("GRANT SELECT,INSERT,UPDATE,DELETE ON "+schema+"."+table+" TO "+role);
   for(String sequence:jdbc.queryForList("SELECT sequencename FROM pg_sequences WHERE schemaname=? AND left(sequencename,4) IN ('act_','flw_')",String.class,schema))
    admin.execute("GRANT USAGE,SELECT ON SEQUENCE "+schema+"."+sequence+" TO "+role);
-  for(String table:List.of("wf_deployments","wf_execution_commands","wf_execution_instances","wf_execution_tasks"))
+  for(String table:List.of("wf_deployments","wf_execution_commands","wf_execution_instances","wf_execution_tasks","wf_flow_deletion_guards"))
    admin.execute("GRANT SELECT,INSERT ON "+schema+"."+table+" TO "+role);
   grantUpdate("wf_deployments","status,engine_deployment_id,process_definition_id");
   grantUpdate("wf_execution_commands","outcome,result_sequence,proof_id,result_hash,result_bytes");
   grantUpdate("wf_execution_instances","engine_process_id,state,sequence,fence_epoch,schema_version,record_version,activation_epoch,updated_at");
   grantUpdate("wf_execution_tasks","state,decision");
+  grantUpdate("wf_flow_deletion_guards","retired,operation_id,deleted_versions,deleted_at");
   runtime=new DriverManagerDataSource(url+"?currentSchema="+schema,role,"v041_synthetic_only");
  }
  void grantUpdate(String table,String columns){admin.execute("GRANT UPDATE("+columns+") ON "+schema+"."+table+" TO "+role);}

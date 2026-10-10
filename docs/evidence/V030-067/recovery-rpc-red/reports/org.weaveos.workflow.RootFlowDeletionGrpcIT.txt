@@ -1,0 +1,60 @@
+-------------------------------------------------------------------------------
+Test set: org.weaveos.workflow.RootFlowDeletionGrpcIT
+-------------------------------------------------------------------------------
+Tests run: 7, Failures: 4, Errors: 2, Skipped: 0, Time elapsed: 19.32 s <<< FAILURE! -- in org.weaveos.workflow.RootFlowDeletionGrpcIT
+org.weaveos.workflow.RootFlowDeletionGrpcIT.outerTransactionCannotSendProvisionalDeletionSuccess -- Time elapsed: 0.821 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <FAILED_PRECONDITION> but was: <UNIMPLEMENTED>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:184)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:179)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1188)
+	at org.weaveos.workflow.RootFlowDeletionGrpcIT.outerTransactionCannotSendProvisionalDeletionSuccess(RootFlowDeletionGrpcIT.java:66)
+
+org.weaveos.workflow.RootFlowDeletionGrpcIT.responseLossAfterCommitRecoversSameOperation -- Time elapsed: 0.727 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Expected org.weaveos.workflow.RootFlowDeletionGrpcIT.DeliveryLost to be thrown, but nothing was thrown.
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:74)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3223)
+	at org.weaveos.workflow.RootFlowDeletionGrpcIT.responseLossAfterCommitRecoversSameOperation(RootFlowDeletionGrpcIT.java:71)
+
+org.weaveos.workflow.RootFlowDeletionGrpcIT.activeInstanceAndChangedOperationHaveDistinctSafeStatus -- Time elapsed: 1.101 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <FAILED_PRECONDITION> but was: <UNIMPLEMENTED>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:184)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:179)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1188)
+	at org.weaveos.workflow.RootFlowDeletionGrpcIT.code(RootFlowDeletionGrpcIT.java:33)
+	at org.weaveos.workflow.RootFlowDeletionGrpcIT.activeInstanceAndChangedOperationHaveDistinctSafeStatus(RootFlowDeletionGrpcIT.java:58)
+
+org.weaveos.workflow.RootFlowDeletionGrpcIT.authenticatedDeleteAndLookupReturnOriginalCommittedIdentityAndTime -- Time elapsed: 1.288 s <<< ERROR!
+io.grpc.StatusRuntimeException: UNIMPLEMENTED: Method weaveos.workflow.v1.DeploymentService/DeleteFlow is unimplemented
+	at io.grpc.stub.ClientCalls.toStatusRuntimeException(ClientCalls.java:368)
+	at io.grpc.stub.ClientCalls.getUnchecked(ClientCalls.java:349)
+	at io.grpc.stub.ClientCalls.blockingUnaryCall(ClientCalls.java:174)
+	at org.weaveos.workflow.v1.DeploymentServiceGrpc$DeploymentServiceBlockingStub.deleteFlow(DeploymentServiceGrpc.java:369)
+	at org.weaveos.workflow.RootFlowDeletionGrpcIT.authenticatedDeleteAndLookupReturnOriginalCommittedIdentityAndTime(RootFlowDeletionGrpcIT.java:35)
+
+org.weaveos.workflow.RootFlowDeletionGrpcIT.missingAndCrossScopeLookupAreExplicitNotObservedAndReadOnly -- Time elapsed: 1.049 s <<< ERROR!
+io.grpc.StatusRuntimeException: UNIMPLEMENTED: Method weaveos.workflow.v1.DeploymentService/LookupFlowDeletion is unimplemented
+	at io.grpc.stub.ClientCalls.toStatusRuntimeException(ClientCalls.java:368)
+	at io.grpc.stub.ClientCalls.getUnchecked(ClientCalls.java:349)
+	at io.grpc.stub.ClientCalls.blockingUnaryCall(ClientCalls.java:174)
+	at org.weaveos.workflow.v1.DeploymentServiceGrpc$DeploymentServiceBlockingStub.lookupFlowDeletion(DeploymentServiceGrpc.java:376)
+	at org.weaveos.workflow.RootFlowDeletionGrpcIT.missingAndCrossScopeLookupAreExplicitNotObservedAndReadOnly(RootFlowDeletionGrpcIT.java:45)
+
+org.weaveos.workflow.RootFlowDeletionGrpcIT.invalidUUIDAndOversizedUnknownFieldsAreInvalidArgument -- Time elapsed: 0.899 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <INVALID_ARGUMENT> but was: <UNIMPLEMENTED>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:184)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:179)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1188)
+	at org.weaveos.workflow.RootFlowDeletionGrpcIT.code(RootFlowDeletionGrpcIT.java:33)
+	at org.weaveos.workflow.RootFlowDeletionGrpcIT.invalidUUIDAndOversizedUnknownFieldsAreInvalidArgument(RootFlowDeletionGrpcIT.java:52)
+

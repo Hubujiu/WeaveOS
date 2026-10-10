@@ -1,0 +1,35 @@
+//go:build workflowruntime_integration && workflowrpc_integration && linux
+
+package main
+
+import (
+ "os"
+ "os/exec"
+ "strings"
+ "testing"
+)
+
+// A real child failure must remain diagnosable after owning cleanup, without
+// exposing even the synthetic service identity. No database or engine is mocked.
+func TestRootFormalChildFailureDiagnosticsSurviveCleanup(t *testing.T) {
+ const childMode = "WEAVEOS_FORMAL_DIAGNOSTIC_CHILD"
+ if os.Getenv(childMode) == "1" {
+  var child *rootBFFProcess
+  // Reproduce formal fixture ownership: cleanup precedes child log allocation.
+  t.Cleanup(func() { rootFormalStop(child, false); rootFormalLog(t, "diagnostic", child) })
+  child = rootFormalStartChild(t, "diagnostic", "/bin/sh", []string{"-c", "printf 'diagnostic-marker %s %s' \"$DIAG_TOKEN\" \"$DIAG_PASSWORD\"; exit 23"}, map[string]string{"DIAG_TOKEN":rootRPCToken,"DIAG_PASSWORD":"v041_synthetic_only"})
+  <-child.done
+  t.Error("intentional synthetic child failure")
+  return
+ }
+ cmd := exec.Command(os.Args[0], "-test.run=^TestRootFormalChildFailureDiagnosticsSurviveCleanup$", "-test.v")
+ cmd.Env = append(os.Environ(), childMode+"=1")
+ output, err := cmd.CombinedOutput()
+ if err == nil { t.Fatal("diagnostic subprocess must actually fail") }
+ raw := string(output)
+ if !strings.Contains(raw, "diagnostic-marker [fixture-token] [fixture-password]") {
+  t.Errorf("actual child output vanished before owner diagnostics: %s", raw)
+ }
+ if !strings.Contains(raw,"exit status 23") { t.Errorf("actual child exit status missing: %s",raw) }
+ if strings.Contains(raw,rootRPCToken)||strings.Contains(raw,"v041_synthetic_only") { t.Fatal("child diagnostic exposed synthetic credentials") }
+}
