@@ -143,3 +143,10 @@ GRANT UPDATE(next_attempt_at,attempts,lease_token,lease_until,last_error) ON app
 REVOKE ALL ON applications.workflow_evidence_blobs,applications.workflow_evidence_documents,applications.workflow_evidence_members FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
 GRANT SELECT,INSERT ON applications.workflow_evidence_blobs,applications.workflow_evidence_documents,applications.workflow_evidence_members TO auth_app;
 GRANT SELECT ON applications.workflow_evidence_blobs,applications.workflow_evidence_documents,applications.workflow_evidence_members TO auth_backup;
+
+-- V030-068: accepted deletion identity survives physical catalog cleanup.
+REVOKE ALL ON applications.workflow_deletions FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+GRANT SELECT,INSERT ON applications.workflow_deletions TO auth_app;
+GRANT UPDATE(status,reason,engine_deleted_versions,engine_deleted_at,lease_token,lease_until,attempts,next_attempt_at,updated_at,completed_at)
+ ON applications.workflow_deletions TO auth_app;
+GRANT SELECT ON applications.workflow_deletions TO auth_backup;

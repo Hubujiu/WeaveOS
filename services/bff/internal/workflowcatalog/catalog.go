@@ -282,6 +282,10 @@ func (Catalog) EnableInTx(ctx context.Context, tx pgx.Tx, appID, flowID string, 
 	if err != nil {
 		return Head{}, err
 	}
+	if err := rejectDeletion(ctx, tx, flowID); err != nil {
+		return Head{}, err
+	}
+
 	if h.Revision != expectedRevision {
 		return Head{}, ErrConflict
 	}
