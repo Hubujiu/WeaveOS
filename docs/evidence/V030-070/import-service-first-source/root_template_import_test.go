@@ -126,11 +126,11 @@ func TestRootTemplateImportEmptyApplicationAndStableReplayAfterRevocation(t *tes
 		t.Fatal(e)
 	}
 	replay, e := s.Import(f.ctx, p, op, m, []apptemplates.Binding{}, applications.Metadata{RequestID: "new-trace"})
-	if e != nil || r.Status != replay.Status || r.Location != replay.Location || !rootTemplateJSONEqual(r.Data, replay.Data) {
+	if e != nil || !reflect.DeepEqual(r, replay) {
 		t.Fatal("same-key confirmed recovery changed", replay, e)
 	}
 	receipt, e := (&applications.Application{Pool: f.runtime}).Operation(f.ctx, p, op)
-	if e != nil || !rootTemplateJSONEqual(receipt.Result, r.Data) {
+	if e != nil || !bytes.Equal(receipt.Result, r.Data) {
 		t.Fatal("receipt read after revoke", receipt, e)
 	}
 	if _, e = s.Import(f.ctx, p, f.id(t), m, []apptemplates.Binding{}, applications.Metadata{}); !errors.Is(e, applications.ErrDenied) {
@@ -180,9 +180,4 @@ func TestRootTemplateImportRejectsCurrentAuthorityAndTargetsWithoutWrites(t *tes
 			}
 		})
 	}
-}
-
-func rootTemplateJSONEqual(a, b json.RawMessage) bool {
-	var x, y any
-	return json.Unmarshal(a, &x) == nil && json.Unmarshal(b, &y) == nil && reflect.DeepEqual(x, y)
 }

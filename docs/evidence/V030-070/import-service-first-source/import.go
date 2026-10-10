@@ -130,10 +130,6 @@ func (s *Service) Import(ctx context.Context, p session.Principal, operationID s
 			return empty, e
 		}
 	}
-	formTables := map[string]string{}
-	for _, f := range m.Forms {
-		formTables[f.ID] = f.TableID
-	}
 	members, grants := 0, 0
 	for _, g := range m.PermissionGroups {
 		if _, e = tx.Exec(ctx, "INSERT INTO applications.permission_groups(id,app_id,name,enabled) VALUES($1,$2,$3,$4)", g.ID, app, g.Name, g.Enabled); e != nil {
@@ -154,7 +150,7 @@ func (s *Service) Import(ctx context.Context, p session.Principal, operationID s
 				return empty, e
 			}
 			for _, field := range grant.Fields {
-				if _, e = tx.Exec(ctx, "INSERT INTO applications.grant_fields(app_id,grant_id,field_id,table_id) VALUES($1,$2,$3,$4)", app, id, field, formTables[grant.ResourceID]); e != nil {
+				if _, e = tx.Exec(ctx, "INSERT INTO applications.grant_fields(app_id,grant_id,field_id) VALUES($1,$2,$3)", app, id, field); e != nil {
 					return empty, e
 				}
 			}
