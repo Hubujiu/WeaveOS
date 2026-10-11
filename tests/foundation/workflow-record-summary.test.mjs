@@ -30,3 +30,16 @@ for(const [name,value,p,size]of [
  ['unapproved action flags',{...page,items:[{...row,canWithdraw:true}]},1,20],
  ['missing header',{...page,items:[Object.fromEntries(Object.entries(row).filter(([k])=>k!=='initiatorId'))]},1,20],
 ])test('record workflows rejects '+name,()=>assert.equal(valid(value,p,size),false));
+const apiSource=await readFile(new URL('../../apps/web/src/applications/api.ts',import.meta.url),'utf8');
+const {applicationReadPost,ApplicationError}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(apiSource,{mode:'transform'})).toString('base64'));
+const path=`applications/${id(4)}/forms/${id(5)}/records/${id(6)}/workflow-instances/search`;
+test('record workflow search is a read-only scoped POST with identity and CSRF, not a mutation',async()=>{
+ const oldFetch=globalThis.fetch,oldDocument=globalThis.document;const calls=[];
+ globalThis.document={cookie:'__Host-csrf=test-csrf'};globalThis.fetch=async(url,options)=>{calls.push({url,options});return new Response(JSON.stringify({code:'OK',data:page,meta:null}),{status:200,headers:{'Content-Type':'application/json'}});};
+ try{assert.deepEqual(await applicationReadPost(id(3),path,{page:1,pageSize:20}),page);assert.equal(calls.length,1);assert.equal(calls[0].url,'/api/v1/'+path);assert.equal(calls[0].options.method,'POST');assert.equal(calls[0].options.headers['X-Expected-Actor-Id'],id(3));assert.equal(calls[0].options.headers['X-CSRF-Token'],'test-csrf');assert.deepEqual(JSON.parse(calls[0].options.body),{page:1,pageSize:20});}finally{globalThis.fetch=oldFetch;globalThis.document=oldDocument;}
+});
+test('record workflow search network failure is retryable read failure, never unconfirmed write',async()=>{
+ const oldFetch=globalThis.fetch,oldDocument=globalThis.document;globalThis.document={cookie:''};globalThis.fetch=async()=>{throw new TypeError('network');};
+ try{await assert.rejects(applicationReadPost(id(3),path,{page:1,pageSize:20}),e=>e instanceof ApplicationError&&e.status===0&&!e.unconfirmed);}finally{globalThis.fetch=oldFetch;globalThis.document=oldDocument;}
+});
+for(const suffix of ['actions','lifecycle','search/extra','search?actorId=other'])test('record workflow read transport refuses '+suffix,async()=>{await assert.rejects(applicationReadPost(id(3),path.replace(/search$/,suffix),{page:1}),TypeError);});
