@@ -114,3 +114,13 @@ test('Root inbox identity mismatch suspends old account data until explicit iden
  await expect(page.getByText('暂无待办',{exact:true})).toHaveCount(0);
  await expect(page.getByTestId('workspace-shell')).toHaveCount(0);
 });
+test('Root inbox small screen keeps short workflow names readable inside a horizontally scrollable table',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await setup(page,()=>({data:{items:[item(1)],total:1,page:1,pageSize:20,queryVersion:'mobile'}}));
+ await page.goto('/app/approvals');const name=page.getByText('财务审批 1',{exact:true});await expect(name).toBeVisible();
+ const sizes=await name.evaluate(el=>{const cell=el.closest('td')!;const range=document.createRange();range.selectNodeContents(el);return {cell:cell.getBoundingClientRect().width,text:range.getBoundingClientRect().width};});
+ expect(sizes.cell).toBeGreaterThanOrEqual(sizes.text+24);
+ const table=page.getByRole('table',{name:'待办',exact:true});
+ expect(await table.evaluate(el=>{const scroller=el.closest('.table-scroll')!;return scroller.scrollWidth>scroller.clientWidth;})).toBe(true);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+});
