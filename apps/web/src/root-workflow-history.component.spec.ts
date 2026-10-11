@@ -70,3 +70,7 @@ test('Root history leaving the task cancels an outstanding detail without a late
  await page.route('**/workflow-events/'+id(20),async r=>{started=true;await new Promise<void>(resolve=>{release=resolve;});await r.fulfill({status:401,json:{code:'AUTH_UNAUTHENTICATED',data:null,meta:null}}).catch(()=>{});});
  await open(page);await page.getByRole('region',{name:'审批轨迹',exact:true}).getByRole('button',{name:'查看审批依据',exact:true}).first().click();await expect.poll(()=>started).toBe(true);await page.getByRole('button',{name:'返回待办',exact:true}).click();await expect(page).toHaveURL(/\/app\/approvals$/);release!();await expect(page.getByRole('heading',{name:'我的待办',exact:true})).toBeVisible();await expect(page.getByRole('region',{name:'历史审批依据',exact:true})).toHaveCount(0);
 });
+test('Root opening version comparison brings its heading into view and return restores the origin control',async({page})=>{
+ await setup(page);await page.setViewportSize({width:1280,height:720});await open(page);await page.getByLabel('当前金额').fill('300.00');await page.getByRole('region',{name:'审批轨迹',exact:true}).getByRole('button',{name:'查看审批依据',exact:true}).first().click();await page.getByRole('button',{name:'查看版本差异',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'版本差异',exact:true})).toBeInViewport();await page.getByRole('button',{name:'返回审批处理',exact:true}).click();await expect(page.getByRole('button',{name:'查看版本差异',exact:true})).toBeFocused();await expect(page.getByLabel('当前金额')).toHaveValue('300.00');
+});

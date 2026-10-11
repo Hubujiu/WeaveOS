@@ -58,3 +58,12 @@ test('Root withdrawal stale basis requires explicit refresh without a replacemen
 test('Root withdrawal mismatched instance receipt remains unconfirmed',async({page})=>{
  await setup(page,{wrongResult:true});await open(page);await confirm(page);await page.getByRole('button',{name:'核查撤回结果',exact:true}).click();await expect(page.getByText(/撤回结果.*未确认/)).toBeVisible();await expect(page.getByText('已撤回',{exact:true})).toHaveCount(0);
 });
+test('Root withdrawal two synchronous confirmation clicks send one operation',async({page})=>{
+ const calls=await setup(page);await open(page);await preview(page);await page.getByRole('button',{name:'撤回审批',exact:true}).click();await page.getByRole('button',{name:'确认撤回',exact:true}).evaluate((button:HTMLButtonElement)=>{button.click();button.click();});await expect(page.getByText('撤回处理中',{exact:true})).toBeVisible();expect(calls.filter(c=>c.path===instance+'/actions')).toHaveLength(1);
+});
+test('Root withdrawal dirty record guard never silently saves or opens an action on continue editing',async({page})=>{
+ const calls=await setup(page);await open(page);await page.getByRole('button',{name:'编辑记录',exact:true}).click();await page.getByLabel('金额',{exact:true}).fill('25.00');await preview(page);const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(page.getByLabel('金额',{exact:true})).toHaveValue('25.00');expect(calls.filter(c=>c.path===instance+'/lifecycle'||c.path===instance+'/actions'||c.method==='PATCH')).toEqual([]);
+});
+test('Root withdrawal identity preflight mismatch never transmits the action',async({page})=>{
+ const calls=await setup(page);await open(page);await preview(page);await page.getByRole('button',{name:'撤回审批',exact:true}).click();let checks=0;await page.route('**/api/v1/sessions/current',async r=>{checks++;return r.fulfill({json:{code:'OK',data:{id:id(77),account:'different'},meta:null}});});await page.getByRole('button',{name:'确认撤回',exact:true}).click();await expect.poll(()=>checks).toBeGreaterThan(0);expect(calls.filter(c=>c.path===instance+'/actions')).toEqual([]);await expect(page.getByText('已撤回',{exact:true})).toHaveCount(0);
+});
