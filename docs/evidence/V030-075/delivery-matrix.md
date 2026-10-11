@@ -18,3 +18,5 @@ Read-only inventory at 2026-10-11 16:19 UTC. A backend endpoint and its own test
 | Complete product acceptance | Existing older integration suites | New real multi-actor browser/BFF/Flowable full journey, failure path and visual review |
 
 No new production deploy/main approval. Notifications, scheduled/webhook triggers, reports, formulas and business attachments remain excluded per approved scope. This is an initial source inventory, not a percentage or final backend completeness claim.
+
+2026-10-11 16:56UTC source correction: V015 ADR14.2 explicitly excludes automatic reuse of ordinary reference-candidates for task fields. V043 grants task edit mask intersection but no dedicated task candidate endpoint was located. Complete node member/department editing therefore requires a frozen, tested current-task candidate contract; do not silently route it through ordinary form candidates. P3 first non-reference types can proceed independently. This is an additional bounded backend/UI gap, not a claim that the backend is fully complete.
