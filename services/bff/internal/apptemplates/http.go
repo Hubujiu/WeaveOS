@@ -142,6 +142,10 @@ func decodeImport(raw []byte) (string, Manifest, []Binding, error) {
 	return in.OperationID, m, in.Bindings, e
 }
 func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(r.URL.Path, "/api/v1/structure-copies/") {
+		s.serveCopy(w, r)
+		return
+	}
 	var e error
 	r, e = httpserver.Prepare(w, r, s.TrustedProxyHosts)
 	if e != nil {

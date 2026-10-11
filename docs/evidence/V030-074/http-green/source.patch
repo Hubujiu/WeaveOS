@@ -1,0 +1,41 @@
+diff --git a/services/bff/internal/applications/http.go b/services/bff/internal/applications/http.go
+index 7a9d0329..a85876d2 100644
+--- a/services/bff/internal/applications/http.go
++++ b/services/bff/internal/applications/http.go
+@@ -236,7 +236,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 	if s.Templates != nil {
+ 		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
+ 		parts := strings.Split(path, "/")
+-		if strings.HasPrefix(r.URL.Path, "/api/v1/application-templates/") || path != r.URL.Path && len(parts) == 2 && parts[1] == "structure-template" {
++		if strings.HasPrefix(r.URL.Path, "/api/v1/structure-copies/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-templates/") || path != r.URL.Path && len(parts) == 2 && parts[1] == "structure-template" {
+ 			s.Templates.ServeHTTP(w, r)
+ 			return
+ 		}
+diff --git a/services/bff/internal/apptemplates/http.go b/services/bff/internal/apptemplates/http.go
+index c4f548ff..efafa031 100644
+--- a/services/bff/internal/apptemplates/http.go
++++ b/services/bff/internal/apptemplates/http.go
+@@ -142,6 +142,10 @@ func decodeImport(raw []byte) (string, Manifest, []Binding, error) {
+ 	return in.OperationID, m, in.Bindings, e
+ }
+ func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
++	if strings.HasPrefix(r.URL.Path, "/api/v1/structure-copies/") {
++		s.serveCopy(w, r)
++		return
++	}
+ 	var e error
+ 	r, e = httpserver.Prepare(w, r, s.TrustedProxyHosts)
+ 	if e != nil {
+diff --git a/services/bff/internal/auth/service.go b/services/bff/internal/auth/service.go
+index e2c3b2d2..03b4195e 100644
+--- a/services/bff/internal/auth/service.go
++++ b/services/bff/internal/auth/service.go
+@@ -27,7 +27,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+ 		s.Personnel.ServeHTTP(w, r)
+ 		return
+ 	}
+-	if s.Applications != nil && (strings.HasPrefix(r.URL.Path, "/api/v1/application-templates/") || r.URL.Path == "/api/v1/workflow-tasks/search" || r.URL.Path == "/api/v1/applications" || strings.HasPrefix(r.URL.Path, "/api/v1/applications/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-operations/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/")) {
++	if s.Applications != nil && (strings.HasPrefix(r.URL.Path, "/api/v1/structure-copies/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-templates/") || r.URL.Path == "/api/v1/workflow-tasks/search" || r.URL.Path == "/api/v1/applications" || strings.HasPrefix(r.URL.Path, "/api/v1/applications/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-operations/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/")) {
+ 		s.Applications.ServeHTTP(w, r)
+ 		return
+ 	}
