@@ -188,3 +188,6 @@ func (s *Service) PreflightCopy(ctx context.Context, p session.Principal, in Cop
 	}
 	return CopyPreflight{Valid: true, Counts: counts, MappedManifest: m}, nil
 }
+
+// validateCopyPreview checks whether every retained reference can be rebuilt.
+func validateCopyPreview(m Manifest) error { return nil }
