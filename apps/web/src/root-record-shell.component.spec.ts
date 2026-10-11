@@ -38,7 +38,8 @@ async function fixture(page:Page,options:{ordinary?:boolean;createOnly?:boolean;
   }else if(path===formPath+'/records/'+recordId&&method==='GET'){
    if(options.detailFailure||options.rejectEditRefresh&&rejectedEdits>0&&failedRefreshedReads++===0)return route.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
    data=item();
-  }else return route.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
+  }else if(path===formPath+'/records/'+recordId+'/workflow-instances/search')data={items:[],total:0,page:body.page,pageSize:body.pageSize,queryVersion:'empty-workflows'};
+  else return route.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
   return route.fulfill({status:200,json:ok(data)});
  });
  return {calls,seed:(next:string)=>{value=next;version=1;}};

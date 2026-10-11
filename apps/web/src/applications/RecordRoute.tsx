@@ -3,6 +3,7 @@ import {Modal} from '../Modal';
 import {applicationApi,applicationApiEnvelope,ApplicationError,type ApplicationEnvelope} from './api';
 import type {RegisterLeaveGuard} from './forms';
 import {RecordWorkspace} from './RecordWorkspace';
+import {RecordWorkflows} from './workflows/RecordWorkflows';
 import {RecordForm} from './records/RecordForm';
 import type {MutationResult,RecordItem,RuntimeField,RuntimeView,UUID} from './records/contracts';
 import {parseRecordItem,parseRuntimeView} from './recordReadContracts';
@@ -139,6 +140,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
    {editor&&<RecordForm key={JSON.stringify([editor.identity,editor.mode,editor.view.policyRevision,editor.view.schemaVersion,editor.view.viewVersion,editor.record?.recordVersion??'new'])} view={editor.view} identity={editor.identity} record={editor.record} mode={editor.mode} authorityKey={`${editor.view.policyRevision}:${editor.view.schemaVersion}:${editor.view.viewVersion}:${editor.record?.recordVersion??'new'}`}
     queryVersion={editor.queryVersion} loadCandidates={loadCandidates} onConfirmed={onConfirmed} onDirtyChange={onDirtyChange} onRequestDiscard={guardedClose} onDiscard={closeEditor}
     onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard}
-    onRefresh={refreshEditor}/>}</Modal>}
+    onRefresh={refreshEditor}/>}
+   {editor?.record&&<RecordWorkflows actorId={actorId} appId={appId} viewId={viewId} recordId={editor.record.id} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>}</Modal>}
  </section>;
 }
