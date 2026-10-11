@@ -22,3 +22,14 @@ No new production deploy/main approval. Notifications, scheduled/webhook trigger
 2026-10-11 16:56UTC source correction: V015 ADR14.2 explicitly excludes automatic reuse of ordinary reference-candidates for task fields. V043 grants task edit mask intersection but no dedicated task candidate endpoint was located. Complete node member/department editing therefore requires a frozen, tested current-task candidate contract; do not silently route it through ordinary form candidates. P3 first non-reference types can proceed independently. This is an additional bounded backend/UI gap, not a claim that the backend is fully complete.
 
 2026-10-11 17:22UTC P4 response audit: OpenAPI WorkflowTaskNoEffect requires sequence even when zero, but WorkflowOperationResult.sequence has omitempty and no custom serializer. A focused real encoding test is needed before correction; do not relax the frontend contract to hide a missing terminal sequence.
+
+## Verified checkpoint — 2026-10-11 19:12 UTC
+
+- P1 inbox and P2 preview: original interaction suites passed exact CI candidates; full combined real-service journey remains outstanding.
+- P3 node Save and P4 Agree: exact component cases passed, including unknown-result replay, identity and access revocation. Reject remains blocked on the explicit reason decision, not complete.
+- P5 trusted task candidates: actual PG/Redis/HTTPS full Go job114544971758 passed on1444cde4. The next-page revocation UI fix passed on7cfe4385. Final full-product verification still needed.
+- P6 history/detail/persisted comparison:11 original UI cases passed on7cfe4385, including layout and cancel/switch. Root visual review discovered clipped comparison heading; new regression is not yet executed, so visual acceptance remains open.
+- P7 record workflows: six independent UI RED retained; basic scoped read component implemented locally after that RED. Additional full-page/dirty/cancel RED is running at04f80a84, no full-page migration yet.
+- P8 withdrawal: pure wire/request/terminal tests RED→GREEN;8 UI cases at04f80a84 still running with no withdrawal UI/hook implementation. Three extra interaction tests are local and NOT RUN. Derived OpenAPI missing withdrawn result independently RED→126 contract suite GREEN; final lint unverified because of telemetry review block.
+- New pushes that would rerun default Redocly telemetry are paused pending the narrow user question. No telemetry or network-security settings changed. Local source/read-only inspection, pure tests, and already-started CI observation continue.
+- Remaining definitions/designer/lifecycle rounds/global lists/templates/copy/deletion/presets/full real browser acceptance are unchanged open scope; none is silently dropped or counted complete.
