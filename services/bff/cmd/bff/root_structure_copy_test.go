@@ -7,6 +7,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apptemplates"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"reflect"
 	"strings"
@@ -184,5 +185,86 @@ func TestRootStructureCopyTargetCASAndLiveMapping(t *testing.T) {
 	}
 	if _, e = s.PreflightCopy(f.ctx, p, rootCopyPreflightInput(plan, in)); !errors.Is(e, applications.ErrDenied) {
 		t.Fatal("revoked source authority accepted", e)
+	}
+}
+
+func TestRootStructureCopyReceiptSchema(t *testing.T) {
+	f := rootHTTPResourceSetup(t)
+	for _, kind := range []string{"application", "directory", "table", "form"} {
+		t.Run(kind, func(t *testing.T) {
+			tx, e := f.runtime.Begin(f.ctx)
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer tx.Rollback(f.ctx)
+			op, id := f.id(t), f.id(t)
+			location := "/api/v1/applications/" + f.app
+			if kind == "application" {
+				id = f.app
+			} else {
+				suffix := map[string]string{"directory": "directories", "table": "tables", "form": "forms"}[kind]
+				location += "/" + suffix + "/" + id
+			}
+			raw, _ := json.Marshal(map[string]any{"operationId": op, "appId": f.app, "resourceKind": kind, "id": id, "structureVersion": 3, "policyRevision": 2, "status": "copied"})
+			_, e = tx.Exec(f.ctx, `INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location) VALUES($1,$2,$3,'structure.copy',decode(repeat('12',32),'hex'),$4,201,$5)`, f.actor, op, f.app, raw, location)
+			if e != nil {
+				t.Fatal("valid closed copy receipt rejected", e)
+			}
+		})
+	}
+	for _, mode := range []string{"extra", "missing", "kind", "id", "id-zero", "id-app", "op", "app", "status", "policy-string", "policy-zero", "policy-fraction", "structure-zero", "structure-big", "null", "http", "location"} {
+		t.Run(mode, func(t *testing.T) {
+			tx, e := f.runtime.Begin(f.ctx)
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer tx.Rollback(f.ctx)
+			op := f.id(t)
+			status := 201
+			location := "/api/v1/applications/" + f.app
+			receipt := map[string]any{"operationId": op, "appId": f.app, "resourceKind": "application", "id": f.app, "structureVersion": 1, "policyRevision": 1, "status": "copied"}
+			switch mode {
+			case "extra":
+				receipt["manifest"] = map[string]any{}
+			case "missing":
+				delete(receipt, "id")
+			case "kind":
+				receipt["resourceKind"] = "workflow"
+			case "id":
+				receipt["id"] = "wrong"
+			case "id-zero":
+				receipt["id"] = "00000000-0000-0000-0000-000000000000"
+			case "id-app":
+				receipt["id"] = f.id(t)
+			case "op":
+				receipt["operationId"] = f.id(t)
+			case "app":
+				receipt["appId"] = f.id(t)
+			case "status":
+				receipt["status"] = "imported"
+			case "policy-string":
+				receipt["policyRevision"] = "1"
+			case "policy-zero":
+				receipt["policyRevision"] = 0
+			case "policy-fraction":
+				receipt["policyRevision"] = 1.5
+			case "structure-zero":
+				receipt["structureVersion"] = 0
+			case "structure-big":
+				receipt["structureVersion"] = 9007199254740992
+			case "null":
+				receipt["structureVersion"] = nil
+			case "http":
+				status = 200
+			case "location":
+				location = "/api/v1/application-operations/" + op
+			}
+			raw, _ := json.Marshal(receipt)
+			_, e = tx.Exec(f.ctx, `INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location) VALUES($1,$2,$3,'structure.copy',decode(repeat('12',32),'hex'),$4,$5,$6)`, f.actor, op, f.app, raw, status, location)
+			var pg *pgconn.PgError
+			if !errors.As(e, &pg) || pg.Code != "23514" || pg.ConstraintName != "ck_structure_copy_result" {
+				t.Fatal("receipt constraint missing or wrong failure", e)
+			}
+		})
 	}
 }
