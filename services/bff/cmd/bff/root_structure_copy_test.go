@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -603,6 +604,64 @@ func TestRootStructureCopyFaultRollsBackEverything(t *testing.T) {
 			current, e := s.PlanCopy(f.ctx, p, in)
 			if e != nil || current.SourceFingerprint != plan.SourceFingerprint || current.TargetStructureVersion != plan.TargetStructureVersion || current.TargetPolicyRevision != plan.TargetPolicyRevision {
 				t.Fatal("rollback changed source/versions", e)
+			}
+		})
+	}
+}
+
+func TestRootStructureCopyConcurrentSameKeyAndTargetCAS(t *testing.T) {
+	for _, sameKey := range []bool{true, false} {
+		t.Run(fmt.Sprint(sameKey), func(t *testing.T) {
+			f := rootHTTPTaskSetup(t)
+			s := apptemplates.Service{Pool: f.runtime}
+			p := rootTemplatePrincipal(f)
+			p.SessionRef = ""
+			in := rootCopyPlanInput(f)
+			plan, e := s.PlanCopy(f.ctx, p, in)
+			if e != nil {
+				t.Fatal(e)
+			}
+			req := rootCopyPreflightInput(plan, in)
+			ops := [2]string{f.id(t), f.id(t)}
+			if sameKey {
+				ops[1] = ops[0]
+			}
+			start := make(chan struct{})
+			var wg sync.WaitGroup
+			var results [2]applications.Result
+			var errs [2]error
+			before := rootTemplateReadCounts(t, f)
+			for i := range 2 {
+				wg.Add(1)
+				go func(i int) {
+					defer wg.Done()
+					<-start
+					results[i], errs[i] = s.ExecuteCopy(f.ctx, p, ops[i], req, applications.Metadata{RequestID: "copy-concurrent"})
+				}(i)
+			}
+			close(start)
+			wg.Wait()
+			success := 0
+			for _, e := range errs {
+				if e == nil {
+					success++
+				} else {
+					var conflict *appstructure.Error
+					if !errors.As(e, &conflict) || conflict.Code != "APPLICATION_STRUCTURE_CONFLICT" {
+						t.Fatal("unexpected concurrent error", e)
+					}
+				}
+			}
+			if sameKey {
+				if success != 2 || !rootTemplateJSONEqual(results[0].Data, results[1].Data) {
+					t.Fatal("same key did not converge", errs)
+				}
+			} else if success != 1 {
+				t.Fatal("two writes consumed same target CAS", success)
+			}
+			after := rootTemplateReadCounts(t, f)
+			if after[1] != before[1]+1 || after[2] != before[2]+1 || after[4] != before[4]+1 {
+				t.Fatal("duplicate or orphaned durable copies", before, after)
 			}
 		})
 	}

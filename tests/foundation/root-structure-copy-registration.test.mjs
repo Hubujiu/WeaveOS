@@ -16,3 +16,7 @@ test('V074 host dispatch includes new copy family without replacing legacy templ
   const s=read(p);assert.match(s,/\/api\/v1\/structure-copies\//);assert.match(s,/\/api\/v1\/application-templates\//);
  }
 });
+test('V074 formal encrypted backup registers copy migration and retained receipt',()=>{
+ const source=read('infra/runtime/backup.test.mjs');
+ for(const expected of ['00036_structure_copy.sql','structureCopyOperation',"'structure.copy'",'sql(restored,structureCopyQuery),sql(live,structureCopyQuery)'])assert.ok(source.includes(expected),expected);
+});
