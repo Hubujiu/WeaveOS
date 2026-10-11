@@ -60,7 +60,7 @@ export async function applicationApi<T>(actorId: string, path: string, method = 
 
 // Only the frozen task action and its original execution-status resource may
 // consume both 202 acceptance and 200 completion. Ordinary calls stay unchanged.
-export async function applicationWorkflowApi<T>(actorId:string,path:string,method:'GET'|'POST',body?:object,signal?:AbortSignal):Promise<ApplicationEnvelope<T>&{httpStatus:number}>{
+export function validWorkflowTransportRequest(path:string,method:string,body?:object):boolean{
  const id='[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}';
  const canonical=(value:unknown)=>typeof value==='string'&&new RegExp('^'+id+'$').test(value)&&value!=='00000000-0000-0000-0000-000000000000';
  const actionPath=new RegExp(`^applications/(${id})/forms/(${id})/records/(${id})/workflow-instances/(${id})/tasks/(${id})/actions$`).exec(path);
@@ -68,7 +68,10 @@ export async function applicationWorkflowApi<T>(actorId:string,path:string,metho
  const data=body as Record<string,unknown>|undefined;
  const validPost=method==='POST'&&actionPath&&actionPath.slice(1).every(canonical)&&data&&!Array.isArray(data)&&Object.keys(data).length===3&&['operationId','action','basisToken'].every(k=>Object.hasOwn(data,k))&&canonical(data.operationId)&&(data.action==='agree'||data.action==='reject')&&typeof data.basisToken==='string'&&/^[A-Za-z0-9_-]{43}$/.test(data.basisToken);
  const validGet=method==='GET'&&operationPath&&canonical(operationPath[1])&&body===undefined;
- if(!validPost&&!validGet)throw new TypeError('Workflow transport is restricted to task actions and original execution status');
+ return Boolean(validPost||validGet);
+}
+export async function applicationWorkflowApi<T>(actorId:string,path:string,method:'GET'|'POST',body?:object,signal?:AbortSignal):Promise<ApplicationEnvelope<T>&{httpStatus:number}>{
+ if(!validWorkflowTransportRequest(path,method,body))throw new TypeError('Workflow transport is restricted to task actions and original execution status');
  const result=await request<T>(actorId,path,method,body,signal,method==='GET'?200:undefined,method==='POST',true);
  if(result.httpStatus!==200&&result.httpStatus!==202)throw new ApplicationError(result.httpStatus??0,'APPLICATION_OPERATION_UNCONFIRMED',method==='POST');
  return {...result,httpStatus:result.httpStatus};

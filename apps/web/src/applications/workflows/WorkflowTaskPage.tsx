@@ -7,6 +7,7 @@ import '../forms/forms.css';
 import {createLeaveController,type RegisterLeaveGuard} from '../forms/leaveGuard';
 import {useApplicationOperation} from '../useApplicationOperation';
 import {isMutationResult,type MutationResult,type Values} from '../records/contracts';
+import type {WorkflowOperation} from './taskActionContract';
 
 type ReadState={scope:string;loading:boolean;data:TaskPreview|null;error:string};
 function readError(error:unknown):string{
@@ -38,6 +39,8 @@ export function WorkflowTaskPage({actorId,location,onBack,onUnauthorized,onIdent
  const [epoch,setEpoch]=useState(0);
  const [changes,setChanges]=useState<Values>({});
  const [saved,setSaved]=useState(false);
+ const [actionResult,setActionResult]=useState<WorkflowOperation|null>(null);
+ const [actionWarning,setActionWarning]=useState('');
  const [state,setState]=useState<ReadState>({scope,loading:true,data:null,error:''});
  const path=`applications/${location.appId}/forms/${location.viewId}/records/${location.recordId}/workflow-instances/${location.instanceId}/tasks/${location.taskId}`;
  const resource={kind:'task-record' as const,appId:location.appId,viewId:location.viewId,id:location.recordId,instanceId:location.instanceId,taskId:location.taskId};
@@ -45,18 +48,24 @@ export function WorkflowTaskPage({actorId,location,onBack,onUnauthorized,onIdent
   confirmed:()=>{setChanges({});setSaved(true);setEpoch(v=>v+1);},
   unauthorized:onUnauthorized,identityMismatch:onIdentityMismatch,
   valid:(result,packet)=>isMutationResult(result,packet.operationId??'',location.recordId)});
+ const actionResource={...resource,kind:'task-action' as const};
+ const actionOperation=useApplicationOperation<WorkflowOperation>({actorId,scope,resource:actionResource,
+  confirmed:result=>{if(result)setActionResult(result);},unauthorized:onUnauthorized,identityMismatch:onIdentityMismatch});
  const dirty=Object.keys(changes).length>0;
- const busy=operation.phase==='preflight'||operation.phase==='pending';
- const unknown=operation.phase==='unconfirmed';
- useEffect(()=>{onDirtyChange(dirty||busy||unknown);return()=>onDirtyChange(false);},[dirty,busy,unknown,onDirtyChange]);
- const needsRefresh=['WORKFLOW_BASIS_EXPIRED','WORKFLOW_BASIS_CHANGED','WORKFLOW_TASK_CHANGED','APPLICATION_POLICY_CONFLICT','APPLICATION_SCHEMA_NOT_READY'].includes(operation.errorCode??'');
- const guard=useRef({changes,operation});guard.current={changes,operation};
+ const saveBusy=operation.phase==='preflight'||operation.phase==='pending',saveUnknown=operation.phase==='unconfirmed';
+ const actionBusy=actionOperation.phase==='preflight'||actionOperation.phase==='pending',actionUnknown=actionOperation.phase==='unconfirmed';
+ const busy=saveBusy||actionBusy,unknown=saveUnknown||actionUnknown,accepted=actionOperation.phase==='accepted';
+ const blocked=busy||unknown||accepted||!!actionResult;
+ useEffect(()=>{onDirtyChange(dirty||busy||unknown||accepted);return()=>onDirtyChange(false);},[dirty,busy,unknown,accepted,onDirtyChange]);
+ const errorCode=actionOperation.errorCode??operation.errorCode;
+ const needsRefresh=['WORKFLOW_BASIS_EXPIRED','WORKFLOW_BASIS_CHANGED','WORKFLOW_TASK_CHANGED','APPLICATION_POLICY_CONFLICT','APPLICATION_SCHEMA_NOT_READY'].includes(errorCode??'');
+ const guard=useRef({changes,operation,actionOperation});guard.current={changes,operation,actionOperation};
  useEffect(()=>registerLeaveGuard({kind:'record',actorId,appId:location.appId,viewId:location.viewId,recordId:location.recordId},createLeaveController(()=>{
-  const latest=guard.current,pending=latest.operation.getPendingStatus();
+  const latest=guard.current,pending=latest.operation.getPendingStatus()??latest.actionOperation.getPendingStatus();
   const status=pending??(Object.keys(latest.changes).length?'draft':'clean');
-  return {status,fingerprint:JSON.stringify([latest.changes,latest.operation.packet?.operationId,status])};
- },decision=>{if(decision==='discard'){guard.current.operation.cancelPreflight();setChanges({});}})),[scope,registerLeaveGuard]);
- const refresh=()=>requestSectionLeave(()=>{setChanges({});operation.dismissError();setEpoch(v=>v+1);});
+  return {status,fingerprint:JSON.stringify([latest.changes,latest.operation.packet?.operationId,latest.actionOperation.packet?.operationId,status])};
+ },decision=>{if(decision==='discard'){guard.current.operation.cancelPreflight();guard.current.actionOperation.cancelPreflight();setChanges({});}})),[scope,registerLeaveGuard]);
+ const refresh=()=>requestSectionLeave(()=>{setChanges({});operation.dismissError();actionOperation.dismissError();setActionResult(null);setActionWarning('');setEpoch(v=>v+1);});
  useEffect(()=>{
   const controller=new AbortController();let current=true;
   setState({scope,loading:true,data:null,error:''});
@@ -81,21 +90,29 @@ export function WorkflowTaskPage({actorId,location,onBack,onUnauthorized,onIdent
   const field=preview.fields.find(item=>item.id===id);return field&&!['member','department'].includes(field.kind);
  })??[]);
  const save=()=>{
-  if(!preview||!dirty||busy||unknown||needsRefresh||operation.getPendingStatus())return;
+  if(!preview||!dirty||blocked||needsRefresh||operation.getPendingStatus()||actionOperation.getPendingStatus())return;
   const permitted=Object.fromEntries(Object.entries(changes).filter(([id])=>editable.has(id)));
   if(!Object.keys(permitted).length)return;
   setSaved(false);
   operation.start({resource,path:path+'/record',method:'PATCH',expectedStatus:200,body:{basisToken:preview.basisToken,changes:permitted}});
  };
- const message=operation.errorCode==='WORKFLOW_BASIS_EXPIRED'?'审批依据已过期，请刷新预览后重新核对。':operation.errorCode==='WORKFLOW_BASIS_CHANGED'?'审批数据已变化，请刷新预览后重新核对。':operation.errorCode==='WORKFLOW_TASK_CHANGED'?'任务已变化或已结束，请返回待办重新核对。':operation.message;
+ const agree=()=>{
+  if(!preview||blocked||needsRefresh||operation.getPendingStatus()||actionOperation.getPendingStatus())return;
+  if(dirty){setActionWarning('有未保存的修改，请先保存或明确放弃后再审批。');return;}
+  setActionWarning('');
+  actionOperation.start({resource:actionResource,path:path+'/actions',method:'POST',expectedStatus:202,body:{action:'agree',basisToken:preview.basisToken}});
+ };
+ const message=actionWarning||(errorCode==='WORKFLOW_BASIS_EXPIRED'?'审批依据已过期，请刷新预览后重新核对。':errorCode==='WORKFLOW_BASIS_CHANGED'?'审批数据已变化，请刷新预览后重新核对。':errorCode==='WORKFLOW_TASK_CHANGED'?'任务已变化或已结束，请返回待办重新核对。':operation.message||(accepted?'':actionOperation.message));
  return <section className="workflow-task-page" aria-label="审批任务详情">
-  <div className="workflow-task-toolbar"><button type="button" className="admin-button" onClick={onBack}>返回待办</button><button type="button" className="admin-button" disabled={!current||current.loading||busy||unknown} onClick={refresh}>刷新预览</button></div>
+  <div className="workflow-task-toolbar"><button type="button" className="admin-button" onClick={onBack}>返回待办</button><button type="button" className="admin-button" disabled={!current||current.loading||busy||unknown||accepted} onClick={refresh}>刷新预览</button></div>
   <div className="app-page-heading"><h1>审批处理</h1></div><p className="workflow-task-reference">记录 {location.recordId}</p>
   {saved&&<p role="status">修改已保存</p>}
   {message&&<p role="alert">{message}</p>}
-  {(unknown||busy&&operation.packet)&&<div className="workflow-task-toolbar"><span role="status">{busy?'正在核对保存结果…':'原保存结果待核对'}</span><button type="button" className="admin-button" disabled={busy} onClick={operation.query}>核查保存结果</button><button type="button" className="admin-button" disabled={busy} onClick={operation.retry}>重试原保存</button></div>}
+  {(saveUnknown||saveBusy&&operation.packet)&&<div className="workflow-task-toolbar"><span role="status">{saveBusy?'正在核对保存结果…':'原保存结果待核对'}</span><button type="button" className="admin-button" disabled={saveBusy} onClick={operation.query}>核查保存结果</button><button type="button" className="admin-button" disabled={saveBusy} onClick={operation.retry}>重试原保存</button></div>}
+  {actionResult&&<p role="status">{actionResult.status==='success'?'审批已同意':'操作未执行'}</p>}
+  {(accepted||actionUnknown||actionBusy&&actionOperation.packet)&&<div className="workflow-task-toolbar"><span role="status">{accepted?'审批处理中':actionBusy?'正在核对审批结果…':'原审批结果待核对'}</span><button type="button" className="admin-button" disabled={actionBusy} onClick={actionOperation.query}>核查审批结果</button><button type="button" className="admin-button" disabled={actionBusy} onClick={actionOperation.retry}>重试原审批</button></div>}
   {!current||current.loading?<div className="app-surface app-state" role="status">正在读取审批预览…</div>
    :current.error?<div className="app-surface app-state"><p role="alert">{current.error}</p><button type="button" className="admin-button" onClick={()=>setEpoch(v=>v+1)}>重试读取</button></div>
-   :preview?<section className="app-surface workflow-task-card" aria-label="当前审批数据"><div className="workflow-task-section-heading"><h2>当前记录</h2><span>最新 v{preview.record.recordVersion}</span></div><div className="workflow-task-fields">{preview.fields.map(field=>editable.has(field.id)?<FieldRenderer key={field.id} field={field} value={Object.hasOwn(changes,field.id)?changes[field.id]:preview.record.values[field.id]} readOnly={busy||unknown||needsRefresh} idPrefix="task-edit" onChange={value=>{setSaved(false);setChanges(previous=>{const next={...previous};if(JSON.stringify(value)===JSON.stringify(preview.record.values[field.id]))delete next[field.id];else next[field.id]=value;return next;});}}/>:<ReadonlyField key={field.id} field={field} preview={preview}/>)}</div>{!preview.fields.length&&<p>没有可展示的字段</p>}{editable.size>0&&<div><button type="button" className="admin-button" disabled={!dirty||busy||unknown||needsRefresh} onClick={save}>保存修改</button></div>}</section>:null}
+   :preview?<section className="app-surface workflow-task-card" aria-label="当前审批数据"><div className="workflow-task-section-heading"><h2>当前记录</h2><span>最新 v{preview.record.recordVersion}</span></div><div className="workflow-task-fields">{preview.fields.map(field=>editable.has(field.id)?<FieldRenderer key={field.id} field={field} value={Object.hasOwn(changes,field.id)?changes[field.id]:preview.record.values[field.id]} readOnly={blocked||needsRefresh} idPrefix="task-edit" onChange={value=>{setActionWarning('');setSaved(false);setChanges(previous=>{const next={...previous};if(JSON.stringify(value)===JSON.stringify(preview.record.values[field.id]))delete next[field.id];else next[field.id]=value;return next;});}}/>:<ReadonlyField key={field.id} field={field} preview={preview}/>)}</div>{!preview.fields.length&&<p>没有可展示的字段</p>}{editable.size>0&&<div><button type="button" className="admin-button" disabled={!dirty||blocked||needsRefresh} onClick={save}>保存修改</button></div>}<div><button type="button" className="admin-button primary" disabled={blocked||needsRefresh} onClick={agree}>同意</button></div></section>:null}
  </section>;
 }
