@@ -374,3 +374,113 @@ func TestRootStructureCopyEmptyDownRestoresOldConstraints(t *testing.T) {
 		t.Fatal("Down did not restore exact hot35 checks", e)
 	}
 }
+
+func TestRootStructureCopyExecuteFourKindsEmptyAndIndependent(t *testing.T) {
+	for _, kind := range []string{"application", "directory", "table", "form"} {
+		t.Run(kind, func(t *testing.T) {
+			f := rootHTTPTaskSetup(t)
+			s := apptemplates.Service{Pool: f.runtime}
+			p := rootTemplatePrincipal(f)
+			p.SessionRef = ""
+			directory := f.id(t)
+			if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.directories(id,app_id,name,position) VALUES($1,$2,'Source directory',0)", directory, f.app); e != nil {
+				t.Fatal(e)
+			}
+			if _, e := f.owner.Exec(f.ctx, "UPDATE applications.logical_tables SET directory_id=$1 WHERE id=$2", directory, f.table); e != nil {
+				t.Fatal(e)
+			}
+			if _, e := f.owner.Exec(f.ctx, "UPDATE applications.form_views SET directory_id=$1 WHERE id=$2", directory, f.view); e != nil {
+				t.Fatal(e)
+			}
+			in := rootCopyPlanInput(f)
+			in.Source.Kind = kind
+			in.Target.Name = "Independent copy"
+			switch kind {
+			case "application":
+				in.Source.ID = f.app
+				in.Target.AppID = nil
+				rootTemplateGrantCreate(t, f, f.actor)
+			case "directory":
+				in.Source.ID = directory
+			case "table":
+				in.Source.ID = f.table
+			}
+			plan, e := s.PlanCopy(f.ctx, p, in)
+			if e != nil {
+				t.Fatal(e)
+			}
+			req := rootCopyPreflightInput(plan, in)
+			op := f.id(t)
+			before := rootTemplateReadCounts(t, f)
+			result, e := s.ExecuteCopy(f.ctx, p, op, req, applications.Metadata{RequestID: "copy-write"})
+			if e != nil {
+				t.Fatal("atomic copy unavailable", e)
+			}
+			var receipt struct {
+				OperationID, AppID, ResourceKind, ID, Status string
+				StructureVersion, PolicyRevision             int64
+			}
+			var fields map[string]json.RawMessage
+			if json.Unmarshal(result.Data, &receipt) != nil || json.Unmarshal(result.Data, &fields) != nil || len(fields) != 7 || result.Status != 201 || receipt.OperationID != op || receipt.ResourceKind != kind || receipt.Status != "copied" || receipt.ID == in.Source.ID {
+				t.Fatal("wrong minimum receipt", string(result.Data))
+			}
+			expectedPolicy, expectedVersion := plan.TargetPolicyRevision, plan.TargetStructureVersion+1
+			if kind == "application" {
+				expectedPolicy = 1
+				if receipt.AppID == f.app || receipt.ID != receipt.AppID {
+					t.Fatal("app identity reused")
+				}
+			} else if receipt.AppID != f.app {
+				t.Fatal("partial copy changed target")
+			}
+			if receipt.PolicyRevision != expectedPolicy || receipt.StructureVersion != expectedVersion {
+				t.Fatal("wrong target versions", receipt)
+			}
+			var table, view string
+			switch kind {
+			case "application":
+				e = f.owner.QueryRow(f.ctx, "SELECT id::text FROM applications.logical_tables WHERE app_id=$1", receipt.AppID).Scan(&table)
+			case "directory":
+				e = f.owner.QueryRow(f.ctx, "SELECT id::text FROM applications.logical_tables WHERE directory_id=$1", receipt.ID).Scan(&table)
+			case "table":
+				table = receipt.ID
+			case "form":
+				e = f.owner.QueryRow(f.ctx, "SELECT table_id::text FROM applications.form_views WHERE id=$1", receipt.ID).Scan(&table)
+			}
+			if e != nil || table == f.table {
+				t.Fatal("new table absent or reused", e)
+			}
+			if e = f.owner.QueryRow(f.ctx, "SELECT id::text FROM applications.form_views WHERE table_id=$1", table).Scan(&view); e != nil || view == f.view {
+				t.Fatal("new view absent", e)
+			}
+			var n int
+			if e = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM "+pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(table, "-", "")}.Sanitize()).Scan(&n); e != nil || n != 0 {
+				t.Fatal("copied business rows", n, e)
+			}
+			var state string
+			var current, candidate int
+			if e = f.owner.QueryRow(f.ctx, "SELECT state,current_version,candidate_version FROM applications.workflow_definitions WHERE view_id=$1", view).Scan(&state, &current, &candidate); e != nil || state != "disabled" || current != 0 || candidate != 1 {
+				t.Fatal("flow copied active", e)
+			}
+			after := rootTemplateReadCounts(t, f)
+			if after[1] != before[1]+1 || after[2] != before[2]+1 || after[4] != before[4]+1 {
+				t.Fatal("wrong atomic operation/audit/table counts", before, after)
+			}
+			if _, e = f.owner.Exec(f.ctx, "UPDATE personnel.permission_catalog SET enabled=false WHERE app_id=$1", f.app); e != nil {
+				t.Fatal(e)
+			}
+			replay, e := s.ExecuteCopy(f.ctx, p, op, req, applications.Metadata{})
+			if e != nil || !rootTemplateJSONEqual(result.Data, replay.Data) || result.Location != replay.Location {
+				t.Fatal("replay after revocation failed", e)
+			}
+			stored, e := (&applications.Application{Pool: f.runtime}).Operation(f.ctx, p, op)
+			if e != nil || !rootTemplateJSONEqual(stored.Result, result.Data) {
+				t.Fatal("minimum recovery unavailable", e)
+			}
+			req.Target.Name = "Different body"
+			if _, e = s.ExecuteCopy(f.ctx, p, op, req, applications.Metadata{}); !errors.Is(e, applications.ErrOperationConflict) {
+				t.Fatal("same key different body accepted", e)
+			}
+		})
+	}
+}
