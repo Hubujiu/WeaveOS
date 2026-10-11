@@ -25,7 +25,7 @@ async function setup(page:Page,options:{denied?:boolean;notEligible?:boolean;unk
    data={basisToken:'life-basis',instance:{id:instanceId,sequence:2,state:'active'},record:item,fields:[field],canWithdraw:!options.notEligible,returnTargets:options.notEligible?[{nodeId:id(10),taskId:id(11),activationEpoch:1}]:[]};
   }else if(path===instance+'/actions'){
    operationId=body.operationId;posts++;
-   if(options.stale)return r.fulfill({status:409,json:{code:'APPLICATION_WORKFLOW_BASIS_INVALID',data:null}});
+   if(options.stale)return r.fulfill({status:409,json:{code:'WORKFLOW_BASIS_CHANGED',data:null}});
    if(options.unknown&&posts===1)return r.abort('failed');
    status=202;data={operationId,instanceId,commandId:id(12),status:'pending'};
    return r.fulfill({status,headers:{Location:'/api/v1/application-workflow-operations/'+operationId},json:{code:'OK',data,meta:null}});

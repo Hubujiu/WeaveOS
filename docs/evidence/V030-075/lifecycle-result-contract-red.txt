@@ -1,0 +1,81 @@
+✖ V075 existing lifecycle withdrawn success is valid at post /api/v1/applications/{appId}/forms/{viewId}/records/{recordId}/workflow-instances/{instanceId}/actions (10.174038ms)
+✖ V075 existing lifecycle withdrawn success is valid at get /api/v1/application-workflow-operations/{operationId} (7.903576ms)
+✔ V075 task-only approval does not acquire a withdrawn outcome (1.174154ms)
+✔ V075 lifecycle return remains active and pending stays a separate 202 shape (7.122522ms)
+✖ V075 common lookup retains all previous task states without overlapping alternatives (4.058849ms)
+✔ V075 lifecycle final remains closed for extra private data (0.911069ms)
+✔ V075 lifecycle final remains closed for missing sequence (0.825771ms)
+✔ V075 lifecycle final remains closed for zero sequence (0.851169ms)
+✔ V075 lifecycle final remains closed for unsafe sequence (1.008445ms)
+✔ V075 lifecycle final remains closed for invented state (1.136939ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 7
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 195.211001
+
+✖ failing tests:
+
+test at contracts/workflow-lifecycle-result.contract.test.mjs:15:73
+✖ V075 existing lifecycle withdrawn success is valid at post /api/v1/applications/{appId}/forms/{viewId}/records/{recordId}/workflow-instances/{instanceId}/actions (10.174038ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/contracts/workflow-lifecycle-result.contract.test.mjs:15:162)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at contracts/workflow-lifecycle-result.contract.test.mjs:15:73
+✖ V075 existing lifecycle withdrawn success is valid at get /api/v1/application-workflow-operations/{operationId} (7.903576ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/contracts/workflow-lifecycle-result.contract.test.mjs:15:162)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at contracts/workflow-lifecycle-result.contract.test.mjs:23:1
+✖ V075 common lookup retains all previous task states without overlapping alternatives (4.058849ms)
+  AssertionError [ERR_ASSERTION]: withdrawn
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/contracts/workflow-lifecycle-result.contract.test.mjs:24:74)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
