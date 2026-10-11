@@ -1,0 +1,3 @@
+# Current preview wire GREEN
+Original valid-projection RED: 14 positive cases failed false!==true against loadable placeholder, remaining33 fail-closed cases passed; no setup or module errors. Started/exit/original test/placeholder retained in preview-contract-red.
+After implementation:47/47 pass, no skips; fixed Node24.14.0, pnpm typecheck passes. Decoder checks path/task/record binding, closed data, exact visible values/edit mask and typed11 fields, selected reference tombstones. No frontend task-detail UI has been implemented yet; UI RED is still running remotely. No current-actor authority is manufactured from the result: server remains authoritative.
