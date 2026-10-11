@@ -1,0 +1,8 @@
+# Next slice: current authorized task preview
+Source reread 2026-10-11 16:27–16:33UTC: V037 ADR3f02f5a9e64881ecaa13ea540238ddfa, V043 ADR3f22f5a9e6488103abfcf6a44eceb773, FLOW01–14 page3ef2f5a9e648817586caebb69f4b56fe. V075 ADR P2 appended and completely read back. Figma484:3324 high-fidelity code and screenshot inspected; existing Shell, FieldRenderer and card controls are the composition boundary.
+
+Only the current live preview can supply field/value/edit-mask and basis token; list IDs are locators, never authority. Route contains five resource IDs, no token/values. Node save and async approval operations are separate later steps; no success claim from202. Existing API includes selected option tombstones as well as member/department displays, unlike ordinary record parser which currently only accepts member/department display entries; do not blindly reuse that parser or drop option labels.
+
+Current eight independent P2 browser cases are tests only, not executed yet. No P2 production implementation. They cover direct route/ExpectedActor/exact38-digit decimal/return in stable Shell, wrong record/task, extra hidden value, invalid edit mask, closed-task rejection, explicit latest version refresh, and deleted reference/option labels without extra private lookup. These remain future behavior RED, not current passes.
+
+Broader inventory correction: RecordRoute exposes record read/create/edit and recovery, but no draft/history/lifecycle user entry was found. RecordWorkspace uses one shared server query hook but its parameters still freeze filter:null; private presets and actual filter UI must be connected. Keep these gaps on the full delivery matrix.
