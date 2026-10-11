@@ -3,12 +3,17 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apptemplates"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"net/url"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -266,5 +271,106 @@ func TestRootStructureCopyReceiptSchema(t *testing.T) {
 				t.Fatal("receipt constraint missing or wrong failure", e)
 			}
 		})
+	}
+}
+
+func rootCopyMigration(t *testing.T) (string, string) {
+	t.Helper()
+	raw, e := os.ReadFile("../../../../db/migrations/00036_structure_copy.sql")
+	if e != nil {
+		t.Fatal(e)
+	}
+	parts := strings.Split(string(raw), "-- +goose Down")
+	if len(parts) != 2 {
+		t.Fatal("missing migration boundary")
+	}
+	return parts[0], parts[1]
+}
+func TestRootStructureCopyDownRefusesDurableOrPending(t *testing.T) {
+	f := rootHTTPResourceSetup(t)
+	_, down := rootCopyMigration(t)
+	for _, pending := range []bool{false, true} {
+		t.Run(fmt.Sprint(pending), func(t *testing.T) {
+			tx, e := f.owner.Begin(f.ctx)
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer tx.Rollback(f.ctx)
+			op := f.id(t)
+			if pending {
+				_, e = tx.Exec(f.ctx, `INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint) VALUES($1,$2,$3,'structure.copy',decode(repeat('12',32),'hex'))`, f.actor, op, f.app)
+			} else {
+				raw, _ := json.Marshal(map[string]any{"operationId": op, "appId": f.app, "resourceKind": "application", "id": f.app, "structureVersion": 1, "policyRevision": 1, "status": "copied"})
+				_, e = tx.Exec(f.ctx, `INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location) VALUES($1,$2,$3,'structure.copy',decode(repeat('12',32),'hex'),$4,201,$5)`, f.actor, op, f.app, raw, "/api/v1/applications/"+f.app)
+			}
+			if e != nil {
+				t.Fatal(e)
+			}
+			_, e = tx.Exec(f.ctx, down)
+			var pg *pgconn.PgError
+			if !errors.As(e, &pg) || pg.Code != "55000" {
+				t.Fatal("Down did not refuse retained copy", e)
+			}
+		})
+	}
+}
+func TestRootStructureCopyEmptyDownRestoresOldConstraints(t *testing.T) {
+	f := rootHTTPResourceSetup(t)
+	dbname := "weaveos_v074_empty_" + strings.ReplaceAll(f.id(t), "-", "")
+	quoted := pgx.Identifier{dbname}.Sanitize()
+	if _, e := f.owner.Exec(f.ctx, "CREATE DATABASE "+quoted); e != nil {
+		t.Fatal(e)
+	}
+	u, e := url.Parse(os.Getenv("WEAVEOS_TEST_DATABASE_URL"))
+	if e != nil {
+		t.Fatal(e)
+	}
+	u.Path = "/" + dbname
+	pool, e := pgxpool.New(f.ctx, u.String())
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer func() {
+		pool.Close()
+		_, e := f.owner.Exec(f.ctx, "DROP DATABASE "+quoted)
+		if e != nil {
+			t.Error(e)
+		}
+	}()
+	files, e := filepath.Glob("../../../../db/migrations/[0-9]*.sql")
+	if e != nil {
+		t.Fatal(e)
+	}
+	for _, file := range files {
+		if filepath.Base(file) > "00035_structure_deletion.sql" {
+			break
+		}
+		raw, e := os.ReadFile(file)
+		if e != nil {
+			t.Fatal(e)
+		}
+		if _, e = pool.Exec(f.ctx, strings.SplitN(string(raw), "-- +goose Down", 2)[0]); e != nil {
+			t.Fatal(file, e)
+		}
+	}
+	q := `SELECT string_agg(conname||':'||pg_get_constraintdef(oid),'|' ORDER BY conname) FROM pg_constraint WHERE conrelid='applications.operations'::regclass`
+	var before, after string
+	if e = pool.QueryRow(f.ctx, q).Scan(&before); e != nil {
+		t.Fatal(e)
+	}
+	up, down := rootCopyMigration(t)
+	if _, e = pool.Exec(f.ctx, up); e != nil {
+		t.Fatal(e)
+	}
+	tx, e := pool.Begin(f.ctx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer tx.Rollback(f.ctx)
+	if _, e = tx.Exec(f.ctx, down); e != nil {
+		t.Fatal(e)
+	}
+	if e = tx.QueryRow(f.ctx, q).Scan(&after); e != nil || before != after {
+		t.Fatal("Down did not restore exact hot35 checks", e)
 	}
 }
