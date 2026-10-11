@@ -1,0 +1,201 @@
+(node:14) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ lifecycle accepts exact path-bound withdrawal capability and precise masked values (3.295506ms)
+✔ lifecycle permits return-only qualification without inventing withdrawal (0.30631ms)
+✔ lifecycle accepts empty visible projection without inferring hidden fields (0.185659ms)
+✔ lifecycle retains current reference tombstone labels (0.25296ms)
+✔ lifecycle rejects extra top key (0.340613ms)
+✔ lifecycle rejects missing token (0.146079ms)
+✔ lifecycle rejects empty token (0.358369ms)
+✔ lifecycle rejects oversized token (0.130516ms)
+✔ lifecycle rejects wrong instance (0.188784ms)
+✔ lifecycle rejects terminal state (0.385019ms)
+✔ lifecycle rejects extra instance (0.263446ms)
+✔ lifecycle rejects negative sequence (0.156405ms)
+✔ lifecycle rejects unsafe sequence (0.109675ms)
+✔ lifecycle rejects wrong record (0.107251ms)
+✔ lifecycle rejects wrong app (0.136776ms)
+✔ lifecycle rejects wrong view (0.091417ms)
+✔ lifecycle rejects extra record (0.077987ms)
+✔ lifecycle rejects hidden field (0.141653ms)
+✔ lifecycle rejects wrong money type (0.107271ms)
+✔ lifecycle rejects bad date (0.07977ms)
+✔ lifecycle rejects duplicate field (0.085208ms)
+✔ lifecycle rejects bad field config (0.08623ms)
+✔ lifecycle rejects string capability (0.065489ms)
+✔ lifecycle rejects missing capability (0.117687ms)
+✔ lifecycle rejects target null (0.127822ms)
+✔ lifecycle rejects extra target (0.199449ms)
+✔ lifecycle rejects missing target task (1.267406ms)
+✔ lifecycle rejects zero target epoch (0.126931ms)
+✔ lifecycle rejects unsafe target epoch (0.105048ms)
+✔ lifecycle rejects duplicate target node (0.114141ms)
+✔ lifecycle rejects target limit (0.229195ms)
+✔ lifecycle rejects field limit (0.47881ms)
+✔ lifecycle rejects invalid structures or scope without throwing (0.149575ms)
+✖ withdraw scoped request accepts exact four-ID instance resource without client operation ID (0.682236ms)
+✔ withdraw scoped request rejects wrong resource (0.060421ms)
+✔ withdraw scoped request rejects extra task (0.053751ms)
+✔ withdraw scoped request rejects invalid identity (0.121032ms)
+✔ withdraw scoped request rejects another instance (0.060221ms)
+✔ withdraw scoped request rejects task path (0.103195ms)
+✔ withdraw scoped request rejects query (0.029254ms)
+✔ withdraw scoped request rejects wrong status (0.024086ms)
+✔ withdraw scoped request rejects wrong method (0.023195ms)
+✔ withdraw scoped request rejects target forbidden (0.021793ms)
+✔ withdraw scoped request rejects client operation (0.02626ms)
+✔ withdraw scoped request rejects unapproved return (0.050096ms)
+✔ withdraw scoped request rejects missing basis (0.025098ms)
+✖ withdraw transport preserves HTTP 200 and exact body (1.576331ms)
+✖ withdraw transport preserves HTTP 202 and exact body (0.411198ms)
+✔ withdraw transport refuses wrong action (0.081463ms)
+✔ withdraw transport refuses return pending decision (0.040821ms)
+✔ withdraw transport refuses extra target (0.033721ms)
+✔ withdraw transport refuses query (0.031798ms)
+✔ withdraw transport refuses missing basis (0.029064ms)
+✖ withdraw result accepts only actual withdrawn terminal receipt (0.454623ms)
+✖ withdraw result refuses unrelated success active (0.249435ms)
+✖ withdraw result refuses unrelated success completed (0.12622ms)
+✖ withdraw result refuses unrelated success rejected (0.092639ms)
+✔ task action result cannot borrow withdrawn success from instance action (0.076485ms)
+ℹ tests 58
+ℹ suites 0
+ℹ pass 51
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 215.564284
+
+✖ failing tests:
+
+test at tests/foundation/workflow-lifecycle-consumption.test.mjs:38:1
+✖ withdraw scoped request accepts exact four-ID instance resource without client operation ID (0.682236ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-lifecycle-consumption.test.mjs:38:111)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-lifecycle-consumption.test.mjs:49:31
+✖ withdraw transport preserves HTTP 200 and exact body (1.576331ms)
+  TypeError: Workflow transport is restricted to task actions and original execution status
+      at applicationWorkflowApi (data:text/javascript;base64,ZXhwb3J0IGNsYXNzIEFwcGxpY2F0aW9uRXJyb3IgZXh0ZW5kcyBFcnJvciB7CiAgICBzdGF0dXM7CiAgICBjb2RlOwogICAgdW5jb25maXJtZWQ7CiAgICBjb25zdHJ1Y3RvcihzdGF0dXMsIGNvZGUsIHVuY29uZmlybWVkID0gZmFsc2UpewogICAgICAgIHN1cGVyKHVuY29uZmlybWVkID8gJ+aTjeS9nOe7k+aenOWwmuacquehruiupO+8jOivt+aguOafpeWOn+aTjeS9nOaIluS9v+eUqOWQjOS4gOaTjeS9nOmHjeivlScgOiBzdGF0dXMgPT09IDQwMSA/ICfnmbvlvZXlt7LlpLHmlYjvvIzor7fph43mlrDnmbvlvZUnIDogY29kZSA9PT0gJ0FVVEhfU0VTU0lPTl9DSEFOR0VEJyA/ICfnmbvlvZXouqvku73lt7Llj5jljJbvvIzor7fph43mlrDmoLjlr7nouqvku70nIDogY29kZSA9PT0gJ0NPTU1PTl9DU1JGX1JFSkVDVEVEJyA/ICflronlhajmoKHpqozlpLHotKXvvIzor7fph43mlrDnmbvlvZXlkI7lho3or5UnIDogc3RhdHVzID09PSA0MDMgPyAn5rKh5pyJ5bqU55So6K6/6Zeu5oiW566h55CG5p2D6ZmQJyA6IGNvZGUgPT09ICdBUFBMSUNBVElPTl9QT0xJQ1lfQ09ORkxJQ1QnID8gJ+adg+mZkOmFjee9ruW3suWPmOWMlu+8jOivt+mHjeaWsOWKoOi9veWQjuWGjee8lui+kScgOiBjb2RlID09PSAnQVBQTElDQVRJT05fT1BFUkFUSU9OX0NPTkZMSUNUJyA/ICfmk43kvZzmoIfor4blhrLnqoHvvIzor7fmoLjmn6Xljp/mk43kvZwnIDogc3RhdHVzID09PSA0MDQgPyAn5bqU55So5oiW6YWN572u5LiN5a2Y5ZyoJyA6IHN0YXR1cyA9PT0gNDAwID8gJ+i+k+WFpeS/oeaBr+S4jeWQiOazle+8jOivt+ajgOafpeWQjumHjeivlScgOiAn5pyN5Yqh5pqC5pe25LiN5Y+v55So77yM6K+356iN5ZCO6YeN6K+VJyksIHRoaXMuc3RhdHVzID0gc3RhdHVzLCB0aGlzLmNvZGUgPSBjb2RlLCB0aGlzLnVuY29uZmlybWVkID0gdW5jb25maXJtZWQ7CiAgICB9Cn0KYXN5bmMgZnVuY3Rpb24gcmVxdWVzdChhY3RvcklkLCBwYXRoLCBtZXRob2QsIGJvZHksIHNpZ25hbCwgZXhwZWN0ZWRTdGF0dXMsIG11dGF0aW9uLCB3aXRoU3RhdHVzID0gZmFsc2UpIHsKICAgIGNvbnN0IGhlYWRlcnMgPSB7CiAgICAgICAgJ1gtRXhwZWN0ZWQtQWN0b3ItSWQnOiBhY3RvcklkCiAgICB9OwogICAgaWYgKGJvZHkpIGhlYWRlcnNbJ0NvbnRlbnQtVHlwZSddID0gJ2FwcGxpY2F0aW9uL2pzb24nOwogICAgaWYgKG1ldGhvZCAhPT0gJ0dFVCcpIHsKICAgICAgICBjb25zdCBjc3JmID0gZG9jdW1lbnQuY29va2llLnNwbGl0KCc7JykubWFwKCh2KT0+di50cmltKCkpLmZpbmQoKHYpPT52LnN0YXJ0c1dpdGgoJ19fSG9zdC1jc3JmPScpKTsKICAgICAgICBpZiAoY3NyZikgaGVhZGVyc1snWC1DU1JGLVRva2VuJ10gPSBjc3JmLnNsaWNlKCdfX0hvc3QtY3NyZj0nLmxlbmd0aCk7CiAgICB9CiAgICBsZXQgcmVzcG9uc2U7CiAgICB0cnkgewogICAgICAgIHJlc3BvbnNlID0gYXdhaXQgZmV0Y2goJy9hcGkvdjEvJyArIHBhdGgsIHsKICAgICAgICAgICAgbWV0aG9kLAogICAgICAgICAgICBjcmVkZW50aWFsczogJ2luY2x1ZGUnLAogICAgICAgICAgICBoZWFkZXJzLAogICAgICAgICAgICBib2R5OiBib2R5ID8gSlNPTi5zdHJpbmdpZnkoYm9keSkgOiB1bmRlZmluZWQsCiAgICAgICAgICAgIHNpZ25hbAogICAgICAgIH0pOwogICAgfSBjYXRjaCAoY2F1c2UpIHsKICAgICAgICBpZiAoc2lnbmFsPy5hYm9ydGVkKSB0aHJvdyBjYXVzZTsKICAgICAgICB0aHJvdyBuZXcgQXBwbGljYXRpb25FcnJvcigwLCAnQ09NTU9OX1NFUlZJQ0VfVU5BVkFJTEFCTEUnLCBtdXRhdGlvbik7CiAgICB9CiAgICBpZiAoZXhwZWN0ZWRTdGF0dXMgPT09IDIwNCAmJiByZXNwb25zZS5zdGF0dXMgPT09IDIwNCkgewogICAgICAgIGlmIChhd2FpdCByZXNwb25zZS50ZXh0KCkgIT09ICcnKSB0aHJvdyBuZXcgQXBwbGljYXRpb25FcnJvcigyMDQsICdBUFBMSUNBVElPTl9PUEVSQVRJT05fVU5DT05GSVJNRUQnLCBtdXRhdGlvbik7CiAgICAgICAgcmV0dXJuIHsKICAgICAgICAgICAgZGF0YTogdW5kZWZpbmVkLAogICAgICAgICAgICBtZXRhOiBudWxsLAogICAgICAgICAgICBsb2NhdGlvbjogcmVzcG9uc2UuaGVhZGVycy5nZXQoJ0xvY2F0aW9uJyksCiAgICAgICAgICAgIC4uLndpdGhTdGF0dXMgPyB7CiAgICAgICAgICAgICAgICBodHRwU3RhdHVzOiByZXNwb25zZS5zdGF0dXMKICAgICAgICAgICAgfSA6IHt9CiAgICAgICAgfTsKICAgIH0KICAgIGxldCByYXc7CiAgICB0cnkgewogICAgICAgIHJhdyA9IGF3YWl0IHJlc3BvbnNlLmpzb24oKTsKICAgIH0gY2F0Y2ggIHsKICAgICAgICB0aHJvdyBuZXcgQXBwbGljYXRpb25FcnJvcihyZXNwb25zZS5zdGF0dXMsICdDT01NT05fU0VSVklDRV9VTkFWQUlMQUJMRScsIG11dGF0aW9uKTsKICAgIH0KICAgIGNvbnN0IGVudmVsb3BlID0gcmF3ICYmIHR5cGVvZiByYXcgPT09ICdvYmplY3QnICYmICFBcnJheS5pc0FycmF5KHJhdykgPyByYXcgOiBudWxsOwogICAgY29uc3QgY29kZSA9IHR5cGVvZiBlbnZlbG9wZT8uY29kZSA9PT0gJ3N0cmluZycgPyBlbnZlbG9wZS5jb2RlIDogJ0NPTU1PTl9TRVJWSUNFX1VOQVZBSUxBQkxFJzsKICAgIGlmICghcmVzcG9uc2Uub2sgfHwgY29kZSAhPT0gJ09LJykgdGhyb3cgbmV3IEFwcGxpY2F0aW9uRXJyb3IocmVzcG9uc2Uuc3RhdHVzLCBjb2RlLCBtdXRhdGlvbiAmJiAocmVzcG9uc2Uub2sgfHwgY29kZSA9PT0gJ0FQUExJQ0FUSU9OX09QRVJBVElPTl9VTkNPTkZJUk1FRCcpKTsKICAgIGlmIChleHBlY3RlZFN0YXR1cyAhPT0gdW5kZWZpbmVkICYmIHJlc3BvbnNlLnN0YXR1cyAhPT0gZXhwZWN0ZWRTdGF0dXMpIHRocm93IG5ldyBBcHBsaWNhdGlvbkVycm9yKHJlc3BvbnNlLnN0YXR1cywgJ0FQUExJQ0FUSU9OX09QRVJBVElPTl9VTkNPTkZJUk1FRCcsIG11dGF0aW9uKTsKICAgIGlmICghZW52ZWxvcGUgfHwgIU9iamVjdC5oYXNPd24oZW52ZWxvcGUsICdkYXRhJykpIHRocm93IG5ldyBBcHBsaWNhdGlvbkVycm9yKHJlc3BvbnNlLnN0YXR1cywgJ0FQUExJQ0FUSU9OX09QRVJBVElPTl9VTkNPTkZJUk1FRCcsIG11dGF0aW9uKTsKICAgIHJldHVybiB7CiAgICAgICAgZGF0YTogZW52ZWxvcGUuZGF0YSwKICAgICAgICBtZXRhOiBlbnZlbG9wZS5tZXRhID8/IG51bGwsCiAgICAgICAgbG9jYXRpb246IHJlc3BvbnNlLmhlYWRlcnMuZ2V0KCdMb2NhdGlvbicpLAogICAgICAgIC4uLndpdGhTdGF0dXMgPyB7CiAgICAgICAgICAgIGh0dHBTdGF0dXM6IHJlc3BvbnNlLnN0YXR1cwogICAgICAgIH0gOiB7fQogICAgfTsKfQpleHBvcnQgYXN5bmMgZnVuY3Rpb24gYXBwbGljYXRpb25BcGlFbnZlbG9wZShhY3RvcklkLCBwYXRoLCBtZXRob2QgPSAnR0VUJywgYm9keSwgc2lnbmFsLCBleHBlY3RlZFN0YXR1cykgewogICAgcmV0dXJuIHJlcXVlc3QoYWN0b3JJZCwgcGF0aCwgbWV0aG9kLCBib2R5LCBzaWduYWwsIGV4cGVjdGVkU3RhdHVzLCBtZXRob2QgIT09ICdHRVQnKTsKfQpleHBvcnQgYXN5bmMgZnVuY3Rpb24gYXBwbGljYXRpb25SZWFkUG9zdChhY3RvcklkLCBwYXRoLCBib2R5LCBzaWduYWwpIHsKICAgIGNvbnN0IHV1aWQgPSAnWzAtOWEtZl17OH0tWzAtOWEtZl17NH0tWzAtOWEtZl17NH0tWzAtOWEtZl17NH0tWzAtOWEtZl17MTJ9JzsKICAgIGNvbnN0IHJlY29yZFdvcmtmbG93cyA9IG5ldyBSZWdFeHAoYF5hcHBsaWNhdGlvbnMvJHt1dWlkfS9mb3Jtcy8ke3V1aWR9L3JlY29yZHMvJHt1dWlkfS93b3JrZmxvdy1pbnN0YW5jZXMvc2VhcmNoJGApLnRlc3QocGF0aCk7CiAgICBpZiAocGF0aCAhPT0gJ3dvcmtmbG93LXRhc2tzL3NlYXJjaCcgJiYgIXJlY29yZFdvcmtmbG93cyAmJiAhbmV3IFJlZ0V4cChgXmFwcGxpY2F0aW9ucy8ke3V1aWR9L2Zvcm1zLyR7dXVpZH0vcmVjb3Jkcy9zZWFyY2gkYCwgJ2knKS50ZXN0KHBhdGgpKSB0aHJvdyBuZXcgVHlwZUVycm9yKCdSZWFkLW9ubHkgUE9TVCBpcyByZXN0cmljdGVkIHRvIHJlY29yZCBzZWFyY2gnKTsKICAgIHJldHVybiAoYXdhaXQgcmVxdWVzdChhY3RvcklkLCBwYXRoLCAnUE9TVCcsIGJvZHksIHNpZ25hbCwgMjAwLCBmYWxzZSkpLmRhdGE7Cn0KZXhwb3J0IGFzeW5jIGZ1bmN0aW9uIGFwcGxpY2F0aW9uQXBpKGFjdG9ySWQsIHBhdGgsIG1ldGhvZCA9ICdHRVQnLCBib2R5LCBzaWduYWwsIGV4cGVjdGVkU3RhdHVzKSB7CiAgICByZXR1cm4gKGF3YWl0IGFwcGxpY2F0aW9uQXBpRW52ZWxvcGUoYWN0b3JJZCwgcGF0aCwgbWV0aG9kLCBib2R5LCBzaWduYWwsIGV4cGVjdGVkU3RhdHVzKSkuZGF0YTsKfQpleHBvcnQgZnVuY3Rpb24gdmFsaWRXb3JrZmxvd1RyYW5zcG9ydFJlcXVlc3QocGF0aCwgbWV0aG9kLCBib2R5KSB7CiAgICBjb25zdCBpZCA9ICdbMC05YS1mXXs4fS0oPzpbMC05YS1mXXs0fS0pezN9WzAtOWEtZl17MTJ9JzsKICAgIGNvbnN0IGNhbm9uaWNhbCA9ICh2YWx1ZSk9PnR5cGVvZiB2YWx1ZSA9PT0gJ3N0cmluZycgJiYgbmV3IFJlZ0V4cCgnXicgKyBpZCArICckJykudGVzdCh2YWx1ZSkgJiYgdmFsdWUgIT09ICcwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAnOwogICAgY29uc3QgYWN0aW9uUGF0aCA9IG5ldyBSZWdFeHAoYF5hcHBsaWNhdGlvbnMvKCR7aWR9KS9mb3Jtcy8oJHtpZH0pL3JlY29yZHMvKCR7aWR9KS93b3JrZmxvdy1pbnN0YW5jZXMvKCR7aWR9KS90YXNrcy8oJHtpZH0pL2FjdGlvbnMkYCkuZXhlYyhwYXRoKTsKICAgIGNvbnN0IG9wZXJhdGlvblBhdGggPSBuZXcgUmVnRXhwKGBeYXBwbGljYXRpb24td29ya2Zsb3ctb3BlcmF0aW9ucy8oJHtpZH0pJGApLmV4ZWMocGF0aCk7CiAgICBjb25zdCBkYXRhID0gYm9keTsKICAgIGNvbnN0IHZhbGlkUG9zdCA9IG1ldGhvZCA9PT0gJ1BPU1QnICYmIGFjdGlvblBhdGggJiYgYWN0aW9uUGF0aC5zbGljZSgxKS5ldmVyeShjYW5vbmljYWwpICYmIGRhdGEgJiYgIUFycmF5LmlzQXJyYXkoZGF0YSkgJiYgT2JqZWN0LmtleXMoZGF0YSkubGVuZ3RoID09PSAzICYmIFsKICAgICAgICAnb3BlcmF0aW9uSWQnLAogICAgICAgICdhY3Rpb24nLAogICAgICAgICdiYXNpc1Rva2VuJwogICAgXS5ldmVyeSgoayk9Pk9iamVjdC5oYXNPd24oZGF0YSwgaykpICYmIGNhbm9uaWNhbChkYXRhLm9wZXJhdGlvbklkKSAmJiAoZGF0YS5hY3Rpb24gPT09ICdhZ3JlZScgfHwgZGF0YS5hY3Rpb24gPT09ICdyZWplY3QnKSAmJiB0eXBlb2YgZGF0YS5iYXNpc1Rva2VuID09PSAnc3RyaW5nJyAmJiAvXltBLVphLXowLTlfLV17NDN9JC8udGVzdChkYXRhLmJhc2lzVG9rZW4pOwogICAgY29uc3QgdmFsaWRHZXQgPSBtZXRob2QgPT09ICdHRVQnICYmIG9wZXJhdGlvblBhdGggJiYgY2Fub25pY2FsKG9wZXJhdGlvblBhdGhbMV0pICYmIGJvZHkgPT09IHVuZGVmaW5lZDsKICAgIHJldHVybiBCb29sZWFuKHZhbGlkUG9zdCB8fCB2YWxpZEdldCk7Cn0KZXhwb3J0IGFzeW5jIGZ1bmN0aW9uIGFwcGxpY2F0aW9uV29ya2Zsb3dBcGkoYWN0b3JJZCwgcGF0aCwgbWV0aG9kLCBib2R5LCBzaWduYWwpIHsKICAgIGlmICghdmFsaWRXb3JrZmxvd1RyYW5zcG9ydFJlcXVlc3QocGF0aCwgbWV0aG9kLCBib2R5KSkgdGhyb3cgbmV3IFR5cGVFcnJvcignV29ya2Zsb3cgdHJhbnNwb3J0IGlzIHJlc3RyaWN0ZWQgdG8gdGFzayBhY3Rpb25zIGFuZCBvcmlnaW5hbCBleGVjdXRpb24gc3RhdHVzJyk7CiAgICBjb25zdCByZXN1bHQgPSBhd2FpdCByZXF1ZXN0KGFjdG9ySWQsIHBhdGgsIG1ldGhvZCwgYm9keSwgc2lnbmFsLCBtZXRob2QgPT09ICdHRVQnID8gMjAwIDogdW5kZWZpbmVkLCBtZXRob2QgPT09ICdQT1NUJywgdHJ1ZSk7CiAgICBpZiAocmVzdWx0Lmh0dHBTdGF0dXMgIT09IDIwMCAmJiByZXN1bHQuaHR0cFN0YXR1cyAhPT0gMjAyKSB0aHJvdyBuZXcgQXBwbGljYXRpb25FcnJvcihyZXN1bHQuaHR0cFN0YXR1cyA/PyAwLCAnQVBQTElDQVRJT05fT1BFUkFUSU9OX1VOQ09ORklSTUVEJywgbWV0aG9kID09PSAnUE9TVCcpOwogICAgcmV0dXJuIHsKICAgICAgICAuLi5yZXN1bHQsCiAgICAgICAgaHR0cFN0YXR1czogcmVzdWx0Lmh0dHBTdGF0dXMKICAgIH07Cn0K:89:67)
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-lifecycle-consumption.test.mjs:52:21)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)
+      at run (node:internal/test_runner/harness:369:12)
+      at test (node:internal/test_runner/harness:378:12)
+      at file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-lifecycle-consumption.test.mjs:49:31
+
+test at tests/foundation/workflow-lifecycle-consumption.test.mjs:49:31
+✖ withdraw transport preserves HTTP 202 and exact body (0.411198ms)
+  TypeError: Workflow transport is restricted to task actions and original execution status
+      at applicationWorkflowApi (data:text/javascript;base64,ZXhwb3J0IGNsYXNzIEFwcGxpY2F0aW9uRXJyb3IgZXh0ZW5kcyBFcnJvciB7CiAgICBzdGF0dXM7CiAgICBjb2RlOwogICAgdW5jb25maXJtZWQ7CiAgICBjb25zdHJ1Y3RvcihzdGF0dXMsIGNvZGUsIHVuY29uZmlybWVkID0gZmFsc2UpewogICAgICAgIHN1cGVyKHVuY29uZmlybWVkID8gJ+aTjeS9nOe7k+aenOWwmuacquehruiupO+8jOivt+aguOafpeWOn+aTjeS9nOaIluS9v+eUqOWQjOS4gOaTjeS9nOmHjeivlScgOiBzdGF0dXMgPT09IDQwMSA/ICfnmbvlvZXlt7LlpLHmlYjvvIzor7fph43mlrDnmbvlvZUnIDogY29kZSA9PT0gJ0FVVEhfU0VTU0lPTl9DSEFOR0VEJyA/ICfnmbvlvZXouqvku73lt7Llj5jljJbvvIzor7fph43mlrDmoLjlr7nouqvku70nIDogY29kZSA9PT0gJ0NPTU1PTl9DU1JGX1JFSkVDVEVEJyA/ICflronlhajmoKHpqozlpLHotKXvvIzor7fph43mlrDnmbvlvZXlkI7lho3or5UnIDogc3RhdHVzID09PSA0MDMgPyAn5rKh5pyJ5bqU55So6K6/6Zeu5oiW566h55CG5p2D6ZmQJyA6IGNvZGUgPT09ICdBUFBMSUNBVElPTl9QT0xJQ1lfQ09ORkxJQ1QnID8gJ+adg+mZkOmFjee9ruW3suWPmOWMlu+8jOivt+mHjeaWsOWKoOi9veWQjuWGjee8lui+kScgOiBjb2RlID09PSAnQVBQTElDQVRJT05fT1BFUkFUSU9OX0NPTkZMSUNUJyA/ICfmk43kvZzmoIfor4blhrLnqoHvvIzor7fmoLjmn6Xljp/mk43kvZwnIDogc3RhdHVzID09PSA0MDQgPyAn5bqU55So5oiW6YWN572u5LiN5a2Y5ZyoJyA6IHN0YXR1cyA9PT0gNDAwID8gJ+i+k+WFpeS/oeaBr+S4jeWQiOazle+8jOivt+ajgOafpeWQjumHjeivlScgOiAn5pyN5Yqh5pqC5pe25LiN5Y+v55So77yM6K+356iN5ZCO6YeN6K+VJyksIHRoaXMuc3RhdHVzID0gc3RhdHVzLCB0aGlzLmNvZGUgPSBjb2RlLCB0aGlzLnVuY29uZmlybWVkID0gdW5jb25maXJtZWQ7CiAgICB9Cn0KYXN5bmMgZnVuY3Rpb24gcmVxdWVzdChhY3RvcklkLCBwYXRoLCBtZXRob2QsIGJvZHksIHNpZ25hbCwgZXhwZWN0ZWRTdGF0dXMsIG11dGF0aW9uLCB3aXRoU3RhdHVzID0gZmFsc2UpIHsKICAgIGNvbnN0IGhlYWRlcnMgPSB7CiAgICAgICAgJ1gtRXhwZWN0ZWQtQWN0b3ItSWQnOiBhY3RvcklkCiAgICB9OwogICAgaWYgKGJvZHkpIGhlYWRlcnNbJ0NvbnRlbnQtVHlwZSddID0gJ2FwcGxpY2F0aW9uL2pzb24nOwogICAgaWYgKG1ldGhvZCAhPT0gJ0dFVCcpIHsKICAgICAgICBjb25zdCBjc3JmID0gZG9jdW1lbnQuY29va2llLnNwbGl0KCc7JykubWFwKCh2KT0+di50cmltKCkpLmZpbmQoKHYpPT52LnN0YXJ0c1dpdGgoJ19fSG9zdC1jc3JmPScpKTsKICAgICAgICBpZiAoY3NyZikgaGVhZGVyc1snWC1DU1JGLVRva2VuJ10gPSBjc3JmLnNsaWNlKCdfX0hvc3QtY3NyZj0nLmxlbmd0aCk7CiAgICB9CiAgICBsZXQgcmVzcG9uc2U7CiAgICB0cnkgewogICAgICAgIHJlc3BvbnNlID0gYXdhaXQgZmV0Y2goJy9hcGkvdjEvJyArIHBhdGgsIHsKICAgICAgICAgICAgbWV0aG9kLAogICAgICAgICAgICBjcmVkZW50aWFsczogJ2luY2x1ZGUnLAogICAgICAgICAgICBoZWFkZXJzLAogICAgICAgICAgICBib2R5OiBib2R5ID8gSlNPTi5zdHJpbmdpZnkoYm9keSkgOiB1bmRlZmluZWQsCiAgICAgICAgICAgIHNpZ25hbAogICAgICAgIH0pOwogICAgfSBjYXRjaCAoY2F1c2UpIHsKICAgICAgICBpZiAoc2lnbmFsPy5hYm9ydGVkKSB0aHJvdyBjYXVzZTsKICAgICAgICB0aHJvdyBuZXcgQXBwbGljYXRpb25FcnJvcigwLCAnQ09NTU9OX1NFUlZJQ0VfVU5BVkFJTEFCTEUnLCBtdXRhdGlvbik7CiAgICB9CiAgICBpZiAoZXhwZWN0ZWRTdGF0dXMgPT09IDIwNCAmJiByZXNwb25zZS5zdGF0dXMgPT09IDIwNCkgewogICAgICAgIGlmIChhd2FpdCByZXNwb25zZS50ZXh0KCkgIT09ICcnKSB0aHJvdyBuZXcgQXBwbGljYXRpb25FcnJvcigyMDQsICdBUFBMSUNBVElPTl9PUEVSQVRJT05fVU5DT05GSVJNRUQnLCBtdXRhdGlvbik7CiAgICAgICAgcmV0dXJuIHsKICAgICAgICAgICAgZGF0YTogdW5kZWZpbmVkLAogICAgICAgICAgICBtZXRhOiBudWxsLAogICAgICAgICAgICBsb2NhdGlvbjogcmVzcG9uc2UuaGVhZGVycy5nZXQoJ0xvY2F0aW9uJyksCiAgICAgICAgICAgIC4uLndpdGhTdGF0dXMgPyB7CiAgICAgICAgICAgICAgICBodHRwU3RhdHVzOiByZXNwb25zZS5zdGF0dXMKICAgICAgICAgICAgfSA6IHt9CiAgICAgICAgfTsKICAgIH0KICAgIGxldCByYXc7CiAgICB0cnkgewogICAgICAgIHJhdyA9IGF3YWl0IHJlc3BvbnNlLmpzb24oKTsKICAgIH0gY2F0Y2ggIHsKICAgICAgICB0aHJvdyBuZXcgQXBwbGljYXRpb25FcnJvcihyZXNwb25zZS5zdGF0dXMsICdDT01NT05fU0VSVklDRV9VTkFWQUlMQUJMRScsIG11dGF0aW9uKTsKICAgIH0KICAgIGNvbnN0IGVudmVsb3BlID0gcmF3ICYmIHR5cGVvZiByYXcgPT09ICdvYmplY3QnICYmICFBcnJheS5pc0FycmF5KHJhdykgPyByYXcgOiBudWxsOwogICAgY29uc3QgY29kZSA9IHR5cGVvZiBlbnZlbG9wZT8uY29kZSA9PT0gJ3N0cmluZycgPyBlbnZlbG9wZS5jb2RlIDogJ0NPTU1PTl9TRVJWSUNFX1VOQVZBSUxBQkxFJzsKICAgIGlmICghcmVzcG9uc2Uub2sgfHwgY29kZSAhPT0gJ09LJykgdGhyb3cgbmV3IEFwcGxpY2F0aW9uRXJyb3IocmVzcG9uc2Uuc3RhdHVzLCBjb2RlLCBtdXRhdGlvbiAmJiAocmVzcG9uc2Uub2sgfHwgY29kZSA9PT0gJ0FQUExJQ0FUSU9OX09QRVJBVElPTl9VTkNPTkZJUk1FRCcpKTsKICAgIGlmIChleHBlY3RlZFN0YXR1cyAhPT0gdW5kZWZpbmVkICYmIHJlc3BvbnNlLnN0YXR1cyAhPT0gZXhwZWN0ZWRTdGF0dXMpIHRocm93IG5ldyBBcHBsaWNhdGlvbkVycm9yKHJlc3BvbnNlLnN0YXR1cywgJ0FQUExJQ0FUSU9OX09QRVJBVElPTl9VTkNPTkZJUk1FRCcsIG11dGF0aW9uKTsKICAgIGlmICghZW52ZWxvcGUgfHwgIU9iamVjdC5oYXNPd24oZW52ZWxvcGUsICdkYXRhJykpIHRocm93IG5ldyBBcHBsaWNhdGlvbkVycm9yKHJlc3BvbnNlLnN0YXR1cywgJ0FQUExJQ0FUSU9OX09QRVJBVElPTl9VTkNPTkZJUk1FRCcsIG11dGF0aW9uKTsKICAgIHJldHVybiB7CiAgICAgICAgZGF0YTogZW52ZWxvcGUuZGF0YSwKICAgICAgICBtZXRhOiBlbnZlbG9wZS5tZXRhID8/IG51bGwsCiAgICAgICAgbG9jYXRpb246IHJlc3BvbnNlLmhlYWRlcnMuZ2V0KCdMb2NhdGlvbicpLAogICAgICAgIC4uLndpdGhTdGF0dXMgPyB7CiAgICAgICAgICAgIGh0dHBTdGF0dXM6IHJlc3BvbnNlLnN0YXR1cwogICAgICAgIH0gOiB7fQogICAgfTsKfQpleHBvcnQgYXN5bmMgZnVuY3Rpb24gYXBwbGljYXRpb25BcGlFbnZlbG9wZShhY3RvcklkLCBwYXRoLCBtZXRob2QgPSAnR0VUJywgYm9keSwgc2lnbmFsLCBleHBlY3RlZFN0YXR1cykgewogICAgcmV0dXJuIHJlcXVlc3QoYWN0b3JJZCwgcGF0aCwgbWV0aG9kLCBib2R5LCBzaWduYWwsIGV4cGVjdGVkU3RhdHVzLCBtZXRob2QgIT09ICdHRVQnKTsKfQpleHBvcnQgYXN5bmMgZnVuY3Rpb24gYXBwbGljYXRpb25SZWFkUG9zdChhY3RvcklkLCBwYXRoLCBib2R5LCBzaWduYWwpIHsKICAgIGNvbnN0IHV1aWQgPSAnWzAtOWEtZl17OH0tWzAtOWEtZl17NH0tWzAtOWEtZl17NH0tWzAtOWEtZl17NH0tWzAtOWEtZl17MTJ9JzsKICAgIGNvbnN0IHJlY29yZFdvcmtmbG93cyA9IG5ldyBSZWdFeHAoYF5hcHBsaWNhdGlvbnMvJHt1dWlkfS9mb3Jtcy8ke3V1aWR9L3JlY29yZHMvJHt1dWlkfS93b3JrZmxvdy1pbnN0YW5jZXMvc2VhcmNoJGApLnRlc3QocGF0aCk7CiAgICBpZiAocGF0aCAhPT0gJ3dvcmtmbG93LXRhc2tzL3NlYXJjaCcgJiYgIXJlY29yZFdvcmtmbG93cyAmJiAhbmV3IFJlZ0V4cChgXmFwcGxpY2F0aW9ucy8ke3V1aWR9L2Zvcm1zLyR7dXVpZH0vcmVjb3Jkcy9zZWFyY2gkYCwgJ2knKS50ZXN0KHBhdGgpKSB0aHJvdyBuZXcgVHlwZUVycm9yKCdSZWFkLW9ubHkgUE9TVCBpcyByZXN0cmljdGVkIHRvIHJlY29yZCBzZWFyY2gnKTsKICAgIHJldHVybiAoYXdhaXQgcmVxdWVzdChhY3RvcklkLCBwYXRoLCAnUE9TVCcsIGJvZHksIHNpZ25hbCwgMjAwLCBmYWxzZSkpLmRhdGE7Cn0KZXhwb3J0IGFzeW5jIGZ1bmN0aW9uIGFwcGxpY2F0aW9uQXBpKGFjdG9ySWQsIHBhdGgsIG1ldGhvZCA9ICdHRVQnLCBib2R5LCBzaWduYWwsIGV4cGVjdGVkU3RhdHVzKSB7CiAgICByZXR1cm4gKGF3YWl0IGFwcGxpY2F0aW9uQXBpRW52ZWxvcGUoYWN0b3JJZCwgcGF0aCwgbWV0aG9kLCBib2R5LCBzaWduYWwsIGV4cGVjdGVkU3RhdHVzKSkuZGF0YTsKfQpleHBvcnQgZnVuY3Rpb24gdmFsaWRXb3JrZmxvd1RyYW5zcG9ydFJlcXVlc3QocGF0aCwgbWV0aG9kLCBib2R5KSB7CiAgICBjb25zdCBpZCA9ICdbMC05YS1mXXs4fS0oPzpbMC05YS1mXXs0fS0pezN9WzAtOWEtZl17MTJ9JzsKICAgIGNvbnN0IGNhbm9uaWNhbCA9ICh2YWx1ZSk9PnR5cGVvZiB2YWx1ZSA9PT0gJ3N0cmluZycgJiYgbmV3IFJlZ0V4cCgnXicgKyBpZCArICckJykudGVzdCh2YWx1ZSkgJiYgdmFsdWUgIT09ICcwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAnOwogICAgY29uc3QgYWN0aW9uUGF0aCA9IG5ldyBSZWdFeHAoYF5hcHBsaWNhdGlvbnMvKCR7aWR9KS9mb3Jtcy8oJHtpZH0pL3JlY29yZHMvKCR7aWR9KS93b3JrZmxvdy1pbnN0YW5jZXMvKCR7aWR9KS90YXNrcy8oJHtpZH0pL2FjdGlvbnMkYCkuZXhlYyhwYXRoKTsKICAgIGNvbnN0IG9wZXJhdGlvblBhdGggPSBuZXcgUmVnRXhwKGBeYXBwbGljYXRpb24td29ya2Zsb3ctb3BlcmF0aW9ucy8oJHtpZH0pJGApLmV4ZWMocGF0aCk7CiAgICBjb25zdCBkYXRhID0gYm9keTsKICAgIGNvbnN0IHZhbGlkUG9zdCA9IG1ldGhvZCA9PT0gJ1BPU1QnICYmIGFjdGlvblBhdGggJiYgYWN0aW9uUGF0aC5zbGljZSgxKS5ldmVyeShjYW5vbmljYWwpICYmIGRhdGEgJiYgIUFycmF5LmlzQXJyYXkoZGF0YSkgJiYgT2JqZWN0LmtleXMoZGF0YSkubGVuZ3RoID09PSAzICYmIFsKICAgICAgICAnb3BlcmF0aW9uSWQnLAogICAgICAgICdhY3Rpb24nLAogICAgICAgICdiYXNpc1Rva2VuJwogICAgXS5ldmVyeSgoayk9Pk9iamVjdC5oYXNPd24oZGF0YSwgaykpICYmIGNhbm9uaWNhbChkYXRhLm9wZXJhdGlvbklkKSAmJiAoZGF0YS5hY3Rpb24gPT09ICdhZ3JlZScgfHwgZGF0YS5hY3Rpb24gPT09ICdyZWplY3QnKSAmJiB0eXBlb2YgZGF0YS5iYXNpc1Rva2VuID09PSAnc3RyaW5nJyAmJiAvXltBLVphLXowLTlfLV17NDN9JC8udGVzdChkYXRhLmJhc2lzVG9rZW4pOwogICAgY29uc3QgdmFsaWRHZXQgPSBtZXRob2QgPT09ICdHRVQnICYmIG9wZXJhdGlvblBhdGggJiYgY2Fub25pY2FsKG9wZXJhdGlvblBhdGhbMV0pICYmIGJvZHkgPT09IHVuZGVmaW5lZDsKICAgIHJldHVybiBCb29sZWFuKHZhbGlkUG9zdCB8fCB2YWxpZEdldCk7Cn0KZXhwb3J0IGFzeW5jIGZ1bmN0aW9uIGFwcGxpY2F0aW9uV29ya2Zsb3dBcGkoYWN0b3JJZCwgcGF0aCwgbWV0aG9kLCBib2R5LCBzaWduYWwpIHsKICAgIGlmICghdmFsaWRXb3JrZmxvd1RyYW5zcG9ydFJlcXVlc3QocGF0aCwgbWV0aG9kLCBib2R5KSkgdGhyb3cgbmV3IFR5cGVFcnJvcignV29ya2Zsb3cgdHJhbnNwb3J0IGlzIHJlc3RyaWN0ZWQgdG8gdGFzayBhY3Rpb25zIGFuZCBvcmlnaW5hbCBleGVjdXRpb24gc3RhdHVzJyk7CiAgICBjb25zdCByZXN1bHQgPSBhd2FpdCByZXF1ZXN0KGFjdG9ySWQsIHBhdGgsIG1ldGhvZCwgYm9keSwgc2lnbmFsLCBtZXRob2QgPT09ICdHRVQnID8gMjAwIDogdW5kZWZpbmVkLCBtZXRob2QgPT09ICdQT1NUJywgdHJ1ZSk7CiAgICBpZiAocmVzdWx0Lmh0dHBTdGF0dXMgIT09IDIwMCAmJiByZXN1bHQuaHR0cFN0YXR1cyAhPT0gMjAyKSB0aHJvdyBuZXcgQXBwbGljYXRpb25FcnJvcihyZXN1bHQuaHR0cFN0YXR1cyA/PyAwLCAnQVBQTElDQVRJT05fT1BFUkFUSU9OX1VOQ09ORklSTUVEJywgbWV0aG9kID09PSAnUE9TVCcpOwogICAgcmV0dXJuIHsKICAgICAgICAuLi5yZXN1bHQsCiAgICAgICAgaHR0cFN0YXR1czogcmVzdWx0Lmh0dHBTdGF0dXMKICAgIH07Cn0K:89:67)
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-lifecycle-consumption.test.mjs:52:21)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)
+
+test at tests/foundation/workflow-lifecycle-consumption.test.mjs:59:1
+✖ withdraw result accepts only actual withdrawn terminal receipt (0.454623ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-lifecycle-consumption.test.mjs:59:82)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)
+      at run (node:internal/test_runner/harness:369:12)
+      at test (node:internal/test_runner/harness:378:12)
+      at file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-lifecycle-consumption.test.mjs:59:1 {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-lifecycle-consumption.test.mjs:60:54
+✖ withdraw result refuses unrelated success active (0.249435ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-lifecycle-consumption.test.mjs:60:121)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-lifecycle-consumption.test.mjs:60:54
+✖ withdraw result refuses unrelated success completed (0.12622ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-lifecycle-consumption.test.mjs:60:121)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-lifecycle-consumption.test.mjs:60:54
+✖ withdraw result refuses unrelated success rejected (0.092639ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-lifecycle-consumption.test.mjs:60:121)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

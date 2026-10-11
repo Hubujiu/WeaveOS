@@ -13,3 +13,4 @@ export function validLifecyclePreview(v:unknown,location:InstanceLocation):v is 
  if(!object(i)||!exact(i,['id','sequence','state'])||i.id!==location.instanceId||i.state!=='active'||!integer(i.sequence,0)||!validRecordProjection(v.record,v.fields,{appId:location.appId,viewId:location.viewId,recordId:location.recordId},200))return false;
  return Array.isArray(v.returnTargets)&&v.returnTargets.length<=100&&v.returnTargets.every(t=>object(t)&&exact(t,['nodeId','taskId','activationEpoch'])&&id(t.nodeId)&&id(t.taskId)&&integer(t.activationEpoch,1))&&new Set(v.returnTargets.map(t=>t.nodeId)).size===v.returnTargets.length;
 }
+export function validInstanceActionRequest(_resource:unknown,_request:unknown):boolean{return false;}

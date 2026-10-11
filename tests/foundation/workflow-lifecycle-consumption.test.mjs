@@ -31,3 +31,31 @@ const invalid={
 };
 for(const [name,change]of Object.entries(invalid))test('lifecycle rejects '+name,()=>{const v=fixture();change(v);assert.equal(validLifecyclePreview(v,loc),false);});
 test('lifecycle rejects invalid structures or scope without throwing',()=>{for(const v of [null,[],{},true,1,''])assert.equal(validLifecyclePreview(v,loc),false);assert.equal(validLifecyclePreview(fixture(),{...loc,recordId:'bad'}),false);});
+const {validInstanceActionRequest}=await import(encode(src));
+const resource={kind:'instance-action',appId:loc.appId,viewId:loc.viewId,id:loc.recordId,instanceId:loc.instanceId};
+const actionPath=`applications/${loc.appId}/forms/${loc.viewId}/records/${loc.recordId}/workflow-instances/${loc.instanceId}/actions`;
+const request={path:actionPath,method:'POST',expectedStatus:202,body:{action:'withdraw',basisToken:'life-basis'}};
+test('withdraw scoped request accepts exact four-ID instance resource without client operation ID',()=>assert.equal(validInstanceActionRequest(resource,request),true));
+for(const [name,r,q]of [
+ ['wrong resource',{...resource,kind:'task-action'},request],['extra task',{...resource,taskId:id(9)},request],['invalid identity',{...resource,instanceId:'../x'},request],
+ ['another instance',resource,{...request,path:actionPath.replace(loc.instanceId,id(99))}],['task path',resource,{...request,path:actionPath.replace('/actions','/tasks/'+id(9)+'/actions')}],
+ ['query',resource,{...request,path:actionPath+'?x=1'}],['wrong status',resource,{...request,expectedStatus:200}],['wrong method',resource,{...request,method:'PATCH'}],
+ ['target forbidden',resource,{...request,body:{...request.body,targetNodeId:id(9)}}],['client operation',resource,{...request,body:{...request.body,operationId:id(9)}}],
+ ['unapproved return',resource,{...request,body:{action:'return',basisToken:'life-basis'}}],['missing basis',resource,{...request,body:{action:'withdraw'}}],
+])test('withdraw scoped request rejects '+name,()=>assert.equal(validInstanceActionRequest(r,q),false));
+const apiSource=await readFile(new URL('../../apps/web/src/applications/api.ts',import.meta.url),'utf8');
+const {applicationWorkflowApi,validWorkflowTransportRequest}=await import(encode(apiSource));
+const actionBody={...request.body,operationId:id(50)};
+for(const status of [200,202])test('withdraw transport preserves HTTP '+status+' and exact body',async t=>{
+ const old=Object.getOwnPropertyDescriptor(globalThis,'document');Object.defineProperty(globalThis,'document',{configurable:true,value:{cookie:'__Host-csrf=synthetic'}});t.after(()=>{if(old)Object.defineProperty(globalThis,'document',old);else delete globalThis.document;});
+ let sent;t.mock.method(globalThis,'fetch',async(url,init)=>{sent={url,init};return new Response(JSON.stringify({code:'OK',data:{status:status===202?'pending':'success'},meta:null}),{status});});
+ const result=await applicationWorkflowApi(id(7),actionPath,'POST',actionBody);assert.equal(result.httpStatus,status);assert.equal(sent.url,'/api/v1/'+actionPath);assert.equal(sent.init.headers['X-CSRF-Token'],'synthetic');assert.equal(sent.init.headers['X-Expected-Actor-Id'],id(7));assert.deepEqual(JSON.parse(sent.init.body),actionBody);
+});
+for(const [name,path,body] of [['wrong action',actionPath,{...actionBody,action:'agree'}],['return pending decision',actionPath,{...actionBody,action:'return',targetNodeId:id(9)}],['extra target',actionPath,{...actionBody,targetNodeId:id(9)}],['query',actionPath+'?x=1',actionBody],['missing basis',actionPath,{operationId:id(50),action:'withdraw'}]])test('withdraw transport refuses '+name,()=>assert.equal(validWorkflowTransportRequest(path,'POST',body),false));
+const operationSource=await readFile(new URL('../../apps/web/src/applications/workflows/taskActionContract.ts',import.meta.url),'utf8');
+const {validWorkflowOperation}=await import(encode(operationSource));
+const expected={operationId:id(50),instanceId:loc.instanceId,action:'withdraw'};
+const success={operationId:id(50),commandId:id(51),instanceId:loc.instanceId,status:'success',instanceState:'withdrawn',sequence:4};
+test('withdraw result accepts only actual withdrawn terminal receipt',()=>assert.equal(validWorkflowOperation(success,expected,200,'GET'),true));
+for(const state of ['active','completed','rejected'])test('withdraw result refuses unrelated success '+state,()=>assert.equal(validWorkflowOperation({...success,instanceState:state},expected,200,'GET'),false));
+test('task action result cannot borrow withdrawn success from instance action',()=>assert.equal(validWorkflowOperation(success,{operationId:id(50),instanceId:loc.instanceId},200,'GET'),false));
