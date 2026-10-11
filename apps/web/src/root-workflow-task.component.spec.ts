@@ -49,3 +49,10 @@ test('Root task explicit refresh rereads current record rather than trusting inb
  await expect(page.getByLabel('报销金额',{exact:false})).toHaveValue('100.00');await page.getByRole('button',{name:'刷新预览',exact:true}).click();
  await expect(page.getByLabel('报销金额',{exact:false})).toHaveValue('200.00');await expect(page.getByText('最新 v4',{exact:true})).toBeVisible();
 });
+test('Root task displays authorized tombstones without resolving extra private data',async({page})=>{
+ const member={...field,id:id(10),name:'申请成员',kind:'member',required:false,config:{}};
+ const option={...field,id:id(11),name:'费用类别',kind:'single_select',required:false,config:{options:[]}};
+ const calls=await setup(page,()=>({data:{...preview,fields:[member,option],record:{...preview.record,values:{[member.id]:id(20),[option.id]:id(21)},referenceDisplays:{[member.id]:{[id(20)]:{id:id(20),label:'原成员',deleted:true}},[option.id]:{[id(21)]:{id:id(21),label:'原类别',deleted:true}}}}}}));
+ await page.goto(route);await expect(page.getByText('原成员（已删除）',{exact:true})).toBeVisible();await expect(page.getByText('原类别（已删除）',{exact:true})).toBeVisible();
+ expect(calls.filter(c=>/candidates|personnel|members/.test(c.path))).toHaveLength(0);
+});
