@@ -1,0 +1,38 @@
+diff --git a/services/bff/internal/applications/structure_copy.go b/services/bff/internal/applications/structure_copy.go
+index 029e7cf4..b1df5145 100644
+--- a/services/bff/internal/applications/structure_copy.go
++++ b/services/bff/internal/applications/structure_copy.go
+@@ -153,6 +153,33 @@ func (a *Application) BeginStructureCopyWrite(ctx context.Context, p session.Pri
+ 	if !errors.Is(e, ErrMissing) {
+ 		return fail(e)
+ 	}
++	// Deny unauthorized scopes before exposing mapped-target existence. These
++	// nonlocking checks are repeated under sorted app gates after source locks.
++	for _, id := range []string{o.SourceAppID, o.TargetAppID} {
++		if id == "" {
++			continue
++		}
++		app, err := loadApp(ctx, tx, id, false)
++		if err != nil {
++			return fail(err)
++		}
++		if err = registered(ctx, tx, app); err != nil {
++			return fail(err)
++		}
++		if !manager(actor, app) {
++			return fail(ErrDenied)
++		}
++	}
++	if o.TargetAppID == "" {
++		for _, permission := range access.Permissions {
++			if permission.Code == "applications.create" {
++				actor.CreateApp = true
++			}
++		}
++		if !apppolicy.CanCreate(actor) {
++			return fail(ErrDenied)
++		}
++	}
+ 	if e = o.SourceGuard(ctx, tx); e != nil {
+ 		return fail(e)
+ 	}
