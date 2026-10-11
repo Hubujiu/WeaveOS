@@ -9,6 +9,8 @@ async function setup(page:Page,options:{kind?:'member'|'department';readonly?:bo
  const candidates:URL[]=[],writes:any[]=[],paths:string[]=[];let selected=id(10),version=1;
  await page.route('**/api/v1/**',async r=>{
   const req=r.request(),url=new URL(req.url()),path=url.pathname;paths.push(path);let data:unknown,meta:unknown=null;
+  // Independently authorized empty history is unrelated to this fixture's task/action oracle.
+  if(path.endsWith('/workflow-events'))return r.fulfill({json:{code:'OK',data:{items:[]},meta:{pagination:{hasMore:false,nextPageToken:null}},message:''}});
   if(path.endsWith('/sessions/current'))data=actor;
   else if(path.endsWith('/me/access'))data={user:actor,bootstrapAdmin:false,personnelManage:false,identities:[],permissions:[],applications:[]};
   else if(path==='/api/v1/applications')data={items:[]};

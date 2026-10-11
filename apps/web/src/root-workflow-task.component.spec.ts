@@ -11,6 +11,8 @@ async function setup(page:Page,result:(n:number)=>{status?:number;code?:string;d
  const calls:{path:string;headers:Record<string,string>}[]=[];let reads=0;
  await page.route('**/api/v1/**',async r=>{
   const path=new URL(r.request().url()).pathname;calls.push({path,headers:r.request().headers()});let data:unknown;
+  // Independently authorized empty history is unrelated to this fixture's task/action oracle.
+  if(path.endsWith('/workflow-events'))return r.fulfill({json:{code:'OK',data:{items:[]},meta:{pagination:{hasMore:false,nextPageToken:null}},message:''}});
   if(path.endsWith('/sessions/current'))data=actor;
   else if(path.endsWith('/me/access'))data={user:actor,bootstrapAdmin:false,personnelManage:false,identities:[],permissions:[],applications:[]};
   else if(path==='/api/v1/applications')data={items:[]};

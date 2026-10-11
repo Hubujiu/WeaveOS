@@ -59,3 +59,14 @@ test('Root task workspace presents history beside the record at desktop and stac
  const save=await page.getByRole('button',{name:'保存修改',exact:true}).boundingBox(),agree=await page.getByRole('button',{name:'同意',exact:true}).boundingBox();expect(agree!.y).toBeGreaterThan(save!.y+save!.height);
  await page.setViewportSize({width:390,height:844});await expect(historyPanel).toBeVisible();const narrow=await historyPanel.boundingBox();expect(narrow!.x).toBeGreaterThanOrEqual(0);expect(narrow!.x+narrow!.width).toBeLessThanOrEqual(390);await expect(page.locator('body')).toHaveJSProperty('scrollWidth',390);
 });
+test('Root history switching events ignores a late first response',async({page})=>{
+ await setup(page);let release:(()=>void)|undefined,started=false;
+ await page.route('**/workflow-events/'+id(20),async r=>{started=true;await new Promise<void>(resolve=>{release=resolve;});await r.fulfill({json:{code:'OK',data:{event:event(20),basis:{status:'available',fields:[{fieldId:field.id,fieldName:'旧请求依据',fieldKind:'money',value:'100.00',valueLabels:{}}]}},meta:null}}).catch(()=>{});});
+ await open(page);const panel=page.getByRole('region',{name:'审批轨迹',exact:true});await panel.getByRole('button',{name:'加载更多历史',exact:true}).click();await expect(panel.getByRole('button',{name:'查看审批依据',exact:true})).toHaveCount(2);
+ await panel.getByRole('button',{name:'查看审批依据',exact:true}).nth(0).click();await expect.poll(()=>started).toBe(true);await panel.getByRole('button',{name:'查看审批依据',exact:true}).nth(1).click();const basis=page.getByRole('region',{name:'历史审批依据',exact:true});await expect(basis).toContainText('123456789012345678901234567890.12');release!();await expect(basis).not.toContainText('旧请求依据');
+});
+test('Root history leaving the task cancels an outstanding detail without a late authorization error',async({page})=>{
+ await setup(page);let release:(()=>void)|undefined,started=false;
+ await page.route('**/workflow-events/'+id(20),async r=>{started=true;await new Promise<void>(resolve=>{release=resolve;});await r.fulfill({status:401,json:{code:'AUTH_UNAUTHENTICATED',data:null,meta:null}}).catch(()=>{});});
+ await open(page);await page.getByRole('region',{name:'审批轨迹',exact:true}).getByRole('button',{name:'查看审批依据',exact:true}).first().click();await expect.poll(()=>started).toBe(true);await page.getByRole('button',{name:'返回待办',exact:true}).click();await expect(page).toHaveURL(/\/app\/approvals$/);release!();await expect(page.getByRole('heading',{name:'我的待办',exact:true})).toBeVisible();await expect(page.getByRole('region',{name:'历史审批依据',exact:true})).toHaveCount(0);
+});

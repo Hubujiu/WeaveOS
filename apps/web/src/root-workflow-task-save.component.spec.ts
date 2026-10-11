@@ -13,6 +13,8 @@ async function setup(page:Page,options:Options={}){
  const receipt=(operationId:string)=>({operationId,id:loc.recordId,recordVersion:2,schemaVersion:1,createdAt:'2026-10-11T09:00:00Z',updatedAt:'2026-10-11T10:00:00Z'});
  await page.route('**/api/v1/**',async r=>{
   const req=r.request(),path=new URL(req.url()).pathname;requests.push(path);let data:unknown;
+  // Independently authorized empty history is unrelated to this fixture's task/action oracle.
+  if(path.endsWith('/workflow-events'))return r.fulfill({json:{code:'OK',data:{items:[]},meta:{pagination:{hasMore:false,nextPageToken:null}},message:''}});
   if(path.endsWith('/sessions/current')){data=changedIdentity?{id:id(99),account:'other'}:actor;}
   else if(path.endsWith('/me/access'))data={user:actor,bootstrapAdmin:false,personnelManage:false,identities:[],permissions:[],applications:[]};
   else if(path==='/api/v1/applications')data={items:[]};
