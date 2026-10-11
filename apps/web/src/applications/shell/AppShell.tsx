@@ -11,11 +11,13 @@ import { useApplications } from '../useApplications';
 import { useApplicationOperation } from '../useApplicationOperation';
 import { validCreatedApplication } from '../creationReceipt';
 import '../applications.css';
+import {WorkflowInbox} from '../workflows/WorkflowInbox';
 
 const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 
 export function AppShell({ user, access, logout, pending, error, onDirty, onPermissionDirty, onFormsDirty, registerLeaveGuard, requestSectionLeave, onAuthLost, onIdentityMismatch, suspended, adminContent }: { user: User; access: Access; logout: () => void; pending: boolean; error: string; onDirty: (dirty: boolean) => void; onPermissionDirty: (dirty: boolean, summary: string) => void; onFormsDirty: (dirty: boolean) => void; registerLeaveGuard: RegisterLeaveGuard; requestSectionLeave: (action: () => void) => void; onAuthLost: () => void; onIdentityMismatch: () => void; suspended: boolean; adminContent?: ReactNode }) {
  const location = useLocation(); const navigate = useNavigate();
+ const approvals = /^\/app\/approvals\/?$/.test(location.pathname);
  const catalog = location.pathname === '/app/applications' || location.pathname === '/app/applications/';
  const appRoute = location.pathname.match(/^\/app\/applications\/([^/]+)(?:\/forms\/([^/]+)(?:\/(design))?)?\/?$/);
  const appId = appRoute?.[1]&&uuid.test(appRoute[1])?appRoute[1]:undefined;
@@ -62,19 +64,20 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onPerm
  };
  const canCreate = access.bootstrapAdmin || access.permissions.some(p => p.code === 'applications.create');
  if (suspended) return null;
- return <WorkspaceShell user={user} access={access} catalog={catalog} appId={appId} admin={!!adminContent}
+ return <WorkspaceShell user={user} access={access} catalog={catalog} appId={appId} admin={!!adminContent} approvals={approvals} onApprovals={()=>navigate('/app/approvals')}
   accountOpen={account} onAccount={()=>setAccount(value=>!value)} onHome={()=>navigate('/app')}
   onCatalog={()=>navigate('/app/applications')} onAdmin={()=>navigate('/app/admin')}
   tabs={
    <nav className="app-tabs" aria-label="全局应用标签">
-    <button className="app-global-tab app-home-tab" aria-current={!adminContent && !catalog && !appId ? 'page' : undefined} onClick={() => navigate('/app')}>首页</button>
+    <button className="app-global-tab app-home-tab" aria-current={!adminContent && !catalog && !appId && !approvals ? 'page' : undefined} onClick={() => navigate('/app')}>首页</button>
     {tabs.map(tab => <div className="app-tab-group" key={tab.application.id}><button className="app-global-tab" aria-current={appId === tab.application.id ? 'page' : undefined} onClick={() => open(tab.application)}>{tab.application.name}</button>{!tab.pinned && <button className="app-close-tab" aria-label={'关闭应用：' + tab.application.name} onClick={() => closeTab(tab.application.id)}>×</button>}</div>)}
     <button className="app-global-tab" aria-current={catalog ? 'page' : undefined} onClick={() => navigate('/app/applications')}>全部应用</button>
    </nav>
   }>
-  <main className="app-content" aria-label={adminContent ? '人员管理' : catalog ? '应用中心' : appId ? '应用工作台' : '主页'}>
+  <main className="app-content" aria-label={adminContent ? '人员管理' : approvals ? '我的待办' : catalog ? '应用中心' : appId ? '应用工作台' : '主页'}>
    {error && <p role="alert">{error}</p>}{catalog && success && <p className="app-success" role="status">{success}</p>}
    {adminContent ?? (appId ? <ApplicationWorkspace actorId={user.id} appId={appId} viewId={viewId} configurationRoute={configurationRoute} bootstrapAdmin={access.bootstrapAdmin} opened={opened} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onPermissionDirty={onPermissionDirty} onFormsDirty={onFormsDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} openForm={id=>navigate(runtimeFormPath(appId,id))} configureForm={id=>openConfiguration(id,location.pathname)} backFromConfiguration={()=>navigate(configurationReturn())} backToStructure={()=>navigate('/app/applications/'+encodeURIComponent(appId))} />
+    : approvals ? <WorkflowInbox key={user.id} actorId={user.id} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>
     : catalog ? <ApplicationCatalog applications={apps.items} loading={apps.loading} error={apps.error} retry={apps.reload} canCreate={canCreate} create={trigger => { createTrigger.current = trigger; setSuccess(''); setCreate(true); }} open={open} />
     : <><div className="app-page-heading"><h1>主页</h1></div><section className="app-surface app-home-section"><h2>我的应用</h2>{apps.loading ? <p role="status">正在加载应用…</p> : apps.error ? <div className="app-state"><p role="alert">{apps.error}</p><button className="admin-button" onClick={apps.reload}>重试</button></div> : apps.items.length ? <ApplicationCards applications={apps.items} open={open} /> : <div className="home-empty"><h3>暂无可用应用</h3><p>获得应用访问权限后，将在这里显示。</p></div>}</section><div><button className="admin-button" onClick={() => navigate('/app/applications')}>打开应用中心</button></div></>)}
   </main>

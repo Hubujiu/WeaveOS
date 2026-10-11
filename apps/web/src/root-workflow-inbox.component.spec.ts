@@ -20,8 +20,9 @@ async function setup(page:Page,reply:(body:any)=>{status?:number;code?:string;da
  });
  return calls;
 }
-test('Root inbox is reachable in persistent shell and uses authoritative server pagination',async({page})=>{
+test('Root inbox is reachable in persistent shell and uses authoritative server pagination',async({page},testInfo)=>{
  const calls=await setup(page,body=>({data:{items:[item(body.page)],total:21,page:body.page,pageSize:20,queryVersion:'inbox-v1'}}));
+ await page.setViewportSize({width:1440,height:1000});
  await page.goto('/app');
  const shell=await page.getByTestId('workspace-shell').elementHandle();
  await page.getByRole('button',{name:'我的待办',exact:true}).click();
@@ -30,12 +31,16 @@ test('Root inbox is reachable in persistent shell and uses authoritative server 
  await expect(page.getByText('财务审批 1',{exact:true})).toBeVisible();
  expect(await shell!.evaluate(n=>n.isConnected)).toBe(true);
  expect(calls[0].body).toEqual({page:1,pageSize:20});
+ await page.evaluate(()=>document.fonts.ready);
+ await testInfo.attach('inbox-desktop',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  expect(calls[0].method).toBe('POST');
  expect(calls[0].headers['x-expected-actor-id']).toBe(actor.id);
  await page.getByRole('button',{name:'下一页',exact:true}).click();
  await expect(page.getByText('财务审批 2',{exact:true})).toBeVisible();
  expect(calls[1].body).toEqual({page:2,pageSize:20,queryVersion:'inbox-v1'});
  await expect(page.getByText('财务审批 1',{exact:true})).toHaveCount(0);
+ await page.setViewportSize({width:390,height:844});
+ await testInfo.attach('inbox-small-screen',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
 });
 test('Root inbox query change requires explicit refresh, resets first page and drops stale token',async({page})=>{
  let changed=false;

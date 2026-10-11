@@ -1,17 +1,17 @@
 import type { ReactNode } from 'react';
 import type { Access, User } from './workspace-types';
-import { House, LayoutGrid, Settings } from 'lucide-react';
+import { House, LayoutGrid, Settings, SquareCheck } from 'lucide-react';
 import './monochrome.css';
 
 type WorkspaceShellProps = {
- user: User; access: Access; catalog: boolean; appId?: string; admin: boolean;
+ user: User; access: Access; catalog: boolean; appId?: string; admin: boolean; approvals?: boolean; onApprovals?: () => void;
  accountOpen: boolean; onAccount: () => void; onHome: () => void;
  onCatalog: () => void; onAdmin: () => void; tabs: ReactNode; children: ReactNode;
 };
 
 /** Persistent layout only: identity, navigation guards and data remain owned by Workspace. */
-export function WorkspaceShell({ user, access, catalog, appId, admin, accountOpen, onAccount, onHome, onCatalog, onAdmin, tabs, children }: WorkspaceShellProps) {
- const home = !catalog && !appId && !admin;
+export function WorkspaceShell({ user, access, catalog, appId, admin, approvals=false, onApprovals, accountOpen, onAccount, onHome, onCatalog, onAdmin, tabs, children }: WorkspaceShellProps) {
+ const home = !catalog && !appId && !admin && !approvals;
  return <div className="mono-shell app-shell" data-testid="workspace-shell">
   <aside className="mono-rail" data-testid="workspace-rail" aria-label="工作区快捷入口">
    <span className="mono-mark" aria-hidden="true">w.</span>
@@ -26,6 +26,7 @@ export function WorkspaceShell({ user, access, catalog, appId, admin, accountOpe
     <span className="mono-brand">WaveOS</span>
     <p className="mono-caption">我的工作区</p>
     <button type="button" className="mono-nav-item" aria-current={home ? 'page' : undefined} onClick={onHome}><House size={20} strokeWidth={1.7} aria-hidden="true" /><span>首页</span></button>
+    {onApprovals&&<button type="button" className="mono-nav-item" aria-current={approvals?'page':undefined} onClick={onApprovals}><SquareCheck size={20} strokeWidth={1.7} aria-hidden="true"/><span>我的待办</span></button>}
     <p className="mono-caption mono-section-caption">应用</p>
     <button type="button" className="mono-nav-item" aria-current={catalog ? 'page' : undefined} onClick={onCatalog}><LayoutGrid size={20} strokeWidth={1.7} aria-hidden="true" /><span>全部应用</span></button>
     {access.personnelManage && <button type="button" className="mono-nav-item" aria-current={admin ? 'page' : undefined} onClick={onAdmin}><Settings size={20} strokeWidth={1.7} aria-hidden="true" /><span>人员管理</span></button>}
