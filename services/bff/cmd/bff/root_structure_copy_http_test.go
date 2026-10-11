@@ -40,6 +40,7 @@ func TestRootStructureCopyHTTPPlanPreflightExecuteAndRecovery(t *testing.T) {
 	base := "/api/v1/structure-copies/"
 	w := f.call(t, "POST", base+"plan", rootCopyHTTPBody(t, in), nil)
 	data := rootHTTPData(t, w, 200)
+	t.Logf("V074_SCHEMA StructureCopyPlanEnvelope %s", w.Body.String())
 	if len(data) != 5 || w.Header().Get("Cache-Control") != "no-store" {
 		t.Fatal("plan envelope changed")
 	}
@@ -51,6 +52,7 @@ func TestRootStructureCopyHTTPPlanPreflightExecuteAndRecovery(t *testing.T) {
 	req := rootCopyPreflightInput(plan, in)
 	pre := f.call(t, "POST", base+"preflight", rootCopyHTTPBody(t, req), nil)
 	result := rootHTTPData(t, pre, 200)
+	t.Logf("V074_SCHEMA StructureCopyPreflightEnvelope %s", pre.Body.String())
 	if len(result) != 3 || string(result["valid"]) != "true" {
 		t.Fatal("preflight shape wrong")
 	}
@@ -58,6 +60,7 @@ func TestRootStructureCopyHTTPPlanPreflightExecuteAndRecovery(t *testing.T) {
 	body := rootCopyExecuteBody(t, op, req)
 	executed := f.call(t, "POST", base+"execute", body, nil)
 	receipt := rootHTTPData(t, executed, 201)
+	t.Logf("V074_SCHEMA StructureCopyEnvelope %s", executed.Body.String())
 	if len(receipt) != 7 || string(receipt["status"]) != `"copied"` || executed.Header().Get("Location") == "" {
 		t.Fatal("execute receipt wrong")
 	}
@@ -102,6 +105,7 @@ func TestRootStructureCopyHTTPBoundary(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			w := f.call(t, tc.method, tc.path, tc.body, tc.edit)
 			rootTemplateHTTPError(t, w, tc.status)
+			t.Logf("V074_SCHEMA StructureCopyErrorEnvelope %s", w.Body.String())
 			if !strings.Contains(w.Body.String(), `"code":"`+tc.code+`"`) || w.Header().Get("Cache-Control") != "no-store" {
 				t.Fatal("wrong boundary", w.Body.String())
 			}
@@ -206,6 +210,67 @@ func TestRootStructureCopyHTTPUnknownCommitAndConfirmedRenewalFailure(t *testing
 			if e != nil || saved.Status != "confirmed" {
 				t.Fatal("actual committed import missing", e)
 			}
+		})
+	}
+}
+
+func TestRootStructureCopyHTTPPreflightConflictsAndNullVersions(t *testing.T) {
+	f := rootHTTPTaskSetup(t)
+	in := rootCopyPlanInput(f)
+	s := apptemplates.Service{Pool: f.runtime}
+	plan, e := s.PlanCopy(f.ctx, rootTemplatePrincipal(f), in)
+	if e != nil {
+		t.Fatal(e)
+	}
+	original := rootCopyPreflightInput(plan, in)
+	for _, mode := range []string{"source", "structure", "policy", "null-structure", "null-policy", "null-groups", "missing-mapping"} {
+		t.Run(mode, func(t *testing.T) {
+			var body map[string]any
+			json.Unmarshal([]byte(rootCopyHTTPBody(t, original)), &body)
+			status, code := 409, "APPLICATION_COPY_SOURCE_CHANGED"
+			switch mode {
+			case "source":
+				body["expectedSourceFingerprint"] = strings.Repeat("a", 64)
+			case "structure":
+				body["expectedTargetStructureVersion"] = plan.TargetStructureVersion + 1
+				code = "APPLICATION_STRUCTURE_CONFLICT"
+			case "policy":
+				body["expectedTargetPolicyRevision"] = plan.TargetPolicyRevision + 1
+				code = "APPLICATION_POLICY_CONFLICT"
+			case "null-structure":
+				body["expectedTargetStructureVersion"] = nil
+				status = 400
+				code = "COMMON_INVALID_ARGUMENT"
+			case "null-policy":
+				body["expectedTargetPolicyRevision"] = nil
+				status = 400
+				code = "COMMON_INVALID_ARGUMENT"
+			case "null-groups":
+				body["groupMappings"] = nil
+				status = 400
+				code = "COMMON_INVALID_ARGUMENT"
+			case "missing-mapping":
+				body["bindings"] = []any{}
+				status = 400
+				code = "COMMON_INVALID_ARGUMENT"
+			}
+			w := f.call(t, "POST", "/api/v1/structure-copies/preflight", rootCopyHTTPBody(t, body), nil)
+			if w.Code != status || !strings.Contains(w.Body.String(), `"code":"`+code+`"`) {
+				t.Fatal("wrong preflight refusal", w.Code, w.Body.String())
+			}
+			var env struct{ Data json.RawMessage }
+			if json.Unmarshal(w.Body.Bytes(), &env) != nil {
+				t.Fatal("invalid envelope")
+			}
+			if mode == "structure" {
+				var current map[string]int64
+				if json.Unmarshal(env.Data, &current) != nil || len(current) != 1 || current["currentStructureVersion"] != plan.TargetStructureVersion {
+					t.Fatal("wrong current version")
+				}
+			} else if string(env.Data) != "null" {
+				t.Fatal("nonminimal error disclosure", string(env.Data))
+			}
+			t.Logf("V074_SCHEMA StructureCopyErrorEnvelope %s", w.Body.String())
 		})
 	}
 }
