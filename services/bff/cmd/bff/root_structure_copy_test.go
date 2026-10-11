@@ -666,3 +666,24 @@ func TestRootStructureCopyConcurrentSameKeyAndTargetCAS(t *testing.T) {
 		})
 	}
 }
+
+func TestRootStructureCopyDeniesBeforeMappedTargetDisclosure(t *testing.T) {
+	f := rootHTTPTaskSetup(t)
+	s := apptemplates.Service{Pool: f.runtime}
+	in := rootCopyPlanInput(f)
+	p := rootTemplatePrincipal(f)
+	plan, e := s.PlanCopy(f.ctx, p, in)
+	if e != nil {
+		t.Fatal(e)
+	}
+	req := rootCopyPreflightInput(plan, in)
+	for i := range req.Bindings {
+		req.Bindings[i].TargetID = f.id(t)
+	}
+	p.UserID = f.other
+	p.Record.UserID = f.other
+	p.SessionRef = ""
+	if _, e = s.ExecuteCopy(f.ctx, p, f.id(t), req, applications.Metadata{RequestID: "copy-denied-probe"}); !errors.Is(e, applications.ErrDenied) {
+		t.Fatal("unauthorized caller can distinguish mapped target state", e)
+	}
+}
