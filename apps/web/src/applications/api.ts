@@ -57,3 +57,6 @@ export async function applicationReadPost<T>(actorId: string, path: string, body
 export async function applicationApi<T>(actorId: string, path: string, method = 'GET', body?: object, signal?: AbortSignal, expectedStatus?: number): Promise<T> {
  return (await applicationApiEnvelope<T>(actorId, path, method, body, signal, expectedStatus)).data;
 }
+
+// V075 P4 declaration-only RED seam; implementation follows observed tests.
+export async function applicationWorkflowApi<T>(_actorId:string,_path:string,_method:'GET'|'POST',_body?:object,_signal?:AbortSignal):Promise<ApplicationEnvelope<T>&{httpStatus:number}>{throw new TypeError('Workflow transport not connected');}
