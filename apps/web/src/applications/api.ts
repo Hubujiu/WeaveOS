@@ -59,17 +59,19 @@ export async function applicationApi<T>(actorId: string, path: string, method = 
  return (await applicationApiEnvelope<T>(actorId, path, method, body, signal, expectedStatus)).data;
 }
 
-// Only the frozen task action and its original execution-status resource may
+// Only the frozen task/withdrawal actions and original execution-status resource may
 // consume both 202 acceptance and 200 completion. Ordinary calls stay unchanged.
 export function validWorkflowTransportRequest(path:string,method:string,body?:object):boolean{
  const id='[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}';
  const canonical=(value:unknown)=>typeof value==='string'&&new RegExp('^'+id+'$').test(value)&&value!=='00000000-0000-0000-0000-000000000000';
  const actionPath=new RegExp(`^applications/(${id})/forms/(${id})/records/(${id})/workflow-instances/(${id})/tasks/(${id})/actions$`).exec(path);
+ const instancePath=new RegExp(`^applications/(${id})/forms/(${id})/records/(${id})/workflow-instances/(${id})/actions$`).exec(path);
  const operationPath=new RegExp(`^application-workflow-operations/(${id})$`).exec(path);
  const data=body as Record<string,unknown>|undefined;
  const validPost=method==='POST'&&actionPath&&actionPath.slice(1).every(canonical)&&data&&!Array.isArray(data)&&Object.keys(data).length===3&&['operationId','action','basisToken'].every(k=>Object.hasOwn(data,k))&&canonical(data.operationId)&&(data.action==='agree'||data.action==='reject')&&typeof data.basisToken==='string'&&/^[A-Za-z0-9_-]{43}$/.test(data.basisToken);
+ const validWithdraw=method==='POST'&&instancePath&&instancePath.slice(1).every(canonical)&&data&&!Array.isArray(data)&&Object.keys(data).length===3&&['operationId','action','basisToken'].every(k=>Object.hasOwn(data,k))&&canonical(data.operationId)&&data.action==='withdraw'&&typeof data.basisToken==='string'&&data.basisToken.length>0&&data.basisToken.length<=256;
  const validGet=method==='GET'&&operationPath&&canonical(operationPath[1])&&body===undefined;
- return Boolean(validPost||validGet);
+ return Boolean(validPost||validWithdraw||validGet);
 }
 export async function applicationWorkflowApi<T>(actorId:string,path:string,method:'GET'|'POST',body?:object,signal?:AbortSignal):Promise<ApplicationEnvelope<T>&{httpStatus:number}>{
  if(!validWorkflowTransportRequest(path,method,body))throw new TypeError('Workflow transport is restricted to task actions and original execution status');
