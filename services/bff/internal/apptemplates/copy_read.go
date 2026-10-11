@@ -110,7 +110,7 @@ func (s *Service) beginCopyPlan(ctx context.Context, p session.Principal, in Cop
 	}
 	m, e := SelectCopyManifest(full, in.Source.Kind, in.Source.ID)
 	if e != nil {
-		return fail(e)
+		return fail(applications.ErrMissing)
 	}
 	fingerprint, e := sourceFingerprint(m)
 	if e != nil {
