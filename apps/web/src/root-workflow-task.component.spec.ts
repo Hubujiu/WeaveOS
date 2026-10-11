@@ -67,3 +67,8 @@ test('Root inbox opens selected task using all five authoritative resource IDs',
  await expect(page.getByLabel('报销金额',{exact:false})).toHaveValue('123456789012345678901234567890.12');
  expect(calls.filter(c=>c.path===api)).toHaveLength(1);
 });
+test('Root task readonly controls use approved workspace typography and readonly surface',async({page})=>{
+ await setup(page,()=>({data:preview}));await page.goto(route);const input=page.getByLabel('报销金额');await expect(input).toBeVisible();
+ const styles=await input.evaluate(el=>{const own=getComputedStyle(el),workspace=getComputedStyle(el.closest('.workflow-task-page')!);return {font:own.fontFamily,workspaceFont:workspace.fontFamily,background:own.backgroundColor};});
+ expect(styles.font).toBe(styles.workspaceFont);expect(styles.background).toBe('rgb(245, 245, 245)');
+});

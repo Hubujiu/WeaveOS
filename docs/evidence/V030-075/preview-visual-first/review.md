@@ -1,0 +1,4 @@
+# First task preview render
+Artifact11708886696 ZIP digest833198e162d997be95caf591a7a8b20f50f552173d45e8ce2a17267cf70219f9 verified. Report source c119fd4ad56c9cff6336494817e52ce9e5b49333 fetched; treea24be897e0254f950e7d8b43fae719d257ec655c matches f95c2d41/local6e6c92e.
+Eight original detail cases pass, 17:01UTC independently reviewed log. Root inspected attached1440x1000 image: correct shell/route/current version and unrounded decimal, no fake actions/history. Only a first read-only composition, not full Figma processing screen.
+Found typography/read-only surface gap: control looks serif/white instead of inherited workspace typography and approved #f5f5f5 readonly surface. Existing forms.css scopes font to designer module/dialog, so this new consumer must compose scoped tokens without changing vendor/source components. New independent browser assertion added before fix; not yet executed. Retain this original image, require subsequent verified screenshot.
