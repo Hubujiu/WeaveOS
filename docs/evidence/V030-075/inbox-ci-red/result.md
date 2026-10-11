@@ -1,0 +1,3 @@
+# Actual browser RED, not environment error
+Repository Actions run38155227118 / job114517070340, remote17d89eed09d62a0d73742062c065ad2fd36fc77d (local30fc8ec; identical treebfa5bc5b431fbe967a27075f68865bafd67e1b32).
+Fixed Chromium successfully started and executed shard4. Original five inbox cases failed because shell lacks 我的待办 control, route lacks authoritative rows/error UI. Existing86 cases in shard passed. Actual exit1, 16:28:41UTC. No new UI implementation existed. Full original job log and original test source saved here. Remaining three later interrupted/expired/identity tests await their separate current CI RED.
