@@ -1,0 +1,324 @@
+(node:13) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ workflow history accepts confirmed (2.800115ms)
+✔ workflow history accepts next (0.231749ms)
+✔ workflow history accepts empty (3.319557ms)
+✔ workflow history accepts legacy (0.1593ms)
+✔ workflow history accepts no effect (0.131297ms)
+✔ workflow history accepts start (0.490379ms)
+✔ workflow history accepts return (0.309126ms)
+✔ workflow history rejects pending (0.176916ms)
+✔ workflow history rejects private header (0.128103ms)
+✔ workflow history rejects missing source (0.127782ms)
+✔ workflow history rejects wrong source (0.121843ms)
+✔ workflow history rejects duplicate events (0.134863ms)
+✔ workflow history rejects bad timestamp (0.061002ms)
+✔ workflow history rejects unsafe sequence (0.054422ms)
+✔ workflow history rejects extra total (0.161894ms)
+✔ workflow history rejects oversize (0.042614ms)
+✔ workflow history rejects invalid node (0.034272ms)
+✔ workflow history rejects unexpected return target (0.033571ms)
+✔ workflow history rejects missing cursor (0.055063ms)
+✔ workflow history rejects extra pagination (0.050566ms)
+✔ workflow history rejects zero pageSize (0.030276ms)
+✔ event basis accepts original values (0.765292ms)
+✔ event basis accepts unavailable (0.064928ms)
+✔ event basis accepts empty original mask (0.052699ms)
+✔ event basis accepts multi order (0.053701ms)
+✔ event basis rejects wrong event (0.06642ms)
+✔ event basis rejects changed event header (0.041913ms)
+✔ event basis rejects private detail (0.028102ms)
+✔ event basis rejects unavailable values (0.15332ms)
+✔ event basis rejects private basis (0.080691ms)
+✔ event basis rejects duplicate field (0.112359ms)
+✔ event basis rejects numeric money (0.092049ms)
+✔ event basis rejects extra field metadata (0.061112ms)
+✔ event basis rejects hidden label (0.075784ms)
+✔ event basis rejects nonreference labels (0.058157ms)
+✔ event basis rejects unknown kind (0.081213ms)
+✖ historical display preserves precise decimal (0.911132ms)
+✖ historical display preserves tombstone reference (0.284899ms)
+✖ historical display preserves unknown reference (0.211989ms)
+✖ historical display preserves null (0.107722ms)
+✔ historical display preserves empty text (0.047522ms)
+✖ historical display preserves false (1.304614ms)
+✖ historical display preserves true (0.138017ms)
+✖ historical display preserves multi order (0.150326ms)
+✖ historical comparison handles same authorized field (1.01665ms)
+✖ historical comparison handles hidden or deleted current field (0.289586ms)
+✖ historical comparison handles different stable field (0.193331ms)
+✖ historical comparison handles incompatible current kind (0.164498ms)
+ℹ tests 48
+ℹ suites 0
+ℹ pass 37
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 142.836859
+
+✖ failing tests:
+
+test at tests/foundation/workflow-history-consumption.test.mjs:41:3
+✖ historical display preserves precise decimal (0.911132ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + ''
+  - '123456789012345678901234567890.12'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-history-consumption.test.mjs:41:56)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: '123456789012345678901234567890.12',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-history-consumption.test.mjs:41:3
+✖ historical display preserves tombstone reference (0.284899ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  '' !== '原财务部（已删除）'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-history-consumption.test.mjs:41:56)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: '原财务部（已删除）',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-history-consumption.test.mjs:41:3
+✖ historical display preserves unknown reference (0.211989ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  '' !== '引用信息不可用'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-history-consumption.test.mjs:41:56)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: '引用信息不可用',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-history-consumption.test.mjs:41:3
+✖ historical display preserves null (0.107722ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  '' !== '—'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-history-consumption.test.mjs:41:56)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: '—',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-history-consumption.test.mjs:41:3
+✖ historical display preserves false (1.304614ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  '' !== '否'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-history-consumption.test.mjs:41:56)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: '否',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-history-consumption.test.mjs:41:3
+✖ historical display preserves true (0.138017ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  '' !== '是'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-history-consumption.test.mjs:41:56)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: '是',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-history-consumption.test.mjs:41:3
+✖ historical display preserves multi order (0.150326ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + ''
+  - '先选项目、原财务部（已删除）'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-history-consumption.test.mjs:41:56)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: '先选项目、原财务部（已删除）',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-history-consumption.test.mjs:47:3
+✖ historical comparison handles same authorized field (1.01665ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   after: '',
+  +   before: '',
+  +   comparable: false
+  -   after: '200.00',
+  -   before: '123456789012345678901234567890.12',
+  -   comparable: true
+    }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-history-consumption.test.mjs:47:57)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { before: '', after: '', comparable: false },
+    expected: { before: '123456789012345678901234567890.12', after: '200.00', comparable: true },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-history-consumption.test.mjs:47:3
+✖ historical comparison handles hidden or deleted current field (0.289586ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   after: '',
+  +   before: '',
+  -   after: '当前不可比较',
+  -   before: '123456789012345678901234567890.12',
+      comparable: false
+    }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-history-consumption.test.mjs:47:57)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { before: '', after: '', comparable: false },
+    expected: { before: '123456789012345678901234567890.12', after: '当前不可比较', comparable: false },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-history-consumption.test.mjs:47:3
+✖ historical comparison handles different stable field (0.193331ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   after: '',
+  +   before: '',
+  -   after: '当前不可比较',
+  -   before: '123456789012345678901234567890.12',
+      comparable: false
+    }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-history-consumption.test.mjs:47:57)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { before: '', after: '', comparable: false },
+    expected: { before: '123456789012345678901234567890.12', after: '当前不可比较', comparable: false },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-history-consumption.test.mjs:47:3
+✖ historical comparison handles incompatible current kind (0.164498ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   after: '',
+  +   before: '',
+  -   after: '当前不可比较',
+  -   before: '123456789012345678901234567890.12',
+      comparable: false
+    }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-history-consumption.test.mjs:47:57)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { before: '', after: '', comparable: false },
+    expected: { before: '123456789012345678901234567890.12', after: '当前不可比较', comparable: false },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

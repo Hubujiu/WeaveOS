@@ -47,3 +47,7 @@ export function validWorkflowEventDetail(data:unknown,expected:WorkflowEvent):da
  if(!Array.isArray(basis.fields)||basis.fields.length>1600||!basis.fields.every(field)||new Set(basis.fields.map(f=>f.fieldId)).size!==basis.fields.length)return false;
  return basis.status==='available'||basis.status==='unavailable'&&basis.fields.length===0;
 }
+
+// Minimal declarations for independent display/comparison RED.
+export function historyValue(_field:HistoricalField):string{return '';}
+export function historyComparison(_before:HistoricalField,_current?:HistoricalField):{before:string;after:string;comparable:boolean}{return {before:'',after:'',comparable:false};}

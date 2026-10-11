@@ -4,7 +4,7 @@ const id=(n:number)=>'77777777-7777-4777-8777-'+String(n).padStart(12,'0');
 const actor={id:id(1),account:'reviewer'},loc={appId:id(2),viewId:id(3),recordId:id(4),instanceId:id(5),taskId:id(6)};
 const route='/app/approvals/'+Object.values(loc).join('/');
 const api=`/api/v1/applications/${loc.appId}/forms/${loc.viewId}/records/${loc.recordId}/workflow-instances/${loc.instanceId}/tasks/${loc.taskId}`;
-async function setup(page:Page,options:{kind?:'member'|'department';readonly?:boolean;denied?:boolean;malformed?:boolean}={}){
+async function setup(page:Page,options:{kind?:'member'|'department';readonly?:boolean;denied?:boolean;malformed?:boolean;nextDenied?:boolean}={}){
  const kind=options.kind??'member',field={id:id(8),name:kind==='member'?'经办人':'所属部门',kind,required:false,default:null,config:{},presentation:{helpText:null,displayTimeZone:null}};
  const candidates:URL[]=[],writes:any[]=[],paths:string[]=[];let selected=id(10),version=1;
  await page.route('**/api/v1/**',async r=>{
@@ -15,7 +15,7 @@ async function setup(page:Page,options:{kind?:'member'|'department';readonly?:bo
   else if(path===api)data={basisToken:'b'.repeat(43),task:{id:loc.taskId,instanceId:loc.instanceId,nodeId:id(7),activationEpoch:1,sequence:0},record:{id:loc.recordId,appId:loc.appId,viewId:loc.viewId,tableId:id(9),createdBy:actor.id,createdAt:'2026-10-11T09:00:00Z',updatedAt:'2026-10-11T10:00:00Z',recordVersion:version,schemaVersion:1,values:{[field.id]:selected},referenceDisplays:{[field.id]:{[selected]:{id:selected,label:selected===id(10)?'原引用':'新引用',deleted:selected===id(10)}}}},fields:[field],editableFieldIds:options.readonly?[]:[field.id]};
   else if(path===api+'/reference-candidates'){
    candidates.push(url);
-   if(options.denied)return r.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null,meta:null}});
+   if(options.denied||options.nextDenied&&url.searchParams.has('pageToken'))return r.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null,meta:null}});
    const more=!url.searchParams.has('pageToken')&&!url.searchParams.get('q');
    const item={id:more?id(11):id(12),label:more?'第一页候选':'新引用',status:'active',...(kind==='department'?{parentId:null}:{})};
    data={items:[options.malformed?{...item,passwordHash:'must-never-render'}:item]};meta={pagination:{nextPageToken:more?'c'.repeat(43):null,hasMore:more}};
@@ -51,3 +51,8 @@ for(const failure of ['denied','malformed'] as const){
   const f=await setup(page,{[failure]:true});await page.goto(route);await page.getByRole('button',{name:'选择成员',exact:true}).click();await expect(page.getByRole('alert')).toContainText('候选加载失败');await expect(page.getByRole('button',{name:'第一页候选',exact:true})).toHaveCount(0);await expect(page.getByText('无可选成员',{exact:true})).toHaveCount(0);expect(f.writes).toHaveLength(0);
  });
 }
+
+test('Root task revoked candidate access on the next page clears all previously selectable items',async({page})=>{
+ const f=await setup(page,{nextDenied:true});await page.goto(route);await page.getByRole('button',{name:'选择成员',exact:true}).click();await expect(page.getByRole('button',{name:'第一页候选',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'加载更多',exact:true}).click();await expect(page.getByRole('alert')).toContainText('候选加载失败');await expect(page.getByRole('button',{name:'第一页候选',exact:true})).toHaveCount(0);expect(f.writes).toHaveLength(0);
+});
