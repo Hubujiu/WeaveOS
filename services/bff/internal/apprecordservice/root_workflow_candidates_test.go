@@ -223,3 +223,41 @@ func TestRootWorkflowCandidatesCursorBindsCurrentSession(t *testing.T) {
 		t.Fatal("cursor replayed in a different session")
 	}
 }
+
+// A candidate is display data, never a durable grant to write a source that
+// became inactive after selection. Source lifecycle validation stays in Save.
+func TestRootWorkflowCandidatesDoNotAuthorizeDeletedOrDisabledSourceOnSave(t *testing.T) {
+	for _, state := range []string{"disabled", "deleted"} {
+		t.Run(state, func(t *testing.T) {
+			f := rootCandidateSetup(t, true)
+			label := "v075-selection-" + f.app
+			var source string
+			if err := f.owner.QueryRow(f.ctx, "INSERT INTO auth.users(account) VALUES($1) RETURNING id::text", label).Scan(&source); err != nil {
+				t.Fatal(err)
+			}
+			req := rootCandidateRequest(f)
+			req.Query = label
+			req.PageSize = 20
+			page, err := f.service.WorkflowTaskCandidates(f.ctx, f.principal, req)
+			if err != nil || len(page.Items) != 1 {
+				t.Fatalf("active selectable source missing: %v", err)
+			}
+			preview := rootTaskPreview(t, f)
+			if state == "deleted" {
+				rootSaveExec(t, f, "DELETE FROM auth.users WHERE id=$1", source)
+			} else {
+				rootSaveExec(t, f, "UPDATE auth.users SET status='disabled' WHERE id=$1", source)
+			}
+			result, err := f.service.SaveWorkflowTask(f.ctx, f.principal, WorkflowTaskSaveRequest{WorkflowTaskRequest: f.request(), OperationID: recordOperationID(t, f.recordFixture), BasisToken: preview.BasisToken, Changes: map[string]any{f.reference: source}}, applications.Metadata{RequestID: "v075-candidate-source-revoked"})
+			if !errors.Is(err, applications.ErrResourceInvalid) || result.ID != "" {
+				t.Fatalf("revoked source must reject without receipt: %+v %v", result, err)
+			}
+			rootSaveCounts(t, f, 0)
+			var value string
+			var version int64
+			if err = f.owner.QueryRow(f.ctx, "SELECT "+rootCaptureColumn(f.reference)+"::text,record_version FROM "+rootCaptureRelation(rootEvidenceStoreFixture{recordFixture: f.recordFixture})+" WHERE id=$1", f.ownRecord).Scan(&value, &version); err != nil || value != f.other || version != 1 {
+				t.Fatalf("failed source validation changed row %s/v%d: %v", value, version, err)
+			}
+		})
+	}
+}
