@@ -1,6 +1,6 @@
-import {useEffect,useRef,useState} from 'react';
-import {applicationApi,ApplicationError} from '../api';
-import {FieldRenderer} from '../forms/FieldRenderer';
+import {useCallback,useEffect,useRef,useState} from 'react';
+import {applicationApi,applicationApiEnvelope,ApplicationError} from '../api';
+import {FieldRenderer,type FieldValue,type LoadReferenceCandidates,type ReferenceDisplay} from '../forms/FieldRenderer';
 import type {Field} from '../forms/contracts';
 import {validTaskPreview,type TaskLocation,type TaskPreview} from './taskPreviewContract';
 import '../forms/forms.css';
@@ -8,6 +8,7 @@ import {createLeaveController,type RegisterLeaveGuard} from '../forms/leaveGuard
 import {useApplicationOperation} from '../useApplicationOperation';
 import {isMutationResult,type MutationResult,type Values} from '../records/contracts';
 import type {WorkflowOperation} from './taskActionContract';
+import {validTaskCandidates} from './taskCandidateContract';
 
 type ReadState={scope:string;loading:boolean;data:TaskPreview|null;error:string};
 function readError(error:unknown):string{
@@ -33,6 +34,29 @@ function ReadonlyField({field,preview}:{field:Field;preview:TaskPreview}){
   return <div className="forms-rendered-field" role="group" aria-label={field.name}><span className="forms-field-label">{field.name}</span><div className="workflow-readonly-value">{labels.join('、')||'—'}</div>{field.presentation.helpText&&<small>{field.presentation.helpText}</small>}</div>;
  }
  return <FieldRenderer field={field} value={value} readOnly idPrefix="task-preview"/>;
+}
+function TaskEditableField({field,value,preview,actorId,path,scope,readOnly,onChange,onUnauthorized,onIdentityMismatch}:{field:Field;value:FieldValue;preview:TaskPreview;actorId:string;path:string;scope:string;readOnly:boolean;onChange:(value:FieldValue)=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void}){
+ const [selected,setSelected]=useState<ReferenceDisplay|null>(null);
+ const kind=field.kind;
+ const load=useCallback<LoadReferenceCandidates>(async(request,signal)=>{
+  if(kind!=='member'&&kind!=='department')throw new Error('该字段不是引用字段');
+  await Promise.resolve();if(signal.aborted)throw signal.reason??new DOMException('Aborted','AbortError');
+  const params=new URLSearchParams({fieldId:field.id,pageSize:String(request.pageSize)});
+  if(request.q)params.set('q',request.q);
+  if(request.pageToken)params.set('pageToken',request.pageToken);
+  try{
+   const reply=await applicationApiEnvelope<unknown>(actorId,path+'/reference-candidates?'+params.toString(),'GET',undefined,signal,200);
+   if(!validTaskCandidates(reply.data,reply.meta?.pagination,kind,request.pageSize))throw new Error('候选项响应格式不正确');
+   return {items:reply.data.items,nextPageToken:reply.meta!.pagination!.nextPageToken};
+  }catch(error){
+   if(!signal.aborted){if(error instanceof ApplicationError&&error.status===401)onUnauthorized();else if(error instanceof ApplicationError&&error.code==='AUTH_SESSION_CHANGED')onIdentityMismatch();}
+   throw error;
+  }
+ },[actorId,path,field.id,kind,onUnauthorized,onIdentityMismatch]);
+ const selectedId=typeof value==='string'?value:null;
+ const original=selectedId?preview.record.referenceDisplays[field.id]?.[selectedId]:undefined;
+ const display=original??(selected?.id===selectedId?selected:null);
+ return <FieldRenderer field={field} value={value} readOnly={readOnly} idPrefix="task-edit" referenceDisplay={display} referenceScopeKey={scope+':'+field.id} loadReferenceCandidates={kind==='member'||kind==='department'?load:undefined} onChange={(next,candidate)=>{setSelected(candidate?.status==='active'&&candidate.id===next?{id:candidate.id,label:candidate.label,deleted:false}:null);onChange(next);}}/>;
 }
 export function WorkflowTaskPage({actorId,location,onBack,onUnauthorized,onIdentityMismatch,registerLeaveGuard,requestSectionLeave,onDirtyChange}:{actorId:string;location:TaskLocation;onBack:()=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void;onDirtyChange:(dirty:boolean)=>void}){
  const scope=JSON.stringify([actorId,location.appId,location.viewId,location.recordId,location.instanceId,location.taskId]);
@@ -65,7 +89,7 @@ export function WorkflowTaskPage({actorId,location,onBack,onUnauthorized,onIdent
   const status=pending??(Object.keys(latest.changes).length?'draft':'clean');
   return {status,fingerprint:JSON.stringify([latest.changes,latest.operation.packet?.operationId,latest.actionOperation.packet?.operationId,status])};
  },decision=>{if(decision==='discard'){guard.current.operation.cancelPreflight();guard.current.actionOperation.cancelPreflight();setChanges({});}})),[scope,registerLeaveGuard]);
- const refresh=()=>requestSectionLeave(()=>{setChanges({});operation.dismissError();actionOperation.dismissError();setActionResult(null);setActionWarning('');setEpoch(v=>v+1);});
+ const refresh=()=>requestSectionLeave(()=>{setChanges({});setState({scope,loading:true,data:null,error:''});operation.dismissError();actionOperation.dismissError();setActionResult(null);setActionWarning('');setEpoch(v=>v+1);});
  useEffect(()=>{
   const controller=new AbortController();let current=true;
   setState({scope,loading:true,data:null,error:''});
@@ -85,10 +109,10 @@ export function WorkflowTaskPage({actorId,location,onBack,onUnauthorized,onIdent
   })();
   return()=>{current=false;controller.abort();};
  },[scope,epoch,actorId,path,onUnauthorized,onIdentityMismatch]);
- const current=state.scope===scope?state:null,preview=current?.data;
- const editable=new Set(preview?.editableFieldIds.filter(id=>{
-  const field=preview.fields.find(item=>item.id===id);return field&&!['member','department'].includes(field.kind);
- })??[]);
+ const current=state.scope===scope?state:null;
+ const accessLost=errorCode==='APPLICATION_FORBIDDEN'||errorCode==='APPLICATION_NOT_FOUND';
+ const preview=accessLost?null:current?.data;
+ const editable=new Set(preview?.editableFieldIds??[]);
  const save=()=>{
   if(!preview||!dirty||blocked||needsRefresh||operation.getPendingStatus()||actionOperation.getPendingStatus())return;
   const permitted=Object.fromEntries(Object.entries(changes).filter(([id])=>editable.has(id)));
@@ -113,6 +137,6 @@ export function WorkflowTaskPage({actorId,location,onBack,onUnauthorized,onIdent
   {(accepted||actionUnknown||actionBusy&&actionOperation.packet)&&<div className="workflow-task-toolbar"><span role="status">{accepted?'审批处理中':actionBusy?'正在核对审批结果…':'原审批结果待核对'}</span><button type="button" className="admin-button" disabled={actionBusy} onClick={actionOperation.query}>核查审批结果</button><button type="button" className="admin-button" disabled={actionBusy} onClick={actionOperation.retry}>重试原审批</button></div>}
   {!current||current.loading?<div className="app-surface app-state" role="status">正在读取审批预览…</div>
    :current.error?<div className="app-surface app-state"><p role="alert">{current.error}</p><button type="button" className="admin-button" onClick={()=>setEpoch(v=>v+1)}>重试读取</button></div>
-   :preview?<section className="app-surface workflow-task-card" aria-label="当前审批数据"><div className="workflow-task-section-heading"><h2>当前记录</h2><span>最新 v{preview.record.recordVersion}</span></div><div className="workflow-task-fields">{preview.fields.map(field=>editable.has(field.id)?<FieldRenderer key={field.id} field={field} value={Object.hasOwn(changes,field.id)?changes[field.id]:preview.record.values[field.id]} readOnly={blocked||needsRefresh} idPrefix="task-edit" onChange={value=>{setActionWarning('');setSaved(false);setChanges(previous=>{const next={...previous};if(JSON.stringify(value)===JSON.stringify(preview.record.values[field.id]))delete next[field.id];else next[field.id]=value;return next;});}}/>:<ReadonlyField key={field.id} field={field} preview={preview}/>)}</div>{!preview.fields.length&&<p>没有可展示的字段</p>}{editable.size>0&&<div><button type="button" className="admin-button" disabled={!dirty||blocked||needsRefresh} onClick={save}>保存修改</button></div>}<div><button type="button" className="admin-button primary" disabled={blocked||needsRefresh} onClick={agree}>同意</button></div></section>:null}
+   :preview?<section className="app-surface workflow-task-card" aria-label="当前审批数据"><div className="workflow-task-section-heading"><h2>当前记录</h2><span>最新 v{preview.record.recordVersion}</span></div><div className="workflow-task-fields">{preview.fields.map(field=>editable.has(field.id)?<TaskEditableField key={field.id} field={field} value={Object.hasOwn(changes,field.id)?changes[field.id]:preview.record.values[field.id]} preview={preview} actorId={actorId} path={path} scope={scope} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} readOnly={blocked||needsRefresh} onChange={value=>{setActionWarning('');setSaved(false);setChanges(previous=>{const next={...previous};if(JSON.stringify(value)===JSON.stringify(preview.record.values[field.id]))delete next[field.id];else next[field.id]=value;return next;});}}/>:<ReadonlyField key={field.id} field={field} preview={preview}/>)}</div>{!preview.fields.length&&<p>没有可展示的字段</p>}{editable.size>0&&<div><button type="button" className="admin-button" disabled={!dirty||blocked||needsRefresh} onClick={save}>保存修改</button></div>}<div><button type="button" className="admin-button primary" disabled={blocked||needsRefresh} onClick={agree}>同意</button></div></section>:null}
  </section>;
 }
