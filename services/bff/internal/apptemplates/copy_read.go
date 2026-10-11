@@ -164,6 +164,9 @@ func (s *Service) PreflightCopy(ctx context.Context, p session.Principal, in Cop
 	if e != nil {
 		return CopyPreflight{}, e
 	}
+	if e = validateCopyPreview(m); e != nil {
+		return CopyPreflight{}, e
+	}
 	refs, e := ExternalReferences(m)
 	if e != nil {
 		return CopyPreflight{}, e
@@ -190,4 +193,9 @@ func (s *Service) PreflightCopy(ctx context.Context, p session.Principal, in Cop
 }
 
 // validateCopyPreview checks whether every retained reference can be rebuilt.
-func validateCopyPreview(m Manifest) error { return nil }
+func validateCopyPreview(m Manifest) error {
+	// Temporary remapping proves complete internal references. Discard the copy;
+	// preview keeps source IDs and reserves no final identity or database object.
+	_, err := RemapInternalIDs(m, randomID)
+	return err
+}
