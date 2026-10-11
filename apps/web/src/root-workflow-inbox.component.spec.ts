@@ -81,3 +81,23 @@ test('Root inbox direct route handles revoked access without inventing empty suc
  await page.getByTestId('workspace-nav-home').click();
  await expect(page).toHaveURL(/\/app$/);
 });
+test('Root inbox expired query never silently restarts pagination',async({page})=>{
+ const calls=await setup(page,body=>body.queryVersion?{status:409,code:'APPLICATION_QUERY_CONTEXT_EXPIRED'}:{data:{items:[item(1)],total:21,page:1,pageSize:20,queryVersion:'q-old'}});
+ await page.goto('/app/approvals');await expect(page.getByText('财务审批 1',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'下一页',exact:true}).click();
+ await expect(page.getByRole('alert')).toContainText('刷新');await expect(page.getByText('财务审批 1',{exact:true})).toHaveCount(0);expect(calls).toHaveLength(2);
+ await page.getByRole('button',{name:'刷新待办',exact:true}).click();await expect(page.getByText('财务审批 1',{exact:true})).toBeVisible();
+ expect(calls[2].body).toEqual({page:1,pageSize:20});
+});
+test('Root inbox leaving during read discards late response and back navigation fetches anew',async({page})=>{
+ await setup(page,()=>({data:{items:[item(2)],total:1,page:1,pageSize:20,queryVersion:'fresh'}}));
+ let release!:()=>void;const gate=new Promise<void>(r=>release=r);let entered=false;
+ await page.route('**/api/v1/workflow-tasks/search',async route=>{
+  if(entered)return route.fallback();entered=true;await gate;
+  await route.fulfill({json:{code:'OK',data:{items:[item(1)],total:1,page:1,pageSize:20,queryVersion:'late'},meta:null}}).catch(()=>{});
+ });
+ await page.goto('/app/approvals');await expect.poll(()=>entered).toBe(true);
+ await page.getByTestId('workspace-nav-home').click();release();
+ await expect(page.getByRole('heading',{name:'主页',exact:true})).toBeVisible();await expect(page.getByText('财务审批 1',{exact:true})).toHaveCount(0);
+ await page.goBack();await expect(page.getByText('财务审批 2',{exact:true})).toBeVisible();await expect(page.getByText('财务审批 1',{exact:true})).toHaveCount(0);
+});
