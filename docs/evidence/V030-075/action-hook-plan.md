@@ -11,3 +11,5 @@ Extend the existing useApplicationOperation's finite resource union with task-ac
 - Reject UI is blocked solely on the pending reason-input product decision, not on these common technical rules.
 
 Eight independent UI tests were committed before action hook/UI implementation and are running on remote45dc8c9c. Wait for actual behavior RED before adding this behavior. Pure response35 and transport23 already have preserved RED→GREEN; no action UI test has yet passed.
+
+17:48UTC checkpoint: implemented after the preserved eight actual RED cases. Exact remote5cfe2119 / product38160670031 / job114533039328 now reports122 passed, including all eight original Agree cases and prior Save/preview/inbox cases. New hardening cases have only compiled; full CI remains running. This historical plan header describes its pre-implementation state, not the current status.

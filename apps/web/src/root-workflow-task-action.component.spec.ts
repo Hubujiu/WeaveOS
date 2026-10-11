@@ -6,7 +6,7 @@ const route='/app/approvals/'+Object.values(loc).join('/');
 const api=`/api/v1/applications/${loc.appId}/forms/${loc.viewId}/records/${loc.recordId}/workflow-instances/${loc.instanceId}/tasks/${loc.taskId}`;
 const field={id:id(8),name:'报销金额',kind:'money',required:true,default:null,config:{precision:38,scale:2,roundingPlaces:2,roundingMode:'HALF_UP'},presentation:{helpText:null,displayTimeZone:null}};
 type Reply={status:number;code:string;data?:unknown;location?:string};
-async function setup(page:Page,options:{reply?:(body:any,count:number)=>Reply;lookupFails?:boolean}={}){
+async function setup(page:Page,options:{reply?:(body:any,count:number)=>Reply;lookupFails?:boolean;lookup?:(operationId:string)=>unknown}={}){
  const actions:any[]=[],paths:string[]=[];let terminal:'pending'|'success'|'no_effect'='pending',changed=false,reads=0;
  const result=(operationId:string)=>({operationId,commandId:id(20),instanceId:loc.instanceId,status:terminal,...(terminal==='success'?{instanceState:'completed',sequence:1}:terminal==='no_effect'?{instanceState:'unchanged',sequence:0,reason:'task_inactive'}:{})});
  await page.route('**/api/v1/**',async r=>{
@@ -21,18 +21,20 @@ async function setup(page:Page,options:{reply?:(body:any,count:number)=>Reply;lo
    return r.fulfill({status:reply.status,headers:reply.location?{Location:reply.location}:{},json:{code:reply.code,data:reply.data??null,meta:null}});
   }else if(path.startsWith('/api/v1/application-workflow-operations/')){
    if(options.lookupFails)return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
-   data=result(path.split('/').at(-1)!);
+   data=options.lookup?options.lookup(path.split('/').at(-1)!):result(path.split('/').at(-1)!);
   }else return r.fulfill({status:404,json:{code:'API_NOT_FOUND',data:null}});
   return r.fulfill({json:{code:'OK',data,meta:null,message:''}});
  });
  return {actions,paths,result,finish(value:'success'|'no_effect'='success'){terminal=value;},changeIdentity(){changed=true;},get reads(){return reads;}};
 }
 async function open(page:Page){await page.goto(route);await expect(page.getByLabel('报销金额')).toHaveValue('100.00');}
-test('Root Agree keeps 202 pending distinct and confirms only the dedicated execution result',async({page})=>{
+test('Root Agree keeps 202 pending distinct and confirms only the dedicated execution result',async({page},testInfo)=>{
  const f=await setup(page);await open(page);await page.getByRole('button',{name:'同意',exact:true}).click();
  await expect(page.getByText('审批处理中',{exact:true})).toBeVisible();await expect(page.getByText('审批已同意',{exact:true})).toHaveCount(0);
+ await testInfo.attach('task-approval-pending',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  expect(f.actions).toHaveLength(1);expect(f.actions[0].body).toEqual({operationId:expect.stringMatching(/^[0-9a-f-]{36}$/),action:'agree',basisToken:'b'.repeat(43)});expect(f.actions[0].method).toBe('POST');expect(f.actions[0].headers['x-expected-actor-id']).toBe(actor.id);
  f.finish();await page.getByRole('button',{name:'核查审批结果',exact:true}).click();await expect(page.getByText('审批已同意',{exact:true})).toBeVisible();
+ await testInfo.attach('task-approval-completed',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  expect(f.paths.filter(p=>p.startsWith('/api/v1/application-operations/'))).toHaveLength(0);expect(f.actions).toHaveLength(1);
 });
 test('Root Agree no-effect is a terminal non-success rather than approval',async({page})=>{
@@ -62,4 +64,20 @@ test('Root Agree two synchronous clicks keep one immutable command request',asyn
 });
 test('Root Agree identity preflight changes never transmit the action',async({page})=>{
  const f=await setup(page);await open(page);f.changeIdentity();await page.getByRole('button',{name:'同意',exact:true}).click();await expect(page.getByRole('alert')).toContainText('登录身份已变化');expect(f.actions).toHaveLength(0);
+});
+test('Root Agree rejects a changed command ID when querying an accepted operation',async({page})=>{
+ const f=await setup(page,{lookup:operationId=>({operationId,commandId:id(21),instanceId:loc.instanceId,status:'success',instanceState:'completed',sequence:1})});
+ await open(page);await page.getByRole('button',{name:'同意',exact:true}).click();await expect(page.getByText('审批处理中',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'核查审批结果',exact:true}).click();await expect(page.getByRole('alert')).toContainText('未确认');await expect(page.getByText('审批已同意',{exact:true})).toHaveCount(0);expect(f.actions).toHaveLength(1);
+});
+test('Root Agree never follows an external pending Location or treats it as acceptance',async({page})=>{
+ let f:Awaited<ReturnType<typeof setup>>;f=await setup(page,{reply:body=>({status:202,code:'OK',data:f.result(body.operationId),location:'https://example.invalid/api/v1/application-workflow-operations/'+body.operationId})});
+ await open(page);await page.getByRole('button',{name:'同意',exact:true}).click();await expect(page.getByRole('alert')).toContainText('未确认');await expect(page.getByText('审批处理中',{exact:true})).toHaveCount(0);expect(f.actions).toHaveLength(1);
+});
+test('Root accepted Agree locks editing and guards browser refresh until a terminal receipt',async({page})=>{
+ const f=await setup(page);await open(page);await page.getByRole('button',{name:'同意',exact:true}).click();await expect(page.getByText('审批处理中',{exact:true})).toBeVisible();
+ await expect(page.getByLabel('报销金额')).toBeDisabled();await expect(page.getByRole('button',{name:'保存修改',exact:true})).toBeDisabled();await expect(page.getByRole('button',{name:'同意',exact:true})).toBeDisabled();
+ expect(await page.evaluate(()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;})).toBe(true);
+ f.finish();await page.getByRole('button',{name:'核查审批结果',exact:true}).click();await expect(page.getByText('审批已同意',{exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;})).toBe(false);expect(f.actions).toHaveLength(1);
 });
