@@ -1,0 +1,1 @@
+Actual RED: valid fixture normalization succeeded. Six positive test roots failed because the declared selection function returns ErrInvalid without behavior; invalid-scope tests pass. This is missing behavior, not a build/tool failure. Immutable original test and stub are alongside this log.
