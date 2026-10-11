@@ -50,7 +50,7 @@ export async function applicationApiEnvelope<T>(actorId: string, path: string, m
 // Keep this entrypoint narrow so mutation callers cannot erase uncertainty.
 export async function applicationReadPost<T>(actorId: string, path: string, body: object, signal?: AbortSignal): Promise<T> {
  const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
- if (!new RegExp(`^applications/${uuid}/forms/${uuid}/records/search$`, 'i').test(path)) throw new TypeError('Read-only POST is restricted to record search');
+ if (path !== 'workflow-tasks/search' && !new RegExp(`^applications/${uuid}/forms/${uuid}/records/search$`, 'i').test(path)) throw new TypeError('Read-only POST is restricted to record search and personal inbox');
  return (await request<T>(actorId, path, 'POST', body, signal, 200, false)).data;
 }
 
