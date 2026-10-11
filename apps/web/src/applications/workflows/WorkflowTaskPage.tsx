@@ -33,7 +33,7 @@ function ReadonlyField({field,preview}:{field:Field;preview:TaskPreview}){
  }
  return <FieldRenderer field={field} value={value} readOnly idPrefix="task-preview"/>;
 }
-export function WorkflowTaskPage({actorId,location,onBack,onUnauthorized,onIdentityMismatch,registerLeaveGuard,requestSectionLeave}:{actorId:string;location:TaskLocation;onBack:()=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void}){
+export function WorkflowTaskPage({actorId,location,onBack,onUnauthorized,onIdentityMismatch,registerLeaveGuard,requestSectionLeave,onDirtyChange}:{actorId:string;location:TaskLocation;onBack:()=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void;onDirtyChange:(dirty:boolean)=>void}){
  const scope=JSON.stringify([actorId,location.appId,location.viewId,location.recordId,location.instanceId,location.taskId]);
  const [epoch,setEpoch]=useState(0);
  const [changes,setChanges]=useState<Values>({});
@@ -48,6 +48,7 @@ export function WorkflowTaskPage({actorId,location,onBack,onUnauthorized,onIdent
  const dirty=Object.keys(changes).length>0;
  const busy=operation.phase==='preflight'||operation.phase==='pending';
  const unknown=operation.phase==='unconfirmed';
+ useEffect(()=>{onDirtyChange(dirty||busy||unknown);return()=>onDirtyChange(false);},[dirty,busy,unknown,onDirtyChange]);
  const needsRefresh=['WORKFLOW_BASIS_EXPIRED','WORKFLOW_BASIS_CHANGED','WORKFLOW_TASK_CHANGED','APPLICATION_POLICY_CONFLICT','APPLICATION_SCHEMA_NOT_READY'].includes(operation.errorCode??'');
  const guard=useRef({changes,operation});guard.current={changes,operation};
  useEffect(()=>registerLeaveGuard({kind:'record',actorId,appId:location.appId,viewId:location.viewId,recordId:location.recordId},createLeaveController(()=>{
