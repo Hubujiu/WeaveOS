@@ -63,7 +63,7 @@ test('Root Shell create then read authoritative normalized data and edit a recor
  await page.screenshot({path:test.info().outputPath('record-shell-create.png'),fullPage:true});
  await create.getByRole('button',{name:'保存记录',exact:true}).click();
  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
- const detail=page.getByRole('dialog',{name:'记录详情',exact:true});await expect(detail).toBeVisible();await expect(detail.getByLabel('金额',{exact:true})).toHaveValue('12.35');
+ const detail=page.getByRole('region',{name:'记录详情',exact:true});await expect(detail).toBeVisible();await expect(detail.getByLabel('金额',{exact:true})).toHaveValue('12.35');
  await page.screenshot({path:test.info().outputPath('record-shell-created-detail.png'),fullPage:true});
  await detail.getByRole('button',{name:'编辑记录',exact:true}).click();
  await detail.getByLabel('金额',{exact:true}).fill('20.105');
@@ -97,7 +97,7 @@ test('Root create-only actor confirms a receipt without an unauthorized detail o
 test('Root opening an existing row validates the original query before reading detail',async({page})=>{
  const api=await fixture(page,{ordinary:true,staleOpen:true});api.seed('18.00');await page.goto(routePath);
  await page.getByRole('button',{name:'打开记录：金额 18.00',exact:true}).click();
- await expect(page.getByRole('alert')).toContainText('刷新');await expect(page.getByRole('dialog',{name:'记录详情',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('alert')).toContainText('刷新');await expect(page.getByRole('region',{name:'记录详情',exact:true})).toHaveCount(0);
  const searches=api.calls.filter(c=>c.path===formPath+'/records/search');expect(searches).toHaveLength(2);expect(searches[1].body.queryVersion).toBe('query-1');
  expect(api.calls.filter(c=>c.path===formPath+'/records/'+recordId)).toEqual([]);
 });
@@ -157,7 +157,7 @@ test('Root rejected create refresh discards only after confirmation and rebuilds
 });
 test('Root retry after rejected edit and failed refresh never invents a saved result',async({page})=>{
  const api=await fixture(page,{rejectEditRefresh:true});api.seed('18.00');await page.goto(routePath);await page.getByRole('button',{name:'打开记录：金额 18.00',exact:true}).click();
- const detail=page.getByRole('dialog',{name:'记录详情',exact:true});await detail.getByRole('button',{name:'编辑记录',exact:true}).click();await detail.getByLabel('金额',{exact:true}).fill('20.00');await detail.getByRole('button',{name:'保存记录',exact:true}).click();
+ const detail=page.getByRole('region',{name:'记录详情',exact:true});await detail.getByRole('button',{name:'编辑记录',exact:true}).click();await detail.getByLabel('金额',{exact:true}).fill('20.00');await detail.getByRole('button',{name:'保存记录',exact:true}).click();
  await expect(detail.getByRole('alert')).toContainText('刷新');await detail.getByRole('button',{name:'刷新记录',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();
  await expect(page.getByRole('alert')).toContainText('无法读取');await expect(page.getByRole('status').filter({hasText:'正在读取记录'})).toHaveCount(0);await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toHaveCount(0);
  await page.getByRole('button',{name:'重试读取记录',exact:true}).click();await expect(detail.getByLabel('金额',{exact:true})).toHaveValue('18.00');

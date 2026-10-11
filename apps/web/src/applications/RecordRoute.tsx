@@ -129,18 +129,23 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   });
  };
  const canRetryRead=!!pendingRead&&!!readError;
- return <section className="record-route" aria-label="记录路由">
-  {saved&&<p className="record-saved" role="status">记录已保存</p>}
-  <RecordWorkspace key={`${actorId}:${appId}:${viewId}:${workspaceRefresh}`} actorId={actorId} appId={appId} viewId={viewId}
-   onCreate={openNew} onOpenRecord={openRow} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onRuntimeReady={runtimeReady}/>
-  {(editor||pendingRead)&&<Modal title={editor?.mode==='create'?'新建记录':'记录详情'} onClose={guardedClose}>
+ const showingDetail=!!pendingRead||!!editor&&editor.mode!=='create';
+ const editorContent=<>
    {pendingRead&&!readError&&<p role="status">正在读取记录…</p>}
    {readError&&<><p role="alert">{readError}</p>{canRetryRead&&<button type="button" className="admin-button" onClick={()=>{const target=pendingRead!;setReadError('');if(target.view)void readRecord(target.view,target.recordId,target.queryVersion,target.identity,target.mode);else void refreshRead(target.identity,target.recordId,target.confirmedWrite);}}>重试读取记录</button>}</>}
-   {editor?.mode==='read'&&<div className="record-route-actions">{editAllowed(editor)&&<button type="button" className="admin-button" onClick={()=>{setSaved(false);setEditor({...editor,mode:'edit',queryVersion:editor.queryVersion});}}>编辑记录</button>}</div>}
-   {editor&&<RecordForm key={JSON.stringify([editor.identity,editor.mode,editor.view.policyRevision,editor.view.schemaVersion,editor.view.viewVersion,editor.record?.recordVersion??'new'])} view={editor.view} identity={editor.identity} record={editor.record} mode={editor.mode} authorityKey={`${editor.view.policyRevision}:${editor.view.schemaVersion}:${editor.view.viewVersion}:${editor.record?.recordVersion??'new'}`}
+   <div className="record-detail-grid">{editor&&<RecordForm key={JSON.stringify([editor.identity,editor.mode,editor.view.policyRevision,editor.view.schemaVersion,editor.view.viewVersion,editor.record?.recordVersion??'new'])} view={editor.view} identity={editor.identity} record={editor.record} mode={editor.mode} authorityKey={`${editor.view.policyRevision}:${editor.view.schemaVersion}:${editor.view.viewVersion}:${editor.record?.recordVersion??'new'}`}
     queryVersion={editor.queryVersion} loadCandidates={loadCandidates} onConfirmed={onConfirmed} onDirtyChange={onDirtyChange} onRequestDiscard={guardedClose} onDiscard={closeEditor}
     onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard}
     onRefresh={refreshEditor}/>}
-   {editor?.record&&<RecordWorkflows actorId={actorId} appId={appId} viewId={viewId} recordId={editor.record.id} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>}</Modal>}
+   {editor?.record&&<RecordWorkflows actorId={actorId} appId={appId} viewId={viewId} recordId={editor.record.id} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>} </div>
+ </>;
+ return <section className="record-route" aria-label="记录路由">
+  {saved&&<p className="record-saved" role="status">记录已保存</p>}
+  <div hidden={showingDetail} className="record-list-host"><RecordWorkspace key={`${actorId}:${appId}:${viewId}:${workspaceRefresh}`} actorId={actorId} appId={appId} viewId={viewId}
+   onCreate={openNew} onOpenRecord={openRow} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onRuntimeReady={runtimeReady}/></div>
+  {editor?.mode==='create'?<Modal title="新建记录" onClose={guardedClose}>{editorContent}</Modal>:showingDetail?<section className="record-detail-page" aria-label="记录详情">
+   <div className="app-page-heading"><h1>记录详情</h1><div className="record-detail-actions"><button type="button" className="admin-button" aria-label="关闭" onClick={guardedClose}>返回</button>{editor?.mode==='read'&&editAllowed(editor)&&<button type="button" className="admin-button primary" onClick={()=>{setSaved(false);setEditor({...editor,mode:'edit',queryVersion:editor.queryVersion});}}>编辑记录</button>}</div></div>
+   {editorContent}
+  </section>:null}
  </section>;
 }

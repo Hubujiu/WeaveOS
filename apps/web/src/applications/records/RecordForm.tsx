@@ -118,6 +118,6 @@ function RecordFormScope(props:RecordFormProps){
   {conflict?<button type="button" className="admin-button" onClick={onRefresh}>刷新记录</button>:null}
   {needsReview&&!conflict?<button type="button" className="admin-button" onClick={onRefresh}>刷新记录</button>:null}
   <div className="record-form-fields forms-preview-grid">{view.layout.map(renderLayoutNode)}</div>
-  <footer><button type="button" className="admin-button" onClick={onRequestDiscard} disabled={busy||unknown}>放弃填写</button><button type="button" className="admin-button" onClick={save} disabled={!canEdit||conflict||saved&&!dirty||!saved&&!view.capabilities.create||saved&&!canEditRecord}>保存记录</button></footer>
+  {mode!=='read'&&<footer><button type="button" className="admin-button" onClick={onRequestDiscard} disabled={busy||unknown}>放弃填写</button><button type="button" className="admin-button" onClick={save} disabled={!canEdit||conflict||saved&&!dirty||!saved&&!view.capabilities.create||saved&&!canEditRecord}>保存记录</button></footer>}
  </section>;
 }
