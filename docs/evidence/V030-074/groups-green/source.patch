@@ -1,0 +1,30 @@
+diff --git a/services/bff/internal/apptemplates/copy_groups.go b/services/bff/internal/apptemplates/copy_groups.go
+index 67a47dcc..0fdc4368 100644
+--- a/services/bff/internal/apptemplates/copy_groups.go
++++ b/services/bff/internal/apptemplates/copy_groups.go
+@@ -6,5 +6,24 @@ type CopyGroupMapping struct {
+ }
+ 
+ func MapCopyGroups(in Manifest, mappings []CopyGroupMapping) (Manifest, error) {
+-	return Manifest{}, ErrInvalid
++	m, err := NormalizeManifest(in)
++	if err != nil || len(mappings) != len(m.PermissionGroups) {
++		return Manifest{}, ErrInvalid
++	}
++	wanted := make(map[string]bool, len(m.PermissionGroups))
++	for _, g := range m.PermissionGroups {
++		wanted[g.ID] = true
++	}
++	names := make(map[string]string, len(mappings))
++	for _, mapping := range mappings {
++		normalized, ok := name(mapping.Name)
++		if !wanted[mapping.SourceGroupID] || names[mapping.SourceGroupID] != "" || !ok {
++			return Manifest{}, ErrInvalid
++		}
++		names[mapping.SourceGroupID] = normalized
++	}
++	for i := range m.PermissionGroups {
++		m.PermissionGroups[i].Name = names[m.PermissionGroups[i].ID]
++	}
++	return m, nil
+ }
