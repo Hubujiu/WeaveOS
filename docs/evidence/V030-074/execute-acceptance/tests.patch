@@ -1,0 +1,129 @@
+diff --git a/services/bff/cmd/bff/root_structure_copy_test.go b/services/bff/cmd/bff/root_structure_copy_test.go
+index fae96f96..45bcb73a 100644
+--- a/services/bff/cmd/bff/root_structure_copy_test.go
++++ b/services/bff/cmd/bff/root_structure_copy_test.go
+@@ -484,3 +484,124 @@ func TestRootStructureCopyExecuteFourKindsEmptyAndIndependent(t *testing.T) {
+ 		})
+ 	}
+ }
++
++func TestRootStructureCopyCrossAppIndependentGroupAndDirectory(t *testing.T) {
++	f := rootHTTPTaskSetup(t)
++	s := apptemplates.Service{Pool: f.runtime}
++	p := rootTemplatePrincipal(f)
++	p.SessionRef = ""
++	target, dir, group, existing := f.id(t), f.id(t), f.id(t), f.id(t)
++	for _, q := range []struct {
++		sql  string
++		args []any
++	}{
++		{"INSERT INTO applications.apps(id,name,owner_user_id,structure_version) VALUES($1,'Target',$2,4)", []any{target, f.actor}},
++		{"SELECT applications.register_catalog_entry($1)", []any{target}},
++		{"INSERT INTO applications.directories(id,app_id,name,position) VALUES($1,$2,'Destination',0)", []any{dir, target}},
++		{"INSERT INTO applications.permission_groups(id,app_id,name,enabled) VALUES($1,$2,'Existing unchanged',false),($3,$4,'Source role',false)", []any{existing, target, group, f.app}},
++		{"INSERT INTO applications.group_members(app_id,group_id,user_id) VALUES($1,$2,$3)", []any{f.app, group, f.actor}},
++		{"INSERT INTO applications.grants(id,app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,$3,'form',$4,'data.read','own')", []any{f.id(t), f.app, group, f.view}},
++	} {
++		if _, e := f.owner.Exec(f.ctx, q.sql, q.args...); e != nil {
++			t.Fatal(e)
++		}
++	}
++	in := rootCopyPlanInput(f)
++	in.Target.AppID = &target
++	in.Target.DirectoryID = &dir
++	plan, e := s.PlanCopy(f.ctx, p, in)
++	if e != nil {
++		t.Fatal(e)
++	}
++	if len(plan.Manifest.PermissionGroups) != 1 {
++		t.Fatal("source grant absent")
++	}
++	req := rootCopyPreflightInput(plan, in)
++	for i := range req.Bindings {
++		req.Bindings[i].TargetID = f.other
++	}
++	result, e := s.ExecuteCopy(f.ctx, p, f.id(t), req, applications.Metadata{})
++	if e != nil {
++		t.Fatal(e)
++	}
++	var receipt struct {
++		ID                               string
++		PolicyRevision, StructureVersion int64
++	}
++	if json.Unmarshal(result.Data, &receipt) != nil || receipt.PolicyRevision != 2 || receipt.StructureVersion != 5 {
++		t.Fatal(string(result.Data))
++	}
++	var targetDir, tableDir, assignee, member, newGroup string
++	var enabled bool
++	if e = f.owner.QueryRow(f.ctx, "SELECT v.directory_id::text,t.directory_id::text FROM applications.form_views v JOIN applications.logical_tables t ON t.id=v.table_id WHERE v.id=$1", receipt.ID).Scan(&targetDir, &tableDir); e != nil || targetDir != dir || tableDir != dir {
++		t.Fatal("root placement wrong", e)
++	}
++	if e = f.owner.QueryRow(f.ctx, "SELECT id::text,enabled FROM applications.permission_groups WHERE app_id=$1 AND id<>$2", target, existing).Scan(&newGroup, &enabled); e != nil || newGroup == group || enabled {
++		t.Fatal("independent group lost", e)
++	}
++	if e = f.owner.QueryRow(f.ctx, "SELECT user_id::text FROM applications.group_members WHERE group_id=$1", newGroup).Scan(&member); e != nil || member != f.other {
++		t.Fatal("member mapping lost", e)
++	}
++	if e = f.owner.QueryRow(f.ctx, `SELECT graph_json->'nodes'->1->'approval'->'assigneeIds'->>0 FROM applications.workflow_versions WHERE flow_id IN (SELECT id FROM applications.workflow_definitions WHERE view_id=$1)`, receipt.ID).Scan(&assignee); e != nil || assignee != f.other {
++		t.Fatal("approver mapping lost", e)
++	}
++	var existingName string
++	if e = f.owner.QueryRow(f.ctx, "SELECT name FROM applications.permission_groups WHERE id=$1", existing).Scan(&existingName); e != nil || existingName != "Existing unchanged" {
++		t.Fatal("existing group modified", e)
++	}
++	var sourcePolicy int
++	if e = f.owner.QueryRow(f.ctx, "SELECT policy_revision FROM applications.apps WHERE id=$1", f.app).Scan(&sourcePolicy); e != nil || sourcePolicy != 1 {
++		t.Fatal("source policy mutated", e)
++	}
++}
++func TestRootStructureCopyFaultRollsBackEverything(t *testing.T) {
++	for _, phase := range []string{"form", "workflow", "audit", "receipt"} {
++		t.Run(phase, func(t *testing.T) {
++			f := rootHTTPTaskSetup(t)
++			s := apptemplates.Service{Pool: f.runtime}
++			p := rootTemplatePrincipal(f)
++			p.SessionRef = ""
++			in := rootCopyPlanInput(f)
++			plan, e := s.PlanCopy(f.ctx, p, in)
++			if e != nil {
++				t.Fatal(e)
++			}
++			req := rootCopyPreflightInput(plan, in)
++			op := f.id(t)
++			name := "copy_fault_" + strings.ReplaceAll(op, "-", "")
++			fn := pgx.Identifier{"public", name}.Sanitize()
++			trigger := pgx.Identifier{name}.Sanitize()
++			table, event, condition := "applications.form_views", "INSERT", "NEW.app_id='"+f.app+"'::uuid"
++			switch phase {
++			case "workflow":
++				table = "applications.workflow_versions"
++			case "audit":
++				table = "auth.authentication_events"
++				condition = "NEW.change_summary->>'operationId'='" + op + "'"
++			case "receipt":
++				table = "applications.operations"
++				event = "UPDATE"
++				condition = "NEW.operation_id='" + op + "'::uuid"
++			}
++			if _, e = f.owner.Exec(f.ctx, "CREATE FUNCTION "+fn+"() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF "+condition+" THEN RAISE EXCEPTION 'isolated copy failure';END IF;RETURN NEW;END $$;CREATE TRIGGER "+trigger+" BEFORE "+event+" ON "+table+" FOR EACH ROW EXECUTE FUNCTION "+fn+"()"); e != nil {
++				t.Fatal(e)
++			}
++			defer func() {
++				if _, e := f.owner.Exec(f.ctx, "DROP TRIGGER "+trigger+" ON "+table+";DROP FUNCTION "+fn+"()"); e != nil {
++					t.Error(e)
++				}
++			}()
++			before := rootTemplateReadCounts(t, f)
++			if _, e = s.ExecuteCopy(f.ctx, p, op, req, applications.Metadata{}); e == nil {
++				t.Fatal("injected late fault succeeded")
++			}
++			if after := rootTemplateReadCounts(t, f); !reflect.DeepEqual(before, after) {
++				t.Fatal("partial durable state", before, after)
++			}
++			current, e := s.PlanCopy(f.ctx, p, in)
++			if e != nil || current.SourceFingerprint != plan.SourceFingerprint || current.TargetStructureVersion != plan.TargetStructureVersion || current.TargetPolicyRevision != plan.TargetPolicyRevision {
++				t.Fatal("rollback changed source/versions", e)
++			}
++		})
++	}
++}

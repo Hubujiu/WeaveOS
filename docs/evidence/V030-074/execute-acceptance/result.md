@@ -1,0 +1,1 @@
+First acceptance run is NOT GREEN: direct-call fixture omitted required audit requestId; corrected only fixture metadata. Fault tests now require exact injected database failure to prevent unrelated audit failure masking receipt-phase reachability.
