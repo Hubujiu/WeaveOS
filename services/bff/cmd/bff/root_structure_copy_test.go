@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apptemplates"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -141,5 +142,47 @@ func TestRootStructureCopyPreflightSourceAndTargetCAS(t *testing.T) {
 	}
 	if _, e = s.PreflightCopy(f.ctx, p, rootCopyPreflightInput(plan, in)); !errors.Is(e, apptemplates.ErrCopySourceChanged) {
 		t.Fatal("changed source accepted", e)
+	}
+}
+
+func TestRootStructureCopyMissingSourceIsNotFound(t *testing.T) {
+	f := rootHTTPTaskSetup(t)
+	s := apptemplates.Service{Pool: f.runtime}
+	in := rootCopyPlanInput(f)
+	in.Source.ID = f.id(t)
+	if _, e := s.PlanCopy(f.ctx, rootTemplatePrincipal(f), in); !errors.Is(e, applications.ErrMissing) {
+		t.Fatal("missing source needs not-found", e)
+	}
+}
+func TestRootStructureCopyTargetCASAndLiveMapping(t *testing.T) {
+	f := rootHTTPTaskSetup(t)
+	s := apptemplates.Service{Pool: f.runtime}
+	in := rootCopyPlanInput(f)
+	p := rootTemplatePrincipal(f)
+	plan, e := s.PlanCopy(f.ctx, p, in)
+	if e != nil {
+		t.Fatal(e)
+	}
+	req := rootCopyPreflightInput(plan, in)
+	req.ExpectedTargetStructureVersion++
+	var conflict *appstructure.Error
+	if _, e = s.PreflightCopy(f.ctx, p, req); !errors.As(e, &conflict) || conflict.Code != "APPLICATION_STRUCTURE_CONFLICT" {
+		t.Fatal("target structure CAS ignored", e)
+	}
+	req = rootCopyPreflightInput(plan, in)
+	for i := range req.Bindings {
+		req.Bindings[i].TargetID = f.other
+	}
+	if _, e = f.owner.Exec(f.ctx, "UPDATE auth.users SET status='disabled' WHERE id=$1", f.other); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = s.PreflightCopy(f.ctx, p, req); e == nil {
+		t.Fatal("inactive mapped user accepted")
+	}
+	if _, e = f.owner.Exec(f.ctx, "UPDATE personnel.permission_catalog SET enabled=false WHERE app_id=$1", f.app); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = s.PreflightCopy(f.ctx, p, rootCopyPreflightInput(plan, in)); !errors.Is(e, applications.ErrDenied) {
+		t.Fatal("revoked source authority accepted", e)
 	}
 }
