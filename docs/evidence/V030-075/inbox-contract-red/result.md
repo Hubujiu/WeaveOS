@@ -1,0 +1,3 @@
+# Original independent RED
+Command: fixed Node24.14.0 `node --test tests/foundation/workflow-inbox-consumption.test.mjs`.
+Actual timestamp and exit status are adjacent. Production validator was only a loadable false placeholder; API remained baseline. Valid wire acceptance fails false !== true; exact inbox transport fails existing read-only whitelist; read error assertion fails because whitelist TypeError replaces read error. Other rejection cases already pass via fail-closed placeholder and do not prove validation implemented. Test/placeholder/API snapshots preserve original source. Browser behavior still awaits CI; this RED authorizes only pure contract/transport work.
