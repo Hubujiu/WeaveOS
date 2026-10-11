@@ -159,3 +159,34 @@
 .mono-shell .workflow-task-fields .forms-rendered-field input:disabled:not([type=checkbox]),
 .mono-shell .workflow-task-fields .forms-rendered-field textarea:disabled,
 .mono-shell .workflow-task-fields .forms-rendered-field select:disabled { background:var(--mono-well); }
+
+/* V075 P6 business composition from the approved two-card workspace. */
+.workflow-task-content { display:flex;flex-direction:column;gap:20px;min-width:0; }
+.workflow-task-content[hidden] { display:none; }
+.workflow-task-workspace { display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start;min-width:0; }
+.workflow-task-workspace>.workflow-task-card { min-width:0;min-height:750px;gap:16px; }
+.workflow-task-decisions { margin-top:auto;padding-top:16px; }
+.workflow-history-card { min-width:0;min-height:750px;max-height:750px;overflow:auto;padding:24px;display:flex;flex-direction:column;gap:16px; }
+.workflow-history-event { padding-bottom:16px;border-bottom:1px solid var(--mono-line);overflow-wrap:anywhere; }
+.workflow-history-event h3 { margin:0 0 8px;font-size:14px;font-weight:500; }
+.workflow-history-event p { margin:8px 0; }
+.workflow-history-meta { font-size:12px;color:var(--mono-muted);overflow-wrap:anywhere; }
+.workflow-history-basis { display:flex;flex-direction:column;gap:12px;min-width:0;overflow-wrap:anywhere; }
+.workflow-history-basis dl { margin:0;display:flex;flex-direction:column;gap:16px; }
+.workflow-history-basis dt { font-size:12px;color:var(--mono-secondary);margin-bottom:8px; }
+.workflow-history-basis dd { margin:0;padding:10px 12px;background:var(--mono-well);border:1px solid var(--mono-line);border-radius:8px;white-space:pre-wrap; }
+.workflow-comparison { display:flex;flex-direction:column;gap:20px;min-width:0; }
+.workflow-comparison-card { min-width:0;min-height:710px;padding:24px;display:flex;flex-direction:column;gap:16px; }
+.workflow-comparison-versions { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px; }
+.workflow-comparison-versions>div { min-width:0; }
+.workflow-comparison-versions span { font-size:12px;color:var(--mono-secondary); }
+.workflow-comparison-versions p { margin:8px 0 0; }
+.workflow-comparison-back { margin-top:auto; }
+@media(max-width:1100px) {
+ .workflow-task-workspace { grid-template-columns:minmax(0,1fr); }
+ .workflow-task-workspace>.workflow-task-card,.workflow-history-card { min-height:0;max-height:none; }
+}
+@media(max-width:700px) {
+ .workflow-history-card,.workflow-comparison-card { padding:16px; }
+ .workflow-comparison-versions { grid-template-columns:minmax(0,1fr); }
+}

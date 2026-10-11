@@ -94,7 +94,7 @@ function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,refer
           !(referenceDisplay?.deleted&&item.id===referenceDisplay.id))];
       });
       setNextPageToken(page.nextPageToken);
-    }catch{if(current===generation.current&&!request.signal.aborted)setError(true);}
+    }catch{if(current===generation.current&&!request.signal.aborted){setItems([]);setNextPageToken(null);setError(true);}}
     finally{if(current===generation.current&&!request.signal.aborted)setBusy(false);}
   };
   const currentDisplay=<span id={inputId} className="forms-reference-value">

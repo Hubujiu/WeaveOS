@@ -49,15 +49,15 @@ test('Root history revoked access clears prior history without denying independe
 test('Root history mismatched detail refuses the other event values',async({page})=>{
  await setup(page,{wrongDetail:true});await open(page);await page.getByRole('region',{name:'审批轨迹',exact:true}).getByRole('button',{name:'查看审批依据',exact:true}).first().click();const basis=page.getByRole('region',{name:'历史审批依据',exact:true});await expect(basis).toContainText('响应格式不正确');await expect(basis).not.toContainText('123456789012345678901234567890.12');
 });
-test('Root historical comparison uses persisted visible current values and never local unsaved edits',async({page})=>{
+test('Root historical comparison uses persisted visible current values and never local unsaved edits',async({page},testInfo)=>{
  const f=await setup(page);await open(page);await page.getByLabel('当前金额').fill('300.00');await page.getByRole('region',{name:'审批轨迹',exact:true}).getByRole('button',{name:'查看审批依据',exact:true}).first().click();
- await page.getByRole('button',{name:'查看版本差异',exact:true}).click();const comparison=page.getByRole('region',{name:'版本对照',exact:true});await expect(comparison).toContainText('123456789012345678901234567890.12');await expect(comparison).toContainText('200.00');await expect(comparison).not.toContainText('300.00');await expect(page.getByLabel('当前金额')).toHaveValue('300.00');expect(f.writes).toHaveLength(0);
+ await page.getByRole('button',{name:'查看版本差异',exact:true}).click();const comparison=page.getByRole('region',{name:'版本对照',exact:true});await expect(comparison).toContainText('123456789012345678901234567890.12');await expect(comparison).toContainText('200.00');await expect(comparison).not.toContainText('300.00');await testInfo.attach('history-comparison',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});await expect(page.getByLabel('当前金额')).toHaveValue('300.00');expect(f.writes).toHaveLength(0);
 });
-test('Root task workspace presents history beside the record at desktop and stacks within mobile width',async({page})=>{
+test('Root task workspace presents history beside the record at desktop and stacks within mobile width',async({page},testInfo)=>{
  await setup(page);await page.setViewportSize({width:1440,height:1000});await open(page);const recordPanel=page.getByRole('region',{name:'当前审批数据',exact:true}),historyPanel=page.getByRole('region',{name:'审批轨迹',exact:true});await expect(historyPanel).toBeVisible();
  const left=await recordPanel.boundingBox(),right=await historyPanel.boundingBox();expect(left&&right).toBeTruthy();expect(right!.x-left!.x-left!.width).toBeCloseTo(20,0);expect(Math.abs(right!.y-left!.y)).toBeLessThan(2);expect(right!.width).toBeCloseTo(340,0);
  const save=await page.getByRole('button',{name:'保存修改',exact:true}).boundingBox(),agree=await page.getByRole('button',{name:'同意',exact:true}).boundingBox();expect(agree!.y).toBeGreaterThan(save!.y+save!.height);
- await page.setViewportSize({width:390,height:844});await expect(historyPanel).toBeVisible();const narrow=await historyPanel.boundingBox();expect(narrow!.x).toBeGreaterThanOrEqual(0);expect(narrow!.x+narrow!.width).toBeLessThanOrEqual(390);await expect(page.locator('body')).toHaveJSProperty('scrollWidth',390);
+ await testInfo.attach('history-desktop',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});await page.setViewportSize({width:390,height:844});await expect(historyPanel).toBeVisible();const narrow=await historyPanel.boundingBox();expect(narrow!.x).toBeGreaterThanOrEqual(0);expect(narrow!.x+narrow!.width).toBeLessThanOrEqual(390);await expect(page.locator('body')).toHaveJSProperty('scrollWidth',390);await testInfo.attach('history-mobile',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
 });
 test('Root history switching events ignores a late first response',async({page})=>{
  await setup(page);let release:(()=>void)|undefined,started=false;
