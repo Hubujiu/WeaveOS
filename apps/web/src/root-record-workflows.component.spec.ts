@@ -43,3 +43,11 @@ test('Root record workflows successful empty page is explicit and never invents 
 test('Root record workflow read failure retries the read without creating an operation',async({page})=>{
  const calls=await setup(page,{failure:true});await open(page);const panel=page.getByRole('region',{name:'关联流程',exact:true});await expect(panel.getByRole('alert')).toBeVisible();await expect(panel).not.toContainText('尚未确认');await panel.getByRole('button',{name:'重试流程读取',exact:true}).click();await expect(panel).toContainText('关联审批 1');expect(calls.filter(c=>c.path===search).map(c=>c.body)).toEqual([{page:1,pageSize:20},{page:1,pageSize:20}]);
 });
+test('Root record workflow refresh preserves unsaved record editing without writing',async({page})=>{
+ const calls=await setup(page);await open(page);const panel=page.getByRole('region',{name:'关联流程',exact:true});await expect(panel).toContainText('关联审批 1');await page.getByRole('button',{name:'编辑记录',exact:true}).click();await page.getByLabel('金额',{exact:true}).fill('25.00');await panel.getByRole('button',{name:'刷新流程',exact:true}).click();await expect(panel).toContainText('关联审批 1');await expect(page.getByLabel('金额',{exact:true})).toHaveValue('25.00');expect(calls.filter(c=>c.method!=='GET'&&!c.path.endsWith('/search'))).toEqual([]);
+});
+test('Root record workflow closing cancels late unauthorized read without leaving the form workspace',async({page})=>{
+ await setup(page);let release:(()=>void)|undefined,started=false;
+ await page.route('**/api/v1/'+search,async r=>{started=true;await new Promise<void>(resolve=>{release=resolve;});await r.fulfill({status:401,json:{code:'AUTH_UNAUTHENTICATED',data:null,meta:null}}).catch(()=>{});});
+ await open(page);await expect.poll(()=>started).toBe(true);await page.getByRole('button',{name:'关闭',exact:true}).click();release!();await expect(page.getByRole('button',{name:'打开记录：金额 10.00',exact:true})).toBeVisible();await expect(page.getByRole('region',{name:'关联流程',exact:true})).toHaveCount(0);await expect(page).toHaveURL('/app/'+form);
+});
