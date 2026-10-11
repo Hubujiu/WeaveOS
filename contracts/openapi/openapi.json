@@ -18439,6 +18439,765 @@
           }
         }
       }
+    },
+    "/api/v1/structure-copies/plan": {
+      "post": {
+        "operationId": "planStructureCopy",
+        "summary": "Plan independent empty structure copy",
+        "description": "Copy only selected application/directory/table/form and required complete table dependencies, never business rows/history. Explicit source and target management authority, user/department mappings and independent new group names. Source fingerprint and target structure/policy CAS are rechecked in the same transaction. All new workflows are disabled. Strict JSON <=4194304 bytes, depth32; reject unknown/duplicate/case-confused keys, query (including bare ?), compressed bodies and trailing input. Plan/preflight are one read-only RR snapshot. Execute is one local atomic transaction; original actor/key/body recovers seven-key receipt after permission or source revocation. Unknown COMMIT returns only operationId with503 and no Location/Cookies; confirmed commit renewal failure retains201 and clears Cookies.",
+        "x-max-body-bytes": 4194304,
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StructureCopyPlanRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Read-only advisory result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyPlanEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/structure-copies/preflight": {
+      "post": {
+        "operationId": "preflightStructureCopy",
+        "summary": "Preflight independent empty structure copy",
+        "description": "Copy only selected application/directory/table/form and required complete table dependencies, never business rows/history. Explicit source and target management authority, user/department mappings and independent new group names. Source fingerprint and target structure/policy CAS are rechecked in the same transaction. All new workflows are disabled. Strict JSON <=4194304 bytes, depth32; reject unknown/duplicate/case-confused keys, query (including bare ?), compressed bodies and trailing input. Plan/preflight are one read-only RR snapshot. Execute is one local atomic transaction; original actor/key/body recovers seven-key receipt after permission or source revocation. Unknown COMMIT returns only operationId with503 and no Location/Cookies; confirmed commit renewal failure retains201 and clears Cookies.",
+        "x-max-body-bytes": 4194304,
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StructureCopyPreflightRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Read-only advisory result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyPreflightEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/structure-copies/execute": {
+      "post": {
+        "operationId": "executeStructureCopy",
+        "summary": "Execute independent empty structure copy",
+        "description": "Copy only selected application/directory/table/form and required complete table dependencies, never business rows/history. Explicit source and target management authority, user/department mappings and independent new group names. Source fingerprint and target structure/policy CAS are rechecked in the same transaction. All new workflows are disabled. Strict JSON <=4194304 bytes, depth32; reject unknown/duplicate/case-confused keys, query (including bare ?), compressed bodies and trailing input. Plan/preflight are one read-only RR snapshot. Execute is one local atomic transaction; original actor/key/body recovers seven-key receipt after permission or source revocation. Unknown COMMIT returns only operationId with503 and no Location/Cookies; confirmed commit renewal failure retains201 and clears Cookies.",
+        "x-max-body-bytes": 4194304,
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StructureCopyExecuteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyErrorEnvelope"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Confirmed independent empty copy or original seven-key receipt",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "pattern": "^/api/v1/applications/[0-9a-f-]+(?:/(?:directories|tables|forms)/[0-9a-f-]+)?$"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureCopyEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -22099,6 +22858,9 @@
               },
               {
                 "$ref": "#/components/schemas/StructureDeletionResult"
+              },
+              {
+                "$ref": "#/components/schemas/StructureCopyResult"
               }
             ]
           }
@@ -32824,6 +33586,661 @@
                 }
               }
             ]
+          }
+        ]
+      },
+      "StructureCopySource": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "appId",
+          "kind",
+          "id"
+        ],
+        "properties": {
+          "appId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "application",
+              "directory",
+              "table",
+              "form"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          }
+        }
+      },
+      "StructureCopyTarget": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "appId",
+          "directoryId",
+          "name"
+        ],
+        "properties": {
+          "appId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "not": {
+                  "const": "00000000-0000-0000-0000-000000000000"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "directoryId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "not": {
+                  "const": "00000000-0000-0000-0000-000000000000"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^(?![\\s\\S]*\\u0000)\\s*\\S(?:[\\s\\S]{0,98}\\S)?\\s*$",
+            "description": "TrimSpace then 1..100 Unicode code points, no NUL; request bound also applies."
+          }
+        }
+      },
+      "StructureCopyGroupMapping": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sourceGroupId",
+          "name"
+        ],
+        "properties": {
+          "sourceGroupId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^(?![\\s\\S]*\\u0000)\\s*\\S(?:[\\s\\S]{0,98}\\S)?\\s*$",
+            "description": "TrimSpace then 1..100 Unicode code points, no NUL; request bound also applies."
+          }
+        }
+      },
+      "StructureCopyPlanRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source",
+          "target"
+        ],
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/StructureCopySource"
+          },
+          "target": {
+            "$ref": "#/components/schemas/StructureCopyTarget"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "source": {
+                  "properties": {
+                    "kind": {
+                      "const": "application"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "target": {
+                  "properties": {
+                    "appId": {
+                      "type": "null"
+                    },
+                    "directoryId": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "target": {
+                  "properties": {
+                    "appId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                      "not": {
+                        "const": "00000000-0000-0000-0000-000000000000"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "StructureCopyPreflightRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source",
+          "target",
+          "expectedSourceFingerprint",
+          "expectedTargetStructureVersion",
+          "expectedTargetPolicyRevision",
+          "bindings",
+          "groupMappings"
+        ],
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/StructureCopySource"
+          },
+          "target": {
+            "$ref": "#/components/schemas/StructureCopyTarget"
+          },
+          "expectedSourceFingerprint": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "expectedTargetStructureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "expectedTargetPolicyRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "bindings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateBinding"
+            }
+          },
+          "groupMappings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StructureCopyGroupMapping"
+            },
+            "maxItems": 128
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "source": {
+                  "properties": {
+                    "kind": {
+                      "const": "application"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "target": {
+                  "properties": {
+                    "appId": {
+                      "type": "null"
+                    },
+                    "directoryId": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "target": {
+                  "properties": {
+                    "appId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                      "not": {
+                        "const": "00000000-0000-0000-0000-000000000000"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "StructureCopyExecuteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source",
+          "target",
+          "expectedSourceFingerprint",
+          "expectedTargetStructureVersion",
+          "expectedTargetPolicyRevision",
+          "bindings",
+          "groupMappings",
+          "operationId"
+        ],
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/StructureCopySource"
+          },
+          "target": {
+            "$ref": "#/components/schemas/StructureCopyTarget"
+          },
+          "expectedSourceFingerprint": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "expectedTargetStructureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "expectedTargetPolicyRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "bindings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateBinding"
+            }
+          },
+          "groupMappings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StructureCopyGroupMapping"
+            },
+            "maxItems": 128
+          },
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "source": {
+                  "properties": {
+                    "kind": {
+                      "const": "application"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "target": {
+                  "properties": {
+                    "appId": {
+                      "type": "null"
+                    },
+                    "directoryId": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "target": {
+                  "properties": {
+                    "appId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                      "not": {
+                        "const": "00000000-0000-0000-0000-000000000000"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "StructureCopyReferences": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "userIds",
+          "departmentIds"
+        ],
+        "properties": {
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            },
+            "uniqueItems": true
+          },
+          "departmentIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "not": {
+                "const": "00000000-0000-0000-0000-000000000000"
+              }
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "StructureCopyPlanResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sourceFingerprint",
+          "targetStructureVersion",
+          "targetPolicyRevision",
+          "manifest",
+          "externalReferences"
+        ],
+        "properties": {
+          "sourceFingerprint": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "targetStructureVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "targetPolicyRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/TemplateManifest"
+          },
+          "externalReferences": {
+            "$ref": "#/components/schemas/StructureCopyReferences"
+          }
+        }
+      },
+      "StructureCopyPreflightResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "valid",
+          "counts",
+          "mappedManifest"
+        ],
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "const": true
+          },
+          "counts": {
+            "$ref": "#/components/schemas/TemplateCounts"
+          },
+          "mappedManifest": {
+            "$ref": "#/components/schemas/TemplateManifest"
+          }
+        }
+      },
+      "StructureCopyResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "appId",
+          "resourceKind",
+          "id",
+          "structureVersion",
+          "policyRevision",
+          "status"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "appId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "resourceKind": {
+            "type": "string",
+            "enum": [
+              "application",
+              "directory",
+              "table",
+              "form"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "structureVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "policyRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "status": {
+            "type": "string",
+            "const": "copied"
+          }
+        }
+      },
+      "StructureCopyPlanEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/StructureCopyPlanResult"
+              }
+            }
+          }
+        ]
+      },
+      "StructureCopyPreflightEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/StructureCopyPreflightResult"
+              }
+            }
+          }
+        ]
+      },
+      "StructureCopyEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/StructureCopyResult"
+              }
+            }
+          }
+        ]
+      },
+      "StructureCopyErrorEnvelope": {
+        "oneOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "COMMON_INVALID_ARGUMENT",
+                      "COMMON_UNSUPPORTED_MEDIA_TYPE",
+                      "COMMON_METHOD_NOT_ALLOWED",
+                      "AUTH_UNAUTHENTICATED",
+                      "COMMON_CSRF_REJECTED",
+                      "AUTH_SESSION_CHANGED",
+                      "APPLICATION_FORBIDDEN",
+                      "APPLICATION_NOT_FOUND",
+                      "APPLICATION_RESOURCE_INVALID",
+                      "APPLICATION_TEMPLATE_NOT_EXPORTABLE",
+                      "APPLICATION_TEMPLATE_TOO_LARGE",
+                      "COMMON_SERVICE_UNAVAILABLE",
+                      "API_NOT_FOUND",
+                      "APPLICATION_OPERATION_CONFLICT",
+                      "APPLICATION_POLICY_CONFLICT",
+                      "APPLICATION_COPY_SOURCE_CHANGED"
+                    ]
+                  },
+                  "data": {
+                    "type": "null"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "COMMON_VALIDATION_FAILED"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/ValidationErrorData"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "APPLICATION_STRUCTURE_CONFLICT"
+                  },
+                  "data": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "currentStructureVersion"
+                    ],
+                    "properties": {
+                      "currentStructureVersion": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "$ref": "#/components/schemas/TemplateUnconfirmedEnvelope"
           }
         ]
       }
