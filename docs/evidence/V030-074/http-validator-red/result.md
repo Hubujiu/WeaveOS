@@ -1,0 +1,1 @@
+Actual Go JSON test logs split a large plan JSON across output events. Initial evidence validator incorrectly parses each fragment. Real validation failure preserved; this is a validator bug, not an API schema result. Repair must reconstruct complete output lines and keep every schema assertion.
