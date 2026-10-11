@@ -4,6 +4,7 @@ import type { User } from '../workspace-types';
 import { applicationApi, applicationApiEnvelope, ApplicationError } from './api';
 import { cancelUnsentPreflights, clearPacket, clearRecovery, getRecovery, keepPacket, registerUnsentPreflight, type ApplicationPacket } from './recovery';
 import type { ApplicationOperation } from './types';
+import { validTaskRecordRequest } from './workflows/taskSaveContract';
 
 type State = { phase: 'idle' | 'preflight' | 'pending' | 'error' | 'unconfirmed'; message: string; packet: ApplicationPacket | null; errorCode?: string };
 
@@ -32,7 +33,7 @@ function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean
  if (packet.resource.id && receipt.id !== packet.resource.id) return false;
  const version = packet.resource.kind === 'draft' ? receipt.draftVersion : receipt.recordVersion;
  if (!Number.isSafeInteger(version) || (version as number) < 1) return false;
- if (packet.resource.kind === 'record') {
+ if (packet.resource.kind === 'record' || packet.resource.kind === 'task-record') {
   if (!Number.isSafeInteger(receipt.schemaVersion) || (receipt.schemaVersion as number) < 1) return false;
   if (typeof receipt.createdAt !== 'string' || typeof receipt.updatedAt !== 'string') return false;
  }
@@ -162,9 +163,13 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
   else {
    const request = requestOrPath;
    if (!scope || !scopedResource || JSON.stringify(request.resource) !== JSON.stringify(scopedResource)) throw new TypeError('Mutation resource does not match the mounted scope');
+   if (request.resource.kind === 'task-record') {
+    if (!validTaskRecordRequest(request.resource, request)) throw new TypeError('Invalid scoped mutation packet');
+   } else {
    const base = 'applications/' + encodeURIComponent(request.resource.appId) + '/forms/' + encodeURIComponent(request.resource.viewId) + '/' + (request.resource.kind === 'draft' ? 'drafts' : 'records');
    const expectedPath = request.method === 'POST' ? base : base + '/' + encodeURIComponent(request.resource.id ?? '');
    if (request.path !== expectedPath || request.path.includes('?') || request.path.includes('#') || request.method === 'DELETE' && (request.resource.kind !== 'draft' || !Number.isSafeInteger(request.expectedDraftVersion) || (request.expectedDraftVersion as number) < 1) || request.method === 'POST' && (request.expectedStatus !== 201 || !request.resource.creationNonce) || request.method === 'PATCH' && request.expectedStatus !== 200 || request.method === 'DELETE' && request.expectedStatus !== 204 || request.body && Object.hasOwn(request.body, 'operationId')) throw new TypeError('Invalid scoped mutation packet');
+   }
    const query = request.method === 'DELETE' ? { operationId, expectedDraftVersion: request.expectedDraftVersion } : undefined;
    const path = query ? request.path + '?operationId=' + encodeURIComponent(operationId) + '&expectedDraftVersion=' + encodeURIComponent(String(request.expectedDraftVersion)) : request.path;
    packet = { actorId, path, method: request.method, expectedStatus: request.expectedStatus, scope, operationId, query, resource: structuredClone(request.resource), body: request.method === 'DELETE' ? undefined : { ...structuredClone(request.body ?? {}), operationId } };

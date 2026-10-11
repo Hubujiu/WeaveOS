@@ -9,7 +9,8 @@ export type ApplicationPacket = {
  operationId?: string;
  body?: { operationId?: string; [key: string]: unknown };
  query?: { operationId: string; expectedDraftVersion?: number };
- resource?: { kind: 'record' | 'draft'; appId: string; viewId: string; id?: string; creationNonce?: string };
+ resource?: { kind: 'record' | 'draft'; appId: string; viewId: string; id?: string; creationNonce?: string }
+  | { kind: 'task-record'; appId: string; viewId: string; id: string; instanceId: string; taskId: string; creationNonce?: never };
  context?: unknown;
 };
 type Recovery = { name: string; packet: ApplicationPacket | null; unknown: boolean; draft?: unknown };
