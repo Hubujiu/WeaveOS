@@ -20,12 +20,13 @@ async function setup(page:Page,result:(n:number)=>{status?:number;code?:string;d
   return r.fulfill({json:{code:'OK',data,meta:null,message:''}});
  });return calls;
 }
-test('Root task deep link reads current authorized preview and preserves exact decimal strings',async({page})=>{
- const calls=await setup(page,()=>({data:preview}));await page.goto(route);
+test('Root task deep link reads current authorized preview and preserves exact decimal strings',async({page},testInfo)=>{
+ const calls=await setup(page,()=>({data:preview}));await page.setViewportSize({width:1440,height:1000});await page.goto(route);
  await expect(page.getByRole('heading',{name:'审批处理',exact:true})).toBeVisible();
  await expect(page.getByLabel('报销金额',{exact:false})).toHaveValue('123456789012345678901234567890.12');
  await expect(page.getByLabel('报销金额',{exact:false})).not.toBeEditable();
  await expect(page.getByText('最新 v3',{exact:true})).toBeVisible();
+ await page.evaluate(()=>document.fonts.ready);await testInfo.attach('task-preview-desktop',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  expect(calls.find(c=>c.path===api)?.headers['x-expected-actor-id']).toBe(actor.id);
  expect(page.url()).not.toContain(preview.basisToken);
  const shell=await page.getByTestId('workspace-shell').elementHandle();
