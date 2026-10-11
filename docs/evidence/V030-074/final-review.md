@@ -15,3 +15,6 @@ Runtime/test source fixed at ba803cae (full SHA in full-corrected/source-head.tx
 - Initial Redocly CLI completion was blocked for default telemetry. Installed official source proved REDOCLY_TELEMETRY=off suppresses the whole telemetry call; local-only rerun with update checks disabled passed. No contract upload authorization inferred.
 
 No main promotion, production deployment, new credentials or persistent access were performed. Self-review is by root alone, as requested; no independent-agent review claim. Ready means a local development candidate, not accepted or user-approved main.
+
+## Final matrix supplement
+The test-only scope-matrix-final extension passes18 top-level/59 subtests without skips. Opposite-direction concurrent copies both complete with independent target integrity. Group insertion is the fifth exact-injection rollback phase in addition to form/workflow/audit/receipt. No runtime changes after the full-corrected regression. Final exact-head CI remains required.
