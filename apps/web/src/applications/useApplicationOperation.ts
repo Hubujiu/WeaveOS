@@ -6,6 +6,7 @@ import { cancelUnsentPreflights, clearPacket, clearRecovery, getRecovery, keepPa
 import type { ApplicationOperation } from './types';
 import { validTaskRecordRequest } from './workflows/taskSaveContract';
 import { validWorkflowOperation } from './workflows/taskActionContract';
+import { validInstanceActionRequest } from './workflows/lifecycleContract';
 
 type State = { phase: 'idle' | 'preflight' | 'pending' | 'accepted' | 'error' | 'unconfirmed'; message: string; packet: ApplicationPacket | null; errorCode?: string };
 
@@ -31,7 +32,7 @@ function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean
  if (!result || typeof result !== 'object' || Array.isArray(result) || !packet.resource) return false;
  // Task execution receipts are checked against their distinct closed wire
  // in perform(), including actual HTTP status and the confirmed command ID.
- if (packet.resource.kind === 'task-action') return true;
+ if (packet.resource.kind === 'task-action'||packet.resource.kind === 'instance-action') return true;
  const receipt = result as Record<string, unknown>;
  if (receipt.operationId !== packet.operationId || typeof receipt.id !== 'string' || !receipt.id) return false;
  if (packet.resource.id && receipt.id !== packet.resource.id) return false;
@@ -117,12 +118,12 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
    sent = true;
    let result: T;
    let location: string | null | undefined;
-   const taskAction = packet.resource?.kind === 'task-action';
+   const taskAction = packet.resource?.kind === 'task-action'||packet.resource?.kind === 'instance-action';
    if (taskAction) {
     const reply = await applicationWorkflowApi<T>(packet.actorId, query ? 'application-workflow-operations/' + packet.operationId : packet.path, query ? 'GET' : 'POST', query ? undefined : packet.body);
     result = reply.data; location = reply.location;
     const context = packet.context as {commandId?:string} | undefined;
-    if (!validWorkflowOperation(result, {operationId:packet.operationId??'', instanceId:packet.resource!.kind==='task-action'?packet.resource!.instanceId:'', commandId:context?.commandId}, reply.httpStatus, query?'GET':'POST')) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
+    if (!validWorkflowOperation(result, {operationId:packet.operationId??'', instanceId:packet.resource&&(packet.resource.kind==='task-action'||packet.resource.kind==='instance-action')?packet.resource.instanceId:'', commandId:context?.commandId,...(packet.resource?.kind==='instance-action'?{action:'withdraw' as const}:{})}, reply.httpStatus, query?'GET':'POST')) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
     if (!query && result.status === 'pending') {
      let target:URL|null=null;
      try { if(typeof location==='string')target=new URL(location,window.location.origin); } catch { /* Invalid receipt Location remains unknown. */ }
@@ -185,7 +186,9 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
   else {
    const request = requestOrPath;
    if (!scope || !scopedResource || JSON.stringify(request.resource) !== JSON.stringify(scopedResource)) throw new TypeError('Mutation resource does not match the mounted scope');
-   if (request.resource.kind === 'task-action') {
+   if (request.resource.kind === 'instance-action') {
+    if (!validInstanceActionRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'task-action') {
     const r=request.resource;
     const expectedPath=`applications/${r.appId}/forms/${r.viewId}/records/${r.id}/workflow-instances/${r.instanceId}/tasks/${r.taskId}/actions`;
     if (request.path!==expectedPath || request.method!=='POST' || request.expectedStatus!==202 || request.body&&Object.hasOwn(request.body,'operationId') || !validWorkflowTransportRequest(request.path,request.method,{...request.body,operationId})) throw new TypeError('Invalid scoped mutation packet');

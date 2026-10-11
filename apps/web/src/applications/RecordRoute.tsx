@@ -21,10 +21,12 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
  registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void;
 }){
  const [editor,setEditor]=useState<Editor|null>(null),[pendingRead,setPendingRead]=useState<PendingRead|null>(null);
+ const [recordDirty,setRecordDirty]=useState(false),[workflowDirty,setWorkflowDirty]=useState(false);
+ useEffect(()=>{onDirtyChange(recordDirty||workflowDirty);return()=>onDirtyChange(false);},[recordDirty,workflowDirty,onDirtyChange]);
  const [readError,setReadError]=useState(''),[saved,setSaved]=useState(false),[workspaceRefresh,setWorkspaceRefresh]=useState(0);
  const generation=useRef(0),openedRecovery=useRef(new Set<string>()),readController=useRef<AbortController|null>(null),originFocus=useRef<HTMLElement|null>(null);
  useEffect(()=>()=>{generation.current++;readController.current?.abort();},[]);
- const closeEditor=useCallback(()=>{generation.current++;readController.current?.abort();setEditor(null);setPendingRead(null);setReadError('');onDirtyChange(false);},[onDirtyChange]);
+ const closeEditor=useCallback(()=>{generation.current++;readController.current?.abort();setEditor(null);setPendingRead(null);setReadError('');setRecordDirty(false);},[onDirtyChange]);
  const captureOriginFocus=()=>{originFocus.current=document.activeElement instanceof HTMLElement?document.activeElement:null;};
  const guardedClose=()=>requestSectionLeave(()=>{
   const target=originFocus.current;
@@ -63,16 +65,16 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   try{
    const runtime=parseRuntimeView(await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/runtime`,'GET',undefined,controller.signal),{appId,viewId});
    if(current!==generation.current)return;
-   if(runtime.capabilities.read==='none'){setPendingRead(null);setSaved(confirmedWrite);onDirtyChange(false);return;}
+   if(runtime.capabilities.read==='none'){setPendingRead(null);setSaved(confirmedWrite);setRecordDirty(false);return;}
    const raw=await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/records/${encodeURIComponent(recordId)}`,'GET',undefined,controller.signal);
    const record=parseRecordItem(raw,runtime,actorId);
    if(record.id!==recordId)throw new Error('记录身份不匹配');
    if(current!==generation.current)return;
-   setPendingRead(null);setEditor({identity,view:runtime,record,mode:'read'});setSaved(confirmedWrite);onDirtyChange(false);
-  }catch(error){if(current!==generation.current||controller.signal.aborted)return;handleError(error);setPendingRead({identity,view:null,recordId,mode:'read',confirmedWrite});setReadError(confirmedWrite?'记录已保存，但无法读取记录；请重试读取记录':'无法读取记录，请重试读取记录');setSaved(confirmedWrite);onDirtyChange(false);}
+   setPendingRead(null);setEditor({identity,view:runtime,record,mode:'read'});setSaved(confirmedWrite);setRecordDirty(false);
+  }catch(error){if(current!==generation.current||controller.signal.aborted)return;handleError(error);setPendingRead({identity,view:null,recordId,mode:'read',confirmedWrite});setReadError(confirmedWrite?'记录已保存，但无法读取记录；请重试读取记录':'无法读取记录，请重试读取记录');setSaved(confirmedWrite);setRecordDirty(false);}
  },[actorId,appId,viewId,onUnauthorized,onIdentityMismatch,onDirtyChange]);
  const onConfirmed=useCallback((result:MutationResult,identity:RecordEditorIdentity)=>{
-  setSaved(true);onDirtyChange(false);
+  setSaved(true);setRecordDirty(false);
   void refreshRead(identity,result.id,true);
  },[onDirtyChange,refreshRead]);
  const editAllowed=(value:Editor)=>!!value.record&&scopeAllows(value.view.capabilities.edit,actorId,value.record.createdBy)&&projectRuntimeFields(value.view,'edit',actorId,value.record).some(field=>field.editable);
@@ -124,27 +126,29 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   if(!editor)return;
   if(editor.record){requestSectionLeave(()=>{setSaved(false);void refreshRead(editor.identity,editor.record!.id,false);});return;}
   requestSectionLeave(()=>{
-   setEditor(null);setPendingRead(null);setReadError('');setSaved(false);onDirtyChange(false);
+   setEditor(null);setPendingRead(null);setReadError('');setSaved(false);setRecordDirty(false);
    setWorkspaceRefresh(value=>value+1);
   });
  };
+ const openFlowAction=(action:()=>void)=>{const current=editor;if(!current)return;requestSectionLeave(()=>{setEditor({...current,mode:'read'});setRecordDirty(false);action();});};
+ const hasPendingFlow=workflowDirty||scopedUnconfirmed(actorId).some(packet=>packet.resource?.kind==='instance-action'&&packet.resource.appId===appId&&packet.resource.viewId===viewId&&packet.resource.id===editor?.record?.id);
  const canRetryRead=!!pendingRead&&!!readError;
  const showingDetail=!!pendingRead||!!editor&&editor.mode!=='create';
  const editorContent=<>
    {pendingRead&&!readError&&<p role="status">正在读取记录…</p>}
    {readError&&<><p role="alert">{readError}</p>{canRetryRead&&<button type="button" className="admin-button" onClick={()=>{const target=pendingRead!;setReadError('');if(target.view)void readRecord(target.view,target.recordId,target.queryVersion,target.identity,target.mode);else void refreshRead(target.identity,target.recordId,target.confirmedWrite);}}>重试读取记录</button>}</>}
    <div className="record-detail-grid">{editor&&<RecordForm key={JSON.stringify([editor.identity,editor.mode,editor.view.policyRevision,editor.view.schemaVersion,editor.view.viewVersion,editor.record?.recordVersion??'new'])} view={editor.view} identity={editor.identity} record={editor.record} mode={editor.mode} authorityKey={`${editor.view.policyRevision}:${editor.view.schemaVersion}:${editor.view.viewVersion}:${editor.record?.recordVersion??'new'}`}
-    queryVersion={editor.queryVersion} loadCandidates={loadCandidates} onConfirmed={onConfirmed} onDirtyChange={onDirtyChange} onRequestDiscard={guardedClose} onDiscard={closeEditor}
+    queryVersion={editor.queryVersion} loadCandidates={loadCandidates} onConfirmed={onConfirmed} onDirtyChange={setRecordDirty} onRequestDiscard={guardedClose} onDiscard={closeEditor}
     onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard}
     onRefresh={refreshEditor}/>}
-   {editor?.record&&<RecordWorkflows actorId={actorId} appId={appId} viewId={viewId} recordId={editor.record.id} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>} </div>
+   {editor?.record&&<RecordWorkflows actorId={actorId} appId={appId} viewId={viewId} recordId={editor.record.id} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onOpenAction={openFlowAction} onDirtyChange={setWorkflowDirty}/>} </div>
  </>;
  return <section className="record-route" aria-label="记录路由">
   {saved&&<p className="record-saved" role="status">记录已保存</p>}
   <div hidden={showingDetail} className="record-list-host"><RecordWorkspace key={`${actorId}:${appId}:${viewId}:${workspaceRefresh}`} actorId={actorId} appId={appId} viewId={viewId}
    onCreate={openNew} onOpenRecord={openRow} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onRuntimeReady={runtimeReady}/></div>
   {editor?.mode==='create'?<Modal title="新建记录" onClose={guardedClose}>{editorContent}</Modal>:showingDetail?<section className="record-detail-page" aria-label="记录详情">
-   <div className="app-page-heading"><h1>记录详情</h1><div className="record-detail-actions"><button type="button" className="admin-button" aria-label="关闭" onClick={guardedClose}>返回</button>{editor?.mode==='read'&&editAllowed(editor)&&<button type="button" className="admin-button primary" onClick={()=>{setSaved(false);setEditor({...editor,mode:'edit',queryVersion:editor.queryVersion});}}>编辑记录</button>}</div></div>
+   <div className="app-page-heading"><h1>记录详情</h1><div className="record-detail-actions"><button type="button" className="admin-button" aria-label="关闭" onClick={guardedClose}>返回</button>{editor?.mode==='read'&&editAllowed(editor)&&<button type="button" className="admin-button primary" disabled={hasPendingFlow} onClick={()=>{setSaved(false);setEditor({...editor,mode:'edit',queryVersion:editor.queryVersion});}}>编辑记录</button>}</div></div>
    {editorContent}
   </section>:null}
  </section>;
