@@ -1,0 +1,1 @@
+Second acceptance run: late-phase faults pass including exact injected error. Cross-app business expectation unchanged; assertion query used public lowercase graph keys against documented internal Go graph encoding (Nodes/Approval/AssigneeIDs). Corrected only storage-path casing; expected mapped user remains f.other.

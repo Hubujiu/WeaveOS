@@ -236,7 +236,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if s.Templates != nil {
 		path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
 		parts := strings.Split(path, "/")
-		if strings.HasPrefix(r.URL.Path, "/api/v1/application-templates/") || path != r.URL.Path && len(parts) == 2 && parts[1] == "structure-template" {
+		if strings.HasPrefix(r.URL.Path, "/api/v1/structure-copies/") || strings.HasPrefix(r.URL.Path, "/api/v1/application-templates/") || path != r.URL.Path && len(parts) == 2 && parts[1] == "structure-template" {
 			s.Templates.ServeHTTP(w, r)
 			return
 		}

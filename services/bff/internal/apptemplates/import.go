@@ -88,94 +88,9 @@ func (s *Service) Import(ctx context.Context, p session.Principal, operationID s
 	}
 	tx := w.Tx()
 	app := m.Application.ID
-	pending := append([]Directory{}, m.Directories...)
-	written := map[string]bool{}
-	for len(pending) > 0 {
-		next := []Directory{}
-		for _, d := range pending {
-			if d.ParentID != nil && !written[*d.ParentID] {
-				next = append(next, d)
-				continue
-			}
-			if _, e = tx.Exec(ctx, "INSERT INTO applications.directories(id,app_id,name,parent_id,position) VALUES($1,$2,$3,$4,$5)", d.ID, app, d.Name, d.ParentID, d.Position); e != nil {
-				return empty, e
-			}
-			if _, e = tx.Exec(ctx, "INSERT INTO applications.menu_resources(app_id,resource_kind,resource_id) VALUES($1,'directory',$2)", app, d.ID); e != nil {
-				return empty, e
-			}
-			written[d.ID] = true
-		}
-		if len(next) == len(pending) {
-			return empty, ErrInvalid
-		}
-		pending = next
-	}
-	for _, t := range m.Tables {
-		if _, e = tx.Exec(ctx, "INSERT INTO applications.logical_tables(id,app_id,name,directory_id,position) VALUES($1,$2,$3,$4,$5)", t.ID, app, t.Name, t.DirectoryID, t.Position); e != nil {
-			return empty, e
-		}
-		if e = appstructure.InitializeTemplateTableInTx(ctx, tx, p, app, t.ID, t.Fields, limits); e != nil {
-			return empty, e
-		}
-	}
-	for _, f := range m.Forms {
-		layout, e := json.Marshal(f.Layout)
-		if e != nil {
-			return empty, e
-		}
-		if _, e = tx.Exec(ctx, "INSERT INTO applications.form_views(id,app_id,table_id,name,directory_id,position,view_version,layout) VALUES($1,$2,$3,$4,$5,$6,1,$7)", f.ID, app, f.TableID, f.Name, f.DirectoryID, f.Position, layout); e != nil {
-			return empty, e
-		}
-		if _, e = tx.Exec(ctx, "INSERT INTO applications.menu_resources(app_id,resource_kind,resource_id) VALUES($1,'form',$2)", app, f.ID); e != nil {
-			return empty, e
-		}
-	}
-	formTables := map[string]string{}
-	for _, f := range m.Forms {
-		formTables[f.ID] = f.TableID
-	}
-	members, grants := 0, 0
-	for _, g := range m.PermissionGroups {
-		if _, e = tx.Exec(ctx, "INSERT INTO applications.permission_groups(id,app_id,name,enabled) VALUES($1,$2,$3,$4)", g.ID, app, g.Name, g.Enabled); e != nil {
-			return empty, e
-		}
-		for _, id := range g.MemberIDs {
-			if _, e = tx.Exec(ctx, "INSERT INTO applications.group_members(app_id,group_id,user_id) VALUES($1,$2,$3)", app, g.ID, id); e != nil {
-				return empty, e
-			}
-			members++
-		}
-		for _, grant := range g.Grants {
-			id, e := randomID()
-			if e != nil {
-				return empty, e
-			}
-			if _, e = tx.Exec(ctx, "INSERT INTO applications.grants(id,app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,$3,$4,$5,$6,$7)", id, app, g.ID, grant.ResourceKind, grant.ResourceID, grant.Action, grant.RowScope); e != nil {
-				return empty, e
-			}
-			for _, field := range grant.Fields {
-				if _, e = tx.Exec(ctx, "INSERT INTO applications.grant_fields(app_id,grant_id,field_id,table_id) VALUES($1,$2,$3,$4)", app, id, field, formTables[grant.ResourceID]); e != nil {
-					return empty, e
-				}
-			}
-			grants++
-		}
-	}
-	for _, flow := range m.Workflows {
-		graph := flowgraph.Graph{Version: flow.Graph.Version, Nodes: []flowgraph.Node{}, Edges: []flowgraph.Edge{}}
-		for _, node := range flow.Graph.Nodes {
-			n := flowgraph.Node{ID: node.ID, Kind: node.Kind, Condition: node.Condition}
-			if a := node.Approval; a != nil {
-				n.Approval = &flowgraph.Approval{Mode: a.Mode, AssigneeIDs: a.AssigneeIDs, EditableFieldIDs: a.EditableFieldIDs}
-			}
-			graph.Nodes = append(graph.Nodes, n)
-		}
-		for _, edge := range flow.Graph.Edges {
-			graph.Edges = append(graph.Edges, flowgraph.Edge{From: edge.From, To: edge.To, Branch: edge.Branch})
-		}
-		if _, e = (workflowcatalog.Catalog{}).PutVersionInTx(ctx, tx, workflowcatalog.VersionInput{AppID: app, TableID: flow.TableID, ViewID: flow.ViewID, FlowID: flow.ID, ActorID: p.UserID, Name: flow.Name, ExpectedRevision: 0, ExpectedSchemaVersion: 1, Graph: graph, AllowWithdraw: flow.AllowWithdraw, Triggers: &flow.Triggers}); e != nil {
-			return empty, e
-		}
+	members, grants, e := insertManifestInTx(ctx, tx, p, m, limits)
+	if e != nil {
+		return empty, e
 	}
 	summary, e := json.Marshal(map[string]any{"appId": app, "operationId": operationID, "beforePolicyRevision": 0, "afterPolicyRevision": 1, "changeCounts": map[string]int{"applications": 1, "groups": len(m.PermissionGroups), "members": members, "grants": grants}})
 	if e != nil {
@@ -196,4 +111,101 @@ func (s *Service) Import(ctx context.Context, p session.Principal, operationID s
 		return empty, e
 	}
 	return result, nil
+}
+
+// insertManifestInTx creates only objects. The caller owns app registration,
+// authority, revision changes, audit, receipt and the sole commit.
+func insertManifestInTx(ctx context.Context, tx pgx.Tx, p session.Principal, m Manifest, limits appschema.Limits) (int, int, error) {
+	app := m.Application.ID
+	var e error
+	pending := append([]Directory{}, m.Directories...)
+	written := map[string]bool{}
+	for len(pending) > 0 {
+		next := []Directory{}
+		for _, d := range pending {
+			if d.ParentID != nil && !written[*d.ParentID] {
+				next = append(next, d)
+				continue
+			}
+			if _, e = tx.Exec(ctx, "INSERT INTO applications.directories(id,app_id,name,parent_id,position) VALUES($1,$2,$3,$4,$5)", d.ID, app, d.Name, d.ParentID, d.Position); e != nil {
+				return 0, 0, e
+			}
+			if _, e = tx.Exec(ctx, "INSERT INTO applications.menu_resources(app_id,resource_kind,resource_id) VALUES($1,'directory',$2)", app, d.ID); e != nil {
+				return 0, 0, e
+			}
+			written[d.ID] = true
+		}
+		if len(next) == len(pending) {
+			return 0, 0, ErrInvalid
+		}
+		pending = next
+	}
+	for _, t := range m.Tables {
+		if _, e = tx.Exec(ctx, "INSERT INTO applications.logical_tables(id,app_id,name,directory_id,position) VALUES($1,$2,$3,$4,$5)", t.ID, app, t.Name, t.DirectoryID, t.Position); e != nil {
+			return 0, 0, e
+		}
+		if e = appstructure.InitializeTemplateTableInTx(ctx, tx, p, app, t.ID, t.Fields, limits); e != nil {
+			return 0, 0, e
+		}
+	}
+	for _, f := range m.Forms {
+		layout, e := json.Marshal(f.Layout)
+		if e != nil {
+			return 0, 0, e
+		}
+		if _, e = tx.Exec(ctx, "INSERT INTO applications.form_views(id,app_id,table_id,name,directory_id,position,view_version,layout) VALUES($1,$2,$3,$4,$5,$6,1,$7)", f.ID, app, f.TableID, f.Name, f.DirectoryID, f.Position, layout); e != nil {
+			return 0, 0, e
+		}
+		if _, e = tx.Exec(ctx, "INSERT INTO applications.menu_resources(app_id,resource_kind,resource_id) VALUES($1,'form',$2)", app, f.ID); e != nil {
+			return 0, 0, e
+		}
+	}
+	formTables := map[string]string{}
+	for _, f := range m.Forms {
+		formTables[f.ID] = f.TableID
+	}
+	members, grants := 0, 0
+	for _, g := range m.PermissionGroups {
+		if _, e = tx.Exec(ctx, "INSERT INTO applications.permission_groups(id,app_id,name,enabled) VALUES($1,$2,$3,$4)", g.ID, app, g.Name, g.Enabled); e != nil {
+			return 0, 0, e
+		}
+		for _, id := range g.MemberIDs {
+			if _, e = tx.Exec(ctx, "INSERT INTO applications.group_members(app_id,group_id,user_id) VALUES($1,$2,$3)", app, g.ID, id); e != nil {
+				return 0, 0, e
+			}
+			members++
+		}
+		for _, grant := range g.Grants {
+			id, e := randomID()
+			if e != nil {
+				return 0, 0, e
+			}
+			if _, e = tx.Exec(ctx, "INSERT INTO applications.grants(id,app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,$3,$4,$5,$6,$7)", id, app, g.ID, grant.ResourceKind, grant.ResourceID, grant.Action, grant.RowScope); e != nil {
+				return 0, 0, e
+			}
+			for _, field := range grant.Fields {
+				if _, e = tx.Exec(ctx, "INSERT INTO applications.grant_fields(app_id,grant_id,field_id,table_id) VALUES($1,$2,$3,$4)", app, id, field, formTables[grant.ResourceID]); e != nil {
+					return 0, 0, e
+				}
+			}
+			grants++
+		}
+	}
+	for _, flow := range m.Workflows {
+		graph := flowgraph.Graph{Version: flow.Graph.Version, Nodes: []flowgraph.Node{}, Edges: []flowgraph.Edge{}}
+		for _, node := range flow.Graph.Nodes {
+			n := flowgraph.Node{ID: node.ID, Kind: node.Kind, Condition: node.Condition}
+			if a := node.Approval; a != nil {
+				n.Approval = &flowgraph.Approval{Mode: a.Mode, AssigneeIDs: a.AssigneeIDs, EditableFieldIDs: a.EditableFieldIDs}
+			}
+			graph.Nodes = append(graph.Nodes, n)
+		}
+		for _, edge := range flow.Graph.Edges {
+			graph.Edges = append(graph.Edges, flowgraph.Edge{From: edge.From, To: edge.To, Branch: edge.Branch})
+		}
+		if _, e = (workflowcatalog.Catalog{}).PutVersionInTx(ctx, tx, workflowcatalog.VersionInput{AppID: app, TableID: flow.TableID, ViewID: flow.ViewID, FlowID: flow.ID, ActorID: p.UserID, Name: flow.Name, ExpectedRevision: 0, ExpectedSchemaVersion: 1, Graph: graph, AllowWithdraw: flow.AllowWithdraw, Triggers: &flow.Triggers}); e != nil {
+			return 0, 0, e
+		}
+	}
+	return members, grants, nil
 }

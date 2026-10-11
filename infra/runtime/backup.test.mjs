@@ -78,6 +78,7 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00033_application_table_presets.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00034_record_lifecycle.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,'BEGIN;\n'+readFileSync('db/migrations/00035_structure_deletion.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
+ sql(live,'BEGIN;\n'+readFileSync('db/migrations/00036_structure_copy.sql','utf8').split('-- +goose Down')[0]+'\nCOMMIT;');
  sql(live,"SELECT setval('applications.record_command_fence_epoch_seq',41,true);");
  sql(live,`INSERT INTO auth.users(id,account) VALUES('77777777-7777-4777-8777-777777777777','preset-backup-synthetic');
  INSERT INTO personnel.table_presets(id,owner_id,view_key,name,slot,filter_json,hidden_column_ids,schema_version,version,created_at,updated_at)
@@ -144,6 +145,15 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  WITH changed AS (SELECT applications.delete_structure_resource('${structureDeletionApp}','application','${structureDeletionApp}','${h.createdBy}','${structureDeletionOperation}',0,1) AS result)
  INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location)
  SELECT '${h.createdBy}','${structureDeletionOperation}','${structureDeletionApp}','application.delete',decode('${'23'.repeat(32)}','hex'),result,200,'' FROM changed;`);
+ // Independent minimum empty-application copy snapshot. Real service copies
+ // with typed tables, mapped groups and disabled workflows have separate tests.
+ const structureCopyApp=recoveryID(960),structureCopyOperation=recoveryID(961);
+ const structureCopyReceipt={operationId:structureCopyOperation,appId:structureCopyApp,resourceKind:'application',id:structureCopyApp,structureVersion:1,policyRevision:1,status:'copied'};
+ sql(live,`INSERT INTO applications.apps(id,name,owner_user_id,structure_version) VALUES('${structureCopyApp}','Independent empty copy','${h.createdBy}',1);
+ SELECT applications.register_catalog_entry('${structureCopyApp}');
+ INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location)
+ VALUES('${h.createdBy}','${structureCopyOperation}','${structureCopyApp}','structure.copy',decode('${'31'.repeat(32)}','hex'),$receipt$${JSON.stringify(structureCopyReceipt)}$receipt$,201,'/api/v1/applications/${structureCopyApp}');`);
+ const structureCopyQuery=`SELECT to_jsonb(a) FROM applications.apps a WHERE id='${structureCopyApp}'; SELECT to_jsonb(o) FROM applications.operations o WHERE operation_id='${structureCopyOperation}';`;
  const structureDeletionQuery="SELECT to_jsonb(a) FROM applications.apps a ORDER BY id; SELECT to_jsonb(d) FROM applications.directories d ORDER BY id; SELECT to_jsonb(t) FROM applications.logical_tables t ORDER BY id; SELECT to_jsonb(v) FROM applications.form_views v ORDER BY id; SELECT to_jsonb(e) FROM applications.structure_deletions e ORDER BY app_id,resource_kind,resource_id;";
  const lifecycleQuery="SELECT to_jsonb(l) FROM applications.record_lifecycle l ORDER BY app_id,table_id,record_id; SELECT to_jsonb(e) FROM applications.record_lifecycle_events e ORDER BY id;";
  const privateQuery="SELECT id,owner_user_id,app_id,view_id,name,slot,encode(convert_to(definition_json,'UTF8'),'hex'),field_kinds,version,created_at,updated_at FROM applications.table_presets ORDER BY id;";
@@ -156,6 +166,8 @@ test('restricted backup preserves migration ledger sequence and remains unable t
  const operationQuery="SELECT actor_user_id,operation_id,app_id,operation_kind,encode(fingerprint,'hex'),result_json,http_status,location,created_at FROM applications.operations ORDER BY actor_user_id,operation_id;";
  assert.equal(sql(restored,operationQuery),sql(live,operationQuery),'pending operation receipt bytes must survive restricted backup');
  assert.ok(sql(restored,operationQuery).includes(actionOperation));
+ assert.equal(sql(restored,structureCopyQuery),sql(live,structureCopyQuery),'independent copy identity and exact seven-key receipt survive restricted backup');
+ assert.ok(sql(restored,operationQuery).includes(structureCopyOperation));
  assert.equal(sql(restored,privateQuery),sql(live,privateQuery),'private configuration and immutable scope survive restricted backup exactly');
  assert.equal(sql(restored,lifecycleQuery),sql(live,lifecycleQuery),'retained deletion and permanent lifecycle events survive restricted backup exactly');
  assert.equal(sql(restored,structureDeletionQuery),sql(live,structureDeletionQuery),'retained structure metadata and deletion events survive restricted backup exactly');

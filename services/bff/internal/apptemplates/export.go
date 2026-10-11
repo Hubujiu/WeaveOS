@@ -49,6 +49,21 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
 		return empty, e
 	}
 	defer tx.Rollback(context.Background())
+	result, e := exportManifestInTx(ctx, tx, app)
+	if e != nil {
+		return empty, e
+	}
+	if e = tx.Commit(ctx); e != nil {
+		return empty, e
+	}
+	return result, nil
+}
+
+// The caller owns authorization, snapshot and transaction completion.
+func exportManifestInTx(ctx context.Context, tx pgx.Tx, app applications.App) (Manifest, error) {
+	empty := Manifest{}
+	id := app.ID
+	var e error
 	out := Manifest{Format: "weaveos.structure-template", Version: 1, Application: Application{ID: app.ID, Name: app.Name}, Directories: []Directory{}, Tables: []Table{}, Forms: []Form{}, Workflows: []Workflow{}, PermissionGroups: []PermissionGroup{}}
 	b, _ := json.Marshal(out)
 	used := len(b)
@@ -250,9 +265,6 @@ func (s *Service) ExportManifest(ctx context.Context, p session.Principal, id st
 	result, e := NormalizeManifest(out)
 	if e != nil {
 		return empty, ErrNotExportable
-	}
-	if e = tx.Commit(ctx); e != nil {
-		return empty, e
 	}
 	return result, nil
 }

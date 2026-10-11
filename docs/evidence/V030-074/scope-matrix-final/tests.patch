@@ -1,0 +1,108 @@
+diff --git a/services/bff/cmd/bff/root_structure_copy_test.go b/services/bff/cmd/bff/root_structure_copy_test.go
+index 41b43458..67b2bde3 100644
+--- a/services/bff/cmd/bff/root_structure_copy_test.go
++++ b/services/bff/cmd/bff/root_structure_copy_test.go
+@@ -556,13 +556,22 @@ func TestRootStructureCopyCrossAppIndependentGroupAndDirectory(t *testing.T) {
+ 	}
+ }
+ func TestRootStructureCopyFaultRollsBackEverything(t *testing.T) {
+-	for _, phase := range []string{"form", "workflow", "audit", "receipt"} {
++	for _, phase := range []string{"form", "group", "workflow", "audit", "receipt"} {
+ 		t.Run(phase, func(t *testing.T) {
+ 			f := rootHTTPTaskSetup(t)
+ 			s := apptemplates.Service{Pool: f.runtime}
+ 			p := rootTemplatePrincipal(f)
+ 			p.SessionRef = ""
+ 			in := rootCopyPlanInput(f)
++			if phase == "group" {
++				group := f.id(t)
++				if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.permission_groups(id,app_id,name,enabled) VALUES($1,$2,'Source copy group',true)", group, f.app); e != nil {
++					t.Fatal(e)
++				}
++				if _, e := f.owner.Exec(f.ctx, "INSERT INTO applications.grants(id,app_id,group_id,resource_kind,resource_id,action,row_scope) VALUES($1,$2,$3,'form',$4,'data.read','own')", f.id(t), f.app, group, f.view); e != nil {
++					t.Fatal(e)
++				}
++			}
+ 			plan, e := s.PlanCopy(f.ctx, p, in)
+ 			if e != nil {
+ 				t.Fatal(e)
+@@ -574,6 +583,8 @@ func TestRootStructureCopyFaultRollsBackEverything(t *testing.T) {
+ 			trigger := pgx.Identifier{name}.Sanitize()
+ 			table, event, condition := "applications.form_views", "INSERT", "NEW.app_id='"+f.app+"'::uuid"
+ 			switch phase {
++			case "group":
++				table = "applications.permission_groups"
+ 			case "workflow":
+ 				table = "applications.workflow_versions"
+ 			case "audit":
+@@ -687,3 +698,70 @@ func TestRootStructureCopyDeniesBeforeMappedTargetDisclosure(t *testing.T) {
+ 		t.Fatal("unauthorized caller can distinguish mapped target state", e)
+ 	}
+ }
++
++func TestRootStructureCopyOppositeDirectionsKeepBothTargetsIndependent(t *testing.T) {
++	f := rootHTTPTaskSetup(t)
++	s := apptemplates.Service{Pool: f.runtime}
++	p := rootTemplatePrincipal(f)
++	p.SessionRef = ""
++	rootTemplateGrantCreate(t, f, f.actor)
++	seed := rootCopyPlanInput(f)
++	seed.Source.Kind = "application"
++	seed.Source.ID = f.app
++	seed.Target.AppID = nil
++	seed.Target.Name = "Opposite source"
++	seedPlan, e := s.PlanCopy(f.ctx, p, seed)
++	if e != nil {
++		t.Fatal(e)
++	}
++	seeded, e := s.ExecuteCopy(f.ctx, p, f.id(t), rootCopyPreflightInput(seedPlan, seed), applications.Metadata{RequestID: "opposite-seed"})
++	if e != nil {
++		t.Fatal(e)
++	}
++	var receipt struct{ AppID string }
++	if json.Unmarshal(seeded.Data, &receipt) != nil {
++		t.Fatal("invalid seed receipt")
++	}
++	var otherView string
++	if e = f.owner.QueryRow(f.ctx, "SELECT id::text FROM applications.form_views WHERE app_id=$1", receipt.AppID).Scan(&otherView); e != nil {
++		t.Fatal(e)
++	}
++	forward := rootCopyPlanInput(f)
++	forward.Target.AppID = &receipt.AppID
++	reverse := apptemplates.CopyPlanInput{Source: apptemplates.CopySource{AppID: receipt.AppID, Kind: "form", ID: otherView}, Target: apptemplates.CopyTarget{AppID: &f.app, Name: "Reverse copy"}}
++	fp, e := s.PlanCopy(f.ctx, p, forward)
++	if e != nil {
++		t.Fatal(e)
++	}
++	rp, e := s.PlanCopy(f.ctx, p, reverse)
++	if e != nil {
++		t.Fatal(e)
++	}
++	requests := [2]apptemplates.CopyPreflightInput{rootCopyPreflightInput(fp, forward), rootCopyPreflightInput(rp, reverse)}
++	ops := [2]string{f.id(t), f.id(t)}
++	var errs [2]error
++	start := make(chan struct{})
++	var wg sync.WaitGroup
++	for i := range 2 {
++		wg.Add(1)
++		go func(i int) {
++			defer wg.Done()
++			<-start
++			_, errs[i] = s.ExecuteCopy(f.ctx, p, ops[i], requests[i], applications.Metadata{RequestID: "opposite-copy"})
++		}(i)
++	}
++	close(start)
++	wg.Wait()
++	for _, e := range errs {
++		if e != nil {
++			t.Fatal("opposite direction failed or deadlocked", e)
++		}
++	}
++	for _, app := range []string{f.app, receipt.AppID} {
++		var tables, views int
++		var version int64
++		if e = f.owner.QueryRow(f.ctx, "SELECT structure_version,(SELECT count(*) FROM applications.logical_tables WHERE app_id=$1),(SELECT count(*) FROM applications.form_views WHERE app_id=$1) FROM applications.apps WHERE id=$1", app).Scan(&version, &tables, &views); e != nil || version != 2 || tables != 2 || views != 2 {
++			t.Fatal("opposite copy lost target integrity", version, tables, views, e)
++		}
++	}
++}

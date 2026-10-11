@@ -1,0 +1,13 @@
+diff --git a/services/bff/internal/apptemplates/copy_read.go b/services/bff/internal/apptemplates/copy_read.go
+index 5873ff31..e0441ba1 100644
+--- a/services/bff/internal/apptemplates/copy_read.go
++++ b/services/bff/internal/apptemplates/copy_read.go
+@@ -110,7 +110,7 @@ func (s *Service) beginCopyPlan(ctx context.Context, p session.Principal, in Cop
+ 	}
+ 	m, e := SelectCopyManifest(full, in.Source.Kind, in.Source.ID)
+ 	if e != nil {
+-		return fail(e)
++		return fail(applications.ErrMissing)
+ 	}
+ 	fingerprint, e := sourceFingerprint(m)
+ 	if e != nil {

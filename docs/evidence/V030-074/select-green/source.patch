@@ -1,0 +1,128 @@
+diff --git a/services/bff/internal/apptemplates/copy_select.go b/services/bff/internal/apptemplates/copy_select.go
+index 9b608987..709f3320 100644
+--- a/services/bff/internal/apptemplates/copy_select.go
++++ b/services/bff/internal/apptemplates/copy_select.go
+@@ -1,7 +1,120 @@
+ package apptemplates
+ 
+-// SelectCopyManifest selects approved structure and its required dependencies.
+-// Initial declaration only: behavior is intentionally absent for RED evidence.
++// SelectCopyManifest returns a detached, closed configuration subset. The
++// temporary application identity is a namespace, not permission to create it.
+ func SelectCopyManifest(in Manifest, kind, id string) (Manifest, error) {
+-	return Manifest{}, ErrInvalid
++	m, err := NormalizeManifest(in)
++	if err != nil || !validID(id) {
++		return Manifest{}, ErrInvalid
++	}
++	if kind == "application" {
++		if id != m.Application.ID {
++			return Manifest{}, ErrInvalid
++		}
++		return m, nil
++	}
++	dirs, tables, forms := map[string]bool{}, map[string]bool{}, map[string]bool{}
++	found := false
++	switch kind {
++	case "directory":
++		for _, d := range m.Directories {
++			if d.ID == id {
++				found = true
++				dirs[id] = true
++			}
++		}
++		// Input normalization guarantees an acyclic, bounded directory graph.
++		for changed := true; changed; {
++			changed = false
++			for _, d := range m.Directories {
++				if !dirs[d.ID] && d.ParentID != nil && dirs[*d.ParentID] {
++					dirs[d.ID] = true
++					changed = true
++				}
++			}
++		}
++		for _, t := range m.Tables {
++			if t.DirectoryID != nil && dirs[*t.DirectoryID] {
++				tables[t.ID] = true
++			}
++		}
++		for _, f := range m.Forms {
++			if f.DirectoryID != nil && dirs[*f.DirectoryID] {
++				forms[f.ID] = true
++				tables[f.TableID] = true
++			}
++		}
++	case "table":
++		for _, t := range m.Tables {
++			if t.ID == id {
++				found = true
++				tables[id] = true
++			}
++		}
++		for _, f := range m.Forms {
++			if f.TableID == id {
++				forms[f.ID] = true
++			}
++		}
++	case "form":
++		for _, f := range m.Forms {
++			if f.ID == id {
++				found = true
++				forms[id] = true
++				tables[f.TableID] = true
++			}
++		}
++	default:
++		return Manifest{}, ErrInvalid
++	}
++	if !found {
++		return Manifest{}, ErrInvalid
++	}
++	out := Manifest{Format: m.Format, Version: m.Version, Application: m.Application, Directories: []Directory{}, Tables: []Table{}, Forms: []Form{}, Workflows: []Workflow{}, PermissionGroups: []PermissionGroup{}}
++	for _, d := range m.Directories {
++		if dirs[d.ID] {
++			if d.ID == id {
++				d.ParentID = nil
++			}
++			out.Directories = append(out.Directories, d)
++		}
++	}
++	for _, t := range m.Tables {
++		if !tables[t.ID] {
++			continue
++		}
++		if kind != "directory" {
++			t.DirectoryID = nil
++		} else if t.DirectoryID == nil || !dirs[*t.DirectoryID] {
++			root := id
++			t.DirectoryID = &root
++		}
++		out.Tables = append(out.Tables, t)
++	}
++	for _, f := range m.Forms {
++		if forms[f.ID] {
++			if kind != "directory" {
++				f.DirectoryID = nil
++			}
++			out.Forms = append(out.Forms, f)
++		}
++	}
++	for _, w := range m.Workflows {
++		if forms[w.ViewID] {
++			out.Workflows = append(out.Workflows, w)
++		}
++	}
++	for _, g := range m.PermissionGroups {
++		selected := []Grant{}
++		for _, grant := range g.Grants {
++			if grant.ResourceKind == "directory" && dirs[grant.ResourceID] || grant.ResourceKind == "form" && forms[grant.ResourceID] {
++				selected = append(selected, grant)
++			}
++		}
++		if len(selected) > 0 {
++			g.Grants = selected
++			out.PermissionGroups = append(out.PermissionGroups, g)
++		}
++	}
++	return NormalizeManifest(out)
+ }
