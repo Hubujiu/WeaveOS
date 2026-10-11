@@ -14,6 +14,7 @@ async function setup(page:Page,result:(n:number)=>{status?:number;code?:string;d
   if(path.endsWith('/sessions/current'))data=actor;
   else if(path.endsWith('/me/access'))data={user:actor,bootstrapAdmin:false,personnelManage:false,identities:[],permissions:[],applications:[]};
   else if(path==='/api/v1/applications')data={items:[]};
+  else if(path==='/api/v1/workflow-tasks/search')data={items:[{id:loc.taskId,appId:loc.appId,viewId:loc.viewId,recordId:loc.recordId,instanceId:loc.instanceId,flowId:id(30),nodeId:id(7),flowName:'财务审批',createdAt:'2026-10-11T09:00:00Z',definitionVersion:1,activationEpoch:1,sequence:0}],total:1,page:1,pageSize:20,queryVersion:'inbox'};
   else if(path===api){const reply=result(++reads);return r.fulfill({status:reply.status??200,json:{code:reply.code??'OK',data:reply.data??null,meta:null,message:''}});}
   else return r.fulfill({status:404,json:{code:'API_NOT_FOUND',data:null}});
   return r.fulfill({json:{code:'OK',data,meta:null,message:''}});
@@ -55,4 +56,13 @@ test('Root task displays authorized tombstones without resolving extra private d
  const calls=await setup(page,()=>({data:{...preview,fields:[member,option],record:{...preview.record,values:{[member.id]:id(20),[option.id]:id(21)},referenceDisplays:{[member.id]:{[id(20)]:{id:id(20),label:'原成员',deleted:true}},[option.id]:{[id(21)]:{id:id(21),label:'原类别',deleted:true}}}}}}));
  await page.goto(route);await expect(page.getByText('原成员（已删除）',{exact:true})).toBeVisible();await expect(page.getByText('原类别（已删除）',{exact:true})).toBeVisible();
  expect(calls.filter(c=>/candidates|personnel|members/.test(c.path))).toHaveLength(0);
+});
+
+test('Root inbox opens selected task using all five authoritative resource IDs',async({page})=>{
+ const calls=await setup(page,()=>({data:preview}));await page.goto('/app/approvals');
+ await page.getByRole('button',{name:'打开待办：财务审批',exact:true}).click();
+ await expect(page).toHaveURL(new RegExp(route+'$'));
+ await expect(page.getByRole('heading',{name:'审批处理',exact:true})).toBeVisible();
+ await expect(page.getByLabel('报销金额',{exact:false})).toHaveValue('123456789012345678901234567890.12');
+ expect(calls.filter(c=>c.path===api)).toHaveLength(1);
 });
