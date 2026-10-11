@@ -75,3 +75,8 @@ test('Root task two synchronous Save clicks send only one immutable operation',a
 test('Root task identity preflight change prevents Save transmission',async({page})=>{
  const f=await setup(page);await edit(page);f.changeIdentity();await page.getByRole('button',{name:'保存修改',exact:true}).click();await expect(page.getByRole('alert')).toContainText('登录身份已变化');expect(f.writes).toHaveLength(0);
 });
+test('Root task unsaved draft warns browser refresh without transmitting',async({page})=>{
+ const f=await setup(page);await edit(page);
+ const warned=await page.evaluate(()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;});
+ expect(warned).toBe(true);expect(f.writes).toHaveLength(0);
+});
