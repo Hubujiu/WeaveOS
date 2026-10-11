@@ -53,5 +53,40 @@ ALTER TABLE applications.operations ADD CONSTRAINT ck_structure_copy_result CHEC
   WHEN 'form' THEN '/forms/'||(result_json->>'id') END,false));
 
 -- +goose Down
--- No-behavior placeholder until independent real Down RED.
-SELECT 1;
+LOCK TABLE applications.operations IN ACCESS EXCLUSIVE MODE;
+-- +goose StatementBegin
+DO $$ BEGIN
+ IF EXISTS(SELECT 1 FROM applications.operations WHERE operation_kind='structure.copy') THEN
+  RAISE EXCEPTION 'durable or pending structure copy blocks Down' USING ERRCODE='55000';
+ END IF;
+END $$;
+-- +goose StatementEnd
+ALTER TABLE applications.operations DROP CONSTRAINT ck_structure_copy_result;
+ALTER TABLE applications.operations
+ DROP CONSTRAINT ck_operation_kind,
+ ADD CONSTRAINT ck_operation_kind CHECK(operation_kind IN (
+  'application.create',
+  'group.create',
+  'group.update',
+  'members.replace',
+  'grants.replace',
+  'directory.create',
+  'directory.update',
+  'table.create',
+  'table.update',
+  'form.create',
+  'form.update',
+  'definition.save',
+  'record.create',
+  'record.edit',
+  'draft.create',
+  'draft.update',
+  'draft.discard',
+  'workflow.definition.save',
+  'workflow.enable',
+  'workflow.close',
+  'workflow.task.agree',
+  'workflow.task.reject',
+  'workflow.instance.withdraw',
+  'workflow.task.return','workflow.manual.start','workflow.delete','workflow.round.resubmit','workflow.round.review','application.template.import','preset.create','preset.update','preset.discard','record.delete','record.restore','application.delete','directory.delete','table.delete','form.delete'
+ ));
