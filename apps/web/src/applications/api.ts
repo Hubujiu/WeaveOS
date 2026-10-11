@@ -15,7 +15,7 @@ export class ApplicationError extends Error {
 
 export type ApplicationEnvelope<T> = { data: T; meta: { pagination?: { nextPageToken: string | null; hasMore: boolean } } | null; location?: string | null };
 
-async function request<T>(actorId: string, path: string, method: string, body: object | undefined, signal: AbortSignal | undefined, expectedStatus: number | undefined, mutation: boolean): Promise<ApplicationEnvelope<T>> {
+async function request<T>(actorId: string, path: string, method: string, body: object | undefined, signal: AbortSignal | undefined, expectedStatus: number | undefined, mutation: boolean, withStatus = false): Promise<ApplicationEnvelope<T> & {httpStatus?:number}> {
  const headers: Record<string, string> = { 'X-Expected-Actor-Id': actorId };
  if (body) headers['Content-Type'] = 'application/json';
  if (method !== 'GET') {
@@ -29,7 +29,7 @@ async function request<T>(actorId: string, path: string, method: string, body: o
  // successful status, must never be mistaken for a confirmed deletion.
  if (expectedStatus === 204 && response.status === 204) {
   if ((await response.text()) !== '') throw new ApplicationError(204, 'APPLICATION_OPERATION_UNCONFIRMED', mutation);
-  return { data: undefined as T, meta: null, location: response.headers.get('Location') };
+  return { data: undefined as T, meta: null, location: response.headers.get('Location'), ...(withStatus?{httpStatus:response.status}:{}) };
  }
  let raw: unknown;
  try { raw = await response.json(); }
@@ -39,7 +39,7 @@ async function request<T>(actorId: string, path: string, method: string, body: o
  if (!response.ok || code !== 'OK') throw new ApplicationError(response.status, code, mutation && (response.ok || code === 'APPLICATION_OPERATION_UNCONFIRMED'));
  if (expectedStatus !== undefined && response.status !== expectedStatus) throw new ApplicationError(response.status, 'APPLICATION_OPERATION_UNCONFIRMED', mutation);
  if (!envelope || !Object.hasOwn(envelope, 'data')) throw new ApplicationError(response.status, 'APPLICATION_OPERATION_UNCONFIRMED', mutation);
- return { data: envelope.data as T, meta: envelope.meta ?? null, location: response.headers.get('Location') };
+ return { data: envelope.data as T, meta: envelope.meta ?? null, location: response.headers.get('Location'), ...(withStatus?{httpStatus:response.status}:{}) };
 }
 
 export async function applicationApiEnvelope<T>(actorId: string, path: string, method = 'GET', body?: object, signal?: AbortSignal, expectedStatus?: number): Promise<ApplicationEnvelope<T>> {
@@ -58,5 +58,18 @@ export async function applicationApi<T>(actorId: string, path: string, method = 
  return (await applicationApiEnvelope<T>(actorId, path, method, body, signal, expectedStatus)).data;
 }
 
-// V075 P4 declaration-only RED seam; implementation follows observed tests.
-export async function applicationWorkflowApi<T>(_actorId:string,_path:string,_method:'GET'|'POST',_body?:object,_signal?:AbortSignal):Promise<ApplicationEnvelope<T>&{httpStatus:number}>{throw new TypeError('Workflow transport not connected');}
+// Only the frozen task action and its original execution-status resource may
+// consume both 202 acceptance and 200 completion. Ordinary calls stay unchanged.
+export async function applicationWorkflowApi<T>(actorId:string,path:string,method:'GET'|'POST',body?:object,signal?:AbortSignal):Promise<ApplicationEnvelope<T>&{httpStatus:number}>{
+ const id='[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}';
+ const canonical=(value:unknown)=>typeof value==='string'&&new RegExp('^'+id+'$').test(value)&&value!=='00000000-0000-0000-0000-000000000000';
+ const actionPath=new RegExp(`^applications/(${id})/forms/(${id})/records/(${id})/workflow-instances/(${id})/tasks/(${id})/actions$`).exec(path);
+ const operationPath=new RegExp(`^application-workflow-operations/(${id})$`).exec(path);
+ const data=body as Record<string,unknown>|undefined;
+ const validPost=method==='POST'&&actionPath&&actionPath.slice(1).every(canonical)&&data&&!Array.isArray(data)&&Object.keys(data).length===3&&['operationId','action','basisToken'].every(k=>Object.hasOwn(data,k))&&canonical(data.operationId)&&(data.action==='agree'||data.action==='reject')&&typeof data.basisToken==='string'&&/^[A-Za-z0-9_-]{43}$/.test(data.basisToken);
+ const validGet=method==='GET'&&operationPath&&canonical(operationPath[1])&&body===undefined;
+ if(!validPost&&!validGet)throw new TypeError('Workflow transport is restricted to task actions and original execution status');
+ const result=await request<T>(actorId,path,method,body,signal,method==='GET'?200:undefined,method==='POST',true);
+ if(result.httpStatus!==200&&result.httpStatus!==202)throw new ApplicationError(result.httpStatus??0,'APPLICATION_OPERATION_UNCONFIRMED',method==='POST');
+ return {...result,httpStatus:result.httpStatus};
+}
