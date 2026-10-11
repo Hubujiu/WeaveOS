@@ -7,13 +7,13 @@ const route='/app/approvals/'+[loc.appId,loc.viewId,loc.recordId,loc.instanceId,
 const api=`/api/v1/applications/${loc.appId}/forms/${loc.viewId}/records/${loc.recordId}/workflow-instances/${loc.instanceId}/tasks/${loc.taskId}`;
 const money={id:id(8),name:'报销金额',kind:'money',required:true,default:null,config:{precision:38,scale:2,roundingPlaces:2,roundingMode:'HALF_UP'},presentation:{helpText:null,displayTimeZone:null}};
 const reason={id:id(9),name:'事由',kind:'text',required:false,default:null,config:{maxLength:null},presentation:{helpText:null,displayTimeZone:null}};
-type Options={write?:(body:any,count:number)=>{status:number;code:string;data?:unknown};lookupFails?:boolean;readAfterFails?:boolean;changedIdentity?:boolean};
+type Options={write?:(body:any,count:number)=>{status:number;code:string;data?:unknown};lookupFails?:boolean;readAfterFails?:boolean};
 async function setup(page:Page,options:Options={}){
- const writes:any[]=[],requests:string[]=[];let saved=false,reads=0,sessions=0,amount='100.00';
+ const writes:any[]=[],requests:string[]=[];let saved=false,reads=0,changedIdentity=false,amount='100.00';
  const receipt=(operationId:string)=>({operationId,id:loc.recordId,recordVersion:2,schemaVersion:1,createdAt:'2026-10-11T09:00:00Z',updatedAt:'2026-10-11T10:00:00Z'});
  await page.route('**/api/v1/**',async r=>{
   const req=r.request(),path=new URL(req.url()).pathname;requests.push(path);let data:unknown;
-  if(path.endsWith('/sessions/current')){sessions++;data=options.changedIdentity&&sessions>1?{id:id(99),account:'other'}:actor;}
+  if(path.endsWith('/sessions/current')){data=changedIdentity?{id:id(99),account:'other'}:actor;}
   else if(path.endsWith('/me/access'))data={user:actor,bootstrapAdmin:false,personnelManage:false,identities:[],permissions:[],applications:[]};
   else if(path==='/api/v1/applications')data={items:[]};
   else if(path===api){
@@ -31,7 +31,7 @@ async function setup(page:Page,options:Options={}){
   }else return r.fulfill({status:404,json:{code:'API_NOT_FOUND',data:null}});
   return r.fulfill({json:{code:'OK',data,meta:null,message:''}});
  });
- return {writes,requests,get reads(){return reads;},receipt};
+ return {writes,requests,get reads(){return reads;},changeIdentity(){changedIdentity=true;},receipt};
 }
 async function edit(page:Page,value='200.00'){await page.goto(route);await expect(page.getByLabel('报销金额')).toBeEditable();await page.getByLabel('报销金额').fill(value);}
 test('Root task Save uses current field mask and exact PATCH then refreshes basis without approval',async({page})=>{
@@ -73,5 +73,5 @@ test('Root task two synchronous Save clicks send only one immutable operation',a
  await expect(page.getByText('修改已保存',{exact:true})).toBeVisible();expect(f.writes).toHaveLength(1);
 });
 test('Root task identity preflight change prevents Save transmission',async({page})=>{
- const f=await setup(page,{changedIdentity:true});await edit(page);await page.getByRole('button',{name:'保存修改',exact:true}).click();await expect(page.getByRole('alert')).toContainText('登录身份已变化');expect(f.writes).toHaveLength(0);
+ const f=await setup(page);await edit(page);f.changeIdentity();await page.getByRole('button',{name:'保存修改',exact:true}).click();await expect(page.getByRole('alert')).toContainText('登录身份已变化');expect(f.writes).toHaveLength(0);
 });
