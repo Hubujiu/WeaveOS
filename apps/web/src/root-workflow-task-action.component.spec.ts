@@ -81,3 +81,7 @@ test('Root accepted Agree locks editing and guards browser refresh until a termi
  f.finish();await page.getByRole('button',{name:'核查审批结果',exact:true}).click();await expect(page.getByText('审批已同意',{exact:true})).toBeVisible();
  expect(await page.evaluate(()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;})).toBe(false);expect(f.actions).toHaveLength(1);
 });
+test('Root Agree definite access revocation hides the old record instead of leaving usable controls',async({page})=>{
+ const f=await setup(page,{reply:()=>({status:403,code:'APPLICATION_FORBIDDEN'})});await open(page);await page.getByRole('button',{name:'同意',exact:true}).click();
+ await expect(page.getByRole('alert')).toContainText('权限');await expect(page.getByLabel('报销金额')).toHaveCount(0);await expect(page.getByRole('button',{name:'同意',exact:true})).toHaveCount(0);expect(f.actions).toHaveLength(1);expect(f.reads).toBe(1);
+});
