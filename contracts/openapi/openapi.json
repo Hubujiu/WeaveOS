@@ -11142,7 +11142,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WorkflowTaskOperationEnvelope"
+                  "$ref": "#/components/schemas/WorkflowExecutionOperationEnvelope"
                 }
               }
             }
@@ -11903,7 +11903,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WorkflowTaskFinalEnvelope"
+                  "$ref": "#/components/schemas/WorkflowLifecycleFinalEnvelope"
                 }
               }
             }
@@ -34516,6 +34516,162 @@
           },
           {
             "$ref": "#/components/schemas/TemplateUnconfirmedEnvelope"
+          }
+        ]
+      },
+      "WorkflowWithdrawSuccess": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "commandId",
+          "instanceId",
+          "status",
+          "instanceState",
+          "sequence"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "instanceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "status": {
+            "const": "success"
+          },
+          "instanceState": {
+            "type": "string",
+            "const": "withdrawn"
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "WorkflowLifecycleSuccess": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "commandId",
+          "instanceId",
+          "status",
+          "instanceState",
+          "sequence"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "instanceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "not": {
+              "const": "00000000-0000-0000-0000-000000000000"
+            }
+          },
+          "status": {
+            "const": "success"
+          },
+          "instanceState": {
+            "type": "string",
+            "enum": [
+              "active",
+              "withdrawn"
+            ]
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "WorkflowLifecycleFinal": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/WorkflowLifecycleSuccess"
+          },
+          {
+            "$ref": "#/components/schemas/WorkflowTaskNoEffect"
+          }
+        ]
+      },
+      "WorkflowLifecycleFinalEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/WorkflowLifecycleFinal"
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowExecutionOperationEnvelope": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/WorkflowTaskOperationEnvelope"
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Envelope"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "const": "OK"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/WorkflowWithdrawSuccess"
+                  }
+                }
+              }
+            ]
           }
         ]
       }
