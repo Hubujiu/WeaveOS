@@ -101,3 +101,11 @@ test('Root inbox leaving during read discards late response and back navigation 
  await expect(page.getByRole('heading',{name:'主页',exact:true})).toBeVisible();await expect(page.getByText('财务审批 1',{exact:true})).toHaveCount(0);
  await page.goBack();await expect(page.getByText('财务审批 2',{exact:true})).toBeVisible();await expect(page.getByText('财务审批 1',{exact:true})).toHaveCount(0);
 });
+test('Root inbox identity mismatch suspends old account data until explicit identity check',async({page})=>{
+ await setup(page,()=>({status:409,code:'AUTH_SESSION_CHANGED'}));
+ await page.goto('/app/approvals');
+ await expect(page.getByRole('alert')).toContainText('登录身份已变化');
+ await expect(page.getByRole('button',{name:'重新核对身份',exact:true})).toBeVisible();
+ await expect(page.getByText('暂无待办',{exact:true})).toHaveCount(0);
+ await expect(page.getByTestId('workspace-shell')).toHaveCount(0);
+});
