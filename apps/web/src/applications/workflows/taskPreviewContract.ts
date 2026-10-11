@@ -46,12 +46,22 @@ export function validTaskPreview(v:unknown,location:TaskLocation):v is TaskPrevi
  if(!Object.values(location).every(id)||!object(v)||!exact(v,['basisToken','task','record','fields','editableFieldIds'])||typeof v.basisToken!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(v.basisToken)||!object(v.task)||!object(v.record))return false;
  const t=v.task,r=v.record;
  if(!exact(t,['id','instanceId','nodeId','activationEpoch','sequence'])||t.id!==location.taskId||t.instanceId!==location.instanceId||!id(t.nodeId)||!integer(t.activationEpoch,1)||!integer(t.sequence,0))return false;
- if(!exact(r,['id','appId','viewId','tableId','createdBy','createdAt','updatedAt','recordVersion','schemaVersion','values','referenceDisplays'])||r.id!==location.recordId||r.appId!==location.appId||r.viewId!==location.viewId||!id(r.tableId)||!id(r.createdBy)||!timestamp(r.createdAt)||!timestamp(r.updatedAt)||!integer(r.recordVersion,1)||!integer(r.schemaVersion,0)||!object(r.values)||!object(r.referenceDisplays))return false;
- if(!Array.isArray(v.fields)||v.fields.length>1600||!v.fields.every(field))return false;
- const fields=new Map(v.fields.map(f=>[f.id,f]));
- if(fields.size!==v.fields.length||!exact(r.values,[...fields.keys()]))return false;
- for(const [key,val] of Object.entries(r.values))if(!value(fields.get(key)!.kind,val))return false;
+ if(!validRecordProjection(r,v.fields,location,1600))return false;
+ const fields=new Set((v.fields as Field[]).map(f=>f.id));
  if(!Array.isArray(v.editableFieldIds)||v.editableFieldIds.length>200||!v.editableFieldIds.every(key=>id(key)&&fields.has(key))||new Set(v.editableFieldIds).size!==v.editableFieldIds.length)return false;
+
+ return true;
+}
+
+// Shared current-record wire boundary; task and lifecycle retain distinct outer contracts.
+export function validRecordProjection(record:unknown,rawFields:unknown,location:Pick<TaskLocation,'appId'|'viewId'|'recordId'>,maxFields:number):record is RecordItem{
+ if(!object(record)||!Object.values(location).every(id))return false;
+ const r=record;
+ if(!exact(r,['id','appId','viewId','tableId','createdBy','createdAt','updatedAt','recordVersion','schemaVersion','values','referenceDisplays'])||r.id!==location.recordId||r.appId!==location.appId||r.viewId!==location.viewId||!id(r.tableId)||!id(r.createdBy)||!timestamp(r.createdAt)||!timestamp(r.updatedAt)||!integer(r.recordVersion,1)||!integer(r.schemaVersion,0)||!object(r.values)||!object(r.referenceDisplays))return false;
+ if(!Array.isArray(rawFields)||rawFields.length>maxFields||!rawFields.every(field))return false;
+ const fields=new Map(rawFields.map(f=>[f.id,f]));
+ if(fields.size!==rawFields.length||!exact(r.values,[...fields.keys()]))return false;
+ for(const [key,val] of Object.entries(r.values))if(!value(fields.get(key)!.kind,val))return false;
  for(const [key,displays] of Object.entries(r.referenceDisplays)){
   const f=fields.get(key);if(!f||!['member','department','single_select','multi_select'].includes(f.kind)||!object(displays))return false;
   const selected=r.values[key],selectedIds=Array.isArray(selected)?selected:[selected];
