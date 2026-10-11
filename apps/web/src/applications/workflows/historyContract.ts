@@ -48,6 +48,19 @@ export function validWorkflowEventDetail(data:unknown,expected:WorkflowEvent):da
  return basis.status==='available'||basis.status==='unavailable'&&basis.fields.length===0;
 }
 
-// Minimal declarations for independent display/comparison RED.
-export function historyValue(_field:HistoricalField):string{return '';}
-export function historyComparison(_before:HistoricalField,_current?:HistoricalField):{before:string;after:string;comparable:boolean}{return {before:'',after:'',comparable:false};}
+// Display only the authorized original projection, without numeric conversion
+// or an extra directory lookup that could replace historical names.
+export function historyValue(field:HistoricalField):string{
+ const value=field.value;
+ if(value===null)return '—';
+ if(typeof value==='boolean')return value?'是':'否';
+ if(['member','department','single_select','multi_select'].includes(field.fieldKind)){
+  const ids=Array.isArray(value)?value:[value];
+  return ids.map(id=>{const label=field.valueLabels[id];return label?label.label+(label.deleted?'（已删除）':''):'引用信息不可用';}).join('、');
+ }
+ return typeof value==='string'?value:'';
+}
+export function historyComparison(before:HistoricalField,current?:HistoricalField):{before:string;after:string;comparable:boolean}{
+ const comparable=!!current&&current.fieldId===before.fieldId&&current.fieldKind===before.fieldKind;
+ return {before:historyValue(before),after:comparable?historyValue(current!):'当前不可比较',comparable};
+}
