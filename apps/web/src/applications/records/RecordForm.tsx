@@ -1,4 +1,6 @@
 import {useEffect,useMemo,useRef,useState,type ReactNode} from 'react';
+import {createPortal} from 'react-dom';
+import {Modal} from '../../Modal';
 import {FieldRenderer,type LoadReferenceCandidates,type ReferenceCandidate,type ReferenceDisplay} from '../forms';
 import {createLeaveController,type RegisterLeaveGuard} from '../forms/leaveGuard';
 import {useApplicationOperation,type ApplicationMutationRequest} from '../useApplicationOperation';
@@ -11,7 +13,7 @@ import {projectRuntimeFields,requiresRuntimeReview,scopeAllows} from './runtimeM
 import {projectDraftFields} from './draftContract';
 
 export type RecordFormProps={
- view:RuntimeView;identity:RecordEditorIdentity;record?:RecordItem;draft?:Draft;recoveredDraft?:ApplicationPacket;onDraftConfirmed?:(result:DraftMutationResult)=>void;mode:'create'|'edit'|'read';authorityKey:string;queryVersion?:string;reworkInstanceId?:string;
+ actionHost?:HTMLElement|null;view:RuntimeView;identity:RecordEditorIdentity;record?:RecordItem;draft?:Draft;recoveredDraft?:ApplicationPacket;onDraftConfirmed?:(result:DraftMutationResult)=>void;mode:'create'|'edit'|'read';authorityKey:string;queryVersion?:string;reworkInstanceId?:string;
  loadCandidates?:(field:RuntimeField,request:Parameters<LoadReferenceCandidates>[0],signal:AbortSignal)=>ReturnType<LoadReferenceCandidates>;
  onUnauthorized:()=>void;onIdentityMismatch:()=>void;registerLeaveGuard:RegisterLeaveGuard;onRefresh:()=>void;
  onConfirmed:(result:MutationResult,identity:RecordEditorIdentity)=>void;onDirtyChange:(dirty:boolean)=>void;
@@ -48,7 +50,7 @@ function RecordFormScope(props:RecordFormProps){
  const unauthorizedRef=useRef(onUnauthorized);unauthorizedRef.current=onUnauthorized;
  const identityMismatchRef=useRef(onIdentityMismatch);identityMismatchRef.current=onIdentityMismatch;
  const confirmationSync=useRef(false);
- const [confirmed,setConfirmed]=useState(false);
+ const [confirmed,setConfirmed]=useState(false),[cleanupField,setCleanupField]=useState<string|null>(null);
  const hookResource=resource??{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,id:identity.kind==='draft'?identity.draftId:identity.kind==='record'?identity.recordId:''};
  const operation=useApplicationOperation<MutationResult>({actorId:identity.actorId,scope:operationScope,resource:hookResource,confirmed:(result)=>{if(!result)return;const next=identity.kind==='new'?confirmRecordIdentity(identity,result,result.operationId):identity.kind==='draft'?{kind:'record' as const,actorId:identity.actorId,appId:identity.appId,viewId:identity.viewId,recordId:result.id}:identity;if(!next)return;confirmationSync.current=true;setConfirmed(true);readGuard.current={...readGuard.current,confirmed:true,packetId:null,phase:'idle',dirty:false};onDirtyChange(false);confirmedRef.current(result,next);},unauthorized:()=>unauthorizedRef.current(),identityMismatch:()=>identityMismatchRef.current(),valid:(result,packet)=>!!packet.operationId&&isMutationResult(result,packet.operationId,recordId)});
  const startView=useRef(view),startValues=useRef(draft?Object.fromEntries(Object.entries(draft.values).filter(([id])=>projectDraftFields(view,draft,identity.actorId,record).some(port=>port.editable&&port.field.id===id))):initialValues(view,identity.actorId,mode,record));
@@ -64,7 +66,7 @@ function RecordFormScope(props:RecordFormProps){
  const dirty=!same(values,startValues.current);
  const needsReview=requiresRuntimeReview(startView.current,view,dirty||!!packet);
  const visibleRecord=record&&record.appId===view.appId&&record.tableId===view.tableId&&record.viewId===view.viewId&&scopeAllows(view.capabilities.read,identity.actorId,record.createdBy)?record:undefined;
- const canEditRecord=saved&&!!visibleRecord&&scopeAllows(view.capabilities.edit,identity.actorId,visibleRecord.createdBy);
+ const canEditRecord=saved&&(!!visibleRecord&&scopeAllows(view.capabilities.edit,identity.actorId,visibleRecord.createdBy)||!!draft&&!record&&view.capabilities.draftEdit&&view.capabilities.edit==='all');
  const retainedUnknown=unknown&&!!packet?.operationId&&operation.getPendingStatus()==='unknown';
 
  // Recovery packets are immutable. Reconstruct only present values/changes the
@@ -104,6 +106,13 @@ function RecordFormScope(props:RecordFormProps){
   const request:ApplicationMutationRequest={resource:draftResource,path:`applications/${identity.appId}/forms/${identity.viewId}/drafts`+(draft?'/'+draft.id:''),method:draft?'PATCH':'POST',expectedStatus:draft?200:201,body:draft?{expectedDraftVersion:draft.draftVersion,changes:payload,removeFieldIds:[]}:{targetRecordId:recordId??null,schemaVersion:startView.current.schemaVersion,baseRecordVersion:record?.recordVersion??null,values:payload}};
   const job={key:crypto.randomUUID(),request};pendingDraft.current=job;setDraftError('');setDraftPhase('preflight');setDraftJob(job);
  };
+ const cleanupBlocked=!!pendingDraft.current||!!operation.getPendingStatus()||busy||unknown||confirmed||needsReview||draftConflict||dirty;
+ const clearDraftField=()=>{
+  if(!draft||!cleanupField||cleanupBlocked||!draft.conflicts.some(c=>c.fieldId===cleanupField&&['FIELD_REMOVED','FIELD_PERMISSION_REVOKED'].includes(c.reason)))return;
+  const resource={kind:'draft' as const,appId:identity.appId,viewId:identity.viewId,id:draft.id};
+  const job={key:crypto.randomUUID(),request:{resource,path:`applications/${identity.appId}/forms/${identity.viewId}/drafts/${draft.id}`,method:'PATCH' as const,expectedStatus:200 as const,body:{expectedDraftVersion:draft.draftVersion,changes:{},removeFieldIds:[cleanupField]}}};
+  pendingDraft.current=job;setCleanupField(null);setDraftError('');setDraftPhase('preflight');setDraftJob(job);
+ };
  const settleDraft=(result?:DraftMutationResult,message='',code?:string)=>{
   if(result){confirmationSync.current=true;setConfirmed(true);readGuard.current={...readGuard.current,confirmed:true,packetId:null,phase:'idle',dirty:false};onDirtyChange(false);onDraftConfirmed?.(result);return;}
   pendingDraft.current=null;setDraftJob(null);setDraftPhase('idle');setDraftError(message);setDraftConflict(['APPLICATION_DRAFT_CONFLICT','APPLICATION_DRAFT_BASE_CONFLICT','APPLICATION_SCHEMA_CONFLICT','APPLICATION_POLICY_CONFLICT'].includes(code??''));
@@ -129,10 +138,13 @@ function RecordFormScope(props:RecordFormProps){
  };
  const conflict=operation.phase==='error'&&['APPLICATION_RECORD_CONFLICT','APPLICATION_SCHEMA_CONFLICT','APPLICATION_QUERY_CHANGED','APPLICATION_QUERY_CONTEXT_EXPIRED','APPLICATION_POLICY_CONFLICT',...(reworkInstanceId?['WORKFLOW_CONFLICT','WORKFLOW_NOT_READY']:[])].includes(operation.errorCode??'');
  const statusMessage=unknown?'保存结果待确认':busy?'正在确认并保存…':'';
+ const formalSave=<button type="button" className={props.actionHost?"admin-button primary":"admin-button"} onClick={save} disabled={!canEdit||conflict||draftConflict||saved&&!dirty&&!draft||!saved&&!view.capabilities.create||saved&&!canEditRecord}>{reworkInstanceId?"保存返工":"保存记录"}</button>;
  return <section aria-label={reworkInstanceId?"返工记录":"记录填写"} className="surface record-form">
   {invalidDraftIdentity?<p role="alert">草稿身份不能保存为普通记录</p>:null}
   {draftBasisConflict?<p role="alert">草稿结构、基础记录或字段权限已变化，请刷新核对；原草稿不会自动覆盖或重新绑定。</p>:null}
   {(draftConflict||draftBasisConflict)&&<button className="admin-button" type="button" onClick={onRefresh}>刷新草稿</button>}
+  {draft?.conflicts.filter(c=>c.fieldId&&['FIELD_REMOVED','FIELD_PERMISSION_REVOKED'].includes(c.reason)).map(c=><div key={c.fieldId}><span>{c.reason==='FIELD_REMOVED'?'字段已移除':'字段权限已撤销'}：{c.fieldId}</span><button className="text-button" type="button" aria-label={'清除失效草稿项：'+c.fieldId} disabled={cleanupBlocked} onClick={()=>setCleanupField(c.fieldId)}>清除草稿项</button></div>)}
+  {cleanupField&&<Modal title="清除草稿项" onClose={()=>setCleanupField(null)}><p>仅清除本人草稿中的这一项，不会修改正式记录，也不会重新绑定草稿版本。</p><p>{cleanupField}</p><div className="workflow-instance-confirm"><button type="button" className="admin-button" onClick={()=>setCleanupField(null)}>取消</button><button type="button" className="admin-button" disabled={cleanupBlocked} onClick={clearDraftField}>确认清除</button></div></Modal>}
   {draftError?<p role="alert">{draftConflict?'草稿版本或权限已变化，请刷新草稿并核对当前输入。':''}{draftError}</p>:null}
   {draftJob?<RecordDraftMutation job={draftJob} actorId={identity.actorId} operationRef={draftOperation} onPhase={setDraftPhase} settle={settleDraft} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>:null}
   {needsReview?<p role="alert">结构或权限已变化，请核对当前输入</p>:null}
@@ -145,7 +157,7 @@ function RecordFormScope(props:RecordFormProps){
   {conflict?<button type="button" className="admin-button" onClick={onRefresh}>刷新记录</button>:null}
   {needsReview&&!conflict?<button type="button" className="admin-button" onClick={onRefresh}>刷新记录</button>:null}
   <div className="record-form-fields forms-preview-grid">{view.layout.map(renderLayoutNode)}</div>
-  {mode!=='read'&&<footer><button type="button" className="admin-button" onClick={onRequestDiscard} disabled={busy||unknown||!!draftJob}>放弃填写</button>{onDraftConfirmed&&!reworkInstanceId&&(saved?view.capabilities.draftEdit:view.capabilities.draftCreate)&&<button type="button" className="admin-button primary record-draft-save" onClick={saveDraft} disabled={!canEdit||draftConflict||conflict}>保存草稿</button>}<button type="button" className="admin-button" onClick={save} disabled={!canEdit||conflict||draftConflict||saved&&!dirty&&!draft||!saved&&!view.capabilities.create||saved&&!canEditRecord}>{reworkInstanceId?"保存返工":"保存记录"}</button></footer>}
+  {mode!=='read'&&<footer><button type="button" className="admin-button" onClick={onRequestDiscard} disabled={busy||unknown||!!draftJob}>放弃填写</button>{onDraftConfirmed&&!reworkInstanceId&&(saved?view.capabilities.draftEdit:view.capabilities.draftCreate)&&<button type="button" className="admin-button record-draft-save" onClick={saveDraft} disabled={!canEdit||draftConflict||conflict}>保存草稿</button>}{props.actionHost?createPortal(formalSave,props.actionHost):formalSave}</footer>}
  </section>;
 }
 

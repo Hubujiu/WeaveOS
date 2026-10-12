@@ -48,7 +48,7 @@ async function setup(page:Page,mode:Mode='normal'){
   return r.fulfill({status:200,json:{code:'OK',data,meta:null}});
  });return calls;
 }
-async function create(page:Page){await page.goto('/app/'+form);await page.getByRole('button',{name:'新建记录',exact:true}).click();return page.getByRole('dialog',{name:'新建记录',exact:true});}
+async function create(page:Page){await page.goto('/app/'+form);await page.getByRole('button',{name:'新建记录',exact:true}).click();return page.getByRole('region',{name:'新建记录',exact:true});}
 const draftWrites=(calls:Awaited<ReturnType<typeof setup>>)=>calls.filter(c=>c.path.startsWith(draftPath)&&['POST','PATCH'].includes(c.method));
 test('Root draft saves incomplete required decimal without creating record or starting workflow',async({page})=>{
  const calls=await setup(page);const editor=await create(page);await editor.getByRole('textbox',{name:/^金额/}).fill('-');await editor.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();
@@ -101,7 +101,7 @@ test('Root draft conflict refresh is explicit and preserves local input on conti
 });
 
 test('Root unknown saved-draft PATCH restores pending edits after actual Shell unmount',async({page})=>{
- const calls=await setup(page,'patch-unknown');let dialog=await create(page);await dialog.getByRole('textbox',{name:/^金额/}).fill('-');await dialog.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();await page.getByRole('textbox',{name:/^金额/}).fill('12.');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿保存结果待确认',{exact:true})).toBeVisible();dialog=page.getByRole('dialog',{name:'新建记录',exact:true});await dialog.getByRole('button',{name:'关闭',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await page.getByRole('button',{name:'返回主页',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();
+ const calls=await setup(page,'patch-unknown');let dialog=await create(page);await dialog.getByRole('textbox',{name:/^金额/}).fill('-');await dialog.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();await page.getByRole('textbox',{name:/^金额/}).fill('12.');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿保存结果待确认',{exact:true})).toBeVisible();dialog=page.getByRole('region',{name:'新建记录',exact:true});await dialog.getByRole('button',{name:'关闭',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await page.getByRole('button',{name:'返回主页',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();
  await expect(page.getByRole('button',{name:'重试原草稿操作',exact:true})).toBeVisible();await expect(page.getByRole('textbox',{name:/^金额/})).toHaveValue('12.');expect(calls.filter(c=>c.method==='PATCH')).toHaveLength(1);await page.getByRole('button',{name:'重试原草稿操作',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();const writes=calls.filter(c=>c.method==='PATCH');expect(writes).toHaveLength(2);expect(writes[1]).toEqual(writes[0]);
 });
 test('Root unknown edit-draft creation retains original target and base after actual Shell unmount',async({page})=>{

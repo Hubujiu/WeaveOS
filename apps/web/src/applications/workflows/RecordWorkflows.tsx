@@ -1,4 +1,4 @@
-import {useCallback,useEffect,useState} from 'react';
+import {useCallback,useEffect,useState,type ReactNode} from 'react';
 import {applicationReadPost,ApplicationError} from '../api';
 import {WorkflowRoundActions} from './WorkflowRoundActions';
 import {WorkflowManualStart} from './WorkflowManualStart';
@@ -8,11 +8,11 @@ import {useResourceQuery} from '../../usePersonnelQuery';
 import {TablePagination} from '../../vendor/arca/components/motion/table/table-pagination';
 import {validRecordWorkflows,type RecordWorkflow,type RecordWorkflowPage} from './recordWorkflowsContract';
 
-type Props={onRework?:(instanceId:string)=>void;actorId:string;appId:string;viewId:string;recordId:string;onUnauthorized:()=>void;onIdentityMismatch:()=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void;onOpenAction:(action:()=>void)=>void;onDirtyChange:(dirty:boolean)=>void};
+type Props={historyAction?:ReactNode;onRework?:(instanceId:string)=>void;actorId:string;appId:string;viewId:string;recordId:string;onUnauthorized:()=>void;onIdentityMismatch:()=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void;onOpenAction:(action:()=>void)=>void;onDirtyChange:(dirty:boolean)=>void};
 type Parameters={page:number;pageSize:number};
 const states:Record<RecordWorkflow['state'],string>={starting:'正在发起',active:'审批中',completed:'已通过',rejected:'已驳回',withdrawn:'已撤回',no_effect:'未执行'};
 export function RecordWorkflows(props:Props){return <RecordWorkflowsScope key={JSON.stringify([props.actorId,props.appId,props.viewId,props.recordId])} {...props}/>;}
-function RecordWorkflowsScope({onRework,actorId,appId,viewId,recordId,onUnauthorized,onIdentityMismatch,registerLeaveGuard,requestSectionLeave,onOpenAction,onDirtyChange}:Props){
+function RecordWorkflowsScope({historyAction,onRework,actorId,appId,viewId,recordId,onUnauthorized,onIdentityMismatch,registerLeaveGuard,requestSectionLeave,onOpenAction,onDirtyChange}:Props){
  const [selected,setSelected]=useState<RecordWorkflow|null>(null),[manual,setManual]=useState(false),[round,setRound]=useState<RecordWorkflow|null>(null);
  const [parameters,setParameters]=useState<Parameters>({page:1,pageSize:20});
  const path=`applications/${appId}/forms/${viewId}/records/${recordId}/workflow-instances/search`;
@@ -38,6 +38,7 @@ function RecordWorkflowsScope({onRework,actorId,appId,viewId,recordId,onUnauthor
    {query.data.items.map(flow=><article key={flow.id} className="record-workflow-item"><h3>{flow.name||'未命名流程'}</h3><p className="record-workflow-state">{states[flow.state]} · 定义 v{flow.definitionVersion}</p><p className="workflow-history-meta">实例 {flow.id}</p><p className="workflow-history-meta"><time dateTime={flow.updatedAt}>{new Date(flow.updatedAt).toLocaleString('zh-CN',{hour12:false})}</time></p><button type="button" className="text-button" aria-label={'查看流程操作：'+(flow.name||'未命名流程')} onClick={()=>onOpenAction(()=>setSelected(flow))}>查看流程操作</button><button type="button" className="text-button" aria-label={'查看轮次操作：'+(flow.name||'未命名流程')} onClick={()=>onOpenAction(()=>setRound(flow))}>查看轮次操作</button></article>)}
    {query.data.total>20&&<div className="arca-source personnel-source-scope"><TablePagination pageIndex={query.data.page-1} pageSize={20} pageCount={Math.max(1,Math.ceil(query.data.total/20))} recordCount={query.data.total} sizes={[20]} rowsPerPageLabel="每页" info="{from}–{to} / {count}" previousPageLabel="上一页" nextPageLabel="下一页" onPageIndexChange={index=>setParameters({page:index+1,pageSize:20})} onPageSizeChange={()=>{}}/></div>}
   </>}
+  {historyAction}
   <div className="workflow-manual-entry"><button type="button" className="admin-button" onClick={()=>onOpenAction(()=>setManual(true))}>发起流程</button></div>
   {manual&&<WorkflowManualStart actorId={actorId} appId={appId} viewId={viewId} recordId={recordId} onClose={()=>setManual(false)} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={onDirtyChange} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave}/>}
   {round&&<WorkflowRoundActions onRework={onRework?(instanceId)=>{setRound(null);onRework(instanceId);}:undefined} actorId={actorId} location={{appId,viewId,recordId,instanceId:round.id}} flowId={round.flowId} name={round.name||'未命名流程'} onClose={()=>setRound(null)} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={onDirtyChange} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave}/>}
