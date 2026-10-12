@@ -22,6 +22,7 @@ export function RecordPresets({registerLeaveGuard,onDirtyChange,actorId,view,lay
  const {appId,viewId}=view,scope=JSON.stringify(['presets',actorId,appId,viewId]);
  const base=`applications/${appId}/forms/${viewId}/table-presets`;
  const [job,setJob]=useState<Job|null>(null),[dirty,setDirty]=useState(false),[operating,setOperating]=useState(false);
+ const [confirmedRead,setConfirmedRead]=useState<{id:string;resolve:(preset:ApplicationPreset)=>void;message:string}|null>(null),[readingConfirmed,setReadingConfirmed]=useState(false);
  const editor=useRef<PresetEditorState>({dirty:false,fingerprint:'',discard:()=>{}}),operationRef=useRef<PresetOperation|null>(null);
  const editorState=useCallback((state:PresetEditorState)=>{editor.current=state;},[]);
  useEffect(()=>{onDirtyChange(dirty||operating);return()=>onDirtyChange(false);},[dirty,operating,onDirtyChange]);
@@ -68,7 +69,9 @@ export function RecordPresets({registerLeaveGuard,onDirtyChange,actorId,view,lay
    if(!receipt)throw new Error('保存回执不完整');
    // Confirmation authorizes no historical configuration read. Re-read the
    // current projection; failure cannot turn a confirmed write into a retry.
-   try{return await read(receipt.id);}catch(error){throw new Error('方案已保存，但最新配置无法读取；请重新加载方案列表。'+(error instanceof Error?error.message:''));}
+   try{return await read(receipt.id);}catch(error){
+    return new Promise<ApplicationPreset>(resolve=>setConfirmedRead({id:receipt.id,resolve,message:'方案已保存，但最新配置无法读取。'+(error instanceof Error?error.message:'')}));
+   }
   },
   remove:async(id,version)=>{await mutate({resource:{kind:'preset',appId,viewId,id},path:base+'/'+id,method:'DELETE',expectedStatus:204,expectedVersion:version});known.current.delete(id);},
  };
@@ -81,10 +84,17 @@ export function RecordPresets({registerLeaveGuard,onDirtyChange,actorId,view,lay
   if(preset&&preset.invalid)throw new Error('方案已失效，请明确重新配置');
   return onApply(preset as ApplicationPresetValid|null);
  };
+ async function retryConfirmedRead(){
+  if(!confirmedRead||readingConfirmed)return;
+  const current=confirmedRead;setReadingConfirmed(true);
+  try{const preset=await read(current.id);if(life.current?.signal.aborted)return;setConfirmedRead(null);current.resolve(preset);}
+  catch(error){if(!life.current?.signal.aborted)setConfirmedRead({...current,message:'方案已保存，但最新配置无法读取。'+(error instanceof Error?error.message:'')});}
+  finally{setReadingConfirmed(false);}
+ }
  return <TablePresetManager view="resource" active={active} hiddenColumnIds={layout.hiddenColumnIds} onDirty={setDirty} onUnauthorized={onUnauthorized}
   resource={{scopeKey:scope,onEditorState:editorState,...descriptors(view),repository,onApply:apply,
    refreshDescriptors:async()=>descriptors(await refreshRuntime(life.current!.signal)),
-   operationStatus:job?<PresetMutation key={job.key} actorId={actorId} scope={scope} job={job} operationRef={operationRef} onActivity={setOperating} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} settle={settle}/>:null}}/>;
+   operationStatus:confirmedRead?<div><p role="alert">{confirmedRead.message}</p><button type="button" disabled={readingConfirmed} onClick={()=>void retryConfirmedRead()}>重试读取已保存方案</button></div>:job?<PresetMutation key={job.key} actorId={actorId} scope={scope} job={job} operationRef={operationRef} onActivity={setOperating} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} settle={settle}/>:null}}/>;
 }
 
 function PresetMutation({actorId,scope,job,operationRef,onActivity,onUnauthorized,onIdentityMismatch,settle}:{actorId:string;scope:string;job:Job;operationRef:MutableRefObject<PresetOperation|null>;onActivity:(active:boolean)=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void;settle:(job:Job,result:PresetMutationReceipt|undefined,error?:Error)=>void}){
