@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useLayoutEffect,useRef,useState,type MutableRefObject} from 'react';
 import {TablePresetManager,type ResourcePreset,type ResourcePresetRepository,type PresetEditorState} from '../../TablePresetManager';
-import type {ResourceFilterField} from '../../QueryFilterState';
+import {presetDescriptors as descriptors} from './presetDescriptors';
 import {applicationApi,ApplicationError} from '../api';
 import {useApplicationOperation,type ApplicationMutationRequest} from '../useApplicationOperation';
 import {validApplicationPreset,validApplicationPresets,type ApplicationPreset,type ApplicationPresetValid,type PresetMutationReceipt} from './presetContract';
@@ -10,10 +10,7 @@ import type {RuntimeView,RecordSort} from './contracts';
 type Layout={sort:RecordSort;hiddenColumnIds:string[];columnOrder:string[];columnWidths:Record<string,number>};
 type Props={registerLeaveGuard:RegisterLeaveGuard;onDirtyChange:(dirty:boolean)=>void;actorId:string;view:RuntimeView;layout:Layout;active:ApplicationPresetValid|null;onApply:(preset:ApplicationPresetValid|null)=>Promise<boolean>;refreshRuntime:(signal:AbortSignal)=>Promise<RuntimeView>;onUnauthorized:()=>void;onIdentityMismatch:()=>void};
 type Job={key:string;request:ApplicationMutationRequest;resolve:(value:PresetMutationReceipt|undefined)=>void;reject:(error:Error)=>void};
-const descriptors=(view:RuntimeView)=>({
- fields:view.fields.filter(f=>f.access.read!=='none'&&f.query.operators.length>0).map(f=>({id:f.id,label:f.name,kind:f.kind,operators:f.query.operators,optionIds:f.input.options?.map(o=>o.id),choices:f.input.options?.map(o=>({value:o.id,label:o.label}))})) as ResourceFilterField[],
- columns:view.fields.filter(f=>f.access.read!=='none').map(f=>({id:f.id,name:f.name})),
-});
+
 
 // Business adapter for the approved shared editor. No second query or mutation
 // state machine: live reads use the scoped API and writes use the shared hook.
@@ -23,13 +20,15 @@ export function RecordPresets({registerLeaveGuard,onDirtyChange,actorId,view,lay
  const base=`applications/${appId}/forms/${viewId}/table-presets`;
  const [job,setJob]=useState<Job|null>(null),[dirty,setDirty]=useState(false),[operating,setOperating]=useState(false);
  const [confirmedRead,setConfirmedRead]=useState<{id:string;resolve:(preset:ApplicationPreset)=>void;message:string}|null>(null),[readingConfirmed,setReadingConfirmed]=useState(false);
+ const released=useRef(false);
  const editor=useRef<PresetEditorState>({dirty:false,fingerprint:'',discard:()=>{}}),operationRef=useRef<PresetOperation|null>(null);
  const editorState=useCallback((state:PresetEditorState)=>{editor.current=state;},[]);
  useEffect(()=>{onDirtyChange(dirty||operating);return()=>onDirtyChange(false);},[dirty,operating,onDirtyChange]);
  useLayoutEffect(()=>registerLeaveGuard({kind:'preset',actorId,appId,viewId},createLeaveController(()=>{
   const operation=operationRef.current,pendingStatus=operation?.getPendingStatus();
-  return {status:pendingStatus??(editor.current.dirty?'draft':'clean'),fingerprint:JSON.stringify([pendingStatus,operation?.packet?.operationId,editor.current.fingerprint])};
+  return {status:released.current?'clean':pendingStatus??(editor.current.dirty?'draft':'clean'),fingerprint:JSON.stringify([pendingStatus,operation?.packet?.operationId,editor.current.fingerprint])};
  },decision=>{
+  if(decision==='retain_operation'){released.current=true;return;}
   if(decision!=='discard')return;
   const operation=operationRef.current;
   if(operation?.getPendingStatus()==='preflight'){

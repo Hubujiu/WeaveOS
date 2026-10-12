@@ -37,7 +37,8 @@ export function TablePresetManager(props:Props){
  const sharedMotion=!reducedMotion&&typeof document.startViewTransition==='function'&&navigator.vendor!=='Apple Computer, Inc.';
  const columns=view==='resource'?resource!.columns:view==='members'?memberBusinessColumns:eventBusinessColumns;
  const fields=view==='resource'?resource!.fields.map(f=>({key:f.id,label:f.label??'字段',kind:f.kind,choices:f.choices,operators:f.operators})):view==='members'?memberFilterFields:eventFilterFields;
- const [hiddenSearch,setHiddenSearch]=useState(''),[shownSearch,setShownSearch]=useState('');
+ const [hiddenSearch,setHiddenSearch]=useState(''),[shownSearch,setShownSearch]=useState(''),[listSearch,setListSearch]=useState('');
+ const filteredItems=resource?items.filter(item=>item.name.toLocaleLowerCase().includes(listSearch.trim().toLocaleLowerCase())):items;
  const applyCurrent=useRef(onApply);applyCurrent.current=onApply;
  const editFingerprint=edit?contentKey(edit,filterKey):'';
  const dirty=!!edit&&editFingerprint!==edit.initial;
@@ -119,24 +120,25 @@ export function TablePresetManager(props:Props){
    else if(expanded)exchange();else{setExpanded(false);setOpen(false);finishShared(version,focusToken);}
   }else{setExpanded(next);setOpen(next);}
  }
- function requestClose(restore=true){if(busy||confirmation)return;if(dirty){setConfirmation({kind:'leave'});return;}setEdit(null);setError('');changeOpen(false,restore);}
+ function requestClose(restore=true){if(busy||confirmation||(resource&&document.querySelector('dialog')))return;if(dirty){setConfirmation({kind:'leave'});return;}setEdit(null);setError('');changeOpen(false,restore);}
  function deferOutsideClose(event:Event){
   outsideClose.current?.();invalidateCloseFocus();
   let active=true,timer=0;
   // Starting a React ViewTransition on mousedown can suppress React's later
   // click dispatch during its async commit. Let the real outside gesture finish;
   // never redispatch a synthetic click or change the user's target.
-  const cleanup=()=>{active=false;clearTimeout(timer);document.removeEventListener('click',queue);document.removeEventListener('pointerup',queue);document.removeEventListener('pointercancel',queue);window.removeEventListener('blur',queue);if(outsideClose.current===cleanup)outsideClose.current=null;};
-  const complete=()=>{if(!active)return;cleanup();if(resource&&document.querySelector('dialog[open]'))return;if(intent.current)requestClose(false);};
+  const cleanup=()=>{active=false;clearTimeout(timer);document.removeEventListener('click',queue);if(!resource)document.removeEventListener('pointerup',queue);document.removeEventListener('pointercancel',queue);window.removeEventListener('blur',queue);if(outsideClose.current===cleanup)outsideClose.current=null;};
+  const complete=()=>{if(!active)return;cleanup();if(resource&&document.querySelector('dialog'))return;if(intent.current)requestClose(false);};
   const queue=()=>{clearTimeout(timer);timer=window.setTimeout(complete,0);};
   outsideClose.current=cleanup;
-  document.addEventListener('click',queue);document.addEventListener('pointerup',queue);document.addEventListener('pointercancel',queue);window.addEventListener('blur',queue);
+  document.addEventListener('click',queue);if(!resource)document.addEventListener('pointerup',queue);document.addEventListener('pointercancel',queue);window.addEventListener('blur',queue);
   if(!['mousedown','pointerdown','touchstart'].includes(event.type))queue();
  }
  useLayoutEffect(()=>{
   function beginOutsideGesture(event:PointerEvent){
    if((!sharedMotion&&!resource)||(dirty&&!resource)||busy||confirmation||!intent.current)return;
    const target=event.target;
+   if(target instanceof Element&&resource&&target.closest('dialog'))return;
    if(target instanceof Node&&!popup?.contains(target)&&!trigger.current?.contains(target))deferOutsideClose(event);
   }
   // Native capture precedes focus-out, which can arrive before outside-press.
@@ -185,7 +187,7 @@ export function TablePresetManager(props:Props){
  function row(b:PresetBlock,r:PresetRow,bi:number,ri:number){
   const field=fields.find(f=>f.key===r.field),resourceField=resource?.fields.find(f=>f.id===r.field),path=`${bi+1}.${ri+1}`,label=`条件 ${path}`,choices=r.field==='departmentIds'?options.departmentIds:r.field==='identityIds'?options.identityIds:field?.choices;
   const calendar=!resource&&!Array.isArray(r.value)&&typeof r.value==='object'&&r.value!==null?r.value as {date:string;timeZone:string}:null,mode=r.value===null?'null':calendar?'date':'value';
-  const operators=resourceField?filterOperators.filter(o=>resourceField.operators.includes(o.value)):(field?.kind==='time'?filterOperators:filterOperators.slice(0,2));
+  const operators=resourceField?filterOperators.filter(o=>resourceField.operators.includes(o.value)).map(o=>({...o,label:resourceField.kind==='number'||resourceField.kind==='money'?({gt:'大于',gte:'大于等于',lt:'小于',lte:'小于等于'} as Record<string,string>)[o.value]??o.label:o.label})):(field?.kind==='time'?filterOperators:filterOperators.slice(0,2));
   return <div key={r.id} className="preset-condition">
    <select aria-label={label+' 字段'} value={r.field} onChange={e=>patchRow(b.id,r.id,{field:e.target.value,operator:'eq',value:''})}><option value="">请选择字段</option>{!field&&r.field&&<option value={r.field}>{resource?'字段已不可用':'已失效字段：'+r.field}</option>}{fields.map(f=><option key={f.key} value={f.key}>{f.label}{edit?.hidden.includes(f.key==='departmentIds'?'departments':f.key==='identityIds'?'identities':f.key)?'（已隐藏）':''}</option>)}</select>
    <select aria-label={label+' 比较'} value={r.operator} onChange={e=>patchRow(b.id,r.id,{operator:e.target.value,...(!['eq','neq'].includes(e.target.value)&&r.value===null?{value:''}:{})})}>{operators.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select>
@@ -205,8 +207,8 @@ export function TablePresetManager(props:Props){
     {edit.blocks.map((b,bi)=><div key={b.id}>{bi>0&&<div className="preset-or"><span>或</span></div>}<fieldset className="preset-block" aria-label={`且条件组 ${bi+1}`}><legend>且条件</legend>{b.rows.map((r,ri)=>row(b,r,bi,ri))}<button type="button" className="preset-add" aria-label={`组 ${bi+1} 且条件`} disabled={leaves>=MAX_FILTER_LEAVES} onClick={()=>setEdit(e=>e?{...e,blocks:e.blocks.map(block=>block.id===b.id?{...block,rows:[...block.rows,newRow()]}:block)}:e)}><Plus size={14}/>且条件</button></fieldset></div>)}
     <button type="button" className="preset-add" aria-label="或条件" disabled={leaves>=MAX_FILTER_LEAVES} onClick={addBlock}><Plus size={14}/>或条件</button><h3>设置显隐字段</h3><div className="preset-visibility">{visibility(true)}{visibility(false)}</div><p className="preset-hint">隐藏字段仍参与筛选与排序。至少保留一个业务字段；选择、序号和操作列始终显示。</p>
     {conflict&&edit.preset&&<button type="button" onClick={()=>setConfirmation({kind:'reload'})}>重新加载最新方案</button>}
-   </fieldset>:<><button ref={firstControl} type="button" className="preset-add preset-new" aria-label="新增筛选" disabled={busy||listLoading||items.length>=20} onClick={()=>begin(null)}><Plus size={16}/>新增筛选</button>
-    {listLoading?<p role="status" className="preset-empty">正在加载筛选方案…</p>:items.length?<ul className="preset-list">{items.map(item=><li key={item.id}><div className="preset-info"><strong>{item.name}</strong>{resource&&'invalid'in item&&item.invalid&&<span className="preset-error">{item.reason||'方案已失效'}</span>}{active?.id===item.id&&<span className="preset-active">{active.version===item.version?'已应用':'已修改，待应用'}</span>}</div><div className="preset-actions"><button type="button" disabled={busy||!!(resource&&'invalid'in item&&item.invalid)} aria-label={'应用'+item.name} onClick={()=>void apply(item)}>应用</button><button type="button" disabled={busy} aria-label={'编辑'+item.name} onClick={()=>void readEdit(item)}>编辑</button><button type="button" disabled={busy} aria-label={'删除'+item.name} onClick={()=>{setError('');setConfirmation({kind:'delete',preset:item});}}>删除</button></div></li>)}</ul>:resource&&error?null:<p className="preset-empty">暂无自定义筛选</p>}
+   </fieldset>:<><div className="preset-list-toolbar">{resource&&<input aria-label="搜索筛选" placeholder="搜索筛选" value={listSearch} onChange={event=>setListSearch(event.target.value)}/>}<button ref={firstControl} type="button" className="preset-add preset-new" aria-label="新增筛选" disabled={busy||listLoading||items.length>=20} onClick={()=>begin(null)}><Plus size={16}/>新增筛选</button></div>
+    {listLoading?<p role="status" className="preset-empty">正在加载筛选方案…</p>:filteredItems.length?<ul className="preset-list">{filteredItems.map(item=><li key={item.id}><div className="preset-info"><strong>{item.name}</strong>{resource&&'invalid'in item&&item.invalid&&<span className="preset-error">{item.reason||'方案已失效'}</span>}{active?.id===item.id&&<span className="preset-active">{active.version===item.version?'已应用':'已修改，待应用'}</span>}</div><div className="preset-actions"><button type="button" disabled={busy||!!(resource&&'invalid'in item&&item.invalid)} aria-label={'应用'+item.name} onClick={()=>void apply(item)}>应用</button><button type="button" disabled={busy} aria-label={'编辑'+item.name} onClick={()=>void readEdit(item)}>编辑</button><button type="button" disabled={busy} aria-label={'删除'+item.name} onClick={()=>{setError('');setConfirmation({kind:'delete',preset:item});}}>删除</button></div></li>)}</ul>:resource&&error?null:<p className="preset-empty">{resource&&listSearch.trim()?'没有匹配的筛选方案':'暂无自定义筛选'}</p>}
     {active&&<button type="button" className="preset-cancel-application" disabled={busy} onClick={()=>setConfirmation({kind:'cancel'})}>取消应用</button>}{error&&<button type="button" disabled={busy} onClick={()=>void load()}>重新加载方案列表</button>}
    </>}
   </div>

@@ -117,9 +117,9 @@ test('Root private preset unknown operation survives SPA departure and reopens t
 });
 
 test('Root private preset dirty refresh requires explicit discard and preserves the editor on continue',async({page})=>{
- const calls=await setup(page);await open(page);await newPreset(page);await page.getByRole('button',{name:'刷新',exact:true}).evaluate((button:HTMLButtonElement)=>button.click());
- const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(page.getByLabel('自定义筛选名称')).toHaveValue('精确金额方案');expect(calls.filter(c=>c.path===path+'/runtime')).toHaveLength(1);
- await page.getByRole('button',{name:'刷新',exact:true}).evaluate((button:HTMLButtonElement)=>button.click());await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByLabel('自定义筛选名称')).toHaveCount(0);await expect.poll(()=>calls.filter(c=>c.path===path+'/runtime').length).toBe(2);expect(calls.filter(c=>c.method==='POST'&&c.path===path+'/table-presets')).toEqual([]);
+ const calls=await setup(page);await open(page);await newPreset(page);const runtimeReads=calls.filter(c=>c.path===path+'/runtime').length;await page.getByRole('button',{name:'刷新',exact:true}).evaluate((button:HTMLButtonElement)=>button.click());
+ const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(page.getByLabel('自定义筛选名称')).toHaveValue('精确金额方案');expect(calls.filter(c=>c.path===path+'/runtime')).toHaveLength(runtimeReads);
+ await page.getByRole('button',{name:'刷新',exact:true}).evaluate((button:HTMLButtonElement)=>button.click());await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByLabel('自定义筛选名称')).toHaveCount(0);await expect.poll(()=>calls.filter(c=>c.path===path+'/runtime').length).toBe(runtimeReads+1);expect(calls.filter(c=>c.method==='POST'&&c.path===path+'/table-presets')).toEqual([]);
 });
 
 test('Root private preset manager matches approved desktop surface and searches the bounded private list',async({page},testInfo)=>{
