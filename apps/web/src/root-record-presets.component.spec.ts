@@ -105,7 +105,7 @@ test('Root private preset unknown operation blocks browser refresh and keeps edi
 
 test('Root confirmed preset save with failed current reread remains saved and cannot write again',async({page})=>{
  const calls=await setup(page,{confirmedReadFails:true});await open(page);const editor=await newPreset(page);await editor.getByRole('button',{name:'确定',exact:true}).click();
- await expect(page.getByRole('alert').filter({hasText:'方案已保存'})).toBeVisible();await expect(editor.getByRole('button',{name:'确定',exact:true})).toBeDisabled();
+ await expect(page.getByRole('alert').filter({hasText:'方案已保存'})).toBeVisible();await expect(editor.getByRole('button',{name:'保存中…',exact:true})).toBeDisabled();await expect(editor.getByRole('button',{name:'确定',exact:true})).toHaveCount(0);
  await expect(page.getByRole('button',{name:'重试读取已保存方案',exact:true})).toBeVisible();await page.getByRole('button',{name:'重试读取已保存方案',exact:true}).click();
  await expect(page.getByRole('alert').filter({hasText:'方案已保存'})).toBeVisible();expect(calls.filter(c=>c.method==='POST'&&c.path===path+'/table-presets')).toHaveLength(1);
 });
@@ -146,4 +146,11 @@ test('Root private preset applies system date conditions and preserves system la
 test('Root preset editor offers only the two system timestamp filters alongside authorized business fields',async({page})=>{
  await setup(page);await open(page);const editor=await newPreset(page);const choices=editor.getByLabel('条件 1.1 字段');await expect(choices.locator('option')).toHaveText(['请选择字段','金额','事由','创建时间','更新时间']);await choices.selectOption('createdAt');await editor.getByLabel('条件 1.1 比较').selectOption('gte');await editor.getByLabel('条件 1.1 值',{exact:true}).fill('2026-10-01T00:00:00Z');
  await editor.getByLabel('自定义筛选名称').fill('本月记录');await editor.getByRole('button',{name:'确定',exact:true}).click();await expect(page.getByText('本月记录',{exact:true})).toBeVisible();
+});
+
+test('Root resource preset list search is available independently of layout dimensions',async({page})=>{
+ const calls=await setup(page);await open(page);const panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});const search=panel.getByRole('textbox',{name:'搜索筛选',exact:true});await expect(search).toBeVisible();await search.fill('无匹配方案');await expect(panel.getByText('高额方案',{exact:true})).toHaveCount(0);await search.fill('高额');await expect(panel.getByText('高额方案',{exact:true})).toBeVisible();expect(calls.filter(c=>c.path===path+'/table-presets')).toHaveLength(1);
+});
+test('Root resource numeric operators use numeric wording independently of editor dimensions',async({page})=>{
+ await setup(page);await open(page);const panel=await newPreset(page);await expect(panel.getByLabel('条件 1.1 比较').locator('option[value=gt]')).toHaveText('大于');await expect(panel.getByLabel('条件 1.1 比较').locator('option[value=lt]')).toHaveText('小于');
 });
