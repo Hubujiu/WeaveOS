@@ -58,3 +58,8 @@ test('Root existing record uses a full-page workspace with the original Shell an
  await expect(page.getByRole('button',{name:'保存记录',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'放弃填写',exact:true})).toHaveCount(0);await testInfo.attach('record-full-page',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  await page.setViewportSize({width:390,height:844});const narrow=await page.getByRole('region',{name:'关联流程',exact:true}).boundingBox();expect(narrow!.x).toBeGreaterThanOrEqual(0);expect(narrow!.x+narrow!.width).toBeLessThanOrEqual(390);await expect(page.locator('body')).toHaveJSProperty('scrollWidth',390);await testInfo.attach('record-full-page-mobile',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
 });
+test('Root record read-only fields follow the approved gray well while editable fields remain white',async({page})=>{
+ await setup(page);await open(page);const value=page.getByLabel('金额',{exact:true});
+ await expect(value).not.toBeEditable();await expect(value).toHaveCSS('background-color','rgb(245, 245, 245)');await expect(value).toHaveCSS('color','rgb(105, 105, 105)');
+ await page.getByRole('button',{name:'编辑记录',exact:true}).click();await expect(value).toBeEditable();await expect(value).toHaveCSS('background-color','rgb(255, 255, 255)');
+});
