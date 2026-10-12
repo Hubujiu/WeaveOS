@@ -1,0 +1,158 @@
+(node:12) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ V017 missing scope has no invented preset recovery (0.852481ms)
+✖ V017 exact actor and view reopens the original frozen preset request without mutating it (1.848868ms)
+✔ V017 confirmed packets are not reintroduced as unknown writes (0.158107ms)
+✔ V017 preset recovery excludes other actor (0.135153ms)
+✔ V017 preset recovery excludes other app (0.098418ms)
+✔ V017 preset recovery excludes other view (0.158518ms)
+✔ V017 record operations cannot become preset recovery (0.195223ms)
+✔ V017 foreign recovery scope cannot be replayed from the preset manager (0.177116ms)
+✖ V017 updates preserve resource identity and exact CAS payload (3.455872ms)
+✖ V017 deletion preserves original operation and expected version query (0.555705ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 7
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 121.389223
+
+✖ failing tests:
+
+test at tests/foundation/application-preset-recovery.test.mjs:17:1
+✖ V017 exact actor and view reopens the original frozen preset request without mutating it (1.848868ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   actorId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001',
+  -   body: {
+  -     columnOrder: [],
+  -     columnWidths: {},
+  -     expectedSchemaVersion: 2,
+  -     filter: null,
+  -     hiddenColumnIds: [],
+  -     name: '精确方案',
+  -     operationId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005',
+  -     sort: null
+  -   },
+  -   expectedStatus: 201,
+  -   method: 'POST',
+  -   operationId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005',
+  -   path: 'applications/aaaaaaaa-aaaa-4aaa-8aaa-000000000002/forms/aaaaaaaa-aaaa-4aaa-8aaa-000000000003/table-presets',
+  -   resource: {
+  -     appId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002',
+  -     creationNonce: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000004',
+  -     kind: 'preset',
+  -     viewId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000003'
+  -   },
+  -   scope: '["[\\"presets\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000001\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000002\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000003\\"]",{"kind":"preset","appId":"aaaaaaaa-aaaa-4aaa-8aaa-000000000002","viewId":"aaaaaaaa-aaaa-4aaa-8aaa-000000000003","creationNonce":"aaaaaaaa-aaaa-4aaa-8aaa-000000000004"}]'
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/application-preset-recovery.test.mjs:17:191)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { actorId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001', scope: '["[\\"presets\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000001\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000002\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000003\\"]",{"kind":"preset","appId":"aaaaaaaa-aaaa-4aaa-8aaa-000000000002","viewId":"aaaaaaaa-aaaa-4aaa-8aaa-000000000003","creationNonce":"aaaaaaaa-aaaa-4aaa-8aaa-000000000004"}]', resource: { kind: 'preset', appId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002', viewId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000003', creationNonce: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000004' }, path: 'applications/aaaaaaaa-aaaa-4aaa-8aaa-000000000002/forms/aaaaaaaa-aaaa-4aaa-8aaa-000000000003/table-presets', method: 'POST', expectedStatus: 201, operationId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005', body: { operationId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005', name: '精确方案', expectedSchemaVersion: 2, filter: null, sort: null, hiddenColumnIds: [], columnOrder: [], columnWidths: {} } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/application-preset-recovery.test.mjs:22:1
+✖ V017 updates preserve resource identity and exact CAS payload (3.455872ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   actorId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001',
+  -   body: {
+  -     columnOrder: [],
+  -     columnWidths: {},
+  -     expectedSchemaVersion: 2,
+  -     expectedVersion: 7,
+  -     filter: null,
+  -     hiddenColumnIds: [],
+  -     name: '精确方案',
+  -     operationId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005',
+  -     sort: null
+  -   },
+  -   expectedStatus: 200,
+  -   method: 'PUT',
+  -   operationId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005',
+  -   path: 'applications/aaaaaaaa-aaaa-4aaa-8aaa-000000000002/forms/aaaaaaaa-aaaa-4aaa-8aaa-000000000003/table-presets/aaaaaaaa-aaaa-4aaa-8aaa-000000000006',
+  -   resource: {
+  -     appId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002',
+  -     creationNonce: undefined,
+  -     id: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000006',
+  -     kind: 'preset',
+  -     viewId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000003'
+  -   },
+  -   scope: '["[\\"presets\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000001\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000002\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000003\\"]",{"kind":"preset","appId":"aaaaaaaa-aaaa-4aaa-8aaa-000000000002","viewId":"aaaaaaaa-aaaa-4aaa-8aaa-000000000003","id":"aaaaaaaa-aaaa-4aaa-8aaa-000000000006"}]'
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/application-preset-recovery.test.mjs:22:285)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { actorId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001', scope: '["[\\"presets\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000001\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000002\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000003\\"]",{"kind":"preset","appId":"aaaaaaaa-aaaa-4aaa-8aaa-000000000002","viewId":"aaaaaaaa-aaaa-4aaa-8aaa-000000000003","id":"aaaaaaaa-aaaa-4aaa-8aaa-000000000006"}]', resource: { kind: 'preset', appId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002', viewId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000003', creationNonce: undefined, id: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000006' }, path: 'applications/aaaaaaaa-aaaa-4aaa-8aaa-000000000002/forms/aaaaaaaa-aaaa-4aaa-8aaa-000000000003/table-presets/aaaaaaaa-aaaa-4aaa-8aaa-000000000006', method: 'PUT', expectedStatus: 200, operationId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005', body: { operationId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005', name: '精确方案', expectedSchemaVersion: 2, filter: null, sort: null, hiddenColumnIds: [], columnOrder: [], columnWidths: {}, expectedVersion: 7 } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/application-preset-recovery.test.mjs:23:1
+✖ V017 deletion preserves original operation and expected version query (0.555705ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   actorId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001',
+  -   expectedStatus: 204,
+  -   method: 'DELETE',
+  -   operationId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005',
+  -   path: 'applications/aaaaaaaa-aaaa-4aaa-8aaa-000000000002/forms/aaaaaaaa-aaaa-4aaa-8aaa-000000000003/table-presets/aaaaaaaa-aaaa-4aaa-8aaa-000000000006',
+  -   query: {
+  -     expectedVersion: 7,
+  -     operationId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005'
+  -   },
+  -   resource: {
+  -     appId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002',
+  -     creationNonce: undefined,
+  -     id: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000006',
+  -     kind: 'preset',
+  -     viewId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000003'
+  -   },
+  -   scope: '["[\\"presets\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000001\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000002\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000003\\"]",{"kind":"preset","appId":"aaaaaaaa-aaaa-4aaa-8aaa-000000000002","viewId":"aaaaaaaa-aaaa-4aaa-8aaa-000000000003","id":"aaaaaaaa-aaaa-4aaa-8aaa-000000000006"}]'
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/application-preset-recovery.test.mjs:23:339)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { actorId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001', scope: '["[\\"presets\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000001\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000002\\",\\"aaaaaaaa-aaaa-4aaa-8aaa-000000000003\\"]",{"kind":"preset","appId":"aaaaaaaa-aaaa-4aaa-8aaa-000000000002","viewId":"aaaaaaaa-aaaa-4aaa-8aaa-000000000003","id":"aaaaaaaa-aaaa-4aaa-8aaa-000000000006"}]', resource: { kind: 'preset', appId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002', viewId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000003', creationNonce: undefined, id: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000006' }, path: 'applications/aaaaaaaa-aaaa-4aaa-8aaa-000000000002/forms/aaaaaaaa-aaaa-4aaa-8aaa-000000000003/table-presets/aaaaaaaa-aaaa-4aaa-8aaa-000000000006', method: 'DELETE', expectedStatus: 204, operationId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005', query: { operationId: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005', expectedVersion: 7 } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+node_exit=1
