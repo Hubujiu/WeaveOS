@@ -105,7 +105,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   if(new Set(items.map(item=>item.id)).size!==items.length)throw new Error('候选项响应格式不正确');
   return {items,nextPageToken:pagination.nextPageToken};
  },[actorId,appId,viewId,editor]);
- const readRework=useCallback((instanceId:string,identity:RecordEditorIdentity,recordId:string)=>{
+ const readRework=useCallback((instanceId:string,identity:RecordEditorIdentity,recordId:string,recovering=false)=>{
   const current=++generation.current;
   readController.current?.abort();const controller=new AbortController();readController.current=controller;
   setEditor(null);setReadError('');setSaved(false);setReworkSaved(false);setPendingRead({identity,view:null,recordId,mode:'edit',confirmedWrite:false});
@@ -115,7 +115,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
    const preview=await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/records/${recordId}/workflows/${instanceId}/round-actions`,'GET',undefined,controller.signal,200);
    if(current!==generation.current||controller.signal.aborted)return;
    if(record.id!==recordId||!validRoundPreview(preview,instanceId))throw new Error('返工资格或记录身份已变化，请刷新后重试');
-   const view=reworkRuntimeView(runtime,record,preview,actorId);
+   const view=reworkRuntimeView(runtime,record,preview,actorId)??(recovering?{...runtime,fields:runtime.fields.map(field=>({...field,access:{...field.access,edit:'none' as const}}))}:null);
    if(!view)throw new Error('当前返工资格、字段权限或记录版本已变化，请刷新后重试');
    setPendingRead(null);setRecordDirty(false);setEditor({identity,view,record,mode:'edit',reworkInstanceId:instanceId});
   }catch(error){if(current!==generation.current||controller.signal.aborted)return;handleError(error);setReadError(error instanceof Error?error.message:'无法读取返工记录，请刷新后重试');}})();
@@ -124,7 +124,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   const rework=scopedUnconfirmed(actorId).find(packet=>{const resource=packet.resource;return resource?.kind==='round-record'&&resource.appId===appId&&resource.viewId===viewId&&findRoundRecovery(actorId,appId,viewId,resource.id,resource.instanceId,'round-record')===packet;});
   if(rework?.resource?.kind==='round-record'){
    const resource=rework.resource,token=JSON.stringify([resource,rework.operationId]);if(openedRecovery.current.has(token))return;openedRecovery.current.add(token);
-   readRework(resource.instanceId,{kind:'record',actorId,appId,viewId,recordId:resource.id},resource.id);return;
+   readRework(resource.instanceId,{kind:'record',actorId,appId,viewId,recordId:resource.id},resource.id,true);return;
   }
   const packet=scopedUnconfirmed(actorId).find(value=>value.resource?.kind==='record'&&value.resource.appId===appId&&value.resource.viewId===viewId&&
    (!!value.resource.id||!!value.resource.creationNonce));
