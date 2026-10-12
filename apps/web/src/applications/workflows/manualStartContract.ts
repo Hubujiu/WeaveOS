@@ -16,3 +16,5 @@ export function validManualStartPage(value:unknown,page:number,pageSize:number):
 export function validManualStartReceipt(value:unknown,operationId:string,flowId:string):value is ManualStartReceipt{
  return id(operationId)&&id(flowId)&&object(value)&&exact(value,['operationId','flowId','instanceId','status','ignored'])&&value.operationId===operationId&&value.flowId===flowId&&id(value.instanceId)&&((value.status==='accepted'&&value.ignored===false)||(value.status==='ignored'&&value.ignored===true));
 }
+// V044 pre-operation packet declaration; behavior follows independent RED.
+export function validManualStartRequest(_resource:unknown,_request:unknown):boolean{return false;}
