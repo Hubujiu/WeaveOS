@@ -1,0 +1,77 @@
+✖ preflight disables Redocly telemetry with inherited setting undefined (2.037811ms)
+✖ preflight disables Redocly telemetry with inherited setting on (0.397907ms)
+✔ preflight disables Redocly telemetry with inherited setting off (0.746782ms)
+✖ direct CI contract lint explicitly disables telemetry without removing validation (0.624778ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 1
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 74.848421
+
+✖ failing tests:
+
+test at tests/governance/redocly-privacy.test.mjs:9:3
+✖ preflight disables Redocly telemetry with inherited setting undefined (2.037811ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  undefined !== 'off'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/redocly-privacy.test.mjs:19:12)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'off',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/governance/redocly-privacy.test.mjs:9:3
+✖ preflight disables Redocly telemetry with inherited setting on (0.397907ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'on' !== 'off'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/redocly-privacy.test.mjs:19:12)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'on',
+    expected: 'off',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/governance/redocly-privacy.test.mjs:27:1
+✖ direct CI contract lint explicitly disables telemetry without removing validation (0.624778ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /REDOCLY_TELEMETRY:\s*['"]off['"]/. Input:
+  
+  '        run: |\n' +
+    '          node --test contracts/*.test.mjs\n' +
+    '          pnpm exec redocly lint contracts/openapi/openapi.json\n'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/redocly-privacy.test.mjs:31:10)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '        run: |\n          node --test contracts/*.test.mjs\n          pnpm exec redocly lint contracts/openapi/openapi.json\n',
+    expected: /REDOCLY_TELEMETRY:\s*['"]off['"]/,
+    operator: 'match',
+    diff: 'simple'
+  }
