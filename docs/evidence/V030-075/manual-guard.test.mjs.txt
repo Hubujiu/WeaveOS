@@ -1,0 +1,8 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {stripTypeScriptTypes} from 'node:module';
+const source=await readFile(new URL('../../apps/web/src/applications/shell/leaveGuards.ts',import.meta.url),'utf8');
+const {LeaveGuards}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source,{mode:'transform'})).toString('base64'));
+const base={kind:'manual-start',actorId:'actor',appId:'app',viewId:'view',recordId:'record'};
+const controller=()=>({getStatus:()=> 'unknown',prepareLeave:()=>({ok:true})});
+test('V044 manual intent guards isolate records within the same view',()=>{const guards=new LeaveGuards(),one=controller(),two=controller();guards.register(base,one);guards.register({...base,recordId:'second'},two);assert.deepEqual(new Set(guards.snapshot('actor').map(entry=>entry.controller)),new Set([one,two]));});
+test('V044 manual intent guard cannot replace ordinary record or instance guards',()=>{const guards=new LeaveGuards();guards.register(base,controller());guards.register({...base,kind:'record'},controller());guards.register({...base,kind:'workflow-instance',instanceId:'instance'},controller());assert.equal(guards.snapshot('actor').length,3);});
+test('V044 stale manual cleanup retains replacement and another actor',()=>{const guards=new LeaveGuards(),stale=guards.register(base,controller()),current=controller();guards.register(base,current);guards.register({...base,actorId:'other'},controller());stale();assert.equal(guards.snapshot('actor').length,1);assert.equal(guards.snapshot('actor')[0].controller,current);assert.equal(guards.snapshot('other').length,1);});

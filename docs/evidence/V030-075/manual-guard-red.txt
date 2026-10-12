@@ -1,0 +1,45 @@
+(node:14) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ V044 manual intent guards isolate records within the same view (2.184462ms)
+✔ V044 manual intent guard cannot replace ordinary record or instance guards (0.203816ms)
+✔ V044 stale manual cleanup retains replacement and another actor (0.46627ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 159.721206
+
+✖ failing tests:
+
+test at tests/foundation/workflow-manual-guard.test.mjs:6:1
+✖ V044 manual intent guards isolate records within the same view (2.184462ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + Set(1) {
+  - Set(2) {
+      {
+        getStatus: [Function: getStatus],
+        prepareLeave: [Function: prepareLeave]
+      },
+  -   {
+  -     getStatus: [Function: getStatus],
+  -     prepareLeave: [Function: prepareLeave]
+  -   }
+    }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-manual-guard.test.mjs:6:223)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [Set],
+    expected: [Set],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
