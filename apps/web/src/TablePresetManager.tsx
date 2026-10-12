@@ -1,8 +1,9 @@
-import {type ReactNode,startTransition,useEffect,useId,useLayoutEffect,useRef,useState,ViewTransition} from 'react';
+import {type ReactNode,startTransition,useContext,useEffect,useId,useLayoutEffect,useRef,useState,ViewTransition} from 'react';
 import {Popover} from '@base-ui/react/popover';
 import {Funnel,X,Plus,ArrowLeft,ArrowRight} from '@phosphor-icons/react';
 import {workspaceApi,WorkspaceError} from './workspace-api';
 import {Modal} from './Modal';
+import {LeavePromptContext} from './applications/shell/LeavePromptContext';
 import {memberFilterFields,eventFilterFields,filterOperators,MAX_FILTER_LEAVES,type QueryView,type ResourceFilterField,type ResourceFilterGroup} from './QueryFilterState';
 import {blockFilter,presetBlocks,newPresetRow,validatePreset,validateResourcePreset,editablePresetFilter,memberBusinessColumns,eventBusinessColumns,type TablePreset,type AppliedPreset,type PresetBlock,type PresetRow,type PresetOptions,type BusinessColumn} from './TablePresetState';
 import './query-filter.css';
@@ -19,6 +20,7 @@ type Edit={preset:ManagedPreset|null;name:string;blocks:PresetBlock[];hidden:str
 const contentKey=(e:Pick<Edit,'name'|'blocks'|'hidden'>,key:'field'|'fieldId')=>JSON.stringify([e.name,blockFilter(e.blocks,key),e.hidden]);
 export function TablePresetManager(props:Props){
  const {view,active,hiddenColumnIds,onDirty,onUnauthorized}=props,resource=view==='resource'?props.resource:null;
+ const sharedLeavePrompt=useContext(LeavePromptContext);
  const options=view==='resource'?{}:props.options??{};
  const loadOptions=view==='resource'?async()=>({}):props.loadOptions;
  const onApply=view==='resource'?async (_preset:TablePreset|null)=>false:props.onApply;
@@ -31,6 +33,7 @@ export function TablePresetManager(props:Props){
  const intent=useRef(false),everOpened=useRef(false),generation=useRef(0),animation=useRef<Animation[]>([]),sharedGeneration=useRef(0),sharedFrame=useRef(0),sharedTimer=useRef(0),requests=useRef(0);
  const outsideClose=useRef<(()=>void)|null>(null);
  const saving=useRef(false);
+ useLayoutEffect(()=>{if(resource&&sharedLeavePrompt){outsideClose.current?.();setConfirmation(null);}},[!!resource,sharedLeavePrompt]);
  const focusLifecycle=useRef(0),closeFocus=useRef<{token:number;popup:HTMLDivElement|null}|null>(null);
  const openingFocus=useRef(false);
  const sharedVersion=sharedGeneration.current,focusVersion=focusLifecycle.current,panelId=useId(),sharedName=`q36-preset-shell-${panelId.replace(/[^a-zA-Z0-9_-]/g,'-')}`;
@@ -120,7 +123,7 @@ export function TablePresetManager(props:Props){
    else if(expanded)exchange();else{setExpanded(false);setOpen(false);finishShared(version,focusToken);}
   }else{setExpanded(next);setOpen(next);}
  }
- function requestClose(restore=true){if(busy||confirmation||(resource&&document.querySelector('dialog')))return;if(dirty){setConfirmation({kind:'leave'});return;}setEdit(null);setError('');changeOpen(false,restore);}
+ function requestClose(restore=true){if(busy||confirmation||(resource&&(sharedLeavePrompt||document.querySelector('dialog'))))return;if(dirty){setConfirmation({kind:'leave'});return;}setEdit(null);setError('');changeOpen(false,restore);}
  function deferOutsideClose(event:Event){
   outsideClose.current?.();invalidateCloseFocus();
   let active=true,timer=0;
@@ -222,6 +225,6 @@ export function TablePresetManager(props:Props){
     {sharedMotion?<ViewTransition default="none" update={expanded?'q36-filter-content-in':'q36-filter-content-out'}>{content}</ViewTransition>:content}
    </Popover.Popup></Popover.Positioner></Popover.Portal>
   </Popover.Root>
-  {confirmation&&<Modal title={confirmation.kind==='cancel'?'取消当前筛选':confirmation.kind==='delete'?'删除筛选方案':confirmation.kind==='reload'?'重新加载最新方案':'放弃未保存的筛选'} busy={busy} onClose={()=>setConfirmation(null)}><p>{confirmation.kind==='delete'?`确认删除“${confirmation.preset?.name}”？${active?.id===confirmation.preset?.id?'同时取消当前应用，并恢复首次应用前的显隐字段。':''}`:confirmation.kind==='cancel'?'取消当前应用，并恢复首次应用前的显隐字段。':confirmation.kind==='reload'?'将丢弃当前输入，并读取最新版本。':'当前修改尚未保存，确认放弃更改？'}</p>{error&&<p role="alert">{error}</p>}<div className="preset-confirm-actions"><button type="button" disabled={busy} onClick={()=>setConfirmation(null)}>返回</button><button type="button" disabled={busy} className="preset-primary" onClick={()=>void confirm()}>{confirmation.kind==='delete'?'确认删除':confirmation.kind==='cancel'?'确认取消':confirmation.kind==='reload'?'确认重新加载':'放弃更改'}</button></div></Modal>}
+  {confirmation&&!(resource&&sharedLeavePrompt)&&<Modal title={confirmation.kind==='cancel'?'取消当前筛选':confirmation.kind==='delete'?'删除筛选方案':confirmation.kind==='reload'?'重新加载最新方案':'放弃未保存的筛选'} busy={busy} onClose={()=>setConfirmation(null)}><p>{confirmation.kind==='delete'?`确认删除“${confirmation.preset?.name}”？${active?.id===confirmation.preset?.id?'同时取消当前应用，并恢复首次应用前的显隐字段。':''}`:confirmation.kind==='cancel'?'取消当前应用，并恢复首次应用前的显隐字段。':confirmation.kind==='reload'?'将丢弃当前输入，并读取最新版本。':'当前修改尚未保存，确认放弃更改？'}</p>{error&&<p role="alert">{error}</p>}<div className="preset-confirm-actions"><button type="button" disabled={busy} onClick={()=>setConfirmation(null)}>返回</button><button type="button" disabled={busy} className="preset-primary" onClick={()=>void confirm()}>{confirmation.kind==='delete'?'确认删除':confirmation.kind==='cancel'?'确认取消':confirmation.kind==='reload'?'确认重新加载':'放弃更改'}</button></div></Modal>}
  </>;
 }

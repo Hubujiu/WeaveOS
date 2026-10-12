@@ -111,7 +111,7 @@ test('Root confirmed preset save with failed current reread remains saved and ca
 });
 test('Root private preset unknown operation survives SPA departure and reopens the original recovery',async({page})=>{
  const calls=await setup(page,{writeUnknown:true});await open(page);const editor=await newPreset(page);await editor.getByRole('button',{name:'确定',exact:true}).click();await expect(page.getByRole('alert').filter({hasText:/未确认/})).toBeVisible();
- await page.getByRole('button',{name:'返回主页',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page).toHaveURL(/\/app$/);
+ await page.getByRole('button',{name:'返回主页',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page).toHaveURL(/\/app$/);await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await expect(page.getByLabel('自定义筛选名称')).toHaveCount(0);
  await page.goBack();await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();await page.getByRole('button',{name:/^自定义筛选/}).click();await expect(page.getByRole('button',{name:'重试原方案操作',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'重试原方案操作',exact:true}).click();await expect(page.getByText('精确金额方案',{exact:true})).toBeVisible();const writes=calls.filter(c=>c.method==='POST'&&c.path===path+'/table-presets');expect(writes).toHaveLength(2);expect(writes[1].body).toEqual(writes[0].body);
 });
