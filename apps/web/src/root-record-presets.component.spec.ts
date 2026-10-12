@@ -178,3 +178,6 @@ test('Root display-fields typography uses approved monochrome dialog heading',as
 test('Root display-fields approved checkbox geometry and monochrome color do not inherit personnel blue',async({page})=>{
  await setup(page);await open(page);await page.keyboard.press('Escape');await page.getByRole('button',{name:'显示字段',exact:true}).click();const dialog=page.getByRole('dialog',{name:'显示字段',exact:true}),checkbox=dialog.getByRole('checkbox',{name:'金额',exact:true});await expect(checkbox).toHaveCSS('width','16px');await expect(checkbox).toHaveCSS('height','16px');await expect(checkbox).toHaveCSS('background-color','rgb(37, 37, 37)');
 });
+test('Root display-fields checkbox uses monochrome fill independently of its dimensions',async({page})=>{
+ await setup(page);await open(page);await page.keyboard.press('Escape');await page.getByRole('button',{name:'显示字段',exact:true}).click();await expect(page.getByRole('dialog',{name:'显示字段',exact:true}).getByRole('checkbox',{name:'金额',exact:true})).toHaveCSS('background-color','rgb(37, 37, 37)');
+});
