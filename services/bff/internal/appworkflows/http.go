@@ -424,6 +424,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
 	parts := strings.Split(path, "/")
+	if path != r.URL.Path && len(parts) == 6 && parts[1] == "forms" && parts[3] == "workflows" && parts[4] == "approvers" && parts[5] == "search" {
+		s.approverSearch(w, r, p, parts[0], parts[2])
+		return
+	}
 	if path != r.URL.Path && len(parts) == 5 && parts[1] == "forms" && parts[3] == "workflows" && parts[4] == "search" {
 		s.managerSearch(w, r, p, parts[0], parts[2])
 		return
