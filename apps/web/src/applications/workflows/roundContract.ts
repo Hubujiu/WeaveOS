@@ -14,3 +14,5 @@ export function validRoundPreview(value:unknown,instanceId:string):value is Roun
 export function validRoundStartReceipt(value:unknown,operationId:string,flowId:string,previousInstanceId:string,kind:'resubmit'|'review'):value is RoundStartReceipt{
  return [operationId,flowId,previousInstanceId].every(id)&&(kind==='resubmit'||kind==='review')&&object(value)&&exact(value,['operationId','flowId','previousInstanceId','instanceId','roundKind','roundNumber','status'])&&value.operationId===operationId&&value.flowId===flowId&&value.previousInstanceId===previousInstanceId&&id(value.instanceId)&&value.instanceId!==previousInstanceId&&value.roundKind===kind&&positive(value.roundNumber)&&value.status==='accepted';
 }
+
+export function validRoundStartRequest(resource:unknown,request:unknown):boolean{return false;}
