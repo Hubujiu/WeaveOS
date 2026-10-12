@@ -275,7 +275,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					var page appdrafts.Page
 					page, e = s.Records.ListDrafts(r.Context(), p, apprecordservice.DraftListRequest{AppID: app, ViewID: view, PageSize: int(size), PageToken: q.Get("pageToken")})
 					data = map[string]any{"items": page.Items}
-					pagination = map[string]any{"pageSize": size, "hasMore": page.NextToken != "", "nextPageToken": nil}
+					pagination = map[string]any{"hasMore": page.NextToken != "", "nextPageToken": nil}
 					if page.NextToken != "" {
 						pagination.(map[string]any)["nextPageToken"] = page.NextToken
 					}
