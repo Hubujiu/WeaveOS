@@ -4,12 +4,13 @@ import {createLeaveController,type RegisterLeaveGuard} from '../forms/leaveGuard
 import {useApplicationOperation,type ApplicationMutationRequest} from '../useApplicationOperation';
 import '../forms/forms.css';
 import type {Draft,DraftMutationResult,FieldValue,MutationResult,RecordItem,RuntimeField,RuntimeLayoutNode,RuntimeView,UUID,Values} from './contracts';
+import type {ApplicationPacket} from '../recovery';
 import {isDraftMutationResult,isMutationResult} from './contracts';
 import {confirmRecordIdentity,fieldRendererKey,type RecordEditorIdentity} from './recordState';
 import {projectRuntimeFields,requiresRuntimeReview,scopeAllows} from './runtimeModel';
 
 export type RecordFormProps={
- view:RuntimeView;identity:RecordEditorIdentity;record?:RecordItem;draft?:Draft;onDraftConfirmed?:(result:DraftMutationResult)=>void;mode:'create'|'edit'|'read';authorityKey:string;queryVersion?:string;reworkInstanceId?:string;
+ view:RuntimeView;identity:RecordEditorIdentity;record?:RecordItem;draft?:Draft;recoveredDraft?:ApplicationPacket;onDraftConfirmed?:(result:DraftMutationResult)=>void;mode:'create'|'edit'|'read';authorityKey:string;queryVersion?:string;reworkInstanceId?:string;
  loadCandidates?:(field:RuntimeField,request:Parameters<LoadReferenceCandidates>[0],signal:AbortSignal)=>ReturnType<LoadReferenceCandidates>;
  onUnauthorized:()=>void;onIdentityMismatch:()=>void;registerLeaveGuard:RegisterLeaveGuard;onRefresh:()=>void;
  onConfirmed:(result:MutationResult,identity:RecordEditorIdentity)=>void;onDirtyChange:(dirty:boolean)=>void;
@@ -39,8 +40,8 @@ function RecordFormScope(props:RecordFormProps){
  const creationNonce=identity.kind==='new'?identity.clientDraftId:identity.kind==='draft'?identity.draftId:undefined;
  const resource=useMemo(()=>reworkInstanceId&&recordId?{kind:'round-record' as const,appId:identity.appId,viewId:identity.viewId,id:recordId,instanceId:reworkInstanceId}:recordId?{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,id:recordId}:creationNonce?{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,creationNonce}:null,[identity.appId,identity.viewId,recordId,creationNonce,reworkInstanceId]);
  const operationScope=reworkInstanceId&&recordId?`round-record:${identity.appId}:${identity.viewId}:${recordId}:${reworkInstanceId}`:recordId?`record-editor:${identity.appId}:${identity.viewId}:record:${recordId}`:`record-editor:${identity.appId}:${identity.viewId}:new:${creationNonce}`;
- const [draftJob,setDraftJob]=useState<DraftJob|null>(null),[draftPhase,setDraftPhase]=useState('idle'),[draftError,setDraftError]=useState(''),[draftConflict,setDraftConflict]=useState(false);
- const draftOperation=useRef<DraftOperation|null>(null),pendingDraft=useRef<DraftJob|null>(null);
+ const [draftJob,setDraftJob]=useState<DraftJob|null>(()=>{const packet=props.recoveredDraft;return packet?.resource?{key:packet.operationId!,recovered:true,request:{resource:packet.resource,path:packet.path,method:packet.method,expectedStatus:packet.expectedStatus,body:packet.body}}:null;}),[draftPhase,setDraftPhase]=useState(props.recoveredDraft?'unconfirmed':'idle'),[draftError,setDraftError]=useState(''),[draftConflict,setDraftConflict]=useState(false);
+ const draftOperation=useRef<DraftOperation|null>(null),pendingDraft=useRef<DraftJob|null>(draftJob);
  const draftBasisConflict=!!draft&&(draft.hasConflicts||draft.schemaVersion!==view.schemaVersion||!!draft.targetRecordId&&draft.baseRecordVersion!==record?.recordVersion);
  const confirmedRef=useRef(onConfirmed);confirmedRef.current=onConfirmed;
  const unauthorizedRef=useRef(onUnauthorized);unauthorizedRef.current=onUnauthorized;
@@ -68,7 +69,8 @@ function RecordFormScope(props:RecordFormProps){
  // Recovery packets are immutable. Reconstruct only present values/changes the
  // current runtime still permits, over this mount's projected baseline.
  const hydrated=useRef<string|null>(null);
- useEffect(()=>{if(!packet?.operationId||hydrated.current===packet.operationId)return;hydrated.current=packet.operationId;const frozen=packet.body?.values??packet.body?.changes;if(!frozen||typeof frozen!=='object'||Array.isArray(frozen))return;setValues(old=>{const next={...old};for(const [id,value] of Object.entries(frozen))if(currentEditable.has(id))next[id]=value as FieldValue;return next;});},[packet]);
+ const hydrationPacket=packet??props.recoveredDraft;
+ useEffect(()=>{const packet=hydrationPacket;if(!packet?.operationId||hydrated.current===packet.operationId)return;hydrated.current=packet.operationId;const frozen=packet.body?.values??packet.body?.changes;if(!frozen||typeof frozen!=='object'||Array.isArray(frozen))return;setValues(old=>{const next={...old};for(const [id,value] of Object.entries(frozen))if(currentEditable.has(id))next[id]=value as FieldValue;return next;});},[hydrationPacket]);
  useEffect(()=>{setPendingDisplays({});},[authorityKey]);
  useEffect(()=>{onDirtyChange((dirty||!!draftJob)&&!confirmed);},[dirty,draftJob,confirmed,onDirtyChange]);
 
@@ -146,7 +148,7 @@ function RecordFormScope(props:RecordFormProps){
 }
 
 
-type DraftJob={key:string;request:ApplicationMutationRequest};
+type DraftJob={key:string;request:ApplicationMutationRequest;recovered?:boolean};
 type DraftOperation=ReturnType<typeof useApplicationOperation<DraftMutationResult>>;
 function RecordDraftMutation({job,actorId,operationRef,onPhase,settle,onUnauthorized,onIdentityMismatch}:{job:DraftJob;actorId:string;operationRef:{current:DraftOperation|null};onPhase:(phase:string)=>void;settle:(result?:DraftMutationResult,message?:string,code?:string)=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void}){
  const resource=job.request.resource;
@@ -154,7 +156,7 @@ function RecordDraftMutation({job,actorId,operationRef,onPhase,settle,onUnauthor
  const operation=useApplicationOperation<DraftMutationResult>({actorId,scope:`draft-editor:${resource.appId}:${resource.viewId}:${key}`,resource,confirmed:result=>settle(result),unauthorized:onUnauthorized,identityMismatch:onIdentityMismatch,valid:(result,packet)=>isDraftMutationResult(result,packet.operationId??'',resource.id)});
  const current=useRef(operation);current.current=operation;operationRef.current=operation;
  useEffect(()=>()=>{operationRef.current=null;},[]);
- useEffect(()=>{let active=true;void Promise.resolve().then(()=>{if(active)current.current.start(job.request);});return()=>{active=false;};},[job]);
+ useEffect(()=>{let active=true;void Promise.resolve().then(()=>{if(active&&!job.recovered)current.current.start(job.request);});return()=>{active=false;};},[job]);
  useEffect(()=>{onPhase(operation.phase);if(operation.phase==='error')settle(undefined,operation.message,operation.errorCode);},[operation.phase,operation.message,operation.errorCode]);
  return operation.phase==='unconfirmed'?<div><p role="status">草稿保存结果待确认</p><p role="alert">{operation.message}</p><button type="button" className="admin-button" onClick={operation.query}>核查草稿结果</button><button type="button" className="admin-button" onClick={operation.retry}>重试原草稿操作</button></div>:<p role="status">正在保存草稿…</p>;
 }

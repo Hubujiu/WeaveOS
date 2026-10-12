@@ -13,11 +13,12 @@ import {validDraft} from './records/draftContract';
 import {parseRecordItem,parseRuntimeView} from './recordReadContracts';
 import {createNewRecordIdentity,type RecordEditorIdentity} from './records/recordState';
 import {projectRuntimeFields,scopeAllows} from './records/runtimeModel';
-import {scopedUnconfirmed} from './recovery';
+import {findDraftRecovery} from './records/draftRecovery';
+import {scopedUnconfirmed,type ApplicationPacket} from './recovery';
 import type {LoadReferenceCandidates,ReferenceCandidate} from './forms';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-type Editor={identity:RecordEditorIdentity;view:RuntimeView;record?:RecordItem;draft?:Draft;mode:'create'|'edit'|'read';queryVersion?:string;reworkInstanceId?:string};
+type Editor={identity:RecordEditorIdentity;view:RuntimeView;record?:RecordItem;draft?:Draft;recoveredDraft?:ApplicationPacket;mode:'create'|'edit'|'read';queryVersion?:string;reworkInstanceId?:string};
 type PendingRead={identity:RecordEditorIdentity;view:RuntimeView|null;recordId:UUID;queryVersion?:string;mode:'read'|'edit';confirmedWrite:boolean};
 
 export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMismatch,onDirtyChange,registerLeaveGuard,requestSectionLeave}:{
@@ -140,6 +141,11 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   }catch(error){if(current!==generation.current||controller.signal.aborted)return;handleError(error);setReadError(error instanceof Error?error.message:'无法读取返工记录，请刷新后重试');}})();
  },[actorId,appId,viewId,onUnauthorized,onIdentityMismatch]);
  const recoverPacket=useCallback((view:RuntimeView)=>{
+  const draftPacket=findDraftRecovery(actorId,appId,viewId);
+  if(draftPacket?.resource?.kind==='draft'&&draftPacket.method==='POST'&&draftPacket.resource.creationNonce&&draftPacket.body?.targetRecordId===null){
+   const token=JSON.stringify([draftPacket.resource,draftPacket.operationId]);if(openedRecovery.current.has(token))return;openedRecovery.current.add(token);
+   setSaved(false);setDraftSaved(false);setReadError('');setEditor({identity:{kind:'new',actorId,appId,viewId,clientDraftId:draftPacket.resource.creationNonce},view,mode:'create',recoveredDraft:draftPacket});return;
+  }
   const rework=scopedUnconfirmed(actorId).find(packet=>{const resource=packet.resource;return resource?.kind==='round-record'&&resource.appId===appId&&resource.viewId===viewId&&findRoundRecovery(actorId,appId,viewId,resource.id,resource.instanceId,'round-record')===packet;});
   if(rework?.resource?.kind==='round-record'){
    const resource=rework.resource,token=JSON.stringify([resource,rework.operationId]);if(openedRecovery.current.has(token))return;openedRecovery.current.add(token);
@@ -184,7 +190,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
    {pendingDraftRead&&readError&&<button type="button" className="admin-button" onClick={()=>void readDraft(pendingDraftRead.id,pendingDraftRead.confirmed)}>重试读取草稿</button>}
    {pendingRead&&!readError&&<p role="status">正在读取记录…</p>}
    {readError&&<><p role="alert">{readError}</p>{canRetryRead&&<button type="button" className="admin-button" onClick={()=>{const target=pendingRead!;setReadError('');if(target.view)void readRecord(target.view,target.recordId,target.queryVersion,target.identity,target.mode);else void refreshRead(target.identity,target.recordId,target.confirmedWrite);}}>重试读取记录</button>}</>}
-   <div className="record-detail-grid">{editor&&<RecordForm key={JSON.stringify([editor.identity,editor.mode,editor.view.policyRevision,editor.view.schemaVersion,editor.view.viewVersion,editor.record?.recordVersion??'new',editor.draft?.draftVersion])} view={editor.view} identity={editor.identity} record={editor.record} draft={editor.draft} onDraftConfirmed={onDraftConfirmed} mode={editor.mode} authorityKey={`${editor.view.policyRevision}:${editor.view.schemaVersion}:${editor.view.viewVersion}:${editor.record?.recordVersion??'new'}`}
+   <div className="record-detail-grid">{editor&&<RecordForm key={JSON.stringify([editor.identity,editor.mode,editor.view.policyRevision,editor.view.schemaVersion,editor.view.viewVersion,editor.record?.recordVersion??'new',editor.draft?.draftVersion])} view={editor.view} identity={editor.identity} record={editor.record} draft={editor.draft} recoveredDraft={editor.recoveredDraft} onDraftConfirmed={onDraftConfirmed} mode={editor.mode} authorityKey={`${editor.view.policyRevision}:${editor.view.schemaVersion}:${editor.view.viewVersion}:${editor.record?.recordVersion??'new'}`}
     reworkInstanceId={editor.reworkInstanceId} queryVersion={editor.queryVersion} loadCandidates={loadCandidates} onConfirmed={onConfirmed} onDirtyChange={setRecordDirty} onRequestDiscard={guardedClose} onDiscard={closeEditor}
     onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard}
     onRefresh={refreshEditor}/>}
