@@ -1,0 +1,244 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ V019 display layers use edges rather than serialized node order and never mutate the definition (1.897162ms)
+✖ V019 direct start to end stays a valid two-layer display (0.34573ms)
+✖ V019 unequal condition branches rejoin only after every predecessor (0.381022ms)
+✖ V019 independent branch nodes share a row without duplicating a joined end (0.524779ms)
+✔ V019 invalid display graph empty nodes is rejected (0.21922ms)
+✔ V019 invalid display graph missing target is rejected (0.079509ms)
+✔ V019 invalid display graph cycle is rejected (0.060601ms)
+✔ V019 invalid display graph extra duplicate is rejected (0.056915ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 4
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 110.198424
+
+✖ failing tests:
+
+test at tests/foundation/workflow-graph-layout.test.mjs:6:1
+✖ V019 display layers use edges rather than serialized node order and never mutate the definition (1.897162ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - [
+  -   [
+  -     {
+  -       id: 'edededed-eded-4ded-8ded-000000000001',
+  -       kind: 'start'
+  -     }
+  -   ],
+  -   [
+  -     {
+  -       approval: {
+  -         assigneeIds: [
+  -           'edededed-eded-4ded-8ded-000000000008'
+  -         ],
+  -         editableFieldIds: [],
+  -         mode: 'any'
+  -       },
+  -       id: 'edededed-eded-4ded-8ded-000000000003',
+  -       kind: 'approval'
+  -     }
+  -   ],
+  -   [
+  -     {
+  -       id: 'edededed-eded-4ded-8ded-000000000002',
+  -       kind: 'end'
+  -     }
+  -   ]
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-graph-layout.test.mjs:6:153)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: [ [ [Object] ], [ [Object] ], [ [Object] ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-graph-layout.test.mjs:7:1
+✖ V019 direct start to end stays a valid two-layer display (0.34573ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - [
+  -   [
+  -     {
+  -       id: 'edededed-eded-4ded-8ded-000000000001',
+  -       kind: 'start'
+  -     }
+  -   ],
+  -   [
+  -     {
+  -       id: 'edededed-eded-4ded-8ded-000000000002',
+  -       kind: 'end'
+  -     }
+  -   ]
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-graph-layout.test.mjs:7:76)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: [ [ [Object] ], [ [Object] ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-graph-layout.test.mjs:8:1
+✖ V019 unequal condition branches rejoin only after every predecessor (0.381022ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - [
+  -   [
+  -     {
+  -       id: 'edededed-eded-4ded-8ded-000000000001',
+  -       kind: 'start'
+  -     }
+  -   ],
+  -   [
+  -     {
+  -       condition: {
+  -         children: [
+  -           {
+  -             fieldId: 'edededed-eded-4ded-8ded-000000000009',
+  -             operator: 'gt',
+  -             value: '5000.00'
+  -           }
+  -         ],
+  -         operator: 'and'
+  -       },
+  -       id: 'edededed-eded-4ded-8ded-000000000004',
+  -       kind: 'condition'
+  -     }
+  -   ],
+  -   [
+  -     {
+  -       approval: {
+  -         assigneeIds: [
+  -           'edededed-eded-4ded-8ded-000000000008'
+  -         ],
+  -         editableFieldIds: [],
+  -         mode: 'any'
+  -       },
+  -       id: 'edededed-eded-4ded-8ded-000000000003',
+  -       kind: 'approval'
+  -     }
+  -   ],
+  -   [
+  -     {
+  -       id: 'edededed-eded-4ded-8ded-000000000002',
+  -       kind: 'end'
+  -     }
+  -   ]
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-graph-layout.test.mjs:8:270)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: [ [ [Object] ], [ [Object] ], [ [Object] ], [ [Object] ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-graph-layout.test.mjs:9:1
+✖ V019 independent branch nodes share a row without duplicating a joined end (0.524779ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - [
+  -   [
+  -     {
+  -       id: 'edededed-eded-4ded-8ded-000000000001',
+  -       kind: 'start'
+  -     }
+  -   ],
+  -   [
+  -     {
+  -       condition: {
+  -         children: [
+  -           {
+  -             fieldId: 'edededed-eded-4ded-8ded-000000000009',
+  -             operator: 'gt',
+  -             value: '5000.00'
+  -           }
+  -         ],
+  -         operator: 'and'
+  -       },
+  -       id: 'edededed-eded-4ded-8ded-000000000004',
+  -       kind: 'condition'
+  -     }
+  -   ],
+  -   [
+  -     {
+  -       approval: {
+  -         assigneeIds: [
+  -           'edededed-eded-4ded-8ded-000000000008'
+  -         ],
+  -         editableFieldIds: [],
+  -         mode: 'any'
+  -       },
+  -       id: 'edededed-eded-4ded-8ded-000000000003',
+  -       kind: 'approval'
+  -     },
+  -     {
+  -       approval: {
+  -         assigneeIds: [
+  -           'edededed-eded-4ded-8ded-000000000008'
+  -         ],
+  -         editableFieldIds: [],
+  -         mode: 'any'
+  -       },
+  -       id: 'edededed-eded-4ded-8ded-000000000005',
+  -       kind: 'approval'
+  -     }
+  -   ],
+  -   [
+  -     {
+  -       id: 'edededed-eded-4ded-8ded-000000000002',
+  -       kind: 'end'
+  -     }
+  -   ]
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-graph-layout.test.mjs:9:340)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: [ [ [Object] ], [ [Object] ], [ [Object], [Object] ], [ [Object] ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
