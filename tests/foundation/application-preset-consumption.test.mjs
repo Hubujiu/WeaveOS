@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {stripTypeScriptTypes} from 'node:module';
 const source=await readFile(new URL('../../apps/web/src/applications/records/presetContract.ts',import.meta.url),'utf8');
-const {validApplicationPreset:valid,validApplicationPresets:list}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source,{mode:'transform'})).toString('base64'));
+const {validApplicationPreset:valid,validApplicationPresets:list,validPresetMutationRequest:request,validPresetMutationReceipt:receipt}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source,{mode:'transform'})).toString('base64'));
 // Independent V071 ADR closed DTO, scope and limits. Not schema/authorization proof.
 const id=n=>'aaaaaaaa-aaaa-4aaa-8aaa-'+String(n).padStart(12,'0');
 const scope={appId:id(1),viewId:id(2)};
@@ -42,3 +42,28 @@ for(const [name,value]of [
  ['hour 24',{...item,createdAt:'2026-10-10T24:00:00Z'}],
  ['config byte limit',{...item,filter:{operator:'and',children:[{...leaf,value:'x'.repeat(15000)}]},hiddenColumnIds:Array.from({length:200},(_,i)=>id(100+i)),columnOrder:Array.from({length:200},(_,i)=>id(100+i)),columnWidths:Object.fromEntries(Array.from({length:200},(_,i)=>[id(100+i),999999999999999]))}],
 ])test('preset rejects '+name,()=>assert.equal(valid(value,scope),false));
+
+const state={name:'方案',filter:and,sort:null,hiddenColumnIds:[],columnOrder:[],columnWidths:{}};
+const resource={kind:'preset',...scope,id:id(3)};
+const creating={kind:'preset',...scope,creationNonce:id(10)};
+const path=`applications/${id(1)}/forms/${id(2)}/table-presets`;
+const create={path,method:'POST',expectedStatus:201,body:{...state,expectedSchemaVersion:2}};
+const update={path:path+'/'+id(3),method:'PUT',expectedStatus:200,body:{...state,expectedSchemaVersion:2,expectedVersion:3}};
+const remove={path:path+'/'+id(3),method:'DELETE',expectedStatus:204,expectedVersion:3};
+for(const [name,res,req]of [['create',creating,create],['update',resource,update],['remove',resource,remove]])test('private preset request accepts '+name,()=>assert.equal(request(res,req),true));
+for(const [name,res,req]of [
+ ['other resource',{...resource,kind:'record'},update],['other id',resource,{...update,path:path+'/'+id(8)}],['other view',resource,{...update,path:update.path.replace(id(2),id(9))}],
+ ['query injection',resource,{...update,path:update.path+'?owner='+id(9)}],['fragment',resource,{...update,path:update.path+'#fragment'}],
+ ['dual identity',{...creating,id:id(3)},create],['no creation nonce',{kind:'preset',...scope},create],['create on existing',resource,create],
+ ['wrong create status',creating,{...create,expectedStatus:200}],['wrong update method',resource,{...update,method:'PATCH'}],['wrong update status',resource,{...update,expectedStatus:201}],
+ ['missing CAS',resource,{...update,body:{...state,expectedSchemaVersion:2}}],['unsafe CAS',resource,{...update,body:{...update.body,expectedVersion:9007199254740992}}],
+ ['caller operation',resource,{...update,body:{...update.body,operationId:id(12)}}],['caller owner',resource,{...update,body:{...update.body,ownerUserId:id(1)}}],
+ ['invalid config',resource,{...update,body:{...update.body,columnWidths:{[id(4)]:0}}}],['no schema',creating,{...create,body:state}],
+ ['delete missing CAS',resource,{...remove,expectedVersion:undefined}],['delete body',resource,{...remove,body:{expectedVersion:3}}],['wrong delete status',resource,{...remove,expectedStatus:200}],
+])test('private preset request rejects '+name,()=>assert.equal(request(res,req),false));
+const result={operationId:id(20),id:id(3),version:4};
+test('private preset minimal result binds operation and selected id',()=>{assert.equal(receipt(result,id(20),id(3)),true);assert.equal(receipt(result,id(20)),true);});
+for(const [name,value,op,preset]of [
+ ['wrong operation',result,id(21),id(3)],['wrong resource',result,id(20),id(9)],['zero version',{...result,version:0},id(20),id(3)],
+ ['unsafe version',{...result,version:9007199254740992},id(20),id(3)],['private config',{...result,filter:and},id(20),id(3)],['record result',{operationId:id(20),id:id(3),recordVersion:4},id(20),id(3)],
+])test('private preset minimal result rejects '+name,()=>assert.equal(receipt(value,op,preset),false));

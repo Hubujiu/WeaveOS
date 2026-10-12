@@ -42,3 +42,7 @@ export function validApplicationPreset(value:unknown,scope:PresetScope,expectedI
 export function validApplicationPresets(value:unknown,scope:PresetScope):value is {items:ApplicationPreset[]}{
  return id(scope.appId)&&id(scope.viewId)&&object(value)&&exact(value,['items'])&&Array.isArray(value.items)&&value.items.length<=20&&value.items.every(item=>validApplicationPreset(item,scope))&&new Set(value.items.map(item=>item.id)).size===value.items.length;
 }
+
+// Declaration-only boundary, awaiting independent mutation RED.
+export function validPresetMutationRequest(_resource:unknown,_request:unknown):boolean{return false;}
+export function validPresetMutationReceipt(_value:unknown,_operationId:string,_presetId?:string):boolean{return false;}
