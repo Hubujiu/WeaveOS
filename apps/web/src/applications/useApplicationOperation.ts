@@ -7,7 +7,8 @@ import type { ApplicationOperation } from './types';
 import { validTaskRecordRequest } from './workflows/taskSaveContract';
 import { validWorkflowOperation } from './workflows/taskActionContract';
 import { validPresetMutationRequest, validPresetMutationReceipt } from './records/presetContract';
-import {validRoundStartRequest,validRoundStartReceipt} from './workflows/roundContract';
+import {isMutationResult} from './records/contracts';
+import {validRoundStartRequest,validRoundStartReceipt,validRoundReworkRequest} from './workflows/roundContract';
 import {validManualStartRequest,validManualStartReceipt} from './workflows/manualStartContract';
 import { validInstanceActionRequest } from './workflows/lifecycleContract';
 
@@ -37,6 +38,7 @@ function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean
  // Task execution receipts are checked against their distinct closed wire
  // in perform(), including actual HTTP status and the confirmed command ID.
  if (packet.resource.kind === 'task-action'||packet.resource.kind === 'instance-action') return true;
+ if (packet.resource.kind === 'round-record') return isMutationResult(result,packet.operationId??'',packet.resource.id)&&result.recordVersion>0&&result.schemaVersion>0;
  if (packet.resource.kind === 'round-start') return validRoundStartReceipt(result,packet.operationId??'',packet.resource.flowId,packet.resource.instanceId,packet.resource.roundKind);
  if (packet.resource.kind === 'manual-start') return validManualStartReceipt(result,packet.operationId??'',packet.resource.flowId);
  if (packet.resource.kind === 'preset') return validPresetMutationReceipt(result,packet.operationId??'',packet.resource.id);
@@ -198,7 +200,9 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
   else {
    const request = requestOrPath;
    if (!scope || !scopedResource || JSON.stringify(request.resource) !== JSON.stringify(scopedResource)) throw new TypeError('Mutation resource does not match the mounted scope');
-   if (request.resource.kind === 'round-start') {
+   if (request.resource.kind === 'round-record') {
+    if (!validRoundReworkRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'round-start') {
     if (!validRoundStartRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
    } else if (request.resource.kind === 'manual-start') {
     if (!validManualStartRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
