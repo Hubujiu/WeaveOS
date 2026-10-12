@@ -15,4 +15,8 @@ export function validRoundStartReceipt(value:unknown,operationId:string,flowId:s
  return [operationId,flowId,previousInstanceId].every(id)&&(kind==='resubmit'||kind==='review')&&object(value)&&exact(value,['operationId','flowId','previousInstanceId','instanceId','roundKind','roundNumber','status'])&&value.operationId===operationId&&value.flowId===flowId&&value.previousInstanceId===previousInstanceId&&id(value.instanceId)&&value.instanceId!==previousInstanceId&&value.roundKind===kind&&positive(value.roundNumber)&&value.status==='accepted';
 }
 
-export function validRoundStartRequest(resource:unknown,request:unknown):boolean{return false;}
+export function validRoundStartRequest(resource:unknown,request:unknown):boolean{
+ if(!object(resource)||!exact(resource,['kind','appId','viewId','id','instanceId','flowId','roundKind'])||resource.kind!=='round-start'||!['appId','viewId','id','instanceId','flowId'].every(k=>id(resource[k]))||(resource.roundKind!=='resubmit'&&resource.roundKind!=='review')||!object(request))return false;
+ const path=`applications/${resource.appId}/forms/${resource.viewId}/records/${resource.id}/workflows/${resource.instanceId}/round-actions`;
+ return request.path===path&&request.method==='POST'&&request.expectedStatus===202&&object(request.body)&&exact(request.body,['kind','expectedWorkflowRevision','expectedSchemaVersion','expectedRecordVersion'])&&request.body.kind===resource.roundKind&&positive(request.body.expectedWorkflowRevision)&&positive(request.body.expectedSchemaVersion)&&positive(request.body.expectedRecordVersion);
+}
