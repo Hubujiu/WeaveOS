@@ -123,7 +123,7 @@ func buildHost(startupCtx, processCtx context.Context, cfg config) (*bffHost, er
 	s.Personnel = &personnel.Service{Application: people, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	apps := &applications.Service{Application: &applications.Application{Pool: pool}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	apps.Definitions = &appstructure.Service{Application: &appstructure.Application{Pool: pool, ConfirmationKey: cfg.DefinitionKey, ConfirmationKeyID: cfg.DefinitionKeyID, Limits: cfg.SchemaLimits, Dependencies: appstructure.LocalRegistry{}, References: appstructure.CurrentSources{}, CandidateRedis: queryRedis, CandidateNamespace: cfg.Generation, RecordAccess: apprecordhttp.ResolveAccess}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
-	workflows := &appworkflows.Application{Pool: pool, Limits: cfg.SchemaLimits}
+	workflows := &appworkflows.Application{Pool: pool, Limits: cfg.SchemaLimits, ManagerQueries: appworkflows.NewManagerQueryStore(queryRedis, cfg.Generation)}
 	apps.Workflows = &appworkflows.Service{Application: workflows, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
 	records := apprecordservice.New(pool, queryRedis, cfg.Generation)
 	records.Limits = cfg.SchemaLimits
