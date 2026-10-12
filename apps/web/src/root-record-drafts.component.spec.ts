@@ -4,12 +4,13 @@ const id=(n:number)=>'cccccccc-cccc-4ccc-8ccc-'+String(n).padStart(12,'0');
 const actor={id:id(1),account:'draft-owner'},appId=id(2),viewId=id(3),fieldId=id(4),tableId=id(5),draftId=id(6),recordId=id(7);
 const form=`applications/${appId}/forms/${viewId}`,draftPath=form+'/drafts',recordPath=form+'/records';
 const runtime={appId,viewId,tableId,schemaVersion:1,viewVersion:1,policyRevision:1,fields:[{id:fieldId,name:'金额',kind:'money',required:true,presentation:{helpText:null,displayTimeZone:null},input:{decimal:{precision:20,scale:2,roundingPlaces:2,roundingMode:'HALF_UP'}},access:{read:'all',create:true,edit:'all',history:'none'},query:{operators:['eq','neq','gt','gte','lt','lte'],sortable:true,quickSearchable:false}}],layout:[{id:id(8),kind:'field',fieldId}],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}};
-type Mode='normal'|'unknown'|'read-error'|'conflict'|'edit'|'list'|'list-leak'|'delete-unknown';
+type Mode='normal'|'unknown'|'read-error'|'conflict'|'edit'|'list'|'list-leak'|'delete-unknown'|'patch-unknown'|'edit-unknown';
 async function setup(page:Page,mode:Mode='normal'){
- const calls:{path:string;method:string;body:any;query:string}[]=[];let draftVersion=['list','list-leak','delete-unknown'].includes(mode)?7:0,draftValue:unknown='-',recordValue='10.00',posts=0,deleted=false,deletes=0;
+ const calls:{path:string;method:string;body:any;query:string}[]=[];let draftVersion=['list','list-leak','delete-unknown'].includes(mode)?7:0,draftValue:unknown='-',recordValue='10.00',posts=0,patches=0,deleted=false,deletes=0;
+ const isEdit=mode==='edit'||mode==='edit-unknown';
  const app={id:appId,name:'报销管理',ownerUserId:id(99),policyRevision:1};
  const row=()=>({id:recordId,appId,viewId,tableId,createdBy:actor.id,createdAt:'2026-10-12T09:00:00Z',updatedAt:'2026-10-12T10:00:00Z',recordVersion:9,schemaVersion:1,values:{[fieldId]:recordValue},referenceDisplays:{}});
- const draft=()=>({id:draftId,viewId,tableId,targetRecordId:mode==='edit'?recordId:null,schemaVersion:1,baseRecordVersion:mode==='edit'?9:null,draftVersion,createdAt:'2026-10-12T09:00:00Z',updatedAt:'2026-10-12T10:00:00Z',hasConflicts:false,values:{[fieldId]:draftValue},conflicts:[]});
+ const draft=()=>({id:draftId,viewId,tableId,targetRecordId:isEdit?recordId:null,schemaVersion:1,baseRecordVersion:isEdit?9:null,draftVersion,createdAt:'2026-10-12T09:00:00Z',updatedAt:'2026-10-12T10:00:00Z',hasConflicts:false,values:{[fieldId]:draftValue},conflicts:[]});
  await page.route('**/api/v1/**',async r=>{
   const req=r.request(),path=new URL(req.url()).pathname.slice('/api/v1/'.length),method=req.method(),body=req.postData()?req.postDataJSON():null;const query=new URL(req.url()).search;calls.push({path,method,body,query});let data:unknown;
   if(path==='sessions/current')data=actor;
@@ -18,7 +19,7 @@ async function setup(page:Page,mode:Mode='normal'){
   else if(path==='applications/'+appId)data=app;
   else if(path==='applications/'+appId+'/access')data={appId,canEnter:true,policyRevision:1,menus:[{resourceKind:'application',resourceId:appId},{resourceKind:'form',resourceId:viewId}]};
   else if(path===form+'/runtime')data=runtime;
-  else if(path===recordPath+'/search')data={items:mode==='edit'?[row()]:[],total:mode==='edit'?1:0,page:body.page,pageSize:body.pageSize,sort:body.sort,queryVersion:'record-context',schemaVersion:1,viewVersion:1};
+  else if(path===recordPath+'/search')data={items:isEdit?[row()]:[],total:isEdit?1:0,page:body.page,pageSize:body.pageSize,sort:body.sort,queryVersion:'record-context',schemaVersion:1,viewVersion:1};
   else if(path===draftPath&&method==='GET'){
    const second=new URLSearchParams(query).get('pageToken')==='opaque.next';
    const {values,conflicts,...summary}=draft();const item={...summary,id:second?id(16):draftId,...(mode==='list-leak'?{values:{secret:'private-draft-value'}}:{})};
@@ -26,11 +27,12 @@ async function setup(page:Page,mode:Mode='normal'){
   }else if(path===draftPath+'/'+draftId&&method==='DELETE'){
    deletes++;if(mode==='delete-unknown'&&deletes===1)return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});deleted=true;return r.fulfill({status:204,body:''});
   }else if(path===draftPath&&method==='POST'){
-   posts++;if(mode==='unknown'&&posts===1)return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
+   posts++;if((mode==='unknown'||mode==='edit-unknown')&&posts===1)return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
    draftValue=body.values[fieldId];draftVersion=1;return r.fulfill({status:201,headers:{Location:'/api/v1/'+draftPath+'/'+draftId},json:{code:'OK',data:{operationId:body.operationId,id:draftId,draftVersion},meta:null}});
   }else if(path===draftPath+'/'+draftId&&method==='GET'){
    if(mode==='read-error')return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});data=draft();
   }else if(path===draftPath+'/'+draftId&&method==='PATCH'){
+   patches++;if(mode==='patch-unknown'&&patches===1)return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
    if(mode==='conflict')return r.fulfill({status:409,json:{code:'APPLICATION_DRAFT_CONFLICT',data:null}});
    if(Object.hasOwn(body.changes,fieldId))draftValue=body.changes[fieldId];draftVersion++;data={operationId:body.operationId,id:draftId,draftVersion};
   }else if(path===recordPath&&method==='POST'){
@@ -92,4 +94,17 @@ test('Root unknown draft deletion retains its original operation and version on 
 
 test('Root draft conflict refresh is explicit and preserves local input on continue',async({page})=>{
  const calls=await setup(page,'conflict');const editor=await create(page);await editor.getByRole('textbox',{name:/^金额/}).fill('-');await editor.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();await page.getByRole('textbox',{name:/^金额/}).fill('12.');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByRole('alert')).toContainText('刷新');const refresh=page.getByRole('button',{name:'刷新草稿',exact:true});await expect(refresh).toBeVisible();await refresh.click();let guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(page.getByRole('textbox',{name:/^金额/})).toHaveValue('12.');expect(calls.filter(c=>c.path===draftPath+'/'+draftId&&c.method==='GET')).toHaveLength(1);await refresh.click();guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('textbox',{name:/^金额/})).toHaveValue('-');expect(calls.filter(c=>c.path===draftPath+'/'+draftId&&c.method==='GET')).toHaveLength(2);expect(draftWrites(calls)).toHaveLength(2);
+});
+
+test('Root unknown saved-draft PATCH restores pending edits after actual Shell unmount',async({page})=>{
+ const calls=await setup(page,'patch-unknown');let dialog=await create(page);await dialog.getByRole('textbox',{name:/^金额/}).fill('-');await dialog.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();await page.getByRole('textbox',{name:/^金额/}).fill('12.');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿保存结果待确认',{exact:true})).toBeVisible();dialog=page.getByRole('dialog',{name:'新建记录',exact:true});await dialog.getByRole('button',{name:'关闭',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await page.getByRole('button',{name:'返回主页',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();
+ await expect(page.getByRole('button',{name:'重试原草稿操作',exact:true})).toBeVisible();await expect(page.getByRole('textbox',{name:/^金额/})).toHaveValue('12.');expect(calls.filter(c=>c.method==='PATCH')).toHaveLength(1);await page.getByRole('button',{name:'重试原草稿操作',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();const writes=calls.filter(c=>c.method==='PATCH');expect(writes).toHaveLength(2);expect(writes[1]).toEqual(writes[0]);
+});
+test('Root unknown edit-draft creation retains original target and base after actual Shell unmount',async({page})=>{
+ const calls=await setup(page,'edit-unknown');await page.goto('/app/'+form);await page.getByRole('button',{name:'打开记录：金额 10.00',exact:true}).click();await page.getByRole('button',{name:'编辑记录',exact:true}).click();await page.getByRole('textbox',{name:/^金额/}).fill('12.');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿保存结果待确认',{exact:true})).toBeVisible();await page.getByRole('button',{name:'返回主页',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();
+ await expect(page.getByRole('button',{name:'重试原草稿操作',exact:true})).toBeVisible();await page.getByRole('button',{name:'重试原草稿操作',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();const writes=draftWrites(calls);expect(writes).toHaveLength(2);expect(writes[1]).toEqual(writes[0]);expect(writes[0].body).toMatchObject({targetRecordId:recordId,baseRecordVersion:9,values:{[fieldId]:'12.'}});expect(calls.filter(c=>c.path===recordPath+'/'+recordId&&c.method==='PATCH')).toEqual([]);
+});
+
+test('Root draft save uses the approved monochrome primary action geometry',async({page})=>{
+ await setup(page);const dialog=await create(page);const save=dialog.getByRole('button',{name:'保存草稿',exact:true});await expect(save).toBeVisible();const style=await save.evaluate(node=>{const c=getComputedStyle(node),r=node.getBoundingClientRect();return {width:r.width,height:r.height,background:c.backgroundColor,color:c.color};});expect(style).toEqual({width:120,height:40,background:'rgb(37, 37, 37)',color:'rgb(255, 255, 255)'});
 });
