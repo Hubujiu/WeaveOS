@@ -9,11 +9,11 @@ const filter={operator:'and',children:[{fieldId:amount,operator:'gt',value:'9007
 const preset={id:presetId,appId,viewId,name:'高额方案',version:3,invalid:false,createdAt:'2026-10-10T00:00:00Z',updatedAt:'2026-10-11T00:00:00Z',filter,sort:{fieldId:amount,direction:'desc'},hiddenColumnIds:[title],columnOrder:[amount,'createdAt'],columnWidths:{[amount]:240}};
 const row={id:recordId,appId,viewId,tableId:appId,createdBy:actor.id,createdAt:'2026-10-10T00:00:00Z',updatedAt:'2026-10-11T00:00:00Z',recordVersion:1,schemaVersion:2,values:{[amount]:'9999999999999999.99',[title]:'差旅'},referenceDisplays:{}};
 async function setup(page:Page,options:{invalid?:boolean;invalidLeak?:boolean;listDenied?:boolean;queryChanged?:boolean;detailInvalid?:boolean;listDelay?:number;writeUnknown?:boolean;writeConflict?:boolean}={}){
- const calls:{path:string;method:string;body:any;actor?:string}[]=[];
+ const calls:{path:string;method:string;body:any;actor?:string;query:string}[]=[];
  let stored:any=preset,writeCount=0;
  await page.route('**/api/v1/**',async route=>{
   const req=route.request(),p=new URL(req.url()).pathname.slice(8),method=req.method(),body=req.postData()?req.postDataJSON():null;
-  calls.push({path:p,method,body,actor:req.headers()['x-expected-actor-id']});let data:unknown;
+  calls.push({path:p,method,body,actor:req.headers()['x-expected-actor-id'],query:new URL(req.url()).search});let data:unknown;
   const redacted={id:presetId,name:'已失效方案',version:3,invalid:true,reason:'PERMISSION_CHANGED'};
   if(p==='sessions/current')data=actor;
   else if(p==='me/access')data={user:actor,bootstrapAdmin:true,personnelManage:true,identities:[],permissions:[],applications:[]};
@@ -30,11 +30,12 @@ async function setup(page:Page,options:{invalid?:boolean;invalidLeak?:boolean;li
    if(options.writeUnknown&&writeCount===1)return route.fulfill({status:503,json:{code:'APPLICATION_OPERATION_UNCONFIRMED',data:null}});
    stored={...preset,name:body.name,filter:body.filter,sort:body.sort,hiddenColumnIds:body.hiddenColumnIds,columnOrder:body.columnOrder,columnWidths:body.columnWidths,version:method==='POST'?1:4};
    return route.fulfill({status:method==='POST'?201:200,headers:method==='POST'?{Location:'/api/v1/'+path+'/table-presets/'+presetId}:{},json:{code:'OK',data:{operationId:body.operationId,id:presetId,version:stored.version},meta:null}});
-  }else if(p.startsWith('application-operations/'))return route.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
+  }else if(p===path+'/table-presets/'+presetId&&method==='DELETE'){stored=null;return route.fulfill({status:204,body:''});}
+  else if(p.startsWith('application-operations/'))return route.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
   else if(p===path+'/table-presets'){
    if(options.listDelay)await new Promise(resolve=>setTimeout(resolve,options.listDelay));
    if(options.listDenied)return route.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
-   data={items:[options.invalidLeak?{...redacted,filter:{secret:'private-operand'}}:options.invalid?redacted:stored]};
+   data={items:stored?[options.invalidLeak?{...redacted,filter:{secret:'private-operand'}}:options.invalid?redacted:stored]:[]};
   }else if(p===path+'/table-presets/'+presetId)data=options.detailInvalid?redacted:stored;
   else return route.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
   return route.fulfill({status:200,json:{code:'OK',data,meta:null}});
@@ -73,4 +74,13 @@ test('Root private preset unknown submission retries the immutable original oper
 });
 test('Root private preset CAS conflict retains user input without a replacement write',async({page})=>{
  const calls=await setup(page,{writeConflict:true});await open(page);await page.getByRole('button',{name:'编辑高额方案',exact:true}).click();const editor=page.getByRole('dialog',{name:'编辑自定义筛选',exact:true});await editor.getByLabel('自定义筛选名称').fill('保留此名称');await editor.getByRole('button',{name:'确定',exact:true}).click();await expect(page.getByRole('alert')).toContainText(/变化|冲突|更新/);await expect(editor.getByLabel('自定义筛选名称')).toHaveValue('保留此名称');expect(calls.filter(c=>c.method==='PUT')).toHaveLength(1);expect(calls.filter(c=>c.path===path+'/records/search')).toHaveLength(1);
+});
+test('Root private preset deletion requires confirmation and sends exact version query with no body',async({page})=>{
+ const calls=await setup(page);await open(page);await page.getByRole('button',{name:'删除高额方案',exact:true}).click();const confirm=page.getByRole('dialog',{name:'删除筛选方案',exact:true});await expect(confirm).toBeVisible();expect(calls.filter(c=>c.method==='DELETE')).toEqual([]);await confirm.getByRole('button',{name:'返回',exact:true}).click();expect(calls.filter(c=>c.method==='DELETE')).toEqual([]);await page.getByRole('button',{name:'删除高额方案',exact:true}).click();await confirm.getByRole('button',{name:'确认删除',exact:true}).click();await expect(page.getByText('暂无自定义筛选',{exact:true})).toBeVisible();const writes=calls.filter(c=>c.method==='DELETE');expect(writes).toHaveLength(1);expect(writes[0].body).toBeNull();expect(writes[0].path).toBe(path+'/table-presets/'+presetId);expect(Object.fromEntries(new URLSearchParams(writes[0].query))).toEqual({operationId:expect.any(String),expectedVersion:'3'});expect(calls.filter(c=>c.path===path+'/records/search')).toHaveLength(1);
+});
+test('Root private preset synchronous double save cannot create two operations',async({page})=>{
+ const calls=await setup(page);await open(page);const editor=await newPreset(page);await editor.getByRole('button',{name:'确定',exact:true}).evaluate((button:HTMLButtonElement)=>{button.click();button.click();});await expect(page.getByText('精确金额方案',{exact:true})).toBeVisible();expect(calls.filter(c=>c.method==='POST'&&c.path===path+'/table-presets')).toHaveLength(1);
+});
+test('Root private preset identity preflight rejects a new account before transmitting configuration',async({page})=>{
+ const calls=await setup(page);await open(page);const editor=await newPreset(page);let checks=0;await page.route('**/api/v1/sessions/current',r=>{checks++;return r.fulfill({json:{code:'OK',data:{id:id(99),account:'other'},meta:null}});});await editor.getByRole('button',{name:'确定',exact:true}).click();await expect.poll(()=>checks).toBeGreaterThan(0);expect(calls.filter(c=>c.method==='POST'&&c.path===path+'/table-presets')).toEqual([]);
 });

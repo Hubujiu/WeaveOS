@@ -42,3 +42,5 @@ No new production deploy/main approval. Notifications, scheduled/webhook trigger
 - Shard1 old readonly footer expected a disabled Save button; approved Figma483:2764 and independent P7 test require no readonly write footer. Updated only this legacy expectation, preserving exact value/noneditable/permission assertions and original evidence.
 - P9 private preset consumption: current V071/V015 sources and Figma486:4393/4558 read;90 wire/request/receipt tests passed after independent RED.11 real-Shell tests are written but NOT RUN; no preset UI/mutation integration yet.
 - Other full-product gaps and reject/return reason decision remain open. No main merge/deploy or overall completion claim.
+
+P9 additional source-audit gap: shared manager currently has no member/department filter candidate picker. V01514.2 ordinary candidates authorize create/edit only; readonly query permission cannot borrow that route. Complete private presets require an independently scoped, current read-coverage-authorized query-candidate contract and tests. Numeric/text first acceptance is not full reference-filter delivery.
