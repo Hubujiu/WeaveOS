@@ -27,6 +27,7 @@ import (
 
 type Application struct {
 	ManagerQueries   *querycontext.Store
+	ApproverQueries  *querycontext.Store
 	RuntimeReady     func(context.Context) error
 	Pool             *pgxpool.Pool
 	Limits           appschema.Limits
