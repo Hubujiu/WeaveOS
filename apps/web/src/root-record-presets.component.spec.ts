@@ -171,3 +171,10 @@ test('Root display-fields leaves active filter and selected record unchanged',as
 test('Root display-fields panel remains bounded with visible controls on narrow screens',async({page})=>{
  await page.setViewportSize({width:390,height:844});await setup(page);await open(page);await page.keyboard.press('Escape');await page.getByRole('button',{name:'显示字段',exact:true}).click();const dialog=page.getByRole('dialog',{name:'显示字段',exact:true}),box=await dialog.boundingBox();expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.x+box!.width).toBeLessThanOrEqual(390);await expect(dialog.getByRole('button',{name:'应用',exact:true})).toBeInViewport();
 });
+
+test('Root display-fields typography uses approved monochrome dialog heading',async({page})=>{
+ await setup(page);await open(page);await page.keyboard.press('Escape');await page.getByRole('button',{name:'显示字段',exact:true}).click();const dialog=page.getByRole('dialog',{name:'显示字段',exact:true});await expect(dialog.getByRole('heading',{name:'显示字段',exact:true})).toHaveCSS('font-size','16px');await expect(dialog.getByRole('heading',{name:'显示字段',exact:true})).toHaveCSS('font-weight','500');
+});
+test('Root display-fields approved checkbox geometry and monochrome color do not inherit personnel blue',async({page})=>{
+ await setup(page);await open(page);await page.keyboard.press('Escape');await page.getByRole('button',{name:'显示字段',exact:true}).click();const dialog=page.getByRole('dialog',{name:'显示字段',exact:true}),checkbox=dialog.getByRole('checkbox',{name:'金额',exact:true});await expect(checkbox).toHaveCSS('width','16px');await expect(checkbox).toHaveCSS('height','16px');await expect(checkbox).toHaveCSS('background-color','rgb(37, 37, 37)');
+});
