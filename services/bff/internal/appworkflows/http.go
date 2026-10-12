@@ -18,6 +18,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
 	"github.com/jackc/pgx/v5"
@@ -25,6 +26,7 @@ import (
 )
 
 type Application struct {
+	ManagerQueries   *querycontext.Store
 	RuntimeReady     func(context.Context) error
 	Pool             *pgxpool.Pool
 	Limits           appschema.Limits
