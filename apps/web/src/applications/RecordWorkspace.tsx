@@ -13,7 +13,7 @@ import {useResourceQuery} from '../usePersonnelQuery';
 export type RecordWorkspaceProps={
  actorId:string;appId:string;viewId:string;
  onDirtyChange:(dirty:boolean)=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void;
- onCreate:(view:RuntimeView,queryVersion?:string)=>void;
+ onCreate:(view:RuntimeView,queryVersion?:string)=>void;onOpenDrafts?:(view:RuntimeView)=>void;
  onOpenRecord:(view:RuntimeView,record:RecordItem,queryVersion:string)=>void;
  onRuntimeReady?:(view:RuntimeView)=>void;
  onUnauthorized:()=>void;onIdentityMismatch:()=>void;
@@ -47,9 +47,10 @@ export function RecordWorkspace(props:RecordWorkspaceProps){
  if(!current||current.loading)return <section className="record-workspace" aria-label="记录列表"><p role="status">正在读取记录…</p></section>;
  if(!current.view)return <section className="record-workspace" aria-label="记录列表"><p role="alert">{current.errorCode==='APPLICATION_SCHEMA_NOT_READY'?'表单尚未配置，请先完成表单配置。':current.error??genericError}</p><button className="admin-button" type="button" onClick={refresh}>重试</button></section>;
  const view=current.view;
+ const drafts=props.onOpenDrafts&&(view.capabilities.draftCreate||view.capabilities.draftEdit)?<button className="admin-button" type="button" onClick={()=>props.onOpenDrafts?.(view)}>我的草稿</button>:null;
  const createOnly=view.capabilities.create&&view.capabilities.read==='none'&&!view.capabilities.search;
- if(createOnly)return <section className="record-workspace" aria-label="记录列表"><button className="admin-button" type="button" onClick={()=>props.onCreate(view)}>新建记录</button></section>;
- if(view.capabilities.read==='none'||!view.capabilities.search)return <section className="record-workspace" aria-label="记录列表"><p>当前视图没有可读取的记录</p>{view.capabilities.create&&<button className="admin-button" type="button" onClick={()=>props.onCreate(view)}>新建记录</button>}</section>;
+ if(createOnly)return <section className="record-workspace" aria-label="记录列表">{drafts}<button className="admin-button" type="button" onClick={()=>props.onCreate(view)}>新建记录</button></section>;
+ if(view.capabilities.read==='none'||!view.capabilities.search)return <section className="record-workspace" aria-label="记录列表"><p>当前视图没有可读取的记录</p>{drafts}{view.capabilities.create&&<button className="admin-button" type="button" onClick={()=>props.onCreate(view)}>新建记录</button>}</section>;
  const updateRuntime=(next:RuntimeView)=>setState(old=>old.scope===scope&&old.generation===generation.current?{...old,view:next}:old);
  return <RecordQuery key={`${scope}:${reload}`} {...props} scope={scope} view={view} onRefresh={refresh} onRuntimeUpdate={updateRuntime}/>;
 }
@@ -104,7 +105,7 @@ function RecordQuery(props:RecordWorkspaceProps&{scope:string;view:RuntimeView;o
   return true;
  };
  return <section className="record-workspace" aria-label="记录工作区">
-  <div className="table-toolbar"><RecordColumnVisibility view={viewRef.current} hiddenColumnIds={hiddenColumnIds} onApply={setHiddenColumnIds}/><RecordPresets registerLeaveGuard={props.registerLeaveGuard} onDirtyChange={props.onDirtyChange} actorId={actorId} view={viewRef.current} layout={{sort:parameters.sort,hiddenColumnIds,columnOrder,columnWidths}} active={activePreset} onApply={applyPreset} refreshRuntime={refreshPresetRuntime} onUnauthorized={props.onUnauthorized} onIdentityMismatch={props.onIdentityMismatch}/><button className="admin-button" type="button" onClick={props.onRefresh}>刷新</button>{view.capabilities.create&&<button className="admin-button" type="button" disabled={disabled} onClick={()=>props.onCreate(view,query.data.queryVersion||undefined)}>新建记录</button>}</div>
+  <div className="table-toolbar">{props.onOpenDrafts&&(view.capabilities.draftCreate||view.capabilities.draftEdit)&&<button className="admin-button" type="button" disabled={disabled} onClick={()=>props.onOpenDrafts?.(view)}>我的草稿</button>}<RecordColumnVisibility view={viewRef.current} hiddenColumnIds={hiddenColumnIds} onApply={setHiddenColumnIds}/><RecordPresets registerLeaveGuard={props.registerLeaveGuard} onDirtyChange={props.onDirtyChange} actorId={actorId} view={viewRef.current} layout={{sort:parameters.sort,hiddenColumnIds,columnOrder,columnWidths}} active={activePreset} onApply={applyPreset} refreshRuntime={refreshPresetRuntime} onUnauthorized={props.onUnauthorized} onIdentityMismatch={props.onIdentityMismatch}/><button className="admin-button" type="button" onClick={props.onRefresh}>刷新</button>{view.capabilities.create&&<button className="admin-button" type="button" disabled={disabled} onClick={()=>props.onCreate(view,query.data.queryVersion||undefined)}>新建记录</button>}</div>
   <fieldset className="record-table-frame" disabled={disabled}><legend className="sr-only">记录操作</legend><RecordsPanel view={viewRef.current} actorId={actorId} page={query.data} loading={query.loading} error={message} hiddenColumnIds={hiddenColumnIds} columnWidths={columnWidths} columnOrder={columnOrder} selectedRowIds={selectedRowIds} onSelectionChange={setSelectedRowIds} onPageChange={page=>setParameters(current=>({...current,page}))} onPageSizeChange={pageSize=>{setSelectedRowIds([]);setParameters(current=>({...current,page:1,pageSize}));}} onSortChange={sort=>{setSelectedRowIds([]);setParameters(current=>({...current,page:1,sort}));}} onColumnWidthsChange={setColumnWidths} onColumnOrderChange={setColumnOrder} onOpenRecord={record=>{if(disabled)return;void (async()=>{try{
    const accept=await query.prepareChange(parameters);
    if(!accept||!accept())return;

@@ -131,6 +131,7 @@ function RecordFormScope(props:RecordFormProps){
  return <section aria-label={reworkInstanceId?"返工记录":"记录填写"} className="surface record-form">
   {invalidDraftIdentity?<p role="alert">草稿身份不能保存为普通记录</p>:null}
   {draftBasisConflict?<p role="alert">草稿结构、基础记录或字段权限已变化，请刷新核对；原草稿不会自动覆盖或重新绑定。</p>:null}
+  {(draftConflict||draftBasisConflict)&&<button className="admin-button" type="button" onClick={onRefresh}>刷新草稿</button>}
   {draftError?<p role="alert">{draftConflict?'草稿版本或权限已变化，请刷新草稿并核对当前输入。':''}{draftError}</p>:null}
   {draftJob?<RecordDraftMutation job={draftJob} actorId={identity.actorId} operationRef={draftOperation} onPhase={setDraftPhase} settle={settleDraft} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>:null}
   {needsReview?<p role="alert">结构或权限已变化，请核对当前输入</p>:null}
@@ -143,7 +144,7 @@ function RecordFormScope(props:RecordFormProps){
   {conflict?<button type="button" className="admin-button" onClick={onRefresh}>刷新记录</button>:null}
   {needsReview&&!conflict?<button type="button" className="admin-button" onClick={onRefresh}>刷新记录</button>:null}
   <div className="record-form-fields forms-preview-grid">{view.layout.map(renderLayoutNode)}</div>
-  {mode!=='read'&&<footer><button type="button" className="admin-button" onClick={onRequestDiscard} disabled={busy||unknown||!!draftJob}>放弃填写</button>{onDraftConfirmed&&!reworkInstanceId&&(saved?view.capabilities.draftEdit:view.capabilities.draftCreate)&&<button type="button" className="admin-button" onClick={saveDraft} disabled={!canEdit||draftConflict||conflict}>保存草稿</button>}<button type="button" className="admin-button" onClick={save} disabled={!canEdit||conflict||draftConflict||saved&&!dirty&&!draft||!saved&&!view.capabilities.create||saved&&!canEditRecord}>{reworkInstanceId?"保存返工":"保存记录"}</button></footer>}
+  {mode!=='read'&&<footer><button type="button" className="admin-button" onClick={onRequestDiscard} disabled={busy||unknown||!!draftJob}>放弃填写</button>{onDraftConfirmed&&!reworkInstanceId&&(saved?view.capabilities.draftEdit:view.capabilities.draftCreate)&&<button type="button" className="admin-button primary record-draft-save" onClick={saveDraft} disabled={!canEdit||draftConflict||conflict}>保存草稿</button>}<button type="button" className="admin-button" onClick={save} disabled={!canEdit||conflict||draftConflict||saved&&!dirty&&!draft||!saved&&!view.capabilities.create||saved&&!canEditRecord}>{reworkInstanceId?"保存返工":"保存记录"}</button></footer>}
  </section>;
 }
 
