@@ -2,6 +2,7 @@ import {useCallback,useEffect,useRef,useState} from 'react';
 import {applicationApi,applicationReadPost,ApplicationError} from './api';
 import {RecordPresets} from './records/RecordPresets';
 import type {ApplicationPresetValid} from './records/presetContract';
+import type {RegisterLeaveGuard} from './forms';
 import type {ResourceFilterGroup} from '../QueryFilterState';
 import {RecordsPanel} from './records/RecordsPanel';
 import type {RecordItem,RecordPage,RecordSort,RuntimeView} from './records/contracts';
@@ -10,6 +11,7 @@ import {useResourceQuery} from '../usePersonnelQuery';
 
 export type RecordWorkspaceProps={
  actorId:string;appId:string;viewId:string;
+ onDirtyChange:(dirty:boolean)=>void;registerLeaveGuard:RegisterLeaveGuard;
  onCreate:(view:RuntimeView,queryVersion?:string)=>void;
  onOpenRecord:(view:RuntimeView,record:RecordItem,queryVersion:string)=>void;
  onRuntimeReady?:(view:RuntimeView)=>void;
@@ -101,7 +103,7 @@ function RecordQuery(props:RecordWorkspaceProps&{scope:string;view:RuntimeView;o
   return true;
  };
  return <section className="record-workspace" aria-label="记录工作区">
-  <div className="table-toolbar"><RecordPresets actorId={actorId} view={viewRef.current} layout={{sort:parameters.sort,hiddenColumnIds,columnOrder,columnWidths}} active={activePreset} onApply={applyPreset} refreshRuntime={refreshPresetRuntime} onUnauthorized={props.onUnauthorized} onIdentityMismatch={props.onIdentityMismatch}/><button className="admin-button" type="button" onClick={props.onRefresh}>刷新</button>{view.capabilities.create&&<button className="admin-button" type="button" disabled={disabled} onClick={()=>props.onCreate(view,query.data.queryVersion||undefined)}>新建记录</button>}</div>
+  <div className="table-toolbar"><RecordPresets registerLeaveGuard={props.registerLeaveGuard} onDirtyChange={props.onDirtyChange} actorId={actorId} view={viewRef.current} layout={{sort:parameters.sort,hiddenColumnIds,columnOrder,columnWidths}} active={activePreset} onApply={applyPreset} refreshRuntime={refreshPresetRuntime} onUnauthorized={props.onUnauthorized} onIdentityMismatch={props.onIdentityMismatch}/><button className="admin-button" type="button" onClick={props.onRefresh}>刷新</button>{view.capabilities.create&&<button className="admin-button" type="button" disabled={disabled} onClick={()=>props.onCreate(view,query.data.queryVersion||undefined)}>新建记录</button>}</div>
   <fieldset className="record-table-frame" disabled={disabled}><legend className="sr-only">记录操作</legend><RecordsPanel view={viewRef.current} actorId={actorId} page={query.data} loading={query.loading} error={message} hiddenColumnIds={hiddenColumnIds} columnWidths={columnWidths} columnOrder={columnOrder} selectedRowIds={selectedRowIds} onSelectionChange={setSelectedRowIds} onPageChange={page=>setParameters(current=>({...current,page}))} onPageSizeChange={pageSize=>{setSelectedRowIds([]);setParameters(current=>({...current,page:1,pageSize}));}} onSortChange={sort=>{setSelectedRowIds([]);setParameters(current=>({...current,page:1,sort}));}} onColumnWidthsChange={setColumnWidths} onColumnOrderChange={setColumnOrder} onOpenRecord={record=>{if(disabled)return;void (async()=>{try{
    const accept=await query.prepareChange(parameters);
    if(!accept||!accept())return;

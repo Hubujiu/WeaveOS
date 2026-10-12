@@ -10,7 +10,8 @@ import './table-presets.css';
 
 export type ResourcePreset = {id:string;name:string;version:number;invalid?:boolean;reason?:string;filter?:ResourceFilterGroup|null;hiddenColumnIds?:string[]};
 export type ResourcePresetRepository = {list:()=>Promise<{items:ResourcePreset[]}>;read:(id:string)=>Promise<ResourcePreset>;save:(input:{name:string;filter:ResourceFilterGroup|null;hiddenColumnIds:string[]},existing?:{id:string;version:number})=>Promise<ResourcePreset>;remove:(id:string,version:number)=>Promise<void>};
-export type ResourceManagerConfig = {operationStatus?:ReactNode;scopeKey:string;fields:readonly ResourceFilterField[];columns:readonly BusinessColumn[];repository:ResourcePresetRepository;refreshDescriptors:()=>Promise<{fields:readonly ResourceFilterField[];columns:readonly BusinessColumn[]}>;onApply:(preset:ResourcePreset|null)=>Promise<boolean>};
+export type PresetEditorState={dirty:boolean;fingerprint:string;discard:()=>void};
+export type ResourceManagerConfig = {onEditorState?:(state:PresetEditorState)=>void;operationStatus?:ReactNode;scopeKey:string;fields:readonly ResourceFilterField[];columns:readonly BusinessColumn[];repository:ResourcePresetRepository;refreshDescriptors:()=>Promise<{fields:readonly ResourceFilterField[];columns:readonly BusinessColumn[]}>;onApply:(preset:ResourcePreset|null)=>Promise<boolean>};
 type CommonProps={hiddenColumnIds:readonly string[];onDirty:(dirty:boolean)=>void;onUnauthorized:()=>void};
 type Props=(CommonProps & {view:QueryView;active:AppliedPreset|null;options?:PresetOptions;loadOptions:()=>Promise<PresetOptions>;onApply:(preset:TablePreset|null)=>Promise<boolean>;resource?:never})|(CommonProps & {view:'resource';resource:ResourceManagerConfig;active:ResourcePreset|null;options?:never;loadOptions?:never;onApply?:never});
 type ManagedPreset=TablePreset|ResourcePreset;
@@ -38,7 +39,9 @@ export function TablePresetManager(props:Props){
  const fields=view==='resource'?resource!.fields.map(f=>({key:f.id,label:f.label??'字段',kind:f.kind,choices:f.choices,operators:f.operators})):view==='members'?memberFilterFields:eventFilterFields;
  const [hiddenSearch,setHiddenSearch]=useState(''),[shownSearch,setShownSearch]=useState('');
  const applyCurrent=useRef(onApply);applyCurrent.current=onApply;
- const dirty=!!edit&&contentKey(edit,filterKey)!==edit.initial;
+ const editFingerprint=edit?contentKey(edit,filterKey):'';
+ const dirty=!!edit&&editFingerprint!==edit.initial;
+ useLayoutEffect(()=>{resource?.onEditorState?.({dirty,fingerprint:editFingerprint,discard:()=>{setEdit(null);setConfirmation(null);setError('');changeOpen(false);}});},[dirty,editFingerprint,resource?.onEditorState]);
  useLayoutEffect(()=>{onDirty(dirty);return()=>onDirty(false);},[dirty,onDirty]);
  useEffect(()=>{if(edit)nameControl.current?.focus({preventScroll:true});},[edit?.preset?.id,!!edit]);
  function failed(e:unknown){if(e instanceof WorkspaceError&&e.status===401)onUnauthorized();setError(e instanceof Error?e.message:'服务暂时不可用，请稍后重试');if(e instanceof WorkspaceError&&e.code==='PERSONNEL_PRESET_CONFLICT')setConflict(true);}
@@ -198,11 +201,11 @@ export function TablePresetManager(props:Props){
   <div className="preset-body">
    {error&&<div role="alert" className="preset-error">{error}</div>}
    {resource?.operationStatus}
-   {edit?<><label className="preset-name">自定义筛选名称 <span aria-hidden="true">*</span><input ref={nameControl} aria-label="自定义筛选名称" required placeholder="请输入自定义筛选名称" value={edit.name} onChange={e=>setEdit(old=>old?{...old,name:e.target.value}:old)}/></label><h3>配置筛选条件</h3>
+   {edit?<fieldset disabled={!!resource&&busy} style={{border:0,padding:0,margin:0,minWidth:0}}><label className="preset-name">自定义筛选名称 <span aria-hidden="true">*</span><input ref={nameControl} aria-label="自定义筛选名称" required placeholder="请输入自定义筛选名称" value={edit.name} onChange={e=>setEdit(old=>old?{...old,name:e.target.value}:old)}/></label><h3>配置筛选条件</h3>
     {edit.blocks.map((b,bi)=><div key={b.id}>{bi>0&&<div className="preset-or"><span>或</span></div>}<fieldset className="preset-block" aria-label={`且条件组 ${bi+1}`}><legend>且条件</legend>{b.rows.map((r,ri)=>row(b,r,bi,ri))}<button type="button" className="preset-add" aria-label={`组 ${bi+1} 且条件`} disabled={leaves>=MAX_FILTER_LEAVES} onClick={()=>setEdit(e=>e?{...e,blocks:e.blocks.map(block=>block.id===b.id?{...block,rows:[...block.rows,newRow()]}:block)}:e)}><Plus size={14}/>且条件</button></fieldset></div>)}
     <button type="button" className="preset-add" aria-label="或条件" disabled={leaves>=MAX_FILTER_LEAVES} onClick={addBlock}><Plus size={14}/>或条件</button><h3>设置显隐字段</h3><div className="preset-visibility">{visibility(true)}{visibility(false)}</div><p className="preset-hint">隐藏字段仍参与筛选与排序。至少保留一个业务字段；选择、序号和操作列始终显示。</p>
     {conflict&&edit.preset&&<button type="button" onClick={()=>setConfirmation({kind:'reload'})}>重新加载最新方案</button>}
-   </>:<><button ref={firstControl} type="button" className="preset-add preset-new" aria-label="新增筛选" disabled={busy||listLoading||items.length>=20} onClick={()=>begin(null)}><Plus size={16}/>新增筛选</button>
+   </fieldset>:<><button ref={firstControl} type="button" className="preset-add preset-new" aria-label="新增筛选" disabled={busy||listLoading||items.length>=20} onClick={()=>begin(null)}><Plus size={16}/>新增筛选</button>
     {listLoading?<p role="status" className="preset-empty">正在加载筛选方案…</p>:items.length?<ul className="preset-list">{items.map(item=><li key={item.id}><div className="preset-info"><strong>{item.name}</strong>{resource&&'invalid'in item&&item.invalid&&<span className="preset-error">{item.reason||'方案已失效'}</span>}{active?.id===item.id&&<span className="preset-active">{active.version===item.version?'已应用':'已修改，待应用'}</span>}</div><div className="preset-actions"><button type="button" disabled={busy||!!(resource&&'invalid'in item&&item.invalid)} aria-label={'应用'+item.name} onClick={()=>void apply(item)}>应用</button><button type="button" disabled={busy} aria-label={'编辑'+item.name} onClick={()=>void readEdit(item)}>编辑</button><button type="button" disabled={busy} aria-label={'删除'+item.name} onClick={()=>{setError('');setConfirmation({kind:'delete',preset:item});}}>删除</button></div></li>)}</ul>:resource&&error?null:<p className="preset-empty">暂无自定义筛选</p>}
     {active&&<button type="button" className="preset-cancel-application" disabled={busy} onClick={()=>setConfirmation({kind:'cancel'})}>取消应用</button>}{error&&<button type="button" disabled={busy} onClick={()=>void load()}>重新加载方案列表</button>}
    </>}

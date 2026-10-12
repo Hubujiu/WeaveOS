@@ -1,13 +1,14 @@
-import {useEffect,useRef,useState} from 'react';
-import {TablePresetManager,type ResourcePreset,type ResourcePresetRepository} from '../../TablePresetManager';
+import {useCallback,useEffect,useLayoutEffect,useRef,useState,type MutableRefObject} from 'react';
+import {TablePresetManager,type ResourcePreset,type ResourcePresetRepository,type PresetEditorState} from '../../TablePresetManager';
 import type {ResourceFilterField} from '../../QueryFilterState';
 import {applicationApi,ApplicationError} from '../api';
 import {useApplicationOperation,type ApplicationMutationRequest} from '../useApplicationOperation';
 import {validApplicationPreset,validApplicationPresets,type ApplicationPreset,type ApplicationPresetValid,type PresetMutationReceipt} from './presetContract';
+import {createLeaveController,type RegisterLeaveGuard} from '../forms/leaveGuard';
 import type {RuntimeView,RecordSort} from './contracts';
 
 type Layout={sort:RecordSort;hiddenColumnIds:string[];columnOrder:string[];columnWidths:Record<string,number>};
-type Props={actorId:string;view:RuntimeView;layout:Layout;active:ApplicationPresetValid|null;onApply:(preset:ApplicationPresetValid|null)=>Promise<boolean>;refreshRuntime:(signal:AbortSignal)=>Promise<RuntimeView>;onUnauthorized:()=>void;onIdentityMismatch:()=>void};
+type Props={registerLeaveGuard:RegisterLeaveGuard;onDirtyChange:(dirty:boolean)=>void;actorId:string;view:RuntimeView;layout:Layout;active:ApplicationPresetValid|null;onApply:(preset:ApplicationPresetValid|null)=>Promise<boolean>;refreshRuntime:(signal:AbortSignal)=>Promise<RuntimeView>;onUnauthorized:()=>void;onIdentityMismatch:()=>void};
 type Job={key:string;request:ApplicationMutationRequest;resolve:(value:PresetMutationReceipt|undefined)=>void;reject:(error:Error)=>void};
 const descriptors=(view:RuntimeView)=>({
  fields:view.fields.filter(f=>f.access.read!=='none'&&f.query.operators.length>0).map(f=>({id:f.id,label:f.name,kind:f.kind,operators:f.query.operators,optionIds:f.input.options?.map(o=>o.id),choices:f.input.options?.map(o=>({value:o.id,label:o.label}))})) as ResourceFilterField[],
@@ -16,10 +17,25 @@ const descriptors=(view:RuntimeView)=>({
 
 // Business adapter for the approved shared editor. No second query or mutation
 // state machine: live reads use the scoped API and writes use the shared hook.
-export function RecordPresets({actorId,view,layout,active,onApply,refreshRuntime,onUnauthorized,onIdentityMismatch}:Props){
+type PresetOperation=ReturnType<typeof useApplicationOperation<PresetMutationReceipt>>;
+export function RecordPresets({registerLeaveGuard,onDirtyChange,actorId,view,layout,active,onApply,refreshRuntime,onUnauthorized,onIdentityMismatch}:Props){
  const {appId,viewId}=view,scope=JSON.stringify(['presets',actorId,appId,viewId]);
  const base=`applications/${appId}/forms/${viewId}/table-presets`;
- const [job,setJob]=useState<Job|null>(null);
+ const [job,setJob]=useState<Job|null>(null),[dirty,setDirty]=useState(false),[operating,setOperating]=useState(false);
+ const editor=useRef<PresetEditorState>({dirty:false,fingerprint:'',discard:()=>{}}),operationRef=useRef<PresetOperation|null>(null);
+ const editorState=useCallback((state:PresetEditorState)=>{editor.current=state;},[]);
+ useEffect(()=>{onDirtyChange(dirty||operating);return()=>onDirtyChange(false);},[dirty,operating,onDirtyChange]);
+ useEffect(()=>registerLeaveGuard({kind:'preset',actorId,appId,viewId},createLeaveController(()=>{
+  const operation=operationRef.current,pendingStatus=operation?.getPendingStatus();
+  return {status:pendingStatus??(editor.current.dirty?'draft':'clean'),fingerprint:JSON.stringify([pendingStatus,operation?.packet?.operationId,editor.current.fingerprint])};
+ },decision=>{
+  if(decision!=='discard')return;
+  const operation=operationRef.current;
+  if(operation?.getPendingStatus()==='preflight'){
+   operation.cancelPreflight();const current=pending.current;pending.current=null;setJob(null);setOperating(false);current?.reject(new Error('未发送的方案操作已取消'));
+  }
+  if(editor.current.dirty)editor.current.discard();
+ })),[scope,registerLeaveGuard]);
  const pending=useRef<Job|null>(null),known=useRef(new Map<string,ApplicationPreset>());
  const life=useRef<AbortController|null>(null);
  useEffect(()=>{const controller=new AbortController();life.current=controller;return()=>controller.abort();},[scope]);
@@ -65,15 +81,18 @@ export function RecordPresets({actorId,view,layout,active,onApply,refreshRuntime
   if(preset&&preset.invalid)throw new Error('方案已失效，请明确重新配置');
   return onApply(preset as ApplicationPresetValid|null);
  };
- return <TablePresetManager view="resource" active={active} hiddenColumnIds={layout.hiddenColumnIds} onDirty={()=>{}} onUnauthorized={onUnauthorized}
-  resource={{scopeKey:scope,...descriptors(view),repository,onApply:apply,
+ return <TablePresetManager view="resource" active={active} hiddenColumnIds={layout.hiddenColumnIds} onDirty={setDirty} onUnauthorized={onUnauthorized}
+  resource={{scopeKey:scope,onEditorState:editorState,...descriptors(view),repository,onApply:apply,
    refreshDescriptors:async()=>descriptors(await refreshRuntime(life.current!.signal)),
-   operationStatus:job?<PresetMutation key={job.key} actorId={actorId} scope={scope} job={job} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} settle={settle}/>:null}}/>;
+   operationStatus:job?<PresetMutation key={job.key} actorId={actorId} scope={scope} job={job} operationRef={operationRef} onActivity={setOperating} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} settle={settle}/>:null}}/>;
 }
 
-function PresetMutation({actorId,scope,job,onUnauthorized,onIdentityMismatch,settle}:{actorId:string;scope:string;job:Job;onUnauthorized:()=>void;onIdentityMismatch:()=>void;settle:(job:Job,result:PresetMutationReceipt|undefined,error?:Error)=>void}){
+function PresetMutation({actorId,scope,job,operationRef,onActivity,onUnauthorized,onIdentityMismatch,settle}:{actorId:string;scope:string;job:Job;operationRef:MutableRefObject<PresetOperation|null>;onActivity:(active:boolean)=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void;settle:(job:Job,result:PresetMutationReceipt|undefined,error?:Error)=>void}){
  const operation=useApplicationOperation<PresetMutationReceipt>({actorId,scope,resource:job.request.resource,confirmed:result=>settle(job,result),unauthorized:onUnauthorized,identityMismatch:onIdentityMismatch});
  const latest=useRef(operation);latest.current=operation;
+ useLayoutEffect(()=>{operationRef.current=operation;});
+ useEffect(()=>()=>{operationRef.current=null;onActivity(false);},[]);
+ useEffect(()=>{onActivity(['preflight','pending','unconfirmed'].includes(operation.phase));},[operation.phase,onActivity]);
  useEffect(()=>{let current=true;void Promise.resolve().then(()=>{if(current)latest.current.start(job.request);});return()=>{current=false;};},[job]);
  useEffect(()=>{if(operation.phase==='error')settle(job,undefined,new Error(operation.errorCode==='APPLICATION_PRESET_CONFLICT'?'方案已被更新，请重新加载后核对；当前输入已保留':operation.message));},[operation.phase,operation.message,operation.errorCode]);
  if(operation.phase==='unconfirmed')return <div><p role="alert">方案操作结果尚未确认。{operation.message}</p><button type="button" onClick={operation.query}>核查方案操作</button><button type="button" onClick={operation.retry}>重试原方案操作</button></div>;
