@@ -6,15 +6,21 @@ import {useApplicationOperation,type ApplicationMutationRequest} from '../useApp
 import {createLeaveController,type RegisterLeaveGuard} from '../forms/leaveGuard';
 import {isDraftMutationResult,type DraftMutationResult,type DraftSummary,type RuntimeView} from './contracts';
 import {validDraftPage} from './draftContract';
+import {findDraftRecovery} from './draftRecovery';
 
 type Props={actorId:string;view:RuntimeView;onOpen:(id:string)=>void;onClose:()=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onDirtyChange:(dirty:boolean)=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void};
-type Job={key:string;request:ApplicationMutationRequest};
+type Job={key:string;request:ApplicationMutationRequest;recovered?:boolean};
+function recoverDelete(actorId:string,view:RuntimeView):Job|null{
+ const packet=findDraftRecovery(actorId,view.appId,view.viewId);
+ if(packet?.method!=='DELETE'||!packet.resource)return null;
+ return {key:packet.operationId!,recovered:true,request:{resource:packet.resource,path:packet.path.split('?')[0],method:'DELETE',expectedStatus:204,expectedDraftVersion:packet.query!.expectedDraftVersion}};
+}
 type Operation=ReturnType<typeof useApplicationOperation<DraftMutationResult>>;
 export function DraftsPanel(props:Props){return <DraftScope key={JSON.stringify([props.actorId,props.view.appId,props.view.viewId])} {...props}/>;}
 function DraftScope({actorId,view,onOpen,onClose,onUnauthorized,onIdentityMismatch,onDirtyChange,registerLeaveGuard,requestSectionLeave}:Props){
  const [token,setToken]=useState<string|null>(null),[epoch,setEpoch]=useState(0),[page,setPage]=useState<{items:DraftSummary[];next:string|null;loading:boolean;error:string}>({items:[],next:null,loading:true,error:''});
- const [selected,setSelected]=useState<DraftSummary|null>(null),[job,setJob]=useState<Job|null>(null),[mutationError,setMutationError]=useState('');
- const pending=useRef<Job|null>(null),operationRef=useRef<Operation|null>(null),released=useRef(false);
+ const [selected,setSelected]=useState<DraftSummary|null>(null),[job,setJob]=useState<Job|null>(()=>recoverDelete(actorId,view)),[mutationError,setMutationError]=useState('');
+ const pending=useRef<Job|null>(job),operationRef=useRef<Operation|null>(null),released=useRef(false);
  const handlers=useRef({onUnauthorized,onIdentityMismatch});handlers.current={onUnauthorized,onIdentityMismatch};
  const base=`applications/${view.appId}/forms/${view.viewId}/drafts`;
  useEffect(()=>{
@@ -30,11 +36,11 @@ function DraftScope({actorId,view,onOpen,onClose,onUnauthorized,onIdentityMismat
  },[actorId,base,view.tableId,view.viewId,token,epoch]);
  useEffect(()=>{onDirtyChange(!!job);return()=>onDirtyChange(false);},[job,onDirtyChange]);
  useLayoutEffect(()=>{
-  if(!selected)return;
-  return registerLeaveGuard({kind:'draft',actorId,appId:view.appId,viewId:view.viewId,draftId:selected.id},createLeaveController(()=>{
+  const draftId=selected?.id??job?.request.resource.id;if(!draftId)return;
+  return registerLeaveGuard({kind:'draft',actorId,appId:view.appId,viewId:view.viewId,draftId},createLeaveController(()=>{
    const status=operationRef.current?.getPendingStatus()??(pending.current?'preflight':'clean');return {status:released.current?'clean':status,fingerprint:JSON.stringify([status,pending.current?.key,operationRef.current?.packet?.operationId])};
   },decision=>{if(decision==='retain_operation')released.current=true;else if(decision==='discard'&&operationRef.current?.getPendingStatus()==='preflight'){operationRef.current.cancelPreflight();pending.current=null;setJob(null);}}));
- },[actorId,view.appId,view.viewId,selected?.id,registerLeaveGuard]);
+ },[actorId,view.appId,view.viewId,selected?.id,job?.request.resource.id,registerLeaveGuard]);
  const refresh=()=>{if(pending.current)return;setMutationError('');setToken(null);setEpoch(value=>value+1);};
  const settle=(confirmed:boolean,message='')=>{pending.current=null;setJob(null);setSelected(null);if(confirmed)refresh();else setMutationError(message);};
  const remove=()=>{
@@ -54,7 +60,8 @@ function DraftScope({actorId,view,onOpen,onClose,onUnauthorized,onIdentityMismat
   {page.error&&<p role="alert">{page.error}</p>}{mutationError&&<p role="alert">{mutationError} 请刷新草稿列表后核对。</p>}
   {!page.error&&<div className="arca-source personnel-source-scope"><Table className="personnel-source-table" ariaLabel="我的草稿列表" columns={columns} data={page.items} getRowId={row=>row.id} rowHeight={48} minWidth={680} loading={page.loading} emptyState="暂无草稿"/></div>}
   {page.next&&<button className="admin-button" type="button" disabled={page.loading||!!job} onClick={()=>setToken(page.next)}>下一批草稿</button>}
-  {selected&&<Modal title="删除草稿" onClose={()=>job?requestSectionLeave(()=>setSelected(null)):setSelected(null)}>
+  {job&&!selected&&<DraftDelete actorId={actorId} job={job} operationRef={operationRef} settle={settle} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>}
+  {selected&&<Modal title="删除草稿" onClose={()=>job?requestSectionLeave(()=>{setJob(current=>current?{...current,recovered:true}:null);setSelected(null);}):setSelected(null)}>
    <p>删除这份草稿？不会删除或修改正式记录。</p><p>{selected.id}</p>
    {job?<DraftDelete actorId={actorId} job={job} operationRef={operationRef} settle={settle} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>:<div className="workflow-instance-confirm"><button className="admin-button" type="button" onClick={()=>setSelected(null)}>取消</button><button className="admin-button" type="button" onClick={remove}>删除草稿</button></div>}
   </Modal>}
@@ -65,7 +72,7 @@ function DraftDelete({actorId,job,operationRef,settle,onUnauthorized,onIdentityM
  const operation=useApplicationOperation<DraftMutationResult>({actorId,scope:`draft-editor:${resource.appId}:${resource.viewId}:${resource.id}`,resource,confirmed:()=>settle(true),unauthorized:onUnauthorized,identityMismatch:onIdentityMismatch,valid:(result,packet)=>isDraftMutationResult(result,packet.operationId??'',resource.id)});
  const latest=useRef(operation);latest.current=operation;operationRef.current=operation;
  useEffect(()=>()=>{operationRef.current=null;},[]);
- useEffect(()=>{let active=true;void Promise.resolve().then(()=>{if(active)latest.current.start(job.request);});return()=>{active=false;};},[job]);
+ useEffect(()=>{let active=true;void Promise.resolve().then(()=>{if(active&&!job.recovered)latest.current.start(job.request);});return()=>{active=false;};},[job]);
  useEffect(()=>{if(operation.phase==='error')settle(false,operation.message);},[operation.phase,operation.message]);
  return operation.phase==='unconfirmed'?<div><p role="status">草稿删除结果待确认</p><p role="alert">{operation.message}</p><div className="workflow-instance-buttons"><button className="admin-button" type="button" onClick={operation.query}>核查草稿结果</button><button className="admin-button" type="button" onClick={operation.retry}>重试原草稿操作</button></div></div>:<p role="status">正在删除草稿…</p>;
 }

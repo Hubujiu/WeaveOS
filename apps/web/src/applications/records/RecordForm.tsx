@@ -8,6 +8,7 @@ import type {ApplicationPacket} from '../recovery';
 import {isDraftMutationResult,isMutationResult} from './contracts';
 import {confirmRecordIdentity,fieldRendererKey,type RecordEditorIdentity} from './recordState';
 import {projectRuntimeFields,requiresRuntimeReview,scopeAllows} from './runtimeModel';
+import {projectDraftFields} from './draftContract';
 
 export type RecordFormProps={
  view:RuntimeView;identity:RecordEditorIdentity;record?:RecordItem;draft?:Draft;recoveredDraft?:ApplicationPacket;onDraftConfirmed?:(result:DraftMutationResult)=>void;mode:'create'|'edit'|'read';authorityKey:string;queryVersion?:string;reworkInstanceId?:string;
@@ -42,7 +43,7 @@ function RecordFormScope(props:RecordFormProps){
  const operationScope=reworkInstanceId&&recordId?`round-record:${identity.appId}:${identity.viewId}:${recordId}:${reworkInstanceId}`:recordId?`record-editor:${identity.appId}:${identity.viewId}:record:${recordId}`:`record-editor:${identity.appId}:${identity.viewId}:new:${creationNonce}`;
  const [draftJob,setDraftJob]=useState<DraftJob|null>(()=>{const packet=props.recoveredDraft;return packet?.resource?{key:packet.operationId!,recovered:true,request:{resource:packet.resource,path:packet.path,method:packet.method,expectedStatus:packet.expectedStatus,body:packet.body}}:null;}),[draftPhase,setDraftPhase]=useState(props.recoveredDraft?'unconfirmed':'idle'),[draftError,setDraftError]=useState(''),[draftConflict,setDraftConflict]=useState(false);
  const draftOperation=useRef<DraftOperation|null>(null),pendingDraft=useRef<DraftJob|null>(draftJob);
- const draftBasisConflict=!!draft&&(draft.hasConflicts||draft.schemaVersion!==view.schemaVersion||!!draft.targetRecordId&&draft.baseRecordVersion!==record?.recordVersion);
+ const draftBasisConflict=!!draft&&(draft.hasConflicts||draft.schemaVersion!==view.schemaVersion||!!record&&draft.baseRecordVersion!==record.recordVersion);
  const confirmedRef=useRef(onConfirmed);confirmedRef.current=onConfirmed;
  const unauthorizedRef=useRef(onUnauthorized);unauthorizedRef.current=onUnauthorized;
  const identityMismatchRef=useRef(onIdentityMismatch);identityMismatchRef.current=onIdentityMismatch;
@@ -50,9 +51,9 @@ function RecordFormScope(props:RecordFormProps){
  const [confirmed,setConfirmed]=useState(false);
  const hookResource=resource??{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,id:identity.kind==='draft'?identity.draftId:identity.kind==='record'?identity.recordId:''};
  const operation=useApplicationOperation<MutationResult>({actorId:identity.actorId,scope:operationScope,resource:hookResource,confirmed:(result)=>{if(!result)return;const next=identity.kind==='new'?confirmRecordIdentity(identity,result,result.operationId):identity.kind==='draft'?{kind:'record' as const,actorId:identity.actorId,appId:identity.appId,viewId:identity.viewId,recordId:result.id}:identity;if(!next)return;confirmationSync.current=true;setConfirmed(true);readGuard.current={...readGuard.current,confirmed:true,packetId:null,phase:'idle',dirty:false};onDirtyChange(false);confirmedRef.current(result,next);},unauthorized:()=>unauthorizedRef.current(),identityMismatch:()=>identityMismatchRef.current(),valid:(result,packet)=>!!packet.operationId&&isMutationResult(result,packet.operationId,recordId)});
- const startView=useRef(view),startValues=useRef(draft?Object.fromEntries(Object.entries(draft.values).filter(([id])=>projectRuntimeFields(view,mode,identity.actorId,record).some(port=>port.editable&&port.field.id===id))):initialValues(view,identity.actorId,mode,record));
+ const startView=useRef(view),startValues=useRef(draft?Object.fromEntries(Object.entries(draft.values).filter(([id])=>projectDraftFields(view,draft,identity.actorId,record).some(port=>port.editable&&port.field.id===id))):initialValues(view,identity.actorId,mode,record));
  const [values,setValues]=useState<Values>(startValues.current),[pendingDisplays,setPendingDisplays]=useState<Record<UUID,ReferenceDisplay>>({});
- const fields=projectRuntimeFields(view,mode,identity.actorId,record);
+ const fields=draft?projectDraftFields(view,draft,identity.actorId,record):projectRuntimeFields(view,mode,identity.actorId,record);
  const fieldById=new Map(fields.map(port=>[port.field.id,port] as const));
  const currentEditable=new Set(fields.filter(port=>port.editable).map(port=>port.field.id));
  const packet=resource&&operation.packet?.resource&&same(operation.packet.resource,resource)?operation.packet:null;

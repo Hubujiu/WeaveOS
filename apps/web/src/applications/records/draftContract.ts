@@ -29,4 +29,11 @@ export function validDraftPage(data:unknown,pagination:unknown,viewId:string,tab
  return data.items.every(item=>validDraftSummary(item,viewId,tableId))&&new Set(data.items.map(item=>item.id)).size===data.items.length;
 }
 
-export function projectDraftFields(view:RuntimeView,draft:Draft,actorId:string,record?:RecordItem):RuntimeDisplayField[]{return [];}
+export function projectDraftFields(view:RuntimeView,draft:Draft,actorId:string,record?:RecordItem):RuntimeDisplayField[]{
+ if(draft.viewId!==view.viewId||draft.tableId!==view.tableId)return [];
+ if(record&&(record.id!==draft.targetRecordId||record.appId!==view.appId||record.viewId!==view.viewId||record.tableId!==view.tableId))return [];
+ const creating=draft.targetRecordId===null;
+ const allows=(scope:string)=>scope==='all'||scope==='own'&&!!record&&record.createdBy===actorId;
+ if(creating?!view.capabilities.draftCreate||!view.capabilities.create:!view.capabilities.draftEdit||!allows(view.capabilities.edit))return [];
+ return view.fields.filter(field=>creating?field.access.create:allows(field.access.edit)).map(field=>({field,readable:false,editable:true,...(Object.hasOwn(draft.values,field.id)?{value:draft.values[field.id]}:{})}));
+}

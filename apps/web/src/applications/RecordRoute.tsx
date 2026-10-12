@@ -10,7 +10,7 @@ import {validRoundPreview} from './workflows/roundContract';
 import {DraftsPanel} from './records/DraftsPanel';
 import {RecordForm} from './records/RecordForm';
 import type {Draft,DraftMutationResult,MutationResult,RecordItem,RuntimeField,RuntimeView,UUID} from './records/contracts';
-import {validDraft} from './records/draftContract';
+import {validDraft,projectDraftFields} from './records/draftContract';
 import {parseRecordItem,parseRuntimeView} from './recordReadContracts';
 import {createNewRecordIdentity,type RecordEditorIdentity} from './records/recordState';
 import {projectRuntimeFields,scopeAllows} from './records/runtimeModel';
@@ -95,8 +95,8 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
    if(!validDraft(raw,viewId,runtime.tableId,draftId,runtime.fields.map(field=>field.id)))throw new Error('草稿响应格式不正确');
    const mode=raw.targetRecordId?'edit':'create';
    let record:RecordItem|undefined;
-   if(raw.targetRecordId){record=parseRecordItem(await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/records/${raw.targetRecordId}`,'GET',undefined,controller.signal),runtime,actorId);if(record.id!==raw.targetRecordId)throw new Error('草稿基础记录不匹配');}
-   const fields=projectRuntimeFields(runtime,mode,actorId,record).filter(port=>port.editable).map(port=>port.field.id);
+   if(raw.targetRecordId&&runtime.capabilities.read!=='none'){record=parseRecordItem(await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/records/${raw.targetRecordId}`,'GET',undefined,controller.signal),runtime,actorId);if(record.id!==raw.targetRecordId)throw new Error('草稿基础记录不匹配');}
+   const fields=projectDraftFields(runtime,raw,actorId,record).filter(port=>port.editable).map(port=>port.field.id);
    if(!validDraft(raw,viewId,runtime.tableId,draftId,fields))throw new Error('草稿字段权限已变化');
    if(current!==generation.current||controller.signal.aborted)return;
    setPendingDraftRead(null);setEditor({identity:{kind:'draft',actorId,appId,viewId,draftId},view:runtime,record,draft:raw,mode,recoveredDraft});
