@@ -84,3 +84,19 @@ test('Root private preset synchronous double save cannot create two operations',
 test('Root private preset identity preflight rejects a new account before transmitting configuration',async({page})=>{
  const calls=await setup(page);await open(page);const editor=await newPreset(page);let checks=0;await page.route('**/api/v1/sessions/current',r=>{checks++;return r.fulfill({json:{code:'OK',data:{id:id(99),account:'other'},meta:null}});});await editor.getByRole('button',{name:'确定',exact:true}).click();await expect.poll(()=>checks).toBeGreaterThan(0);expect(calls.filter(c=>c.method==='POST'&&c.path===path+'/table-presets')).toEqual([]);
 });
+
+test('Root unsaved private preset warns browser refresh without writing',async({page})=>{
+ const calls=await setup(page);await open(page);await newPreset(page);
+ const warned=await page.evaluate(()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;});
+ expect(warned).toBe(true);expect(calls.filter(c=>c.method==='POST'&&c.path===path+'/table-presets')).toEqual([]);
+});
+test('Root private preset dirty navigation keeps the draft on continue and leaves only after explicit discard',async({page})=>{
+ const calls=await setup(page);await open(page);await newPreset(page);await page.getByRole('button',{name:'返回主页',exact:true}).click();
+ const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(page.getByLabel('自定义筛选名称')).toHaveValue('精确金额方案');
+ await page.getByRole('button',{name:'返回主页',exact:true}).click();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page).toHaveURL(/\/app$/);expect(calls.filter(c=>c.method==='POST'&&c.path===path+'/table-presets')).toEqual([]);
+});
+test('Root private preset unknown operation blocks browser refresh and keeps editor inputs immutable',async({page})=>{
+ await setup(page,{writeUnknown:true});await open(page);const editor=await newPreset(page);await editor.getByRole('button',{name:'确定',exact:true}).click();await expect(page.getByRole('alert').filter({hasText:/未确认/})).toBeVisible();
+ await expect(editor.getByLabel('自定义筛选名称')).toBeDisabled();
+ const warned=await page.evaluate(()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;});expect(warned).toBe(true);
+});
