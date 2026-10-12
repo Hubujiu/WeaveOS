@@ -4,10 +4,11 @@ const id=(n:number)=>'cccccccc-cccc-4ccc-8ccc-'+String(n).padStart(12,'0');
 const actor={id:id(1),account:'draft-owner'},appId=id(2),viewId=id(3),fieldId=id(4),tableId=id(5),draftId=id(6),recordId=id(7);
 const form=`applications/${appId}/forms/${viewId}`,draftPath=form+'/drafts',recordPath=form+'/records';
 const runtime={appId,viewId,tableId,schemaVersion:1,viewVersion:1,policyRevision:1,fields:[{id:fieldId,name:'金额',kind:'money',required:true,presentation:{helpText:null,displayTimeZone:null},input:{decimal:{precision:20,scale:2,roundingPlaces:2,roundingMode:'HALF_UP'}},access:{read:'all',create:true,edit:'all',history:'none'},query:{operators:['eq','neq','gt','gte','lt','lte'],sortable:true,quickSearchable:false}}],layout:[{id:id(8),kind:'field',fieldId}],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}};
-type Mode='normal'|'unknown'|'read-error'|'conflict'|'edit'|'list'|'list-leak'|'delete-unknown'|'patch-unknown'|'edit-unknown';
+type Mode='normal'|'unknown'|'read-error'|'conflict'|'edit'|'list'|'list-leak'|'delete-unknown'|'patch-unknown'|'edit-unknown'|'edit-only';
 async function setup(page:Page,mode:Mode='normal'){
- const calls:{path:string;method:string;body:any;query:string}[]=[];let draftVersion=['list','list-leak','delete-unknown'].includes(mode)?7:0,draftValue:unknown='-',recordValue='10.00',posts=0,patches=0,deleted=false,deletes=0;
- const isEdit=mode==='edit'||mode==='edit-unknown';
+ const calls:{path:string;method:string;body:any;query:string}[]=[];let draftVersion=['list','list-leak','delete-unknown','edit-only'].includes(mode)?7:0,draftValue:unknown='-',recordValue='10.00',posts=0,patches=0,deleted=false,deletes=0;
+ const isEdit=mode==='edit'||mode==='edit-unknown'||mode==='edit-only';
+ const currentRuntime=structuredClone(runtime);if(mode==='edit-only'){currentRuntime.capabilities={...currentRuntime.capabilities,create:false,read:'none',search:false,draftCreate:false};currentRuntime.fields[0].access={...currentRuntime.fields[0].access,read:'none',create:false};}
  const app={id:appId,name:'报销管理',ownerUserId:id(99),policyRevision:1};
  const row=()=>({id:recordId,appId,viewId,tableId,createdBy:actor.id,createdAt:'2026-10-12T09:00:00Z',updatedAt:'2026-10-12T10:00:00Z',recordVersion:9,schemaVersion:1,values:{[fieldId]:recordValue},referenceDisplays:{}});
  const draft=()=>({id:draftId,viewId,tableId,targetRecordId:isEdit?recordId:null,schemaVersion:1,baseRecordVersion:isEdit?9:null,draftVersion,createdAt:'2026-10-12T09:00:00Z',updatedAt:'2026-10-12T10:00:00Z',hasConflicts:false,values:{[fieldId]:draftValue},conflicts:[]});
@@ -18,7 +19,7 @@ async function setup(page:Page,mode:Mode='normal'){
   else if(path==='applications')data={items:[app]};
   else if(path==='applications/'+appId)data=app;
   else if(path==='applications/'+appId+'/access')data={appId,canEnter:true,policyRevision:1,menus:[{resourceKind:'application',resourceId:appId},{resourceKind:'form',resourceId:viewId}]};
-  else if(path===form+'/runtime')data=runtime;
+  else if(path===form+'/runtime')data=currentRuntime;
   else if(path===recordPath+'/search')data={items:isEdit?[row()]:[],total:isEdit?1:0,page:body.page,pageSize:body.pageSize,sort:body.sort,queryVersion:'record-context',schemaVersion:1,viewVersion:1};
   else if(path===draftPath&&method==='GET'){
    const second=new URLSearchParams(query).get('pageToken')==='opaque.next';
@@ -37,7 +38,7 @@ async function setup(page:Page,mode:Mode='normal'){
    if(Object.hasOwn(body.changes,fieldId))draftValue=body.changes[fieldId];draftVersion++;data={operationId:body.operationId,id:draftId,draftVersion};
   }else if(path===recordPath&&method==='POST'){
    recordValue=body.values[fieldId];return r.fulfill({status:201,headers:{Location:'/api/v1/'+recordPath+'/'+recordId},json:{code:'OK',data:{operationId:body.operationId,id:recordId,recordVersion:9,schemaVersion:1,createdAt:row().createdAt,updatedAt:row().updatedAt},meta:null}});
-  }else if(path===recordPath+'/'+recordId&&method==='GET')data=row();
+  }else if(path===recordPath+'/'+recordId&&method==='GET'){if(mode==='edit-only')return r.fulfill({status:404,json:{code:'APPLICATION_RECORD_NOT_FOUND',data:null}});data=row();}
   else if(path===recordPath+'/'+recordId+'/workflow-instances/search')data={items:[],total:0,page:body.page,pageSize:body.pageSize,queryVersion:'no-flows'};
   else if(path.startsWith('application-operations/'))return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
   else return r.fulfill({status:404,json:{code:'API_NOT_FOUND',data:null}});
@@ -107,4 +108,8 @@ test('Root unknown edit-draft creation retains original target and base after ac
 
 test('Root draft save uses the approved monochrome primary action geometry',async({page})=>{
  await setup(page);const dialog=await create(page);const save=dialog.getByRole('button',{name:'保存草稿',exact:true});await expect(save).toBeVisible();const style=await save.evaluate(node=>{const c=getComputedStyle(node),r=node.getBoundingClientRect();return {width:r.width,height:r.height,background:c.backgroundColor,color:c.color};});expect(style).toEqual({width:120,height:40,background:'rgb(37, 37, 37)',color:'rgb(255, 255, 255)'});
+});
+
+test('Root current draft edit authority does not imply ordinary record read permission',async({page})=>{
+ const calls=await setup(page,'edit-only');const dialog=await list(page);await dialog.getByRole('button',{name:'打开草稿：'+draftId,exact:true}).click();await expect(page.getByRole('textbox',{name:/^金额/})).toHaveValue('-');await page.getByRole('textbox',{name:/^金额/}).fill('12.');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();expect(calls.filter(c=>c.path===recordPath+'/'+recordId||c.path===recordPath+'/search')).toEqual([]);const writes=draftWrites(calls);expect(writes).toHaveLength(1);expect(writes[0].method).toBe('PATCH');expect(writes[0].body).toMatchObject({expectedDraftVersion:7,changes:{[fieldId]:'12.'},removeFieldIds:[]});
 });
