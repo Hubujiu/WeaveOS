@@ -13,3 +13,8 @@ export function validDraftEditorContext(value:unknown,view:RuntimeView,draftId:s
  const eligible=!v.draft.hasConflicts&&v.draft.schemaVersion===view.schemaVersion&&(creating||v.draft.baseRecordVersion===v.recordVersion);
  return v.canCommit===eligible;
 }
+export function projectDraftEditorFields(view:RuntimeView,context:DraftEditorContext):import('./runtimeModel').RuntimeDisplayField[]{
+ if(!validDraftEditorContext(context,view,context.draft.id))return [];
+ const mask=new Set(context.editableFieldIds);
+ return view.fields.filter(field=>mask.has(field.id)).map(field=>({field,readable:false,editable:true,...(Object.hasOwn(context.draft.values,field.id)?{value:context.draft.values[field.id]}:{})}));
+}

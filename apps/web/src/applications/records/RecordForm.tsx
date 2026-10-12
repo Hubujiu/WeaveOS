@@ -11,9 +11,10 @@ import {isDraftMutationResult,isMutationResult} from './contracts';
 import {confirmRecordIdentity,fieldRendererKey,type RecordEditorIdentity} from './recordState';
 import {projectRuntimeFields,requiresRuntimeReview,scopeAllows} from './runtimeModel';
 import {projectDraftFields} from './draftContract';
+import {validDraftEditorContext,projectDraftEditorFields,type DraftEditorContext} from './draftEditorContext';
 
 export type RecordFormProps={
- actionHost?:HTMLElement|null;view:RuntimeView;identity:RecordEditorIdentity;record?:RecordItem;draft?:Draft;recoveredDraft?:ApplicationPacket;onDraftConfirmed?:(result:DraftMutationResult)=>void;mode:'create'|'edit'|'read';authorityKey:string;queryVersion?:string;reworkInstanceId?:string;
+ actionHost?:HTMLElement|null;view:RuntimeView;identity:RecordEditorIdentity;record?:RecordItem;draft?:Draft;draftContext?:DraftEditorContext;recoveredDraft?:ApplicationPacket;onDraftConfirmed?:(result:DraftMutationResult)=>void;mode:'create'|'edit'|'read';authorityKey:string;queryVersion?:string;reworkInstanceId?:string;
  loadCandidates?:(field:RuntimeField,request:Parameters<LoadReferenceCandidates>[0],signal:AbortSignal)=>ReturnType<LoadReferenceCandidates>;
  onUnauthorized:()=>void;onIdentityMismatch:()=>void;registerLeaveGuard:RegisterLeaveGuard;onRefresh:()=>void;
  onConfirmed:(result:MutationResult,identity:RecordEditorIdentity)=>void;onDirtyChange:(dirty:boolean)=>void;
@@ -36,26 +37,28 @@ export function RecordForm(props:RecordFormProps){
 }
 
 function RecordFormScope(props:RecordFormProps){
- const {view,identity,record,draft,onDraftConfirmed,mode,authorityKey,queryVersion,reworkInstanceId,loadCandidates,onUnauthorized,onIdentityMismatch,registerLeaveGuard,onRefresh,onConfirmed,onDirtyChange,onRequestDiscard,onDiscard}=props;
+ const {view,identity,record,draft,draftContext,onDraftConfirmed,mode,authorityKey,queryVersion,reworkInstanceId,loadCandidates,onUnauthorized,onIdentityMismatch,registerLeaveGuard,onRefresh,onConfirmed,onDirtyChange,onRequestDiscard,onDiscard}=props;
  const recordId=identity.kind==='record'?identity.recordId:draft?.targetRecordId??undefined;
+ const trustedContext=draftContext&&draft&&draftContext.draft===draft&&validDraftEditorContext(draftContext,view,draft.id)?draftContext:undefined;
+ const draftFields=draft?(draftContext?(trustedContext?projectDraftEditorFields(view,trustedContext):[]):projectDraftFields(view,draft,identity.actorId,record)):[];
  const saved=!!recordId;
- const invalidDraftIdentity=identity.kind==='draft'&&(!draft||draft.id!==identity.draftId||draft.viewId!==identity.viewId||draft.tableId!==view.tableId);
+ const invalidDraftIdentity=identity.kind==='draft'&&(!draft||draft.id!==identity.draftId||draft.viewId!==identity.viewId||draft.tableId!==view.tableId||!!draftContext&&!trustedContext);
  const creationNonce=identity.kind==='new'?identity.clientDraftId:identity.kind==='draft'?identity.draftId:undefined;
  const resource=useMemo(()=>reworkInstanceId&&recordId?{kind:'round-record' as const,appId:identity.appId,viewId:identity.viewId,id:recordId,instanceId:reworkInstanceId}:recordId?{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,id:recordId}:creationNonce?{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,creationNonce}:null,[identity.appId,identity.viewId,recordId,creationNonce,reworkInstanceId]);
  const operationScope=reworkInstanceId&&recordId?`round-record:${identity.appId}:${identity.viewId}:${recordId}:${reworkInstanceId}`:recordId?`record-editor:${identity.appId}:${identity.viewId}:record:${recordId}`:`record-editor:${identity.appId}:${identity.viewId}:new:${creationNonce}`;
  const [draftJob,setDraftJob]=useState<DraftJob|null>(()=>{const packet=props.recoveredDraft;return packet?.resource?{key:packet.operationId!,recovered:true,request:{resource:packet.resource,path:packet.path,method:packet.method,expectedStatus:packet.expectedStatus,body:packet.body}}:null;}),[draftPhase,setDraftPhase]=useState(props.recoveredDraft?'unconfirmed':'idle'),[draftError,setDraftError]=useState(''),[draftConflict,setDraftConflict]=useState(false);
  const draftOperation=useRef<DraftOperation|null>(null),pendingDraft=useRef<DraftJob|null>(draftJob);
- const draftBasisConflict=!!draft&&(draft.hasConflicts||draft.schemaVersion!==view.schemaVersion||!!record&&draft.baseRecordVersion!==record.recordVersion);
+ const draftBasisConflict=!!draft&&(draft.hasConflicts||!!trustedContext&&!trustedContext.canCommit||draft.schemaVersion!==view.schemaVersion||!!record&&draft.baseRecordVersion!==record.recordVersion);
  const confirmedRef=useRef(onConfirmed);confirmedRef.current=onConfirmed;
  const unauthorizedRef=useRef(onUnauthorized);unauthorizedRef.current=onUnauthorized;
  const identityMismatchRef=useRef(onIdentityMismatch);identityMismatchRef.current=onIdentityMismatch;
  const confirmationSync=useRef(false);
- const [confirmed,setConfirmed]=useState(false),[cleanupField,setCleanupField]=useState<string|null>(null);
+ const [confirmed,setConfirmed]=useState(false),[cleanupField,setCleanupField]=useState<string|null>(null),[copyConfirm,setCopyConfirm]=useState(false);
  const hookResource=resource??{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,id:identity.kind==='draft'?identity.draftId:identity.kind==='record'?identity.recordId:''};
  const operation=useApplicationOperation<MutationResult>({actorId:identity.actorId,scope:operationScope,resource:hookResource,confirmed:(result)=>{if(!result)return;const next=identity.kind==='new'?confirmRecordIdentity(identity,result,result.operationId):identity.kind==='draft'?{kind:'record' as const,actorId:identity.actorId,appId:identity.appId,viewId:identity.viewId,recordId:result.id}:identity;if(!next)return;confirmationSync.current=true;setConfirmed(true);readGuard.current={...readGuard.current,confirmed:true,packetId:null,phase:'idle',dirty:false};onDirtyChange(false);confirmedRef.current(result,next);},unauthorized:()=>unauthorizedRef.current(),identityMismatch:()=>identityMismatchRef.current(),valid:(result,packet)=>!!packet.operationId&&isMutationResult(result,packet.operationId,recordId)});
- const startView=useRef(view),startValues=useRef(draft?Object.fromEntries(Object.entries(draft.values).filter(([id])=>projectDraftFields(view,draft,identity.actorId,record).some(port=>port.editable&&port.field.id===id))):initialValues(view,identity.actorId,mode,record));
+ const startView=useRef(view),startValues=useRef(draft?Object.fromEntries(Object.entries(draft.values).filter(([id])=>draftFields.some(port=>port.editable&&port.field.id===id))):initialValues(view,identity.actorId,mode,record));
  const [values,setValues]=useState<Values>(startValues.current),[pendingDisplays,setPendingDisplays]=useState<Record<UUID,ReferenceDisplay>>({});
- const fields=draft?projectDraftFields(view,draft,identity.actorId,record):projectRuntimeFields(view,mode,identity.actorId,record);
+ const fields=draft?draftFields:projectRuntimeFields(view,mode,identity.actorId,record);
  const fieldById=new Map(fields.map(port=>[port.field.id,port] as const));
  const currentEditable=new Set(fields.filter(port=>port.editable).map(port=>port.field.id));
  const packet=resource&&operation.packet?.resource&&same(operation.packet.resource,resource)?operation.packet:null;
@@ -66,7 +69,7 @@ function RecordFormScope(props:RecordFormProps){
  const dirty=!same(values,startValues.current);
  const needsReview=requiresRuntimeReview(startView.current,view,dirty||!!packet);
  const visibleRecord=record&&record.appId===view.appId&&record.tableId===view.tableId&&record.viewId===view.viewId&&scopeAllows(view.capabilities.read,identity.actorId,record.createdBy)?record:undefined;
- const canEditRecord=saved&&(!!visibleRecord&&scopeAllows(view.capabilities.edit,identity.actorId,visibleRecord.createdBy)||!!draft&&!record&&view.capabilities.draftEdit&&view.capabilities.edit==='all');
+ const canEditRecord=saved&&(!!visibleRecord&&scopeAllows(view.capabilities.edit,identity.actorId,visibleRecord.createdBy)||!!draft&&!record&&view.capabilities.draftEdit&&(trustedContext?trustedContext.canCommit:view.capabilities.edit==='all'));
  const retainedUnknown=unknown&&!!packet?.operationId&&operation.getPendingStatus()==='unknown';
 
  // Recovery packets are immutable. Reconstruct only present values/changes the
@@ -113,6 +116,14 @@ function RecordFormScope(props:RecordFormProps){
   const job={key:crypto.randomUUID(),request:{resource,path:`applications/${identity.appId}/forms/${identity.viewId}/drafts/${draft.id}`,method:'PATCH' as const,expectedStatus:200 as const,body:{expectedDraftVersion:draft.draftVersion,changes:{},removeFieldIds:[cleanupField]}}};
   pendingDraft.current=job;setCleanupField(null);setDraftError('');setDraftPhase('preflight');setDraftJob(job);
  };
+ const canCopyDraft=!!draft&&!!trustedContext&&draftBasisConflict&&!cleanupBlocked&&!invalidDraftIdentity;
+ const copyDraft=()=>{
+  if(!canCopyDraft||!draft||!trustedContext)return;
+  const resource={kind:'draft' as const,appId:identity.appId,viewId:identity.viewId,creationNonce:crypto.randomUUID()};
+  const payload=Object.fromEntries(Object.entries(values).filter(([id])=>currentEditable.has(id)));
+  const job={key:crypto.randomUUID(),request:{resource,path:`applications/${identity.appId}/forms/${identity.viewId}/drafts`,method:'POST' as const,expectedStatus:201 as const,body:{targetRecordId:draft.targetRecordId,schemaVersion:trustedContext.schemaVersion,baseRecordVersion:trustedContext.recordVersion,values:payload}}};
+  pendingDraft.current=job;setCopyConfirm(false);setDraftError('');setDraftPhase('preflight');setDraftJob(job);
+ };
  const settleDraft=(result?:DraftMutationResult,message='',code?:string)=>{
   if(result){confirmationSync.current=true;setConfirmed(true);readGuard.current={...readGuard.current,confirmed:true,packetId:null,phase:'idle',dirty:false};onDirtyChange(false);onDraftConfirmed?.(result);return;}
   pendingDraft.current=null;setDraftJob(null);setDraftPhase('idle');setDraftError(message);setDraftConflict(['APPLICATION_DRAFT_CONFLICT','APPLICATION_DRAFT_BASE_CONFLICT','APPLICATION_SCHEMA_CONFLICT','APPLICATION_POLICY_CONFLICT'].includes(code??''));
@@ -145,6 +156,8 @@ function RecordFormScope(props:RecordFormProps){
   {(draftConflict||draftBasisConflict)&&<button className="admin-button" type="button" onClick={onRefresh}>刷新草稿</button>}
   {draft?.conflicts.filter(c=>c.fieldId&&['FIELD_REMOVED','FIELD_PERMISSION_REVOKED'].includes(c.reason)).map(c=><div key={c.fieldId}><span>{c.reason==='FIELD_REMOVED'?'字段已移除':'字段权限已撤销'}：{c.fieldId}</span><button className="text-button" type="button" aria-label={'清除失效草稿项：'+c.fieldId} disabled={cleanupBlocked} onClick={()=>setCleanupField(c.fieldId)}>清除草稿项</button></div>)}
   {cleanupField&&<Modal title="清除草稿项" onClose={()=>setCleanupField(null)}><p>仅清除本人草稿中的这一项，不会修改正式记录，也不会重新绑定草稿版本。</p><p>{cleanupField}</p><div className="workflow-instance-confirm"><button type="button" className="admin-button" onClick={()=>setCleanupField(null)}>取消</button><button type="button" className="admin-button" disabled={cleanupBlocked} onClick={clearDraftField}>确认清除</button></div></Modal>}
+  {draft&&trustedContext&&draftBasisConflict&&<button type="button" className="admin-button" disabled={!canCopyDraft} onClick={()=>setCopyConfirm(true)}>另存为新草稿</button>}
+  {copyConfirm&&<Modal title="另存为新草稿" onClose={()=>setCopyConfirm(false)}><p>原草稿保留。将当前仍允许编辑的草稿值保存为独立新草稿，并明确绑定当前结构及记录版本；不会修改正式记录。</p><div className="workflow-instance-confirm"><button type="button" className="admin-button" onClick={()=>setCopyConfirm(false)}>取消</button><button type="button" className="admin-button" disabled={!canCopyDraft} onClick={copyDraft}>确认另存</button></div></Modal>}
   {draftError?<p role="alert">{draftConflict?'草稿版本或权限已变化，请刷新草稿并核对当前输入。':''}{draftError}</p>:null}
   {draftJob?<RecordDraftMutation job={draftJob} actorId={identity.actorId} operationRef={draftOperation} onPhase={setDraftPhase} settle={settleDraft} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>:null}
   {needsReview?<p role="alert">结构或权限已变化，请核对当前输入</p>:null}
