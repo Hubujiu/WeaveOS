@@ -108,8 +108,8 @@ test('Root unknown edit-draft creation retains original target and base after ac
  await expect(page.getByRole('button',{name:'重试原草稿操作',exact:true})).toBeVisible();await page.getByRole('button',{name:'重试原草稿操作',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();const writes=draftWrites(calls);expect(writes).toHaveLength(2);expect(writes[1]).toEqual(writes[0]);expect(writes[0].body).toMatchObject({targetRecordId:recordId,baseRecordVersion:9,values:{[fieldId]:'12.'}});expect(calls.filter(c=>c.path===recordPath+'/'+recordId&&c.method==='PATCH')).toEqual([]);
 });
 
-test('Root draft save uses the approved monochrome primary action geometry',async({page})=>{
- await setup(page);const dialog=await create(page);const save=dialog.getByRole('button',{name:'保存草稿',exact:true});await expect(save).toBeVisible();const style=await save.evaluate(node=>{const c=getComputedStyle(node),r=node.getBoundingClientRect();return {width:r.width,height:r.height,background:c.backgroundColor,color:c.color};});expect(style).toEqual({width:120,height:40,background:'rgb(37, 37, 37)',color:'rgb(255, 255, 255)'});
+test('Root draft save uses the approved monochrome secondary action geometry',async({page})=>{
+ await setup(page);const dialog=await create(page);const save=dialog.getByRole('button',{name:'保存草稿',exact:true});await expect(save).toBeVisible();const style=await save.evaluate(node=>{const c=getComputedStyle(node),r=node.getBoundingClientRect();return {width:r.width,height:r.height,background:c.backgroundColor,color:c.color};});expect(style).toEqual({width:120,height:40,background:'rgb(255, 255, 255)',color:'rgb(37, 37, 37)'});
 });
 
 test('Root current draft edit authority does not imply ordinary record read permission',async({page})=>{
