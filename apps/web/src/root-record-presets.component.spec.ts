@@ -9,9 +9,9 @@ const runtime={appId,viewId,tableId:appId,schemaVersion:2,viewVersion:1,policyRe
 const filter={operator:'and',children:[{fieldId:amount,operator:'gt',value:'9007199254740993.01'}]};
 const preset={id:presetId,appId,viewId,name:'高额方案',version:3,invalid:false,createdAt:'2026-10-10T00:00:00Z',updatedAt:'2026-10-11T00:00:00Z',filter,sort:{fieldId:amount,direction:'desc'},hiddenColumnIds:[title],columnOrder:[amount,'createdAt'],columnWidths:{[amount]:240}};
 const row={id:recordId,appId,viewId,tableId:appId,createdBy:actor.id,createdAt:'2026-10-10T00:00:00Z',updatedAt:'2026-10-11T00:00:00Z',recordVersion:1,schemaVersion:2,values:{[amount]:'9999999999999999.99',[title]:'差旅'},referenceDisplays:{}};
-async function setup(page:Page,options:{invalid?:boolean;invalidLeak?:boolean;listDenied?:boolean;queryChanged?:boolean;detailInvalid?:boolean;listDelay?:number;writeUnknown?:boolean;writeConflict?:boolean;confirmedReadFails?:boolean}={}){
+async function setup(page:Page,options:{invalid?:boolean;invalidLeak?:boolean;listDenied?:boolean;queryChanged?:boolean;detailInvalid?:boolean;listDelay?:number;writeUnknown?:boolean;writeConflict?:boolean;confirmedReadFails?:boolean;presetOverride?:Partial<typeof preset>}={}){
  const calls:{path:string;method:string;body:any;actor?:string;query:string}[]=[];
- let stored:any=preset,writeCount=0;
+ let stored:any={...preset,...options.presetOverride},writeCount=0;
  await page.route('**/api/v1/**',async route=>{
   const req=route.request(),p=new URL(req.url()).pathname.slice(8),method=req.method(),body=req.postData()?req.postDataJSON():null;
   calls.push({path:p,method,body,actor:req.headers()['x-expected-actor-id'],query:new URL(req.url()).search});let data:unknown;
@@ -133,4 +133,17 @@ test('Root private preset editor uses approved dimensions and numeric comparison
 });
 test('Root private preset editor stays within a narrow viewport with usable actions',async({page},testInfo)=>{
  await page.setViewportSize({width:390,height:844});await setup(page);await open(page);const panel=await newPreset(page);await expect(panel.getByRole('button',{name:'确定',exact:true})).toBeInViewport();const box=await panel.boundingBox();expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.x+box!.width).toBeLessThanOrEqual(390);await expect(page.locator('body')).toHaveJSProperty('scrollWidth',390);await testInfo.attach('private-preset-editor-mobile',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+});
+
+// V071 ADR: only five display system columns; only the two timestamps filter/sort.
+test('Root private preset applies system date conditions and preserves system layout columns',async({page})=>{
+ const dateFilter={operator:'and',children:[{fieldId:'createdAt',operator:'gte',value:'2026-10-01T00:00:00Z'}]};
+ const calls=await setup(page,{presetOverride:{filter:dateFilter,sort:{fieldId:'updatedAt',direction:'asc'},hiddenColumnIds:['id','createdBy'],columnOrder:['updatedAt',amount,'createdAt'],columnWidths:{updatedAt:220}}});await open(page);await page.getByRole('button',{name:'应用高额方案',exact:true}).click();await expect(page.getByRole('button',{name:'自定义筛选，已应用',exact:true})).toBeVisible();
+ expect(calls.filter(c=>c.path===path+'/records/search').at(-1)!.body).toMatchObject({filter:dateFilter,sort:{fieldId:'updatedAt',direction:'asc'},queryVersion:'preset-query-version'});await page.keyboard.press('Escape');
+ const header=(name:string)=>page.getByRole('columnheader').filter({has:page.getByText(name,{exact:true})});
+ await expect(header('更新时间')).toBeVisible();await expect(header('创建时间')).toBeVisible();await expect(header('记录版本')).toBeVisible();await expect(header('记录 ID')).toHaveCount(0);await expect(header('创建人')).toHaveCount(0);await expect(header('更新人')).toHaveCount(0);
+});
+test('Root preset editor offers only the two system timestamp filters alongside authorized business fields',async({page})=>{
+ await setup(page);await open(page);const editor=await newPreset(page);const choices=editor.getByLabel('条件 1.1 字段');await expect(choices.locator('option')).toHaveText(['金额','事由','创建时间','更新时间']);await choices.selectOption('createdAt');await editor.getByLabel('条件 1.1 比较').selectOption('gte');await editor.getByLabel('条件 1.1 值',{exact:true}).fill('2026-10-01T00:00:00Z');
+ await editor.getByLabel('自定义筛选名称').fill('本月记录');await editor.getByRole('button',{name:'确定',exact:true}).click();await expect(page.getByText('本月记录',{exact:true})).toBeVisible();
 });
