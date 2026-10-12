@@ -82,3 +82,9 @@ test('Root committed rework recovery does not require permission to start anothe
  await page.getByRole('button',{name:'返回主页',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();
  await expect(page.getByRole('button',{name:'恢复保存结果',exact:true})).toBeVisible();await page.getByRole('button',{name:'恢复保存结果',exact:true}).click();await expect(page.getByText('返工修改已保存',{exact:true})).toBeVisible();expect(calls.filter(c=>c.path.endsWith('/rework')&&c.method==='POST')).toHaveLength(1);expect(calls.filter(c=>c.path.startsWith('application-operations/')).at(-1)?.method).toBe('GET');
 });
+
+// Figma493:8702 uses a bottom-aligned 100/120px footer inside its 580x400 card.
+test('Root round confirmation keeps Figma footer sizing and bottom alignment',async({page})=>{
+ await setup(page);await open(page);const dialog=await choose(page);const cancel=dialog.getByRole('button',{name:'取消',exact:true}),submit=dialog.getByRole('button',{name:'重新提交',exact:true});
+ const box=await dialog.boundingBox(),a=await cancel.boundingBox(),b=await submit.boundingBox();expect(box!.width).toBe(580);expect(box!.height).toBe(400);expect(a!.width).toBe(100);expect(b!.width).toBe(120);expect(b!.height).toBe(40);expect(Math.abs(box!.y+box!.height-b!.y-b!.height-24)).toBeLessThanOrEqual(2);
+});
