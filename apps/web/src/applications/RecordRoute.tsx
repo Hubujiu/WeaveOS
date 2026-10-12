@@ -8,7 +8,8 @@ import {findRoundRecovery} from './workflows/roundRecovery';
 import {reworkRuntimeView} from './workflows/reworkView';
 import {validRoundPreview} from './workflows/roundContract';
 import {RecordForm} from './records/RecordForm';
-import type {MutationResult,RecordItem,RuntimeField,RuntimeView,UUID} from './records/contracts';
+import type {Draft,DraftMutationResult,MutationResult,RecordItem,RuntimeField,RuntimeView,UUID} from './records/contracts';
+import {validDraft} from './records/draftContract';
 import {parseRecordItem,parseRuntimeView} from './recordReadContracts';
 import {createNewRecordIdentity,type RecordEditorIdentity} from './records/recordState';
 import {projectRuntimeFields,scopeAllows} from './records/runtimeModel';
@@ -16,7 +17,7 @@ import {scopedUnconfirmed} from './recovery';
 import type {LoadReferenceCandidates,ReferenceCandidate} from './forms';
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-type Editor={identity:RecordEditorIdentity;view:RuntimeView;record?:RecordItem;mode:'create'|'edit'|'read';queryVersion?:string;reworkInstanceId?:string};
+type Editor={identity:RecordEditorIdentity;view:RuntimeView;record?:RecordItem;draft?:Draft;mode:'create'|'edit'|'read';queryVersion?:string;reworkInstanceId?:string};
 type PendingRead={identity:RecordEditorIdentity;view:RuntimeView|null;recordId:UUID;queryVersion?:string;mode:'read'|'edit';confirmedWrite:boolean};
 
 export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMismatch,onDirtyChange,registerLeaveGuard,requestSectionLeave}:{
@@ -27,10 +28,11 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
  const [recordDirty,setRecordDirty]=useState(false),[workflowDirty,setWorkflowDirty]=useState(false),[presetDirty,setPresetDirty]=useState(false);
  useEffect(()=>{onDirtyChange(recordDirty||workflowDirty||presetDirty);return()=>onDirtyChange(false);},[recordDirty,workflowDirty,presetDirty,onDirtyChange]);
  const [reworkSaved,setReworkSaved]=useState(false);
+ const [draftSaved,setDraftSaved]=useState(false),[pendingDraftRead,setPendingDraftRead]=useState<{id:string;confirmed:boolean}|null>(null);
  const [readError,setReadError]=useState(''),[saved,setSaved]=useState(false),[workspaceRefresh,setWorkspaceRefresh]=useState(0);
  const generation=useRef(0),openedRecovery=useRef(new Set<string>()),readController=useRef<AbortController|null>(null),originFocus=useRef<HTMLElement|null>(null);
  useEffect(()=>()=>{generation.current++;readController.current?.abort();},[]);
- const closeEditor=useCallback(()=>{generation.current++;readController.current?.abort();setEditor(null);setPendingRead(null);setReadError('');setRecordDirty(false);},[onDirtyChange]);
+ const closeEditor=useCallback(()=>{generation.current++;readController.current?.abort();setEditor(null);setPendingRead(null);setPendingDraftRead(null);setReadError('');setRecordDirty(false);},[onDirtyChange]);
  const captureOriginFocus=()=>{originFocus.current=document.activeElement instanceof HTMLElement?document.activeElement:null;};
  const guardedClose=()=>requestSectionLeave(()=>{
   const target=originFocus.current;
@@ -57,10 +59,10 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
    setPendingRead(null);setEditor({identity:nextIdentity,view,record,mode,queryVersion});
   }catch(error){if(current!==generation.current||controller.signal.aborted)return;handleError(error);setPendingRead({identity:nextIdentity,view,recordId,queryVersion,mode,confirmedWrite:false});setReadError('无法读取记录，请重试读取记录');}
  },[actorId,appId,viewId,onUnauthorized,onIdentityMismatch]);
- const openNew=(view:RuntimeView,queryVersion?:string)=>{captureOriginFocus();setSaved(false);setReworkSaved(false);setReadError('');setEditor({identity:createNewRecordIdentity(actorId,appId,viewId),view,mode:'create',queryVersion});};
+ const openNew=(view:RuntimeView,queryVersion?:string)=>{captureOriginFocus();setDraftSaved(false);setPendingDraftRead(null);setSaved(false);setReworkSaved(false);setReadError('');setEditor({identity:createNewRecordIdentity(actorId,appId,viewId),view,mode:'create',queryVersion});};
  const openRow=(view:RuntimeView,row:RecordItem,queryVersion:string)=>{
   if(view.capabilities.read==='none')return;
-  setSaved(false);setReworkSaved(false);void readRecord(view,row.id,queryVersion);
+  setDraftSaved(false);setPendingDraftRead(null);setSaved(false);setReworkSaved(false);void readRecord(view,row.id,queryVersion);
  };
  const refreshRead=useCallback(async(identity:RecordEditorIdentity,recordId:UUID,confirmedWrite:boolean)=>{
   setWorkspaceRefresh(value=>value+1);
@@ -78,9 +80,26 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   }catch(error){if(current!==generation.current||controller.signal.aborted)return;handleError(error);setPendingRead({identity,view:null,recordId,mode:'read',confirmedWrite});setReadError(confirmedWrite?'记录已保存，但无法读取记录；请重试读取记录':'无法读取记录，请重试读取记录');setSaved(confirmedWrite);setRecordDirty(false);}
  },[actorId,appId,viewId,onUnauthorized,onIdentityMismatch,onDirtyChange]);
  const onConfirmed=useCallback((result:MutationResult,identity:RecordEditorIdentity)=>{
-  setSaved(true);setReworkSaved(!!editor?.reworkInstanceId);setRecordDirty(false);
+  setDraftSaved(false);setPendingDraftRead(null);setSaved(true);setReworkSaved(!!editor?.reworkInstanceId);setRecordDirty(false);
   void refreshRead(identity,result.id,true);
  },[onDirtyChange,refreshRead,editor?.reworkInstanceId]);
+ const readDraft=useCallback(async(draftId:string,confirmedWrite:boolean)=>{
+  const current=++generation.current;readController.current?.abort();const controller=new AbortController();readController.current=controller;
+  setEditor(null);setPendingRead(null);setPendingDraftRead({id:draftId,confirmed:confirmedWrite});setReadError('');setRecordDirty(false);
+  try{
+   const runtime=parseRuntimeView(await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/runtime`,'GET',undefined,controller.signal),{appId,viewId});
+   const raw=await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/drafts/${draftId}`,'GET',undefined,controller.signal);
+   if(!validDraft(raw,viewId,runtime.tableId,draftId,runtime.fields.map(field=>field.id)))throw new Error('草稿响应格式不正确');
+   const mode=raw.targetRecordId?'edit':'create';
+   let record:RecordItem|undefined;
+   if(raw.targetRecordId){record=parseRecordItem(await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/records/${raw.targetRecordId}`,'GET',undefined,controller.signal),runtime,actorId);if(record.id!==raw.targetRecordId)throw new Error('草稿基础记录不匹配');}
+   const fields=projectRuntimeFields(runtime,mode,actorId,record).filter(port=>port.editable).map(port=>port.field.id);
+   if(!validDraft(raw,viewId,runtime.tableId,draftId,fields))throw new Error('草稿字段权限已变化');
+   if(current!==generation.current||controller.signal.aborted)return;
+   setPendingDraftRead(null);setEditor({identity:{kind:'draft',actorId,appId,viewId,draftId},view:runtime,record,draft:raw,mode});
+  }catch(error){if(current!==generation.current||controller.signal.aborted)return;handleError(error);setReadError(confirmedWrite?'草稿已保存，但无法读取草稿；请重试读取草稿':'无法读取草稿，请重试读取草稿');}
+ },[actorId,appId,viewId,onUnauthorized,onIdentityMismatch]);
+ const onDraftConfirmed=useCallback((result:DraftMutationResult)=>{setDraftSaved(true);setSaved(false);setReworkSaved(false);setRecordDirty(false);void readDraft(result.id,true);},[readDraft]);
  const editAllowed=(value:Editor)=>!!value.record&&scopeAllows(value.view.capabilities.edit,actorId,value.record.createdBy)&&projectRuntimeFields(value.view,'edit',actorId,value.record).some(field=>field.editable);
  const loadCandidates=useCallback<NonNullable<Parameters<typeof RecordForm>[0]['loadCandidates']>>(async(field:RuntimeField,request,signal)=>{
   const current=editor;
@@ -90,7 +109,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   const action=current.mode==='edit'?'edit':'create';
   const params=new URLSearchParams({fieldId:field.id,action,q:request.q,pageSize:String(request.pageSize)});
   if(request.pageToken)params.set('pageToken',request.pageToken);
-  if(action==='edit'&&current.identity.kind==='record')params.set('recordId',current.identity.recordId);
+  if(action==='edit'&&current.record)params.set('recordId',current.record.id);
   let envelope:ApplicationEnvelope<unknown>;
   try{envelope=await applicationApiEnvelope<unknown>(actorId,`applications/${appId}/forms/${viewId}/reference-candidates?${params.toString()}`,'GET',undefined,signal);}
   catch(error){handleError(error);throw error;}
@@ -148,6 +167,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
  const runtimeReady=useCallback((view:RuntimeView)=>recoverPacket(view),[recoverPacket]);
  const refreshEditor=()=>{
   if(!editor)return;
+  if(editor.draft){const id=editor.draft.id;requestSectionLeave(()=>{setDraftSaved(false);void readDraft(id,false);});return;}
   if(editor.record){requestSectionLeave(()=>{setSaved(false);setReworkSaved(false);void refreshRead(editor.identity,editor.record!.id,false);});return;}
   requestSectionLeave(()=>{
    setEditor(null);setPendingRead(null);setReadError('');setSaved(false);setReworkSaved(false);setRecordDirty(false);
@@ -158,17 +178,20 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
  const openRework=(instanceId:string)=>{if(editor?.record)readRework(instanceId,editor.identity,editor.record.id);};
  const hasPendingFlow=workflowDirty||scopedUnconfirmed(actorId).some(packet=>packet.resource?.kind==='instance-action'&&packet.resource.appId===appId&&packet.resource.viewId===viewId&&packet.resource.id===editor?.record?.id);
  const canRetryRead=!!pendingRead&&!!readError;
- const showingDetail=!!pendingRead||!!editor&&editor.mode!=='create';
+ const showingDetail=!!pendingDraftRead||!!pendingRead||!!editor&&editor.mode!=='create';
  const editorContent=<>
+   {pendingDraftRead&&!readError&&<p role="status">正在读取草稿…</p>}
+   {pendingDraftRead&&readError&&<button type="button" className="admin-button" onClick={()=>void readDraft(pendingDraftRead.id,pendingDraftRead.confirmed)}>重试读取草稿</button>}
    {pendingRead&&!readError&&<p role="status">正在读取记录…</p>}
    {readError&&<><p role="alert">{readError}</p>{canRetryRead&&<button type="button" className="admin-button" onClick={()=>{const target=pendingRead!;setReadError('');if(target.view)void readRecord(target.view,target.recordId,target.queryVersion,target.identity,target.mode);else void refreshRead(target.identity,target.recordId,target.confirmedWrite);}}>重试读取记录</button>}</>}
-   <div className="record-detail-grid">{editor&&<RecordForm key={JSON.stringify([editor.identity,editor.mode,editor.view.policyRevision,editor.view.schemaVersion,editor.view.viewVersion,editor.record?.recordVersion??'new'])} view={editor.view} identity={editor.identity} record={editor.record} mode={editor.mode} authorityKey={`${editor.view.policyRevision}:${editor.view.schemaVersion}:${editor.view.viewVersion}:${editor.record?.recordVersion??'new'}`}
+   <div className="record-detail-grid">{editor&&<RecordForm key={JSON.stringify([editor.identity,editor.mode,editor.view.policyRevision,editor.view.schemaVersion,editor.view.viewVersion,editor.record?.recordVersion??'new',editor.draft?.draftVersion])} view={editor.view} identity={editor.identity} record={editor.record} draft={editor.draft} onDraftConfirmed={onDraftConfirmed} mode={editor.mode} authorityKey={`${editor.view.policyRevision}:${editor.view.schemaVersion}:${editor.view.viewVersion}:${editor.record?.recordVersion??'new'}`}
     reworkInstanceId={editor.reworkInstanceId} queryVersion={editor.queryVersion} loadCandidates={loadCandidates} onConfirmed={onConfirmed} onDirtyChange={setRecordDirty} onRequestDiscard={guardedClose} onDiscard={closeEditor}
     onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard}
     onRefresh={refreshEditor}/>}
-   {editor?.record&&<RecordWorkflows onRework={openRework} actorId={actorId} appId={appId} viewId={viewId} recordId={editor.record.id} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onOpenAction={openFlowAction} onDirtyChange={setWorkflowDirty}/>} </div>
+   {editor?.record&&!editor.draft&&<RecordWorkflows onRework={openRework} actorId={actorId} appId={appId} viewId={viewId} recordId={editor.record.id} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onOpenAction={openFlowAction} onDirtyChange={setWorkflowDirty}/>} </div>
  </>;
  return <section className="record-route" aria-label="记录路由">
+  {draftSaved&&<p className="record-saved" role="status">草稿已保存</p>}
   {saved&&<p className="record-saved" role="status">{reworkSaved?"返工修改已保存":"记录已保存"}</p>}
   <div hidden={showingDetail} className="record-list-host"><RecordWorkspace requestSectionLeave={requestSectionLeave} registerLeaveGuard={registerLeaveGuard} onDirtyChange={setPresetDirty} key={`${actorId}:${appId}:${viewId}:${workspaceRefresh}`} actorId={actorId} appId={appId} viewId={viewId}
    onCreate={openNew} onOpenRecord={openRow} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onRuntimeReady={runtimeReady}/></div>
