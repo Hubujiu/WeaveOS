@@ -67,3 +67,12 @@ P9 additional source-audit gap: shared manager currently has no member/departmen
 
 ## 2026-10-12 10:02 UTC checkpoint
 Published dde: P11 selected resubmit/review9 UI passed; rework4 UI missing-entry RED preserved before implementation. P9 heading/geometry/focus passed;2 color expectations red then narrow local fix, remote GREEN pending. Local14 current rework permission intersection checks passed; RecordForm dedicated rework reuse now wired, full UI verification pending. New actual-unmount round/rework recovery tests await RED, not yet implemented. Exact dde complete Go and specialized backend jobs passed, browser still running. Full feature/real-service/visual delivery matrix above remains open.
+
+## Verified checkpoint — 2026-10-12 10:43 UTC
+
+- P9 display fields:8854 shard3 186PASS, including independent geometry/color/focus; exact screenshot personally inspected and retained. Private presets earlier SPA recovery remains verified.
+- P10 manual start: original ten cases plus true-unmount original-key recovery passed. Complete real-service journey remains outstanding.
+- P11 rounds: nine original resubmit/review cases and four original rework-save cases passed. Rework true-SPA recovery passed4944; lost current eligibility for already committed rework remained RED and is fixed in currentabd candidate pending results. Round post-retry locator corrected with all original assertions preserved. Footer geometry defect found in actual image; new independent Figma test unrun.
+- P12 drafts: closed authorized read adapter27 initial cases8RED→27GREEN, cursor/field-conflict extension43total4RED→43GREEN. Seven actual-Shell UI tests published first onabd41843; no draft UI implementation yet. CRUD/list/delete/atomic submit/full recovery still open.
+- Five warm exact-source candidates have complete Go success without reducing tests or raising time limits; latest4944 other specialized backend jobs passed. Current/full-product CI is not all green.
+- Workflow manager/designer, personal lists, templates/copy, ordinary record history and deletion/restore, full product E2E and final visual remain open. No feature removed to create apparent completion.
