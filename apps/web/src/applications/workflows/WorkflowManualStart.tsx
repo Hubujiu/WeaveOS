@@ -5,19 +5,23 @@ import {TablePagination} from '../../vendor/arca/components/motion/table/table-p
 import {applicationReadPost,ApplicationError} from '../api';
 import {useApplicationOperation,type ApplicationMutationRequest} from '../useApplicationOperation';
 import {createLeaveController,type RegisterLeaveGuard} from '../forms/leaveGuard';
+import {findManualStartRecovery} from './manualStartRecovery';
 import {validManualStartPage,type ManualStartOption,type ManualStartPage,type ManualStartReceipt} from './manualStartContract';
 
 type Props={actorId:string;appId:string;viewId:string;recordId:string;onClose:()=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onDirtyChange:(dirty:boolean)=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void};
 type Parameters={page:number;pageSize:number};
-type Job={key:string;request:ApplicationMutationRequest};
+type Job={key:string;request:ApplicationMutationRequest;recovered?:boolean};
 type Operation=ReturnType<typeof useApplicationOperation<ManualStartReceipt>>;
 export function WorkflowManualStart(props:Props){return <ManualStartScope key={JSON.stringify([props.actorId,props.appId,props.viewId,props.recordId])} {...props}/>;}
 function ManualStartScope({actorId,appId,viewId,recordId,onClose,onUnauthorized,onIdentityMismatch,onDirtyChange,registerLeaveGuard,requestSectionLeave}:Props){
  const scope=JSON.stringify(['manual-start',actorId,appId,viewId,recordId]),path=`applications/${appId}/forms/${viewId}/records/${recordId}`;
  const [parameters,setParameters]=useState<Parameters>({page:1,pageSize:20}),[selected,setSelected]=useState<ManualStartOption|null>(null);
- const [job,setJob]=useState<Job|null>(null),[result,setResult]=useState<ManualStartReceipt|null>(null),[error,setError]=useState(''),[stale,setStale]=useState(false);
+ const [job,setJob]=useState<Job|null>(()=>{
+  const packet=findManualStartRecovery(actorId,appId,viewId,recordId);
+  return packet?.resource?{key:packet.operationId!,recovered:true,request:{resource:packet.resource,path:packet.path,method:packet.method,expectedStatus:packet.expectedStatus,body:packet.body}}:null;
+ }),[result,setResult]=useState<ManualStartReceipt|null>(null),[error,setError]=useState(''),[stale,setStale]=useState(false);
  const [operationBusy,setOperationBusy]=useState(false);
- const pending=useRef<Job|null>(null),operationRef=useRef<Operation|null>(null),released=useRef(false);
+ const pending=useRef<Job|null>(job),operationRef=useRef<Operation|null>(null),released=useRef(false);
  const transport=useCallback(async(body:Parameters&{queryVersion?:string},signal:AbortSignal)=>{
   await Promise.resolve();if(signal.aborted)throw signal.reason??new DOMException('Aborted','AbortError');
   const raw=await applicationReadPost<unknown>(actorId,path+'/workflow-start-options/search',body,signal);
@@ -28,7 +32,7 @@ function ManualStartScope({actorId,appId,viewId,recordId,onClose,onUnauthorized,
  useEffect(()=>{if(failure instanceof ApplicationError&&failure.status===401)onUnauthorized();else if(failure instanceof ApplicationError&&failure.code==='AUTH_SESSION_CHANGED')onIdentityMismatch();},[failure,onUnauthorized,onIdentityMismatch]);
  useEffect(()=>{onDirtyChange(!!job);return()=>onDirtyChange(false);},[job,onDirtyChange]);
  useLayoutEffect(()=>registerLeaveGuard({kind:'manual-start',actorId,appId,viewId,recordId},createLeaveController(()=>{
-  const operation=operationRef.current,status=operation?.getPendingStatus()??(pending.current?'preflight':'clean');
+  const operation=operationRef.current,status=operation?.getPendingStatus()??(pending.current?(pending.current.recovered?'unknown':'preflight'):'clean');
   return {status:released.current?'clean':status,fingerprint:JSON.stringify([status,operation?.packet?.operationId,pending.current?.key])};
  },decision=>{
   if(decision==='retain_operation'){released.current=true;return;}
@@ -66,7 +70,7 @@ function ManualStartMutation({actorId,scope,job,operationRef,onBusyChange,settle
  const latest=useRef(operation);latest.current=operation;
  useLayoutEffect(()=>{operationRef.current=operation;onBusyChange(operation.phase==='preflight'||operation.phase==='pending');},[operation,onBusyChange]);
  useLayoutEffect(()=>()=>{operationRef.current=null;},[]);
- useEffect(()=>{let current=true;void Promise.resolve().then(()=>{if(current)latest.current.start(job.request);});return()=>{current=false;};},[job]);
+ useEffect(()=>{let current=true;void Promise.resolve().then(()=>{if(current&&!job.recovered)latest.current.start(job.request);});return()=>{current=false;};},[job]);
  useEffect(()=>{if(operation.phase==='error')settle(job,undefined,operation.message,operation.errorCode);},[operation.phase,operation.message,operation.errorCode]);
  if(operation.phase==='unconfirmed')return <div><p role="alert">发起结果尚未确认。{operation.message}</p><div className="workflow-instance-buttons"><button type="button" className="admin-button" onClick={operation.query}>核查发起结果</button><button type="button" className="admin-button" onClick={operation.retry}>重试原发起</button></div></div>;
  return <p role="status">正在核对发起请求…</p>;
