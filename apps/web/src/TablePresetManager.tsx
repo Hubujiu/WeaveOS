@@ -12,7 +12,7 @@ import './table-presets.css';
 export type ResourcePreset = {id:string;name:string;version:number;invalid?:boolean;reason?:string;filter?:ResourceFilterGroup|null;hiddenColumnIds?:string[]};
 export type ResourcePresetRepository = {list:()=>Promise<{items:ResourcePreset[]}>;read:(id:string)=>Promise<ResourcePreset>;save:(input:{name:string;filter:ResourceFilterGroup|null;hiddenColumnIds:string[]},existing?:{id:string;version:number})=>Promise<ResourcePreset>;remove:(id:string,version:number)=>Promise<void>};
 export type PresetEditorState={dirty:boolean;fingerprint:string;discard:()=>void};
-export type ResourceManagerConfig = {onEditorState?:(state:PresetEditorState)=>void;operationStatus?:ReactNode;scopeKey:string;fields:readonly ResourceFilterField[];columns:readonly BusinessColumn[];repository:ResourcePresetRepository;refreshDescriptors:()=>Promise<{fields:readonly ResourceFilterField[];columns:readonly BusinessColumn[]}>;onApply:(preset:ResourcePreset|null)=>Promise<boolean>};
+export type ResourceManagerConfig = {writeBlocked?:boolean;listRevision?:number;onEditorState?:(state:PresetEditorState)=>void;operationStatus?:ReactNode;scopeKey:string;fields:readonly ResourceFilterField[];columns:readonly BusinessColumn[];repository:ResourcePresetRepository;refreshDescriptors:()=>Promise<{fields:readonly ResourceFilterField[];columns:readonly BusinessColumn[]}>;onApply:(preset:ResourcePreset|null)=>Promise<boolean>};
 type CommonProps={hiddenColumnIds:readonly string[];onDirty:(dirty:boolean)=>void;onUnauthorized:()=>void};
 type Props=(CommonProps & {view:QueryView;active:AppliedPreset|null;options?:PresetOptions;loadOptions:()=>Promise<PresetOptions>;onApply:(preset:TablePreset|null)=>Promise<boolean>;resource?:never})|(CommonProps & {view:'resource';resource:ResourceManagerConfig;active:ResourcePreset|null;options?:never;loadOptions?:never;onApply?:never});
 type ManagedPreset=TablePreset|ResourcePreset;
@@ -26,7 +26,8 @@ export function TablePresetManager(props:Props){
  const onApply=view==='resource'?async (_preset:TablePreset|null)=>false:props.onApply;
  const filterKey=view==='resource'?'fieldId':'field';
  const [open,setOpen]=useState(false),[expanded,setExpanded]=useState(false),[popup,setPopup]=useState<HTMLDivElement|null>(null);
- const [items,setItems]=useState<ManagedPreset[]>([]),[edit,setEdit]=useState<Edit|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[listLoading,setListLoading]=useState(false),[conflict,setConflict]=useState(false);
+ const [items,setItems]=useState<ManagedPreset[]>([]),[edit,setEdit]=useState<Edit|null>(null),[error,setError]=useState(''),[localBusy,setBusy]=useState(false),[listLoading,setListLoading]=useState(false),[conflict,setConflict]=useState(false);
+ const busy=localBusy||!!resource?.writeBlocked;
  const [confirmation,setConfirmation]=useState<{kind:'cancel'|'delete'|'leave'|'reload';preset?:ManagedPreset;returnToManager?:boolean}|null>(null);
  const [reducedMotion,setReducedMotion]=useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches);
  const trigger=useRef<HTMLButtonElement>(null),firstControl=useRef<HTMLButtonElement>(null),nameControl=useRef<HTMLInputElement>(null),actions=useRef<Popover.Root.Actions|null>(null);
@@ -51,6 +52,8 @@ export function TablePresetManager(props:Props){
  function failed(e:unknown){if(e instanceof WorkspaceError&&e.status===401)onUnauthorized();setError(e instanceof Error?e.message:'服务暂时不可用，请稍后重试');if(e instanceof WorkspaceError&&e.code==='PERSONNEL_PRESET_CONFLICT')setConflict(true);}
  async function load(){const token=++requests.current;setListLoading(true);setError('');try{const result=resource?await resource.repository.list():await workspaceApi<{items:TablePreset[]}>('personnel/table-presets?view='+view);if(token===requests.current)setItems(result.items);}catch(e){if(token===requests.current)failed(e);}finally{if(token===requests.current)setListLoading(false);}}
  useEffect(()=>{setItems([]);setEdit(null);setConfirmation(null);if(open)void load();return()=>{requests.current++;};},[open,view,resource?.scopeKey]);
+ const listRevision=useRef(resource?.listRevision);
+ useEffect(()=>{if(listRevision.current===resource?.listRevision)return;listRevision.current=resource?.listRevision;if(open)void load();},[resource?.listRevision,open]);
  function invalidateCloseFocus(){focusLifecycle.current++;closeFocus.current=null;}
  function restoreCloseFocus(token:number,keyboard=false){
   const pending=closeFocus.current,button=trigger.current;

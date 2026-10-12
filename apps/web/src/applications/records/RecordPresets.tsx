@@ -1,5 +1,6 @@
 import {useCallback,useEffect,useLayoutEffect,useRef,useState,type MutableRefObject} from 'react';
 import {TablePresetManager,type ResourcePreset,type ResourcePresetRepository,type PresetEditorState} from '../../TablePresetManager';
+import {findPresetRecovery} from './presetRecovery';
 import {presetDescriptors as descriptors} from './presetDescriptors';
 import {applicationApi,ApplicationError} from '../api';
 import {useApplicationOperation,type ApplicationMutationRequest} from '../useApplicationOperation';
@@ -9,7 +10,7 @@ import type {RuntimeView,RecordSort} from './contracts';
 
 type Layout={sort:RecordSort;hiddenColumnIds:string[];columnOrder:string[];columnWidths:Record<string,number>};
 type Props={registerLeaveGuard:RegisterLeaveGuard;onDirtyChange:(dirty:boolean)=>void;actorId:string;view:RuntimeView;layout:Layout;active:ApplicationPresetValid|null;onApply:(preset:ApplicationPresetValid|null)=>Promise<boolean>;refreshRuntime:(signal:AbortSignal)=>Promise<RuntimeView>;onUnauthorized:()=>void;onIdentityMismatch:()=>void};
-type Job={key:string;request:ApplicationMutationRequest;resolve:(value:PresetMutationReceipt|undefined)=>void;reject:(error:Error)=>void};
+type Job={recovered?:boolean;key:string;request:ApplicationMutationRequest;resolve:(value:PresetMutationReceipt|undefined)=>void;reject:(error:Error)=>void};
 
 
 // Business adapter for the approved shared editor. No second query or mutation
@@ -18,14 +19,17 @@ type PresetOperation=ReturnType<typeof useApplicationOperation<PresetMutationRec
 export function RecordPresets({registerLeaveGuard,onDirtyChange,actorId,view,layout,active,onApply,refreshRuntime,onUnauthorized,onIdentityMismatch}:Props){
  const {appId,viewId}=view,scope=JSON.stringify(['presets',actorId,appId,viewId]);
  const base=`applications/${appId}/forms/${viewId}/table-presets`;
- const [job,setJob]=useState<Job|null>(null),[dirty,setDirty]=useState(false),[operating,setOperating]=useState(false);
+ const [job,setJob]=useState<Job|null>(()=>{
+  const packet=findPresetRecovery(actorId,appId,viewId);if(!packet?.resource)return null;
+  return {key:packet.operationId!,recovered:true,request:{resource:packet.resource,path:packet.path,method:packet.method,expectedStatus:packet.expectedStatus,body:packet.body,expectedVersion:packet.query?.expectedVersion},resolve:()=>{},reject:()=>{}};
+ }),[dirty,setDirty]=useState(false),[operating,setOperating]=useState(!!job),[listRevision,setListRevision]=useState(0);
  const [confirmedRead,setConfirmedRead]=useState<{id:string;resolve:(preset:ApplicationPreset)=>void;message:string}|null>(null),[readingConfirmed,setReadingConfirmed]=useState(false);
  const released=useRef(false);
  const editor=useRef<PresetEditorState>({dirty:false,fingerprint:'',discard:()=>{}}),operationRef=useRef<PresetOperation|null>(null);
  const editorState=useCallback((state:PresetEditorState)=>{editor.current=state;},[]);
  useEffect(()=>{onDirtyChange(dirty||operating);return()=>onDirtyChange(false);},[dirty,operating,onDirtyChange]);
  useLayoutEffect(()=>registerLeaveGuard({kind:'preset',actorId,appId,viewId},createLeaveController(()=>{
-  const operation=operationRef.current,pendingStatus=operation?.getPendingStatus();
+  const operation=operationRef.current,pendingStatus=operation?.getPendingStatus()??(pending.current?.recovered?'unknown':pending.current?'preflight':null);
   return {status:released.current?'clean':pendingStatus??(editor.current.dirty?'draft':'clean'),fingerprint:JSON.stringify([pendingStatus,operation?.packet?.operationId,editor.current.fingerprint])};
  },decision=>{
   if(decision==='retain_operation'){released.current=true;return;}
@@ -36,7 +40,7 @@ export function RecordPresets({registerLeaveGuard,onDirtyChange,actorId,view,lay
   }
   if(editor.current.dirty)editor.current.discard();
  })),[scope,registerLeaveGuard]);
- const pending=useRef<Job|null>(null),known=useRef(new Map<string,ApplicationPreset>());
+ const pending=useRef<Job|null>(job),known=useRef(new Map<string,ApplicationPreset>());
  const life=useRef<AbortController|null>(null);
  useEffect(()=>{const controller=new AbortController();life.current=controller;return()=>controller.abort();},[scope]);
  const report=(error:unknown)=>{if(error instanceof ApplicationError&&error.status===401)onUnauthorized();else if(error instanceof ApplicationError&&error.code==='AUTH_SESSION_CHANGED')onIdentityMismatch();};
@@ -76,7 +80,15 @@ export function RecordPresets({registerLeaveGuard,onDirtyChange,actorId,view,lay
  };
  function settle(current:Job,result:PresetMutationReceipt|undefined,error?:Error){
   if(pending.current!==current)return;pending.current=null;setJob(null);
-  if(error)current.reject(error);else current.resolve(result);
+  if(current.recovered){
+   if(error)return;
+   if(current.request.method==='DELETE'){setListRevision(value=>value+1);return;}
+   if(result){
+    const complete=()=>setListRevision(value=>value+1);
+    setConfirmedRead({id:result.id,resolve:complete,message:'方案操作已确认，正在读取最新配置。'});
+    void read(result.id).then(()=>{if(!life.current?.signal.aborted){setConfirmedRead(null);complete();}}).catch(cause=>{if(!life.current?.signal.aborted)setConfirmedRead({id:result.id,resolve:complete,message:'方案操作已确认，但最新配置无法读取。'+(cause instanceof Error?cause.message:'')});});
+   }
+  }else if(error)current.reject(error);else current.resolve(result);
  }
  const apply=async(preset:ResourcePreset|null)=>{
   if(preset&&!validApplicationPreset(preset,{appId,viewId}))throw new Error('方案响应格式不正确');
@@ -91,7 +103,7 @@ export function RecordPresets({registerLeaveGuard,onDirtyChange,actorId,view,lay
   finally{setReadingConfirmed(false);}
  }
  return <TablePresetManager view="resource" active={active} hiddenColumnIds={layout.hiddenColumnIds} onDirty={setDirty} onUnauthorized={onUnauthorized}
-  resource={{scopeKey:scope,onEditorState:editorState,...descriptors(view),repository,onApply:apply,
+  resource={{scopeKey:scope,listRevision,writeBlocked:!!job||!!confirmedRead,onEditorState:editorState,...descriptors(view),repository,onApply:apply,
    refreshDescriptors:async()=>descriptors(await refreshRuntime(life.current!.signal)),
    operationStatus:confirmedRead?<div><p role="alert">{confirmedRead.message}</p><button type="button" disabled={readingConfirmed} onClick={()=>void retryConfirmedRead()}>重试读取已保存方案</button></div>:job?<PresetMutation key={job.key} actorId={actorId} scope={scope} job={job} operationRef={operationRef} onActivity={setOperating} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} settle={settle}/>:null}}/>;
 }
@@ -102,7 +114,7 @@ function PresetMutation({actorId,scope,job,operationRef,onActivity,onUnauthorize
  useLayoutEffect(()=>{operationRef.current=operation;});
  useEffect(()=>()=>{operationRef.current=null;onActivity(false);},[]);
  useEffect(()=>{onActivity(['preflight','pending','unconfirmed'].includes(operation.phase));},[operation.phase,onActivity]);
- useEffect(()=>{let current=true;void Promise.resolve().then(()=>{if(current)latest.current.start(job.request);});return()=>{current=false;};},[job]);
+ useEffect(()=>{let current=true;void Promise.resolve().then(()=>{if(current&&!job.recovered)latest.current.start(job.request);});return()=>{current=false;};},[job]);
  useEffect(()=>{if(operation.phase==='error')settle(job,undefined,new Error(operation.errorCode==='APPLICATION_PRESET_CONFLICT'?'方案已被更新，请重新加载后核对；当前输入已保留':operation.message));},[operation.phase,operation.message,operation.errorCode]);
  if(operation.phase==='unconfirmed')return <div><p role="alert">方案操作结果尚未确认。{operation.message}</p><button type="button" onClick={operation.query}>核查方案操作</button><button type="button" onClick={operation.retry}>重试原方案操作</button></div>;
  return <p role="status">正在核对方案操作…</p>;
