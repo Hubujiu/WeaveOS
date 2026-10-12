@@ -144,6 +144,6 @@ test('Root private preset applies system date conditions and preserves system la
  await expect(header('更新时间')).toBeVisible();await expect(header('创建时间')).toBeVisible();await expect(header('记录版本')).toBeVisible();await expect(header('记录 ID')).toHaveCount(0);await expect(header('创建人')).toHaveCount(0);await expect(header('更新人')).toHaveCount(0);
 });
 test('Root preset editor offers only the two system timestamp filters alongside authorized business fields',async({page})=>{
- await setup(page);await open(page);const editor=await newPreset(page);const choices=editor.getByLabel('条件 1.1 字段');await expect(choices.locator('option')).toHaveText(['金额','事由','创建时间','更新时间']);await choices.selectOption('createdAt');await editor.getByLabel('条件 1.1 比较').selectOption('gte');await editor.getByLabel('条件 1.1 值',{exact:true}).fill('2026-10-01T00:00:00Z');
+ await setup(page);await open(page);const editor=await newPreset(page);const choices=editor.getByLabel('条件 1.1 字段');await expect(choices.locator('option')).toHaveText(['请选择字段','金额','事由','创建时间','更新时间']);await choices.selectOption('createdAt');await editor.getByLabel('条件 1.1 比较').selectOption('gte');await editor.getByLabel('条件 1.1 值',{exact:true}).fill('2026-10-01T00:00:00Z');
  await editor.getByLabel('自定义筛选名称').fill('本月记录');await editor.getByRole('button',{name:'确定',exact:true}).click();await expect(page.getByText('本月记录',{exact:true})).toBeVisible();
 });
