@@ -16,5 +16,8 @@ export function validManualStartPage(value:unknown,page:number,pageSize:number):
 export function validManualStartReceipt(value:unknown,operationId:string,flowId:string):value is ManualStartReceipt{
  return id(operationId)&&id(flowId)&&object(value)&&exact(value,['operationId','flowId','instanceId','status','ignored'])&&value.operationId===operationId&&value.flowId===flowId&&id(value.instanceId)&&((value.status==='accepted'&&value.ignored===false)||(value.status==='ignored'&&value.ignored===true));
 }
-// V044 pre-operation packet declaration; behavior follows independent RED.
-export function validManualStartRequest(_resource:unknown,_request:unknown):boolean{return false;}
+export function validManualStartRequest(resource:unknown,request:unknown):boolean{
+ if(!object(resource)||!exact(resource,['kind','appId','viewId','id','flowId'])||resource.kind!=='manual-start'||!['appId','viewId','id','flowId'].every(key=>id(resource[key]))||!object(request))return false;
+ const path=`applications/${resource.appId}/forms/${resource.viewId}/records/${resource.id}/workflow-starts`;
+ return request.path===path&&request.method==='POST'&&request.expectedStatus===202&&object(request.body)&&exact(request.body,['flowId','expectedWorkflowRevision','expectedSchemaVersion','expectedRecordVersion'])&&request.body.flowId===resource.flowId&&positive(request.body.expectedWorkflowRevision)&&positive(request.body.expectedSchemaVersion)&&positive(request.body.expectedRecordVersion);
+}
