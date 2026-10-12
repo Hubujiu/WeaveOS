@@ -26,7 +26,7 @@ export function RecordPresets({registerLeaveGuard,onDirtyChange,actorId,view,lay
  const editor=useRef<PresetEditorState>({dirty:false,fingerprint:'',discard:()=>{}}),operationRef=useRef<PresetOperation|null>(null);
  const editorState=useCallback((state:PresetEditorState)=>{editor.current=state;},[]);
  useEffect(()=>{onDirtyChange(dirty||operating);return()=>onDirtyChange(false);},[dirty,operating,onDirtyChange]);
- useEffect(()=>registerLeaveGuard({kind:'preset',actorId,appId,viewId},createLeaveController(()=>{
+ useLayoutEffect(()=>registerLeaveGuard({kind:'preset',actorId,appId,viewId},createLeaveController(()=>{
   const operation=operationRef.current,pendingStatus=operation?.getPendingStatus();
   return {status:pendingStatus??(editor.current.dirty?'draft':'clean'),fingerprint:JSON.stringify([pendingStatus,operation?.packet?.operationId,editor.current.fingerprint])};
  },decision=>{

@@ -145,7 +145,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
  </>;
  return <section className="record-route" aria-label="记录路由">
   {saved&&<p className="record-saved" role="status">记录已保存</p>}
-  <div hidden={showingDetail} className="record-list-host"><RecordWorkspace registerLeaveGuard={registerLeaveGuard} onDirtyChange={setPresetDirty} key={`${actorId}:${appId}:${viewId}:${workspaceRefresh}`} actorId={actorId} appId={appId} viewId={viewId}
+  <div hidden={showingDetail} className="record-list-host"><RecordWorkspace requestSectionLeave={requestSectionLeave} registerLeaveGuard={registerLeaveGuard} onDirtyChange={setPresetDirty} key={`${actorId}:${appId}:${viewId}:${workspaceRefresh}`} actorId={actorId} appId={appId} viewId={viewId}
    onCreate={openNew} onOpenRecord={openRow} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onRuntimeReady={runtimeReady}/></div>
   {editor?.mode==='create'?<Modal title="新建记录" onClose={guardedClose}>{editorContent}</Modal>:showingDetail?<section className="record-detail-page" aria-label="记录详情">
    <div className="app-page-heading"><h1>记录详情</h1><div className="record-detail-actions"><button type="button" className="admin-button" aria-label="关闭" onClick={guardedClose}>返回</button>{editor?.mode==='read'&&editAllowed(editor)&&<button type="button" className="admin-button primary" disabled={hasPendingFlow} onClick={()=>{setSaved(false);setEditor({...editor,mode:'edit',queryVersion:editor.queryVersion});}}>编辑记录</button>}</div></div>

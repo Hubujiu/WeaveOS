@@ -11,7 +11,7 @@ import {useResourceQuery} from '../usePersonnelQuery';
 
 export type RecordWorkspaceProps={
  actorId:string;appId:string;viewId:string;
- onDirtyChange:(dirty:boolean)=>void;registerLeaveGuard:RegisterLeaveGuard;
+ onDirtyChange:(dirty:boolean)=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void;
  onCreate:(view:RuntimeView,queryVersion?:string)=>void;
  onOpenRecord:(view:RuntimeView,record:RecordItem,queryVersion:string)=>void;
  onRuntimeReady?:(view:RuntimeView)=>void;
@@ -42,7 +42,7 @@ export function RecordWorkspace(props:RecordWorkspaceProps){
  },[actorId,appId,viewId,scope,reload,report]);
  const current=state.scope===scope?state:null;
  useEffect(()=>{if(current?.view)props.onRuntimeReady?.(current.view);},[current?.view,props.onRuntimeReady]);
- const refresh=()=>{setState(old=>old.scope===scope?{...old,view:null,error:null,errorCode:null,loading:true}:old);setReload(value=>value+1);};
+ const refresh=()=>props.requestSectionLeave(()=>{setState(old=>old.scope===scope?{...old,view:null,error:null,errorCode:null,loading:true}:old);setReload(value=>value+1);});
  if(!current||current.loading)return <section className="record-workspace" aria-label="记录列表"><p role="status">正在读取记录…</p></section>;
  if(!current.view)return <section className="record-workspace" aria-label="记录列表"><p role="alert">{current.errorCode==='APPLICATION_SCHEMA_NOT_READY'?'表单尚未配置，请先完成表单配置。':current.error??genericError}</p><button className="admin-button" type="button" onClick={refresh}>重试</button></section>;
  const view=current.view;
