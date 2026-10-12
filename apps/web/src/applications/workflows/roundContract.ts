@@ -21,4 +21,10 @@ export function validRoundStartRequest(resource:unknown,request:unknown):boolean
  return request.path===path&&request.method==='POST'&&request.expectedStatus===202&&object(request.body)&&exact(request.body,['kind','expectedWorkflowRevision','expectedSchemaVersion','expectedRecordVersion'])&&request.body.kind===resource.roundKind&&positive(request.body.expectedWorkflowRevision)&&positive(request.body.expectedSchemaVersion)&&positive(request.body.expectedRecordVersion);
 }
 
-export function validRoundReworkRequest(resource:unknown,request:unknown):boolean{return false;}
+export function validRoundReworkRequest(resource:unknown,request:unknown):boolean{
+ if(!object(resource)||!exact(resource,['kind','appId','viewId','id','instanceId'])||resource.kind!=='round-record'||!['appId','viewId','id','instanceId'].every(k=>id(resource[k]))||!object(request))return false;
+ const path=`applications/${resource.appId}/forms/${resource.viewId}/records/${resource.id}/workflows/${resource.instanceId}/rework`;
+ if(request.path!==path||request.method!=='POST'||request.expectedStatus!==200||!object(request.body)||!exact(request.body,['expectedSchemaVersion','expectedRecordVersion','changes'])||!positive(request.body.expectedSchemaVersion)||!positive(request.body.expectedRecordVersion)||!object(request.body.changes))return false;
+ const entries=Object.entries(request.body.changes);
+ return entries.length>=1&&entries.length<=200&&entries.every(([key,value])=>id(key)&&(value===null||typeof value==='string'||typeof value==='boolean'||Array.isArray(value)&&value.every(id)));
+}
