@@ -21,3 +21,5 @@ export function validDraft(value:unknown,viewId:string,tableId:string,draftId:st
  if(!Object.entries(value.values).every(([key,entry])=>id(key)&&allowed.has(key)&&(entry===null||typeof entry==='string'||typeof entry==='boolean'||Array.isArray(entry)&&entry.every(item=>typeof item==='string'))))return false;
  return value.hasConflicts===(value.conflicts.length>0)&&value.conflicts.every(conflict=>object(conflict)&&exact(conflict,['fieldId','reason'])&&(conflict.fieldId===null||id(conflict.fieldId))&&typeof conflict.reason==='string'&&['FIELD_REMOVED','FIELD_PERMISSION_REVOKED','SCHEMA_CHANGED','BASE_RECORD_CHANGED'].includes(conflict.reason));
 }
+
+export function validDraftPage(data:unknown,pagination:unknown,viewId:string,tableId:string,pageSize:number):data is {items:DraftSummary[]}{return false;}
