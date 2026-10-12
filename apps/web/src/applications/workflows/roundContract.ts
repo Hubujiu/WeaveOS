@@ -20,3 +20,5 @@ export function validRoundStartRequest(resource:unknown,request:unknown):boolean
  const path=`applications/${resource.appId}/forms/${resource.viewId}/records/${resource.id}/workflows/${resource.instanceId}/round-actions`;
  return request.path===path&&request.method==='POST'&&request.expectedStatus===202&&object(request.body)&&exact(request.body,['kind','expectedWorkflowRevision','expectedSchemaVersion','expectedRecordVersion'])&&request.body.kind===resource.roundKind&&positive(request.body.expectedWorkflowRevision)&&positive(request.body.expectedSchemaVersion)&&positive(request.body.expectedRecordVersion);
 }
+
+export function validRoundReworkRequest(resource:unknown,request:unknown):boolean{return false;}
