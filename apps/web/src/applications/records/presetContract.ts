@@ -30,19 +30,34 @@ function filter(v:unknown):boolean{
  const valid=and(v)||object(v)&&exact(v,['operator','children'])&&v.operator==='or'&&Array.isArray(v.children)&&v.children.length>0&&v.children.every(and);
  return !!valid&&leaves<=20&&bytes(v)<=16384;
 }
-export function validApplicationPreset(value:unknown,scope:PresetScope,expectedId?:string):value is ApplicationPreset{
- if(!id(scope.appId)||!id(scope.viewId)||!object(value)||!id(value.id)||(expectedId!==undefined&&value.id!==expectedId)||!positive(value.version)||!text(value.name)||!value.name.trim()||[...value.name].length>100)return false;
- if(value.invalid===true)return exact(value,['id','name','version','invalid','reason'])&&oneOf(value.reason,['FIELD_UNAVAILABLE','PERMISSION_CHANGED','DEFINITION_CHANGED']);
- if(value.invalid!==false||!exact(value,['id','appId','viewId','name','version','invalid','createdAt','updatedAt','filter','sort','hiddenColumnIds','columnOrder','columnWidths'])||value.appId!==scope.appId||value.viewId!==scope.viewId||!timestamp(value.createdAt)||!timestamp(value.updatedAt))return false;
+const stateKeys=['name','filter','sort','hiddenColumnIds','columnOrder','columnWidths'];
+function validState(value:Record<string,unknown>):boolean{
+ if(!text(value.name)||!value.name.trim()||[...value.name].length>100)return false;
  if(!filter(value.filter)||!columns(value.hiddenColumnIds)||!columns(value.columnOrder)||!object(value.columnWidths)||Object.keys(value.columnWidths).length>205||!Object.entries(value.columnWidths).every(([key,width])=>column(key)&&positive(width)))return false;
  const sort=value.sort;
  if(sort!==null&&(!object(sort)||!exact(sort,['fieldId','direction'])||!(id(sort.fieldId)||sort.fieldId==='createdAt'||sort.fieldId==='updatedAt')||!oneOf(sort.direction,['asc','desc'])))return false;
  return bytes({name:value.name,filter:value.filter,sort:value.sort,hiddenColumnIds:value.hiddenColumnIds,columnOrder:value.columnOrder,columnWidths:value.columnWidths})<=32768;
 }
+export function validApplicationPreset(value:unknown,scope:PresetScope,expectedId?:string):value is ApplicationPreset{
+ if(!id(scope.appId)||!id(scope.viewId)||!object(value)||!id(value.id)||(expectedId!==undefined&&value.id!==expectedId)||!positive(value.version)||!text(value.name)||!value.name.trim()||[...value.name].length>100)return false;
+ if(value.invalid===true)return exact(value,['id','name','version','invalid','reason'])&&oneOf(value.reason,['FIELD_UNAVAILABLE','PERMISSION_CHANGED','DEFINITION_CHANGED']);
+ return value.invalid===false&&exact(value,['id','appId','viewId','version','invalid','createdAt','updatedAt',...stateKeys])&&value.appId===scope.appId&&value.viewId===scope.viewId&&timestamp(value.createdAt)&&timestamp(value.updatedAt)&&validState(value);
+}
 export function validApplicationPresets(value:unknown,scope:PresetScope):value is {items:ApplicationPreset[]}{
  return id(scope.appId)&&id(scope.viewId)&&object(value)&&exact(value,['items'])&&Array.isArray(value.items)&&value.items.length<=20&&value.items.every(item=>validApplicationPreset(item,scope))&&new Set(value.items.map(item=>item.id)).size===value.items.length;
 }
 
-// Declaration-only boundary, awaiting independent mutation RED.
-export function validPresetMutationRequest(_resource:unknown,_request:unknown):boolean{return false;}
-export function validPresetMutationReceipt(_value:unknown,_operationId:string,_presetId?:string):boolean{return false;}
+export function validPresetMutationRequest(resource:unknown,request:unknown):boolean{
+ if(!object(resource)||!object(request)||resource.kind!=='preset'||!id(resource.appId)||!id(resource.viewId))return false;
+ const creating=Object.hasOwn(resource,'creationNonce');
+ if(!exact(resource,['kind','appId','viewId',creating?'creationNonce':'id'])||!id(creating?resource.creationNonce:resource.id))return false;
+ const path=`applications/${resource.appId}/forms/${resource.viewId}/table-presets`+(creating?'':'/'+resource.id);
+ if(request.path!==path)return false;
+ if(!creating&&request.method==='DELETE')return request.expectedStatus===204&&positive(request.expectedVersion)&&request.body===undefined;
+ if(request.method!==(creating?'POST':'PUT')||request.expectedStatus!==(creating?201:200)||!object(request.body))return false;
+ return exact(request.body,[...stateKeys,'expectedSchemaVersion',...(creating?[]:['expectedVersion'])])&&positive(request.body.expectedSchemaVersion)&&(creating||positive(request.body.expectedVersion))&&validState(request.body);
+}
+export type PresetMutationReceipt={operationId:string;id:string;version:number};
+export function validPresetMutationReceipt(value:unknown,operationId:string,presetId?:string):value is PresetMutationReceipt{
+ return id(operationId)&&object(value)&&exact(value,['operationId','id','version'])&&value.operationId===operationId&&id(value.id)&&(presetId===undefined||value.id===presetId)&&positive(value.version);
+}
