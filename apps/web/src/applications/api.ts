@@ -81,3 +81,15 @@ export async function applicationWorkflowApi<T>(actorId:string,path:string,metho
  if(result.httpStatus!==200&&result.httpStatus!==202)throw new ApplicationError(result.httpStatus??0,'APPLICATION_OPERATION_UNCONFIRMED',method==='POST');
  return {...result,httpStatus:result.httpStatus};
 }
+
+export async function applicationPublicationApi<T>(actorId:string,path:string,method:'GET'|'POST',body?:object,signal?:AbortSignal):Promise<ApplicationEnvelope<T>&{httpStatus:number}>{
+ const id='[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}',valid=(v:unknown)=>typeof v==='string'&&new RegExp('^'+id+'$').test(v)&&v!=='00000000-0000-0000-0000-000000000000';
+ const base=`applications/(${id})/forms/(${id})/workflows/(${id})`,post=new RegExp('^'+base+'/publish$').exec(path),get=new RegExp('^'+base+'/publications/('+id+')$').exec(path);
+ const b=body as Record<string,unknown>|undefined,positive=(v:unknown)=>typeof v==='number'&&Number.isSafeInteger(v)&&v>0;
+ const write=method==='POST'&&post&&post.slice(1).every(valid)&&b&&!Array.isArray(b)&&Object.keys(b).length===3&&['operationId','expectedRevision','expectedSchemaVersion'].every(k=>Object.hasOwn(b,k))&&valid(b.operationId)&&positive(b.expectedRevision)&&positive(b.expectedSchemaVersion);
+ const read=method==='GET'&&get&&get.slice(1).every(valid)&&body===undefined;
+ if(!write&&!read)throw new TypeError('Publication transport is restricted to exact publication requests and status');
+ const result=await request<T>(actorId,path,method,body,signal,method==='GET'?200:undefined,method==='POST',true);
+ if(result.httpStatus!==200&&result.httpStatus!==202)throw new ApplicationError(result.httpStatus??0,'APPLICATION_OPERATION_UNCONFIRMED',method==='POST');
+ return {...result,httpStatus:result.httpStatus};
+}

@@ -1,0 +1,3 @@
+export type WorkflowPublicationResult={operationId:string;flowId:string;version:number;status:'pending'|'unknown'|'confirmed'|'superseded'|'blocked';reason:string|null};
+export function validPublicationRequest(_resource:unknown,_request:unknown):boolean{return false;}
+export function validPublicationResult(_value:unknown,_operationId:string,_flowId:string,_version:number,_status:number,_method:'GET'|'POST'):_value is WorkflowPublicationResult{return false;}
