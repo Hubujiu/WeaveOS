@@ -1,0 +1,4 @@
+export type WorkflowGraph={version:1;nodes:WorkflowNode[];edges:{from:string;to:string;branch?:'true'|'false'}[]};
+export type WorkflowNode={id:string;kind:'start'|'end'}|{id:string;kind:'approval';approval:{mode:'all'|'any';assigneeIds:string[];editableFieldIds:string[]}}|{id:string;kind:'condition';condition:unknown};
+export type WorkflowDefinition={id:string;name:string;revision:number;currentVersion:number;candidateVersion:number;state:'disabled'|'enabled'|'closing';schemaVersion:number;allowWithdraw:boolean;graph:WorkflowGraph;triggers:{event:'manual'|'record.created'|'record.updated';condition:unknown}[]};
+export function validWorkflowDefinition(value:unknown,flowId:string):value is WorkflowDefinition{return false;}
