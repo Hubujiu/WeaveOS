@@ -41,3 +41,12 @@ test('Root leaving pending workflow manager cancels late results and returns to 
 test('Root narrow manager keeps refresh and return controls reachable without page overflow',async({page})=>{
  await page.setViewportSize({width:390,height:844});await setup(page);await page.goto(route);await expect(page.getByText('部门审批',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'刷新流程',exact:true})).toBeInViewport();await expect(page.getByRole('button',{name:'返回记录',exact:true})).toBeInViewport();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);await test.info().attach('workflow-manager-narrow',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
 });
+// Diagnose the still-failing real pager geometry without forcing clicks or changing the original assertions.
+test('Root manager fixed card and pager settle across layout frames',async({page},info)=>{
+ await page.setViewportSize({width:1440,height:1000});await setup(page);await page.goto(route);await expect(page.getByText('部门审批',{exact:true})).toBeVisible();
+ const measurements=await page.getByRole('button',{name:'下一页',exact:true}).evaluate(async button=>{
+  const frames:unknown[]=[];for(let i=0;i<20;i++){await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const chain=[];let n:Element|null=button;while(n&&chain.length<10){const r=n.getBoundingClientRect(),s=getComputedStyle(n);chain.push({tag:n.tagName,className:n.className,x:r.x,y:r.y,width:r.width,height:r.height,display:s.display,flex:s.flex,minHeight:s.minHeight,maxHeight:s.maxHeight,overflow:s.overflow,boxSizing:s.boxSizing});n=n.parentElement;}frames.push(chain);}return frames;
+ });
+ await info.attach('workflow-manager-layout-frames.json',{body:JSON.stringify(measurements,null,2),contentType:'application/json'});
+ const ys=measurements.map(frame=>(frame as {y:number}[])[0].y);expect(Math.max(...ys)-Math.min(...ys)).toBeLessThanOrEqual(1);
+});

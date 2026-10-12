@@ -1,0 +1,1423 @@
+﻿2026-10-12T14:24:00.5113705Z Current runner version: '2.337.0'
+2026-10-12T14:24:00.5137957Z ##[group]Runner Image Provisioner
+2026-10-12T14:24:00.5138914Z Hosted Compute Agent
+2026-10-12T14:24:00.5139465Z Version: 20261002.596
+2026-10-12T14:24:00.5140074Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-12T14:24:00.5141018Z Build Date: 2026-10-02T22:28:27Z
+2026-10-12T14:24:00.5141649Z Worker ID: {90a4ff14-aeca-42cb-b77e-f8f2c6a9f426}
+2026-10-12T14:24:00.5142388Z Region: centralus
+2026-10-12T14:24:00.5142904Z Cloud: Azure
+2026-10-12T14:24:00.5143401Z ##[endgroup]
+2026-10-12T14:24:00.5144683Z ##[group]Operating System
+2026-10-12T14:24:00.5145261Z Ubuntu
+2026-10-12T14:24:00.5145800Z 24.04.5
+2026-10-12T14:24:00.5146280Z LTS
+2026-10-12T14:24:00.5146749Z ##[endgroup]
+2026-10-12T14:24:00.5147297Z ##[group]Runner Image
+2026-10-12T14:24:00.5147892Z Image: ubuntu-24.04
+2026-10-12T14:24:00.5148453Z Version: 20261004.327.1
+2026-10-12T14:24:00.5149617Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-12T14:24:00.5151404Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+2026-10-12T14:24:00.5152292Z ##[endgroup]
+2026-10-12T14:24:00.5153343Z ##[group]GITHUB_TOKEN Permissions
+2026-10-12T14:24:00.5155489Z Contents: read
+2026-10-12T14:24:00.5156089Z Metadata: read
+2026-10-12T14:24:00.5156605Z ##[endgroup]
+2026-10-12T14:24:00.5158475Z Secret source: Actions
+2026-10-12T14:24:00.5159400Z Cache mode: write
+2026-10-12T14:24:00.5160107Z Prepare workflow directory
+2026-10-12T14:24:00.5637000Z Prepare all required actions
+2026-10-12T14:24:00.5689731Z Getting action download info
+2026-10-12T14:24:00.8563568Z Download action repository 'actions/checkout@11d5960a326750d5838078e36cf38b85af677262' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-12T14:24:00.9469567Z Download action repository 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-12T14:24:01.0683909Z Download action repository 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9' (SHA:55cc8345863c7cc4c66a329aec7e433d2d1c52a9)
+2026-10-12T14:24:01.2521852Z Download action repository 'actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4' (SHA:330a01c490aca151604b8cf639adc76d48f6c5d4)
+2026-10-12T14:24:01.5377643Z Complete job name: components (4)
+2026-10-12T14:24:01.6185407Z ##[group]Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+2026-10-12T14:24:01.6187035Z with:
+2026-10-12T14:24:01.6187938Z   persist-credentials: false
+2026-10-12T14:24:01.6188930Z   repository: Hubujiu/WeaveOS
+2026-10-12T14:24:01.6198238Z   token: ***
+2026-10-12T14:24:01.6199142Z   ssh-strict: true
+2026-10-12T14:24:01.6200003Z   ssh-user: git
+2026-10-12T14:24:01.6200962Z   clean: true
+2026-10-12T14:24:01.6201842Z   sparse-checkout-cone-mode: true
+2026-10-12T14:24:01.6202833Z   fetch-depth: 1
+2026-10-12T14:24:01.6203725Z   fetch-tags: false
+2026-10-12T14:24:01.6204600Z   show-progress: true
+2026-10-12T14:24:01.6205489Z   lfs: false
+2026-10-12T14:24:01.6206355Z   submodules: false
+2026-10-12T14:24:01.6207276Z   set-safe-directory: true
+2026-10-12T14:24:01.6208307Z   allow-unsafe-pr-checkout: false
+2026-10-12T14:24:01.6209559Z env:
+2026-10-12T14:24:01.6210434Z   COMPONENT_SHARD: 4
+2026-10-12T14:24:01.6211344Z ##[endgroup]
+2026-10-12T14:24:01.7273289Z Syncing repository: Hubujiu/WeaveOS
+2026-10-12T14:24:01.7277625Z ##[group]Getting Git version info
+2026-10-12T14:24:01.7279527Z Working directory is '/home/runner/work/WeaveOS/WeaveOS'
+2026-10-12T14:24:01.7282648Z [command]/usr/bin/git version
+2026-10-12T14:24:01.7284045Z git version 2.55.0
+2026-10-12T14:24:01.7300762Z ##[endgroup]
+2026-10-12T14:24:01.7312663Z Temporarily overriding HOME='/home/runner/work/_temp/ed1f2f79-06cf-497b-99bb-0efec3616200' before making global git config changes
+2026-10-12T14:24:01.7316564Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-12T14:24:01.7319875Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/WeaveOS/WeaveOS
+2026-10-12T14:24:01.7368039Z Deleting the contents of '/home/runner/work/WeaveOS/WeaveOS'
+2026-10-12T14:24:01.7387379Z ##[group]Initializing the repository
+2026-10-12T14:24:01.7390304Z [command]/usr/bin/git init /home/runner/work/WeaveOS/WeaveOS
+2026-10-12T14:24:01.7492012Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-12T14:24:01.7494714Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-12T14:24:01.7496763Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-12T14:24:01.7498171Z hint: call:
+2026-10-12T14:24:01.7499088Z hint:
+2026-10-12T14:24:01.7500644Z hint: 	git config --global init.defaultBranch <name>
+2026-10-12T14:24:01.7502400Z hint:
+2026-10-12T14:24:01.7503940Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-12T14:24:01.7506618Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-12T14:24:01.7508805Z hint:
+2026-10-12T14:24:01.7509931Z hint: 	git branch -m <name>
+2026-10-12T14:24:01.7511392Z hint:
+2026-10-12T14:24:01.7513234Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-12T14:24:01.7516032Z Initialized empty Git repository in /home/runner/work/WeaveOS/WeaveOS/.git/
+2026-10-12T14:24:01.7520865Z [command]/usr/bin/git remote add origin https://github.com/Hubujiu/WeaveOS
+2026-10-12T14:24:01.7546492Z ##[endgroup]
+2026-10-12T14:24:01.7548874Z ##[group]Disabling automatic garbage collection
+2026-10-12T14:24:01.7550989Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-12T14:24:01.7584064Z ##[endgroup]
+2026-10-12T14:24:01.7586309Z ##[group]Setting up auth
+2026-10-12T14:24:01.7588611Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-12T14:24:01.7620988Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-12T14:24:01.7955355Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-12T14:24:01.7987803Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-12T14:24:01.8185129Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-12T14:24:01.8217756Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-12T14:24:01.8411007Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-12T14:24:01.8452759Z ##[endgroup]
+2026-10-12T14:24:01.8455252Z ##[group]Fetching the repository
+2026-10-12T14:24:01.8464556Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +08db444eb168789661533657d9584cd5ea9c1d4a:refs/remotes/pull/84/merge
+2026-10-12T14:24:10.0615068Z From https://github.com/Hubujiu/WeaveOS
+2026-10-12T14:24:10.0616153Z  * [new ref]         08db444eb168789661533657d9584cd5ea9c1d4a -> pull/84/merge
+2026-10-12T14:24:10.0619235Z ##[endgroup]
+2026-10-12T14:24:10.0622296Z ##[group]Determining the checkout info
+2026-10-12T14:24:10.0624028Z ##[endgroup]
+2026-10-12T14:24:10.0628439Z [command]/usr/bin/git sparse-checkout disable
+2026-10-12T14:24:10.2017097Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-12T14:24:10.2444463Z ##[group]Checking out the ref
+2026-10-12T14:24:10.2447391Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/84/merge
+2026-10-12T14:24:11.3718054Z Updating files:  73% (9794/13240)
+2026-10-12T14:24:11.3855041Z Updating files:  74% (9798/13240)
+2026-10-12T14:24:11.3888475Z Updating files:  75% (9930/13240)
+2026-10-12T14:24:11.3919427Z Updating files:  76% (10063/13240)
+2026-10-12T14:24:11.4144156Z Updating files:  77% (10195/13240)
+2026-10-12T14:24:11.4207390Z Updating files:  78% (10328/13240)
+2026-10-12T14:24:11.4243010Z Updating files:  79% (10460/13240)
+2026-10-12T14:24:11.4323721Z Updating files:  80% (10592/13240)
+2026-10-12T14:24:11.4417996Z Updating files:  81% (10725/13240)
+2026-10-12T14:24:11.4445258Z Updating files:  82% (10857/13240)
+2026-10-12T14:24:11.4483841Z Updating files:  83% (10990/13240)
+2026-10-12T14:24:11.4517609Z Updating files:  84% (11122/13240)
+2026-10-12T14:24:11.4546708Z Updating files:  85% (11254/13240)
+2026-10-12T14:24:11.4586563Z Updating files:  86% (11387/13240)
+2026-10-12T14:24:11.4628202Z Updating files:  87% (11519/13240)
+2026-10-12T14:24:11.5267705Z Updating files:  88% (11652/13240)
+2026-10-12T14:24:11.5964066Z Updating files:  89% (11784/13240)
+2026-10-12T14:24:11.6182163Z Updating files:  90% (11916/13240)
+2026-10-12T14:24:11.6378843Z Updating files:  91% (12049/13240)
+2026-10-12T14:24:11.6712663Z Updating files:  92% (12181/13240)
+2026-10-12T14:24:11.6766713Z Updating files:  93% (12314/13240)
+2026-10-12T14:24:11.6817940Z Updating files:  94% (12446/13240)
+2026-10-12T14:24:11.6870601Z Updating files:  95% (12578/13240)
+2026-10-12T14:24:11.6923732Z Updating files:  96% (12711/13240)
+2026-10-12T14:24:11.6968774Z Updating files:  97% (12843/13240)
+2026-10-12T14:24:11.7019486Z Updating files:  98% (12976/13240)
+2026-10-12T14:24:11.7067251Z Updating files:  99% (13108/13240)
+2026-10-12T14:24:11.7068301Z Updating files: 100% (13240/13240)
+2026-10-12T14:24:11.7068863Z Updating files: 100% (13240/13240), done.
+2026-10-12T14:24:11.7195438Z Note: switching to 'refs/remotes/pull/84/merge'.
+2026-10-12T14:24:11.7196517Z 
+2026-10-12T14:24:11.7196823Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-12T14:24:11.7197412Z changes and commit them, and you can discard any commits you make in this
+2026-10-12T14:24:11.7198298Z state without impacting any branches by switching back to a branch.
+2026-10-12T14:24:11.7198730Z 
+2026-10-12T14:24:11.7199207Z If you want to create a new branch to retain commits you create, you may
+2026-10-12T14:24:11.7199971Z do so (now or later) by using -c with the switch command. Example:
+2026-10-12T14:24:11.7200611Z 
+2026-10-12T14:24:11.7200964Z   git switch -c <new-branch-name>
+2026-10-12T14:24:11.7201264Z 
+2026-10-12T14:24:11.7201686Z Or undo this operation with:
+2026-10-12T14:24:11.7202035Z 
+2026-10-12T14:24:11.7202200Z   git switch -
+2026-10-12T14:24:11.7202438Z 
+2026-10-12T14:24:11.7202839Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-12T14:24:11.7203280Z 
+2026-10-12T14:24:11.7203850Z HEAD is now at 08db444 Merge 5ce8d35218c55aa4cf9c9d7cfd15c6d2ade4e5c8 into 4d2d43a2aaa5c7822531b78075d5c155b5b22df7
+2026-10-12T14:24:11.7243702Z ##[endgroup]
+2026-10-12T14:24:11.7283059Z [command]/usr/bin/git log -1 --format=%H
+2026-10-12T14:24:11.7306288Z 08db444eb168789661533657d9584cd5ea9c1d4a
+2026-10-12T14:24:11.7319571Z ##[group]Removing auth
+2026-10-12T14:24:11.7320278Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-12T14:24:11.7352634Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-12T14:24:11.7553192Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-12T14:24:11.7576738Z http.https://github.com/.extraheader
+2026-10-12T14:24:11.7585069Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-12T14:24:11.7617305Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-12T14:24:11.7835029Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-12T14:24:11.7869212Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-12T14:24:11.8079788Z ##[endgroup]
+2026-10-12T14:24:11.8320043Z ##[group]Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+2026-10-12T14:24:11.8320815Z with:
+2026-10-12T14:24:11.8321143Z   node-version-file: .node-version
+2026-10-12T14:24:11.8321506Z   always-auth: false
+2026-10-12T14:24:11.8321852Z   check-latest: false
+2026-10-12T14:24:11.8324456Z   token: ***
+2026-10-12T14:24:11.8324740Z env:
+2026-10-12T14:24:11.8325037Z   COMPONENT_SHARD: 4
+2026-10-12T14:24:11.8325336Z ##[endgroup]
+2026-10-12T14:24:11.9633135Z Node version file is not JSON file
+2026-10-12T14:24:11.9634704Z Resolved .node-version as 24.14.0
+2026-10-12T14:24:11.9648793Z Attempting to download 24.14.0...
+2026-10-12T14:24:11.9753521Z (node:2390) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-12T14:24:11.9754366Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-12T14:24:12.7529817Z Acquiring 24.14.0 - x64 from https://github.com/actions/node-versions/releases/download/24.14.0-22380502845/node-24.14.0-linux-x64.tar.gz
+2026-10-12T14:24:13.3318286Z Extracting ...
+2026-10-12T14:24:13.3417098Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/96c4b245-b08f-4940-97dd-1399378dfb41 -f /home/runner/work/_temp/22996439-4713-4ddb-a857-de177688c041
+2026-10-12T14:24:14.9403260Z Adding to the cache ...
+2026-10-12T14:24:24.3948994Z ##[group]Environment details
+2026-10-12T14:24:24.6239476Z node: v24.14.0
+2026-10-12T14:24:24.6239896Z npm: 11.9.0
+2026-10-12T14:24:24.6240556Z yarn: 1.22.22
+2026-10-12T14:24:24.6241289Z ##[endgroup]
+2026-10-12T14:24:24.6391126Z ##[group]Run npm install --global pnpm@10.28.2 --ignore-scripts
+2026-10-12T14:24:24.6391905Z [36;1mnpm install --global pnpm@10.28.2 --ignore-scripts[0m
+2026-10-12T14:24:24.6572607Z shell: /usr/bin/bash -e {0}
+2026-10-12T14:24:24.6573069Z env:
+2026-10-12T14:24:24.6573451Z   COMPONENT_SHARD: 4
+2026-10-12T14:24:24.6573771Z ##[endgroup]
+2026-10-12T14:24:26.0105819Z 
+2026-10-12T14:24:26.0116030Z added 1 package in 1s
+2026-10-12T14:24:26.0116475Z 
+2026-10-12T14:24:26.0116823Z 1 package is looking for funding
+2026-10-12T14:24:26.0117628Z   run `npm fund` for details
+2026-10-12T14:24:26.1005535Z ##[group]Run actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+2026-10-12T14:24:26.1005979Z with:
+2026-10-12T14:24:26.1006317Z   path: .work/pnpm-store
+2026-10-12T14:24:26.1006822Z   key: pnpm-Linux-X64-0d2ec9ec787609be34e7efe677445b87cbcc0576e2c87e53dec8b1c9f3090ce4
+2026-10-12T14:24:26.1007371Z   enableCrossOsArchive: false
+2026-10-12T14:24:26.1007741Z   fail-on-cache-miss: false
+2026-10-12T14:24:26.1008093Z   lookup-only: false
+2026-10-12T14:24:26.1008396Z   save-always: false
+2026-10-12T14:24:26.1008690Z env:
+2026-10-12T14:24:26.1008965Z   COMPONENT_SHARD: 4
+2026-10-12T14:24:26.1009275Z ##[endgroup]
+2026-10-12T14:24:26.3763405Z Cache hit for: pnpm-Linux-X64-0d2ec9ec787609be34e7efe677445b87cbcc0576e2c87e53dec8b1c9f3090ce4
+2026-10-12T14:24:27.3336146Z Received 52786766 of 52786766 (100.0%), 65.0 MBs/sec
+2026-10-12T14:24:27.3337333Z Cache Size: ~50 MB (52786766 B)
+2026-10-12T14:24:27.3377733Z [command]/usr/bin/tar -xf /home/runner/work/_temp/21aa3514-2798-49cd-bffd-75e9fffb9a1a/cache.tzst -P -C /home/runner/work/WeaveOS/WeaveOS --use-compress-program unzstd
+2026-10-12T14:24:27.8212007Z Cache restored successfully
+2026-10-12T14:24:27.8308559Z Cache restored from key: pnpm-Linux-X64-0d2ec9ec787609be34e7efe677445b87cbcc0576e2c87e53dec8b1c9f3090ce4
+2026-10-12T14:24:27.8401388Z ##[group]Run pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store
+2026-10-12T14:24:27.8402143Z [36;1mpnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store[0m
+2026-10-12T14:24:27.8442620Z shell: /usr/bin/bash -e {0}
+2026-10-12T14:24:27.8443059Z env:
+2026-10-12T14:24:27.8443396Z   COMPONENT_SHARD: 4
+2026-10-12T14:24:27.8443729Z ##[endgroup]
+2026-10-12T14:24:28.1980876Z Scope: all 2 workspace projects
+2026-10-12T14:24:28.2198063Z Lockfile is up to date, resolution step is skipped
+2026-10-12T14:24:28.2357212Z Progress: resolved 1, reused 0, downloaded 0, added 0
+2026-10-12T14:24:28.2540884Z Packages: +76
+2026-10-12T14:24:28.2542308Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+2026-10-12T14:24:28.8882833Z Progress: resolved 76, reused 76, downloaded 0, added 76, done
+2026-10-12T14:24:28.9864332Z 
+2026-10-12T14:24:28.9865288Z devDependencies:
+2026-10-12T14:24:28.9865880Z + @playwright/test 1.63.0
+2026-10-12T14:24:28.9866903Z + @redocly/cli 2.54.2
+2026-10-12T14:24:28.9867412Z + @types/node 24.0.0
+2026-10-12T14:24:28.9867922Z + ajv 8.20.0
+2026-10-12T14:24:28.9868342Z + typescript 5.9.3
+2026-10-12T14:24:28.9868611Z 
+2026-10-12T14:24:28.9926144Z Done in 1.1s using pnpm v10.28.2
+2026-10-12T14:24:29.0713296Z ##[group]Run actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+2026-10-12T14:24:29.0713794Z with:
+2026-10-12T14:24:29.0714112Z   path: ~/.cache/ms-playwright
+2026-10-12T14:24:29.0714698Z   key: playwright-Linux-X64-cffe04ca8f1dc19ed4a6c08ead0698af40a1f05e3939f2569333a5987caebc4d
+2026-10-12T14:24:29.0715243Z   enableCrossOsArchive: false
+2026-10-12T14:24:29.0715568Z   fail-on-cache-miss: false
+2026-10-12T14:24:29.0715941Z   lookup-only: false
+2026-10-12T14:24:29.0716273Z   save-always: false
+2026-10-12T14:24:29.0716575Z env:
+2026-10-12T14:24:29.0716849Z   COMPONENT_SHARD: 4
+2026-10-12T14:24:29.0717121Z ##[endgroup]
+2026-10-12T14:24:29.3356821Z Cache hit for: playwright-Linux-X64-cffe04ca8f1dc19ed4a6c08ead0698af40a1f05e3939f2569333a5987caebc4d
+2026-10-12T14:24:30.5191588Z Received 121634816 of 284186753 (42.8%), 115.9 MBs/sec
+2026-10-12T14:24:31.4307878Z Received 284186753 of 284186753 (100.0%), 141.7 MBs/sec
+2026-10-12T14:24:31.4308657Z Cache Size: ~271 MB (284186753 B)
+2026-10-12T14:24:31.4422282Z [command]/usr/bin/tar -xf /home/runner/work/_temp/ddd9fa5a-97a7-4cd0-afe8-b97f82e78344/cache.tzst -P -C /home/runner/work/WeaveOS/WeaveOS --use-compress-program unzstd
+2026-10-12T14:24:32.3326115Z Cache restored successfully
+2026-10-12T14:24:32.3503368Z Cache restored from key: playwright-Linux-X64-cffe04ca8f1dc19ed4a6c08ead0698af40a1f05e3939f2569333a5987caebc4d
+2026-10-12T14:24:32.3602647Z ##[group]Run pnpm exec playwright install --with-deps chromium
+2026-10-12T14:24:32.3603217Z [36;1mpnpm exec playwright install --with-deps chromium[0m
+2026-10-12T14:24:32.3644404Z shell: /usr/bin/bash -e {0}
+2026-10-12T14:24:32.3644876Z env:
+2026-10-12T14:24:32.3645230Z   COMPONENT_SHARD: 4
+2026-10-12T14:24:32.3645564Z ##[endgroup]
+2026-10-12T14:24:33.0500647Z Installing dependencies...
+2026-10-12T14:24:33.0572477Z Switching to root user to install dependencies...
+2026-10-12T14:24:33.1422195Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-10-12T14:24:33.1877259Z Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-10-12T14:24:33.1897743Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+2026-10-12T14:24:33.1934159Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+2026-10-12T14:24:33.1957733Z Get:6 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+2026-10-12T14:24:33.1962793Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+2026-10-12T14:24:33.2967343Z Get:7 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1375 kB]
+2026-10-12T14:24:33.3103255Z Get:8 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [306 kB]
+2026-10-12T14:24:33.3121789Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1702 kB]
+2026-10-12T14:24:33.3201349Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [342 kB]
+2026-10-12T14:24:33.3232454Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1765 kB]
+2026-10-12T14:24:33.3333935Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [402 kB]
+2026-10-12T14:24:33.3348029Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [50.7 kB]
+2026-10-12T14:24:33.3360252Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse Translation-en [14.0 kB]
+2026-10-12T14:24:33.3485738Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Packages [748 B]
+2026-10-12T14:24:33.3938608Z Get:16 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [492 kB]
+2026-10-12T14:24:33.4072678Z Get:17 https://packages.microsoft.com/ubuntu/24.04/prod noble/main armhf Packages [12.3 kB]
+2026-10-12T14:24:33.4119572Z Get:18 https://packages.microsoft.com/ubuntu/24.04/prod noble/main all Packages [640 B]
+2026-10-12T14:24:33.4161144Z Get:19 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [549 kB]
+2026-10-12T14:24:33.4349054Z Get:20 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1122 kB]
+2026-10-12T14:24:33.4853988Z Get:21 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [228 kB]
+2026-10-12T14:24:33.4875274Z Get:22 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1220 kB]
+2026-10-12T14:24:33.4931575Z Get:23 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [245 kB]
+2026-10-12T14:24:33.4949074Z Get:24 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [1674 kB]
+2026-10-12T14:24:33.5030894Z Get:25 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted Translation-en [383 kB]
+2026-10-12T14:24:33.5059086Z Get:26 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse amd64 Packages [45.4 kB]
+2026-10-12T14:24:33.5079776Z Get:27 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse Translation-en [12.1 kB]
+2026-10-12T14:24:36.5902276Z Fetched 12.3 MB in 1s (9231 kB/s)
+2026-10-12T14:24:37.4895846Z Reading package lists...
+2026-10-12T14:24:37.5175933Z Reading package lists...
+2026-10-12T14:24:37.7171624Z Building dependency tree...
+2026-10-12T14:24:37.7179692Z Reading state information...
+2026-10-12T14:24:37.8909872Z libasound2t64 is already the newest version (1.2.11-1ubuntu0.3).
+2026-10-12T14:24:37.8911324Z libasound2t64 set to manually installed.
+2026-10-12T14:24:37.8912107Z libatk-bridge2.0-0t64 is already the newest version (2.52.0-1build1).
+2026-10-12T14:24:37.8912930Z libatk-bridge2.0-0t64 set to manually installed.
+2026-10-12T14:24:37.8913731Z libatk1.0-0t64 is already the newest version (2.52.0-1build1).
+2026-10-12T14:24:37.8914551Z libatk1.0-0t64 set to manually installed.
+2026-10-12T14:24:37.8915082Z libatspi2.0-0t64 is already the newest version (2.52.0-1build1).
+2026-10-12T14:24:37.8915592Z libatspi2.0-0t64 set to manually installed.
+2026-10-12T14:24:37.8916074Z libcairo2 is already the newest version (1.18.0-3build1).
+2026-10-12T14:24:37.8916572Z libcairo2 set to manually installed.
+2026-10-12T14:24:37.8917095Z libcups2t64 is already the newest version (2.4.7-1.2ubuntu7.14).
+2026-10-12T14:24:37.8917577Z libcups2t64 set to manually installed.
+2026-10-12T14:24:37.8918106Z libdbus-1-3 is already the newest version (1.14.10-4ubuntu4.1).
+2026-10-12T14:24:37.8918574Z libdbus-1-3 set to manually installed.
+2026-10-12T14:24:37.8919096Z libdrm2 is already the newest version (2.4.125-1ubuntu0.1~24.04.2).
+2026-10-12T14:24:37.8919558Z libdrm2 set to manually installed.
+2026-10-12T14:24:37.8920297Z libgbm1 is already the newest version (25.2.8-0ubuntu0.24.04.4).
+2026-10-12T14:24:37.8921082Z libgbm1 set to manually installed.
+2026-10-12T14:24:37.8921605Z libglib2.0-0t64 is already the newest version (2.80.0-6ubuntu3.9).
+2026-10-12T14:24:37.8922069Z libglib2.0-0t64 set to manually installed.
+2026-10-12T14:24:37.8922539Z libnspr4 is already the newest version (2:4.35-1.1build1).
+2026-10-12T14:24:37.8923046Z libnspr4 set to manually installed.
+2026-10-12T14:24:37.8923473Z libnss3 is already the newest version (2:3.98-1ubuntu0.2).
+2026-10-12T14:24:37.8924251Z libnss3 set to manually installed.
+2026-10-12T14:24:37.8924862Z libpango-1.0-0 is already the newest version (1.52.1+ds-1build1).
+2026-10-12T14:24:37.8925412Z libpango-1.0-0 set to manually installed.
+2026-10-12T14:24:37.8925865Z libxcb1 is already the newest version (1.15-1ubuntu2).
+2026-10-12T14:24:37.8926332Z libxcb1 set to manually installed.
+2026-10-12T14:24:37.8926794Z libxcomposite1 is already the newest version (1:0.4.5-1build3).
+2026-10-12T14:24:37.8927312Z libxcomposite1 set to manually installed.
+2026-10-12T14:24:37.8927787Z libxdamage1 is already the newest version (1:1.1.6-1build1).
+2026-10-12T14:24:37.8928249Z libxdamage1 set to manually installed.
+2026-10-12T14:24:37.8928723Z libxext6 is already the newest version (2:1.3.4-1build2).
+2026-10-12T14:24:37.8929185Z libxext6 set to manually installed.
+2026-10-12T14:24:37.8929668Z libxfixes3 is already the newest version (1:6.0.0-2build1).
+2026-10-12T14:24:37.8930108Z libxfixes3 set to manually installed.
+2026-10-12T14:24:37.8930863Z libxkbcommon0 is already the newest version (1.6.0-1build1).
+2026-10-12T14:24:37.8931342Z libxkbcommon0 set to manually installed.
+2026-10-12T14:24:37.8931847Z libxrandr2 is already the newest version (2:1.5.2-2build1).
+2026-10-12T14:24:37.8932311Z libxrandr2 set to manually installed.
+2026-10-12T14:24:37.8932799Z xvfb is already the newest version (2:21.1.12-1ubuntu1.8).
+2026-10-12T14:24:37.8933381Z fonts-noto-color-emoji is already the newest version (2.047-0ubuntu0.24.04.1).
+2026-10-12T14:24:37.8934011Z libfontconfig1 is already the newest version (2.15.0-1.1ubuntu2).
+2026-10-12T14:24:37.8934500Z libfontconfig1 set to manually installed.
+2026-10-12T14:24:37.8935012Z fonts-liberation is already the newest version (1:2.1.5-3).
+2026-10-12T14:24:37.8935448Z fonts-liberation set to manually installed.
+2026-10-12T14:24:37.8935963Z The following additional packages will be installed:
+2026-10-12T14:24:37.8936470Z   libx11-data libx11-xcb1 xfonts-encodings xfonts-utils
+2026-10-12T14:24:37.8936919Z Recommended packages:
+2026-10-12T14:24:37.8937274Z   fonts-ipafont-mincho fonts-tlwg-loma
+2026-10-12T14:24:37.9114929Z The following NEW packages will be installed:
+2026-10-12T14:24:37.9115635Z   fonts-freefont-ttf fonts-ipafont-gothic fonts-tlwg-loma-otf fonts-unifont
+2026-10-12T14:24:37.9123105Z   fonts-wqy-zenhei xfonts-cyrillic xfonts-encodings xfonts-scalable
+2026-10-12T14:24:37.9123585Z   xfonts-utils
+2026-10-12T14:24:37.9127435Z The following packages will be upgraded:
+2026-10-12T14:24:37.9133287Z   libfreetype6 libx11-6 libx11-data libx11-xcb1
+2026-10-12T14:24:37.9368594Z 4 upgraded, 9 newly installed, 0 to remove and 22 not upgraded.
+2026-10-12T14:24:37.9369571Z Need to get 22.3 MB of archives.
+2026-10-12T14:24:37.9371425Z After this operation, 79.6 MB of additional disk space will be used.
+2026-10-12T14:24:37.9372426Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-10-12T14:24:37.9914839Z Get:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-ipafont-gothic all 00303-21ubuntu1 [3513 kB]
+2026-10-12T14:24:38.0517256Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 libx11-6 amd64 2:1.8.7-1ubuntu0.1 [653 kB]
+2026-10-12T14:24:38.0832922Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 libx11-xcb1 amd64 2:1.8.7-1ubuntu0.1 [7796 B]
+2026-10-12T14:24:38.1112835Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 libx11-data all 2:1.8.7-1ubuntu0.1 [116 kB]
+2026-10-12T14:24:38.1403869Z Get:6 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 fonts-freefont-ttf all 20211204+svn4273-2 [5641 kB]
+2026-10-12T14:24:38.2323172Z Get:7 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-tlwg-loma-otf all 1:0.7.3-1 [107 kB]
+2026-10-12T14:24:38.2673412Z Get:8 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-unifont all 1:15.1.01-1build1 [2993 kB]
+2026-10-12T14:24:38.3369532Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-wqy-zenhei all 0.9.45-8 [7472 kB]
+2026-10-12T14:24:38.4508743Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libfreetype6 amd64 2.13.2+dfsg-1ubuntu0.2 [403 kB]
+2026-10-12T14:24:38.4872295Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-encodings all 1:1.0.5-0ubuntu2 [578 kB]
+2026-10-12T14:24:38.5230037Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-utils amd64 1:7.7+6build3 [94.4 kB]
+2026-10-12T14:24:38.5550932Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 xfonts-cyrillic all 1:1.0.5+nmu1 [384 kB]
+2026-10-12T14:24:38.5884091Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-scalable all 1:1.0.3-1.3 [304 kB]
+2026-10-12T14:24:38.8437373Z Fetched 22.3 MB in 1s (33.6 MB/s)
+2026-10-12T14:24:38.8701755Z Selecting previously unselected package fonts-ipafont-gothic.
+2026-10-12T14:24:38.8872869Z (Reading database ... 
+2026-10-12T14:24:38.8873598Z (Reading database ... 5%
+2026-10-12T14:24:38.8874113Z (Reading database ... 10%
+2026-10-12T14:24:38.8874623Z (Reading database ... 15%
+2026-10-12T14:24:38.8875044Z (Reading database ... 20%
+2026-10-12T14:24:38.8875568Z (Reading database ... 25%
+2026-10-12T14:24:38.8875938Z (Reading database ... 30%
+2026-10-12T14:24:38.8876399Z (Reading database ... 35%
+2026-10-12T14:24:38.8876838Z (Reading database ... 40%
+2026-10-12T14:24:38.8877288Z (Reading database ... 45%
+2026-10-12T14:24:38.8878517Z (Reading database ... 50%
+2026-10-12T14:24:38.8919853Z (Reading database ... 55%
+2026-10-12T14:24:38.9523485Z (Reading database ... 60%
+2026-10-12T14:24:39.1615090Z (Reading database ... 65%
+2026-10-12T14:24:39.3687914Z (Reading database ... 70%
+2026-10-12T14:24:39.5422373Z (Reading database ... 75%
+2026-10-12T14:24:39.6502175Z (Reading database ... 80%
+2026-10-12T14:24:39.7815889Z (Reading database ... 85%
+2026-10-12T14:24:39.8599731Z (Reading database ... 90%
+2026-10-12T14:24:40.0066169Z (Reading database ... 95%
+2026-10-12T14:24:40.0066897Z (Reading database ... 100%
+2026-10-12T14:24:40.0068044Z (Reading database ... 203191 files and directories currently installed.)
+2026-10-12T14:24:40.0111845Z Preparing to unpack .../00-fonts-ipafont-gothic_00303-21ubuntu1_all.deb ...
+2026-10-12T14:24:40.0251404Z Unpacking fonts-ipafont-gothic (00303-21ubuntu1) ...
+2026-10-12T14:24:40.3391494Z Preparing to unpack .../01-libx11-6_2%3a1.8.7-1ubuntu0.1_amd64.deb ...
+2026-10-12T14:24:40.3426919Z Unpacking libx11-6:amd64 (2:1.8.7-1ubuntu0.1) over (2:1.8.7-1build1) ...
+2026-10-12T14:24:40.3869557Z Preparing to unpack .../02-libx11-xcb1_2%3a1.8.7-1ubuntu0.1_amd64.deb ...
+2026-10-12T14:24:40.3897955Z Unpacking libx11-xcb1:amd64 (2:1.8.7-1ubuntu0.1) over (2:1.8.7-1build1) ...
+2026-10-12T14:24:40.4212134Z Preparing to unpack .../03-libx11-data_2%3a1.8.7-1ubuntu0.1_all.deb ...
+2026-10-12T14:24:40.4236991Z Unpacking libx11-data (2:1.8.7-1ubuntu0.1) over (2:1.8.7-1build1) ...
+2026-10-12T14:24:40.5033941Z Selecting previously unselected package fonts-freefont-ttf.
+2026-10-12T14:24:40.5159414Z Preparing to unpack .../04-fonts-freefont-ttf_20211204+svn4273-2_all.deb ...
+2026-10-12T14:24:40.5170888Z Unpacking fonts-freefont-ttf (20211204+svn4273-2) ...
+2026-10-12T14:24:40.6198241Z Selecting previously unselected package fonts-tlwg-loma-otf.
+2026-10-12T14:24:40.6321455Z Preparing to unpack .../05-fonts-tlwg-loma-otf_1%3a0.7.3-1_all.deb ...
+2026-10-12T14:24:40.6332063Z Unpacking fonts-tlwg-loma-otf (1:0.7.3-1) ...
+2026-10-12T14:24:40.6508085Z Selecting previously unselected package fonts-unifont.
+2026-10-12T14:24:40.6631889Z Preparing to unpack .../06-fonts-unifont_1%3a15.1.01-1build1_all.deb ...
+2026-10-12T14:24:40.6640186Z Unpacking fonts-unifont (1:15.1.01-1build1) ...
+2026-10-12T14:24:40.9024858Z Selecting previously unselected package fonts-wqy-zenhei.
+2026-10-12T14:24:40.9148260Z Preparing to unpack .../07-fonts-wqy-zenhei_0.9.45-8_all.deb ...
+2026-10-12T14:24:40.9236242Z Unpacking fonts-wqy-zenhei (0.9.45-8) ...
+2026-10-12T14:24:41.6246600Z Preparing to unpack .../08-libfreetype6_2.13.2+dfsg-1ubuntu0.2_amd64.deb ...
+2026-10-12T14:24:41.6721744Z Unpacking libfreetype6:amd64 (2.13.2+dfsg-1ubuntu0.2) over (2.13.2+dfsg-1ubuntu0.1) ...
+2026-10-12T14:24:41.7778568Z Selecting previously unselected package xfonts-encodings.
+2026-10-12T14:24:41.7909506Z Preparing to unpack .../09-xfonts-encodings_1%3a1.0.5-0ubuntu2_all.deb ...
+2026-10-12T14:24:41.8376261Z Unpacking xfonts-encodings (1:1.0.5-0ubuntu2) ...
+2026-10-12T14:24:42.1589799Z Selecting previously unselected package xfonts-utils.
+2026-10-12T14:24:42.1725656Z Preparing to unpack .../10-xfonts-utils_1%3a7.7+6build3_amd64.deb ...
+2026-10-12T14:24:42.2136812Z Unpacking xfonts-utils (1:7.7+6build3) ...
+2026-10-12T14:24:42.4189560Z Selecting previously unselected package xfonts-cyrillic.
+2026-10-12T14:24:42.4319966Z Preparing to unpack .../11-xfonts-cyrillic_1%3a1.0.5+nmu1_all.deb ...
+2026-10-12T14:24:42.4374450Z Unpacking xfonts-cyrillic (1:1.0.5+nmu1) ...
+2026-10-12T14:24:42.6041498Z Selecting previously unselected package xfonts-scalable.
+2026-10-12T14:24:42.6170480Z Preparing to unpack .../12-xfonts-scalable_1%3a1.0.3-1.3_all.deb ...
+2026-10-12T14:24:42.6342413Z Unpacking xfonts-scalable (1:1.0.3-1.3) ...
+2026-10-12T14:24:42.8414896Z Setting up fonts-wqy-zenhei (0.9.45-8) ...
+2026-10-12T14:24:43.3256752Z Setting up fonts-freefont-ttf (20211204+svn4273-2) ...
+2026-10-12T14:24:43.4385745Z Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...
+2026-10-12T14:24:43.5886021Z Setting up libfreetype6:amd64 (2.13.2+dfsg-1ubuntu0.2) ...
+2026-10-12T14:24:43.8406166Z Setting up libx11-data (2:1.8.7-1ubuntu0.1) ...
+2026-10-12T14:24:44.0326346Z Setting up xfonts-encodings (1:1.0.5-0ubuntu2) ...
+2026-10-12T14:24:44.2715735Z Setting up fonts-ipafont-gothic (00303-21ubuntu1) ...
+2026-10-12T14:24:44.4218147Z update-alternatives: using /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf to provide /usr/share/fonts/truetype/fonts-japanese-gothic.ttf (fonts-japanese-gothic.ttf) in auto mode
+2026-10-12T14:24:44.5669741Z Setting up libx11-6:amd64 (2:1.8.7-1ubuntu0.1) ...
+2026-10-12T14:24:44.7134905Z Setting up fonts-unifont (1:15.1.01-1build1) ...
+2026-10-12T14:24:45.0666278Z Setting up libx11-xcb1:amd64 (2:1.8.7-1ubuntu0.1) ...
+2026-10-12T14:24:45.2005854Z Setting up xfonts-utils (1:7.7+6build3) ...
+2026-10-12T14:24:45.2526160Z Setting up xfonts-cyrillic (1:1.0.5+nmu1) ...
+2026-10-12T14:24:45.2788141Z Setting up xfonts-scalable (1:1.0.3-1.3) ...
+2026-10-12T14:24:45.3021895Z Processing triggers for libc-bin (2.39-0ubuntu8.9) ...
+2026-10-12T14:24:45.3283352Z Processing triggers for man-db (2.12.0-4build2) ...
+2026-10-12T14:24:45.3304945Z Not building database; man-db/auto-update is not 'true'.
+2026-10-12T14:24:45.3319482Z Processing triggers for fontconfig (2.15.0-1.1ubuntu2) ...
+2026-10-12T14:24:45.9439526Z 
+2026-10-12T14:24:45.9440549Z Running kernel seems to be up-to-date.
+2026-10-12T14:24:45.9441018Z 
+2026-10-12T14:24:45.9441232Z Restarting services...
+2026-10-12T14:24:45.9507853Z  systemctl restart php8.3-fpm.service
+2026-10-12T14:24:46.0350718Z 
+2026-10-12T14:24:46.0351746Z No containers need to be restarted.
+2026-10-12T14:24:46.0352159Z 
+2026-10-12T14:24:46.0352441Z No user sessions are running outdated binaries.
+2026-10-12T14:24:46.0352824Z 
+2026-10-12T14:24:46.0353238Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-10-12T14:24:46.9780056Z ##[group]Run mkdir -p "$RUNNER_TEMP/component-reports/shard-$COMPONENT_SHARD"
+2026-10-12T14:24:46.9781159Z [36;1mmkdir -p "$RUNNER_TEMP/component-reports/shard-$COMPONENT_SHARD"[0m
+2026-10-12T14:24:46.9781699Z [36;1mnode --input-type=module <<'JS'[0m
+2026-10-12T14:24:46.9782112Z [36;1mimport {execFileSync} from 'node:child_process';[0m
+2026-10-12T14:24:46.9782592Z [36;1mimport {writeFileSync} from 'node:fs';[0m
+2026-10-12T14:24:46.9782977Z [36;1mimport {join} from 'node:path';[0m
+2026-10-12T14:24:46.9783545Z [36;1mconst sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], {encoding: 'utf8'}).trim();[0m
+2026-10-12T14:24:46.9784135Z [36;1mconst shardIndex = Number(process.env.COMPONENT_SHARD);[0m
+2026-10-12T14:24:46.9784942Z [36;1mwriteFileSync(join(process.env.RUNNER_TEMP, 'component-reports', `shard-${shardIndex}`, 'metadata.json'), JSON.stringify({sourceSha, shardIndex, shardTotal: 4}) + '\n');[0m
+2026-10-12T14:24:46.9785860Z [36;1mJS[0m
+2026-10-12T14:24:46.9787121Z [36;1mPLAYWRIGHT_JSON_OUTPUT_NAME="$RUNNER_TEMP/component-reports/shard-$COMPONENT_SHARD/baseline.json" pnpm exec playwright test --config apps/web/playwright.component.config.ts --list --reporter=json[0m
+2026-10-12T14:24:46.9827655Z shell: /usr/bin/bash -e {0}
+2026-10-12T14:24:46.9828153Z env:
+2026-10-12T14:24:46.9828483Z   COMPONENT_SHARD: 4
+2026-10-12T14:24:46.9828824Z ##[endgroup]
+2026-10-12T14:24:49.4507529Z Listing tests:
+2026-10-12T14:24:49.4511026Z   [chromium] › applications/forms/forms.component.spec.ts:112:1 › original designer shows three panels and keyboard-added draft can preview without a write
+2026-10-12T14:24:49.4512934Z   [chromium] › applications/forms/forms.component.spec.ts:129:1 › save preflights and commits with both versions and stable IDs only after server success
+2026-10-12T14:24:49.4514903Z   [chromium] › applications/forms/forms.component.spec.ts:144:1 › lost save response keeps the original operation and draft until recovery confirms it
+2026-10-12T14:24:49.4516852Z   [chromium] › applications/forms/forms.component.spec.ts:160:1 › directory creation and new form creation use coherent structure and one atomic form POST
+2026-10-12T14:24:49.4518395Z   [chromium] › applications/forms/forms.component.spec.ts:182:1 › impact dialog requires a live confirmation token before a schema write
+2026-10-12T14:24:49.4519930Z   [chromium] › applications/forms/forms.component.spec.ts:199:1 › blocked dependencies show the affected resource and prevent PUT
+2026-10-12T14:24:49.4521595Z   [chromium] › applications/forms/forms.component.spec.ts:215:1 › used option deletion maps old option IDs before renewed preflight and confirmed Save
+2026-10-12T14:24:49.4523233Z   [chromium] › applications/forms/forms.component.spec.ts:250:1 › late preflight for an old view cannot open impact or write into the newly selected view
+2026-10-12T14:24:49.4524925Z   [chromium] › applications/forms/forms.component.spec.ts:280:1 › keyboard can move an existing field into a group with the same ordered 12-column layout
+2026-10-12T14:24:49.4526609Z   [chromium] › applications/forms/forms.component.spec.ts:296:1 › permission revoked during Save masks the retained draft until access is reverified
+2026-10-12T14:24:49.4528324Z   [chromium] › applications/forms/forms.component.spec.ts:314:1 › system fields stay read-only and each inserted node references a distinct server-defined code
+2026-10-12T14:24:49.4529992Z   [chromium] › applications/forms/forms.component.spec.ts:328:1 › destructive preflight waits for explicit confirmation and sends its exact token
+2026-10-12T14:24:49.4531967Z   [chromium] › applications/forms/forms.component.spec.ts:347:1 › dirty exit and CAS conflict require an explicit decision while preserving the draft
+2026-10-12T14:24:49.4533842Z   [chromium] › applications/forms/forms.component.spec.ts:372:1 › structure CAS conflict keeps the entered name and offers an explicit latest-version reload
+2026-10-12T14:24:49.4536017Z   [chromium] › applications/forms/forms.component.spec.ts:392:1 › structure write permission revocation masks retained input until access is reverified
+2026-10-12T14:24:49.4537746Z   [chromium] › applications/forms/forms.component.spec.ts:407:1 › late directory create for an old app cannot replace the selected app tree
+2026-10-12T14:24:49.4539337Z   [chromium] › applications/forms/forms.component.spec.ts:439:1 › empty structure explains the next action to keyboard and screen reader users
+2026-10-12T14:24:49.4541123Z   [chromium] › applications/forms/forms.component.spec.ts:447:1 › removing an optional selected default option clears the invalid default before Save
+2026-10-12T14:24:49.4542755Z   [chromium] › applications/forms/forms.component.spec.ts:466:1 › decimal controls keep exact text and signed rounding places on the definition wire
+2026-10-12T14:24:49.4544394Z   [chromium] › applications/forms/forms.component.spec.ts:483:1 › preview dialog restores trigger focus after fast close and under reduced motion
+2026-10-12T14:24:49.4546211Z   [chromium] › applications/forms/forms.component.spec.ts:499:1 › existing-table form source creates another view without creating a table
+2026-10-12T14:24:49.4547901Z   [chromium] › applications/forms/forms.component.spec.ts:516:1 › directory rename and same-app move use current structure CAS while descendants are excluded
+2026-10-12T14:24:49.4549481Z   [chromium] › applications/forms/forms.component.spec.ts:546:1 › palette drag into a group preserves the chosen drop parent in saved layout
+2026-10-12T14:24:49.4551079Z   [chromium] › applications/forms/forms.component.spec.ts:560:1 › new view beside a selected form inherits its directory
+2026-10-12T14:24:49.4552742Z   [chromium] › applications/forms/forms.component.spec.ts:569:1 › existing member default remains visible and can be cleared without a candidate source
+2026-10-12T14:24:49.4554552Z   [chromium] › applications/forms/forms.component.spec.ts:586:1 › text empty-string default and boolean unset false true remain distinct on Save
+2026-10-12T14:24:49.4556403Z   [chromium] › applications/forms/forms.component.spec.ts:605:1 › no-op Save with unknown result blocks exit even when definition is not dirty
+2026-10-12T14:24:49.4558006Z   [chromium] › applications/forms/forms.component.spec.ts:620:1 › A to B to A navigation ignores a late first-generation preflight
+2026-10-12T14:24:49.4559586Z   [chromium] › applications/forms/forms.component.spec.ts:665:1 › definition requests bind verified actor and B cannot replay A unknown Save
+2026-10-12T14:24:49.4561355Z   [chromium] › applications/forms/forms.component.spec.ts:686:1 › 401 and actor mismatch are handed to Shell without losing the designer draft
+2026-10-12T14:24:49.4562947Z   [chromium] › applications/forms/forms.component.spec.ts:708:1 › structure unknown operation stays with A through an actor switch
+2026-10-12T14:24:49.4564427Z   [chromium] › applications/forms/forms.component.spec.ts:723:1 › dialog returns focus to its source after quick reverse and reopens
+2026-10-12T14:24:49.4565880Z   [chromium] › applications/forms/forms.component.spec.ts:736:1 › dialog closes immediately when reduced motion is requested
+2026-10-12T14:24:49.4567413Z   [chromium] › applications/forms/forms.component.spec.ts:744:1 › owner member default picker searches, pages and saves the selected stable ID
+2026-10-12T14:24:49.4569996Z   [chromium] › applications/forms/forms.component.spec.ts:769:1 › owner department default picker displays hierarchy candidate and saves ID
+2026-10-12T14:24:49.4571920Z   [chromium] › applications/forms/forms.component.spec.ts:783:1 › second view can place an existing table field without creating another field ID
+2026-10-12T14:24:49.4573436Z   [chromium] › applications/forms/forms.component.spec.ts:798:1 › removing a group leaves its table field available to place again
+2026-10-12T14:24:49.4575026Z   [chromium] › applications/forms/forms.component.spec.ts:816:1 › preview explicit null selection does not bounce back to the configured default
+2026-10-12T14:24:49.4576994Z   [chromium] › applications/forms/forms.component.spec.ts:830:1 › malformed successful structure receipt remains unconfirmed with the original operation
+2026-10-12T14:24:49.4578676Z   [chromium] › applications/forms/forms.component.spec.ts:843:1 › malformed successful definition receipt does not erase draft or issue a new key
+2026-10-12T14:24:49.4580247Z   [chromium] › applications/forms/forms.component.spec.ts:858:1 › null JSON success envelope retains the original Save for recovery
+2026-10-12T14:24:49.4598860Z   [chromium] › applications/forms/forms.component.spec.ts:873:1 › server failure after a Save request keeps its operation until verified
+2026-10-12T14:24:49.4600995Z   [chromium] › applications/forms/forms.component.spec.ts:888:1 › server failure after a directory request keeps its name and operation
+2026-10-12T14:24:49.4602802Z   [chromium] › applications/forms/forms.component.spec.ts:902:1 › StrictMode designer boots after effect setup cleanup setup and repeated component mounting
+2026-10-12T14:24:49.4604895Z   [chromium] › applications/forms/forms.component.spec.ts:911:1 › StrictMode structure boots after effect setup cleanup setup and repeated component mounting
+2026-10-12T14:24:49.4606647Z   [chromium] › applications/forms/forms.component.spec.ts:920:1 › StrictMode designer ignores a late first setup response after the replayed setup
+2026-10-12T14:24:49.4607936Z   [chromium] › applications/forms/forms.component.spec.ts:945:1 › StrictMode structure ignores a late first setup response after the replayed setup
+2026-10-12T14:24:49.4609588Z   [chromium] › applications/forms/forms.component.spec.ts:970:1 › cached designer draft is masked when return GET is forbidden
+2026-10-12T14:24:49.4611173Z   [chromium] › applications/forms/forms.component.spec.ts:987:1 › StrictMode auth-route unmount and same actor return reverify before restoring input
+2026-10-12T14:24:49.4612467Z   [chromium] › applications/forms/forms.component.spec.ts:1005:1 › cached designer masks on auth version rejection and same actor reauth restores draft
+2026-10-12T14:24:49.4614244Z   [chromium] › applications/forms/forms.component.spec.ts:1023:1 › cached designer masks a changed actor guard before showing any old field
+2026-10-12T14:24:49.4616105Z   [chromium] › applications/forms/forms.component.spec.ts:1043:1 › cached designer masks server GET failure then preserves draft after retry
+2026-10-12T14:24:49.4617364Z   [chromium] › applications/forms/forms.component.spec.ts:1060:1 › revalidated newer definition warns and keeps dirty versions without rebasing
+2026-10-12T14:24:49.4618423Z   [chromium] › applications/forms/forms.component.spec.ts:1083:1 › cached structure dialog is masked after permission revocation
+2026-10-12T14:24:49.4619472Z   [chromium] › applications/forms/forms.component.spec.ts:1107:1 › revalidated newer structure retains original name and CAS version
+2026-10-12T14:24:49.4620659Z   [chromium] › applications/forms/forms.component.spec.ts:1140:3 › unknown Save retry 401 retains original operation for later confirmation
+2026-10-12T14:24:49.4621791Z   [chromium] › applications/forms/forms.component.spec.ts:1140:3 › unknown Save retry 403 retains original operation for later confirmation
+2026-10-12T14:24:49.4622796Z   [chromium] › applications/forms/forms.component.spec.ts:1140:3 › unknown Save retry 409 retains original operation for later confirmation
+2026-10-12T14:24:49.4623887Z   [chromium] › applications/forms/forms.component.spec.ts:1169:1 › StrictMode guard clears on unmount while retaining an unknown Save packet
+2026-10-12T14:24:49.4624940Z   [chromium] › applications/forms/forms.component.spec.ts:1186:1 › StrictMode structure guard clears on unmount while retaining the unknown operation
+2026-10-12T14:24:49.4626089Z   [chromium] › applications/forms/forms.component.spec.ts:1201:1 › unknown structure retry denial retains original directory request after revalidation
+2026-10-12T14:24:49.4627190Z   [chromium] › applications/forms/forms.component.spec.ts:1220:1 › slow preflight is abandoned on Back before PUT and guard teardown is explicit
+2026-10-12T14:24:49.4628538Z   [chromium] › applications/forms/forms.component.spec.ts:1239:1 › discard cancels a gated preflight even when onBack is absent and the designer stays mounted
+2026-10-12T14:24:49.4629671Z   [chromium] › applications/forms/forms.component.spec.ts:1261:1 › external designer discard clears the scoped draft before delayed unmount
+2026-10-12T14:24:49.4631089Z   [chromium] › applications/forms/forms.component.spec.ts:1275:1 › external structure discard clears entered directory before route remount
+2026-10-12T14:24:49.4632151Z   [chromium] › applications/forms/forms.component.spec.ts:1288:1 › external preflight discard cancels PUT while route unmount is delayed
+2026-10-12T14:24:49.4633178Z   [chromium] › applications/forms/forms.component.spec.ts:1307:1 › external leave retains an already sent unknown Save and its original key
+2026-10-12T14:24:49.4634289Z   [chromium] › applications/forms/forms.component.spec.ts:1327:1 › external leave during sent PUT retains the packet until a same-actor result lookup
+2026-10-12T14:24:49.4636084Z   [chromium] › applications/forms/forms.component.spec.ts:1358:1 › external structure leave keeps an unknown directory operation and entered name
+2026-10-12T14:24:49.4637614Z   [chromium] › applications/forms/forms.component.spec.ts:1377:1 › StrictMode old same-scope unsubscribe cannot clear the current controller
+2026-10-12T14:24:49.4638672Z   [chromium] › applications/forms/forms.component.spec.ts:1386:1 › external leave rejects a decision made before draft becomes preflight
+2026-10-12T14:24:49.4639758Z   [chromium] › applications/forms/forms.component.spec.ts:1407:1 › external leave rejects a stale confirmation after draft content changes
+2026-10-12T14:24:49.4640974Z   [chromium] › applications/forms/forms.component.spec.ts:1421:1 › explicit discard removes an ordinary draft while an unknown packet is never discarded implicitly
+2026-10-12T14:24:49.4642090Z   [chromium] › applications/forms/forms.component.spec.ts:1433:1 › datetime to non-datetime conversion clears timezone in preflight DTO
+2026-10-12T14:24:49.4643103Z   [chromium] › applications/forms/forms.component.spec.ts:1448:1 › existing text field can request a guarded number type conversion
+2026-10-12T14:24:49.4644156Z   [chromium] › applications/forms/forms.component.spec.ts:1463:1 › designer canvas renders the actual field control in a nonediting design state
+2026-10-12T14:24:49.4645305Z   [chromium] › applications/forms/forms.component.spec.ts:1474:1 › changing an option mapping after successful preflight invalidates its token and pending packet
+2026-10-12T14:24:49.4646499Z   [chromium] › applications/forms/forms.component.spec.ts:1506:1 › expired confirmation token asks for another preflight instead of silently ignoring click
+2026-10-12T14:24:49.4647779Z   [chromium] › applications/records/record-form.component.spec.ts:3:1 › record form keeps precise and false values, excludes denied fields, and recovers the same unknown operation
+2026-10-12T14:24:49.4649123Z   [chromium] › applications/records/record-form.component.spec.ts:24:1 › record form uses scoped ordinary candidate selector and keeps selected label only in unsaved state
+2026-10-12T14:24:49.4650504Z   [chromium] › applications/records/record-form.component.spec.ts:34:1 › dirty form preserves input and blocks save when runtime control version changes
+2026-10-12T14:24:49.4651774Z   [chromium] › applications/records/records-panel.component.spec.ts:3:1 › records use one server ordered Table with stable IDs, guarded cells and manual numeric sort
+2026-10-12T14:24:49.4653198Z   [chromium] › applications/records/records-panel.component.spec.ts:18:1 › hidden column and arbitrary empty deep page stay controlled without erasing scope
+2026-10-12T14:24:49.4655026Z   [chromium] › applications/records/records.component.spec.ts:11:1 › confirmed record and draft receipts accept exact minimum only
+2026-10-12T14:24:49.4656415Z   [chromium] › applications/records/records.component.spec.ts:22:1 › safe runtime projection keeps null, empty and false but never fills denied values or defaults
+2026-10-12T14:24:49.4658120Z   [chromium] › applications/records/records.component.spec.ts:36:1 › history hint intersects current read and history; schema change flags dirty review
+2026-10-12T14:24:49.4659218Z   [chromium] › applications/records/records.component.spec.ts:45:1 › history labels only use IDs in allowed delta and keep unavailable explicit
+2026-10-12T14:24:49.4660524Z   [chromium] › applications/records/records.component.spec.ts:51:1 › new record editor identities stay distinct until confirmed server record and isolate field cache
+2026-10-12T14:24:49.4661724Z   [chromium] › applications/records/root-editor.component.spec.ts:12:1 › Root record form sends one canonical create and confirms only after the receipt
+2026-10-12T14:24:49.4662860Z   [chromium] › applications/records/root-editor.component.spec.ts:31:1 › Root record form edits only changed fields with row and schema CAS
+2026-10-12T14:24:49.4663994Z   [chromium] › applications/records/root-editor.component.spec.ts:39:1 › Root record form unknown save survives unmount and failed lookup using the same key
+2026-10-12T14:24:49.4665223Z   [chromium] › applications/records/root-editor.component.spec.ts:50:1 › Root another actor cannot inherit an unknown record editor packet or input
+2026-10-12T14:24:49.4667028Z   [chromium] › applications/records/root-editor.component.spec.ts:57:2 › Root APPLICATION_RECORD_CONFLICT retains input and requires explicit refresh before another save
+2026-10-12T14:24:49.4668994Z   [chromium] › applications/records/root-editor.component.spec.ts:57:2 › Root APPLICATION_SCHEMA_CONFLICT retains input and requires explicit refresh before another save
+2026-10-12T14:24:49.4670464Z   [chromium] › applications/records/root-editor.component.spec.ts:57:2 › Root APPLICATION_QUERY_CHANGED retains input and requires explicit refresh before another save
+2026-10-12T14:24:49.4671755Z   [chromium] › applications/records/root-editor.component.spec.ts:57:2 › Root APPLICATION_QUERY_CONTEXT_EXPIRED retains input and requires explicit refresh before another save
+2026-10-12T14:24:49.4673092Z   [chromium] › applications/records/root-editor.component.spec.ts:57:2 › Root APPLICATION_POLICY_CONFLICT retains input and requires explicit refresh before another save
+2026-10-12T14:24:49.4674271Z   [chromium] › applications/records/root-editor.component.spec.ts:65:1 › Root record form cancels an unsent preflight through the real leave guard
+2026-10-12T14:24:49.4675376Z   [chromium] › applications/records/root-editor.component.spec.ts:75:1 › Root revoked field is hidden while an old pending operation stays recoverable
+2026-10-12T14:24:49.4676485Z   [chromium] › applications/records/root-editor.component.spec.ts:81:1 › Root description layout renders plain text without executable markup
+2026-10-12T14:24:49.4677600Z   [chromium] › applications/records/root-layout.component.spec.ts:2:1 › Root configured group and field order override schema field order
+2026-10-12T14:24:49.4678582Z   [chromium] › applications/records/root-layout.component.spec.ts:11:1 › Root layout does not expose unplaced or denied fields
+2026-10-12T14:24:49.4679610Z   [chromium] › applications/records/root-layout.component.spec.ts:17:1 › Root read layout preserves exact values and disables edits
+2026-10-12T14:24:49.4680697Z   [chromium] › applications/records/root-layout.component.spec.ts:27:1 › Root system record version comes from actual record metadata
+2026-10-12T14:24:49.4681761Z   [chromium] › applications/records/root-recovery.component.spec.ts:10:2 › Root unknown save survives failed recovery without a second write
+2026-10-12T14:24:49.4682856Z   [chromium] › applications/records/root-recovery.component.spec.ts:10:2 › Root unknown save survives throw recovery without a second write
+2026-10-12T14:24:49.4683942Z   [chromium] › applications/records/root-recovery.component.spec.ts:10:2 › Root unknown save survives malformed recovery without a second write
+2026-10-12T14:24:49.4685080Z   [chromium] › applications/records/root-recovery.component.spec.ts:43:1 › Root definitive first-write rejection allows editing and a fresh submission
+2026-10-12T14:24:49.4686284Z   [chromium] › applications/root-boundary.component.spec.ts:6:1 › Root recovery owns an immutable deep snapshot of the sent packet
+2026-10-12T14:24:49.4687331Z   [chromium] › applications/root-boundary.component.spec.ts:21:1 › Root successful PATCH retains actor and exact JSON body
+2026-10-12T14:24:49.4688228Z   [chromium] › applications/root-boundary.component.spec.ts:32:1 › Root DELETE confirms only an exact empty 204
+2026-10-12T14:24:49.4689187Z   [chromium] › applications/root-boundary.component.spec.ts:41:1 › Root DELETE unexpected successful status stays unconfirmed
+2026-10-12T14:24:49.4690106Z   [chromium] › applications/root-boundary.component.spec.ts:51:2 › Root network failure uncertainty follows mutation
+2026-10-12T14:24:49.4691191Z   [chromium] › applications/root-boundary.component.spec.ts:51:2 › Root network failure uncertainty follows read-only search
+2026-10-12T14:24:49.4692188Z   [chromium] › applications/root-boundary.component.spec.ts:62:1 › Root read-only POST does not grant mutation paths read semantics
+2026-10-12T14:24:49.4693355Z   [chromium] › applications/root-boundary.component.spec.ts:71:1 › Root malformed read-only search response does not create unknown write state
+2026-10-12T14:24:49.4694807Z   [chromium] › applications/root-boundary.component.spec.ts:85:2 › Root read-only search rejects normalized path applications/22222222-2222-4222-8222-222222222222#fragment/forms/33333333-3333-4333-8333-333333333333/records/search
+2026-10-12T14:24:49.4696337Z   [chromium] › applications/root-boundary.component.spec.ts:85:2 › Root read-only search rejects normalized path applications/../forms/33333333-3333-4333-8333-333333333333/records/search
+2026-10-12T14:24:49.4698287Z   [chromium] › applications/root-boundary.component.spec.ts:85:2 › Root read-only search rejects normalized path applications/22222222-2222-4222-8222-222222222222/forms/%2e%2e/records/search
+2026-10-12T14:24:49.4699830Z   [chromium] › applications/root-boundary.component.spec.ts:95:1 › Root read-only search HTTP 503 remains a read failure
+2026-10-12T14:24:49.4701618Z   [chromium] › applications/root-operation-guard.component.spec.ts:14:1 › Root leave guard sees preflight immediately and cancellation prevents the write
+2026-10-12T14:24:49.4703322Z   [chromium] › applications/root-operation-guard.component.spec.ts:32:1 › Root leave guard distinguishes a sent write and clears only on confirmation
+2026-10-12T14:24:49.4704705Z   [chromium] › applications/root-operation-guard.component.spec.ts:45:2 › Root ambiguous HTTP 408 keeps the original write pending
+2026-10-12T14:24:49.4706186Z   [chromium] › applications/root-operation-guard.component.spec.ts:45:2 › Root ambiguous HTTP 500 keeps the original write pending
+2026-10-12T14:24:49.4707616Z   [chromium] › applications/root-operation-guard.component.spec.ts:45:2 › Root ambiguous HTTP 504 keeps the original write pending
+2026-10-12T14:24:49.4709146Z   [chromium] › applications/root-operation-guard.component.spec.ts:54:1 › Root definitive record conflict exposes a safe error code for refresh handling
+2026-10-12T14:24:49.4710973Z   [chromium] › applications/root-record-leave.component.spec.ts:7:1 › Root record drafts, saved records and persistent drafts have distinct leave scopes
+2026-10-12T14:24:49.4712568Z   [chromium] › applications/root-record-leave.component.spec.ts:20:1 › Root old record-scope cleanup cannot remove its replacement
+2026-10-12T14:24:49.4713895Z   [chromium] › applications/root-record-leave.component.spec.ts:28:1 › Root record leave guards remain actor-isolated
+2026-10-12T14:24:49.4715300Z   [chromium] › applications/root-record-read-contract.component.spec.ts:12:2 › Root read contract keeps scalar member references including tombstones
+2026-10-12T14:24:49.4716959Z   [chromium] › applications/root-record-read-contract.component.spec.ts:12:2 › Root read contract keeps scalar department references including tombstones
+2026-10-12T14:24:49.4718774Z   [chromium] › applications/root-record-read-contract.component.spec.ts:20:1 › Root runtime accepts rounding at the hundreds place without float conversion
+2026-10-12T14:24:49.4720799Z   [chromium] › applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":0,"scale":0,"roundingPlaces":0}
+2026-10-12T14:24:49.4722600Z   [chromium] › applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":39,"scale":2,"roundingPlaces":2}
+2026-10-12T14:24:49.4724458Z   [chromium] › applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":20,"scale":19,"roundingPlaces":2}
+2026-10-12T14:24:49.4726266Z   [chromium] › applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":2,"scale":3,"roundingPlaces":2}
+2026-10-12T14:24:49.4728064Z   [chromium] › applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":20,"scale":2,"roundingPlaces":-19}
+2026-10-12T14:24:49.4729987Z   [chromium] › applications/root-record-read-contract.component.spec.ts:34:2 › Root rejects invalid decimal configuration {"precision":20,"scale":2,"roundingPlaces":3}
+2026-10-12T14:24:49.4731872Z   [chromium] › applications/root-record-read-contract.component.spec.ts:39:1 › Root record read-none and own-row policies cannot be widened by field access
+2026-10-12T14:24:49.4733568Z   [chromium] › applications/root-record-read-contract.component.spec.ts:44:1 › Root own-field value is rejected when the record belongs to somebody else
+2026-10-12T14:24:49.4735162Z   [chromium] › applications/root-record-read-contract.component.spec.ts:49:1 › Root persisted records require positive record and schema versions
+2026-10-12T14:24:49.4736713Z   [chromium] › applications/root-record-read-contract.component.spec.ts:56:1 › Root supports system timestamp sort and ignores JSON object key order
+2026-10-12T14:24:49.4738205Z   [chromium] › applications/root-record-read-contract.component.spec.ts:65:1 › Root rejects duplicate row IDs and oversized pages
+2026-10-12T14:24:49.4739886Z   [chromium] › applications/root-record-read-contract.component.spec.ts:74:1 › Root preserves description layout and canonical UUIDs without inventing version restrictions
+2026-10-12T14:24:49.4741664Z   [chromium] › applications/root-record-read-contract.component.spec.ts:81:1 › Root calendar dates reject impossible days and retain leap days
+2026-10-12T14:24:49.4743250Z   [chromium] › applications/root-record-read-contract.component.spec.ts:86:1 › Root query operators must be literal strings rather than coercible arrays
+2026-10-12T14:24:49.4744732Z   [chromium] › applications/root-record-read-contract.component.spec.ts:90:1 › Root layout span follows the declared integer range
+2026-10-12T14:24:49.4747565Z   [chromium] › applications/root-record-read-contract.component.spec.ts:97:1 › Root ordinary runtime requires a ready schema and positive policy revision
+2026-10-12T14:24:49.4749267Z   [chromium] › applications/root-record-read-contract.component.spec.ts:102:1 › Root reference labels cannot bypass an own-field read restriction
+2026-10-12T14:24:49.4751044Z   [chromium] › applications/root-record-workspace.component.spec.ts:13:1 › Root runtime record list reads ordinary endpoints then opens the exact row context
+2026-10-12T14:24:49.4752710Z   [chromium] › applications/root-record-workspace.component.spec.ts:35:1 › Root page jump retains old query and explicit refresh returns to page one without it
+2026-10-12T14:24:49.4754386Z   [chromium] › applications/root-record-workspace.component.spec.ts:52:1 › Root changed query preserves existing rows until the user explicitly refreshes
+2026-10-12T14:24:49.4756122Z   [chromium] › applications/root-record-workspace.component.spec.ts:72:1 › Root rejects a foreign-resource row instead of rendering or silently filtering it
+2026-10-12T14:24:49.4757988Z   [chromium] › applications/root-record-workspace.component.spec.ts:84:1 › Root create-only access opens the new record action without querying unreadable rows
+2026-10-12T14:24:49.4760676Z   [chromium] › applications/root-record-workspace.component.spec.ts:94:1 › Root metadata-only view changes reload runtime without discarding query context
+2026-10-12T14:24:49.4762544Z   [chromium] › applications/root-record-workspace.component.spec.ts:118:1 › Root visible record selection works and sorting clears selected rows
+2026-10-12T14:24:49.4764365Z   [chromium] › applications/root-record-workspace.component.spec.ts:127:1 › Root unconfigured schema gives an actionable configuration state without querying rows
+2026-10-12T14:24:49.4765962Z   [chromium] › applications/root-record-workspace.component.spec.ts:134:1 › Root pagination remains inside the bounded application work area
+2026-10-12T14:24:49.4767465Z   [chromium] › applications/root-scoped.component.spec.ts:16:1 › Root scoped create confirms exact receipt and canonical Location once
+2026-10-12T14:24:49.4768911Z   [chromium] › applications/root-scoped.component.spec.ts:28:2 › Root scoped create keeps original operation for extra-values
+2026-10-12T14:24:49.4770563Z   [chromium] › applications/root-scoped.component.spec.ts:28:2 › Root scoped create keeps original operation for wrong-operation
+2026-10-12T14:24:49.4772045Z   [chromium] › applications/root-scoped.component.spec.ts:28:2 › Root scoped create keeps original operation for wrong-record
+2026-10-12T14:24:49.4773337Z   [chromium] › applications/root-scoped.component.spec.ts:28:2 › Root scoped create keeps original operation for wrong-location
+2026-10-12T14:24:49.4774347Z   [chromium] › applications/root-scoped.component.spec.ts:55:1 › Root scoped PATCH sends one operation and correct record CAS
+2026-10-12T14:24:49.4775396Z   [chromium] › applications/root-scoped.component.spec.ts:66:1 › Root draft DELETE empty 204 confirms without invented response body
+2026-10-12T14:24:49.4776426Z   [chromium] › applications/root-scoped.component.spec.ts:80:1 › Root unknown DELETE recovers minimum receipt without a second delete
+2026-10-12T14:24:49.4777403Z   [chromium] › applications.component.spec.ts:35:1 › V030-012 Home opens the real application catalogue
+2026-10-12T14:24:49.4778426Z   [chromium] › applications.component.spec.ts:45:1 › V030-012 catalogue reads B5 without parameters and filters its authorized result
+2026-10-12T14:24:49.4779390Z   [chromium] › applications.component.spec.ts:63:1 › V030-012 catalog trailing slash survives direct entry and refresh
+2026-10-12T14:24:49.4780310Z   [chromium] › applications.component.spec.ts:73:1 › V030-012 live create capability opens a name-only real create flow
+2026-10-12T14:24:49.4781524Z   [chromium] › applications.component.spec.ts:84:1 › V030-012 opening an application rechecks access and presents its actual empty workspace
+2026-10-12T14:24:49.4782642Z   [chromium] › applications.component.spec.ts:104:1 › V030-012 slow create preflight locks its name, ignores repeat clicks, and retains the matching unknown packet
+2026-10-12T14:24:49.4783885Z   [chromium] › applications.component.spec.ts:141:1 › V030-012 preflight 401 keeps the unsent name without a write or unknown operation
+2026-10-12T14:24:49.4785190Z   [chromium] › applications.component.spec.ts:176:1 › V030-012 preflight actor mismatch masks the Shell before any create POST
+2026-10-12T14:24:49.4786247Z   [chromium] › applications.component.spec.ts:201:1 › V030-012 discarding a gated unsent create through Back prevents its later POST and success
+2026-10-12T14:24:49.4787257Z   [chromium] › applications.component.spec.ts:237:1 › V030-012 create waits for server acknowledgement and sends only the frozen DTO
+2026-10-12T14:24:49.4788349Z   [chromium] › applications.component.spec.ts:261:1 › V030-012 unconfirmed create recovers its original operation and never treats 404 as rollback
+2026-10-12T14:24:49.4789427Z   [chromium] › applications.component.spec.ts:290:1 › V030-012 retry after lost response preserves the operation key and exact payload
+2026-10-12T14:24:49.4790515Z   [chromium] › applications.component.spec.ts:315:2 › V030-012 non-confirming create reply retains the original operation: 201 JSON null
+2026-10-12T14:24:49.4791770Z   [chromium] › applications.component.spec.ts:315:2 › V030-012 non-confirming create reply retains the original operation: 201 wrong owner
+2026-10-12T14:24:49.4792893Z   [chromium] › applications.component.spec.ts:315:2 › V030-012 non-confirming create reply retains the original operation: 200 valid application body
+2026-10-12T14:24:49.4794038Z   [chromium] › applications.component.spec.ts:333:1 › V030-012 A unknown create cannot retry under B after another tab switches the shared session
+2026-10-12T14:24:49.4795026Z   [chromium] › applications.component.spec.ts:379:1 › V030-012 stale A shell blocks a new create when another tab is now B
+2026-10-12T14:24:49.4796062Z   [chromium] › applications.component.spec.ts:406:1 › V030-012 switching from a masked A view keeps recovery in the SPA auth flow
+2026-10-12T14:24:49.4797055Z   [chromium] › applications.component.spec.ts:430:1 › V030-012 a mismatched me/access actor never renders the old application Shell
+2026-10-12T14:24:49.4798232Z   [chromium] › applications.component.spec.ts:446:1 › V030-012 operation 401 keeps A draft and original key across SPA reauthentication
+2026-10-12T14:24:49.4799560Z   [chromium] › applications.component.spec.ts:481:1 › V030-012 B login cannot see or replay A draft and unknown operation
+2026-10-12T14:24:49.4800624Z   [chromium] › applications.component.spec.ts:517:1 › V030-012 late catalog 401 keeps an unsent name for the same actor after login
+2026-10-12T14:24:49.4801755Z   [chromium] › applications.component.spec.ts:541:1 › V030-012 a pending POST interrupted by forced login resumes as unknown under the same actor
+2026-10-12T14:24:49.4803116Z   [chromium] › applications.component.spec.ts:585:1 › V030-012 every application-domain read, write and operation query binds the viewed actor
+2026-10-12T14:24:49.4804771Z   [chromium] › applications.component.spec.ts:610:1 › V030-012 server denial is visible and never produces a success message
+2026-10-12T14:24:49.4805792Z   [chromium] › applications.component.spec.ts:622:1 › V030-012 dirty create cancel and Escape retain the name until explicit discard
+2026-10-12T14:24:49.4806891Z   [chromium] › applications.component.spec.ts:636:1 › V030-012 Home and application navigation retain one Shell and reauthorize repeated opens
+2026-10-12T14:24:49.4808008Z   [chromium] › applications.component.spec.ts:658:1 › V030-012 leaving a dirty create restores its route on cancel and closes it on discard
+2026-10-12T14:24:49.4809095Z   [chromium] › applications.component.spec.ts:676:1 › V030-012 an operation query denial is visible while the original outcome remains unconfirmed
+2026-10-12T14:24:49.4810151Z   [chromium] › applications.component.spec.ts:688:1 › V030-012 denial on same-key retry cannot erase an earlier unknown outcome
+2026-10-12T14:24:49.4811271Z   [chromium] › applications.component.spec.ts:707:1 › V030-012 confirmed create notice stays in the catalogue after opening the workspace
+2026-10-12T14:24:49.4812872Z   [chromium] › applications.component.spec.ts:724:1 › Root Mono application Home uses the approved shared full-bleed desktop shell
+2026-10-12T14:24:49.4814927Z   [chromium] › applications.form-shell.component.spec.ts:41:1 › V030-012 Shell opens the real structure and form view under one app tab
+2026-10-12T14:24:49.4816333Z   [chromium] › applications.form-shell.component.spec.ts:53:1 › V030-012 external Back discard removes a structure draft before returning
+2026-10-12T14:24:49.4817428Z   [chromium] › applications.form-shell.component.spec.ts:72:1 › V030-012 external Back discard removes a designer draft before returning
+2026-10-12T14:24:49.4818571Z   [chromium] › applications.form-shell.component.spec.ts:91:1 › V030-012 closing the current app tab waits for form discard and clears only the unsent draft
+2026-10-12T14:24:49.4819762Z   [chromium] › applications.form-shell.component.spec.ts:117:1 › V030-012 closing the current app tab retains a sent unknown form operation
+2026-10-12T14:24:49.4821199Z   [chromium] › applications.form-shell.component.spec.ts:146:1 › V030-012 Shell cancels a slow unsent form preflight before route leave
+2026-10-12T14:24:49.4822479Z   [chromium] › applications.form-shell.component.spec.ts:176:1 › V030-012 Shell re-confirms a changed preflight outcome and retains the original unknown write
+2026-10-12T14:24:49.4823622Z   [chromium] › applications.form-shell.component.spec.ts:211:1 › V030-012 forced form 401 routes to login and restores only the same actor draft
+2026-10-12T14:24:49.4824838Z   [chromium] › applications.form-shell.component.spec.ts:243:2 › Root R26 nested long form actions stay inside the tree and remain clickable at 1280
+2026-10-12T14:24:49.4825961Z   [chromium] › applications.form-shell.component.spec.ts:243:2 › Root R26 nested long form actions stay inside the tree and remain clickable at 1920
+2026-10-12T14:24:49.4827173Z   [chromium] › applications.form-shell.component.spec.ts:276:1 › Root R26 money configuration exposes a unique rounding control and preserves its selected rule
+2026-10-12T14:24:49.4828438Z   [chromium] › applications.permissions.component.spec.ts:61:1 › V030-012 owner manages a real group with three independent server saves
+2026-10-12T14:24:49.4829484Z   [chromium] › applications.permissions.component.spec.ts:85:1 › V030-012 a non-owner has no group-management entrance
+2026-10-12T14:24:49.4830742Z   [chromium] › applications.permissions.component.spec.ts:94:1 › V030-012 canceling a dirty current-tab close keeps the tab and its permission draft
+2026-10-12T14:24:49.4831918Z   [chromium] › applications.permissions.component.spec.ts:109:1 › V030-012 a confirmed group write with failed reread stays confirmed and blocks another save
+2026-10-12T14:24:49.4833035Z   [chromium] › applications.permissions.component.spec.ts:131:1 › V030-012 creates an enabled group with the real POST and rereads it
+2026-10-12T14:24:49.4834145Z   [chromium] › applications.permissions.component.spec.ts:145:1 › V030-012 group names count Unicode characters and reject a 101-character write
+2026-10-12T14:24:49.4835305Z   [chromium] › applications.permissions.component.spec.ts:161:1 › V030-012 permission management remains keyboard reachable with reduced motion
+2026-10-12T14:24:49.4836531Z   [chromium] › applications.permissions.component.spec.ts:180:1 › V030-012 an existing disabled member remains visible and can be explicitly removed
+2026-10-12T14:24:49.4837689Z   [chromium] › applications.permissions.component.spec.ts:193:1 › V030-012 permission-group loading and failed read have visible retry states
+2026-10-12T14:24:49.4838778Z   [chromium] › applications.permissions.component.spec.ts:216:1 › V030-012 member-candidate empty and failure states remain retryable
+2026-10-12T14:24:49.4839875Z   [chromium] › applications.permissions.component.spec.ts:238:1 › V030-012 preserves an unsupported grant by making the menu read-only
+2026-10-12T14:24:49.4841375Z   [chromium] › applications.permissions.component.spec.ts:252:1 › V030-012 selected members survive cursor paging and a dirty menu requires review after member save
+2026-10-12T14:24:49.4842641Z   [chromium] › applications.permissions.component.spec.ts:279:1 › V030-012 CAS review lets two dirty sections save in sequence only after explicit retry
+2026-10-12T14:24:49.4843795Z   [chromium] › applications.permissions.component.spec.ts:298:1 › V030-012 CAS review keeps a same-section draft after another actor changes its server baseline
+2026-10-12T14:24:49.4844986Z   [chromium] › applications.permissions.component.spec.ts:320:1 › V030-012 CAS review discards only the selected section and retains a dirty peer
+2026-10-12T14:24:49.4846164Z   [chromium] › applications.permissions.component.spec.ts:337:1 › V030-012 CAS review handles a second definite conflict without losing input or reusing a key
+2026-10-12T14:24:49.4847291Z   [chromium] › applications.permissions.component.spec.ts:357:1 › V030-012 CAS review rejects a split policy snapshot before any grant write
+2026-10-12T14:24:49.4848511Z   [chromium] › applications.permissions.component.spec.ts:388:1 › V030-012 CAS review rejects a stale group item against its list revision
+2026-10-12T14:24:49.4849708Z   [chromium] › applications.permissions.component.spec.ts:415:1 › V030-012 Back discard cancels a gated group preflight before PUT
+2026-10-12T14:24:49.4851015Z   [chromium] › applications.permissions.component.spec.ts:439:1 › V030-012 an unconfirmed group PUT keeps its original actor, body, key and editable scope
+2026-10-12T14:24:49.4852170Z   [chromium] › applications.permissions.component.spec.ts:483:1 › V030-012 group preflight 401 preserves the unsent scoped draft for the same actor
+2026-10-12T14:24:49.4853408Z   [chromium] › applications.states.component.spec.ts:19:1 › V030-012 catalog error, loading, retry and empty states remain honest
+2026-10-12T14:24:49.4854453Z   [chromium] › applications.states.component.spec.ts:40:1 › V030-012 stale app access is denied and a fresh retry reauthorizes it
+2026-10-12T14:24:49.4855373Z   [chromium] › applications.states.component.spec.ts:54:1 › V030-012 catalog 401 sends the user to login
+2026-10-12T14:24:49.4856394Z   [chromium] › applications.states.component.spec.ts:62:1 › V030-012 unknown create and dirty-close states show the retained operation
+2026-10-12T14:24:49.4857351Z   [chromium] › auth.component.spec.ts:5:1 › Q29 login error card and registration retain the current Figma dimensions
+2026-10-12T14:24:49.4858351Z   [chromium] › auth.component.spec.ts:14:1 › approved account dictionary: 254 Unicode characters can be entered and submitted
+2026-10-12T14:24:49.4859224Z   [chromium] › auth.component.spec.ts:26:1 › approved account dictionary: non-breaking edge spaces are preserved
+2026-10-12T14:24:49.4860094Z   [chromium] › auth.component.spec.ts:35:1 › Figma brand text keeps its #102044 color above the glow on mobile
+2026-10-12T14:24:49.4861183Z   [chromium] › auth.component.spec.ts:58:1 › PRD UX: login loading prevents a second submission and restores after failure
+2026-10-12T14:24:49.4862634Z   [chromium] › auth.component.spec.ts:80:1 › PRD FR-017/018: four-character strong password submits and registration returns to login without a Session
+2026-10-12T14:24:49.4863638Z   [chromium] › auth.component.spec.ts:97:1 › Q7: logout sends the frontend-readable host CSRF cookie in the header
+2026-10-12T14:24:49.4864492Z   [chromium] › auth.component.spec.ts:120:1 › Q12: future login controls stay visible and disabled
+2026-10-12T14:24:49.4865284Z   [chromium] › auth.component.spec.ts:133:1 › WaveOS Figma 13:2 login shell uses the new brand and card geometry
+2026-10-12T14:24:49.4866142Z   [chromium] › auth.component.spec.ts:148:1 › WaveOS Figma 40:2 register has four large fields and the invitation
+2026-10-12T14:24:49.4867043Z   [chromium] › auth.component.spec.ts:164:1 › FR-001/011: login is accessible and offers no self-service recovery
+2026-10-12T14:24:49.4867822Z   [chromium] › auth.component.spec.ts:172:1 › PRD interaction: password visibility can be toggled
+2026-10-12T14:24:49.4868624Z   [chromium] › auth.component.spec.ts:181:1 › FR-004: invitation URL fills the registration field
+2026-10-12T14:24:49.4869470Z   [chromium] › auth.component.spec.ts:186:1 › FR-002: registration rejects an account containing spaces before submission
+2026-10-12T14:24:49.4870604Z   [chromium] › auth.component.spec.ts:202:1 › FR-007: an anonymous browser cannot enter the protected app
+2026-10-12T14:24:49.4871473Z   [chromium] › auth.component.spec.ts:207:1 › API-14: a current-session service failure is shown as a system error
+2026-10-12T14:24:49.4872334Z   [chromium] › auth.component.spec.ts:213:1 › FR-001 UX: login reports a network failure in plain language
+2026-10-12T14:24:49.4873139Z   [chromium] › auth.component.spec.ts:222:1 › FR-001: wrong credentials show an error and remain unauthenticated
+2026-10-12T14:24:49.4874104Z   [chromium] › auth.component.spec.ts:236:1 › PRD login rule: an empty password is rejected before submission
+2026-10-12T14:24:49.4875031Z   [chromium] › filter-manager.component.spec.ts:43:1 › approved empty manager opens at viewport center with explicit new action
+2026-10-12T14:24:49.4876100Z   [chromium] › filter-manager.component.spec.ts:47:1 › save finite OR of AND blocks and typed comparison without applying
+2026-10-12T14:24:49.4877177Z   [chromium] › filter-manager.component.spec.ts:55:1 › visibility-only save has independent searches and keeps at least one business field
+2026-10-12T14:24:49.4878301Z   [chromium] › filter-manager.component.spec.ts:62:1 › apply latest resource resets page selection while preserving search quick filters and queryVersion
+2026-10-12T14:24:49.4879469Z   [chromium] › filter-manager.component.spec.ts:68:1 › editing applied preset saves new version but preserves applied snapshot until explicit apply
+2026-10-12T14:24:49.4880710Z   [chromium] › filter-manager.component.spec.ts:72:1 › switch A to B then cancel restores original visibility and does not restore A baseline
+2026-10-12T14:24:49.4881782Z   [chromium] › filter-manager.component.spec.ts:76:1 › delete active requires confirmation then clears filter and restores columns
+2026-10-12T14:24:49.4882879Z   [chromium] › filter-manager.component.spec.ts:79:115 › PERSONNEL_PRESET_NAME_CONFLICT preserves editor input with specific recovery
+2026-10-12T14:24:49.4883943Z   [chromium] › filter-manager.component.spec.ts:79:115 › PERSONNEL_PRESET_LIMIT_REACHED preserves editor input with specific recovery
+2026-10-12T14:24:49.4884974Z   [chromium] › filter-manager.component.spec.ts:79:115 › PERSONNEL_PRESET_CONFLICT preserves editor input with specific recovery
+2026-10-12T14:24:49.4886012Z   [chromium] › filter-manager.component.spec.ts:82:75 › failed COMMON_QUERY_CHANGED apply cannot change active filter visibility or refresh automatically
+2026-10-12T14:24:49.4887226Z   [chromium] › filter-manager.component.spec.ts:82:75 › failed COMMON_QUERY_CONTEXT_EXPIRED apply cannot change active filter visibility or refresh automatically
+2026-10-12T14:24:49.4888255Z   [chromium] › filter-manager.component.spec.ts:85:1 › reopening and reloading do not autoapply persisted presets
+2026-10-12T14:24:49.4889237Z   [chromium] › filter-manager.component.spec.ts:88:1 › invalid empty intermediate row stays editable and cannot be saved
+2026-10-12T14:24:49.4890208Z   [chromium] › filter-manager.component.spec.ts:91:1 › narrow centered editor scrolls body with fixed footer and keyboard move controls
+2026-10-12T14:24:49.4891535Z   [chromium] › filter-manager.component.spec.ts:95:1 › open close reopen last intent survives transition and reduced motion remains operable
+2026-10-12T14:24:49.4892705Z   [chromium] › filter-manager.component.spec.ts:98:1 › single Arca Table hides by stable ID and preserves hidden width/order through visible resize
+2026-10-12T14:24:49.4893812Z   [chromium] › filter-manager.component.spec.ts:106:1 › frozen text empty string stays a typed value and is distinct from zero conditions
+2026-10-12T14:24:49.4894962Z   [chromium] › filter-manager.component.spec.ts:109:1 › successful active delete and later query failure are reported separately with old snapshot retained
+2026-10-12T14:24:49.4896141Z   [chromium] › filter-manager.component.spec.ts:114:1 › unsupported runtime tree cannot be silently flattened by edit or applied as a full query
+2026-10-12T14:24:49.4897362Z   [chromium] › filter-manager.component.spec.ts:117:1 › visibility-only applies without a query and deletion of nonactive does not change the snapshot
+2026-10-12T14:24:49.4898537Z   [chromium] › filter-manager.component.spec.ts:120:1 › unsaved editor Escape preserves input until explicit discard and footer cancel returns to manager
+2026-10-12T14:24:49.4899675Z   [chromium] › filter-manager.component.spec.ts:123:1 › deleted reference and unknown fields fail apply before any search request
+2026-10-12T14:24:49.4900947Z   [chromium] › filter-manager.component.spec.ts:126:1 › narrow typed condition retains a readable field name beside NULL controls
+2026-10-12T14:24:49.4901985Z   [chromium] › filter-manager.component.spec.ts:134:36 › V051 production manager delayed opening 0ms honors trusted Escape
+2026-10-12T14:24:49.4903101Z   [chromium] › filter-manager.component.spec.ts:134:36 › V051 production manager delayed opening 650ms honors trusted Escape
+2026-10-12T14:24:49.4904138Z   [chromium] › filter-manager.component.spec.ts:168:1 › V051 production manager uses native shared geometry at 300ms open and 220ms close
+2026-10-12T14:24:49.4905263Z   [chromium] › filter-manager.component.spec.ts:208:2 › V051 production manager native restores trigger pixels after Escape and outside close
+2026-10-12T14:24:49.4906334Z   [chromium] › filter-manager.component.spec.ts:208:2 › V051 production manager fallback restores trigger pixels after Escape and outside close
+2026-10-12T14:24:49.4907511Z   [chromium] › filter-manager.component.spec.ts:208:2 › V051 production manager reduced restores trigger pixels after Escape and outside close
+2026-10-12T14:24:49.4908669Z   [chromium] › filter-manager.component.spec.ts:208:2 › V051 production manager quick restores trigger pixels after Escape and outside close
+2026-10-12T14:24:49.4909882Z   [chromium] › filter-manager.component.spec.ts:208:2 › V051 production manager fallback-quick restores trigger pixels after Escape and outside close
+2026-10-12T14:24:49.4911212Z   [chromium] › filter-manager.component.spec.ts:208:2 › V051 production manager reduced-quick restores trigger pixels after Escape and outside close
+2026-10-12T14:24:49.4912367Z   [chromium] › filter-manager.component.spec.ts:254:1 › V051 production manager fallback safely edits finite AND OR groups including WebKit
+2026-10-12T14:24:49.4913512Z   [chromium] › filter-manager.component.spec.ts:283:1 › V051 production manager keyboard entry gives the first control focus without manual refocusing
+2026-10-12T14:24:49.4914637Z   [chromium] › filter-manager.component.spec.ts:294:1 › V051 production manager deleting a condition restores the shared AND OR twenty-leaf capacity
+2026-10-12T14:24:49.4915806Z   [chromium] › filter-manager.component.spec.ts:314:1 › V051 production manager preserves exact text and relation inequality in the approved DTO
+2026-10-12T14:24:49.4917055Z   [chromium] › filter-manager.component.spec.ts:329:1 › V051 production manager keeps typed operator menus and exact zoned microsecond input
+2026-10-12T14:24:49.4918379Z   [chromium] › filter-manager.component.spec.ts:348:38 › V051 production manager delayed list focus reaches the first enabled control
+2026-10-12T14:24:49.4919350Z   [chromium] › filter-manager.component.spec.ts:348:38 › V051 production manager delayed list focus respects newer focus
+2026-10-12T14:24:49.4920465Z   [chromium] › password-ascii.component.spec.ts:4:1 › Q13: space is printable but does not satisfy the special class
+2026-10-12T14:24:49.4921448Z   [chromium] › password-ascii.component.spec.ts:10:1 › Q13: registration rejects Unicode despite having all four ASCII classes
+2026-10-12T14:24:49.4922508Z   [chromium] › password-ascii.component.spec.ts:25:1 › Q13: printable spaces are preserved when four classes are present
+2026-10-12T14:24:49.4923541Z   [chromium] › personnel-arca-focus.component.spec.ts:6:1 › Q35 original column focus excludes the workspace outline while retaining outer focus
+2026-10-12T14:24:49.4924811Z   [chromium] › personnel-arca-keyboard.component.spec.ts:6:1 › Q35 sort menu supports direction keys, visible focus and Escape return
+2026-10-12T14:24:49.4925959Z   [chromium] › personnel-arca-keyboard.component.spec.ts:42:1 › Q35 original base foreground and smoothing are scoped to the table
+2026-10-12T14:24:49.4927024Z   [chromium] › personnel-arca-theme.component.spec.ts:6:1 › Q35 original dark variant leaves the light pager unchanged without a dark class
+2026-10-12T14:24:49.4928130Z   [chromium] › personnel-arca.component.spec.ts:25:1 › Q35 identity and template share the card list and retain dirty edit protection
+2026-10-12T14:24:49.4929122Z   [chromium] › personnel-arca.component.spec.ts:45:66 › Q35 成员与部门 0 real rows fill the body with inert blank grid rows
+2026-10-12T14:24:49.4930069Z   [chromium] › personnel-arca.component.spec.ts:45:66 › Q35 成员与部门 1 real rows fill the body with inert blank grid rows
+2026-10-12T14:24:49.4931278Z   [chromium] › personnel-arca.component.spec.ts:45:66 › Q35 操作记录 0 real rows fill the body with inert blank grid rows
+2026-10-12T14:24:49.4932441Z   [chromium] › personnel-arca.component.spec.ts:45:66 › Q35 操作记录 1 real rows fill the body with inert blank grid rows
+2026-10-12T14:24:49.4933708Z   [chromium] › personnel-arca.component.spec.ts:69:1 › Q35 full original pager and page size control are present
+2026-10-12T14:24:49.4934599Z   [chromium] › personnel-arca.component.spec.ts:78:1 › Q35 original resize and reorder handles are enabled
+2026-10-12T14:24:49.4935593Z   [chromium] › personnel-arca.component.spec.ts:85:1 › Q35 official animated checkbox and full pager use real server page sizes without double slicing
+2026-10-12T14:24:49.4936740Z   [chromium] › personnel-arca.component.spec.ts:107:1 › Q36 typed member headers preserve received order, resize and reorder without business writes
+2026-10-12T14:24:49.4937798Z   [chromium] › personnel-arca.component.spec.ts:126:1 › Q35 page size retains arrow, Home and Enter keyboard operation
+2026-10-12T14:24:49.4938869Z   [chromium] › personnel-arca.component.spec.ts:138:1 › Q36 shrinking full result blocks pagination until explicit refresh instead of silently clamping
+2026-10-12T14:24:49.4940080Z   [chromium] › personnel-arca.component.spec.ts:163:1 › Q35 narrow viewport keeps the original pager controls fully reachable
+2026-10-12T14:24:49.4941255Z   [chromium] › personnel-arca.component.spec.ts:177:1 › Q35 source font uses Geist with the existing Chinese fallback inside its scope
+2026-10-12T14:24:49.4942313Z   [chromium] › personnel-arca.component.spec.ts:185:1 › Q35 sorting menu stays open during its own scrolling and closes on table scrolling
+2026-10-12T14:24:49.4943305Z   [chromium] › personnel-table.component.spec.ts:20:1 › Q35 identity pagination remains accessible in the shared definition list
+2026-10-12T14:24:49.4944346Z   [chromium] › personnel-table.component.spec.ts:33:1 › Q34 member status retains its meaning with the confirmed body typography
+2026-10-12T14:24:49.4945336Z   [chromium] › personnel.component.spec.ts:43:89 › Q34 Arca table geometry and readable rows on 成员与部门
+2026-10-12T14:24:49.4946124Z   [chromium] › personnel.component.spec.ts:43:89 › Q34 Arca table geometry and readable rows on 操作记录
+2026-10-12T14:24:49.4947035Z   [chromium] › personnel.component.spec.ts:62:1 › Q34 page selection exposes mixed state without writing and shows selected rows
+2026-10-12T14:24:49.4947984Z   [chromium] › personnel.component.spec.ts:72:1 › Q35 identity cards preserve edit entry, shared fields and unsaved switch protection
+2026-10-12T14:24:49.4949016Z   [chromium] › personnel.component.spec.ts:83:31 › Q34 dense table keeps sticky header and both scroll axes at 1920
+2026-10-12T14:24:49.4949864Z   [chromium] › personnel.component.spec.ts:83:31 › Q34 dense table keeps sticky header and both scroll axes at 320
+2026-10-12T14:24:49.4950916Z   [chromium] › personnel.component.spec.ts:97:1 › Q35 identity empty list and reduced motion preserve accessible states
+2026-10-12T14:24:49.4951926Z   [chromium] › personnel.component.spec.ts:103:1 › Q34 keyboard focus ring stays visible inside truncated table cells
+2026-10-12T14:24:49.4952927Z   [chromium] › personnel.component.spec.ts:112:1 › Q34 reverse keyboard navigation keeps row actions below the sticky header
+2026-10-12T14:24:49.4954180Z   [chromium] › personnel.component.spec.ts:122:44 › Root Mono personnel keeps reachable navigation and full-bleed surface at 2504
+2026-10-12T14:24:49.4955227Z   [chromium] › personnel.component.spec.ts:122:44 › Root Mono personnel keeps reachable navigation and full-bleed surface at 1920
+2026-10-12T14:24:49.4956270Z   [chromium] › personnel.component.spec.ts:122:44 › Root Mono personnel keeps reachable navigation and full-bleed surface at 900
+2026-10-12T14:24:49.4957189Z   [chromium] › personnel.component.spec.ts:122:44 › Root Mono personnel keeps reachable navigation and full-bleed surface at 390
+2026-10-12T14:24:49.4958238Z   [chromium] › personnel.component.spec.ts:122:44 › Root Mono personnel keeps reachable navigation and full-bleed surface at 320
+2026-10-12T14:24:49.4959416Z   [chromium] › personnel.component.spec.ts:127:1 › Q33 crossing responsive breakpoints preserves navigation, dirty input and explicit leave protection
+2026-10-12T14:24:49.4960663Z   [chromium] › personnel.component.spec.ts:139:30 › Q33 fixed sidebar retains narrow keyboard tabs and real content scrolling at 390
+2026-10-12T14:24:49.4961687Z   [chromium] › personnel.component.spec.ts:139:30 › Q33 fixed sidebar retains narrow keyboard tabs and real content scrolling at 320
+2026-10-12T14:24:49.4962808Z   [chromium] › personnel.component.spec.ts:154:1 › Q32 identity select has the separated rounded menu and preserves server filtering
+2026-10-12T14:24:49.4963824Z   [chromium] › personnel.component.spec.ts:169:1 › Q32 grouped selectors keep modal focus and Escape first dismisses the menu
+2026-10-12T14:24:49.4964786Z   [chromium] › personnel.component.spec.ts:180:1 › Q32 parent department chooser uses options without closing the native modal
+2026-10-12T14:24:49.4965851Z   [chromium] › personnel.component.spec.ts:188:1 › Q32 long action menu stays in the viewport and keyboard chooses the final real action
+2026-10-12T14:24:49.4966865Z   [chromium] › personnel.component.spec.ts:199:1 › Q32 pill indicator slides between tabs only after unsaved changes are resolved
+2026-10-12T14:24:49.4967969Z   [chromium] › personnel.component.spec.ts:211:1 › Q32 reduced motion removes displacement and option stagger and keeps compact tabs reachable
+2026-10-12T14:24:49.4968939Z   [chromium] › personnel.component.spec.ts:222:1 › Q32 large directories expose the final option promptly after End
+2026-10-12T14:24:49.4969945Z   [chromium] › personnel.component.spec.ts:228:1 › Q32 quick reversal preserves the current menu height rather than jumping to endpoints
+2026-10-12T14:24:49.4971169Z   [chromium] › personnel.component.spec.ts:247:1 › Q32 searching below the tabs preserves the narrow-screen content scroll position
+2026-10-12T14:24:49.4972255Z   [chromium] › personnel.component.spec.ts:253:1 › Q32 upward expansion and closing stay attached to the trigger edge on every frame
+2026-10-12T14:24:49.4973238Z   [chromium] › personnel.component.spec.ts:267:1 › Q32 upward menus animate the corners adjacent to their trigger
+2026-10-12T14:24:49.4974153Z   [chromium] › personnel.component.spec.ts:276:1 › Root Mono Home keeps account control in the rail and a stable top bar
+2026-10-12T14:24:49.4975145Z   [chromium] › personnel.component.spec.ts:283:1 › Root Mono admin retains actions within shared full-bleed chrome across resize
+2026-10-12T14:24:49.4976186Z   [chromium] › personnel.component.spec.ts:290:1 › Q31 tabs have no vertical overflow and compact layouts retain keyboard access to the last tab
+2026-10-12T14:24:49.4977315Z   [chromium] › personnel.component.spec.ts:303:1 › Q31 real member overflow remains scrollable while the tab strip has no vertical scrollbar
+2026-10-12T14:24:49.4978248Z   [chromium] › personnel.component.spec.ts:315:97 › Root Mono white surface fills viewport 2504x1355 after resize
+2026-10-12T14:24:49.4979236Z   [chromium] › personnel.component.spec.ts:315:97 › Root Mono white surface fills viewport 1440x900 after resize
+2026-10-12T14:24:49.4980168Z   [chromium] › personnel.component.spec.ts:315:97 › Root Mono white surface fills viewport 390x844 after resize
+2026-10-12T14:24:49.4981339Z   [chromium] › personnel.component.spec.ts:320:1 › Root Mono hover preserves navigation geometry without moving the label
+2026-10-12T14:24:49.4982351Z   [chromium] › personnel.component.spec.ts:326:1 › Q33 reduced motion and repeated resize keep navigation geometry and unsaved edit
+2026-10-12T14:24:49.4983422Z   [chromium] › personnel.component.spec.ts:333:1 › R3 login enters Home with settings and account navigation; admin exit retains Session
+2026-10-12T14:24:49.4984518Z   [chromium] › personnel.component.spec.ts:344:1 › R2 AC02 ordinary member Home has own identity/empty app state; direct admin denies
+2026-10-12T14:24:49.4985593Z   [chromium] › personnel.component.spec.ts:348:1 › Q33 fixed sidebar retains selected tab and unsaved input across viewports; icons aligned
+2026-10-12T14:24:49.4986860Z   [chromium] › personnel.component.spec.ts:357:1 › R3 identity separates direct/template sources and confirms impact before versioned save
+2026-10-12T14:24:49.4987854Z   [chromium] › personnel.component.spec.ts:366:2 › R3 save failure 409 preserves input and exposes specific outcome
+2026-10-12T14:24:49.4988784Z   [chromium] › personnel.component.spec.ts:366:2 › R3 save failure 403 preserves input and exposes specific outcome
+2026-10-12T14:24:49.4989724Z   [chromium] › personnel.component.spec.ts:366:2 › R3 save failure 503 preserves input and exposes specific outcome
+2026-10-12T14:24:49.4990809Z   [chromium] › personnel.component.spec.ts:371:1 › R3 dirty tab/object/admin leave requires explicit choice and never saves
+2026-10-12T14:24:49.4991841Z   [chromium] › personnel.component.spec.ts:376:1 › R3 template UI has genuine no-application empty state and referenced delete protection
+2026-10-12T14:24:49.4992910Z   [chromium] › personnel.component.spec.ts:379:1 › R3 members expose multi-identity editor and group operation without changing permissions
+2026-10-12T14:24:49.4993950Z   [chromium] › personnel.component.spec.ts:384:1 › R3 departments create uses selected parent; enterprise root is protected
+2026-10-12T14:24:49.4994869Z   [chromium] › personnel.component.spec.ts:389:1 › R3 invitation is deliberate one-time result; activity has true empty state
+2026-10-12T14:24:49.4995855Z   [chromium] › personnel.component.spec.ts:393:1 › R3 reduced motion and compact layouts retain keyboard-reachable navigation
+2026-10-12T14:24:49.4996785Z   [chromium] › personnel.component.spec.ts:397:1 › R3 browser back with dirty configuration prompts, cancel preserves inputs
+2026-10-12T14:24:49.4997810Z   [chromium] › personnel.component.spec.ts:403:1 › V030-012 retained app operation does not hide the current personnel discard consequence
+2026-10-12T14:24:49.4998832Z   [chromium] › personnel.component.spec.ts:438:1 › R3 definition creation has no fake seed; validates and sends explicit config
+2026-10-12T14:24:49.4999809Z   [chromium] › personnel.component.spec.ts:444:1 › R3 member explicit move preserves other groups and identity configuration
+2026-10-12T14:24:49.5001189Z   [chromium] › personnel.component.spec.ts:452:1 › R3 member search and pagination send approved filters, no local page-only filtering
+2026-10-12T14:24:49.5002203Z   [chromium] › personnel.component.spec.ts:457:1 › R3 activity search and action filter are server-side, not cosmetic controls
+2026-10-12T14:24:49.5003197Z   [chromium] › personnel.component.spec.ts:462:1 › R3 deleting unreferenced template confirms and sends version; 409 keeps selection
+2026-10-12T14:24:49.5004205Z   [chromium] › personnel.component.spec.ts:470:1 › R3 creates a permission template with explicit empty configuration
+2026-10-12T14:24:49.5005396Z   [chromium] › personnel.component.spec.ts:478:1 › R3 identity deletion protects references and explicitly confirms an unreferenced object
+2026-10-12T14:24:49.5006624Z   [chromium] › personnel.component.spec.ts:485:1 › R3 department selected node filters members; rename and delete use actual version; root protected
+2026-10-12T14:24:49.5007913Z   [chromium] › personnel.component.spec.ts:495:1 › R3 complete assignment choices load beyond the first 100 templates
+2026-10-12T14:24:49.5009070Z   [chromium] › personnel.component.spec.ts:502:1 › R3 identity search and next page query the backend while keeping explicit selection
+2026-10-12T14:24:49.5010229Z   [chromium] › personnel.component.spec.ts:508:1 › R3 member identity filter and activity pagination are server controls
+2026-10-12T14:24:49.5011623Z   [chromium] › personnel.component.spec.ts:514:1 › R3 invitation uses the existing invitationCode response and clears it on close
+2026-10-12T14:24:49.5012713Z   [chromium] › personnel.component.spec.ts:520:1 › R3 activity pagination and explicit time range reach the server independently
+2026-10-12T14:24:49.5014141Z   [chromium] › personnel.component.spec.ts:527:1 › R3 explicit activity time filter sends RFC3339 and resets the page
+2026-10-12T14:24:49.5015384Z   [chromium] › personnel.component.spec.ts:533:1 › R3 empty department deletion confirms version and preserves conflict feedback
+2026-10-12T14:24:49.5016727Z   [chromium] › personnel.component.spec.ts:539:61 › R3 unsaved department form survives close and Escape until explicit discard
+2026-10-12T14:24:49.5018263Z   [chromium] › personnel.component.spec.ts:539:61 › R3 unsaved member form survives close and Escape until explicit discard
+2026-10-12T14:24:49.5019443Z   [chromium] › personnel.component.spec.ts:539:61 › R3 unsaved groups form survives close and Escape until explicit discard
+2026-10-12T14:24:49.5020879Z   [chromium] › personnel.component.spec.ts:549:1 › Root Mono shell retains white surface and inset content well at large sizes
+2026-10-12T14:24:49.5022056Z   [chromium] › personnel.component.spec.ts:558:1 › Q25 default activity range omits optional empty timestamps in every initial request
+2026-10-12T14:24:49.5023367Z   [chromium] › personnel.component.spec.ts:564:1 › Figma original checkbox uses the original check SVG, 20px surface and 6px corners
+2026-10-12T14:24:49.5024527Z   [chromium] › personnel.component.spec.ts:571:1 › Root Mono shell has the approved white foreground and pale neutral background
+2026-10-12T14:24:49.5025977Z   [chromium] › personnel.component.spec.ts:575:1 › R3 activity presents readable action, target and safe changes rather than raw protocol JSON
+2026-10-12T14:24:49.5027395Z   [chromium] › personnel.component.spec.ts:581:1 › Root Mono personnel navigation stays reachable at viewport edges after resize
+2026-10-12T14:24:49.5029022Z   [chromium] › personnel.component.spec.ts:584:1 › Q34 member table keeps confirmed column geometry and page selection never sends a write
+2026-10-12T14:24:49.5030742Z   [chromium] › personnel.component.spec.ts:590:1 › Root Mono surface retains viewport edges after narrow re-entry
+2026-10-12T14:24:49.5032486Z   [chromium] › personnel.component.spec.ts:595:2 › Figma final view original white plus asset on 身份
+2026-10-12T14:24:49.5034140Z   [chromium] › personnel.component.spec.ts:595:2 › Figma final view original white plus asset on 权限模板
+2026-10-12T14:24:49.5035739Z   [chromium] › personnel.component.spec.ts:600:1 › Figma final template permission retains the actual controlled code
+2026-10-12T14:24:49.5036744Z   [chromium] › personnel.component.spec.ts:603:1 › Figma final identity distinguishes assignable management from trusted Root
+2026-10-12T14:24:49.5037645Z   [chromium] › personnel.component.spec.ts:606:1 › Figma final activity action filter belongs in the section heading
+2026-10-12T14:24:49.5038560Z   [chromium] › personnel.component.spec.ts:609:1 › Figma final activity time range retains the right toolbar inset
+2026-10-12T14:24:49.5039408Z   [chromium] › personnel.component.spec.ts:612:1 › Figma final definition footer retains its source separation line
+2026-10-12T14:24:49.5040585Z   [chromium] › personnel.component.spec.ts:616:1 › Figma final identity without applications keeps its footer in the original view
+2026-10-12T14:24:49.5041745Z   [chromium] › personnel.component.spec.ts:619:1 › Q34 successful activity uses Arca body typography and retains the result meaning
+2026-10-12T14:24:49.5042754Z   [chromium] › personnel.component.spec.ts:625:1 › Root Mono personnel desktop keeps the primary table in the first working area
+2026-10-12T14:24:49.5043742Z   [chromium] › q36-b2.component.spec.ts:52:1 › Q36 B2 real member page uses POST typed filter and old context without text sorting
+2026-10-12T14:24:49.5044672Z   [chromium] › q36-b2.component.spec.ts:63:1 › Q36 B2 event page uses server display and only occurredAt server ordering
+2026-10-12T14:24:49.5045622Z   [chromium] › q36-b2.component.spec.ts:80:1 › Q36 B2 restored invalid identity reference remains editable until explicitly resolved
+2026-10-12T14:24:49.5046561Z   [chromium] › q36-b2.component.spec.ts:90:1 › Q36 B2 modal query refresh preserves unsaved member input and original object version
+2026-10-12T14:24:49.5047631Z   [chromium] › q36-b2.component.spec.ts:95:75 › Q36 B2 COMMON_QUERY_CHANGED requires explicit page-one refresh and clears selection
+2026-10-12T14:24:49.5048585Z   [chromium] › q36-b2.component.spec.ts:95:75 › Q36 B2 COMMON_QUERY_CONTEXT_EXPIRED requires explicit page-one refresh and clears selection
+2026-10-12T14:24:49.5049534Z   [chromium] › q36-b2.component.spec.ts:106:1 › Q36 B2 late responses cannot overwrite the newest search
+2026-10-12T14:24:49.5051275Z   [chromium] › q36-b2.component.spec.ts:122:1 › Q36 B2 unused template card save keeps member page and validates its existing context on return
+2026-10-12T14:24:49.5052503Z   [chromium] › q36-b2.component.spec.ts:134:1 › Q36 B2 definition explicitly saves durable draft and restores original version with conflict
+2026-10-12T14:24:49.5053490Z   [chromium] › q36-b2.component.spec.ts:153:1 › Q36 B2 explicit member draft does not save automatically or bypass query guard
+2026-10-12T14:24:49.5054415Z   [chromium] › q36-b2.component.spec.ts:162:1 › Q36 B2 real-page animation closes on navigation and leaves no root blocker
+2026-10-12T14:24:49.5055360Z   [chromium] › q36-b2.component.spec.ts:170:1 › Q36 B2 applied preset manager close then trigger press honors reopen intent
+2026-10-12T14:24:49.5056250Z   [chromium] › q36-b2.component.spec.ts:177:1 › Q36 B2 twenty AND conditions keep the save footer inside the narrow viewport
+2026-10-12T14:24:49.5057203Z   [chromium] › q36-b2.component.spec.ts:186:1 › Q36 B2 select-current-page cannot resurrect a member hidden by custom filtering
+2026-10-12T14:24:49.5058158Z   [chromium] › q36-b2.component.spec.ts:198:1 › Q36 B2 a trusted press spanning the exiting selection mark still selects current rows
+2026-10-12T14:24:49.5059303Z   [chromium] › q36-b2.component.spec.ts:218:1 › Q36 B2 trusted select-all clicks while loading or empty cannot persist into restored or next-page rows
+2026-10-12T14:24:49.5060296Z   [chromium] › q36-b2.component.spec.ts:235:1 › Q36 B2 completed filter exit preserves a newer deliberate checkbox focus
+2026-10-12T14:24:49.5061429Z   [chromium] › q36-b2.component.spec.ts:330:108 › Q36 B2 engine button restores focus once after an ordinary close
+2026-10-12T14:24:49.5062345Z   [chromium] › q36-b2.component.spec.ts:330:108 › Q36 B2 engine Escape restores focus once after an ordinary close
+2026-10-12T14:24:49.5063211Z   [chromium] › q36-b2.component.spec.ts:330:108 › Q36 B2 fallback button restores focus once after an ordinary close
+2026-10-12T14:24:49.5064080Z   [chromium] › q36-b2.component.spec.ts:330:108 › Q36 B2 fallback Escape restores focus once after an ordinary close
+2026-10-12T14:24:49.5064906Z   [chromium] › q36-b2.component.spec.ts:330:108 › Q36 B2 reduced button restores focus once after an ordinary close
+2026-10-12T14:24:49.5066162Z   [chromium] › q36-b2.component.spec.ts:330:108 › Q36 B2 reduced Escape restores focus once after an ordinary close
+2026-10-12T14:24:49.5067513Z   [chromium] › q36-b2.component.spec.ts:344:50 › Q36 B2 engine late close honors newer focus even after that target is removed
+2026-10-12T14:24:49.5069095Z   [chromium] › q36-b2.component.spec.ts:344:50 › Q36 B2 fallback late close honors newer focus even after that target is removed
+2026-10-12T14:24:49.5070437Z   [chromium] › q36-b2.component.spec.ts:355:1 › Q36 B2 removal-induced body focus still restores after Escape
+2026-10-12T14:24:49.5071778Z   [chromium] › q36-b2.component.spec.ts:362:50 › Q36 B2 engine stale exit cannot focus the trigger after reopen or unmount
+2026-10-12T14:24:49.5073277Z   [chromium] › q36-b2.component.spec.ts:362:50 › Q36 B2 fallback stale exit cannot focus the trigger after reopen or unmount
+2026-10-12T14:24:49.5074733Z   [chromium] › q36-b2.component.spec.ts:370:50 › Q36 B2 engine outside pointer and keyboard navigation keep their new focus
+2026-10-12T14:24:49.5076217Z   [chromium] › q36-b2.component.spec.ts:370:50 › Q36 B2 fallback outside pointer and keyboard navigation keep their new focus
+2026-10-12T14:24:49.5077345Z   [chromium] › q36-b2.component.spec.ts:383:50 › Q36 B2 engine completion delivered after unmount cannot move focus
+2026-10-12T14:24:49.5078379Z   [chromium] › q36-b2.component.spec.ts:383:50 › Q36 B2 fallback completion delivered after unmount cannot move focus
+2026-10-12T14:24:49.5079790Z   [chromium] › q36-b2.component.spec.ts:394:2 › Q36 B2 focus review evidence › manager, editor and closed keyboard focus remain accessible
+2026-10-12T14:24:49.5081250Z   [chromium] › q36-b2.component.spec.ts:406:40 › Root Q36 outside tab click after reopening records native event delivery 0ms
+2026-10-12T14:24:49.5082174Z   [chromium] › q36-b2.component.spec.ts:406:40 › Root Q36 outside tab click after reopening records native event delivery 100ms
+2026-10-12T14:24:49.5083155Z   [chromium] › q36-b2.component.spec.ts:406:40 › Root Q36 outside tab click after reopening records native event delivery 300ms
+2026-10-12T14:24:49.5084143Z   [chromium] › q36-front-table.component.spec.ts:4:1 › Q36 Table directly controls 1-based page, arbitrary jump and size reset
+2026-10-12T14:24:49.5085171Z   [chromium] › q36-front-table.component.spec.ts:16:1 › Q36 typed text has no sort icon; time/number sorting requests preserve received rows
+2026-10-12T14:24:49.5086226Z   [chromium] › q36-front-table.component.spec.ts:27:1 › Q36 external column width/order controls survive loading; empty grid remains inert
+2026-10-12T14:24:49.5087173Z   [chromium] › q36-front-table.component.spec.ts:40:1 › Q36 original selection, drag and resize remain interactive
+2026-10-12T14:24:49.5088016Z   [chromium] › responsive.component.spec.ts:12:5 › Figma responsive /login at 1920×1080
+2026-10-12T14:24:49.5088765Z   [chromium] › responsive.component.spec.ts:12:5 › Figma responsive /login at 2560×1440
+2026-10-12T14:24:49.5089497Z   [chromium] › responsive.component.spec.ts:12:5 › Figma responsive /login at 1440×900
+2026-10-12T14:24:49.5090240Z   [chromium] › responsive.component.spec.ts:44:5 › responsive /login stays usable at 320×568
+2026-10-12T14:24:49.5091262Z   [chromium] › responsive.component.spec.ts:44:5 › responsive /login stays usable at 390×844
+2026-10-12T14:24:49.5092023Z   [chromium] › responsive.component.spec.ts:44:5 › responsive /login stays usable at 768×600
+2026-10-12T14:24:49.5092795Z   [chromium] › responsive.component.spec.ts:12:5 › Figma responsive /register at 1920×1080
+2026-10-12T14:24:49.5093504Z   [chromium] › responsive.component.spec.ts:12:5 › Figma responsive /register at 2560×1440
+2026-10-12T14:24:49.5094298Z   [chromium] › responsive.component.spec.ts:12:5 › Figma responsive /register at 1440×900
+2026-10-12T14:24:49.5095040Z   [chromium] › responsive.component.spec.ts:44:5 › responsive /register stays usable at 320×568
+2026-10-12T14:24:49.5095837Z   [chromium] › responsive.component.spec.ts:44:5 › responsive /register stays usable at 390×844
+2026-10-12T14:24:49.5096614Z   [chromium] › responsive.component.spec.ts:44:5 › responsive /register stays usable at 768×600
+2026-10-12T14:24:49.5097542Z   [chromium] › root-monochrome-designer.component.spec.ts:50:2 › Root Mono designer fits three white cards inside persistent shell 1440
+2026-10-12T14:24:49.5098731Z   [chromium] › root-monochrome-designer.component.spec.ts:50:2 › Root Mono designer fits three white cards inside persistent shell 1280
+2026-10-12T14:24:49.5099795Z   [chromium] › root-monochrome-designer.component.spec.ts:69:1 › Root Mono designer retains palette, neutral selection and preview source focus
+2026-10-12T14:24:49.5101107Z   [chromium] › root-monochrome-designer.component.spec.ts:82:1 › Root Mono designer narrow reduced-motion remains editable without page overflow
+2026-10-12T14:24:49.5102084Z   [chromium] › root-monochrome-shell.component.spec.ts:67:2 › Root Mono P1 unified full-bleed desktop geometry 1440
+2026-10-12T14:24:49.5103068Z   [chromium] › root-monochrome-shell.component.spec.ts:67:2 › Root Mono P1 unified full-bleed desktop geometry 1280
+2026-10-12T14:24:49.5104107Z   [chromium] › root-monochrome-shell.component.spec.ts:74:1 › Root Mono P1 ordinary record route retains live table and authorization under the same shell
+2026-10-12T14:24:49.5105325Z   [chromium] › root-monochrome-shell.component.spec.ts:81:1 › Root Mono P1 administration and back preserve shell and opened application tab
+2026-10-12T14:24:49.5106366Z   [chromium] › root-monochrome-shell.component.spec.ts:90:1 › Root Mono P1 no invented business data when real catalogue is empty
+2026-10-12T14:24:49.5107464Z   [chromium] › root-monochrome-shell.component.spec.ts:99:1 › Root Mono P1 confirmed record save still uses authoritative value after visual migration
+2026-10-12T14:24:49.5108610Z   [chromium] › root-monochrome-shell.component.spec.ts:106:1 › Root Mono P1 reduced-motion route transition does not hide content or duplicate shell
+2026-10-12T14:24:49.5109704Z   [chromium] › root-monochrome-shell.component.spec.ts:112:1 › Root Mono P1 account remains a single accessible control and home cannot be closed
+2026-10-12T14:24:49.5112141Z   [chromium] › root-record-drafts.component.spec.ts:62:1 › Root draft saves incomplete required decimal without creating record or starting workflow
+2026-10-12T14:24:49.5113358Z   [chromium] › root-record-drafts.component.spec.ts:66:1 › Root saved draft edits use exact draft CAS and preserve explicit empty value
+2026-10-12T14:24:49.5114412Z   [chromium] › root-record-drafts.component.spec.ts:69:1 › Root formal submission consumes exact draft reference through ordinary record create
+2026-10-12T14:24:49.5115460Z   [chromium] › root-record-drafts.component.spec.ts:72:1 › Root editing record saves an independent draft without changing formal record
+2026-10-12T14:24:49.5116516Z   [chromium] › root-record-drafts.component.spec.ts:75:1 › Root unknown draft retains input locks both writes and retries original request only
+2026-10-12T14:24:49.5117558Z   [chromium] › root-record-drafts.component.spec.ts:78:1 › Root confirmed draft with failed reread is saved and retry cannot write again
+2026-10-12T14:24:49.5118658Z   [chromium] › root-record-drafts.component.spec.ts:81:1 › Root draft version conflict retains text and blocks replacement write until explicit review
+2026-10-12T14:24:49.5119815Z   [chromium] › root-record-drafts.component.spec.ts:85:1 › Root unknown draft survives actual Shell unmount and recovers only the original operation
+2026-10-12T14:24:49.5121095Z   [chromium] › root-record-drafts.component.spec.ts:92:1 › Root own draft list uses bounded opaque cursor batches without business values
+2026-10-12T14:24:49.5122141Z   [chromium] › root-record-drafts.component.spec.ts:95:1 › Root opening a listed draft rereads current payload before rendering incomplete input
+2026-10-12T14:24:49.5123240Z   [chromium] › root-record-drafts.component.spec.ts:98:1 › Root draft list rejects leaked payload rather than displaying partial summaries
+2026-10-12T14:24:49.5124290Z   [chromium] › root-record-drafts.component.spec.ts:101:1 › Root draft deletion requires confirmation and exact versioned bodyless DELETE
+2026-10-12T14:24:49.5125350Z   [chromium] › root-record-drafts.component.spec.ts:104:1 › Root unknown draft deletion retains its original operation and version on retry
+2026-10-12T14:24:49.5126498Z   [chromium] › root-record-drafts.component.spec.ts:108:1 › Root draft conflict refresh is explicit and preserves local input on continue
+2026-10-12T14:24:49.5127596Z   [chromium] › root-record-drafts.component.spec.ts:112:1 › Root unknown saved-draft PATCH restores pending edits after actual Shell unmount
+2026-10-12T14:24:49.5128711Z   [chromium] › root-record-drafts.component.spec.ts:116:1 › Root unknown edit-draft creation retains original target and base after actual Shell unmount
+2026-10-12T14:24:49.5129790Z   [chromium] › root-record-drafts.component.spec.ts:121:1 › Root draft save uses the approved monochrome secondary action geometry
+2026-10-12T14:24:49.5131057Z   [chromium] › root-record-drafts.component.spec.ts:125:1 › Root current draft edit authority does not imply ordinary record read permission
+2026-10-12T14:24:49.5132136Z   [chromium] › root-record-drafts.component.spec.ts:129:1 › Root closing unknown draft deletion keeps recovery controls reachable in its list
+2026-10-12T14:24:49.5133287Z   [chromium] › root-record-drafts.component.spec.ts:132:1 › Root unknown draft deletion restores its original operation after Shell unmount
+2026-10-12T14:24:49.5134354Z   [chromium] › root-record-drafts.component.spec.ts:137:1 › Root stale draft field cleanup needs explicit confirmation and sends no formal values
+2026-10-12T14:24:49.5135387Z   [chromium] › root-record-drafts.component.spec.ts:140:1 › Root stale draft cleanup unknown retries the exact key and remove mask
+2026-10-12T14:24:49.5136386Z   [chromium] › root-record-drafts.component.spec.ts:143:1 › Root stale draft cleanup CAS conflict never overwrites a newer draft
+2026-10-12T14:24:49.5137481Z   [chromium] › root-record-drafts.component.spec.ts:146:1 › Root clearing stale draft key preserves a separate base conflict and original binding
+2026-10-12T14:24:49.5138601Z   [chromium] › root-record-drafts.component.spec.ts:150:1 › Root new record opens in the persistent full-page workspace with one formal save action
+2026-10-12T14:24:49.5139696Z   [chromium] › root-record-drafts.component.spec.ts:153:1 › Root new record desktop matches the approved split cards and heading action geometry
+2026-10-12T14:24:49.5141316Z   [chromium] › root-record-drafts.component.spec.ts:156:1 › Root narrow new-record workspace stays within the viewport and retains dirty input on continue
+2026-10-12T14:24:49.5142474Z   [chromium] › root-record-drafts.component.spec.ts:160:1 › Root edit-only saved draft can atomically commit without borrowing ordinary record read
+2026-10-12T14:24:49.5143670Z   [chromium] › root-record-drafts.component.spec.ts:164:1 › Root own-only draft opens missing editable fields through the current server context without record read
+2026-10-12T14:24:49.5144898Z   [chromium] › root-record-drafts.component.spec.ts:167:1 › Root mixed own and all draft fields use the target mask without treating the draft owner as record owner
+2026-10-12T14:24:49.5146042Z   [chromium] › root-record-drafts.component.spec.ts:170:1 › Root draft context policy skew cannot enable an editor from two different authority snapshots
+2026-10-12T14:24:49.5147407Z   [chromium] › root-record-drafts.component.spec.ts:173:1 › Root draft reference selection carries its actual target record without requiring formal read
+2026-10-12T14:24:49.5148581Z   [chromium] › root-record-drafts.component.spec.ts:177:1 › Root conflicted draft saves as a separate current-version draft only after explicit confirmation
+2026-10-12T14:24:49.5149781Z   [chromium] › root-record-drafts.component.spec.ts:180:1 › Root new-copy draft unknown recovers the same creation request without touching its old draft
+2026-10-12T14:24:49.5151072Z   [chromium] › root-record-drafts.component.spec.ts:183:1 › Root edit-only new-copy unknown survives Shell unmount without borrowing record read authority
+2026-10-12T14:24:49.5152248Z   [chromium] › root-record-history.component.spec.ts:28:1 › Root saved-record history is read only and keeps exact old and new decimal strings
+2026-10-12T14:24:49.5153455Z   [chromium] › root-record-history.component.spec.ts:31:1 › Root record history cursor replaces its bounded batch and refreshes from the first batch
+2026-10-12T14:24:49.5154570Z   [chromium] › root-record-history.component.spec.ts:34:1 › Root record history permission failure does not discard an independently editable record
+2026-10-12T14:24:49.5155718Z   [chromium] › root-record-history.component.spec.ts:37:1 › Root record history rejects extra private fields instead of displaying a partial event
+2026-10-12T14:24:49.5156763Z   [chromium] › root-record-history.component.spec.ts:40:1 › Root no history grant does not expose an entry or issue a history read
+2026-10-12T14:24:49.5157884Z   [chromium] › root-record-history.component.spec.ts:43:1 › Root closing pending record history ignores its late response and leaves the record mounted
+2026-10-12T14:24:49.5159023Z   [chromium] › root-record-history.component.spec.ts:46:1 › Root record history close returns keyboard focus to its live entry without replacing the editor
+2026-10-12T14:24:49.5160277Z   [chromium] › root-record-history.component.spec.ts:49:1 › Root narrow history keeps its dialog and controls in view while exact values remain horizontally reachable
+2026-10-12T14:24:49.5161609Z   [chromium] › root-record-presets.component.spec.ts:46:1 › Root private preset list stays scoped and does not apply on opening
+2026-10-12T14:24:49.5162791Z   [chromium] › root-record-presets.component.spec.ts:49:1 › Root applying a private preset rereads live scope and queries with original token before hiding columns
+2026-10-12T14:24:49.5163963Z   [chromium] › root-record-presets.component.spec.ts:52:1 › Root private preset changed query keeps old layout and does not silently refresh or apply
+2026-10-12T14:24:49.5165041Z   [chromium] › root-record-presets.component.spec.ts:55:1 › Root invalid private preset is visibly unusable without exposing old conditions
+2026-10-12T14:24:49.5166182Z   [chromium] › root-record-presets.component.spec.ts:58:59 › Root private preset invalidLeak fails closed rather than displaying an empty successful list
+2026-10-12T14:24:49.5167636Z   [chromium] › root-record-presets.component.spec.ts:58:59 › Root private preset listDenied fails closed rather than displaying an empty successful list
+2026-10-12T14:24:49.5289012Z   [chromium] › root-record-presets.component.spec.ts:61:1 › Root private preset revoked between list and apply never changes the records query
+2026-10-12T14:24:49.5290134Z   [chromium] › root-record-presets.component.spec.ts:67:1 › Root private preset create sends complete configuration and a minimal operation without applying
+2026-10-12T14:24:49.5291333Z   [chromium] › root-record-presets.component.spec.ts:70:1 › Root private preset edit keeps saved layout and uses exact preset CAS without applying
+2026-10-12T14:24:49.5292353Z   [chromium] › root-record-presets.component.spec.ts:73:1 › Root private preset unknown submission retries the immutable original operation only
+2026-10-12T14:24:49.5293333Z   [chromium] › root-record-presets.component.spec.ts:76:1 › Root private preset CAS conflict retains user input without a replacement write
+2026-10-12T14:24:49.5294658Z   [chromium] › root-record-presets.component.spec.ts:79:1 › Root private preset deletion requires confirmation and sends exact version query with no body
+2026-10-12T14:24:49.5295650Z   [chromium] › root-record-presets.component.spec.ts:82:1 › Root private preset synchronous double save cannot create two operations
+2026-10-12T14:24:49.5296657Z   [chromium] › root-record-presets.component.spec.ts:85:1 › Root private preset identity preflight rejects a new account before transmitting configuration
+2026-10-12T14:24:49.5297606Z   [chromium] › root-record-presets.component.spec.ts:89:1 › Root unsaved private preset warns browser refresh without writing
+2026-10-12T14:24:49.5298615Z   [chromium] › root-record-presets.component.spec.ts:94:1 › Root private preset dirty navigation keeps the draft on continue and leaves only after explicit discard
+2026-10-12T14:24:49.5299674Z   [chromium] › root-record-presets.component.spec.ts:99:1 › Root private preset unknown operation blocks browser refresh and keeps editor inputs immutable
+2026-10-12T14:24:49.5300969Z   [chromium] › root-record-presets.component.spec.ts:106:1 › Root confirmed preset save with failed current reread remains saved and cannot write again
+2026-10-12T14:24:49.5302008Z   [chromium] › root-record-presets.component.spec.ts:112:1 › Root private preset unknown operation survives SPA departure and reopens the original recovery
+2026-10-12T14:24:49.5303087Z   [chromium] › root-record-presets.component.spec.ts:119:1 › Root private preset dirty refresh requires explicit discard and preserves the editor on continue
+2026-10-12T14:24:49.5304182Z   [chromium] › root-record-presets.component.spec.ts:125:1 › Root private preset manager matches approved desktop surface and searches the bounded private list
+2026-10-12T14:24:49.5305189Z   [chromium] › root-record-presets.component.spec.ts:130:1 › Root private preset editor uses approved dimensions and numeric comparison wording
+2026-10-12T14:24:49.5306156Z   [chromium] › root-record-presets.component.spec.ts:134:1 › Root private preset editor stays within a narrow viewport with usable actions
+2026-10-12T14:24:49.5307156Z   [chromium] › root-record-presets.component.spec.ts:139:1 › Root private preset applies system date conditions and preserves system layout columns
+2026-10-12T14:24:49.5308274Z   [chromium] › root-record-presets.component.spec.ts:146:1 › Root preset editor offers only the two system timestamp filters alongside authorized business fields
+2026-10-12T14:24:49.5309326Z   [chromium] › root-record-presets.component.spec.ts:151:1 › Root resource preset list search is available independently of layout dimensions
+2026-10-12T14:24:49.5310455Z   [chromium] › root-record-presets.component.spec.ts:154:1 › Root resource numeric operators use numeric wording independently of editor dimensions
+2026-10-12T14:24:49.5311538Z   [chromium] › root-record-presets.component.spec.ts:159:1 › Root record display-fields panel applies visibility only after confirmation without changing the query
+2026-10-12T14:24:49.5312672Z   [chromium] › root-record-presets.component.spec.ts:164:1 › Root display-fields keeps one actual business column even while all system columns are visible
+2026-10-12T14:24:49.5313644Z   [chromium] › root-record-presets.component.spec.ts:167:1 › Root display-fields leaves active filter and selected record unchanged
+2026-10-12T14:24:49.5314590Z   [chromium] › root-record-presets.component.spec.ts:171:1 › Root display-fields panel remains bounded with visible controls on narrow screens
+2026-10-12T14:24:49.5315539Z   [chromium] › root-record-presets.component.spec.ts:175:1 › Root display-fields typography uses approved monochrome dialog heading
+2026-10-12T14:24:49.5316550Z   [chromium] › root-record-presets.component.spec.ts:178:1 › Root display-fields approved checkbox geometry and monochrome color do not inherit personnel blue
+2026-10-12T14:24:49.5317579Z   [chromium] › root-record-presets.component.spec.ts:181:1 › Root display-fields checkbox uses monochrome fill independently of its dimensions
+2026-10-12T14:24:49.5318621Z   [chromium] › root-record-shell.component.spec.ts:47:1 › Root Shell ordinary form route mounts records under the original persistent chrome
+2026-10-12T14:24:49.5319663Z   [chromium] › root-record-shell.component.spec.ts:57:1 › Root Shell create then read authoritative normalized data and edit a record
+2026-10-12T14:24:49.5320643Z   [chromium] › root-record-shell.component.spec.ts:80:1 › Root confirmed write with failed reread remains saved and cannot submit again
+2026-10-12T14:24:49.5321626Z   [chromium] › root-record-shell.component.spec.ts:91:1 › Root create-only actor confirms a receipt without an unauthorized detail or search read
+2026-10-12T14:24:49.5322580Z   [chromium] › root-record-shell.component.spec.ts:97:1 › Root opening an existing row validates the original query before reading detail
+2026-10-12T14:24:49.5323551Z   [chromium] › root-record-shell.component.spec.ts:104:1 › Root dirty record modal close requires an explicit discard and restores the origin focus
+2026-10-12T14:24:49.5324594Z   [chromium] › root-record-shell.component.spec.ts:112:1 › Root ordinary actor cannot load owner definition by entering the design URL
+2026-10-12T14:24:49.5325515Z   [chromium] › root-record-shell.component.spec.ts:119:1 › Root ordinary record editor searches only field-scoped reference candidates
+2026-10-12T14:24:49.5326418Z   [chromium] › root-record-shell.component.spec.ts:136:1 › Root owner returns from configuration to the runtime page that opened it
+2026-10-12T14:24:49.5327350Z   [chromium] › root-record-shell.component.spec.ts:145:1 › Root rejected create refresh discards only after confirmation and rebuilds page one
+2026-10-12T14:24:49.5328295Z   [chromium] › root-record-shell.component.spec.ts:158:1 › Root retry after rejected edit and failed refresh never invents a saved result
+2026-10-12T14:24:49.5329164Z   [chromium] › root-record-shell.component.spec.ts:168:1 › Root footer discard confirms before dropping dirty record input
+2026-10-12T14:24:49.5330080Z   [chromium] › root-record-shell.component.spec.ts:176:1 › Root shared record route fills its work area and keeps its legend visually hidden
+2026-10-12T14:24:49.5331111Z   [chromium] › root-record-shell.component.spec.ts:184:1 › Root record dialog separates fields from shared action buttons
+2026-10-12T14:24:49.5332083Z   [chromium] › root-record-workflows.component.spec.ts:30:1 › Root record detail reads only its scoped workflow page and preserves server pagination identity
+2026-10-12T14:24:49.5333164Z   [chromium] › root-record-workflows.component.spec.ts:34:1 › Root record workflows changed query clears old summaries and requires explicit first-page refresh
+2026-10-12T14:24:49.5334101Z   [chromium] › root-record-workflows.component.spec.ts:37:54 › Root record workflow denied is not a successful empty list
+2026-10-12T14:24:49.5334952Z   [chromium] › root-record-workflows.component.spec.ts:37:54 › Root record workflow malformed is not a successful empty list
+2026-10-12T14:24:49.5335924Z   [chromium] › root-record-workflows.component.spec.ts:40:1 › Root record workflows successful empty page is explicit and never invents action eligibility
+2026-10-12T14:24:49.5336921Z   [chromium] › root-record-workflows.component.spec.ts:43:1 › Root record workflow read failure retries the read without creating an operation
+2026-10-12T14:24:49.5337886Z   [chromium] › root-record-workflows.component.spec.ts:46:1 › Root record workflow refresh preserves unsaved record editing without writing
+2026-10-12T14:24:49.5338873Z   [chromium] › root-record-workflows.component.spec.ts:49:1 › Root record workflow closing cancels late unauthorized read without leaving the form workspace
+2026-10-12T14:24:49.5339953Z   [chromium] › root-record-workflows.component.spec.ts:54:1 › Root existing record uses a full-page workspace with the original Shell and right related-flow card
+2026-10-12T14:24:49.5341143Z   [chromium] › root-record-workflows.component.spec.ts:61:1 › Root record read-only fields follow the approved gray well while editable fields remain white
+2026-10-12T14:24:49.5342317Z   [chromium] › root-workflow-history.component.spec.ts:29:1 › Root history reads confirmed record-scoped events and opens precise original evidence only on demand
+2026-10-12T14:24:49.5343405Z   [chromium] › root-workflow-history.component.spec.ts:33:1 › Root history no-effect rejection is displayed as not executed, never a successful rejection
+2026-10-12T14:24:49.5344464Z   [chromium] › root-workflow-history.component.spec.ts:36:1 › Root history legacy flow names are identified as last known rather than captured at event time
+2026-10-12T14:24:49.5345455Z   [chromium] › root-workflow-history.component.spec.ts:39:1 › Root history missing original basis never substitutes current record values
+2026-10-12T14:24:49.5346413Z   [chromium] › root-workflow-history.component.spec.ts:42:1 › Root history pagination and refresh keep local unsaved edits and never write
+2026-10-12T14:24:49.5347478Z   [chromium] › root-workflow-history.component.spec.ts:46:1 › Root history revoked access clears prior history without denying independently authorized task editing
+2026-10-12T14:24:49.5348529Z   [chromium] › root-workflow-history.component.spec.ts:49:1 › Root history mismatched detail refuses the other event values
+2026-10-12T14:24:49.5349527Z   [chromium] › root-workflow-history.component.spec.ts:52:1 › Root historical comparison uses persisted visible current values and never local unsaved edits
+2026-10-12T14:24:49.5350696Z   [chromium] › root-workflow-history.component.spec.ts:56:1 › Root task workspace presents history beside the record at desktop and stacks within mobile width
+2026-10-12T14:24:49.5351651Z   [chromium] › root-workflow-history.component.spec.ts:62:1 › Root history switching events ignores a late first response
+2026-10-12T14:24:49.5352617Z   [chromium] › root-workflow-history.component.spec.ts:68:1 › Root history leaving the task cancels an outstanding detail without a late authorization error
+2026-10-12T14:24:49.5353719Z   [chromium] › root-workflow-history.component.spec.ts:73:1 › Root opening version comparison brings its heading into view and return restores the origin control
+2026-10-12T14:24:49.5354769Z   [chromium] › root-workflow-inbox.component.spec.ts:23:1 › Root inbox is reachable in persistent shell and uses authoritative server pagination
+2026-10-12T14:24:49.5355789Z   [chromium] › root-workflow-inbox.component.spec.ts:45:1 › Root inbox query change requires explicit refresh, resets first page and drops stale token
+2026-10-12T14:24:49.5356784Z   [chromium] › root-workflow-inbox.component.spec.ts:61:1 › Root inbox read failure is not an unconfirmed write and retry repeats only the read
+2026-10-12T14:24:49.5357766Z   [chromium] › root-workflow-inbox.component.spec.ts:75:1 › Root inbox rejects malformed or cross-page results instead of displaying untrusted rows
+2026-10-12T14:24:49.5358738Z   [chromium] › root-workflow-inbox.component.spec.ts:81:1 › Root inbox direct route handles revoked access without inventing empty success
+2026-10-12T14:24:49.5359625Z   [chromium] › root-workflow-inbox.component.spec.ts:89:1 › Root inbox expired query never silently restarts pagination
+2026-10-12T14:24:49.5360652Z   [chromium] › root-workflow-inbox.component.spec.ts:97:1 › Root inbox leaving during read discards late response and back navigation fetches anew
+2026-10-12T14:24:49.5361663Z   [chromium] › root-workflow-inbox.component.spec.ts:109:1 › Root inbox identity mismatch suspends old account data until explicit identity check
+2026-10-12T14:24:49.5362777Z   [chromium] › root-workflow-inbox.component.spec.ts:117:1 › Root inbox small screen keeps short workflow names readable inside a horizontally scrollable table
+2026-10-12T14:24:49.5363853Z   [chromium] › root-workflow-manager.component.spec.ts:23:1 › Root workflow manager entry preserves Shell and displays real server summaries and page identity
+2026-10-12T14:24:49.5364936Z   [chromium] › root-workflow-manager.component.spec.ts:26:1 › Root workflow manager changed query clears rows and requires explicit first-page refresh
+2026-10-12T14:24:49.5366085Z   [chromium] › root-workflow-manager.component.spec.ts:29:56 › Root workflow manager denied fails closed without pretending empty success or unknown write
+2026-10-12T14:24:49.5367130Z   [chromium] › root-workflow-manager.component.spec.ts:29:56 › Root workflow manager leak fails closed without pretending empty success or unknown write
+2026-10-12T14:24:49.5368179Z   [chromium] › root-workflow-manager.component.spec.ts:29:56 › Root workflow manager offline fails closed without pretending empty success or unknown write
+2026-10-12T14:24:49.5369262Z   [chromium] › root-workflow-manager.component.spec.ts:32:1 › Root ordinary form reader neither receives manager entry nor sends manager query from direct URL
+2026-10-12T14:24:49.5370436Z   [chromium] › root-workflow-manager.component.spec.ts:35:1 › Root manager navigation asks before dropping a dirty record and continue preserves its input
+2026-10-12T14:24:49.5371523Z   [chromium] › root-workflow-manager.component.spec.ts:38:1 › Root leaving pending workflow manager cancels late results and returns to the original form
+2026-10-12T14:24:49.5372615Z   [chromium] › root-workflow-manager.component.spec.ts:41:1 › Root narrow manager keeps refresh and return controls reachable without page overflow
+2026-10-12T14:24:49.5373620Z   [chromium] › root-workflow-manual-start.component.spec.ts:37:1 › Root manual start discovers current record choices only and cancel has no write
+2026-10-12T14:24:49.5374656Z   [chromium] › root-workflow-manual-start.component.spec.ts:40:1 › Root manual start sends exact selected CAS and treats accepted as intent not engine success
+2026-10-12T14:24:49.5375696Z   [chromium] › root-workflow-manual-start.component.spec.ts:43:48 › Root manual start denied fails closed without fabricated empty eligibility
+2026-10-12T14:24:49.5376669Z   [chromium] › root-workflow-manual-start.component.spec.ts:43:48 › Root manual start leaked fails closed without fabricated empty eligibility
+2026-10-12T14:24:49.5377646Z   [chromium] › root-workflow-manual-start.component.spec.ts:44:1 › Root manual start authorized empty choices offers no submission
+2026-10-12T14:24:49.5378589Z   [chromium] › root-workflow-manual-start.component.spec.ts:45:1 › Root manual start changed choices require explicit refresh to first page
+2026-10-12T14:24:49.5379609Z   [chromium] › root-workflow-manual-start.component.spec.ts:46:1 › Root manual start unknown preserves original request through failed lookup and retry
+2026-10-12T14:24:49.5381137Z   [chromium] › root-workflow-manual-start.component.spec.ts:47:1 › Root manual start duplicate running flow is shown as ignored not a new instance
+2026-10-12T14:24:49.5382187Z   [chromium] › root-workflow-manual-start.component.spec.ts:48:1 › Root manual start stale CAS requires explicit refresh without replacement write
+2026-10-12T14:24:49.5383139Z   [chromium] › root-workflow-manual-start.component.spec.ts:49:1 › Root manual start identity preflight mismatch does not transmit
+2026-10-12T14:24:49.5384613Z   [chromium] › root-workflow-manual-start.component.spec.ts:51:1 › Root manual unknown intent survives real Shell unmount and reopens only its original operation
+2026-10-12T14:24:49.5385802Z   [chromium] › root-workflow-round.component.spec.ts:45:1 › Root round preview is loaded only on explicit selection and cancel writes nothing
+2026-10-12T14:24:49.5386764Z   [chromium] › root-workflow-round.component.spec.ts:46:50 › Root resubmit creates only the selected new round without saving record changes
+2026-10-12T14:24:49.5387717Z   [chromium] › root-workflow-round.component.spec.ts:46:50 › Root review creates only the selected new round without saving record changes
+2026-10-12T14:24:49.5388614Z   [chromium] › root-workflow-round.component.spec.ts:47:1 › Root old round preview remains read only without new-round controls
+2026-10-12T14:24:49.5389476Z   [chromium] › root-workflow-round.component.spec.ts:48:48 › Root round denied preview does not grant actions or leak data
+2026-10-12T14:24:49.5390506Z   [chromium] › root-workflow-round.component.spec.ts:48:48 › Root round leaked preview does not grant actions or leak data
+2026-10-12T14:24:49.5391454Z   [chromium] › root-workflow-round.component.spec.ts:49:1 › Root round unknown lookup and retry preserve original operation and selected kind
+2026-10-12T14:24:49.5392414Z   [chromium] › root-workflow-round.component.spec.ts:50:1 › Root round conflict requires explicit reread and never silently replaces the request
+2026-10-12T14:24:49.5393367Z   [chromium] › root-workflow-round.component.spec.ts:51:1 › Root round selection keeps dirty record input on continue without implicit Save
+2026-10-12T14:24:49.5394301Z   [chromium] › root-workflow-round.component.spec.ts:55:1 › Root rework saves typed current changes through only the dedicated endpoint
+2026-10-12T14:24:49.5395242Z   [chromium] › root-workflow-round.component.spec.ts:58:1 › Root rework unknown retains original edit and retries only its original operation
+2026-10-12T14:24:49.5396278Z   [chromium] › root-workflow-round.component.spec.ts:61:1 › Root rework stale CAS blocks replacement save and retains current input for review
+2026-10-12T14:24:49.5397212Z   [chromium] › root-workflow-round.component.spec.ts:64:1 › Root rework dirty cancellation keeps input on continue and never auto-saves
+2026-10-12T14:24:49.5398191Z   [chromium] › root-workflow-round.component.spec.ts:68:1 › Root round unknown survives real Shell unmount and offers only original request recovery
+2026-10-12T14:24:49.5399202Z   [chromium] › root-workflow-round.component.spec.ts:74:1 › Root rework unknown survives real Shell unmount without replacement Save or lost input
+2026-10-12T14:24:49.5400162Z   [chromium] › root-workflow-round.component.spec.ts:80:1 › Root committed rework recovery does not require permission to start another rework
+2026-10-12T14:24:49.5401178Z   [chromium] › root-workflow-round.component.spec.ts:87:1 › Root round confirmation keeps Figma footer sizing and bottom alignment
+2026-10-12T14:24:49.5402187Z   [chromium] › root-workflow-task-action.component.spec.ts:33:1 › Root Agree keeps 202 pending distinct and confirms only the dedicated execution result
+2026-10-12T14:24:49.5403181Z   [chromium] › root-workflow-task-action.component.spec.ts:42:1 › Root Agree no-effect is a terminal non-success rather than approval
+2026-10-12T14:24:49.5404187Z   [chromium] › root-workflow-task-action.component.spec.ts:46:1 › Root Agree unknown response and failed lookup preserve the original operation on retry
+2026-10-12T14:24:49.5405164Z   [chromium] › root-workflow-task-action.component.spec.ts:52:1 › Root Agree refuses a success receipt belonging to another instance
+2026-10-12T14:24:49.5406097Z   [chromium] › root-workflow-task-action.component.spec.ts:56:1 › Root Agree stale basis requires explicit refresh without auto-resubmission
+2026-10-12T14:24:49.5406987Z   [chromium] › root-workflow-task-action.component.spec.ts:60:1 › Root Agree never auto-saves or approves a dirty form
+2026-10-12T14:24:49.5407872Z   [chromium] › root-workflow-task-action.component.spec.ts:64:1 › Root Agree two synchronous clicks keep one immutable command request
+2026-10-12T14:24:49.5408789Z   [chromium] › root-workflow-task-action.component.spec.ts:67:1 › Root Agree identity preflight changes never transmit the action
+2026-10-12T14:24:49.5409745Z   [chromium] › root-workflow-task-action.component.spec.ts:70:1 › Root Agree rejects a changed command ID when querying an accepted operation
+2026-10-12T14:24:49.5410850Z   [chromium] › root-workflow-task-action.component.spec.ts:75:1 › Root Agree never follows an external pending Location or treats it as acceptance
+2026-10-12T14:24:49.5411870Z   [chromium] › root-workflow-task-action.component.spec.ts:79:1 › Root accepted Agree locks editing and guards browser refresh until a terminal receipt
+2026-10-12T14:24:49.5412921Z   [chromium] › root-workflow-task-action.component.spec.ts:86:1 › Root Agree definite access revocation hides the old record instead of leaving usable controls
+2026-10-12T14:24:49.5414085Z   [chromium] › root-workflow-task-candidates.component.spec.ts:33:2 › Root task member selector uses its trusted field scope and saves only the selected ID
+2026-10-12T14:24:49.5415194Z   [chromium] › root-workflow-task-candidates.component.spec.ts:33:2 › Root task department selector uses its trusted field scope and saves only the selected ID
+2026-10-12T14:24:49.5416248Z   [chromium] › root-workflow-task-candidates.component.spec.ts:43:1 › Root readonly task reference has no selector and does not enumerate a directory
+2026-10-12T14:24:49.5417237Z   [chromium] › root-workflow-task-candidates.component.spec.ts:46:1 › Root task candidate search starts a new page without the previous cursor
+2026-10-12T14:24:49.5418306Z   [chromium] › root-workflow-task-candidates.component.spec.ts:52:2 › Root task candidate denied response never presents selectable items or a successful empty page
+2026-10-12T14:24:49.5419478Z   [chromium] › root-workflow-task-candidates.component.spec.ts:52:2 › Root task candidate malformed response never presents selectable items or a successful empty page
+2026-10-12T14:24:49.5420779Z   [chromium] › root-workflow-task-candidates.component.spec.ts:57:1 › Root task revoked candidate access on the next page clears all previously selectable items
+2026-10-12T14:24:49.5421879Z   [chromium] › root-workflow-task-save.component.spec.ts:39:1 › Root task Save uses current field mask and exact PATCH then refreshes basis without approval
+2026-10-12T14:24:49.5422877Z   [chromium] › root-workflow-task-save.component.spec.ts:48:1 › Root task dirty leave requires explicit discard and never writes on departure
+2026-10-12T14:24:49.5423814Z   [chromium] › root-workflow-task-save.component.spec.ts:53:1 › Root task expired basis does not auto-refresh or silently resend edits
+2026-10-12T14:24:49.5424767Z   [chromium] › root-workflow-task-save.component.spec.ts:58:1 › Root task unknown Save and failed lookup retain exact original request for retry
+2026-10-12T14:24:49.5425739Z   [chromium] › root-workflow-task-save.component.spec.ts:65:1 › Root task malformed Save receipt stays unconfirmed and does not reread as success
+2026-10-12T14:24:49.5426700Z   [chromium] › root-workflow-task-save.component.spec.ts:69:1 › Root task confirmed Save remains saved when subsequent preview fails
+2026-10-12T14:24:49.5427617Z   [chromium] › root-workflow-task-save.component.spec.ts:73:1 › Root task two synchronous Save clicks send only one immutable operation
+2026-10-12T14:24:49.5428527Z   [chromium] › root-workflow-task-save.component.spec.ts:77:1 › Root task identity preflight change prevents Save transmission
+2026-10-12T14:24:49.5429416Z   [chromium] › root-workflow-task-save.component.spec.ts:80:1 › Root task unsaved draft warns browser refresh without transmitting
+2026-10-12T14:24:49.5430461Z   [chromium] › root-workflow-task.component.spec.ts:25:1 › Root task deep link reads current authorized preview and preserves exact decimal strings
+2026-10-12T14:24:49.5431287Z   [chromium] › root-workflow-task.component.spec.ts:42:12 › Root task refuses wrong record
+2026-10-12T14:24:49.5431958Z   [chromium] › root-workflow-task.component.spec.ts:42:12 › Root task refuses wrong task
+2026-10-12T14:24:49.5432629Z   [chromium] › root-workflow-task.component.spec.ts:42:12 › Root task refuses hidden extra value
+2026-10-12T14:24:49.5433383Z   [chromium] › root-workflow-task.component.spec.ts:42:12 › Root task refuses edit mask outside visible fields
+2026-10-12T14:24:49.5434216Z   [chromium] › root-workflow-task.component.spec.ts:46:1 › Root task closed or revoked state never offers stale approval controls
+2026-10-12T14:24:49.5435140Z   [chromium] › root-workflow-task.component.spec.ts:51:1 › Root task explicit refresh rereads current record rather than trusting inbox version
+2026-10-12T14:24:49.5436100Z   [chromium] › root-workflow-task.component.spec.ts:56:1 › Root task displays authorized tombstones without resolving extra private data
+2026-10-12T14:24:49.5437001Z   [chromium] › root-workflow-task.component.spec.ts:64:1 › Root inbox opens selected task using all five authoritative resource IDs
+2026-10-12T14:24:49.5438030Z   [chromium] › root-workflow-task.component.spec.ts:72:1 › Root task readonly controls use approved workspace typography and readonly surface
+2026-10-12T14:24:49.5438988Z   [chromium] › root-workflow-withdraw.component.spec.ts:40:1 › Root withdrawal qualification is loaded on demand and cancel never submits
+2026-10-12T14:24:49.5439994Z   [chromium] › root-workflow-withdraw.component.spec.ts:43:1 › Root withdrawal 202 stays pending until original dedicated execution receipt confirms
+2026-10-12T14:24:49.5441044Z   [chromium] › root-workflow-withdraw.component.spec.ts:46:55 › Root withdrawal denied never exposes a confirmation capability
+2026-10-12T14:24:49.5441965Z   [chromium] › root-workflow-withdraw.component.spec.ts:46:55 › Root withdrawal notEligible never exposes a confirmation capability
+2026-10-12T14:24:49.5442896Z   [chromium] › root-workflow-withdraw.component.spec.ts:49:1 › Root withdrawal network loss retries only the immutable original request
+2026-10-12T14:24:49.5443865Z   [chromium] › root-workflow-withdraw.component.spec.ts:52:1 › Root withdrawal no-effect is not reported as withdrawn
+2026-10-12T14:24:49.5444795Z   [chromium] › root-workflow-withdraw.component.spec.ts:55:1 › Root withdrawal stale basis requires explicit refresh without a replacement write
+2026-10-12T14:24:49.5445714Z   [chromium] › root-workflow-withdraw.component.spec.ts:58:1 › Root withdrawal mismatched instance receipt remains unconfirmed
+2026-10-12T14:24:49.5446614Z   [chromium] › root-workflow-withdraw.component.spec.ts:61:1 › Root withdrawal two synchronous confirmation clicks send one operation
+2026-10-12T14:24:49.5448299Z   [chromium] › root-workflow-withdraw.component.spec.ts:64:1 › Root withdrawal dirty record guard never silently saves or opens an action on continue editing
+2026-10-12T14:24:49.5449305Z   [chromium] › root-workflow-withdraw.component.spec.ts:67:1 › Root withdrawal identity preflight mismatch never transmits the action
+2026-10-12T14:24:49.5450448Z   [chromium] › root-workflow-withdraw.component.spec.ts:70:1 › Root closing an accepted withdrawal preserves its record and disables a new edit until recovery
+2026-10-12T14:24:49.5451516Z   [chromium] › root-workflow-withdraw.component.spec.ts:73:1 › Root withdrawal definite authorization revocation clears the earlier capability
+2026-10-12T14:24:49.5452486Z   [chromium] › table-preset-generic.component.spec.ts:18:1 › dynamic AST preserves nested AND/OR and exact decimal strings without DNF
+2026-10-12T14:24:49.5453415Z   [chromium] › table-preset-generic.component.spec.ts:31:1 › runtime operators and typed values reject unknown or unauthorized fields
+2026-10-12T14:24:49.5454408Z   [chromium] › table-preset-generic.component.spec.ts:40:1 › NULL, false and precise dates remain distinct, with server-safe depth limits
+2026-10-12T14:24:49.5455333Z   [chromium] › table-preset-generic.component.spec.ts:51:1 › one editor serializes record fieldId without altering AND/OR grouping
+2026-10-12T14:24:49.5456341Z   [chromium] › table-preset-generic.component.spec.ts:61:1 › record preset validates authorized business visibility without discarding a hidden filter
+2026-10-12T14:24:49.5457322Z   [chromium] › table-preset-generic.component.spec.ts:69:1 › one manager loads scoped resource presets and redacts invalid definitions
+2026-10-12T14:24:49.5458345Z   [chromium] › table-preset-generic.component.spec.ts:79:1 › resource editor saves fieldId and decimal text through injected repository after confirmation
+2026-10-12T14:24:49.5459456Z   [chromium] › table-preset-generic.component.spec.ts:96:1 › shared query lifecycle validates changed criteria with old token and clears it only on refresh or actor switch
+2026-10-12T14:24:49.5460141Z Total: 686 tests in 47 files
+2026-10-12T14:24:49.5493835Z ##[group]Run PLAYWRIGHT_JSON_OUTPUT_NAME="$RUNNER_TEMP/component-reports/shard-$COMPONENT_SHARD/report.json" pnpm exec playwright test --config apps/web/playwright.component.config.ts --shard=4/4 --workers=1 --retries=0 --reporter=line,json --output "$RUNNER_TEMP/component-execution"
+2026-10-12T14:24:49.5495606Z [36;1mPLAYWRIGHT_JSON_OUTPUT_NAME="$RUNNER_TEMP/component-reports/shard-$COMPONENT_SHARD/report.json" pnpm exec playwright test --config apps/web/playwright.component.config.ts --shard=4/4 --workers=1 --retries=0 --reporter=line,json --output "$RUNNER_TEMP/component-execution"[0m
+2026-10-12T14:24:49.5535257Z shell: /usr/bin/bash -e {0}
+2026-10-12T14:24:49.5535532Z env:
+2026-10-12T14:24:49.5535751Z   COMPONENT_SHARD: 4
+2026-10-12T14:24:49.5535981Z ##[endgroup]
+2026-10-12T14:24:52.6748994Z 
+2026-10-12T14:24:52.6787285Z Running 141 tests using 1 worker, shard 4 of 4
+2026-10-12T14:24:52.6799972Z 
+2026-10-12T14:24:53.1642614Z [1/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:47:1 › Root Shell ordinary form route mounts records under the original persistent chrome
+2026-10-12T14:24:55.4879883Z [2/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:57:1 › Root Shell create then read authoritative normalized data and edit a record
+2026-10-12T14:24:58.5141972Z [3/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:80:1 › Root confirmed write with failed reread remains saved and cannot submit again
+2026-10-12T14:25:01.0813219Z [4/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:91:1 › Root create-only actor confirms a receipt without an unauthorized detail or search read
+2026-10-12T14:25:03.1142316Z [5/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:97:1 › Root opening an existing row validates the original query before reading detail
+2026-10-12T14:25:05.1963528Z [6/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:104:1 › Root dirty record modal close requires an explicit discard and restores the origin focus
+2026-10-12T14:25:07.5609547Z [7/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:112:1 › Root ordinary actor cannot load owner definition by entering the design URL
+2026-10-12T14:25:09.1971574Z [8/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:119:1 › Root ordinary record editor searches only field-scoped reference candidates
+2026-10-12T14:25:11.6972903Z [9/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:136:1 › Root owner returns from configuration to the runtime page that opened it
+2026-10-12T14:25:14.1408781Z [10/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:145:1 › Root rejected create refresh discards only after confirmation and rebuilds page one
+2026-10-12T14:25:17.0466989Z [11/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:158:1 › Root retry after rejected edit and failed refresh never invents a saved result
+2026-10-12T14:25:20.7391457Z [12/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:168:1 › Root footer discard confirms before dropping dirty record input
+2026-10-12T14:25:23.1805643Z [13/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:176:1 › Root shared record route fills its work area and keeps its legend visually hidden
+2026-10-12T14:25:25.2101642Z [14/141] [chromium] › apps/web/src/root-record-shell.component.spec.ts:184:1 › Root record dialog separates fields from shared action buttons
+2026-10-12T14:25:27.3159453Z [15/141] [chromium] › apps/web/src/root-record-workflows.component.spec.ts:30:1 › Root record detail reads only its scoped workflow page and preserves server pagination identity
+2026-10-12T14:25:29.4959682Z [16/141] [chromium] › apps/web/src/root-record-workflows.component.spec.ts:34:1 › Root record workflows changed query clears old summaries and requires explicit first-page refresh
+2026-10-12T14:25:31.7147022Z [17/141] [chromium] › apps/web/src/root-record-workflows.component.spec.ts:37:54 › Root record workflow denied is not a successful empty list
+2026-10-12T14:25:33.8555726Z [18/141] [chromium] › apps/web/src/root-record-workflows.component.spec.ts:37:54 › Root record workflow malformed is not a successful empty list
+2026-10-12T14:25:35.9556629Z [19/141] [chromium] › apps/web/src/root-record-workflows.component.spec.ts:40:1 › Root record workflows successful empty page is explicit and never invents action eligibility
+2026-10-12T14:25:38.0327033Z [20/141] [chromium] › apps/web/src/root-record-workflows.component.spec.ts:43:1 › Root record workflow read failure retries the read without creating an operation
+2026-10-12T14:25:40.2209343Z [21/141] [chromium] › apps/web/src/root-record-workflows.component.spec.ts:46:1 › Root record workflow refresh preserves unsaved record editing without writing
+2026-10-12T14:25:42.5468823Z [22/141] [chromium] › apps/web/src/root-record-workflows.component.spec.ts:49:1 › Root record workflow closing cancels late unauthorized read without leaving the form workspace
+2026-10-12T14:25:44.7458807Z [23/141] [chromium] › apps/web/src/root-record-workflows.component.spec.ts:54:1 › Root existing record uses a full-page workspace with the original Shell and right related-flow card
+2026-10-12T14:25:47.0367794Z [24/141] [chromium] › apps/web/src/root-record-workflows.component.spec.ts:61:1 › Root record read-only fields follow the approved gray well while editable fields remain white
+2026-10-12T14:25:49.2537224Z [25/141] [chromium] › apps/web/src/root-workflow-history.component.spec.ts:29:1 › Root history reads confirmed record-scoped events and opens precise original evidence only on demand
+2026-10-12T14:25:51.0151286Z [26/141] [chromium] › apps/web/src/root-workflow-history.component.spec.ts:33:1 › Root history no-effect rejection is displayed as not executed, never a successful rejection
+2026-10-12T14:25:52.7026396Z [27/141] [chromium] › apps/web/src/root-workflow-history.component.spec.ts:36:1 › Root history legacy flow names are identified as last known rather than captured at event time
+2026-10-12T14:25:54.3507382Z [28/141] [chromium] › apps/web/src/root-workflow-history.component.spec.ts:39:1 › Root history missing original basis never substitutes current record values
+2026-10-12T14:25:56.2635773Z [29/141] [chromium] › apps/web/src/root-workflow-history.component.spec.ts:42:1 › Root history pagination and refresh keep local unsaved edits and never write
+2026-10-12T14:25:58.0746077Z [30/141] [chromium] › apps/web/src/root-workflow-history.component.spec.ts:46:1 › Root history revoked access clears prior history without denying independently authorized task editing
+2026-10-12T14:25:59.8412767Z [31/141] [chromium] › apps/web/src/root-workflow-history.component.spec.ts:49:1 › Root history mismatched detail refuses the other event values
+2026-10-12T14:26:01.6034410Z [32/141] [chromium] › apps/web/src/root-workflow-history.component.spec.ts:52:1 › Root historical comparison uses persisted visible current values and never local unsaved edits
+2026-10-12T14:26:03.4636540Z [33/141] [chromium] › apps/web/src/root-workflow-history.component.spec.ts:56:1 › Root task workspace presents history beside the record at desktop and stacks within mobile width
+2026-10-12T14:26:05.3462268Z [34/141] [chromium] › apps/web/src/root-workflow-history.component.spec.ts:62:1 › Root history switching events ignores a late first response
+2026-10-12T14:26:07.1945663Z [35/141] [chromium] › apps/web/src/root-workflow-history.component.spec.ts:68:1 › Root history leaving the task cancels an outstanding detail without a late authorization error
+2026-10-12T14:26:09.0565659Z [36/141] [chromium] › apps/web/src/root-workflow-history.component.spec.ts:73:1 › Root opening version comparison brings its heading into view and return restores the origin control
+2026-10-12T14:26:10.9786615Z [37/141] [chromium] › apps/web/src/root-workflow-inbox.component.spec.ts:23:1 › Root inbox is reachable in persistent shell and uses authoritative server pagination
+2026-10-12T14:26:13.0950694Z [38/141] [chromium] › apps/web/src/root-workflow-inbox.component.spec.ts:45:1 › Root inbox query change requires explicit refresh, resets first page and drops stale token
+2026-10-12T14:26:15.1497627Z [39/141] [chromium] › apps/web/src/root-workflow-inbox.component.spec.ts:61:1 › Root inbox read failure is not an unconfirmed write and retry repeats only the read
+2026-10-12T14:26:16.9402479Z [40/141] [chromium] › apps/web/src/root-workflow-inbox.component.spec.ts:75:1 › Root inbox rejects malformed or cross-page results instead of displaying untrusted rows
+2026-10-12T14:26:18.5547938Z [41/141] [chromium] › apps/web/src/root-workflow-inbox.component.spec.ts:81:1 › Root inbox direct route handles revoked access without inventing empty success
+2026-10-12T14:26:20.2285169Z [42/141] [chromium] › apps/web/src/root-workflow-inbox.component.spec.ts:89:1 › Root inbox expired query never silently restarts pagination
+2026-10-12T14:26:22.2493153Z [43/141] [chromium] › apps/web/src/root-workflow-inbox.component.spec.ts:97:1 › Root inbox leaving during read discards late response and back navigation fetches anew
+2026-10-12T14:26:24.2601652Z [44/141] [chromium] › apps/web/src/root-workflow-inbox.component.spec.ts:109:1 › Root inbox identity mismatch suspends old account data until explicit identity check
+2026-10-12T14:26:25.8719897Z [45/141] [chromium] › apps/web/src/root-workflow-inbox.component.spec.ts:117:1 › Root inbox small screen keeps short workflow names readable inside a horizontally scrollable table
+2026-10-12T14:26:27.7319212Z [46/141] [chromium] › apps/web/src/root-workflow-manager.component.spec.ts:23:1 › Root workflow manager entry preserves Shell and displays real server summaries and page identity
+2026-10-12T14:26:57.8132040Z   1) [chromium] › apps/web/src/root-workflow-manager.component.spec.ts:23:1 › Root workflow manager entry preserves Shell and displays real server summaries and page identity 
+2026-10-12T14:26:57.8133356Z 
+2026-10-12T14:26:57.8133797Z     Test timeout of 30000ms exceeded.
+2026-10-12T14:26:57.8136092Z 
+2026-10-12T14:26:57.8136930Z     Error: locator.click: Test timeout of 30000ms exceeded.
+2026-10-12T14:26:57.8137585Z     Call log:
+2026-10-12T14:26:57.8138381Z       - waiting for getByRole('button', { name: '下一页', exact: true })
+2026-10-12T14:26:57.8144050Z         - locator resolved to <button tabindex="0" type="button" aria-label="下一页" data-slot="button" class="group/button inline-flex shrink-0 items-center justify-center border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive…>…</button>
+2026-10-12T14:26:57.8147912Z       - attempting click action
+2026-10-12T14:26:57.8154676Z         2 × waiting for element to be visible, enabled and stable
+2026-10-12T14:26:57.8161859Z           - element is not stable
+2026-10-12T14:26:57.8162360Z         - retrying click action
+2026-10-12T14:26:57.8162739Z         - waiting 20ms
+2026-10-12T14:26:57.8163411Z         2 × waiting for element to be visible, enabled and stable
+2026-10-12T14:26:57.8163951Z           - element is not stable
+2026-10-12T14:26:57.8164524Z         - retrying click action
+2026-10-12T14:26:57.8164894Z           - waiting 100ms
+2026-10-12T14:26:57.8165377Z         52 × waiting for element to be visible, enabled and stable
+2026-10-12T14:26:57.8165855Z            - element is not stable
+2026-10-12T14:26:57.8166133Z          - retrying click action
+2026-10-12T14:26:57.8166399Z            - waiting 500ms
+2026-10-12T14:26:57.8166895Z 
+2026-10-12T14:26:57.8166904Z 
+2026-10-12T14:26:57.8167281Z       22 | const queries=(api:Awaited<ReturnType<typeof setup>>)=>api.calls.filter(c=>c.path===managerPath);
+2026-10-12T14:26:57.8168052Z       23 | test('Root workflow manager entry preserves Shell and displays real server summaries and page identity',async({page})=>{
+2026-10-12T14:26:57.8173209Z     > 24 |  const api=await setup(page);await page.setViewportSize({width:1440,height:1000});await page.goto('/app/'+base);await expect(page.getByRole('button',{name:'新建记录',exact:true})).toBeVisible();const shell=await page.getByTestId('workspace-shell').elementHandle();await page.getByRole('button',{name:'审批流程',exact:true}).click();await expect(page).toHaveURL(route);await expect(page.getByRole('heading',{name:'审批流程',exact:true})).toBeVisible();await expect(page.getByText('部门审批',{exact:true})).toBeVisible();await expect(page.getByText('关闭中',{exact:true})).toBeVisible();expect(await shell!.evaluate(n=>n.isConnected)).toBe(true);expect(queries(api)[0]).toEqual({path:managerPath,method:'POST',body:{page:1,pageSize:20}});await page.getByRole('button',{name:'下一页',exact:true}).click();await expect(page.getByText('第二页流程',{exact:true})).toBeVisible();await expect(page.getByText('部门审批',{exact:true})).toHaveCount(0);expect(queries(api)[1].body).toEqual({page:2,pageSize:20,queryVersion:'manager-original'});await test.info().attach('workflow-manager-desktop',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+2026-10-12T14:26:57.8177839Z          |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ^
+2026-10-12T14:26:57.8178984Z       25 | });
+2026-10-12T14:26:57.8179521Z       26 | test('Root workflow manager changed query clears rows and requires explicit first-page refresh',async({page})=>{
+2026-10-12T14:26:57.8182666Z       27 |  const api=await setup(page,'changed');await page.goto(route);await expect(page.getByText('部门审批',{exact:true})).toBeVisible();await page.getByRole('button',{name:'下一页',exact:true}).click();await expect(page.getByRole('alert')).toContainText('变化');await expect(page.getByText('部门审批',{exact:true})).toHaveCount(0);expect(queries(api)).toHaveLength(2);await page.getByRole('button',{name:'刷新流程',exact:true}).click();await expect(page.getByText('刷新后的流程',{exact:true})).toBeVisible();expect(queries(api)[2].body).toEqual({page:1,pageSize:20});
+2026-10-12T14:26:57.8185350Z         at /home/runner/work/WeaveOS/WeaveOS/apps/web/src/root-workflow-manager.component.spec.ts:24:773
+2026-10-12T14:26:57.8185910Z 
+2026-10-12T14:26:57.8186670Z     Error Context: ../../_temp/component-execution/root-workflow-manager.comp-100a7-summaries-and-page-identity-chromium/error-context.md
+2026-10-12T14:26:57.8187498Z 
+2026-10-12T14:26:57.8187529Z 
+2026-10-12T14:26:58.2154575Z [47/141] [chromium] › apps/web/src/root-workflow-manager.component.spec.ts:26:1 › Root workflow manager changed query clears rows and requires explicit first-page refresh
+2026-10-12T14:27:28.4168968Z   2) [chromium] › apps/web/src/root-workflow-manager.component.spec.ts:26:1 › Root workflow manager changed query clears rows and requires explicit first-page refresh 
+2026-10-12T14:27:28.4180896Z 
+2026-10-12T14:27:28.4181542Z     Test timeout of 30000ms exceeded.
+2026-10-12T14:27:28.4181984Z 
+2026-10-12T14:27:28.4182350Z     Error: locator.click: Test timeout of 30000ms exceeded.
+2026-10-12T14:27:28.4182843Z     Call log:
+2026-10-12T14:27:28.4183665Z       - waiting for getByRole('button', { name: '下一页', exact: true })
+2026-10-12T14:27:28.4188006Z         - locator resolved to <button tabindex="0" type="button" aria-label="下一页" data-slot="button" class="group/button inline-flex shrink-0 items-center justify-center border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive…>…</button>
+2026-10-12T14:27:28.4190294Z       - attempting click action
+2026-10-12T14:27:28.4191127Z         2 × waiting for element to be visible, enabled and stable
+2026-10-12T14:27:28.4191708Z           - element is not stable
+2026-10-12T14:27:28.4192101Z         - retrying click action
+2026-10-12T14:27:28.4192536Z         - waiting 20ms
+2026-10-12T14:27:28.4193096Z         2 × waiting for element to be visible, enabled and stable
+2026-10-12T14:27:28.4193601Z           - element is not stable
+2026-10-12T14:27:28.4193990Z         - retrying click action
+2026-10-12T14:27:28.4194240Z           - waiting 100ms
+2026-10-12T14:27:28.4194628Z         52 × waiting for element to be visible, enabled and stable
+2026-10-12T14:27:28.4194984Z            - element is not stable
+2026-10-12T14:27:28.4195266Z          - retrying click action
+2026-10-12T14:27:28.4195518Z            - waiting 500ms
+2026-10-12T14:27:28.4195668Z 
+2026-10-12T14:27:28.4195675Z 
+2026-10-12T14:27:28.4195769Z       25 | });
+2026-10-12T14:27:28.4196272Z       26 | test('Root workflow manager changed query clears rows and requires explicit first-page refresh',async({page})=>{
+2026-10-12T14:27:28.4198683Z     > 27 |  const api=await setup(page,'changed');await page.goto(route);await expect(page.getByText('部门审批',{exact:true})).toBeVisible();await page.getByRole('button',{name:'下一页',exact:true}).click();await expect(page.getByRole('alert')).toContainText('变化');await expect(page.getByText('部门审批',{exact:true})).toHaveCount(0);expect(queries(api)).toHaveLength(2);await page.getByRole('button',{name:'刷新流程',exact:true}).click();await expect(page.getByText('刷新后的流程',{exact:true})).toBeVisible();expect(queries(api)[2].body).toEqual({page:1,pageSize:20});
+2026-10-12T14:27:28.4200624Z          |                                                                                                                                                                                      ^
+2026-10-12T14:27:28.4201101Z       28 | });
+2026-10-12T14:27:28.4202052Z       29 | for(const mode of ['denied','leak','offline'] as const)test('Root workflow manager '+mode+' fails closed without pretending empty success or unknown write',async({page})=>{
+2026-10-12T14:27:28.4205584Z       30 |  const api=await setup(page,mode);await page.goto(route);await expect(page.getByRole('alert')).toBeVisible();await expect(page.getByText('部门审批',{exact:true})).toHaveCount(0);await expect(page.getByText('hidden-approval-secret')).toHaveCount(0);await expect(page.getByText('暂无流程',{exact:true})).toHaveCount(0);await expect(page.getByText('操作结果尚未确认',{exact:false})).toHaveCount(0);expect(api.calls.filter(c=>['PUT','PATCH','DELETE'].includes(c.method)||c.method==='POST'&&!c.path.endsWith('/search'))).toEqual([]);
+2026-10-12T14:27:28.4208118Z         at /home/runner/work/WeaveOS/WeaveOS/apps/web/src/root-workflow-manager.component.spec.ts:27:182
+2026-10-12T14:27:28.4208627Z 
+2026-10-12T14:27:28.4209290Z     Error Context: ../../_temp/component-execution/root-workflow-manager.comp-2cbf1-explicit-first-page-refresh-chromium/error-context.md
+2026-10-12T14:27:28.4210019Z 
+2026-10-12T14:27:28.4210026Z 
+2026-10-12T14:27:28.7993315Z [48/141] [chromium] › apps/web/src/root-workflow-manager.component.spec.ts:29:56 › Root workflow manager denied fails closed without pretending empty success or unknown write
+2026-10-12T14:27:30.7016391Z [49/141] [chromium] › apps/web/src/root-workflow-manager.component.spec.ts:29:56 › Root workflow manager leak fails closed without pretending empty success or unknown write
+2026-10-12T14:27:32.6529525Z [50/141] [chromium] › apps/web/src/root-workflow-manager.component.spec.ts:29:56 › Root workflow manager offline fails closed without pretending empty success or unknown write
+2026-10-12T14:27:34.3132544Z [51/141] [chromium] › apps/web/src/root-workflow-manager.component.spec.ts:32:1 › Root ordinary form reader neither receives manager entry nor sends manager query from direct URL
+2026-10-12T14:27:37.6680167Z [52/141] [chromium] › apps/web/src/root-workflow-manager.component.spec.ts:35:1 › Root manager navigation asks before dropping a dirty record and continue preserves its input
+2026-10-12T14:27:40.9006211Z [53/141] [chromium] › apps/web/src/root-workflow-manager.component.spec.ts:38:1 › Root leaving pending workflow manager cancels late results and returns to the original form
+2026-10-12T14:27:42.8444047Z [54/141] [chromium] › apps/web/src/root-workflow-manager.component.spec.ts:41:1 › Root narrow manager keeps refresh and return controls reachable without page overflow
+2026-10-12T14:27:44.8410154Z [55/141] [chromium] › apps/web/src/root-workflow-manual-start.component.spec.ts:37:1 › Root manual start discovers current record choices only and cancel has no write
+2026-10-12T14:27:47.0711578Z [56/141] [chromium] › apps/web/src/root-workflow-manual-start.component.spec.ts:40:1 › Root manual start sends exact selected CAS and treats accepted as intent not engine success
+2026-10-12T14:27:49.3978120Z [57/141] [chromium] › apps/web/src/root-workflow-manual-start.component.spec.ts:43:48 › Root manual start denied fails closed without fabricated empty eligibility
+2026-10-12T14:27:51.5806994Z [58/141] [chromium] › apps/web/src/root-workflow-manual-start.component.spec.ts:43:48 › Root manual start leaked fails closed without fabricated empty eligibility
+2026-10-12T14:27:53.7490958Z [59/141] [chromium] › apps/web/src/root-workflow-manual-start.component.spec.ts:44:1 › Root manual start authorized empty choices offers no submission
+2026-10-12T14:27:55.9178578Z [60/141] [chromium] › apps/web/src/root-workflow-manual-start.component.spec.ts:45:1 › Root manual start changed choices require explicit refresh to first page
+2026-10-12T14:27:58.2543186Z [61/141] [chromium] › apps/web/src/root-workflow-manual-start.component.spec.ts:46:1 › Root manual start unknown preserves original request through failed lookup and retry
+2026-10-12T14:28:00.7459307Z [62/141] [chromium] › apps/web/src/root-workflow-manual-start.component.spec.ts:47:1 › Root manual start duplicate running flow is shown as ignored not a new instance
+2026-10-12T14:28:03.0429189Z [63/141] [chromium] › apps/web/src/root-workflow-manual-start.component.spec.ts:48:1 › Root manual start stale CAS requires explicit refresh without replacement write
+2026-10-12T14:28:05.4513787Z [64/141] [chromium] › apps/web/src/root-workflow-manual-start.component.spec.ts:49:1 › Root manual start identity preflight mismatch does not transmit
+2026-10-12T14:28:07.7736720Z [65/141] [chromium] › apps/web/src/root-workflow-manual-start.component.spec.ts:51:1 › Root manual unknown intent survives real Shell unmount and reopens only its original operation
+2026-10-12T14:28:10.7760211Z [66/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:45:1 › Root round preview is loaded only on explicit selection and cancel writes nothing
+2026-10-12T14:28:13.1343924Z [67/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:46:50 › Root resubmit creates only the selected new round without saving record changes
+2026-10-12T14:28:15.5675080Z [68/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:46:50 › Root review creates only the selected new round without saving record changes
+2026-10-12T14:28:17.9993836Z [69/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:47:1 › Root old round preview remains read only without new-round controls
+2026-10-12T14:28:20.2393270Z [70/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:48:48 › Root round denied preview does not grant actions or leak data
+2026-10-12T14:28:22.4422473Z [71/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:48:48 › Root round leaked preview does not grant actions or leak data
+2026-10-12T14:28:24.6578872Z [72/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:49:1 › Root round unknown lookup and retry preserve original operation and selected kind
+2026-10-12T14:28:27.1883950Z [73/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:50:1 › Root round conflict requires explicit reread and never silently replaces the request
+2026-10-12T14:28:29.6257119Z [74/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:51:1 › Root round selection keeps dirty record input on continue without implicit Save
+2026-10-12T14:28:31.9866291Z [75/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:55:1 › Root rework saves typed current changes through only the dedicated endpoint
+2026-10-12T14:28:34.4783272Z [76/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:58:1 › Root rework unknown retains original edit and retries only its original operation
+2026-10-12T14:28:37.0047396Z [77/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:61:1 › Root rework stale CAS blocks replacement save and retains current input for review
+2026-10-12T14:28:39.4592209Z [78/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:64:1 › Root rework dirty cancellation keeps input on continue and never auto-saves
+2026-10-12T14:28:41.9809477Z [79/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:68:1 › Root round unknown survives real Shell unmount and offers only original request recovery
+2026-10-12T14:28:45.0974129Z [80/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:74:1 › Root rework unknown survives real Shell unmount without replacement Save or lost input
+2026-10-12T14:28:48.3386903Z [81/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:80:1 › Root committed rework recovery does not require permission to start another rework
+2026-10-12T14:28:51.5316091Z [82/141] [chromium] › apps/web/src/root-workflow-round.component.spec.ts:87:1 › Root round confirmation keeps Figma footer sizing and bottom alignment
+2026-10-12T14:28:53.8905902Z [83/141] [chromium] › apps/web/src/root-workflow-task-action.component.spec.ts:33:1 › Root Agree keeps 202 pending distinct and confirms only the dedicated execution result
+2026-10-12T14:28:56.0013613Z [84/141] [chromium] › apps/web/src/root-workflow-task-action.component.spec.ts:42:1 › Root Agree no-effect is a terminal non-success rather than approval
+2026-10-12T14:28:57.8707671Z [85/141] [chromium] › apps/web/src/root-workflow-task-action.component.spec.ts:46:1 › Root Agree unknown response and failed lookup preserve the original operation on retry
+2026-10-12T14:28:59.8136310Z [86/141] [chromium] › apps/web/src/root-workflow-task-action.component.spec.ts:52:1 › Root Agree refuses a success receipt belonging to another instance
+2026-10-12T14:29:01.7365861Z [87/141] [chromium] › apps/web/src/root-workflow-task-action.component.spec.ts:56:1 › Root Agree stale basis requires explicit refresh without auto-resubmission
+2026-10-12T14:29:03.5645917Z [88/141] [chromium] › apps/web/src/root-workflow-task-action.component.spec.ts:60:1 › Root Agree never auto-saves or approves a dirty form
+2026-10-12T14:29:05.2954107Z [89/141] [chromium] › apps/web/src/root-workflow-task-action.component.spec.ts:64:1 › Root Agree two synchronous clicks keep one immutable command request
+2026-10-12T14:29:07.0382386Z [90/141] [chromium] › apps/web/src/root-workflow-task-action.component.spec.ts:67:1 › Root Agree identity preflight changes never transmit the action
+2026-10-12T14:29:08.7322995Z [91/141] [chromium] › apps/web/src/root-workflow-task-action.component.spec.ts:70:1 › Root Agree rejects a changed command ID when querying an accepted operation
+2026-10-12T14:29:10.5916755Z [92/141] [chromium] › apps/web/src/root-workflow-task-action.component.spec.ts:75:1 › Root Agree never follows an external pending Location or treats it as acceptance
+2026-10-12T14:29:12.3646735Z [93/141] [chromium] › apps/web/src/root-workflow-task-action.component.spec.ts:79:1 › Root accepted Agree locks editing and guards browser refresh until a terminal receipt
+2026-10-12T14:29:14.2184627Z [94/141] [chromium] › apps/web/src/root-workflow-task-action.component.spec.ts:86:1 › Root Agree definite access revocation hides the old record instead of leaving usable controls
+2026-10-12T14:29:15.9778837Z [95/141] [chromium] › apps/web/src/root-workflow-task-candidates.component.spec.ts:33:2 › Root task member selector uses its trusted field scope and saves only the selected ID
+2026-10-12T14:29:17.9202771Z [96/141] [chromium] › apps/web/src/root-workflow-task-candidates.component.spec.ts:33:2 › Root task department selector uses its trusted field scope and saves only the selected ID
+2026-10-12T14:29:19.8207546Z [97/141] [chromium] › apps/web/src/root-workflow-task-candidates.component.spec.ts:43:1 › Root readonly task reference has no selector and does not enumerate a directory
+2026-10-12T14:29:21.4703076Z [98/141] [chromium] › apps/web/src/root-workflow-task-candidates.component.spec.ts:46:1 › Root task candidate search starts a new page without the previous cursor
+2026-10-12T14:29:23.4529454Z [99/141] [chromium] › apps/web/src/root-workflow-task-candidates.component.spec.ts:52:2 › Root task candidate denied response never presents selectable items or a successful empty page
+2026-10-12T14:29:25.4027896Z [100/141] [chromium] › apps/web/src/root-workflow-task-candidates.component.spec.ts:52:2 › Root task candidate malformed response never presents selectable items or a successful empty page
+2026-10-12T14:29:27.1685476Z [101/141] [chromium] › apps/web/src/root-workflow-task-candidates.component.spec.ts:57:1 › Root task revoked candidate access on the next page clears all previously selectable items
+2026-10-12T14:29:28.9801762Z [102/141] [chromium] › apps/web/src/root-workflow-task-save.component.spec.ts:39:1 › Root task Save uses current field mask and exact PATCH then refreshes basis without approval
+2026-10-12T14:29:30.9194317Z [103/141] [chromium] › apps/web/src/root-workflow-task-save.component.spec.ts:48:1 › Root task dirty leave requires explicit discard and never writes on departure
+2026-10-12T14:29:32.9763165Z [104/141] [chromium] › apps/web/src/root-workflow-task-save.component.spec.ts:53:1 › Root task expired basis does not auto-refresh or silently resend edits
+2026-10-12T14:29:35.1311565Z [105/141] [chromium] › apps/web/src/root-workflow-task-save.component.spec.ts:58:1 › Root task unknown Save and failed lookup retain exact original request for retry
+2026-10-12T14:29:37.1075249Z [106/141] [chromium] › apps/web/src/root-workflow-task-save.component.spec.ts:65:1 › Root task malformed Save receipt stays unconfirmed and does not reread as success
+2026-10-12T14:29:38.9010264Z [107/141] [chromium] › apps/web/src/root-workflow-task-save.component.spec.ts:69:1 › Root task confirmed Save remains saved when subsequent preview fails
+2026-10-12T14:29:40.8325863Z [108/141] [chromium] › apps/web/src/root-workflow-task-save.component.spec.ts:73:1 › Root task two synchronous Save clicks send only one immutable operation
+2026-10-12T14:29:42.6186267Z [109/141] [chromium] › apps/web/src/root-workflow-task-save.component.spec.ts:77:1 › Root task identity preflight change prevents Save transmission
+2026-10-12T14:29:44.5356204Z [110/141] [chromium] › apps/web/src/root-workflow-task-save.component.spec.ts:80:1 › Root task unsaved draft warns browser refresh without transmitting
+2026-10-12T14:29:46.2343425Z [111/141] [chromium] › apps/web/src/root-workflow-task.component.spec.ts:25:1 › Root task deep link reads current authorized preview and preserves exact decimal strings
+2026-10-12T14:29:48.2043560Z [112/141] [chromium] › apps/web/src/root-workflow-task.component.spec.ts:42:12 › Root task refuses wrong record
+2026-10-12T14:29:50.0101835Z [113/141] [chromium] › apps/web/src/root-workflow-task.component.spec.ts:42:12 › Root task refuses wrong task
+2026-10-12T14:29:51.6600781Z [114/141] [chromium] › apps/web/src/root-workflow-task.component.spec.ts:42:12 › Root task refuses hidden extra value
+2026-10-12T14:29:53.3035945Z [115/141] [chromium] › apps/web/src/root-workflow-task.component.spec.ts:42:12 › Root task refuses edit mask outside visible fields
+2026-10-12T14:29:54.9500772Z [116/141] [chromium] › apps/web/src/root-workflow-task.component.spec.ts:46:1 › Root task closed or revoked state never offers stale approval controls
+2026-10-12T14:29:56.6385635Z [117/141] [chromium] › apps/web/src/root-workflow-task.component.spec.ts:51:1 › Root task explicit refresh rereads current record rather than trusting inbox version
+2026-10-12T14:29:58.4138154Z [118/141] [chromium] › apps/web/src/root-workflow-task.component.spec.ts:56:1 › Root task displays authorized tombstones without resolving extra private data
+2026-10-12T14:30:00.0703364Z [119/141] [chromium] › apps/web/src/root-workflow-task.component.spec.ts:64:1 › Root inbox opens selected task using all five authoritative resource IDs
+2026-10-12T14:30:02.0352727Z [120/141] [chromium] › apps/web/src/root-workflow-task.component.spec.ts:72:1 › Root task readonly controls use approved workspace typography and readonly surface
+2026-10-12T14:30:03.8876779Z [121/141] [chromium] › apps/web/src/root-workflow-withdraw.component.spec.ts:40:1 › Root withdrawal qualification is loaded on demand and cancel never submits
+2026-10-12T14:30:06.1487024Z [122/141] [chromium] › apps/web/src/root-workflow-withdraw.component.spec.ts:43:1 › Root withdrawal 202 stays pending until original dedicated execution receipt confirms
+2026-10-12T14:30:08.6033080Z [123/141] [chromium] › apps/web/src/root-workflow-withdraw.component.spec.ts:46:55 › Root withdrawal denied never exposes a confirmation capability
+2026-10-12T14:30:10.8245906Z [124/141] [chromium] › apps/web/src/root-workflow-withdraw.component.spec.ts:46:55 › Root withdrawal notEligible never exposes a confirmation capability
+2026-10-12T14:30:13.0725939Z [125/141] [chromium] › apps/web/src/root-workflow-withdraw.component.spec.ts:49:1 › Root withdrawal network loss retries only the immutable original request
+2026-10-12T14:30:15.5126479Z [126/141] [chromium] › apps/web/src/root-workflow-withdraw.component.spec.ts:52:1 › Root withdrawal no-effect is not reported as withdrawn
+2026-10-12T14:30:17.9265842Z [127/141] [chromium] › apps/web/src/root-workflow-withdraw.component.spec.ts:55:1 › Root withdrawal stale basis requires explicit refresh without a replacement write
+2026-10-12T14:30:20.2996988Z [128/141] [chromium] › apps/web/src/root-workflow-withdraw.component.spec.ts:58:1 › Root withdrawal mismatched instance receipt remains unconfirmed
+2026-10-12T14:30:22.7182697Z [129/141] [chromium] › apps/web/src/root-workflow-withdraw.component.spec.ts:61:1 › Root withdrawal two synchronous confirmation clicks send one operation
+2026-10-12T14:30:25.0504828Z [130/141] [chromium] › apps/web/src/root-workflow-withdraw.component.spec.ts:64:1 › Root withdrawal dirty record guard never silently saves or opens an action on continue editing
+2026-10-12T14:30:27.4458601Z [131/141] [chromium] › apps/web/src/root-workflow-withdraw.component.spec.ts:67:1 › Root withdrawal identity preflight mismatch never transmits the action
+2026-10-12T14:30:29.7511843Z [132/141] [chromium] › apps/web/src/root-workflow-withdraw.component.spec.ts:70:1 › Root closing an accepted withdrawal preserves its record and disables a new edit until recovery
+2026-10-12T14:30:32.5011149Z [133/141] [chromium] › apps/web/src/root-workflow-withdraw.component.spec.ts:73:1 › Root withdrawal definite authorization revocation clears the earlier capability
+2026-10-12T14:30:34.8542413Z [134/141] [chromium] › apps/web/src/table-preset-generic.component.spec.ts:18:1 › dynamic AST preserves nested AND/OR and exact decimal strings without DNF
+2026-10-12T14:30:34.8615624Z [135/141] [chromium] › apps/web/src/table-preset-generic.component.spec.ts:31:1 › runtime operators and typed values reject unknown or unauthorized fields
+2026-10-12T14:30:34.8686018Z [136/141] [chromium] › apps/web/src/table-preset-generic.component.spec.ts:40:1 › NULL, false and precise dates remain distinct, with server-safe depth limits
+2026-10-12T14:30:34.8766383Z [137/141] [chromium] › apps/web/src/table-preset-generic.component.spec.ts:51:1 › one editor serializes record fieldId without altering AND/OR grouping
+2026-10-12T14:30:34.8832181Z [138/141] [chromium] › apps/web/src/table-preset-generic.component.spec.ts:61:1 › record preset validates authorized business visibility without discarding a hidden filter
+2026-10-12T14:30:34.8906722Z [139/141] [chromium] › apps/web/src/table-preset-generic.component.spec.ts:69:1 › one manager loads scoped resource presets and redacts invalid definitions
+2026-10-12T14:30:36.3604025Z [140/141] [chromium] › apps/web/src/table-preset-generic.component.spec.ts:79:1 › resource editor saves fieldId and decimal text through injected repository after confirmation
+2026-10-12T14:30:38.8979713Z [141/141] [chromium] › apps/web/src/table-preset-generic.component.spec.ts:96:1 › shared query lifecycle validates changed criteria with old token and clears it only on refresh or actor switch
+2026-10-12T14:30:40.4827374Z   2 failed
+2026-10-12T14:30:40.4828594Z     [chromium] › apps/web/src/root-workflow-manager.component.spec.ts:23:1 › Root workflow manager entry preserves Shell and displays real server summaries and page identity 
+2026-10-12T14:30:40.4829820Z     [chromium] › apps/web/src/root-workflow-manager.component.spec.ts:26:1 › Root workflow manager changed query clears rows and requires explicit first-page refresh 
+2026-10-12T14:30:40.4830687Z   139 passed (5.8m)
+2026-10-12T14:30:40.5155880Z ##[error]Process completed with exit code 1.
+2026-10-12T14:30:40.5226081Z ##[group]Run actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+2026-10-12T14:30:40.5226492Z with:
+2026-10-12T14:30:40.5226723Z   name: components-38262320715-1-shard-4
+2026-10-12T14:30:40.5227055Z   path: /home/runner/work/_temp/component-reports/
+2026-10-12T14:30:40.5227375Z   if-no-files-found: error
+2026-10-12T14:30:40.5227625Z   retention-days: 14
+2026-10-12T14:30:40.5227860Z   compression-level: 6
+2026-10-12T14:30:40.5228086Z   overwrite: false
+2026-10-12T14:30:40.5228317Z   include-hidden-files: false
+2026-10-12T14:30:40.5228561Z env:
+2026-10-12T14:30:40.5228767Z   COMPONENT_SHARD: 4
+2026-10-12T14:30:40.5229003Z ##[endgroup]
+2026-10-12T14:30:40.6840772Z (node:5482) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-12T14:30:40.6841535Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-12T14:30:40.6896876Z With the provided path, there will be 3 files uploaded
+2026-10-12T14:30:40.6902701Z Artifact name is valid!
+2026-10-12T14:30:40.6903206Z Root directory input is valid!
+2026-10-12T14:30:40.9468506Z Beginning upload of artifact content to blob storage
+2026-10-12T14:30:41.0076899Z (node:5482) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-12T14:30:41.2591100Z Uploaded bytes 668426
+2026-10-12T14:30:41.2951727Z Finished uploading artifact content to blob storage!
+2026-10-12T14:30:41.2953187Z SHA256 digest of uploaded artifact zip is 8929a1c36b3c45913a20d4405bcb7247ab3396e2a34598936a3f40de31d049d9
+2026-10-12T14:30:41.2954204Z Finalizing artifact upload
+2026-10-12T14:30:41.5697913Z Artifact components-38262320715-1-shard-4.zip successfully finalized. Artifact ID 11753866335
+2026-10-12T14:30:41.5699159Z Artifact components-38262320715-1-shard-4 has been successfully uploaded! Final size is 668426 bytes. Artifact ID is 11753866335
+2026-10-12T14:30:41.5704700Z Artifact download URL: https://github.com/Hubujiu/WeaveOS/actions/runs/38262320715/artifacts/11753866335
+2026-10-12T14:30:41.5876911Z Post job cleanup.
+2026-10-12T14:30:41.6768647Z [command]/usr/bin/git version
+2026-10-12T14:30:41.6807868Z git version 2.55.0
+2026-10-12T14:30:41.6844113Z Temporarily overriding HOME='/home/runner/work/_temp/afccb914-ae85-43ff-8b24-bdf473cdfbc3' before making global git config changes
+2026-10-12T14:30:41.6845789Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-12T14:30:41.6847032Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/WeaveOS/WeaveOS
+2026-10-12T14:30:41.6885262Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-12T14:30:41.6919829Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-12T14:30:41.7146701Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-12T14:30:41.7177471Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-12T14:30:41.7407408Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-12T14:30:41.7440014Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-12T14:30:41.7837755Z Cleaning up orphan processes
+2026-10-12T14:30:41.8095885Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@11d5960a326750d5838078e36cf38b85af677262, actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020, actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
