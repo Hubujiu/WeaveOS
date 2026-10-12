@@ -18,3 +18,8 @@ const accepted={operationId:id(2),flowId:id(1),instanceId:id(3),status:'accepted
 test('V044 accepted minimum receipt confirms intent only',()=>assert.equal(receipt(accepted,id(2),id(1)),true));
 test('V044 ignored receipt identifies the original running instance',()=>assert.equal(receipt({...accepted,status:'ignored',ignored:true},id(2),id(1)),true));
 for(const [name,change]of [['other operation',{operationId:id(9)}],['other flow',{flowId:id(9)}],['missing instance',{instanceId:undefined}],['zero instance',{instanceId:'00000000-0000-0000-0000-000000000000'}],['engine success',{status:'completed'}],['inconsistent accepted',{ignored:true}],['inconsistent ignored',{status:'ignored'}],['coerced ignored',{ignored:'false'}],['command capability',{commandId:id(9)}],['private graph',{graph:{}}],['record values',{values:{}}]])test('V044 receipt rejects '+name,()=>assert.equal(receipt({...accepted,...change},id(2),id(1)),false));
+// Page coordinates are part of the authorized projection, not advisory metadata.
+test('V044 page two cannot carry an item beyond total',()=>assert.equal(page({...result,page:2},2,20),false));
+test('V044 last page refuses overflow after its first item',()=>assert.equal(page({...result,page:2,total:21,items:[option,{...option,flowId:id(99)}]},2,20),false));
+test('V044 last page accepts exactly its remaining item',()=>assert.equal(page({...result,page:2,total:21},2,20),true));
+test('V044 safe integer page arithmetic rejects impossible populated deep pages',()=>assert.equal(page({...result,page:Number.MAX_SAFE_INTEGER,total:Number.MAX_SAFE_INTEGER},Number.MAX_SAFE_INTEGER,20),false));
