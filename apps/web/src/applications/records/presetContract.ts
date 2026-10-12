@@ -13,15 +13,16 @@ const text=(v:unknown):v is string=>typeof v==='string'&&!/[\u0000\p{Surrogate}]
 const column=(v:unknown):v is string=>id(v)||typeof v==='string'&&['id','createdBy','createdAt','updatedAt','recordVersion'].includes(v);
 const columns=(v:unknown):v is string[]=>Array.isArray(v)&&v.length<=205&&v.every(column)&&new Set(v).size===v.length;
 const bytes=(v:unknown)=>new TextEncoder().encode(JSON.stringify(v)).byteLength;
+const oneOf=(v:unknown,allowed:readonly string[])=>typeof v==='string'&&allowed.includes(v);
 const timestamp=(v:unknown):v is string=>{
  if(typeof v!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(v)||!Number.isFinite(Date.parse(v)))return false;
- const date=v.slice(0,10);return new Date(date+'T00:00:00Z').toISOString().slice(0,10)===date;
+ const date=v.slice(0,10);return Number(v.slice(11,13))<24&&new Date(date+'T00:00:00Z').toISOString().slice(0,10)===date;
 };
 function filter(v:unknown):boolean{
  if(v===null)return true;
  let leaves=0;
  const leaf=(x:unknown):boolean=>{
-  if(!object(x)||!exact(x,['fieldId','operator','value'])||!(id(x.fieldId)||x.fieldId==='createdAt'||x.fieldId==='updatedAt')||!['eq','neq','gt','gte','lt','lte'].includes(String(x.operator)))return false;
+  if(!object(x)||!exact(x,['fieldId','operator','value'])||!(id(x.fieldId)||x.fieldId==='createdAt'||x.fieldId==='updatedAt')||!oneOf(x.operator,['eq','neq','gt','gte','lt','lte']))return false;
   leaves++;
   return x.value===null||typeof x.value==='boolean'||text(x.value)||Array.isArray(x.value)&&x.value.every(text);
  };
@@ -31,11 +32,11 @@ function filter(v:unknown):boolean{
 }
 export function validApplicationPreset(value:unknown,scope:PresetScope,expectedId?:string):value is ApplicationPreset{
  if(!id(scope.appId)||!id(scope.viewId)||!object(value)||!id(value.id)||(expectedId!==undefined&&value.id!==expectedId)||!positive(value.version)||!text(value.name)||!value.name.trim()||[...value.name].length>100)return false;
- if(value.invalid===true)return exact(value,['id','name','version','invalid','reason'])&&['FIELD_UNAVAILABLE','PERMISSION_CHANGED','DEFINITION_CHANGED'].includes(String(value.reason));
+ if(value.invalid===true)return exact(value,['id','name','version','invalid','reason'])&&oneOf(value.reason,['FIELD_UNAVAILABLE','PERMISSION_CHANGED','DEFINITION_CHANGED']);
  if(value.invalid!==false||!exact(value,['id','appId','viewId','name','version','invalid','createdAt','updatedAt','filter','sort','hiddenColumnIds','columnOrder','columnWidths'])||value.appId!==scope.appId||value.viewId!==scope.viewId||!timestamp(value.createdAt)||!timestamp(value.updatedAt))return false;
  if(!filter(value.filter)||!columns(value.hiddenColumnIds)||!columns(value.columnOrder)||!object(value.columnWidths)||Object.keys(value.columnWidths).length>205||!Object.entries(value.columnWidths).every(([key,width])=>column(key)&&positive(width)))return false;
  const sort=value.sort;
- if(sort!==null&&(!object(sort)||!exact(sort,['fieldId','direction'])||!(id(sort.fieldId)||sort.fieldId==='createdAt'||sort.fieldId==='updatedAt')||!['asc','desc'].includes(String(sort.direction))))return false;
+ if(sort!==null&&(!object(sort)||!exact(sort,['fieldId','direction'])||!(id(sort.fieldId)||sort.fieldId==='createdAt'||sort.fieldId==='updatedAt')||!oneOf(sort.direction,['asc','desc'])))return false;
  return bytes({name:value.name,filter:value.filter,sort:value.sort,hiddenColumnIds:value.hiddenColumnIds,columnOrder:value.columnOrder,columnWidths:value.columnWidths})<=32768;
 }
 export function validApplicationPresets(value:unknown,scope:PresetScope):value is {items:ApplicationPreset[]}{
