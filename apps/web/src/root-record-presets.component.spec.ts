@@ -8,7 +8,7 @@ const runtime={appId,viewId,tableId:appId,schemaVersion:2,viewVersion:1,policyRe
 const filter={operator:'and',children:[{fieldId:amount,operator:'gt',value:'9007199254740993.01'}]};
 const preset={id:presetId,appId,viewId,name:'高额方案',version:3,invalid:false,createdAt:'2026-10-10T00:00:00Z',updatedAt:'2026-10-11T00:00:00Z',filter,sort:{fieldId:amount,direction:'desc'},hiddenColumnIds:[title],columnOrder:[amount,'createdAt'],columnWidths:{[amount]:240}};
 const row={id:recordId,appId,viewId,tableId:appId,createdBy:actor.id,createdAt:'2026-10-10T00:00:00Z',updatedAt:'2026-10-11T00:00:00Z',recordVersion:1,schemaVersion:2,values:{[amount]:'9999999999999999.99',[title]:'差旅'},referenceDisplays:{}};
-async function setup(page:Page,options:{invalid?:boolean;invalidLeak?:boolean;listDenied?:boolean;queryChanged?:boolean;detailInvalid?:boolean;listDelay?:number;writeUnknown?:boolean;writeConflict?:boolean}={}){
+async function setup(page:Page,options:{invalid?:boolean;invalidLeak?:boolean;listDenied?:boolean;queryChanged?:boolean;detailInvalid?:boolean;listDelay?:number;writeUnknown?:boolean;writeConflict?:boolean;confirmedReadFails?:boolean}={}){
  const calls:{path:string;method:string;body:any;actor?:string;query:string}[]=[];
  let stored:any=preset,writeCount=0;
  await page.route('**/api/v1/**',async route=>{
@@ -36,20 +36,20 @@ async function setup(page:Page,options:{invalid?:boolean;invalidLeak?:boolean;li
    if(options.listDelay)await new Promise(resolve=>setTimeout(resolve,options.listDelay));
    if(options.listDenied)return route.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
    data={items:stored?[options.invalidLeak?{...redacted,filter:{secret:'private-operand'}}:options.invalid?redacted:stored]:[]};
-  }else if(p===path+'/table-presets/'+presetId)data=options.detailInvalid?redacted:stored;
+  }else if(p===path+'/table-presets/'+presetId){if(options.confirmedReadFails&&writeCount>0)return route.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});data=options.detailInvalid?redacted:stored;}
   else return route.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
   return route.fulfill({status:200,json:{code:'OK',data,meta:null}});
  });return calls;
 }
-async function open(page:Page){await page.goto(routePath);await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();await page.getByRole('button',{name:/^自定义筛选/}).click();}
+async function open(page:Page){await page.goto(routePath);await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();await expect(page.getByRole('columnheader').filter({has:page.getByText('事由',{exact:true})})).toBeVisible();await page.getByRole('button',{name:/^自定义筛选/}).click();}
 test('Root private preset list stays scoped and does not apply on opening',async({page})=>{
  const calls=await setup(page);await open(page);await expect(page.getByText('高额方案',{exact:true})).toBeVisible();expect(calls.filter(c=>c.path===path+'/table-presets')).toHaveLength(1);expect(calls.filter(c=>c.path.startsWith('personnel/'))).toEqual([]);expect(calls.filter(c=>c.path.startsWith('applications/')).every(c=>c.actor===actor.id)).toBe(true);expect(calls.filter(c=>c.path===path+'/records/search').every(c=>c.body.filter===null)).toBe(true);
 });
 test('Root applying a private preset rereads live scope and queries with original token before hiding columns',async({page})=>{
- const calls=await setup(page);await open(page);await page.getByRole('button',{name:'应用高额方案',exact:true}).click();await expect(page.getByRole('button',{name:'自定义筛选，已应用',exact:true})).toBeVisible();const requests=calls.filter(c=>c.path===path+'/records/search');expect(requests.at(-1)!.body).toMatchObject({page:1,filter,sort:preset.sort,queryVersion:'preset-query-version'});expect(calls.filter(c=>c.path===path+'/table-presets/'+presetId)).toHaveLength(1);expect(calls.filter(c=>c.path===path+'/runtime').length).toBeGreaterThanOrEqual(2);await page.keyboard.press('Escape');await expect(page.getByRole('columnheader',{name:'事由',exact:true})).toHaveCount(0);expect(requests.at(-1)!.body).not.toHaveProperty('fields');expect(calls.filter(c=>['PUT','PATCH','DELETE'].includes(c.method))).toEqual([]);await page.screenshot({path:test.info().outputPath('record-private-preset-applied.png'),fullPage:true});
+ const calls=await setup(page);await open(page);await page.getByRole('button',{name:'应用高额方案',exact:true}).click();await expect(page.getByRole('button',{name:'自定义筛选，已应用',exact:true})).toBeVisible();const requests=calls.filter(c=>c.path===path+'/records/search');expect(requests.at(-1)!.body).toMatchObject({page:1,filter,sort:preset.sort,queryVersion:'preset-query-version'});expect(calls.filter(c=>c.path===path+'/table-presets/'+presetId)).toHaveLength(1);expect(calls.filter(c=>c.path===path+'/runtime').length).toBeGreaterThanOrEqual(2);await page.keyboard.press('Escape');await expect(page.getByRole('columnheader').filter({has:page.getByText('事由',{exact:true})})).toHaveCount(0);expect(requests.at(-1)!.body).not.toHaveProperty('fields');expect(calls.filter(c=>['PUT','PATCH','DELETE'].includes(c.method))).toEqual([]);await page.screenshot({path:test.info().outputPath('record-private-preset-applied.png'),fullPage:true});
 });
 test('Root private preset changed query keeps old layout and does not silently refresh or apply',async({page})=>{
- const calls=await setup(page,{queryChanged:true});await open(page);await page.getByRole('button',{name:'应用高额方案',exact:true}).click();await expect(page.getByRole('alert').filter({hasText:/刷新|变化/})).toBeVisible();await expect(page.getByRole('button',{name:'自定义筛选，已应用',exact:true})).toHaveCount(0);expect(calls.filter(c=>c.path===path+'/records/search')).toHaveLength(2);await page.keyboard.press('Escape');await expect(page.getByRole('columnheader',{name:'事由',exact:true})).toBeVisible();
+ const calls=await setup(page,{queryChanged:true});await open(page);await page.getByRole('button',{name:'应用高额方案',exact:true}).click();await expect(page.getByRole('alert').filter({hasText:/刷新|变化/})).toBeVisible();await expect(page.getByRole('button',{name:'自定义筛选，已应用',exact:true})).toHaveCount(0);expect(calls.filter(c=>c.path===path+'/records/search')).toHaveLength(2);await page.keyboard.press('Escape');await expect(page.getByRole('columnheader').filter({has:page.getByText('事由',{exact:true})})).toBeVisible();
 });
 test('Root invalid private preset is visibly unusable without exposing old conditions',async({page})=>{
  const calls=await setup(page,{invalid:true});await open(page);await expect(page.getByText('已失效方案',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'应用已失效方案',exact:true})).toBeDisabled();expect(calls.filter(c=>c.path===path+'/records/search')).toHaveLength(1);await expect(page.getByRole('dialog')).not.toContainText(amount);
@@ -99,4 +99,18 @@ test('Root private preset unknown operation blocks browser refresh and keeps edi
  await setup(page,{writeUnknown:true});await open(page);const editor=await newPreset(page);await editor.getByRole('button',{name:'确定',exact:true}).click();await expect(page.getByRole('alert').filter({hasText:/未确认/})).toBeVisible();
  await expect(editor.getByLabel('自定义筛选名称')).toBeDisabled();
  const warned=await page.evaluate(()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;});expect(warned).toBe(true);
+});
+
+
+test('Root confirmed preset save with failed current reread remains saved and cannot write again',async({page})=>{
+ const calls=await setup(page,{confirmedReadFails:true});await open(page);const editor=await newPreset(page);await editor.getByRole('button',{name:'确定',exact:true}).click();
+ await expect(page.getByRole('alert').filter({hasText:'方案已保存'})).toBeVisible();await expect(editor.getByRole('button',{name:'确定',exact:true})).toBeDisabled();
+ await expect(page.getByRole('button',{name:'重试读取已保存方案',exact:true})).toBeVisible();await page.getByRole('button',{name:'重试读取已保存方案',exact:true}).click();
+ await expect(page.getByRole('alert').filter({hasText:'方案已保存'})).toBeVisible();expect(calls.filter(c=>c.method==='POST'&&c.path===path+'/table-presets')).toHaveLength(1);
+});
+test('Root private preset unknown operation survives SPA departure and reopens the original recovery',async({page})=>{
+ const calls=await setup(page,{writeUnknown:true});await open(page);const editor=await newPreset(page);await editor.getByRole('button',{name:'确定',exact:true}).click();await expect(page.getByRole('alert').filter({hasText:/未确认/})).toBeVisible();
+ await page.getByRole('button',{name:'返回主页',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page).toHaveURL(/\/app$/);
+ await page.goBack();await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();await page.getByRole('button',{name:/^自定义筛选/}).click();await expect(page.getByRole('button',{name:'重试原方案操作',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'重试原方案操作',exact:true}).click();await expect(page.getByText('精确金额方案',{exact:true})).toBeVisible();const writes=calls.filter(c=>c.method==='POST'&&c.path===path+'/table-presets');expect(writes).toHaveLength(2);expect(writes[1].body).toEqual(writes[0].body);
 });
