@@ -1,0 +1,53 @@
+✖ V075 exact Go compiled cache restores only GOCACHE for OS architecture toolchain dependencies and source (4.055313ms)
+✖ V075 successful independent discovery saves missing compiled cache before potentially long real suite (0.718469ms)
+✔ V075 cache cannot gate or replace any race test vet build or shorten stored evidence (0.457097ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 1
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 75.747608
+
+✖ failing tests:
+
+test at tests/governance/go-build-cache.test.mjs:4:1
+✖ V075 exact Go compiled cache restores only GOCACHE for OS architecture toolchain dependencies and source (4.055313ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(go.includes('uses: actions/cache/restore@'+pinned))
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/go-build-cache.test.mjs:5:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/governance/go-build-cache.test.mjs:8:1
+✖ V075 successful independent discovery saves missing compiled cache before potentially long real suite (0.718469ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(discover>=0&&save>discover&&save<full)
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/go-build-cache.test.mjs:9:175)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
