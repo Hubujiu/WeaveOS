@@ -1,4 +1,5 @@
 import {useEffect,useLayoutEffect,useRef,useState,type MutableRefObject} from 'react';
+import {findRoundRecovery} from './roundRecovery';
 import {Modal} from '../../Modal';
 import {applicationApi,ApplicationError} from '../api';
 import {useApplicationOperation,type ApplicationMutationRequest} from '../useApplicationOperation';
@@ -8,15 +9,15 @@ import type {InstanceLocation} from './lifecycleContract';
 
 type Props={actorId:string;location:InstanceLocation;flowId:string;name:string;onClose:()=>void;onRework?:(instanceId:string)=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onDirtyChange:(dirty:boolean)=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void};
 type Kind='resubmit'|'review';
-type Job={key:string;request:ApplicationMutationRequest};
+type Job={key:string;request:ApplicationMutationRequest;recovered?:boolean};
 type Operation=ReturnType<typeof useApplicationOperation<RoundStartReceipt>>;
 export function WorkflowRoundActions(props:Props){return <RoundScope key={JSON.stringify([props.actorId,props.location])} {...props}/>;}
 function RoundScope({actorId,location,flowId,name,onClose,onRework,onUnauthorized,onIdentityMismatch,onDirtyChange,registerLeaveGuard,requestSectionLeave}:Props){
  const scope=JSON.stringify(['workflow-round',actorId,location.appId,location.viewId,location.recordId,location.instanceId]);
  const path=`applications/${location.appId}/forms/${location.viewId}/records/${location.recordId}/workflows/${location.instanceId}/round-actions`;
  const [preview,setPreview]=useState<RoundPreview|null>(null),[loading,setLoading]=useState(true),[epoch,setEpoch]=useState(0),[error,setError]=useState(''),[stale,setStale]=useState(false);
- const [kind,setKind]=useState<Kind|null>(null),[job,setJob]=useState<Job|null>(null),[busy,setBusy]=useState(false),[result,setResult]=useState<RoundStartReceipt|null>(null);
- const pending=useRef<Job|null>(null),operationRef=useRef<Operation|null>(null),released=useRef(false),handlers=useRef({onUnauthorized,onIdentityMismatch});handlers.current={onUnauthorized,onIdentityMismatch};
+ const [kind,setKind]=useState<Kind|null>(null),[job,setJob]=useState<Job|null>(()=>{const packet=findRoundRecovery(actorId,location.appId,location.viewId,location.recordId,location.instanceId,'round-start');return packet?.resource?{key:packet.operationId!,recovered:true,request:{resource:packet.resource,path:packet.path,method:packet.method,expectedStatus:packet.expectedStatus,body:packet.body}}:null;}),[busy,setBusy]=useState(false),[result,setResult]=useState<RoundStartReceipt|null>(null);
+ const pending=useRef<Job|null>(job),operationRef=useRef<Operation|null>(null),released=useRef(false),handlers=useRef({onUnauthorized,onIdentityMismatch});handlers.current={onUnauthorized,onIdentityMismatch};
  useEffect(()=>{
   const abort=new AbortController();let current=true;setPreview(null);setLoading(true);setError('');
   void(async()=>{await Promise.resolve();if(abort.signal.aborted)return;try{
@@ -28,7 +29,7 @@ function RoundScope({actorId,location,flowId,name,onClose,onRework,onUnauthorize
  },[actorId,path,flowId,epoch]);
  useEffect(()=>{onDirtyChange(!!job);return()=>onDirtyChange(false);},[job,onDirtyChange]);
  useLayoutEffect(()=>registerLeaveGuard({kind:'workflow-round',actorId,...location},createLeaveController(()=>{
-  const status=operationRef.current?.getPendingStatus()??(pending.current?'preflight':'clean');return {status:released.current?'clean':status,fingerprint:JSON.stringify([status,pending.current?.key,operationRef.current?.packet?.operationId])};
+  const status=operationRef.current?.getPendingStatus()??(pending.current?(pending.current.recovered?'unknown':'preflight'):'clean');return {status:released.current?'clean':status,fingerprint:JSON.stringify([status,pending.current?.key,operationRef.current?.packet?.operationId])};
  },decision=>{if(decision==='retain_operation'){released.current=true;return;}if(decision==='discard'&&operationRef.current?.getPendingStatus()==='preflight'){operationRef.current.cancelPreflight();pending.current=null;setJob(null);}})),[scope,registerLeaveGuard]);
  const blocked=!!job||!!result;
  function submit(){
@@ -57,7 +58,7 @@ function RoundScope({actorId,location,flowId,name,onClose,onRework,onUnauthorize
 function RoundMutation({actorId,scope,job,operationRef,onBusyChange,settle,onUnauthorized,onIdentityMismatch}:{actorId:string;scope:string;job:Job;operationRef:MutableRefObject<Operation|null>;onBusyChange:(busy:boolean)=>void;settle:(job:Job,receipt?:RoundStartReceipt,message?:string,code?:string)=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void}){
  const operation=useApplicationOperation<RoundStartReceipt>({actorId,scope,resource:job.request.resource,confirmed:value=>settle(job,value),unauthorized:onUnauthorized,identityMismatch:onIdentityMismatch}),latest=useRef(operation);latest.current=operation;
  useLayoutEffect(()=>{operationRef.current=operation;onBusyChange(operation.phase==='preflight'||operation.phase==='pending');},[operation,onBusyChange]);useLayoutEffect(()=>()=>{operationRef.current=null;},[]);
- useEffect(()=>{let active=true;void Promise.resolve().then(()=>{if(active)latest.current.start(job.request);});return()=>{active=false;};},[job]);
+ useEffect(()=>{let active=true;void Promise.resolve().then(()=>{if(active&&!job.recovered)latest.current.start(job.request);});return()=>{active=false;};},[job]);
  useEffect(()=>{if(operation.phase==='error')settle(job,undefined,operation.message,operation.errorCode);},[operation.phase,operation.message,operation.errorCode]);
  return operation.phase==='unconfirmed'?<div><p role="alert">新轮次结果尚未确认。{operation.message}</p><div className="workflow-instance-buttons"><button className="admin-button" type="button" onClick={operation.query}>核查新轮次结果</button><button className="admin-button" type="button" onClick={operation.retry}>重试原轮次请求</button></div></div>:<p role="status">正在核对新轮次请求…</p>;
 }

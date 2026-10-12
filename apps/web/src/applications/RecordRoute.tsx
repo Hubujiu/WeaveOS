@@ -4,6 +4,7 @@ import {applicationApi,applicationApiEnvelope,ApplicationError,type ApplicationE
 import type {RegisterLeaveGuard} from './forms';
 import {RecordWorkspace} from './RecordWorkspace';
 import {RecordWorkflows} from './workflows/RecordWorkflows';
+import {findRoundRecovery} from './workflows/roundRecovery';
 import {reworkRuntimeView} from './workflows/reworkView';
 import {validRoundPreview} from './workflows/roundContract';
 import {RecordForm} from './records/RecordForm';
@@ -104,7 +105,27 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   if(new Set(items.map(item=>item.id)).size!==items.length)throw new Error('候选项响应格式不正确');
   return {items,nextPageToken:pagination.nextPageToken};
  },[actorId,appId,viewId,editor]);
+ const readRework=useCallback((instanceId:string,identity:RecordEditorIdentity,recordId:string)=>{
+  const current=++generation.current;
+  readController.current?.abort();const controller=new AbortController();readController.current=controller;
+  setEditor(null);setReadError('');setSaved(false);setReworkSaved(false);setPendingRead({identity,view:null,recordId,mode:'edit',confirmedWrite:false});
+  void(async()=>{try{
+   const runtime=parseRuntimeView(await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/runtime`,'GET',undefined,controller.signal),{appId,viewId});
+   const record=parseRecordItem(await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/records/${recordId}`,'GET',undefined,controller.signal),runtime,actorId);
+   const preview=await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/records/${recordId}/workflows/${instanceId}/round-actions`,'GET',undefined,controller.signal,200);
+   if(current!==generation.current||controller.signal.aborted)return;
+   if(record.id!==recordId||!validRoundPreview(preview,instanceId))throw new Error('返工资格或记录身份已变化，请刷新后重试');
+   const view=reworkRuntimeView(runtime,record,preview,actorId);
+   if(!view)throw new Error('当前返工资格、字段权限或记录版本已变化，请刷新后重试');
+   setPendingRead(null);setRecordDirty(false);setEditor({identity,view,record,mode:'edit',reworkInstanceId:instanceId});
+  }catch(error){if(current!==generation.current||controller.signal.aborted)return;handleError(error);setReadError(error instanceof Error?error.message:'无法读取返工记录，请刷新后重试');}})();
+ },[actorId,appId,viewId,onUnauthorized,onIdentityMismatch]);
  const recoverPacket=useCallback((view:RuntimeView)=>{
+  const rework=scopedUnconfirmed(actorId).find(packet=>{const resource=packet.resource;return resource?.kind==='round-record'&&resource.appId===appId&&resource.viewId===viewId&&findRoundRecovery(actorId,appId,viewId,resource.id,resource.instanceId,'round-record')===packet;});
+  if(rework?.resource?.kind==='round-record'){
+   const resource=rework.resource,token=JSON.stringify([resource,rework.operationId]);if(openedRecovery.current.has(token))return;openedRecovery.current.add(token);
+   readRework(resource.instanceId,{kind:'record',actorId,appId,viewId,recordId:resource.id},resource.id);return;
+  }
   const packet=scopedUnconfirmed(actorId).find(value=>value.resource?.kind==='record'&&value.resource.appId===appId&&value.resource.viewId===viewId&&
    (!!value.resource.id||!!value.resource.creationNonce));
   if(!packet||!packet.resource)return;
@@ -121,7 +142,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
    const identity:RecordEditorIdentity={kind:'new',actorId,appId,viewId,clientDraftId:resource.creationNonce};
    setEditor({identity,view,mode:'create'});
   }
- },[actorId,appId,viewId,readRecord]);
+ },[actorId,appId,viewId,readRecord,readRework]);
  // RecordWorkspace already verified and parsed this runtime. Its lifecycle owns
  // cancellation; this callback only offers a matching immutable unknown write.
  const runtimeReady=useCallback((view:RuntimeView)=>recoverPacket(view),[recoverPacket]);
@@ -134,22 +155,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   });
  };
  const openFlowAction=(action:()=>void)=>{const current=editor;if(!current)return;requestSectionLeave(()=>{setEditor({...current,mode:'read',reworkInstanceId:undefined});setRecordDirty(false);action();});};
- const openRework=(instanceId:string)=>{
-  const target=editor;if(!target?.record)return;
-  const recordId=target.record.id,current=++generation.current;
-  readController.current?.abort();const controller=new AbortController();readController.current=controller;
-  setEditor(null);setReadError('');setSaved(false);setReworkSaved(false);setPendingRead({identity:target.identity,view:null,recordId,mode:'edit',confirmedWrite:false});
-  void(async()=>{try{
-   const runtime=parseRuntimeView(await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/runtime`,'GET',undefined,controller.signal),{appId,viewId});
-   const record=parseRecordItem(await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/records/${recordId}`,'GET',undefined,controller.signal),runtime,actorId);
-   const preview=await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/records/${recordId}/workflows/${instanceId}/round-actions`,'GET',undefined,controller.signal,200);
-   if(current!==generation.current||controller.signal.aborted)return;
-   if(record.id!==recordId||!validRoundPreview(preview,instanceId))throw new Error('返工资格或记录身份已变化，请刷新后重试');
-   const view=reworkRuntimeView(runtime,record,preview,actorId);
-   if(!view)throw new Error('当前返工资格、字段权限或记录版本已变化，请刷新后重试');
-   setPendingRead(null);setRecordDirty(false);setEditor({identity:target.identity,view,record,mode:'edit',reworkInstanceId:instanceId});
-  }catch(error){if(current!==generation.current||controller.signal.aborted)return;handleError(error);setReadError(error instanceof Error?error.message:'无法读取返工记录，请刷新后重试');}})();
- };
+ const openRework=(instanceId:string)=>{if(editor?.record)readRework(instanceId,editor.identity,editor.record.id);};
  const hasPendingFlow=workflowDirty||scopedUnconfirmed(actorId).some(packet=>packet.resource?.kind==='instance-action'&&packet.resource.appId===appId&&packet.resource.viewId===viewId&&packet.resource.id===editor?.record?.id);
  const canRetryRead=!!pendingRead&&!!readError;
  const showingDetail=!!pendingRead||!!editor&&editor.mode!=='create';
