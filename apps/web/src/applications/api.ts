@@ -51,7 +51,7 @@ export async function applicationApiEnvelope<T>(actorId: string, path: string, m
 export async function applicationReadPost<T>(actorId: string, path: string, body: object, signal?: AbortSignal): Promise<T> {
  const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
  const recordWorkflows = new RegExp(`^applications/${uuid}/forms/${uuid}/records/${uuid}/(?:workflow-instances|workflow-start-options)/search$`).test(path);
- const managerMatch=new RegExp(`^applications/(${uuid})/forms/(${uuid})/workflows/search$`).exec(path);
+ const managerMatch=new RegExp(`^applications/(${uuid})/forms/(${uuid})/workflows/(?:approvers/)?search$`).exec(path);
  const managerQuery=!!managerMatch&&managerMatch.slice(1).every(id=>id!=='00000000-0000-0000-0000-000000000000');
  if (path !== 'workflow-tasks/search' && !recordWorkflows && !managerQuery && !new RegExp(`^applications/${uuid}/forms/${uuid}/records/search$`, 'i').test(path)) throw new TypeError('Read-only POST is restricted to record search');
  return (await request<T>(actorId, path, 'POST', body, signal, 200, false)).data;
