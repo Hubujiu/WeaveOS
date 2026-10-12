@@ -45,6 +45,19 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   // the nested native-dialog cleanups can otherwise leave focus on <body>.
   if(target)requestAnimationFrame(()=>{if(target.isConnected)target.focus();});
  });
+ useEffect(()=>{
+  if(editor?.mode!=='create')return;
+  // A dismissed native leave dialog can temporarily return focus to body.
+  // Keep full-page Escape reachable there, but never consume a modal's Escape.
+  const escape=(event:KeyboardEvent)=>{
+   if(event.key!=='Escape'||event.defaultPrevented||document.querySelector('dialog[open]'))return;
+   if(event.target!==document.body&&!(event.target instanceof Element&&event.target.closest('.record-detail-page')))return;
+   event.preventDefault();
+   requestSectionLeave(()=>{const target=originFocus.current;closeEditor();if(target)requestAnimationFrame(()=>{if(target.isConnected)target.focus();});});
+  };
+  document.addEventListener('keydown',escape);
+  return()=>document.removeEventListener('keydown',escape);
+ },[editor?.mode,requestSectionLeave,closeEditor]);
  const handleError=(error:unknown)=>{
   if(error instanceof ApplicationError&&error.status===401)onUnauthorized();
   else if(error instanceof ApplicationError&&error.code==='AUTH_SESSION_CHANGED')onIdentityMismatch();
@@ -214,7 +227,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
    onOpenDrafts={setDraftsView} onCreate={openNew} onOpenRecord={openRow} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onRuntimeReady={runtimeReady}/></div>
   {historyAllowed&&historyRecord===editor?.record?.id&&<RecordHistoryPanel actorId={actorId} appId={appId} viewId={viewId} recordId={historyRecord!} onClose={()=>setHistoryRecord(null)} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>}
   {draftsView&&<DraftsPanel actorId={actorId} view={draftsView} onOpen={id=>{setDraftsView(null);setDraftSaved(false);setSaved(false);void readDraft(id,false);}} onClose={()=>setDraftsView(null)} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onDirtyChange={setDraftListDirty}/>}
-  {showingDetail?<section className="record-detail-page" onKeyDown={event=>{if(editor?.mode==='create'&&event.key==='Escape'&&event.target instanceof Element&&!event.target.closest('dialog')){event.preventDefault();guardedClose();}}} aria-label={editor?.mode==='create'?"新建记录":"记录详情"}>
+  {showingDetail?<section className="record-detail-page" aria-label={editor?.mode==='create'?"新建记录":"记录详情"}>
    <div className="app-page-heading"><h1>{editor?.mode==='create'?"新建记录":"记录详情"}</h1><div className="record-detail-actions">{editor?.mode==='create'&&<div ref={setCreateActionHost}/>}<button type="button" className="admin-button" aria-label="关闭" onClick={guardedClose}>返回</button>{editor?.mode==='read'&&editAllowed(editor)&&<button type="button" className="admin-button primary" disabled={hasPendingFlow} onClick={()=>{setSaved(false);setReworkSaved(false);setEditor({...editor,mode:'edit',queryVersion:editor.queryVersion});}}>编辑记录</button>}</div></div>
    {editorContent}
   </section>:null}
