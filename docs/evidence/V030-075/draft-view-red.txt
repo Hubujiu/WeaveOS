@@ -1,0 +1,171 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ V015 edit draft uses current all edit authority without granting ordinary read or copying record values (2.572656ms)
+✖ V015 absent draft key stays absent and never receives a formal record value (0.350367ms)
+✖ V015 own edit uses actual matching record owner rather than draft owner (0.262184ms)
+✖ V015 new draft only exposes current create fields and its incomplete saved values (0.262494ms)
+✔ V015 draft projection fails closed foreign draft view (0.32672ms)
+✔ V015 draft projection fails closed foreign draft table (0.081592ms)
+✔ V015 draft projection fails closed draft edit revoked (0.110106ms)
+✔ V015 draft projection fails closed record edit revoked (0.150626ms)
+✔ V015 draft projection fails closed foreign target record (0.146289ms)
+✔ V015 draft projection fails closed foreign record app (0.125299ms)
+✔ V015 draft projection fails closed foreign record view (0.138178ms)
+✔ V015 draft projection fails closed foreign record table (0.803557ms)
+✔ V015 draft projection fails closed new draft create revoked (0.054262ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 9
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 134.484895
+
+✖ failing tests:
+
+test at tests/foundation/record-draft-view.test.mjs:7:1
+✖ V015 edit draft uses current all edit authority without granting ordinary read or copying record values (2.572656ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     editable: true,
+  -     field: {
+  -       access: {
+  -         create: false,
+  -         edit: 'all',
+  -         read: 'none'
+  -       },
+  -       id: 'dddddddd-dddd-4ddd-8ddd-000000000006'
+  -     },
+  -     readable: false,
+  -     value: '-'
+  -   }
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-draft-view.test.mjs:7:167)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { field: [Object], readable: false, editable: true, value: '-' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-draft-view.test.mjs:8:1
+✖ V015 absent draft key stays absent and never receives a formal record value (0.350367ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     editable: true,
+  -     field: {
+  -       access: {
+  -         create: false,
+  -         edit: 'all',
+  -         read: 'none'
+  -       },
+  -       id: 'dddddddd-dddd-4ddd-8ddd-000000000006'
+  -     },
+  -     readable: false
+  -   }
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-draft-view.test.mjs:8:96)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { field: [Object], readable: false, editable: true } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-draft-view.test.mjs:9:1
+✖ V015 own edit uses actual matching record owner rather than draft owner (0.262184ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     editable: true,
+  -     field: {
+  -       access: {
+  -         create: false,
+  -         edit: 'own',
+  -         read: 'none'
+  -       },
+  -       id: 'dddddddd-dddd-4ddd-8ddd-000000000006'
+  -     },
+  -     readable: false,
+  -     value: '-'
+  -   }
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-draft-view.test.mjs:9:233)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { field: [Object], readable: false, editable: true, value: '-' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-draft-view.test.mjs:10:1
+✖ V015 new draft only exposes current create fields and its incomplete saved values (0.262494ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     editable: true,
+  -     field: {
+  -       access: {
+  -         create: true,
+  -         edit: 'all',
+  -         read: 'none'
+  -       },
+  -       default: '99',
+  -       id: 'dddddddd-dddd-4ddd-8ddd-000000000006'
+  -     },
+  -     readable: false,
+  -     value: '-'
+  -   }
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-draft-view.test.mjs:10:273)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { field: [Object], readable: false, editable: true, value: '-' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

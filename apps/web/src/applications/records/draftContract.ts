@@ -1,4 +1,5 @@
-import type {Draft,DraftSummary} from './contracts';
+import type {Draft,DraftSummary,RecordItem,RuntimeView} from './contracts';
+import type {RuntimeDisplayField} from './runtimeModel';
 const summaryKeys=['id','viewId','tableId','targetRecordId','schemaVersion','baseRecordVersion','draftVersion','createdAt','updatedAt','hasConflicts'];
 const object=(value:unknown):value is Record<string,unknown>=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const exact=(value:Record<string,unknown>,keys:readonly string[])=>Object.keys(value).length===keys.length&&keys.every(key=>Object.hasOwn(value,key));
@@ -27,3 +28,5 @@ export function validDraftPage(data:unknown,pagination:unknown,viewId:string,tab
  if(pagination.hasMore?typeof pagination.nextPageToken!=='string'||!pagination.nextPageToken:pagination.nextPageToken!==null)return false;
  return data.items.every(item=>validDraftSummary(item,viewId,tableId))&&new Set(data.items.map(item=>item.id)).size===data.items.length;
 }
+
+export function projectDraftFields(view:RuntimeView,draft:Draft,actorId:string,record?:RecordItem):RuntimeDisplayField[]{return [];}
