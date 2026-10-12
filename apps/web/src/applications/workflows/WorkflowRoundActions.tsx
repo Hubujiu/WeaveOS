@@ -6,12 +6,12 @@ import {createLeaveController,type RegisterLeaveGuard} from '../forms/leaveGuard
 import {validRoundPreview,type RoundPreview,type RoundStartReceipt} from './roundContract';
 import type {InstanceLocation} from './lifecycleContract';
 
-type Props={actorId:string;location:InstanceLocation;flowId:string;name:string;onClose:()=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onDirtyChange:(dirty:boolean)=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void};
+type Props={actorId:string;location:InstanceLocation;flowId:string;name:string;onClose:()=>void;onRework?:(instanceId:string)=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onDirtyChange:(dirty:boolean)=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void};
 type Kind='resubmit'|'review';
 type Job={key:string;request:ApplicationMutationRequest};
 type Operation=ReturnType<typeof useApplicationOperation<RoundStartReceipt>>;
 export function WorkflowRoundActions(props:Props){return <RoundScope key={JSON.stringify([props.actorId,props.location])} {...props}/>;}
-function RoundScope({actorId,location,flowId,name,onClose,onUnauthorized,onIdentityMismatch,onDirtyChange,registerLeaveGuard,requestSectionLeave}:Props){
+function RoundScope({actorId,location,flowId,name,onClose,onRework,onUnauthorized,onIdentityMismatch,onDirtyChange,registerLeaveGuard,requestSectionLeave}:Props){
  const scope=JSON.stringify(['workflow-round',actorId,location.appId,location.viewId,location.recordId,location.instanceId]);
  const path=`applications/${location.appId}/forms/${location.viewId}/records/${location.recordId}/workflows/${location.instanceId}/round-actions`;
  const [preview,setPreview]=useState<RoundPreview|null>(null),[loading,setLoading]=useState(true),[epoch,setEpoch]=useState(0),[error,setError]=useState(''),[stale,setStale]=useState(false);
@@ -44,7 +44,7 @@ function RoundScope({actorId,location,flowId,name,onClose,onUnauthorized,onIdent
  return <Modal title={title} onClose={()=>requestSectionLeave(onClose)} busy={busy}>
   <div className="workflow-round-controls">
    {loading&&<p role="status">正在读取轮次操作资格…</p>}
-   {preview&&!kind&&<><p>第 {preview.roundNumber} 轮 · 定义 v{preview.definitionVersion}</p>{preview.latestInstanceId!==location.instanceId?<p>历史轮次仅供查看，请选择最新轮次。</p>:<div className="workflow-instance-buttons">{preview.canResubmit&&<button className="admin-button" type="button" disabled={blocked||stale} onClick={()=>setKind('resubmit')}>重新提交审批</button>}{preview.canReview&&<button className="admin-button" type="button" disabled={blocked||stale} onClick={()=>setKind('review')}>发起重审</button>}{!preview.canResubmit&&!preview.canReview&&<p>当前不可发起新一轮</p>}</div>}</>}
+   {preview&&!kind&&<><p>第 {preview.roundNumber} 轮 · 定义 v{preview.definitionVersion}</p>{preview.latestInstanceId!==location.instanceId?<p>历史轮次仅供查看，请选择最新轮次。</p>:<div className="workflow-instance-buttons">{preview.canRework&&onRework&&<button className="admin-button" type="button" disabled={blocked||stale} onClick={()=>onRework(location.instanceId)}>返工编辑</button>}{preview.canResubmit&&<button className="admin-button" type="button" disabled={blocked||stale} onClick={()=>setKind('resubmit')}>重新提交审批</button>}{preview.canReview&&<button className="admin-button" type="button" disabled={blocked||stale} onClick={()=>setKind('review')}>发起重审</button>}{!preview.canResubmit&&!preview.canReview&&<p>当前不可发起新一轮</p>}</div>}</>}
    {kind&&<><p>{name}</p><p>仅发起此流程的新一轮；不会自动保存记录，也不会重新发起其它流程。</p></>}
    {error&&<p role="alert">{stale?'轮次、记录或权限已变化，请刷新轮次资格并重新核对。':error}</p>}
    {job&&<RoundMutation actorId={actorId} scope={scope} job={job} operationRef={operationRef} onBusyChange={setBusy} settle={settle} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>}

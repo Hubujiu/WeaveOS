@@ -9,7 +9,7 @@ import {confirmRecordIdentity,fieldRendererKey,type RecordEditorIdentity} from '
 import {projectRuntimeFields,requiresRuntimeReview,scopeAllows} from './runtimeModel';
 
 export type RecordFormProps={
- view:RuntimeView;identity:RecordEditorIdentity;record?:RecordItem;mode:'create'|'edit'|'read';authorityKey:string;queryVersion?:string;
+ view:RuntimeView;identity:RecordEditorIdentity;record?:RecordItem;mode:'create'|'edit'|'read';authorityKey:string;queryVersion?:string;reworkInstanceId?:string;
  loadCandidates?:(field:RuntimeField,request:Parameters<LoadReferenceCandidates>[0],signal:AbortSignal)=>ReturnType<LoadReferenceCandidates>;
  onUnauthorized:()=>void;onIdentityMismatch:()=>void;registerLeaveGuard:RegisterLeaveGuard;onRefresh:()=>void;
  onConfirmed:(result:MutationResult,identity:RecordEditorIdentity)=>void;onDirtyChange:(dirty:boolean)=>void;
@@ -27,15 +27,15 @@ const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
 export function RecordForm(props:RecordFormProps){
  const {identity,mode}=props;
  const resourceId=identity.kind==='new'?identity.clientDraftId:identity.kind==='record'?identity.recordId:identity.draftId;
- const scopeKey=JSON.stringify([identity.actorId,identity.appId,identity.viewId,identity.kind,resourceId,mode]);
+ const scopeKey=JSON.stringify([identity.actorId,identity.appId,identity.viewId,identity.kind,resourceId,mode,props.reworkInstanceId]);
  return <RecordFormScope key={scopeKey} {...props}/>;
 }
 
 function RecordFormScope(props:RecordFormProps){
- const {view,identity,record,mode,authorityKey,queryVersion,loadCandidates,onUnauthorized,onIdentityMismatch,registerLeaveGuard,onRefresh,onConfirmed,onDirtyChange,onRequestDiscard,onDiscard}=props;
+ const {view,identity,record,mode,authorityKey,queryVersion,reworkInstanceId,loadCandidates,onUnauthorized,onIdentityMismatch,registerLeaveGuard,onRefresh,onConfirmed,onDirtyChange,onRequestDiscard,onDiscard}=props;
  const saved=identity.kind==='record';
- const resource=useMemo(()=>identity.kind==='new'?{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,creationNonce:identity.clientDraftId}:identity.kind==='record'?{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,id:identity.recordId}:null,[identity]);
- const operationScope=identity.kind==='new'?`record-editor:${identity.appId}:${identity.viewId}:new:${identity.clientDraftId}`:identity.kind==='record'?`record-editor:${identity.appId}:${identity.viewId}:record:${identity.recordId}`:`record-editor:${identity.appId}:${identity.viewId}:draft:${identity.draftId}`;
+ const resource=useMemo(()=>reworkInstanceId&&identity.kind==='record'?{kind:'round-record' as const,appId:identity.appId,viewId:identity.viewId,id:identity.recordId,instanceId:reworkInstanceId}:identity.kind==='new'?{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,creationNonce:identity.clientDraftId}:identity.kind==='record'?{kind:'record' as const,appId:identity.appId,viewId:identity.viewId,id:identity.recordId}:null,[identity,reworkInstanceId]);
+ const operationScope=reworkInstanceId&&identity.kind==='record'?`round-record:${identity.appId}:${identity.viewId}:${identity.recordId}:${reworkInstanceId}`:identity.kind==='new'?`record-editor:${identity.appId}:${identity.viewId}:new:${identity.clientDraftId}`:identity.kind==='record'?`record-editor:${identity.appId}:${identity.viewId}:record:${identity.recordId}`:`record-editor:${identity.appId}:${identity.viewId}:draft:${identity.draftId}`;
  const confirmedRef=useRef(onConfirmed);confirmedRef.current=onConfirmed;
  const unauthorizedRef=useRef(onUnauthorized);unauthorizedRef.current=onUnauthorized;
  const identityMismatchRef=useRef(onIdentityMismatch);identityMismatchRef.current=onIdentityMismatch;
@@ -78,11 +78,12 @@ function RecordFormScope(props:RecordFormProps){
 
  const save=()=>{
   if(!resource||identity.kind==='draft'||busy||unknown||confirmed||needsReview||mode==='read'||saved&&!dirty||!view.capabilities.create&&!saved||saved&&!canEditRecord)return;
-  const path='applications/'+encodeURIComponent(identity.appId)+'/forms/'+encodeURIComponent(identity.viewId)+'/records'+(saved?'/'+encodeURIComponent(identity.recordId):'');
+  const recordPath='applications/'+encodeURIComponent(identity.appId)+'/forms/'+encodeURIComponent(identity.viewId)+'/records'+(saved?'/'+encodeURIComponent(identity.recordId):'');
+  const path=reworkInstanceId?recordPath+'/workflows/'+encodeURIComponent(reworkInstanceId)+'/rework':recordPath;
   const payload:Values=Object.fromEntries(Object.entries(values).filter(([id,value])=>currentEditable.has(id)&&(mode==='create'||!same(startValues.current[id],value))));
   if(saved&&!Object.keys(payload).length)return;
-  const body=saved?{expectedSchemaVersion:startView.current.schemaVersion,expectedRecordVersion:record?.recordVersion,changes:payload,...(queryVersion?{queryVersion}:{})}:{expectedSchemaVersion:startView.current.schemaVersion,values:payload,...(queryVersion?{queryVersion}:{})};
-  const request:ApplicationMutationRequest={path,method:saved?'PATCH':'POST',expectedStatus:saved?200:201,resource,body};
+  const body=saved?{expectedSchemaVersion:startView.current.schemaVersion,expectedRecordVersion:record?.recordVersion,changes:payload,...(queryVersion&&!reworkInstanceId?{queryVersion}:{})}:{expectedSchemaVersion:startView.current.schemaVersion,values:payload,...(queryVersion&&!reworkInstanceId?{queryVersion}:{})};
+  const request:ApplicationMutationRequest={path,method:saved&&!reworkInstanceId?'PATCH':'POST',expectedStatus:saved?200:201,resource,body};
   operation.start(request);
  };
  const canEdit=!busy&&!unknown&&!confirmed&&!needsReview&&mode!=='read'&&identity.kind!=='draft';
@@ -104,9 +105,9 @@ function RecordFormScope(props:RecordFormProps){
   if(node.kind==='system_field'){const label=systemFieldLabels.get(node.fieldId);if(!label)return null;const value=mode==='create'?'由系统填写':visibleRecord?systemFieldValue(node.fieldId,visibleRecord):undefined;if(value===undefined)return null;const span=layoutSpan(node.span),inputId=`record-system-${node.id}`;return <div key={node.id} style={{gridColumn:`span ${span} / span ${span}`}} className="forms-rendered-field"><label htmlFor={inputId}>{label}</label><input id={inputId} aria-label={label} readOnly value={value}/></div>;}
   return null;
  };
- const conflict=operation.phase==='error'&&['APPLICATION_RECORD_CONFLICT','APPLICATION_SCHEMA_CONFLICT','APPLICATION_QUERY_CHANGED','APPLICATION_QUERY_CONTEXT_EXPIRED','APPLICATION_POLICY_CONFLICT'].includes(operation.errorCode??'');
+ const conflict=operation.phase==='error'&&['APPLICATION_RECORD_CONFLICT','APPLICATION_SCHEMA_CONFLICT','APPLICATION_QUERY_CHANGED','APPLICATION_QUERY_CONTEXT_EXPIRED','APPLICATION_POLICY_CONFLICT',...(reworkInstanceId?['WORKFLOW_CONFLICT','WORKFLOW_NOT_READY']:[])].includes(operation.errorCode??'');
  const statusMessage=unknown?'保存结果待确认':busy?'正在确认并保存…':'';
- return <section aria-label="记录填写" className="surface record-form">
+ return <section aria-label={reworkInstanceId?"返工记录":"记录填写"} className="surface record-form">
   {identity.kind==='draft'?<p role="alert">草稿身份不能保存为普通记录</p>:null}
   {needsReview?<p role="alert">结构或权限已变化，请核对当前输入</p>:null}
   {conflict?<p role="alert">记录、结构、筛选或权限已变化，请刷新记录并核对当前输入。{operation.message}</p>:null}
@@ -118,6 +119,6 @@ function RecordFormScope(props:RecordFormProps){
   {conflict?<button type="button" className="admin-button" onClick={onRefresh}>刷新记录</button>:null}
   {needsReview&&!conflict?<button type="button" className="admin-button" onClick={onRefresh}>刷新记录</button>:null}
   <div className="record-form-fields forms-preview-grid">{view.layout.map(renderLayoutNode)}</div>
-  {mode!=='read'&&<footer><button type="button" className="admin-button" onClick={onRequestDiscard} disabled={busy||unknown}>放弃填写</button><button type="button" className="admin-button" onClick={save} disabled={!canEdit||conflict||saved&&!dirty||!saved&&!view.capabilities.create||saved&&!canEditRecord}>保存记录</button></footer>}
+  {mode!=='read'&&<footer><button type="button" className="admin-button" onClick={onRequestDiscard} disabled={busy||unknown}>放弃填写</button><button type="button" className="admin-button" onClick={save} disabled={!canEdit||conflict||saved&&!dirty||!saved&&!view.capabilities.create||saved&&!canEditRecord}>{reworkInstanceId?"保存返工":"保存记录"}</button></footer>}
  </section>;
 }

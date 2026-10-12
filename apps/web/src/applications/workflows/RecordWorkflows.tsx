@@ -8,11 +8,11 @@ import {useResourceQuery} from '../../usePersonnelQuery';
 import {TablePagination} from '../../vendor/arca/components/motion/table/table-pagination';
 import {validRecordWorkflows,type RecordWorkflow,type RecordWorkflowPage} from './recordWorkflowsContract';
 
-type Props={actorId:string;appId:string;viewId:string;recordId:string;onUnauthorized:()=>void;onIdentityMismatch:()=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void;onOpenAction:(action:()=>void)=>void;onDirtyChange:(dirty:boolean)=>void};
+type Props={onRework?:(instanceId:string)=>void;actorId:string;appId:string;viewId:string;recordId:string;onUnauthorized:()=>void;onIdentityMismatch:()=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void;onOpenAction:(action:()=>void)=>void;onDirtyChange:(dirty:boolean)=>void};
 type Parameters={page:number;pageSize:number};
 const states:Record<RecordWorkflow['state'],string>={starting:'正在发起',active:'审批中',completed:'已通过',rejected:'已驳回',withdrawn:'已撤回',no_effect:'未执行'};
 export function RecordWorkflows(props:Props){return <RecordWorkflowsScope key={JSON.stringify([props.actorId,props.appId,props.viewId,props.recordId])} {...props}/>;}
-function RecordWorkflowsScope({actorId,appId,viewId,recordId,onUnauthorized,onIdentityMismatch,registerLeaveGuard,requestSectionLeave,onOpenAction,onDirtyChange}:Props){
+function RecordWorkflowsScope({onRework,actorId,appId,viewId,recordId,onUnauthorized,onIdentityMismatch,registerLeaveGuard,requestSectionLeave,onOpenAction,onDirtyChange}:Props){
  const [selected,setSelected]=useState<RecordWorkflow|null>(null),[manual,setManual]=useState(false),[round,setRound]=useState<RecordWorkflow|null>(null);
  const [parameters,setParameters]=useState<Parameters>({page:1,pageSize:20});
  const path=`applications/${appId}/forms/${viewId}/records/${recordId}/workflow-instances/search`;
@@ -40,7 +40,7 @@ function RecordWorkflowsScope({actorId,appId,viewId,recordId,onUnauthorized,onId
   </>}
   <div className="workflow-manual-entry"><button type="button" className="admin-button" onClick={()=>onOpenAction(()=>setManual(true))}>发起流程</button></div>
   {manual&&<WorkflowManualStart actorId={actorId} appId={appId} viewId={viewId} recordId={recordId} onClose={()=>setManual(false)} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={onDirtyChange} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave}/>}
-  {round&&<WorkflowRoundActions actorId={actorId} location={{appId,viewId,recordId,instanceId:round.id}} flowId={round.flowId} name={round.name||'未命名流程'} onClose={()=>setRound(null)} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={onDirtyChange} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave}/>}
+  {round&&<WorkflowRoundActions onRework={onRework?(instanceId)=>{setRound(null);onRework(instanceId);}:undefined} actorId={actorId} location={{appId,viewId,recordId,instanceId:round.id}} flowId={round.flowId} name={round.name||'未命名流程'} onClose={()=>setRound(null)} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={onDirtyChange} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave}/>}
   {selected&&<WorkflowInstanceActions key={selected.id} actorId={actorId} location={{appId,viewId,recordId,instanceId:selected.id}} name={selected.name||'未命名流程'} onClose={()=>setSelected(null)} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={onDirtyChange} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave}/>}
  </section>;
 }
