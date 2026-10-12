@@ -6,9 +6,9 @@ const form=`applications/${appId}/forms/${viewId}`,record=form+'/records/'+recor
 const app={id:appId,name:'报销管理',ownerUserId:id(99),policyRevision:1};
 const runtime={appId,viewId,tableId:id(6),schemaVersion:1,viewVersion:1,policyRevision:1,fields:[{id:fieldId,name:'金额',kind:'money',required:false,presentation:{helpText:null,displayTimeZone:null},input:{decimal:{precision:20,scale:2,roundingPlaces:2,roundingMode:'HALF_UP'}},access:{read:'all',create:true,edit:'all',history:'none'},query:{operators:['eq','neq','gt','gte','lt','lte'],sortable:true,quickSearchable:false}}],layout:[{id:id(7),kind:'field',fieldId}],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}};
 const row={id:recordId,appId,viewId,tableId:id(6),createdBy:actor.id,createdAt:'2026-10-11T09:00:00Z',updatedAt:'2026-10-11T10:00:00Z',recordVersion:9,schemaVersion:1,values:{[fieldId]:'10.00'},referenceDisplays:{}};
-type Mode='normal'|'review'|'old'|'denied'|'leaked'|'unknown'|'conflict'|'rework-unknown'|'rework-conflict';
+type Mode='normal'|'review'|'old'|'denied'|'leaked'|'unknown'|'conflict'|'rework-unknown'|'rework-conflict'|'rework-applied';
 async function setup(page:Page,mode:Mode='normal'){
- const calls:{path:string;method:string;body:any}[]=[];let posts=0,reworkPosts=0,currentRow=structuredClone(row);
+ const calls:{path:string;method:string;body:any}[]=[];let posts=0,reworkPosts=0,currentRow=structuredClone(row),reworkOperation:string|undefined;
  await page.route('**/api/v1/**',async r=>{
   const req=r.request(),path=new URL(req.url()).pathname.slice('/api/v1/'.length),body=req.postData()?req.postDataJSON():null,method=req.method();calls.push({path,method,body});let data:unknown;
   if(path==='sessions/current')data=actor;
@@ -22,17 +22,19 @@ async function setup(page:Page,mode:Mode='normal'){
   else if(path===record+'/workflow-instances/search')data={items:[{id:instanceId,flowId,name:'财务审批',initiatorId:actor.id,state:mode==='review'?'completed':'rejected',createdAt:row.createdAt,updatedAt:row.updatedAt,definitionVersion:3,sequence:4}],total:1,page:body.page,pageSize:body.pageSize,queryVersion:'flows'};
   else if(path===round&&method==='GET'){
    if(mode==='denied')return r.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
-   data={instanceId,flowId,roundNumber:2,latestInstanceId:mode==='old'?id(11):instanceId,state:mode==='review'?'completed':'rejected',definitionVersion:3,workflowRevision:7,schemaVersion:1,recordVersion:currentRow.recordVersion,canRework:mode!=='old'&&mode!=='review',canResubmit:mode!=='old'&&mode!=='review',canReview:mode==='review',editableFieldIds:mode==='old'||mode==='review'?[]:[fieldId],...(mode==='leaked'?{graph:{secret:'private-graph'}}:{})};
+   data={instanceId,flowId,roundNumber:2,latestInstanceId:mode==='old'?id(11):instanceId,state:mode==='review'?'completed':'rejected',definitionVersion:3,workflowRevision:7,schemaVersion:1,recordVersion:currentRow.recordVersion,canRework:mode!=='old'&&mode!=='review'&&!(mode==='rework-applied'&&reworkPosts>0),canResubmit:mode!=='old'&&mode!=='review',canReview:mode==='review',editableFieldIds:mode==='old'||mode==='review'||mode==='rework-applied'&&reworkPosts>0?[]:[fieldId],...(mode==='leaked'?{graph:{secret:'private-graph'}}:{})};
   }else if(path===round&&method==='POST'){
    posts++;if(mode==='unknown'&&posts===1)return r.fulfill({status:503,json:{code:'APPLICATION_OPERATION_UNCONFIRMED',data:{operationId:body.operationId}}});
    if(mode==='conflict')return r.fulfill({status:409,json:{code:'APPLICATION_RECORD_CONFLICT',data:null}});
    return r.fulfill({status:202,headers:{Location:'/api/v1/application-operations/'+body.operationId},json:{code:'OK',data:{operationId:body.operationId,flowId,previousInstanceId:instanceId,instanceId:id(12),roundKind:body.kind,roundNumber:3,status:'accepted'},meta:null}});
   }else if(path===record+'/workflows/'+instanceId+'/rework'&&method==='POST'){
-   reworkPosts++;if(mode==='rework-unknown'&&reworkPosts===1)return r.fulfill({status:503,json:{code:'APPLICATION_OPERATION_UNCONFIRMED',data:{operationId:body.operationId}}});
+   reworkPosts++;reworkOperation=body.operationId;if(mode==='rework-unknown'&&reworkPosts===1)return r.fulfill({status:503,json:{code:'APPLICATION_OPERATION_UNCONFIRMED',data:{operationId:body.operationId}}});
    if(mode==='rework-conflict')return r.fulfill({status:409,json:{code:'WORKFLOW_CONFLICT',data:null}});
    currentRow={...currentRow,recordVersion:10,values:{...currentRow.values,...body.changes}};
+   if(mode==='rework-applied'&&reworkPosts===1)return r.fulfill({status:503,json:{code:'APPLICATION_OPERATION_UNCONFIRMED',data:{operationId:body.operationId}}});
    data={operationId:body.operationId,id:recordId,recordVersion:10,schemaVersion:1,createdAt:row.createdAt,updatedAt:'2026-10-12T09:00:00Z'};
-  }else if(path.startsWith('application-operations/'))return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
+  }else if(mode==='rework-applied'&&path==='application-operations/'+reworkOperation)data={operationId:reworkOperation,status:'confirmed',httpStatus:200,result:{operationId:reworkOperation,id:recordId,recordVersion:10,schemaVersion:1,createdAt:row.createdAt,updatedAt:'2026-10-12T09:00:00Z'}};
+  else if(path.startsWith('application-operations/'))return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
   else return r.fulfill({status:404,json:{code:'API_NOT_FOUND',data:null}});
   return r.fulfill({status:200,json:{code:'OK',data,meta:null}});
  });return calls;
@@ -73,4 +75,10 @@ test('Root rework unknown survives real Shell unmount without replacement Save o
  const calls=await setup(page,'rework-unknown');await open(page);let editor=await rework(page);await editor.getByLabel('金额',{exact:true}).fill('20.00');await editor.getByRole('button',{name:'保存返工',exact:true}).click();await expect(editor.getByText('保存结果待确认',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'返回主页',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();editor=page.getByRole('region',{name:'返工记录',exact:true});
  await expect(editor.getByRole('button',{name:'使用同一操作重试',exact:true})).toBeVisible();await expect(editor.getByLabel('金额',{exact:true})).toHaveValue('20.00');await expect(editor.getByRole('button',{name:'保存返工',exact:true})).toBeDisabled();expect(calls.filter(c=>c.path.endsWith('/rework')&&c.method==='POST')).toHaveLength(1);await editor.getByRole('button',{name:'使用同一操作重试',exact:true}).click();await expect(page.getByText('返工修改已保存',{exact:true})).toBeVisible();const writes=calls.filter(c=>c.path.endsWith('/rework')&&c.method==='POST');expect(writes).toHaveLength(2);expect(writes[1].body).toEqual(writes[0].body);
+});
+
+test('Root committed rework recovery does not require permission to start another rework',async({page})=>{
+ const calls=await setup(page,'rework-applied');await open(page);const editor=await rework(page);await editor.getByLabel('金额',{exact:true}).fill('20.00');await editor.getByRole('button',{name:'保存返工',exact:true}).click();await expect(editor.getByText('保存结果待确认',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'返回主页',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();
+ await expect(page.getByRole('button',{name:'恢复保存结果',exact:true})).toBeVisible();await page.getByRole('button',{name:'恢复保存结果',exact:true}).click();await expect(page.getByText('返工修改已保存',{exact:true})).toBeVisible();expect(calls.filter(c=>c.path.endsWith('/rework')&&c.method==='POST')).toHaveLength(1);expect(calls.filter(c=>c.path.startsWith('application-operations/')).at(-1)?.method).toBe('GET');
 });
