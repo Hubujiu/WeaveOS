@@ -96,23 +96,21 @@ jobs:
           "$(go env GOPATH)/bin/goose" -dir db/migrations postgres "$WEAVEOS_TEST_DATABASE_URL" up
       - name: Prepare dedicated B2 PostgreSQL private socket fixture
         run: node infra/acceptance/run.mjs b2-fixture-start "$GITHUB_ENV" "$RUNNER_TEMP/weaveos-b2-ci.json"
-      - name: Native catalog persisted scope contract
+      - name: Prepare real storage roles and discover critical Go test identities
         working-directory: services/bff
         run: |
+          set -euo pipefail
           psql "$WEAVEOS_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f ../../infra/runtime/roles.sql
-          go test -race -count=1 -v -run '^TestRootNativeCatalog' ./internal/apprecordservice
-      - name: Root runtime admission preserves atomic writes and replay
-        working-directory: services/bff
-        run: go test -race -p 1 -count=1 -v -run '^TestRootRuntimeAdmission' ./internal/appstructure ./internal/apprecordservice
-      - name: Root actual BFF host and OS process lifecycle
-        working-directory: services/bff
-        run: go test -race -count=1 -v -run '^TestRoot(Host|MainProcess)' ./cmd/bff
+          go test -race -json -p 1 -cover -list '^TestRoot(NativeCatalog|RuntimeAdmission|Host|MainProcess)' ./cmd/bff ./internal/appstructure ./internal/apprecordservice > "$RUNNER_TEMP/go-discovery.jsonl"
+          node ../../scripts/verify-go-required.mjs discover "$RUNNER_TEMP/go-discovery.jsonl" "$GITHUB_SHA" > "$RUNNER_TEMP/go-required.json"
       - name: Format, static checks, race tests and build
         working-directory: services/bff
         run: |
+          set -euo pipefail
           test -z "$(gofmt -l .)"
           go vet ./...
-          go test -race -p 1 -count=1 -coverprofile=coverage.out ./...
+          go test -race -json -p 1 -count=1 -coverprofile=coverage.out ./... | tee "$RUNNER_TEMP/go-run.jsonl"
+          node ../../scripts/verify-go-required.mjs verify "$RUNNER_TEMP/go-required.json" "$RUNNER_TEMP/go-run.jsonl" "$GITHUB_SHA"
           go build ./cmd/bff
       - name: Clean only this job's dedicated B2 fixture
         if: always()
@@ -121,7 +119,11 @@ jobs:
         if: always()
         with:
           name: go-coverage-${{ github.run_id }}
-          path: services/bff/coverage.out
+          path: |
+            services/bff/coverage.out
+            ${{ runner.temp }}/go-discovery.jsonl
+            ${{ runner.temp }}/go-required.json
+            ${{ runner.temp }}/go-run.jsonl
           retention-days: 14
   browser:
     needs: preflight

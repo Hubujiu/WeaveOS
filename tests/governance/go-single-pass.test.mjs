@@ -33,11 +33,11 @@ const workflow=readFileSync(new URL('../../.github/workflows/ci.yml',import.meta
 const go=workflow.slice(workflow.indexOf('\n  go:'),workflow.indexOf('\n  browser:'));
 test('V075 real Go workflow discovers then runs full suite only once at original budget',()=>{
  assert.match(go,/timeout-minutes: 10/);assert.equal((go.match(/\bgo test /g)||[]).length,2);
- assert.match(go,/go test -json -race -p 1 -cover -list/);
- assert.match(go,/go test -json -race -p 1 -count=1 -coverprofile=coverage.out \.\/\.\.\./);
+ assert.match(go,/go test -race -json -p 1 -cover -list/);
+ assert.match(go,/go test -race -json -p 1 -count=1 -coverprofile=coverage.out \.\/\.\.\./);
  assert.doesNotMatch(go,/\bgo test[^\n]*\s-run\s/);assert.doesNotMatch(go,/\bgo test[^\n]*\s-skip\s/);
  assert.match(go,/verify-go-required\.mjs discover/);assert.match(go,/verify-go-required\.mjs verify/);
  assert.match(go,/set -euo pipefail/);assert.match(go,/go vet \.\/\.\.\./);assert.match(go,/go build \.\/cmd\/bff/);
- assert.ok(go.indexOf('roles.sql')<go.indexOf('go test -json'));
+ assert.ok(go.indexOf('roles.sql')<go.indexOf('go test -race -json'));
  assert.match(go,/b2-fixture-start/);assert.match(go,/b2-fixture-stop/);assert.match(go,/go-required\.json/);assert.match(go,/go-run\.jsonl/);
 });
