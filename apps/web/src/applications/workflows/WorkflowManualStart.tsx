@@ -16,6 +16,7 @@ function ManualStartScope({actorId,appId,viewId,recordId,onClose,onUnauthorized,
  const scope=JSON.stringify(['manual-start',actorId,appId,viewId,recordId]),path=`applications/${appId}/forms/${viewId}/records/${recordId}`;
  const [parameters,setParameters]=useState<Parameters>({page:1,pageSize:20}),[selected,setSelected]=useState<ManualStartOption|null>(null);
  const [job,setJob]=useState<Job|null>(null),[result,setResult]=useState<ManualStartReceipt|null>(null),[error,setError]=useState(''),[stale,setStale]=useState(false);
+ const [operationBusy,setOperationBusy]=useState(false);
  const pending=useRef<Job|null>(null),operationRef=useRef<Operation|null>(null),released=useRef(false);
  const transport=useCallback(async(body:Parameters&{queryVersion?:string},signal:AbortSignal)=>{
   await Promise.resolve();if(signal.aborted)throw signal.reason??new DOMException('Aborted','AbortError');
@@ -45,7 +46,7 @@ function ManualStartScope({actorId,appId,viewId,recordId,onClose,onUnauthorized,
   if(receipt)setResult(receipt);else {setError(message??'无法发起，请刷新后重新核对。');setStale(['APPLICATION_RECORD_CONFLICT','APPLICATION_SCHEMA_NOT_READY','APPLICATION_POLICY_CONFLICT','WORKFLOW_NOT_READY','WORKFLOW_CONFLICT','APPLICATION_FORBIDDEN','APPLICATION_NOT_FOUND'].includes(code??''));}
  }
  const close=()=>requestSectionLeave(onClose);
- return <Modal title="发起流程" onClose={close} busy={!!job&&operationRef.current?.getPendingStatus()!=='unknown'}>
+ return <Modal title="发起流程" onClose={close} busy={!!job&&operationBusy}>
   <div className="workflow-instance-controls">
    {query.loading?<p role="status">正在读取可发起流程…</p>:failure?<p role="alert">{changed?'可发起流程已变化，请刷新后重新选择。':expired?'可发起流程查询已过期，请刷新后重新选择。':failure.message}</p>:<>
     {!query.data.items.length&&<p>暂无可发起的流程</p>}
@@ -53,17 +54,17 @@ function ManualStartScope({actorId,appId,viewId,recordId,onClose,onUnauthorized,
     {query.data.total>20&&<div className="arca-source personnel-source-scope"><TablePagination pageIndex={query.data.page-1} pageSize={20} pageCount={Math.max(1,Math.ceil(query.data.total/20))} recordCount={query.data.total} sizes={[20]} rowsPerPageLabel="每页" info="{from}–{to} / {count}" previousPageLabel="上一页" nextPageLabel="下一页" onPageIndexChange={index=>{if(!blocked){setSelected(null);setParameters({page:index+1,pageSize:20});}}} onPageSizeChange={()=>{}}/></div>}
    </>}
    {error&&<p role="alert">{stale?'流程或记录已变化，请刷新可发起流程并重新核对。':error}</p>}
-   {job&&<ManualStartMutation key={job.key} actorId={actorId} scope={scope} job={job} operationRef={operationRef} settle={settle} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>}
+   {job&&<ManualStartMutation key={job.key} actorId={actorId} scope={scope} job={job} operationRef={operationRef} onBusyChange={setOperationBusy} settle={settle} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>}
    {result&&<p role="status">{result.status==='ignored'?'该流程已在进行中，未重复发起。':'已接受发起请求，可在关联流程中查看实际进度。'}</p>}
    {!blocked&&(failure||stale||error)&&<button type="button" className="admin-button" onClick={refresh}>刷新可发起流程</button>}
    <div className="workflow-instance-confirm"><button type="button" className="admin-button" disabled={!!job} onClick={close}>{result?'关闭':'取消'}</button>{!result&&<button type="button" className="admin-button primary" disabled={!selected||blocked||stale||query.blocked} onClick={start}>确认发起</button>}</div>
   </div>
  </Modal>;
 }
-function ManualStartMutation({actorId,scope,job,operationRef,settle,onUnauthorized,onIdentityMismatch}:{actorId:string;scope:string;job:Job;operationRef:MutableRefObject<Operation|null>;settle:(job:Job,result?:ManualStartReceipt,message?:string,code?:string)=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void}){
+function ManualStartMutation({actorId,scope,job,operationRef,onBusyChange,settle,onUnauthorized,onIdentityMismatch}:{actorId:string;scope:string;job:Job;operationRef:MutableRefObject<Operation|null>;onBusyChange:(busy:boolean)=>void;settle:(job:Job,result?:ManualStartReceipt,message?:string,code?:string)=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void}){
  const operation=useApplicationOperation<ManualStartReceipt>({actorId,scope,resource:job.request.resource,confirmed:value=>settle(job,value),unauthorized:onUnauthorized,identityMismatch:onIdentityMismatch});
  const latest=useRef(operation);latest.current=operation;
- useLayoutEffect(()=>{operationRef.current=operation;});
+ useLayoutEffect(()=>{operationRef.current=operation;onBusyChange(operation.phase==='preflight'||operation.phase==='pending');},[operation,onBusyChange]);
  useLayoutEffect(()=>()=>{operationRef.current=null;},[]);
  useEffect(()=>{let current=true;void Promise.resolve().then(()=>{if(current)latest.current.start(job.request);});return()=>{current=false;};},[job]);
  useEffect(()=>{if(operation.phase==='error')settle(job,undefined,operation.message,operation.errorCode);},[operation.phase,operation.message,operation.errorCode]);

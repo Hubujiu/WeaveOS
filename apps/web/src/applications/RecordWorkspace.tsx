@@ -1,5 +1,6 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {applicationApi,applicationReadPost,ApplicationError} from './api';
+import {RecordColumnVisibility} from './records/RecordColumnVisibility';
 import {RecordPresets} from './records/RecordPresets';
 import type {ApplicationPresetValid} from './records/presetContract';
 import type {RegisterLeaveGuard} from './forms';
@@ -103,7 +104,7 @@ function RecordQuery(props:RecordWorkspaceProps&{scope:string;view:RuntimeView;o
   return true;
  };
  return <section className="record-workspace" aria-label="记录工作区">
-  <div className="table-toolbar"><RecordPresets registerLeaveGuard={props.registerLeaveGuard} onDirtyChange={props.onDirtyChange} actorId={actorId} view={viewRef.current} layout={{sort:parameters.sort,hiddenColumnIds,columnOrder,columnWidths}} active={activePreset} onApply={applyPreset} refreshRuntime={refreshPresetRuntime} onUnauthorized={props.onUnauthorized} onIdentityMismatch={props.onIdentityMismatch}/><button className="admin-button" type="button" onClick={props.onRefresh}>刷新</button>{view.capabilities.create&&<button className="admin-button" type="button" disabled={disabled} onClick={()=>props.onCreate(view,query.data.queryVersion||undefined)}>新建记录</button>}</div>
+  <div className="table-toolbar"><RecordColumnVisibility view={viewRef.current} hiddenColumnIds={hiddenColumnIds} onApply={setHiddenColumnIds}/><RecordPresets registerLeaveGuard={props.registerLeaveGuard} onDirtyChange={props.onDirtyChange} actorId={actorId} view={viewRef.current} layout={{sort:parameters.sort,hiddenColumnIds,columnOrder,columnWidths}} active={activePreset} onApply={applyPreset} refreshRuntime={refreshPresetRuntime} onUnauthorized={props.onUnauthorized} onIdentityMismatch={props.onIdentityMismatch}/><button className="admin-button" type="button" onClick={props.onRefresh}>刷新</button>{view.capabilities.create&&<button className="admin-button" type="button" disabled={disabled} onClick={()=>props.onCreate(view,query.data.queryVersion||undefined)}>新建记录</button>}</div>
   <fieldset className="record-table-frame" disabled={disabled}><legend className="sr-only">记录操作</legend><RecordsPanel view={viewRef.current} actorId={actorId} page={query.data} loading={query.loading} error={message} hiddenColumnIds={hiddenColumnIds} columnWidths={columnWidths} columnOrder={columnOrder} selectedRowIds={selectedRowIds} onSelectionChange={setSelectedRowIds} onPageChange={page=>setParameters(current=>({...current,page}))} onPageSizeChange={pageSize=>{setSelectedRowIds([]);setParameters(current=>({...current,page:1,pageSize}));}} onSortChange={sort=>{setSelectedRowIds([]);setParameters(current=>({...current,page:1,sort}));}} onColumnWidthsChange={setColumnWidths} onColumnOrderChange={setColumnOrder} onOpenRecord={record=>{if(disabled)return;void (async()=>{try{
    const accept=await query.prepareChange(parameters);
    if(!accept||!accept())return;
