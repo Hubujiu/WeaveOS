@@ -1,0 +1,169 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ V017 original POST draft recovery remains frozen and unchanged (2.655059ms)
+✔ V017 POST draft recovery cannot cross identity 0 (0.231408ms)
+✔ V017 POST draft recovery cannot cross identity 1 (0.112359ms)
+✔ V017 POST draft recovery cannot cross identity 2 (0.817138ms)
+✔ V017 POST recovery rejects different scope (0.227071ms)
+✔ V017 POST recovery rejects different resource kind (0.128243ms)
+✔ V017 POST recovery rejects wrong path (0.158829ms)
+✔ V017 POST recovery rejects bad status (0.114081ms)
+✔ V017 POST recovery rejects different operation (0.192179ms)
+✔ V017 confirmed POST is never restored as unknown (0.205929ms)
+✖ V017 original PATCH draft recovery remains frozen and unchanged (0.436706ms)
+✔ V017 PATCH draft recovery cannot cross identity 0 (0.186851ms)
+✔ V017 PATCH draft recovery cannot cross identity 1 (0.135774ms)
+✔ V017 PATCH draft recovery cannot cross identity 2 (0.097095ms)
+✔ V017 PATCH recovery rejects different scope (0.088363ms)
+✔ V017 PATCH recovery rejects different resource kind (0.06004ms)
+✔ V017 PATCH recovery rejects wrong path (0.087341ms)
+✔ V017 PATCH recovery rejects bad status (0.098177ms)
+✔ V017 PATCH recovery rejects different operation (0.06004ms)
+✔ V017 confirmed PATCH is never restored as unknown (0.048223ms)
+✖ V017 original DELETE draft recovery remains frozen and unchanged (0.293942ms)
+✔ V017 DELETE draft recovery cannot cross identity 0 (0.075644ms)
+✔ V017 DELETE draft recovery cannot cross identity 1 (0.05267ms)
+✔ V017 DELETE draft recovery cannot cross identity 2 (0.081623ms)
+✔ V017 DELETE recovery rejects different scope (0.052439ms)
+✔ V017 DELETE recovery rejects different resource kind (0.078177ms)
+✔ V017 DELETE recovery rejects wrong path (0.079269ms)
+✔ V017 DELETE recovery rejects bad status (0.05295ms)
+✔ V017 DELETE recovery rejects different operation (0.06628ms)
+✔ V017 confirmed DELETE is never restored as unknown (0.049264ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 27
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 138.037882
+
+✖ failing tests:
+
+test at tests/foundation/record-draft-recovery.test.mjs:9:2
+✖ V017 original POST draft recovery remains frozen and unchanged (2.655059ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   actorId: 'cccccccc-cccc-4ccc-8ccc-000000000001',
+  -   body: {
+  -     baseRecordVersion: null,
+  -     operationId: 'cccccccc-cccc-4ccc-8ccc-000000000005',
+  -     schemaVersion: 2,
+  -     targetRecordId: null,
+  -     values: {
+  -       'cccccccc-cccc-4ccc-8ccc-000000000006': '-'
+  -     }
+  -   },
+  -   expectedStatus: 201,
+  -   method: 'POST',
+  -   operationId: 'cccccccc-cccc-4ccc-8ccc-000000000005',
+  -   path: 'applications/cccccccc-cccc-4ccc-8ccc-000000000002/forms/cccccccc-cccc-4ccc-8ccc-000000000003/drafts',
+  -   resource: {
+  -     appId: 'cccccccc-cccc-4ccc-8ccc-000000000002',
+  -     creationNonce: 'cccccccc-cccc-4ccc-8ccc-000000000004',
+  -     kind: 'draft',
+  -     viewId: 'cccccccc-cccc-4ccc-8ccc-000000000003'
+  -   },
+  -   scope: '["draft-editor:cccccccc-cccc-4ccc-8ccc-000000000002:cccccccc-cccc-4ccc-8ccc-000000000003:cccccccc-cccc-4ccc-8ccc-000000000004",{"kind":"draft","appId":"cccccccc-cccc-4ccc-8ccc-000000000002","viewId":"cccccccc-cccc-4ccc-8ccc-000000000003","creationNonce":"cccccccc-cccc-4ccc-8ccc-000000000004"}]'
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-draft-recovery.test.mjs:9:176)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { actorId: 'cccccccc-cccc-4ccc-8ccc-000000000001', scope: '["draft-editor:cccccccc-cccc-4ccc-8ccc-000000000002:cccccccc-cccc-4ccc-8ccc-000000000003:cccccccc-cccc-4ccc-8ccc-000000000004",{"kind":"draft","appId":"cccccccc-cccc-4ccc-8ccc-000000000002","viewId":"cccccccc-cccc-4ccc-8ccc-000000000003","creationNonce":"cccccccc-cccc-4ccc-8ccc-000000000004"}]', resource: { kind: 'draft', appId: 'cccccccc-cccc-4ccc-8ccc-000000000002', viewId: 'cccccccc-cccc-4ccc-8ccc-000000000003', creationNonce: 'cccccccc-cccc-4ccc-8ccc-000000000004' }, path: 'applications/cccccccc-cccc-4ccc-8ccc-000000000002/forms/cccccccc-cccc-4ccc-8ccc-000000000003/drafts', method: 'POST', expectedStatus: 201, operationId: 'cccccccc-cccc-4ccc-8ccc-000000000005', body: { operationId: 'cccccccc-cccc-4ccc-8ccc-000000000005', targetRecordId: null, schemaVersion: 2, baseRecordVersion: null, values: [Object] } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-draft-recovery.test.mjs:9:2
+✖ V017 original PATCH draft recovery remains frozen and unchanged (0.436706ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   actorId: 'cccccccc-cccc-4ccc-8ccc-000000000001',
+  -   body: {
+  -     changes: {
+  -       'cccccccc-cccc-4ccc-8ccc-000000000006': '-'
+  -     },
+  -     expectedDraftVersion: 7,
+  -     operationId: 'cccccccc-cccc-4ccc-8ccc-000000000005',
+  -     removeFieldIds: []
+  -   },
+  -   expectedStatus: 200,
+  -   method: 'PATCH',
+  -   operationId: 'cccccccc-cccc-4ccc-8ccc-000000000005',
+  -   path: 'applications/cccccccc-cccc-4ccc-8ccc-000000000002/forms/cccccccc-cccc-4ccc-8ccc-000000000003/drafts/cccccccc-cccc-4ccc-8ccc-000000000004',
+  -   resource: {
+  -     appId: 'cccccccc-cccc-4ccc-8ccc-000000000002',
+  -     id: 'cccccccc-cccc-4ccc-8ccc-000000000004',
+  -     kind: 'draft',
+  -     viewId: 'cccccccc-cccc-4ccc-8ccc-000000000003'
+  -   },
+  -   scope: '["draft-editor:cccccccc-cccc-4ccc-8ccc-000000000002:cccccccc-cccc-4ccc-8ccc-000000000003:cccccccc-cccc-4ccc-8ccc-000000000004",{"kind":"draft","appId":"cccccccc-cccc-4ccc-8ccc-000000000002","viewId":"cccccccc-cccc-4ccc-8ccc-000000000003","id":"cccccccc-cccc-4ccc-8ccc-000000000004"}]'
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-draft-recovery.test.mjs:9:176)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { actorId: 'cccccccc-cccc-4ccc-8ccc-000000000001', scope: '["draft-editor:cccccccc-cccc-4ccc-8ccc-000000000002:cccccccc-cccc-4ccc-8ccc-000000000003:cccccccc-cccc-4ccc-8ccc-000000000004",{"kind":"draft","appId":"cccccccc-cccc-4ccc-8ccc-000000000002","viewId":"cccccccc-cccc-4ccc-8ccc-000000000003","id":"cccccccc-cccc-4ccc-8ccc-000000000004"}]', resource: { kind: 'draft', appId: 'cccccccc-cccc-4ccc-8ccc-000000000002', viewId: 'cccccccc-cccc-4ccc-8ccc-000000000003', id: 'cccccccc-cccc-4ccc-8ccc-000000000004' }, path: 'applications/cccccccc-cccc-4ccc-8ccc-000000000002/forms/cccccccc-cccc-4ccc-8ccc-000000000003/drafts/cccccccc-cccc-4ccc-8ccc-000000000004', method: 'PATCH', expectedStatus: 200, operationId: 'cccccccc-cccc-4ccc-8ccc-000000000005', body: { operationId: 'cccccccc-cccc-4ccc-8ccc-000000000005', expectedDraftVersion: 7, changes: [Object], removeFieldIds: [] } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-draft-recovery.test.mjs:9:2
+✖ V017 original DELETE draft recovery remains frozen and unchanged (0.293942ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   actorId: 'cccccccc-cccc-4ccc-8ccc-000000000001',
+  -   expectedStatus: 204,
+  -   method: 'DELETE',
+  -   operationId: 'cccccccc-cccc-4ccc-8ccc-000000000005',
+  -   path: 'applications/cccccccc-cccc-4ccc-8ccc-000000000002/forms/cccccccc-cccc-4ccc-8ccc-000000000003/drafts/cccccccc-cccc-4ccc-8ccc-000000000004?operationId=cccccccc-cccc-4ccc-8ccc-000000000005&expectedDraftVersion=7',
+  -   query: {
+  -     expectedDraftVersion: 7,
+  -     operationId: 'cccccccc-cccc-4ccc-8ccc-000000000005'
+  -   },
+  -   resource: {
+  -     appId: 'cccccccc-cccc-4ccc-8ccc-000000000002',
+  -     id: 'cccccccc-cccc-4ccc-8ccc-000000000004',
+  -     kind: 'draft',
+  -     viewId: 'cccccccc-cccc-4ccc-8ccc-000000000003'
+  -   },
+  -   scope: '["draft-editor:cccccccc-cccc-4ccc-8ccc-000000000002:cccccccc-cccc-4ccc-8ccc-000000000003:cccccccc-cccc-4ccc-8ccc-000000000004",{"kind":"draft","appId":"cccccccc-cccc-4ccc-8ccc-000000000002","viewId":"cccccccc-cccc-4ccc-8ccc-000000000003","id":"cccccccc-cccc-4ccc-8ccc-000000000004"}]'
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-draft-recovery.test.mjs:9:176)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { actorId: 'cccccccc-cccc-4ccc-8ccc-000000000001', scope: '["draft-editor:cccccccc-cccc-4ccc-8ccc-000000000002:cccccccc-cccc-4ccc-8ccc-000000000003:cccccccc-cccc-4ccc-8ccc-000000000004",{"kind":"draft","appId":"cccccccc-cccc-4ccc-8ccc-000000000002","viewId":"cccccccc-cccc-4ccc-8ccc-000000000003","id":"cccccccc-cccc-4ccc-8ccc-000000000004"}]', resource: { kind: 'draft', appId: 'cccccccc-cccc-4ccc-8ccc-000000000002', viewId: 'cccccccc-cccc-4ccc-8ccc-000000000003', id: 'cccccccc-cccc-4ccc-8ccc-000000000004' }, path: 'applications/cccccccc-cccc-4ccc-8ccc-000000000002/forms/cccccccc-cccc-4ccc-8ccc-000000000003/drafts/cccccccc-cccc-4ccc-8ccc-000000000004?operationId=cccccccc-cccc-4ccc-8ccc-000000000005&expectedDraftVersion=7', method: 'DELETE', expectedStatus: 204, operationId: 'cccccccc-cccc-4ccc-8ccc-000000000005', query: { operationId: 'cccccccc-cccc-4ccc-8ccc-000000000005', expectedDraftVersion: 7 } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
