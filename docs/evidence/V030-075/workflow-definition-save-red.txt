@@ -1,0 +1,112 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ V020 existing definition uses exact PUT and preserves graph and explicit triggers (4.489926ms)
+✖ V020 first definition PUT uses client flow identity and 201, not record POST (0.211668ms)
+✔ definition identity appId ../escape (0.150256ms)
+✔ definition identity appId 00000000-0000-0000-0000-000000000000 (0.075263ms)
+✔ definition identity appId DCDCDCDC-DCDC-4CDC-8CDC-000000000001 (0.065538ms)
+✔ definition identity viewId ../escape (0.10611ms)
+✔ definition identity viewId 00000000-0000-0000-0000-000000000000 (0.260391ms)
+✔ definition identity viewId DCDCDCDC-DCDC-4CDC-8CDC-000000000001 (0.09341ms)
+✔ definition identity id ../escape (1.079072ms)
+✔ definition identity id 00000000-0000-0000-0000-000000000000 (0.207983ms)
+✔ definition identity id DCDCDCDC-DCDC-4CDC-8CDC-000000000001 (0.144958ms)
+✔ definition rejects record resource (0.126991ms)
+✔ definition rejects extra resource (0.044697ms)
+✔ definition rejects wrong flow (0.035784ms)
+✔ definition rejects query (0.058608ms)
+✔ definition rejects fragment (0.177747ms)
+✔ definition rejects POST (0.04047ms)
+✔ definition rejects existing 201 (0.028894ms)
+✔ definition rejects new 200 (0.026079ms)
+✔ definition rejects caller operation (0.031007ms)
+✔ definition rejects BPMN authority (0.027261ms)
+✔ definition rejects blank name (0.113701ms)
+✔ definition rejects unsafe revision (0.065999ms)
+✔ definition rejects bad schema (0.030346ms)
+✔ definition rejects fake boolean (0.045989ms)
+✔ definition rejects hidden trigger omission (0.026911ms)
+✔ definition rejects unsupported trigger (0.025228ms)
+✔ definition rejects invalid DAG (0.02663ms)
+✖ V020 closed minimal save receipt confirms persistence with matching operation and flow only (0.265529ms)
+✔ definition receipt rejects {"operationId":"dcdcdcdc-dcdc-4cdc-8cdc-000000000008"} (0.07984ms)
+✔ definition receipt rejects {"id":"dcdcdcdc-dcdc-4cdc-8cdc-000000000008"} (0.038347ms)
+✔ definition receipt rejects {"revision":4} (0.037155ms)
+✔ definition receipt rejects {"revision":9007199254740992} (0.065017ms)
+✔ definition receipt rejects {"candidateVersion":0} (0.036796ms)
+✔ definition receipt rejects {"currentVersion":3} (0.068843ms)
+✔ definition receipt rejects {"state":"closing"} (0.25286ms)
+✔ definition receipt rejects {"graph":{"version":1,"nodes":[{"id":"dcdcdcdc-dcdc-4cdc-8cdc-000000000004","kind":"start"},{"id":"dcdcdcdc-dcdc-4cdc-8cdc-000000000005","kind":"end"}],"edges":[{"from":"dcdcdcdc-dcdc-4cdc-8cdc-000000000004","to":"dcdcdcdc-dcdc-4cdc-8cdc-000000000005"}]}} (0.053861ms)
+✔ definition receipt rejects {"deploymentId":"private"} (0.061121ms)
+✔ definition receipt rejects {"state":"disabled","currentVersion":-1} (0.034131ms)
+ℹ tests 39
+ℹ suites 0
+ℹ pass 36
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 142.690727
+
+✖ failing tests:
+
+test at tests/foundation/workflow-definition-save.test.mjs:9:1
+✖ V020 existing definition uses exact PUT and preserves graph and explicit triggers (4.489926ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-definition-save.test.mjs:9:138)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-definition-save.test.mjs:10:1
+✖ V020 first definition PUT uses client flow identity and 201, not record POST (0.211668ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-definition-save.test.mjs:10:96)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-definition-save.test.mjs:22:1
+✖ V020 closed minimal save receipt confirms persistence with matching operation and flow only (0.265529ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-definition-save.test.mjs:22:111)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

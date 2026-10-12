@@ -16,7 +16,7 @@ function condition(value:unknown):boolean{
  if(!object(value)||!Object.hasOwn(value,'children')||!visit(value,1)||leaves>20)return false;
  return new TextEncoder().encode(JSON.stringify(value)).byteLength<=16384;
 }
-function graph(value:unknown):value is WorkflowGraph{
+export function validWorkflowGraph(value:unknown):value is WorkflowGraph{
  if(!object(value)||!exact(value,['version','nodes','edges'])||value.version!==1||!Array.isArray(value.nodes)||value.nodes.length<2||value.nodes.length>100||!Array.isArray(value.edges)||value.edges.length<1||value.edges.length>200)return false;
  const nodes=new Map<string,WorkflowNode>();let starts=0,ends=0;
  for(const n of value.nodes){
@@ -46,7 +46,10 @@ function graph(value:unknown):value is WorkflowGraph{
 }
 export function validWorkflowDefinition(value:unknown,flowId:string):value is WorkflowDefinition{
  if(!uuid(flowId)||!object(value)||!exact(value,['id','name','revision','currentVersion','candidateVersion','state','schemaVersion','allowWithdraw','graph','triggers'])||value.id!==flowId)return false;
- if(typeof value.name!=='string'||!value.name.trim()||[...value.name].length>100||!integer(value.revision,1)||!integer(value.schemaVersion,1)||!integer(value.currentVersion,0)||!integer(value.candidateVersion,1)||value.candidateVersion<value.currentVersion||!['disabled','enabled','closing'].includes(value.state as string)||typeof value.allowWithdraw!=='boolean'||!graph(value.graph))return false;
- if(!Array.isArray(value.triggers)||value.triggers.length>3||!value.triggers.every(t=>object(t)&&exact(t,['event','condition'])&&['manual','record.created','record.updated'].includes(t.event as string)&&(t.condition===null||condition(t.condition))))return false;
- return new Set(value.triggers.map(t=>t.event)).size===value.triggers.length;
+ if(typeof value.name!=='string'||!value.name.trim()||[...value.name].length>100||!integer(value.revision,1)||!integer(value.schemaVersion,1)||!integer(value.currentVersion,0)||!integer(value.candidateVersion,1)||value.candidateVersion<value.currentVersion||!['disabled','enabled','closing'].includes(value.state as string)||typeof value.allowWithdraw!=='boolean'||!validWorkflowGraph(value.graph))return false;
+ return validWorkflowTriggers(value.triggers);
+}
+export function validWorkflowTriggers(value:unknown):value is WorkflowDefinition['triggers']{
+ if(!Array.isArray(value)||value.length>3||!value.every(t=>object(t)&&exact(t,['event','condition'])&&['manual','record.created','record.updated'].includes(t.event as string)&&(t.condition===null||condition(t.condition))))return false;
+ return new Set(value.map(t=>t.event)).size===value.length;
 }

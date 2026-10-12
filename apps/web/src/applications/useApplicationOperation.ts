@@ -1,3 +1,4 @@
+import {validWorkflowDefinitionRequest,validWorkflowDefinitionReceipt} from './workflows/definitionSaveContract';
 import { useEffect, useRef, useState } from 'react';
 import { workspaceApi, WorkspaceError } from '../workspace-api';
 import type { User } from '../workspace-types';
@@ -38,6 +39,7 @@ function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean
  // Task execution receipts are checked against their distinct closed wire
  // in perform(), including actual HTTP status and the confirmed command ID.
  if (packet.resource.kind === 'task-action'||packet.resource.kind === 'instance-action') return true;
+ if (packet.resource.kind === 'workflow-definition') return validWorkflowDefinitionReceipt(result,packet.operationId??'',packet.resource.id,packet.body?.expectedRevision as number);
  if (packet.resource.kind === 'round-record') return isMutationResult(result,packet.operationId??'',packet.resource.id)&&result.recordVersion>0&&result.schemaVersion>0;
  if (packet.resource.kind === 'round-start') return validRoundStartReceipt(result,packet.operationId??'',packet.resource.flowId,packet.resource.instanceId,packet.resource.roundKind);
  if (packet.resource.kind === 'manual-start') return validManualStartReceipt(result,packet.operationId??'',packet.resource.flowId);
@@ -155,7 +157,7 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
     result = reply.data; location = reply.location;
    }
    if (!(packet.expectedStatus === 204 && !query) && !valid(result, packet)) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
-   if (scopedResource && packet.expectedStatus === 201 && !validLocation(location, packet, result)) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
+   if (scopedResource && packet.resource?.kind !== 'workflow-definition' && packet.expectedStatus === 201 && !validLocation(location, packet, result)) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
    if (packet.resource?.kind==='manual-start'||packet.resource?.kind==='round-start') {
     let target:URL|null=null;
     try { if(typeof location==='string')target=new URL(location,window.location.origin); } catch { /* Invalid durable intent receipt remains uncertain. */ }
@@ -200,7 +202,9 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
   else {
    const request = requestOrPath;
    if (!scope || !scopedResource || JSON.stringify(request.resource) !== JSON.stringify(scopedResource)) throw new TypeError('Mutation resource does not match the mounted scope');
-   if (request.resource.kind === 'round-record') {
+   if (request.resource.kind === 'workflow-definition') {
+    if (!validWorkflowDefinitionRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'round-record') {
     if (!validRoundReworkRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
    } else if (request.resource.kind === 'round-start') {
     if (!validRoundStartRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
