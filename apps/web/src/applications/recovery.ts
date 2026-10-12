@@ -10,6 +10,7 @@ export type ApplicationPacket = {
  body?: { operationId?: string; [key: string]: unknown };
  query?: { operationId: string; expectedDraftVersion?: number; expectedVersion?: number };
  resource?: { kind: 'record' | 'draft' | 'preset'; appId: string; viewId: string; id?: string; creationNonce?: string }
+  | { kind:'round-start';appId:string;viewId:string;id:string;instanceId:string;flowId:string;roundKind:'resubmit'|'review';creationNonce?:never }
   | { kind: 'manual-start'; appId:string;viewId:string;id:string;flowId:string;creationNonce?:never }
   | { kind: 'instance-action'; appId:string;viewId:string;id:string;instanceId:string;creationNonce?:never }
   | { kind: 'task-record' | 'task-action'; appId: string; viewId: string; id: string; instanceId: string; taskId: string; creationNonce?: never };
