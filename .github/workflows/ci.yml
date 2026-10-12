@@ -88,6 +88,15 @@ jobs:
             services/bff/go.mod
             services/bff/go.sum
             .github/workflows/preflight.yml
+      - name: Locate Go compiled cache
+        id: go-build-path
+        run: printf 'path=%s\n' "$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+      - name: Restore exact BFF source compiled cache
+        id: bff-build-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ${{ steps.go-build-path.outputs.path }}
+          key: bff-build-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.go-version', 'services/bff/go.mod', 'services/bff/go.sum', 'services/bff/**/*.go') }}
       - name: Migrate isolated PostgreSQL for real storage tests
         run: |
           go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
@@ -103,6 +112,12 @@ jobs:
           psql "$WEAVEOS_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f ../../infra/runtime/roles.sql
           go test -race -json -p 1 -cover -list '^TestRoot(NativeCatalog|RuntimeAdmission|Host|MainProcess)' ./cmd/bff ./internal/appstructure ./internal/apprecordservice > "$RUNNER_TEMP/go-discovery.jsonl"
           node ../../scripts/verify-go-required.mjs discover "$RUNNER_TEMP/go-discovery.jsonl" "$GITHUB_SHA" > "$RUNNER_TEMP/go-required.json"
+      - name: Preserve successful independent-discovery compilation
+        if: steps.bff-build-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ${{ steps.go-build-path.outputs.path }}
+          key: ${{ steps.bff-build-cache.outputs.cache-primary-key }}
       - name: Format, static checks, race tests and build
         working-directory: services/bff
         run: |
