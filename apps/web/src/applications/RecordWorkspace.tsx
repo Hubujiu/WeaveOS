@@ -1,5 +1,8 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {applicationApi,applicationReadPost,ApplicationError} from './api';
+import {RecordPresets} from './records/RecordPresets';
+import type {ApplicationPresetValid} from './records/presetContract';
+import type {ResourceFilterGroup} from '../QueryFilterState';
 import {RecordsPanel} from './records/RecordsPanel';
 import type {RecordItem,RecordPage,RecordSort,RuntimeView} from './records/contracts';
 import {parseRecordPage,parseRuntimeView} from './recordReadContracts';
@@ -50,10 +53,12 @@ export function RecordWorkspace(props:RecordWorkspaceProps){
 
 function RecordQuery(props:RecordWorkspaceProps&{scope:string;view:RuntimeView;onRefresh:()=>void;onRuntimeUpdate:(view:RuntimeView)=>void}){
  const {actorId,appId,viewId,view,scope}=props;
- const [parameters,setParameters]=useState({page:1,pageSize:20,filter:null as null,sort:null as RecordSort});
+ const [parameters,setParameters]=useState({page:1,pageSize:20,filter:null as ResourceFilterGroup|null,sort:null as RecordSort});
  const [selectedRowIds,setSelectedRowIds]=useState<string[]>([]);
  const [columnWidths,setColumnWidths]=useState<Record<string,number>>({});
  const [columnOrder,setColumnOrder]=useState<string[]>([]);
+ const [hiddenColumnIds,setHiddenColumnIds]=useState<string[]>([]),[activePreset,setActivePreset]=useState<ApplicationPresetValid|null>(null);
+ const originalLayout=useRef<{hidden:string[];order:string[];widths:Record<string,number>;sort:RecordSort}|null>(null);
  const active=useRef(scope);active.current=scope;
  const viewRef=useRef(view);viewRef.current=view;
  const parsedPage=useRef<RecordPage|null>(null);
@@ -64,7 +69,7 @@ function RecordQuery(props:RecordWorkspaceProps&{scope:string;view:RuntimeView;o
   try{return parseRuntimeView(await applicationApi<unknown>(actorId,`applications/${appId}/forms/${viewId}/runtime`,'GET',undefined,signal),{appId,viewId});}
   finally{runtimeBusy.current=false;}
  },[actorId,appId,viewId]);
- const transport=useCallback(async(body:{page:number;pageSize:number;filter:null;sort:RecordSort;queryVersion?:string},signal:AbortSignal)=>{
+ const transport=useCallback(async(body:{page:number;pageSize:number;filter:ResourceFilterGroup|null;sort:RecordSort;queryVersion?:string},signal:AbortSignal)=>{
   // StrictMode replays an effect's setup/cleanup synchronously. Defer the
   // initial fetch one microtask so the aborted setup never reaches the API.
   await Promise.resolve();
@@ -81,9 +86,23 @@ function RecordQuery(props:RecordWorkspaceProps&{scope:string;view:RuntimeView;o
  useEffect(()=>{if(query.error instanceof ApplicationError&&query.error.status===401)props.onUnauthorized();else if(query.error instanceof ApplicationError&&query.error.code==='AUTH_SESSION_CHANGED')props.onIdentityMismatch();},[query.error,props.onUnauthorized,props.onIdentityMismatch]);
  const message=query.error instanceof ApplicationError&&(query.error.code==='APPLICATION_QUERY_CHANGED'||query.error.code==='APPLICATION_QUERY_CONTEXT_EXPIRED')?'记录上下文已变化，请刷新后重试':query.error?.message??null;
  const disabled=!!query.error||query.loading;
+ const refreshPresetRuntime=async(signal:AbortSignal)=>{const fresh=await fetchRuntime(signal);if(signal.aborted||active.current!==scope)throw new Error('读取已取消');viewRef.current=fresh;props.onRuntimeUpdate(fresh);return fresh;};
+ const applyPreset=async(preset:ApplicationPresetValid|null)=>{
+  const previous=originalLayout.current;
+  const next={...parameters,page:1,filter:preset?.filter??null,sort:preset?preset.sort:previous?.sort??null};
+  const accept=await query.prepareChange(next);
+  if(!accept||!accept())return false;
+  if(preset&&!originalLayout.current)originalLayout.current={hidden:[...hiddenColumnIds],order:[...columnOrder],widths:{...columnWidths},sort:parameters.sort};
+  setParameters(next);setSelectedRowIds([]);setActivePreset(preset);
+  setHiddenColumnIds(preset?[...preset.hiddenColumnIds]:previous?.hidden??[]);
+  setColumnOrder(preset?[...preset.columnOrder]:previous?.order??[]);
+  setColumnWidths(preset?{...preset.columnWidths}:previous?.widths??{});
+  if(!preset)originalLayout.current=null;
+  return true;
+ };
  return <section className="record-workspace" aria-label="记录工作区">
-  <div className="table-toolbar"><button className="admin-button" type="button" onClick={props.onRefresh}>刷新</button>{view.capabilities.create&&<button className="admin-button" type="button" disabled={disabled} onClick={()=>props.onCreate(view,query.data.queryVersion||undefined)}>新建记录</button>}</div>
-  <fieldset className="record-table-frame" disabled={disabled}><legend className="sr-only">记录操作</legend><RecordsPanel view={viewRef.current} actorId={actorId} page={query.data} loading={query.loading} error={message} hiddenColumnIds={[]} columnWidths={columnWidths} columnOrder={columnOrder} selectedRowIds={selectedRowIds} onSelectionChange={setSelectedRowIds} onPageChange={page=>setParameters(current=>({...current,page}))} onPageSizeChange={pageSize=>{setSelectedRowIds([]);setParameters(current=>({...current,page:1,pageSize}));}} onSortChange={sort=>{setSelectedRowIds([]);setParameters(current=>({...current,page:1,sort}));}} onColumnWidthsChange={setColumnWidths} onColumnOrderChange={setColumnOrder} onOpenRecord={record=>{if(disabled)return;void (async()=>{try{
+  <div className="table-toolbar"><RecordPresets actorId={actorId} view={viewRef.current} layout={{sort:parameters.sort,hiddenColumnIds,columnOrder,columnWidths}} active={activePreset} onApply={applyPreset} refreshRuntime={refreshPresetRuntime} onUnauthorized={props.onUnauthorized} onIdentityMismatch={props.onIdentityMismatch}/><button className="admin-button" type="button" onClick={props.onRefresh}>刷新</button>{view.capabilities.create&&<button className="admin-button" type="button" disabled={disabled} onClick={()=>props.onCreate(view,query.data.queryVersion||undefined)}>新建记录</button>}</div>
+  <fieldset className="record-table-frame" disabled={disabled}><legend className="sr-only">记录操作</legend><RecordsPanel view={viewRef.current} actorId={actorId} page={query.data} loading={query.loading} error={message} hiddenColumnIds={hiddenColumnIds} columnWidths={columnWidths} columnOrder={columnOrder} selectedRowIds={selectedRowIds} onSelectionChange={setSelectedRowIds} onPageChange={page=>setParameters(current=>({...current,page}))} onPageSizeChange={pageSize=>{setSelectedRowIds([]);setParameters(current=>({...current,page:1,pageSize}));}} onSortChange={sort=>{setSelectedRowIds([]);setParameters(current=>({...current,page:1,sort}));}} onColumnWidthsChange={setColumnWidths} onColumnOrderChange={setColumnOrder} onOpenRecord={record=>{if(disabled)return;void (async()=>{try{
    const accept=await query.prepareChange(parameters);
    if(!accept||!accept())return;
    const accepted=parsedPage.current;

@@ -8,8 +8,8 @@ export type ApplicationPacket = {
  scope?: string;
  operationId?: string;
  body?: { operationId?: string; [key: string]: unknown };
- query?: { operationId: string; expectedDraftVersion?: number };
- resource?: { kind: 'record' | 'draft'; appId: string; viewId: string; id?: string; creationNonce?: string }
+ query?: { operationId: string; expectedDraftVersion?: number; expectedVersion?: number };
+ resource?: { kind: 'record' | 'draft' | 'preset'; appId: string; viewId: string; id?: string; creationNonce?: string }
   | { kind: 'instance-action'; appId:string;viewId:string;id:string;instanceId:string;creationNonce?:never }
   | { kind: 'task-record' | 'task-action'; appId: string; viewId: string; id: string; instanceId: string; taskId: string; creationNonce?: never };
  context?: unknown;

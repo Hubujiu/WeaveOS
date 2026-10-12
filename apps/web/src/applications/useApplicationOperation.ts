@@ -6,16 +6,18 @@ import { cancelUnsentPreflights, clearPacket, clearRecovery, getRecovery, keepPa
 import type { ApplicationOperation } from './types';
 import { validTaskRecordRequest } from './workflows/taskSaveContract';
 import { validWorkflowOperation } from './workflows/taskActionContract';
+import { validPresetMutationRequest, validPresetMutationReceipt } from './records/presetContract';
 import { validInstanceActionRequest } from './workflows/lifecycleContract';
 
 type State = { phase: 'idle' | 'preflight' | 'pending' | 'accepted' | 'error' | 'unconfirmed'; message: string; packet: ApplicationPacket | null; errorCode?: string };
 
 export type ApplicationMutationRequest = {
  path: string;
- method: 'POST' | 'PATCH' | 'DELETE';
+ method: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
  expectedStatus: 200 | 201 | 202 | 204;
  body?: Record<string, unknown>;
  expectedDraftVersion?: number;
+ expectedVersion?: number;
  resource: NonNullable<ApplicationPacket['resource']>;
 };
 export type ScopedApplicationOperationOptions<T> = {
@@ -33,6 +35,7 @@ function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean
  // Task execution receipts are checked against their distinct closed wire
  // in perform(), including actual HTTP status and the confirmed command ID.
  if (packet.resource.kind === 'task-action'||packet.resource.kind === 'instance-action') return true;
+ if (packet.resource.kind === 'preset') return validPresetMutationReceipt(result,packet.operationId??'',packet.resource.id);
  const receipt = result as Record<string, unknown>;
  if (receipt.operationId !== packet.operationId || typeof receipt.id !== 'string' || !receipt.id) return false;
  if (packet.resource.id && receipt.id !== packet.resource.id) return false;
@@ -186,7 +189,9 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
   else {
    const request = requestOrPath;
    if (!scope || !scopedResource || JSON.stringify(request.resource) !== JSON.stringify(scopedResource)) throw new TypeError('Mutation resource does not match the mounted scope');
-   if (request.resource.kind === 'instance-action') {
+   if (request.resource.kind === 'preset') {
+    if (!validPresetMutationRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'instance-action') {
     if (!validInstanceActionRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
    } else if (request.resource.kind === 'task-action') {
     const r=request.resource;
@@ -199,8 +204,10 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
    const expectedPath = request.method === 'POST' ? base : base + '/' + encodeURIComponent(request.resource.id ?? '');
    if (request.path !== expectedPath || request.path.includes('?') || request.path.includes('#') || request.method === 'DELETE' && (request.resource.kind !== 'draft' || !Number.isSafeInteger(request.expectedDraftVersion) || (request.expectedDraftVersion as number) < 1) || request.method === 'POST' && (request.expectedStatus !== 201 || !request.resource.creationNonce) || request.method === 'PATCH' && request.expectedStatus !== 200 || request.method === 'DELETE' && request.expectedStatus !== 204 || request.body && Object.hasOwn(request.body, 'operationId')) throw new TypeError('Invalid scoped mutation packet');
    }
-   const query = request.method === 'DELETE' ? { operationId, expectedDraftVersion: request.expectedDraftVersion } : undefined;
-   const path = query ? request.path + '?operationId=' + encodeURIComponent(operationId) + '&expectedDraftVersion=' + encodeURIComponent(String(request.expectedDraftVersion)) : request.path;
+   const versionKey = request.resource.kind === 'preset' ? 'expectedVersion' : 'expectedDraftVersion';
+   const version = request.resource.kind === 'preset' ? request.expectedVersion : request.expectedDraftVersion;
+   const query = request.method === 'DELETE' ? { operationId, [versionKey]: version } : undefined;
+   const path = query ? request.path + '?operationId=' + encodeURIComponent(operationId) + '&' + versionKey + '=' + encodeURIComponent(String(version)) : request.path;
    packet = { actorId, path, method: request.method, expectedStatus: request.expectedStatus, scope, operationId, query, resource: structuredClone(request.resource), body: request.method === 'DELETE' ? undefined : { ...structuredClone(request.body ?? {}), operationId } };
   }
   void perform(packet, false);

@@ -1,4 +1,4 @@
-import {startTransition,useEffect,useId,useLayoutEffect,useRef,useState,ViewTransition} from 'react';
+import {type ReactNode,startTransition,useEffect,useId,useLayoutEffect,useRef,useState,ViewTransition} from 'react';
 import {Popover} from '@base-ui/react/popover';
 import {Funnel,X,Plus,ArrowLeft,ArrowRight} from '@phosphor-icons/react';
 import {workspaceApi,WorkspaceError} from './workspace-api';
@@ -10,7 +10,7 @@ import './table-presets.css';
 
 export type ResourcePreset = {id:string;name:string;version:number;invalid?:boolean;reason?:string;filter?:ResourceFilterGroup|null;hiddenColumnIds?:string[]};
 export type ResourcePresetRepository = {list:()=>Promise<{items:ResourcePreset[]}>;read:(id:string)=>Promise<ResourcePreset>;save:(input:{name:string;filter:ResourceFilterGroup|null;hiddenColumnIds:string[]},existing?:{id:string;version:number})=>Promise<ResourcePreset>;remove:(id:string,version:number)=>Promise<void>};
-export type ResourceManagerConfig = {scopeKey:string;fields:readonly ResourceFilterField[];columns:readonly BusinessColumn[];repository:ResourcePresetRepository;refreshDescriptors:()=>Promise<{fields:readonly ResourceFilterField[];columns:readonly BusinessColumn[]}>;onApply:(preset:ResourcePreset|null)=>Promise<boolean>};
+export type ResourceManagerConfig = {operationStatus?:ReactNode;scopeKey:string;fields:readonly ResourceFilterField[];columns:readonly BusinessColumn[];repository:ResourcePresetRepository;refreshDescriptors:()=>Promise<{fields:readonly ResourceFilterField[];columns:readonly BusinessColumn[]}>;onApply:(preset:ResourcePreset|null)=>Promise<boolean>};
 type CommonProps={hiddenColumnIds:readonly string[];onDirty:(dirty:boolean)=>void;onUnauthorized:()=>void};
 type Props=(CommonProps & {view:QueryView;active:AppliedPreset|null;options?:PresetOptions;loadOptions:()=>Promise<PresetOptions>;onApply:(preset:TablePreset|null)=>Promise<boolean>;resource?:never})|(CommonProps & {view:'resource';resource:ResourceManagerConfig;active:ResourcePreset|null;options?:never;loadOptions?:never;onApply?:never});
 type ManagedPreset=TablePreset|ResourcePreset;
@@ -29,6 +29,7 @@ export function TablePresetManager(props:Props){
  const trigger=useRef<HTMLButtonElement>(null),firstControl=useRef<HTMLButtonElement>(null),nameControl=useRef<HTMLInputElement>(null),actions=useRef<Popover.Root.Actions|null>(null);
  const intent=useRef(false),everOpened=useRef(false),generation=useRef(0),animation=useRef<Animation[]>([]),sharedGeneration=useRef(0),sharedFrame=useRef(0),sharedTimer=useRef(0),requests=useRef(0);
  const outsideClose=useRef<(()=>void)|null>(null);
+ const saving=useRef(false);
  const focusLifecycle=useRef(0),closeFocus=useRef<{token:number;popup:HTMLDivElement|null}|null>(null);
  const openingFocus=useRef(false);
  const sharedVersion=sharedGeneration.current,focusVersion=focusLifecycle.current,panelId=useId(),sharedName=`q36-preset-shell-${panelId.replace(/[^a-zA-Z0-9_-]/g,'-')}`;
@@ -158,12 +159,12 @@ export function TablePresetManager(props:Props){
  function patchRow(blockId:string,rowId:string,patch:Partial<PresetRow>){setEdit(e=>e?{...e,blocks:e.blocks.map(b=>b.id===blockId?{...b,rows:b.rows.map(r=>r.id===rowId?{...r,...patch}:r)}:b)}:e);}
  function newRow():PresetRow{return resource?{id:crypto.randomUUID(),field:resource.fields[0]?.id??'',operator:'eq',value:''}:newPresetRow(view as QueryView);}
  function addBlock(){setEdit(e=>e?{...e,blocks:[...e.blocks,{id:crypto.randomUUID(),rows:[newRow()]}]}:e);}
- async function save(){if(!edit||busy)return;setError('');const filter=blockFilter(edit.blocks,filterKey);const v=resource?validateResourcePreset(edit.name,filter,edit.hidden,resource.fields,resource.columns):validatePreset(view as QueryView,edit.name,filter,edit.hidden,options);if(v.issues.length){setError(v.issues.join('\n'));return;}setBusy(true);try{
+ async function save(){if(!edit||busy||saving.current)return;setError('');const filter=blockFilter(edit.blocks,filterKey);const v=resource?validateResourcePreset(edit.name,filter,edit.hidden,resource.fields,resource.columns):validatePreset(view as QueryView,edit.name,filter,edit.hidden,options);if(v.issues.length){setError(v.issues.join('\n'));return;}saving.current=true;setBusy(true);try{
   const stored=resource?await resource.repository.save({name:v.name,filter:v.filter as ResourceFilterGroup|null,hiddenColumnIds:edit.hidden},edit.preset?{id:edit.preset.id,version:edit.preset.version}:undefined):await workspaceApi<TablePreset>('personnel/table-presets'+(edit.preset?'/'+edit.preset.id:''),edit.preset?'PUT':'POST',edit.preset?{name:v.name,filter:v.filter,hiddenColumnIds:edit.hidden,schemaVersion:1,version:edit.preset.version}:{name:v.name,filter:v.filter,hiddenColumnIds:edit.hidden,schemaVersion:1,view});
   setItems(old=>[stored,...old.filter(p=>p.id!==stored.id)]);setEdit(null);setConflict(false);
- }catch(e){failed(e);}finally{setBusy(false);}}
+ }catch(e){failed(e);}finally{saving.current=false;setBusy(false);}}
  async function apply(item:ManagedPreset){if(busy)return;setBusy(true);setError('');try{
-  if(resource){if('invalid'in item&&item.invalid)throw new Error(item.reason||'方案已失效，请明确重新配置');const latest=await resource.repository.read(item.id);if(latest.invalid)throw new Error(latest.reason||'方案已失效，请明确重新配置');const current=await resource.refreshDescriptors();const v=validateResourcePreset(latest.name,latest.filter,latest.hiddenColumnIds??[],current.fields,current.columns);if(v.issues.length)throw new Error(v.issues.join('\n'));if(await resource.onApply({...latest,filter:v.filter,hiddenColumnIds:[...latest.hiddenColumnIds??[]]}))setItems(old=>old.map(p=>p.id===latest.id?latest:p));return;}
+  if(resource){if('invalid'in item&&item.invalid)throw new Error(item.reason||'方案已失效，请明确重新配置');const latest=await resource.repository.read(item.id);if(latest.invalid)throw new Error('方案已失效，请明确重新配置：'+(latest.reason??''));const current=await resource.refreshDescriptors();const v=validateResourcePreset(latest.name,latest.filter,latest.hiddenColumnIds??[],current.fields,current.columns);if(v.issues.length)throw new Error(v.issues.join('\n'));if(await resource.onApply({...latest,filter:v.filter,hiddenColumnIds:[...latest.hiddenColumnIds??[]]}))setItems(old=>old.map(p=>p.id===latest.id?latest:p));return;}
   const latest=await workspaceApi<TablePreset>('personnel/table-presets/'+item.id),freshOptions=await loadOptions();
   const v=validatePreset(view as QueryView,latest.name,latest.filter,latest.hiddenColumnIds,freshOptions);if(latest.view!==view||latest.schemaVersion!==1)throw new Error('方案所属表格或结构已失效，请重新加载后编辑');if(v.issues.length)throw new Error(v.issues.join('\n'));
   if(await applyCurrent.current(latest))setItems(old=>old.map(p=>p.id===latest.id?latest:p));
@@ -196,12 +197,13 @@ export function TablePresetManager(props:Props){
   <header className="preset-heading"><Popover.Title>{title}</Popover.Title><button type="button" className="preset-icon preset-close" aria-label="关闭筛选管理" disabled={busy} onClick={()=>requestClose()}><X size={18}/></button></header>
   <div className="preset-body">
    {error&&<div role="alert" className="preset-error">{error}</div>}
+   {resource?.operationStatus}
    {edit?<><label className="preset-name">自定义筛选名称 <span aria-hidden="true">*</span><input ref={nameControl} aria-label="自定义筛选名称" required placeholder="请输入自定义筛选名称" value={edit.name} onChange={e=>setEdit(old=>old?{...old,name:e.target.value}:old)}/></label><h3>配置筛选条件</h3>
     {edit.blocks.map((b,bi)=><div key={b.id}>{bi>0&&<div className="preset-or"><span>或</span></div>}<fieldset className="preset-block" aria-label={`且条件组 ${bi+1}`}><legend>且条件</legend>{b.rows.map((r,ri)=>row(b,r,bi,ri))}<button type="button" className="preset-add" aria-label={`组 ${bi+1} 且条件`} disabled={leaves>=MAX_FILTER_LEAVES} onClick={()=>setEdit(e=>e?{...e,blocks:e.blocks.map(block=>block.id===b.id?{...block,rows:[...block.rows,newRow()]}:block)}:e)}><Plus size={14}/>且条件</button></fieldset></div>)}
     <button type="button" className="preset-add" aria-label="或条件" disabled={leaves>=MAX_FILTER_LEAVES} onClick={addBlock}><Plus size={14}/>或条件</button><h3>设置显隐字段</h3><div className="preset-visibility">{visibility(true)}{visibility(false)}</div><p className="preset-hint">隐藏字段仍参与筛选与排序。至少保留一个业务字段；选择、序号和操作列始终显示。</p>
     {conflict&&edit.preset&&<button type="button" onClick={()=>setConfirmation({kind:'reload'})}>重新加载最新方案</button>}
    </>:<><button ref={firstControl} type="button" className="preset-add preset-new" aria-label="新增筛选" disabled={busy||listLoading||items.length>=20} onClick={()=>begin(null)}><Plus size={16}/>新增筛选</button>
-    {listLoading?<p role="status" className="preset-empty">正在加载筛选方案…</p>:items.length?<ul className="preset-list">{items.map(item=><li key={item.id}><div className="preset-info"><strong>{item.name}</strong>{resource&&'invalid'in item&&item.invalid&&<span className="preset-error">{item.reason||'方案已失效'}</span>}{active?.id===item.id&&<span className="preset-active">{active.version===item.version?'已应用':'已修改，待应用'}</span>}</div><div className="preset-actions"><button type="button" disabled={busy||!!(resource&&'invalid'in item&&item.invalid)} aria-label={'应用'+item.name} onClick={()=>void apply(item)}>应用</button><button type="button" disabled={busy} aria-label={'编辑'+item.name} onClick={()=>void readEdit(item)}>编辑</button><button type="button" disabled={busy} aria-label={'删除'+item.name} onClick={()=>{setError('');setConfirmation({kind:'delete',preset:item});}}>删除</button></div></li>)}</ul>:<p className="preset-empty">暂无自定义筛选</p>}
+    {listLoading?<p role="status" className="preset-empty">正在加载筛选方案…</p>:items.length?<ul className="preset-list">{items.map(item=><li key={item.id}><div className="preset-info"><strong>{item.name}</strong>{resource&&'invalid'in item&&item.invalid&&<span className="preset-error">{item.reason||'方案已失效'}</span>}{active?.id===item.id&&<span className="preset-active">{active.version===item.version?'已应用':'已修改，待应用'}</span>}</div><div className="preset-actions"><button type="button" disabled={busy||!!(resource&&'invalid'in item&&item.invalid)} aria-label={'应用'+item.name} onClick={()=>void apply(item)}>应用</button><button type="button" disabled={busy} aria-label={'编辑'+item.name} onClick={()=>void readEdit(item)}>编辑</button><button type="button" disabled={busy} aria-label={'删除'+item.name} onClick={()=>{setError('');setConfirmation({kind:'delete',preset:item});}}>删除</button></div></li>)}</ul>:resource&&error?null:<p className="preset-empty">暂无自定义筛选</p>}
     {active&&<button type="button" className="preset-cancel-application" disabled={busy} onClick={()=>setConfirmation({kind:'cancel'})}>取消应用</button>}{error&&<button type="button" disabled={busy} onClick={()=>void load()}>重新加载方案列表</button>}
    </>}
   </div>
