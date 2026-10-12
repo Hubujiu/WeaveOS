@@ -1,4 +1,4 @@
-import {useCallback,useEffect,useRef,useState} from 'react';
+import {useCallback,useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {applicationApi,applicationApiEnvelope,ApplicationError} from '../api';
 import {Table,type TableColumn} from '../../vendor/arca/components/motion/table';
 import {historyComparison,historyValue,validWorkflowEventDetail,validWorkflowHistory,type HistoricalField,type WorkflowEvent,type WorkflowEventDetail} from './historyContract';
@@ -107,13 +107,15 @@ function currentField(field:HistoricalField,preview:TaskPreview):HistoricalField
  return {fieldId:current.id,fieldName:current.name,fieldKind:current.kind,value:preview.record.values[current.id],valueLabels};
 }
 export function WorkflowComparison({detail,preview,onBack}:{detail:WorkflowEventDetail;preview:TaskPreview;onBack:()=>void}){
+ const heading=useRef<HTMLHeadingElement|null>(null);
+ useLayoutEffect(()=>{heading.current?.scrollIntoView({block:'start',behavior:'instant'});},[]);
  const columns:TableColumn<HistoricalField>[]=[
   {key:'fieldName',header:'字段',dataType:'text',sortable:false,cell:field=><span>{field.fieldName}</span>},
   {key:'before',header:'审批时 v'+detail.event.recordVersion,dataType:'text',sortable:false,cell:field=><span>{historyValue(field)}</span>},
   {key:'after',header:'当前 v'+preview.record.recordVersion,dataType:'text',sortable:false,cell:field=><span>{historyComparison(field,currentField(field,preview)).after}</span>},
  ];
  return <section className="workflow-comparison" aria-label="版本对照">
-  <div className="app-page-heading"><h1>版本差异</h1></div>
+  <div className="app-page-heading"><h1 ref={heading}>版本差异</h1></div>
   <section className="app-surface workflow-comparison-card">
    <div className="workflow-comparison-versions"><div><span>已审批依据</span><p className="workflow-readonly-value">v{detail.event.recordVersion} · {new Date(detail.event.occurredAt).toLocaleString('zh-CN',{hour12:false})}</p></div><div><span>当前记录</span><p className="workflow-readonly-value">v{preview.record.recordVersion} · {new Date(preview.record.updatedAt).toLocaleString('zh-CN',{hour12:false})}</p></div></div>
    <div className="arca-source personnel-source-scope"><Table className="personnel-source-table rounded-xl" ariaLabel="版本差异" columns={columns} data={detail.basis.fields} getRowId={field=>field.fieldId} rowHeight={56} minWidth={660} emptyState="当时可见的审批依据为空"/></div>

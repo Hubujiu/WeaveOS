@@ -17,6 +17,8 @@ export function WorkflowInstanceActions({actorId,location,name,onClose,onUnautho
  const busy=operation.phase==='preflight'||operation.phase==='pending',unknown=operation.phase==='unconfirmed',accepted=operation.phase==='accepted';
  const blocked=busy||unknown||accepted||!!result;
  const stale=['WORKFLOW_BASIS_EXPIRED','WORKFLOW_BASIS_CHANGED','WORKFLOW_TASK_CHANGED','APPLICATION_POLICY_CONFLICT','APPLICATION_SCHEMA_NOT_READY'].includes(operation.errorCode??'');
+ const revoked=['APPLICATION_FORBIDDEN','APPLICATION_NOT_FOUND'].includes(operation.errorCode??'');
+ useEffect(()=>{if(revoked)setPreview(null);},[revoked]);
  const latest=useRef(operation);latest.current=operation;
  useEffect(()=>registerLeaveGuard({kind:'workflow-instance',actorId,...location},createLeaveController(()=>{
   const pending=latest.current.getPendingStatus();return {status:pending??'clean',fingerprint:JSON.stringify([pending,latest.current.packet?.operationId])};
@@ -39,7 +41,7 @@ export function WorkflowInstanceActions({actorId,location,name,onClose,onUnautho
   })();return()=>{current=false;controller.abort();};
  },[actorId,path,epoch]);
  const refresh=()=>{if(blocked)return;operation.dismissError();setConfirming(false);setPreview(null);setError('');setLoading(true);setEpoch(value=>value+1);};
- const withdraw=()=>{if(!preview?.canWithdraw||blocked||stale)return;operation.start({resource,path:path+'/actions',method:'POST',expectedStatus:202,body:{action:'withdraw',basisToken:preview.basisToken}});};
+ const withdraw=()=>{if(!preview?.canWithdraw||blocked||stale||revoked)return;operation.start({resource,path:path+'/actions',method:'POST',expectedStatus:202,body:{action:'withdraw',basisToken:preview.basisToken}});};
  return <Modal title={confirming?'撤回'+name:'流程操作：'+name} onClose={()=>requestSectionLeave(onClose)} busy={busy}>
   <div className="workflow-instance-controls">
    {loading&&<p role="status">正在读取当前操作资格…</p>}
@@ -53,8 +55,8 @@ export function WorkflowInstanceActions({actorId,location,name,onClose,onUnautho
    {unknown&&<p role="alert">撤回结果尚未确认，请核查原操作或重试原撤回。{operation.message}</p>}
    {(accepted||unknown)&&<div className="workflow-instance-buttons"><button type="button" className="admin-button" disabled={busy} onClick={operation.query}>核查撤回结果</button><button type="button" className="admin-button" disabled={busy} onClick={operation.retry}>重试原撤回</button></div>}
    {result&&<p role="status">{result.status==='success'?'已撤回':'撤回未执行'}</p>}
-   {!blocked&&(error||stale)&&<button type="button" className="admin-button" onClick={refresh}>刷新操作资格</button>}
-   {confirming&&!result&&<div className="workflow-instance-confirm"><button type="button" className="admin-button" disabled={busy||unknown||accepted} onClick={()=>setConfirming(false)}>取消</button><button type="button" className="admin-button primary" disabled={!preview?.canWithdraw||blocked||stale} onClick={withdraw}>确认撤回</button></div>}
+   {!blocked&&(error||stale||revoked)&&<button type="button" className="admin-button" onClick={refresh}>刷新操作资格</button>}
+   {confirming&&!result&&<div className="workflow-instance-confirm"><button type="button" className="admin-button" disabled={busy||unknown||accepted} onClick={()=>setConfirming(false)}>取消</button><button type="button" className="admin-button primary" disabled={!preview?.canWithdraw||blocked||stale||revoked} onClick={withdraw}>确认撤回</button></div>}
   </div>
  </Modal>;
 }

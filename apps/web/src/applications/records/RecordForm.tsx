@@ -72,7 +72,7 @@ function RecordFormScope(props:RecordFormProps){
  const pendingStatusRef=useRef(operation.getPendingStatus);pendingStatusRef.current=operation.getPendingStatus;
  useEffect(()=>{
   const scope=identity.kind==='new'?{kind:'record' as const,actorId:identity.actorId,appId:identity.appId,viewId:identity.viewId,clientDraftId:identity.clientDraftId}:identity.kind==='record'?{kind:'record' as const,actorId:identity.actorId,appId:identity.appId,viewId:identity.viewId,recordId:identity.recordId}:{kind:'record' as const,actorId:identity.actorId,appId:identity.appId,viewId:identity.viewId,clientDraftId:identity.draftId};
-  const controller=createLeaveController(()=>{const s=readGuard.current;const pending=pendingStatusRef.current();const status=s.confirmed?'clean':pending==='unknown'?'unknown':pending==='write_in_flight'?'write_in_flight':pending==='preflight'?'preflight':s.dirty?'draft':'clean';return {status,fingerprint:JSON.stringify([s.values,s.packetId,s.phase,s.needsReview,s.confirmed,status])};},decision=>{if(decision==='discard'){cancelRef.current();discardRef.current();}});
+  const controller=createLeaveController(()=>{const s=readGuard.current;const pending=pendingStatusRef.current();const status=s.confirmed?'clean':pending==='unknown'?'unknown':pending==='write_in_flight'?'write_in_flight':pending==='preflight'?'preflight':s.dirty?'draft':'clean';return {status,fingerprint:JSON.stringify([s.values,s.packetId,s.phase,s.needsReview,s.confirmed,status])};},decision=>{if(decision==='discard'&&!readGuard.current.confirmed&&(readGuard.current.dirty||pendingStatusRef.current()==='preflight')){cancelRef.current();discardRef.current();}});
   return registerLeaveGuard(scope,controller);
  },[identity,registerLeaveGuard]);
 
