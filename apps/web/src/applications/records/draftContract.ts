@@ -19,7 +19,11 @@ export function validDraft(value:unknown,viewId:string,tableId:string,draftId:st
  // Draft text is intentionally incomplete: no required, decimal or reference
  // business validation here. Current runtime authorization still bounds keys.
  if(!Object.entries(value.values).every(([key,entry])=>id(key)&&allowed.has(key)&&(entry===null||typeof entry==='string'||typeof entry==='boolean'||Array.isArray(entry)&&entry.every(item=>typeof item==='string'))))return false;
- return value.hasConflicts===(value.conflicts.length>0)&&value.conflicts.every(conflict=>object(conflict)&&exact(conflict,['fieldId','reason'])&&(conflict.fieldId===null||id(conflict.fieldId))&&typeof conflict.reason==='string'&&['FIELD_REMOVED','FIELD_PERMISSION_REVOKED','SCHEMA_CHANGED','BASE_RECORD_CHANGED'].includes(conflict.reason));
+ return value.hasConflicts===(value.conflicts.length>0)&&value.conflicts.every(conflict=>object(conflict)&&exact(conflict,['fieldId','reason'])&&(conflict.fieldId===null||id(conflict.fieldId))&&typeof conflict.reason==='string'&&['FIELD_REMOVED','FIELD_PERMISSION_REVOKED','SCHEMA_CHANGED','BASE_RECORD_CHANGED'].includes(conflict.reason)&&(!['FIELD_REMOVED','FIELD_PERMISSION_REVOKED'].includes(conflict.reason)||id(conflict.fieldId)));
 }
 
-export function validDraftPage(data:unknown,pagination:unknown,viewId:string,tableId:string,pageSize:number):data is {items:DraftSummary[]}{return false;}
+export function validDraftPage(data:unknown,pagination:unknown,viewId:string,tableId:string,pageSize:number):data is {items:DraftSummary[]}{
+ if(!id(viewId)||!id(tableId)||!Number.isInteger(pageSize)||pageSize<1||pageSize>100||!object(data)||!exact(data,['items'])||!Array.isArray(data.items)||data.items.length>pageSize||!object(pagination)||!exact(pagination,['hasMore','nextPageToken'])||typeof pagination.hasMore!=='boolean')return false;
+ if(pagination.hasMore?typeof pagination.nextPageToken!=='string'||!pagination.nextPageToken:pagination.nextPageToken!==null)return false;
+ return data.items.every(item=>validDraftSummary(item,viewId,tableId))&&new Set(data.items.map(item=>item.id)).size===data.items.length;
+}
