@@ -33,3 +33,12 @@ No new production deploy/main approval. Notifications, scheduled/webhook trigger
 - P8 withdrawal: pure wire/request/terminal tests RED→GREEN;8 UI cases at04f80a84 still running with no withdrawal UI/hook implementation. Three extra interaction tests are local and NOT RUN. Derived OpenAPI missing withdrawn result independently RED→126 contract suite GREEN; final lint unverified because of telemetry review block.
 - New pushes that would rerun default Redocly telemetry are paused pending the narrow user question. No telemetry or network-security settings changed. Local source/read-only inspection, pure tests, and already-started CI observation continue.
 - Remaining definitions/designer/lifecycle rounds/global lists/templates/copy/deletion/presets/full real browser acceptance are unchanged open scope; none is silently dropped or counted complete.
+
+## Resumed checkpoint — 2026-10-12 06:40 UTC
+
+- User continued the work; approved no-telemetry lint now passes with 0 errors/14 existing warnings. CI and local preflight explicitly force telemetry off, with independent 3 RED then 4 GREEN privacy checks.
+- Published candidate070c9d04 exactly matches local08d98d14 tree. Full Go job114689729899 succeeded at original10-minute budget, and all engine/recovery/formal/RPC/backup jobs succeeded. Legacy browser suite still running; not all CI green.
+- P7 all9 full-page/scoped-summary UI cases passed. P8 original8 plus3 double-click/dirty/identity cases passed on shard4 114689809540. New comparison scroll, accepted-withdraw close, and revoked-confirmation tests produced3 actual REDs; minimal fixes are local, browser GREEN pending.
+- Shard1 old readonly footer expected a disabled Save button; approved Figma483:2764 and independent P7 test require no readonly write footer. Updated only this legacy expectation, preserving exact value/noneditable/permission assertions and original evidence.
+- P9 private preset consumption: current V071/V015 sources and Figma486:4393/4558 read;90 wire/request/receipt tests passed after independent RED.11 real-Shell tests are written but NOT RUN; no preset UI/mutation integration yet.
+- Other full-product gaps and reject/return reason decision remain open. No main merge/deploy or overall completion claim.
