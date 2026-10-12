@@ -153,6 +153,8 @@ jobs:
       - name: Frozen dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store
       - name: Authentication OpenAPI 3.2.1 contract
+        env:
+          REDOCLY_TELEMETRY: 'off'
         run: |
           node --test contracts/*.test.mjs
           pnpm exec redocly lint contracts/openapi/openapi.json
