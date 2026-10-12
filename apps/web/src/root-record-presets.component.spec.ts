@@ -1,4 +1,5 @@
 import {test,expect,type Page} from '@playwright/test';
+test.afterEach(async({page},info)=>{if(info.status!==info.expectedStatus){await info.attach('preset-failure-screen',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});await info.attach('preset-failure-state',{body:JSON.stringify({url:page.url(),body:await page.locator('body').innerText()}),contentType:'application/json'});}});
 const id=(n:number)=>'aaaaaaaa-aaaa-4aaa-8aaa-'+String(n).padStart(12,'0');
 const actor={id:id(1),account:'preset-owner'},appId=id(2),viewId=id(3),amount=id(4),title=id(5),recordId=id(6),presetId=id(7);
 const path=`applications/${appId}/forms/${viewId}`,routePath='/app/'+path;
@@ -116,7 +117,20 @@ test('Root private preset unknown operation survives SPA departure and reopens t
 });
 
 test('Root private preset dirty refresh requires explicit discard and preserves the editor on continue',async({page})=>{
- const calls=await setup(page);await open(page);await newPreset(page);await page.getByRole('button',{name:'刷新',exact:true}).click();
+ const calls=await setup(page);await open(page);await newPreset(page);await page.getByRole('button',{name:'刷新',exact:true}).evaluate((button:HTMLButtonElement)=>button.click());
  const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(page.getByLabel('自定义筛选名称')).toHaveValue('精确金额方案');expect(calls.filter(c=>c.path===path+'/runtime')).toHaveLength(1);
- await page.getByRole('button',{name:'刷新',exact:true}).click();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByLabel('自定义筛选名称')).toHaveCount(0);await expect.poll(()=>calls.filter(c=>c.path===path+'/runtime').length).toBe(2);expect(calls.filter(c=>c.method==='POST'&&c.path===path+'/table-presets')).toEqual([]);
+ await page.getByRole('button',{name:'刷新',exact:true}).evaluate((button:HTMLButtonElement)=>button.click());await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByLabel('自定义筛选名称')).toHaveCount(0);await expect.poll(()=>calls.filter(c=>c.path===path+'/runtime').length).toBe(2);expect(calls.filter(c=>c.method==='POST'&&c.path===path+'/table-presets')).toEqual([]);
+});
+
+test('Root private preset manager matches approved desktop surface and searches the bounded private list',async({page},testInfo)=>{
+ await page.setViewportSize({width:1440,height:1000});const calls=await setup(page);await open(page);const panel=page.getByRole('dialog',{name:'管理自定义筛选',exact:true});await expect(panel).toBeVisible();await testInfo.attach('private-preset-manager-before-layout',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+ await expect(panel).toHaveCSS('width','660px');await expect(panel).toHaveCSS('border-radius','16px');
+ const search=panel.getByRole('textbox',{name:'搜索筛选',exact:true});await search.fill('无匹配方案');await expect(panel.getByText('高额方案',{exact:true})).toHaveCount(0);await search.fill('高额');await expect(panel.getByText('高额方案',{exact:true})).toBeVisible();expect(calls.filter(c=>c.path===path+'/table-presets')).toHaveLength(1);
+});
+test('Root private preset editor uses approved dimensions and numeric comparison wording',async({page},testInfo)=>{
+ await page.setViewportSize({width:1440,height:1000});await setup(page);await open(page);const panel=await newPreset(page);await testInfo.attach('private-preset-editor-before-layout',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+ await expect(panel).toHaveCSS('width','800px');await expect(panel).toHaveCSS('border-radius','16px');await expect(panel.getByLabel('自定义筛选名称')).toHaveCSS('height','42px');await expect(panel.getByLabel('条件 1.1 比较').locator('option[value=gt]')).toHaveText('大于');await expect(panel.getByLabel('条件 1.1 比较').locator('option[value=lt]')).toHaveText('小于');
+});
+test('Root private preset editor stays within a narrow viewport with usable actions',async({page},testInfo)=>{
+ await page.setViewportSize({width:390,height:844});await setup(page);await open(page);const panel=await newPreset(page);await expect(panel.getByRole('button',{name:'确定',exact:true})).toBeInViewport();const box=await panel.boundingBox();expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.x+box!.width).toBeLessThanOrEqual(390);await expect(page.locator('body')).toHaveJSProperty('scrollWidth',390);await testInfo.attach('private-preset-editor-mobile',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
 });
