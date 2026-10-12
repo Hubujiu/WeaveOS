@@ -1,0 +1,127 @@
+(node:14) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ V069 absent round-start recovery grants nothing (0.836137ms)
+✖ V069 round-start selects the immutable original operation without rewriting its CAS (1.654667ms)
+✔ V069 round-start recovery isolates identity component 0 (0.183676ms)
+✔ V069 round-start recovery isolates identity component 1 (0.104898ms)
+✔ V069 round-start recovery isolates identity component 2 (0.098308ms)
+✔ V069 round-start recovery isolates identity component 3 (0.841214ms)
+✔ V069 round-start recovery isolates identity component 4 (0.126931ms)
+✔ V069 round-start cannot borrow scope (0.151147ms)
+✔ V069 round-start cannot borrow wrong path (0.180932ms)
+✔ V069 round-start cannot borrow operation mismatch (0.268734ms)
+✔ V069 round-start cannot borrow kind (0.192229ms)
+✔ V069 round-start confirmed packet does not become unknown again (0.137517ms)
+✔ V069 absent round-record recovery grants nothing (0.042403ms)
+✖ V069 round-record selects the immutable original operation without rewriting its CAS (0.397046ms)
+✔ V069 round-record recovery isolates identity component 0 (0.091567ms)
+✔ V069 round-record recovery isolates identity component 1 (0.095393ms)
+✔ V069 round-record recovery isolates identity component 2 (0.066069ms)
+✔ V069 round-record recovery isolates identity component 3 (0.057506ms)
+✔ V069 round-record recovery isolates identity component 4 (0.094251ms)
+✔ V069 round-record cannot borrow scope (0.065158ms)
+✔ V069 round-record cannot borrow wrong path (0.057696ms)
+✔ V069 round-record cannot borrow operation mismatch (0.062844ms)
+✔ V069 round-record cannot borrow kind (0.057196ms)
+✔ V069 round-record confirmed packet does not become unknown again (0.080741ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 22
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 122.180756
+
+✖ failing tests:
+
+test at tests/foundation/workflow-round-recovery.test.mjs:9:2
+✖ V069 round-start selects the immutable original operation without rewriting its CAS (1.654667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   actorId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001',
+  -   body: {
+  -     expectedRecordVersion: 9,
+  -     expectedSchemaVersion: 2,
+  -     expectedWorkflowRevision: 3,
+  -     kind: 'resubmit',
+  -     operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000007'
+  -   },
+  -   expectedStatus: 202,
+  -   method: 'POST',
+  -   operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000007',
+  -   path: 'applications/bbbbbbbb-bbbb-4bbb-8bbb-000000000002/forms/bbbbbbbb-bbbb-4bbb-8bbb-000000000003/records/bbbbbbbb-bbbb-4bbb-8bbb-000000000004/workflows/bbbbbbbb-bbbb-4bbb-8bbb-000000000005/round-actions',
+  -   resource: {
+  -     appId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000002',
+  -     flowId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000006',
+  -     id: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000004',
+  -     instanceId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000005',
+  -     kind: 'round-start',
+  -     roundKind: 'resubmit',
+  -     viewId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000003'
+  -   },
+  -   scope: '["[\\"workflow-round\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000001\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000002\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000003\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000004\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000005\\"]",{"kind":"round-start","appId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000002","viewId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000003","id":"bbbbbbbb-bbbb-4bbb-8bbb-000000000004","instanceId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000005","flowId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000006","roundKind":"resubmit"}]'
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-round-recovery.test.mjs:9:182)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { actorId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001', scope: '["[\\"workflow-round\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000001\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000002\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000003\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000004\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000005\\"]",{"kind":"round-start","appId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000002","viewId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000003","id":"bbbbbbbb-bbbb-4bbb-8bbb-000000000004","instanceId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000005","flowId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000006","roundKind":"resubmit"}]', resource: { kind: 'round-start', appId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000002', viewId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000003', id: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000004', instanceId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000005', flowId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000006', roundKind: 'resubmit' }, path: 'applications/bbbbbbbb-bbbb-4bbb-8bbb-000000000002/forms/bbbbbbbb-bbbb-4bbb-8bbb-000000000003/records/bbbbbbbb-bbbb-4bbb-8bbb-000000000004/workflows/bbbbbbbb-bbbb-4bbb-8bbb-000000000005/round-actions', method: 'POST', expectedStatus: 202, operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000007', body: { operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000007', expectedSchemaVersion: 2, expectedRecordVersion: 9, kind: 'resubmit', expectedWorkflowRevision: 3 } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-round-recovery.test.mjs:9:2
+✖ V069 round-record selects the immutable original operation without rewriting its CAS (0.397046ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   actorId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001',
+  -   body: {
+  -     changes: {
+  -       'bbbbbbbb-bbbb-4bbb-8bbb-000000000008': '20.00'
+  -     },
+  -     expectedRecordVersion: 9,
+  -     expectedSchemaVersion: 2,
+  -     operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000007'
+  -   },
+  -   expectedStatus: 200,
+  -   method: 'POST',
+  -   operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000007',
+  -   path: 'applications/bbbbbbbb-bbbb-4bbb-8bbb-000000000002/forms/bbbbbbbb-bbbb-4bbb-8bbb-000000000003/records/bbbbbbbb-bbbb-4bbb-8bbb-000000000004/workflows/bbbbbbbb-bbbb-4bbb-8bbb-000000000005/rework',
+  -   resource: {
+  -     appId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000002',
+  -     id: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000004',
+  -     instanceId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000005',
+  -     kind: 'round-record',
+  -     viewId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000003'
+  -   },
+  -   scope: '["round-record:bbbbbbbb-bbbb-4bbb-8bbb-000000000002:bbbbbbbb-bbbb-4bbb-8bbb-000000000003:bbbbbbbb-bbbb-4bbb-8bbb-000000000004:bbbbbbbb-bbbb-4bbb-8bbb-000000000005",{"kind":"round-record","appId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000002","viewId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000003","id":"bbbbbbbb-bbbb-4bbb-8bbb-000000000004","instanceId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000005"}]'
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-round-recovery.test.mjs:9:182)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { actorId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001', scope: '["round-record:bbbbbbbb-bbbb-4bbb-8bbb-000000000002:bbbbbbbb-bbbb-4bbb-8bbb-000000000003:bbbbbbbb-bbbb-4bbb-8bbb-000000000004:bbbbbbbb-bbbb-4bbb-8bbb-000000000005",{"kind":"round-record","appId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000002","viewId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000003","id":"bbbbbbbb-bbbb-4bbb-8bbb-000000000004","instanceId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000005"}]', resource: { kind: 'round-record', appId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000002', viewId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000003', id: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000004', instanceId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000005' }, path: 'applications/bbbbbbbb-bbbb-4bbb-8bbb-000000000002/forms/bbbbbbbb-bbbb-4bbb-8bbb-000000000003/records/bbbbbbbb-bbbb-4bbb-8bbb-000000000004/workflows/bbbbbbbb-bbbb-4bbb-8bbb-000000000005/rework', method: 'POST', expectedStatus: 200, operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000007', body: { operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000007', expectedSchemaVersion: 2, expectedRecordVersion: 9, changes: [Object] } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
