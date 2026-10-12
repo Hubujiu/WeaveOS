@@ -35,3 +35,10 @@ for(const extra of [{filter:and},{createdAt:item.createdAt},{columnOrder:[id(4)]
 test('preset detail binds the selected id',()=>assert.equal(valid(item,scope,id(99)),false));
 test('preset list accepts empty and mixed current configurations',()=>{assert.equal(list({items:[]},scope),true);assert.equal(list({items:[item,{...invalid,id:id(9)}]},scope),true);});
 for(const value of [{items:[item,item]},{items:Array.from({length:21},(_,i)=>({...item,id:id(100+i)}))},{items:[],total:0},{items:[{...item,viewId:id(9)}]},{items:[{...invalid,filter:and}]}])test('preset list fails closed for bad scope limits or payload',()=>assert.equal(list(value,scope),false));
+for(const [name,value]of [
+ ['literal reason',{...invalid,reason:['PERMISSION_CHANGED']}],
+ ['literal sort direction',{...item,sort:{fieldId:id(4),direction:['asc']}}],
+ ['literal comparison operator',{...item,filter:{operator:'and',children:[{...leaf,operator:['eq']}]}}],
+ ['hour 24',{...item,createdAt:'2026-10-10T24:00:00Z'}],
+ ['config byte limit',{...item,filter:{operator:'and',children:[{...leaf,value:'x'.repeat(15000)}]},hiddenColumnIds:Array.from({length:200},(_,i)=>id(100+i)),columnOrder:Array.from({length:200},(_,i)=>id(100+i)),columnWidths:Object.fromEntries(Array.from({length:200},(_,i)=>[id(100+i),999999999999999]))}],
+])test('preset rejects '+name,()=>assert.equal(valid(value,scope),false));
