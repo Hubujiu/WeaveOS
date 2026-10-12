@@ -66,3 +66,12 @@ test('FLOW07 ordinary edits of in-flight records have a registered read-only con
  const op=api.paths['/api/v1/applications/{appId}/forms/{viewId}/records/{recordId}'].patch;
  assert.match(op.responses['409'].description,/WORKFLOW_RECORD_READ_ONLY/);
 });
+
+test('ADR002 V015 draft list response requires the closed current cursor metadata',()=>{
+ const envelope=schema.RecordDraftItemsEnvelope.allOf.find(part=>part.properties?.data);
+ assert.deepEqual(envelope.properties.meta?.required,['requestId','pagination']);
+ assert.equal(envelope.properties.meta?.additionalProperties,false);
+ assert.equal(envelope.properties.meta?.properties.pagination.$ref,'#/components/schemas/CursorPagination');
+ assert.deepEqual(schema.CursorPagination.required,['nextPageToken','hasMore']);
+ assert.deepEqual(Object.keys(schema.CursorPagination.properties),['nextPageToken','hasMore']);
+});

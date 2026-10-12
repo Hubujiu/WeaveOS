@@ -213,6 +213,19 @@ func TestBFFCompositionExposesDefinitionWithSameSession(t *testing.T) {
 		if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &env) != nil || env.Data.Items == nil {
 			t.Fatalf("frozen data.items array %d %s", w.Code, w.Body.String())
 		}
+		// ADR-002 §5.4 / V015 draft cursor: no undocumented pageSize, total or queryVersion response keys.
+		var envelope struct {
+			Meta struct {
+				Pagination map[string]any `json:"pagination"`
+			} `json:"meta"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &envelope); err != nil {
+			t.Fatal(err)
+		}
+		want := map[string]any{"nextPageToken": nil, "hasMore": false}
+		if !reflect.DeepEqual(envelope.Meta.Pagination, want) {
+			t.Fatalf("ADR-002 closed draft cursor metadata got %+v want %+v", envelope.Meta.Pagination, want)
+		}
 	})
 	t.Run("record HTTP and atomic history", func(t *testing.T) {
 		createID := newID()
