@@ -1,8 +1,9 @@
+import {validPublicationRequest,validPublicationResult} from './workflows/publicationContract';
 import {validWorkflowDefinitionRequest,validWorkflowDefinitionReceipt} from './workflows/definitionSaveContract';
 import { useEffect, useRef, useState } from 'react';
 import { workspaceApi, WorkspaceError } from '../workspace-api';
 import type { User } from '../workspace-types';
-import { applicationApi, applicationApiEnvelope, applicationWorkflowApi, validWorkflowTransportRequest, ApplicationError } from './api';
+import { applicationApi, applicationApiEnvelope, applicationWorkflowApi, applicationPublicationApi, validWorkflowTransportRequest, ApplicationError } from './api';
 import { cancelUnsentPreflights, clearPacket, clearRecovery, getRecovery, keepPacket, registerUnsentPreflight, type ApplicationPacket } from './recovery';
 import type { ApplicationOperation } from './types';
 import { validTaskRecordRequest } from './workflows/taskSaveContract';
@@ -38,6 +39,7 @@ function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean
  if (!result || typeof result !== 'object' || Array.isArray(result) || !packet.resource) return false;
  // Task execution receipts are checked against their distinct closed wire
  // in perform(), including actual HTTP status and the confirmed command ID.
+ if (packet.resource.kind === 'workflow-publication') return true;
  if (packet.resource.kind === 'task-action'||packet.resource.kind === 'instance-action') return true;
  if (packet.resource.kind === 'workflow-definition') return validWorkflowDefinitionReceipt(result,packet.operationId??'',packet.resource.id,packet.body?.expectedRevision as number);
  if (packet.resource.kind === 'round-record') return isMutationResult(result,packet.operationId??'',packet.resource.id)&&result.recordVersion>0&&result.schemaVersion>0;
@@ -130,7 +132,20 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
    let result: T;
    let location: string | null | undefined;
    const taskAction = packet.resource?.kind === 'task-action'||packet.resource?.kind === 'instance-action';
-   if (taskAction) {
+   if (packet.resource?.kind === 'workflow-publication') {
+    const resource=packet.resource,base='applications/'+resource.appId+'/forms/'+resource.viewId+'/workflows/'+resource.id;
+    const reply=await applicationPublicationApi<T>(packet.actorId,query?base+'/publications/'+packet.operationId:packet.path,query?'GET':'POST',query?undefined:packet.body);
+    result=reply.data;location=reply.location;
+    if(!validPublicationResult(result,packet.operationId??'',resource.id,resource.version,reply.httpStatus,query?'GET':'POST'))throw new ApplicationError(503,'APPLICATION_OPERATION_UNCONFIRMED',true);
+    if(result.status==='pending'||result.status==='unknown'){
+     if(!query){let target:URL|null=null;try{if(typeof location==='string')target=new URL(location,window.location.origin);}catch{/* Keep the original uncertainty. */}
+      if(!target||target.origin!==window.location.origin||target.pathname!=='/api/v1/'+base+'/publications/'+packet.operationId||target.search||target.hash)throw new ApplicationError(503,'APPLICATION_OPERATION_UNCONFIRMED',true);
+     }
+     if(token!==lifecycle.current)return;
+     snapshot.current=packet;uncertain.current=true;keepPacket(packet,true);inFlight.current=false;
+     setState({phase:'accepted',message:result.status==='pending'?'流程发布处理中':'发布结果待确认',packet});return;
+    }
+   } else if (taskAction) {
     const reply = await applicationWorkflowApi<T>(packet.actorId, query ? 'application-workflow-operations/' + packet.operationId : packet.path, query ? 'GET' : 'POST', query ? undefined : packet.body);
     result = reply.data; location = reply.location;
     const context = packet.context as {commandId?:string} | undefined;
@@ -202,7 +217,9 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
   else {
    const request = requestOrPath;
    if (!scope || !scopedResource || JSON.stringify(request.resource) !== JSON.stringify(scopedResource)) throw new TypeError('Mutation resource does not match the mounted scope');
-   if (request.resource.kind === 'workflow-definition') {
+   if (request.resource.kind === 'workflow-publication') {
+    if (!validPublicationRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'workflow-definition') {
     if (!validWorkflowDefinitionRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
    } else if (request.resource.kind === 'round-record') {
     if (!validRoundReworkRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
