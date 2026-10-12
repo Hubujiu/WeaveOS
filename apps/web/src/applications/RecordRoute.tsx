@@ -27,6 +27,8 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
  registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void;
 }){
  const [createActionHost,setCreateActionHost]=useState<HTMLDivElement|null>(null),[historyRecord,setHistoryRecord]=useState<string|null>(null);
+ const historyTrigger=useRef<HTMLButtonElement|null>(null);
+ const closeHistory=()=>{const target=historyTrigger.current;setHistoryRecord(null);if(target)requestAnimationFrame(()=>{if(target.isConnected)target.focus();});};
  const [editor,setEditor]=useState<Editor|null>(null),[pendingRead,setPendingRead]=useState<PendingRead|null>(null);
  const [draftsView,setDraftsView]=useState<RuntimeView|null>(null),[draftListDirty,setDraftListDirty]=useState(false);
  const [recordDirty,setRecordDirty]=useState(false),[workflowDirty,setWorkflowDirty]=useState(false),[presetDirty,setPresetDirty]=useState(false);
@@ -161,7 +163,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
    if(draftPacket.method==='POST'&&draftPacket.resource.creationNonce){
     const target=draftPacket.body?.targetRecordId;
     if(target===null){openedRecovery.current.add(token);setSaved(false);setDraftSaved(false);setReadError('');setEditor({identity:{kind:'new',actorId,appId,viewId,clientDraftId:draftPacket.resource.creationNonce},view,mode:'create',recoveredDraft:draftPacket});return;}
-    if(typeof target==='string'&&uuid.test(target)){openedRecovery.current.add(token);setDraftSaved(false);setSaved(false);void readRecord(view,target,undefined,{kind:'record',actorId,appId,viewId,recordId:target},'edit',draftPacket);return;}
+    if(typeof target==='string'&&uuid.test(target)){openedRecovery.current.add(token);setDraftSaved(false);setSaved(false);setReadError('');setEditor({identity:{kind:'record',actorId,appId,viewId,recordId:target},view,mode:'edit',recoveredDraft:draftPacket});return;}
    }
   }
   const rework=scopedUnconfirmed(actorId).find(packet=>{const resource=packet.resource;return resource?.kind==='round-record'&&resource.appId===appId&&resource.viewId===viewId&&findRoundRecovery(actorId,appId,viewId,resource.id,resource.instanceId,'round-record')===packet;});
@@ -214,14 +216,14 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
     onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard}
     onRefresh={refreshEditor}/>}
    {editor?.mode==='create'&&<section className="app-surface record-workflow-card" aria-label="关联流程"><h2>关联流程</h2><p>记录保存后可查看关联流程</p></section>}
-   {editor?.record&&!editor.draft&&<RecordWorkflows historyAction={historyAllowed?<section className="record-history-entry" aria-label="最近变更"><h2>最近变更</h2><button type="button" className="admin-button" onClick={()=>setHistoryRecord(editor.record!.id)}>查看历史</button></section>:undefined} onRework={openRework} actorId={actorId} appId={appId} viewId={viewId} recordId={editor.record.id} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onOpenAction={openFlowAction} onDirtyChange={setWorkflowDirty}/>} </div>
+   {editor?.record&&!editor.draft&&<RecordWorkflows historyAction={historyAllowed?<section className="record-history-entry" aria-label="最近变更"><h2>最近变更</h2><button type="button" className="admin-button" onClick={event=>{historyTrigger.current=event.currentTarget;setHistoryRecord(editor.record!.id);}}>查看历史</button></section>:undefined} onRework={openRework} actorId={actorId} appId={appId} viewId={viewId} recordId={editor.record.id} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onOpenAction={openFlowAction} onDirtyChange={setWorkflowDirty}/>} </div>
  </>;
  return <section className="record-route" aria-label="记录路由">
   {draftSaved&&<p className="record-saved" role="status">草稿已保存</p>}
   {saved&&<p className="record-saved" role="status">{reworkSaved?"返工修改已保存":"记录已保存"}</p>}
   <div hidden={showingDetail} className="record-list-host"><RecordWorkspace requestSectionLeave={requestSectionLeave} registerLeaveGuard={registerLeaveGuard} onDirtyChange={setPresetDirty} key={`${actorId}:${appId}:${viewId}:${workspaceRefresh}`} actorId={actorId} appId={appId} viewId={viewId}
    onOpenDrafts={setDraftsView} onCreate={openNew} onOpenRecord={openRow} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onRuntimeReady={runtimeReady}/></div>
-  {historyAllowed&&historyRecord===editor?.record?.id&&<RecordHistoryPanel actorId={actorId} appId={appId} viewId={viewId} recordId={historyRecord!} onClose={()=>setHistoryRecord(null)} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>}
+  {historyAllowed&&historyRecord===editor?.record?.id&&<RecordHistoryPanel actorId={actorId} appId={appId} viewId={viewId} recordId={historyRecord!} onClose={closeHistory} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>}
   {draftsView&&<DraftsPanel actorId={actorId} view={draftsView} onOpen={id=>{setDraftsView(null);setDraftSaved(false);setSaved(false);void readDraft(id,false);}} onClose={()=>setDraftsView(null)} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onDirtyChange={setDraftListDirty}/>}
   {showingDetail?<section className="record-detail-page" aria-label={editor?.mode==='create'?"新建记录":"记录详情"}>
    <div className="app-page-heading"><h1>{editor?.mode==='create'?"新建记录":"记录详情"}</h1><div className="record-detail-actions">{editor?.mode==='create'&&<div ref={setCreateActionHost}/>}<button type="button" className="admin-button" aria-label="关闭" onClick={guardedClose}>返回</button>{editor?.mode==='read'&&editAllowed(editor)&&<button type="button" className="admin-button primary" disabled={hasPendingFlow} onClick={()=>{setSaved(false);setReworkSaved(false);setEditor({...editor,mode:'edit',queryVersion:editor.queryVersion});}}>编辑记录</button>}</div></div>
