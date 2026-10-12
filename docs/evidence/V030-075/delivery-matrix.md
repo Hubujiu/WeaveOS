@@ -76,3 +76,11 @@ Published dde: P11 selected resubmit/review9 UI passed; rework4 UI missing-entry
 - P12 drafts: closed authorized read adapter27 initial cases8RED→27GREEN, cursor/field-conflict extension43total4RED→43GREEN. Seven actual-Shell UI tests published first onabd41843; no draft UI implementation yet. CRUD/list/delete/atomic submit/full recovery still open.
 - Five warm exact-source candidates have complete Go success without reducing tests or raising time limits; latest4944 other specialized backend jobs passed. Current/full-product CI is not all green.
 - Workflow manager/designer, personal lists, templates/copy, ordinary record history and deletion/restore, full product E2E and final visual remain open. No feature removed to create apparent completion.
+
+## Verified checkpoint — 2026-10-12 11:30 UTC
+
+- P11 all16 round/rework behavior cases plus Figma footer regression PASS on948261a0; actual revised footer screenshot personally inspected. Full multi-flow selection/whole-product visuals remain distinct.
+- P12 original7 draft save/update/exact formal consumption/error cases PASS on948261a0. Actual POST new-draft Shell recovery RED preserved before original-packet wiring; pendingea4 GREEN. Currentea4 also has9 new list/deletion/explicit-refresh/edit-draft-POST/saved-draft-PATCH recovery/primary-color cases, no implementation until RED.
+- Existing HTTP draft list contains extra pagination.pageSize; ADR002§5.4 reread and P12 source supplement verified. OpenAPI exact pagination binding1RED→7GREEN. Real BFF composition assertion is published but not yet run; no handler change yet.
+- Current edit-draft UI requires ordinary target read; edit-only/no-read grants need independent handling/verification without fake record data. Drafts must remain accessible through their capabilities without forcing record list access.
+- New-record input still uses existing Modal rather than full Figma page; layout/motion and final whole-product real-service journey remain open. No partial stage is claimed as final delivery.
