@@ -20096,6 +20096,700 @@
         },
         "x-max-body-bytes": 1048576
       }
+    },
+    "/api/v1/application-templates/member-candidates": {
+      "get": {
+        "operationId": "listTemplateMemberCandidates",
+        "summary": "List current member targets for explicit template import mapping",
+        "description": "V030-075 P21. Current applications.create or actual database Bootstrap only, rechecked in one read-only RR transaction for every page. No source or target application identity. Active member / existing department minimal projection only. Literal TrimSpace name prefix q, default20/max50 keyset pagination; opaque ten-minute cursor binds actor, kind, normalized q and template-import purpose, not a future authorization. No application, audit, operation, member-configuration or business writes. No-store and normal read renewal; import independently revalidates targets.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Read-only current candidate page",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberCandidatesEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "headTemplateMemberCandidates",
+        "summary": "Read template member candidate response headers",
+        "description": "V030-075 P21. Current applications.create or actual database Bootstrap only, rechecked in one read-only RR transaction for every page. No source or target application identity. Active member / existing department minimal projection only. Literal TrimSpace name prefix q, default20/max50 keyset pagination; opaque ten-minute cursor binds actor, kind, normalized q and template-import purpose, not a future authorization. No application, audit, operation, member-configuration or business writes. No-store and normal read renewal; import independently revalidates targets.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Read-only current candidate page",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/application-templates/department-candidates": {
+      "get": {
+        "operationId": "listTemplateDepartmentCandidates",
+        "summary": "List current department targets for explicit template import mapping",
+        "description": "V030-075 P21. Current applications.create or actual database Bootstrap only, rechecked in one read-only RR transaction for every page. No source or target application identity. Active member / existing department minimal projection only. Literal TrimSpace name prefix q, default20/max50 keyset pagination; opaque ten-minute cursor binds actor, kind, normalized q and template-import purpose, not a future authorization. No application, audit, operation, member-configuration or business writes. No-store and normal read renewal; import independently revalidates targets.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Read-only current candidate page",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentCandidatesEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "headTemplateDepartmentCandidates",
+        "summary": "Read template department candidate response headers",
+        "description": "V030-075 P21. Current applications.create or actual database Bootstrap only, rechecked in one read-only RR transaction for every page. No source or target application identity. Active member / existing department minimal projection only. Literal TrimSpace name prefix q, default20/max50 keyset pagination; opaque ten-minute cursor binds actor, kind, normalized q and template-import purpose, not a future authorization. No application, audit, operation, member-configuration or business writes. No-store and normal read renewal; import independently revalidates targets.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageToken",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Read-only current candidate page",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTH_SESSION_CHANGED: authenticated actor differs from expected actor; no business access or operation claim/replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorChangedEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Registered safe template or Session error; no internal SQL or source configuration leaked",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
