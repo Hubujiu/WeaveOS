@@ -4,7 +4,7 @@ const id=(n:number)=>'d2d2d2d2-d2d2-4d2d-8d2d-'+String(n).padStart(12,'0');
 const actor={id:id(1),account:'manager'},appId=id(2),viewId=id(3),flowId=id(4),fieldId=id(5),base=`applications/${appId}/forms/${viewId}`,definitionPath=base+'/workflows/'+flowId+'/definition',route='/app/'+base+'/workflows/'+flowId+'/design';
 const graph={version:1,nodes:[{id:id(10),kind:'start'},{id:id(11),kind:'approval',approval:{mode:'all',assigneeIds:[id(20),id(21)],editableFieldIds:[fieldId]}},{id:id(12),kind:'end'}],edges:[{from:id(10),to:id(11)},{from:id(11),to:id(12)}]};
 const triggers=[{event:'manual',condition:null},{event:'record.created',condition:{operator:'and',children:[{fieldId,operator:'eq',value:'原触发条件'}]}}];
-type Options={write?:(body:any,n:number)=>{status:number;code:string;data?:unknown};lookupFails?:boolean;readAfterFails?:boolean};
+type Options={currentSchema?:number;runtimeDenied?:boolean;write?:(body:any,n:number)=>{status:number;code:string;data?:unknown};lookupFails?:boolean;readAfterFails?:boolean};
 async function setup(page:Page,options:Options={}){
  const calls:{path:string;method:string;body:any}[]=[],writes:any[]=[];let saved:any=null,identityChanged=false;
  const receipt=(operationId:string)=>({operationId,id:flowId,revision:4,currentVersion:1,candidateVersion:3,state:'enabled'});
@@ -14,9 +14,12 @@ async function setup(page:Page,options:Options={}){
  else if(path==='me/access')data={user:actor,bootstrapAdmin:false,personnelManage:false,identities:[],permissions:[],applications:[]};
  else if(path==='applications')data={items:[app]};else if(path==='applications/'+appId)data=app;
  else if(path==='applications/'+appId+'/access')data={appId,canEnter:true,policyRevision:1,menus:[{resourceKind:'application',resourceId:appId},{resourceKind:'form',resourceId:viewId}]};
- else if(path===definitionPath&&method==='GET'){
+ else if(path===base+'/runtime'){
+  if(options.runtimeDenied)return r.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
+  data={appId,viewId,tableId:id(8),schemaVersion:options.currentSchema??1,viewVersion:1,policyRevision:1,fields:[{id:fieldId,name:'说明',kind:'text',required:false,presentation:{helpText:null,displayTimeZone:null},input:{},access:{read:'all',create:true,edit:'all',history:'none'},query:{operators:['eq','neq'],sortable:false,quickSearchable:true}}],layout:[{id:id(9),kind:'field',fieldId}],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}};
+ }else if(path===definitionPath&&method==='GET'){
   if(saved&&options.readAfterFails)return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
-  data={id:flowId,name:'部门审批',revision:saved?4:3,currentVersion:1,candidateVersion:saved?3:2,state:'enabled',schemaVersion:1,allowWithdraw:saved?saved.allowWithdraw:true,graph:saved?.graph??graph,triggers:saved?.triggers??triggers};
+  data={id:flowId,name:'部门审批',revision:saved?4:3,currentVersion:1,candidateVersion:saved?3:2,state:'enabled',schemaVersion:saved?saved.expectedSchemaVersion:1,allowWithdraw:saved?saved.allowWithdraw:true,graph:saved?.graph??graph,triggers:saved?.triggers??triggers};
  }else if(path===definitionPath&&method==='PUT'){
   writes.push({body,method,path,headers:req.headers()});const reply=options.write?.(body,writes.length)??{status:200,code:'OK',data:receipt(body.operationId)};
   if(reply.status===200&&reply.code==='OK')saved=body;
@@ -64,4 +67,11 @@ test('Root definition unknown Save survives actual Shell unmount and restores on
  let f:Awaited<ReturnType<typeof setup>>;f=await setup(page,{lookupFails:true,write:(body,n)=>n===1?{status:503,code:'APPLICATION_OPERATION_UNCONFIRMED'}:{status:200,code:'OK',data:f.receipt(body.operationId)}});await edit(page);await save(page).click();await expect(page.getByRole('alert')).toContainText('尚未确认');const first=structuredClone(f.writes[0].body);
  await page.getByRole('button',{name:'返回主页',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();await expect(page.getByRole('button',{name:'重试原保存',exact:true})).toBeVisible();expect(f.writes).toHaveLength(1);
  await page.getByRole('button',{name:'重试原保存',exact:true}).click();await expect(page.getByText('定义已保存',{exact:true})).toBeVisible();expect(f.writes).toHaveLength(2);expect(f.writes[1].body).toEqual(first);
+});
+
+test('Root workflow older candidate saves only after reading current schema while preserving flow revision',async({page})=>{
+ const f=await setup(page,{currentSchema:2});await edit(page);await save(page).click();await expect(page.getByText('定义已保存',{exact:true})).toBeVisible();expect(f.writes).toHaveLength(1);expect(f.writes[0].body.expectedRevision).toBe(3);expect(f.writes[0].body.expectedSchemaVersion).toBe(2);expect(f.calls.some(c=>c.path===base+'/runtime'&&c.method==='GET')).toBe(true);
+});
+test('Root workflow inaccessible current schema cannot authorize a new definition Save',async({page})=>{
+ const f=await setup(page,{runtimeDenied:true});await page.goto(route);await expect(page.getByRole('alert')).toBeVisible();await expect(save(page)).toBeDisabled();expect(f.writes).toEqual([]);expect(f.calls.some(c=>c.path===base+'/runtime'&&c.method==='GET')).toBe(true);
 });
