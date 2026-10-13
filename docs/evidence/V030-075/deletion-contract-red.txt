@@ -1,0 +1,405 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ V068 deletion request has only exact resource POST and original revision (6.138847ms)
+✔ V068 deletion request rejects wrong resource (0.218789ms)
+✔ V068 deletion request rejects extra resource (0.109775ms)
+✔ V068 deletion request rejects zero flow (0.071217ms)
+✔ V068 deletion request rejects wrong scope (0.083756ms)
+✔ V068 deletion request rejects query (0.064778ms)
+✔ V068 deletion request rejects GET (0.107722ms)
+✔ V068 deletion request rejects wrong acceptance (0.115364ms)
+✔ V068 deletion request rejects extra actor (0.111287ms)
+✔ V068 deletion request rejects extra key (0.251819ms)
+✔ V068 deletion request rejects zero revision (0.087402ms)
+✔ V068 deletion request rejects unsafe revision (0.053691ms)
+✔ V068 deletion request rejects fraction (0.034742ms)
+✔ V068 deletion request rejects null (0.030405ms)
+✖ V068 pending null preserves uncertainty (0.246991ms)
+✖ V068 pending waiting_work preserves uncertainty (0.121202ms)
+✖ V068 pending engine_unavailable preserves uncertainty (0.091167ms)
+✖ V068 pending engine_rejected preserves uncertainty (0.253421ms)
+✖ V068 pending receipt_invalid preserves uncertainty (0.158158ms)
+✖ V068 pending cleanup_retry preserves uncertainty (0.084628ms)
+✖ V068 unknown null preserves uncertainty (0.076565ms)
+✖ V068 unknown waiting_work preserves uncertainty (0.127862ms)
+✖ V068 unknown engine_unavailable preserves uncertainty (0.105308ms)
+✖ V068 unknown engine_rejected preserves uncertainty (0.083025ms)
+✖ V068 unknown receipt_invalid preserves uncertainty (0.09993ms)
+✖ V068 unknown cleanup_retry preserves uncertainty (0.087722ms)
+✖ V068 original engine confirmation without application completion remains unknown (0.112809ms)
+✖ V068 zero-version deleted flow requires both distinct original confirmation times (0.104257ms)
+✖ V068 independent engine and application clocks are not ordered by the client (0.094682ms)
+✔ V068 closed deleted result rejects wrong operation (0.094272ms)
+✔ V068 closed deleted result rejects wrong flow (0.037557ms)
+✔ V068 closed deleted result rejects extra graph (0.065688ms)
+✔ V068 closed deleted result rejects wrong state (0.078118ms)
+✔ V068 closed deleted result rejects unknown reason (0.041482ms)
+✔ V068 closed deleted result rejects terminal reason (0.055003ms)
+✔ V068 closed deleted result rejects missing engine count (0.03332ms)
+✔ V068 closed deleted result rejects negative count (0.082835ms)
+✔ V068 closed deleted result rejects unsafe count (0.101473ms)
+✔ V068 closed deleted result rejects fraction count (0.075343ms)
+✔ V068 closed deleted result rejects missing engine time (0.051527ms)
+✔ V068 closed deleted result rejects missing app time (0.032279ms)
+✔ V068 closed deleted result rejects invalid day (0.039229ms)
+✔ V068 closed deleted result rejects non UTC (0.027671ms)
+✔ V068 closed deleted result rejects invalid date (0.031247ms)
+✔ V068 closed deleted result rejects wrong type (0.029224ms)
+✔ V068 deleted result requires operationId (0.065778ms)
+✔ V068 deleted result requires flowId (0.032989ms)
+✔ V068 deleted result requires status (1.526705ms)
+✔ V068 deleted result requires reason (0.085769ms)
+✔ V068 deleted result requires deletedVersions (0.103956ms)
+✔ V068 deleted result requires deletedAt (0.036305ms)
+✔ V068 deleted result requires completedAt (0.029615ms)
+✔ V068 pending confirmation phases stay paired {"deletedVersions":1} (0.068723ms)
+✔ V068 pending confirmation phases stay paired {"deletedAt":"2026-10-13T08:00:00.123456789Z"} (0.035183ms)
+✔ V068 pending confirmation phases stay paired {"completedAt":"2026-10-13T08:00:01Z"} (0.028163ms)
+✔ V068 GET requires exact 200 not 201 (0.069314ms)
+✔ V068 GET requires exact 200 not 202 (0.06665ms)
+✔ V068 GET requires exact 200 not 204 (0.047802ms)
+✔ V068 GET requires exact 200 not 503 (0.022314ms)
+ℹ tests 59
+ℹ suites 0
+ℹ pass 43
+ℹ fail 16
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 140.353959
+
+✖ failing tests:
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:7:1
+✖ V068 deletion request has only exact resource POST and original revision (6.138847ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:7:92)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:11:158
+✖ V068 pending null preserves uncertainty (0.246991ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:12:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:11:158
+✖ V068 pending waiting_work preserves uncertainty (0.121202ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:12:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:11:158
+✖ V068 pending engine_unavailable preserves uncertainty (0.091167ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:12:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:11:158
+✖ V068 pending engine_rejected preserves uncertainty (0.253421ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:12:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:11:158
+✖ V068 pending receipt_invalid preserves uncertainty (0.158158ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:12:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:11:158
+✖ V068 pending cleanup_retry preserves uncertainty (0.084628ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:12:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:11:158
+✖ V068 unknown null preserves uncertainty (0.076565ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:12:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:11:158
+✖ V068 unknown waiting_work preserves uncertainty (0.127862ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:12:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:11:158
+✖ V068 unknown engine_unavailable preserves uncertainty (0.105308ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:12:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:11:158
+✖ V068 unknown engine_rejected preserves uncertainty (0.083025ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:12:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:11:158
+✖ V068 unknown receipt_invalid preserves uncertainty (0.09993ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:12:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:11:158
+✖ V068 unknown cleanup_retry preserves uncertainty (0.087722ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:12:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:14:1
+✖ V068 original engine confirmation without application completion remains unknown (0.112809ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:14:100)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:15:1
+✖ V068 zero-version deleted flow requires both distinct original confirmation times (0.104257ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:15:102)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-deletion-consumption.test.mjs:16:1
+✖ V068 independent engine and application clocks are not ordered by the client (0.094682ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-deletion-consumption.test.mjs:16:96)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
