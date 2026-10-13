@@ -110,8 +110,18 @@ func TestRootTemplateCandidatesAlwaysRequireLiveCreationAuthority(t *testing.T) 
 		t.Fatal(e)
 	}
 	rootTemplateHTTPError(t, f.call(t, "GET", templateMembers, "", nil), 403)
-	rootTemplateCurrentBootstrap(t, f, f.actor)
-	rootTemplateCandidatePage(t, f, templateMembers, nil)
+	root := rootTemplateCurrentBootstrap(t, f, f.actor)
+	sid, csrf, e := f.store.Create(f.ctx, session.Record{UserID: root.UserID, SessionRef: f.id(t), AuthVersion: root.Record.AuthVersion})
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer f.store.Revoke(f.ctx, sid)
+	rootTemplateCandidatePage(t, f, templateMembers, func(r *http.Request) {
+		r.Header.Del("Cookie")
+		r.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: sid})
+		r.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: csrf})
+		r.Header.Set("X-Expected-Actor-Id", root.UserID)
+	})
 	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET auth_version=auth_version+1 WHERE id=$1", f.actor); e != nil {
 		t.Fatal(e)
 	}
@@ -126,8 +136,20 @@ func TestRootTemplateCandidateCursorCannotCrossKindQueryActorOrPurpose(t *testin
 		t.Fatal("fixture did not produce pagination")
 	}
 	suffix := "?q=" + prefix + "&pageSize=1&pageToken=" + url.QueryEscape(token)
-	for _, path := range []string{templateDepartments + suffix, templateMembers + strings.Replace(suffix, "q="+prefix, "q=changed", 1), "/api/v1/applications/" + f.app + "/member-candidates" + suffix} {
+	for _, path := range []string{templateDepartments + suffix, templateMembers + strings.Replace(suffix, "q="+prefix, "q=changed", 1)} {
 		rootTemplateHTTPError(t, f.call(t, "GET", path, "", nil), 400)
+	}
+	normalError := f.call(t, "GET", "/api/v1/applications/"+f.app+"/member-candidates"+suffix, "", nil)
+	rootHTTPError(t, normalError, 400, "COMMON_VALIDATION_FAILED")
+	var closed struct {
+		Data map[string]json.RawMessage `json:"data"`
+	}
+	if json.Unmarshal(normalError.Body.Bytes(), &closed) != nil || len(closed.Data) != 1 || closed.Data["violations"] == nil || normalError.Header().Get("Cache-Control") != "no-store" || normalError.Header().Get("X-Request-Id") == "" {
+		t.Fatal("cross-purpose definition error is not the registered private validation envelope")
+	}
+	var violations []map[string]string
+	if json.Unmarshal(closed.Data["violations"], &violations) != nil || len(violations) != 1 || len(violations[0]) != 4 || violations[0]["code"] != "VALIDATION_INVALID" || violations[0]["location"] != "body" || violations[0]["field"] != "definition" || violations[0]["message"] == "" {
+		t.Fatal("unexpected validation detail")
 	}
 	rootTemplateGrantCreate(t, f, f.other)
 	sid, csrf, e := f.store.Create(f.ctx, session.Record{UserID: f.other, SessionRef: f.id(t), AuthVersion: "1"})
