@@ -15,6 +15,9 @@ import (
 func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[string]json.RawMessage, error) {
 	required, optional, nullable := []string{}, []string{}, []string{}
 	switch kind {
+	case "record.deleted.search":
+		required = []string{"page", "pageSize"}
+		optional = []string{"queryVersion"}
 	case "record.lifecycle":
 		required = []string{"operationId", "expectedSchemaVersion", "expectedRecordVersion"}
 	case "workflow.round.start":
@@ -56,7 +59,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 		return nil, &Error{Code: "COMMON_UNSUPPORTED_MEDIA_TYPE"}
 	}
 	limit := int64(1 << 20)
-	if kind == "record.lifecycle" {
+	if kind == "record.lifecycle" || kind == "record.deleted.search" {
 		limit = 4096
 	}
 	if kind == "record.search" {
