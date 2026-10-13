@@ -1,0 +1,53 @@
+✖ V075 eligible approver discovery is a manager CSRF protected read POST (1.87025ms)
+✔ V075 approver exposes only active identity and account label (0.257988ms)
+✔ V075 approver result binds current schema and policy without granting record rights (0.29975ms)
+✖ P16 search query is optional bounded literal text and never changes manager input (0.211498ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 146.530641
+
+✖ failing tests:
+
+test at contracts/workflow-approver-search.contract.test.mjs:4:1
+✖ V075 eligible approver discovery is a manager CSRF protected read POST (1.87025ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '#/components/schemas/WorkflowManagerSearch'
+  - '#/components/schemas/WorkflowApproverSearch'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/contracts/workflow-approver-search.contract.test.mjs:4:417)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '#/components/schemas/WorkflowManagerSearch',
+    expected: '#/components/schemas/WorkflowApproverSearch',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at contracts/workflow-approver-search.contract.test.mjs:9:1
+✖ P16 search query is optional bounded literal text and never changes manager input (0.211498ms)
+  AssertionError [ERR_ASSERTION]: dedicated searchable approver input is missing
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/contracts/workflow-approver-search.contract.test.mjs:10:42)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
