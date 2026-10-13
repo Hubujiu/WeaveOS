@@ -1,3 +1,5 @@
+import {validStructureCopyRequest,type StructureCopyPreflightRequest} from './templates/copyRequest';
+import {validStructureCopyReceipt,type StructureCopyReceipt} from './templates/copyReceipt';
 import {validTemplateImportRequest} from './templates/importRequest';
 import {validTemplateImportReceipt} from './templates/receipts';
 import {validWorkflowDeletionRequest,validWorkflowDeletionResult} from './workflows/deletionContract';
@@ -44,6 +46,10 @@ function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean
  if (!result || typeof result !== 'object' || Array.isArray(result) || !packet.resource) return false;
  // Task execution receipts are checked against their distinct closed wire
  // in perform(), including actual HTTP status and the confirmed command ID.
+ if (packet.resource.kind === 'structure-copy') {
+  const body=packet.body as unknown as StructureCopyPreflightRequest;
+  return validStructureCopyReceipt(result,{operationId:packet.operationId??'',source:body.source,targetAppId:body.target.appId,expectedStructureVersion:body.expectedTargetStructureVersion,expectedPolicyRevision:body.expectedTargetPolicyRevision,newGroupCount:body.groupMappings.length});
+ }
  if (packet.resource.kind === 'template-import') return validTemplateImportReceipt(result,packet.operationId??'');
  if (packet.resource.kind === 'workflow-publication'||packet.resource.kind === 'workflow-deletion') return true;
  if (packet.resource.kind === 'task-action'||packet.resource.kind === 'instance-action') return true;
@@ -71,7 +77,11 @@ function validLocation(location: string | null | undefined, packet: ApplicationP
  const templateImport=packet.resource?.kind==='template-import';
  const id = templateImport?(result as {appId?:unknown}).appId:(result as { id?: unknown }).id;
  if (typeof id !== 'string' || !id) return false;
- const expected = templateImport?'/api/v1/applications/'+encodeURIComponent(id):'/api/v1/' + packet.path.split('?')[0].replace(/\/$/, '') + '/' + encodeURIComponent(id);
+ let expected = templateImport?'/api/v1/applications/'+encodeURIComponent(id):'/api/v1/' + packet.path.split('?')[0].replace(/\/$/, '') + '/' + encodeURIComponent(id);
+ if(packet.resource?.kind==='structure-copy'){
+  const copy=result as StructureCopyReceipt;
+  expected='/api/v1/applications/'+encodeURIComponent(copy.appId)+(copy.resourceKind==='application'?'':'/'+{directory:'directories',table:'tables',form:'forms'}[copy.resourceKind]+'/'+encodeURIComponent(copy.id));
+ }
  try {
   const parsed = new URL(location, window.location.origin);
   return parsed.origin === window.location.origin && parsed.pathname === expected && !parsed.search && !parsed.hash;
@@ -244,7 +254,9 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
   else {
    const request = requestOrPath;
    if (!scope || !scopedResource || JSON.stringify(request.resource) !== JSON.stringify(scopedResource)) throw new TypeError('Mutation resource does not match the mounted scope');
-   if (request.resource.kind === 'template-import') {
+   if (request.resource.kind === 'structure-copy') {
+    if (!validStructureCopyRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'template-import') {
     if (!validTemplateImportRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
    } else if (request.resource.kind === 'workflow-deletion') {
     if (!validWorkflowDeletionRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
