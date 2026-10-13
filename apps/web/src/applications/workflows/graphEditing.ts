@@ -13,3 +13,6 @@ export function insertWorkflowNode(graph:WorkflowGraph,edge:WorkflowGraph['edges
  const result:WorkflowGraph={version:1,nodes:[...graph.nodes,node],edges:[...graph.edges.slice(0,index),{...edge,to:node.id},...outgoing,...graph.edges.slice(index+1)]};
  return validWorkflowGraph(result)?structuredClone(result):null;
 }
+
+// Test-first declaration only; node-removal behavior is deliberately absent.
+export function removeWorkflowNode(_graph:WorkflowGraph,_nodeId:string):WorkflowGraph|null{return null;}

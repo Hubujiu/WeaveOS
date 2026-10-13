@@ -1,0 +1,300 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ V019 approval insertion changes exactly the selected edge and preserves configured IDs and input (2.261108ms)
+✔ V019 condition insertion retains the exact AST and initially rejoins both branches at original target (0.502786ms)
+✔ V019 branch-qualified insertion edits only true path, not the same-target sibling (0.423296ms)
+✔ V019 branch-qualified insertion edits only false path, not the same-target sibling (0.219139ms)
+✔ V019 insert rejects duplicate id without inventing defaults (0.25946ms)
+✔ V019 insert rejects start without inventing defaults (0.088212ms)
+✔ V019 insert rejects end without inventing defaults (0.091167ms)
+✔ V019 insert rejects no assignees without inventing defaults (0.088203ms)
+✔ V019 insert rejects wrong mode without inventing defaults (0.216175ms)
+✔ V019 insert rejects empty condition without inventing defaults (0.308814ms)
+✔ V019 insert rejects extra metadata without inventing defaults (0.169505ms)
+✔ V019 insert rejects missing edge (0.132699ms)
+✔ V019 insert rejects unqualified condition branch (0.108763ms)
+✔ V019 insert rejects extra edge key (0.077366ms)
+✔ V019 insert rejects invalid source graph (0.037987ms)
+✔ V019 insert permits the hundredth node without truncation (2.705336ms)
+✔ V019 insert rejects the hundred-and-first node without modifying the graph (1.075336ms)
+✖ V019 remove approval reconnects only its incoming edge and preserves immutable input (1.336569ms)
+✖ V019 remove approval shared by true and false preserves both separately qualified edges (0.621154ms)
+✖ V019 remove converged condition keeps its common successor instead of inventing a chosen branch (0.329785ms)
+✖ V019 removal of a converged nested condition preserves its incoming true branch and other path (0.497307ms)
+✔ V019 removal rejects divergent condition without dropping either downstream branch (0.229364ms)
+✔ V019 removal rejects start without guessing repair (0.060501ms)
+✔ V019 removal rejects end without guessing repair (0.029875ms)
+✔ V019 removal rejects missing without guessing repair (0.025939ms)
+✔ V019 removal rejects noncanonical without guessing repair (0.025058ms)
+✔ V019 removal rejects invalid graph without guessing repair (0.022063ms)
+✔ V019 removal rejects extra graph key without guessing repair (0.022464ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 24
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 144.309832
+
+✖ failing tests:
+
+test at tests/foundation/workflow-graph-editing.test.mjs:27:1
+✖ V019 remove approval reconnects only its incoming edge and preserves immutable input (1.336569ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   edges: [
+  -     {
+  -       from: 'ecececec-ecec-4cec-8cec-000000000001',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000002'
+  -     }
+  -   ],
+  -   nodes: [
+  -     {
+  -       id: 'ecececec-ecec-4cec-8cec-000000000002',
+  -       kind: 'end'
+  -     },
+  -     {
+  -       id: 'ecececec-ecec-4cec-8cec-000000000001',
+  -       kind: 'start'
+  -     }
+  -   ],
+  -   version: 1
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-graph-editing.test.mjs:28:52)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { version: 1, nodes: [ [Object], [Object] ], edges: [ [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-graph-editing.test.mjs:30:1
+✖ V019 remove approval shared by true and false preserves both separately qualified edges (0.621154ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   edges: [
+  -     {
+  -       from: 'ecececec-ecec-4cec-8cec-000000000001',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000004'
+  -     },
+  -     {
+  -       branch: 'true',
+  -       from: 'ecececec-ecec-4cec-8cec-000000000004',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000002'
+  -     },
+  -     {
+  -       branch: 'false',
+  -       from: 'ecececec-ecec-4cec-8cec-000000000004',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000002'
+  -     }
+  -   ],
+  -   nodes: [
+  -     {
+  -       id: 'ecececec-ecec-4cec-8cec-000000000001',
+  -       kind: 'start'
+  -     },
+  -     {
+  -       condition: {
+  -         children: [
+  -           {
+  -             fieldId: 'ecececec-ecec-4cec-8cec-000000000030',
+  -             operator: 'eq',
+  -             value: 'A'
+  -           },
+  -           {
+  -             children: [
+  -               {
+  -                 fieldId: 'ecececec-ecec-4cec-8cec-000000000031',
+  -                 operator: 'gte',
+  -                 value: '9007199254740993.01'
+  -               },
+  -               {
+  -                 fieldId: 'ecececec-ecec-4cec-8cec-000000000032',
+  -                 operator: 'eq',
+  -                 value: false
+  -               }
+  -             ],
+  -             operator: 'and'
+  -           }
+  -         ],
+  -         operator: 'or'
+  -       },
+  -       id: 'ecececec-ecec-4cec-8cec-000000000004',
+  -       kind: 'condition'
+  -     },
+  -     {
+  -       id: 'ecececec-ecec-4cec-8cec-000000000002',
+  -       kind: 'end'
+  -     }
+  -   ],
+  -   version: 1
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-graph-editing.test.mjs:32:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { version: 1, nodes: [ [Object], [Object], [Object] ], edges: [ [Object], [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-graph-editing.test.mjs:34:1
+✖ V019 remove converged condition keeps its common successor instead of inventing a chosen branch (0.329785ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   edges: [
+  -     {
+  -       from: 'ecececec-ecec-4cec-8cec-000000000001',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000002'
+  -     }
+  -   ],
+  -   nodes: [
+  -     {
+  -       id: 'ecececec-ecec-4cec-8cec-000000000002',
+  -       kind: 'end'
+  -     },
+  -     {
+  -       id: 'ecececec-ecec-4cec-8cec-000000000001',
+  -       kind: 'start'
+  -     }
+  -   ],
+  -   version: 1
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-graph-editing.test.mjs:35:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { version: 1, nodes: [ [Object], [Object] ], edges: [ [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-graph-editing.test.mjs:37:1
+✖ V019 removal of a converged nested condition preserves its incoming true branch and other path (0.497307ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   edges: [
+  -     {
+  -       from: 'ecececec-ecec-4cec-8cec-000000000001',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000004'
+  -     },
+  -     {
+  -       branch: 'true',
+  -       from: 'ecececec-ecec-4cec-8cec-000000000004',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000002'
+  -     },
+  -     {
+  -       branch: 'false',
+  -       from: 'ecececec-ecec-4cec-8cec-000000000004',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000003'
+  -     },
+  -     {
+  -       from: 'ecececec-ecec-4cec-8cec-000000000003',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000002'
+  -     }
+  -   ],
+  -   nodes: [
+  -     {
+  -       id: 'ecececec-ecec-4cec-8cec-000000000001',
+  -       kind: 'start'
+  -     },
+  -     {
+  -       condition: {
+  -         children: [
+  -           {
+  -             fieldId: 'ecececec-ecec-4cec-8cec-000000000030',
+  -             operator: 'eq',
+  -             value: 'A'
+  -           },
+  -           {
+  -             children: [
+  -               {
+  -                 fieldId: 'ecececec-ecec-4cec-8cec-000000000031',
+  -                 operator: 'gte',
+  -                 value: '9007199254740993.01'
+  -               },
+  -               {
+  -                 fieldId: 'ecececec-ecec-4cec-8cec-000000000032',
+  -                 operator: 'eq',
+  -                 value: false
+  -               }
+  -             ],
+  -             operator: 'and'
+  -           }
+  -         ],
+  -         operator: 'or'
+  -       },
+  -       id: 'ecececec-ecec-4cec-8cec-000000000004',
+  -       kind: 'condition'
+  -     },
+  -     {
+  -       approval: {
+  -         assigneeIds: [
+  -           'ecececec-ecec-4cec-8cec-000000000020',
+  -           'ecececec-ecec-4cec-8cec-000000000021'
+  -         ],
+  -         editableFieldIds: [
+  -           'ecececec-ecec-4cec-8cec-000000000030'
+  -         ],
+  -         mode: 'all'
+  -       },
+  -       id: 'ecececec-ecec-4cec-8cec-000000000003',
+  -       kind: 'approval'
+  -     },
+  -     {
+  -       id: 'ecececec-ecec-4cec-8cec-000000000002',
+  -       kind: 'end'
+  -     }
+  -   ],
+  -   version: 1
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-graph-editing.test.mjs:39:57)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { version: 1, nodes: [ [Object], [Object], [Object], [Object] ], edges: [ [Object], [Object], [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
