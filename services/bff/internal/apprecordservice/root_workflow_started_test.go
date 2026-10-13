@@ -120,3 +120,122 @@ func TestRootPersonalStartedPurposeSessionAndIrrelevantEditChanges(t *testing.T)
 		t.Fatal("unrelated edit authorization changed read projection", next, first)
 	}
 }
+
+func removeStartedRuntimeProjection(t *testing.T, f rootTaskFixture) {
+	t.Helper()
+	eventSQL(t, f, "DELETE FROM applications.workflow_tasks WHERE app_id=$1 AND instance_id=$2", f.app, f.instance.ID)
+	tag, e := f.owner.Exec(f.ctx, "DELETE FROM applications.workflow_instances WHERE app_id=$1 AND id=$2 AND state IN ('completed','rejected','withdrawn','no_effect')", f.app, f.instance.ID)
+	if e != nil || tag.RowsAffected() != 1 {
+		t.Fatal("terminal-only fixture removal failed", tag, e)
+	}
+	var retained bool
+	if e = f.owner.QueryRow(f.ctx, "SELECT EXISTS(SELECT 1 FROM applications.workflow_rounds WHERE instance_id=$1)", f.instance.ID).Scan(&retained); e != nil || !retained {
+		t.Fatal("independent round identity was lost", e)
+	}
+}
+func assertArchivedStartedItem(t *testing.T, item WorkflowStartedItem) {
+	t.Helper()
+	raw, _ := json.Marshal(item)
+	var m map[string]json.RawMessage
+	json.Unmarshal(raw, &m)
+	keys := []string{}
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	if !reflect.DeepEqual(keys, []string{"appId", "archived", "flowNameSource", "instance", "recordId", "viewId"}) || string(m["archived"]) != "true" || string(m["flowNameSource"]) != `"captured"` {
+		t.Fatal("retained round source is not explicit closed metadata", string(raw))
+	}
+}
+func TestRootPersonalStartedRetainsArchivedRoundAndOriginalConfirmedName(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	eventGrant(t, f, "all", f.public)
+	eventConfirmed(t, f, "reject")
+	before := startedRead(t, f, WorkflowStartedRequest{Page: 1})
+	removeStartedRuntimeProjection(t, f)
+	eventSQL(t, f, "UPDATE applications.workflow_definitions SET name='Changed current catalog' WHERE app_id=$1 AND id=$2", f.app, f.head.FlowID)
+	eventSQL(t, f, "UPDATE applications.workflow_versions SET graph_json='{}',bpmn_xml='<removed-test-fixture/>' WHERE app_id=$1 AND flow_id=$2", f.app, f.head.FlowID)
+	if _, e := f.service.SearchWorkflowStarted(f.ctx, f.principal, WorkflowStartedRequest{Page: 1, QueryVersion: before.QueryVersion}); !errors.Is(e, querycontext.ErrChanged) {
+		t.Fatal("archival transition did not invalidate old visible projection", e)
+	}
+	after := startedRead(t, f, WorkflowStartedRequest{Page: 1})
+	if after.Total != 1 || len(after.Items) != 1 {
+		t.Fatal("retained initiated round disappeared with runtime projection", after)
+	}
+	v := after.Items[0].Instance
+	if v.ID != f.instance.ID || v.InitiatorID != f.actor || v.State != "rejected" || v.Sequence != 2 || v.Name != "Expense" || v.CreatedAt != before.Items[0].Instance.CreatedAt {
+		t.Fatal("archive invented current name or state", v)
+	}
+	assertArchivedStartedItem(t, after.Items[0])
+	again := startedRead(t, f, WorkflowStartedRequest{Page: 1, QueryVersion: after.QueryVersion})
+	if !reflect.DeepEqual(after, again) {
+		t.Fatal("unchanged archive was not stable")
+	}
+	beyond := startedRead(t, f, WorkflowStartedRequest{Page: 2, PageSize: 1, QueryVersion: after.QueryVersion})
+	if beyond.Total != 1 || beyond.Items == nil || len(beyond.Items) != 0 {
+		t.Fatal("archive paging not authoritative", beyond)
+	}
+}
+func TestRootPersonalStartedArchiveNeedsCurrentReadAndHistoryBeforeCount(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	eventGrant(t, f, "all", f.public)
+	eventConfirmed(t, f, "agree")
+	removeStartedRuntimeProjection(t, f)
+	first := startedRead(t, f, WorkflowStartedRequest{Page: 1})
+	if first.Total != 1 {
+		t.Fatal("readable archive missing", first)
+	}
+	eventSQL(t, f, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.history')", f.app)
+	eventSQL(t, f, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.history'", f.app)
+	if _, e := f.service.SearchWorkflowStarted(f.ctx, f.principal, WorkflowStartedRequest{Page: 1, QueryVersion: first.QueryVersion}); !errors.Is(e, querycontext.ErrChanged) {
+		t.Fatal("revoked history remained in archived page", e)
+	}
+	next := startedRead(t, f, WorkflowStartedRequest{Page: 1})
+	if next.Total != 0 || len(next.Items) != 0 {
+		t.Fatal("initiator status bypassed current history authorization", next)
+	}
+}
+func TestRootPersonalStartedArchiveRejectsCorruptConfirmedResult(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	eventGrant(t, f, "all", f.public)
+	event := eventConfirmed(t, f, "agree")
+	removeStartedRuntimeProjection(t, f)
+	var raw []byte
+	if e := f.owner.QueryRow(f.ctx, "SELECT result_bytes FROM applications.workflow_execution_events WHERE command_id=$1", event.EventID).Scan(&raw); e != nil {
+		t.Fatal(e)
+	}
+	raw[len(raw)-1] ^= 1
+	eventSQL(t, f, "UPDATE applications.workflow_execution_events SET result_bytes=$2 WHERE command_id=$1", event.EventID, raw)
+	got, e := f.service.SearchWorkflowStarted(f.ctx, f.principal, WorkflowStartedRequest{Page: 1})
+	if !errors.Is(e, ErrUnavailable) || len(got.Items) != 0 {
+		t.Fatal("damaged archived result silently disappeared or exposed a state", got, e)
+	}
+}
+func TestRootPersonalStartedArchiveNoEffectCannotOverwriteConfirmedTerminal(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	eventGrant(t, f, "all", f.public)
+	eventConfirmed(t, f, "reject")
+	c, p := f.rootProjection.accept(t, "agree", f.task.ID, "", 1, 2)
+	r, b := f.receipt(t, c, "unchanged", "task_inactive")
+	f.apply(t, c, p, r, b, true)
+	removeStartedRuntimeProjection(t, f)
+	got := startedRead(t, f, WorkflowStartedRequest{Page: 1})
+	if got.Total != 1 || len(got.Items) != 1 || got.Items[0].Instance.State != "rejected" || got.Items[0].Instance.Sequence != 2 {
+		t.Fatal("later no-effect replaced confirmed business state", got)
+	}
+	assertArchivedStartedItem(t, got.Items[0])
+}
+func TestRootPersonalStartedArchiveCancelledInitialStartRemainsNoEffect(t *testing.T) {
+	p := rootProjectionFixture(t)
+	c, payload := p.accept(t, "start", "", "", 0, 0)
+	r, b := p.receipt(t, c, "unchanged", "cancelled")
+	p.apply(t, c, payload, r, b, true)
+	f := rootTaskFixture{rootProjection: p}
+	eventGrant(t, f, "all", f.public)
+	removeStartedRuntimeProjection(t, f)
+	got := startedRead(t, f, WorkflowStartedRequest{Page: 1})
+	if got.Total != 1 || len(got.Items) != 1 || got.Items[0].Instance.State != "no_effect" || got.Items[0].Instance.Sequence != 0 {
+		t.Fatal("cancelled reservation invented a successful workflow", got)
+	}
+	assertArchivedStartedItem(t, got.Items[0])
+}
