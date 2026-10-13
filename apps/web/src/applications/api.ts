@@ -55,7 +55,7 @@ export async function applicationReadPost<T>(actorId: string, path: string, body
  const managerQuery=!!managerMatch&&managerMatch.slice(1).every(id=>id!=='00000000-0000-0000-0000-000000000000');
  const retainedMatch=new RegExp(`^applications/(${uuid})/forms/(${uuid})/records/deleted/search$`).exec(path);
  const retainedQuery=!!retainedMatch&&retainedMatch.slice(1).every(id=>id!=='00000000-0000-0000-0000-000000000000');
- if (path !== 'structure-copies/plan' && path !== 'structure-copies/preflight' && path !== 'application-templates/preflight' && path !== 'workflow-tasks/search' && !recordWorkflows && !managerQuery && !retainedQuery && !new RegExp(`^applications/${uuid}/forms/${uuid}/records/search$`, 'i').test(path)) throw new TypeError('Read-only POST is restricted to record search');
+ if (path !== 'structure-copies/plan' && path !== 'structure-copies/preflight' && path !== 'application-templates/preflight' && path !== 'workflow-tasks/search' && path !== 'workflow-approvals/search' && !recordWorkflows && !managerQuery && !retainedQuery && !new RegExp(`^applications/${uuid}/forms/${uuid}/records/search$`, 'i').test(path)) throw new TypeError('Read-only POST is restricted to record search');
  return (await request<T>(actorId, path, 'POST', body, signal, 200, false)).data;
 }
 
