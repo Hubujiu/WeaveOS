@@ -54,3 +54,6 @@ test('Root approved table uses the source 12px header typography',async({page})=
 test('Root approved current tab independently uses the source 40px height',async({page})=>{
  await setup(page);await page.goto(route);await expect(page.getByText('已审批流程 1',{exact:true})).toBeVisible();await expect(page.locator('.workflow-inbox-current')).toHaveCSS('height','40px');
 });
+test('Root approved table avoids spreadsheet grid borders in the source personal list',async({page})=>{
+ await setup(page);await page.goto(route);const table=page.getByRole('table',{name:'已审批',exact:true});await expect(table).toBeVisible();const borders=await table.locator('thead th:first-child,tbody tr:first-child td:first-child').evaluateAll(cells=>cells.map(cell=>{const s=getComputedStyle(cell);return [s.borderTopWidth,s.borderRightWidth,s.borderBottomWidth,s.borderLeftWidth]}));expect(borders).toEqual([['0px','0px','0px','0px'],['0px','0px','0px','0px']]);
+});
