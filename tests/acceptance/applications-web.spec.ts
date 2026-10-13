@@ -342,7 +342,7 @@ test('V030-012 real B5: create-only owner, same-app menu member and cross-app de
   let requestSequence = 0;
   const requestKind = (url: string) => {
    const path = new URL(url).pathname;
-   if (path === '/api/v1/session') return 'session';
+   if (path === '/api/v1/sessions/current') return 'session';
    if (path === '/api/v1/sessions') return 'sessions';
    if (path === '/api/v1/applications') return 'applications';
    if (path === '/api/v1/applications/' + appA.id) return 'application-a';

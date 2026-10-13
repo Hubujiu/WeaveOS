@@ -9,7 +9,7 @@ test('real task save, approve, retained evidence and outsider isolation',async({
  async function context(other=false){
   // Only this isolated synthetic TLS fixture, matching existing product tests.
   const context=await browser.newContext({baseURL:f.origin,ignoreHTTPSErrors:true,viewport:{width:1440,height:1000}});contexts.push(context);
-  await context.addCookies([{name:'__Host-weaveos_session',value:other?f.otherSession:f.session,url:f.origin,httpOnly:true,secure:true,sameSite:'Lax'},{name:'__Host-weaveos_csrf',value:other?f.otherCsrf:f.csrf,url:f.origin,httpOnly:false,secure:true,sameSite:'Lax'}]);return context;
+  await context.addCookies([{name:'__Host-session',value:other?f.otherSession:f.session,url:f.origin,httpOnly:true,secure:true,sameSite:'Lax'},{name:'__Host-csrf',value:other?f.otherCsrf:f.csrf,url:f.origin,httpOnly:false,secure:true,sameSite:'Lax'}]);return context;
  }
  try{
   const own=await context(),page=await own.newPage(),saved='browser corrected '+info.project.name;
