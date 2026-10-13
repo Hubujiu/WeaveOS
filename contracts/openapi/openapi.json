@@ -21236,6 +21236,219 @@
         },
         "x-max-body-bytes": 4096
       }
+    },
+    "/api/v1/workflow-started/search": {
+      "post": {
+        "operationId": "searchPersonalStartedWorkflows",
+        "summary": "Search current readable workflow instances initiated by me",
+        "description": "V030-075 current-runtime first slice; not a permanent deleted-flow history. Real instance initiator must equal the current Session actor. Current source-view menu and actual row/read-field permissions are applied before total and pages; owner status does not substitute for initiator. Reuses the exact V046 instance summary without business values or action capabilities. Independent Session-bound query context; visible status/name changes require refresh, unrelated edit grants do not. Stable createdAt DESC/id DESC, batch64 and10-second deadline, no partial totals.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authorized result",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowStartedResultEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Never cache private workflow summaries"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "x-max-body-bytes": 4096,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowInboxSearch"
+              }
+            }
+          }
+        },
+        "x-max-body-bytes": 4096
+      }
     }
   },
   "components": {
@@ -37046,6 +37259,94 @@
               },
               "data": {
                 "$ref": "#/components/schemas/WorkflowApprovalsResult"
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowStartedItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "appId",
+          "viewId",
+          "recordId",
+          "instance"
+        ],
+        "properties": {
+          "appId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "viewId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "recordId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "instance": {
+            "$ref": "#/components/schemas/WorkflowInstanceSummary"
+          }
+        }
+      },
+      "WorkflowStartedResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize",
+          "queryVersion"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/WorkflowStartedItem"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "queryVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      },
+      "WorkflowStartedResultEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/WorkflowStartedResult"
               }
             }
           }
