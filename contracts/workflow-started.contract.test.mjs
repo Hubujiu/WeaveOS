@@ -8,3 +8,6 @@ test('personal started result admits exactly current or retained-round archived 
  assert.deepEqual(s.WorkflowStartedResult.properties.items.items,{oneOf:[{$ref:'#/components/schemas/WorkflowStartedItem'},{$ref:'#/components/schemas/WorkflowStartedArchivedItem'}]});
  const a=s.WorkflowStartedArchivedItem;assert.ok(a,'archived retained-round projection missing');assert.equal(a.additionalProperties,false);assert.deepEqual(a.required.toSorted(),['appId','archived','flowNameSource','instance','recordId','viewId']);assert.deepEqual(Object.keys(a.properties).sort(),a.required.toSorted());assert.deepEqual(a.properties.archived,{type:'boolean',const:true});assert.deepEqual(a.properties.flowNameSource.enum,['captured','legacy_last_known']);assert.equal(a.properties.instance.$ref,'#/components/schemas/WorkflowInstanceSummary');
 });
+test('archived initiated-instance schema cannot label an active or starting instance as archived',()=>{
+ assert.deepEqual(s.WorkflowStartedArchivedItem.properties.instance.properties?.state?.enum,['completed','rejected','withdrawn','no_effect']);
+});
