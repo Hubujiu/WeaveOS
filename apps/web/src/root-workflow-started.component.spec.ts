@@ -48,3 +48,12 @@ test('Root started page distinguishes pending, active and confirmed terminal ins
  await page.goto(route);for(const text of ['正在发起','审批中','已通过','已驳回','已撤回','未执行'])await expect(page.getByText(text,{exact:true}).first()).toBeVisible();
  await expect(page.getByRole('button',{name:'同意',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'撤回',exact:true})).toHaveCount(0);
 });
+
+// V075 15:35 independent retained-round variant. Display provenance rather than
+// disguising a removed runtime projection as a currently executable instance.
+for(const source of ['captured','legacy_last_known'] as const)test('Root started retained round displays archived provenance and '+source+' name source',async({page})=>{
+ const calls=await setup(page,body=>({data:{...result(body),total:1,items:[{...item(1),archived:true,flowNameSource:source,instance:{...item(1).instance,name:'保留的差旅流程',state:'rejected'}}]}}));
+ await page.goto(route);await expect(page.getByText('保留的差旅流程',{exact:true})).toBeVisible();await expect(page.getByText('已驳回',{exact:true})).toBeVisible();await expect(page.getByText('已归档',{exact:true})).toBeVisible();
+ await expect(page.getByText('最后已知名称',{exact:true})).toHaveCount(source==='legacy_last_known'?1:0);
+ await expect(page.getByRole('button',{name:'撤回',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'同意',exact:true})).toHaveCount(0);expect(calls).toHaveLength(1);expect(calls[0].body).toEqual({page:1,pageSize:20});
+});
