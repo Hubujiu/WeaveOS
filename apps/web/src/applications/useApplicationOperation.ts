@@ -1,3 +1,4 @@
+import {validRecordLifecycleRequest,validRecordLifecycleReceipt} from './records/lifecycleContract';
 import {validWorkflowManagementRequest,validWorkflowManagementReceipt} from './workflows/managementContract';
 import {validPublicationRequest,validPublicationResult} from './workflows/publicationContract';
 import {validWorkflowDefinitionRequest,validWorkflowDefinitionReceipt} from './workflows/definitionSaveContract';
@@ -42,6 +43,7 @@ function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean
  // in perform(), including actual HTTP status and the confirmed command ID.
  if (packet.resource.kind === 'workflow-publication') return true;
  if (packet.resource.kind === 'task-action'||packet.resource.kind === 'instance-action') return true;
+ if (packet.resource.kind === 'record-lifecycle') return validRecordLifecycleReceipt(result,packet.operationId??'',packet.resource.id,packet.body?.expectedRecordVersion as number,packet.body?.expectedSchemaVersion as number,packet.resource.action);
  if (packet.resource.kind === 'workflow-management') return validWorkflowManagementReceipt(result,packet.operationId??'',packet.resource.id,packet.body?.expectedRevision as number,packet.resource.action);
  if (packet.resource.kind === 'workflow-definition') return validWorkflowDefinitionReceipt(result,packet.operationId??'',packet.resource.id,packet.body?.expectedRevision as number);
  if (packet.resource.kind === 'round-record') return isMutationResult(result,packet.operationId??'',packet.resource.id)&&result.recordVersion>0&&result.schemaVersion>0;
@@ -75,9 +77,9 @@ export function useApplicationOperation<T>(options: ScopedApplicationOperationOp
 export function useApplicationOperation<T>(actorId: string, confirmed: (result: T) => void, unauthorized: () => void, identityMismatch: () => void, valid: (result: T) => boolean, scope?: string, onDefinitePolicyConflict?: () => void): ReturnType<typeof useOperation<T>>;
 export function useApplicationOperation<T>(actorOrOptions: string | ScopedApplicationOperationOptions<T>, confirmed?: (result: T) => void, unauthorized?: () => void, identityMismatch?: () => void, valid?: (result: T) => boolean, scope?: string, onDefinitePolicyConflict?: () => void) {
  const scoped = typeof actorOrOptions === 'string' ? null : actorOrOptions;
- // Publication recovery belongs to the flow. Its immutable candidate remains
- // in the packet; a newer server candidate must not conceal an unknown write.
- const recoveryResource = scoped?.resource.kind === 'workflow-publication'
+ // Recover by stable resource identity. A newer candidate or lifecycle state
+ // must not conceal the original version/action retained in the immutable packet.
+ const recoveryResource = (scoped?.resource.kind === 'workflow-publication'||scoped?.resource.kind === 'record-lifecycle')
   ? {kind:scoped.resource.kind,appId:scoped.resource.appId,viewId:scoped.resource.viewId,id:scoped.resource.id}
   : scoped?.resource;
  const scopedKey = scoped ? JSON.stringify([scoped.scope ?? '', recoveryResource]) : scope;
@@ -224,7 +226,9 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
   else {
    const request = requestOrPath;
    if (!scope || !scopedResource || JSON.stringify(request.resource) !== JSON.stringify(scopedResource)) throw new TypeError('Mutation resource does not match the mounted scope');
-   if (request.resource.kind === 'workflow-management') {
+   if (request.resource.kind === 'record-lifecycle') {
+    if (!validRecordLifecycleRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'workflow-management') {
     if (!validWorkflowManagementRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
    } else if (request.resource.kind === 'workflow-publication') {
     if (!validPublicationRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');

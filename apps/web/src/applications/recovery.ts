@@ -10,6 +10,7 @@ export type ApplicationPacket = {
  body?: { operationId?: string; [key: string]: unknown };
  query?: { operationId: string; expectedDraftVersion?: number; expectedVersion?: number };
  resource?: { kind: 'record' | 'draft' | 'preset'; appId: string; viewId: string; id?: string; creationNonce?: string }
+  | { kind:'record-lifecycle';appId:string;viewId:string;id:string;action:'deletion'|'restoration';creationNonce?:never }
   | { kind:'workflow-publication';appId:string;viewId:string;id:string;version:number;creationNonce?:never }
   | { kind:'workflow-management';appId:string;viewId:string;id:string;action:'enable'|'close';creationNonce?:never }
   | { kind:'workflow-definition';appId:string;viewId:string;id:string;creationNonce?:never }
