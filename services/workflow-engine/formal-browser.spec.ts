@@ -3,7 +3,8 @@ import {readFileSync} from 'node:fs';
 import {validateFixture} from './product-browser-contract.mjs';
 
 test('real task save, approve, retained evidence and outsider isolation',async({browser},info)=>{
- const f=validateFixture(JSON.parse(readFileSync(process.env.WEAVEOS_PRODUCT_BROWSER_FIXTURE!,'utf8')),process.env.WEAVEOS_PRODUCT_HEAD,info.project.name);
+ let f:ReturnType<typeof validateFixture>;
+ try{f=validateFixture(JSON.parse(readFileSync(process.env.WEAVEOS_PRODUCT_BROWSER_FIXTURE!,'utf8')),process.env.WEAVEOS_PRODUCT_HEAD,info.project.name);}catch{throw new Error('Private isolated browser fixture unavailable');}
  const contexts:BrowserContext[]=[];
  async function context(other=false){
   // Only this isolated synthetic TLS fixture, matching existing product tests.

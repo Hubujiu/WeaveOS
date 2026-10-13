@@ -2,6 +2,7 @@ import {useCallback,useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {applicationApi,applicationApiEnvelope,ApplicationError} from '../api';
 import {Table,type TableColumn} from '../../vendor/arca/components/motion/table';
 import {historyComparison,historyValue,validWorkflowEventDetail,validWorkflowHistory,type HistoricalField,type WorkflowEvent,type WorkflowEventDetail} from './historyContract';
+import type {ComparisonSnapshot} from './comparisonSnapshot';
 import type {TaskLocation,TaskPreview} from './taskPreviewContract';
 
 type Props={actorId:string;location:Pick<TaskLocation,'appId'|'viewId'|'recordId'>;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onCompare?:(detail:WorkflowEventDetail)=>void};
@@ -106,21 +107,23 @@ function currentField(field:HistoricalField,preview:TaskPreview):HistoricalField
  if(current.kind==='single_select'||current.kind==='multi_select')for(const option of current.config.options)if(!valueLabels[option.id])valueLabels[option.id]={label:option.label,deleted:false};
  return {fieldId:current.id,fieldName:current.name,fieldKind:current.kind,value:preview.record.values[current.id],valueLabels};
 }
-export function WorkflowComparison({detail,preview,onBack}:{detail:WorkflowEventDetail;preview:TaskPreview;onBack:()=>void}){
+type ComparisonProps={detail:WorkflowEventDetail;onBack:()=>void;backLabel?:string}&({preview:TaskPreview;snapshot?:never}|{snapshot:ComparisonSnapshot;preview?:never});
+export function WorkflowComparison({detail,preview,snapshot,onBack,backLabel='返回审批处理'}:ComparisonProps){
  const heading=useRef<HTMLHeadingElement|null>(null);
  useLayoutEffect(()=>{heading.current?.scrollIntoView({block:'start',behavior:'instant'});},[]);
+ const current=snapshot??{recordVersion:preview!.record.recordVersion,updatedAt:preview!.record.updatedAt,fields:detail.basis.fields.flatMap(field=>{const value=currentField(field,preview!);return value?[value]:[];})};
  const columns:TableColumn<HistoricalField>[]=[
   {key:'fieldName',header:'字段',dataType:'text',sortable:false,cell:field=><span>{field.fieldName}</span>},
   {key:'before',header:'审批时 v'+detail.event.recordVersion,dataType:'text',sortable:false,cell:field=><span>{historyValue(field)}</span>},
-  {key:'after',header:'当前 v'+preview.record.recordVersion,dataType:'text',sortable:false,cell:field=><span>{historyComparison(field,currentField(field,preview)).after}</span>},
+  {key:'after',header:'当前 v'+current.recordVersion,dataType:'text',sortable:false,cell:field=><span>{historyComparison(field,current.fields.find(value=>value.fieldId===field.fieldId)).after}</span>},
  ];
  return <section className="workflow-comparison" aria-label="版本对照">
   <div className="app-page-heading"><h1 ref={heading}>版本差异</h1></div>
   <section className="app-surface workflow-comparison-card">
-   <div className="workflow-comparison-versions"><div><span>已审批依据</span><p className="workflow-readonly-value">v{detail.event.recordVersion} · {new Date(detail.event.occurredAt).toLocaleString('zh-CN',{hour12:false})}</p></div><div><span>当前记录</span><p className="workflow-readonly-value">v{preview.record.recordVersion} · {new Date(preview.record.updatedAt).toLocaleString('zh-CN',{hour12:false})}</p></div></div>
+   <div className="workflow-comparison-versions"><div><span>已审批依据</span><p className="workflow-readonly-value">v{detail.event.recordVersion} · {new Date(detail.event.occurredAt).toLocaleString('zh-CN',{hour12:false})}</p></div><div><span>当前记录</span><p className="workflow-readonly-value">v{current.recordVersion} · {new Date(current.updatedAt).toLocaleString('zh-CN',{hour12:false})}</p></div></div>
    <div className="arca-source personnel-source-scope"><Table className="personnel-source-table rounded-xl" ariaLabel="版本差异" columns={columns} data={detail.basis.fields} getRowId={field=>field.fieldId} rowHeight={56} minWidth={660} emptyState="当时可见的审批依据为空"/></div>
    <p className="workflow-history-meta">仅对照当前可读取的已保存记录；未保存修改不参与对照。</p>
-   <div className="workflow-comparison-back"><button type="button" className="admin-button" onClick={onBack}>返回审批处理</button></div>
+   <div className="workflow-comparison-back"><button type="button" className="admin-button" onClick={onBack}>{backLabel}</button></div>
   </section>
  </section>;
 }
