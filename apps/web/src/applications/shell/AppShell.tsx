@@ -1,3 +1,5 @@
+import {TemplateImport} from '../templates/TemplateImport';
+import {scopedUnconfirmed} from '../recovery';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import type { Access, User } from '../../workspace-types';
@@ -21,6 +23,7 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onPerm
  const taskParts=location.pathname.match(/^\/app\/approvals\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)\/?$/);
  const taskLocation=taskParts&&taskParts.slice(1).every(id=>uuid.test(id))?{appId:taskParts[1],viewId:taskParts[2],recordId:taskParts[3],instanceId:taskParts[4],taskId:taskParts[5]}:null;
  const approvals = !!taskLocation||/^\/app\/approvals\/?$/.test(location.pathname);
+ const templateImport=location.pathname==='/app/application-templates/import';
  const catalog = location.pathname === '/app/applications' || location.pathname === '/app/applications/';
  const parsedAppRoute = location.pathname.match(/^\/app\/applications\/([^/]+)(?:\/forms\/([^/]+)(?:\/(design|workflows)(?:\/([^/]+)\/(design|new))?)?)?\/?$/);
  const appRoute=parsedAppRoute?.[4]&&(parsedAppRoute[3]!=='workflows'||!uuid.test(parsedAppRoute[4]))?null:parsedAppRoute;
@@ -34,6 +37,9 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onPerm
  const [account, setAccount] = useState(false);
  const [create, setCreate] = useState(false); const [success, setSuccess] = useState('');
  useEffect(() => { if (suspended) { setTabs([]); setAccount(false); setCreate(false); setSuccess(''); onDirty(false); } }, [suspended, onDirty]);
+ const importTrigger=useRef<HTMLButtonElement|null>(null),restoreImportFocus=useRef(false);
+ useEffect(()=>{if(catalog&&restoreImportFocus.current){restoreImportFocus.current=false;queueMicrotask(()=>importTrigger.current?.focus());}},[catalog,location.pathname]);
+ const closeImport=()=>{restoreImportFocus.current=true;navigate('/app/applications');};
  const createTrigger = useRef<HTMLButtonElement | null>(null);
  const closeCreate = useCallback(() => { setCreate(false); queueMicrotask(() => { if (createTrigger.current?.isConnected) createTrigger.current.focus(); }); }, []);
  const previousPath = useRef(location.pathname);
@@ -70,22 +76,22 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onPerm
  };
  const canCreate = access.bootstrapAdmin || access.permissions.some(p => p.code === 'applications.create');
  if (suspended) return null;
- return <WorkspaceShell user={user} access={access} catalog={catalog} appId={appId} admin={!!adminContent} approvals={approvals} onApprovals={()=>navigate('/app/approvals')}
+ return <WorkspaceShell user={user} access={access} catalog={catalog||templateImport} appId={appId} admin={!!adminContent} approvals={approvals} onApprovals={()=>navigate('/app/approvals')}
   accountOpen={account} onAccount={()=>setAccount(value=>!value)} onHome={()=>navigate('/app')}
   onCatalog={()=>navigate('/app/applications')} onAdmin={()=>navigate('/app/admin')}
   tabs={
    <nav className="app-tabs" aria-label="全局应用标签">
-    <button className="app-global-tab app-home-tab" aria-current={!adminContent && !catalog && !appId && !approvals ? 'page' : undefined} onClick={() => navigate('/app')}>首页</button>
+    <button className="app-global-tab app-home-tab" aria-current={!adminContent && !catalog && !appId && !approvals && !templateImport ? 'page' : undefined} onClick={() => navigate('/app')}>首页</button>
     {tabs.map(tab => <div className="app-tab-group" key={tab.application.id}><button className="app-global-tab" aria-current={appId === tab.application.id ? 'page' : undefined} onClick={() => open(tab.application)}>{tab.application.name}</button>{!tab.pinned && <button className="app-close-tab" aria-label={'关闭应用：' + tab.application.name} onClick={() => closeTab(tab.application.id)}>×</button>}</div>)}
     <button className="app-global-tab" aria-current={catalog ? 'page' : undefined} onClick={() => navigate('/app/applications')}>全部应用</button>
    </nav>
   }>
-  <main className="app-content" aria-label={adminContent ? '人员管理' : approvals ? '我的待办' : catalog ? '应用中心' : appId ? '应用工作台' : '主页'}>
+  <main className="app-content" aria-label={templateImport?'模板导入':adminContent ? '人员管理' : approvals ? '我的待办' : catalog ? '应用中心' : appId ? '应用工作台' : '主页'}>
    {error && <p role="alert">{error}</p>}{catalog && success && <p className="app-success" role="status">{success}</p>}
-   {adminContent ?? (appId ? <ApplicationWorkspace actorId={user.id} appId={appId} viewId={viewId} configurationRoute={configurationRoute} workflowManagementRoute={workflowManagementRoute} workflowFlowId={workflowFlowId} workflowCreateMode={appRoute?.[5]==='new'} openWorkflow={(id,flowId,create)=>navigate(runtimeFormPath(appId,id)+'/workflows/'+encodeURIComponent(flowId)+(create?'/new':'/design'))} manageWorkflows={id=>navigate(runtimeFormPath(appId,id)+'/workflows')} bootstrapAdmin={access.bootstrapAdmin} opened={opened} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onPermissionDirty={onPermissionDirty} onFormsDirty={onFormsDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} openForm={id=>navigate(runtimeFormPath(appId,id))} configureForm={id=>openConfiguration(id,location.pathname)} backFromConfiguration={()=>navigate(configurationReturn())} backToStructure={()=>navigate('/app/applications/'+encodeURIComponent(appId))} />
+   {adminContent ?? (templateImport ? <TemplateImport key={user.id} actorId={user.id} canCreate={canCreate} onClose={closeImport} onOpenApplication={id=>{apps.reload();navigate('/app/applications/'+encodeURIComponent(id));}} onDirty={onFormsDirty} registerLeaveGuard={registerLeaveGuard} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/> : appId ? <ApplicationWorkspace actorId={user.id} appId={appId} viewId={viewId} configurationRoute={configurationRoute} workflowManagementRoute={workflowManagementRoute} workflowFlowId={workflowFlowId} workflowCreateMode={appRoute?.[5]==='new'} openWorkflow={(id,flowId,create)=>navigate(runtimeFormPath(appId,id)+'/workflows/'+encodeURIComponent(flowId)+(create?'/new':'/design'))} manageWorkflows={id=>navigate(runtimeFormPath(appId,id)+'/workflows')} bootstrapAdmin={access.bootstrapAdmin} opened={opened} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onPermissionDirty={onPermissionDirty} onFormsDirty={onFormsDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} openForm={id=>navigate(runtimeFormPath(appId,id))} configureForm={id=>openConfiguration(id,location.pathname)} backFromConfiguration={()=>navigate(configurationReturn())} backToStructure={()=>navigate('/app/applications/'+encodeURIComponent(appId))} />
     : taskLocation ? <WorkflowTaskPage key={JSON.stringify([user.id,taskLocation])} actorId={user.id} location={taskLocation} onDirtyChange={onFormsDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onBack={()=>navigate('/app/approvals')} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>
     : approvals ? <WorkflowInbox key={user.id} actorId={user.id} onOpenTask={task=>navigate('/app/approvals/'+[task.appId,task.viewId,task.recordId,task.instanceId,task.id].map(encodeURIComponent).join('/'))} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>
-    : catalog ? <ApplicationCatalog applications={apps.items} loading={apps.loading} error={apps.error} retry={apps.reload} canCreate={canCreate} create={trigger => { createTrigger.current = trigger; setSuccess(''); setCreate(true); }} open={open} />
+    : catalog ? <ApplicationCatalog canImport={canCreate||scopedUnconfirmed(user.id).some(packet=>packet.resource?.kind==='template-import')} importTrigger={importTrigger} importTemplate={()=>navigate('/app/application-templates/import')} applications={apps.items} loading={apps.loading} error={apps.error} retry={apps.reload} canCreate={canCreate} create={trigger => { createTrigger.current = trigger; setSuccess(''); setCreate(true); }} open={open} />
     : <><div className="app-page-heading"><h1>主页</h1></div><section className="app-surface app-home-section"><h2>我的应用</h2>{apps.loading ? <p role="status">正在加载应用…</p> : apps.error ? <div className="app-state"><p role="alert">{apps.error}</p><button className="admin-button" onClick={apps.reload}>重试</button></div> : apps.items.length ? <ApplicationCards applications={apps.items} open={open} /> : <div className="home-empty"><h3>暂无可用应用</h3><p>获得应用访问权限后，将在这里显示。</p></div>}</section><div><button className="admin-button" onClick={() => navigate('/app/applications')}>打开应用中心</button></div></>)}
   </main>
   {account && <section className="account-menu" aria-label="账号信息"><strong>{user.account}</strong><p>{access.bootstrapAdmin ? 'Bootstrap Admin' : access.identities.length ? access.identities.map(v => v.name).join('、') : '尚未分配身份'}</p>{access.permissions.map(p => <div key={p.code}><span>{p.name}</span>{p.sources?.map((s, i) => <small key={i}>{s.identityName}{s.templateName ? ' · ' + s.templateName : ' · 直接权限'}</small>)}</div>)}<button className="admin-button" disabled={pending} onClick={logout}>退出登录</button></section>}

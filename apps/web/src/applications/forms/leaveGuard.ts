@@ -4,6 +4,7 @@ type RecordScope=AppScope&{kind:'record';viewId:string}&(
   | {recordId?:never;clientDraftId:string}
 );
 export type LeaveScope=
+  | {kind:'template-import';actorId:string;appId?:never}
   | (AppScope&{kind:'structure'})
   | (AppScope&{kind:'designer';viewId:string})
   | (AppScope&{kind:'workflow-definition';viewId:string;flowId:string})
