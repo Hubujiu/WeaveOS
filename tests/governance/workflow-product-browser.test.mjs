@@ -18,3 +18,6 @@ test('product browser gate rejects missing, skipped, retried or falsely green br
 test('product browser gate rejects absent or contradictory real backend completion and stale candidate identity',()=>{
  for(const change of [x=>x.backend.pop(),x=>x.backend.push(x.backend[0]),x=>x.backend[0].head='b'.repeat(40),x=>x.backend[0].browser='webkit',x=>x.backend[0].events.pop(),x=>x.backend[0].events[1].Action='fail',x=>x.backend[0].events[1].Action='skip',x=>x.backend[0].events[1].Test='OtherTest',x=>x.backend[0].events.push({Action:'fail',Package:pkg}),x=>x.head='bad']){const x=input();change(x);assert.throws(()=>validateReports(x))}
 });
+test('product browser fixture errors cannot echo malformed private fixture input',()=>{
+ const marker='synthetic-private-fixture-value';try{validateFixture({...fixture(),origin:marker},head,'chromium');assert.fail('bad URL accepted')}catch(error){assert.equal((String(error.stack)+JSON.stringify(error)).includes(marker),false)}
+});
