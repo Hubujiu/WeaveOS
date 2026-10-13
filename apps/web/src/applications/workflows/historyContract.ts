@@ -21,7 +21,7 @@ function event(v:unknown):v is WorkflowEvent{
 }
 export function validWorkflowHistory(data:unknown,pagination:unknown,pageSize:number):data is {items:WorkflowEvent[]}{
  if(!integer(pageSize,1)||pageSize>100||!object(data)||!exact(data,['items'])||!Array.isArray(data.items)||data.items.length>pageSize||!data.items.every(event)||new Set(data.items.map(e=>e.id)).size!==data.items.length||!object(pagination)||!exact(pagination,['hasMore','nextPageToken'])||typeof pagination.hasMore!=='boolean')return false;
- return pagination.hasMore?typeof pagination.nextPageToken==='string'&&/^[A-Za-z0-9_-]{43}$/.test(pagination.nextPageToken):pagination.nextPageToken===null;
+ return pagination.hasMore?typeof pagination.nextPageToken==='string'&&pagination.nextPageToken.length>0:pagination.nextPageToken===null;
 }
 function field(v:unknown):v is HistoricalField{
  if(!object(v)||!exact(v,['fieldId','fieldName','fieldKind','value','valueLabels'])||!id(v.fieldId)||typeof v.fieldName!=='string'||typeof v.fieldKind!=='string'||!object(v.valueLabels))return false;
