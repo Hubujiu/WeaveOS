@@ -75,7 +75,12 @@ export function useApplicationOperation<T>(options: ScopedApplicationOperationOp
 export function useApplicationOperation<T>(actorId: string, confirmed: (result: T) => void, unauthorized: () => void, identityMismatch: () => void, valid: (result: T) => boolean, scope?: string, onDefinitePolicyConflict?: () => void): ReturnType<typeof useOperation<T>>;
 export function useApplicationOperation<T>(actorOrOptions: string | ScopedApplicationOperationOptions<T>, confirmed?: (result: T) => void, unauthorized?: () => void, identityMismatch?: () => void, valid?: (result: T) => boolean, scope?: string, onDefinitePolicyConflict?: () => void) {
  const scoped = typeof actorOrOptions === 'string' ? null : actorOrOptions;
- const scopedKey = scoped ? JSON.stringify([scoped.scope ?? '', scoped.resource]) : scope;
+ // Publication recovery belongs to the flow. Its immutable candidate remains
+ // in the packet; a newer server candidate must not conceal an unknown write.
+ const recoveryResource = scoped?.resource.kind === 'workflow-publication'
+  ? {kind:scoped.resource.kind,appId:scoped.resource.appId,viewId:scoped.resource.viewId,id:scoped.resource.id}
+  : scoped?.resource;
+ const scopedKey = scoped ? JSON.stringify([scoped.scope ?? '', recoveryResource]) : scope;
  return useOperation<T>(scoped?.actorId ?? actorOrOptions as string, (scoped?.confirmed ?? confirmed!) as (result: T | undefined) => void, scoped?.unauthorized ?? unauthorized!, scoped?.identityMismatch ?? identityMismatch!, scoped ? (result, packet) => validScopedReceipt(result, packet) && (scoped.valid?.(result, packet) ?? true) : valid!, scopedKey, onDefinitePolicyConflict, scoped?.resource);
 }
 
