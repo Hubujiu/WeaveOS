@@ -90,13 +90,19 @@ jobs:
             .github/workflows/preflight.yml
       - name: Locate Go compiled cache
         id: go-build-path
-        run: printf 'path=%s\n' "$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
-      - name: Restore exact BFF source compiled cache
+        run: |
+          set -euo pipefail
+          : "${ImageOS:?}" "${ImageVersion:?}"
+          printf 'path=%s\n' "$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+          printf 'image=%s-%s\n' "$ImageOS" "$ImageVersion" >> "$GITHUB_OUTPUT"
+      - name: Restore environment-bound BFF compiled cache
         id: bff-build-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ${{ steps.go-build-path.outputs.path }}
-          key: bff-build-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.go-version', 'services/bff/go.mod', 'services/bff/go.sum', 'services/bff/**/*.go') }}
+          key: bff-build-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.go-build-path.outputs.image }}-${{ hashFiles('.go-version', 'services/bff/go.mod', 'services/bff/go.sum', '.github/workflows/ci.yml') }}-${{ hashFiles('services/bff/**/*.go') }}
+          restore-keys: |
+            bff-build-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.go-build-path.outputs.image }}-${{ hashFiles('.go-version', 'services/bff/go.mod', 'services/bff/go.sum', '.github/workflows/ci.yml') }}-
       - name: Migrate isolated PostgreSQL for real storage tests
         run: |
           go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
