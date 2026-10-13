@@ -139,8 +139,9 @@
 
 /* V075: compose the approved Shell and Arca table; no vendor overrides. */
 .workflow-inbox { display:flex;flex:1;flex-direction:column;gap:20px;min-width:0;min-height:0; }
-.workflow-inbox-toolbar { display:flex;align-items:center;justify-content:space-between;gap:12px; }
-.workflow-inbox-current { padding:10px 12px;border-radius:8px;background:var(--mono-selected);color:var(--mono-ink);font-size:14px; }
+.workflow-inbox-toolbar { display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap; }
+.workflow-inbox-refresh{margin-left:auto;}
+.workflow-inbox-current { display:flex;align-items:center;height:40px;box-sizing:border-box;padding:0 12px;border-radius:8px;background:var(--mono-selected);color:var(--mono-ink);font-size:14px; }
 .workflow-inbox-table { flex:1;min-height:240px;border:1px solid var(--mono-line);border-radius:16px;background:var(--mono-surface);padding:24px; }
 .workflow-inbox-table>.personnel-source-scope { height:100%;min-height:200px; }
 @media(max-width:700px) { .workflow-inbox-table { padding:12px; } }
@@ -424,5 +425,10 @@
 .template-target-picker .forms-reference-candidates{max-height:220px;border-color:var(--mono-line);color:var(--mono-ink);}
 .template-target-picker input{min-height:36px;border:1px solid var(--mono-line);border-radius:8px;padding:6px 12px;color:var(--mono-ink);background:var(--mono-surface);}
 
-.workflow-approver-account{font-size:14px;min-width:0;overflow-wrap:anywhere;}
+.workflow-approver-account{color:var(--mono-ink);font-size:14px;min-width:0;overflow-wrap:anywhere;}
 .workflow-approver-departments{display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-left:auto;min-width:0;max-width:45%;text-align:right;overflow-wrap:anywhere;}
+
+.workflow-inbox-table .personnel-data-table thead tr,.workflow-inbox-table .personnel-data-table thead th,.workflow-inbox-table .personnel-data-table thead th>div{height:44px!important;}
+.workflow-inbox-table .personnel-data-table th{font-size:12px;font-weight:400;color:var(--mono-muted);background:var(--mono-well);}
+.workflow-inbox-table .personnel-data-table th,.workflow-inbox-table .personnel-data-table td{border:0;}
+.workflow-inbox-table .arca-source .personnel-source-table{border:0;}

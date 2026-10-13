@@ -7,9 +7,9 @@ import '../../vendor/arca/arca.css';
 import '../../personnel-table.css';
 
 type Parameters={page:number;pageSize:number};
-export function WorkflowApprovals({actorId,onUnauthorized,onIdentityMismatch,onOpenInbox}:{actorId:string;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onOpenInbox:()=>void}){
+export function WorkflowApprovals({actorId,onUnauthorized,onIdentityMismatch,onOpenInbox,onOpenStarted,onOpenEvent}:{actorId:string;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onOpenInbox:()=>void;onOpenStarted:()=>void;onOpenEvent:(item:WorkflowApproval)=>void}){
  const columns:TableColumn<WorkflowApproval>[]=[
- {key:'flowName',header:'流程',dataType:'text',sortable:false,cell:row=><span className="table-cell" title={row.event.flowName}>{row.event.flowName}</span>},
+ {key:'flowName',header:'流程',dataType:'text',sortable:false,cell:row=><button type="button" className="text-button table-cell" aria-label={'查看已审批：'+row.event.flowName} onClick={()=>onOpenEvent(row)}>{row.event.flowName}</button>},
  {key:'recordId',header:'记录编号',dataType:'text',sortable:false,cell:row=><span title={row.recordId}>{row.recordId}</span>},
  {key:'nodeId',header:'节点编号',dataType:'text',sortable:false,cell:row=><span title={row.event.nodeId??undefined}>{row.event.nodeId??'—'}</span>},
  {key:'action',header:'操作',dataType:'text',sortable:false,cell:row=><span>{{agree:'同意',reject:'驳回',return:'退回'}[row.event.action as 'agree'|'reject'|'return']}</span>},
@@ -35,7 +35,7 @@ export function WorkflowApprovals({actorId,onUnauthorized,onIdentityMismatch,onO
  const refresh=()=>{setParameters(old=>({...old,page:1}));query.refresh();};
  return <section className="workflow-inbox" aria-label="个人已审批记录">
   <div className="app-page-heading"><h1>我已审批</h1></div>
-  <div className="workflow-inbox-toolbar"><button type="button" className="admin-button" onClick={onOpenInbox}>待我审批</button><span className="workflow-inbox-current">我已审批{!query.loading&&!failure?' '+query.data.total:''}</span><button type="button" className="admin-button" disabled={query.loading} onClick={refresh}>刷新已审批</button></div>
+  <div className="workflow-inbox-toolbar"><button type="button" className="admin-button" onClick={onOpenInbox}>待我审批</button><span className="workflow-inbox-current">我已审批{!query.loading&&!failure?' '+query.data.total:''}</span><button type="button" className="admin-button" onClick={onOpenStarted}>我发起的</button><button type="button" className="admin-button workflow-inbox-refresh" disabled={query.loading} onClick={refresh}>刷新已审批</button></div>
   {query.loading?<div className="app-surface app-state" role="status">正在读取已审批记录…</div>
    :failure?<div className="app-surface app-state"><p role="alert">{changed?'已审批记录已变化，请刷新后重新查看。':expired?'已审批查询已过期，请刷新后重新查看。':failure.message}</p>{!changed&&!expired&&<button type="button" className="admin-button" onClick={query.recheck}>重试</button>}</div>
    :<section className="member-table surface workflow-inbox-table" aria-label="已审批列表"><div className="arca-source personnel-source-scope"><Table className="personnel-source-table rounded-xl" ariaLabel="已审批" columns={columns} data={query.data.items} getRowId={row=>row.event.id} rowHeight={56} minWidth={880} fillViewport paginated manualPagination manualSorting recordCount={query.data.total} page={query.data.page} pageSize={query.data.pageSize} pageSizes={[5,10,20,25,50,100]} onPageChange={page=>setParameters(old=>({...old,page}))} onPageSizeChange={pageSize=>setParameters({page:1,pageSize})} emptyState="暂无已审批记录"/></div></section>}
