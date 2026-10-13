@@ -20,5 +20,12 @@ test('template candidates reject malformed data, extra identity information and 
  for(const value of [null,[],{data:null,meta:null},{...page(),data:{items:[],total:0}},{...page(),data:{items:null}},page([user,user]),page(Array.from({length:51},()=>user))])assert.equal(templateCandidatePage(value,'user'),null);
 });
 test('template candidate pagination must be present, closed, bounded and internally consistent',()=>{
- for(const pagination of [null,{}, {nextPageToken:null,hasMore:true},{nextPageToken:'A'.repeat(43),hasMore:false},{nextPageToken:'',hasMore:true},{nextPageToken:'bad token',hasMore:true},{nextPageToken:'a'.repeat(257),hasMore:true},{nextPageToken:null,hasMore:false,total:0}])assert.equal(templateCandidatePage({data:{items:[]},meta:{pagination}},'user'),null);
+ for(const pagination of [null,{}, {nextPageToken:null,hasMore:true},{nextPageToken:'A'.repeat(43),hasMore:false},{nextPageToken:'',hasMore:true},{nextPageToken:null,hasMore:false,total:0}])assert.equal(templateCandidatePage({data:{items:[]},meta:{pagination}},'user'),null);
+});
+
+test('ADR002 candidate continuation is an opaque nonempty string, not a client-decoded server format',()=>{
+ for(const token of ['opaque-token','different format = + /','a'.repeat(257)])assert.deepEqual(templateCandidatePage(page([user],token),'user'),{items:[user],nextPageToken:token});
+});
+test('candidate metadata stays closed and requires the request identity',()=>{
+ for(const meta of [{pagination:{nextPageToken:null,hasMore:false}},{requestId:12,pagination:{nextPageToken:null,hasMore:false}},{requestId:'r',pagination:{nextPageToken:null,hasMore:false},private:true}])assert.equal(templateCandidatePage({data:{items:[]},meta},'user'),null);
 });
