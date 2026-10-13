@@ -8,7 +8,7 @@ const requireValid=(ok)=>{if(!ok)throw Error('Invalid isolated product browser e
 export function validateFixture(fixture,head,browser){
  requireValid(fixture&&typeof fixture==='object'&&!Array.isArray(fixture)&&Object.keys(fixture).length===keys.length&&keys.every(key=>Object.hasOwn(fixture,key)));
  requireValid(validHead(head)&&fixture.head===head&&fixture.version===1&&browsers.includes(browser)&&fixture.browser===browser);
- const origin=new URL(fixture.origin);
+ let origin;try{origin=new URL(fixture.origin);}catch{throw Error('Invalid isolated product browser evidence');}
  requireValid(origin.protocol==='https:'&&origin.hostname==='127.0.0.1'&&origin.port!==''&&origin.origin===fixture.origin);
  requireValid(ids.every(key=>typeof fixture[key]==='string'&&uuid.test(fixture[key])&&fixture[key]!=='00000000-0000-0000-0000-000000000000')&&fixture.actorId!==fixture.outsiderId);
  requireValid(['session','csrf','otherSession','otherCsrf'].every(key=>typeof fixture[key]==='string'&&/^[A-Za-z0-9_-]{1,512}$/.test(fixture[key])));
