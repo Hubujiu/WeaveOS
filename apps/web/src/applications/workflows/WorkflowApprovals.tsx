@@ -9,7 +9,7 @@ import '../../personnel-table.css';
 type Parameters={page:number;pageSize:number};
 export function WorkflowApprovals({actorId,onUnauthorized,onIdentityMismatch,onOpenInbox}:{actorId:string;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onOpenInbox:()=>void}){
  const columns:TableColumn<WorkflowApproval>[]=[
- {key:'flowName',header:'流程',dataType:'text',sortable:false,cell:row=><span title={row.event.flowName}>{row.event.flowName}</span>},
+ {key:'flowName',header:'流程',dataType:'text',sortable:false,cell:row=><span className="table-cell" title={row.event.flowName}>{row.event.flowName}</span>},
  {key:'recordId',header:'记录编号',dataType:'text',sortable:false,cell:row=><span title={row.recordId}>{row.recordId}</span>},
  {key:'nodeId',header:'节点编号',dataType:'text',sortable:false,cell:row=><span title={row.event.nodeId??undefined}>{row.event.nodeId??'—'}</span>},
  {key:'action',header:'操作',dataType:'text',sortable:false,cell:row=><span>{{agree:'同意',reject:'驳回',return:'退回'}[row.event.action as 'agree'|'reject'|'return']}</span>},

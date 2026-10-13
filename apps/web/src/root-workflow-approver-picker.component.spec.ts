@@ -105,3 +105,7 @@ test('Root malformed department projection cannot expose selectable stale approv
 test('Root approver account typography independently matches the source body size',async({page})=>{
  await setup(page);const dialog=await open(page);await expect(dialog.getByText('原审批人甲',{exact:true})).toHaveCSS('font-size','14px');
 });
+
+test('Root approver account name uses the source ink rather than muted helper color',async({page})=>{
+ await setup(page);const dialog=await open(page);await expect(dialog.getByText('原审批人甲',{exact:true})).toHaveCSS('color','rgb(37, 37, 37)');
+});

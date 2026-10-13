@@ -251,7 +251,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if s.Records != nil {
-		if r.URL.Path == "/api/v1/workflow-tasks/search" || r.URL.Path == "/api/v1/workflow-approvals/search" || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/") {
+		if r.URL.Path == "/api/v1/workflow-tasks/search" || r.URL.Path == "/api/v1/workflow-approvals/search" || r.URL.Path == "/api/v1/workflow-started/search" || strings.HasPrefix(r.URL.Path, "/api/v1/application-workflow-operations/") {
 			s.Records.ServeHTTP(w, r)
 			return
 		}

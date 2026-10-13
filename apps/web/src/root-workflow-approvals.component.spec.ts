@@ -36,8 +36,21 @@ test('Root approved history identity mismatch suspends old actor data',async({pa
  await setup(page,()=>({status:409,code:'AUTH_SESSION_CHANGED'}));await page.goto(route);await expect(page.getByRole('button',{name:'重新核对身份',exact:true})).toBeVisible();await expect(page.getByText('已审批流程 1',{exact:true})).toHaveCount(0);
 });
 test('Root approved history leaving discards a delayed response and returning reads afresh',async({page})=>{
- let release:(()=>void)|undefined;let first=true;const calls=await setup(page,async body=>{if(first){first=false;await new Promise<void>(resolve=>{release=resolve})}return {data:result(body)}});await page.goto(route);await expect.poll(()=>calls.length).toBe(1);await page.getByRole('button',{name:'首页',exact:true}).first().click();await expect(page).toHaveURL(/\/app$/);release!();await expect(page.getByText('已审批流程 1',{exact:true})).toHaveCount(0);await page.goBack();await expect(page.getByText('已审批流程 1',{exact:true})).toBeVisible();expect(calls).toHaveLength(2);expect(calls[1].body).toEqual({page:1,pageSize:20});
+ let release:(()=>void)|undefined;let first=true;const calls=await setup(page,async body=>{if(first){first=false;await new Promise<void>(resolve=>{release=resolve})}return {data:result(body)}});await page.goto(route);await expect.poll(()=>calls.length).toBe(1);await page.getByRole('button',{name:'首页',exact:true}).first().click();await expect(page).toHaveURL(/\/app$/);await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();release!();await expect(page.getByText('已审批流程 1',{exact:true})).toHaveCount(0);await page.goBack();await expect(page.getByText('已审批流程 1',{exact:true})).toBeVisible();expect(calls).toHaveLength(2);expect(calls[1].body).toEqual({page:1,pageSize:20});
 });
 test('Root approved history small screen keeps readable rows within the shared table scroll area',async({page},testInfo)=>{
  await setup(page);await page.setViewportSize({width:390,height:844});await page.goto(route);const text=page.getByText('已审批流程 1',{exact:true});await expect(text).toBeVisible();await expect(text).toHaveCSS('font-size','14px');const width=(await text.boundingBox())!.width;expect(width).toBeGreaterThanOrEqual(89);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);await testInfo.attach('personal-approved-small',{body:await page.screenshot(),contentType:'image/png'});
+});
+
+test('Root approved navigation places the selected tab beside the other personal tab',async({page})=>{
+ await setup(page);await page.goto(route);await expect(page.getByText('已审批流程 1',{exact:true})).toBeVisible();const prior=page.getByRole('button',{name:'待我审批',exact:true}),current=page.locator('.workflow-inbox-current');const a=(await prior.boundingBox())!,b=(await current.boundingBox())!;expect(b.x-a.x-a.width).toBeGreaterThanOrEqual(8);expect(b.x-a.x-a.width).toBeLessThanOrEqual(16);
+});
+test('Root approved table uses the source compact 44px header row',async({page})=>{
+ await setup(page);await page.goto(route);const table=page.getByRole('table',{name:'已审批',exact:true});await expect(table).toBeVisible();await expect(table.locator('thead tr')).toHaveCSS('height','44px');
+});
+test('Root approved table uses the source 12px header typography',async({page})=>{
+ await setup(page);await page.goto(route);const table=page.getByRole('table',{name:'已审批',exact:true});await expect(table).toBeVisible();await expect(table.getByRole('columnheader').first()).toHaveCSS('font-size','12px');
+});
+test('Root approved current tab independently uses the source 40px height',async({page})=>{
+ await setup(page);await page.goto(route);await expect(page.getByText('已审批流程 1',{exact:true})).toBeVisible();await expect(page.locator('.workflow-inbox-current')).toHaveCSS('height','40px');
 });
