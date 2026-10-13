@@ -1,3 +1,5 @@
+import {validTemplateImportRequest} from './templates/importRequest';
+import {validTemplateImportReceipt} from './templates/receipts';
 import {validWorkflowDeletionRequest,validWorkflowDeletionResult} from './workflows/deletionContract';
 import {validRecordLifecycleRequest,validRecordLifecycleReceipt} from './records/lifecycleContract';
 import {validWorkflowManagementRequest,validWorkflowManagementReceipt} from './workflows/managementContract';
@@ -42,6 +44,7 @@ function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean
  if (!result || typeof result !== 'object' || Array.isArray(result) || !packet.resource) return false;
  // Task execution receipts are checked against their distinct closed wire
  // in perform(), including actual HTTP status and the confirmed command ID.
+ if (packet.resource.kind === 'template-import') return validTemplateImportReceipt(result,packet.operationId??'');
  if (packet.resource.kind === 'workflow-publication'||packet.resource.kind === 'workflow-deletion') return true;
  if (packet.resource.kind === 'task-action'||packet.resource.kind === 'instance-action') return true;
  if (packet.resource.kind === 'record-lifecycle') return validRecordLifecycleReceipt(result,packet.operationId??'',packet.resource.id,packet.body?.expectedRecordVersion as number,packet.body?.expectedSchemaVersion as number,packet.resource.action);
@@ -65,9 +68,10 @@ function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean
 
 function validLocation(location: string | null | undefined, packet: ApplicationPacket, result: unknown): boolean {
  if (typeof location !== 'string' || !result || typeof result !== 'object') return false;
- const id = (result as { id?: unknown }).id;
+ const templateImport=packet.resource?.kind==='template-import';
+ const id = templateImport?(result as {appId?:unknown}).appId:(result as { id?: unknown }).id;
  if (typeof id !== 'string' || !id) return false;
- const expected = '/api/v1/' + packet.path.split('?')[0].replace(/\/$/, '') + '/' + encodeURIComponent(id);
+ const expected = templateImport?'/api/v1/applications/'+encodeURIComponent(id):'/api/v1/' + packet.path.split('?')[0].replace(/\/$/, '') + '/' + encodeURIComponent(id);
  try {
   const parsed = new URL(location, window.location.origin);
   return parsed.origin === window.location.origin && parsed.pathname === expected && !parsed.search && !parsed.hash;
@@ -240,7 +244,9 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
   else {
    const request = requestOrPath;
    if (!scope || !scopedResource || JSON.stringify(request.resource) !== JSON.stringify(scopedResource)) throw new TypeError('Mutation resource does not match the mounted scope');
-   if (request.resource.kind === 'workflow-deletion') {
+   if (request.resource.kind === 'template-import') {
+    if (!validTemplateImportRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'workflow-deletion') {
     if (!validWorkflowDeletionRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
    } else if (request.resource.kind === 'record-lifecycle') {
     if (!validRecordLifecycleRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
