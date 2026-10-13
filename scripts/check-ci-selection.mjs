@@ -1,7 +1,7 @@
 import {appendFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
-const ci = {governance:'always',go:'backend',browser:'browser','workflow-engine':'backend','workflow-rpc':'backend','execution-rpc':'backend','workflow-recovery':'backend','workflow-actions':'backend','workflow-formal-runtime':'backend','workflow-schema-cli':'backend','workflow-backup':'backend'};
+const ci = {'workflow-browser':'product',governance:'always',go:'backend',browser:'browser','workflow-engine':'backend','workflow-rpc':'backend','execution-rpc':'backend','workflow-recovery':'backend','workflow-actions':'backend','workflow-formal-runtime':'backend','workflow-schema-cli':'backend','workflow-backup':'backend'};
 const product = {components:'product','component-coverage':'product',product:'product'};
 export function verifySelection({kind,needs,sourceSha}) {
   const map = kind === 'ci' ? ci : kind === 'product' ? product : null;

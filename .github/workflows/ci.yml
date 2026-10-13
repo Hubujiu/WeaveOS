@@ -683,6 +683,64 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  workflow-browser:
+    needs: preflight
+    if: needs.preflight.outputs.product == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Locked Java dependency and toolchain cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            services/workflow-engine/.work/m2
+            services/workflow-engine/.work/toolchain
+          key: java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('services/workflow-engine/pom.xml', 'services/workflow-engine/prepare-build.sh', 'services/workflow-engine/maven-settings.xml') }}
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: .go-version
+          cache: true
+          cache-dependency-path: |
+            services/bff/go.mod
+            services/bff/go.sum
+            .github/workflows/preflight.yml
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .node-version
+      - name: Fixed package manager
+        run: npm install --global pnpm@10.28.2 --ignore-scripts
+      - name: Locked pnpm dependency store cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .work/pnpm-store
+          key: pnpm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.node-version', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
+      - name: Frozen dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts --store-dir .work/pnpm-store
+      - name: Build exact frontend and verify composed report contracts
+        run: |
+          pnpm typecheck
+          pnpm build
+          node --test tests/governance/workflow-product-browser*.test.mjs
+      - name: Prepare locked Java and migration tools
+        run: |
+          bash services/workflow-engine/prepare-build.sh
+          CGO_ENABLED=0 go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
+      - name: Actual three-browser BFF and Flowable composition
+        run: WEAVEOS_PRODUCT_BROWSER_MODE=1 WEAVEOS_FORMAL_GOOSE="$(go env GOPATH)/bin/goose" node services/workflow-engine/run-formal-runtime.mjs
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: workflow-browser-${{ github.run_id }}-${{ github.run_attempt }}
+          path: services/workflow-engine/product-browser-reports/
+          if-no-files-found: warn
+          retention-days: 14
+
   workflow-schema-cli:
     needs: preflight
     if: needs.preflight.outputs.backend == 'true'
@@ -751,7 +809,7 @@ jobs:
 
   selection-gate:
     if: always()
-    needs: [preflight, governance, go, browser, workflow-engine, workflow-rpc, execution-rpc, workflow-recovery, workflow-actions, workflow-formal-runtime, workflow-schema-cli, workflow-backup]
+    needs: [preflight, governance, go, browser, workflow-browser, workflow-engine, workflow-rpc, execution-rpc, workflow-recovery, workflow-actions, workflow-formal-runtime, workflow-schema-cli, workflow-backup]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:

@@ -1,7 +1,7 @@
 // Root-owned acceptance: actual BFF and WorkflowEngineMain OS processes.
 // No deployment, published ports, Docker socket in runner, or live credentials.
-import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync, spawn } from 'node:child_process';
+import { mkdirSync, readFileSync, realpathSync, writeFileSync, existsSync, renameSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -12,7 +12,8 @@ const engine = resolve('services/workflow-engine');
 const cache = realpathSync(resolve(engine, '.work'));
 const dir = resolve('.work', `v041-formal-${Date.now()}-${process.pid}`);
 mkdirSync(dir, { recursive: true, mode: 0o700 });
-const reportDir = resolve(engine, 'formal-runtime-reports');
+const browserMode = process.env.WEAVEOS_PRODUCT_BROWSER_MODE === '1';
+const reportDir = resolve(engine, browserMode ? 'product-browser-reports' : 'formal-runtime-reports');
 mkdirSync(reportDir, { recursive: true });
 const go = process.env.WEAVEOS_FORMAL_GO || 'go';
 if (!process.env.WEAVEOS_FORMAL_GOOSE) throw Error('Explicit pinned Goose executable required');
@@ -42,7 +43,7 @@ async function waitFor(probe, description) {
 try {
   if (!call(go, ['version'], { encoding: 'utf8' }).includes('go1.27.2 ')) throw Error('Pinned Go compiler required');
   step('build-bff', go, ['build', '-o', resolve(engine, '.work/formal-bff'), './cmd/bff'], { cwd: resolve('services/bff'), env: { ...env, CGO_ENABLED: '0', GOOS: 'linux', GOARCH: 'amd64' } });
-  step('build-tests', go, ['test', '-tags', 'workflowruntime_integration,workflowrpc_integration', '-c', '-o', resolve(engine, '.work/formal-runtime.test'), './cmd/bff'], { cwd: resolve('services/bff'), env: { ...env, CGO_ENABLED: '0', GOOS: 'linux', GOARCH: 'amd64' } });
+  step('build-tests', go, ['test', '-tags', browserMode ? 'workflowbrowser_integration,workflowruntime_integration,workflowrpc_integration' : 'workflowruntime_integration,workflowrpc_integration', '-c', '-o', resolve(engine, '.work/formal-runtime.test'), './cmd/bff'], { cwd: resolve('services/bff'), env: { ...env, CGO_ENABLED: '0', GOOS: 'linux', GOARCH: 'amd64' } });
   const { startB2TestDatabase } = await import(pathToFileURL(resolve('infra/acceptance/run.mjs')).href);
   app = await startB2TestDatabase({ stateFile: resolve(dir, 'app-state.json') });
   owned.push(app.container);
@@ -79,6 +80,65 @@ try {
     isolation.containers.push({ name, network: info.HostConfig.NetworkMode, ports: info.HostConfig.PortBindings });
   }
   writeFileSync(resolve(reportDir, 'isolation.json'), JSON.stringify(isolation, null, 2));
+  if (browserMode) {
+    const {browserCommand,runBrowserJourneys} = await import('./product-browser-runner.mjs');
+    const {validateFixture,validateReports} = await import('./product-browser-contract.mjs');
+    const head=call('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+    const exchange=resolve(dir,'private-browser-exchange');mkdirSync(exchange,{mode:0o700});
+    const image='mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27';
+    // Download the fixed public browser image before a bounded backend fixture starts.
+    step('browser-image','docker',['pull',image]);
+    step('browser-discovery',process.execPath,['node_modules/@playwright/test/cli.js','test','--config','services/workflow-engine/playwright.product.config.ts','--list'],{env:{...env,WEAVEOS_PRODUCT_BROWSER_REPORT:resolve(reportDir,'baseline.json'),WEAVEOS_PRODUCT_BROWSER_OUTPUT:resolve(reportDir,'discovery')}});
+    const baseline=JSON.parse(readFileSync(resolve(reportDir,'baseline.json'),'utf8'));
+    let results;
+    try {
+      results=await runBrowserJourneys({
+        async start(browser) {
+          const args=['exec','-e',`WEAVEOS_TEST_DATABASE_URL=${app.url}`,'-e',`WEAVEOS_TEST_ARCHIVE_DATABASE_URL=${archive.href}`,'-e',`WEAVEOS_TEST_REDIS_URL=unix://${redisSocket}/redis.sock?db=15`,'-e','WEAVEOS_FORMAL_BFF_BINARY=/proof/.work/formal-bff','-e',`WEAVEOS_FORMAL_JAVA_CLASSPATH=${classpath}`,'-e',`WEAVEOS_PRODUCT_BROWSER=${browser}`,'-e',`WEAVEOS_PRODUCT_HEAD=${head}`,'-e',`WEAVEOS_PRODUCT_EXCHANGE_DIR=${exchange}`,'-e',`WEAVEOS_PRODUCT_WEB_ROOT=${resolve('apps/web/dist')}`,runner,'/proof/.work/formal-runtime.test','-test.v=test2json','-test.run','^TestRootProductBrowserJourney$','-test.timeout=300s'];
+          const child=spawn('docker',args,{cwd:root,env,stdio:['ignore','pipe','pipe']});
+          const handle={browser,child,stdout:'',stderr:'',closed:false,secrets:[]};
+          for(const key of ['stdout','stderr'])child[key].on('data',chunk=>{handle[key]+=chunk.toString();if(handle[key].length>32*1024*1024)child.kill();});
+          handle.exit=new Promise(resolve=>{child.once('error',()=>{handle.closed=true;resolve(1);});child.once('close',code=>{handle.closed=true;resolve(code??1);});});
+          return handle;
+        },
+        async ready(handle) {
+          const path=resolve(exchange,handle.browser+'.request.json');
+          for(let i=0;i<120;i++){
+            if(existsSync(path)){
+              let fixture;try{fixture=validateFixture(JSON.parse(readFileSync(path,'utf8')),head,handle.browser);}catch{throw Error('Private browser fixture rejected');}
+              handle.secrets=['session','csrf','otherSession','otherCsrf'].map(k=>fixture[k]);return;
+            }
+            if(handle.closed)throw Error('Actual browser backend fixture exited before ready');
+            await delay(250);
+          }
+          throw Error('Actual browser backend fixture did not become ready');
+        },
+        async browser(handle) {
+          step('browser-'+handle.browser,'docker',browserCommand({root,output:reportDir,exchange,runner,uid:process.getuid(),gid:process.getgid(),head,browser:handle.browser}));
+          return JSON.parse(readFileSync(resolve(reportDir,handle.browser+'.json'),'utf8'));
+        },
+        async signal(handle,success) {
+          const path=resolve(exchange,handle.browser+'.done.json');
+          writeFileSync(path+'.tmp',JSON.stringify({browser:handle.browser,success}),{mode:0o600});renameSync(path+'.tmp',path);
+        },
+        async finish(handle) {
+          const status=await handle.exit;
+          let raw=handle.stdout;
+          // Native events retain their identities/status. Remove synthetic session tokens if any diagnostic unexpectedly contains one.
+          for(const secret of handle.secrets)raw=raw.split(secret).join('[redacted synthetic Session]');
+          const converted=step('browser-'+handle.browser+'-test2json',go,['tool','test2json','-t','-p','github.com/Hubujiu/WeaveOS/services/bff/cmd/bff'],{input:raw});
+          writeFileSync(resolve(reportDir,handle.browser+'-go.jsonl'),converted.stdout);
+          if(status!==0)throw Error('Actual browser backend assertions failed: '+handle.browser);
+          return {head,browser:handle.browser,events:converted.stdout.trim().split('\n').map(line=>JSON.parse(line))};
+        },
+      });
+    } finally {
+      // This exact directory was created by this invocation; it is never an artifact source.
+      rmSync(exchange,{recursive:true,force:true});
+    }
+    const summary=validateReports({head,baseline,reports:results.map(r=>r.report),backend:results.map(r=>r.backend)});
+    writeFileSync(resolve(reportDir,'summary.json'),JSON.stringify(summary,null,2));console.log(JSON.stringify(summary));
+  } else {
   const result = spawnSync('docker', ['exec', '-e', `WEAVEOS_TEST_DATABASE_URL=${app.url}`, '-e', `WEAVEOS_TEST_ARCHIVE_DATABASE_URL=${archive.href}`, '-e', `WEAVEOS_TEST_REDIS_URL=unix://${redisSocket}/redis.sock?db=15`, '-e', 'WEAVEOS_FORMAL_BFF_BINARY=/proof/.work/formal-bff', '-e', `WEAVEOS_FORMAL_JAVA_CLASSPATH=${classpath}`, runner, '/proof/.work/formal-runtime.test', '-test.v=test2json', '-test.run', '^TestRootFormalRuntime', '-test.timeout=300s'], { cwd: root, env, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
   writeFileSync(resolve(dir, 'test.stdout'), result.stdout || '', { mode: 0o600 });
   writeFileSync(resolve(dir, 'test.stderr'), result.stderr || '', { mode: 0o600 });
@@ -88,6 +148,7 @@ try {
   writeFileSync(resolve(reportDir, 'summary.json'), JSON.stringify(summary, null, 2));
   console.log(JSON.stringify(summary));
   process.exitCode = result.status ?? 1;
+  }
 } finally {
   for (const name of owned) { try { writeFileSync(resolve(dir, `${name}.log`), call('docker', ['logs', name]), { mode: 0o600 }); } catch {} }
   // Only names created successfully by this invocation are removed; never prune.
