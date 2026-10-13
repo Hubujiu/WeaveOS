@@ -167,16 +167,26 @@ func TestRootDeletedRecordsCurrentManagerNotOrdinaryEditOrStaleAuthority(t *test
 	rootHTTPError(t, f.call(t, "POST", path, body, rootDeletedSession(t, f, f.other, "1")), 403, "APPLICATION_FORBIDDEN")
 	first := rootHTTPData(t, f.call(t, "POST", path, body, nil), 200)
 	token := rootHTTPString(t, first, "queryVersion")
-	if _, e := f.owner.Exec(f.ctx, "UPDATE applications.apps SET owner_user_id=$2 WHERE id=$1", f.app, f.other); e != nil {
+	root := rootTemplateCurrentBootstrap(t, f, f.other)
+	rootSession := rootDeletedSession(t, f, root.UserID, root.Record.AuthVersion)
+	rootPage := rootHTTPData(t, f.call(t, "POST", path, body, rootSession), 200)
+	rootToken := rootHTTPString(t, rootPage, "queryVersion")
+	t.Cleanup(func() {
+		if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", root.UserID); e != nil {
+			t.Error("restore original test Bootstrap role", e)
+		}
+	})
+	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=false WHERE id=$1", root.UserID); e != nil {
 		t.Fatal(e)
 	}
-	rootHTTPError(t, f.call(t, "POST", path, rootDeletedQuery(1, 20, token), nil), 403, "APPLICATION_FORBIDDEN")
-	root := rootTemplateCurrentBootstrap(t, f, f.other)
-	rootHTTPData(t, f.call(t, "POST", path, body, rootDeletedSession(t, f, root.UserID, root.Record.AuthVersion)), 200)
+	rootHTTPError(t, f.call(t, "POST", path, rootDeletedQuery(1, 20, rootToken), rootSession), 403, "APPLICATION_FORBIDDEN")
+	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET is_bootstrap_admin=true WHERE id=$1", root.UserID); e != nil {
+		t.Fatal(e)
+	}
 	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET auth_version=auth_version+1 WHERE id=$1", f.actor); e != nil {
 		t.Fatal(e)
 	}
-	rootHTTPError(t, f.call(t, "POST", path, body, nil), 401, "AUTH_UNAUTHENTICATED")
+	rootHTTPError(t, f.call(t, "POST", path, rootDeletedQuery(1, 20, token), nil), 401, "AUTH_UNAUTHENTICATED")
 }
 func TestRootDeletedRecordsStrictHTTPBoundary(t *testing.T) {
 	f := rootHTTPResourceSetup(t)

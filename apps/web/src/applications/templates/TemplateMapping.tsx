@@ -27,7 +27,7 @@ export function TemplateMapping({actorId,references,selection,disabled,onSelect,
   {key:'state',header:'状态',sortable:false,dataType:'text',cell:row=>selection[row.id]?'已选择':'待选择'},
  ];
  return <section aria-label="模板引用映射" className="template-mapping">
-  <div className="arca-source personnel-source-scope"><Table className="personnel-source-table" ariaLabel="模板依赖映射" data={rows} columns={columns} getRowId={row=>row.id} rowHeight={56} height={Math.min(224,56+rows.length*56)} minWidth={560} manualSorting emptyState="无外部引用"/></div>
+  <div className="arca-source personnel-source-scope"><Table className="personnel-source-table" ariaLabel="模板依赖映射" data={rows} columns={columns} getRowId={row=>row.id} rowHeight={56} height={Math.min(224,44+rows.length*56)} minWidth={560} manualSorting emptyState="无外部引用"/></div>
   {active&&!disabled&&<section className="template-target-picker" aria-label={'选择当前'+(active.kind==='user'?'成员':'部门')}>
    <div className="template-target-heading"><span>为 {active.sourceId} 选择当前{active.kind==='user'?'成员':'部门'}</span><button type="button" className="admin-button" onClick={()=>setActive(null)}>取消选择</button></div>
    <ReferenceSelector key={active.id} initiallyOpen field={{id:active.sourceId,name:'当前对象',kind:active.kind==='user'?'member':'department',required:true,presentation:{helpText:null}}} value={null} idPrefix={'template-'+active.kind} loadReferenceCandidates={load} onChange={(_value,candidate)=>{if(candidate){onSelect(active,candidate);setActive(null);}}}/>

@@ -78,14 +78,14 @@ export function TemplateImport({actorId,canCreate,onClose,onOpenApplication,onDi
  if(leavePrompt)return null;
  const needsMapping=!!references&&(references.userIds.length+references.departmentIds.length)>0;
  return <div onKeyDownCapture={event=>{if(event.key==='Escape')beginClose();}} onClickCapture={event=>{if((event.target as HTMLElement).closest('[data-forms-close],.forms-icon-button'))beginClose();}}>
-  <FormsDialog title="导入应用模板" onClose={cancel}><div className={'template-import-panel'+(preflight||needsMapping?' template-import-confirm':'')}>
-   {!result&&<><label className={needsMapping?"template-file-change":"template-file-drop"}>{!needsMapping&&<span className="template-file-icon"><img src={fileIcon} alt=""/></span>}<span>{needsMapping?'更换模板文件':'选择模板文件'}</span>{!needsMapping&&<span className="workflow-publication-caption">.json · UTF-8 · 最多1MiB</span>}<input type="file" aria-label="选择模板文件" accept=".json,application/json" disabled={busy||unknown||closing||!canCreate} onChange={event=>void selectFile(event.target.files?.[0])}/></label>
-    <p>{fileName||((busy||unknown)?'已保留原导入请求':'尚未选择文件')}</p>
+  <FormsDialog title={needsMapping&&!result?'映射依赖':'导入应用模板'} onClose={cancel}><div className={'template-import-panel'+(preflight||needsMapping?' template-import-confirm':'')}>
+   {!result&&<>{!needsMapping&&<label className="template-file-drop"><span className="template-file-icon"><img src={fileIcon} alt=""/></span><span>选择模板文件</span><span className="workflow-publication-caption">.json · UTF-8 · 最多1MiB</span><input type="file" aria-label="选择模板文件" accept=".json,application/json" disabled={busy||unknown||closing||!canCreate} onChange={event=>void selectFile(event.target.files?.[0])}/></label>}
+    {!needsMapping&&<p>{fileName||((busy||unknown)?'已保留原导入请求':'尚未选择文件')}</p>}
     {reading&&<p role="status">正在读取模板文件…</p>}
     {needsMapping&&<TemplateMapping actorId={actorId} references={references!} selection={selection} disabled={busy||unknown||closing||!canCreate} onSelect={selectTarget} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>}
-
+    {needsMapping&&<p className="workflow-publication-caption">导入后流程保持关闭</p>}
    </>}
-   {preflight&&!result&&<><p role="status">模板检查通过</p><p>{preflight.counts.directories} 个目录 · {preflight.counts.tables} 张表 · {preflight.counts.fields} 个字段 · {preflight.counts.forms} 个表单 · {preflight.counts.workflows} 个流程 · {preflight.counts.permissionGroups} 个权限组</p><p className="workflow-publication-caption">导入后流程保持关闭</p></>}
+   {preflight&&!result&&<><p role="status">模板检查通过</p><p>{preflight.counts.directories} 个目录 · {preflight.counts.tables} 张表 · {preflight.counts.fields} 个字段 · {preflight.counts.forms} 个表单 · {preflight.counts.workflows} 个流程 · {preflight.counts.permissionGroups} 个权限组</p>{!needsMapping&&<p className="workflow-publication-caption">导入后流程保持关闭</p>}</>}
    {(error||operation.message)&&<p role="alert">{error||operation.message}</p>}
    {result?<><p role="status">模板已导入</p><p className="workflow-publication-caption">已创建全新应用；流程保持关闭，尚未发布或启用。</p><div className="dialog-actions"><button type="button" className="admin-button" data-forms-close>返回应用中心</button><button type="button" className="admin-button primary" onClick={()=>onOpenApplication(result.appId)}>打开新应用</button></div></>
    :unknown?<div className="dialog-actions template-import-recovery"><button type="button" className="admin-button" data-forms-close>关闭并保留待核查操作</button><button type="button" className="admin-button" onClick={operation.query}>核查导入结果</button><button type="button" className="admin-button primary" onClick={operation.retry}>重试原导入</button></div>
