@@ -16,7 +16,7 @@ export function templateReferences(manifest:unknown):TemplateReferences|null{
   };
   const list=(value:unknown):boolean=>Array.isArray(value)&&value.every(v=>id(v)&&add('member',v));
   const tables=new Map<string,Map<string,string>>(),allFields=new Set<string>();
-  const kinds=['text','multiline','number','boolean','date','datetime','single_select','multi_select','member','department'];
+  const kinds=['text','multiline','number','money','boolean','date','datetime','single_select','multi_select','member','department'];
   for(const table of m.tables as unknown[]){
    if(!object(table)||!id(table.id)||tables.has(table.id)||!Array.isArray(table.fields))return null;
    const fields=new Map<string,string>();tables.set(table.id,fields);
