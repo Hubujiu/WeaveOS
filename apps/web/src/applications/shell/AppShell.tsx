@@ -13,6 +13,7 @@ import { useApplications } from '../useApplications';
 import { useApplicationOperation } from '../useApplicationOperation';
 import { validCreatedApplication } from '../creationReceipt';
 import '../applications.css';
+import {WorkflowApprovals} from '../workflows/WorkflowApprovals';
 import {WorkflowInbox} from '../workflows/WorkflowInbox';
 import {WorkflowTaskPage} from '../workflows/WorkflowTaskPage';
 
@@ -22,7 +23,8 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onPerm
  const location = useLocation(); const navigate = useNavigate();
  const taskParts=location.pathname.match(/^\/app\/approvals\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)\/?$/);
  const taskLocation=taskParts&&taskParts.slice(1).every(id=>uuid.test(id))?{appId:taskParts[1],viewId:taskParts[2],recordId:taskParts[3],instanceId:taskParts[4],taskId:taskParts[5]}:null;
- const approvals = !!taskLocation||/^\/app\/approvals\/?$/.test(location.pathname);
+ const approvedHistory=/^\/app\/approvals\/completed\/?$/.test(location.pathname);
+ const approvals = approvedHistory||!!taskLocation||/^\/app\/approvals\/?$/.test(location.pathname);
  const templateImport=location.pathname==='/app/application-templates/import';
  const catalog = location.pathname === '/app/applications' || location.pathname === '/app/applications/';
  const parsedAppRoute = location.pathname.match(/^\/app\/applications\/([^/]+)(?:\/forms\/([^/]+)(?:\/(design|workflows)(?:\/([^/]+)\/(design|new))?)?)?\/?$/);
@@ -90,7 +92,8 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onPerm
    {error && <p role="alert">{error}</p>}{catalog && success && <p className="app-success" role="status">{success}</p>}
    {adminContent ?? (templateImport ? <TemplateImport key={user.id} actorId={user.id} canCreate={canCreate} onClose={closeImport} onOpenApplication={id=>{apps.reload();navigate('/app/applications/'+encodeURIComponent(id));}} onDirty={onFormsDirty} registerLeaveGuard={registerLeaveGuard} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/> : appId ? <ApplicationWorkspace actorId={user.id} appId={appId} viewId={viewId} configurationRoute={configurationRoute} workflowManagementRoute={workflowManagementRoute} workflowFlowId={workflowFlowId} workflowCreateMode={appRoute?.[5]==='new'} openWorkflow={(id,flowId,create)=>navigate(runtimeFormPath(appId,id)+'/workflows/'+encodeURIComponent(flowId)+(create?'/new':'/design'))} manageWorkflows={id=>navigate(runtimeFormPath(appId,id)+'/workflows')} bootstrapAdmin={access.bootstrapAdmin} opened={opened} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onPermissionDirty={onPermissionDirty} onFormsDirty={onFormsDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} openForm={id=>navigate(runtimeFormPath(appId,id))} configureForm={id=>openConfiguration(id,location.pathname)} backFromConfiguration={()=>navigate(configurationReturn())} backToStructure={()=>navigate('/app/applications/'+encodeURIComponent(appId))} />
     : taskLocation ? <WorkflowTaskPage key={JSON.stringify([user.id,taskLocation])} actorId={user.id} location={taskLocation} onDirtyChange={onFormsDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onBack={()=>navigate('/app/approvals')} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>
-    : approvals ? <WorkflowInbox key={user.id} actorId={user.id} onOpenTask={task=>navigate('/app/approvals/'+[task.appId,task.viewId,task.recordId,task.instanceId,task.id].map(encodeURIComponent).join('/'))} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>
+    : approvedHistory ? <WorkflowApprovals key={user.id} actorId={user.id} onOpenInbox={()=>navigate('/app/approvals')} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>
+    : approvals ? <WorkflowInbox key={user.id} actorId={user.id} onOpenApproved={()=>navigate('/app/approvals/completed')} onOpenTask={task=>navigate('/app/approvals/'+[task.appId,task.viewId,task.recordId,task.instanceId,task.id].map(encodeURIComponent).join('/'))} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>
     : catalog ? <ApplicationCatalog canImport={canCreate||scopedUnconfirmed(user.id).some(packet=>packet.resource?.kind==='template-import')} importTrigger={importTrigger} importTemplate={()=>navigate('/app/application-templates/import')} applications={apps.items} loading={apps.loading} error={apps.error} retry={apps.reload} canCreate={canCreate} create={trigger => { createTrigger.current = trigger; setSuccess(''); setCreate(true); }} open={open} />
     : <><div className="app-page-heading"><h1>主页</h1></div><section className="app-surface app-home-section"><h2>我的应用</h2>{apps.loading ? <p role="status">正在加载应用…</p> : apps.error ? <div className="app-state"><p role="alert">{apps.error}</p><button className="admin-button" onClick={apps.reload}>重试</button></div> : apps.items.length ? <ApplicationCards applications={apps.items} open={open} /> : <div className="home-empty"><h3>暂无可用应用</h3><p>获得应用访问权限后，将在这里显示。</p></div>}</section><div><button className="admin-button" onClick={() => navigate('/app/applications')}>打开应用中心</button></div></>)}
   </main>
