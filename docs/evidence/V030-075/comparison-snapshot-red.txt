@@ -1,0 +1,108 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ comparison snapshot projects only actual current values with exact decimals and independently labelled references (2.512467ms)
+✔ comparison snapshot refuses mismatched route record, table, schema and current actor read scope (0.446351ms)
+✔ comparison snapshot rejects values outside current field read coverage rather than copying hidden values (0.249725ms)
+✖ comparison snapshot keeps absent fields absent and never fabricates missing reference labels (5.079647ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 204.903231
+
+✖ failing tests:
+
+test at tests/foundation/workflow-comparison-snapshot.test.mjs:13:1
+✖ comparison snapshot projects only actual current values with exact decimals and independently labelled references (2.512467ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   fields: [
+  -     {
+  -       fieldId: 'cccccccc-cccc-4ccc-8ccc-000000000010',
+  -       fieldKind: 'money',
+  -       fieldName: '字段10',
+  -       value: '123456789012345678901234567890.12',
+  -       valueLabels: {}
+  -     },
+  -     {
+  -       fieldId: 'cccccccc-cccc-4ccc-8ccc-000000000011',
+  -       fieldKind: 'department',
+  -       fieldName: '字段11',
+  -       value: 'cccccccc-cccc-4ccc-8ccc-000000000020',
+  -       valueLabels: {
+  -         'cccccccc-cccc-4ccc-8ccc-000000000020': {
+  -           deleted: true,
+  -           label: '原部门'
+  -         }
+  -       }
+  -     },
+  -     {
+  -       fieldId: 'cccccccc-cccc-4ccc-8ccc-000000000012',
+  -       fieldKind: 'multi_select',
+  -       fieldName: '字段12',
+  -       value: [
+  -         'cccccccc-cccc-4ccc-8ccc-000000000031',
+  -         'cccccccc-cccc-4ccc-8ccc-000000000030'
+  -       ],
+  -       valueLabels: {
+  -         'cccccccc-cccc-4ccc-8ccc-000000000030': {
+  -           deleted: false,
+  -           label: '选项A'
+  -         },
+  -         'cccccccc-cccc-4ccc-8ccc-000000000031': {
+  -           deleted: false,
+  -           label: '选项B'
+  -         }
+  -       }
+  -     },
+  -     {
+  -       fieldId: 'cccccccc-cccc-4ccc-8ccc-000000000013',
+  -       fieldKind: 'text',
+  -       fieldName: '字段13',
+  -       value: null,
+  -       valueLabels: {}
+  -     }
+  -   ],
+  -   recordVersion: 5,
+  -   updatedAt: '2026-10-13T13:00:00Z'
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-comparison-snapshot.test.mjs:15:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { recordVersion: 5, updatedAt: '2026-10-13T13:00:00Z', fields: [ [Object], [Object], [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-comparison-snapshot.test.mjs:29:1
+✖ comparison snapshot keeps absent fields absent and never fabricates missing reference labels (5.079647ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(got)
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-comparison-snapshot.test.mjs:30:135)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
