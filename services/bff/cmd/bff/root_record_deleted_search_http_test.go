@@ -123,6 +123,14 @@ func TestRootDeletedRecordsPagesAndExplicitRefreshAfterRestore(t *testing.T) {
 		t.Fatal("explicit refresh did not remove restored row")
 	}
 	rootHTTPData(t, f.call(t, "GET", base+"/"+other, "", nil), 200)
+	// Retained metadata must still require refresh after an actual schema save.
+	definition := fmt.Sprintf(`{"operationId":%q,"expectedSchemaVersion":1,"expectedViewVersion":1,"fields":[{"id":%q,"name":"Renamed retained field","kind":"text","required":false,"default":null,"config":{"maxLength":null},"presentation":{"helpText":null,"displayTimeZone":null}}],"layout":[],"optionMappings":[],"confirmationToken":null}`, f.id(t), f.field)
+	rootHTTPData(t, f.call(t, "PUT", "/api/v1/applications/"+f.app+"/forms/"+f.view+"/definition", definition, nil), 200)
+	rootHTTPError(t, f.call(t, "POST", path, rootDeletedQuery(1, 20, rootHTTPString(t, fresh, "queryVersion")), nil), 409, "APPLICATION_QUERY_CHANGED")
+	changed := rootHTTPData(t, f.call(t, "POST", path, rootDeletedQuery(1, 20, ""), nil), 200)
+	if string(changed["schemaVersion"]) != "2" || len(rootDeletedItems(t, changed)) != 1 {
+		t.Fatal("current retained schema did not refresh")
+	}
 }
 func TestRootDeletedRecordsSharedViewsAndSessionContextIsolation(t *testing.T) {
 	f := rootHTTPResourceSetup(t)
