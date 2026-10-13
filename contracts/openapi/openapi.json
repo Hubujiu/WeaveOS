@@ -37387,7 +37387,17 @@
             "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
           },
           "instance": {
-            "$ref": "#/components/schemas/WorkflowInstanceSummary"
+            "$ref": "#/components/schemas/WorkflowInstanceSummary",
+            "properties": {
+              "state": {
+                "enum": [
+                  "completed",
+                  "rejected",
+                  "withdrawn",
+                  "no_effect"
+                ]
+              }
+            }
           },
           "archived": {
             "type": "boolean",
