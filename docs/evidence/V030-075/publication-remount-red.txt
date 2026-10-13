@@ -1,0 +1,45 @@
+(node:13) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ V027 publication 202 remains accepted until its own status confirms the original candidate (12.177242ms)
+✔ V027 query unknown stays retained and cannot admit a newer publication (2.055149ms)
+✔ V027 terminal confirmed is returned exactly, never rewritten as success (1.633886ms)
+✔ V027 terminal superseded is returned exactly, never rewritten as success (1.022026ms)
+✔ V027 terminal blocked is returned exactly, never rewritten as success (1.142137ms)
+✔ V027 response loss retries precisely the original publication without resaving definition (2.512146ms)
+✔ V027 invalid publication Location stays unknown undefined (1.143328ms)
+✔ V027 invalid publication Location stays unknown https://evil.invalid/status (1.259613ms)
+✔ V027 invalid publication Location stays unknown /api/v1/application-operations/x (2.838126ms)
+✔ V027 invalid publication Location stays unknown /api/v1/application-workflow-operations/x (1.679004ms)
+✔ V027 wrong publication binding stays unknown {"flowId":"abababab-abab-4bab-8bab-000000000008"} (2.825767ms)
+✔ V027 wrong publication binding stays unknown {"version":3} (0.865511ms)
+✔ V027 wrong publication binding stays unknown {"operationId":"abababab-abab-4bab-8bab-000000000008"} (0.773192ms)
+✔ V027 wrong publication binding stays unknown {"reason":"raw error"} (0.617878ms)
+✔ V027 changed identity does not transmit publication (0.664509ms)
+✖ V027 newer candidate after remount must not hide the original pending publication (1.511752ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 15
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 213.609295
+
+✖ failing tests:
+
+test at tests/foundation/workflow-publication-operation.test.mjs:46:1
+✖ V027 newer candidate after remount must not hide the original pending publication (1.511752ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  null !== 'unknown'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-publication-operation.test.mjs:50:9)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: 'unknown',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

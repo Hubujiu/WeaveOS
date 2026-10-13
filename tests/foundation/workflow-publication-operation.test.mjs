@@ -42,3 +42,11 @@ for(const patch of [{flowId:id(8)},{version:3},{operationId:id(8)},{reason:'raw 
  const x=setup(t,(call,_calls,base)=>response({...receipt(call),...patch},202,location(call,base)));x.hook.start(x.request);await flush();assert.equal(x.confirmed.length,0);assert.equal(getState().phase,'unconfirmed');
 });
 test('V027 changed identity does not transmit publication',async t=>{const x=setup(t,()=>{throw Error('no transmit')});x.setActor(id(999));x.hook.start(x.request);await flush();assert.equal(x.calls.length,0);assert.equal(x.identity.length,1);});
+
+test('V027 newer candidate after remount must not hide the original pending publication',async t=>{
+ let first;const x=setup(t,(call,_calls,base)=>{if(call.init.method==='POST'){first=call;return response(receipt(call),202,location(call,base));}return response(receipt(first,'superseded','CANDIDATE_SUPERSEDED'));});
+ x.hook.start(x.request);await flush();assert.equal(x.hook.getPendingStatus(),'unknown');
+ const restored=useApplicationOperation({actorId:x.actor,scope:'publication-protocol',resource:{...x.request.resource,version:3},confirmed:v=>x.confirmed.push(v),unauthorized:()=>{},identityMismatch:()=>{}});
+ assert.equal(restored.getPendingStatus(),'unknown');restored.start({...x.request,resource:{...x.request.resource,version:3}});await flush();assert.equal(x.calls.length,1);
+ restored.query();await flush();assert.equal(x.calls[1].url,location(first,x.base));assert.equal(x.confirmed[0].status,'superseded');assert.equal(x.confirmed[0].version,2);
+});
