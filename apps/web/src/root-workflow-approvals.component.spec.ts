@@ -57,3 +57,7 @@ test('Root approved current tab independently uses the source 40px height',async
 test('Root approved table avoids spreadsheet grid borders in the source personal list',async({page})=>{
  await setup(page);await page.goto(route);const table=page.getByRole('table',{name:'已审批',exact:true});await expect(table).toBeVisible();const borders=await table.locator('thead th:first-child,tbody tr:first-child td:first-child').evaluateAll(cells=>cells.map(cell=>{const s=getComputedStyle(cell);return [s.borderTopWidth,s.borderRightWidth,s.borderBottomWidth,s.borderLeftWidth]}));expect(borders).toEqual([['0px','0px','0px','0px'],['0px','0px','0px','0px']]);
 });
+
+test('Root approved sparse final page has no horizontal rules on data or viewport filler rows',async({page})=>{
+ await setup(page);await page.setViewportSize({width:1440,height:1000});await page.goto(route);await expect(page.getByText('已审批流程 1',{exact:true})).toBeVisible();await page.getByRole('button',{name:'下一页',exact:true}).click();await expect(page.getByText('已审批流程 21',{exact:true})).toBeVisible();const table=page.getByRole('table',{name:'已审批',exact:true});await expect(table.locator('tbody tr[data-empty-row]').first()).toBeAttached();const borders=await table.locator('tbody tr').evaluateAll(rows=>rows.map(row=>getComputedStyle(row).borderBottomWidth));expect(borders.length).toBeGreaterThan(1);expect(new Set(borders)).toEqual(new Set(['0px']));
+});
