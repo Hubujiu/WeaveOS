@@ -21,20 +21,25 @@ async function setup(page:Page,mode:Mode='pending'){
  });return {calls,writes};
 }
 const publish=(page:Page)=>page.getByRole('button',{name:'发布',exact:true});
+async function confirmPublish(page:Page){await publish(page).click();const dialog=page.getByRole('dialog',{name:'发布流程',exact:true});await expect(dialog).toContainText('采购审批');await expect(dialog).toContainText('候选版本 2');await dialog.getByRole('button',{name:'确认发布',exact:true}).click();}
 test('Root publication 202 retains original candidate until dedicated query confirms without enabling',async({page})=>{
- const f=await setup(page);await page.goto(route);await publish(page).click();await expect(page.getByText('发布处理中',{exact:true})).toBeVisible();await expect(page.getByText('发布已确认',{exact:true})).toHaveCount(0);await expect(page.getByText('已发布版本 1',{exact:true})).toBeVisible();await expect(publish(page)).toBeDisabled();
+ const f=await setup(page);await page.goto(route);await confirmPublish(page);await expect(page.getByText('发布处理中',{exact:true})).toBeVisible();await expect(page.getByText('发布已确认',{exact:true})).toHaveCount(0);await expect(page.getByText('已发布版本 1',{exact:true})).toBeVisible();await expect(publish(page)).toBeDisabled();
  expect(f.writes).toHaveLength(1);expect(f.writes[0]).toEqual({operationId:expect.stringMatching(/^[0-9a-f-]{36}$/),expectedRevision:3,expectedSchemaVersion:1});
  await page.getByRole('button',{name:'核查发布结果',exact:true}).click();await expect(page.getByText('发布已确认',{exact:true})).toBeVisible();await expect(page.getByText('已发布版本 2',{exact:true})).toBeVisible();expect(f.calls.filter(c=>c.path.startsWith(base+'/publications/')).map(c=>c.path)).toEqual([base+'/publications/'+f.writes[0].operationId]);expect(f.calls.filter(c=>c.path.endsWith('/enable')||c.path.startsWith('application-operations/'))).toEqual([]);expect(f.writes).toHaveLength(1);
 });
 test('Root unknown publication retains same CAS and operation across explicit retry',async({page})=>{
- const f=await setup(page,'unknown');await page.goto(route);await publish(page).click();await expect(page.getByText('发布结果待确认',{exact:true})).toBeVisible();await expect(publish(page)).toBeDisabled();await page.getByRole('button',{name:'重试原发布',exact:true}).click();await expect.poll(()=>f.writes.length).toBe(2);expect(f.writes[1]).toEqual(f.writes[0]);await expect(page.getByText('发布已确认',{exact:true})).toHaveCount(0);
+ const f=await setup(page,'unknown');await page.goto(route);await confirmPublish(page);await expect(page.getByText('发布结果待确认',{exact:true})).toBeVisible();await expect(publish(page)).toBeDisabled();await page.getByRole('button',{name:'重试原发布',exact:true}).click();await expect.poll(()=>f.writes.length).toBe(2);expect(f.writes[1]).toEqual(f.writes[0]);await expect(page.getByText('发布已确认',{exact:true})).toHaveCount(0);
 });
 for(const [mode,message] of [['blocked','发布未生效'],['superseded','候选版本已被替代']] as const)test('Root publication '+mode+' is never presented as published',async({page})=>{
- const f=await setup(page,mode);await page.goto(route);await publish(page).click();await expect(page.getByText(message,{exact:true})).toBeVisible();await expect(page.getByText('发布已确认',{exact:true})).toHaveCount(0);await expect(page.getByText('已发布版本 1',{exact:true})).toBeVisible();expect(f.writes).toHaveLength(1);expect(f.calls.filter(c=>c.path.endsWith('/enable'))).toEqual([]);
+ const f=await setup(page,mode);await page.goto(route);await confirmPublish(page);await expect(page.getByText(message,{exact:true})).toBeVisible();await expect(page.getByText('发布已确认',{exact:true})).toHaveCount(0);await expect(page.getByText('已发布版本 1',{exact:true})).toBeVisible();expect(f.writes).toHaveLength(1);expect(f.calls.filter(c=>c.path.endsWith('/enable'))).toEqual([]);
 });
 for(const mode of ['bad-location','wrong-version'] as const)test('Root publication '+mode+' cannot change the published version',async({page})=>{
- const f=await setup(page,mode);await page.goto(route);await publish(page).click();await expect(page.getByRole('alert')).toContainText('尚未确认');await expect(page.getByText('发布已确认',{exact:true})).toHaveCount(0);await expect(page.getByText('已发布版本 1',{exact:true})).toBeVisible();expect(f.writes).toHaveLength(1);
+ const f=await setup(page,mode);await page.goto(route);await confirmPublish(page);await expect(page.getByRole('alert')).toContainText('尚未确认');await expect(page.getByText('发布已确认',{exact:true})).toHaveCount(0);await expect(page.getByText('已发布版本 1',{exact:true})).toBeVisible();expect(f.writes).toHaveLength(1);
 });
 test('Root publication refuses dirty settings rather than automatically saving them',async({page})=>{
  const f=await setup(page);await page.goto(route);await page.getByRole('tab',{name:'触发与设置',exact:true}).click();await page.getByLabel('允许发起人撤回',{exact:true}).uncheck();await expect(publish(page)).toBeDisabled();expect(f.writes).toEqual([]);expect(f.calls.filter(c=>c.method==='PUT')).toEqual([]);
+});
+
+test('Root publication confirmation cancel sends nothing and returns focus to original button',async({page})=>{
+ const f=await setup(page);await page.goto(route);await publish(page).click();const dialog=page.getByRole('dialog',{name:'发布流程',exact:true});await expect(dialog).toContainText('候选版本 2');expect(f.writes).toEqual([]);await dialog.getByRole('button',{name:'取消',exact:true}).click();await expect(dialog).toHaveCount(0);await expect(publish(page)).toBeFocused();expect(f.writes).toEqual([]);
 });
