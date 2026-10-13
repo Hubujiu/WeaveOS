@@ -19,7 +19,7 @@ async function setup(page:Page,options:Options={}){
   data={appId,viewId,tableId:id(8),schemaVersion:options.currentSchema??1,viewVersion:1,policyRevision:1,fields:[{id:fieldId,name:'说明',kind:'text',required:false,presentation:{helpText:null,displayTimeZone:null},input:{},access:{read:'all',create:true,edit:'all',history:'none'},query:{operators:['eq','neq'],sortable:false,quickSearchable:true}}],layout:[{id:id(9),kind:'field',fieldId}],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}};
  }else if(path===definitionPath&&method==='GET'){
   if(saved&&options.readAfterFails)return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
-  data={id:flowId,name:'部门审批',revision:saved?4:3,currentVersion:1,candidateVersion:saved?3:2,state:'enabled',schemaVersion:saved?saved.expectedSchemaVersion:1,allowWithdraw:saved?saved.allowWithdraw:true,graph:saved?.graph??graph,triggers:saved?.triggers??triggers};
+  data={id:flowId,name:saved?.name??'部门审批',revision:saved?4:3,currentVersion:1,candidateVersion:saved?3:2,state:'enabled',schemaVersion:saved?saved.expectedSchemaVersion:1,allowWithdraw:saved?saved.allowWithdraw:true,graph:saved?.graph??graph,triggers:saved?.triggers??triggers};
  }else if(path===definitionPath&&method==='PUT'){
   writes.push({body,method,path,headers:req.headers()});const reply=options.write?.(body,writes.length)??{status:200,code:'OK',data:receipt(body.operationId)};
   if(reply.status===200&&reply.code==='OK')saved=body;
@@ -80,4 +80,11 @@ test('Root workflow editable-field choice uses current label but saves only exac
  const f=await setup(page);await page.goto(route);await page.getByRole('region',{name:'流程图',exact:true}).getByRole('button',{name:'审批节点',exact:true}).click();
  const field=page.getByRole('region',{name:'节点设置',exact:true}).getByRole('checkbox',{name:'说明',exact:true});await expect(field).toBeChecked();await field.uncheck();expect(f.writes).toEqual([]);await save(page).click();await expect(page.getByText('定义已保存',{exact:true})).toBeVisible();
  const expected=structuredClone(graph);expected.nodes[1].approval!.editableFieldIds=[];expect(f.writes[0].body.graph).toEqual(expected);expect(f.writes[0].body.triggers).toEqual(triggers);
+});
+
+test('Root workflow name edits only the candidate and becomes the confirmed heading after explicit Save',async({page})=>{
+ const f=await setup(page);await page.goto(route);await page.getByRole('tab',{name:'触发与设置',exact:true}).click();await page.getByLabel('流程名称',{exact:true}).fill('审批名称更新');await expect(page.getByRole('heading',{name:'部门审批',exact:true})).toBeVisible();expect(f.writes).toEqual([]);await save(page).click();await expect(page.getByRole('heading',{name:'审批名称更新',exact:true})).toBeVisible();expect(f.writes).toHaveLength(1);expect(f.writes[0].body).toEqual({operationId:expect.stringMatching(/^[0-9a-f-]{36}$/),name:'审批名称更新',expectedRevision:3,expectedSchemaVersion:1,allowWithdraw:true,graph,triggers});expect(f.calls.filter(c=>c.path.endsWith('/publish')||c.path.endsWith('/enable'))).toEqual([]);
+});
+test('Root workflow name enforces nonblank and 100 Unicode characters without truncating surrogate pairs',async({page})=>{
+ const f=await setup(page);await page.goto(route);await page.getByRole('tab',{name:'触发与设置',exact:true}).click();const name=page.getByLabel('流程名称',{exact:true});await name.fill('   ');await expect(save(page)).toBeDisabled();await expect(page.getByRole('alert')).toBeVisible();await name.fill('🦊'.repeat(101));await expect(name).toHaveValue('🦊'.repeat(101));await expect(save(page)).toBeDisabled();expect(f.writes).toEqual([]);await name.fill('🦊'.repeat(100));await expect(save(page)).toBeEnabled();await save(page).click();await expect(page.getByText('定义已保存',{exact:true})).toBeVisible();expect(f.writes[0].body.name).toBe('🦊'.repeat(100));
 });
