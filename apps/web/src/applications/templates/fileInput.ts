@@ -33,7 +33,10 @@ export function decodeTemplateFile(bytes:Uint8Array):Record<string,unknown>|null
    const start=at;
    while(at<text.length&&!/[\x20\t\r\n,\]}]/.test(text[at]))at++;
    if(start===at)invalid();
-   // JSON.parse below validates the exact literal/number grammar.
+   // Template JSON numbers are integer metadata. Decimal business values
+   // are strings; never silently round a token before server validation.
+   const token=text.slice(start,at);
+   if(!['true','false','null'].includes(token)&&(!/^-?(?:0|[1-9][0-9]*)$/.test(token)||!Number.isSafeInteger(Number(token))))invalid();
   };
   value(0);whitespace();if(at!==text.length)return null;
   const result:unknown=JSON.parse(text);
