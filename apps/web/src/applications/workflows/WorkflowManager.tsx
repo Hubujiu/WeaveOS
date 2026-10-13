@@ -9,7 +9,7 @@ import '../../personnel-table.css';
 type Parameters={page:number;pageSize:number};
 const states={disabled:'已关闭',enabled:'已启用',closing:'关闭中'};
 const events={manual:'手动', 'record.created':'记录新增', 'record.updated':'记录修改'};
-export function WorkflowManager({actorId,appId,viewId,onOpen,onBack,onUnauthorized,onIdentityMismatch}:{actorId:string;appId:string;viewId:string;onOpen?:(flowId:string)=>void;onBack:()=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void}){
+export function WorkflowManager({actorId,appId,viewId,onOpen,onCreate,onBack,onUnauthorized,onIdentityMismatch}:{actorId:string;appId:string;viewId:string;onOpen?:(flowId:string)=>void;onCreate?:()=>void;onBack:()=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void}){
  const [parameters,setParameters]=useState<Parameters>({page:1,pageSize:20});
  const transport=useCallback(async(body:Parameters&{queryVersion?:string},signal:AbortSignal)=>{
   await Promise.resolve();if(signal.aborted)throw signal.reason??new DOMException('Aborted','AbortError');
@@ -29,7 +29,7 @@ export function WorkflowManager({actorId,appId,viewId,onOpen,onBack,onUnauthoriz
   {key:'actions',header:'操作',sortable:false,cell:row=><button type="button" className="text-button" aria-label={'编辑'+row.name} onClick={()=>onOpen?.(row.id)}>编辑</button>},
  ];
  return <section className="workflow-manager" aria-label="流程管理">
-  <div className="app-page-heading"><h1>审批流程</h1><div className="workflow-manager-actions"><button type="button" className="admin-button" disabled={query.loading} onClick={refresh}>刷新流程</button><button type="button" className="admin-button" onClick={onBack}>返回记录</button></div></div>
+  <div className="app-page-heading"><h1>审批流程</h1><div className="workflow-manager-actions">{onCreate&&<button type="button" className="admin-button primary" onClick={onCreate}>新建流程</button>}<button type="button" className="admin-button" disabled={query.loading} onClick={refresh}>刷新流程</button><button type="button" className="admin-button" onClick={onBack}>返回记录</button></div></div>
   {query.loading?<section className="app-surface app-state" role="status">正在读取流程…</section>:failure?<section className="app-surface app-state"><p role="alert">{changed?'流程已变化，请刷新后重新查看。':expired?'流程查询已过期，请刷新后重新查看。':failure.message}</p>{!changed&&!expired&&<button type="button" className="admin-button" onClick={query.recheck}>重试</button>}</section>:<section className="member-table surface workflow-manager-table" aria-label="审批流程列表"><div className="arca-source personnel-source-scope"><Table className="personnel-source-table rounded-xl" ariaLabel="审批流程" columns={columns} data={query.data.items} getRowId={row=>row.id} rowHeight={56} minWidth={720} fillViewport paginated manualPagination manualSorting recordCount={query.data.total} page={query.data.page} pageSize={query.data.pageSize} pageSizes={[5,10,20,25,50,100]} onPageChange={page=>setParameters(old=>({...old,page}))} onPageSizeChange={pageSize=>setParameters({page:1,pageSize})} emptyState="暂无流程"/></div></section>}
  </section>;
 }
