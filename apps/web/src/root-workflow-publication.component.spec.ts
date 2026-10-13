@@ -43,3 +43,7 @@ test('Root publication refuses dirty settings rather than automatically saving t
 test('Root publication confirmation cancel sends nothing and returns focus to original button',async({page})=>{
  const f=await setup(page);await page.goto(route);await publish(page).click();const dialog=page.getByRole('dialog',{name:'发布流程',exact:true});await expect(dialog).toContainText('候选版本 2');expect(f.writes).toEqual([]);await dialog.getByRole('button',{name:'取消',exact:true}).click();await expect(dialog).toHaveCount(0);await expect(publish(page)).toBeFocused();expect(f.writes).toEqual([]);
 });
+test('Root publication pending result remains reachable after closing progress dialog and actual Shell unmount',async({page})=>{
+ const f=await setup(page);await page.goto(route);await confirmPublish(page);const progress=page.getByRole('dialog',{name:'正在发布流程',exact:true});await expect(progress).toBeVisible();await progress.getByRole('button',{name:'关闭',exact:true}).click();await expect(progress).toHaveCount(0);await expect(page.getByRole('button',{name:'核查发布结果',exact:true})).toBeVisible();expect(f.writes).toHaveLength(1);
+ await page.getByRole('button',{name:'返回主页',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();await page.getByRole('button',{name:'核查发布结果',exact:true}).click();await expect(page.getByText('发布已确认',{exact:true})).toBeVisible();expect(f.writes).toHaveLength(1);
+});

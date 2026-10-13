@@ -60,3 +60,8 @@ test('Root definition synchronous double Save transmits one operation',async({pa
 test('Root definition changed identity cannot transmit Save',async({page})=>{
  const f=await setup(page);await edit(page);f.changeIdentity();await save(page).click();await expect(page.getByRole('alert')).toContainText('登录身份已变化');expect(f.writes).toEqual([]);
 });
+test('Root definition unknown Save survives actual Shell unmount and restores only its original operation',async({page})=>{
+ let f:Awaited<ReturnType<typeof setup>>;f=await setup(page,{lookupFails:true,write:(body,n)=>n===1?{status:503,code:'APPLICATION_OPERATION_UNCONFIRMED'}:{status:200,code:'OK',data:f.receipt(body.operationId)}});await edit(page);await save(page).click();await expect(page.getByRole('alert')).toContainText('尚未确认');const first=structuredClone(f.writes[0].body);
+ await page.getByRole('button',{name:'返回主页',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();await expect(page.getByRole('button',{name:'重试原保存',exact:true})).toBeVisible();expect(f.writes).toHaveLength(1);
+ await page.getByRole('button',{name:'重试原保存',exact:true}).click();await expect(page.getByText('定义已保存',{exact:true})).toBeVisible();expect(f.writes).toHaveLength(2);expect(f.writes[1].body).toEqual(first);
+});
