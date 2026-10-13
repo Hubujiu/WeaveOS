@@ -57,3 +57,27 @@ for(const source of ['captured','legacy_last_known'] as const)test('Root started
  await expect(page.getByText('最后已知名称',{exact:true})).toHaveCount(source==='legacy_last_known'?1:0);
  await expect(page.getByRole('button',{name:'撤回',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'同意',exact:true})).toHaveCount(0);expect(calls).toHaveLength(1);expect(calls[0].body).toEqual({page:1,pageSize:20});
 });
+
+const recordHistoryPath=`/api/v1/applications/${id(90)}/forms/${id(91)}/records/${id(101)}/workflow-events`;
+const recordHistoryRoute=`/app/approvals/started/${id(90)}/${id(91)}/${id(101)}`;
+const historyEvent=()=>({id:id(201),instanceId:id(1),flowId:id(92),flowName:'原记录流程',flowNameSource:'captured',nodeId:id(202),targetNodeId:null,actorId:id(203),action:'agree',outcome:'success',sequence:2,schemaVersion:1,recordVersion:1,occurredAt:'2026-10-13T12:00:00Z'});
+async function recordHistory(page:Page,reply:()=>Promise<{status?:number;code?:string}>|{status?:number;code?:string}=()=>({})){
+ const calls:{path:string;method:string;actor:string|undefined}[]=[];await page.route('**'+recordHistoryPath+'**',async r=>{
+  const u=new URL(r.request().url());calls.push({path:u.pathname,method:r.request().method(),actor:r.request().headers()['x-expected-actor-id']});const state=await reply();
+  const detail=u.pathname.endsWith('/'+id(201));await r.fulfill({status:state.status??200,json:{code:state.code??'OK',data:state.status?null:detail?{event:historyEvent(),basis:{status:'available',fields:[{fieldId:id(204),fieldName:'原提交说明',fieldKind:'text',value:'真实审批人确认的原依据',valueLabels:{}}]}}:{items:[historyEvent()]},meta:detail?null:{pagination:{hasMore:false,nextPageToken:null}}}}).catch(()=>{});
+ });return calls;
+}
+for(const archived of [false,true])test('Root started '+(archived?'archived':'current')+' row opens independent record history and another approver original evidence',async({page})=>{
+ await setup(page,body=>({data:{...result(body),total:1,items:[{...item(1),...(archived?{archived:true,flowNameSource:'captured',instance:{...item(1).instance,state:'completed'}}:{})}]}}));const history=await recordHistory(page);await page.goto(route);await expect(page.getByText('发起流程 1',{exact:true})).toBeVisible();expect(history).toEqual([]);const shell=await page.getByTestId('workspace-shell').elementHandle();
+ await page.getByRole('button',{name:'查看记录审批轨迹：发起流程 1',exact:true}).click();await expect(page).toHaveURL(recordHistoryRoute);await expect(page.getByRole('heading',{name:'记录审批轨迹',exact:true})).toBeVisible();const panel=page.getByRole('region',{name:'审批轨迹',exact:true});await expect(panel).toContainText('原记录流程');await expect(panel).toContainText(id(203));expect(history).toEqual([{path:recordHistoryPath,method:'GET',actor:actor.id}]);expect(await shell!.evaluate(n=>n.isConnected)).toBe(true);
+ await panel.getByRole('button',{name:'查看审批依据',exact:true}).click();await expect(page.getByRole('region',{name:'历史审批依据',exact:true})).toContainText('真实审批人确认的原依据');expect(history.at(-1)?.path).toBe(recordHistoryPath+'/'+id(201));await expect(page.getByRole('button',{name:'同意',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'保存修改',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'返回我发起的',exact:true}).click();await expect(page).toHaveURL(route);
+});
+test('Root started record history direct address and reload do not require a runtime instance',async({page})=>{
+ await setup(page);const history=await recordHistory(page);await page.goto(recordHistoryRoute);await expect(page.getByRole('region',{name:'审批轨迹',exact:true})).toContainText('原记录流程');await page.reload();await expect(page.getByRole('region',{name:'审批轨迹',exact:true})).toContainText('原记录流程');expect(history).toHaveLength(2);
+});
+test('Root started record history rechecks current permission rather than trusting initiated list access',async({page})=>{
+ await setup(page);const history=await recordHistory(page,()=>({status:403,code:'APPLICATION_FORBIDDEN'}));await page.goto(recordHistoryRoute);await expect(page.getByRole('alert')).toContainText('历史权限');await expect(page.getByText('原记录流程',{exact:true})).toHaveCount(0);expect(history).toHaveLength(1);
+});
+test('Root started record history navigation discards late events and returning reads anew',async({page})=>{
+ let n=0,release:(()=>void)|undefined;await setup(page);await recordHistory(page,async()=>{if(++n===1)await new Promise<void>(resolve=>{release=resolve});return {}});await page.goto(recordHistoryRoute);await expect.poll(()=>n).toBe(1);await page.getByRole('button',{name:'首页',exact:true}).first().click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();release!();await expect(page.getByText('原记录流程',{exact:true})).toHaveCount(0);await page.goBack();await expect(page.getByRole('region',{name:'审批轨迹',exact:true})).toContainText('原记录流程');expect(n).toBe(2);
+});
