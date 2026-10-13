@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import {dialogMotion} from '../motion/dialogMotion';
 
-export function FormsDialog({title,onClose,children,busy=false}:{
-  title:string;onClose:()=>void;children:ReactNode;busy?:boolean;
+export function FormsDialog({title,onClose,children,busy=false,closeLabel="关闭弹窗"}:{
+  title:string;onClose:()=>void;children:ReactNode;busy?:boolean;closeLabel?:string;
 }) {
   const dialog=useRef<HTMLDialogElement>(null);
   const animation=useRef<ReturnType<typeof dialogMotion>|null>(null);
@@ -24,7 +24,7 @@ export function FormsDialog({title,onClose,children,busy=false}:{
       event.preventDefault();event.stopPropagation();close();}}}
     onCancel={event=>{event.preventDefault();close();}}>
     <div className="forms-dialog-heading"><h2 id={heading}>{title}</h2>
-      <button type="button" className="forms-icon-button" aria-label="关闭弹窗"
+      <button type="button" className="forms-icon-button" aria-label={closeLabel}
         disabled={busy} onClick={close}>×</button></div>
     <div className="forms-dialog-body">{children}</div>
   </dialog>;
