@@ -20,8 +20,8 @@ async function setup(page:Page){
 }
 async function edit(page:Page){await page.goto(route);await page.getByRole('region',{name:'流程图',exact:true}).getByRole('button',{name:'条件节点',exact:true}).click();}
 const value=(page:Page,path:string)=>page.getByLabel('条件 '+path+' 的值',{exact:true});
-test('Root condition editor preserves nested groups and exact decimal text through explicit Save',async({page})=>{
- const f=await setup(page);await edit(page);await expect(value(page,'1.2.1')).toHaveValue('5000.01');await value(page,'1.2.1').fill('9007199254740993.01');expect(f.writes).toEqual([]);await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByText('定义已保存',{exact:true})).toBeVisible();
+test('Root condition editor preserves nested groups and exact decimal text through explicit Save',async({page},testInfo)=>{
+ const f=await setup(page);await edit(page);await expect(value(page,'1.2.1')).toHaveValue('5000.01');await value(page,'1.2.1').fill('9007199254740993.01');await testInfo.attach('workflow-condition-editor',{body:await page.screenshot(),contentType:'image/png'});expect(f.writes).toEqual([]);await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByText('定义已保存',{exact:true})).toBeVisible();
  const expected=structuredClone(graph);(expected.nodes[1].condition!.children[1].children![0]).value='9007199254740993.01';expect(f.writes).toHaveLength(1);expect(f.writes[0].path).toBe(definitionPath);expect(f.writes[0].body.graph).toEqual(expected);expect(f.writes[0].body.triggers).toEqual(triggers);expect(f.writes[0].body.expectedSchemaVersion).toBe(2);
 });
 test('Root condition editor changes a selected nested group without flattening parent or siblings',async({page})=>{
@@ -42,4 +42,7 @@ test('Root condition editor removes only selected condition and refuses an empty
 });
 test('Root condition editor selects current option IDs with scalar and set values kept distinct',async({page})=>{
  const f=await setup(page);await edit(page);await page.getByLabel('条件 1.1 的字段',{exact:true}).selectOption(id(33));await value(page,'1.1').selectOption(id(50));await page.getByLabel('条件 1.2.2 的字段',{exact:true}).selectOption(id(34));await page.getByRole('group',{name:'条件 1.2.2 的值',exact:true}).getByRole('checkbox',{name:'选项乙',exact:true}).check();await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByText('定义已保存',{exact:true})).toBeVisible();const expected=structuredClone(graph);expected.nodes[1].condition!.children[0]={fieldId:id(33),operator:'eq',value:id(50)};expected.nodes[1].condition!.children[1].children![1]={fieldId:id(34),operator:'eq',value:[id(51)]} as any;expect(f.writes[0].body.graph).toEqual(expected);
+});
+test('Root condition editor appends a leaf to an existing group without adding an unintended grouping level',async({page})=>{
+ const f=await setup(page);await edit(page);await page.getByRole('button',{name:'条件组 1.2 添加条件',exact:true}).click();await page.getByLabel('条件 1.2.3 的字段',{exact:true}).selectOption(id(30));await value(page,'1.2.3').fill('新增条件');await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByText('定义已保存',{exact:true})).toBeVisible();const expected=structuredClone(graph);(expected.nodes[1].condition!.children[1].children! as any[]).push({fieldId:id(30),operator:'eq',value:'新增条件'});expect(f.writes[0].body.graph).toEqual(expected);
 });

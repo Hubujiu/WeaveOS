@@ -53,7 +53,7 @@ test('Root publication pending result remains reachable after closing progress d
 // Figma496:9292 result dialog. A confirmed publication does not imply enabled.
 test('Root confirmed publication opens truthful result dialog and returns focus without another write',async({page},testInfo)=>{
  const f=await setup(page);await page.goto(route);await confirmPublish(page);await page.getByRole('button',{name:'核查发布结果',exact:true}).click();const result=page.getByRole('dialog',{name:'流程已发布',exact:true});await expect(result).toBeVisible();await expect(result).toContainText('采购审批 · 版本 2');await expect(result).toContainText('当前状态：已关闭');await expect(result).not.toContainText('当前状态：已启用');
- const box=await result.boundingBox();expect(box?.width).toBeCloseTo(520,0);expect(box?.height).toBeCloseTo(340,0);await testInfo.attach('publication-confirmed-desktop',{body:await page.screenshot(),contentType:'image/png'});
+ await expect.poll(async()=>{const box=await result.boundingBox();return box?{width:Math.round(box.width),height:Math.round(box.height)}:null;}).toEqual({width:520,height:340});await testInfo.attach('publication-confirmed-desktop',{body:await page.screenshot(),contentType:'image/png'});
  await result.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(result).toHaveCount(0);await expect(publish(page)).toBeFocused();expect(f.writes).toHaveLength(1);expect(f.calls.filter(c=>c.path.endsWith('/enable'))).toEqual([]);
 });
 test('Root unknown publication has no success dialog and close never claims completion',async({page})=>{
