@@ -81,3 +81,26 @@ test('Root started record history rechecks current permission rather than trusti
 test('Root started record history navigation discards late events and returning reads anew',async({page})=>{
  let n=0,release:(()=>void)|undefined;await setup(page);await recordHistory(page,async()=>{if(++n===1)await new Promise<void>(resolve=>{release=resolve});return {}});await page.goto(recordHistoryRoute);await expect.poll(()=>n).toBe(1);await page.getByRole('button',{name:'首页',exact:true}).first().click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();release!();await expect(page.getByText('原记录流程',{exact:true})).toHaveCount(0);await page.goBack();await expect(page.getByRole('region',{name:'审批轨迹',exact:true})).toContainText('原记录流程');expect(n).toBe(2);
 });
+
+// P1/P6: record-scoped history may contain another approver; comparison uses
+// current ordinary record authorization, never a fabricated active task.
+const savedRecordPath=`/api/v1/applications/${id(90)}/forms/${id(91)}/records/${id(101)}`;
+const savedRuntimePath=`/api/v1/applications/${id(90)}/forms/${id(91)}/runtime`;
+const savedRecord=()=>({id:id(101),appId:id(90),viewId:id(91),tableId:id(205),createdBy:actor.id,createdAt:'2026-10-13T11:00:00Z',updatedAt:'2026-10-13T13:00:00Z',schemaVersion:1,recordVersion:5,values:{[id(204)]:'当前已保存说明'},referenceDisplays:{}});
+async function savedReads(page:Page,reply:()=>Promise<ReturnType<typeof savedRecord>>|ReturnType<typeof savedRecord>=savedRecord){
+ const calls:string[]=[];
+ const runtime={appId:id(90),viewId:id(91),tableId:id(205),schemaVersion:1,viewVersion:1,policyRevision:1,fields:[{id:id(204),name:'当前说明',kind:'text',required:false,presentation:{helpText:null,displayTimeZone:null},input:{},access:{read:'all',create:false,edit:'none',history:'all'},query:{operators:['eq'],sortable:false,quickSearchable:false}}],layout:[],capabilities:{create:false,read:'all',edit:'none',history:'all',search:true,draftCreate:false,draftEdit:false}};
+ for(const path of [savedRuntimePath,savedRecordPath])await page.route('**'+path,async r=>{calls.push(path);expect(r.request().method()).toBe('GET');expect(r.request().headers()['x-expected-actor-id']).toBe(actor.id);await r.fulfill({json:{code:'OK',data:path===savedRuntimePath?runtime:await reply(),meta:null}}).catch(()=>{});});return calls;
+}
+async function openRecordBasis(page:Page){await page.goto(recordHistoryRoute);await page.getByRole('button',{name:'查看审批依据',exact:true}).click();await expect(page.getByRole('region',{name:'历史审批依据',exact:true})).toContainText('真实审批人确认的原依据');}
+test('Root started history compares another approver evidence on demand and returns to that exact basis',async({page},info)=>{
+ await setup(page);const history=await recordHistory(page),current=await savedReads(page);await openRecordBasis(page);expect(current).toEqual([]);expect(history).toHaveLength(2);
+ await page.getByRole('button',{name:'查看版本差异',exact:true}).click();const comparison=page.getByRole('region',{name:'版本对照',exact:true});await expect(comparison).toContainText('真实审批人确认的原依据');await expect(comparison).toContainText('当前已保存说明');await expect(comparison).toContainText('当前 v5');expect(history).toHaveLength(3);expect(history.at(-1)?.path).toBe(recordHistoryPath+'/'+id(201));expect(current).toEqual([savedRuntimePath,savedRecordPath]);await info.attach('started-record-comparison',{body:await page.screenshot(),contentType:'image/png'});
+ await page.getByRole('button',{name:'返回记录审批轨迹',exact:true}).click();await expect(page.getByRole('region',{name:'历史审批依据',exact:true})).toContainText('真实审批人确认的原依据');await expect(page.getByRole('button',{name:'查看版本差异',exact:true})).toBeFocused();await expect(page.getByRole('button',{name:'保存修改',exact:true})).toHaveCount(0);
+});
+test('Root started history comparison rechecks original history permission and clears stale basis on revocation',async({page})=>{
+ let n=0;await setup(page);await recordHistory(page,()=>++n>2?{status:403,code:'APPLICATION_FORBIDDEN'}:{});const current=await savedReads(page);await openRecordBasis(page);await page.getByRole('button',{name:'查看版本差异',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await expect(page.getByText('真实审批人确认的原依据',{exact:true})).toHaveCount(0);expect(current).toEqual([]);
+});
+test('Root started history comparison cancellation ignores late saved values and reopens with fresh data',async({page})=>{
+ let n=0,release:(()=>void)|undefined;await setup(page);await recordHistory(page);const current=await savedReads(page,async()=>{const record=savedRecord();if(++n===1)await new Promise<void>(r=>{release=r});else{record.recordVersion=6;record.values[id(204)]='再次读取的说明'}return record;});await openRecordBasis(page);await page.getByRole('button',{name:'查看版本差异',exact:true}).click();await expect.poll(()=>current.length).toBe(2);await page.getByRole('button',{name:'返回记录审批轨迹',exact:true}).click();release!();await expect(page.getByRole('region',{name:'版本对照',exact:true})).toHaveCount(0);await expect(page.getByText('当前已保存说明',{exact:true})).toHaveCount(0);await page.getByRole('button',{name:'查看版本差异',exact:true}).click();const comparison=page.getByRole('region',{name:'版本对照',exact:true});await expect(comparison).toContainText('再次读取的说明');await expect(comparison).toContainText('当前 v6');expect(current).toHaveLength(4);
+});
