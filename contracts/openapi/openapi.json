@@ -36479,7 +36479,8 @@
         "required": [
           "id",
           "label",
-          "status"
+          "status",
+          "departmentNames"
         ],
         "properties": {
           "id": {
@@ -36496,6 +36497,17 @@
             "enum": [
               "active"
             ]
+          },
+          "departmentNames": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "pattern": "^[^\\u0000]*$"
+            },
+            "description": "Current direct department names, unique and UTF-8 byte-order sorted; no department IDs or inherited descendants."
           }
         }
       },

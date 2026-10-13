@@ -65,7 +65,7 @@ func rootApproverIDs(t *testing.T, out map[string]any) map[string]bool {
 	ids := map[string]bool{}
 	for _, raw := range rootManagerSearchItems(t, out) {
 		item := raw.(map[string]any)
-		if len(item) != 3 || item["status"] != "active" || item["label"] == "" {
+		if len(item) != 4 || item["status"] != "active" || item["label"] == "" {
 			t.Fatalf("leaky or incomplete candidate %+v", item)
 		}
 		id, ok := item["id"].(string)
@@ -293,4 +293,70 @@ func TestRootApproverTextSearchRejectsInvalidTextWithoutExpandingManagerSearch(t
 	}
 	manager := rootManagerSearchHandler(t, s)
 	rootWorkflowHTTPError(t, rootManagerSearchCall(t, s, manager, map[string]any{"page": 1, "pageSize": 20, "q": "no widening"}), 400, "COMMON_INVALID_ARGUMENT")
+}
+
+func TestRootApproverDepartmentsAreCurrentMinimalDistinctAndPermissionFiltered(t *testing.T) {
+	s := rootWorkflowManagementSetup(t)
+	h := rootApproverHandler(t, s)
+	a, _ := rootWorkflowHTTPCandidate(t, s, "all")
+	hidden, _ := rootWorkflowHTTPCandidate(t, s, "")
+	nameA, nameB := "A-"+s.f.actor, "B-"+s.f.actor
+	rootApproverTestDepartment(t, s, nameB, a)
+	rootApproverTestDepartment(t, s, nameA, a, hidden)
+	rootApproverTestDepartment(t, s, nameA, a)
+	out := data(t, rootApproverTextCall(t, s, h, 1, 100, nameA, ""), 200)
+	items := rootManagerSearchItems(t, out)
+	if out["total"] != float64(1) || len(items) != 1 {
+		t.Fatalf("unqualified or duplicate department candidate: %+v", out)
+	}
+	row := items[0].(map[string]any)
+	if len(row) != 4 || row["id"] != a || !reflect.DeepEqual(row["departmentNames"], []any{nameA, nameB}) {
+		t.Fatalf("missing current direct department projection: %+v", row)
+	}
+	own := data(t, rootApproverCall(t, s, h, 1, 100, ""), 200)
+	found := false
+	for _, raw := range rootManagerSearchItems(t, own) {
+		r := raw.(map[string]any)
+		if r["id"] == s.f.actor {
+			found = true
+			if names, ok := r["departmentNames"].([]any); !ok || len(names) != 0 {
+				t.Fatalf("unassigned must be a nonnull empty list: %+v", r)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("owner missing")
+	}
+}
+func TestRootApproverDepartmentDisplayChangesInvalidateOnlyVisibleProjection(t *testing.T) {
+	s := rootWorkflowManagementSetup(t)
+	h := rootApproverHandler(t, s)
+	a, _ := rootWorkflowHTTPCandidate(t, s, "all")
+	hidden, _ := rootWorkflowHTTPCandidate(t, s, "")
+	prefix := "Visible-" + s.f.actor
+	rootApproverTestDepartment(t, s, prefix, a)
+	dept := rootApproverTestDepartment(t, s, "Before-"+s.f.actor, a)
+	unrelated := rootApproverTestDepartment(t, s, "Hidden-"+s.f.actor, hidden)
+	first := data(t, rootApproverTextCall(t, s, h, 1, 100, prefix, ""), 200)
+	row := rootManagerSearchItems(t, first)[0].(map[string]any)
+	if !reflect.DeepEqual(row["departmentNames"], []any{"Before-" + s.f.actor, prefix}) {
+		t.Fatalf("missing initial names: %+v", row)
+	}
+	token := first["queryVersion"].(string)
+	if _, e := s.f.owner.Exec(context.Background(), "UPDATE personnel.departments SET name=$2 WHERE id=$1", unrelated, "HiddenAfter-"+s.f.actor); e != nil {
+		t.Fatal(e)
+	}
+	data(t, rootApproverTextCall(t, s, h, 1, 100, prefix, token), 200)
+	if _, e := s.f.owner.Exec(context.Background(), "UPDATE personnel.departments SET name=$2 WHERE id=$1", dept, "After-"+s.f.actor); e != nil {
+		t.Fatal(e)
+	}
+	rootWorkflowHTTPError(t, rootApproverTextCall(t, s, h, 1, 100, prefix, token), 409, "COMMON_QUERY_CHANGED")
+	fresh := data(t, rootApproverTextCall(t, s, h, 1, 100, prefix, ""), 200)
+	if !reflect.DeepEqual(rootManagerSearchItems(t, fresh)[0].(map[string]any)["departmentNames"], []any{"After-" + s.f.actor, prefix}) {
+		t.Fatal("old department name survived")
+	}
+	if _, e := s.f.owner.Exec(context.Background(), "DELETE FROM personnel.department_members WHERE department_id=$1 AND user_id=$2", dept, a); e != nil {
+		t.Fatal(e)
+	}
+	rootWorkflowHTTPError(t, rootApproverTextCall(t, s, h, 1, 100, prefix, fresh["queryVersion"].(string)), 409, "COMMON_QUERY_CHANGED")
 }

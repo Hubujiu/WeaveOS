@@ -23,7 +23,7 @@ async function setup(page:Page,options:Options={}){
   if(options.candidateMode==='late')await new Promise<void>(resolve=>{release=resolve;});
   if(options.candidateMode==='denied')return r.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
   if(options.candidateMode==='changed'&&body.page===2){refreshed=true;return r.fulfill({status:409,json:{code:'COMMON_QUERY_CHANGED',data:null}});}
-  data={items:body.page===2?[{id:id(22),label:'次页审批人',status:'active'}]:[{id:id(20),label:refreshed?'刷新后审批人':'原审批人甲',status:'active'},{id:id(21),label:'原审批人乙',status:'active'}],total:21,page:body.page,pageSize:body.pageSize,queryVersion:refreshed?'new-token':'original-token',schemaVersion:options.candidateMode==='skew'?2:1,policyRevision:1};
+  data={items:body.page===2?[{id:id(22),label:'次页审批人',status:'active',departmentNames:[]}]:[{id:id(20),label:refreshed?'刷新后审批人':'原审批人甲',status:'active',departmentNames:[]},{id:id(21),label:'原审批人乙',status:'active',departmentNames:[]}],total:21,page:body.page,pageSize:body.pageSize,queryVersion:refreshed?'new-token':'original-token',schemaVersion:options.candidateMode==='skew'?2:1,policyRevision:1};
  }else if(path===definitionPath&&method==='PUT'){
   writes.push({body,method,path,headers:req.headers()});const reply=options.write?.(body,writes.length)??{status:200,code:'OK',data:receipt(body.operationId)};
   if(reply.status===200&&reply.code==='OK')saved=body;
@@ -69,7 +69,7 @@ test('Root approver search resets server paging and query context while keeping 
  await page.route('**/api/v1/'+candidatePath,async r=>{
   const body=r.request().postDataJSON();searches.push(body);
   if(!body.q)return r.fallback();
-  return r.fulfill({json:{code:'OK',data:{items:[{id:id(30),label:'财务搜索命中',status:'active'}],total:1,page:body.page,pageSize:body.pageSize,queryVersion:'search-token',schemaVersion:1,policyRevision:1},meta:null}});
+  return r.fulfill({json:{code:'OK',data:{items:[{id:id(30),label:'财务搜索命中',status:'active',departmentNames:[]}],total:1,page:body.page,pageSize:body.pageSize,queryVersion:'search-token',schemaVersion:1,policyRevision:1},meta:null}});
  });
  const dialog=await open(page);await dialog.getByRole('checkbox',{name:'原审批人乙',exact:true}).uncheck();await dialog.getByRole('button',{name:'下一页',exact:true}).click();await expect(dialog.getByRole('checkbox',{name:'次页审批人',exact:true})).toBeVisible();
  const input=dialog.getByRole('textbox',{name:'搜索账号或部门',exact:true});await expect(input).toBeVisible();await input.fill('财务');
@@ -82,8 +82,22 @@ test('Root approver search ignores superseded results and cancelling search neve
  await page.route('**/api/v1/'+candidatePath,async r=>{
   const body=r.request().postDataJSON();searches.push(body);if(!body.q)return r.fallback();
   if(body.q==='旧'){oldStarted=true;await new Promise<void>(resolve=>{release=resolve;});}
-  await r.fulfill({json:{code:'OK',data:{items:[{id:id(body.q==='旧'?30:31),label:body.q==='旧'?'迟到旧成员':'当前新成员',status:'active'}],total:1,page:body.page,pageSize:body.pageSize,queryVersion:'query-'+body.q,schemaVersion:1,policyRevision:1},meta:null}}).catch(()=>{});
+  await r.fulfill({json:{code:'OK',data:{items:[{id:id(body.q==='旧'?30:31),label:body.q==='旧'?'迟到旧成员':'当前新成员',status:'active',departmentNames:[]}],total:1,page:body.page,pageSize:body.pageSize,queryVersion:'query-'+body.q,schemaVersion:1,policyRevision:1},meta:null}}).catch(()=>{});
  });
  const dialog=await open(page),input=dialog.getByRole('textbox',{name:'搜索账号或部门',exact:true});await input.fill('旧');await expect.poll(()=>oldStarted).toBe(true);await input.fill('新');await expect(dialog.getByRole('checkbox',{name:'当前新成员',exact:true})).toBeVisible();release!();await expect(dialog.getByRole('checkbox',{name:'迟到旧成员',exact:true})).toHaveCount(0);
  expect(searches.filter(x=>x.q).map(x=>x)).toEqual([{page:1,pageSize:20,q:'旧'},{page:1,pageSize:20,q:'新'}]);await dialog.getByRole('checkbox',{name:'当前新成员',exact:true}).check();await dialog.getByRole('button',{name:'取消',exact:true}).click();expect(f.writes).toEqual([]);await page.getByRole('button',{name:'选择审批人',exact:true}).click();await expect(dialog.getByRole('checkbox',{name:'原审批人乙',exact:true})).toBeChecked();await expect(dialog.getByRole('textbox',{name:'搜索账号或部门',exact:true})).toHaveValue('');expect(f.writes).toEqual([]);
+});
+
+test('Root approver displays every current department beside the account without changing its accessible checkbox label',async({page},testInfo)=>{
+ await setup(page);await page.route('**/api/v1/'+candidatePath,async r=>{const body=r.request().postDataJSON();return r.fulfill({json:{code:'OK',data:{items:[{id:id(20),label:'多部门审批人',status:'active',departmentNames:['产品部','财务部']}],total:1,page:body.page,pageSize:body.pageSize,queryVersion:'department-query',schemaVersion:1,policyRevision:1},meta:null}});});
+ const dialog=await open(page),checkbox=dialog.getByRole('checkbox',{name:'多部门审批人',exact:true});await expect(checkbox).toBeVisible();const row=checkbox.locator('..');await expect(row.getByText('产品部',{exact:true})).toBeVisible();await expect(row.getByText('财务部',{exact:true})).toBeVisible();
+ const name=row.getByText('多部门审批人',{exact:true}),department=row.getByText('财务部',{exact:true});await expect(name).toHaveCSS('font-size','14px');await expect(department).toHaveCSS('font-size','12px');const a=await name.boundingBox(),b=await department.boundingBox();expect(b!.x).toBeGreaterThan(a!.x+a!.width);
+ await testInfo.attach('approver-current-departments',{body:await dialog.screenshot(),contentType:'image/png'});
+});
+test('Root approver without a department is explicitly unassigned and remains selectable',async({page})=>{
+ await setup(page);const dialog=await open(page),checkbox=dialog.getByRole('checkbox',{name:'原审批人甲',exact:true});await expect(checkbox).toBeVisible();await expect(checkbox.locator('..').getByText('未分配部门',{exact:true})).toBeVisible();await checkbox.uncheck();await checkbox.check();
+});
+test('Root malformed department projection cannot expose selectable stale approvers',async({page})=>{
+ await setup(page);await page.route('**/api/v1/'+candidatePath,async r=>{const body=r.request().postDataJSON();return r.fulfill({json:{code:'OK',data:{items:[{id:id(20),label:'非法部门成员',status:'active',departmentNames:null}],total:1,page:body.page,pageSize:body.pageSize,queryVersion:'bad',schemaVersion:1,policyRevision:1},meta:null}});});
+ const dialog=await open(page);await expect(dialog.getByRole('alert')).toBeVisible();await expect(dialog.getByRole('checkbox')).toHaveCount(0);await expect(dialog.getByRole('button',{name:'确认',exact:true})).toBeDisabled();
 });
