@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"io"
@@ -19,6 +20,7 @@ import (
 
 type HTTP struct {
 	Application       *Service
+	Candidates        *appstructure.Application
 	Authenticator     session.Authenticator
 	TrustedProxyHosts []string
 }
@@ -163,6 +165,14 @@ func (s *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if s.Application == nil || s.Application.Pool == nil {
 		templateFail(w, r, session.ErrUnavailable)
+		return
+	}
+	if r.URL.Path == "/api/v1/application-templates/member-candidates" {
+		s.candidates(w, r, p, "member")
+		return
+	}
+	if r.URL.Path == "/api/v1/application-templates/department-candidates" {
+		s.candidates(w, r, p, "department")
 		return
 	}
 	if r.URL.RawQuery != "" {
