@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/apppolicy"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appquery"
@@ -33,13 +34,29 @@ type approverResult struct {
 	PolicyRevision int64          `json:"policyRevision"`
 }
 
-func approverResource(b managerBinding) string {
+type approverBinding struct {
+	managerBinding
+	Query string `json:"q"`
+}
+
+func approverValidQuery(q string) bool {
+	return utf8.ValidString(q) && utf8.RuneCountInString(q) <= 100 && !strings.ContainsRune(q, 0)
+}
+func approverValidBinding(raw json.RawMessage) (approverBinding, bool) {
+	var b approverBinding
+	_, e := exactObject(raw, []string{"actorId", "appId", "viewId", "q"}, nil)
+	if e != nil || !utf8.Valid(raw) || json.Unmarshal(raw, &b) != nil {
+		return b, false
+	}
+	return b, validID(b.ActorID) && validID(b.AppID) && validID(b.ViewID) && approverValidQuery(b.Query)
+}
+func approverResource(b approverBinding) string {
 	return "workflow-approvers:" + b.AppID + ":" + b.ViewID
 }
 func NewApproverQueryStore(client redis.UniversalClient, generation string) *querycontext.Store {
 	return querycontext.NewStore(client, "workflow-approvers", generation, querycontext.Policy{
 		Validate: func(m querycontext.Metadata) bool {
-			b, ok := managerValidBinding(m.Criteria)
+			b, ok := approverValidBinding(m.Criteria)
 			r, valid := managerValidRevision(m.Revision)
 			return ok && valid && m.View == approverResource(b) && m.Fingerprint == r.Fingerprint
 		},
@@ -55,7 +72,7 @@ func NewApproverQueryStore(client redis.UniversalClient, generation string) *que
 type approverStrategy struct {
 	app            *Application
 	principal      session.Principal
-	binding        managerBinding
+	binding        approverBinding
 	page           querycontext.Page
 	schema, policy int64
 	owner          string
@@ -65,10 +82,10 @@ type approverStrategy struct {
 
 func (s *approverStrategy) Resource() string { return approverResource(s.binding) }
 func (s *approverStrategy) OpenRead(ctx context.Context) (pgx.Tx, error) {
-	return (&managerStrategy{app: s.app, principal: s.principal, binding: s.binding}).OpenRead(ctx)
+	return (&managerStrategy{app: s.app, principal: s.principal, binding: s.binding.managerBinding}).OpenRead(ctx)
 }
 func (s *approverStrategy) validCriteria(raw json.RawMessage) bool {
-	b, ok := managerValidBinding(raw)
+	b, ok := approverValidBinding(raw)
 	return ok && b == s.binding
 }
 func (s *approverStrategy) Prepare(_ context.Context, _ pgx.Tx, saved, incoming json.RawMessage) (json.RawMessage, json.RawMessage, error) {
@@ -116,13 +133,16 @@ func (s *approverStrategy) Revisions(ctx context.Context, tx pgx.Tx) (json.RawMe
 		root bool
 	}
 	for {
-		sql := `SELECT id::text,account,is_bootstrap_admin FROM auth.users WHERE status='active'`
-		args := []any{}
+		sql := `SELECT u.id::text,u.account,u.is_bootstrap_admin FROM auth.users u WHERE u.status='active'
+ AND ($1::text='' OR starts_with(u.account,$1::text) OR EXISTS (
+ SELECT 1 FROM personnel.department_members m JOIN personnel.departments d ON d.id=m.department_id
+ WHERE m.user_id=u.id AND starts_with(d.name,$1::text)))`
+		args := []any{s.binding.Query}
 		if beforeID != "" {
-			sql += " AND (account,id)>($1::text,$2::uuid)"
+			sql += " AND (u.account,u.id)>($2::text,$3::uuid)"
 			args = append(args, beforeAccount, beforeID)
 		}
-		sql += " ORDER BY account,id LIMIT 64"
+		sql += " ORDER BY u.account,u.id LIMIT 64"
 		rows, e := tx.Query(ctx, sql, args...)
 		if e != nil {
 			return nil, e
@@ -251,13 +271,14 @@ func (s *Service) approverSearch(w http.ResponseWriter, r *http.Request, p sessi
 		}
 		return
 	}
-	fields, e := exactObject(raw, []string{"page", "pageSize"}, []string{"queryVersion"})
+	fields, e := exactObject(raw, []string{"page", "pageSize"}, []string{"queryVersion", "q"})
 	var q struct {
+		Query        string `json:"q"`
 		Page         int    `json:"page"`
 		PageSize     int    `json:"pageSize"`
 		QueryVersion string `json:"queryVersion"`
 	}
-	if e != nil || json.Unmarshal(raw, &q) != nil {
+	if e != nil || !utf8.Valid(raw) || json.Unmarshal(raw, &q) != nil || !approverValidQuery(q.Query) {
 		fail(w, r, errInvalid, "")
 		return
 	}
@@ -275,7 +296,7 @@ func (s *Service) approverSearch(w http.ResponseWriter, r *http.Request, p sessi
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
-	b := managerBinding{ActorID: p.UserID, AppID: appID, ViewID: viewID}
+	b := approverBinding{managerBinding: managerBinding{ActorID: p.UserID, AppID: appID, ViewID: viewID}, Query: q.Query}
 	criteria, _ := json.Marshal(b)
 	strategy := &approverStrategy{app: s.Application, principal: p, binding: b, page: querycontext.Page{Number: q.Page, Size: q.PageSize}}
 	result, e := querycontext.Execute(ctx, s.Application.ApproverQueries, p.SessionRef, q.QueryVersion, criteria, strategy.page, strategy)
