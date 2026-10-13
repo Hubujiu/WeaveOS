@@ -1,0 +1,74 @@
+✖ P23 definition fixture contains only existing resource identities and synthetic sessions (1.19078ms)
+✔ P23 definition fixture rejects fabricated task identities and unsafe scope without private error text (2.044523ms)
+✖ P23 definition gate requires the exact new three browser and independent backend identities (0.327612ms)
+✔ P23 definition gate rejects approval-only, missing, retried and mismatched proofs (0.437768ms)
+✖ P23 complete gate retains both independent same-head three-browser journeys (0.169885ms)
+✔ P23 complete gate cannot succeed on one journey or mixed candidate evidence (0.164608ms)
+✖ P23 definition browser command selects only the fixed definition config and rejects other journeys (1.479484ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 3
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 92.96439
+
+✖ failing tests:
+
+test at tests/governance/workflow-definition-browser.test.mjs:14:1
+✖ P23 definition fixture contains only existing resource identities and synthetic sessions (1.19078ms)
+  Error: Definition browser fixture unavailable
+      at validateDefinitionFixture (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/services/workflow-engine/product-browser-contract.mjs:43:51)
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/workflow-definition-browser.test.mjs:15:59)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)
+
+test at tests/governance/workflow-definition-browser.test.mjs:22:1
+✖ P23 definition gate requires the exact new three browser and independent backend identities (0.327612ms)
+  Error: Definition browser reports unavailable
+      at validateDefinitionReports (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/services/workflow-engine/product-browser-contract.mjs:44:51)
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/workflow-definition-browser.test.mjs:23:61)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7)
+
+test at tests/governance/workflow-definition-browser.test.mjs:29:1
+✖ P23 complete gate retains both independent same-head three-browser journeys (0.169885ms)
+  Error: Complete browser reports unavailable
+      at validateCompleteReports (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/services/workflow-engine/product-browser-contract.mjs:45:49)
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/workflow-definition-browser.test.mjs:30:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7)
+
+test at tests/governance/workflow-definition-browser.test.mjs:35:1
+✖ P23 definition browser command selects only the fixed definition config and rejects other journeys (1.479484ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'services/workflow-engine/playwright.product.config.ts'
+  - 'services/workflow-engine/playwright.definition.config.ts'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/workflow-definition-browser.test.mjs:37:67)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'services/workflow-engine/playwright.product.config.ts',
+    expected: 'services/workflow-engine/playwright.definition.config.ts',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

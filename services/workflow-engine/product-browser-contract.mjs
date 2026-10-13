@@ -39,3 +39,7 @@ export function validateReports({head,baseline,reports,backend}){
  }
  return {head,browsers:3,browserCases:coverage.passed,backendCases:backend.length};
 }
+// P23 second-journey declarations, intentionally unavailable before their RED.
+export function validateDefinitionFixture(){throw Error('Definition browser fixture unavailable');}
+export function validateDefinitionReports(){throw Error('Definition browser reports unavailable');}
+export function validateCompleteReports(){throw Error('Complete browser reports unavailable');}
