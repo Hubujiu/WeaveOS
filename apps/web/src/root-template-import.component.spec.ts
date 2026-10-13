@@ -55,3 +55,49 @@ test('Root identity change after preflight cannot send a template import',async(
 test('Root non-creator has no import control and a direct import route cannot expose upload',async({page})=>{
  const f=await setup(page,'no-create');await page.goto('/app/applications');await expect(page.getByRole('heading',{name:'应用中心',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'导入应用模板',exact:true})).toHaveCount(0);await page.goto(route);await expect(page.getByText('没有应用创建权限',{exact:true})).toBeVisible();await expect(page.getByLabel('选择模板文件',{exact:true})).toHaveCount(0);expect(f.calls.filter(c=>c.path.startsWith('application-templates/'))).toEqual([]);
 });
+
+// P21 complete explicit mapping. The same source UUID may denote two different types.
+const sourceId=id(80),targetUser=id(81),targetDepartment=id(82);
+const mappedManifest={...manifest,application:{...manifest.application,name:'需映射模板'},tables:[{id:id(20),name:'关联表',directoryId:null,position:0,fields:[{id:id(21),name:'原成员',kind:'member',required:false,default:sourceId,config:{},presentation:{helpText:null,displayTimeZone:null}},{id:id(22),name:'原部门',kind:'department',required:false,default:sourceId,config:{},presentation:{helpText:null,displayTimeZone:null}}]}]};
+async function candidates(page:Page,mode:'normal'|'bad'|'delay'='normal'){
+ const calls:{path:string;q:string;token:string|null;actor:string|undefined}[]=[];let release:()=>void=()=>{};const held=new Promise<void>(r=>{release=r;});
+ await page.route('**/api/v1/application-templates/*-candidates*',async r=>{
+  const request=r.request(),url=new URL(request.url()),department=url.pathname.endsWith('department-candidates');calls.push({path:url.pathname,q:url.searchParams.get('q')??'',token:url.searchParams.get('pageToken'),actor:request.headers()['x-expected-actor-id']});
+  if(mode==='delay')await held;
+  const paged=url.searchParams.get('q')==='下一',next=paged&&!url.searchParams.get('pageToken')?'A'.repeat(43):null;
+  const items=department?[{id:targetDepartment,label:'当前研发部',status:'active',parentId:null}]:[{id:paged?next?id(83):id(84):targetUser,label:paged?next?'下一候选一':'下一候选二':'当前成员',status:'active'},...(!paged?[{id:sourceId,label:'同ID当前成员',status:'active'}]:[])];
+  await r.fulfill({json:{code:'OK',data:{items:mode==='bad'?[{...items[0],email:'private@example.test'}]:items},meta:{requestId:'mapping-request',pagination:{hasMore:next!==null,nextPageToken:next}}}});
+ });return{calls,release};
+}
+async function mapTargets(page:Page,user='当前成员'){
+ await page.getByRole('button',{name:'选择成员',exact:true}).click();await page.getByRole('button',{name:user,exact:true}).click();await page.getByRole('button',{name:'选择部门',exact:true}).click();await page.getByRole('button',{name:'当前研发部',exact:true}).click();
+}
+const bindings=(user=targetUser)=>[{kind:'user',sourceId,targetId:user},{kind:'department',sourceId,targetId:targetDepartment}];
+test('Root import requires separate explicit user and department choices and sends unchanged manifest with typed bindings',async({page},info)=>{
+ const f=await setup(page),c=await candidates(page);const dialog=await open(page);await file(page,mappedManifest);
+ await expect(page.getByRole('button',{name:'选择成员',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'选择部门',exact:true})).toBeVisible();expect(c.calls).toEqual([]);await expect(page.getByRole('button',{name:'检查模板',exact:true})).toBeDisabled();
+ await mapTargets(page);await expect.poll(async()=>{const b=await dialog.boundingBox();return b?{w:Math.round(b.width),h:Math.round(b.height)}:null;}).toEqual({w:740,h:540});await info.attach('template-explicit-mapping',{body:await page.screenshot(),contentType:'image/png'});
+ await page.getByRole('button',{name:'检查模板',exact:true}).click();await expect(page.getByText('模板检查通过',{exact:true})).toBeVisible();expect(f.calls.find(c=>c.path==='application-templates/preflight')!.body).toEqual({manifest:mappedManifest,bindings:bindings()});
+ await page.getByRole('button',{name:'确认导入',exact:true}).click();await expect(page.getByText('模板已导入',{exact:true})).toBeVisible();expect(f.writes[0]).toEqual({operationId:expect.any(String),manifest:mappedManifest,bindings:bindings()});expect(c.calls.every(c=>c.actor===actor.id&&c.path.startsWith('/api/v1/application-templates/'))).toBe(true);
+});
+test('Root template mapping searches current targets and follows only the opaque next page',async({page})=>{
+ const f=await setup(page),c=await candidates(page);await open(page);await file(page,mappedManifest);await page.getByRole('button',{name:'选择成员',exact:true}).click();await page.getByLabel('搜索成员',{exact:true}).fill('下一');await expect(page.getByRole('button',{name:'下一候选一',exact:true})).toBeVisible();await page.getByRole('button',{name:'加载更多',exact:true}).click();await page.getByRole('button',{name:'下一候选二',exact:true}).click();
+ expect(c.calls.some(c=>c.q==='下一'&&c.token==='A'.repeat(43))).toBe(true);await page.getByRole('button',{name:'选择部门',exact:true}).click();await page.getByRole('button',{name:'当前研发部',exact:true}).click();await page.getByRole('button',{name:'检查模板',exact:true}).click();await expect(page.getByText('模板检查通过',{exact:true})).toBeVisible();expect(f.calls.find(c=>c.path==='application-templates/preflight')!.body.bindings).toEqual(bindings(id(84)));expect(f.writes).toEqual([]);
+});
+test('Root a changed explicit target invalidates successful preflight, including a deliberate identity mapping',async({page})=>{
+ const f=await setup(page);await candidates(page);await open(page);await file(page,mappedManifest);await mapTargets(page);await page.getByRole('button',{name:'检查模板',exact:true}).click();await expect(page.getByText('模板检查通过',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'选择成员',exact:true}).click();await page.getByRole('button',{name:'同ID当前成员',exact:true}).click();await expect(page.getByRole('button',{name:'确认导入',exact:true})).toHaveCount(0);await expect(page.getByText('模板检查通过',{exact:true})).toHaveCount(0);await page.getByRole('button',{name:'检查模板',exact:true}).click();await expect(page.getByText('模板检查通过',{exact:true})).toBeVisible();expect(f.calls.filter(c=>c.path==='application-templates/preflight').at(-1)!.body.bindings).toEqual(bindings(sourceId));expect(f.writes).toEqual([]);
+});
+test('Root a changed target aborts an in-flight template check and rejects its late success',async({page})=>{
+ const f=await setup(page,'preflight-delay');await candidates(page);await open(page);await file(page,mappedManifest);await mapTargets(page);await page.getByRole('button',{name:'检查模板',exact:true}).click();await expect.poll(()=>f.calls.filter(c=>c.path==='application-templates/preflight').length).toBe(1);
+ const aborted=page.waitForEvent('requestfailed',r=>r.url().endsWith('/application-templates/preflight'));await page.getByRole('button',{name:'选择成员',exact:true}).click();await page.getByRole('button',{name:'同ID当前成员',exact:true}).click();await aborted;f.release();await expect(page.getByRole('button',{name:'检查模板',exact:true})).toBeEnabled();await expect(page.getByRole('button',{name:'确认导入',exact:true})).toHaveCount(0);expect(f.writes).toEqual([]);
+});
+test('Root mapped unknown import keeps the original typed bindings across actual route unmount and replay',async({page})=>{
+ const f=await setup(page,'unknown');await candidates(page);await open(page);await file(page,mappedManifest);await mapTargets(page);await page.getByRole('button',{name:'检查模板',exact:true}).click();await page.getByRole('button',{name:'确认导入',exact:true}).click();await expect(page.getByRole('button',{name:'重试原导入',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'选择成员',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'关闭并保留待核查操作',exact:true}).click();await expect(page).toHaveURL(/\/app\/applications$/);await page.getByRole('button',{name:'导入应用模板',exact:true}).click();await page.getByRole('button',{name:'重试原导入',exact:true}).click();await expect(page.getByText('模板已导入',{exact:true})).toBeVisible();expect(f.writes).toHaveLength(2);expect(f.writes[1]).toEqual(f.writes[0]);expect(f.writes[1].bindings).toEqual(bindings());
+});
+test('Root malformed target candidate page clears options without permitting template preflight',async({page})=>{
+ const f=await setup(page);await candidates(page,'bad');await open(page);await file(page,mappedManifest);await page.getByRole('button',{name:'选择成员',exact:true}).click();await expect(page.getByRole('alert')).toContainText('候选加载失败');await expect(page.getByRole('button',{name:'当前成员',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'检查模板',exact:true})).toBeDisabled();expect(f.calls.some(c=>c.path==='application-templates/preflight')).toBe(false);
+});
+test('Root cancelling an open mapping picker aborts candidate reads and never starts import',async({page})=>{
+ const f=await setup(page),c=await candidates(page,'delay');await open(page);await file(page,mappedManifest);await page.getByRole('button',{name:'选择成员',exact:true}).click();await expect.poll(()=>c.calls.length).toBe(1);const aborted=page.waitForEvent('requestfailed',r=>r.url().includes('/member-candidates'));await page.getByRole('button',{name:'取消',exact:true}).click();await aborted;c.release();await expect(page).toHaveURL(/\/app\/applications$/);expect(f.writes).toEqual([]);
+});
