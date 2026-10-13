@@ -1,0 +1,202 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ V072 exact deletion mutation is separate from physical DELETE and record editing (2.057292ms)
+✖ V072 exact restoration mutation is separate from physical DELETE and record editing (0.318669ms)
+✖ V072 schema zero remains a recognized request for existing not-ready handling (0.170366ms)
+✔ V072 rejects lifecycle request {"path":"applications/d7d7d7d7-d7d7-4d7d-8d7d-000000000001/forms/d7d7d7d7-d7d7-4d7d-8d7d-000000000002/records/d7d7d7d7-d7d7-4d7d-8d7d-000000000003/restoration"} (0.152219ms)
+✔ V072 rejects lifecycle request {"path":"applications/d7d7d7d7-d7d7-4d7d-8d7d-000000000001/forms/d7d7d7d7-d7d7-4d7d-8d7d-000000000002/records/d7d7d7d7-d7d7-4d7d-8d7d-000000000003/deletion?extra=1"} (0.116104ms)
+✔ V072 rejects lifecycle request {"path":"https://other.invalid/applications/d7d7d7d7-d7d7-4d7d-8d7d-000000000001/forms/d7d7d7d7-d7d7-4d7d-8d7d-000000000002/records/d7d7d7d7-d7d7-4d7d-8d7d-000000000003/deletion"} (0.070536ms)
+✔ V072 rejects lifecycle request {"method":"DELETE"} (0.797628ms)
+✔ V072 rejects lifecycle request {"expectedStatus":201} (0.091948ms)
+✔ V072 rejects lifecycle request {"expectedStatus":204} (0.087923ms)
+✔ V072 rejects lifecycle request {"body":{"expectedSchemaVersion":2,"expectedRecordVersion":4,"operationId":"d7d7d7d7-d7d7-4d7d-8d7d-000000000005"}} (0.122204ms)
+✔ V072 rejects lifecycle request {"body":{"expectedSchemaVersion":2,"expectedRecordVersion":4,"deleted":true}} (0.141312ms)
+✔ V072 rejects lifecycle request {"body":{"expectedRecordVersion":4}} (0.077847ms)
+✔ V072 rejects lifecycle request {"body":{"expectedSchemaVersion":2,"expectedRecordVersion":0}} (0.143426ms)
+✔ V072 rejects lifecycle request {"body":{"expectedSchemaVersion":2,"expectedRecordVersion":1.2}} (0.047331ms)
+✔ V072 rejects lifecycle request {"body":{"expectedSchemaVersion":2,"expectedRecordVersion":9007199254740992}} (0.030035ms)
+✔ V072 rejects lifecycle request {"body":{"expectedSchemaVersion":-1,"expectedRecordVersion":4}} (0.028422ms)
+✔ V072 rejects lifecycle request {"body":{"expectedSchemaVersion":"2","expectedRecordVersion":4}} (0.02676ms)
+✔ V072 rejects wrong lifecycle resource {"kind":"record"} (0.063896ms)
+✔ V072 rejects wrong lifecycle resource {"id":"d7d7d7d7-d7d7-4d7d-8d7d-000000000009"} (0.031678ms)
+✔ V072 rejects wrong lifecycle resource {"appId":"00000000-0000-0000-0000-000000000000"} (0.0268ms)
+✔ V072 rejects wrong lifecycle resource {"action":"purge"} (0.025869ms)
+✔ V072 rejects wrong lifecycle resource {"creationNonce":"d7d7d7d7-d7d7-4d7d-8d7d-000000000008"} (0.029194ms)
+✖ V072 current minimal lifecycle state binds actual deleted true (0.202675ms)
+✖ V072 current minimal lifecycle state binds actual deleted false (0.128403ms)
+✔ V072 refuses malformed or leaking current state {"id":"d7d7d7d7-d7d7-4d7d-8d7d-000000000009"} (0.068703ms)
+✔ V072 refuses malformed or leaking current state {"recordVersion":0} (0.130947ms)
+✔ V072 refuses malformed or leaking current state {"schemaVersion":0} (0.052819ms)
+✔ V072 refuses malformed or leaking current state {"deleted":"false"} (0.038448ms)
+✔ V072 refuses malformed or leaking current state {"values":{"private":"must not appear"}} (0.031527ms)
+✖ V072 original deletion receipt binds operation, record, schema and state (0.211879ms)
+✖ V072 original restoration receipt binds operation, record, schema and state (0.094662ms)
+✔ V072 refuses cross-operation or wrong-action receipt {"operationId":"d7d7d7d7-d7d7-4d7d-8d7d-000000000009"} (0.068493ms)
+✔ V072 refuses cross-operation or wrong-action receipt {"id":"d7d7d7d7-d7d7-4d7d-8d7d-000000000009"} (0.067902ms)
+✔ V072 refuses cross-operation or wrong-action receipt {"recordVersion":4} (0.049224ms)
+✔ V072 refuses cross-operation or wrong-action receipt {"recordVersion":9007199254740992} (0.03993ms)
+✔ V072 refuses cross-operation or wrong-action receipt {"schemaVersion":3} (0.105138ms)
+✔ V072 refuses cross-operation or wrong-action receipt {"deleted":false} (0.057666ms)
+✔ V072 refuses cross-operation or wrong-action receipt {"deleted":1} (0.051918ms)
+✔ V072 refuses cross-operation or wrong-action receipt {"values":{}} (0.035494ms)
+✔ V072 refuses cross-operation or wrong-action receipt {"createdAt":"2026-10-13T00:00:00Z"} (0.047842ms)
+✔ V072 missing receipt operationId remains unconfirmed (0.069645ms)
+✔ V072 missing receipt id remains unconfirmed (0.030416ms)
+✔ V072 missing receipt recordVersion remains unconfirmed (0.0265ms)
+✔ V072 missing receipt schemaVersion remains unconfirmed (0.02707ms)
+✔ V072 missing receipt deleted remains unconfirmed (0.025869ms)
+ℹ tests 45
+ℹ suites 0
+ℹ pass 38
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 131.035672
+
+✖ failing tests:
+
+test at tests/foundation/record-lifecycle-consumption.test.mjs:6:48
+✖ V072 exact deletion mutation is separate from physical DELETE and record editing (2.057292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-lifecycle-consumption.test.mjs:6:149)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-lifecycle-consumption.test.mjs:6:48
+✖ V072 exact restoration mutation is separate from physical DELETE and record editing (0.318669ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-lifecycle-consumption.test.mjs:6:149)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-lifecycle-consumption.test.mjs:7:1
+✖ V072 schema zero remains a recognized request for existing not-ready handling (0.170366ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-lifecycle-consumption.test.mjs:7:97)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-lifecycle-consumption.test.mjs:10:35
+✖ V072 current minimal lifecycle state binds actual deleted true (0.202675ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-lifecycle-consumption.test.mjs:10:120)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-lifecycle-consumption.test.mjs:10:35
+✖ V072 current minimal lifecycle state binds actual deleted false (0.128403ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-lifecycle-consumption.test.mjs:10:120)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-lifecycle-consumption.test.mjs:12:48
+✖ V072 original deletion receipt binds operation, record, schema and state (0.211879ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-lifecycle-consumption.test.mjs:12:141)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-lifecycle-consumption.test.mjs:12:48
+✖ V072 original restoration receipt binds operation, record, schema and state (0.094662ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-lifecycle-consumption.test.mjs:12:141)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
