@@ -1,0 +1,158 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ V070 empty complete template has explicitly empty reference lists (1.86947ms)
+✖ V070 typed defaults, group members and approval assignments are unique sorted and source-immutable (0.59872ms)
+✖ V070 discovers nested trigger and condition references in the workflow table, without confusing text (0.476106ms)
+✖ V070 does not classify internal, option, layout or textual UUIDs as personnel (0.437968ms)
+✖ V070 known system-time conditions are not missing personnel fields (0.274202ms)
+✔ V070 rejects unknown or ambiguous reference-bearing shapes rather than returning empty bindings (0.760833ms)
+✔ V070 malformed, cyclic and excessive-depth input fails closed without mutating the source (0.163846ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 2
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 116.616106
+
+✖ failing tests:
+
+test at tests/foundation/template-references.test.mjs:15:1
+✖ V070 empty complete template has explicitly empty reference lists (1.86947ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   departmentIds: [],
+  -   userIds: []
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-references.test.mjs:15:85)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { userIds: [], departmentIds: [] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/template-references.test.mjs:16:1
+✖ V070 typed defaults, group members and approval assignments are unique sorted and source-immutable (0.59872ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   departmentIds: [
+  -     'e8e8e8e8-e8e8-4e8e-8e8e-000000000090'
+  -   ],
+  -   userIds: [
+  -     'e8e8e8e8-e8e8-4e8e-8e8e-000000000090',
+  -     'e8e8e8e8-e8e8-4e8e-8e8e-000000000091',
+  -     'e8e8e8e8-e8e8-4e8e-8e8e-000000000092'
+  -   ]
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-references.test.mjs:16:586)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { userIds: [ 'e8e8e8e8-e8e8-4e8e-8e8e-000000000090', 'e8e8e8e8-e8e8-4e8e-8e8e-000000000091', 'e8e8e8e8-e8e8-4e8e-8e8e-000000000092' ], departmentIds: [ 'e8e8e8e8-e8e8-4e8e-8e8e-000000000090' ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/template-references.test.mjs:17:1
+✖ V070 discovers nested trigger and condition references in the workflow table, without confusing text (0.476106ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   departmentIds: [
+  -     'e8e8e8e8-e8e8-4e8e-8e8e-000000000091'
+  -   ],
+  -   userIds: [
+  -     'e8e8e8e8-e8e8-4e8e-8e8e-000000000090',
+  -     'e8e8e8e8-e8e8-4e8e-8e8e-000000000092'
+  -   ]
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-references.test.mjs:17:600)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { userIds: [ 'e8e8e8e8-e8e8-4e8e-8e8e-000000000090', 'e8e8e8e8-e8e8-4e8e-8e8e-000000000092' ], departmentIds: [ 'e8e8e8e8-e8e8-4e8e-8e8e-000000000091' ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/template-references.test.mjs:18:1
+✖ V070 does not classify internal, option, layout or textual UUIDs as personnel (0.437968ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   departmentIds: [],
+  -   userIds: []
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-references.test.mjs:18:390)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { userIds: [], departmentIds: [] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/template-references.test.mjs:19:1
+✖ V070 known system-time conditions are not missing personnel fields (0.274202ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   departmentIds: [],
+  -   userIds: []
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-references.test.mjs:19:227)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { userIds: [], departmentIds: [] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
