@@ -100,3 +100,15 @@ Exact remote head e008a3218f2ffdca13285b31ff5ba185f11dfaa4, local13da983e/tree53
 - Two explicit product choices are still unanswered as of actual07:33 Notion reread: reject/return reason collection; read-only member/department filter-candidate visibility. No recommendation is treated as approval.
 
 Full pure/governance/contracts1911, TypeScript/build, actual PR path scope and same-version official native Gitleaks of the tracked archive pass locally. Native scanning is supplemental, not a substitute for the unchanged CI Docker scanner. The b02 preflight failure was a diagnosed generic-key false positive on a Figma file locator; accurate source URL metadata removed the ambiguity without suppressing scan rules. That failed candidate never ran its business tests.
+
+## Verified checkpoint — 2026-10-13 09:16 UTC
+
+Current remote85409315227b9deed3779445dfa9f161ca7c5072 matches local77af5039/tree3aa02ea0; main/develop remain unchanged. Current CI38374245985/product38374245950 are running, not accepted.
+
+- Exact480d full main CI38371674572 SUCCESS. Product components1/2/3 SUCCESS, component4 job115210579424185PASS/5FAIL. First creation6, name2, condition insertion2, retaining unsaved topology under invalid condition input all GREEN; picker actual row geometry GREEN. Actual settled close620×390 and manager narrow/trigger-settings screenshots personally inspected from verified artifact11799712787.
+- Four new expected RED cases (node removal3, condition input geometry1) retained before their minimal implementation. The fifth failure is an OLD real Agree-completion beforeunload regression, not a new expected RED or a flaky pass. Original test and Workspace/CSS/page prestate retained before fixing the listener to consult current synchronous guards, as existing route protection does. Current854 browser regression outcome pending.
+- P20 workflow-deletion wire59, transport23, shared hook11 passed after distinct actual REDs. Original deletion operation preserves CAS/key and queries its dedicated status, never the generic stale202 admission ledger; only confirmed deleted clears uncertainty. Seven first-run real-Shell deletion UI tests are now running on854; corresponding page UI has NOT been implemented.
+- P19 recoverable record lifecycle remains protocol/hook only; deleted-record discovery and UI outstanding. Global personal started/approved lists, template/copy/structure lifecycle, approver search/departments, nonexecution node metadata and fuller graph manipulation, combined real multi-actor browser→BFF→Flowable journeys and final visual/motion review remain open.
+- Two product choices (reject/return reasons and read-only reference-filter candidates) remain unanswered; independent work continues without inventing their decisions.
+
+Local2015 pure/governance/contracts, typecheck/build, actual PR path scope and exact tracked archive native Gitleaks pass. Current exact CI still must finish; no overall product completion, merge or deployment claim.
