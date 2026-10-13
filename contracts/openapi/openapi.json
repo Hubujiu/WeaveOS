@@ -20089,7 +20089,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/WorkflowManagerSearch"
+                "$ref": "#/components/schemas/WorkflowApproverSearch"
               }
             }
           }
@@ -36684,6 +36684,37 @@
             }
           }
         ]
+      },
+      "WorkflowApproverSearch": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page",
+          "pageSize"
+        ],
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "queryVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "q": {
+            "type": "string",
+            "maxLength": 100,
+            "pattern": "^[^\\u0000]*$",
+            "description": "Optional case-sensitive literal prefix of account label or a current direct department name; empty means all eligible candidates."
+          }
+        }
       }
     },
     "responses": {

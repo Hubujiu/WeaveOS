@@ -63,3 +63,27 @@ test('Root approver picker late response cannot reopen cancelled dialog',async({
 test('Root approver picker places each checkbox beside its label as the source candidate row',async({page})=>{
  await setup(page);const dialog=await open(page);await expect.poll(async()=>Math.round((await dialog.boundingBox())?.width??0)).toBe(640);const geometry=await dialog.getByRole('checkbox',{name:'原审批人甲',exact:true}).evaluate(input=>{const label=input.closest('label')!,walker=document.createTreeWalker(label,NodeFilter.SHOW_TEXT);let node:Node|null;while((node=walker.nextNode()))if(node.textContent?.trim()==='原审批人甲'){const range=document.createRange();range.selectNodeContents(node);const text=range.getBoundingClientRect(),box=input.getBoundingClientRect();return {gap:text.left-box.right,topDifference:Math.abs(text.top-box.top)};}throw Error('Visible label text not found');});expect(geometry.gap).toBeGreaterThanOrEqual(8);expect(geometry.gap).toBeLessThanOrEqual(16);expect(geometry.topDifference).toBeLessThanOrEqual(6);
 });
+
+test('Root approver search resets server paging and query context while keeping explicit choices',async({page})=>{
+ const f=await setup(page),searches:any[]=[];
+ await page.route('**/api/v1/'+candidatePath,async r=>{
+  const body=r.request().postDataJSON();searches.push(body);
+  if(!body.q)return r.fallback();
+  return r.fulfill({json:{code:'OK',data:{items:[{id:id(30),label:'财务搜索命中',status:'active'}],total:1,page:body.page,pageSize:body.pageSize,queryVersion:'search-token',schemaVersion:1,policyRevision:1},meta:null}});
+ });
+ const dialog=await open(page);await dialog.getByRole('checkbox',{name:'原审批人乙',exact:true}).uncheck();await dialog.getByRole('button',{name:'下一页',exact:true}).click();await expect(dialog.getByRole('checkbox',{name:'次页审批人',exact:true})).toBeVisible();
+ const input=dialog.getByRole('textbox',{name:'搜索账号或部门',exact:true});await expect(input).toBeVisible();await input.fill('财务');
+ await expect(dialog.getByRole('checkbox',{name:'财务搜索命中',exact:true})).toBeVisible();expect(searches.at(-1)).toEqual({page:1,pageSize:20,q:'财务'});await expect(dialog.getByRole('checkbox',{name:'次页审批人',exact:true})).toHaveCount(0);
+ await dialog.getByRole('checkbox',{name:'财务搜索命中',exact:true}).check();await dialog.getByRole('button',{name:'刷新',exact:true}).click();await expect.poll(()=>searches.filter(x=>x.q==='财务').length).toBe(2);expect(searches.at(-1)).toEqual({page:1,pageSize:20,q:'财务'});
+ await expect(dialog.getByRole('checkbox',{name:'财务搜索命中',exact:true})).toBeChecked();await dialog.getByRole('button',{name:'确认',exact:true}).click();expect(f.writes).toEqual([]);await page.getByRole('button',{name:'保存',exact:true}).click();await expect.poll(()=>f.writes.length).toBe(1);expect(f.writes[0].body.graph.nodes[1].approval.assigneeIds).toEqual([id(20),id(30)]);
+});
+test('Root approver search ignores superseded results and cancelling search never saves node changes',async({page})=>{
+ const f=await setup(page);let release:(()=>void)|undefined,oldStarted=false;const searches:any[]=[];
+ await page.route('**/api/v1/'+candidatePath,async r=>{
+  const body=r.request().postDataJSON();searches.push(body);if(!body.q)return r.fallback();
+  if(body.q==='旧'){oldStarted=true;await new Promise<void>(resolve=>{release=resolve;});}
+  await r.fulfill({json:{code:'OK',data:{items:[{id:id(body.q==='旧'?30:31),label:body.q==='旧'?'迟到旧成员':'当前新成员',status:'active'}],total:1,page:body.page,pageSize:body.pageSize,queryVersion:'query-'+body.q,schemaVersion:1,policyRevision:1},meta:null}}).catch(()=>{});
+ });
+ const dialog=await open(page),input=dialog.getByRole('textbox',{name:'搜索账号或部门',exact:true});await input.fill('旧');await expect.poll(()=>oldStarted).toBe(true);await input.fill('新');await expect(dialog.getByRole('checkbox',{name:'当前新成员',exact:true})).toBeVisible();release!();await expect(dialog.getByRole('checkbox',{name:'迟到旧成员',exact:true})).toHaveCount(0);
+ expect(searches.filter(x=>x.q).map(x=>x)).toEqual([{page:1,pageSize:20,q:'旧'},{page:1,pageSize:20,q:'新'}]);await dialog.getByRole('checkbox',{name:'当前新成员',exact:true}).check();await dialog.getByRole('button',{name:'取消',exact:true}).click();expect(f.writes).toEqual([]);await page.getByRole('button',{name:'选择审批人',exact:true}).click();await expect(dialog.getByRole('checkbox',{name:'原审批人乙',exact:true})).toBeChecked();await expect(dialog.getByRole('textbox',{name:'搜索账号或部门',exact:true})).toHaveValue('');expect(f.writes).toEqual([]);
+});

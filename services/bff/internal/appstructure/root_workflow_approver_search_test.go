@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appworkflows"
@@ -178,4 +179,118 @@ func TestRootApproverDiscoveryManagerSessionAndReadBoundary(t *testing.T) {
 		t.Fatal(e)
 	}
 	rootWorkflowHTTPError(t, rootApproverCall(t, s, h, 1, 20, "invalid"), 403, "APPLICATION_FORBIDDEN")
+}
+
+// P16 extension oracle: source-approved account/current-department prefix, not page-local filtering.
+func rootApproverTextCall(t *testing.T, s rootWorkflowManagementFixture, h http.Handler, page, size int, query, token string) *httptest.ResponseRecorder {
+	t.Helper()
+	body := rootManagerSearchBody(page, size, token)
+	body["q"] = query
+	raw, e := json.Marshal(body)
+	if e != nil {
+		t.Fatal(e)
+	}
+	return rootWorkflowHTTPRequest(t, s, h, "POST", rootApproverPath(s), string(raw), true, true, "", nil)
+}
+func rootApproverTestDepartment(t *testing.T, s rootWorkflowManagementFixture, name string, users ...string) string {
+	t.Helper()
+	c := context.Background()
+	id := uuid(t, s.f.owner)
+	var parent string
+	if e := s.f.owner.QueryRow(c, "SELECT id::text FROM personnel.departments WHERE is_root").Scan(&parent); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := s.f.owner.Exec(c, "INSERT INTO personnel.departments(id,parent_id,name) VALUES($1,$2,$3)", id, parent, name); e != nil {
+		t.Fatal(e)
+	}
+	t.Cleanup(func() {
+		if _, e := s.f.owner.Exec(c, "DELETE FROM personnel.department_members WHERE department_id=$1", id); e != nil {
+			t.Error(e)
+		}
+		if _, e := s.f.owner.Exec(c, "DELETE FROM personnel.departments WHERE id=$1", id); e != nil {
+			t.Error(e)
+		}
+	})
+	for _, user := range users {
+		if _, e := s.f.owner.Exec(c, "INSERT INTO personnel.department_members(department_id,user_id) VALUES($1,$2)", id, user); e != nil {
+			t.Fatal(e)
+		}
+	}
+	return id
+}
+func TestRootApproverTextSearchUsesCurrentDepartmentsAndAuthorizedDistinctUsers(t *testing.T) {
+	s := rootWorkflowManagementSetup(t)
+	h := rootApproverHandler(t, s)
+	var account string
+	if e := s.f.owner.QueryRow(context.Background(), "SELECT account FROM auth.users WHERE id=$1", s.f.actor).Scan(&account); e != nil {
+		t.Fatal(e)
+	}
+	own := data(t, rootApproverTextCall(t, s, h, 1, 100, account, ""), 200)
+	if !rootApproverIDs(t, own)[s.f.actor] {
+		t.Fatal("full account prefix did not find owner")
+	}
+	a, _ := rootWorkflowHTTPCandidate(t, s, "all")
+	b, _ := rootWorkflowHTTPCandidate(t, s, "own")
+	hidden, _ := rootWorkflowHTTPCandidate(t, s, "")
+	prefix := "财务_" + s.f.actor
+	rootApproverTestDepartment(t, s, prefix+"甲", a, b, hidden)
+	rootApproverTestDepartment(t, s, prefix+"乙", a)
+	out := data(t, rootApproverTextCall(t, s, h, 1, 100, prefix, ""), 200)
+	got := rootApproverIDs(t, out)
+	if out["total"] != float64(2) || len(got) != 2 || !got[a] || !got[b] || got[hidden] {
+		t.Fatalf("department search leaked or duplicated users: %+v", out)
+	}
+	for _, q := range []string{"%", "_", prefix + "甲suffix"} {
+		empty := data(t, rootApproverTextCall(t, s, h, 1, 100, q, ""), 200)
+		if empty["total"] != float64(0) || len(rootApproverIDs(t, empty)) != 0 {
+			t.Fatalf("not literal prefix %q %+v", q, empty)
+		}
+	}
+	first := data(t, rootApproverTextCall(t, s, h, 1, 1, prefix, ""), 200)
+	next := data(t, rootApproverTextCall(t, s, h, 2, 1, prefix, first["queryVersion"].(string)), 200)
+	if first["total"] != float64(2) || next["total"] != float64(2) || reflect.DeepEqual(first["items"], next["items"]) {
+		t.Fatalf("matched paging is not complete: %+v %+v", first, next)
+	}
+}
+func TestRootApproverTextSearchBindsQueryAndRefreshesDepartmentMembership(t *testing.T) {
+	s := rootWorkflowManagementSetup(t)
+	h := rootApproverHandler(t, s)
+	a, _ := rootWorkflowHTTPCandidate(t, s, "all")
+	b, _ := rootWorkflowHTTPCandidate(t, s, "own")
+	prefix := "SearchDept-" + s.f.actor
+	dept := rootApproverTestDepartment(t, s, prefix, a, b)
+	first := data(t, rootApproverTextCall(t, s, h, 1, 1, prefix, ""), 200)
+	token := first["queryVersion"].(string)
+	rootWorkflowHTTPError(t, rootApproverTextCall(t, s, h, 1, 1, "different", token), 409, "COMMON_QUERY_CONTEXT_EXPIRED")
+	if _, e := s.f.owner.Exec(context.Background(), "DELETE FROM personnel.department_members WHERE department_id=$1 AND user_id=$2", dept, a); e != nil {
+		t.Fatal(e)
+	}
+	rootWorkflowHTTPError(t, rootApproverTextCall(t, s, h, 2, 1, prefix, token), 409, "COMMON_QUERY_CHANGED")
+	fresh := data(t, rootApproverTextCall(t, s, h, 1, 100, prefix, ""), 200)
+	if fresh["total"] != float64(1) || !rootApproverIDs(t, fresh)[b] || rootApproverIDs(t, fresh)[a] {
+		t.Fatal("moved member remained", fresh)
+	}
+	if _, e := s.f.owner.Exec(context.Background(), "UPDATE personnel.departments SET name=$2 WHERE id=$1", dept, "Renamed-"+s.f.actor); e != nil {
+		t.Fatal(e)
+	}
+	rootWorkflowHTTPError(t, rootApproverTextCall(t, s, h, 1, 100, prefix, fresh["queryVersion"].(string)), 409, "COMMON_QUERY_CHANGED")
+	empty := data(t, rootApproverTextCall(t, s, h, 1, 100, prefix, ""), 200)
+	if empty["total"] != float64(0) {
+		t.Fatal("old department name remained searchable", empty)
+	}
+}
+func TestRootApproverTextSearchRejectsInvalidTextWithoutExpandingManagerSearch(t *testing.T) {
+	s := rootWorkflowManagementSetup(t)
+	h := rootApproverHandler(t, s)
+	data(t, rootApproverTextCall(t, s, h, 1, 20, "", ""), 200)
+	data(t, rootApproverTextCall(t, s, h, 1, 20, strings.Repeat("🦊", 100), ""), 200)
+	for _, q := range []any{nil, 3, []string{}, map[string]any{}, strings.Repeat("🦊", 101), "nul\x00query"} {
+		raw, _ := json.Marshal(map[string]any{"page": 1, "pageSize": 20, "q": q})
+		rootWorkflowHTTPError(t, rootWorkflowHTTPRequest(t, s, h, "POST", rootApproverPath(s), string(raw), true, true, "", nil), 400, "COMMON_INVALID_ARGUMENT")
+	}
+	for _, raw := range []string{`{"page":1,"pageSize":20,"q":"a","q":"b"}`, "{\"page\":1,\"pageSize\":20,\"q\":\"\xff\"}"} {
+		rootWorkflowHTTPError(t, rootWorkflowHTTPRequest(t, s, h, "POST", rootApproverPath(s), raw, true, true, "", nil), 400, "COMMON_INVALID_ARGUMENT")
+	}
+	manager := rootManagerSearchHandler(t, s)
+	rootWorkflowHTTPError(t, rootManagerSearchCall(t, s, manager, map[string]any{"page": 1, "pageSize": 20, "q": "no widening"}), 400, "COMMON_INVALID_ARGUMENT")
 }

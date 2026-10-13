@@ -37,3 +37,29 @@ func TestRootWorkflowApproverSearchHostComposition(t *testing.T) {
 	}
 	rootHTTPError(t, f.call(t, "POST", path, `{"page":1,"pageSize":20}`, func(r *http.Request) { r.Header.Del("X-CSRF-Token") }), 403, "COMMON_CSRF_REJECTED")
 }
+
+func TestRootWorkflowApproverTextSearchThroughRealSessionHost(t *testing.T) {
+	f := rootHTTPTriggerSetupEvents(t, "manual")
+	path := "/api/v1/applications/" + f.app + "/forms/" + f.view + "/workflows/approvers/search"
+	var account string
+	if e := f.owner.QueryRow(f.ctx, "SELECT account FROM auth.users WHERE id=$1", f.actor).Scan(&account); e != nil {
+		t.Fatal(e)
+	}
+	raw, _ := json.Marshal(map[string]any{"page": 1, "pageSize": 100, "q": account})
+	out := rootHTTPData(t, f.call(t, "POST", path, string(raw), nil), 200)
+	var items []map[string]json.RawMessage
+	if e := json.Unmarshal(out["items"], &items); e != nil {
+		t.Fatal(e)
+	}
+	found := false
+	for _, item := range items {
+		rootHTTPFieldSet(t, item, []string{"id", "label", "status"})
+		if rootHTTPString(t, item, "id") == f.actor {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("host did not expose eligible matching owner")
+	}
+	rootHTTPError(t, f.call(t, "POST", path, string(raw), func(r *http.Request) { r.Header.Del("X-CSRF-Token") }), 403, "COMMON_CSRF_REJECTED")
+}
