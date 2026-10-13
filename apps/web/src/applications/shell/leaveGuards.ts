@@ -8,6 +8,7 @@ const scopeKey = (scope: LeaveScope) => {
  const viewId = 'viewId' in scope ? scope.viewId ?? '' : '';
  const key: unknown[] = [scope.kind, scope.actorId, scope.appId, viewId];
  if (scope.kind === 'record') key.push(scope.recordId ? ['record', scope.recordId] : ['clientDraft', scope.clientDraftId]);
+ else if (scope.kind === 'workflow-definition') key.push(scope.flowId);
  else if (scope.kind === 'manual-start') key.push(scope.recordId);
  else if (scope.kind === 'workflow-instance'||scope.kind === 'workflow-round') key.push(scope.recordId,scope.instanceId);
  else if (scope.kind === 'draft') key.push(['draft', scope.draftId]);

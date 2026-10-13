@@ -6,6 +6,7 @@ type RecordScope=AppScope&{kind:'record';viewId:string}&(
 export type LeaveScope=
   | (AppScope&{kind:'structure'})
   | (AppScope&{kind:'designer';viewId:string})
+  | (AppScope&{kind:'workflow-definition';viewId:string;flowId:string})
   | (AppScope&{kind:'preset';viewId:string})
   | (AppScope&{kind:'manual-start';viewId:string;recordId:string})
   | (AppScope&{kind:'workflow-round';viewId:string;recordId:string;instanceId:string})
