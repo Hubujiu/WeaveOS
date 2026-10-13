@@ -1,0 +1,128 @@
+✔ V075 eligible approver discovery is a manager CSRF protected read POST (1.683701ms)
+✖ V075 approver exposes only active identity, account label and current department names (1.064751ms)
+✔ V075 approver result binds current schema and policy without granting record rights (0.201663ms)
+✔ P16 search query is optional bounded literal text and never changes manager input (71.558071ms)
+✖ P16 current department names are required bounded unique strings, not directory identities (17.229866ms)
+(node:14) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ P16 accepts current bounded candidates and leaves input untouched (2.274759ms)
+✔ P16 empty deep page is a real successful response (0.29276ms)
+✔ P16 rejects schema drift (0.149945ms)
+✔ P16 rejects policy drift (0.115844ms)
+✔ P16 rejects wrong page (0.200781ms)
+✔ P16 rejects wrong size (0.082504ms)
+✔ P16 rejects extra grant (0.086109ms)
+✔ P16 rejects unsafe total (0.102174ms)
+✔ P16 rejects empty token (0.102975ms)
+✔ P16 rejects token too long (0.217126ms)
+✔ P16 rejects null list (0.117977ms)
+✔ P16 rejects duplicate identity (0.071377ms)
+✔ P16 rejects rows exceed total (0.989588ms)
+✔ P16 refuses candidate disabled (0.15303ms)
+✔ P16 refuses candidate empty id (0.076966ms)
+✔ P16 refuses candidate zero id (0.078528ms)
+✔ P16 refuses candidate uppercase id (0.044206ms)
+✔ P16 refuses candidate blank label (0.042864ms)
+✔ P16 refuses candidate oversize label (0.04688ms)
+✔ P16 refuses candidate extra email (0.136194ms)
+✔ P16 refuses candidate extra scope (0.044937ms)
+✔ P16 rejects unsafe page window or obsolete authority versions (0.083886ms)
+✖ P16 current department names stay complete, unique, bounded and in byte order (0.246801ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 24
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 226.171253
+
+✖ failing tests:
+
+test at contracts/workflow-approver-search.contract.test.mjs:5:1
+✖ V075 approver exposes only active identity, account label and current department names (1.064751ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      'id',
+      'label',
+      'status',
+  -   'departmentNames'
+    ]
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/contracts/workflow-approver-search.contract.test.mjs:5:194)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'id', 'label', 'status' ],
+    expected: [ 'id', 'label', 'status', 'departmentNames' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at contracts/workflow-approver-search.contract.test.mjs:19:1
+✖ P16 current department names are required bounded unique strings, not directory identities (17.229866ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/contracts/workflow-approver-search.contract.test.mjs:21:84)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-approver-consumption.test.mjs:5:1
+✖ P16 accepts current bounded candidates and leaves input untouched (2.274759ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-approver-consumption.test.mjs:5:125)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-approver-consumption.test.mjs:11:1
+✖ P16 current department names stay complete, unique, bounded and in byte order (0.246801ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-approver-consumption.test.mjs:12:100)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
