@@ -67,3 +67,23 @@ test('Root approved comparison every new comparison reads a fresh saved record',
 test('Root approved comparison narrow screen keeps exact values reachable without outer overflow',async({page},testInfo)=>{
  await setup(page);await currentReads(page);await page.setViewportSize({width:390,height:844});await openComparison(page);const region=page.getByRole('region',{name:'版本对照',exact:true});await expect(region).toContainText('987654321098765432109876543210.34');await region.getByText('987654321098765432109876543210.34',{exact:true}).scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await expect(page.getByRole('button',{name:'保存修改',exact:true})).toHaveCount(0);await testInfo.attach('approved-comparison-small',{body:await page.screenshot(),contentType:'image/png'});
 });
+
+// Actual 5f3c screenshots showed a 56px bordered header and visually truncated
+// exact decimals. Figma484:3503 requires the 44px caption header and clean rows;
+// V015/P6 exact values must be readable, not merely present in hidden DOM text.
+test('Root approved comparison uses source caption header and borderless data rows',async({page})=>{
+ await setup(page);await currentReads(page);await openComparison(page);const table=page.getByRole('table',{name:'版本差异',exact:true});await expect(table).toBeVisible();
+ for(const header of await table.locator('thead th').all()){
+  expect.soft((await header.boundingBox())!.height).toBe(44);await expect.soft(header).toHaveCSS('font-size','12px');await expect.soft(header).toHaveCSS('font-weight','400');await expect.soft(header).toHaveCSS('border-right-width','0px');
+ }
+ for(const row of await table.locator('tbody tr').all())await expect.soft(row).toHaveCSS('border-bottom-width','0px');
+ for(const cell of await table.locator('tbody td').all())await expect.soft(cell).toHaveCSS('border-right-width','0px');
+});
+for(const width of [1280,390])test('Root approved comparison full exact digits remain rendered inside their cell at width '+width,async({page})=>{
+ await setup(page);await currentReads(page);await page.setViewportSize({width,height:900});await openComparison(page);const table=page.getByRole('table',{name:'版本差异',exact:true});await expect(table).toBeVisible();
+ for(const value of ['123456789012345678901234567890.12','987654321098765432109876543210.34']){
+  const text=table.getByText(value,{exact:true});await text.scrollIntoViewIfNeeded();await expect(text).toBeVisible();
+  expect.soft(await text.evaluate(node=>{const cell=node.closest('td')!.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(node);return [...range.getClientRects()].every(r=>r.left>=cell.left-.5&&r.right<=cell.right+.5&&r.top>=cell.top-.5&&r.bottom<=cell.bottom+.5);})).toBe(true);
+ }
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
