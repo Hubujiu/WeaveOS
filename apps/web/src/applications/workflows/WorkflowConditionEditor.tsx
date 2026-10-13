@@ -22,6 +22,6 @@ export function WorkflowConditionEditor({value,fields,disabled,onChange,path='1'
     <button type="button" className="admin-button" aria-label={'删除条件 '+childPath} disabled={disabled} onClick={remove}>删除条件</button>
    </div>;
   })}
-  <div className="workflow-condition-actions"><button type="button" className="admin-button" aria-label={'条件组 '+path+' 添加且条件'} disabled={disabled||path.split('.').length>=3} onClick={()=>addGroup('and')}>＋ 且条件</button><button type="button" className="admin-button" aria-label={'条件组 '+path+' 添加或条件'} disabled={disabled||path.split('.').length>=3} onClick={()=>addGroup('or')}>＋ 或条件</button></div>
+  <div className="workflow-condition-actions"><button type="button" className="admin-button" aria-label={'条件组 '+path+' 添加条件'} disabled={disabled} onClick={()=>onChange({...value,children:[...value.children,{fieldId:'',operator:'eq',value:''}]})}>添加条件</button><button type="button" className="admin-button" aria-label={'条件组 '+path+' 添加且条件'} disabled={disabled||path.split('.').length>=3} onClick={()=>addGroup('and')}>＋ 且条件</button><button type="button" className="admin-button" aria-label={'条件组 '+path+' 添加或条件'} disabled={disabled||path.split('.').length>=3} onClick={()=>addGroup('or')}>＋ 或条件</button></div>
  </div>;
 }
