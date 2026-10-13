@@ -9,7 +9,7 @@ import '../../personnel-table.css';
 type Parameters={page:number;pageSize:number};
 const states={disabled:'已关闭',enabled:'已启用',closing:'关闭中'};
 const events={manual:'手动', 'record.created':'记录新增', 'record.updated':'记录修改'};
-export function WorkflowManager({actorId,appId,viewId,onBack,onUnauthorized,onIdentityMismatch}:{actorId:string;appId:string;viewId:string;onBack:()=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void}){
+export function WorkflowManager({actorId,appId,viewId,onOpen,onBack,onUnauthorized,onIdentityMismatch}:{actorId:string;appId:string;viewId:string;onOpen?:(flowId:string)=>void;onBack:()=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void}){
  const [parameters,setParameters]=useState<Parameters>({page:1,pageSize:20});
  const transport=useCallback(async(body:Parameters&{queryVersion?:string},signal:AbortSignal)=>{
   await Promise.resolve();if(signal.aborted)throw signal.reason??new DOMException('Aborted','AbortError');
@@ -26,6 +26,7 @@ export function WorkflowManager({actorId,appId,viewId,onBack,onUnauthorized,onId
   {key:'triggerEvents',header:'触发方式',dataType:'text',sortable:false,cell:row=><span>{row.currentVersion===0?'未发布':row.triggerEvents.length?row.triggerEvents.map(e=>events[e]).join('、'):'无触发'}</span>},
   {key:'state',header:'状态',dataType:'text',sortable:false,cell:row=><span>{states[row.state]}</span>},
   {key:'inFlightCount',header:'进行中',dataType:'number',sortable:false,cell:row=><span>{row.inFlightCount}</span>},
+  {key:'actions',header:'操作',sortable:false,cell:row=><button type="button" className="text-button" aria-label={'编辑'+row.name} onClick={()=>onOpen?.(row.id)}>编辑</button>},
  ];
  return <section className="workflow-manager" aria-label="流程管理">
   <div className="app-page-heading"><h1>审批流程</h1><div className="workflow-manager-actions"><button type="button" className="admin-button" disabled={query.loading} onClick={refresh}>刷新流程</button><button type="button" className="admin-button" onClick={onBack}>返回记录</button></div></div>

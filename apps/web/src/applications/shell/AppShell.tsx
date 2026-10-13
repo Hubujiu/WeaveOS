@@ -22,11 +22,13 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onPerm
  const taskLocation=taskParts&&taskParts.slice(1).every(id=>uuid.test(id))?{appId:taskParts[1],viewId:taskParts[2],recordId:taskParts[3],instanceId:taskParts[4],taskId:taskParts[5]}:null;
  const approvals = !!taskLocation||/^\/app\/approvals\/?$/.test(location.pathname);
  const catalog = location.pathname === '/app/applications' || location.pathname === '/app/applications/';
- const appRoute = location.pathname.match(/^\/app\/applications\/([^/]+)(?:\/forms\/([^/]+)(?:\/(design|workflows))?)?\/?$/);
+ const parsedAppRoute = location.pathname.match(/^\/app\/applications\/([^/]+)(?:\/forms\/([^/]+)(?:\/(design|workflows)(?:\/([^/]+)\/design)?)?)?\/?$/);
+ const appRoute=parsedAppRoute?.[4]&&(parsedAppRoute[3]!=='workflows'||!uuid.test(parsedAppRoute[4]))?null:parsedAppRoute;
  const appId = appRoute?.[1]&&uuid.test(appRoute[1])?appRoute[1]:undefined;
  const viewId = appId&&appRoute?.[2]&&uuid.test(appRoute[2])?appRoute[2]:undefined;
  const configurationRoute = !!viewId&&appRoute?.[3] === 'design';
  const workflowManagementRoute = !!viewId&&appRoute?.[3] === 'workflows';
+ const workflowFlowId=workflowManagementRoute&&appRoute?.[4]&&uuid.test(appRoute[4])?appRoute[4]:undefined;
  const [tabs, setTabs] = useState<ApplicationTab[]>([]);
  const handledClose = useRef(new Set<string>());
  const [account, setAccount] = useState(false);
@@ -80,7 +82,7 @@ export function AppShell({ user, access, logout, pending, error, onDirty, onPerm
   }>
   <main className="app-content" aria-label={adminContent ? '人员管理' : approvals ? '我的待办' : catalog ? '应用中心' : appId ? '应用工作台' : '主页'}>
    {error && <p role="alert">{error}</p>}{catalog && success && <p className="app-success" role="status">{success}</p>}
-   {adminContent ?? (appId ? <ApplicationWorkspace actorId={user.id} appId={appId} viewId={viewId} configurationRoute={configurationRoute} workflowManagementRoute={workflowManagementRoute} manageWorkflows={id=>navigate(runtimeFormPath(appId,id)+'/workflows')} bootstrapAdmin={access.bootstrapAdmin} opened={opened} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onPermissionDirty={onPermissionDirty} onFormsDirty={onFormsDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} openForm={id=>navigate(runtimeFormPath(appId,id))} configureForm={id=>openConfiguration(id,location.pathname)} backFromConfiguration={()=>navigate(configurationReturn())} backToStructure={()=>navigate('/app/applications/'+encodeURIComponent(appId))} />
+   {adminContent ?? (appId ? <ApplicationWorkspace actorId={user.id} appId={appId} viewId={viewId} configurationRoute={configurationRoute} workflowManagementRoute={workflowManagementRoute} workflowFlowId={workflowFlowId} openWorkflow={(id,flowId)=>navigate(runtimeFormPath(appId,id)+'/workflows/'+encodeURIComponent(flowId)+'/design')} manageWorkflows={id=>navigate(runtimeFormPath(appId,id)+'/workflows')} bootstrapAdmin={access.bootstrapAdmin} opened={opened} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onPermissionDirty={onPermissionDirty} onFormsDirty={onFormsDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} openForm={id=>navigate(runtimeFormPath(appId,id))} configureForm={id=>openConfiguration(id,location.pathname)} backFromConfiguration={()=>navigate(configurationReturn())} backToStructure={()=>navigate('/app/applications/'+encodeURIComponent(appId))} />
     : taskLocation ? <WorkflowTaskPage key={JSON.stringify([user.id,taskLocation])} actorId={user.id} location={taskLocation} onDirtyChange={onFormsDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onBack={()=>navigate('/app/approvals')} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>
     : approvals ? <WorkflowInbox key={user.id} actorId={user.id} onOpenTask={task=>navigate('/app/approvals/'+[task.appId,task.viewId,task.recordId,task.instanceId,task.id].map(encodeURIComponent).join('/'))} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>
     : catalog ? <ApplicationCatalog applications={apps.items} loading={apps.loading} error={apps.error} retry={apps.reload} canCreate={canCreate} create={trigger => { createTrigger.current = trigger; setSuccess(''); setCreate(true); }} open={open} />
