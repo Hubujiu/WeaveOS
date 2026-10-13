@@ -23,7 +23,7 @@ async function setup(page:Page,options:Options={}){
   if(options.candidateMode==='late')await new Promise<void>(resolve=>{release=resolve;});
   if(options.candidateMode==='denied')return r.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
   if(options.candidateMode==='changed'&&body.page===2){refreshed=true;return r.fulfill({status:409,json:{code:'COMMON_QUERY_CHANGED',data:null}});}
-  data={items:body.page===2?[{id:id(22),label:'次页审批人',status:'active'}]:[{id:id(20),label:refreshed?'刷新后审批人':'原审批人甲',status:'active'},{id:id(21),label:'原审批人乙',status:'active'}],total:21,page:body.page,pageSize:body.pageSize,queryVersion:refreshed?'new-token':'original-token',schemaVersion:options.candidateMode==='skew'?2:1,policyRevision:1};
+  data={items:body.page===2?[{id:id(22),label:'次页审批人',status:'active',departmentNames:[]}]:[{id:id(20),label:refreshed?'刷新后审批人':'原审批人甲',status:'active',departmentNames:[]},{id:id(21),label:'原审批人乙',status:'active',departmentNames:[]}],total:21,page:body.page,pageSize:body.pageSize,queryVersion:refreshed?'new-token':'original-token',schemaVersion:options.candidateMode==='skew'?2:1,policyRevision:1};
  }else if(path===definitionPath&&method==='PUT'){
   writes.push({body,method,path,headers:req.headers()});const reply=options.write?.(body,writes.length)??{status:200,code:'OK',data:receipt(body.operationId)};
   if(reply.status===200&&reply.code==='OK')saved=body;

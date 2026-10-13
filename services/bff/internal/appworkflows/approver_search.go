@@ -20,9 +20,10 @@ import (
 )
 
 type approverItem struct {
-	ID     string `json:"id"`
-	Label  string `json:"label"`
-	Status string `json:"status"`
+	ID              string   `json:"id"`
+	Label           string   `json:"label"`
+	Status          string   `json:"status"`
+	DepartmentNames []string `json:"departmentNames"`
 }
 type approverResult struct {
 	Items          []approverItem `json:"items"`
@@ -169,6 +170,24 @@ func (s *approverStrategy) Revisions(ctx context.Context, tx pgx.Tx) (json.RawMe
 			}
 			if !eligible {
 				continue
+			}
+			// Expose only current direct names for an already eligible account.
+			// C collation gives the byte ordering frozen by the wire contract;
+			// DISTINCT removes identical names from different direct departments.
+			e = tx.QueryRow(ctx, `SELECT ARRAY(
+ SELECT DISTINCT d.name COLLATE "C" FROM personnel.department_members m
+ JOIN personnel.departments d ON d.id=m.department_id
+ WHERE m.user_id=$1::uuid ORDER BY d.name COLLATE "C")::text[]`, c.item.ID).Scan(&c.item.DepartmentNames)
+			if e != nil {
+				return nil, e
+			}
+			if c.item.DepartmentNames == nil {
+				c.item.DepartmentNames = []string{}
+			}
+			for _, name := range c.item.DepartmentNames {
+				if !utf8.ValidString(name) || strings.TrimSpace(name) == "" || utf8.RuneCountInString(name) > 100 || strings.ContainsRune(name, 0) {
+					return nil, session.ErrUnavailable
+				}
 			}
 			if s.observation.Total >= maxSafeInteger {
 				return nil, session.ErrUnavailable

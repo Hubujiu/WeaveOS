@@ -101,3 +101,7 @@ test('Root malformed department projection cannot expose selectable stale approv
  await setup(page);await page.route('**/api/v1/'+candidatePath,async r=>{const body=r.request().postDataJSON();return r.fulfill({json:{code:'OK',data:{items:[{id:id(20),label:'非法部门成员',status:'active',departmentNames:null}],total:1,page:body.page,pageSize:body.pageSize,queryVersion:'bad',schemaVersion:1,policyRevision:1},meta:null}});});
  const dialog=await open(page);await expect(dialog.getByRole('alert')).toBeVisible();await expect(dialog.getByRole('checkbox')).toHaveCount(0);await expect(dialog.getByRole('button',{name:'确认',exact:true})).toBeDisabled();
 });
+
+test('Root approver account typography independently matches the source body size',async({page})=>{
+ await setup(page);const dialog=await open(page);await expect(dialog.getByText('原审批人甲',{exact:true})).toHaveCSS('font-size','14px');
+});
