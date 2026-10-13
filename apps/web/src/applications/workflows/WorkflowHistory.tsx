@@ -4,7 +4,7 @@ import {Table,type TableColumn} from '../../vendor/arca/components/motion/table'
 import {historyComparison,historyValue,validWorkflowEventDetail,validWorkflowHistory,type HistoricalField,type WorkflowEvent,type WorkflowEventDetail} from './historyContract';
 import type {TaskLocation,TaskPreview} from './taskPreviewContract';
 
-type Props={actorId:string;location:Pick<TaskLocation,'appId'|'viewId'|'recordId'>;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onCompare:(detail:WorkflowEventDetail)=>void};
+type Props={actorId:string;location:Pick<TaskLocation,'appId'|'viewId'|'recordId'>;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onCompare?:(detail:WorkflowEventDetail)=>void};
 type PageState={items:WorkflowEvent[];next:string|null;loading:boolean;error:string};
 type DetailState={event:WorkflowEvent;data:WorkflowEventDetail|null;loading:boolean;error:string}|null;
 const actions:Record<WorkflowEvent['action'],string>={start:'发起申请',agree:'已同意',reject:'已驳回',withdraw:'已撤回',return:'已退回'};
@@ -92,7 +92,7 @@ function WorkflowHistoryScope({actorId,location,onUnauthorized,onIdentityMismatc
    {detail.loading?<p role="status">正在读取当时依据…</p>:detail.error?<p role="alert">{detail.error}</p>:detail.data?.basis.status==='unavailable'?<p>当时审批依据不可用</p>:detail.data?<>
     <p className="workflow-history-meta">审批时记录 v{detail.event.recordVersion}</p>
     {detail.data.basis.fields.length?<dl>{detail.data.basis.fields.map(field=><div key={field.fieldId}><dt>{field.fieldName}</dt><dd>{historyValue(field)}</dd></div>)}</dl>:<p>当时可见的审批依据为空</p>}
-    <button type="button" className="admin-button" onClick={()=>onCompare(detail.data!)}>查看版本差异</button>
+    {onCompare&&<button type="button" className="admin-button" onClick={()=>onCompare(detail.data!)}>查看版本差异</button>}
    </>:null}
   </section>}
  </section>;
