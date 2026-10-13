@@ -10,6 +10,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
 	"net/url"
@@ -241,6 +242,9 @@ func rootFormalEventually(t *testing.T, ctx context.Context, condition func() (b
 }
 func rootFormalSetup(t *testing.T) *rootFormalFixture { return rootFormalSetupEditable(t, false) }
 func rootFormalSetupEditable(t *testing.T, editable bool) *rootFormalFixture {
+	return rootFormalSetupEditableIngress(t, editable, nil)
+}
+func rootFormalSetupEditableIngress(t *testing.T, editable bool, wrap func(http.Handler) http.Handler) *rootFormalFixture {
 	t.Helper()
 	started := time.Now()
 	f := rootHTTPResourceSetup(t)
@@ -296,7 +300,11 @@ func rootFormalSetupEditable(t *testing.T, editable bool) *rootFormalFixture {
 	go func() { _ = x.proxy.server.Serve(listener) }()
 	target, _ := url.Parse("http://" + x.addr)
 	reverse := httputil.NewSingleHostReverseProxy(target)
-	x.public = httptest.NewUnstartedServer(reverse)
+	var ingress http.Handler = reverse
+	if wrap != nil {
+		ingress = wrap(ingress)
+	}
+	x.public = httptest.NewUnstartedServer(ingress)
 	origin := "https://" + x.public.Listener.Addr().String()
 	database, e := url.Parse(os.Getenv("WEAVEOS_TEST_DATABASE_URL"))
 	if e != nil {

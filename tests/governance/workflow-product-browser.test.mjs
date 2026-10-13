@@ -21,3 +21,6 @@ test('product browser gate rejects absent or contradictory real backend completi
 test('product browser fixture errors cannot echo malformed private fixture input',()=>{
  const marker='synthetic-private-fixture-value';try{validateFixture({...fixture(),origin:marker},head,'chromium');assert.fail('bad URL accepted')}catch(error){assert.equal((String(error.stack)+JSON.stringify(error)).includes(marker),false)}
 });
+test('product browser specifications and their config remain inside the real TypeScript check',async()=>{
+ const {readFile}=await import('node:fs/promises');const ts=JSON.parse(await readFile(new URL('../../tsconfig.tests.json',import.meta.url),'utf8'));for(const file of ['services/workflow-engine/formal-browser.spec.ts','services/workflow-engine/playwright.product.config.ts'])assert.ok(ts.include.includes(file));
+});
