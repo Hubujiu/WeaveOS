@@ -1,3 +1,4 @@
+import {validWorkflowManagementRequest,validWorkflowManagementReceipt} from './workflows/managementContract';
 import {validPublicationRequest,validPublicationResult} from './workflows/publicationContract';
 import {validWorkflowDefinitionRequest,validWorkflowDefinitionReceipt} from './workflows/definitionSaveContract';
 import { useEffect, useRef, useState } from 'react';
@@ -41,6 +42,7 @@ function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean
  // in perform(), including actual HTTP status and the confirmed command ID.
  if (packet.resource.kind === 'workflow-publication') return true;
  if (packet.resource.kind === 'task-action'||packet.resource.kind === 'instance-action') return true;
+ if (packet.resource.kind === 'workflow-management') return validWorkflowManagementReceipt(result,packet.operationId??'',packet.resource.id,packet.body?.expectedRevision as number,packet.resource.action);
  if (packet.resource.kind === 'workflow-definition') return validWorkflowDefinitionReceipt(result,packet.operationId??'',packet.resource.id,packet.body?.expectedRevision as number);
  if (packet.resource.kind === 'round-record') return isMutationResult(result,packet.operationId??'',packet.resource.id)&&result.recordVersion>0&&result.schemaVersion>0;
  if (packet.resource.kind === 'round-start') return validRoundStartReceipt(result,packet.operationId??'',packet.resource.flowId,packet.resource.instanceId,packet.resource.roundKind);
@@ -217,7 +219,9 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
   else {
    const request = requestOrPath;
    if (!scope || !scopedResource || JSON.stringify(request.resource) !== JSON.stringify(scopedResource)) throw new TypeError('Mutation resource does not match the mounted scope');
-   if (request.resource.kind === 'workflow-publication') {
+   if (request.resource.kind === 'workflow-management') {
+    if (!validWorkflowManagementRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'workflow-publication') {
     if (!validPublicationRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
    } else if (request.resource.kind === 'workflow-definition') {
     if (!validWorkflowDefinitionRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');

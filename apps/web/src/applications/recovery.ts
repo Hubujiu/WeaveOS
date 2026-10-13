@@ -11,6 +11,7 @@ export type ApplicationPacket = {
  query?: { operationId: string; expectedDraftVersion?: number; expectedVersion?: number };
  resource?: { kind: 'record' | 'draft' | 'preset'; appId: string; viewId: string; id?: string; creationNonce?: string }
   | { kind:'workflow-publication';appId:string;viewId:string;id:string;version:number;creationNonce?:never }
+  | { kind:'workflow-management';appId:string;viewId:string;id:string;action:'enable'|'close';creationNonce?:never }
   | { kind:'workflow-definition';appId:string;viewId:string;id:string;creationNonce?:never }
   | { kind:'round-record';appId:string;viewId:string;id:string;instanceId:string;creationNonce?:never }
   | { kind:'round-start';appId:string;viewId:string;id:string;instanceId:string;flowId:string;roundKind:'resubmit'|'review';creationNonce?:never }
