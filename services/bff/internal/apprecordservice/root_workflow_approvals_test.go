@@ -145,3 +145,22 @@ func TestRootPersonalApprovedBrokenVisibleJournalFailsClosed(t *testing.T) {
 		t.Fatal("damaged binding yielded a partial history", got, e)
 	}
 }
+
+func TestRootPersonalApprovedSoftDeletionPreservesExistingHistoryAuthorization(t *testing.T) {
+	f := rootTaskSetup(t, true)
+	eventGrant(t, f, "all", f.public)
+	eventConfirmed(t, f, "agree")
+	before := approvedRead(t, f, WorkflowApprovalsRequest{Page: 1})
+	if before.Total != 1 {
+		t.Fatal("missing original approved event")
+	}
+	p := lifecycleManager(f.recordFixture)
+	req := lifecycleRequest(t, f.recordFixture, 1, true)
+	if _, e := f.service.ChangeRecordLifecycle(f.ctx, p, req); e != nil {
+		t.Fatal(e)
+	}
+	after := approvedRead(t, f, WorkflowApprovalsRequest{Page: 1, QueryVersion: before.QueryVersion})
+	if !reflect.DeepEqual(after, before) {
+		t.Fatal("soft deletion changed independent readable history", before, after)
+	}
+}

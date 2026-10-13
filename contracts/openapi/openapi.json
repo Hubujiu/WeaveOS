@@ -21028,7 +21028,7 @@
       "post": {
         "operationId": "searchPersonalWorkflowApprovals",
         "summary": "Search my confirmed approval history with current record-history access",
-        "description": "V030-061 read-only POST page-number exception. Current live Session actor only; active unclosed tasks with fixed-definition roster and current menu/actual row/read-field access. Permissions filter before count and pagination. Owner and Bootstrap never substitute for assignee. No business values, engine IDs or arbitrary actor/scope input. Stable createdAt DESC/id DESC. QueryVersion is session-bound; authorized projection changes require explicit refresh; unrelated hidden changes do not. Full authorized scan is O(N), batch64 and total deadline10s; no partial result on timeout. No workflow mutation.",
+        "description": "V030-075 read-only personal confirmed approval history. Current live Session actor only; successful agree/reject/return events from the independent V064 journal. Current original-view menu/read/history permissions filter before count and pagination. Owner and Bootstrap never substitute for the event actor. No business values, evidence payload or engine IDs. Stable occurredAt DESC/event ID DESC; independent Session-bound query context and explicit refresh after visible changes. Survives terminal runtime projection cleanup and flow renaming; soft deletion does not replace existing history authorization. Full authorized scan is bounded to batch64 and total deadline10s, failing closed without partial totals. No workflow mutation.",
         "security": [
           {
             "WebSession": []
