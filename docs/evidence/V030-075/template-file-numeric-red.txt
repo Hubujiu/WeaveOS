@@ -1,0 +1,320 @@
+(node:14) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ V070 local template file admits an empty complete manifest without mutation or generated identities (2.9744ms)
+✔ V070 local admission preserves nested configuration, precise decimal strings and punctuation in strings (0.363115ms)
+✔ V070 repeated keys in different objects are independent and Unicode escaped strings are decoded (0.311408ms)
+✔ V070 rejects root duplicate (0.261193ms)
+✔ V070 rejects nested duplicate (0.182424ms)
+✔ V070 rejects escaped duplicate (0.083675ms)
+✔ V070 rejects nested escaped duplicate (0.181523ms)
+✔ V070 rejects trailing value (0.183055ms)
+✔ V070 rejects trailing comma (0.184057ms)
+✔ V070 rejects comment (0.224227ms)
+✔ V070 rejects bad escape (0.203696ms)
+✔ V070 rejects array root (0.070566ms)
+✔ V070 rejects null root (0.065879ms)
+✔ V070 rejects number root (0.044407ms)
+✔ V070 rejects string root (0.036765ms)
+✔ V070 rejects empty (0.051558ms)
+✔ V070 rejects forbidden extra root records (0.196586ms)
+✔ V070 rejects forbidden extra root attachments (0.09271ms)
+✔ V070 rejects forbidden extra root secrets (0.065278ms)
+✔ V070 rejects forbidden extra root instances (0.060331ms)
+✔ V070 rejects forbidden extra root ownerUserId (0.064627ms)
+✔ V070 requires collection directories (0.118218ms)
+✔ V070 rejects non-array directories null (0.093841ms)
+✔ V070 rejects non-array directories {} (0.062835ms)
+✔ V070 rejects non-array directories false (0.09284ms)
+✔ V070 requires collection tables (0.135994ms)
+✔ V070 rejects non-array tables null (0.168784ms)
+✔ V070 rejects non-array tables {} (0.069905ms)
+✔ V070 rejects non-array tables false (0.129735ms)
+✔ V070 requires collection forms (0.120371ms)
+✔ V070 rejects non-array forms null (0.061582ms)
+✔ V070 rejects non-array forms {} (0.051137ms)
+✔ V070 rejects non-array forms false (0.081723ms)
+✔ V070 requires collection workflows (0.137687ms)
+✔ V070 rejects non-array workflows null (0.081322ms)
+✔ V070 rejects non-array workflows {} (0.071828ms)
+✔ V070 rejects non-array workflows false (0.108363ms)
+✔ V070 requires collection permissionGroups (0.098258ms)
+✔ V070 rejects non-array permissionGroups null (0.060391ms)
+✔ V070 rejects non-array permissionGroups {} (0.041292ms)
+✔ V070 rejects non-array permissionGroups false (0.038668ms)
+✔ V070 rejects invalid format "weaveos.structure-template.v2" (0.07989ms)
+✔ V070 rejects invalid version 2 (0.076555ms)
+✔ V070 rejects invalid version "1" (0.085208ms)
+✔ V070 rejects invalid application null (0.049794ms)
+✔ V070 rejects invalid application [] (0.036055ms)
+✔ V070 rejects invalid UTF8 instead of substituting a replacement character (0.215533ms)
+✔ V070 enforces raw byte size including whitespace before parsing (31.353023ms)
+✔ V070 caps container depth without counting brackets or braces inside a string (0.441724ms)
+✖ V070 integer metadata cannot be silently changed by JSON numeric decoding: 9007199254740993 (1.71668ms)
+✖ V070 integer metadata cannot be silently changed by JSON numeric decoding: -9007199254740993 (0.527122ms)
+✖ V070 integer metadata cannot be silently changed by JSON numeric decoding: 1e400 (0.428053ms)
+✖ V070 integer metadata cannot be silently changed by JSON numeric decoding: 1e-400 (0.419801ms)
+✖ V070 integer metadata cannot be silently changed by JSON numeric decoding: 1.234567890123456789 (2.127106ms)
+✖ V070 integer metadata cannot be silently changed by JSON numeric decoding: 2e0 (0.309866ms)
+✔ V070 rejects UTF8 BOM as non-JSON rather than stripping input bytes (0.277537ms)
+ℹ tests 56
+ℹ suites 0
+ℹ pass 50
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 178.4434
+
+✖ failing tests:
+
+test at tests/foundation/template-file-input.test.mjs:32:107
+✖ V070 integer metadata cannot be silently changed by JSON numeric decoding: 9007199254740993 (1.71668ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   application: {
+  +     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  +     name: '结构模板'
+  +   },
+  +   directories: [
+  +     {
+  +       id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  +       name: '目录',
+  +       parentId: null,
+  +       position: 9007199254740992
+  +     }
+  +   ],
+  +   format: 'weaveos.structure-template',
+  +   forms: [],
+  +   permissionGroups: [],
+  +   tables: [],
+  +   version: 1,
+  +   workflows: []
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-file-input.test.mjs:32:342)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { format: 'weaveos.structure-template', version: 1, application: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '结构模板' }, directories: [ [Object] ], tables: [], forms: [], workflows: [], permissionGroups: [] },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/template-file-input.test.mjs:32:107
+✖ V070 integer metadata cannot be silently changed by JSON numeric decoding: -9007199254740993 (0.527122ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   application: {
+  +     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  +     name: '结构模板'
+  +   },
+  +   directories: [
+  +     {
+  +       id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  +       name: '目录',
+  +       parentId: null,
+  +       position: -9007199254740992
+  +     }
+  +   ],
+  +   format: 'weaveos.structure-template',
+  +   forms: [],
+  +   permissionGroups: [],
+  +   tables: [],
+  +   version: 1,
+  +   workflows: []
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-file-input.test.mjs:32:342)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { format: 'weaveos.structure-template', version: 1, application: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '结构模板' }, directories: [ [Object] ], tables: [], forms: [], workflows: [], permissionGroups: [] },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/template-file-input.test.mjs:32:107
+✖ V070 integer metadata cannot be silently changed by JSON numeric decoding: 1e400 (0.428053ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   application: {
+  +     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  +     name: '结构模板'
+  +   },
+  +   directories: [
+  +     {
+  +       id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  +       name: '目录',
+  +       parentId: null,
+  +       position: Infinity
+  +     }
+  +   ],
+  +   format: 'weaveos.structure-template',
+  +   forms: [],
+  +   permissionGroups: [],
+  +   tables: [],
+  +   version: 1,
+  +   workflows: []
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-file-input.test.mjs:32:342)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { format: 'weaveos.structure-template', version: 1, application: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '结构模板' }, directories: [ [Object] ], tables: [], forms: [], workflows: [], permissionGroups: [] },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/template-file-input.test.mjs:32:107
+✖ V070 integer metadata cannot be silently changed by JSON numeric decoding: 1e-400 (0.419801ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   application: {
+  +     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  +     name: '结构模板'
+  +   },
+  +   directories: [
+  +     {
+  +       id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  +       name: '目录',
+  +       parentId: null,
+  +       position: 0
+  +     }
+  +   ],
+  +   format: 'weaveos.structure-template',
+  +   forms: [],
+  +   permissionGroups: [],
+  +   tables: [],
+  +   version: 1,
+  +   workflows: []
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-file-input.test.mjs:32:342)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { format: 'weaveos.structure-template', version: 1, application: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '结构模板' }, directories: [ [Object] ], tables: [], forms: [], workflows: [], permissionGroups: [] },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/template-file-input.test.mjs:32:107
+✖ V070 integer metadata cannot be silently changed by JSON numeric decoding: 1.234567890123456789 (2.127106ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   application: {
+  +     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  +     name: '结构模板'
+  +   },
+  +   directories: [
+  +     {
+  +       id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  +       name: '目录',
+  +       parentId: null,
+  +       position: 1.2345678901234567
+  +     }
+  +   ],
+  +   format: 'weaveos.structure-template',
+  +   forms: [],
+  +   permissionGroups: [],
+  +   tables: [],
+  +   version: 1,
+  +   workflows: []
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-file-input.test.mjs:32:342)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { format: 'weaveos.structure-template', version: 1, application: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '结构模板' }, directories: [ [Object] ], tables: [], forms: [], workflows: [], permissionGroups: [] },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/template-file-input.test.mjs:32:107
+✖ V070 integer metadata cannot be silently changed by JSON numeric decoding: 2e0 (0.309866ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   application: {
+  +     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  +     name: '结构模板'
+  +   },
+  +   directories: [
+  +     {
+  +       id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  +       name: '目录',
+  +       parentId: null,
+  +       position: 2
+  +     }
+  +   ],
+  +   format: 'weaveos.structure-template',
+  +   forms: [],
+  +   permissionGroups: [],
+  +   tables: [],
+  +   version: 1,
+  +   workflows: []
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-file-input.test.mjs:32:342)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { format: 'weaveos.structure-template', version: 1, application: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: '结构模板' }, directories: [ [Object] ], tables: [], forms: [], workflows: [], permissionGroups: [] },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
