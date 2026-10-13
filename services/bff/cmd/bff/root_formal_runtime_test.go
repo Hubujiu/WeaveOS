@@ -245,6 +245,11 @@ func rootFormalSetupEditable(t *testing.T, editable bool) *rootFormalFixture {
 	return rootFormalSetupEditableIngress(t, editable, nil)
 }
 func rootFormalSetupEditableIngress(t *testing.T, editable bool, wrap func(http.Handler) http.Handler) *rootFormalFixture {
+	x := rootFormalSetupResourceIngress(t, wrap)
+	x.publishAndStartEditable(t, editable)
+	return x
+}
+func rootFormalSetupResourceIngress(t *testing.T, wrap func(http.Handler) http.Handler) *rootFormalFixture {
 	t.Helper()
 	started := time.Now()
 	f := rootHTTPResourceSetup(t)
@@ -328,7 +333,6 @@ func rootFormalSetupEditableIngress(t *testing.T, editable bool, wrap func(http.
 	f.server = x.public
 	f.client = x.public.Client()
 	t.Logf("FORMAL_RESOURCE fixtureSetupAndRuntimeStartupMillis=%d", time.Since(started).Milliseconds())
-	x.publishAndStartEditable(t, editable)
 	return x
 }
 func (x *rootFormalFixture) publishAndStartEditable(t *testing.T, editable bool) {

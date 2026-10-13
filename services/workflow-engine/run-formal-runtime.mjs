@@ -82,19 +82,25 @@ try {
   writeFileSync(resolve(reportDir, 'isolation.json'), JSON.stringify(isolation, null, 2));
   if (browserMode) {
     const {browserCommand,runBrowserJourneys} = await import('./product-browser-runner.mjs');
-    const {validateFixture,validateReports} = await import('./product-browser-contract.mjs');
+    const {validateFixture,validateReports,validateDefinitionFixture,validateDefinitionReports,validateCompleteReports} = await import('./product-browser-contract.mjs');
     const head=call('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
-    const exchange=resolve(dir,'private-browser-exchange');mkdirSync(exchange,{mode:0o700});
     const image='mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27';
     // Download the fixed public browser image before a bounded backend fixture starts.
     step('browser-image','docker',['pull',image]);
-    step('browser-discovery',process.execPath,['node_modules/@playwright/test/cli.js','test','--config','services/workflow-engine/playwright.product.config.ts','--list'],{env:{...env,WEAVEOS_PRODUCT_BROWSER_REPORT:resolve(reportDir,'baseline.json'),WEAVEOS_PRODUCT_BROWSER_OUTPUT:resolve(reportDir,'discovery')}});
-    const baseline=JSON.parse(readFileSync(resolve(reportDir,'baseline.json'),'utf8'));
+    const proofs={};
+    for(const journey of ['approval','definition']) {
+    const phaseDir=journey==='approval'?reportDir:resolve(reportDir,'definition');mkdirSync(phaseDir,{recursive:true});
+    const exchange=resolve(dir,'private-browser-exchange-'+journey);mkdirSync(exchange,{mode:0o700});
+    const validate=journey==='approval'?validateFixture:validateDefinitionFixture;
+    const testName=journey==='approval'?'TestRootProductBrowserJourney':'TestRootProductDefinitionJourney';
+    const config=journey==='approval'?'services/workflow-engine/playwright.product.config.ts':'services/workflow-engine/playwright.definition.config.ts';
+    step('browser-discovery',process.execPath,['node_modules/@playwright/test/cli.js','test','--config',config,'--list'],{env:{...env,WEAVEOS_PRODUCT_BROWSER_REPORT:resolve(phaseDir,'baseline.json'),WEAVEOS_PRODUCT_BROWSER_OUTPUT:resolve(phaseDir,'discovery')}});
+    const baseline=JSON.parse(readFileSync(resolve(phaseDir,'baseline.json'),'utf8'));
     let results;
     try {
       results=await runBrowserJourneys({
         async start(browser) {
-          const args=['exec','-e',`WEAVEOS_TEST_DATABASE_URL=${app.url}`,'-e',`WEAVEOS_TEST_ARCHIVE_DATABASE_URL=${archive.href}`,'-e',`WEAVEOS_TEST_REDIS_URL=unix://${redisSocket}/redis.sock?db=15`,'-e','WEAVEOS_FORMAL_BFF_BINARY=/proof/.work/formal-bff','-e',`WEAVEOS_FORMAL_JAVA_CLASSPATH=${classpath}`,'-e',`WEAVEOS_PRODUCT_BROWSER=${browser}`,'-e',`WEAVEOS_PRODUCT_HEAD=${head}`,'-e',`WEAVEOS_PRODUCT_EXCHANGE_DIR=${exchange}`,'-e',`WEAVEOS_PRODUCT_WEB_ROOT=${resolve('apps/web/dist')}`,runner,'/proof/.work/formal-runtime.test','-test.v=test2json','-test.run','^TestRootProductBrowserJourney$','-test.timeout=300s'];
+          const args=['exec','-e',`WEAVEOS_TEST_DATABASE_URL=${app.url}`,'-e',`WEAVEOS_TEST_ARCHIVE_DATABASE_URL=${archive.href}`,'-e',`WEAVEOS_TEST_REDIS_URL=unix://${redisSocket}/redis.sock?db=15`,'-e','WEAVEOS_FORMAL_BFF_BINARY=/proof/.work/formal-bff','-e',`WEAVEOS_FORMAL_JAVA_CLASSPATH=${classpath}`,'-e',`WEAVEOS_PRODUCT_BROWSER=${browser}`,'-e',`WEAVEOS_PRODUCT_HEAD=${head}`,'-e',`WEAVEOS_PRODUCT_EXCHANGE_DIR=${exchange}`,'-e',`WEAVEOS_PRODUCT_WEB_ROOT=${resolve('apps/web/dist')}`,runner,'/proof/.work/formal-runtime.test','-test.v=test2json','-test.run','^'+testName+'$','-test.timeout=300s'];
           const child=spawn('docker',args,{cwd:root,env,stdio:['ignore','pipe','pipe']});
           const handle={browser,child,stdout:'',stderr:'',closed:false,secrets:[]};
           for(const key of ['stdout','stderr'])child[key].on('data',chunk=>{handle[key]+=chunk.toString();if(handle[key].length>32*1024*1024)child.kill();});
@@ -105,7 +111,7 @@ try {
           const path=resolve(exchange,handle.browser+'.request.json');
           for(let i=0;i<120;i++){
             if(existsSync(path)){
-              let fixture;try{fixture=validateFixture(JSON.parse(readFileSync(path,'utf8')),head,handle.browser);}catch{throw Error('Private browser fixture rejected');}
+              let fixture;try{fixture=validate(JSON.parse(readFileSync(path,'utf8')),head,handle.browser);}catch{throw Error('Private browser fixture rejected');}
               handle.secrets=['session','csrf','otherSession','otherCsrf'].map(k=>fixture[k]);return;
             }
             if(handle.closed)throw Error('Actual browser backend fixture exited before ready');
@@ -114,8 +120,8 @@ try {
           throw Error('Actual browser backend fixture did not become ready');
         },
         async browser(handle) {
-          step('browser-'+handle.browser,'docker',browserCommand({root,output:reportDir,exchange,runner,uid:process.getuid(),gid:process.getgid(),head,browser:handle.browser}));
-          return JSON.parse(readFileSync(resolve(reportDir,handle.browser+'.json'),'utf8'));
+          step('browser-'+handle.browser,'docker',browserCommand({root,output:phaseDir,exchange,runner,uid:process.getuid(),gid:process.getgid(),head,browser:handle.browser,journey}));
+          return JSON.parse(readFileSync(resolve(phaseDir,handle.browser+'.json'),'utf8'));
         },
         async signal(handle,success) {
           const path=resolve(exchange,handle.browser+'.done.json');
@@ -127,7 +133,7 @@ try {
           // Native events retain their identities/status. Remove synthetic session tokens if any diagnostic unexpectedly contains one.
           for(const secret of handle.secrets)raw=raw.split(secret).join('[redacted synthetic Session]');
           const converted=step('browser-'+handle.browser+'-test2json',go,['tool','test2json','-t','-p','github.com/Hubujiu/WeaveOS/services/bff/cmd/bff'],{input:raw});
-          writeFileSync(resolve(reportDir,handle.browser+'-go.jsonl'),converted.stdout);
+          writeFileSync(resolve(phaseDir,handle.browser+'-go.jsonl'),converted.stdout);
           if(status!==0)throw Error('Actual browser backend assertions failed: '+handle.browser);
           return {head,browser:handle.browser,events:converted.stdout.trim().split('\n').map(line=>JSON.parse(line))};
         },
@@ -136,8 +142,12 @@ try {
       // This exact directory was created by this invocation; it is never an artifact source.
       rmSync(exchange,{recursive:true,force:true});
     }
-    const summary=validateReports({head,baseline,reports:results.map(r=>r.report),backend:results.map(r=>r.backend)});
-    writeFileSync(resolve(reportDir,'summary.json'),JSON.stringify(summary,null,2));console.log(JSON.stringify(summary));
+    proofs[journey]={head,baseline,reports:results.map(r=>r.report),backend:results.map(r=>r.backend)};
+    const summary=(journey==='approval'?validateReports:validateDefinitionReports)(proofs[journey]);
+    writeFileSync(resolve(phaseDir,'summary.json'),JSON.stringify(summary,null,2));console.log(JSON.stringify(summary));
+    }
+    const complete=validateCompleteReports(proofs);
+    writeFileSync(resolve(reportDir,'complete-summary.json'),JSON.stringify(complete,null,2));console.log(JSON.stringify(complete));
   } else {
   const result = spawnSync('docker', ['exec', '-e', `WEAVEOS_TEST_DATABASE_URL=${app.url}`, '-e', `WEAVEOS_TEST_ARCHIVE_DATABASE_URL=${archive.href}`, '-e', `WEAVEOS_TEST_REDIS_URL=unix://${redisSocket}/redis.sock?db=15`, '-e', 'WEAVEOS_FORMAL_BFF_BINARY=/proof/.work/formal-bff', '-e', `WEAVEOS_FORMAL_JAVA_CLASSPATH=${classpath}`, runner, '/proof/.work/formal-runtime.test', '-test.v=test2json', '-test.run', '^TestRootFormalRuntime', '-test.timeout=300s'], { cwd: root, env, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
   writeFileSync(resolve(dir, 'test.stdout'), result.stdout || '', { mode: 0o600 });
