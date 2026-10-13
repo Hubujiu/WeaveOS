@@ -44,25 +44,27 @@ func rootTemplateCandidatePage(t *testing.T, f *rootTaskHTTPFixture, path string
 	}
 	return items, token
 }
-func rootTemplateCandidateMembers(t *testing.T, f *rootTaskHTTPFixture) {
+func rootTemplateCandidateMembers(t *testing.T, f *rootTaskHTTPFixture) string {
 	t.Helper()
+	prefix := "tmpl" + strings.ReplaceAll(f.id(t), "-", "")
 	for i, user := range []string{f.actor, f.other} {
-		name := []string{"tmplcandidatea", "tmplcandidateb"}[i]
+		name := prefix + []string{"a", "b"}[i]
 		if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET account=$1 WHERE id=$2", name, user); e != nil {
 			t.Fatal(e)
 		}
 	}
+	return prefix
 }
 func TestRootTemplateCandidatesCurrentCreatorMinimalKeysetNoBusinessWrites(t *testing.T) {
 	f := rootHTTPTaskSetup(t)
 	rootTemplateGrantCreate(t, f, f.actor)
-	rootTemplateCandidateMembers(t, f)
+	prefix := rootTemplateCandidateMembers(t, f)
 	before := rootTemplateReadCounts(t, f)
-	first, token := rootTemplateCandidatePage(t, f, templateMembers+"?q=tmplcandidate&pageSize=1", nil)
-	if len(first) != 1 || len(first[0]) != 3 || first[0]["id"] != f.actor || first[0]["label"] != "tmplcandidatea" || first[0]["status"] != "active" || token == "" {
+	first, token := rootTemplateCandidatePage(t, f, templateMembers+"?q="+prefix+"&pageSize=1", nil)
+	if len(first) != 1 || len(first[0]) != 3 || first[0]["id"] != f.actor || first[0]["label"] != prefix+"a" || first[0]["status"] != "active" || token == "" {
 		t.Fatal("wrong first minimal candidate page", first)
 	}
-	second, next := rootTemplateCandidatePage(t, f, templateMembers+"?q=tmplcandidate&pageSize=1&pageToken="+url.QueryEscape(token), nil)
+	second, next := rootTemplateCandidatePage(t, f, templateMembers+"?q="+prefix+"&pageSize=1&pageToken="+url.QueryEscape(token), nil)
 	if len(second) != 1 || second[0]["id"] != f.other || next != "" {
 		t.Fatal("unstable or repeated next page", second)
 	}
@@ -72,7 +74,7 @@ func TestRootTemplateCandidatesCurrentCreatorMinimalKeysetNoBusinessWrites(t *te
 	if _, e := f.owner.Exec(f.ctx, "UPDATE auth.users SET status='disabled' WHERE id=$1", f.other); e != nil {
 		t.Fatal(e)
 	}
-	items, _ := rootTemplateCandidatePage(t, f, templateMembers+"?q=tmplcandidateb", nil)
+	items, _ := rootTemplateCandidatePage(t, f, templateMembers+"?q="+prefix+"b", nil)
 	if len(items) != 0 {
 		t.Fatal("inactive mapping target exposed")
 	}
@@ -118,13 +120,13 @@ func TestRootTemplateCandidatesAlwaysRequireLiveCreationAuthority(t *testing.T) 
 func TestRootTemplateCandidateCursorCannotCrossKindQueryActorOrPurpose(t *testing.T) {
 	f := rootHTTPTaskSetup(t)
 	rootTemplateGrantCreate(t, f, f.actor)
-	rootTemplateCandidateMembers(t, f)
-	_, token := rootTemplateCandidatePage(t, f, templateMembers+"?q=tmplcandidate&pageSize=1", nil)
+	prefix := rootTemplateCandidateMembers(t, f)
+	_, token := rootTemplateCandidatePage(t, f, templateMembers+"?q="+prefix+"&pageSize=1", nil)
 	if token == "" {
 		t.Fatal("fixture did not produce pagination")
 	}
-	suffix := "?q=tmplcandidate&pageSize=1&pageToken=" + url.QueryEscape(token)
-	for _, path := range []string{templateDepartments + suffix, templateMembers + strings.Replace(suffix, "q=tmplcandidate", "q=changed", 1), "/api/v1/applications/" + f.app + "/member-candidates" + suffix} {
+	suffix := "?q=" + prefix + "&pageSize=1&pageToken=" + url.QueryEscape(token)
+	for _, path := range []string{templateDepartments + suffix, templateMembers + strings.Replace(suffix, "q="+prefix, "q=changed", 1), "/api/v1/applications/" + f.app + "/member-candidates" + suffix} {
 		rootTemplateHTTPError(t, f.call(t, "GET", path, "", nil), 400)
 	}
 	rootTemplateGrantCreate(t, f, f.other)
@@ -138,8 +140,8 @@ func TestRootTemplateCandidateCursorCannotCrossKindQueryActorOrPurpose(t *testin
 		r.AddCookie(&http.Cookie{Name: session.SessionCookieName, Value: sid})
 		r.AddCookie(&http.Cookie{Name: session.CSRFCookieName, Value: csrf})
 	}), 400)
-	_, normal := rootTemplateCandidatePage(t, f, "/api/v1/applications/"+f.app+"/member-candidates?q=tmplcandidate&pageSize=1", nil)
-	rootTemplateHTTPError(t, f.call(t, "GET", templateMembers+"?q=tmplcandidate&pageSize=1&pageToken="+url.QueryEscape(normal), "", nil), 400)
+	_, normal := rootTemplateCandidatePage(t, f, "/api/v1/applications/"+f.app+"/member-candidates?q="+prefix+"&pageSize=1", nil)
+	rootTemplateHTTPError(t, f.call(t, "GET", templateMembers+"?q="+prefix+"&pageSize=1&pageToken="+url.QueryEscape(normal), "", nil), 400)
 }
 func TestRootTemplateCandidateHTTPBoundaries(t *testing.T) {
 	f := rootHTTPTaskSetup(t)
