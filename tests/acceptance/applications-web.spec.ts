@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { safeNetworkFailure } from './browser-diagnostics.mjs';
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 
 // This runs against the isolated HTTPS BFF, PostgreSQL and Redis. The fixture
@@ -336,6 +337,35 @@ test('V030-012 real B5: create-only owner, same-app menu member and cross-app de
   expect(grants.status).toBe(200);
 
   const memberPage = await memberContext.newPage();
+  const diagnosticStart = performance.now();
+  const requestIds = new WeakMap<object, number>();
+  let requestSequence = 0;
+  const requestKind = (url: string) => {
+   const path = new URL(url).pathname;
+   if (path === '/api/v1/session') return 'session';
+   if (path === '/api/v1/sessions') return 'sessions';
+   if (path === '/api/v1/applications') return 'applications';
+   if (path === '/api/v1/applications/' + appA.id) return 'application-a';
+   if (path === '/api/v1/applications/' + appB.id) return 'application-b';
+   return 'other';
+  };
+  const diagnostic = (data: Record<string, string | number | boolean>) => console.log('B5_ACCESS_PHASE ' + JSON.stringify({ relativeMs: Math.round(performance.now() - diagnosticStart), ...data }));
+  memberPage.on('request', request => {
+   const kind = requestKind(request.url());
+   if (kind === 'other') return;
+   const id = ++requestSequence; requestIds.set(request, id);
+   diagnostic({ phase: 'request', id, kind });
+  });
+  memberPage.on('response', response => {
+   const id = requestIds.get(response.request());
+   if (id !== undefined) diagnostic({ phase: 'response', id, kind: requestKind(response.url()), status: response.status() });
+  });
+  memberPage.on('requestfailed', request => {
+   const id = requestIds.get(request);
+   if (id !== undefined) diagnostic({ phase: 'request-failed', id, kind: requestKind(request.url()), failure: safeNetworkFailure(request.failure()?.errorText) });
+  });
+  memberPage.on('pageerror', () => diagnostic({ phase: 'page-error' }));
+  memberPage.on('crash', () => diagnostic({ phase: 'page-crash' }));
   await login(memberPage, ownMember);
   await expect(memberPage.getByRole('button', { name: '设置', exact: true })).toBeHidden();
   await memberPage.getByRole('button', { name: '打开应用中心', exact: true }).click();
@@ -354,8 +384,21 @@ test('V030-012 real B5: create-only owner, same-app menu member and cross-app de
   await memberPage.goto('/app/applications');
   await memberPage.reload();
   await expect(memberPage.getByRole('main').getByRole('button', { name: appA.name, exact: true })).toHaveCount(0);
+  diagnostic({ phase: 'revoked-navigation' });
   await memberPage.goto('/app/applications/' + appA.id);
-  await expect(memberPage.getByRole('alert')).toContainText('没有应用访问或管理权限');
+  try {
+   await expect(memberPage.getByRole('alert')).toContainText('没有应用访问或管理权限');
+  } finally {
+   const state = await memberPage.evaluate(() => ({
+    login: location.pathname === '/login',
+    alertPresent: !!document.querySelector('[role="alert"]'),
+    rootMounted: !!document.querySelector('main'),
+    loading: document.body.textContent?.includes('加载中') === true,
+    networkError: document.body.textContent?.includes('网络连接失败') === true,
+    accessDenied: document.body.textContent?.includes('没有应用访问或管理权限') === true,
+   })).catch(() => ({ unavailable: true }));
+   diagnostic({ phase: 'revoked-page-state', ...state });
+  }
  } finally { await creatorContext.close(); await memberContext.close(); }
 });
 
