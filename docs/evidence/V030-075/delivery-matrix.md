@@ -84,3 +84,19 @@ Published dde: P11 selected resubmit/review9 UI passed; rework4 UI missing-entry
 - Existing HTTP draft list contains extra pagination.pageSize; ADR002§5.4 reread and P12 source supplement verified. OpenAPI exact pagination binding1RED→7GREEN. Real BFF composition assertion is published but not yet run; no handler change yet.
 - Current edit-draft UI requires ordinary target read; edit-only/no-read grants need independent handling/verification without fake record data. Drafts must remain accessible through their capabilities without forcing record list access.
 - New-record input still uses existing Modal rather than full Figma page; layout/motion and final whole-product real-service journey remain open. No partial stage is claimed as final delivery.
+
+## Verified checkpoint — 2026-10-13 08:03 UTC
+
+Exact remote head e008a3218f2ffdca13285b31ff5ba185f11dfaa4, local13da983e/tree5356b81b. Current CI38365956024/product38365955924 are running; no develop/main merge or deployment.
+
+- Definition read9/save9/publication recovery9: verified on preceding exact candidates. Current-runtime/schema3, real approver picker7 and initial close/enable7: GREEN on22ac. The full main CI on22ac, a9 and435 was SUCCESS, but each product run retained its explicitly new test-first RED cases.
+- Nested conditions: original tree/large exact decimal/invalid decimal3 GREEN on a9; boolean/NULL/group insertion/leaf deletion3 and existing trigger configuration4 GREEN on435. Typed single/multi options and explicit null-trigger add/remove were RED on435 then implemented on e008; actual GREEN pending.
+- Exact-edge graph helper17 GREEN. Existing-node approval insertion2 and closing reopen/current-candidate guard2 were RED on435 then implemented on e008; actual GREEN pending. True-branch insertion and same-group leaf append first run on e008; no corresponding implementation yet.
+- Publication result modal: visible confirmed version/name and truthful disabled state verified on435, but original immediate geometry sample captured an animation intermediate frame. Corrected same520×340 oracle now waits for actual settled dimensions within the default assertion budget; no animation disabling/time-budget expansion. Final modal geometry/focus/visual review pending e008.
+- Approver/close screenshots from435 are animation intermediate frames, not final visual approval. Independent checkbox/text alignment regression and settled screenshot checks are local test-first work, NOT RUN. Search/departments remain a separately documented P16 gap.
+- P19 recoverable-record lifecycle protocol45 and shared original-operation hook8 GREEN; no lifecycle UI or deleted-record discovery is claimed.
+- Backend global started/approved personal lists still absent. Definitions still need new-flow creation, condition-node insertion, node removal, nonexecution name/coordinates persistence, search/departments, deletion and final full designer interactions. Local new tests for condition-node insertion2 and workflow naming2 are NOT RUN, with corresponding UI not implemented.
+- Templates/copies, structure/record deletion-restoration journeys, complete real multi-actor browser→BFF→Flowable acceptance and final visual/motion audit remain open. These are not dropped because narrow components pass.
+- Two explicit product choices are still unanswered as of actual07:33 Notion reread: reject/return reason collection; read-only member/department filter-candidate visibility. No recommendation is treated as approval.
+
+Full pure/governance/contracts1911, TypeScript/build, actual PR path scope and same-version official native Gitleaks of the tracked archive pass locally. Native scanning is supplemental, not a substitute for the unchanged CI Docker scanner. The b02 preflight failure was a diagnosed generic-key false positive on a Figma file locator; accurate source URL metadata removed the ambiguity without suppressing scan rules. That failed candidate never ran its business tests.
