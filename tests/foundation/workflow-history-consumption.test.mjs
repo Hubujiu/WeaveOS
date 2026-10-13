@@ -45,3 +45,13 @@ for(const [name,current,expected]of [
  ['different stable field',{...money,fieldId:id(90),value:'200.00'},{before:'123456789012345678901234567890.12',after:'当前不可比较',comparable:false}],
  ['incompatible current kind',{...money,fieldKind:'text',value:'200.00'},{before:'123456789012345678901234567890.12',after:'当前不可比较',comparable:false}],
 ])test('historical comparison handles '+name,()=>assert.deepEqual(historyComparison(money,current),expected));
+
+// V063 public CursorPagination is opaque, not a particular random-byte encoding.
+test('workflow history accepts every nonempty opaque continuation without decoding or mutation',()=>{
+ for(const token of ['next','x'.repeat(44),'x'.repeat(300),'next+/= %汉']){
+  const pagination={hasMore:true,nextPageToken:token};assert.equal(list({items:[event]},pagination,20),true,token);assert.equal(pagination.nextPageToken,token);
+ }
+});
+test('workflow history still rejects empty nonstring or contradictory opaque continuation',()=>{
+ for(const pagination of [{hasMore:true,nextPageToken:''},{hasMore:true,nextPageToken:7},{hasMore:true,nextPageToken:{}},{hasMore:false,nextPageToken:'next'},{hasMore:false,nextPageToken:''}])assert.equal(list({items:[event]},pagination,20),false);
+});

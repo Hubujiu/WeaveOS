@@ -1,0 +1,83 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ workflow history accepts confirmed (2.614889ms)
+✔ workflow history accepts next (0.262634ms)
+✔ workflow history accepts empty (0.38608ms)
+✔ workflow history accepts legacy (0.114652ms)
+✔ workflow history accepts no effect (0.956557ms)
+✔ workflow history accepts start (0.122775ms)
+✔ workflow history accepts return (0.108223ms)
+✔ workflow history rejects pending (0.519931ms)
+✔ workflow history rejects private header (0.132659ms)
+✔ workflow history rejects missing source (0.209074ms)
+✔ workflow history rejects wrong source (0.087381ms)
+✔ workflow history rejects duplicate events (0.244537ms)
+✔ workflow history rejects bad timestamp (0.056545ms)
+✔ workflow history rejects unsafe sequence (0.079079ms)
+✔ workflow history rejects extra total (0.032159ms)
+✔ workflow history rejects oversize (0.038068ms)
+✔ workflow history rejects invalid node (0.031537ms)
+✔ workflow history rejects unexpected return target (0.031407ms)
+✔ workflow history rejects missing cursor (0.051697ms)
+✔ workflow history rejects extra pagination (0.161302ms)
+✔ workflow history rejects zero pageSize (0.038488ms)
+✔ event basis accepts original values (0.321693ms)
+✔ event basis accepts unavailable (0.061442ms)
+✔ event basis accepts empty original mask (0.224327ms)
+✔ event basis accepts multi order (0.146721ms)
+✔ event basis rejects wrong event (0.083015ms)
+✔ event basis rejects changed event header (0.044607ms)
+✔ event basis rejects private detail (0.063315ms)
+✔ event basis rejects unavailable values (0.118007ms)
+✔ event basis rejects private basis (0.109785ms)
+✔ event basis rejects duplicate field (0.075353ms)
+✔ event basis rejects numeric money (0.082344ms)
+✔ event basis rejects extra field metadata (0.051828ms)
+✔ event basis rejects hidden label (0.081963ms)
+✔ event basis rejects nonreference labels (0.05348ms)
+✔ event basis rejects unknown kind (0.078898ms)
+✔ historical display preserves precise decimal (0.108883ms)
+✔ historical display preserves tombstone reference (0.103105ms)
+✔ historical display preserves unknown reference (0.033751ms)
+✔ historical display preserves null (1.101144ms)
+✔ historical display preserves empty text (0.046319ms)
+✔ historical display preserves false (0.02679ms)
+✔ historical display preserves true (0.023105ms)
+✔ historical display preserves multi order (0.068503ms)
+✔ historical comparison handles same authorized field (0.628093ms)
+✔ historical comparison handles hidden or deleted current field (0.051918ms)
+✔ historical comparison handles different stable field (0.036555ms)
+✔ historical comparison handles incompatible current kind (0.027902ms)
+✖ workflow history accepts every nonempty opaque continuation without decoding or mutation (1.092291ms)
+✔ workflow history still rejects empty nonstring or contradictory opaque continuation (0.124877ms)
+ℹ tests 50
+ℹ suites 0
+ℹ pass 49
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 193.657502
+
+✖ failing tests:
+
+test at tests/foundation/workflow-history-consumption.test.mjs:50:1
+✖ workflow history accepts every nonempty opaque continuation without decoding or mutation (1.092291ms)
+  AssertionError [ERR_ASSERTION]: next
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-history-consumption.test.mjs:52:62)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
