@@ -162,3 +162,11 @@ Current published head da5d4e0eb4e2eec08873678559a6f44db20ff9f4 (local4845f43d/t
 - Started-row full record/history navigation is still open. Graph nonexecution metadata/full manipulation, complete structure/record lifecycle UI, full combined multi-actor real browser→HTTPS→BFF→PG/Redis→Flowable journey, final desktop/mobile/motion review remain required.
 - Last all-GREEN full candidate remains c895. Its two three-browser rounds each144PASS are existing product journeys, not the missing combined approval journey. Newer intentional test-first RED candidates must not be called all GREEN or ready.
 - Four user decisions remain unanswered: reject/return reason policy, read-only reference-filter candidate scope, deleted-record/restore prototype, structure-copy prototype. No recommendation, old generic approval or silent passage of time is treated as their answer.
+
+## Verified checkpoint — 2026-10-13 18:44 UTC
+
+- Exact published19ac22b8 is now the latest all-GREEN candidate: CI38443563312, governance38443563677 and product38443563942. Product native log retains two144PASS rounds. Earlier WebKit failures are retested successfully with unchanged assertions and budgets; their earlier root cause remains unproven.
+- Real browser→BFF→Flowable approval/save/history/isolation passed in all3 browsers with3 independent backend receipt/storage checks. Browser creation/publication/enabling/manual start is a separate next-candidate journey, still NOT RUN.
+- Approved/current and initiated-record/history comparison, narrow44px/12px table styling and long exact amount readability have native component GREEN evidence and reviewed desktop/mobile images.
+- P24 application/directory/table/form deletion request, receipt, dependency and immutable original-operation consumption has20 target RED→GREEN tests; no structural deletion UI has been implemented. This design gap is separate from record deletion/restore.
+- Five questions are awaiting specific decisions, including newly surfaced node display-name editing. Structural-deletion UI is an additional unapproved prototype gap. No arbitrary persisted coordinates requirement was inferred from generic graph manipulation wording. No main/develop merge or deployment; full delivery remains open.
