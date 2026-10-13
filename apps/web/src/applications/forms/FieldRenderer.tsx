@@ -45,9 +45,9 @@ function options(field:DisplayField):Option[]{
     !!item&&typeof item==='object'&&typeof item.id==='string'&&typeof item.label==='string'):[];
 }
 
-function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,referenceDisplay,loadReferenceCandidates,idPrefix}:
-  Pick<FieldRendererProps,'field'|'value'|'onChange'|'readOnly'|'referenceOptions'|'referenceDisplay'|'loadReferenceCandidates'|'idPrefix'>){
-  const [open,setOpen]=useState(false);
+export function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,referenceDisplay,loadReferenceCandidates,idPrefix,initiallyOpen=false}:
+  Pick<FieldRendererProps,'field'|'value'|'onChange'|'readOnly'|'referenceOptions'|'referenceDisplay'|'loadReferenceCandidates'|'idPrefix'>&{initiallyOpen?:boolean}){
+  const [open,setOpen]=useState(initiallyOpen);
   const [query,setQuery]=useState('');
   const [items,setItems]=useState<ReferenceCandidate[]>([]);
   const [nextPageToken,setNextPageToken]=useState<string|null>(null);
