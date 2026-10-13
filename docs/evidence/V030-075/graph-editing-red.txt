@@ -1,0 +1,229 @@
+(node:14) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ V019 approval insertion changes exactly the selected edge and preserves configured IDs and input (2.497614ms)
+✖ V019 condition insertion retains the exact AST and initially rejoins both branches at original target (0.554454ms)
+✖ V019 branch-qualified insertion edits only true path, not the same-target sibling (4.5108ms)
+✖ V019 branch-qualified insertion edits only false path, not the same-target sibling (0.33252ms)
+✔ V019 insert rejects duplicate id without inventing defaults (0.182344ms)
+✔ V019 insert rejects start without inventing defaults (0.109304ms)
+✔ V019 insert rejects end without inventing defaults (0.108994ms)
+✔ V019 insert rejects no assignees without inventing defaults (0.061503ms)
+✔ V019 insert rejects wrong mode without inventing defaults (0.082655ms)
+✔ V019 insert rejects empty condition without inventing defaults (0.119159ms)
+✔ V019 insert rejects extra metadata without inventing defaults (0.067061ms)
+✔ V019 insert rejects missing edge (0.09286ms)
+✔ V019 insert rejects unqualified condition branch (0.062274ms)
+✔ V019 insert rejects extra edge key (0.069795ms)
+✔ V019 insert rejects invalid source graph (0.051147ms)
+✖ V019 insert permits the hundredth node without truncation (0.434734ms)
+✔ V019 insert rejects the hundred-and-first node without modifying the graph (1.015657ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 12
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 138.490507
+
+✖ failing tests:
+
+test at tests/foundation/workflow-graph-editing.test.mjs:7:1
+✖ V019 approval insertion changes exactly the selected edge and preserves configured IDs and input (2.497614ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   edges: [
+  -     {
+  -       from: 'ecececec-ecec-4cec-8cec-000000000001',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000003'
+  -     },
+  -     {
+  -       from: 'ecececec-ecec-4cec-8cec-000000000003',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000002'
+  -     }
+  -   ],
+  -   nodes: [
+  -     {
+  -       id: 'ecececec-ecec-4cec-8cec-000000000002',
+  -       kind: 'end'
+  -     },
+  -     {
+  -       id: 'ecececec-ecec-4cec-8cec-000000000001',
+  -       kind: 'start'
+  -     },
+  -     {
+  -       approval: {
+  -         assigneeIds: [
+  -           'ecececec-ecec-4cec-8cec-000000000020',
+  -           'ecececec-ecec-4cec-8cec-000000000021'
+  -         ],
+  -         editableFieldIds: [
+  -           'ecececec-ecec-4cec-8cec-000000000030'
+  -         ],
+  -         mode: 'all'
+  -       },
+  -       id: 'ecececec-ecec-4cec-8cec-000000000003',
+  -       kind: 'approval'
+  -     }
+  -   ],
+  -   version: 1
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-graph-editing.test.mjs:9:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { version: 1, nodes: [ [Object], [Object], [Object] ], edges: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-graph-editing.test.mjs:12:1
+✖ V019 condition insertion retains the exact AST and initially rejoins both branches at original target (0.554454ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   edges: [
+  -     {
+  -       from: 'ecececec-ecec-4cec-8cec-000000000001',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000004'
+  -     },
+  -     {
+  -       branch: 'true',
+  -       from: 'ecececec-ecec-4cec-8cec-000000000004',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000002'
+  -     },
+  -     {
+  -       branch: 'false',
+  -       from: 'ecececec-ecec-4cec-8cec-000000000004',
+  -       to: 'ecececec-ecec-4cec-8cec-000000000002'
+  -     }
+  -   ],
+  -   nodes: [
+  -     {
+  -       id: 'ecececec-ecec-4cec-8cec-000000000002',
+  -       kind: 'end'
+  -     },
+  -     {
+  -       id: 'ecececec-ecec-4cec-8cec-000000000001',
+  -       kind: 'start'
+  -     },
+  -     {
+  -       condition: {
+  -         children: [
+  -           {
+  -             fieldId: 'ecececec-ecec-4cec-8cec-000000000030',
+  -             operator: 'eq',
+  -             value: 'A'
+  -           },
+  -           {
+  -             children: [
+  -               {
+  -                 fieldId: 'ecececec-ecec-4cec-8cec-000000000031',
+  -                 operator: 'gte',
+  -                 value: '9007199254740993.01'
+  -               },
+  -               {
+  -                 fieldId: 'ecececec-ecec-4cec-8cec-000000000032',
+  -                 operator: 'eq',
+  -                 value: false
+  -               }
+  -             ],
+  -             operator: 'and'
+  -           }
+  -         ],
+  -         operator: 'or'
+  -       },
+  -       id: 'ecececec-ecec-4cec-8cec-000000000004',
+  -       kind: 'condition'
+  -     }
+  -   ],
+  -   version: 1
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-graph-editing.test.mjs:13:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { version: 1, nodes: [ [Object], [Object], [Object] ], edges: [ [Object], [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-graph-editing.test.mjs:16:38
+✖ V019 branch-qualified insertion edits only true path, not the same-target sibling (4.5108ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(result)
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-graph-editing.test.mjs:17:89)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-graph-editing.test.mjs:16:38
+✖ V019 branch-qualified insertion edits only false path, not the same-target sibling (0.33252ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(result)
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-graph-editing.test.mjs:17:89)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-graph-editing.test.mjs:23:1
+✖ V019 insert permits the hundredth node without truncation (0.434734ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  undefined !== 100
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-graph-editing.test.mjs:23:173)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 100,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -75,3 +75,9 @@ test('Root workflow older candidate saves only after reading current schema whil
 test('Root workflow inaccessible current schema cannot authorize a new definition Save',async({page})=>{
  const f=await setup(page,{runtimeDenied:true});await page.goto(route);await expect(page.getByRole('alert')).toBeVisible();await expect(save(page)).toBeDisabled();expect(f.writes).toEqual([]);expect(f.calls.some(c=>c.path===base+'/runtime'&&c.method==='GET')).toBe(true);
 });
+
+test('Root workflow editable-field choice uses current label but saves only exact IDs without changing the approval rule',async({page})=>{
+ const f=await setup(page);await page.goto(route);await page.getByRole('region',{name:'流程图',exact:true}).getByRole('button',{name:'审批节点',exact:true}).click();
+ const field=page.getByRole('region',{name:'节点设置',exact:true}).getByRole('checkbox',{name:'说明',exact:true});await expect(field).toBeChecked();await field.uncheck();expect(f.writes).toEqual([]);await save(page).click();await expect(page.getByText('定义已保存',{exact:true})).toBeVisible();
+ const expected=structuredClone(graph);expected.nodes[1].approval!.editableFieldIds=[];expect(f.writes[0].body.graph).toEqual(expected);expect(f.writes[0].body.triggers).toEqual(triggers);
+});
