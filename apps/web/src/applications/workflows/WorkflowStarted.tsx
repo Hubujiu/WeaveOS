@@ -10,9 +10,9 @@ type Parameters={page:number;pageSize:number};
 export function WorkflowStarted({actorId,onUnauthorized,onIdentityMismatch,onOpenInbox,onOpenApproved}:{actorId:string;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onOpenInbox:()=>void;onOpenApproved:()=>void}){
  const states={starting:'正在发起',active:'审批中',completed:'已通过',rejected:'已驳回',withdrawn:'已撤回',no_effect:'未执行'};
  const columns:TableColumn<WorkflowStartedItem>[]=[
- {key:'name',header:'流程',dataType:'text',sortable:false,cell:row=><span className="table-cell" title={row.instance.name}>{row.instance.name}</span>},
+ {key:'name',header:'流程',dataType:'text',sortable:false,cell:row=><div><span className="table-cell" title={row.instance.name}>{row.instance.name}</span>{'archived' in row&&row.flowNameSource==='legacy_last_known'&&<span className="workflow-history-meta">最后已知名称</span>}</div>},
  {key:'recordId',header:'记录编号',dataType:'text',sortable:false,cell:row=><span title={row.recordId}>{row.recordId}</span>},
- {key:'state',header:'状态',dataType:'text',sortable:false,cell:row=><span>{states[row.instance.state]}</span>},
+ {key:'state',header:'状态',dataType:'text',sortable:false,cell:row=><div><span>{states[row.instance.state]}</span>{'archived' in row&&<span className="workflow-started-archive workflow-history-meta">已归档</span>}</div>},
  {key:'createdAt',header:'发起时间',dataType:'time',sortable:false,cell:row=><time dateTime={row.instance.createdAt}>{new Date(row.instance.createdAt).toLocaleString('zh-CN',{hour12:false})}</time>},
  {key:'updatedAt',header:'更新时间',dataType:'time',sortable:false,cell:row=><time dateTime={row.instance.updatedAt}>{new Date(row.instance.updatedAt).toLocaleString('zh-CN',{hour12:false})}</time>},
  ];
