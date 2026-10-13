@@ -24,3 +24,13 @@ test('started instances exact read POST preserves actor CSRF and abort without o
 });
 test('started instances network failure never becomes an uncertain approval action',async t=>{setup(t,async()=>{throw Error('offline')});await assert.rejects(applicationReadPost(actor,'workflow-started/search',{page:1}),e=>e.code==='COMMON_SERVICE_UNAVAILABLE'&&e.unconfirmed===false)});
 test('started instances read helper does not admit adjacent or ambiguous write paths',async()=>{for(const path of ['workflow-started/search/','workflow-started/search?actor=x','workflow-started/actions','workflow-started/search/actions'])await assert.rejects(applicationReadPost(actor,path,{page:1}),TypeError)});
+
+test('started archive admits only explicit retained terminal or no-effect rounds with truthful name source',()=>{
+ for(const flowNameSource of ['captured','legacy_last_known'])for(const state of ['completed','rejected','withdrawn','no_effect']){
+  const p=page();Object.assign(p.items[0],{archived:true,flowNameSource});p.items[0].instance.state=state;const before=structuredClone(p);assert.equal(valid(p,1,20,actor),true);assert.deepEqual(p,before);
+ }
+});
+test('started archive rejects ambiguous source markers and refuses to call active intent archived',()=>{
+ for(const patch of [{archived:false,flowNameSource:'captured'},{archived:true},{flowNameSource:'captured'},{archived:true,flowNameSource:'current'},{archived:true,flowNameSource:'captured',private:[]}]){const p=page();p.items[0].instance.state='completed';Object.assign(p.items[0],patch);assert.equal(valid(p,1,20,actor),false,JSON.stringify(patch))}
+ for(const state of ['starting','active']){const p=page();p.items[0].instance.state=state;Object.assign(p.items[0],{archived:true,flowNameSource:'captured'});assert.equal(valid(p,1,20,actor),false)}
+});
