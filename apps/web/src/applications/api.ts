@@ -94,5 +94,15 @@ export async function applicationPublicationApi<T>(actorId:string,path:string,me
  return {...result,httpStatus:result.httpStatus};
 }
 
-// Test-first declaration only: the new asynchronous transport is not wired yet.
-export async function applicationDeletionApi<T>(_actorId:string,_path:string,_method:'GET'|'POST',_body?:object,_signal?:AbortSignal):Promise<ApplicationEnvelope<T>&{httpStatus:number}>{throw new TypeError('Deletion transport is not implemented');}
+// Only this exact durable deletion request/status pair accepts 202 and 200.
+export async function applicationDeletionApi<T>(actorId:string,path:string,method:'GET'|'POST',body?:object,signal?:AbortSignal):Promise<ApplicationEnvelope<T>&{httpStatus:number}>{
+ const id='[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}',valid=(v:unknown)=>typeof v==='string'&&new RegExp('^'+id+'$').test(v)&&v!=='00000000-0000-0000-0000-000000000000';
+ const base=`applications/(${id})/forms/(${id})/workflows/(${id})`,post=new RegExp('^'+base+'/delete$').exec(path),get=new RegExp('^'+base+'/deletions/('+id+')$').exec(path);
+ const b=body as Record<string,unknown>|undefined;
+ const write=method==='POST'&&post&&post.slice(1).every(valid)&&b&&!Array.isArray(b)&&Object.keys(b).length===2&&['operationId','expectedRevision'].every(k=>Object.hasOwn(b,k))&&valid(b.operationId)&&typeof b.expectedRevision==='number'&&Number.isSafeInteger(b.expectedRevision)&&b.expectedRevision>0;
+ const read=method==='GET'&&get&&get.slice(1).every(valid)&&body===undefined;
+ if(!write&&!read)throw new TypeError('Deletion transport is restricted to exact workflow deletion requests and status');
+ const result=await request<T>(actorId,path,method,body,signal,method==='GET'?200:undefined,method==='POST',true);
+ if(result.httpStatus!==200&&result.httpStatus!==202)throw new ApplicationError(result.httpStatus??0,'APPLICATION_OPERATION_UNCONFIRMED',method==='POST');
+ return {...result,httpStatus:result.httpStatus};
+}
