@@ -1,3 +1,4 @@
+import {validStructureDeletionRequest,validStructureDeletionReceipt} from './forms/structureDeletion';
 import {validStructureCopyRequest,type StructureCopyPreflightRequest} from './templates/copyRequest';
 import {validStructureCopyReceipt,type StructureCopyReceipt} from './templates/copyReceipt';
 import {validTemplateImportRequest} from './templates/importRequest';
@@ -46,6 +47,7 @@ function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean
  if (!result || typeof result !== 'object' || Array.isArray(result) || !packet.resource) return false;
  // Task execution receipts are checked against their distinct closed wire
  // in perform(), including actual HTTP status and the confirmed command ID.
+ if (packet.resource.kind === 'structure-deletion') return validStructureDeletionReceipt(result,{resource:packet.resource,operationId:packet.operationId??'',expectedStructureVersion:packet.body?.expectedStructureVersion as number});
  if (packet.resource.kind === 'structure-copy') {
   const body=packet.body as unknown as StructureCopyPreflightRequest;
   return validStructureCopyReceipt(result,{operationId:packet.operationId??'',source:body.source,targetAppId:body.target.appId,expectedStructureVersion:body.expectedTargetStructureVersion,expectedPolicyRevision:body.expectedTargetPolicyRevision,newGroupCount:body.groupMappings.length});
@@ -208,6 +210,7 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
     const reply = await applicationApiEnvelope<T>(packet.actorId, packet.path, packet.method, packet.body, undefined, packet.expectedStatus);
     result = reply.data; location = reply.location;
    }
+   if (packet.resource?.kind==='structure-deletion' && location!==null && location!==undefined && location!=='') throw new ApplicationError(503,'APPLICATION_OPERATION_UNCONFIRMED',true);
    if (!(packet.expectedStatus === 204 && !query) && !valid(result, packet)) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
    if (scopedResource && packet.resource?.kind !== 'workflow-definition' && packet.expectedStatus === 201 && !validLocation(location, packet, result)) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
    if (packet.resource?.kind==='manual-start'||packet.resource?.kind==='round-start') {
@@ -254,7 +257,9 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
   else {
    const request = requestOrPath;
    if (!scope || !scopedResource || JSON.stringify(request.resource) !== JSON.stringify(scopedResource)) throw new TypeError('Mutation resource does not match the mounted scope');
-   if (request.resource.kind === 'structure-copy') {
+   if (request.resource.kind === 'structure-deletion') {
+    if (!validStructureDeletionRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'structure-copy') {
     if (!validStructureCopyRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
    } else if (request.resource.kind === 'template-import') {
     if (!validTemplateImportRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');

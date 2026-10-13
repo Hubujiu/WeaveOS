@@ -10,6 +10,7 @@ export type ApplicationPacket = {
  body?: { operationId?: string; [key: string]: unknown };
  query?: { operationId: string; expectedDraftVersion?: number; expectedVersion?: number };
  resource?: { kind: 'record' | 'draft' | 'preset'; appId: string; viewId: string; id?: string; creationNonce?: string }
+  | { kind:'structure-deletion';appId:string;resourceKind:'application'|'directory'|'table'|'form';id:string;viewId?:never;creationNonce?:never }
   | { kind:'structure-copy';sourceAppId:string;sourceKind:'application'|'directory'|'table'|'form';sourceId:string;appId?:never;viewId?:never;id?:never;creationNonce?:never }
   | { kind:'template-import';appId?:never;viewId?:never;id?:never;creationNonce?:never }
   | { kind:'record-lifecycle';appId:string;viewId:string;id:string;action:'deletion'|'restoration';creationNonce?:never }
