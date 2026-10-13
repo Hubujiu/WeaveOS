@@ -74,7 +74,7 @@ async function mapTargets(page:Page,user='当前成员'){
 }
 const bindings=(user=targetUser)=>[{kind:'user',sourceId,targetId:user},{kind:'department',sourceId,targetId:targetDepartment}];
 test('Root import requires separate explicit user and department choices and sends unchanged manifest with typed bindings',async({page},info)=>{
- const f=await setup(page),c=await candidates(page);const dialog=await open(page);await file(page,mappedManifest);
+ const f=await setup(page),c=await candidates(page);await open(page);const dialog=page.getByRole('dialog');await file(page,mappedManifest);
  await expect(page.getByRole('button',{name:'选择成员',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'选择部门',exact:true})).toBeVisible();expect(c.calls).toEqual([]);await expect(page.getByRole('button',{name:'检查模板',exact:true})).toBeDisabled();
  await mapTargets(page);await expect.poll(async()=>{const b=await dialog.boundingBox();return b?{w:Math.round(b.width),h:Math.round(b.height)}:null;}).toEqual({w:740,h:540});await info.attach('template-explicit-mapping',{body:await page.screenshot(),contentType:'image/png'});
  await page.getByRole('button',{name:'检查模板',exact:true}).click();await expect(page.getByText('模板检查通过',{exact:true})).toBeVisible();expect(f.calls.find(c=>c.path==='application-templates/preflight')!.body).toEqual({manifest:mappedManifest,bindings:bindings()});
@@ -100,4 +100,16 @@ test('Root malformed target candidate page clears options without permitting tem
 });
 test('Root cancelling an open mapping picker aborts candidate reads and never starts import',async({page})=>{
  const f=await setup(page),c=await candidates(page,'delay');await open(page);await file(page,mappedManifest);await page.getByRole('button',{name:'选择成员',exact:true}).click();await expect.poll(()=>c.calls.length).toBe(1);const aborted=page.waitForEvent('requestfailed',r=>r.url().includes('/member-candidates'));await page.getByRole('button',{name:'取消',exact:true}).click();await aborted;c.release();await expect(page).toHaveURL(/\/app\/applications$/);expect(f.writes).toEqual([]);
+});
+
+// Visual oracle: Figma 487:5238 / 487:5246 (44px header, 32px heading + 16px gap).
+test('Root mapping phase uses its own heading and exact approved table geometry',async({page})=>{
+ await setup(page);await candidates(page);await open(page);await file(page,mappedManifest);
+ const dialog=page.getByRole('dialog',{name:'映射依赖',exact:true});await expect(dialog).toBeVisible();
+ await expect(dialog.getByLabel('选择模板文件',{exact:true})).toHaveCount(0);
+ const header=dialog.getByRole('columnheader').first();await expect.poll(async()=>Math.round((await header.boundingBox())?.height??0)).toBe(44);
+ await expect(header).toHaveCSS('font-size','12px');
+ const heading=dialog.getByRole('heading',{name:'映射依赖',exact:true});
+ await expect.poll(async()=>{const h=await heading.boundingBox(),t=await header.boundingBox();return h&&t?Math.round(t.y-h.y-h.height):null;}).toBe(20);
+ await expect(dialog.getByText('导入后流程保持关闭',{exact:true})).toBeVisible();
 });

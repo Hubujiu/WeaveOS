@@ -47,7 +47,10 @@ function options(field:DisplayField):Option[]{
 
 export function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,referenceDisplay,loadReferenceCandidates,idPrefix,initiallyOpen=false}:
   Pick<FieldRendererProps,'field'|'value'|'onChange'|'readOnly'|'referenceOptions'|'referenceDisplay'|'loadReferenceCandidates'|'idPrefix'>&{initiallyOpen?:boolean}){
-  const [open,setOpen]=useState(initiallyOpen);
+  const [open,setOpen]=useState(false);
+  // An explicitly requested picker opens after mount. Starting the read in a
+  // mount effect with open=true duplicates it during StrictMode's setup replay.
+  useEffect(()=>{if(initiallyOpen)setOpen(true);},[initiallyOpen]);
   const [query,setQuery]=useState('');
   const [items,setItems]=useState<ReferenceCandidate[]>([]);
   const [nextPageToken,setNextPageToken]=useState<string|null>(null);
