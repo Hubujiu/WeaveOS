@@ -46,3 +46,12 @@ test('Root condition editor selects current option IDs with scalar and set value
 test('Root condition editor appends a leaf to an existing group without adding an unintended grouping level',async({page})=>{
  const f=await setup(page);await edit(page);await page.getByRole('button',{name:'条件组 1.2 添加条件',exact:true}).click();await page.getByLabel('条件 1.2.3 的字段',{exact:true}).selectOption(id(30));await value(page,'1.2.3').fill('新增条件');await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByText('定义已保存',{exact:true})).toBeVisible();const expected=structuredClone(graph);(expected.nodes[1].condition!.children[1].children! as any[]).push({fieldId:id(30),operator:'eq',value:'新增条件'});expect(f.writes[0].body.graph).toEqual(expected);
 });
+
+test('Root condition text and decimal controls use the approved 42px rounded input geometry',async({page},info)=>{
+ await page.setViewportSize({width:1440,height:1000});await setup(page);await edit(page);
+ for(const path of ['1.1','1.2.1']){
+  const input=value(page,path);await input.scrollIntoViewIfNeeded();await expect(input).toBeInViewport();const actual=await input.evaluate(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return {height:r.height,radius:s.borderTopLeftRadius,paddingLeft:s.paddingLeft,paddingRight:s.paddingRight,borderWidth:s.borderTopWidth,borderColor:s.borderTopColor,fontSize:s.fontSize};});
+  expect(actual).toEqual({height:42,radius:'8px',paddingLeft:'12px',paddingRight:'12px',borderWidth:'1px',borderColor:'rgb(234, 234, 234)',fontSize:'14px'});
+ }
+ await info.attach('condition-input-geometry',{body:await page.screenshot(),contentType:'image/png'});
+});
