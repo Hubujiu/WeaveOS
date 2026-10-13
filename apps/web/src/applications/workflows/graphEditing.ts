@@ -14,5 +14,14 @@ export function insertWorkflowNode(graph:WorkflowGraph,edge:WorkflowGraph['edges
  return validWorkflowGraph(result)?structuredClone(result):null;
 }
 
-// Test-first declaration only; node-removal behavior is deliberately absent.
-export function removeWorkflowNode(_graph:WorkflowGraph,_nodeId:string):WorkflowGraph|null{return null;}
+/** Removes only an unambiguous local step; divergent branches need explicit redesign. */
+export function removeWorkflowNode(graph:WorkflowGraph,nodeId:string):WorkflowGraph|null{
+ if(!validWorkflowGraph(graph))return null;
+ const node=graph.nodes.find(n=>n.id===nodeId);
+ if(!node||(node.kind!=='approval'&&node.kind!=='condition'))return null;
+ const targets=new Set(graph.edges.filter(edge=>edge.from===nodeId).map(edge=>edge.to));
+ if(targets.size!==1)return null;
+ const target=[...targets][0];
+ const result:WorkflowGraph={version:1,nodes:graph.nodes.filter(n=>n.id!==nodeId),edges:graph.edges.filter(edge=>edge.from!==nodeId).map(edge=>edge.to===nodeId?{...edge,to:target}:edge)};
+ return validWorkflowGraph(result)?structuredClone(result):null;
+}
