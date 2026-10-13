@@ -420,14 +420,14 @@ test('Root real HTTPS full journey creates an application, saves a form, and cre
  const prefix='applications/'+app.id+'/forms/'+form.id;
  const runtimeReply=await realApi(page.context(),f.adminId,prefix+'/runtime');expect(runtimeReply.status).toBe(200);
  const fields=runtimeReply.data.fields as {id:string;name:string}[];const amount=fields.find(x=>x.name==='报销金额')!.id,title=fields.find(x=>x.name==='报销事由')!.id;
- await page.getByRole('button',{name:'新建记录',exact:true}).click();const createRecord=page.getByRole('dialog',{name:'新建记录',exact:true});
+ await page.getByRole('button',{name:'新建记录',exact:true}).click();const createRecord=page.getByRole('region',{name:'新建记录',exact:true});
  await createRecord.getByLabel('报销金额',{exact:true}).fill('12.345');await createRecord.getByLabel('报销事由',{exact:true}).fill('真实差旅');
  if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-create-input.png'),fullPage:true});
  const recordResponse=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/'+prefix+'/records');
  await createRecord.getByRole('button',{name:'保存记录',exact:true}).click();const recordWritten=await recordResponse;expect(recordWritten.status()).toBe(201);
  const receipt=(await recordWritten.json()).data as {id:string;recordVersion:number};
  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
- const detail=page.getByRole('dialog',{name:'记录详情',exact:true});await expect(detail.getByLabel('报销金额',{exact:true})).toHaveValue('12.35');
+ const detail=page.getByRole('region',{name:'记录详情',exact:true});await expect(detail.getByLabel('报销金额',{exact:true})).toHaveValue('12.35');
  await expect(detail.getByLabel('报销事由',{exact:true})).toHaveValue('真实差旅');
  const persisted=await realApi(page.context(),f.adminId,prefix+'/records/'+receipt.id);expect(persisted.status).toBe(200);
  expect(persisted.data.values).toMatchObject({[amount]:'12.35',[title]:'真实差旅'});expect(persisted.data.recordVersion).toBe(receipt.recordVersion);
@@ -441,5 +441,5 @@ test('Root real HTTPS full journey creates an application, saves a form, and cre
  expect(await shell!.evaluate(node=>node.isConnected)).toBe(true);
  await page.reload();await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();
  await page.getByRole('button',{name:'打开记录：报销金额 20.10',exact:true}).click();
- await expect(page.getByRole('dialog',{name:'记录详情',exact:true}).getByLabel('报销事由',{exact:true})).toHaveValue('真实差旅');
+ await expect(page.getByRole('region',{name:'记录详情',exact:true}).getByLabel('报销事由',{exact:true})).toHaveValue('真实差旅');
 });
