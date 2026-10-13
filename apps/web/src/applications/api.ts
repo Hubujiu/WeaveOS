@@ -93,3 +93,6 @@ export async function applicationPublicationApi<T>(actorId:string,path:string,me
  if(result.httpStatus!==200&&result.httpStatus!==202)throw new ApplicationError(result.httpStatus??0,'APPLICATION_OPERATION_UNCONFIRMED',method==='POST');
  return {...result,httpStatus:result.httpStatus};
 }
+
+// Test-first declaration only: the new asynchronous transport is not wired yet.
+export async function applicationDeletionApi<T>(_actorId:string,_path:string,_method:'GET'|'POST',_body?:object,_signal?:AbortSignal):Promise<ApplicationEnvelope<T>&{httpStatus:number}>{throw new TypeError('Deletion transport is not implemented');}
