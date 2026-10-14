@@ -28,6 +28,7 @@ import (
 type WorkflowTaskActionRequest struct {
 	WorkflowTaskRequest
 	OperationID, Action, BasisToken string
+	Reason                          string `json:",omitempty"`
 }
 type WorkflowOperationResult struct {
 	OperationID   string `json:"operationId"`

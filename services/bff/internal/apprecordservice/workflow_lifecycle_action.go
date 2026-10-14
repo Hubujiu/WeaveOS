@@ -23,6 +23,7 @@ import (
 type WorkflowLifecycleActionRequest struct {
 	WorkflowLifecycleRequest
 	OperationID, Action, BasisToken, TargetNodeID string
+	Reason                                        string `json:",omitempty"`
 }
 
 func (s *Service) AcceptWorkflowLifecycle(ctx context.Context, p session.Principal, req WorkflowLifecycleActionRequest, metadata applications.Metadata) (WorkflowOperationResult, error) {
