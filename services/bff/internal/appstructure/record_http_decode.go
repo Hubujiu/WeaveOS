@@ -130,7 +130,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 	if kind == "workflow.task.action" || kind == "workflow.lifecycle.action" {
 		if raw, present := m["reason"]; present {
 			var action, reason string
-			if json.Unmarshal(m["action"], &action) != nil || (action != "reject" && action != "return") || json.Unmarshal(raw, &reason) != nil || !ValidWorkflowActionReason(reason) {
+			if json.Unmarshal(m["action"], &action) != nil || (action != "reject" && action != "return") || !validWorkflowReasonUnicodeEscapes(raw) || json.Unmarshal(raw, &reason) != nil || !ValidWorkflowActionReason(reason) {
 				return nil, recordBodyInvalid()
 			}
 		}
