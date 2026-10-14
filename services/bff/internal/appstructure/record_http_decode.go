@@ -31,9 +31,10 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 		optional = []string{"pageSize", "queryVersion"}
 	case "workflow.lifecycle.action":
 		required = []string{"operationId", "action", "basisToken"}
-		optional = []string{"targetNodeId"}
+		optional = []string{"targetNodeId", "reason"}
 	case "workflow.task.action":
 		required = []string{"operationId", "action", "basisToken"}
+		optional = []string{"reason"}
 	case "workflow.task.save":
 		required = []string{"operationId", "basisToken", "changes"}
 	case "record.create":
@@ -125,6 +126,16 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 			json.Unmarshal(m["basisToken"], &token) != nil || token == "" || utf8.RuneCountInString(token) > 256 {
 			return nil, recordBodyInvalid()
 		}
+	}
+	if kind == "workflow.task.action" || kind == "workflow.lifecycle.action" {
+		if raw, present := m["reason"]; present {
+			var action, reason string
+			if json.Unmarshal(m["action"], &action) != nil || (action != "reject" && action != "return") || json.Unmarshal(raw, &reason) != nil || !ValidWorkflowActionReason(reason) {
+				return nil, recordBodyInvalid()
+			}
+		}
+		// Omission is parsed only to preserve exact pre-upgrade replay. The service
+		// requires a reason after checking whether the original operation exists.
 	}
 	if kind == "workflow.task.save" {
 		var operation, token string
