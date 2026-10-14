@@ -55,3 +55,15 @@ test('workflow history accepts every nonempty opaque continuation without decodi
 test('workflow history still rejects empty nonstring or contradictory opaque continuation',()=>{
  for(const pagination of [{hasMore:true,nextPageToken:''},{hasMore:true,nextPageToken:7},{hasMore:true,nextPageToken:{}},{hasMore:false,nextPageToken:'next'},{hasMore:false,nextPageToken:''}])assert.equal(list({items:[event]},pagination,20),false);
 });
+
+for(const action of ['reject','return']) test('P25 original '+action+' reason survives history and bound detail',()=>{
+ const original={...event,action,targetNodeId:action==='return'?id(9):null,actionReason:'  原文\n🦊  '};
+ assert.equal(list({items:[original]},end,20),true);
+ assert.equal(detail({event:original,basis:{status:'unavailable',fields:[]}},original),true);
+ assert.equal(detail({event:{...original,actionReason:'different'},basis:{status:'unavailable',fields:[]}},original),false);
+ const missing={...original};delete missing.actionReason;
+ assert.equal(detail({event:missing,basis:{status:'unavailable',fields:[]}},original),false);
+});
+for(const reason of ['a','🦊'.repeat(500),'\ufeff']) test('P25 history accepts valid scalar audit text '+reason.length,()=>assert.equal(list({items:[{...event,action:'reject',actionReason:reason}]},end,20),true));
+for(const reason of ['', ' \u3000\u0085', '🦊'.repeat(501),'a\0b','\ud800','\udfff',null,7])test('P25 history rejects malformed audit text '+JSON.stringify(reason),()=>assert.equal(list({items:[{...event,action:'reject',actionReason:reason}]},end,20),false));
+for(const action of ['agree','withdraw','start'])test('P25 history forbids reason on '+action,()=>assert.equal(list({items:[{...event,action,actionReason:'unrequested'}]},end,20),false));
