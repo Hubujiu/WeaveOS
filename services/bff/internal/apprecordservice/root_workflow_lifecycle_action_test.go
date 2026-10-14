@@ -21,6 +21,7 @@ func rootLifecycleActionReq(t *testing.T, f rootTaskFixture, action string) Work
 	r := WorkflowLifecycleActionRequest{WorkflowLifecycleRequest: q, OperationID: recordOperationID(t, f.recordFixture), Action: action, BasisToken: p.BasisToken}
 	if action == "return" {
 		r.TargetNodeID = f.task.NodeID
+		r.Reason = "fixture return reason"
 	}
 	return r
 }

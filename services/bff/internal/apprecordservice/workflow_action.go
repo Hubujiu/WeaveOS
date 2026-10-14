@@ -115,6 +115,9 @@ func (s *Service) AcceptWorkflowTask(ctx context.Context, principal session.Prin
 		}
 		return s.WorkflowOperation(ctx, principal, req.OperationID)
 	}
+	if (req.Action == "reject" && !appstructure.ValidWorkflowActionReason(req.Reason)) || (req.Action != "reject" && req.Reason != "") {
+		return empty, applications.ErrInvalid
+	}
 	if loadErr != nil {
 		if errors.Is(loadErr, querycontext.ErrExpired) || errors.Is(loadErr, querycontext.ErrInvalid) {
 			return empty, ErrWorkflowBasisExpired
@@ -216,6 +219,11 @@ func (s *Service) AcceptWorkflowTask(ctx context.Context, principal session.Prin
 	command := fc.Command{ProtocolVersion: 2, CommandID: commandID, AppID: req.AppID, TableID: facts.TableID, ViewID: req.ViewID, RecordID: req.RecordID, InstanceID: req.InstanceID, TaskID: req.TaskID, ActorID: facts.Actor.ID, Action: req.Action, RecordVersion: h.RecordVersion, SchemaVersion: h.SchemaVersion, FenceEpoch: fenceEpoch, TaskEpoch: epoch, ExpectedSequence: sequence, FlowID: flowID, VersionID: versionID, DefinitionVersion: definitionVersion, PayloadHash: sha256.Sum256(payloadBytes)}
 	if _, err = (fc.Ledger{Namespace: "applications"}).AcceptExecutionInTx(ctx, tx, command, payload); err != nil {
 		return empty, err
+	}
+	if req.Action == "reject" {
+		if _, err = tx.Exec(ctx, "INSERT INTO applications.workflow_action_reasons(command_id,reason) VALUES($1,$2)", commandID, req.Reason); err != nil {
+			return empty, err
+		}
 	}
 	result := WorkflowOperationResult{OperationID: req.OperationID, CommandID: commandID, InstanceID: req.InstanceID, Status: "pending"}
 	resultBytes, err := json.Marshal(result)

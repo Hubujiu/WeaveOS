@@ -19,6 +19,7 @@ import (
 
 type WorkflowEventRequest struct{ AppID, ViewID, RecordID, EventID string }
 type WorkflowEventSummary struct {
+	ActionReason   *string `json:"actionReason,omitempty"`
 	FlowName       string  `json:"flowName"`
 	FlowNameSource string  `json:"flowNameSource"`
 	ID             string  `json:"id"`
@@ -152,10 +153,11 @@ func readWorkflowEventInTx(ctx context.Context, tx pgx.Tx, facts applications.Re
 	err := tx.QueryRow(ctx, `SELECT e.command_id::text,e.instance_id::text,e.flow_id::text,e.view_id::text,
  e.definition_version,e.actor_id::text,e.action,e.outcome,e.sequence,e.schema_version,e.record_version,
  e.created_at,e.evidence_hash,e.payload_bytes,e.result_bytes,e.proof_id::text,
- e.version_id::text,e.task_id::text,e.task_epoch,e.node_id::text,e.target_node_id::text,e.flow_name,e.flow_name_source
+ e.version_id::text,e.task_id::text,e.task_epoch,e.node_id::text,e.target_node_id::text,e.flow_name,e.flow_name_source,ar.reason
  FROM applications.workflow_execution_events e
+ LEFT JOIN applications.workflow_action_reasons ar ON ar.command_id=e.command_id
  WHERE e.app_id=$1::uuid AND e.command_id=$2::uuid AND e.table_id=$3::uuid AND e.record_id=$4::uuid`, q.AppID, q.EventID, facts.TableID, q.RecordID).Scan(
-		&e.ID, &e.InstanceID, &e.FlowID, &sourceView, &definitionVersion, &e.ActorID, &e.Action, &e.Outcome, &e.Sequence, &e.SchemaVersion, &e.RecordVersion, &occurred, &hash, &payloadRaw, &resultRaw, &proof, &versionID, &taskID, &taskEpoch, &e.NodeID, &e.TargetNodeID, &e.FlowName, &e.FlowNameSource)
+		&e.ID, &e.InstanceID, &e.FlowID, &sourceView, &definitionVersion, &e.ActorID, &e.Action, &e.Outcome, &e.Sequence, &e.SchemaVersion, &e.RecordVersion, &occurred, &hash, &payloadRaw, &resultRaw, &proof, &versionID, &taskID, &taskEpoch, &e.NodeID, &e.TargetNodeID, &e.FlowName, &e.FlowNameSource, &e.ActionReason)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return empty, applications.ErrMissing
 	}

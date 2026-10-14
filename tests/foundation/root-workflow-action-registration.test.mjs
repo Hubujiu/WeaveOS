@@ -121,7 +121,7 @@ test('Root V037: exactly reviewed action migration follows immutable evidence',(
 });
 test('Root V037: all earlier migration bytes and installed roles remain unchanged',()=>{
  for(const old of previous){assert.deepEqual(manifest.migrations.filter(x=>x.path===old.path),[old]);assert.equal(hash(read('db/'+old.path)),old.sha256);}
- assert.equal(hash(read('infra/runtime/roles.sql')),'9cb05491e0a472a6f87108fa7806b083091d1e9367d1cd257d9d662157994556');
+ assert.equal(hash(read('infra/runtime/roles.sql')),'ec2a769c5b97209e1cbb7bbec05493b59dce436efe151400efca4711542a2033');
 });
 // Backup/restore receipt and role invariants are executed by infra/runtime/backup.test.mjs.
 // Source-token presence is not evidence of a successful restore.

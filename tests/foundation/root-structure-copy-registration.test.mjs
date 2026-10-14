@@ -8,7 +8,7 @@ test('V074 exact reviewed migration registered with unchanged runtime roles',()=
  const entry=c.migrations.find(m=>m.path==='migrations/00036_structure_copy.sql');
  assert.ok(entry,'copy migration absent from compatibility registration');
  assert.equal(entry.sha256,createHash('sha256').update(read('db/migrations/00036_structure_copy.sql')).digest('hex'));
- assert.equal(createHash('sha256').update(read('infra/runtime/roles.sql')).digest('hex'),'9cb05491e0a472a6f87108fa7806b083091d1e9367d1cd257d9d662157994556');
+ assert.equal(createHash('sha256').update(read('infra/runtime/roles.sql')).digest('hex'),'ec2a769c5b97209e1cbb7bbec05493b59dce436efe151400efca4711542a2033');
  assert.equal(c.backwardCompatible,false);
 });
 test('V074 host dispatch includes new copy family without replacing legacy templates',()=>{

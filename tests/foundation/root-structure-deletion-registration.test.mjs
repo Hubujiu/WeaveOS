@@ -7,7 +7,7 @@ const read=p=>readFileSync(p,'utf8');const hash=s=>createHash('sha256').update(s
 test('V073 exact minimum role suffix preserves the full V072 policy',()=>{
  const sql=read('infra/runtime/roles.sql'),start=sql.indexOf('\n-- V030-073:');assert.ok(start>0);
  assert.equal(hash(sql.slice(0,start)),'07e1df3f7be8409b26b4d30bc320c4c2ce8a0317f194834a3222a055b845b1c0');
- assert.equal(hash(sql),'9cb05491e0a472a6f87108fa7806b083091d1e9367d1cd257d9d662157994556');
+ assert.equal(hash(sql),'ec2a769c5b97209e1cbb7bbec05493b59dce436efe151400efca4711542a2033');
  assert.doesNotThrow(()=>validateInstalledPersonnelRoles(sql));
  for(const extra of ['GRANT UPDATE(deleted_at) ON applications.apps TO auth_app;','GRANT DELETE ON applications.logical_tables TO auth_app;','GRANT INSERT ON applications.structure_deletions TO auth_app;','GRANT SELECT ON applications.structure_deletions TO auth_reader;'])assert.throws(()=>validateInstalledPersonnelRoles(sql+'\n'+extra));
 });

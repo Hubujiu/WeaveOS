@@ -142,3 +142,56 @@ func TestRootWorkflowReasonHistoryKeepsOriginalAndRechecksAuthority(t *testing.T
 		t.Fatal("revoked history leaked reason", e)
 	}
 }
+
+func TestRootWorkflowReasonListsKeepOriginalAfterConfirmation(t *testing.T) {
+	f := rootTaskSetup(t, true)
+	eventGrant(t, f, "all", f.public, f.reference)
+	q := rootActionRequest(t, f, "reject")
+	q.Reason = "  原文\n保留 🦊  "
+	accepted := rootAction(t, f, q)
+	c, p := rootActionRead(t, f, accepted)
+	r, b := f.receipt(t, c, "rejected", "")
+	f.apply(t, c, p, r, b, true)
+	t.Run("record history", func(t *testing.T) {
+		page := historyRead(t, f, f.principal, historyRequest(f, 20))
+		for _, event := range page.Items {
+			if event.ID == c.CommandID {
+				if event.ActionReason == nil || *event.ActionReason != q.Reason {
+					t.Fatal("history list omitted original reason")
+				}
+				return
+			}
+		}
+		t.Fatal("confirmed event missing")
+	})
+	t.Run("personal approved", func(t *testing.T) {
+		page := approvedRead(t, f, WorkflowApprovalsRequest{Page: 1})
+		for _, item := range page.Items {
+			if item.Event.ID == c.CommandID {
+				if item.Event.ActionReason == nil || *item.Event.ActionReason != q.Reason {
+					t.Fatal("personal approved omitted original reason")
+				}
+				return
+			}
+		}
+		t.Fatal("own confirmed event missing")
+	})
+}
+
+func TestRootWorkflowReasonRuntimeRoleIsAppendOnly(t *testing.T) {
+	f := rootTaskSetup(t, false)
+	q := rootActionRequest(t, f, "reject")
+	q.Reason = "immutable audit"
+	a := rootAction(t, f, q)
+	for _, statement := range []string{
+		"UPDATE applications.workflow_action_reasons SET reason='changed' WHERE command_id=$1",
+		"DELETE FROM applications.workflow_action_reasons WHERE command_id=$1",
+	} {
+		_, e := f.runtime.Exec(f.ctx, statement, a.CommandID)
+		var pg interface{ SQLState() string }
+		if !errors.As(e, &pg) || pg.SQLState() != "42501" {
+			t.Fatalf("runtime changed immutable audit: %v", e)
+		}
+	}
+	reasonStored(t, f, a.CommandID, q.Reason)
+}
