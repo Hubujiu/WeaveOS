@@ -1,4 +1,4 @@
-export type WorkflowEvent={id:string;instanceId:string;flowId:string;flowName:string;flowNameSource:'captured'|'legacy_last_known';nodeId:string|null;targetNodeId:string|null;actorId:string;action:'start'|'agree'|'reject'|'withdraw'|'return';outcome:'success'|'no_effect';sequence:number;schemaVersion:number;recordVersion:number;occurredAt:string};
+export type WorkflowEvent={actionReason?:string;id:string;instanceId:string;flowId:string;flowName:string;flowNameSource:'captured'|'legacy_last_known';nodeId:string|null;targetNodeId:string|null;actorId:string;action:'start'|'agree'|'reject'|'withdraw'|'return';outcome:'success'|'no_effect';sequence:number;schemaVersion:number;recordVersion:number;occurredAt:string};
 export type HistoricalField={fieldId:string;fieldName:string;fieldKind:string;value:string|boolean|string[]|null;valueLabels:Record<string,{label:string;deleted:boolean}>};
 export type WorkflowEventDetail={event:WorkflowEvent;basis:{status:'available'|'unavailable';fields:HistoricalField[]}};
 const object=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
@@ -17,7 +17,7 @@ function timestamp(v:unknown,utc=false):boolean{
 }
 const eventKeys=['id','instanceId','flowId','flowName','flowNameSource','nodeId','targetNodeId','actorId','action','outcome','sequence','schemaVersion','recordVersion','occurredAt'];
 function event(v:unknown):v is WorkflowEvent{
- return object(v)&&exact(v,eventKeys)&&['id','instanceId','flowId','actorId'].every(k=>id(v[k]))&&(v.nodeId===null||id(v.nodeId))&&(v.targetNodeId===null||id(v.targetNodeId))&&(v.action==='return'||v.targetNodeId===null)&&typeof v.flowName==='string'&&v.flowName.length>0&&Array.from(v.flowName).length<=100&&['captured','legacy_last_known'].includes(String(v.flowNameSource))&&['start','agree','reject','withdraw','return'].includes(String(v.action))&&['success','no_effect'].includes(String(v.outcome))&&integer(v.sequence,0)&&integer(v.schemaVersion,1)&&integer(v.recordVersion,1)&&timestamp(v.occurredAt,true);
+ return object(v)&&exact(v,Object.hasOwn(v,'actionReason')?[...eventKeys,'actionReason']:eventKeys)&&(!Object.hasOwn(v,'actionReason')||(['reject','return'].includes(String(v.action))&&typeof v.actionReason==='string'&&Array.from(v.actionReason).length<=500&&/[^\p{White_Space}]/u.test(v.actionReason)&&!/[\u0000\uD800-\uDFFF]/u.test(v.actionReason)))&&['id','instanceId','flowId','actorId'].every(k=>id(v[k]))&&(v.nodeId===null||id(v.nodeId))&&(v.targetNodeId===null||id(v.targetNodeId))&&(v.action==='return'||v.targetNodeId===null)&&typeof v.flowName==='string'&&v.flowName.length>0&&Array.from(v.flowName).length<=100&&['captured','legacy_last_known'].includes(String(v.flowNameSource))&&['start','agree','reject','withdraw','return'].includes(String(v.action))&&['success','no_effect'].includes(String(v.outcome))&&integer(v.sequence,0)&&integer(v.schemaVersion,1)&&integer(v.recordVersion,1)&&timestamp(v.occurredAt,true);
 }
 export function validWorkflowHistory(data:unknown,pagination:unknown,pageSize:number):data is {items:WorkflowEvent[]}{
  if(!integer(pageSize,1)||pageSize>100||!object(data)||!exact(data,['items'])||!Array.isArray(data.items)||data.items.length>pageSize||!data.items.every(event)||new Set(data.items.map(e=>e.id)).size!==data.items.length||!object(pagination)||!exact(pagination,['hasMore','nextPageToken'])||typeof pagination.hasMore!=='boolean')return false;
@@ -42,7 +42,7 @@ function field(v:unknown):v is HistoricalField{
 export function validWorkflowEventDetail(data:unknown,expected:WorkflowEvent):data is WorkflowEventDetail{
  if(!object(data)||!exact(data,['event','basis'])||!event(data.event)||!event(expected)||!object(data.basis)||!exact(data.basis,['status','fields']))return false;
  const actual=data.event;
- if(!eventKeys.every(k=>actual[k as keyof WorkflowEvent]===expected[k as keyof WorkflowEvent]))return false;
+ if(![...eventKeys,'actionReason'].every(k=>actual[k as keyof WorkflowEvent]===expected[k as keyof WorkflowEvent]))return false;
  const basis=data.basis;
  if(!Array.isArray(basis.fields)||basis.fields.length>1600||!basis.fields.every(field)||new Set(basis.fields.map(f=>f.fieldId)).size!==basis.fields.length)return false;
  return basis.status==='available'||basis.status==='unavailable'&&basis.fields.length===0;
