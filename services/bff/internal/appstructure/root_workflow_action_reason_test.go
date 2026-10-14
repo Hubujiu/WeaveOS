@@ -66,3 +66,33 @@ func TestRootWorkflowActionReasonDecoder(t *testing.T) {
 		}
 	}
 }
+
+func TestRootWorkflowActionReasonJSONUnicodeScalars(t *testing.T) {
+	for _, c := range []struct {
+		name, raw, want string
+		valid           bool
+	}{
+		{"valid pair", `"\ud83e\udd8a"`, "🦊", true},
+		{"literal escape text", `"\\ud800"`, `\ud800`, true},
+		{"actual replacement scalar", `"�"`, "�", true},
+		{"unpaired high", `"\ud800"`, "", false},
+		{"unpaired low", `"\udfff"`, "", false},
+		{"high then ordinary", `"\ud800a"`, "", false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			body := `{"operationId":"10000000-0000-4000-8000-000000000001","action":"reject","basisToken":"basis","reason":` + c.raw + `}`
+			req := httptest.NewRequest("POST", "/", strings.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			got, e := DecodeRecordBody(httptest.NewRecorder(), req, "workflow.task.action")
+			if (e == nil) != c.valid {
+				t.Fatalf("accepted=%v want%v", e == nil, c.valid)
+			}
+			if e == nil {
+				var text string
+				if json.Unmarshal(got["reason"], &text) != nil || text != c.want {
+					t.Fatal("reason altered")
+				}
+			}
+		})
+	}
+}
