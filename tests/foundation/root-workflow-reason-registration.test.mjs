@@ -19,3 +19,7 @@ test('P25 audit role additions preserve the entire prior approved role source',(
  assert.match(text.slice(index),/GRANT SELECT,INSERT ON applications.workflow_action_reasons TO auth_app;/);
  assert.match(text.slice(index),/GRANT SELECT ON applications.workflow_action_reasons TO auth_backup;/);
 });
+test('P25 restricted backup restores exact original reason bytes separately from machine results',()=>{
+ const s=readFileSync('infra/runtime/backup.test.mjs','utf8');
+ for(const expected of ['00037_workflow_action_reasons.sql','actionReasonQuery','sql(restored,actionReasonQuery),sql(live,actionReasonQuery)']) assert.ok(s.includes(expected),expected);
+});
