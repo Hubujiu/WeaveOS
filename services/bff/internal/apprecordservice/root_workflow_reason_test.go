@@ -1,6 +1,8 @@
 package apprecordservice
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -8,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/applications"
+	fc "github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -194,4 +197,94 @@ func TestRootWorkflowReasonRuntimeRoleIsAppendOnly(t *testing.T) {
 		}
 	}
 	reasonStored(t, f, a.CommandID, q.Reason)
+}
+
+// Legacy request field order comes from the pre-P25 f9b9ef24 request structs.
+// Seed the original ledger/operation without an audit row, rather than deleting
+// a newly stored human reason to pretend it is legacy data.
+func TestRootWorkflowReasonLegacyConfirmedOriginalRequestsRemainReplayable(t *testing.T) {
+	for _, action := range []string{"reject", "return"} {
+		t.Run(action, func(t *testing.T) {
+			f := rootTaskSetup(t, false)
+			op := recordOperationID(t, f.recordFixture)
+			taskRequest := WorkflowTaskActionRequest{WorkflowTaskRequest: f.request(), OperationID: op, Action: action, BasisToken: "expired-legacy-basis"}
+			lifecycleRequest := WorkflowLifecycleActionRequest{WorkflowLifecycleRequest: rootLifecycleRequest(f), OperationID: op, Action: action, BasisToken: "expired-legacy-basis", TargetNodeID: f.task.NodeID}
+			var legacy, current []byte
+			var err error
+			if action == "reject" {
+				legacy, err = json.Marshal(struct {
+					WorkflowTaskRequest
+					OperationID, Action, BasisToken string
+				}{f.request(), op, action, "expired-legacy-basis"})
+				current, _ = json.Marshal(taskRequest)
+			} else {
+				legacy, err = json.Marshal(struct {
+					WorkflowLifecycleRequest
+					OperationID, Action, BasisToken, TargetNodeID string
+				}{rootLifecycleRequest(f), op, action, "expired-legacy-basis", f.task.NodeID})
+				current, _ = json.Marshal(lifecycleRequest)
+			}
+			if err != nil || !bytes.Equal(current, legacy) {
+				t.Fatal("legacy request encoding changed", err)
+			}
+			command := fc.Command{ProtocolVersion: 2, CommandID: recordOperationID(t, f.recordFixture), AppID: f.app, TableID: f.table, ViewID: f.view, RecordID: f.ownRecord, InstanceID: f.instance.ID, TaskID: f.task.ID, ActorID: f.actor, Action: action, RecordVersion: 1, SchemaVersion: 1, TaskEpoch: 1, ExpectedSequence: 1, FlowID: f.head.FlowID, VersionID: f.version, DefinitionVersion: 1}
+			if action == "return" {
+				command.TargetNodeID = f.task.NodeID
+			}
+			payload := fc.ExecutionPayload{EvidenceHash: sha256.Sum256([]byte("legacy-evidence:" + command.CommandID)), Routes: map[string]bool{}}
+			encoded, err := fc.EncodeExecutionPayload(action, payload)
+			if err != nil {
+				t.Fatal(err)
+			}
+			command.PayloadHash = sha256.Sum256(encoded)
+			tx, err := f.runtime.Begin(f.ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer tx.Rollback(f.ctx)
+			if err = tx.QueryRow(f.ctx, rootAcquireSQL, f.app, f.table, f.view, f.ownRecord, command.CommandID, int64(1), int64(1)).Scan(&command.FenceEpoch); err != nil {
+				t.Fatal(err)
+			}
+			if _, err = (fc.Ledger{Namespace: "applications"}).AcceptExecutionInTx(f.ctx, tx, command, payload); err != nil {
+				t.Fatal(err)
+			}
+			pending := WorkflowOperationResult{OperationID: op, CommandID: command.CommandID, InstanceID: f.instance.ID, Status: "pending"}
+			raw, err := json.Marshal(pending)
+			if err != nil {
+				t.Fatal(err)
+			}
+			fingerprint := sha256.Sum256(legacy)
+			if _, err = tx.Exec(f.ctx, "INSERT INTO applications.operations(actor_user_id,operation_id,app_id,operation_kind,fingerprint,result_json,http_status,location) VALUES($1,$2,$3,$4,$5,$6,202,$7)", f.actor, op, f.app, "workflow.task."+action, fingerprint[:], raw, "/api/v1/application-workflow-operations/"+op); err != nil {
+				t.Fatal(err)
+			}
+			if err = tx.Commit(f.ctx); err != nil {
+				t.Fatal(err)
+			}
+			state := "rejected"
+			var tasks []fc.ExecutionTask
+			if action == "return" {
+				state = "active"
+				tasks = []fc.ExecutionTask{f.rootProjection.task(t, f.task.NodeID, f.actor, 2)}
+			}
+			receipt, body := f.receipt(t, command, state, "", tasks...)
+			f.apply(t, command, payload, receipt, body, true)
+			expected, err := f.service.WorkflowOperation(f.ctx, f.principal, op)
+			if err != nil || expected.Status != "success" || expected.InstanceState != state {
+				t.Fatal("legacy original result unreadable", err)
+			}
+			var replay WorkflowOperationResult
+			if action == "reject" {
+				replay, err = f.service.AcceptWorkflowTask(f.ctx, f.principal, taskRequest, applications.Metadata{RequestID: "legacy-replay"})
+			} else {
+				replay, err = f.service.AcceptWorkflowLifecycle(f.ctx, f.principal, lifecycleRequest, applications.Metadata{RequestID: "legacy-replay"})
+			}
+			if err != nil || replay != expected {
+				t.Fatal("old original request did not replay", err)
+			}
+			var n int
+			if err = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.workflow_action_reasons WHERE command_id=$1", command.CommandID).Scan(&n); err != nil || n != 0 {
+				t.Fatal("legacy replay invented human reason", err)
+			}
+		})
+	}
 }
