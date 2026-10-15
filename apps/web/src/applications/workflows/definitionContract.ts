@@ -1,5 +1,5 @@
 export type WorkflowGraph={version:1;nodes:WorkflowNode[];edges:{from:string;to:string;branch?:'true'|'false'}[]};
-export type WorkflowNode={id:string;kind:'start'|'end'}|{id:string;kind:'approval';approval:{mode:'all'|'any';assigneeIds:string[];editableFieldIds:string[]}}|{id:string;kind:'condition';condition:unknown};
+export type WorkflowNode=({id:string;kind:'start'|'end'}|{id:string;kind:'approval';approval:{mode:'all'|'any';assigneeIds:string[];editableFieldIds:string[]}}|{id:string;kind:'condition';condition:unknown})&{name?:string};
 export type WorkflowDefinition={id:string;name:string;revision:number;currentVersion:number;candidateVersion:number;state:'disabled'|'enabled'|'closing';schemaVersion:number;allowWithdraw:boolean;graph:WorkflowGraph;triggers:{event:'manual'|'record.created'|'record.updated';condition:unknown}[]};
 const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const exact=(v:Record<string,unknown>,keys:string[])=>Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
@@ -16,15 +16,17 @@ function condition(value:unknown):boolean{
  if(!object(value)||!Object.hasOwn(value,'children')||!visit(value,1)||leaves>20)return false;
  return new TextEncoder().encode(JSON.stringify(value)).byteLength<=16384;
 }
+export function validWorkflowNodeName(value:unknown):value is string{return typeof value==='string'&&(value===''||/[^\p{White_Space}]/u.test(value))&&!value.includes('\0')&&Array.from(value).length<=100&&!Array.from(value).some(c=>{const n=c.codePointAt(0)!;return n>=0xd800&&n<=0xdfff;});}
 export function validWorkflowGraph(value:unknown):value is WorkflowGraph{
  if(!object(value)||!exact(value,['version','nodes','edges'])||value.version!==1||!Array.isArray(value.nodes)||value.nodes.length<2||value.nodes.length>100||!Array.isArray(value.edges)||value.edges.length<1||value.edges.length>200)return false;
  const nodes=new Map<string,WorkflowNode>();let starts=0,ends=0;
  for(const n of value.nodes){
   if(!object(n)||!uuid(n.id)||nodes.has(n.id))return false;
-  if(n.kind==='start'||n.kind==='end'){if(!exact(n,['id','kind']))return false;if(n.kind==='start')starts++;else ends++;}
+  const metadata=Object.hasOwn(n,'name')?['name']:[];if(metadata.length&&!validWorkflowNodeName(n.name))return false;
+  if(n.kind==='start'||n.kind==='end'){if(!exact(n,['id','kind',...metadata]))return false;if(n.kind==='start')starts++;else ends++;}
   else if(n.kind==='approval'){
-   if(!exact(n,['id','kind','approval'])||!object(n.approval)||!exact(n.approval,['mode','assigneeIds','editableFieldIds'])||!['all','any'].includes(n.approval.mode as string)||!ids(n.approval.assigneeIds,1,50)||!ids(n.approval.editableFieldIds,0,200))return false;
-  }else if(n.kind==='condition'){if(!exact(n,['id','kind','condition'])||!condition(n.condition))return false;}
+   if(!exact(n,['id','kind','approval',...metadata])||!object(n.approval)||!exact(n.approval,['mode','assigneeIds','editableFieldIds'])||!['all','any'].includes(n.approval.mode as string)||!ids(n.approval.assigneeIds,1,50)||!ids(n.approval.editableFieldIds,0,200))return false;
+  }else if(n.kind==='condition'){if(!exact(n,['id','kind','condition',...metadata])||!condition(n.condition))return false;}
   else return false;
   nodes.set(n.id,n as WorkflowNode);
  }

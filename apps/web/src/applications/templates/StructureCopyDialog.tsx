@@ -51,6 +51,7 @@ export function StructureCopyDialog({actorId,selection,applications,canCreate,bo
   else {setError(cause instanceof Error?cause.message:'复制读取失败。');if((cause instanceof ApplicationError||cause instanceof FormApiError)&&[403,404].includes(cause.status)){setDenied(true);setPlan(null);setChecked(null);setSelectionMap({});setGroups({});setDirectories([]);checkedBody.current=null;}}
  };
  useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
+ useEffect(()=>{if(operation.errorCode==='APPLICATION_FORBIDDEN')fail(new ApplicationError(403,operation.errorCode));},[operation.errorCode]);
  useEffect(()=>registerLeaveGuard({kind:'structure-copy',actorId,appId:selection.appId,resourceKind:selection.kind,resourceId:selection.id},createLeaveController(()=>{const s=current.current,status=finished.current||bypass.current?'clean':s.operation.getPendingStatus()??(s.draft?'draft':'clean');return {status,fingerprint:JSON.stringify([status,s.name,s.targetApp,s.targetDir,s.selectionMap,s.groups,s.operation.packet?.operationId])};},decision=>{abort();if(decision==='discard')current.current.operation.cancelPreflight();bypass.current=true;onDirtyChange(false);})),[actorId,selection.appId,selection.kind,selection.id,registerLeaveGuard,onDirtyChange]);
  useEffect(()=>{onDirtyChange(!result&&(draft||busy||unknown));return()=>onDirtyChange(false);},[draft,busy,unknown,result,onDirtyChange]);
  useEffect(()=>{

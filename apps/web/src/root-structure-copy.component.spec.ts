@@ -52,3 +52,13 @@ test('Root late copy plan for an earlier name cannot restore outdated preview el
 test('Root copy permission revocation at execute clears the earlier full preview and disables further creation',async({page})=>{
  const f=await setup(page,'form','execute-denied');await open(page,'form');await plan(page,'form');await preflight(page,'form');await expect(page.getByRole('dialog')).toContainText('申请人');await page.getByRole('button',{name:'确认复制',exact:true}).click();await expect(page.getByRole('dialog').getByRole('alert')).toBeVisible();await expect(page.getByRole('dialog')).not.toContainText('申请人');await expect(page.getByRole('button',{name:'确认复制',exact:true})).toHaveCount(0);expect(f.calls.filter(c=>c.path==='structure-copies/execute')).toHaveLength(1);
 });
+
+test('Root copy mapping keeps new permission group naming inside the source three-column table',async({page})=>{
+ await page.setViewportSize({width:1440,height:1000});await setup(page,'form');await open(page,'form');await plan(page,'form');const dialog=page.getByRole('dialog');await expect(dialog.getByRole('columnheader')).toHaveText(['来源引用 / 权限组','目标映射 / 新组名称','状态']);const group=dialog.getByLabel('新权限组名称 原组',{exact:true});expect(await group.evaluate(el=>!!el.closest('[role="row"],tr'))).toBe(true);await expect(dialog.getByRole('row').filter({has:group})).toContainText('待命名');
+});
+test('Root copy small complete preview exposes its field and permission sections without burying them below metadata',async({page})=>{
+ await page.setViewportSize({width:1440,height:1000});await setup(page,'form');await open(page,'form');await plan(page,'form');await preflight(page,'form');const preview=page.getByRole('region',{name:'完整配置预览',exact:true});await expect(preview.getByRole('heading',{name:'独立新权限组与授权',exact:true})).toBeInViewport();await expect(preview).toContainText('申请人');await expect(preview).toContainText('独立新组');await expect(preview).toHaveCSS('overflow-y','auto');await expect(page.getByRole('button',{name:'确认复制',exact:true})).toBeInViewport();
+});
+test('Root copy target mapping and preview keep dialog controls reachable on a narrow screen',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await setup(page,'form');await open(page,'form');const within=async()=>{const d=page.getByRole('dialog');await expect.poll(()=>d.evaluate(el=>{const r=el.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&el.scrollWidth<=el.clientWidth+1;})).toBe(true);await expect(d.getByRole('button',{name:'关闭弹窗',exact:true})).toBeInViewport();};await within();await plan(page,'form');await within();await preflight(page,'form');await within();await expect(page.getByRole('button',{name:'确认复制',exact:true})).toBeInViewport();
+});

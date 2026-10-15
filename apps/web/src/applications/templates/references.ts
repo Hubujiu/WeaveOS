@@ -1,3 +1,4 @@
+import {validWorkflowNodeName} from '../workflows/definitionContract';
 import {decodeTemplateFile} from './fileInput';
 export type TemplateReferences={userIds:string[];departmentIds:string[]};
 const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
@@ -47,10 +48,11 @@ export function templateReferences(manifest:unknown):TemplateReferences|null{
    if(!fields||!object(workflow.graph)||!Array.isArray(workflow.graph.nodes)||!Array.isArray(workflow.triggers))return null;
    for(const node of workflow.graph.nodes){
     if(!object(node)||!id(node.id))return null;
-    if(node.kind==='start'||node.kind==='end'){if(!exact(node,['id','kind']))return null;}
+    const metadata=Object.hasOwn(node,'name')?['name']:[];if(metadata.length&&!validWorkflowNodeName(node.name))return null;
+    if(node.kind==='start'||node.kind==='end'){if(!exact(node,['id','kind',...metadata]))return null;}
     else if(node.kind==='approval'){
-     if(!exact(node,['id','kind','approval'])||!object(node.approval)||!exact(node.approval,['mode','assigneeIds','editableFieldIds'])||!list(node.approval.assigneeIds))return null;
-    }else if(node.kind==='condition'){if(!exact(node,['id','kind','condition'])||node.condition===null||!condition(node.condition,fields))return null;}
+     if(!exact(node,['id','kind','approval',...metadata])||!object(node.approval)||!exact(node.approval,['mode','assigneeIds','editableFieldIds'])||!list(node.approval.assigneeIds))return null;
+    }else if(node.kind==='condition'){if(!exact(node,['id','kind','condition',...metadata])||node.condition===null||!condition(node.condition,fields))return null;}
     else return null;
    }
    for(const trigger of workflow.triggers)if(!object(trigger)||!exact(trigger,['event','condition'])||!['manual','record.created','record.updated'].includes(trigger.event as string)||!condition(trigger.condition,fields))return null;

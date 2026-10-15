@@ -30394,6 +30394,9 @@
           },
           "condition": {
             "type": "object"
+          },
+          "name": {
+            "$ref": "#/components/schemas/WorkflowNodeName"
           }
         }
       },
@@ -33000,6 +33003,9 @@
           },
           "condition": {
             "$ref": "#/components/schemas/RecordFilterGroup"
+          },
+          "name": {
+            "$ref": "#/components/schemas/WorkflowNodeName"
           }
         }
       },
@@ -37471,6 +37477,20 @@
         "maxLength": 500,
         "pattern": "^(?![\\p{White_Space}]*$)[^\\u0000\\uD800-\\uDFFF]+$",
         "description": "Original audit text, 1–500 Unicode scalar values, no NUL and not entirely Unicode White_Space. Never trimmed or normalized."
+      },
+      "WorkflowNodeName": {
+        "type": "string",
+        "maxLength": 100,
+        "pattern": "^[^\\u0000\\uD800-\\uDFFF]*$",
+        "anyOf": [
+          {
+            "const": ""
+          },
+          {
+            "pattern": "\\P{White_Space}"
+          }
+        ],
+        "description": "Optional non-executable display metadata. Empty means default node type; other names preserve their original Unicode scalars, reject whitespace-only text and never enter BPMN."
       }
     },
     "responses": {

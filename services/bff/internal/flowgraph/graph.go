@@ -19,6 +19,7 @@ type Graph struct {
 	Edges   []Edge
 }
 type Node struct {
+	Name      string `json:"Name,omitempty"`
 	ID        string
 	Kind      string
 	Approval  *Approval
