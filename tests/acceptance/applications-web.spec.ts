@@ -485,6 +485,22 @@ test('Root real HTTPS full journey creates an application, saves a form, and cre
  await page.reload();await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();
  await page.getByRole('button',{name:'打开记录：报销金额 20.10',exact:true}).click();
  await expect(page.getByRole('region',{name:'记录详情',exact:true}).getByLabel('报销事由',{exact:true})).toHaveValue('真实差旅');
+ // Additional V072 product-layer proof, not claimed to precede existing component REDs.
+ const recordPath=prefix+'/records/'+receipt.id;
+ const beforeDelete=await realApi(page.context(),f.adminId,recordPath);expect(beforeDelete.status).toBe(200);
+ await page.getByRole('button',{name:'删除记录',exact:true}).click();const deleting=page.getByRole('dialog',{name:'删除这条记录？',exact:true});
+ const deletionResponse=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/'+recordPath+'/deletion');
+ await deleting.getByRole('button',{name:'确认删除',exact:true}).click();const deletion=await deletionResponse;expect(deletion.status()).toBe(200);
+ const deletionBody=deletion.request().postDataJSON();expect(deletionBody).toEqual({operationId:expect.any(String),expectedSchemaVersion:beforeDelete.data.schemaVersion,expectedRecordVersion:beforeDelete.data.recordVersion});
+ const deleted=(await deletion.json()).data;expect(Object.keys(deleted).sort()).toEqual(['deleted','id','operationId','recordVersion','schemaVersion']);expect(deleted.deleted).toBe(true);expect(deleted.id).toBe(receipt.id);expect(deleted.recordVersion).toBe(Number(beforeDelete.data.recordVersion)+1);
+ await expect(page.getByRole('region',{name:'记录详情',exact:true})).toHaveCount(0);expect((await realApi(page.context(),f.adminId,recordPath)).status).toBe(404);
+ await page.getByRole('button',{name:'已删除记录',exact:true}).click();await expect(page.getByRole('heading',{name:'已删除记录',exact:true})).toBeVisible();const deletedRow=page.getByRole('row').filter({hasText:receipt.id});await expect(deletedRow).toHaveCount(1);
+ await deletedRow.getByRole('button',{name:'恢复',exact:true}).click();const restorationResponse=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/'+recordPath+'/restoration');
+ await page.getByRole('dialog',{name:'恢复这条记录？',exact:true}).getByRole('button',{name:'确认恢复',exact:true}).click();const restoration=await restorationResponse;expect(restoration.status()).toBe(200);expect(restoration.request().postDataJSON()).toEqual({operationId:expect.any(String),expectedSchemaVersion:deleted.schemaVersion,expectedRecordVersion:deleted.recordVersion});
+ const restored=(await restoration.json()).data;expect(restored.id).toBe(receipt.id);expect(restored.deleted).toBe(false);expect(restored.recordVersion).toBe(deleted.recordVersion+1);await expect(deletedRow).toHaveCount(0);
+ const preserved=await realApi(page.context(),f.adminId,recordPath);expect(preserved.status).toBe(200);expect(preserved.data.values).toEqual(beforeDelete.data.values);expect(preserved.data.recordVersion).toBe(restored.recordVersion);
+ await page.getByRole('button',{name:'返回记录',exact:true}).click();await page.getByRole('button',{name:'打开记录：报销金额 20.10',exact:true}).click();await expect(page.getByRole('region',{name:'记录详情',exact:true}).getByLabel('报销事由',{exact:true})).toHaveValue('真实差旅');
+ if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-restored-same-identity.png'),fullPage:true});
 });
 
 test('Root real HTTPS template download maps current targets and creates fresh shared structure without source records',async({page},info)=>{
