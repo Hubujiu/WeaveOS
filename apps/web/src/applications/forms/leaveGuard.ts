@@ -7,6 +7,7 @@ export type LeaveScope=
   | {kind:'template-import';actorId:string;appId?:never}
   | (AppScope&{kind:'structure'})
   | (AppScope&{kind:'structure-deletion';resourceKind:'application'|'directory'|'table'|'form';resourceId:string})
+  | (AppScope&{kind:'structure-copy';resourceKind:'application'|'directory'|'table'|'form';resourceId:string})
   | (AppScope&{kind:'designer';viewId:string})
   | (AppScope&{kind:'workflow-definition';viewId:string;flowId:string})
   | (AppScope&{kind:'preset';viewId:string})
