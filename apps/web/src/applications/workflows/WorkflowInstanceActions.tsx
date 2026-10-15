@@ -53,7 +53,7 @@ export function WorkflowInstanceActions({actorId,location,name,onClose,onUnautho
  const withdraw=()=>{if(!preview?.canWithdraw||blocked||stale||revoked)return;operation.start({resource,path:path+'/actions',method:'POST',expectedStatus:202,body:{action:'withdraw',basisToken:preview.basisToken}});};
  const validReason=Array.from(reason).length>=1&&Array.from(reason).length<=500&&!/^[\p{White_Space}]*$/u.test(reason)&&!/[\u0000\uD800-\uDFFF]/u.test(reason);
  const returnToNode=()=>{if(!preview||!preview.returnTargets.some(t=>t.nodeId===target)||!validReason||blocked||stale||revoked||operation.getPendingStatus())return;operation.start({resource,path:path+'/actions',method:'POST',expectedStatus:202,body:{action:'return',basisToken:preview.basisToken,targetNodeId:target,reason}});};
- if(returning)return <FormsDialog title="退回到节点" onClose={()=>{if(blocked)requestSectionLeave(onClose);else {setReturning(false);setTarget('');setReason('');}}} busy={busy}>
+ if(returning)return <FormsDialog title="退回到节点" onClose={()=>{if(blocked)onClose();else {setReturning(false);setTarget('');setReason('');}}} requestClose={close=>{if(blocked)requestSectionLeave(close);else close();}} busy={busy}>
   <div className="workflow-return-dialog">
    {preview&&!revoked&&!result&&<><label>目标节点<select aria-label="目标节点" value={target} disabled={blocked||stale} onChange={event=>setTarget(event.target.value)}><option value="">请选择目标节点</option>{preview.returnTargets.map(t=><option key={t.nodeId} value={t.nodeId}>节点 {t.nodeId}</option>)}</select></label>
     <label>退回原因（必填，最多500字）<input required value={reason} disabled={blocked||stale} onChange={event=>setReason(event.target.value)}/></label><p className="forms-muted">仅显示本轮已走过的节点</p></>}

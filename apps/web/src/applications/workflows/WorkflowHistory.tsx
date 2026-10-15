@@ -79,6 +79,7 @@ function WorkflowHistoryScope({actorId,location,onUnauthorized,onIdentityMismatc
   {page.items.map(event=><article key={event.id} className="workflow-history-event">
    <h3>{event.flowName}</h3>{event.flowNameSource==='legacy_last_known'&&<span className="workflow-history-meta">最后已知名称</span>}
    <p>{event.outcome==='no_effect'?'操作未执行':actions[event.action]}</p>
+   {event.actionReason!==undefined&&<><span className="workflow-history-meta">{event.action==='return'?'退回原因':'驳回原因'}</span><p className="workflow-action-reason">{event.actionReason}</p></>}
    <p className="workflow-history-meta">操作人 {event.actorId}</p>
    {event.nodeId&&<p className="workflow-history-meta">节点 {event.nodeId}</p>}
    {event.targetNodeId&&<p className="workflow-history-meta">目标节点 {event.targetNodeId}</p>}
