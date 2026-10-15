@@ -130,9 +130,15 @@ func (s *Service) FilterCandidates(ctx context.Context, p session.Principal, req
 		}
 		binding = old
 	}
-	_, predicate, args, e := strategy.sql(criteria{Filter: json.RawMessage("null"), Sort: json.RawMessage("null")})
+	plan, predicate, args, e := strategy.sql(criteria{Filter: json.RawMessage("null"), Sort: json.RawMessage("null")})
 	if e != nil {
 		return empty, e
+	}
+	// Access can bind the actor for another field's own-only projection even
+	// when this reference covers all rows. Keep its parameter typed and used,
+	// as the shared record integrity reader does, without narrowing row scope.
+	if len(plan.Access.Arguments) > 0 {
+		predicate += " AND $1::uuid IS NOT NULL"
 	}
 	rel := pgx.Identifier{"appdata", "t_" + strings.ReplaceAll(strategy.tableID, "-", "")}.Sanitize()
 	column := referenceColumn(req.FieldID)
