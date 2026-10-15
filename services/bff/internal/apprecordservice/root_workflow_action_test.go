@@ -23,7 +23,11 @@ import (
 
 func rootActionRequest(t *testing.T, f rootTaskFixture, action string) WorkflowTaskActionRequest {
 	t.Helper()
-	return WorkflowTaskActionRequest{WorkflowTaskRequest: f.request(), OperationID: recordOperationID(t, f.recordFixture), Action: action, BasisToken: rootTaskPreview(t, f).BasisToken}
+	reason := ""
+	if action == "reject" {
+		reason = "fixture rejection reason"
+	}
+	return WorkflowTaskActionRequest{WorkflowTaskRequest: f.request(), OperationID: recordOperationID(t, f.recordFixture), Action: action, BasisToken: rootTaskPreview(t, f).BasisToken, Reason: reason}
 }
 func rootAction(t *testing.T, f rootTaskFixture, req WorkflowTaskActionRequest) WorkflowOperationResult {
 	t.Helper()
@@ -343,6 +347,7 @@ func TestRootWorkflowActionDistinctConcurrentKeysCannotBypassRecordFence(t *test
 	b := a
 	b.OperationID = recordOperationID(t, f.recordFixture)
 	b.Action = "reject"
+	b.Reason = "synthetic rejection reason"
 	start := make(chan struct{})
 	errorsC := make(chan error, 2)
 	for _, req := range []WorkflowTaskActionRequest{a, b} {

@@ -1,0 +1,1 @@
+Both system Chromium attempts failed before test assertions due local socket restrictions. Sandbox stayed enabled. NOT product RED. Exact committed tests are sent to normal repository CI for genuine behavioral RED.

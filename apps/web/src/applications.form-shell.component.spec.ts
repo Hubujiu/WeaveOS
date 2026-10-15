@@ -255,8 +255,8 @@ for (const width of [1280, 1920]) {
   const row=tree.getByRole('treeitem',{name:longName,exact:true}).locator('.forms-tree-row');
   await expect(row).toBeVisible();
   const actions=row.getByRole('button');
-  await expect(actions).toHaveCount(3);
-  for(let i=0;i<3;i++){
+  await expect(actions).toHaveCount(5);
+  for(let i=0;i<5;i++){
    const action=actions.nth(i);
    await action.scrollIntoViewIfNeeded();
    await expect.poll(()=>action.evaluate(node=>{

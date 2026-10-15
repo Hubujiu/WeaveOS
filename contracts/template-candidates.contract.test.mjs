@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+// V075 P21 current typed target discovery; no source or not-yet-created target app.
+const api=JSON.parse(readFileSync(new URL('./openapi/openapi.json',import.meta.url)));
+for(const [kind,envelope]of [['member','MemberCandidatesEnvelope'],['department','DepartmentCandidatesEnvelope']])test('V075 template '+kind+' targets are bounded read-only creation-scoped candidates',()=>{
+ const path=api.paths['/api/v1/application-templates/'+kind+'-candidates'];assert.ok(path);assert.deepEqual(Object.keys(path),['get','head']);
+ for(const method of ['get','head']){const p=path[method];assert.deepEqual(p.security,[{WebSession:[]}]);assert.ok(p.parameters.some(v=>v.$ref==='#/components/parameters/ExpectedActor'));assert.equal(p.parameters.some(v=>v.in==='path'),false);assert.deepEqual(p.parameters.filter(v=>v.in==='query').map(v=>v.name),['q','pageSize','pageToken']);const size=p.parameters.find(v=>v.name==='pageSize').schema;assert.equal(size.minimum,1);assert.equal(size.maximum,50);assert.equal(size.default,20);assert.equal(p.parameters.find(v=>v.name==='q').schema.maxLength,100);assert.equal(p.requestBody,undefined);if(method==='get')assert.equal(p.responses['200'].content['application/json'].schema.$ref,'#/components/schemas/'+envelope);else assert.equal(p.responses['200'].content,undefined);for(const status of ['400','401','403','405','409','503'])assert.ok(p.responses[status],status);}
+});

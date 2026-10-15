@@ -1,0 +1,50 @@
+(node:14) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ V017 record cannot inherit preset PUT admission (2.978505ms)
+✖ V017 draft cannot inherit preset PUT admission (0.19911ms)
+✔ V017 record retains PATCH admission and identity preflight (0.298969ms)
+✔ V017 draft retains PATCH admission and identity preflight (0.13974ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 140.980562
+
+✖ failing tests:
+
+test at tests/foundation/application-operation-admission.test.mjs:19:38
+✖ V017 record cannot inherit preset PUT admission (2.978505ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/application-operation-admission.test.mjs:21:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /Invalid scoped mutation packet/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/foundation/application-operation-admission.test.mjs:19:38
+✖ V017 draft cannot inherit preset PUT admission (0.19911ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/application-operation-admission.test.mjs:21:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /Invalid scoped mutation packet/,
+    operator: 'throws',
+    diff: 'simple'
+  }

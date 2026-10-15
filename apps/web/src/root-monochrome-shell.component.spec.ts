@@ -98,9 +98,9 @@ test('Root Mono P1 no invented business data when real catalogue is empty',async
 });
 test('Root Mono P1 confirmed record save still uses authoritative value after visual migration',async({page})=>{
  const api=await fixture(page);await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
- const dialog=page.getByRole('dialog',{name:'新建记录',exact:true});await dialog.getByLabel('金额',{exact:true}).fill('12.345');await dialog.getByRole('button',{name:'保存记录',exact:true}).click();
+ const dialog=page.getByRole('region',{name:'新建记录',exact:true});await dialog.getByLabel('金额',{exact:true}).fill('12.345');await dialog.getByRole('button',{name:'保存记录',exact:true}).click();
  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
- await expect(page.getByRole('dialog',{name:'记录详情',exact:true}).getByLabel('金额',{exact:true})).toHaveValue('12.35');
+ await expect(page.getByRole('region',{name:'记录详情',exact:true}).getByLabel('金额',{exact:true})).toHaveValue('12.35');
  expect(api.calls.filter(c=>c.path===formPath+'/records'&&c.method==='POST')).toHaveLength(1);
 });
 test('Root Mono P1 reduced-motion route transition does not hide content or duplicate shell',async({page})=>{

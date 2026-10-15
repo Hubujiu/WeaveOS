@@ -1,0 +1,39 @@
+{
+  "RecordDraftItemsEnvelope": {
+    "allOf": [
+      {
+        "$ref": "#/components/schemas/Envelope"
+      },
+      {
+        "type": "object",
+        "properties": {
+          "code": {
+            "const": "OK"
+          },
+          "data": {
+            "$ref": "#/components/schemas/RecordDraftItems"
+          }
+        }
+      }
+    ]
+  },
+  "CursorPagination": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "nextPageToken",
+      "hasMore"
+    ],
+    "properties": {
+      "nextPageToken": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "hasMore": {
+        "type": "boolean"
+      }
+    }
+  }
+}

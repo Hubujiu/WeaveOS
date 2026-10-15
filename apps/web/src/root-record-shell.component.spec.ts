@@ -38,7 +38,8 @@ async function fixture(page:Page,options:{ordinary?:boolean;createOnly?:boolean;
   }else if(path===formPath+'/records/'+recordId&&method==='GET'){
    if(options.detailFailure||options.rejectEditRefresh&&rejectedEdits>0&&failedRefreshedReads++===0)return route.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
    data=item();
-  }else return route.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
+  }else if(path===formPath+'/records/'+recordId+'/workflow-instances/search')data={items:[],total:0,page:body.page,pageSize:body.pageSize,queryVersion:'empty-workflows'};
+  else return route.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
   return route.fulfill({status:200,json:ok(data)});
  });
  return {calls,seed:(next:string)=>{value=next;version=1;}};
@@ -57,12 +58,12 @@ test('Root Shell create then read authoritative normalized data and edit a recor
  const api=await fixture(page);await page.goto(routePath);await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();
  const shell=await page.getByTestId('application-shell').elementHandle();
  await page.getByRole('button',{name:'新建记录',exact:true}).click();
- const create=page.getByRole('dialog',{name:'新建记录',exact:true});await expect(create).toBeVisible();
+ const create=page.getByRole('region',{name:'新建记录',exact:true});await expect(create).toBeVisible();
  await create.getByLabel('金额',{exact:true}).fill('12.345');
  await page.screenshot({path:test.info().outputPath('record-shell-create.png'),fullPage:true});
  await create.getByRole('button',{name:'保存记录',exact:true}).click();
  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
- const detail=page.getByRole('dialog',{name:'记录详情',exact:true});await expect(detail).toBeVisible();await expect(detail.getByLabel('金额',{exact:true})).toHaveValue('12.35');
+ const detail=page.getByRole('region',{name:'记录详情',exact:true});await expect(detail).toBeVisible();await expect(detail.getByLabel('金额',{exact:true})).toHaveValue('12.35');
  await page.screenshot({path:test.info().outputPath('record-shell-created-detail.png'),fullPage:true});
  await detail.getByRole('button',{name:'编辑记录',exact:true}).click();
  await detail.getByLabel('金额',{exact:true}).fill('20.105');
@@ -78,7 +79,7 @@ test('Root Shell create then read authoritative normalized data and edit a recor
 });
 test('Root confirmed write with failed reread remains saved and cannot submit again',async({page})=>{
  const api=await fixture(page,{detailFailure:true});await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
- const dialog=page.getByRole('dialog',{name:'新建记录',exact:true});await dialog.getByLabel('金额',{exact:true}).fill('12.00');await dialog.getByRole('button',{name:'保存记录',exact:true}).click();
+ const dialog=page.getByRole('region',{name:'新建记录',exact:true});await dialog.getByLabel('金额',{exact:true}).fill('12.00');await dialog.getByRole('button',{name:'保存记录',exact:true}).click();
  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
  await expect(page.getByRole('alert')).toContainText('无法读取');
  await expect(page.getByRole('button',{name:'重试读取记录',exact:true})).toBeVisible();
@@ -89,20 +90,20 @@ test('Root confirmed write with failed reread remains saved and cannot submit ag
 });
 test('Root create-only actor confirms a receipt without an unauthorized detail or search read',async({page})=>{
  const api=await fixture(page,{ordinary:true,createOnly:true});await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
- const dialog=page.getByRole('dialog',{name:'新建记录',exact:true});await dialog.getByLabel('金额',{exact:true}).fill('12.00');await dialog.getByRole('button',{name:'保存记录',exact:true}).click();
+ const dialog=page.getByRole('region',{name:'新建记录',exact:true});await dialog.getByLabel('金额',{exact:true}).fill('12.00');await dialog.getByRole('button',{name:'保存记录',exact:true}).click();
  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
  expect(api.calls.filter(c=>c.path===formPath+'/records/search'||c.path===formPath+'/records/'+recordId&&c.method==='GET')).toEqual([]);
 });
 test('Root opening an existing row validates the original query before reading detail',async({page})=>{
  const api=await fixture(page,{ordinary:true,staleOpen:true});api.seed('18.00');await page.goto(routePath);
  await page.getByRole('button',{name:'打开记录：金额 18.00',exact:true}).click();
- await expect(page.getByRole('alert')).toContainText('刷新');await expect(page.getByRole('dialog',{name:'记录详情',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('alert')).toContainText('刷新');await expect(page.getByRole('region',{name:'记录详情',exact:true})).toHaveCount(0);
  const searches=api.calls.filter(c=>c.path===formPath+'/records/search');expect(searches).toHaveLength(2);expect(searches[1].body.queryVersion).toBe('query-1');
  expect(api.calls.filter(c=>c.path===formPath+'/records/'+recordId)).toEqual([]);
 });
 test('Root dirty record modal close requires an explicit discard and restores the origin focus',async({page})=>{
  await fixture(page);await page.goto(routePath);const trigger=page.getByRole('button',{name:'新建记录',exact:true});await trigger.click();
- const editor=page.getByRole('dialog',{name:'新建记录',exact:true});await editor.getByLabel('金额',{exact:true}).fill('7.00');await page.keyboard.press('Escape');
+ const editor=page.getByRole('region',{name:'新建记录',exact:true});await editor.getByLabel('金额',{exact:true}).fill('7.00');await page.keyboard.press('Escape');
  const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'继续编辑',exact:true}).click();
  await expect(editor.getByLabel('金额',{exact:true})).toHaveValue('7.00');await page.keyboard.press('Escape');await guard.getByRole('button',{name:'放弃修改',exact:true}).click();
  await expect(editor).toHaveCount(0);await expect(trigger).toBeFocused();
@@ -119,7 +120,7 @@ test('Root ordinary record editor searches only field-scoped reference candidate
  const api=await fixture(page,{ordinary:true,reference:true});const candidateUrls:URL[]=[];
  page.on('request',request=>{if(request.url().includes('reference-candidates'))candidateUrls.push(new URL(request.url()));});
  await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
- const dialog=page.getByRole('dialog',{name:'新建记录',exact:true});await dialog.getByRole('button',{name:'选择成员',exact:true}).click();
+ const dialog=page.getByRole('region',{name:'新建记录',exact:true});await dialog.getByRole('button',{name:'选择成员',exact:true}).click();
  await page.getByRole('searchbox',{name:'搜索成员',exact:true}).fill('普通');await page.getByRole('button',{name:'普通成员',exact:true}).click();
  await expect(dialog.getByText('普通成员',{exact:true})).toBeVisible();await dialog.getByLabel('金额',{exact:true}).fill('9.00');await dialog.getByRole('button',{name:'保存记录',exact:true}).click();
  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
@@ -143,7 +144,7 @@ test('Root owner returns from configuration to the runtime page that opened it',
 
 test('Root rejected create refresh discards only after confirmation and rebuilds page one',async({page})=>{
  const api=await fixture(page,{rejectCreate:true});await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
- const editor=page.getByRole('dialog',{name:'新建记录',exact:true});await editor.getByLabel('金额',{exact:true}).fill('7.00');await editor.getByRole('button',{name:'保存记录',exact:true}).click();
+ const editor=page.getByRole('region',{name:'新建记录',exact:true});await editor.getByLabel('金额',{exact:true}).fill('7.00');await editor.getByRole('button',{name:'保存记录',exact:true}).click();
  await expect(editor.getByRole('alert')).toContainText('刷新');const before=api.calls.filter(c=>c.path===formPath+'/records/search').length;
  await editor.getByRole('button',{name:'刷新记录',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();
  await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(editor.getByLabel('金额',{exact:true})).toHaveValue('7.00');
@@ -151,12 +152,12 @@ test('Root rejected create refresh discards only after confirmation and rebuilds
  await expect.poll(()=>api.calls.filter(c=>c.path===formPath+'/records/search').length).toBeGreaterThan(before);
  const last=api.calls.filter(c=>c.path===formPath+'/records/search').at(-1)!;expect(last.body.page).toBe(1);expect(Object.hasOwn(last.body,'queryVersion')).toBe(false);
  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toHaveCount(0);
- await page.getByRole('button',{name:'新建记录',exact:true}).click();await expect(page.getByRole('dialog',{name:'新建记录',exact:true}).getByLabel('金额',{exact:true})).toHaveValue('');
+ await page.getByRole('button',{name:'新建记录',exact:true}).click();await expect(page.getByRole('region',{name:'新建记录',exact:true}).getByLabel('金额',{exact:true})).toHaveValue('');
  expect(api.calls.filter(c=>c.path===formPath+'/records'&&c.method==='POST')).toHaveLength(1);
 });
 test('Root retry after rejected edit and failed refresh never invents a saved result',async({page})=>{
  const api=await fixture(page,{rejectEditRefresh:true});api.seed('18.00');await page.goto(routePath);await page.getByRole('button',{name:'打开记录：金额 18.00',exact:true}).click();
- const detail=page.getByRole('dialog',{name:'记录详情',exact:true});await detail.getByRole('button',{name:'编辑记录',exact:true}).click();await detail.getByLabel('金额',{exact:true}).fill('20.00');await detail.getByRole('button',{name:'保存记录',exact:true}).click();
+ const detail=page.getByRole('region',{name:'记录详情',exact:true});await detail.getByRole('button',{name:'编辑记录',exact:true}).click();await detail.getByLabel('金额',{exact:true}).fill('20.00');await detail.getByRole('button',{name:'保存记录',exact:true}).click();
  await expect(detail.getByRole('alert')).toContainText('刷新');await detail.getByRole('button',{name:'刷新记录',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();
  await expect(page.getByRole('alert')).toContainText('无法读取');await expect(page.getByRole('status').filter({hasText:'正在读取记录'})).toHaveCount(0);await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toHaveCount(0);
  await page.getByRole('button',{name:'重试读取记录',exact:true}).click();await expect(detail.getByLabel('金额',{exact:true})).toHaveValue('18.00');
@@ -166,7 +167,7 @@ test('Root retry after rejected edit and failed refresh never invents a saved re
 
 test('Root footer discard confirms before dropping dirty record input',async({page})=>{
  const api=await fixture(page);await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
- const editor=page.getByRole('dialog',{name:'新建记录',exact:true});await editor.getByLabel('金额',{exact:true}).fill('7.00');
+ const editor=page.getByRole('region',{name:'新建记录',exact:true});await editor.getByLabel('金额',{exact:true}).fill('7.00');
  await editor.getByRole('button',{name:'放弃填写',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();
  await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(editor.getByLabel('金额',{exact:true})).toHaveValue('7.00');
  await editor.getByRole('button',{name:'放弃填写',exact:true}).click();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(editor).toHaveCount(0);
@@ -182,7 +183,7 @@ test('Root shared record route fills its work area and keeps its legend visually
 });
 test('Root record dialog separates fields from shared action buttons',async({page})=>{
  await fixture(page);await page.goto(routePath);await page.getByRole('button',{name:'新建记录',exact:true}).click();
- const dialog=page.getByRole('dialog',{name:'新建记录',exact:true});await expect(dialog.getByLabel('金额',{exact:true})).toBeVisible();
+ const dialog=page.getByRole('region',{name:'新建记录',exact:true});await expect(dialog.getByLabel('金额',{exact:true})).toBeVisible();
  const field=await dialog.locator('.record-form-fields').boundingBox(),footer=await dialog.locator('.record-form footer').boundingBox();
  expect(field).not.toBeNull();expect(footer).not.toBeNull();expect(footer!.y-field!.y-field!.height).toBeGreaterThanOrEqual(12);
  const cancel=await dialog.getByRole('button',{name:'放弃填写',exact:true}).boundingBox(),save=await dialog.getByRole('button',{name:'保存记录',exact:true}).boundingBox();

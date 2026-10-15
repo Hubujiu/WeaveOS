@@ -19,7 +19,8 @@ test('Root read layout preserves exact values and disables edits',async({page})=
  await expect(page.getByLabel('事由',{exact:true})).toHaveValue('差旅报销');
  await expect(page.getByLabel('金额',{exact:true})).toHaveValue('9007199254740993.01');
  await expect(page.getByLabel('金额',{exact:true})).not.toBeEditable();
- await expect(page.getByRole('button',{name:'保存记录',exact:true})).toBeDisabled();
+ // Figma 483:2764: a read-only record has no write footer.
+ await expect(page.getByRole('button',{name:'保存记录',exact:true})).toHaveCount(0);
  await expect(page.getByLabel('未放入布局',{exact:true})).toHaveCount(0);
  await expect(page.getByLabel('无权字段',{exact:true})).toHaveCount(0);
 });

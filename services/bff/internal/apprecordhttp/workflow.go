@@ -1,6 +1,8 @@
 package apprecordhttp
 
 import (
+	"encoding/base64"
+	"io"
 	"net/http"
 	"strings"
 
@@ -43,9 +45,10 @@ func (s *Service) workflowHTTP(w http.ResponseWriter, r *http.Request, p session
 		return false
 	}
 	preview := len(parts) == 9 && parts[7] == "tasks" && r.Method == "GET"
+	candidates := len(parts) == 10 && parts[7] == "tasks" && parts[9] == "reference-candidates" && r.Method == "GET"
 	action := len(parts) == 10 && parts[7] == "tasks" && parts[9] == "actions" && r.Method == "POST"
 	save := len(parts) == 10 && parts[7] == "tasks" && parts[9] == "record" && r.Method == "PATCH"
-	if !preview && !action && !save {
+	if !preview && !action && !save && !candidates {
 		respond(w, r, 404, "API_NOT_FOUND", nil, nil)
 		return true
 	}
@@ -55,11 +58,47 @@ func (s *Service) workflowHTTP(w http.ResponseWriter, r *http.Request, p session
 			return true
 		}
 	}
-	if r.URL.RawQuery != "" || r.URL.ForceQuery {
+	if !candidates && r.URL.RawQuery != "" || r.URL.ForceQuery {
 		failure(w, r, applications.ErrInvalid, "")
 		return true
 	}
 	req := apprecordservice.WorkflowTaskRequest{AppID: parts[0], ViewID: parts[2], RecordID: parts[4], InstanceID: parts[6], TaskID: parts[8]}
+	if candidates {
+		query, err := closedQuery(r, "fieldId", "q", "pageSize", "pageToken")
+		if err != nil || !workflowHTTPID(query.Get("fieldId")) {
+			failure(w, r, applications.ErrInvalid, "")
+			return true
+		}
+		size := int64(20)
+		if raw := query.Get("pageSize"); raw != "" {
+			size, err = number(raw, 1, 50)
+			if err != nil {
+				failure(w, r, err, "")
+				return true
+			}
+		}
+		if token := query.Get("pageToken"); token != "" {
+			decoded, e := base64.RawURLEncoding.DecodeString(token)
+			if e != nil || len(decoded) != 32 || base64.RawURLEncoding.EncodeToString(decoded) != token {
+				failure(w, r, applications.ErrInvalid, "")
+				return true
+			}
+		}
+		if r.Body != nil {
+			body, e := io.ReadAll(io.LimitReader(r.Body, 1))
+			if e != nil || len(body) != 0 {
+				failure(w, r, applications.ErrInvalid, "")
+				return true
+			}
+		}
+		result, err := s.Records.WorkflowTaskCandidates(r.Context(), p, apprecordservice.WorkflowCandidateRequest{WorkflowTaskRequest: req, FieldID: query.Get("fieldId"), Query: query.Get("q"), PageSize: int(size), PageToken: query.Get("pageToken")})
+		if err != nil {
+			failure(w, r, err, "")
+			return true
+		}
+		s.finish(w, r, p, 200, result, "", false, result.Pagination)
+		return true
+	}
 	if preview {
 		result, err := s.Records.PreviewWorkflowTask(r.Context(), p, req)
 		if err != nil {
@@ -89,7 +128,7 @@ func (s *Service) workflowHTTP(w http.ResponseWriter, r *http.Request, p session
 		s.finish(w, r, p, 200, result, "", true, nil)
 		return true
 	}
-	result, err := s.Records.AcceptWorkflowTask(r.Context(), p, apprecordservice.WorkflowTaskActionRequest{WorkflowTaskRequest: req, OperationID: operation, Action: value[string](body, "action"), BasisToken: value[string](body, "basisToken")}, applications.Metadata{RequestID: m.RequestID, ClientIP: m.ClientIP, UserAgent: r.UserAgent()})
+	result, err := s.Records.AcceptWorkflowTask(r.Context(), p, apprecordservice.WorkflowTaskActionRequest{WorkflowTaskRequest: req, OperationID: operation, Action: value[string](body, "action"), Reason: value[string](body, "reason"), BasisToken: value[string](body, "basisToken")}, applications.Metadata{RequestID: m.RequestID, ClientIP: m.ClientIP, UserAgent: r.UserAgent()})
 	if err != nil {
 		failure(w, r, err, operation)
 		return true

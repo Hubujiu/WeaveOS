@@ -127,7 +127,11 @@ func (f *rootTaskHTTPFixture) taskPath() string {
 	return f.root() + "/workflow-instances/" + f.instance + "/tasks/" + f.task
 }
 func rootHTTPActionBody(op, action, token string) string {
-	b, _ := json.Marshal(map[string]string{"operationId": op, "action": action, "basisToken": token})
+	body := map[string]string{"operationId": op, "action": action, "basisToken": token}
+	if action == "reject" {
+		body["reason"] = "  合成审批原因\n🦊  "
+	}
+	b, _ := json.Marshal(body)
 	return string(b)
 }
 func rootHTTPResultBytes(result fc.ExecutionResult) []byte {
@@ -156,6 +160,9 @@ func rootHTTPResourceSetup(t *testing.T) *rootTaskHTTPFixture {
 	return rootHTTPResourceSetupRuntime(t, workflowRuntimeConfig{})
 }
 func rootHTTPResourceSetupRuntime(t *testing.T, runtimeCfg workflowRuntimeConfig) *rootTaskHTTPFixture {
+	return rootHTTPResourceSetupKind(t, runtimeCfg, "text")
+}
+func rootHTTPResourceSetupKind(t *testing.T, runtimeCfg workflowRuntimeConfig, kind string) *rootTaskHTTPFixture {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	t.Cleanup(cancel)
@@ -220,8 +227,16 @@ func rootHTTPResourceSetupRuntime(t *testing.T, runtimeCfg workflowRuntimeConfig
 	f.view, f.table = view.ID, table.ID
 	f.field = f.id(t)
 	definition := `{"operationId":"` + f.id(t) + `","expectedSchemaVersion":0,"expectedViewVersion":0,"fields":[{"id":"` + f.field + `","name":"Reason","kind":"text","required":false,"default":null,"config":{"maxLength":null},"presentation":{"helpText":null,"displayTimeZone":null}}],"layout":[],"optionMappings":[],"confirmationToken":null}`
+	if kind == "member" {
+		definition = strings.ReplaceAll(definition, `"kind":"text"`, `"kind":"member"`)
+		definition = strings.ReplaceAll(definition, `"config":{"maxLength":null}`, `"config":{}`)
+	}
 	rootHTTPData(t, f.call(t, "PUT", "/api/v1/applications/"+f.app+"/forms/"+f.view+"/definition", definition, nil), 200)
-	created := rootHTTPData(t, f.call(t, "POST", "/api/v1/applications/"+f.app+"/forms/"+f.view+"/records", `{"operationId":"`+f.id(t)+`","expectedSchemaVersion":1,"values":{"`+f.field+`":"original"}}`, nil), 201)
+	initial := "original"
+	if kind == "member" {
+		initial = f.other
+	}
+	created := rootHTTPData(t, f.call(t, "POST", "/api/v1/applications/"+f.app+"/forms/"+f.view+"/records", `{"operationId":"`+f.id(t)+`","expectedSchemaVersion":1,"values":{"`+f.field+`":"`+initial+`"}}`, nil), 201)
 	f.record = rootHTTPString(t, created, "id")
 	t.Cleanup(func() {
 		cleanup, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -237,7 +252,10 @@ func rootHTTPTaskSetup(t *testing.T) *rootTaskHTTPFixture {
 
 func rootHTTPTaskSetupEditable(t *testing.T, editable bool) *rootTaskHTTPFixture {
 	t.Helper()
-	f := rootHTTPResourceSetup(t)
+	return rootHTTPTaskFromResource(t, rootHTTPResourceSetup(t), editable)
+}
+func rootHTTPTaskFromResource(t *testing.T, f *rootTaskHTTPFixture, editable bool) *rootTaskHTTPFixture {
+	t.Helper()
 	ctx := f.ctx
 	var e error
 	f.flow, f.instance, f.node, f.task = f.id(t), f.id(t), f.id(t), f.id(t)

@@ -1,0 +1,32 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {stripTypeScriptTypes} from 'node:module';
+const data=source=>'data:text/javascript;base64,'+Buffer.from(source).toString('base64');
+// The only mocked module is React's state storage, not the operation algorithm,
+// API, request validation or recovery store. These are non-DOM protocol tests.
+const react=data(`let state;export const useEffect=()=>{},useRef=value=>({current:value});export function useState(value){state=typeof value==='function'?value():value;return [state,next=>{state=typeof next==='function'?next(state):next}]}export const getState=()=>state;`);
+const cache=new Map();
+async function load(url){if(cache.has(url.href))return cache.get(url.href);let code=stripTypeScriptTypes(await readFile(url,'utf8'),{mode:'transform'});for(const match of [...code.matchAll(/from ['"]([^'"]+)['"]/g)]){const spec=match[1];const target=spec==='react'?react:await load(new URL(spec+'.ts',url));code=code.replace(match[0],`from '${target}'`);}const value=data(code);cache.set(url.href,value);return value;}
+const hookUrl=await load(new URL('../../apps/web/src/applications/useApplicationOperation.ts',import.meta.url));
+const {useApplicationOperation}=await import(hookUrl),{getState}=await import(react);
+const id=n=>'cdcdcdcd-cdcd-4dcd-8dcd-'+String(n).padStart(12,'0');let seq=30;
+async function flush(){for(let i=0;i<12;i++)await new Promise(resolve=>setImmediate(resolve));}
+function response(data,status=200,location){return new Response(JSON.stringify({code:'OK',data,meta:null}),{status,headers:location?{Location:location}:{}});}
+function setup(t,reply,kind='form'){
+ const actor=id(++seq),resource={kind:'structure-copy',sourceAppId:id(1),sourceKind:kind,sourceId:kind==='application'?id(1):id(2)},calls=[],confirmed=[],identity=[];let sessionActor=actor;
+ for(const[key,value]of[['document',{cookie:'__Host-csrf=synthetic'}],['window',{location:{origin:'https://test.invalid'}}]]){const old=Object.getOwnPropertyDescriptor(globalThis,key);Object.defineProperty(globalThis,key,{value,configurable:true});t.after(()=>{if(old)Object.defineProperty(globalThis,key,old);else delete globalThis[key];});}
+ t.mock.method(globalThis,'fetch',async(url,init)=>{if(url==='/api/v1/sessions/current')return response({id:sessionActor});calls.push({url,init,body:init.body?JSON.parse(init.body):undefined});return reply(calls.at(-1),calls);});
+ const options={actorId:actor,scope:'copy-source',resource,confirmed:v=>confirmed.push(v),unauthorized:()=>{},identityMismatch:()=>identity.push(true)};
+ const body={source:{appId:id(1),kind,id:resource.sourceId},target:{appId:kind==='application'?null:id(3),directoryId:null,name:'副本'},expectedSourceFingerprint:'a'.repeat(64),expectedTargetStructureVersion:kind==='application'?0:2,expectedTargetPolicyRevision:kind==='application'?0:3,bindings:[{kind:'user',sourceId:id(8),targetId:id(9)}],groupMappings:[{sourceGroupId:id(10),name:'复制组'}]};
+ const request={resource,path:'structure-copies/execute',method:'POST',expectedStatus:201,body};
+ return {hook:useApplicationOperation(options),remount:()=>useApplicationOperation(options),request,calls,confirmed,identity,setActor:v=>sessionActor=v};
+}
+function start(x){let error=null;try{x.hook.start(x.request);}catch(e){error=e.message;}assert.equal(error,null,'the exact original V074 copy packet must be admitted');}
+const receipt=c=>({operationId:c.body.operationId,appId:id(3),resourceKind:c.body.source.kind,id:c.body.source.kind==='application'?id(3):id(4),structureVersion:c.body.source.kind==='application'?1:3,policyRevision:c.body.source.kind==='application'?1:4,status:'copied'});
+const location=c=>'/api/v1/applications/'+id(3)+(c.body.source.kind==='application'?'':'/'+{directory:'directories',table:'tables',form:'forms'}[c.body.source.kind]+'/'+id(4));
+for(const kind of ['application','directory','table','form'])test('P22 shared copy hook confirms one '+kind+' copy with the exact new-root location',async t=>{const x=setup(t,c=>response(receipt(c),201,location(c)),kind);start(x);start(x);await flush();assert.equal(x.calls.length,1);assert.equal(x.calls[0].url,'/api/v1/structure-copies/execute');assert.deepEqual(x.calls[0].body,{...x.request.body,operationId:x.calls[0].body.operationId});assert.deepEqual(x.confirmed,[receipt(x.calls[0])]);assert.equal(x.hook.getPendingStatus(),null);});
+test('P22 unknown copy retries immutable source target bindings groups CAS and operation key',async t=>{const x=setup(t,(c,cs)=>cs.length===1?response(null,503):response(receipt(c),201,location(c)));start(x);await flush();const original=structuredClone(x.calls[0].body);x.request.body.target.name='changed';x.request.body.bindings[0].targetId=id(99);x.request.body.groupMappings=[];x.request.body.expectedSourceFingerprint='b'.repeat(64);start(x);await flush();assert.equal(x.calls.length,1);x.hook.retry();await flush();assert.deepEqual(x.calls[1].body,original);assert.equal(x.confirmed.length,1);});
+test('P22 original copy recovery queries the original committed operation after remount without replanning or executing twice',async t=>{let first;const x=setup(t,c=>{if(c.init.method==='POST'){first=c;return response(null,503);}return response({operationId:first.body.operationId,status:'confirmed',httpStatus:201,result:receipt(first),location:location(first)});});start(x);await flush();const restored=x.remount();assert.equal(restored.getPendingStatus(),'unknown');restored.query();await flush();assert.equal(x.calls[1].url,'/api/v1/application-operations/'+first.body.operationId);assert.equal(x.calls[1].init.method,'GET');assert.deepEqual(x.confirmed,[receipt(first)]);assert.equal(x.calls.filter(c=>c.init.method==='POST').length,1);});
+for(const mode of ['wrong-version','external-location','wrong-status'])test('P22 copy keeps unknown after '+mode,async t=>{const x=setup(t,c=>response(mode==='wrong-version'?{...receipt(c),structureVersion:99}:receipt(c),mode==='wrong-status'?200:201,mode==='external-location'?'https://example.invalid'+location(c):location(c)));start(x);await flush();assert.equal(x.confirmed.length,0);assert.equal(x.hook.getPendingStatus(),'unknown');assert.equal(getState().phase,'unconfirmed');});
+test('P22 current identity change before copy transmits no creation',async t=>{const x=setup(t,()=>{throw Error('must not send');});x.setActor(id(99));start(x);await flush();assert.equal(x.calls.length,0);assert.equal(x.identity.length,1);});

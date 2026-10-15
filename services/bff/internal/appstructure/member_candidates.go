@@ -40,6 +40,7 @@ type candidateCursor struct {
 	Expires                        int64
 	View, Field, Action, Record    string
 	PolicyRevision                 int64
+	TaskScope                      string
 }
 
 func (a *Application) cursorKey(token string) string {
@@ -62,7 +63,7 @@ func (a *Application) loadCursor(c context.Context, token string, expected candi
 		return candidateCursor{}, ErrUnavailable
 	}
 	var cursor candidateCursor
-	if json.Unmarshal(data, &cursor) != nil || cursor.Expires <= a.now().Unix() || cursor.Actor != expected.Actor || cursor.App != expected.App || cursor.Query != expected.Query || cursor.Kind != expected.Kind || cursor.View != expected.View || cursor.Field != expected.Field || cursor.Action != expected.Action || cursor.Record != expected.Record || cursor.PolicyRevision != expected.PolicyRevision {
+	if json.Unmarshal(data, &cursor) != nil || cursor.Expires <= a.now().Unix() || cursor.Actor != expected.Actor || cursor.App != expected.App || cursor.Query != expected.Query || cursor.Kind != expected.Kind || cursor.View != expected.View || cursor.Field != expected.Field || cursor.Action != expected.Action || cursor.Record != expected.Record || cursor.PolicyRevision != expected.PolicyRevision || cursor.TaskScope != expected.TaskScope {
 		return candidateCursor{}, invalid()
 	}
 	return cursor, nil

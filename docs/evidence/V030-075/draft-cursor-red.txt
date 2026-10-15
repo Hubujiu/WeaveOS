@@ -1,0 +1,139 @@
+(node:13) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ V015 new draft summary permits schema zero and explicitly null base (1.155627ms)
+✔ V015 edit draft summary preserves original target and base (0.125669ms)
+✔ V015 incomplete decimal text is a draft value not an invalid formal record (0.706421ms)
+✔ V015 draft preserves explicitly supplied "" (1.159061ms)
+✔ V015 draft preserves explicitly supplied null (0.141292ms)
+✔ V015 draft preserves explicitly supplied false (0.110626ms)
+✔ V015 draft preserves explicitly supplied ["bbbbbbbb-bbbb-4bbb-8bbb-000000000009","bbbbbbbb-bbbb-4bbb-8bbb-000000000008"] (0.162915ms)
+✔ V015 conflict may preserve removed-key identity without leaking its stored value (0.148292ms)
+✔ V015 draft summary rejects foreign view (0.125189ms)
+✔ V015 draft summary rejects foreign table (0.250056ms)
+✔ V015 draft summary rejects zero draft version (0.100911ms)
+✔ V015 draft summary rejects unsafe version (0.147833ms)
+✔ V015 draft summary rejects negative schema (0.072228ms)
+✔ V015 draft summary rejects target without base (0.039329ms)
+✔ V015 draft summary rejects base without target (0.03353ms)
+✔ V015 draft summary rejects timestamp (0.037096ms)
+✔ V015 draft summary rejects zero ID (0.031888ms)
+✔ V015 draft summary rejects private summary value (0.036274ms)
+✔ V015 full draft rejects wrong draft (0.084116ms)
+✔ V015 full draft rejects extra hidden data (0.036896ms)
+✔ V015 full draft rejects unknown field (0.044027ms)
+✔ V015 full draft rejects number coercion (0.048843ms)
+✔ V015 full draft rejects object value (0.04683ms)
+✔ V015 full draft rejects missing conflicts (0.0335ms)
+✔ V015 full draft rejects unknown reason (0.06667ms)
+✔ V015 full draft rejects extra conflict value (0.049374ms)
+✔ V015 full draft rejects inconsistent conflict flag (0.039029ms)
+✖ V015 field conflict must identify the affected field FIELD_REMOVED (0.741164ms)
+✖ V015 field conflict must identify the affected field FIELD_PERMISSION_REVOKED (0.149405ms)
+✖ V015 draft cursor accepts empty current page (0.176114ms)
+✖ V015 draft cursor accepts bounded safe summaries and opaque next token (0.129094ms)
+✔ V015 draft cursor rejects page number data (0.115243ms)
+✔ V015 draft cursor rejects queryVersion data (0.036215ms)
+✔ V015 draft cursor rejects too many summaries (0.035002ms)
+✔ V015 draft cursor rejects duplicate identity (0.035813ms)
+✔ V015 draft cursor rejects foreign summary (0.059669ms)
+✔ V015 draft cursor rejects secret values (0.051437ms)
+✔ V015 draft cursor rejects missing cursor (0.031507ms)
+✔ V015 draft cursor rejects empty cursor (0.040611ms)
+✔ V015 draft cursor rejects unexpected next cursor (0.031277ms)
+✔ V015 draft cursor rejects wrong flag (0.026189ms)
+✔ V015 draft cursor rejects zero page size (0.045308ms)
+✔ V015 draft cursor rejects oversized page size (0.028163ms)
+ℹ tests 43
+ℹ suites 0
+ℹ pass 39
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 135.807913
+
+✖ failing tests:
+
+test at tests/foundation/record-draft-consumption.test.mjs:14:66
+✖ V015 field conflict must identify the affected field FIELD_REMOVED (0.741164ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-draft-consumption.test.mjs:14:145)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-draft-consumption.test.mjs:14:66
+✖ V015 field conflict must identify the affected field FIELD_PERMISSION_REVOKED (0.149405ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-draft-consumption.test.mjs:14:145)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-draft-consumption.test.mjs:16:1
+✖ V015 draft cursor accepts empty current page (0.176114ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-draft-consumption.test.mjs:16:64)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/record-draft-consumption.test.mjs:17:1
+✖ V015 draft cursor accepts bounded safe summaries and opaque next token (0.129094ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/record-draft-consumption.test.mjs:17:90)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

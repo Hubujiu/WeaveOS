@@ -14,7 +14,7 @@ export type DisplayField = {
   config?: unknown;
 };
 export type ReferenceDisplay = {id:UUID;label:string;deleted:boolean};
-export type ReferenceCandidate = {id:UUID;label:string;status:'active'|'disabled'|'deleted';parentId?:UUID|null};
+export type ReferenceCandidate = {id:UUID;label:string;parentId?:UUID|null}&({status:'active'|'disabled'|'deleted'}|{status:'record-value';deleted:boolean});
 export type ReferenceCandidatePage = {items:ReferenceCandidate[];nextPageToken:string|null};
 export type LoadReferenceCandidates = (
   request:{q:string;pageSize:number;pageToken:string|null},signal:AbortSignal,
@@ -45,9 +45,12 @@ function options(field:DisplayField):Option[]{
     !!item&&typeof item==='object'&&typeof item.id==='string'&&typeof item.label==='string'):[];
 }
 
-function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,referenceDisplay,loadReferenceCandidates,idPrefix}:
-  Pick<FieldRendererProps,'field'|'value'|'onChange'|'readOnly'|'referenceOptions'|'referenceDisplay'|'loadReferenceCandidates'|'idPrefix'>){
+export function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,referenceDisplay,loadReferenceCandidates,idPrefix,initiallyOpen=false,purpose='write'}:
+  Pick<FieldRendererProps,'field'|'value'|'onChange'|'readOnly'|'referenceOptions'|'referenceDisplay'|'loadReferenceCandidates'|'idPrefix'>&{initiallyOpen?:boolean;purpose?:'write'|'record-filter'}){
   const [open,setOpen]=useState(false);
+  // An explicitly requested picker opens after mount. Starting the read in a
+  // mount effect with open=true duplicates it during StrictMode's setup replay.
+  useEffect(()=>{if(initiallyOpen)setOpen(true);},[initiallyOpen]);
   const [query,setQuery]=useState('');
   const [items,setItems]=useState<ReferenceCandidate[]>([]);
   const [nextPageToken,setNextPageToken]=useState<string|null>(null);
@@ -72,13 +75,13 @@ function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,refer
     setBusy(true);setError(false);setItems([]);setNextPageToken(null);
     void loadReferenceCandidates({q:query,pageSize:20,pageToken:null},request.signal).then(page=>{
       if(current!==generation.current||request.signal.aborted)return;
-      setItems(page.items.filter(item=>item.status==='active'&&
+      setItems(page.items.filter(item=>purpose==='record-filter'?item.status==='record-value':item.status==='active'&&
         !(referenceDisplay?.deleted&&item.id===referenceDisplay.id)));
       setNextPageToken(page.nextPageToken);
     }).catch(()=>{if(current===generation.current&&!request.signal.aborted)setError(true);})
       .finally(()=>{if(current===generation.current&&!request.signal.aborted)setBusy(false);});
     return ()=>{request.abort();activeRequest.current?.abort();activeRequest.current=null;generation.current++;};
-  },[open,disabled,loadReferenceCandidates,query,field.id,referenceDisplay?.id,referenceDisplay?.deleted,retryEpoch]);
+  },[open,disabled,loadReferenceCandidates,query,field.id,referenceDisplay?.id,referenceDisplay?.deleted,retryEpoch,purpose]);
 
   const loadMore=async()=>{
     if(!nextPageToken||busy||!loadReferenceCandidates)return;
@@ -90,15 +93,15 @@ function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,refer
       if(current!==generation.current||request.signal.aborted)return;
       setItems(previous=>{
         const ids=new Set(previous.map(item=>item.id));
-        return [...previous,...page.items.filter(item=>item.status==='active'&&!ids.has(item.id)&&
-          !(referenceDisplay?.deleted&&item.id===referenceDisplay.id))];
+        return [...previous,...page.items.filter(item=>!ids.has(item.id)&&(purpose==='record-filter'?item.status==='record-value':item.status==='active'&&
+          !(referenceDisplay?.deleted&&item.id===referenceDisplay.id)))];
       });
       setNextPageToken(page.nextPageToken);
-    }catch{if(current===generation.current&&!request.signal.aborted)setError(true);}
+    }catch{if(current===generation.current&&!request.signal.aborted){setItems([]);setNextPageToken(null);setError(true);}}
     finally{if(current===generation.current&&!request.signal.aborted)setBusy(false);}
   };
   const currentDisplay=<span id={inputId} className="forms-reference-value">
-    {display?.label??(unavailable?'引用信息不可用（需修复）':'未选择')}
+    {display?.label??(unavailable?purpose==='record-filter'?selectedId:'引用信息不可用（需修复）':'未选择')}
     {display&&'deleted'in display&&display.deleted===true&&<span className="forms-reference-deleted">已删除</span>}
   </span>;
   if(!loadReferenceCandidates&&!referenceDisplay&&!readOnly){
@@ -108,10 +111,11 @@ function ReferenceSelector({field,value,onChange,readOnly,referenceOptions,refer
       {referenceOptions?.map(option=><option key={option.id} value={option.id}>{option.label}</option>)}
     </select>;
   }
-  return <div className="forms-reference-selector">
-    {currentDisplay}
+  return <div className={'forms-reference-selector'+(purpose==='record-filter'?' record-filter-reference':'')}>
+    {(purpose!=='record-filter'||disabled||!loadReferenceCandidates)&&currentDisplay}
     {!disabled&&loadReferenceCandidates&&<button type="button" aria-expanded={open}
-      aria-controls={`${inputId}-candidates`} onClick={()=>setOpen(previous=>!previous)}>选择{referenceName}</button>}
+      aria-label={purpose==='record-filter'?'选择'+referenceName:undefined}
+      aria-controls={`${inputId}-candidates`} onClick={()=>setOpen(previous=>!previous)}>{purpose==='record-filter'?(selectedId?currentDisplay:<span className="record-filter-reference-placeholder">请选择{referenceName}</span>):'选择'+referenceName}</button>}
     {open&&!disabled&&loadReferenceCandidates&&<div id={`${inputId}-candidates`} className="forms-reference-candidates">
       <label htmlFor={`${inputId}-search`}>搜索{referenceName}</label>
       <input id={`${inputId}-search`} type="search" value={query}

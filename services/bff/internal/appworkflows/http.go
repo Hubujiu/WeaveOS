@@ -18,6 +18,7 @@ import (
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appschema"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/session"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog"
 	"github.com/jackc/pgx/v5"
@@ -25,6 +26,8 @@ import (
 )
 
 type Application struct {
+	ManagerQueries   *querycontext.Store
+	ApproverQueries  *querycontext.Store
 	RuntimeReady     func(context.Context) error
 	Pool             *pgxpool.Pool
 	Limits           appschema.Limits
@@ -55,6 +58,7 @@ type workflowGraph struct {
 }
 
 type workflowNode struct {
+	Name      string            `json:"name,omitempty"`
 	ID        string            `json:"id"`
 	Kind      string            `json:"kind"`
 	Approval  *workflowApproval `json:"approval,omitempty"`
@@ -287,13 +291,20 @@ func decodeGraph(raw []byte) (flowgraph.Graph, error) {
 		if !ok {
 			return flowgraph.Graph{}, errInvalid
 		}
-		nodeObject, e := exactObject(rawNodes[i], fields, nil)
+		nodeObject, e := exactObject(rawNodes[i], fields, []string{"name"})
 		if e != nil {
 			return flowgraph.Graph{}, e
 		}
+		name := ""
+		if rawName, exists := nodeObject["name"]; exists {
+			name, e = flowgraph.DecodeNodeNameJSON(rawName)
+			if e != nil {
+				return flowgraph.Graph{}, errInvalid
+			}
+		}
 		switch node.Kind {
 		case "start", "end":
-			nodes[i] = flowgraph.Node{ID: node.ID, Kind: node.Kind}
+			nodes[i] = flowgraph.Node{Name: name, ID: node.ID, Kind: node.Kind}
 		case "approval":
 			_, e := exactObject(nodeObject["approval"], []string{"mode", "assigneeIds", "editableFieldIds"}, nil)
 			if e != nil {
@@ -308,12 +319,12 @@ func decodeGraph(raw []byte) (flowgraph.Graph, error) {
 					return flowgraph.Graph{}, errInvalid
 				}
 			}
-			nodes[i] = flowgraph.Node{ID: node.ID, Kind: node.Kind, Approval: &flowgraph.Approval{Mode: a.Mode, AssigneeIDs: a.AssigneeIDs, EditableFieldIDs: a.EditableFieldIDs}}
+			nodes[i] = flowgraph.Node{Name: name, ID: node.ID, Kind: node.Kind, Approval: &flowgraph.Approval{Mode: a.Mode, AssigneeIDs: a.AssigneeIDs, EditableFieldIDs: a.EditableFieldIDs}}
 		case "condition":
 			if len(bytes.TrimSpace(nodeObject["condition"])) == 0 {
 				return flowgraph.Graph{}, errInvalid
 			}
-			nodes[i] = flowgraph.Node{ID: node.ID, Kind: node.Kind, Condition: nodeObject["condition"]}
+			nodes[i] = flowgraph.Node{Name: name, ID: node.ID, Kind: node.Kind, Condition: nodeObject["condition"]}
 		}
 	}
 	edges := make([]flowgraph.Edge, len(graph.Edges))
@@ -386,7 +397,7 @@ func decodeLifecycle(w http.ResponseWriter, r *http.Request) (lifecycleRequest, 
 func toGraphDTO(graph flowgraph.Graph) workflowGraph {
 	out := workflowGraph{Version: graph.Version, Nodes: make([]workflowNode, len(graph.Nodes)), Edges: make([]workflowEdge, len(graph.Edges))}
 	for i, node := range graph.Nodes {
-		out.Nodes[i] = workflowNode{ID: node.ID, Kind: node.Kind}
+		out.Nodes[i] = workflowNode{Name: node.Name, ID: node.ID, Kind: node.Kind}
 		if node.Approval != nil {
 			out.Nodes[i].Approval = &workflowApproval{Mode: node.Approval.Mode, AssigneeIDs: node.Approval.AssigneeIDs, EditableFieldIDs: node.Approval.EditableFieldIDs}
 		}
@@ -421,6 +432,14 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
 	parts := strings.Split(path, "/")
+	if path != r.URL.Path && len(parts) == 6 && parts[1] == "forms" && parts[3] == "workflows" && parts[4] == "approvers" && parts[5] == "search" {
+		s.approverSearch(w, r, p, parts[0], parts[2])
+		return
+	}
+	if path != r.URL.Path && len(parts) == 5 && parts[1] == "forms" && parts[3] == "workflows" && parts[4] == "search" {
+		s.managerSearch(w, r, p, parts[0], parts[2])
+		return
+	}
 	if path == r.URL.Path || (len(parts) != 6 && len(parts) != 7) || parts[1] != "forms" || parts[3] != "workflows" {
 		writeEnvelope(w, r, http.StatusNotFound, "API_NOT_FOUND", nil)
 		return

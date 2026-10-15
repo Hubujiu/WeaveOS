@@ -1,0 +1,115 @@
+{
+  "WorkflowTaskSuccess": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "operationId",
+      "commandId",
+      "instanceId",
+      "status",
+      "instanceState",
+      "sequence"
+    ],
+    "properties": {
+      "operationId": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "not": {
+          "const": "00000000-0000-0000-0000-000000000000"
+        }
+      },
+      "commandId": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "not": {
+          "const": "00000000-0000-0000-0000-000000000000"
+        }
+      },
+      "instanceId": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "not": {
+          "const": "00000000-0000-0000-0000-000000000000"
+        }
+      },
+      "status": {
+        "const": "success"
+      },
+      "instanceState": {
+        "type": "string",
+        "enum": [
+          "active",
+          "completed",
+          "rejected"
+        ]
+      },
+      "sequence": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991
+      }
+    }
+  },
+  "WorkflowTaskFinal": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/WorkflowTaskSuccess"
+      },
+      {
+        "$ref": "#/components/schemas/WorkflowTaskNoEffect"
+      }
+    ]
+  },
+  "WorkflowTaskFinalEnvelope": {
+    "allOf": [
+      {
+        "$ref": "#/components/schemas/Envelope"
+      },
+      {
+        "type": "object",
+        "properties": {
+          "code": {
+            "const": "OK"
+          },
+          "data": {
+            "$ref": "#/components/schemas/WorkflowTaskFinal"
+          }
+        }
+      }
+    ]
+  },
+  "WorkflowTaskOperation": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/WorkflowTaskPending"
+      },
+      {
+        "$ref": "#/components/schemas/WorkflowTaskSuccess"
+      },
+      {
+        "$ref": "#/components/schemas/WorkflowTaskNoEffect"
+      }
+    ]
+  },
+  "WorkflowTaskOperationEnvelope": {
+    "allOf": [
+      {
+        "$ref": "#/components/schemas/Envelope"
+      },
+      {
+        "type": "object",
+        "properties": {
+          "code": {
+            "const": "OK"
+          },
+          "data": {
+            "$ref": "#/components/schemas/WorkflowTaskOperation"
+          }
+        }
+      }
+    ]
+  }
+}

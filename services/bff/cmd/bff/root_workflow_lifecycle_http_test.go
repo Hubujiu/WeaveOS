@@ -19,7 +19,7 @@ func TestRootLifecycleHTTPSPreviewAcceptAndOperation(t *testing.T) {
 			op := f.id(t)
 			target := ""
 			if action == "return" {
-				target = fmt.Sprintf(`,"targetNodeId":%q`, f.node)
+				target = fmt.Sprintf(`,"targetNodeId":%q,"reason":"synthetic return reason"`, f.node)
 			}
 			body := fmt.Sprintf(`{"operationId":%q,"action":%q,"basisToken":%q%s}`, op, action, token, target)
 			r := f.call(t, "POST", path+"/actions", body, nil)

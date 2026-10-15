@@ -1,0 +1,946 @@
+﻿2026-10-13T11:01:51.5230114Z Current runner version: '2.337.0'
+2026-10-13T11:01:51.5259907Z ##[group]Runner Image Provisioner
+2026-10-13T11:01:51.5261460Z Hosted Compute Agent
+2026-10-13T11:01:51.5262656Z Version: 20261002.596
+2026-10-13T11:01:51.5263804Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-13T11:01:51.5265038Z Build Date: 2026-10-02T22:28:27Z
+2026-10-13T11:01:51.5266144Z Worker ID: {b45e3b89-8a24-4183-8d74-020f9d406a4b}
+2026-10-13T11:01:51.5267482Z Region: northcentralus
+2026-10-13T11:01:51.5268415Z Cloud: Azure
+2026-10-13T11:01:51.5269282Z ##[endgroup]
+2026-10-13T11:01:51.5271366Z ##[group]Operating System
+2026-10-13T11:01:51.5272514Z Ubuntu
+2026-10-13T11:01:51.5273505Z 24.04.5
+2026-10-13T11:01:51.5274319Z LTS
+2026-10-13T11:01:51.5275146Z ##[endgroup]
+2026-10-13T11:01:51.5275999Z ##[group]Runner Image
+2026-10-13T11:01:51.5276932Z Image: ubuntu-24.04
+2026-10-13T11:01:51.5277951Z Version: 20261004.327.1
+2026-10-13T11:01:51.5279910Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-13T11:01:51.5282789Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+2026-10-13T11:01:51.5284335Z ##[endgroup]
+2026-10-13T11:01:51.5286204Z ##[group]GITHUB_TOKEN Permissions
+2026-10-13T11:01:51.5289037Z Contents: read
+2026-10-13T11:01:51.5290086Z Metadata: read
+2026-10-13T11:01:51.5290951Z ##[endgroup]
+2026-10-13T11:01:51.5293976Z Secret source: Actions
+2026-10-13T11:01:51.5295495Z Cache mode: write
+2026-10-13T11:01:51.5297082Z Prepare workflow directory
+2026-10-13T11:01:51.5984714Z Prepare all required actions
+2026-10-13T11:01:51.6055176Z Getting action download info
+2026-10-13T11:01:51.8993239Z Download action repository 'actions/checkout@11d5960a326750d5838078e36cf38b85af677262' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-13T11:01:51.9885365Z Download action repository 'docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4' (SHA:e43656e248c0bd0647d3f5c195d116aacf6fcaf4)
+2026-10-13T11:01:52.3972265Z Download action repository 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-13T11:01:52.5244221Z Download action repository 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9' (SHA:55cc8345863c7cc4c66a329aec7e433d2d1c52a9)
+2026-10-13T11:01:52.7029384Z Download action repository 'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333' (SHA:9000827ccba6bdab643e8b6fd33ac0654aef8333)
+2026-10-13T11:01:53.5633291Z Download action repository 'actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4' (SHA:330a01c490aca151604b8cf639adc76d48f6c5d4)
+2026-10-13T11:01:54.2696247Z Complete job name: product
+2026-10-13T11:01:54.3587279Z ##[group]Run test "$RUNNER_ENVIRONMENT" = "github-hosted"
+2026-10-13T11:01:54.3588124Z [36;1mtest "$RUNNER_ENVIRONMENT" = "github-hosted"[0m
+2026-10-13T11:01:54.3588717Z [36;1mtest "$RUNNER_OS" = "Linux"[0m
+2026-10-13T11:01:54.3589288Z [36;1msudo rm -rf -- /usr/local/lib/android[0m
+2026-10-13T11:01:54.3589846Z [36;1mdf -h /[0m
+2026-10-13T11:01:55.0111441Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-13T11:01:55.0112122Z env:
+2026-10-13T11:01:55.0112807Z   WEAVEOS_DEPENDENCY_CACHE_DIR: /home/runner/work/WeaveOS/WeaveOS/.work/dependency-cache
+2026-10-13T11:01:55.0113301Z ##[endgroup]
+2026-10-13T11:03:07.3157744Z Filesystem      Size  Used Avail Use% Mounted on
+2026-10-13T11:03:07.3158248Z /dev/root       145G   49G   97G  34% /
+2026-10-13T11:03:07.3358681Z ##[group]Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+2026-10-13T11:03:07.3359135Z with:
+2026-10-13T11:03:07.3359368Z   persist-credentials: false
+2026-10-13T11:03:07.3359636Z   fetch-depth: 0
+2026-10-13T11:03:07.3359863Z   repository: Hubujiu/WeaveOS
+2026-10-13T11:03:07.3362743Z   token: ***
+2026-10-13T11:03:07.3362966Z   ssh-strict: true
+2026-10-13T11:03:07.3363187Z   ssh-user: git
+2026-10-13T11:03:07.3363392Z   clean: true
+2026-10-13T11:03:07.3363614Z   sparse-checkout-cone-mode: true
+2026-10-13T11:03:07.3364157Z   fetch-tags: false
+2026-10-13T11:03:07.3364375Z   show-progress: true
+2026-10-13T11:03:07.3364592Z   lfs: false
+2026-10-13T11:03:07.3364806Z   submodules: false
+2026-10-13T11:03:07.3365037Z   set-safe-directory: true
+2026-10-13T11:03:07.3365312Z   allow-unsafe-pr-checkout: false
+2026-10-13T11:03:07.3365614Z env:
+2026-10-13T11:03:07.3366004Z   WEAVEOS_DEPENDENCY_CACHE_DIR: /home/runner/work/WeaveOS/WeaveOS/.work/dependency-cache
+2026-10-13T11:03:07.3366529Z ##[endgroup]
+2026-10-13T11:03:07.4388668Z Syncing repository: Hubujiu/WeaveOS
+2026-10-13T11:03:07.4390531Z ##[group]Getting Git version info
+2026-10-13T11:03:07.4391202Z Working directory is '/home/runner/work/WeaveOS/WeaveOS'
+2026-10-13T11:03:07.4392179Z [command]/usr/bin/git version
+2026-10-13T11:03:07.4401378Z git version 2.55.0
+2026-10-13T11:03:07.4421013Z ##[endgroup]
+2026-10-13T11:03:07.4435647Z Temporarily overriding HOME='/home/runner/work/_temp/a5d47488-b61f-47e5-8bab-bf51f894693d' before making global git config changes
+2026-10-13T11:03:07.4437029Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-13T11:03:07.4440281Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/WeaveOS/WeaveOS
+2026-10-13T11:03:07.4489103Z Deleting the contents of '/home/runner/work/WeaveOS/WeaveOS'
+2026-10-13T11:03:07.4493581Z ##[group]Initializing the repository
+2026-10-13T11:03:07.4497545Z [command]/usr/bin/git init /home/runner/work/WeaveOS/WeaveOS
+2026-10-13T11:03:07.4578034Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-13T11:03:07.4579014Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-13T11:03:07.4581361Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-13T11:03:07.4582009Z hint: call:
+2026-10-13T11:03:07.4582788Z hint:
+2026-10-13T11:03:07.4583233Z hint: 	git config --global init.defaultBranch <name>
+2026-10-13T11:03:07.4583830Z hint:
+2026-10-13T11:03:07.4584322Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-13T11:03:07.4585179Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-13T11:03:07.4585802Z hint:
+2026-10-13T11:03:07.4586120Z hint: 	git branch -m <name>
+2026-10-13T11:03:07.4586498Z hint:
+2026-10-13T11:03:07.4587027Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-13T11:03:07.4587909Z Initialized empty Git repository in /home/runner/work/WeaveOS/WeaveOS/.git/
+2026-10-13T11:03:07.4592190Z [command]/usr/bin/git remote add origin https://github.com/Hubujiu/WeaveOS
+2026-10-13T11:03:07.4637542Z ##[endgroup]
+2026-10-13T11:03:07.4638319Z ##[group]Disabling automatic garbage collection
+2026-10-13T11:03:07.4642087Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-13T11:03:07.4675695Z ##[endgroup]
+2026-10-13T11:03:07.4676282Z ##[group]Setting up auth
+2026-10-13T11:03:07.4683155Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-13T11:03:07.4719147Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-13T11:03:07.5081193Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-13T11:03:07.5114250Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-13T11:03:07.5380084Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-13T11:03:07.5418000Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-13T11:03:07.5659966Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-13T11:03:07.5703942Z ##[endgroup]
+2026-10-13T11:03:07.5704981Z ##[group]Fetching the repository
+2026-10-13T11:03:07.5713072Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* +a431a8e980753f356b4f28d7677147e0c37acbf4:refs/remotes/pull/84/merge
+2026-10-13T11:03:12.5732908Z From https://github.com/Hubujiu/WeaveOS
+2026-10-13T11:03:12.5733674Z  * [new branch]        develop                                  -> origin/develop
+2026-10-13T11:03:12.5734624Z  * [new branch]        evidence/V030-039-rollback-patched       -> origin/evidence/V030-039-rollback-patched
+2026-10-13T11:03:12.5735714Z  * [new branch]        evidence/V030-058-rollback-patched       -> origin/evidence/V030-058-rollback-patched
+2026-10-13T11:03:12.5736774Z  * [new branch]        integration/V030-011-fixed-inputs        -> origin/integration/V030-011-fixed-inputs
+2026-10-13T11:03:12.5737682Z  * [new branch]        main                                     -> origin/main
+2026-10-13T11:03:12.5738526Z  * [new branch]        task/UI-031-sidebar-preview              -> origin/task/UI-031-sidebar-preview
+2026-10-13T11:03:12.5739395Z  * [new branch]        task/UI-032-full-preview                 -> origin/task/UI-032-full-preview
+2026-10-13T11:03:12.5740190Z  * [new branch]        task/V010-020-admin-shell                -> origin/task/V010-020-admin-shell
+2026-10-13T11:03:12.5741111Z  * [new branch]        task/V010-020-drafts-backend             -> origin/task/V010-020-drafts-backend
+2026-10-13T11:03:12.5742073Z  * [new branch]        task/V010-020-filter-manager             -> origin/task/V010-020-filter-manager
+2026-10-13T11:03:12.5743172Z  * [new branch]        task/V010-020-q36-front-b1               -> origin/task/V010-020-q36-front-b1
+2026-10-13T11:03:12.5744130Z  * [new branch]        task/V010-020-query-backend              -> origin/task/V010-020-query-backend
+2026-10-13T11:03:12.5745142Z  * [new branch]        task/V010-020-query-contracts            -> origin/task/V010-020-query-contracts
+2026-10-13T11:03:12.5746258Z  * [new branch]        task/V010-021-v030-task-governance       -> origin/task/V010-021-v030-task-governance
+2026-10-13T11:03:12.5747332Z  * [new branch]        task/V030-002-application-meta           -> origin/task/V030-002-application-meta
+2026-10-13T11:03:12.5748377Z  * [new branch]        task/V030-003-schema-save                -> origin/task/V030-003-schema-save
+2026-10-13T11:03:12.5749376Z  * [new branch]        task/V030-004-flowable-tx-proof          -> origin/task/V030-004-flowable-tx-proof
+2026-10-13T11:03:12.5750401Z  * [new branch]        task/V030-011-applications               -> origin/task/V030-011-applications
+2026-10-13T11:03:12.5751334Z  * [new branch]        task/V030-011-webkit-focus               -> origin/task/V030-011-webkit-focus
+2026-10-13T11:03:12.5753103Z  * [new branch]        task/V030-012-original-app-shell         -> origin/task/V030-012-original-app-shell
+2026-10-13T11:03:12.5754083Z  * [new branch]        task/V030-013-definition-api             -> origin/task/V030-013-definition-api
+2026-10-13T11:03:12.5754759Z  * [new branch]        task/V030-014-form-designer              -> origin/task/V030-014-form-designer
+2026-10-13T11:03:12.5755399Z  * [new branch]        task/V030-015-records-query-drafts       -> origin/task/V030-015-records-query-drafts
+2026-10-13T11:03:12.5756027Z  * [new branch]        task/V030-017-records-frontend           -> origin/task/V030-017-records-frontend
+2026-10-13T11:03:12.5756938Z  * [new branch]        task/V030-018-approval-commands          -> origin/task/V030-018-approval-commands
+2026-10-13T11:03:12.5757547Z  * [new branch]        task/V030-019-flow-graph                 -> origin/task/V030-019-flow-graph
+2026-10-13T11:03:12.5758106Z  * [new branch]        task/V030-020-workflow-http              -> origin/task/V030-020-workflow-http
+2026-10-13T11:03:12.5758652Z  * [new branch]        task/V030-021-monochrome                 -> origin/task/V030-021-monochrome
+2026-10-13T11:03:12.5759372Z  * [new branch]        task/V030-022-flowable-deployment        -> origin/task/V030-022-flowable-deployment
+2026-10-13T11:03:12.5760376Z  * [new branch]        task/V030-023-monochrome-designer        -> origin/task/V030-023-monochrome-designer
+2026-10-13T11:03:12.5760996Z  * [new branch]        task/V030-024-integrate-verified         -> origin/task/V030-024-integrate-verified
+2026-10-13T11:03:12.5761620Z  * [new branch]        task/V030-025-focused-designer           -> origin/task/V030-025-focused-designer
+2026-10-13T11:03:12.5762201Z  * [new branch]        task/V030-026-deployment-rpc             -> origin/task/V030-026-deployment-rpc
+2026-10-13T11:03:12.5763271Z  * [new branch]        task/V030-027-publication                -> origin/task/V030-027-publication
+2026-10-13T11:03:12.5764275Z  * [new branch]        task/V030-029-command-v2                 -> origin/task/V030-029-command-v2
+2026-10-13T11:03:12.5765346Z  * [new branch]        task/V030-030-engine-actions             -> origin/task/V030-030-engine-actions
+2026-10-13T11:03:12.5766411Z  * [new branch]        task/V030-030-engine-execution           -> origin/task/V030-030-engine-execution
+2026-10-13T11:03:12.5767331Z  * [new branch]        task/V030-031-execution-codecs           -> origin/task/V030-031-execution-codecs
+2026-10-13T11:03:12.5768228Z  * [new branch]        task/V030-032-execution-rpc              -> origin/task/V030-032-execution-rpc
+2026-10-13T11:03:12.5769242Z  * [new branch]        task/V030-033-execution-projection       -> origin/task/V030-033-execution-projection
+2026-10-13T11:03:12.5770251Z  * [new branch]        task/V030-034-result-evidence            -> origin/task/V030-034-result-evidence
+2026-10-13T11:03:12.5771293Z  * [new branch]        task/V030-035-execution-recovery         -> origin/task/V030-035-execution-recovery
+2026-10-13T11:03:12.5772527Z  * [new branch]        task/V030-036-approval-evidence          -> origin/task/V030-036-approval-evidence
+2026-10-13T11:03:12.5773519Z  * [new branch]        task/V030-037-approval-admission         -> origin/task/V030-037-approval-admission
+2026-10-13T11:03:12.5774503Z  * [new branch]        task/V030-038-flowable-native            -> origin/task/V030-038-flowable-native
+2026-10-13T11:03:12.5775706Z  * [new branch]        task/V030-039-source-map-security        -> origin/task/V030-039-source-map-security
+2026-10-13T11:03:12.5776340Z  * [new branch]        task/V030-040-develop-workflow           -> origin/task/V030-040-develop-workflow
+2026-10-13T11:03:12.5776982Z  * [new branch]        task/V030-041-service-runtime            -> origin/task/V030-041-service-runtime
+2026-10-13T11:03:12.5777565Z  * [new branch]        task/V030-043-node-save                  -> origin/task/V030-043-node-save
+2026-10-13T11:03:12.5778148Z  * [new branch]        task/V030-044-record-triggers            -> origin/task/V030-044-record-triggers
+2026-10-13T11:03:12.5778760Z  * [new branch]        task/V030-045-workflow-lifecycle         -> origin/task/V030-045-workflow-lifecycle
+2026-10-13T11:03:12.5779381Z  * [new branch]        task/V030-046-firefox-diagnostic         -> origin/task/V030-046-firefox-diagnostic
+2026-10-13T11:03:12.5779979Z  * [new branch]        task/V030-046-workflow-read              -> origin/task/V030-046-workflow-read
+2026-10-13T11:03:12.5780569Z  * [new branch]        task/V030-047-close-finalization         -> origin/task/V030-047-close-finalization
+2026-10-13T11:03:12.5781476Z  * [new branch]        task/V030-048-test-oracles               -> origin/task/V030-048-test-oracles
+2026-10-13T11:03:12.5782064Z  * [new branch]        task/V030-049-ci-throughput              -> origin/task/V030-049-ci-throughput
+2026-10-13T11:03:12.5782968Z  * [new branch]        task/V030-050-test-reduction             -> origin/task/V030-050-test-reduction
+2026-10-13T11:03:12.5783614Z  * [new branch]        task/V030-051-filter-test-migration      -> origin/task/V030-051-filter-test-migration
+2026-10-13T11:03:12.5784351Z  * [new branch]        task/V030-052-password-schema-validation -> origin/task/V030-052-password-schema-validation
+2026-10-13T11:03:12.5785204Z  * [new branch]        task/V030-054-login-response-schema      -> origin/task/V030-054-login-response-schema
+2026-10-13T11:03:12.5785840Z  * [new branch]        task/V030-055-hosted-disk-oracle         -> origin/task/V030-055-hosted-disk-oracle
+2026-10-13T11:03:12.5786444Z  * [new branch]        task/V030-056-bpmn-edge-oracle           -> origin/task/V030-056-bpmn-edge-oracle
+2026-10-13T11:03:12.5787064Z  * [new branch]        task/V030-057-result-publication         -> origin/task/V030-057-result-publication
+2026-10-13T11:03:12.5787657Z  * [new branch]        task/V030-058-go-security                -> origin/task/V030-058-go-security
+2026-10-13T11:03:12.5788245Z  * [new branch]        task/V030-059-ci-routing                 -> origin/task/V030-059-ci-routing
+2026-10-13T11:03:12.5789253Z  * [new branch]        task/V030-060-docs-routing-acceptance    -> origin/task/V030-060-docs-routing-acceptance
+2026-10-13T11:03:12.5790218Z  * [new branch]        task/V030-061-workflow-inbox             -> origin/task/V030-061-workflow-inbox
+2026-10-13T11:03:12.5791281Z  * [new branch]        task/V030-062-workflow-evidence-read     -> origin/task/V030-062-workflow-evidence-read
+2026-10-13T11:03:12.5792515Z  * [new branch]        task/V030-063-workflow-event-history     -> origin/task/V030-063-workflow-event-history
+2026-10-13T11:03:12.5793728Z  * [new branch]        task/V030-064-independent-workflow-journal -> origin/task/V030-064-independent-workflow-journal
+2026-10-13T11:03:12.5794956Z  * [new branch]        task/V030-065-publication-history-lifetime -> origin/task/V030-065-publication-history-lifetime
+2026-10-13T11:03:12.5796323Z  * [new branch]        task/V030-066-native-deletion-contract   -> origin/task/V030-066-native-deletion-contract
+2026-10-13T11:03:12.5797381Z  * [new branch]        task/V030-067-controlled-flow-deletion   -> origin/task/V030-067-controlled-flow-deletion
+2026-10-13T11:03:12.5798511Z  * [new branch]        task/V030-068-recoverable-workflow-deletion -> origin/task/V030-068-recoverable-workflow-deletion
+2026-10-13T11:03:12.5799619Z  * [new branch]        task/V030-069-workflow-rounds            -> origin/task/V030-069-workflow-rounds
+2026-10-13T11:03:12.5800626Z  * [new branch]        task/V030-070-structure-templates        -> origin/task/V030-070-structure-templates
+2026-10-13T11:03:12.5801626Z  * [new branch]        task/V030-071-private-table-presets      -> origin/task/V030-071-private-table-presets
+2026-10-13T11:03:12.5802802Z  * [new branch]        task/V030-072-record-lifecycle           -> origin/task/V030-072-record-lifecycle
+2026-10-13T11:03:12.5803789Z  * [new branch]        task/V030-073-structure-deletion         -> origin/task/V030-073-structure-deletion
+2026-10-13T11:03:12.5804718Z  * [new branch]        task/V030-074-structure-copy             -> origin/task/V030-074-structure-copy
+2026-10-13T11:03:12.5805660Z  * [new branch]        task/V030-075-full-product-delivery      -> origin/task/V030-075-full-product-delivery
+2026-10-13T11:03:12.5807176Z  * [new tag]           rollback/v0.1.0-85c2ee1                  -> rollback/v0.1.0-85c2ee1
+2026-10-13T11:03:12.5808192Z  * [new ref]           a431a8e980753f356b4f28d7677147e0c37acbf4 -> pull/84/merge
+2026-10-13T11:03:12.5810064Z ##[endgroup]
+2026-10-13T11:03:12.5810785Z ##[group]Determining the checkout info
+2026-10-13T11:03:12.5811428Z ##[endgroup]
+2026-10-13T11:03:12.5811818Z [command]/usr/bin/git sparse-checkout disable
+2026-10-13T11:03:12.5837291Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-13T11:03:12.5876900Z ##[group]Checking out the ref
+2026-10-13T11:03:12.5882043Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/84/merge
+2026-10-13T11:03:13.6076576Z Updating files:  61% (8387/13638)
+2026-10-13T11:03:13.6137956Z Updating files:  62% (8456/13638)
+2026-10-13T11:03:13.6205650Z Updating files:  63% (8592/13638)
+2026-10-13T11:03:13.6269361Z Updating files:  64% (8729/13638)
+2026-10-13T11:03:13.6333020Z Updating files:  65% (8865/13638)
+2026-10-13T11:03:13.6387790Z Updating files:  66% (9002/13638)
+2026-10-13T11:03:13.6446501Z Updating files:  67% (9138/13638)
+2026-10-13T11:03:13.6521177Z Updating files:  68% (9274/13638)
+2026-10-13T11:03:13.6640977Z Updating files:  69% (9411/13638)
+2026-10-13T11:03:13.6690517Z Updating files:  70% (9547/13638)
+2026-10-13T11:03:13.6779127Z Updating files:  71% (9683/13638)
+2026-10-13T11:03:13.6833474Z Updating files:  72% (9820/13638)
+2026-10-13T11:03:13.6987317Z Updating files:  73% (9956/13638)
+2026-10-13T11:03:13.7046336Z Updating files:  74% (10093/13638)
+2026-10-13T11:03:13.7184303Z Updating files:  75% (10229/13638)
+2026-10-13T11:03:13.7330473Z Updating files:  76% (10365/13638)
+2026-10-13T11:03:13.7427851Z Updating files:  77% (10502/13638)
+2026-10-13T11:03:13.7508938Z Updating files:  78% (10638/13638)
+2026-10-13T11:03:13.7611441Z Updating files:  79% (10775/13638)
+2026-10-13T11:03:13.7722068Z Updating files:  80% (10911/13638)
+2026-10-13T11:03:13.7777792Z Updating files:  81% (11047/13638)
+2026-10-13T11:03:13.7834406Z Updating files:  82% (11184/13638)
+2026-10-13T11:03:13.7910117Z Updating files:  83% (11320/13638)
+2026-10-13T11:03:13.7968606Z Updating files:  84% (11456/13638)
+2026-10-13T11:03:13.8063268Z Updating files:  85% (11593/13638)
+2026-10-13T11:03:13.8203338Z Updating files:  86% (11729/13638)
+2026-10-13T11:03:13.8926073Z Updating files:  87% (11866/13638)
+2026-10-13T11:03:13.9567471Z Updating files:  88% (12002/13638)
+2026-10-13T11:03:13.9770368Z Updating files:  89% (12138/13638)
+2026-10-13T11:03:13.9958541Z Updating files:  90% (12275/13638)
+2026-10-13T11:03:14.0351585Z Updating files:  91% (12411/13638)
+2026-10-13T11:03:14.0732634Z Updating files:  92% (12547/13638)
+2026-10-13T11:03:14.0817057Z Updating files:  93% (12684/13638)
+2026-10-13T11:03:14.0890518Z Updating files:  94% (12820/13638)
+2026-10-13T11:03:14.0965083Z Updating files:  95% (12957/13638)
+2026-10-13T11:03:14.1038424Z Updating files:  96% (13093/13638)
+2026-10-13T11:03:14.1106370Z Updating files:  97% (13229/13638)
+2026-10-13T11:03:14.1183834Z Updating files:  98% (13366/13638)
+2026-10-13T11:03:14.1250088Z Updating files:  99% (13502/13638)
+2026-10-13T11:03:14.1250604Z Updating files: 100% (13638/13638)
+2026-10-13T11:03:14.1251048Z Updating files: 100% (13638/13638), done.
+2026-10-13T11:03:14.1395625Z Note: switching to 'refs/remotes/pull/84/merge'.
+2026-10-13T11:03:14.1395885Z 
+2026-10-13T11:03:14.1396125Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-13T11:03:14.1396645Z changes and commit them, and you can discard any commits you make in this
+2026-10-13T11:03:14.1397132Z state without impacting any branches by switching back to a branch.
+2026-10-13T11:03:14.1397401Z 
+2026-10-13T11:03:14.1397593Z If you want to create a new branch to retain commits you create, you may
+2026-10-13T11:03:14.1398050Z do so (now or later) by using -c with the switch command. Example:
+2026-10-13T11:03:14.1398306Z 
+2026-10-13T11:03:14.1398414Z   git switch -c <new-branch-name>
+2026-10-13T11:03:14.1398594Z 
+2026-10-13T11:03:14.1398712Z Or undo this operation with:
+2026-10-13T11:03:14.1398878Z 
+2026-10-13T11:03:14.1398971Z   git switch -
+2026-10-13T11:03:14.1399088Z 
+2026-10-13T11:03:14.1399308Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-13T11:03:14.1399599Z 
+2026-10-13T11:03:14.1399953Z HEAD is now at a431a8e9 Merge f37fc166c5c1bd814ff028980aa20e38aacd0d5b into 4d2d43a2aaa5c7822531b78075d5c155b5b22df7
+2026-10-13T11:03:14.1493265Z ##[endgroup]
+2026-10-13T11:03:14.1548347Z [command]/usr/bin/git log -1 --format=%H
+2026-10-13T11:03:14.1581218Z a431a8e980753f356b4f28d7677147e0c37acbf4
+2026-10-13T11:03:14.1593997Z ##[group]Removing auth
+2026-10-13T11:03:14.1598657Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-13T11:03:14.1635487Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-13T11:03:14.1898863Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-13T11:03:14.1928622Z http.https://github.com/.extraheader
+2026-10-13T11:03:14.1938458Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-13T11:03:14.1977841Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-13T11:03:14.2239140Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-13T11:03:14.2276252Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-13T11:03:14.2535621Z ##[endgroup]
+2026-10-13T11:03:14.2740986Z ##[group]Run docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4
+2026-10-13T11:03:14.2741405Z with:
+2026-10-13T11:03:14.2741613Z   version: v29.6.2
+2026-10-13T11:03:14.2741936Z   daemon-config: {"features":{"containerd-snapshotter":true}}
+
+2026-10-13T11:03:14.2742278Z   set-host: false
+2026-10-13T11:03:14.2742774Z   rootless: false
+2026-10-13T11:03:14.2745441Z   github-token: ***
+2026-10-13T11:03:14.2745666Z env:
+2026-10-13T11:03:14.2746023Z   WEAVEOS_DEPENDENCY_CACHE_DIR: /home/runner/work/WeaveOS/WeaveOS/.work/dependency-cache
+2026-10-13T11:03:14.2746464Z ##[endgroup]
+2026-10-13T11:03:14.5183887Z ##[group]Download docker
+2026-10-13T11:03:14.5184591Z Downloading Docker v29.6.2 from stable at download.docker.com
+2026-10-13T11:03:14.5440267Z Downloading https://download.docker.com/linux/static/stable/x86_64/docker-29.6.2.tgz
+2026-10-13T11:03:14.9406892Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/aa0f7b5e-c7a3-4476-84e3-49558e2a5eb6 -f /home/runner/work/_temp/898bf1ce-306f-43d1-8c43-747d6c668007
+2026-10-13T11:03:16.6469622Z Fixing perms
+2026-10-13T11:03:16.8077979Z Added Docker to PATH
+2026-10-13T11:03:16.8079427Z ##[endgroup]
+2026-10-13T11:03:16.8089758Z ##[group]Writing Docker daemon config
+2026-10-13T11:03:16.8090206Z {
+2026-10-13T11:03:16.8090489Z   "features": {
+2026-10-13T11:03:16.8090849Z     "containerd-snapshotter": true
+2026-10-13T11:03:16.8091275Z   }
+2026-10-13T11:03:16.8091557Z }
+2026-10-13T11:03:16.8092089Z ##[endgroup]
+2026-10-13T11:03:16.8096724Z ##[group]Start Docker daemon
+2026-10-13T11:03:16.8109320Z [command] /opt/hostedtoolcache/docker-archive-stable/29.6.2/x64/dockerd --host="unix:///home/runner/setup-docker-action/run-7dc4fc89/docker.sock" --config-file="/home/runner/setup-docker-action/run-7dc4fc89/daemon.json" --exec-root="/home/runner/setup-docker-action/run-7dc4fc89/execroot" --data-root="/home/runner/setup-docker-action/run-7dc4fc89/data" --pidfile="/home/runner/setup-docker-action/run-7dc4fc89/docker.pid"
+2026-10-13T11:03:16.9678673Z time="2026-10-13T11:03:16.967579050Z" level=info msg="Starting up"
+2026-10-13T11:03:16.9685138Z time="2026-10-13T11:03:16.968376079Z" level=info msg="OTEL tracing is not configured, using no-op tracer provider"
+2026-10-13T11:03:16.9686071Z time="2026-10-13T11:03:16.968460827Z" level=info msg="CDI directory does not exist, skipping" dir=/var/run/cdi
+2026-10-13T11:03:16.9686742Z time="2026-10-13T11:03:16.968474478Z" level=info msg="CDI directory does not exist, skipping" dir=/etc/cdi
+2026-10-13T11:03:16.9689716Z time="2026-10-13T11:03:16.968842955Z" level=info msg="detected 127.0.0.53 nameserver, assuming systemd-resolved, so using resolv.conf: /run/systemd/resolve/resolv.conf"
+2026-10-13T11:03:16.9768631Z time="2026-10-13T11:03:16.976669753Z" level=warning msg="\"containerd-snapshotter\" is now the default and no longer needed to be set"
+2026-10-13T11:03:16.9956131Z time="2026-10-13T11:03:16.995320350Z" level=info msg="Creating a containerd client" address=/run/containerd/containerd.sock timeout=1m0s
+2026-10-13T11:03:17.0088751Z time="2026-10-13T11:03:17.008703786Z" level=info msg="Loading containers: start."
+2026-10-13T11:03:17.0089640Z time="2026-10-13T11:03:17.008751277Z" level=info msg="NRI is disabled"
+2026-10-13T11:03:17.0090976Z time="2026-10-13T11:03:17.008759830Z" level=info msg="Starting daemon with containerd snapshotter integration enabled"
+2026-10-13T11:03:17.0116639Z time="2026-10-13T11:03:17.011506131Z" level=info msg="Restoring containers: start."
+2026-10-13T11:03:17.0442665Z time="2026-10-13T11:03:17.043957424Z" level=info msg="Deleting nftables IPv4 rules" error="running nft: /dev/stdin:1:17-30: Error: Could not process rule: No such file or directory\ndelete table ip docker-bridges\n                ^^^^^^^^^^^^^^\n exit status 1"
+2026-10-13T11:03:17.0541446Z time="2026-10-13T11:03:17.053888893Z" level=info msg="Deleting nftables IPv6 rules" error="running nft: /dev/stdin:1:18-31: Error: Could not process rule: No such file or directory\ndelete table ip6 docker-bridges\n                 ^^^^^^^^^^^^^^\n exit status 1"
+2026-10-13T11:03:17.4105214Z time="2026-10-13T11:03:17.410347440Z" level=info msg="Loading containers: done."
+2026-10-13T11:03:17.4164956Z time="2026-10-13T11:03:17.416323522Z" level=info msg="Docker daemon" commit=3d80467 containerd-snapshotter=true storage-driver=overlayfs version=29.6.2
+2026-10-13T11:03:17.4165949Z time="2026-10-13T11:03:17.416428831Z" level=info msg="Initializing buildkit"
+2026-10-13T11:03:17.6728360Z time="2026-10-13T11:03:17.672613627Z" level=info msg="Completed buildkit initialization"
+2026-10-13T11:03:17.6758685Z time="2026-10-13T11:03:17.675735846Z" level=info msg="Daemon has completed initialization"
+2026-10-13T11:03:17.6759796Z time="2026-10-13T11:03:17.675787103Z" level=info msg="API listen on /home/runner/setup-docker-action/run-7dc4fc89/docker.sock"
+2026-10-13T11:03:19.8374520Z Docker daemon started started successfully
+2026-10-13T11:03:19.8375497Z ##[endgroup]
+2026-10-13T11:03:19.8376104Z ##[group]Create Docker context
+2026-10-13T11:03:19.8393369Z [command]/opt/hostedtoolcache/docker-archive-stable/29.6.2/x64/docker context create setup-docker-action --docker host=unix:///home/runner/setup-docker-action/run-7dc4fc89/docker.sock
+2026-10-13T11:03:19.8506796Z setup-docker-action
+2026-10-13T11:03:19.8507146Z Successfully created context "setup-docker-action"
+2026-10-13T11:03:19.8525638Z [command]/opt/hostedtoolcache/docker-archive-stable/29.6.2/x64/docker context use setup-docker-action
+2026-10-13T11:03:19.8633096Z setup-docker-action
+2026-10-13T11:03:19.8633523Z Current context is now "setup-docker-action"
+2026-10-13T11:03:19.8640455Z ##[endgroup]
+2026-10-13T11:03:19.8641220Z ##[group]Setting outputs
+2026-10-13T11:03:19.8641788Z sock=unix:///home/runner/setup-docker-action/run-7dc4fc89/docker.sock
+2026-10-13T11:03:19.8643301Z ##[endgroup]
+2026-10-13T11:03:19.8643921Z ##[group]Docker info
+2026-10-13T11:03:19.8659261Z [command]/opt/hostedtoolcache/docker-archive-stable/29.6.2/x64/docker version
+2026-10-13T11:03:19.8828557Z Client:
+2026-10-13T11:03:19.8829122Z  Version:           29.6.2
+2026-10-13T11:03:19.8829534Z  API version:       1.55
+2026-10-13T11:03:19.8829929Z  Go version:        go1.26.5
+2026-10-13T11:03:19.8830240Z  Git commit:        dfc4efb
+2026-10-13T11:03:19.8830521Z  Built:             Thu Jul 16 16:11:35 2026
+2026-10-13T11:03:19.8830915Z  OS/Arch:           linux/amd64
+2026-10-13T11:03:19.8831311Z  Context:           setup-docker-action
+2026-10-13T11:03:19.8831604Z 
+2026-10-13T11:03:19.8831775Z Server: Docker Engine - Community
+2026-10-13T11:03:19.8832165Z  Engine:
+2026-10-13T11:03:19.8832562Z   Version:          29.6.2
+2026-10-13T11:03:19.8832825Z   API version:      1.55 (minimum version 1.40)
+2026-10-13T11:03:19.8833157Z   Go version:       go1.26.5
+2026-10-13T11:03:19.8833396Z   Git commit:       3d80467
+2026-10-13T11:03:19.8833650Z   Built:            Thu Jul 16 16:14:05 2026
+2026-10-13T11:03:19.8833925Z   OS/Arch:          linux/amd64
+2026-10-13T11:03:19.8834170Z   Experimental:     false
+2026-10-13T11:03:19.8834436Z  containerd:
+2026-10-13T11:03:19.8834645Z   Version:          v2.3.6
+2026-10-13T11:03:19.8834937Z   GitCommit:        ee2735368117d2eb259779949d5e75cdafec9761
+2026-10-13T11:03:19.8835613Z  runc:
+2026-10-13T11:03:19.8835809Z   Version:          1.3.6
+2026-10-13T11:03:19.8836056Z   GitCommit:        v1.3.6-0-g491b69b
+2026-10-13T11:03:19.8836326Z  docker-init:
+2026-10-13T11:03:19.8836530Z   Version:          0.19.0
+2026-10-13T11:03:19.8836763Z   GitCommit:        de40ad0
+2026-10-13T11:03:19.8856818Z [command]/opt/hostedtoolcache/docker-archive-stable/29.6.2/x64/docker info
+2026-10-13T11:03:22.1880941Z Client:
+2026-10-13T11:03:22.1881301Z  Version:    29.6.2
+2026-10-13T11:03:22.1886197Z  Context:    setup-docker-action
+2026-10-13T11:03:22.1886566Z  Debug Mode: false
+2026-10-13T11:03:22.1886796Z  Plugins:
+2026-10-13T11:03:22.1887020Z   buildx: Docker Buildx (Docker Inc.)
+2026-10-13T11:03:22.1887305Z     Version:  v0.37.2
+2026-10-13T11:03:22.1888233Z     Path:     /usr/libexec/docker/cli-plugins/docker-buildx
+2026-10-13T11:03:22.1888629Z   compose: Docker Compose (Docker Inc.)
+2026-10-13T11:03:22.1888900Z     Version:  v2.38.2
+2026-10-13T11:03:22.1889181Z     Path:     /usr/libexec/docker/cli-plugins/docker-compose
+2026-10-13T11:03:22.1889428Z 
+2026-10-13T11:03:22.1889521Z Server:
+2026-10-13T11:03:22.1889714Z  Containers: 0
+2026-10-13T11:03:22.1889915Z   Running: 0
+2026-10-13T11:03:22.1890109Z   Paused: 0
+2026-10-13T11:03:22.1890417Z   Stopped: 0
+2026-10-13T11:03:22.1890614Z  Images: 0
+2026-10-13T11:03:22.1890813Z  Server Version: 29.6.2
+2026-10-13T11:03:22.1891053Z  Storage Driver: overlayfs
+2026-10-13T11:03:22.1891333Z   driver-type: io.containerd.snapshotter.v1
+2026-10-13T11:03:22.1891638Z  Logging Driver: json-file
+2026-10-13T11:03:22.1891879Z  Cgroup Driver: systemd
+2026-10-13T11:03:22.1892107Z  Cgroup Version: 2
+2026-10-13T11:03:22.1892492Z  Plugins:
+2026-10-13T11:03:22.1892778Z   Volume: local
+2026-10-13T11:03:22.1893148Z   Network: bridge host ipvlan macvlan null overlay
+2026-10-13T11:03:22.1893690Z   Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+2026-10-13T11:03:22.1894225Z  CDI spec directories:
+2026-10-13T11:03:22.1894514Z   /etc/cdi
+2026-10-13T11:03:22.1894771Z   /var/run/cdi
+2026-10-13T11:03:22.1895043Z  Swarm: inactive
+2026-10-13T11:03:22.1895361Z  Runtimes: io.containerd.runc.v2 runc
+2026-10-13T11:03:22.1895730Z  Default Runtime: runc
+2026-10-13T11:03:22.1896035Z  Init Binary: docker-init
+2026-10-13T11:03:22.1896440Z  containerd version: ee2735368117d2eb259779949d5e75cdafec9761
+2026-10-13T11:03:22.1896946Z  runc version: v1.3.6-0-g491b69b
+2026-10-13T11:03:22.1897378Z  init version: de40ad0
+2026-10-13T11:03:22.1897607Z  Security Options:
+2026-10-13T11:03:22.1897817Z   apparmor
+2026-10-13T11:03:22.1898005Z   seccomp
+2026-10-13T11:03:22.1898207Z    Profile: builtin
+2026-10-13T11:03:22.1898413Z   cgroupns
+2026-10-13T11:03:22.1898613Z  Kernel Version: 6.17.0-1022-azure
+2026-10-13T11:03:22.1898890Z  Operating System: Ubuntu 24.04.5 LTS
+2026-10-13T11:03:22.1899173Z  OSType: linux
+2026-10-13T11:03:22.1899415Z  Architecture: x86_64
+2026-10-13T11:03:22.1899639Z  CPUs: 4
+2026-10-13T11:03:22.1899834Z  Total Memory: 15.61GiB
+2026-10-13T11:03:22.1900057Z  Name: runnervmmprz5
+2026-10-13T11:03:22.1900302Z  ID: c9137f97-7421-4b25-aab4-432e740efbd4
+2026-10-13T11:03:22.1900694Z  Docker Root Dir: /home/runner/setup-docker-action/run-7dc4fc89/data
+2026-10-13T11:03:22.1901104Z  Debug Mode: false
+2026-10-13T11:03:22.1901321Z  Username: githubactions
+2026-10-13T11:03:22.1901555Z  Experimental: false
+2026-10-13T11:03:22.1901805Z  Insecure Registries:
+2026-10-13T11:03:22.1902017Z   127.0.0.0/8
+2026-10-13T11:03:22.1907180Z   ::1/128
+2026-10-13T11:03:22.1907453Z  Live Restore Enabled: false
+2026-10-13T11:03:22.1907746Z  Product License: Community Engine
+2026-10-13T11:03:22.1908031Z  Firewall Backend: iptables
+2026-10-13T11:03:22.1908284Z   EnableUserlandProxy: true
+2026-10-13T11:03:22.1908709Z   UserlandProxyPath: /opt/hostedtoolcache/docker-archive-stable/29.6.2/x64/docker-proxy
+2026-10-13T11:03:22.1909097Z 
+2026-10-13T11:03:22.1909734Z ##[endgroup]
+2026-10-13T11:03:27.2160360Z ##[group]Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+2026-10-13T11:03:27.2160768Z with:
+2026-10-13T11:03:27.2161212Z   node-version-file: .node-version
+2026-10-13T11:03:27.2161485Z   always-auth: false
+2026-10-13T11:03:27.2161715Z   check-latest: false
+2026-10-13T11:03:27.2164666Z   token: ***
+2026-10-13T11:03:27.2164871Z env:
+2026-10-13T11:03:27.2165242Z   WEAVEOS_DEPENDENCY_CACHE_DIR: /home/runner/work/WeaveOS/WeaveOS/.work/dependency-cache
+2026-10-13T11:03:27.2165668Z ##[endgroup]
+2026-10-13T11:03:27.3542968Z Node version file is not JSON file
+2026-10-13T11:03:27.3584984Z Resolved .node-version as 24.14.0
+2026-10-13T11:03:27.3588771Z Attempting to download 24.14.0...
+2026-10-13T11:03:27.3659263Z (node:2691) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-13T11:03:27.3660498Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-13T11:03:28.0350852Z Acquiring 24.14.0 - x64 from https://github.com/actions/node-versions/releases/download/24.14.0-22380502845/node-24.14.0-linux-x64.tar.gz
+2026-10-13T11:03:28.4846148Z Extracting ...
+2026-10-13T11:03:28.4932961Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/ff5313c4-c1f6-4f35-8bec-b866331b570d -f /home/runner/work/_temp/bf4de731-4768-43f0-ad73-7988ffdcb9a5
+2026-10-13T11:03:29.7834644Z Adding to the cache ...
+2026-10-13T11:03:31.4473435Z ##[group]Environment details
+2026-10-13T11:03:31.6676746Z node: v24.14.0
+2026-10-13T11:03:31.6677120Z npm: 11.9.0
+2026-10-13T11:03:31.6677329Z yarn: 1.22.22
+2026-10-13T11:03:31.6677918Z ##[endgroup]
+2026-10-13T11:03:31.7520051Z ##[group]Run actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+2026-10-13T11:03:31.7520446Z with:
+2026-10-13T11:03:31.7520889Z   path: .work/dependency-cache/go-mod
+.work/dependency-cache/go-build
+.work/dependency-cache/pnpm-store
+
+2026-10-13T11:03:31.7521630Z   key: containers-Linux-X64-4ee089ad1ea271b07d5e38ec03c0fe3303bac0f6ff41332b91979fbaf26b0369
+2026-10-13T11:03:31.7522141Z   enableCrossOsArchive: false
+2026-10-13T11:03:31.7522716Z   fail-on-cache-miss: false
+2026-10-13T11:03:31.7522965Z   lookup-only: false
+2026-10-13T11:03:31.7523184Z   save-always: false
+2026-10-13T11:03:31.7523390Z env:
+2026-10-13T11:03:31.7523749Z   WEAVEOS_DEPENDENCY_CACHE_DIR: /home/runner/work/WeaveOS/WeaveOS/.work/dependency-cache
+2026-10-13T11:03:31.7524173Z ##[endgroup]
+2026-10-13T11:03:31.9887729Z Cache not found for input keys: containers-Linux-X64-4ee089ad1ea271b07d5e38ec03c0fe3303bac0f6ff41332b91979fbaf26b0369
+2026-10-13T11:03:32.0008235Z ##[group]Run actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+2026-10-13T11:03:32.0008670Z with:
+2026-10-13T11:03:32.0008921Z   pattern: components-38386239636-1-shard-*
+2026-10-13T11:03:32.0009266Z   path: /home/runner/work/_temp/component-shards
+2026-10-13T11:03:32.0009595Z   merge-multiple: true
+2026-10-13T11:03:32.0009839Z   digest-mismatch: error
+2026-10-13T11:03:32.0010095Z   repository: Hubujiu/WeaveOS
+2026-10-13T11:03:32.0010361Z   run-id: 38386239636
+2026-10-13T11:03:32.0010598Z   skip-decompress: false
+2026-10-13T11:03:32.0010858Z env:
+2026-10-13T11:03:32.0011230Z   WEAVEOS_DEPENDENCY_CACHE_DIR: /home/runner/work/WeaveOS/WeaveOS/.work/dependency-cache
+2026-10-13T11:03:32.0011669Z ##[endgroup]
+2026-10-13T11:03:32.3151993Z Found 4 artifact(s)
+2026-10-13T11:03:32.3153044Z Filtering artifacts by pattern 'components-38386239636-1-shard-*'
+2026-10-13T11:03:32.3186958Z Preparing to download the following artifacts:
+2026-10-13T11:03:32.3188281Z - components-38386239636-1-shard-2 (ID: 11807436445, Size: 119861, Expected Digest: sha256:b42054466a23e924827a18b18b5b59d16c56266d16e670930e5f65dbc8921aca)
+2026-10-13T11:03:32.3189858Z - components-38386239636-1-shard-3 (ID: 11806936749, Size: 876874, Expected Digest: sha256:780ebda665265e99e396e0bce8a7113e2279f8019ba7e9e452b5681c917d624e)
+2026-10-13T11:03:32.3191329Z - components-38386239636-1-shard-4 (ID: 11806687877, Size: 1086783, Expected Digest: sha256:2a9eff34e916d20fb8613a91f7da3210c7b2139c060bec4c1f748348940209b1)
+2026-10-13T11:03:32.3192970Z - components-38386239636-1-shard-1 (ID: 11806567229, Size: 112628, Expected Digest: sha256:1126435853e6254ad5ccb574059269156ec5503561a2c78127f1a2d09705ce8e)
+2026-10-13T11:03:32.5692826Z Redirecting to blob download url: https://productionresultssa9.blob.core.windows.net/actions-results/537386dc-e479-8a12-80ce-46b8ecd4d1f2/workflow-job-run-663b27b9-746e-5b1c-953b-c538315e69bf/artifacts/64a27df6f745d431032d954b8613e595261a38c7d5b8700c2aa6238737a76056.zip
+2026-10-13T11:03:32.5909973Z Starting download of artifact to: /home/runner/work/_temp/component-shards
+2026-10-13T11:03:32.5914326Z Redirecting to blob download url: https://productionresultssa9.blob.core.windows.net/actions-results/537386dc-e479-8a12-80ce-46b8ecd4d1f2/workflow-job-run-98371762-3ee3-52a4-81d6-9f0fd99bab26/artifacts/d83865e3cf8720f75ccce3d19840376e7283f007904e364751dbbc6cf3faea30.zip
+2026-10-13T11:03:32.5915757Z Starting download of artifact to: /home/runner/work/_temp/component-shards
+2026-10-13T11:03:32.5959014Z Redirecting to blob download url: https://productionresultssa9.blob.core.windows.net/actions-results/537386dc-e479-8a12-80ce-46b8ecd4d1f2/workflow-job-run-1547c605-3645-5fff-8c60-25ba039d79af/artifacts/f995b19e3c8fa28478069195090e1d18b095d34197c97aacebee70acb993d607.zip
+2026-10-13T11:03:32.5961411Z Starting download of artifact to: /home/runner/work/_temp/component-shards
+2026-10-13T11:03:32.6090630Z Redirecting to blob download url: https://productionresultssa9.blob.core.windows.net/actions-results/537386dc-e479-8a12-80ce-46b8ecd4d1f2/workflow-job-run-208bb4ed-31ee-50fb-8803-89089fb1cf1d/artifacts/5c97e5be4857689a05663ce1e6a1afc0cba793df4eb1aae9e8b359dbd961caf8.zip
+2026-10-13T11:03:32.6093398Z Starting download of artifact to: /home/runner/work/_temp/component-shards
+2026-10-13T11:03:32.6943986Z (node:2751) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-10-13T11:03:32.6945784Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-13T11:03:32.7377952Z SHA256 digest of downloaded artifact is 1126435853e6254ad5ccb574059269156ec5503561a2c78127f1a2d09705ce8e
+2026-10-13T11:03:32.7378894Z Artifact download completed successfully.
+2026-10-13T11:03:32.7510142Z SHA256 digest of downloaded artifact is b42054466a23e924827a18b18b5b59d16c56266d16e670930e5f65dbc8921aca
+2026-10-13T11:03:32.7510980Z Artifact download completed successfully.
+2026-10-13T11:03:32.8333541Z SHA256 digest of downloaded artifact is 780ebda665265e99e396e0bce8a7113e2279f8019ba7e9e452b5681c917d624e
+2026-10-13T11:03:32.8334243Z Artifact download completed successfully.
+2026-10-13T11:03:32.9557860Z SHA256 digest of downloaded artifact is 2a9eff34e916d20fb8613a91f7da3210c7b2139c060bec4c1f748348940209b1
+2026-10-13T11:03:32.9558889Z Artifact download completed successfully.
+2026-10-13T11:03:32.9559493Z Total of 4 artifact(s) downloaded
+2026-10-13T11:03:32.9563544Z Download artifact has finished successfully
+2026-10-13T11:03:32.9687779Z ##[group]Run node infra/acceptance/run.mjs
+2026-10-13T11:03:32.9688189Z [36;1mnode infra/acceptance/run.mjs[0m
+2026-10-13T11:03:32.9758406Z shell: /usr/bin/bash -e {0}
+2026-10-13T11:03:32.9758714Z env:
+2026-10-13T11:03:32.9759128Z   WEAVEOS_DEPENDENCY_CACHE_DIR: /home/runner/work/WeaveOS/WeaveOS/.work/dependency-cache
+2026-10-13T11:03:32.9759720Z   WEAVEOS_COMPONENT_SHARD_DIR: /home/runner/work/_temp/component-shards
+2026-10-13T11:03:32.9760123Z ##[endgroup]
+2026-10-13T11:03:42.2053507Z  test-redis Pulling 
+2026-10-13T11:03:42.2057636Z  redis Pulling 
+2026-10-13T11:03:42.8295777Z  774043ccc8cc Pulling fs layer 
+2026-10-13T11:03:42.8296403Z  7d15c3b84c6f Pulling fs layer 
+2026-10-13T11:03:42.8296927Z  eb62d249f37a Pulling fs layer 
+2026-10-13T11:03:42.8297413Z  4d6dc27a1e8c Pulling fs layer 
+2026-10-13T11:03:42.8297879Z  ef3c315121e5 Pulling fs layer 
+2026-10-13T11:03:42.8298360Z  4f4fb700ef54 Pulling fs layer 
+2026-10-13T11:03:42.8298852Z  9ac22f0bd4ee Pulling fs layer 
+2026-10-13T11:03:42.8489837Z  eb62d249f37a Pulling fs layer 
+2026-10-13T11:03:42.8493573Z  4d6dc27a1e8c Pulling fs layer 
+2026-10-13T11:03:42.8495731Z  9ac22f0bd4ee Pulling fs layer 
+2026-10-13T11:03:42.8496608Z  4f4fb700ef54 Pulling fs layer 
+2026-10-13T11:03:42.8498024Z  774043ccc8cc Pulling fs layer 
+2026-10-13T11:03:42.8498783Z  7d15c3b84c6f Pulling fs layer 
+2026-10-13T11:03:42.8501525Z  ef3c315121e5 Pulling fs layer 
+2026-10-13T11:03:42.9090846Z  4f4fb700ef54 Download complete 
+2026-10-13T11:03:42.9098690Z  eb62d249f37a Download complete 
+2026-10-13T11:03:42.9104087Z  4f4fb700ef54 Download complete 
+2026-10-13T11:03:42.9106475Z  7d15c3b84c6f Download complete 
+2026-10-13T11:03:42.9137346Z  774043ccc8cc Downloading [============>                                      ]   7.34MB/28.24MB
+2026-10-13T11:03:42.9148240Z  9ac22f0bd4ee Download complete 
+2026-10-13T11:03:42.9149640Z  774043ccc8cc Downloading [============>                                      ]   7.34MB/28.24MB
+2026-10-13T11:03:42.9152706Z  4d6dc27a1e8c Download complete 
+2026-10-13T11:03:42.9156449Z  7d15c3b84c6f Download complete 
+2026-10-13T11:03:42.9157182Z  9ac22f0bd4ee Download complete 
+2026-10-13T11:03:42.9161321Z  eb62d249f37a Download complete 
+2026-10-13T11:03:42.9165036Z  4d6dc27a1e8c Download complete 
+2026-10-13T11:03:43.0089818Z  774043ccc8cc Download complete 
+2026-10-13T11:03:43.0091044Z  ef3c315121e5 Downloading [==================================================>]  24.59MB/24.59MB
+2026-10-13T11:03:43.0095055Z  774043ccc8cc Download complete 
+2026-10-13T11:03:43.0096000Z  ef3c315121e5 Downloading [==================================================>]  24.59MB/24.59MB
+2026-10-13T11:03:43.0114978Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.0121380Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.1093976Z  ef3c315121e5 Download complete 
+2026-10-13T11:03:43.1095251Z  ef3c315121e5 Download complete 
+2026-10-13T11:03:43.1127356Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.1134195Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.2105096Z  140a6337a9b7 Download complete 
+2026-10-13T11:03:43.2133407Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.2147521Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.3100021Z  140a6337a9b7 Download complete 
+2026-10-13T11:03:43.3105859Z  1f6ba3745411 Download complete 
+2026-10-13T11:03:43.3113397Z  1f6ba3745411 Download complete 
+2026-10-13T11:03:43.3182641Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.3225470Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.4138669Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.4147863Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.5128363Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.5130950Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.6126379Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.6144284Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.7141768Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.7142592Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.8121448Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.8166683Z  774043ccc8cc Extracting 1 s
+2026-10-13T11:03:43.9103744Z  eb62d249f37a Pull complete 
+2026-10-13T11:03:43.9111867Z  eb62d249f37a Pull complete 
+2026-10-13T11:03:43.9123275Z  774043ccc8cc Pull complete 
+2026-10-13T11:03:43.9124015Z  774043ccc8cc Pull complete 
+2026-10-13T11:03:44.0120489Z  9ac22f0bd4ee Pull complete 
+2026-10-13T11:03:44.0127662Z  9ac22f0bd4ee Pull complete 
+2026-10-13T11:03:44.0150252Z  ef3c315121e5 Extracting 1 s
+2026-10-13T11:03:44.0159235Z  ef3c315121e5 Extracting 1 s
+2026-10-13T11:03:44.1119179Z  ef3c315121e5 Extracting 1 s
+2026-10-13T11:03:44.1120718Z  ef3c315121e5 Extracting 1 s
+2026-10-13T11:03:44.2119077Z  ef3c315121e5 Extracting 1 s
+2026-10-13T11:03:44.2130286Z  ef3c315121e5 Extracting 1 s
+2026-10-13T11:03:44.3093980Z  4f4fb700ef54 Pull complete 
+2026-10-13T11:03:44.3094665Z  4f4fb700ef54 Pull complete 
+2026-10-13T11:03:44.3113547Z  4d6dc27a1e8c Pull complete 
+2026-10-13T11:03:44.3128955Z  ef3c315121e5 Pull complete 
+2026-10-13T11:03:44.3133566Z  4d6dc27a1e8c Pull complete 
+2026-10-13T11:03:44.3139951Z  ef3c315121e5 Pull complete 
+2026-10-13T11:03:44.3326665Z  7d15c3b84c6f Pull complete 
+2026-10-13T11:03:44.3334409Z  test-redis Pulled 
+2026-10-13T11:03:44.3934170Z  7d15c3b84c6f Pull complete 
+2026-10-13T11:03:44.3939066Z  redis Pulled 
+2026-10-13T11:03:44.4265266Z  Network weaveos-v010-007-1791889413080_default  Creating
+2026-10-13T11:03:44.4582947Z  Network weaveos-v010-007-1791889413080_default  Created
+2026-10-13T11:03:44.4633555Z  Volume "weaveos-v010-007-1791889413080_pg"  Creating
+2026-10-13T11:03:44.4644355Z  Volume "weaveos-v010-007-1791889413080_pg"  Created
+2026-10-13T11:03:44.4649037Z  Container weaveos-v010-007-1791889413080-redis-1  Creating
+2026-10-13T11:03:44.4649807Z  Container weaveos-v010-007-1791889413080-postgres-1  Creating
+2026-10-13T11:03:45.0019581Z  Container weaveos-v010-007-1791889413080-postgres-1  Created
+2026-10-13T11:03:45.0020614Z  Container weaveos-v010-007-1791889413080-redis-1  Created
+2026-10-13T11:03:45.0021359Z  Container weaveos-v010-007-1791889413080-test-redis-1  Creating
+2026-10-13T11:03:45.0316556Z  Container weaveos-v010-007-1791889413080-test-redis-1  Created
+2026-10-13T11:03:45.0519586Z  Container weaveos-v010-007-1791889413080-redis-1  Starting
+2026-10-13T11:03:45.0520445Z  Container weaveos-v010-007-1791889413080-postgres-1  Starting
+2026-10-13T11:03:45.2141076Z  Container weaveos-v010-007-1791889413080-redis-1  Started
+2026-10-13T11:03:45.2240605Z  Container weaveos-v010-007-1791889413080-postgres-1  Started
+2026-10-13T11:03:45.2241503Z  Container weaveos-v010-007-1791889413080-test-redis-1  Starting
+2026-10-13T11:03:45.3085900Z  Container weaveos-v010-007-1791889413080-test-redis-1  Started
+2026-10-13T11:03:45.3087234Z  Container weaveos-v010-007-1791889413080-postgres-1  Waiting
+2026-10-13T11:03:45.3087894Z  Container weaveos-v010-007-1791889413080-redis-1  Waiting
+2026-10-13T11:03:45.3088546Z  Container weaveos-v010-007-1791889413080-test-redis-1  Waiting
+2026-10-13T11:03:47.3100815Z  Container weaveos-v010-007-1791889413080-redis-1  Healthy
+2026-10-13T11:03:47.3108416Z  Container weaveos-v010-007-1791889413080-postgres-1  Healthy
+2026-10-13T11:03:47.8098094Z  Container weaveos-v010-007-1791889413080-test-redis-1  Healthy
+2026-10-13T11:03:48.0877926Z Unable to find image 'golang:1.27.2@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c' locally
+2026-10-13T11:03:48.5708035Z docker.io/library/golang@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c: Pulling from library/golang
+2026-10-13T11:03:48.6984541Z 4846f2900730: Pulling fs layer
+2026-10-13T11:03:48.6985375Z 801401a9a8ba: Pulling fs layer
+2026-10-13T11:03:48.6986205Z 4f4fb700ef54: Pulling fs layer
+2026-10-13T11:03:48.6986705Z a6132307e9f8: Pulling fs layer
+2026-10-13T11:03:48.6987178Z b2b6413ae8f3: Pulling fs layer
+2026-10-13T11:03:48.6987689Z 62fe2e747f69: Pulling fs layer
+2026-10-13T11:03:48.6988129Z 4dc3950125eb: Pulling fs layer
+2026-10-13T11:03:48.7937124Z 4f4fb700ef54: Already exists
+2026-10-13T11:03:48.7946267Z 801401a9a8ba: Download complete
+2026-10-13T11:03:49.0938389Z 62fe2e747f69: Download complete
+2026-10-13T11:03:49.0953211Z 4846f2900730: Download complete
+2026-10-13T11:03:49.1956098Z 1fbf9551eaaf: Download complete
+2026-10-13T11:03:49.2909816Z 4dc3950125eb: Download complete
+2026-10-13T11:03:49.2916200Z 3c2ab6224b80: Download complete
+2026-10-13T11:03:49.3924514Z b2b6413ae8f3: Download complete
+2026-10-13T11:03:49.5905641Z a6132307e9f8: Download complete
+2026-10-13T11:03:50.3923902Z 4846f2900730: Pull complete
+2026-10-13T11:03:50.7920083Z 62fe2e747f69: Pull complete
+2026-10-13T11:03:52.3926072Z 4dc3950125eb: Pull complete
+2026-10-13T11:03:54.0926379Z a6132307e9f8: Pull complete
+2026-10-13T11:03:57.0907776Z 4f4fb700ef54: Pull complete
+2026-10-13T11:03:57.0918995Z 801401a9a8ba: Pull complete
+2026-10-13T11:03:57.0919978Z b2b6413ae8f3: Pull complete
+2026-10-13T11:03:57.1029875Z Digest: sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c
+2026-10-13T11:03:57.1031501Z Status: Downloaded newer image for golang@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c
+2026-10-13T11:03:59.4897622Z go: downloading github.com/pressly/goose/v3 v3.28.0
+2026-10-13T11:03:59.6486168Z go: downloading github.com/ClickHouse/clickhouse-go/v2 v2.48.0
+2026-10-13T11:03:59.6504008Z go: downloading github.com/go-sql-driver/mysql v1.10.0
+2026-10-13T11:03:59.6507514Z go: downloading github.com/jackc/pgx/v5 v5.10.0
+2026-10-13T11:03:59.6553581Z go: downloading github.com/joho/godotenv v1.5.1
+2026-10-13T11:03:59.7074489Z go: downloading github.com/mfridman/xflag v0.1.0
+2026-10-13T11:03:59.7123680Z go: downloading github.com/microsoft/go-mssqldb v1.11.0
+2026-10-13T11:03:59.8018007Z go: downloading github.com/tursodatabase/libsql-client-go v0.0.0-20260528064733-9d5d30a29a60
+2026-10-13T11:03:59.8528412Z go: downloading github.com/vertica/vertica-sql-go v1.3.8
+2026-10-13T11:03:59.8714616Z go: downloading github.com/ydb-platform/ydb-go-sdk/v3 v3.151.1
+2026-10-13T11:03:59.8728076Z go: downloading github.com/ziutek/mymysql v1.5.4
+2026-10-13T11:03:59.8746671Z go: downloading modernc.org/sqlite v1.57.0
+2026-10-13T11:03:59.9841246Z go: downloading filippo.io/edwards25519 v1.2.0
+2026-10-13T11:04:00.0033166Z go: downloading github.com/sethvargo/go-retry v0.4.0
+2026-10-13T11:04:00.0316033Z go: downloading go.uber.org/multierr v1.11.0
+2026-10-13T11:04:00.0539430Z go: downloading github.com/ClickHouse/ch-go v0.74.0
+2026-10-13T11:04:00.1769899Z go: downloading github.com/andybalholm/brotli v1.2.3
+2026-10-13T11:04:00.1877771Z go: downloading go.opentelemetry.io/otel/trace v1.46.0
+2026-10-13T11:04:00.1948256Z go: downloading github.com/Azure/azure-sdk-for-go/sdk/azcore v1.23.1
+2026-10-13T11:04:00.2180015Z go: downloading go.opentelemetry.io/otel v1.46.0
+2026-10-13T11:04:00.2640777Z go: downloading github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.1
+2026-10-13T11:04:00.2780946Z go: downloading github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9
+2026-10-13T11:04:00.3058951Z go: downloading github.com/golang-sql/sqlexp v0.1.0
+2026-10-13T11:04:00.3075278Z go: downloading github.com/google/uuid v1.6.0
+2026-10-13T11:04:00.3493410Z go: downloading github.com/shopspring/decimal v1.4.0
+2026-10-13T11:04:00.3503145Z go: downloading golang.org/x/text v0.41.0
+2026-10-13T11:04:00.4492894Z go: downloading github.com/jackc/pgpassfile v1.0.0
+2026-10-13T11:04:00.4705619Z go: downloading github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761
+2026-10-13T11:04:00.6864680Z go: downloading github.com/jackc/puddle/v2 v2.2.2
+2026-10-13T11:04:00.7073470Z go: downloading github.com/mfridman/interpolate v0.0.2
+2026-10-13T11:04:00.7302550Z go: downloading golang.org/x/sync v0.22.0
+2026-10-13T11:04:00.7564608Z go: downloading github.com/coder/websocket v1.8.15
+2026-10-13T11:04:00.8010980Z go: downloading github.com/ydb-platform/ydb-go-genproto v0.0.0-20260810123728-f0c151ab31b9
+2026-10-13T11:04:00.8748154Z go: downloading google.golang.org/grpc v1.83.2
+2026-10-13T11:04:00.9094102Z go: downloading github.com/paulmach/orb v0.13.0
+2026-10-13T11:04:01.0694931Z go: downloading github.com/go-faster/city v1.0.1
+2026-10-13T11:04:01.1161192Z go: downloading github.com/go-faster/errors v0.8.0
+2026-10-13T11:04:01.1435694Z go: downloading github.com/klauspost/compress v1.19.2
+2026-10-13T11:04:01.2349005Z go: downloading github.com/pierrec/lz4/v4 v4.1.29
+2026-10-13T11:04:01.2349769Z go: downloading github.com/segmentio/asm v1.2.1
+2026-10-13T11:04:01.2993907Z go: downloading github.com/Azure/azure-sdk-for-go/sdk/internal v1.12.0
+2026-10-13T11:04:01.3367724Z go: downloading github.com/AzureAD/microsoft-authentication-library-for-go v1.9.0
+2026-10-13T11:04:01.4014998Z go: downloading golang.org/x/crypto v0.55.0
+2026-10-13T11:04:01.6013604Z go: downloading github.com/elastic/go-sysinfo v1.15.5
+2026-10-13T11:04:01.7042696Z go: downloading google.golang.org/protobuf v1.36.12
+2026-10-13T11:04:02.0407107Z go: downloading github.com/golang-jwt/jwt/v4 v4.5.2
+2026-10-13T11:04:02.0408097Z go: downloading github.com/jonboulle/clockwork v0.5.0
+2026-10-13T11:04:02.0716085Z go: downloading golang.org/x/net v0.58.0
+2026-10-13T11:04:02.0751889Z go: downloading github.com/kylelemons/godebug v1.1.0
+2026-10-13T11:04:02.0793833Z go: downloading github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
+2026-10-13T11:04:02.1010521Z go: downloading github.com/antlr4-go/antlr/v4 v4.13.1
+2026-10-13T11:04:02.1041898Z go: downloading golang.org/x/sys v0.47.0
+2026-10-13T11:04:02.1399473Z go: downloading modernc.org/libc v1.75.6
+2026-10-13T11:04:02.3202608Z go: downloading google.golang.org/genproto/googleapis/rpc v0.0.0-20260831171406-18b4a7587f8a
+2026-10-13T11:04:02.3219544Z go: downloading github.com/golang-jwt/jwt/v5 v5.3.1
+2026-10-13T11:04:02.3682272Z go: downloading github.com/prometheus/procfs v0.22.0
+2026-10-13T11:04:02.3683566Z go: downloading github.com/cespare/xxhash/v2 v2.3.0
+2026-10-13T11:04:02.4004875Z go: downloading golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa
+2026-10-13T11:04:03.5464793Z go: downloading modernc.org/memory v1.12.1
+2026-10-13T11:04:03.5465358Z go: downloading github.com/dustin/go-humanize v1.0.1
+2026-10-13T11:04:03.5465857Z go: downloading modernc.org/mathutil v1.7.1
+2026-10-13T11:04:03.5975382Z go: downloading github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec
+2026-10-13T11:04:58.4618312Z 2026/10/13 11:04:58 OK   00001_archive.sql (3.17ms)
+2026-10-13T11:04:58.4644590Z 2026/10/13 11:04:58 OK   00002_personnel_audit.sql (2.47ms)
+2026-10-13T11:04:58.4677084Z 2026/10/13 11:04:58 OK   00003_apps_audit.sql (2.95ms)
+2026-10-13T11:04:58.4723119Z 2026/10/13 11:04:58 OK   00004_app_structure_audit.sql (4.42ms)
+2026-10-13T11:04:58.4753998Z 2026/10/13 11:04:58 OK   00005_workflow_management_audit.sql (2.99ms)
+2026-10-13T11:04:58.4793669Z 2026/10/13 11:04:58 OK   00006_workflow_publication_audit.sql (3.72ms)
+2026-10-13T11:04:58.4847609Z 2026/10/13 11:04:58 OK   00007_workflow_deletion_audit.sql (5.15ms)
+2026-10-13T11:04:58.4848497Z 2026/10/13 11:04:58 goose: successfully migrated database to version: 7
+2026-10-13T11:04:58.4977007Z 2026/10/13 11:04:58 goose: no migrations to run. current version: 7
+2026-10-13T11:04:58.7803529Z 2026/10/13 11:04:58 OK   00001_auth.sql (13.52ms)
+2026-10-13T11:04:58.7996376Z 2026/10/13 11:04:58 OK   00002_personnel.sql (19.16ms)
+2026-10-13T11:04:58.8063585Z 2026/10/13 11:04:58 OK   00003_query_drafts.sql (5.73ms)
+2026-10-13T11:04:58.8111389Z 2026/10/13 11:04:58 OK   00004_query_revision_writers.sql (4.46ms)
+2026-10-13T11:04:58.8152892Z 2026/10/13 11:04:58 OK   00005_table_presets.sql (4.07ms)
+2026-10-13T11:04:58.8322025Z 2026/10/13 11:04:58 OK   00006_apps_policy.sql (16.6ms)
+2026-10-13T11:04:58.8527786Z 2026/10/13 11:04:58 OK   00007_app_structure.sql (20.29ms)
+2026-10-13T11:04:58.8729895Z 2026/10/13 11:04:58 OK   00008_app_records.sql (19.97ms)
+2026-10-13T11:04:58.8817982Z 2026/10/13 11:04:58 OK   00009_record_save_history.sql (8.65ms)
+2026-10-13T11:04:58.8827170Z 2026/10/13 11:04:58 OK   00010_member_source_label_width.sql (867.55µs)
+2026-10-13T11:04:58.8845807Z 2026/10/13 11:04:58 OK   00011_record_reference_defaults.sql (1.77ms)
+2026-10-13T11:04:58.8865751Z 2026/10/13 11:04:58 OK   00012_actual_reference_defaults.sql (1.91ms)
+2026-10-13T11:04:58.8914456Z 2026/10/13 11:04:58 OK   00013_record_command_fence.sql (4.71ms)
+2026-10-13T11:04:58.8950029Z 2026/10/13 11:04:58 OK   00014_workflow_command_ledger.sql (3.47ms)
+2026-10-13T11:04:58.9055368Z 2026/10/13 11:04:58 OK   00015_workflow_catalog.sql (10.45ms)
+2026-10-13T11:04:58.9097107Z 2026/10/13 11:04:58 OK   00016_workflow_management_operations.sql (3.92ms)
+2026-10-13T11:04:58.9223159Z 2026/10/13 11:04:58 OK   00017_workflow_publications.sql (12.29ms)
+2026-10-13T11:04:58.9332560Z 2026/10/13 11:04:58 OK   00018_workflow_execution_projection.sql (10.76ms)
+2026-10-13T11:04:58.9361187Z 2026/10/13 11:04:58 OK   00019_workflow_execution_recovery.sql (2.85ms)
+2026-10-13T11:04:58.9431233Z 2026/10/13 11:04:58 OK   00020_workflow_evidence.sql (6.87ms)
+2026-10-13T11:04:58.9454176Z 2026/10/13 11:04:58 OK   00021_workflow_task_operations.sql (2.21ms)
+2026-10-13T11:04:58.9478294Z 2026/10/13 11:04:58 OK   00022_workflow_lifecycle_operations.sql (2.29ms)
+2026-10-13T11:04:58.9490140Z 2026/10/13 11:04:58 OK   00023_workflow_record_order_index.sql (1.12ms)
+2026-10-13T11:04:58.9500443Z 2026/10/13 11:04:58 OK   00024_workflow_trigger_configuration.sql (980.51µs)
+2026-10-13T11:04:58.9523046Z 2026/10/13 11:04:58 OK   00025_workflow_manual_start_operations.sql (2.14ms)
+2026-10-13T11:04:58.9532742Z 2026/10/13 11:04:58 OK   00026_workflow_personal_inbox_index.sql (905.79µs)
+2026-10-13T11:04:58.9601694Z 2026/10/13 11:04:58 OK   00027_workflow_independent_journal.sql (6.72ms)
+2026-10-13T11:04:58.9674416Z 2026/10/13 11:04:58 OK   00028_workflow_publication_history.sql (7.13ms)
+2026-10-13T11:04:58.9822124Z 2026/10/13 11:04:58 OK   00029_workflow_deletions.sql (14.53ms)
+2026-10-13T11:04:58.9889837Z 2026/10/13 11:04:58 OK   00030_workflow_rounds.sql (6.6ms)
+2026-10-13T11:04:58.9917488Z 2026/10/13 11:04:58 OK   00031_workflow_round_operations.sql (2.74ms)
+2026-10-13T11:04:58.9935926Z 2026/10/13 11:04:58 OK   00032_application_template_import.sql (1.75ms)
+2026-10-13T11:04:58.9996034Z 2026/10/13 11:04:58 OK   00033_application_table_presets.sql (5.9ms)
+2026-10-13T11:04:59.0088116Z 2026/10/13 11:04:59 OK   00034_record_lifecycle.sql (8.98ms)
+2026-10-13T11:04:59.0245212Z 2026/10/13 11:04:59 OK   00035_structure_deletion.sql (15.3ms)
+2026-10-13T11:04:59.0284782Z 2026/10/13 11:04:59 OK   00036_structure_copy.sql (2.86ms)
+2026-10-13T11:04:59.0285733Z 2026/10/13 11:04:59 goose: successfully migrated database to version: 36
+2026-10-13T11:04:59.0411729Z 2026/10/13 11:04:59 goose: no migrations to run. current version: 36
+2026-10-13T11:04:59.3723557Z go: downloading github.com/jackc/pgx/v5 v5.9.2
+2026-10-13T11:04:59.3725049Z go: downloading golang.org/x/crypto v0.57.0
+2026-10-13T11:04:59.5093107Z go: downloading github.com/redis/go-redis/v9 v9.22.0
+2026-10-13T11:04:59.5094145Z go: downloading google.golang.org/grpc v1.84.0
+2026-10-13T11:04:59.8736544Z go: downloading golang.org/x/net v0.60.0
+2026-10-13T11:04:59.8897060Z go: downloading golang.org/x/text v0.42.0
+2026-10-13T11:04:59.8908925Z go: downloading golang.org/x/sys v0.48.0
+2026-10-13T11:05:00.1301382Z go: downloading google.golang.org/genproto/googleapis/rpc v0.0.0-20260706201446-f0a921348800
+2026-10-13T11:05:00.1404818Z go: downloading golang.org/x/sync v0.23.0
+2026-10-13T11:05:00.1414138Z go: downloading go.uber.org/atomic v1.11.0
+2026-10-13T11:05:41.9428059Z ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/acceptance-seed	1.448s
+2026-10-13T11:06:20.1484379Z ok  	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-maintenance	13.472s
+2026-10-13T11:06:20.3727445Z ?   	github.com/Hubujiu/WeaveOS/services/bff/cmd/audit-read	[no test files]
+2026-10-13T11:07:31.1925782Z --- FAIL: TestRootTemplateCandidatesCurrentCreatorMinimalKeysetNoBusinessWrites (0.15s)
+2026-10-13T11:07:31.1927505Z     root_template_candidates_http_test.go:61: want200 actual400 {"code":"COMMON_INVALID_ARGUMENT","message":"请求未完成","data":null,"meta":{"requestId":"6fb820b3f83c993586a7574d99a1922c"}}
+2026-10-13T11:07:31.1928883Z --- FAIL: TestRootTemplateDepartmentCandidatesCurrentParentAndPaging (0.16s)
+2026-10-13T11:07:31.1930331Z     root_template_candidates_http_test.go:93: want200 actual400 {"code":"COMMON_INVALID_ARGUMENT","message":"请求未完成","data":null,"meta":{"requestId":"93bff178dc4f6a0f18969bf0f7aa41d0"}}
+2026-10-13T11:07:31.1931349Z --- FAIL: TestRootTemplateCandidatesAlwaysRequireLiveCreationAuthority (0.16s)
+2026-10-13T11:07:31.1933111Z     root_template_candidates_http_test.go:104: want safe error 403 actual 404 {"code":"API_NOT_FOUND","message":"请求未完成","data":null,"meta":{"requestId":"60b98776f8d13f009f4e1c18b86ab10c"}}
+2026-10-13T11:07:31.1934783Z --- FAIL: TestRootTemplateCandidateCursorCannotCrossKindQueryActorOrPurpose (0.16s)
+2026-10-13T11:07:31.1935699Z     root_template_candidates_http_test.go:121: ERROR: duplicate key value violates unique constraint "uq_users_account_key" (SQLSTATE 23505)
+2026-10-13T11:07:31.1936453Z --- FAIL: TestRootTemplateCandidateHTTPBoundaries (0.17s)
+2026-10-13T11:07:31.1937012Z     root_template_candidates_http_test.go:155: HEAD must succeed without a body 404
+2026-10-13T11:07:31.1937685Z FAIL
+2026-10-13T11:07:31.1938061Z FAIL	github.com/Hubujiu/WeaveOS/services/bff/cmd/bff	45.347s
+2026-10-13T11:07:32.4587735Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appaccess	1.007s
+2026-10-13T11:07:34.0882594Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appdrafts	1.030s
+2026-10-13T11:07:35.4543877Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appfields	1.022s
+2026-10-13T11:07:42.6577597Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/applications	5.653s
+2026-10-13T11:07:44.1380933Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appmeta	1.154s
+2026-10-13T11:07:45.4344901Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/apppolicy	1.013s
+2026-10-13T11:07:47.3618392Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/apppresets	1.091s
+2026-10-13T11:07:49.1970075Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appquery	1.065s
+2026-10-13T11:07:49.1970835Z ?   	github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordhttp	[no test files]
+2026-10-13T11:07:50.8424215Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/apprecords	1.049s
+2026-10-13T11:09:09.4466470Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/apprecordservice	73.090s
+2026-10-13T11:09:12.0205422Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appschema	1.705s
+2026-10-13T11:09:59.3507244Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/appstructure	43.617s
+2026-10-13T11:10:01.9858856Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/apptemplates	1.250s
+2026-10-13T11:10:01.9859764Z ?   	github.com/Hubujiu/WeaveOS/services/bff/internal/appworkflows	[no test files]
+2026-10-13T11:10:05.6646959Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/audit	2.552s
+2026-10-13T11:10:19.4332021Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/auth	12.083s
+2026-10-13T11:10:22.2826742Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/flowcommands	1.668s
+2026-10-13T11:10:24.0134078Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph	1.042s
+2026-10-13T11:10:25.2557081Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/identity	1.007s
+2026-10-13T11:10:26.5096810Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/invitation	1.007s
+2026-10-13T11:10:29.0089527Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence	1.787s
+2026-10-13T11:10:29.0090394Z ?   	github.com/Hubujiu/WeaveOS/services/bff/internal/persistence/authsql	[no test files]
+2026-10-13T11:11:37.9077654Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/personnel	66.369s
+2026-10-13T11:11:39.3389625Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/platform/httpserver	1.012s
+2026-10-13T11:11:41.3882208Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/querycontext	1.094s
+2026-10-13T11:11:42.7847760Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/security	1.010s
+2026-10-13T11:11:44.4691514Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/securityreview	1.015s
+2026-10-13T11:11:46.9003437Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/session	1.217s
+2026-10-13T11:11:48.5317438Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/workflowcatalog	1.011s
+2026-10-13T11:12:04.5910671Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/workflowevidence	15.367s
+2026-10-13T11:12:07.0757701Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/workflowexecution	1.535s
+2026-10-13T11:12:07.0758489Z ?   	github.com/Hubujiu/WeaveOS/services/bff/internal/workflowprojection	[no test files]
+2026-10-13T11:12:09.2252795Z ok  	github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc	1.201s
+2026-10-13T11:12:09.2253674Z ?   	github.com/Hubujiu/WeaveOS/services/bff/internal/workflowrpc/pb	[no test files]
+2026-10-13T11:12:09.2254243Z FAIL
+2026-10-13T11:12:09.6780868Z  Container weaveos-v010-007-1791889413080-test-redis-1  Stopping
+2026-10-13T11:12:09.6782012Z  Container weaveos-v010-007-1791889413080-redis-1  Stopping
+2026-10-13T11:12:09.8457491Z  Container weaveos-v010-007-1791889413080-redis-1  Stopped
+2026-10-13T11:12:09.8807782Z  Container weaveos-v010-007-1791889413080-test-redis-1  Stopped
+2026-10-13T11:12:09.8808617Z  Container weaveos-v010-007-1791889413080-postgres-1  Stopping
+2026-10-13T11:12:10.6054510Z  Container weaveos-v010-007-1791889413080-postgres-1  Stopped
+2026-10-13T11:12:11.0675396Z node:internal/errors:985
+2026-10-13T11:12:11.0676024Z   const err = new Error(message);
+2026-10-13T11:12:11.0676557Z               ^
+2026-10-13T11:12:11.0677056Z 
+2026-10-13T11:12:11.0681244Z Error: Command failed: docker run --rm --network container:bd5fa3a1526984a6ea822ef762f21dd1ce4bb7c3c7dace0ac409ca9aac201747 --mount type=bind,src=/home/runner/work/WeaveOS/WeaveOS/,dst=/repo --mount type=bind,src=/tmp/weaveos-b2-ci-fA9mdQ/socket,dst=/tmp/weaveos-b2-ci-fA9mdQ/socket,readonly --mount type=bind,src=/home/runner/work/WeaveOS/WeaveOS/.work/dependency-cache/go-mod,dst=/go/pkg/mod --mount type=bind,src=/home/runner/work/WeaveOS/WeaveOS/.work/dependency-cache/go-build,dst=/root/.cache/go-build --env-file /home/runner/work/WeaveOS/WeaveOS/.work/acceptance/test.env -e GOTOOLCHAIN=local -e GOFLAGS=-buildvcs=false -e GOBIN=/repo/.work/acceptance/tools -w /repo/services/bff golang:1.27.2@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c sh -ec go test -race -p 1 -count=1 ./... && go vet ./... && CGO_ENABLED=0 go build -o /repo/.work/acceptance/bff ./cmd/bff
+2026-10-13T11:12:11.0685206Z     at genericNodeError (node:internal/errors:985:15)
+2026-10-13T11:12:11.0685850Z     at wrappedFn (node:internal/errors:539:14)
+2026-10-13T11:12:11.0686552Z     at checkExecSyncError (node:child_process:925:11)
+2026-10-13T11:12:11.0687189Z     at execFileSync (node:child_process:961:15)
+2026-10-13T11:12:11.0688045Z     at call (file:///home/runner/work/WeaveOS/WeaveOS/infra/acceptance/run.mjs:37:47)
+2026-10-13T11:12:11.0688918Z     at go (file:///home/runner/work/WeaveOS/WeaveOS/infra/acceptance/run.mjs:51:46)
+2026-10-13T11:12:11.0689858Z     at runAcceptance (file:///home/runner/work/WeaveOS/WeaveOS/infra/acceptance/run.mjs:64:3)
+2026-10-13T11:12:11.0690775Z     at async file:///home/runner/work/WeaveOS/WeaveOS/infra/acceptance/run.mjs:202:8 {
+2026-10-13T11:12:11.0691348Z   status: 1,
+2026-10-13T11:12:11.0692133Z   signal: null,
+2026-10-13T11:12:11.0692815Z   output: [ null, null, null ],
+2026-10-13T11:12:11.0693316Z   pid: 10802,
+2026-10-13T11:12:11.0693948Z   stdout: null,
+2026-10-13T11:12:11.0694555Z   stderr: null
+2026-10-13T11:12:11.0695162Z }
+2026-10-13T11:12:11.0695646Z 
+2026-10-13T11:12:11.0695887Z Node.js v24.14.0
+2026-10-13T11:12:11.0735193Z ##[error]Process completed with exit code 1.
+2026-10-13T11:12:11.0826057Z ##[group]Run actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+2026-10-13T11:12:11.0826523Z with:
+2026-10-13T11:12:11.0826776Z   name: product-acceptance-38386239636
+2026-10-13T11:12:11.0827097Z   path: .work/acceptance/public/
+2026-10-13T11:12:11.0827395Z   include-hidden-files: true
+2026-10-13T11:12:11.0827669Z   if-no-files-found: error
+2026-10-13T11:12:11.0827932Z   retention-days: 14
+2026-10-13T11:12:11.0828197Z   compression-level: 6
+2026-10-13T11:12:11.0828447Z   overwrite: false
+2026-10-13T11:12:11.0828679Z env:
+2026-10-13T11:12:11.0829054Z   WEAVEOS_DEPENDENCY_CACHE_DIR: /home/runner/work/WeaveOS/WeaveOS/.work/dependency-cache
+2026-10-13T11:12:11.0829511Z ##[endgroup]
+2026-10-13T11:12:11.2525724Z (node:34184) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-13T11:12:11.2527129Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-13T11:12:11.2589778Z With the provided path, there will be 1 file uploaded
+2026-10-13T11:12:11.2590742Z Artifact name is valid!
+2026-10-13T11:12:11.2591403Z Root directory input is valid!
+2026-10-13T11:12:11.5228863Z Beginning upload of artifact content to blob storage
+2026-10-13T11:12:11.5407504Z (node:34184) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-13T11:12:11.6498222Z Uploaded bytes 231
+2026-10-13T11:12:11.6844041Z Finished uploading artifact content to blob storage!
+2026-10-13T11:12:11.6845181Z SHA256 digest of uploaded artifact zip is 465f238b8e2b429fcf5847e76c652db81d85f4ddce1cec24db44539fcf42cd08
+2026-10-13T11:12:11.6846352Z Finalizing artifact upload
+2026-10-13T11:12:11.9370339Z Artifact product-acceptance-38386239636.zip successfully finalized. Artifact ID 11807543654
+2026-10-13T11:12:11.9371912Z Artifact product-acceptance-38386239636 has been successfully uploaded! Final size is 231 bytes. Artifact ID is 11807543654
+2026-10-13T11:12:11.9377441Z Artifact download URL: https://github.com/Hubujiu/WeaveOS/actions/runs/38386239636/artifacts/11807543654
+2026-10-13T11:12:11.9528187Z ##[group]Run actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+2026-10-13T11:12:11.9528627Z with:
+2026-10-13T11:12:11.9528877Z   name: runtime-evidence-38386239636
+2026-10-13T11:12:11.9529190Z   path: .work/runtime/public/
+2026-10-13T11:12:11.9529502Z   include-hidden-files: true
+2026-10-13T11:12:11.9529780Z   if-no-files-found: warn
+2026-10-13T11:12:11.9545478Z   retention-days: 14
+2026-10-13T11:12:11.9545870Z   compression-level: 6
+2026-10-13T11:12:11.9546219Z   overwrite: false
+2026-10-13T11:12:11.9546550Z env:
+2026-10-13T11:12:11.9547096Z   WEAVEOS_DEPENDENCY_CACHE_DIR: /home/runner/work/WeaveOS/WeaveOS/.work/dependency-cache
+2026-10-13T11:12:11.9547705Z ##[endgroup]
+2026-10-13T11:12:12.1256521Z (node:34198) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-13T11:12:12.1257382Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-13T11:12:12.1288310Z ##[warning]No files were found with the provided path: .work/runtime/public/. No artifacts will be uploaded.
+2026-10-13T11:12:12.1527948Z Post job cleanup.
+2026-10-13T11:12:12.3954368Z ##[group]Docker daemon logs
+2026-10-13T11:12:12.3956983Z time="2026-10-13T11:03:16.967579050Z" level=info msg="Starting up"
+2026-10-13T11:12:12.3958225Z time="2026-10-13T11:03:16.968376079Z" level=info msg="OTEL tracing is not configured, using no-op tracer provider"
+2026-10-13T11:12:12.3959564Z time="2026-10-13T11:03:16.968460827Z" level=info msg="CDI directory does not exist, skipping" dir=/var/run/cdi
+2026-10-13T11:12:12.3960360Z time="2026-10-13T11:03:16.968474478Z" level=info msg="CDI directory does not exist, skipping" dir=/etc/cdi
+2026-10-13T11:12:12.3961464Z time="2026-10-13T11:03:16.968842955Z" level=info msg="detected 127.0.0.53 nameserver, assuming systemd-resolved, so using resolv.conf: /run/systemd/resolve/resolv.conf"
+2026-10-13T11:12:12.3962842Z time="2026-10-13T11:03:16.976669753Z" level=warning msg="\"containerd-snapshotter\" is now the default and no longer needed to be set"
+2026-10-13T11:12:12.3963915Z time="2026-10-13T11:03:16.995320350Z" level=info msg="Creating a containerd client" address=/run/containerd/containerd.sock timeout=1m0s
+2026-10-13T11:12:12.3964708Z time="2026-10-13T11:03:17.008703786Z" level=info msg="Loading containers: start."
+2026-10-13T11:12:12.3965312Z time="2026-10-13T11:03:17.008751277Z" level=info msg="NRI is disabled"
+2026-10-13T11:12:12.3966043Z time="2026-10-13T11:03:17.008759830Z" level=info msg="Starting daemon with containerd snapshotter integration enabled"
+2026-10-13T11:12:12.3966770Z time="2026-10-13T11:03:17.011506131Z" level=info msg="Restoring containers: start."
+2026-10-13T11:12:12.3968129Z time="2026-10-13T11:03:17.043957424Z" level=info msg="Deleting nftables IPv4 rules" error="running nft: /dev/stdin:1:17-30: Error: Could not process rule: No such file or directory\ndelete table ip docker-bridges\n                ^^^^^^^^^^^^^^\n exit status 1"
+2026-10-13T11:12:12.3969953Z time="2026-10-13T11:03:17.053888893Z" level=info msg="Deleting nftables IPv6 rules" error="running nft: /dev/stdin:1:18-31: Error: Could not process rule: No such file or directory\ndelete table ip6 docker-bridges\n                 ^^^^^^^^^^^^^^\n exit status 1"
+2026-10-13T11:12:12.3971371Z time="2026-10-13T11:03:17.410347440Z" level=info msg="Loading containers: done."
+2026-10-13T11:12:12.3972267Z time="2026-10-13T11:03:17.416323522Z" level=info msg="Docker daemon" commit=3d80467 containerd-snapshotter=true storage-driver=overlayfs version=29.6.2
+2026-10-13T11:12:12.3973322Z time="2026-10-13T11:03:17.416428831Z" level=info msg="Initializing buildkit"
+2026-10-13T11:12:12.3973949Z time="2026-10-13T11:03:17.672613627Z" level=info msg="Completed buildkit initialization"
+2026-10-13T11:12:12.3974607Z time="2026-10-13T11:03:17.675735846Z" level=info msg="Daemon has completed initialization"
+2026-10-13T11:12:12.3975416Z time="2026-10-13T11:03:17.675787103Z" level=info msg="API listen on /home/runner/setup-docker-action/run-7dc4fc89/docker.sock"
+2026-10-13T11:12:12.3976940Z time="2026-10-13T11:03:37.439137760Z" level=info msg="image pulled" digest="sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722" remote="docker.io/library/postgres@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722"
+2026-10-13T11:12:12.3978569Z time="2026-10-13T11:03:41.171671433Z" level=info msg="sbJoin: gwep4 ''->'', gwep6 ''->''" eid=7d2da3bfd8e3 ep=weaveos-b2-ci-730b87581d2342f0f2a0fe56d12d0ed8 net=none nid=51f4514e77e9
+2026-10-13T11:12:12.3981344Z time="2026-10-13T11:03:44.318778217Z" level=info msg="image pulled" digest="sha256:164c759a0c342ee69d08fc99219382b0fd682181465c0df2e0e6911f4c85d73c" remote="docker.io/library/redis@sha256:164c759a0c342ee69d08fc99219382b0fd682181465c0df2e0e6911f4c85d73c" spanID=f034508859b85983 traceID=1616481a19f23ef533b0f79297cbd00d
+2026-10-13T11:12:12.3987393Z time="2026-10-13T11:03:44.383574568Z" level=info msg="image pulled" digest="sha256:164c759a0c342ee69d08fc99219382b0fd682181465c0df2e0e6911f4c85d73c" remote="docker.io/library/redis@sha256:164c759a0c342ee69d08fc99219382b0fd682181465c0df2e0e6911f4c85d73c" spanID=c3794922598739f2 traceID=1616481a19f23ef533b0f79297cbd00d
+2026-10-13T11:12:12.3991398Z time="2026-10-13T11:03:45.178603326Z" level=info msg="sbJoin: gwep4 ''->'0eaf43e20316', gwep6 ''->''" eid=0eaf43e20316 ep=weaveos-v010-007-1791889413080-redis-1 net=weaveos-v010-007-1791889413080_default nid=ac9c9addfe74 spanID=75c86e625db1db22 traceID=1616481a19f23ef533b0f79297cbd00d
+2026-10-13T11:12:12.3995235Z time="2026-10-13T11:03:45.180101855Z" level=info msg="sbJoin: gwep4 ''->'74a24e3c11be', gwep6 ''->''" eid=74a24e3c11be ep=weaveos-v010-007-1791889413080-postgres-1 net=weaveos-v010-007-1791889413080_default nid=ac9c9addfe74 spanID=4f605727ed3f3bd5 traceID=1616481a19f23ef533b0f79297cbd00d
+2026-10-13T11:12:12.3998755Z time="2026-10-13T11:03:57.092132544Z" level=info msg="image pulled" digest="sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c" remote="docker.io/library/golang@sha256:5bc7f572bbaa98885a3a1fd9c0aa76b59e3e14e8628bfc316bbfd0c701e4818c"
+2026-10-13T11:12:12.4002225Z time="2026-10-13T11:04:57.731279061Z" level=info msg="received task-delete event from containerd" container=aa598a9097cb9ac666b9f4845d7ef1f2d2d5195c4aff2f879090c2e14c1d95d2 module=libcontainerd namespace=moby topic=/tasks/delete type="*events.TaskDelete"
+2026-10-13T11:12:12.4005819Z time="2026-10-13T11:04:58.517365853Z" level=info msg="received task-delete event from containerd" container=26bd3105c5db19db32c2786e670f12284621126a8c411aaf3b67fb471af2aa1c module=libcontainerd namespace=moby topic=/tasks/delete type="*events.TaskDelete"
+2026-10-13T11:12:12.4009212Z time="2026-10-13T11:04:59.055721386Z" level=info msg="received task-delete event from containerd" container=e75813af1037cb482bd15ac9d655d2568e2c40ae6d4e50855f91813613828974 module=libcontainerd namespace=moby topic=/tasks/delete type="*events.TaskDelete"
+2026-10-13T11:12:12.4012814Z time="2026-10-13T11:12:09.497801389Z" level=info msg="received task-delete event from containerd" container=3f867176c68e7ff9ff37a5164a00299d241276fc7a95d2291cb2fa785885062b module=libcontainerd namespace=moby topic=/tasks/delete type="*events.TaskDelete"
+2026-10-13T11:12:12.4016399Z time="2026-10-13T11:12:09.755632914Z" level=info msg="received task-delete event from containerd" container=f1425a3d96c1d02ec33b319e6270c04ead30ae2d81e1a5da19ae7d85a8b06d3c module=libcontainerd namespace=moby topic=/tasks/delete type="*events.TaskDelete"
+2026-10-13T11:12:12.4020264Z time="2026-10-13T11:12:09.822809035Z" level=info msg="received task-delete event from containerd" container=f114932d835ef7096c5242e494152005fab632eac142360ce15f0c6a0e762603 module=libcontainerd namespace=moby topic=/tasks/delete type="*events.TaskDelete"
+2026-10-13T11:12:12.4023991Z time="2026-10-13T11:12:10.488008281Z" level=info msg="received task-delete event from containerd" container=bd5fa3a1526984a6ea822ef762f21dd1ce4bb7c3c7dace0ac409ca9aac201747 module=libcontainerd namespace=moby topic=/tasks/delete type="*events.TaskDelete"
+2026-10-13T11:12:12.4027620Z time="2026-10-13T11:12:10.699744583Z" level=info msg="received task-delete event from containerd" container=da2004c99440a706220985c1bb850eb5d50895b80c0c039b4796c35ac3eee9b7 module=libcontainerd namespace=moby topic=/tasks/delete type="*events.TaskDelete"
+2026-10-13T11:12:12.4030564Z time="2026-10-13T11:12:10.972128644Z" level=info msg="sbJoin: gwep4 ''->'', gwep6 ''->''" eid=3eff94bb5ee8 ep=angry_moore net=none nid=51f4514e77e9
+2026-10-13T11:12:12.4033579Z time="2026-10-13T11:12:10.997089090Z" level=info msg="received task-delete event from containerd" container=2064323be8e7658da319352689eaf56f008dca707c4b60d1ed4937381137b8d7 module=libcontainerd namespace=moby topic=/tasks/delete type="*events.TaskDelete"
+2026-10-13T11:12:12.4035232Z 
+2026-10-13T11:12:12.4035760Z ##[endgroup]
+2026-10-13T11:12:12.4036413Z ##[group]Stopping Docker daemon
+2026-10-13T11:12:12.4037287Z [command]/usr/bin/sudo kill -s SIGTERM 2444
+2026-10-13T11:12:17.4215102Z ##[endgroup]
+2026-10-13T11:12:17.4215772Z ##[group]Removing Docker context
+2026-10-13T11:12:17.4237556Z [command]/opt/hostedtoolcache/docker-archive-stable/29.6.2/x64/docker context rm -f setup-docker-action
+2026-10-13T11:12:17.4338177Z setup-docker-action
+2026-10-13T11:12:17.4344450Z ##[endgroup]
+2026-10-13T11:12:17.4345095Z ##[group]Cleaning up runDir
+2026-10-13T11:12:17.4357655Z [command]/usr/bin/sudo rm -rf /home/runner/setup-docker-action/run-7dc4fc89
+2026-10-13T11:12:17.8442239Z ##[endgroup]
+2026-10-13T11:12:17.8444858Z ##[group]Cleaning up toolDir
+2026-10-13T11:12:17.8445564Z ##[endgroup]
+2026-10-13T11:12:17.8446096Z ##[group]Post cache
+2026-10-13T11:12:17.8446561Z State not set
+2026-10-13T11:12:17.8447096Z ##[endgroup]
+2026-10-13T11:12:17.8654427Z Post job cleanup.
+2026-10-13T11:12:17.9565980Z [command]/usr/bin/git version
+2026-10-13T11:12:17.9609140Z git version 2.55.0
+2026-10-13T11:12:17.9653664Z Temporarily overriding HOME='/home/runner/work/_temp/db049fe9-8d71-4e00-8c82-04b624df59bc' before making global git config changes
+2026-10-13T11:12:17.9655404Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-13T11:12:17.9662211Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/WeaveOS/WeaveOS
+2026-10-13T11:12:17.9709233Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-13T11:12:17.9752717Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-13T11:12:18.0050187Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-13T11:12:18.0087466Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-13T11:12:18.0397264Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-13T11:12:18.0440956Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-13T11:12:18.0888626Z Cleaning up orphan processes
+2026-10-13T11:12:18.1234577Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@11d5960a326750d5838078e36cf38b85af677262, actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020, actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4, docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

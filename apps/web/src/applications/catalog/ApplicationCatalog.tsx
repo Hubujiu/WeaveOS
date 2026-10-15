@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type RefObject } from 'react';
 import type { Application } from '../types';
 import cardIcon from '../assets/app-card.svg';
 
@@ -6,14 +6,14 @@ export function ApplicationCards({ applications, open }: { applications: readonl
  return <div className="app-card-grid">{applications.map(app => <button type="button" className="app-tile" aria-label={app.name} key={app.id} onClick={() => open(app)}><span className="app-icon"><img src={cardIcon} alt="" /></span><span className="app-tile-name">{app.name}</span><span className="app-tile-description">业务应用</span></button>)}</div>;
 }
 
-export function ApplicationCatalog({ applications, loading, error, retry, canCreate, create, open }: {
- applications: readonly Application[]; loading: boolean; error: string; retry: () => void; canCreate: boolean; create: (trigger: HTMLButtonElement) => void; open: (app: Application) => void;
+export function ApplicationCatalog({ applications, loading, error, retry, canCreate, create, open, importTemplate, importTrigger, canImport=false }: {
+ applications: readonly Application[]; loading: boolean; error: string; retry: () => void; canCreate: boolean; create: (trigger: HTMLButtonElement) => void; open: (app: Application) => void; importTemplate?:()=>void; importTrigger?:RefObject<HTMLButtonElement|null>; canImport?:boolean;
 }) {
  const [search, setSearch] = useState('');
  const matches = applications.filter(app => app.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
  return <>
   <div className="app-page-heading"><h1>应用中心</h1></div>
-  <div className="app-page-actions">{canCreate && <button className="admin-button primary" onClick={e => create(e.currentTarget)}>新建应用</button>}</div>
+  <div className="app-page-actions">{canCreate && <button className="admin-button primary" onClick={e => create(e.currentTarget)}>新建应用</button>}{canImport&&importTemplate&&<button ref={importTrigger} type="button" className="admin-button" onClick={importTemplate}>导入应用模板</button>}</div>
   <div className="app-search-row"><input type="search" aria-label="搜索应用名称" placeholder="搜索应用名称" value={search} onChange={e => setSearch(e.target.value)} /><span className="app-filter-label" aria-label="当前显示范围">全部应用</span></div>
   {loading ? <section className="app-surface app-state" role="status">正在加载应用…</section>
    : error ? <section className="app-surface app-state"><p role="alert">{error}</p><button className="admin-button" onClick={retry}>重试</button></section>

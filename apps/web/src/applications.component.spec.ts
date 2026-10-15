@@ -1,5 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
 
+// Drain in-flight mock handlers while their browser context still exists.
+// 'wait' preserves handler errors; do not use 'ignoreErrors' or catch them.
+test.afterEach(async ({ page }) => {
+ await page.unrouteAll({ behavior: 'wait' });
+});
+
 // Independent oracle: PRD V030-012.2/.3, AP-FR-10, B5a.4-7 and
 // original Home358:18205/catalog327:2132. Mock only the HTTP boundary.
 // These component fixtures are not real API acceptance.

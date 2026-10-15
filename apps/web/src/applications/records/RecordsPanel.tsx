@@ -38,6 +38,9 @@ export function RecordsPanel({view,actorId,page,loading,error,hiddenColumnIds,co
    return <button className="text-button table-cell" type="button" onClick={()=>onOpenRecord(row)} aria-label={`打开记录：${field.name} ${text}`}>{text}</button>;
   }
  }));
+ columns.push(...([
+  ['id','记录 ID'],['createdBy','创建人'],['createdAt','创建时间'],['updatedAt','更新时间'],['recordVersion','记录版本'],
+ ] as const).map(([key,header]):TableColumn<RecordItem>=>({key,header,dataType:key==='createdAt'||key==='updatedAt'?'time':'text',sortable:key==='createdAt'||key==='updatedAt',cell:row=><span>{String(row[key])}</span>})));
  const sort=page.sort?{key:page.sort.fieldId,direction:page.sort.direction}:null;
  return <section className="member-table surface" aria-label="记录列表">
   {error?<p role="alert">{error}</p>:null}

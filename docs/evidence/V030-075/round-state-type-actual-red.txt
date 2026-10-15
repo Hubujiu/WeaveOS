@@ -1,0 +1,75 @@
+(node:14) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ V069 authorized rejected latest round keeps current CAS and field mask (1.691793ms)
+✔ V069 old round is a valid read-only preview (0.157546ms)
+✔ V069 completed latest round may authorize review without rework (0.320992ms)
+✔ V069 starting has no terminal actions (4.099221ms)
+✔ V069 active has no terminal actions (0.183606ms)
+✔ V069 no_effect has no terminal actions (0.122694ms)
+✔ V069 preview rejects other instance (0.227301ms)
+✔ V069 preview rejects zero flow (0.108032ms)
+✔ V069 preview rejects uppercase id (0.156104ms)
+✔ V069 preview rejects missing latest (0.228473ms)
+✔ V069 preview rejects bad state (0.167632ms)
+✔ V069 preview rejects zero round (0.156215ms)
+✔ V069 preview rejects unsafe version (0.087882ms)
+✔ V069 preview rejects string revision (0.048934ms)
+✔ V069 preview rejects null schema (0.038097ms)
+✔ V069 preview rejects fractional definition (0.044077ms)
+✔ V069 preview rejects coerced capability (0.032939ms)
+✔ V069 preview rejects null field mask (0.037166ms)
+✔ V069 preview rejects duplicate field (0.038148ms)
+✔ V069 preview rejects non-id field (0.030937ms)
+✔ V069 preview rejects private graph (0.03371ms)
+✔ V069 preview rejects business values (0.030465ms)
+✔ V069 preview rejects approvers (0.029584ms)
+✔ V069 preview rejects old writable (0.034312ms)
+✔ V069 preview rejects active writable (0.032549ms)
+✔ V069 preview rejects completed resubmit (0.031447ms)
+✔ V069 resubmit accepts only the minimum new-round receipt (0.103856ms)
+✔ V069 review is an independent new round (0.093851ms)
+✔ V069 receipt rejects other operation (0.065959ms)
+✔ V069 receipt rejects other flow (0.034231ms)
+✔ V069 receipt rejects other parent (0.086941ms)
+✔ V069 receipt rejects same instance (0.126851ms)
+✔ V069 receipt rejects wrong kind (0.074492ms)
+✔ V069 receipt rejects completed (0.06011ms)
+✔ V069 receipt rejects zero round (0.040341ms)
+✔ V069 receipt rejects string round (0.10614ms)
+✔ V069 receipt rejects unsafe round (0.134462ms)
+✔ V069 receipt rejects no instance (0.051417ms)
+✔ V069 receipt rejects command (0.036525ms)
+✔ V069 receipt rejects values (0.031006ms)
+✔ V069 state is a literal string not an array that stringifies to a state (0.071778ms)
+✖ V069 read-only active state rejects array coercion (0.673622ms)
+ℹ tests 42
+ℹ suites 0
+ℹ pass 41
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 161.249252
+
+✖ failing tests:
+
+test at tests/foundation/workflow-round-consumption.test.mjs:21:1
+✖ V069 read-only active state rejects array coercion (0.673622ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-round-consumption.test.mjs:21:70)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

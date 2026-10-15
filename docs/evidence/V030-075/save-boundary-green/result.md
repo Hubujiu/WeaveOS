@@ -1,0 +1,1 @@
+26 independent contract tests. Original false placeholder fails5 positive cases and passes21 fail-closed cases; log/snapshot/actual timestamp retained. Exact helper now26/26 GREEN. This does not yet connect the shared mutation hook or task Save UI, whose browser RED has not run. No claim of saving or live end-to-end completion.

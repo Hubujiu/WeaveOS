@@ -52,7 +52,7 @@ func (s *Service) workflowLifecycleHTTP(w http.ResponseWriter, r *http.Request, 
 	operation := value[string](body, "operationId")
 	m := httpserver.Metadata(r.Context())
 	result, err := s.Records.AcceptWorkflowLifecycle(r.Context(), p, apprecordservice.WorkflowLifecycleActionRequest{
-		WorkflowLifecycleRequest: req, OperationID: operation, Action: value[string](body, "action"),
+		WorkflowLifecycleRequest: req, OperationID: operation, Action: value[string](body, "action"), Reason: value[string](body, "reason"),
 		BasisToken: value[string](body, "basisToken"), TargetNodeID: value[string](body, "targetNodeId"),
 	}, applications.Metadata{RequestID: m.RequestID, ClientIP: m.ClientIP, UserAgent: r.UserAgent()})
 	if err != nil {

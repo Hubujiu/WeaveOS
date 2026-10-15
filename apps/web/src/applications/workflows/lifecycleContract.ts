@@ -1,0 +1,20 @@
+import {validRecordProjection} from './taskPreviewContract';
+import type {Field} from '../forms/contracts';
+import type {RecordItem} from '../records/contracts';
+export type InstanceLocation={appId:string;viewId:string;recordId:string;instanceId:string};
+export type LifecyclePreview={basisToken:string;instance:{id:string;sequence:number;state:'active'};record:RecordItem;fields:Field[];canWithdraw:boolean;returnTargets:{nodeId:string;taskId:string;activationEpoch:number}[]};
+const object=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
+const exact=(v:Record<string,unknown>,keys:string[])=>Object.keys(v).length===keys.length&&keys.every(key=>Object.hasOwn(v,key));
+const id=(v:unknown):v is string=>typeof v==='string'&&/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/.test(v)&&v!=='00000000-0000-0000-0000-000000000000';
+const integer=(v:unknown,min:number):v is number=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=min;
+export function validLifecyclePreview(v:unknown,location:InstanceLocation):v is LifecyclePreview{
+ if(!Object.values(location).every(id)||!object(v)||!exact(v,['basisToken','instance','record','fields','canWithdraw','returnTargets'])||typeof v.basisToken!=='string'||!v.basisToken.length||v.basisToken.length>256||typeof v.canWithdraw!=='boolean')return false;
+ const i=v.instance;
+ if(!object(i)||!exact(i,['id','sequence','state'])||i.id!==location.instanceId||i.state!=='active'||!integer(i.sequence,0)||!validRecordProjection(v.record,v.fields,{appId:location.appId,viewId:location.viewId,recordId:location.recordId},200))return false;
+ return Array.isArray(v.returnTargets)&&v.returnTargets.length<=100&&v.returnTargets.every(t=>object(t)&&exact(t,['nodeId','taskId','activationEpoch'])&&id(t.nodeId)&&id(t.taskId)&&integer(t.activationEpoch,1))&&new Set(v.returnTargets.map(t=>t.nodeId)).size===v.returnTargets.length;
+}
+export function validInstanceActionRequest(resource:unknown,request:unknown):boolean{
+ if(!object(resource)||!exact(resource,['kind','appId','viewId','id','instanceId'])||resource.kind!=='instance-action'||!['appId','viewId','id','instanceId'].every(k=>id(resource[k]))||!object(request))return false;
+ const path=`applications/${resource.appId}/forms/${resource.viewId}/records/${resource.id}/workflow-instances/${resource.instanceId}/actions`;
+ return request.path===path&&request.method==='POST'&&request.expectedStatus===202&&object(request.body)&&(request.body.action==='withdraw'&&exact(request.body,['action','basisToken'])||request.body.action==='return'&&exact(request.body,['action','basisToken','targetNodeId','reason'])&&id(request.body.targetNodeId)&&typeof request.body.reason==='string'&&Array.from(request.body.reason).length>=1&&Array.from(request.body.reason).length<=500&&!/^[\p{White_Space}]*$/u.test(request.body.reason)&&!/[\u0000\uD800-\uDFFF]/u.test(request.body.reason))&&typeof request.body.basisToken==='string'&&request.body.basisToken.length>0&&request.body.basisToken.length<=256;
+}

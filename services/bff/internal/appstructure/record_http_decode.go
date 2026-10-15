@@ -15,6 +15,9 @@ import (
 func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[string]json.RawMessage, error) {
 	required, optional, nullable := []string{}, []string{}, []string{}
 	switch kind {
+	case "record.deleted.search":
+		required = []string{"page", "pageSize"}
+		optional = []string{"queryVersion"}
 	case "record.lifecycle":
 		required = []string{"operationId", "expectedSchemaVersion", "expectedRecordVersion"}
 	case "workflow.round.start":
@@ -28,9 +31,10 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 		optional = []string{"pageSize", "queryVersion"}
 	case "workflow.lifecycle.action":
 		required = []string{"operationId", "action", "basisToken"}
-		optional = []string{"targetNodeId"}
+		optional = []string{"targetNodeId", "reason"}
 	case "workflow.task.action":
 		required = []string{"operationId", "action", "basisToken"}
+		optional = []string{"reason"}
 	case "workflow.task.save":
 		required = []string{"operationId", "basisToken", "changes"}
 	case "record.create":
@@ -56,7 +60,7 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 		return nil, &Error{Code: "COMMON_UNSUPPORTED_MEDIA_TYPE"}
 	}
 	limit := int64(1 << 20)
-	if kind == "record.lifecycle" {
+	if kind == "record.lifecycle" || kind == "record.deleted.search" {
 		limit = 4096
 	}
 	if kind == "record.search" {
@@ -122,6 +126,16 @@ func decodeRecord(w http.ResponseWriter, r *http.Request, kind string) (map[stri
 			json.Unmarshal(m["basisToken"], &token) != nil || token == "" || utf8.RuneCountInString(token) > 256 {
 			return nil, recordBodyInvalid()
 		}
+	}
+	if kind == "workflow.task.action" || kind == "workflow.lifecycle.action" {
+		if raw, present := m["reason"]; present {
+			var action, reason string
+			if json.Unmarshal(m["action"], &action) != nil || (action != "reject" && action != "return") || !validWorkflowReasonUnicodeEscapes(raw) || json.Unmarshal(raw, &reason) != nil || !ValidWorkflowActionReason(reason) {
+				return nil, recordBodyInvalid()
+			}
+		}
+		// Omission is parsed only to preserve exact pre-upgrade replay. The service
+		// requires a reason after checking whether the original operation exists.
 	}
 	if kind == "workflow.task.save" {
 		var operation, token string

@@ -23,6 +23,7 @@ import (
 type WorkflowLifecycleActionRequest struct {
 	WorkflowLifecycleRequest
 	OperationID, Action, BasisToken, TargetNodeID string
+	Reason                                        string `json:",omitempty"`
 }
 
 func (s *Service) AcceptWorkflowLifecycle(ctx context.Context, p session.Principal, req WorkflowLifecycleActionRequest, metadata applications.Metadata) (WorkflowOperationResult, error) {
@@ -90,6 +91,9 @@ func (s *Service) AcceptWorkflowLifecycle(ctx context.Context, p session.Princip
 			return empty, err
 		}
 		return s.WorkflowOperation(ctx, p, req.OperationID)
+	}
+	if (req.Action == "return" && !appstructure.ValidWorkflowActionReason(req.Reason)) || (req.Action != "return" && req.Reason != "") {
+		return empty, applications.ErrInvalid
 	}
 	if loadErr != nil {
 		if errors.Is(loadErr, querycontext.ErrExpired) || errors.Is(loadErr, querycontext.ErrInvalid) {
@@ -194,6 +198,11 @@ func (s *Service) AcceptWorkflowLifecycle(ctx context.Context, p session.Princip
 		DefinitionVersion: loaded.Binding.DefinitionVersion, PayloadHash: sha256.Sum256(payloadBytes)}
 	if _, err = (fc.Ledger{Namespace: "applications"}).AcceptExecutionInTx(ctx, tx, command, payload); err != nil {
 		return empty, err
+	}
+	if req.Action == "return" {
+		if _, err = tx.Exec(ctx, "INSERT INTO applications.workflow_action_reasons(command_id,reason) VALUES($1,$2)", commandID, req.Reason); err != nil {
+			return empty, err
+		}
 	}
 	result := WorkflowOperationResult{OperationID: req.OperationID, CommandID: commandID, InstanceID: req.InstanceID, Status: "pending"}
 	resultBytes, err := json.Marshal(result)

@@ -1,0 +1,13 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {stripTypeScriptTypes} from 'node:module';
+const url=source=>'data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source,{mode:'transform'})).toString('base64');
+const read=p=>readFileSync(new URL('../../apps/web/src/applications/'+p,import.meta.url),'utf8'),recoveryURL=url(read('recovery.ts'));
+const recovery=await import(recoveryURL),{findManualStartRecovery:find}=await import(url(read('workflows/manualStartRecovery.ts').replace("from '../recovery'",'from '+JSON.stringify(recoveryURL))));
+const id=n=>'bbbbbbbb-bbbb-4bbb-8bbb-'+String(n).padStart(12,'0'),actor=id(1),app=id(2),view=id(3),record=id(4);
+function packet(extra={}){const resource={kind:'manual-start',appId:app,viewId:view,id:record,flowId:id(5),...extra};return {actorId:actor,scope:JSON.stringify([JSON.stringify(['manual-start',actor,app,view,record]),resource]),resource,path:`applications/${app}/forms/${view}/records/${record}/workflow-starts`,method:'POST',expectedStatus:202,operationId:id(6),body:{operationId:id(6),flowId:id(5),expectedWorkflowRevision:7,expectedSchemaVersion:2,expectedRecordVersion:8}};}
+const clear=p=>recovery.clearRecovery(p.actorId,p.scope);
+test('V044 absent manual scope does not invent a capability',()=>assert.equal(find(actor,app,view,record),null));
+test('V044 exact manual recovery preserves the original frozen operation and CAS',()=>{const p=packet();recovery.keepPacket(p,true);try{const found=find(actor,app,view,record);assert.deepEqual(found,p);assert.ok(Object.isFrozen(found));assert.ok(Object.isFrozen(found.body));assert.equal(recovery.scopedUnconfirmed(actor).length,1);}finally{clear(p);}});
+for(const [name,args]of [['actor',[id(99),app,view,record]],['app',[actor,id(99),view,record]],['view',[actor,app,id(99),record]],['record',[actor,app,view,id(99)]]])test('V044 manual recovery isolates '+name,()=>{const p=packet();recovery.keepPacket(p,true);try{assert.equal(find(...args),null);}finally{clear(p);}});
+for(const kind of ['record','preset','task-action','instance-action'])test('V044 manual recovery excludes '+kind,()=>{const p=packet({kind});recovery.keepPacket(p,true);try{assert.equal(find(actor,app,view,record),null);}finally{clear(p);}});
+test('V044 confirmed intent is not restored as another unknown start',()=>{const p=packet();recovery.keepPacket(p,false);try{assert.equal(find(actor,app,view,record),null);}finally{clear(p);}});
+test('V044 foreign scope cannot be borrowed despite matching resource identifiers',()=>{const p={...packet(),scope:'other'};recovery.keepPacket(p,true);try{assert.equal(find(actor,app,view,record),null);}finally{clear(p);}});

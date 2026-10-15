@@ -123,12 +123,12 @@ func buildHost(startupCtx, processCtx context.Context, cfg config) (*bffHost, er
 	s.Personnel = &personnel.Service{Application: people, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	apps := &applications.Service{Application: &applications.Application{Pool: pool}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, Logger: slog.Default(), TrustedProxyHosts: cfg.TrustedProxyHosts}
 	apps.Definitions = &appstructure.Service{Application: &appstructure.Application{Pool: pool, ConfirmationKey: cfg.DefinitionKey, ConfirmationKeyID: cfg.DefinitionKeyID, Limits: cfg.SchemaLimits, Dependencies: appstructure.LocalRegistry{}, References: appstructure.CurrentSources{}, CandidateRedis: queryRedis, CandidateNamespace: cfg.Generation, RecordAccess: apprecordhttp.ResolveAccess}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
-	workflows := &appworkflows.Application{Pool: pool, Limits: cfg.SchemaLimits}
+	workflows := &appworkflows.Application{Pool: pool, Limits: cfg.SchemaLimits, ManagerQueries: appworkflows.NewManagerQueryStore(queryRedis, cfg.Generation), ApproverQueries: appworkflows.NewApproverQueryStore(queryRedis, cfg.Generation)}
 	apps.Workflows = &appworkflows.Service{Application: workflows, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
 	records := apprecordservice.New(pool, queryRedis, cfg.Generation)
 	records.Limits = cfg.SchemaLimits
 	apps.Records = &apprecordhttp.Service{Records: records, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
-	apps.Templates = &apptemplates.HTTP{Application: &apptemplates.Service{Pool: pool}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
+	apps.Templates = &apptemplates.HTTP{Application: &apptemplates.Service{Pool: pool}, Candidates: &appstructure.Application{Pool: pool, CandidateRedis: queryRedis, CandidateNamespace: cfg.Generation}, Authenticator: session.Authenticator{Sessions: sessions, DB: pool, Origin: cfg.Origin}, TrustedProxyHosts: cfg.TrustedProxyHosts}
 	s.Applications = apps
 	s.InvitationBegin = func(ctx context.Context, p session.Principal, version string) (pgx.Tx, error) {
 		tx, err := people.BeginQueryWrite(ctx, p, version)

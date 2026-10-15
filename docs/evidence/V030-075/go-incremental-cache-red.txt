@@ -1,0 +1,54 @@
+✖ V075 compiled cache uses one environment-bound incremental fallback and exact source primary (8.063489ms)
+✖ V075 compiled cache binds actual immutable runner image and refuses missing identity (0.321603ms)
+✔ V075 successful independent discovery saves missing compiled cache before potentially long real suite (0.302835ms)
+✔ V075 cache cannot gate or replace any race test vet build or shorten stored evidence (0.300361ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 91.112869
+
+✖ failing tests:
+
+test at tests/governance/go-build-cache.test.mjs:5:1
+✖ V075 compiled cache uses one environment-bound incremental fallback and exact source primary (8.063489ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(block.includes("key: "+prefix+"${{ hashFiles('services/bff/**/*.go') }}"))
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/go-build-cache.test.mjs:9:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/governance/go-build-cache.test.mjs:14:1
+✖ V075 compiled cache binds actual immutable runner image and refuses missing identity (0.321603ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(identity.includes('"${ImageOS:?}"'))
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/go-build-cache.test.mjs:16:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

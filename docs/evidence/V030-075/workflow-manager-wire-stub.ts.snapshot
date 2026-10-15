@@ -1,0 +1,3 @@
+export type WorkflowManagerItem={id:string;name:string;revision:number;currentVersion:number;candidateVersion:number;state:'disabled'|'enabled'|'closing';triggerEvents:('manual'|'record.created'|'record.updated')[];inFlightCount:number;updatedAt:string};
+export type WorkflowManagerPage={items:WorkflowManagerItem[];total:number;page:number;pageSize:number;queryVersion:string};
+export function validWorkflowManagerPage(value:unknown,page:number,pageSize:number):value is WorkflowManagerPage{return false;}

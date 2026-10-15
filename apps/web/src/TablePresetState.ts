@@ -6,7 +6,7 @@ export type TablePreset={id:string;view:QueryView;name:string;filter:PresetFilte
 export type AppliedPreset=Pick<TablePreset,'id'|'version'|'filter'|'hiddenColumnIds'>;
 export type PresetChoice={value:string;label:string};
 export type PresetOptions={departmentIds?:readonly PresetChoice[];identityIds?:readonly PresetChoice[]};
-export type BusinessColumn={id:string;name:string};
+export type BusinessColumn={id:string;name:string;system?:boolean};
 export const memberBusinessColumns:readonly BusinessColumn[]=[{id:'account',name:'成员'},{id:'departments',name:'部门'},{id:'identities',name:'身份'},{id:'personnelManage',name:'人员管理'}];
 export const eventBusinessColumns:readonly BusinessColumn[]=[{id:'occurredAt',name:'时间'},{id:'actorAccount',name:'操作者'},{id:'action',name:'操作'},{id:'object',name:'对象'},{id:'detail',name:'详情'},{id:'outcome',name:'结果'}];
 export type PresetRow={id:string;field:string;operator:string;value:unknown};
@@ -37,7 +37,7 @@ export function validateResourcePreset(name:string,filter:unknown,hidden:readonl
  if(!trimmed||[...trimmed].length>100)issues.push('自定义筛选名称须为 1–100 个字符');
  if(/\p{Surrogate}/u.test(trimmed))issues.push('名称包含无效 Unicode 字符');
  if(new Set(hidden).size!==hidden.length||hidden.some(id=>!columns.some(column=>column.id===id)))issues.push('存在已失效显隐字段，请编辑后再应用');
- if(columns.length&&columns.every(column=>hidden.includes(column.id)))issues.push('至少保留一个业务字段');
+ if(columns.filter(column=>!column.system).every(column=>hidden.includes(column.id)))issues.push('至少保留一个业务字段');
  const validation=validateResourceFilter(fields,filter);
  for(const problem of validation.issues)issues.push(`条件 ${problem.path}：${problem.message}`);
  const normalized=validation.filter??null;

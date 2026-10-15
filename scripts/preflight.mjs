@@ -29,7 +29,8 @@ export function runPreflight({root = fileURLToPath(new URL('..', import.meta.url
     const failure = `Preflight check failed: ${step.id}`;
     let result;
     try {
-      result = execute({...step, cwd: step.cwd ?? root, env});
+      result = execute({...step, cwd: step.cwd ?? root,
+        env: step.id === 'contract-lint' ? {...env, REDOCLY_TELEMETRY: 'off'} : env});
     } catch {
       throw new Error(failure);
     }

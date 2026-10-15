@@ -1,0 +1,75 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ template candidates consume only current user or department minimal pages with opaque continuation (5.777963ms)
+✔ template candidates reject malformed data, extra identity information and cross-kind projections (0.352951ms)
+✔ template candidate pagination must be present, closed, bounded and internally consistent (0.258809ms)
+✖ ADR002 candidate continuation is an opaque nonempty string, not a client-decoded server format (1.661828ms)
+✖ candidate metadata stays closed and requires the request identity (0.282465ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 3
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 173.364604
+
+✖ failing tests:
+
+test at tests/foundation/template-candidates.test.mjs:26:1
+✖ ADR002 candidate continuation is an opaque nonempty string, not a client-decoded server format (1.661828ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   items: [
+  -     {
+  -       id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+  -       label: '当前用户',
+  -       status: 'active'
+  -     }
+  -   ],
+  -   nextPageToken: 'opaque-token'
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-candidates.test.mjs:27:86)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { items: [ [Object] ], nextPageToken: 'opaque-token' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/template-candidates.test.mjs:29:1
+✖ candidate metadata stays closed and requires the request identity (0.282465ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   items: [],
+  +   nextPageToken: null
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-candidates.test.mjs:30:213)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { items: [], nextPageToken: null },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

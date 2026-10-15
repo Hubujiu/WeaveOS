@@ -1,0 +1,1 @@
+Fixed Playwright Chromium download unavailable/truncated. This launch attempt failed before browser behavior, NOT product RED. System Chromium with sandbox enabled also failed local socket creation in managed exec; explicit escalation requested for the same local test without changing browser security settings.

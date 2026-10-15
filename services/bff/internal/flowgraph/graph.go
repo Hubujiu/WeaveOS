@@ -19,6 +19,7 @@ type Graph struct {
 	Edges   []Edge
 }
 type Node struct {
+	Name      string `json:"Name,omitempty"`
 	ID        string
 	Kind      string
 	Approval  *Approval
@@ -60,6 +61,9 @@ func Validate(g Graph, fields []appquery.Field) (Validated, error) {
 	endCount := 0
 	dependencies := make(map[string]struct{})
 	for i, node := range g.Nodes {
+		if !ValidNodeName(node.Name) {
+			return Validated{}, invalid("invalid node display name")
+		}
 		if !validUUID(node.ID) {
 			return Validated{}, invalid("invalid node identity")
 		}

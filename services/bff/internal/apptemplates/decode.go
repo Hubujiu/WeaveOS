@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/Hubujiu/WeaveOS/services/bff/internal/appfields"
+	"github.com/Hubujiu/WeaveOS/services/bff/internal/flowgraph"
 	"io"
 	"reflect"
 	"strings"
@@ -82,6 +83,13 @@ func shape(raw json.RawMessage, typ reflect.Type, depth int) bool {
 		var object map[string]json.RawMessage
 		if json.Unmarshal(raw, &object) != nil || object == nil {
 			return false
+		}
+		if typ == reflect.TypeOf(Node{}) {
+			if value, present := object["name"]; present {
+				if _, err := flowgraph.DecodeNodeNameJSON(value); err != nil {
+					return false
+				}
+			}
 		}
 		if typ == layoutType {
 			return layoutShape(object, depth)

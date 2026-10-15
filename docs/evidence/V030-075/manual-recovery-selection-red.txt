@@ -1,0 +1,68 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ V044 absent manual scope does not invent a capability (0.973713ms)
+✖ V044 exact manual recovery preserves the original frozen operation and CAS (1.881707ms)
+✔ V044 manual recovery isolates actor (0.18668ms)
+✔ V044 manual recovery isolates app (0.106871ms)
+✔ V044 manual recovery isolates view (0.097176ms)
+✔ V044 manual recovery isolates record (0.222695ms)
+✔ V044 manual recovery excludes record (0.177677ms)
+✔ V044 manual recovery excludes preset (0.176285ms)
+✔ V044 manual recovery excludes task-action (0.207112ms)
+✔ V044 manual recovery excludes instance-action (0.958801ms)
+✔ V044 confirmed intent is not restored as another unknown start (0.257486ms)
+✔ V044 foreign scope cannot be borrowed despite matching resource identifiers (0.128032ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 11
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 139.2708
+
+✖ failing tests:
+
+test at tests/foundation/workflow-manual-recovery.test.mjs:9:1
+✖ V044 exact manual recovery preserves the original frozen operation and CAS (1.881707ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   actorId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001',
+  -   body: {
+  -     expectedRecordVersion: 8,
+  -     expectedSchemaVersion: 2,
+  -     expectedWorkflowRevision: 7,
+  -     flowId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000005',
+  -     operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000006'
+  -   },
+  -   expectedStatus: 202,
+  -   method: 'POST',
+  -   operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000006',
+  -   path: 'applications/bbbbbbbb-bbbb-4bbb-8bbb-000000000002/forms/bbbbbbbb-bbbb-4bbb-8bbb-000000000003/records/bbbbbbbb-bbbb-4bbb-8bbb-000000000004/workflow-starts',
+  -   resource: {
+  -     appId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000002',
+  -     flowId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000005',
+  -     id: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000004',
+  -     kind: 'manual-start',
+  -     viewId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000003'
+  -   },
+  -   scope: '["[\\"manual-start\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000001\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000002\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000003\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000004\\"]",{"kind":"manual-start","appId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000002","viewId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000003","id":"bbbbbbbb-bbbb-4bbb-8bbb-000000000004","flowId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000005"}]'
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-manual-recovery.test.mjs:9:184)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { actorId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001', scope: '["[\\"manual-start\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000001\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000002\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000003\\",\\"bbbbbbbb-bbbb-4bbb-8bbb-000000000004\\"]",{"kind":"manual-start","appId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000002","viewId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000003","id":"bbbbbbbb-bbbb-4bbb-8bbb-000000000004","flowId":"bbbbbbbb-bbbb-4bbb-8bbb-000000000005"}]', resource: { kind: 'manual-start', appId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000002', viewId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000003', id: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000004', flowId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000005' }, path: 'applications/bbbbbbbb-bbbb-4bbb-8bbb-000000000002/forms/bbbbbbbb-bbbb-4bbb-8bbb-000000000003/records/bbbbbbbb-bbbb-4bbb-8bbb-000000000004/workflow-starts', method: 'POST', expectedStatus: 202, operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000006', body: { operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000006', flowId: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000005', expectedWorkflowRevision: 7, expectedSchemaVersion: 2, expectedRecordVersion: 8 } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

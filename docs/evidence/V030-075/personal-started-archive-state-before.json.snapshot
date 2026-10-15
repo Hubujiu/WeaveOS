@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "appId",
+    "viewId",
+    "recordId",
+    "instance",
+    "archived",
+    "flowNameSource"
+  ],
+  "properties": {
+    "appId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "viewId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "recordId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "instance": {
+      "$ref": "#/components/schemas/WorkflowInstanceSummary"
+    },
+    "archived": {
+      "type": "boolean",
+      "const": true
+    },
+    "flowNameSource": {
+      "type": "string",
+      "enum": [
+        "captured",
+        "legacy_last_known"
+      ]
+    }
+  },
+  "description": "Retained initiated round after runtime projection removal; current read/history authorization still required."
+}

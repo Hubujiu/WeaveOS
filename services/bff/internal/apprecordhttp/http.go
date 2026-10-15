@@ -223,7 +223,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		failure(w, r, apprecordservice.ErrUnavailable, "")
 		return
 	}
-	if s.recordLifecycleHTTP(w, r, p) || s.privatePresetsHTTP(w, r, p) || s.workflowRoundHTTP(w, r, p) || s.workflowInboxHTTP(w, r, p) || s.workflowEventHistoryHTTP(w, r, p) || s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
+	if s.filterCandidatesHTTP(w, r, p) || s.recordDeletedSearchHTTP(w, r, p) || s.draftEditorHTTP(w, r, p) || s.recordLifecycleHTTP(w, r, p) || s.privatePresetsHTTP(w, r, p) || s.workflowRoundHTTP(w, r, p) || s.workflowInboxHTTP(w, r, p) || s.workflowApprovalsHTTP(w, r, p) || s.workflowStartedHTTP(w, r, p) || s.workflowEventHistoryHTTP(w, r, p) || s.workflowEventHTTP(w, r, p) || s.workflowManualOptionsHTTP(w, r, p) || s.workflowManualHTTP(w, r, p) || s.workflowReadHTTP(w, r, p) || s.workflowLifecycleHTTP(w, r, p) || s.workflowHTTP(w, r, p) {
 		return
 	}
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/applications/")
@@ -275,7 +275,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					var page appdrafts.Page
 					page, e = s.Records.ListDrafts(r.Context(), p, apprecordservice.DraftListRequest{AppID: app, ViewID: view, PageSize: int(size), PageToken: q.Get("pageToken")})
 					data = map[string]any{"items": page.Items}
-					pagination = map[string]any{"pageSize": size, "hasMore": page.NextToken != "", "nextPageToken": nil}
+					pagination = map[string]any{"hasMore": page.NextToken != "", "nextPageToken": nil}
 					if page.NextToken != "" {
 						pagination.(map[string]any)["nextPageToken"] = page.NextToken
 					}

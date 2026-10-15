@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import {dialogMotion} from '../motion/dialogMotion';
 
-export function FormsDialog({title,onClose,children,busy=false}:{
-  title:string;onClose:()=>void;children:ReactNode;busy?:boolean;
+export function FormsDialog({title,onClose,children,busy=false,requestClose,closeLabel="关闭弹窗"}:{
+  title:string;onClose:()=>void;children:ReactNode;busy?:boolean;requestClose?:(close:()=>void)=>void;closeLabel?:string;
 }) {
   const dialog=useRef<HTMLDialogElement>(null);
   const animation=useRef<ReturnType<typeof dialogMotion>|null>(null);
@@ -18,13 +18,13 @@ export function FormsDialog({title,onClose,children,busy=false}:{
     // element before restoring focus, including quick-close and unmount paths.
     return()=>{animation.current?.dispose();animation.current=null;element?.close();if(origin?.isConnected)origin.focus();};
   },[]);
-  const close=()=>{if(!busy)animation.current?.close();};
+  const close=()=>{if(busy)return;const finish=()=>animation.current?.close();if(requestClose)requestClose(finish);else finish();};
   return <dialog ref={dialog} className="forms-dialog" aria-labelledby={heading}
     onClickCapture={event=>{if((event.target as HTMLElement).closest('[data-forms-close]')){
       event.preventDefault();event.stopPropagation();close();}}}
     onCancel={event=>{event.preventDefault();close();}}>
     <div className="forms-dialog-heading"><h2 id={heading}>{title}</h2>
-      <button type="button" className="forms-icon-button" aria-label="关闭弹窗"
+      <button type="button" className="forms-icon-button" aria-label={closeLabel}
         disabled={busy} onClick={close}>×</button></div>
     <div className="forms-dialog-body">{children}</div>
   </dialog>;

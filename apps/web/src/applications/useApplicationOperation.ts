@@ -1,18 +1,36 @@
+import {validStructureDeletionRequest,validStructureDeletionReceipt,validStructureDeletionDependencies} from './forms/structureDeletion';
+import {validStructureCopyRequest,type StructureCopyPreflightRequest} from './templates/copyRequest';
+import {validStructureCopyReceipt,type StructureCopyReceipt} from './templates/copyReceipt';
+import {validTemplateImportRequest} from './templates/importRequest';
+import {validTemplateImportReceipt} from './templates/receipts';
+import {validWorkflowDeletionRequest,validWorkflowDeletionResult} from './workflows/deletionContract';
+import {validRecordLifecycleRequest,validRecordLifecycleReceipt} from './records/lifecycleContract';
+import {validWorkflowManagementRequest,validWorkflowManagementReceipt} from './workflows/managementContract';
+import {validPublicationRequest,validPublicationResult} from './workflows/publicationContract';
+import {validWorkflowDefinitionRequest,validWorkflowDefinitionReceipt} from './workflows/definitionSaveContract';
 import { useEffect, useRef, useState } from 'react';
 import { workspaceApi, WorkspaceError } from '../workspace-api';
 import type { User } from '../workspace-types';
-import { applicationApi, applicationApiEnvelope, ApplicationError } from './api';
+import { applicationApi, applicationApiEnvelope, applicationWorkflowApi, applicationPublicationApi, applicationDeletionApi, validWorkflowTransportRequest, ApplicationError } from './api';
 import { cancelUnsentPreflights, clearPacket, clearRecovery, getRecovery, keepPacket, registerUnsentPreflight, type ApplicationPacket } from './recovery';
 import type { ApplicationOperation } from './types';
+import { validTaskRecordRequest } from './workflows/taskSaveContract';
+import { validWorkflowOperation } from './workflows/taskActionContract';
+import { validPresetMutationRequest, validPresetMutationReceipt } from './records/presetContract';
+import {isMutationResult} from './records/contracts';
+import {validRoundStartRequest,validRoundStartReceipt,validRoundReworkRequest} from './workflows/roundContract';
+import {validManualStartRequest,validManualStartReceipt} from './workflows/manualStartContract';
+import { validInstanceActionRequest } from './workflows/lifecycleContract';
 
-type State = { phase: 'idle' | 'preflight' | 'pending' | 'error' | 'unconfirmed'; message: string; packet: ApplicationPacket | null; errorCode?: string };
+type State = { phase: 'idle' | 'preflight' | 'pending' | 'accepted' | 'error' | 'unconfirmed'; message: string; packet: ApplicationPacket | null; errorCode?: string; errorDetails?: {dependencies:string[]} };
 
 export type ApplicationMutationRequest = {
  path: string;
- method: 'POST' | 'PATCH' | 'DELETE';
- expectedStatus: 200 | 201 | 204;
+ method: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+ expectedStatus: 200 | 201 | 202 | 204;
  body?: Record<string, unknown>;
  expectedDraftVersion?: number;
+ expectedVersion?: number;
  resource: NonNullable<ApplicationPacket['resource']>;
 };
 export type ScopedApplicationOperationOptions<T> = {
@@ -27,12 +45,29 @@ export type ScopedApplicationOperationOptions<T> = {
 
 function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean {
  if (!result || typeof result !== 'object' || Array.isArray(result) || !packet.resource) return false;
+ // Task execution receipts are checked against their distinct closed wire
+ // in perform(), including actual HTTP status and the confirmed command ID.
+ if (packet.resource.kind === 'structure-deletion') return validStructureDeletionReceipt(result,{resource:packet.resource,operationId:packet.operationId??'',expectedStructureVersion:packet.body?.expectedStructureVersion as number});
+ if (packet.resource.kind === 'structure-copy') {
+  const body=packet.body as unknown as StructureCopyPreflightRequest;
+  return validStructureCopyReceipt(result,{operationId:packet.operationId??'',source:body.source,targetAppId:body.target.appId,expectedStructureVersion:body.expectedTargetStructureVersion,expectedPolicyRevision:body.expectedTargetPolicyRevision,newGroupCount:body.groupMappings.length});
+ }
+ if (packet.resource.kind === 'template-import') return validTemplateImportReceipt(result,packet.operationId??'');
+ if (packet.resource.kind === 'workflow-publication'||packet.resource.kind === 'workflow-deletion') return true;
+ if (packet.resource.kind === 'task-action'||packet.resource.kind === 'instance-action') return true;
+ if (packet.resource.kind === 'record-lifecycle') return validRecordLifecycleReceipt(result,packet.operationId??'',packet.resource.id,packet.body?.expectedRecordVersion as number,packet.body?.expectedSchemaVersion as number,packet.resource.action);
+ if (packet.resource.kind === 'workflow-management') return validWorkflowManagementReceipt(result,packet.operationId??'',packet.resource.id,packet.body?.expectedRevision as number,packet.resource.action);
+ if (packet.resource.kind === 'workflow-definition') return validWorkflowDefinitionReceipt(result,packet.operationId??'',packet.resource.id,packet.body?.expectedRevision as number);
+ if (packet.resource.kind === 'round-record') return isMutationResult(result,packet.operationId??'',packet.resource.id)&&result.recordVersion>0&&result.schemaVersion>0;
+ if (packet.resource.kind === 'round-start') return validRoundStartReceipt(result,packet.operationId??'',packet.resource.flowId,packet.resource.instanceId,packet.resource.roundKind);
+ if (packet.resource.kind === 'manual-start') return validManualStartReceipt(result,packet.operationId??'',packet.resource.flowId);
+ if (packet.resource.kind === 'preset') return validPresetMutationReceipt(result,packet.operationId??'',packet.resource.id);
  const receipt = result as Record<string, unknown>;
  if (receipt.operationId !== packet.operationId || typeof receipt.id !== 'string' || !receipt.id) return false;
  if (packet.resource.id && receipt.id !== packet.resource.id) return false;
  const version = packet.resource.kind === 'draft' ? receipt.draftVersion : receipt.recordVersion;
  if (!Number.isSafeInteger(version) || (version as number) < 1) return false;
- if (packet.resource.kind === 'record') {
+ if (packet.resource.kind === 'record' || packet.resource.kind === 'task-record') {
   if (!Number.isSafeInteger(receipt.schemaVersion) || (receipt.schemaVersion as number) < 1) return false;
   if (typeof receipt.createdAt !== 'string' || typeof receipt.updatedAt !== 'string') return false;
  }
@@ -41,9 +76,14 @@ function validScopedReceipt(result: unknown, packet: ApplicationPacket): boolean
 
 function validLocation(location: string | null | undefined, packet: ApplicationPacket, result: unknown): boolean {
  if (typeof location !== 'string' || !result || typeof result !== 'object') return false;
- const id = (result as { id?: unknown }).id;
+ const templateImport=packet.resource?.kind==='template-import';
+ const id = templateImport?(result as {appId?:unknown}).appId:(result as { id?: unknown }).id;
  if (typeof id !== 'string' || !id) return false;
- const expected = '/api/v1/' + packet.path.split('?')[0].replace(/\/$/, '') + '/' + encodeURIComponent(id);
+ let expected = templateImport?'/api/v1/applications/'+encodeURIComponent(id):'/api/v1/' + packet.path.split('?')[0].replace(/\/$/, '') + '/' + encodeURIComponent(id);
+ if(packet.resource?.kind==='structure-copy'){
+  const copy=result as StructureCopyReceipt;
+  expected='/api/v1/applications/'+encodeURIComponent(copy.appId)+(copy.resourceKind==='application'?'':'/'+{directory:'directories',table:'tables',form:'forms'}[copy.resourceKind]+'/'+encodeURIComponent(copy.id));
+ }
  try {
   const parsed = new URL(location, window.location.origin);
   return parsed.origin === window.location.origin && parsed.pathname === expected && !parsed.search && !parsed.hash;
@@ -54,7 +94,12 @@ export function useApplicationOperation<T>(options: ScopedApplicationOperationOp
 export function useApplicationOperation<T>(actorId: string, confirmed: (result: T) => void, unauthorized: () => void, identityMismatch: () => void, valid: (result: T) => boolean, scope?: string, onDefinitePolicyConflict?: () => void): ReturnType<typeof useOperation<T>>;
 export function useApplicationOperation<T>(actorOrOptions: string | ScopedApplicationOperationOptions<T>, confirmed?: (result: T) => void, unauthorized?: () => void, identityMismatch?: () => void, valid?: (result: T) => boolean, scope?: string, onDefinitePolicyConflict?: () => void) {
  const scoped = typeof actorOrOptions === 'string' ? null : actorOrOptions;
- const scopedKey = scoped ? JSON.stringify([scoped.scope ?? '', scoped.resource]) : scope;
+ // Recover by stable resource identity. A newer candidate or lifecycle state
+ // must not conceal the original version/action retained in the immutable packet.
+ const recoveryResource = (scoped?.resource.kind === 'workflow-publication'||scoped?.resource.kind === 'record-lifecycle')
+  ? {kind:scoped.resource.kind,appId:scoped.resource.appId,viewId:scoped.resource.viewId,id:scoped.resource.id}
+  : scoped?.resource;
+ const scopedKey = scoped ? JSON.stringify([scoped.scope ?? '', recoveryResource]) : scope;
  return useOperation<T>(scoped?.actorId ?? actorOrOptions as string, (scoped?.confirmed ?? confirmed!) as (result: T | undefined) => void, scoped?.unauthorized ?? unauthorized!, scoped?.identityMismatch ?? identityMismatch!, scoped ? (result, packet) => validScopedReceipt(result, packet) && (scoped.valid?.(result, packet) ?? true) : valid!, scopedKey, onDefinitePolicyConflict, scoped?.resource);
 }
 
@@ -112,7 +157,51 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
    sent = true;
    let result: T;
    let location: string | null | undefined;
-   if (query) {
+   const taskAction = packet.resource?.kind === 'task-action'||packet.resource?.kind === 'instance-action';
+   if (packet.resource?.kind === 'workflow-deletion') {
+    const resource=packet.resource,base='applications/'+resource.appId+'/forms/'+resource.viewId+'/workflows/'+resource.id;
+    const reply=await applicationDeletionApi<T>(packet.actorId,query?base+'/deletions/'+packet.operationId:packet.path,query?'GET':'POST',query?undefined:packet.body);
+    result=reply.data;location=reply.location;
+    if(!validWorkflowDeletionResult(result,packet.operationId??'',resource.id,reply.httpStatus,query?'GET':'POST'))throw new ApplicationError(503,'APPLICATION_OPERATION_UNCONFIRMED',true);
+    if(result.status!=='deleted'){
+     if(!query){let target:URL|null=null;try{if(typeof location==='string')target=new URL(location,window.location.origin);}catch{/* Preserve original uncertainty. */}
+      if(!target||target.origin!==window.location.origin||target.pathname!=='/api/v1/'+base+'/deletions/'+packet.operationId||target.search||target.hash)throw new ApplicationError(503,'APPLICATION_OPERATION_UNCONFIRMED',true);
+     }
+     if(token!==lifecycle.current)return;
+     snapshot.current=packet;uncertain.current=true;keepPacket(packet,true);inFlight.current=false;
+     setState({phase:'accepted',message:result.status==='pending'?'流程删除处理中':'删除结果待确认',packet});return;
+    }
+   } else if (packet.resource?.kind === 'workflow-publication') {
+    const resource=packet.resource,base='applications/'+resource.appId+'/forms/'+resource.viewId+'/workflows/'+resource.id;
+    const reply=await applicationPublicationApi<T>(packet.actorId,query?base+'/publications/'+packet.operationId:packet.path,query?'GET':'POST',query?undefined:packet.body);
+    result=reply.data;location=reply.location;
+    if(!validPublicationResult(result,packet.operationId??'',resource.id,resource.version,reply.httpStatus,query?'GET':'POST'))throw new ApplicationError(503,'APPLICATION_OPERATION_UNCONFIRMED',true);
+    if(result.status==='pending'||result.status==='unknown'){
+     if(!query){let target:URL|null=null;try{if(typeof location==='string')target=new URL(location,window.location.origin);}catch{/* Keep the original uncertainty. */}
+      if(!target||target.origin!==window.location.origin||target.pathname!=='/api/v1/'+base+'/publications/'+packet.operationId||target.search||target.hash)throw new ApplicationError(503,'APPLICATION_OPERATION_UNCONFIRMED',true);
+     }
+     if(token!==lifecycle.current)return;
+     snapshot.current=packet;uncertain.current=true;keepPacket(packet,true);inFlight.current=false;
+     setState({phase:'accepted',message:result.status==='pending'?'流程发布处理中':'发布结果待确认',packet});return;
+    }
+   } else if (taskAction) {
+    const reply = await applicationWorkflowApi<T>(packet.actorId, query ? 'application-workflow-operations/' + packet.operationId : packet.path, query ? 'GET' : 'POST', query ? undefined : packet.body);
+    result = reply.data; location = reply.location;
+    const context = packet.context as {commandId?:string} | undefined;
+    if (!validWorkflowOperation(result, {operationId:packet.operationId??'', instanceId:packet.resource&&(packet.resource.kind==='task-action'||packet.resource.kind==='instance-action')?packet.resource.instanceId:'', commandId:context?.commandId,...(packet.resource?.kind==='instance-action'?{action:(packet.body as {action:'withdraw'|'return'}).action}:{})}, reply.httpStatus, query?'GET':'POST')) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
+    if (!query && result.status === 'pending') {
+     let target:URL|null=null;
+     try { if(typeof location==='string')target=new URL(location,window.location.origin); } catch { /* Invalid receipt Location remains unknown. */ }
+     if (!target || target.origin !== window.location.origin || target.pathname !== '/api/v1/application-workflow-operations/' + packet.operationId || target.search || target.hash) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
+    }
+    if (token !== lifecycle.current) return;
+    if (result.status === 'pending') {
+     packet = {...packet, context:{commandId:result.commandId}};
+     keepPacket(packet, true); snapshot.current = getRecovery(packet.actorId, packet.scope)!.packet; uncertain.current = true;
+     setState({phase:'accepted',message:'审批处理中',packet:snapshot.current});
+     return;
+    }
+   } else if (query) {
     const operation = await applicationApi<ApplicationOperation<T>>(packet.actorId, 'application-operations/' + (packet.operationId ?? packet.body?.operationId));
     if (operation.operationId !== (packet.operationId ?? packet.body?.operationId) || operation.status !== 'confirmed' || operation.httpStatus !== packet.expectedStatus) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
     result = operation.result;
@@ -121,8 +210,14 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
     const reply = await applicationApiEnvelope<T>(packet.actorId, packet.path, packet.method, packet.body, undefined, packet.expectedStatus);
     result = reply.data; location = reply.location;
    }
+   if (packet.resource?.kind==='structure-deletion' && location!==null && location!==undefined && location!=='') throw new ApplicationError(503,'APPLICATION_OPERATION_UNCONFIRMED',true);
    if (!(packet.expectedStatus === 204 && !query) && !valid(result, packet)) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
-   if (scopedResource && packet.expectedStatus === 201 && !validLocation(location, packet, result)) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
+   if (scopedResource && packet.resource?.kind !== 'workflow-definition' && packet.expectedStatus === 201 && !validLocation(location, packet, result)) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
+   if (packet.resource?.kind==='manual-start'||packet.resource?.kind==='round-start') {
+    let target:URL|null=null;
+    try { if(typeof location==='string')target=new URL(location,window.location.origin); } catch { /* Invalid durable intent receipt remains uncertain. */ }
+    if(!target||target.origin!==window.location.origin||target.pathname!=='/api/v1/application-operations/'+packet.operationId||target.search||target.hash)throw new ApplicationError(503,'APPLICATION_OPERATION_UNCONFIRMED',true);
+   }
    if (token !== lifecycle.current) return;
    snapshot.current = null; uncertain.current = false;
    clearRecovery(packet.actorId, packet.scope);
@@ -150,7 +245,7 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
    const reason = cause instanceof Error ? cause.message : '服务暂时不可用，请稍后重试';
    const message = unknown && !(cause instanceof ApplicationError && cause.unconfirmed)
     ? reason + '。操作结果仍未确认，请稍后核查或使用同一操作重试。' : reason;
-   setState({ phase: unknown ? 'unconfirmed' : 'error', packet, message, ...(unknown || !(cause instanceof ApplicationError) ? {} : { errorCode: cause.code }) });
+   setState({ phase: unknown ? 'unconfirmed' : 'error', packet, message, ...(unknown || !(cause instanceof ApplicationError) ? {} : { errorCode: cause.code }), ...(!unknown&&cause instanceof ApplicationError&&packet.resource?.kind==='structure-deletion'&&validStructureDeletionDependencies(cause.details,packet.resource.resourceKind)?{errorDetails:cause.details}:{}) });
    if (!unknown && cause instanceof ApplicationError && cause.status === 409 && cause.code === 'APPLICATION_POLICY_CONFLICT') onDefinitePolicyConflict?.();
   } finally { unregister(); if (token === lifecycle.current) inFlight.current = false; }
  };
@@ -162,11 +257,47 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
   else {
    const request = requestOrPath;
    if (!scope || !scopedResource || JSON.stringify(request.resource) !== JSON.stringify(scopedResource)) throw new TypeError('Mutation resource does not match the mounted scope');
+   if (request.resource.kind === 'structure-deletion') {
+    if (!validStructureDeletionRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'structure-copy') {
+    if (!validStructureCopyRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'template-import') {
+    if (!validTemplateImportRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'workflow-deletion') {
+    if (!validWorkflowDeletionRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'record-lifecycle') {
+    if (!validRecordLifecycleRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'workflow-management') {
+    if (!validWorkflowManagementRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'workflow-publication') {
+    if (!validPublicationRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'workflow-definition') {
+    if (!validWorkflowDefinitionRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'round-record') {
+    if (!validRoundReworkRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'round-start') {
+    if (!validRoundStartRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'manual-start') {
+    if (!validManualStartRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'preset') {
+    if (!validPresetMutationRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'instance-action') {
+    if (!validInstanceActionRequest(request.resource,request)) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'task-action') {
+    const r=request.resource;
+    const expectedPath=`applications/${r.appId}/forms/${r.viewId}/records/${r.id}/workflow-instances/${r.instanceId}/tasks/${r.taskId}/actions`;
+    if (request.path!==expectedPath || request.method!=='POST' || request.expectedStatus!==202 || request.body&&Object.hasOwn(request.body,'operationId') || !validWorkflowTransportRequest(request.path,request.method,{...request.body,operationId})) throw new TypeError('Invalid scoped mutation packet');
+   } else if (request.resource.kind === 'task-record') {
+    if (!validTaskRecordRequest(request.resource, request)) throw new TypeError('Invalid scoped mutation packet');
+   } else {
    const base = 'applications/' + encodeURIComponent(request.resource.appId) + '/forms/' + encodeURIComponent(request.resource.viewId) + '/' + (request.resource.kind === 'draft' ? 'drafts' : 'records');
    const expectedPath = request.method === 'POST' ? base : base + '/' + encodeURIComponent(request.resource.id ?? '');
-   if (request.path !== expectedPath || request.path.includes('?') || request.path.includes('#') || request.method === 'DELETE' && (request.resource.kind !== 'draft' || !Number.isSafeInteger(request.expectedDraftVersion) || (request.expectedDraftVersion as number) < 1) || request.method === 'POST' && (request.expectedStatus !== 201 || !request.resource.creationNonce) || request.method === 'PATCH' && request.expectedStatus !== 200 || request.method === 'DELETE' && request.expectedStatus !== 204 || request.body && Object.hasOwn(request.body, 'operationId')) throw new TypeError('Invalid scoped mutation packet');
-   const query = request.method === 'DELETE' ? { operationId, expectedDraftVersion: request.expectedDraftVersion } : undefined;
-   const path = query ? request.path + '?operationId=' + encodeURIComponent(operationId) + '&expectedDraftVersion=' + encodeURIComponent(String(request.expectedDraftVersion)) : request.path;
+   if (!['POST','PATCH','DELETE'].includes(request.method) || request.path !== expectedPath || request.path.includes('?') || request.path.includes('#') || request.method === 'DELETE' && (request.resource.kind !== 'draft' || !Number.isSafeInteger(request.expectedDraftVersion) || (request.expectedDraftVersion as number) < 1) || request.method === 'POST' && (request.expectedStatus !== 201 || !request.resource.creationNonce) || request.method === 'PATCH' && request.expectedStatus !== 200 || request.method === 'DELETE' && request.expectedStatus !== 204 || request.body && Object.hasOwn(request.body, 'operationId')) throw new TypeError('Invalid scoped mutation packet');
+   }
+   const versionKey = request.resource.kind === 'preset' ? 'expectedVersion' : 'expectedDraftVersion';
+   const version = request.resource.kind === 'preset' ? request.expectedVersion : request.expectedDraftVersion;
+   const query = request.method === 'DELETE' ? { operationId, [versionKey]: version } : undefined;
+   const path = query ? request.path + '?operationId=' + encodeURIComponent(operationId) + '&' + versionKey + '=' + encodeURIComponent(String(version)) : request.path;
    packet = { actorId, path, method: request.method, expectedStatus: request.expectedStatus, scope, operationId, query, resource: structuredClone(request.resource), body: request.method === 'DELETE' ? undefined : { ...structuredClone(request.body ?? {}), operationId } };
   }
   void perform(packet, false);

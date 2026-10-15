@@ -1,0 +1,90 @@
+import {test,expect,type Page} from '@playwright/test';
+// V069 PRD/ADR and Figma493:8702. First-round manual and withdrawal are separate.
+const id=(n:number)=>'bbbbbbbb-bbbb-4bbb-8bbb-'+String(n).padStart(12,'0');
+const actor={id:id(1),account:'initiator'},appId=id(2),viewId=id(3),fieldId=id(4),recordId=id(5),instanceId=id(8),flowId=id(9);
+const form=`applications/${appId}/forms/${viewId}`,record=form+'/records/'+recordId,round=record+'/workflows/'+instanceId+'/round-actions';
+const app={id:appId,name:'报销管理',ownerUserId:id(99),policyRevision:1};
+const runtime={appId,viewId,tableId:id(6),schemaVersion:1,viewVersion:1,policyRevision:1,fields:[{id:fieldId,name:'金额',kind:'money',required:false,presentation:{helpText:null,displayTimeZone:null},input:{decimal:{precision:20,scale:2,roundingPlaces:2,roundingMode:'HALF_UP'}},access:{read:'all',create:true,edit:'all',history:'none'},query:{operators:['eq','neq','gt','gte','lt','lte'],sortable:true,quickSearchable:false}}],layout:[{id:id(7),kind:'field',fieldId}],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}};
+const row={id:recordId,appId,viewId,tableId:id(6),createdBy:actor.id,createdAt:'2026-10-11T09:00:00Z',updatedAt:'2026-10-11T10:00:00Z',recordVersion:9,schemaVersion:1,values:{[fieldId]:'10.00'},referenceDisplays:{}};
+type Mode='normal'|'review'|'old'|'denied'|'leaked'|'unknown'|'conflict'|'rework-unknown'|'rework-conflict'|'rework-applied';
+async function setup(page:Page,mode:Mode='normal'){
+ const calls:{path:string;method:string;body:any}[]=[];let posts=0,reworkPosts=0,currentRow=structuredClone(row),reworkOperation:string|undefined;
+ await page.route('**/api/v1/**',async r=>{
+  const req=r.request(),path=new URL(req.url()).pathname.slice('/api/v1/'.length),body=req.postData()?req.postDataJSON():null,method=req.method();calls.push({path,method,body});let data:unknown;
+  if(path==='sessions/current')data=actor;
+  else if(path==='me/access')data={user:actor,bootstrapAdmin:false,personnelManage:false,identities:[],permissions:[],applications:[]};
+  else if(path==='applications')data={items:[app]};
+  else if(path==='applications/'+appId)data=app;
+  else if(path==='applications/'+appId+'/access')data={appId,canEnter:true,policyRevision:1,menus:[{resourceKind:'application',resourceId:appId},{resourceKind:'form',resourceId:viewId}]};
+  else if(path===form+'/runtime')data=runtime;
+  else if(path===form+'/records/search')data={items:[row],total:1,page:body.page,pageSize:body.pageSize,sort:body.sort,queryVersion:'records',schemaVersion:1,viewVersion:1};
+  else if(path===record)data=currentRow;
+  else if(path===record+'/workflow-instances/search')data={items:[{id:instanceId,flowId,name:'财务审批',initiatorId:actor.id,state:mode==='review'?'completed':'rejected',createdAt:row.createdAt,updatedAt:row.updatedAt,definitionVersion:3,sequence:4}],total:1,page:body.page,pageSize:body.pageSize,queryVersion:'flows'};
+  else if(path===round&&method==='GET'){
+   if(mode==='denied')return r.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
+   data={instanceId,flowId,roundNumber:2,latestInstanceId:mode==='old'?id(11):instanceId,state:mode==='review'?'completed':'rejected',definitionVersion:3,workflowRevision:7,schemaVersion:1,recordVersion:currentRow.recordVersion,canRework:mode!=='old'&&mode!=='review'&&!(mode==='rework-applied'&&reworkPosts>0),canResubmit:mode!=='old'&&mode!=='review',canReview:mode==='review',editableFieldIds:mode==='old'||mode==='review'||mode==='rework-applied'&&reworkPosts>0?[]:[fieldId],...(mode==='leaked'?{graph:{secret:'private-graph'}}:{})};
+  }else if(path===round&&method==='POST'){
+   posts++;if(mode==='unknown'&&posts===1)return r.fulfill({status:503,json:{code:'APPLICATION_OPERATION_UNCONFIRMED',data:{operationId:body.operationId}}});
+   if(mode==='conflict')return r.fulfill({status:409,json:{code:'APPLICATION_RECORD_CONFLICT',data:null}});
+   return r.fulfill({status:202,headers:{Location:'/api/v1/application-operations/'+body.operationId},json:{code:'OK',data:{operationId:body.operationId,flowId,previousInstanceId:instanceId,instanceId:id(12),roundKind:body.kind,roundNumber:3,status:'accepted'},meta:null}});
+  }else if(path===record+'/workflows/'+instanceId+'/rework'&&method==='POST'){
+   reworkPosts++;reworkOperation=body.operationId;if(mode==='rework-unknown'&&reworkPosts===1)return r.fulfill({status:503,json:{code:'APPLICATION_OPERATION_UNCONFIRMED',data:{operationId:body.operationId}}});
+   if(mode==='rework-conflict')return r.fulfill({status:409,json:{code:'WORKFLOW_CONFLICT',data:null}});
+   currentRow={...currentRow,recordVersion:10,values:{...currentRow.values,...body.changes}};
+   if(mode==='rework-applied'&&reworkPosts===1)return r.fulfill({status:503,json:{code:'APPLICATION_OPERATION_UNCONFIRMED',data:{operationId:body.operationId}}});
+   data={operationId:body.operationId,id:recordId,recordVersion:10,schemaVersion:1,createdAt:row.createdAt,updatedAt:'2026-10-12T09:00:00Z'};
+  }else if(mode==='rework-applied'&&path==='application-operations/'+reworkOperation)data={operationId:reworkOperation,status:'confirmed',httpStatus:200,result:{operationId:reworkOperation,id:recordId,recordVersion:10,schemaVersion:1,createdAt:row.createdAt,updatedAt:'2026-10-12T09:00:00Z'}};
+  else if(path.startsWith('application-operations/'))return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
+  else return r.fulfill({status:404,json:{code:'API_NOT_FOUND',data:null}});
+  return r.fulfill({status:200,json:{code:'OK',data,meta:null}});
+ });return calls;
+}
+async function open(page:Page){await page.goto('/app/'+form);await page.getByRole('button',{name:'打开记录：金额 10.00',exact:true}).click();}
+async function preview(page:Page){await page.getByRole('button',{name:'查看轮次操作：财务审批',exact:true}).click();return page.getByRole('dialog',{name:'轮次操作：财务审批',exact:true});}
+async function choose(page:Page,kind:'resubmit'|'review'='resubmit'){const panel=await preview(page);await panel.getByRole('button',{name:kind==='resubmit'?'重新提交审批':'发起重审',exact:true}).click();return page.getByRole('dialog',{name:kind==='resubmit'?'重新提交审批':'发起重审',exact:true});}
+test('Root round preview is loaded only on explicit selection and cancel writes nothing',async({page},testInfo)=>{const calls=await setup(page);await open(page);expect(calls.some(c=>c.path===round)).toBe(false);const dialog=await choose(page);await expect(dialog).toContainText('财务审批');await testInfo.attach('round-resubmit-confirmation',{body:await page.screenshot({animations:'disabled'}),contentType:'image/png'});await dialog.getByRole('button',{name:'取消',exact:true}).click();expect(calls.filter(c=>c.path===round&&c.method==='POST')).toEqual([]);});
+for(const kind of ['resubmit','review'] as const)test('Root '+kind+' creates only the selected new round without saving record changes',async({page})=>{const calls=await setup(page,kind==='review'?'review':'normal');await open(page);const dialog=await choose(page,kind);await dialog.getByRole('button',{name:kind==='resubmit'?'重新提交':'确认重审',exact:true}).click();await expect(dialog.getByRole('status')).toContainText('已接受新一轮请求');await expect(dialog).not.toContainText('审批成功');const writes=calls.filter(c=>c.path===round&&c.method==='POST');expect(writes).toHaveLength(1);expect(writes[0].body).toEqual({operationId:expect.any(String),kind,expectedWorkflowRevision:7,expectedSchemaVersion:1,expectedRecordVersion:9});expect(calls.some(c=>c.method==='PATCH'||c.path.endsWith('/rework')||c.path.endsWith('/workflow-starts'))).toBe(false);});
+test('Root old round preview remains read only without new-round controls',async({page})=>{await setup(page,'old');await open(page);const dialog=await preview(page);await expect(dialog).toContainText('历史轮次');await expect(dialog.getByRole('button',{name:'重新提交审批',exact:true})).toHaveCount(0);await expect(dialog.getByRole('button',{name:'发起重审',exact:true})).toHaveCount(0);});
+for(const mode of ['denied','leaked'] as const)test('Root round '+mode+' preview does not grant actions or leak data',async({page})=>{await setup(page,mode);await open(page);const dialog=await preview(page);await expect(dialog.getByRole('alert')).toBeVisible();await expect(dialog.getByRole('button',{name:'重新提交审批',exact:true})).toHaveCount(0);await expect(dialog).not.toContainText('private-graph');});
+test('Root round unknown lookup and retry preserve original operation and selected kind',async({page})=>{const calls=await setup(page,'unknown');await open(page);const dialog=await choose(page);await dialog.getByRole('button',{name:'重新提交',exact:true}).click();await expect(dialog.getByRole('alert')).toContainText('尚未确认');await dialog.getByRole('button',{name:'核查新轮次结果',exact:true}).click();await expect(dialog.getByRole('alert')).toContainText('尚未确认');await dialog.getByRole('button',{name:'重试原轮次请求',exact:true}).click();await expect(dialog.getByRole('status')).toContainText('已接受新一轮请求');const writes=calls.filter(c=>c.path===round&&c.method==='POST');expect(writes).toHaveLength(2);expect(writes[1].body).toEqual(writes[0].body);});
+test('Root round conflict requires explicit reread and never silently replaces the request',async({page})=>{const calls=await setup(page,'conflict');await open(page);const dialog=await choose(page);await dialog.getByRole('button',{name:'重新提交',exact:true}).click();await expect(dialog.getByRole('alert')).toContainText('刷新');await expect(dialog.getByRole('button',{name:'重新提交',exact:true})).toBeDisabled();expect(calls.filter(c=>c.path===round&&c.method==='POST')).toHaveLength(1);expect(calls.filter(c=>c.path===round&&c.method==='GET')).toHaveLength(1);});
+test('Root round selection keeps dirty record input on continue without implicit Save',async({page})=>{const calls=await setup(page);await open(page);await page.getByRole('button',{name:'编辑记录',exact:true}).click();await page.getByLabel('金额',{exact:true}).fill('20.00');await page.getByRole('button',{name:'查看轮次操作：财务审批',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(page.getByLabel('金额',{exact:true})).toHaveValue('20.00');expect(calls.filter(c=>c.path===round||c.method==='PATCH')).toEqual([]);});
+
+// Separate V069 rework: saving never implies starting a new round.
+async function rework(page:Page){const dialog=await preview(page);await dialog.getByRole('button',{name:'返工编辑',exact:true}).click();const editor=page.getByRole('region',{name:'返工记录',exact:true});await expect(editor).toBeVisible();return editor;}
+test('Root rework saves typed current changes through only the dedicated endpoint',async({page},testInfo)=>{
+ const calls=await setup(page);await open(page);const editor=await rework(page);await editor.getByLabel('金额',{exact:true}).fill('20.00');await testInfo.attach('round-rework-editor',{body:await page.screenshot({animations:'disabled'}),contentType:'image/png'});await editor.getByRole('button',{name:'保存返工',exact:true}).click();await expect(page.getByText('返工修改已保存',{exact:true})).toBeVisible();const writes=calls.filter(c=>c.path.endsWith('/rework')&&c.method==='POST');expect(writes).toHaveLength(1);expect(writes[0].body).toEqual({operationId:expect.any(String),expectedSchemaVersion:1,expectedRecordVersion:9,changes:{[fieldId]:'20.00'}});expect(calls.some(c=>c.method==='PATCH'||c.path===round&&c.method==='POST'||c.path.endsWith('/workflow-starts'))).toBe(false);
+});
+test('Root rework unknown retains original edit and retries only its original operation',async({page})=>{
+ const calls=await setup(page,'rework-unknown');await open(page);const editor=await rework(page);await editor.getByLabel('金额',{exact:true}).fill('20.00');await editor.getByRole('button',{name:'保存返工',exact:true}).click();await expect(editor.getByText('保存结果待确认',{exact:true})).toBeVisible();await expect(editor.getByLabel('金额',{exact:true})).toBeDisabled();await editor.getByRole('button',{name:'使用同一操作重试',exact:true}).click();await expect(page.getByText('返工修改已保存',{exact:true})).toBeVisible();const writes=calls.filter(c=>c.path.endsWith('/rework')&&c.method==='POST');expect(writes).toHaveLength(2);expect(writes[1].body).toEqual(writes[0].body);
+});
+test('Root rework stale CAS blocks replacement save and retains current input for review',async({page})=>{
+ const calls=await setup(page,'rework-conflict');await open(page);const editor=await rework(page);await editor.getByLabel('金额',{exact:true}).fill('20.00');await editor.getByRole('button',{name:'保存返工',exact:true}).click();await expect(editor.getByRole('alert')).toContainText('刷新');await expect(editor.getByRole('button',{name:'保存返工',exact:true})).toBeDisabled();await expect(editor.getByLabel('金额',{exact:true})).toHaveValue('20.00');expect(calls.filter(c=>c.path.endsWith('/rework')&&c.method==='POST')).toHaveLength(1);
+});
+test('Root rework dirty cancellation keeps input on continue and never auto-saves',async({page})=>{
+ const calls=await setup(page);await open(page);const editor=await rework(page);await editor.getByLabel('金额',{exact:true}).fill('20.00');await editor.getByRole('button',{name:'放弃填写',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(editor.getByLabel('金额',{exact:true})).toHaveValue('20.00');expect(calls.filter(c=>c.path.endsWith('/rework')&&c.method==='POST')).toEqual([]);
+});
+
+test('Root round unknown survives real Shell unmount and offers only original request recovery',async({page})=>{
+ const calls=await setup(page,'unknown');await open(page);let dialog=await choose(page);await dialog.getByRole('button',{name:'重新提交',exact:true}).click();await expect(dialog.getByRole('alert')).toContainText('尚未确认');
+ await dialog.getByRole('button',{name:'关闭',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();
+ await page.getByRole('button',{name:'返回主页',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();await page.getByRole('button',{name:'打开记录：金额 10.00',exact:true}).click();await preview(page);dialog=page.getByRole('dialog',{name:'轮次操作：财务审批',exact:true});
+ await expect(dialog.getByRole('button',{name:'重试原轮次请求',exact:true})).toBeVisible();expect(calls.filter(c=>c.path===round&&c.method==='POST')).toHaveLength(1);await expect(dialog.getByRole('button',{name:'返工编辑',exact:true})).toBeDisabled();await dialog.getByRole('button',{name:'重试原轮次请求',exact:true}).click();await expect(dialog.getByRole('status')).toContainText('已接受新一轮请求');const writes=calls.filter(c=>c.path===round&&c.method==='POST');expect(writes).toHaveLength(2);expect(writes[1].body).toEqual(writes[0].body);
+});
+test('Root rework unknown survives real Shell unmount without replacement Save or lost input',async({page})=>{
+ const calls=await setup(page,'rework-unknown');await open(page);let editor=await rework(page);await editor.getByLabel('金额',{exact:true}).fill('20.00');await editor.getByRole('button',{name:'保存返工',exact:true}).click();await expect(editor.getByText('保存结果待确认',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'返回主页',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();editor=page.getByRole('region',{name:'返工记录',exact:true});
+ await expect(editor.getByRole('button',{name:'使用同一操作重试',exact:true})).toBeVisible();await expect(editor.getByLabel('金额',{exact:true})).toHaveValue('20.00');await expect(editor.getByRole('button',{name:'保存返工',exact:true})).toBeDisabled();expect(calls.filter(c=>c.path.endsWith('/rework')&&c.method==='POST')).toHaveLength(1);await editor.getByRole('button',{name:'使用同一操作重试',exact:true}).click();await expect(page.getByText('返工修改已保存',{exact:true})).toBeVisible();const writes=calls.filter(c=>c.path.endsWith('/rework')&&c.method==='POST');expect(writes).toHaveLength(2);expect(writes[1].body).toEqual(writes[0].body);
+});
+
+test('Root committed rework recovery does not require permission to start another rework',async({page})=>{
+ const calls=await setup(page,'rework-applied');await open(page);const editor=await rework(page);await editor.getByLabel('金额',{exact:true}).fill('20.00');await editor.getByRole('button',{name:'保存返工',exact:true}).click();await expect(editor.getByText('保存结果待确认',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'返回主页',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();
+ await expect(page.getByRole('button',{name:'恢复保存结果',exact:true})).toBeVisible();await page.getByRole('button',{name:'恢复保存结果',exact:true}).click();await expect(page.getByText('返工修改已保存',{exact:true})).toBeVisible();expect(calls.filter(c=>c.path.endsWith('/rework')&&c.method==='POST')).toHaveLength(1);expect(calls.filter(c=>c.path.startsWith('application-operations/')).at(-1)?.method).toBe('GET');
+});
+
+// Figma493:8702 uses a bottom-aligned 100/120px footer inside its 580x400 card.
+test('Root round confirmation keeps Figma footer sizing and bottom alignment',async({page})=>{
+ await setup(page);await open(page);const dialog=await choose(page);const cancel=dialog.getByRole('button',{name:'取消',exact:true}),submit=dialog.getByRole('button',{name:'重新提交',exact:true});
+ const box=await dialog.boundingBox(),a=await cancel.boundingBox(),b=await submit.boundingBox();expect(box!.width).toBe(580);expect(box!.height).toBe(400);expect(a!.width).toBe(100);expect(b!.width).toBe(120);expect(b!.height).toBe(40);expect(Math.abs(box!.y+box!.height-b!.y-b!.height-24)).toBeLessThanOrEqual(2);
+});

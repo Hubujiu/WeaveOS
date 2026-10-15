@@ -1,0 +1,74 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ P16 accepts current bounded candidates and leaves input untouched (1.465311ms)
+✖ P16 empty deep page is a real successful response (0.218528ms)
+✔ P16 rejects schema drift (0.147471ms)
+✔ P16 rejects policy drift (0.119159ms)
+✔ P16 rejects wrong page (0.091227ms)
+✔ P16 rejects wrong size (0.140662ms)
+✔ P16 rejects extra grant (0.075614ms)
+✔ P16 rejects unsafe total (0.062484ms)
+✔ P16 rejects empty token (0.105829ms)
+✔ P16 rejects token too long (0.124006ms)
+✔ P16 rejects null list (0.100421ms)
+✔ P16 rejects duplicate identity (0.087832ms)
+✔ P16 rejects rows exceed total (0.047692ms)
+✔ P16 refuses candidate disabled (0.079279ms)
+✔ P16 refuses candidate empty id (0.070155ms)
+✔ P16 refuses candidate zero id (0.092309ms)
+✔ P16 refuses candidate uppercase id (0.062735ms)
+✔ P16 refuses candidate blank label (0.055233ms)
+✔ P16 refuses candidate oversize label (0.033661ms)
+✔ P16 refuses candidate extra email (0.064828ms)
+✔ P16 refuses candidate extra scope (0.051848ms)
+✔ P16 rejects unsafe page window or obsolete authority versions (0.096996ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 20
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 134.079019
+
+✖ failing tests:
+
+test at tests/foundation/workflow-approver-consumption.test.mjs:5:1
+✖ P16 accepts current bounded candidates and leaves input untouched (1.465311ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-approver-consumption.test.mjs:5:125)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-approver-consumption.test.mjs:6:1
+✖ P16 empty deep page is a real successful response (0.218528ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-approver-consumption.test.mjs:6:69)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

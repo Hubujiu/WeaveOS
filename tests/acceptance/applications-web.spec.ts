@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { safeNetworkFailure } from './browser-diagnostics.mjs';
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 
 // This runs against the isolated HTTPS BFF, PostgreSQL and Redis. The fixture
@@ -336,6 +337,35 @@ test('V030-012 real B5: create-only owner, same-app menu member and cross-app de
   expect(grants.status).toBe(200);
 
   const memberPage = await memberContext.newPage();
+  const diagnosticStart = performance.now();
+  const requestIds = new WeakMap<object, number>();
+  let requestSequence = 0;
+  const requestKind = (url: string) => {
+   const path = new URL(url).pathname;
+   if (path === '/api/v1/sessions/current') return 'session';
+   if (path === '/api/v1/sessions') return 'sessions';
+   if (path === '/api/v1/applications') return 'applications';
+   if (path === '/api/v1/applications/' + appA.id) return 'application-a';
+   if (path === '/api/v1/applications/' + appB.id) return 'application-b';
+   return 'other';
+  };
+  const diagnostic = (data: Record<string, string | number | boolean>) => console.log('B5_ACCESS_PHASE ' + JSON.stringify({ relativeMs: Math.round(performance.now() - diagnosticStart), ...data }));
+  memberPage.on('request', request => {
+   const kind = requestKind(request.url());
+   if (kind === 'other') return;
+   const id = ++requestSequence; requestIds.set(request, id);
+   diagnostic({ phase: 'request', id, kind });
+  });
+  memberPage.on('response', response => {
+   const id = requestIds.get(response.request());
+   if (id !== undefined) diagnostic({ phase: 'response', id, kind: requestKind(response.url()), status: response.status() });
+  });
+  memberPage.on('requestfailed', request => {
+   const id = requestIds.get(request);
+   if (id !== undefined) diagnostic({ phase: 'request-failed', id, kind: requestKind(request.url()), failure: safeNetworkFailure(request.failure()?.errorText) });
+  });
+  memberPage.on('pageerror', () => diagnostic({ phase: 'page-error' }));
+  memberPage.on('crash', () => diagnostic({ phase: 'page-crash' }));
   await login(memberPage, ownMember);
   await expect(memberPage.getByRole('button', { name: '设置', exact: true })).toBeHidden();
   await memberPage.getByRole('button', { name: '打开应用中心', exact: true }).click();
@@ -354,8 +384,21 @@ test('V030-012 real B5: create-only owner, same-app menu member and cross-app de
   await memberPage.goto('/app/applications');
   await memberPage.reload();
   await expect(memberPage.getByRole('main').getByRole('button', { name: appA.name, exact: true })).toHaveCount(0);
+  diagnostic({ phase: 'revoked-navigation' });
   await memberPage.goto('/app/applications/' + appA.id);
-  await expect(memberPage.getByRole('alert')).toContainText('没有应用访问或管理权限');
+  try {
+   await expect(memberPage.getByRole('alert')).toContainText('没有应用访问或管理权限');
+  } finally {
+   const state = await memberPage.evaluate(() => ({
+    login: location.pathname === '/login',
+    alertPresent: !!document.querySelector('[role="alert"]'),
+    rootMounted: !!document.querySelector('main'),
+    loading: document.body.textContent?.includes('加载中') === true,
+    networkError: document.body.textContent?.includes('网络连接失败') === true,
+    accessDenied: document.body.textContent?.includes('没有应用访问或管理权限') === true,
+   })).catch(() => ({ unavailable: true }));
+   diagnostic({ phase: 'revoked-page-state', ...state });
+  }
  } finally { await creatorContext.close(); await memberContext.close(); }
 });
 
@@ -420,14 +463,14 @@ test('Root real HTTPS full journey creates an application, saves a form, and cre
  const prefix='applications/'+app.id+'/forms/'+form.id;
  const runtimeReply=await realApi(page.context(),f.adminId,prefix+'/runtime');expect(runtimeReply.status).toBe(200);
  const fields=runtimeReply.data.fields as {id:string;name:string}[];const amount=fields.find(x=>x.name==='报销金额')!.id,title=fields.find(x=>x.name==='报销事由')!.id;
- await page.getByRole('button',{name:'新建记录',exact:true}).click();const createRecord=page.getByRole('dialog',{name:'新建记录',exact:true});
+ await page.getByRole('button',{name:'新建记录',exact:true}).click();const createRecord=page.getByRole('region',{name:'新建记录',exact:true});
  await createRecord.getByLabel('报销金额',{exact:true}).fill('12.345');await createRecord.getByLabel('报销事由',{exact:true}).fill('真实差旅');
  if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-create-input.png'),fullPage:true});
  const recordResponse=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/'+prefix+'/records');
  await createRecord.getByRole('button',{name:'保存记录',exact:true}).click();const recordWritten=await recordResponse;expect(recordWritten.status()).toBe(201);
  const receipt=(await recordWritten.json()).data as {id:string;recordVersion:number};
  await expect(page.getByRole('status').filter({hasText:'记录已保存'})).toBeVisible();
- const detail=page.getByRole('dialog',{name:'记录详情',exact:true});await expect(detail.getByLabel('报销金额',{exact:true})).toHaveValue('12.35');
+ const detail=page.getByRole('region',{name:'记录详情',exact:true});await expect(detail.getByLabel('报销金额',{exact:true})).toHaveValue('12.35');
  await expect(detail.getByLabel('报销事由',{exact:true})).toHaveValue('真实差旅');
  const persisted=await realApi(page.context(),f.adminId,prefix+'/records/'+receipt.id);expect(persisted.status).toBe(200);
  expect(persisted.data.values).toMatchObject({[amount]:'12.35',[title]:'真实差旅'});expect(persisted.data.recordVersion).toBe(receipt.recordVersion);
@@ -441,5 +484,76 @@ test('Root real HTTPS full journey creates an application, saves a form, and cre
  expect(await shell!.evaluate(node=>node.isConnected)).toBe(true);
  await page.reload();await expect(page.getByRole('region',{name:'记录工作区'})).toBeVisible();
  await page.getByRole('button',{name:'打开记录：报销金额 20.10',exact:true}).click();
- await expect(page.getByRole('dialog',{name:'记录详情',exact:true}).getByLabel('报销事由',{exact:true})).toHaveValue('真实差旅');
+ await expect(page.getByRole('region',{name:'记录详情',exact:true}).getByLabel('报销事由',{exact:true})).toHaveValue('真实差旅');
+ // Additional V072 product-layer proof, not claimed to precede existing component REDs.
+ const recordPath=prefix+'/records/'+receipt.id;
+ const beforeDelete=await realApi(page.context(),f.adminId,recordPath);expect(beforeDelete.status).toBe(200);
+ await page.getByRole('button',{name:'删除记录',exact:true}).click();const deleting=page.getByRole('dialog',{name:'删除这条记录？',exact:true});
+ const deletionResponse=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/'+recordPath+'/deletion');
+ await deleting.getByRole('button',{name:'确认删除',exact:true}).click();const deletion=await deletionResponse;expect(deletion.status()).toBe(200);
+ const deletionBody=deletion.request().postDataJSON();expect(deletionBody).toEqual({operationId:expect.any(String),expectedSchemaVersion:beforeDelete.data.schemaVersion,expectedRecordVersion:beforeDelete.data.recordVersion});
+ const deleted=(await deletion.json()).data;expect(Object.keys(deleted).sort()).toEqual(['deleted','id','operationId','recordVersion','schemaVersion']);expect(deleted.deleted).toBe(true);expect(deleted.id).toBe(receipt.id);expect(deleted.recordVersion).toBe(Number(beforeDelete.data.recordVersion)+1);
+ await expect(page.getByRole('region',{name:'记录详情',exact:true})).toHaveCount(0);expect((await realApi(page.context(),f.adminId,recordPath)).status).toBe(404);
+ await page.getByRole('button',{name:'已删除记录',exact:true}).click();await expect(page.getByRole('heading',{name:'已删除记录',exact:true})).toBeVisible();const deletedRow=page.getByRole('row').filter({hasText:receipt.id});await expect(deletedRow).toHaveCount(1);
+ await deletedRow.getByRole('button',{name:'恢复',exact:true}).click();const restorationResponse=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/'+recordPath+'/restoration');
+ await page.getByRole('dialog',{name:'恢复这条记录？',exact:true}).getByRole('button',{name:'确认恢复',exact:true}).click();const restoration=await restorationResponse;expect(restoration.status()).toBe(200);expect(restoration.request().postDataJSON()).toEqual({operationId:expect.any(String),expectedSchemaVersion:deleted.schemaVersion,expectedRecordVersion:deleted.recordVersion});
+ const restored=(await restoration.json()).data;expect(restored.id).toBe(receipt.id);expect(restored.deleted).toBe(false);expect(restored.recordVersion).toBe(deleted.recordVersion+1);await expect(deletedRow).toHaveCount(0);
+ const preserved=await realApi(page.context(),f.adminId,recordPath);expect(preserved.status).toBe(200);expect(preserved.data.values).toEqual(beforeDelete.data.values);expect(preserved.data.recordVersion).toBe(restored.recordVersion);
+ await page.getByRole('button',{name:'返回记录',exact:true}).click();await page.getByRole('button',{name:'打开记录：报销金额 20.10',exact:true}).click();await expect(page.getByRole('region',{name:'记录详情',exact:true}).getByLabel('报销事由',{exact:true})).toHaveValue('真实差旅');
+ if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('record-real-restored-same-identity.png'),fullPage:true});
+});
+
+test('Root real HTTPS template download maps current targets and creates fresh shared structure without source records',async({page},info)=>{
+ test.setTimeout(120_000);
+ const f=fixture();await page.setViewportSize({width:1920,height:1080});await login(page,f.admin);
+ const api=(path:string,method='GET',body?:object)=>realApi(page.context(),f.adminId,path,method,body);
+ const departments=await api('personnel/departments');expect(departments.status).toBe(200);
+ const root=(departments.data.items as {id:string;name:string;isRoot:boolean}[]).find(d=>d.isRoot)!;expect(root).toBeTruthy();
+ const ids=Array.from({length:14},()=>crypto.randomUUID()),[sourceApp,table,viewA,viewB,member,department,text,flow,start,approve,end,group]=ids;
+ const field=(id:string,name:string,kind:string,value:unknown)=>({id,name,kind,required:false,default:value,config:kind==='text'?{maxLength:null}:{},presentation:{helpText:null,displayTimeZone:null}});
+ const layout=()=>[member,department,text].map(fieldId=>({id:crypto.randomUUID(),kind:'field',fieldId,span:12}));
+ // Synthetic fixture setup through supported HTTPS only; no SQL or business API mocks.
+ const seed={format:'weaveos.structure-template',version:1,application:{id:sourceApp,name:'模板真实闭环 '+info.project.name+' '+Date.now()},directories:[],tables:[{id:table,name:'共享表',directoryId:null,position:0,fields:[field(member,'经办成员','member',f.userId),field(department,'所属部门','department',root.id),field(text,'说明','text',null)]}],forms:[{id:viewA,tableId:table,name:'主表单',directoryId:null,position:0,layout:layout()},{id:viewB,tableId:table,name:'共享视图',directoryId:null,position:1,layout:layout()}],workflows:[{id:flow,tableId:table,viewId:viewA,name:'模板审批',allowWithdraw:true,graph:{version:1,nodes:[{id:start,kind:'start'},{id:approve,kind:'approval',approval:{mode:'all',assigneeIds:[f.userId],editableFieldIds:[text]}},{id:end,kind:'end'}],edges:[{from:start,to:approve},{from:approve,to:end}]},triggers:[{event:'manual',condition:null}]}],permissionGroups:[{id:group,name:'模板配置组',enabled:false,memberIds:[f.userId],grants:[{resourceKind:'form',resourceId:viewA,action:'data.read',rowScope:'own',fields:[text]}]}]};
+ const seeded=await api('application-templates/import','POST',{operationId:crypto.randomUUID(),manifest:seed,bindings:[{kind:'user',sourceId:f.userId,targetId:f.userId},{kind:'department',sourceId:root.id,targetId:root.id}]});expect(seeded.status).toBe(201);
+ const appId=seeded.data.appId as string,sourceExport=await api('applications/'+appId+'/structure-template');expect(sourceExport.status).toBe(200);const source=sourceExport.data as any;
+ const sourceView=source.forms.find((v:any)=>v.name==='主表单'),sourceText=source.tables[0].fields.find((v:any)=>v.kind==='text');
+ const createdRecord=await api(`applications/${appId}/forms/${sourceView.id}/records`,'POST',{operationId:crypto.randomUUID(),expectedSchemaVersion:1,values:{[sourceText.id]:'不得迁移的业务内容'}});expect(createdRecord.status).toBe(201);
+ await page.goto('/app/applications/'+appId);await page.getByRole('button',{name:'导出应用模板',exact:true}).click();const downloadEvent=page.waitForEvent('download');await page.getByRole('button',{name:'导出模板',exact:true}).click();const download=await downloadEvent;
+ expect(download.suggestedFilename()).toBe('weaveos-template-'+appId+'.json');const stream=await download.createReadStream();expect(stream).toBeTruthy();const chunks:Buffer[]=[];for await(const chunk of stream!)chunks.push(Buffer.from(chunk));const bytes=Buffer.concat(chunks),exported=JSON.parse(bytes.toString('utf8'));
+ expect(exported).toEqual(source);expect(bytes.toString('utf8')).not.toContain('不得迁移的业务内容');expect(bytes.toString('utf8')).not.toContain(createdRecord.data.id as string);
+ await page.getByRole('dialog',{name:'导出应用模板',exact:true}).getByRole('button',{name:'取消',exact:true}).click();await page.goto('/app/applications');await page.getByRole('button',{name:'导入应用模板',exact:true}).click();await page.getByLabel('选择模板文件',{exact:true}).setInputFiles({name:download.suggestedFilename(),mimeType:'application/json',buffer:bytes});
+ await page.getByRole('button',{name:'选择成员',exact:true}).click();await page.getByLabel('搜索成员',{exact:true}).fill(f.admin.account);await page.getByRole('button',{name:f.admin.account,exact:true}).click();await page.getByRole('button',{name:'选择部门',exact:true}).click();await page.getByLabel('搜索部门',{exact:true}).fill(root.name);await page.getByRole('button',{name:root.name,exact:true}).click();
+ const preflightEvent=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/application-templates/preflight');await page.getByRole('button',{name:'检查模板',exact:true}).click();const preflight=await preflightEvent;expect(preflight.status()).toBe(200);expect((await preflight.json()).data).toEqual({valid:true,counts:{directories:0,tables:1,fields:3,forms:2,workflows:1,permissionGroups:1}});
+ if(info.project.name==='chromium')await page.screenshot({path:info.outputPath('template-real-mapping.png'),fullPage:true});
+ const importedEvent=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/application-templates/import');await page.getByRole('button',{name:'确认导入',exact:true}).click();const imported=await importedEvent;expect(imported.status()).toBe(201);const receipt=(await imported.json()).data;expect(receipt.appId).not.toBe(appId);expect(receipt).toEqual({operationId:expect.any(String),appId:expect.any(String),policyRevision:1,structureVersion:1,status:'imported'});expect(imported.headers().location).toBe('/api/v1/applications/'+receipt.appId);
+ expect(imported.request().postDataJSON()).toEqual({operationId:receipt.operationId,manifest:source,bindings:[{kind:'user',sourceId:f.userId,targetId:f.adminId},{kind:'department',sourceId:root.id,targetId:root.id}]});await expect(page.getByText('模板已导入',{exact:true})).toBeVisible();
+ const copied=await api('applications/'+receipt.appId+'/structure-template');expect(copied.status).toBe(200);const dest=copied.data as any;expect(dest.forms).toHaveLength(2);expect(dest.tables).toHaveLength(1);expect(dest.tables[0].id).not.toBe(source.tables[0].id);expect(dest.forms.every((v:any)=>v.tableId===dest.tables[0].id)).toBe(true);expect(dest.tables[0].fields.find((v:any)=>v.kind==='member').default).toBe(f.adminId);expect(dest.tables[0].fields.find((v:any)=>v.kind==='department').default).toBe(root.id);expect(dest.permissionGroups[0].memberIds).toEqual([f.adminId]);expect(dest.workflows[0].graph.nodes.find((v:any)=>v.kind==='approval').approval.assigneeIds).toEqual([f.adminId]);
+ const newView=dest.forms.find((v:any)=>v.name==='主表单'),newFlow=dest.workflows[0];const definition=await api(`applications/${receipt.appId}/forms/${newView.id}/workflows/${newFlow.id}/definition`);expect(definition.status).toBe(200);expect(definition.data).toMatchObject({state:'disabled',currentVersion:0,candidateVersion:1});
+ const rows=await api(`applications/${receipt.appId}/forms/${newView.id}/records/search`,'POST',{page:1,pageSize:20,filter:null,sort:null});expect(rows.status).toBe(200);expect(rows.data.items).toEqual([]);expect(rows.data.total).toBe(0);
+ const original=await api(`applications/${appId}/forms/${sourceView.id}/records/${createdRecord.data.id}`);expect(original.status).toBe(200);expect(original.data.values).toMatchObject({[sourceText.id]:'不得迁移的业务内容'});
+ await page.getByRole('button',{name:'打开新应用',exact:true}).click();await expect(page).toHaveURL(new RegExp('/app/applications/'+receipt.appId+'$'));await page.reload();await expect(page.getByRole('heading',{name:seed.application.name,exact:true})).toBeVisible();
+ // V074 real structural copy uses the existing imported configuration as its
+ // source, now with a real row. Original export/import assertions stay above.
+ const copySourceText=dest.tables[0].fields.find((v:any)=>v.kind==='text');
+ const copySourceRecord=await api(`applications/${receipt.appId}/forms/${newView.id}/records`,'POST',{operationId:crypto.randomUUID(),expectedSchemaVersion:1,values:{[copySourceText.id]:'结构复制不得搬运的行'}});expect(copySourceRecord.status).toBe(201);
+ await page.getByRole('button',{name:'复制应用',exact:true}).click();const copyDialog=page.getByRole('dialog');const copyName='结构副本 '+info.project.name+' '+Date.now();await copyDialog.getByLabel('新应用名称',{exact:true}).fill(copyName);
+ const planEvent=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/structure-copies/plan');await copyDialog.getByRole('button',{name:'读取复制计划',exact:true}).click();const planned=await planEvent;expect(planned.status()).toBe(200);const copyPlan=(await planned.json()).data;
+ expect(planned.request().postDataJSON()).toEqual({source:{appId:receipt.appId,kind:'application',id:receipt.appId},target:{appId:null,directoryId:null,name:copyName}});
+ await copyDialog.getByRole('button',{name:'选择成员',exact:true}).click();await copyDialog.getByLabel('搜索成员',{exact:true}).fill(f.admin.account);await copyDialog.getByRole('button',{name:f.admin.account,exact:true}).click();await copyDialog.getByRole('button',{name:'选择部门',exact:true}).click();await copyDialog.getByLabel('搜索部门',{exact:true}).fill(root.name);await copyDialog.getByRole('button',{name:root.name,exact:true}).click();await copyDialog.getByLabel('新权限组名称 模板配置组',{exact:true}).fill('独立复制组');
+ const copyPreflightEvent=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/structure-copies/preflight');await copyDialog.getByRole('button',{name:'预检复制',exact:true}).click();const copyPreflight=await copyPreflightEvent;expect(copyPreflight.status()).toBe(200);await expect(copyDialog).toContainText('经办成员');await expect(copyDialog).toContainText('模板审批');await expect(copyDialog).toContainText('独立复制组');await expect(copyDialog).not.toContainText('结构复制不得搬运的行');
+ const copiedEvent=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/v1/structure-copies/execute');await copyDialog.getByRole('button',{name:'确认复制',exact:true}).click();const copiedResponse=await copiedEvent;expect(copiedResponse.status()).toBe(201);const structuralReceipt=(await copiedResponse.json()).data;expect(structuralReceipt).toEqual({operationId:expect.any(String),appId:expect.any(String),resourceKind:'application',id:expect.any(String),structureVersion:1,policyRevision:1,status:'copied'});expect(structuralReceipt.id).toBe(structuralReceipt.appId);expect(structuralReceipt.appId).not.toBe(receipt.appId);expect(copiedResponse.request().postDataJSON()).toEqual({...planned.request().postDataJSON(),expectedSourceFingerprint:copyPlan.sourceFingerprint,expectedTargetStructureVersion:0,expectedTargetPolicyRevision:0,bindings:[{kind:'user',sourceId:f.adminId,targetId:f.adminId},{kind:'department',sourceId:root.id,targetId:root.id}],groupMappings:[{sourceGroupId:dest.permissionGroups[0].id,name:'独立复制组'}],operationId:structuralReceipt.operationId});await expect(copyDialog.getByText('结构已复制',{exact:true})).toBeVisible();
+ const structuralExport=await api('applications/'+structuralReceipt.appId+'/structure-template');expect(structuralExport.status).toBe(200);const structural=structuralExport.data as any;expect(structural.application.name).toBe(copyName);expect(structural.tables).toHaveLength(1);expect(structural.forms).toHaveLength(2);expect(structural.tables[0].id).not.toBe(dest.tables[0].id);expect(structural.forms.every((v:any)=>v.tableId===structural.tables[0].id)).toBe(true);expect(structural.permissionGroups[0].id).not.toBe(dest.permissionGroups[0].id);expect(structural.permissionGroups[0].name).toBe('独立复制组');expect(structural.permissionGroups[0].memberIds).toEqual([f.adminId]);expect(structural.workflows[0].graph.nodes.every((n:any)=>!dest.workflows[0].graph.nodes.some((old:any)=>old.id===n.id))).toBe(true);
+ const structuralMain=structural.forms.find((v:any)=>v.name==='主表单'),structuralSibling=structural.forms.find((v:any)=>v.name==='共享视图'),structuralFlow=structural.workflows[0];const structuralRows=await api(`applications/${structuralReceipt.appId}/forms/${structuralMain.id}/records/search`,'POST',{page:1,pageSize:20,filter:null,sort:null});expect(structuralRows.status).toBe(200);expect(structuralRows.data.items).toEqual([]);expect(structuralRows.data.total).toBe(0);const structuralDefinition=await api(`applications/${structuralReceipt.appId}/forms/${structuralMain.id}/workflows/${structuralFlow.id}/definition`);expect(structuralDefinition.status).toBe(200);expect(structuralDefinition.data).toMatchObject({state:'disabled',currentVersion:0,candidateVersion:1});
+ expect((await api(`applications/${receipt.appId}/forms/${newView.id}/records/${copySourceRecord.data.id}`)).data.values).toMatchObject({[copySourceText.id]:'结构复制不得搬运的行'});
+ // V073 UI deletion removes only a sibling view, preserving its shared table,
+ // a current real row, and the independent workflow on the remaining view.
+ const structuralText=structural.tables[0].fields.find((v:any)=>v.kind==='text');const retained=await api(`applications/${structuralReceipt.appId}/forms/${structuralMain.id}/records`,'POST',{operationId:crypto.randomUUID(),expectedSchemaVersion:1,values:{[structuralText.id]:'删除视图仍保留'}});expect(retained.status).toBe(201);await copyDialog.getByRole('button',{name:'关闭',exact:true}).click();await page.goto('/app/applications/'+structuralReceipt.appId);await page.getByRole('button',{name:'删除表单 共享视图',exact:true}).click();const structuralDeletionEvent=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname===`/api/v1/applications/${structuralReceipt.appId}/forms/${structuralSibling.id}/deletion`);await page.getByRole('dialog',{name:'删除表单视图？',exact:true}).getByRole('button',{name:'确认删除',exact:true}).click();const structuralDeletion=await structuralDeletionEvent;expect(structuralDeletion.status()).toBe(200);expect(structuralDeletion.request().postDataJSON()).toEqual({operationId:expect.any(String),expectedStructureVersion:1,expectedResourceVersion:1});await expect(page.getByRole('treeitem',{name:'共享视图',exact:true})).toHaveCount(0);const afterStructureDelete=await api('applications/'+structuralReceipt.appId+'/structure-template');expect(afterStructureDelete.status).toBe(200);expect((afterStructureDelete.data as any).tables[0].id).toBe(structural.tables[0].id);expect((afterStructureDelete.data as any).forms.map((v:any)=>v.id)).toEqual([structuralMain.id]);expect((await api(`applications/${structuralReceipt.appId}/forms/${structuralMain.id}/records/${retained.data.id}`)).data.values).toMatchObject({[structuralText.id]:'删除视图仍保留'});
+ // P26 integration reuses this real typed-reference row. Permission-only reader
+ // scope is proved by the isolated service/HTTP suite, not inferred from this owner.
+ const structuralMember=structural.tables[0].fields.find((v:any)=>v.kind==='member');
+ await page.goto(`/app/applications/${structuralReceipt.appId}/forms/${structuralMain.id}`);await page.getByRole('button',{name:/^自定义筛选/}).click();await page.getByRole('button',{name:'新增筛选',exact:true}).click();
+ const filterEditor=page.getByRole('dialog',{name:'新增自定义筛选',exact:true});await filterEditor.getByLabel('自定义筛选名称').fill('经办成员筛选');await filterEditor.getByRole('button',{name:'或条件',exact:true}).click();await filterEditor.getByLabel('条件 1.1 字段').selectOption(structuralMember.id);
+ const valuesEvent=page.waitForResponse(r=>r.request().method()==='GET'&&new URL(r.url()).pathname===`/api/v1/applications/${structuralReceipt.appId}/forms/${structuralMain.id}/filter-candidates`);await filterEditor.getByRole('button',{name:'选择成员',exact:true}).click();const valuesResponse=await valuesEvent;expect(valuesResponse.status()).toBe(200);expect(new URL(valuesResponse.url()).searchParams.get('fieldId')).toBe(structuralMember.id);expect((await valuesResponse.json()).data.items).toEqual([{id:f.adminId,label:f.admin.account,deleted:false}]);await filterEditor.getByRole('button',{name:f.admin.account,exact:true}).click();await filterEditor.getByRole('button',{name:'确定',exact:true}).click();
+ const filteredEvent=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname===`/api/v1/applications/${structuralReceipt.appId}/forms/${structuralMain.id}/records/search`&&r.request().postDataJSON().filter!==null);await page.getByRole('button',{name:'应用经办成员筛选',exact:true}).click();const filteredResponse=await filteredEvent;expect(filteredResponse.status()).toBe(200);expect(filteredResponse.request().postDataJSON().filter).toEqual({operator:'and',children:[{fieldId:structuralMember.id,operator:'eq',value:f.adminId}]});expect((await filteredResponse.json()).data.items.map((item:any)=>item.id)).toEqual([retained.data.id]);await page.keyboard.press('Escape');await expect(page.getByText('删除视图仍保留',{exact:true})).toBeVisible();
+
 });

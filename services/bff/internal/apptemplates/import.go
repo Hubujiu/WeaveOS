@@ -194,7 +194,7 @@ func insertManifestInTx(ctx context.Context, tx pgx.Tx, p session.Principal, m M
 	for _, flow := range m.Workflows {
 		graph := flowgraph.Graph{Version: flow.Graph.Version, Nodes: []flowgraph.Node{}, Edges: []flowgraph.Edge{}}
 		for _, node := range flow.Graph.Nodes {
-			n := flowgraph.Node{ID: node.ID, Kind: node.Kind, Condition: node.Condition}
+			n := flowgraph.Node{Name: node.Name, ID: node.ID, Kind: node.Kind, Condition: node.Condition}
 			if a := node.Approval; a != nil {
 				n.Approval = &flowgraph.Approval{Mode: a.Mode, AssigneeIDs: a.AssigneeIDs, EditableFieldIDs: a.EditableFieldIDs}
 			}

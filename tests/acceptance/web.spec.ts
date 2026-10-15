@@ -1,3 +1,4 @@
+import { safeNetworkFailure } from './browser-diagnostics.mjs';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
@@ -386,7 +387,7 @@ async function observeWeb15Registration(page: Page, expectedCode: string) {
     if (registration(request.url(), request.method())) emit({ phase: 'request', path: '/api/v1/registrations', method: 'POST' });
   });
   page.on('requestfailed', request => {
-    if (registration(request.url(), request.method())) emit({ phase: 'request-failed', path: '/api/v1/registrations', method: 'POST' });
+    if (registration(request.url(), request.method())) emit({ phase: 'request-failed', path: '/api/v1/registrations', method: 'POST', failure: safeNetworkFailure(request.failure()?.errorText) });
   });
   page.on('response', response => {
     if (registration(response.url(), response.request().method())) emit({ phase: 'response', path: '/api/v1/registrations', method: 'POST', status: response.status() });

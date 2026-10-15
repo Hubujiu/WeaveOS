@@ -1,6 +1,6 @@
 # v0.1.0 架构落地与模块边界
 
-当前完成基础宿主，不是业务完成。Node24.14.0、pnpm10.28.2、Go1.27.1为本任务CI锁定值；React19.3.0、Vite8.0.0、TypeScript5.9.3、Playwright1.63.0通过锁文件/实际构建核对。不是宣称行业最新，也不批准ADR-003全部候选库。Go module的1.23.0是语言最低版本，CI/建议运行时由.go-version锁定，不推荐用旧运行时发布。
+当前完成基础宿主，不是业务完成。Node24.14.0、pnpm10.28.2、Go1.27.1为本任务CI锁定值；React19.3.0、Vite8.0.0、TypeScript5.9.3、Playwright1.64.1通过锁文件/实际构建核对。不是宣称行业最新，也不批准ADR-003全部候选库。Go module的1.23.0是语言最低版本，CI/建议运行时由.go-version锁定，不推荐用旧运行时发布。
 
 浏览器 → React/Vite静态构建 → 同源HTTP入口 → Go BFF。当前cmd/bff装配平台宿主，internal/platform/httpserver实现健康/就绪/错误边界；persistence、session、identity、auth、invitation、audit由各任务补齐。没有额外Node BFF，没有为同进程模块制造RPC。
 

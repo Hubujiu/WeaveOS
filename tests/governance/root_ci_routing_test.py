@@ -20,8 +20,25 @@ class Routing(unittest.TestCase):
             for name, job in jobs.items():
                 if name in ['preflight','governance','selection-gate']: continue
                 self.assertIn('preflight', job['needs'] if isinstance(job['needs'],list) else [job['needs']])
-                lane = 'product' if file == 'acceptance.yml' else 'browser' if name == 'browser' else 'backend'
+                lane = 'product' if file == 'acceptance.yml' or name == 'workflow-browser' else 'browser' if name == 'browser' else 'backend'
                 self.assertEqual(job['if'], "needs.preflight.outputs." + lane + " == 'true'")
+    def test_real_engine_browser_is_product_only_and_required(self):
+        jobs = workflow(ROOT, 'ci.yml')['jobs']
+        self.assertIn('workflow-browser', jobs, 'P23 composed real browser-engine proof is missing')
+        job = jobs['workflow-browser']
+        self.assertEqual(job['if'], "needs.preflight.outputs.product == 'true'")
+        self.assertIn('workflow-browser', jobs['selection-gate']['needs'])
+        commands = '\n'.join(step.get('run', '') for step in job['steps'])
+        self.assertIn('pnpm build', commands)
+        self.assertIn('WEAVEOS_PRODUCT_BROWSER_MODE=1', commands)
+        self.assertIn('node services/workflow-engine/run-formal-runtime.mjs', commands)
+        self.assertNotIn('continue-on-error', job)
+        uploads = [s for s in job['steps'] if s.get('uses', '').startswith('actions/upload-artifact@')]
+        self.assertEqual(len(uploads), 1)
+        self.assertEqual(uploads[0]['if'], 'always()')
+        self.assertEqual(uploads[0]['with']['path'].strip(), 'services/workflow-engine/product-browser-reports/')
+        self.assertNotIn('.work', uploads[0]['with']['path'], 'private Session exchange never uploaded')
+
     def test_only_result_verifier_can_use_always(self):
         valid={'jobs':{'preflight':{'uses':'./.github/workflows/preflight.yml'},
           'build':{'needs':'preflight'},'selection-gate':{'needs':['preflight','build'],

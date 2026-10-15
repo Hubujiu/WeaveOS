@@ -4,12 +4,25 @@ export type ApplicationPacket = {
  actorId: string;
  path: string;
  method: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
- expectedStatus: 200 | 201 | 204;
+ expectedStatus: 200 | 201 | 202 | 204;
  scope?: string;
  operationId?: string;
  body?: { operationId?: string; [key: string]: unknown };
- query?: { operationId: string; expectedDraftVersion?: number };
- resource?: { kind: 'record' | 'draft'; appId: string; viewId: string; id?: string; creationNonce?: string };
+ query?: { operationId: string; expectedDraftVersion?: number; expectedVersion?: number };
+ resource?: { kind: 'record' | 'draft' | 'preset'; appId: string; viewId: string; id?: string; creationNonce?: string }
+  | { kind:'structure-deletion';appId:string;resourceKind:'application'|'directory'|'table'|'form';id:string;viewId?:never;creationNonce?:never }
+  | { kind:'structure-copy';sourceAppId:string;sourceKind:'application'|'directory'|'table'|'form';sourceId:string;appId?:never;viewId?:never;id?:never;creationNonce?:never }
+  | { kind:'template-import';appId?:never;viewId?:never;id?:never;creationNonce?:never }
+  | { kind:'record-lifecycle';appId:string;viewId:string;id:string;action:'deletion'|'restoration';creationNonce?:never }
+  | { kind:'workflow-publication';appId:string;viewId:string;id:string;version:number;creationNonce?:never }
+  | { kind:'workflow-management';appId:string;viewId:string;id:string;action:'enable'|'close';creationNonce?:never }
+  | { kind:'workflow-deletion';appId:string;viewId:string;id:string;creationNonce?:never }
+  | { kind:'workflow-definition';appId:string;viewId:string;id:string;creationNonce?:never }
+  | { kind:'round-record';appId:string;viewId:string;id:string;instanceId:string;creationNonce?:never }
+  | { kind:'round-start';appId:string;viewId:string;id:string;instanceId:string;flowId:string;roundKind:'resubmit'|'review';creationNonce?:never }
+  | { kind: 'manual-start'; appId:string;viewId:string;id:string;flowId:string;creationNonce?:never }
+  | { kind: 'instance-action'; appId:string;viewId:string;id:string;instanceId:string;creationNonce?:never }
+  | { kind: 'task-record' | 'task-action'; appId: string; viewId: string; id: string; instanceId: string; taskId: string; creationNonce?: never };
  context?: unknown;
 };
 type Recovery = { name: string; packet: ApplicationPacket | null; unknown: boolean; draft?: unknown };

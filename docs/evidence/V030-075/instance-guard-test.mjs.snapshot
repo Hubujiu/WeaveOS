@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {stripTypeScriptTypes} from 'node:module';
+const source=await readFile(new URL('../../apps/web/src/applications/shell/leaveGuards.ts',import.meta.url),'utf8');
+const {LeaveGuards}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source,{mode:'transform'})).toString('base64'));
+const base={kind:'workflow-instance',actorId:'actor',appId:'app',viewId:'view',recordId:'record',instanceId:'first'};
+const controller=()=>({getStatus:()=> 'unknown',prepareLeave:()=>({ok:true})});
+for(const [name,second] of [['another instance',{...base,instanceId:'second'}],['another record',{...base,recordId:'other'}]])test('instance leave guards retain '+name+' independently',()=>{const g=new LeaveGuards(),one=controller(),two=controller();g.register(base,one);g.register(second,two);assert.equal(g.snapshot('actor').length,2);assert.deepEqual(new Set(g.snapshot('actor').map(e=>e.controller)),new Set([one,two]));});
+test('instance guard cannot replace record dirty protection or another actor',()=>{const g=new LeaveGuards();g.register(base,controller());g.register({kind:'record',actorId:'actor',appId:'app',viewId:'view',recordId:'record'},controller());g.register({...base,actorId:'other'},controller());assert.equal(g.snapshot('actor').length,2);assert.equal(g.snapshot('other').length,1);});
+test('instance stale cleanup preserves replacement and unrelated instance',()=>{const g=new LeaveGuards();const stale=g.register(base,controller());const current=controller();g.register(base,current);g.register({...base,instanceId:'second'},controller());stale();assert.equal(g.snapshot('actor').length,2);assert.ok(g.snapshot('actor').some(e=>e.controller===current));});

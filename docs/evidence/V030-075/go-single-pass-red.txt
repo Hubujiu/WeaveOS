@@ -1,0 +1,75 @@
+✖ V075 discovery freezes independent list identities and candidate SHA (0.880924ms)
+✖ V075 complete actual Go report proves each required test once (0.148423ms)
+✔ V075 discovery rejects empty (0.238628ms)
+✔ V075 discovery rejects malformed (0.153351ms)
+✔ V075 discovery rejects missing package (0.211798ms)
+✔ V075 discovery rejects duplicate listing (0.125699ms)
+✔ V075 discovery rejects failed list (0.092609ms)
+✔ V075 discovery rejects missing successful package (0.061232ms)
+✔ V075 verification rejects empty (0.220972ms)
+✔ V075 verification rejects malformed (0.23299ms)
+✔ V075 verification rejects missing test (0.207352ms)
+✔ V075 verification rejects duplicate run (0.099339ms)
+✔ V075 verification rejects duplicate pass (0.058288ms)
+✔ V075 verification rejects target skip (0.044357ms)
+✔ V075 verification rejects target fail (0.098868ms)
+✔ V075 verification rejects nested failure (0.11262ms)
+✔ V075 verification rejects nested skip (0.121672ms)
+✔ V075 verification rejects unlisted required test (0.058548ms)
+✔ V075 verification rejects missing package success (0.041833ms)
+✔ V075 verification rejects other package failure (0.069384ms)
+✔ V075 rejects stale candidate and malformed manifest (0.165539ms)
+✖ V075 real Go workflow discovers then runs full suite only once at original budget (0.948715ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 19
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 101.988438
+
+✖ failing tests:
+
+test at tests/governance/go-single-pass.test.mjs:11:1
+✖ V075 discovery freezes independent list identities and candidate SHA (0.880924ms)
+  Error: Go required-test discovery not implemented
+      at discoverRequiredGoTests (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/scripts/verify-go-required.mjs:2:51)
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/go-single-pass.test.mjs:11:98)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)
+
+test at tests/governance/go-single-pass.test.mjs:12:1
+✖ V075 complete actual Go report proves each required test once (0.148423ms)
+  Error: Go required-test verification not implemented
+      at verifyRequiredGoTests (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/scripts/verify-go-required.mjs:3:49)
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/go-single-pass.test.mjs:12:87)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)
+
+test at tests/governance/go-single-pass.test.mjs:34:1
+✖ V075 real Go workflow discovers then runs full suite only once at original budget (0.948715ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  4 !== 2
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/governance/go-single-pass.test.mjs:35:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 4,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

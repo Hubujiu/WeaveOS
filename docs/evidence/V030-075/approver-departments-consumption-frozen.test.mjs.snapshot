@@ -1,0 +1,15 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {stripTypeScriptTypes} from 'node:module';
+// V075 P16: current-only configuration candidates. No directory authority inferred.
+const source=stripTypeScriptTypes(await readFile(new URL('../../apps/web/src/applications/workflows/approverContract.ts',import.meta.url),'utf8'),{mode:'transform'});const {validWorkflowApproverPage:valid}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const id='acacacac-acac-4cac-8cac-acacacacacac',row=()=>({id,label:'审批人员甲',status:'active',departmentNames:[]}),page=()=>({items:[row()],total:1,page:1,pageSize:20,queryVersion:'opaque',schemaVersion:3,policyRevision:8});
+test('P16 accepts current bounded candidates and leaves input untouched',()=>{const p=page(),copy=structuredClone(p);assert.equal(valid(p,1,20,3,8),true);assert.deepEqual(p,copy)});
+test('P16 empty deep page is a real successful response',()=>assert.equal(valid({...page(),page:9,items:[]},9,20,3,8),true));
+for(const [name,patch]of [['schema drift',{schemaVersion:4}],['policy drift',{policyRevision:9}],['wrong page',{page:2}],['wrong size',{pageSize:21}],['extra grant',{grants:[]}],['unsafe total',{total:2**53}],['empty token',{queryVersion:''}],['token too long',{queryVersion:'x'.repeat(257)}],['null list',{items:null}],['duplicate identity',{items:[row(),row()],total:2}],['rows exceed total',{total:0}]])test('P16 rejects '+name,()=>assert.equal(valid({...page(),...patch},1,20,3,8),false));
+for(const [name,patch]of [['disabled',{status:'disabled'}],['empty id',{id:''}],['zero id',{id:'00000000-0000-0000-0000-000000000000'}],['uppercase id',{id:id.toUpperCase()}],['blank label',{label:' '}],['oversize label',{label:'字'.repeat(255)}],['extra email',{email:'private@example.test'}],['extra scope',{scope:'all'}]])test('P16 refuses candidate '+name,()=>assert.equal(valid({...page(),items:[{...row(),...patch}]},1,20,3,8),false));
+test('P16 rejects unsafe page window or obsolete authority versions',()=>{assert.equal(valid({...page(),page:Number.MAX_SAFE_INTEGER,pageSize:100,items:[]},Number.MAX_SAFE_INTEGER,100,3,8),false);assert.equal(valid(page(),1,20,0,8),false)});
+
+test('P16 current department names stay complete, unique, bounded and in byte order',()=>{
+ for(const departmentNames of [[],['财务部'],['产品部','财务部'],['\ue000','🦊'],['🦊'.repeat(100)]])assert.equal(valid({...page(),items:[{...row(),departmentNames}]},1,20,3,8),true);
+ for(const departmentNames of [null,'财务部',[null],[''],[' '],['nul\0name'],['🦊'.repeat(101)],['财务部','财务部'],['财务部','产品部'],[{id,label:'财务部'}]])assert.equal(valid({...page(),items:[{...row(),departmentNames}]},1,20,3,8),false,JSON.stringify(departmentNames));
+ const old=row();delete old.departmentNames;assert.equal(valid({...page(),items:[old]},1,20,3,8),false);
+});

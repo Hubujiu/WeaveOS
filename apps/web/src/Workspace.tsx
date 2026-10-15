@@ -7,6 +7,7 @@ import { Modal } from './Modal';
 import { AppShell } from './applications/shell/AppShell';
 import { cancelUnsentPreflights, clearRecovery, clearScopedDrafts, getRecovery, scopedUnconfirmed } from './applications/recovery';
 import { LeaveGuards, type ActiveLeaveGuard, type RegisterLeaveGuard } from './applications/shell/leaveGuards';
+import {LeavePromptContext} from './applications/shell/LeavePromptContext';
 import './workspace.css';
 
 export function Workspace({user,logout,pending,error}:{user:User;logout:()=>void;pending:boolean;error:string}){
@@ -69,13 +70,20 @@ export function Workspace({user,logout,pending,error}:{user:User;logout:()=>void
   ...leaveSnapshot.filter(entry=>entry.status!=='clean').map(entry=>(entry.scope.kind==='structure'?'应用目录':'表单设计器')+(entry.status==='draft'?'草稿将丢失。':entry.status==='preflight'?'尚未发送的预检将取消，草稿将丢失。':'已发送的操作会保留原请求供核查。')),
  ].filter(Boolean).join(' ');
  useEffect(()=>{let active=true;setFailure('');workspaceApi<Access>('me/access').then(value=>{if(!active)return;setAccess(value);setIdentityMismatch(value.user?.id!==user.id);if(value.user?.id!==user.id)updateDirty(false);}).catch(e=>{if(!active)return;if(e instanceof WorkspaceError&&e.status===401)forceLogin();else setFailure(e instanceof Error?e.message:'服务暂时不可用，请稍后重试');});return()=>{active=false;};},[retry,admin,user.id,updateDirty,forceLogin]);
- useEffect(()=>{if(!dirty)return;const warn=(e:BeforeUnloadEvent)=>{e.preventDefault();};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[dirty]);
+ useEffect(()=>{
+  const warn=(event:BeforeUnloadEvent)=>{
+   const active=leaveGuards.current.snapshot(user.id);
+   const otherDirty=[...dirtySources.current.keys()].some(source=>source!=='forms');
+   if(otherDirty||active.some(entry=>entry.status!=='clean')||(dirtySources.current.has('forms')&&!active.length))event.preventDefault();
+  };
+  window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);
+ },[user.id]);
  useEffect(()=>{if(!admin)updateDirty(false);},[admin,updateDirty]);
  if(!access)return <div className="workspace"><div className="workspace-loading">{failure?<><p role="alert">{failure}</p><button className="admin-button" onClick={()=>setRetry(v=>v+1)}>重试</button><button className="admin-button" onClick={()=>setMenu(!menu)}>账号</button>{menu&&<><p>{user.account}</p><button className="admin-button" disabled={pending} onClick={logout}>退出登录</button></>}</>:<p role="status">正在加载主页…</p>}</div></div>;
  const suspended=identityMismatch||access.user?.id!==user.id;
- return <div className="workspace monochrome-workspace">
+ return <LeavePromptContext value={blocker.state==='blocked'||internalPrompt}><div className="workspace monochrome-workspace">
   {<AppShell key={user.id} user={user} access={access} logout={logout} pending={pending} error={error} onDirty={applicationDirty} onPermissionDirty={permissionDirty} onFormsDirty={formsDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onAuthLost={forceLogin} onIdentityMismatch={onIdentityMismatch} suspended={suspended} adminContent={admin ? (access.personnelManage ? <PersonnelAdmin access={access} onDirty={personnelDirty} onExit={()=>navigate('/app')} onUnauthorized={forceLogin}/> : <section className="app-state"><p role="alert">没有人员管理权限</p><button className="admin-button" onClick={()=>navigate('/app')}>返回主页</button></section>) : undefined}/> }
   {suspended?<main className="workspace-loading"><p role="alert">登录身份已变化，原账号的未确认操作仍保留在此标签页。</p>{failure&&<p role="alert">{failure}</p>}<button className="admin-button" onClick={()=>setRetry(v=>v+1)}>重新核对身份</button><button className="admin-button" onClick={()=>{updateDirty(false);navigate('/login',{replace:true});}}>载入当前账号</button></main>:null}
   {(blocker.state==='blocked'||internalPrompt)&&<Modal title="有未保存的修改" onClose={()=>{if(blocker.state==='blocked')blocker.reset();internalAction.current=null;setInternalPrompt(false);}}><p>{consequences||'当前操作状态需重新确认。'}</p>{leaveError&&<p role="alert">{leaveError}</p>}<div className="dialog-actions"><button className="admin-button" onClick={()=>{if(blocker.state==='blocked')blocker.reset();internalAction.current=null;setInternalPrompt(false);}}>继续编辑</button><button className="admin-button primary" onClick={confirmLeave}>{dirtySource==='personnel'&&getRecovery(user.id)?.unknown?'放弃人员更改并保留待核查操作':dirtySource==='permissions'?'放弃权限组更改并保留待核查操作':getRecovery(user.id)?.unknown?'离开并保留待核查操作':'放弃修改'}</button></div></Modal>}
- </div>;
+ </div></LeavePromptContext>;
 }

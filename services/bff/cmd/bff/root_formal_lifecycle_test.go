@@ -17,6 +17,9 @@ func rootFormalLifecycleAccept(t *testing.T, x *rootFormalFixture, action, targe
 	preview := rootHTTPData(t, f.call(t, "GET", path+"/lifecycle", "", nil), 200)
 	op := f.id(t)
 	body := map[string]any{"operationId": op, "action": action, "basisToken": rootHTTPString(t, preview, "basisToken")}
+	if action == "return" {
+		body["reason"] = "  合成退回原因\n🦊  "
+	}
 	if target != "" {
 		body["targetNodeId"] = target
 	}

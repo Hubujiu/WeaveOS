@@ -1,0 +1,148 @@
+(node:12) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ V071 descriptors include exactly readable business and five allowed display-only system columns (2.196801ms)
+✖ V071 only authorized business operators and the two system dates become filter descriptors (0.274162ms)
+✖ V071 descriptors do not change current runtime and preserve enum identities (0.828035ms)
+✖ V071 showing system columns cannot substitute for a visible business field (3.812699ms)
+✔ V071 all five system columns can be hidden while one business field remains (0.288945ms)
+✖ V071 missing business columns cannot be made valid with system columns alone (0.447042ms)
+✔ V071 rejects unavailable column selection (0.122354ms)
+✔ V071 rejects unavailable column updatedBy (0.396065ms)
+✔ V071 rejects unavailable column aaaaaaaa-aaaa-4aaa-8aaa-000000000006 (0.183736ms)
+✔ V071 shared personnel column semantics remain business by default (0.25242ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 5
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 155.744786
+
+✖ failing tests:
+
+test at tests/foundation/application-preset-descriptors.test.mjs:14:1
+✖ V071 descriptors include exactly readable business and five allowed display-only system columns (2.196801ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   'aaaaaaaa-aaaa-4aaa-8aaa-000000000004',
+  -   'aaaaaaaa-aaaa-4aaa-8aaa-000000000005',
+  -   'id',
+  -   'createdBy',
+  -   'createdAt',
+  -   'updatedAt',
+  -   'recordVersion'
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/application-preset-descriptors.test.mjs:15:37)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ 'aaaaaaaa-aaaa-4aaa-8aaa-000000000004', 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005', 'id', 'createdBy', 'createdAt', 'updatedAt', 'recordVersion' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/application-preset-descriptors.test.mjs:18:1
+✖ V071 only authorized business operators and the two system dates become filter descriptors (0.274162ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   'aaaaaaaa-aaaa-4aaa-8aaa-000000000004',
+  -   'createdAt',
+  -   'updatedAt'
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/application-preset-descriptors.test.mjs:19:37)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ 'aaaaaaaa-aaaa-4aaa-8aaa-000000000004', 'createdAt', 'updatedAt' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/application-preset-descriptors.test.mjs:23:1
+✖ V071 descriptors do not change current runtime and preserve enum identities (0.828035ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - [
+  -   {
+  -     label: '采购',
+  -     value: 'approved-option'
+  -   }
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/application-preset-descriptors.test.mjs:24:274)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [ { value: 'approved-option', label: '采购' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/foundation/application-preset-descriptors.test.mjs:26:1
+✖ V071 showing system columns cannot substitute for a visible business field (3.812699ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(validate('方案',null,[amount,own],[],columns).issues.includes('至少保留一个业务字段'))
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/application-preset-descriptors.test.mjs:26:94)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/foundation/application-preset-descriptors.test.mjs:28:1
+✖ V071 missing business columns cannot be made valid with system columns alone (0.447042ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(validate('方案',null,[],[],columns.filter(c=>c.system)).issues.includes('至少保留一个业务字段'))
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/application-preset-descriptors.test.mjs:28:96)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

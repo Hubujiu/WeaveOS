@@ -182,3 +182,9 @@ REVOKE DELETE ON applications.apps FROM auth_app;
 GRANT UPDATE(id,app_id,name,parent_id,position) ON applications.directories TO auth_app;
 GRANT UPDATE(id,app_id,name,directory_id,position,schema_version,data_revision,dependency_revision,schema_ready,fields_json) ON applications.logical_tables TO auth_app;
 GRANT UPDATE(id,app_id,table_id,name,directory_id,position,view_version,layout) ON applications.form_views TO auth_app;
+
+-- V030-075: original human action reasons are append-only audit data.
+REVOKE ALL ON applications.workflow_action_reasons FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;
+GRANT SELECT,INSERT ON applications.workflow_action_reasons TO auth_app;
+GRANT SELECT ON applications.workflow_action_reasons TO auth_backup;
+REVOKE ALL ON FUNCTION applications.validate_workflow_action_reason() FROM PUBLIC,auth_app,auth_reader,auth_maintenance,auth_backup;

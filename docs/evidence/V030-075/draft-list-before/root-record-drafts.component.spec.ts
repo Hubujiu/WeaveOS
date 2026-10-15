@@ -1,0 +1,110 @@
+import {test,expect,type Page} from '@playwright/test';
+// V015 §§8.4/8.7/14; V017 draft consumption; Figma483:2701 footer.
+const id=(n:number)=>'cccccccc-cccc-4ccc-8ccc-'+String(n).padStart(12,'0');
+const actor={id:id(1),account:'draft-owner'},appId=id(2),viewId=id(3),fieldId=id(4),tableId=id(5),draftId=id(6),recordId=id(7);
+const form=`applications/${appId}/forms/${viewId}`,draftPath=form+'/drafts',recordPath=form+'/records';
+const runtime={appId,viewId,tableId,schemaVersion:1,viewVersion:1,policyRevision:1,fields:[{id:fieldId,name:'金额',kind:'money',required:true,presentation:{helpText:null,displayTimeZone:null},input:{decimal:{precision:20,scale:2,roundingPlaces:2,roundingMode:'HALF_UP'}},access:{read:'all',create:true,edit:'all',history:'none'},query:{operators:['eq','neq','gt','gte','lt','lte'],sortable:true,quickSearchable:false}}],layout:[{id:id(8),kind:'field',fieldId}],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}};
+type Mode='normal'|'unknown'|'read-error'|'conflict'|'edit'|'list'|'list-leak'|'delete-unknown'|'patch-unknown'|'edit-unknown';
+async function setup(page:Page,mode:Mode='normal'){
+ const calls:{path:string;method:string;body:any;query:string}[]=[];let draftVersion=['list','list-leak','delete-unknown'].includes(mode)?7:0,draftValue:unknown='-',recordValue='10.00',posts=0,patches=0,deleted=false,deletes=0;
+ const isEdit=mode==='edit'||mode==='edit-unknown';
+ const app={id:appId,name:'报销管理',ownerUserId:id(99),policyRevision:1};
+ const row=()=>({id:recordId,appId,viewId,tableId,createdBy:actor.id,createdAt:'2026-10-12T09:00:00Z',updatedAt:'2026-10-12T10:00:00Z',recordVersion:9,schemaVersion:1,values:{[fieldId]:recordValue},referenceDisplays:{}});
+ const draft=()=>({id:draftId,viewId,tableId,targetRecordId:isEdit?recordId:null,schemaVersion:1,baseRecordVersion:isEdit?9:null,draftVersion,createdAt:'2026-10-12T09:00:00Z',updatedAt:'2026-10-12T10:00:00Z',hasConflicts:false,values:{[fieldId]:draftValue},conflicts:[]});
+ await page.route('**/api/v1/**',async r=>{
+  const req=r.request(),path=new URL(req.url()).pathname.slice('/api/v1/'.length),method=req.method(),body=req.postData()?req.postDataJSON():null;const query=new URL(req.url()).search;calls.push({path,method,body,query});let data:unknown;
+  if(path==='sessions/current')data=actor;
+  else if(path==='me/access')data={user:actor,bootstrapAdmin:false,personnelManage:false,identities:[],permissions:[],applications:[]};
+  else if(path==='applications')data={items:[app]};
+  else if(path==='applications/'+appId)data=app;
+  else if(path==='applications/'+appId+'/access')data={appId,canEnter:true,policyRevision:1,menus:[{resourceKind:'application',resourceId:appId},{resourceKind:'form',resourceId:viewId}]};
+  else if(path===form+'/runtime')data=runtime;
+  else if(path===recordPath+'/search')data={items:isEdit?[row()]:[],total:isEdit?1:0,page:body.page,pageSize:body.pageSize,sort:body.sort,queryVersion:'record-context',schemaVersion:1,viewVersion:1};
+  else if(path===draftPath&&method==='GET'){
+   const second=new URLSearchParams(query).get('pageToken')==='opaque.next';
+   const {values,conflicts,...summary}=draft();const item={...summary,id:second?id(16):draftId,...(mode==='list-leak'?{values:{secret:'private-draft-value'}}:{})};
+   return r.fulfill({status:200,json:{code:'OK',data:{items:deleted?[]:[item]},meta:{pagination:{hasMore:mode==='list'&&!second&&!deleted,nextPageToken:mode==='list'&&!second&&!deleted?'opaque.next':null}}}});
+  }else if(path===draftPath+'/'+draftId&&method==='DELETE'){
+   deletes++;if(mode==='delete-unknown'&&deletes===1)return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});deleted=true;return r.fulfill({status:204,body:''});
+  }else if(path===draftPath&&method==='POST'){
+   posts++;if((mode==='unknown'||mode==='edit-unknown')&&posts===1)return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
+   draftValue=body.values[fieldId];draftVersion=1;return r.fulfill({status:201,headers:{Location:'/api/v1/'+draftPath+'/'+draftId},json:{code:'OK',data:{operationId:body.operationId,id:draftId,draftVersion},meta:null}});
+  }else if(path===draftPath+'/'+draftId&&method==='GET'){
+   if(mode==='read-error')return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});data=draft();
+  }else if(path===draftPath+'/'+draftId&&method==='PATCH'){
+   patches++;if(mode==='patch-unknown'&&patches===1)return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
+   if(mode==='conflict')return r.fulfill({status:409,json:{code:'APPLICATION_DRAFT_CONFLICT',data:null}});
+   if(Object.hasOwn(body.changes,fieldId))draftValue=body.changes[fieldId];draftVersion++;data={operationId:body.operationId,id:draftId,draftVersion};
+  }else if(path===recordPath&&method==='POST'){
+   recordValue=body.values[fieldId];return r.fulfill({status:201,headers:{Location:'/api/v1/'+recordPath+'/'+recordId},json:{code:'OK',data:{operationId:body.operationId,id:recordId,recordVersion:9,schemaVersion:1,createdAt:row().createdAt,updatedAt:row().updatedAt},meta:null}});
+  }else if(path===recordPath+'/'+recordId&&method==='GET')data=row();
+  else if(path===recordPath+'/'+recordId+'/workflow-instances/search')data={items:[],total:0,page:body.page,pageSize:body.pageSize,queryVersion:'no-flows'};
+  else if(path.startsWith('application-operations/'))return r.fulfill({status:503,json:{code:'COMMON_SERVICE_UNAVAILABLE',data:null}});
+  else return r.fulfill({status:404,json:{code:'API_NOT_FOUND',data:null}});
+  return r.fulfill({status:200,json:{code:'OK',data,meta:null}});
+ });return calls;
+}
+async function create(page:Page){await page.goto('/app/'+form);await page.getByRole('button',{name:'新建记录',exact:true}).click();return page.getByRole('dialog',{name:'新建记录',exact:true});}
+const draftWrites=(calls:Awaited<ReturnType<typeof setup>>)=>calls.filter(c=>c.path.startsWith(draftPath)&&['POST','PATCH'].includes(c.method));
+test('Root draft saves incomplete required decimal without creating record or starting workflow',async({page})=>{
+ const calls=await setup(page);const editor=await create(page);await editor.getByRole('textbox',{name:/^金额/}).fill('-');await editor.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();
+ expect(draftWrites(calls)).toHaveLength(1);expect(draftWrites(calls)[0].body).toEqual({operationId:expect.any(String),targetRecordId:null,schemaVersion:1,baseRecordVersion:null,values:{[fieldId]:'-'}});expect(calls.filter(c=>c.path===recordPath&&c.method==='POST'||c.path.endsWith('/workflow-starts'))).toEqual([]);await expect(page.getByRole('textbox',{name:/^金额/})).toHaveValue('-');await test.info().attach('record-draft-saved',{body:await page.screenshot({animations:'disabled'}),contentType:'image/png'});
+});
+test('Root saved draft edits use exact draft CAS and preserve explicit empty value',async({page})=>{
+ const calls=await setup(page);const editor=await create(page);await editor.getByRole('textbox',{name:/^金额/}).fill('-');await editor.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();await page.getByRole('textbox',{name:/^金额/}).fill('');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await expect.poll(()=>draftWrites(calls).length).toBe(2);const writes=draftWrites(calls);expect(writes[1].path).toBe(draftPath+'/'+draftId);expect(writes[1].method).toBe('PATCH');expect(writes[1].body).toEqual({operationId:expect.any(String),expectedDraftVersion:1,changes:{[fieldId]:''},removeFieldIds:[]});expect(writes[1].body.operationId).not.toBe(writes[0].body.operationId);
+});
+test('Root formal submission consumes exact draft reference through ordinary record create',async({page})=>{
+ const calls=await setup(page);const editor=await create(page);await editor.getByRole('textbox',{name:/^金额/}).fill('-');await editor.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();await page.getByRole('textbox',{name:/^金额/}).fill('12.00');await page.getByRole('button',{name:'保存记录',exact:true}).click();await expect(page.getByText('记录已保存',{exact:true})).toBeVisible();const writes=calls.filter(c=>c.path===recordPath&&c.method==='POST');expect(writes).toHaveLength(1);expect(writes[0].body).toMatchObject({expectedSchemaVersion:1,values:{[fieldId]:'12.00'},draftRef:{id:draftId,draftVersion:1}});expect(calls.some(c=>c.path.endsWith('/submit')||c.path===draftPath+'/'+draftId&&c.method==='DELETE')).toBe(false);
+});
+test('Root editing record saves an independent draft without changing formal record',async({page})=>{
+ const calls=await setup(page,'edit');await page.goto('/app/'+form);await page.getByRole('button',{name:'打开记录：金额 10.00',exact:true}).click();await page.getByRole('button',{name:'编辑记录',exact:true}).click();await page.getByRole('textbox',{name:/^金额/}).fill('-');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();expect(draftWrites(calls)[0].body).toEqual({operationId:expect.any(String),targetRecordId:recordId,schemaVersion:1,baseRecordVersion:9,values:{[fieldId]:'-'}});expect(calls.filter(c=>c.path===recordPath+'/'+recordId&&c.method==='PATCH')).toEqual([]);
+});
+test('Root unknown draft retains input locks both writes and retries original request only',async({page})=>{
+ const calls=await setup(page,'unknown');const editor=await create(page);await editor.getByRole('textbox',{name:/^金额/}).fill('-');await editor.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿保存结果待确认',{exact:true})).toBeVisible();await expect(page.getByRole('textbox',{name:/^金额/})).toBeDisabled();await expect(page.getByRole('button',{name:'保存草稿',exact:true})).toBeDisabled();await expect(page.getByRole('button',{name:'保存记录',exact:true})).toBeDisabled();await page.getByRole('button',{name:'重试原草稿操作',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();expect(draftWrites(calls)).toHaveLength(2);expect(draftWrites(calls)[1]).toEqual(draftWrites(calls)[0]);
+});
+test('Root confirmed draft with failed reread is saved and retry cannot write again',async({page})=>{
+ const calls=await setup(page,'read-error');const editor=await create(page);await editor.getByRole('textbox',{name:/^金额/}).fill('-');await editor.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();await expect(page.getByRole('alert')).toContainText('无法读取草稿');await page.getByRole('button',{name:'重试读取草稿',exact:true}).click();await expect.poll(()=>calls.filter(c=>c.path===draftPath+'/'+draftId&&c.method==='GET').length).toBe(2);expect(draftWrites(calls)).toHaveLength(1);await expect(page.getByRole('button',{name:'保存草稿',exact:true})).toHaveCount(0);
+});
+test('Root draft version conflict retains text and blocks replacement write until explicit review',async({page})=>{
+ const calls=await setup(page,'conflict');const editor=await create(page);await editor.getByRole('textbox',{name:/^金额/}).fill('-');await editor.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();await page.getByRole('textbox',{name:/^金额/}).fill('12.');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByRole('alert')).toContainText('刷新');await expect(page.getByRole('textbox',{name:/^金额/})).toHaveValue('12.');await expect(page.getByRole('button',{name:'保存草稿',exact:true})).toBeDisabled();await expect(page.getByRole('button',{name:'保存记录',exact:true})).toBeDisabled();expect(draftWrites(calls)).toHaveLength(2);
+});
+
+test('Root unknown draft survives actual Shell unmount and recovers only the original operation',async({page})=>{
+ const calls=await setup(page,'unknown');const dialog=await create(page);await dialog.getByRole('textbox',{name:/^金额/}).fill('-');await dialog.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿保存结果待确认',{exact:true})).toBeVisible();
+ await dialog.getByRole('button',{name:'关闭',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await expect(dialog).toHaveCount(0);await page.getByRole('button',{name:'返回主页',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();
+ await expect(page.getByRole('button',{name:'重试原草稿操作',exact:true})).toBeVisible();expect(draftWrites(calls)).toHaveLength(1);await page.getByRole('button',{name:'重试原草稿操作',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();await expect(page.getByRole('textbox',{name:/^金额/})).toHaveValue('-');expect(draftWrites(calls)).toHaveLength(2);expect(draftWrites(calls)[1]).toEqual(draftWrites(calls)[0]);
+});
+
+async function list(page:Page){await page.goto('/app/'+form);const trigger=page.getByRole('button',{name:'我的草稿',exact:true});await expect(trigger).toBeVisible();await trigger.click();return page.getByRole('dialog',{name:'我的草稿',exact:true});}
+test('Root own draft list uses bounded opaque cursor batches without business values',async({page})=>{
+ const calls=await setup(page,'list');const dialog=await list(page);await expect(dialog.getByRole('button',{name:'打开草稿：'+draftId,exact:true})).toBeVisible();expect(new URLSearchParams(calls.find(c=>c.path===draftPath&&c.method==='GET')!.query).get('pageSize')).toBe('20');await dialog.getByRole('button',{name:'下一批草稿',exact:true}).click();await expect(dialog.getByRole('button',{name:'打开草稿：'+id(16),exact:true})).toBeVisible();await expect(dialog.getByRole('button',{name:'打开草稿：'+draftId,exact:true})).toHaveCount(0);const reads=calls.filter(c=>c.path===draftPath&&c.method==='GET');expect(reads).toHaveLength(2);expect([...new URLSearchParams(reads[1].query)]).toEqual([['pageSize','20'],['pageToken','opaque.next']]);expect(draftWrites(calls)).toEqual([]);
+});
+test('Root opening a listed draft rereads current payload before rendering incomplete input',async({page})=>{
+ const calls=await setup(page,'list');const dialog=await list(page);await dialog.getByRole('button',{name:'打开草稿：'+draftId,exact:true}).click();await expect(dialog).toHaveCount(0);await expect(page.getByRole('textbox',{name:/^金额/})).toHaveValue('-');expect(calls.filter(c=>c.path===draftPath+'/'+draftId&&c.method==='GET')).toHaveLength(1);expect(draftWrites(calls)).toEqual([]);
+});
+test('Root draft list rejects leaked payload rather than displaying partial summaries',async({page})=>{
+ await setup(page,'list-leak');const dialog=await list(page);await expect(dialog.getByRole('alert')).toBeVisible();await expect(dialog.getByRole('button',{name:'打开草稿：'+draftId,exact:true})).toHaveCount(0);await expect(dialog).not.toContainText('private-draft-value');
+});
+test('Root draft deletion requires confirmation and exact versioned bodyless DELETE',async({page})=>{
+ const calls=await setup(page,'list');const dialog=await list(page);const trigger=dialog.getByRole('button',{name:'删除草稿：'+draftId,exact:true});await trigger.click();let confirmation=page.getByRole('dialog',{name:'删除草稿',exact:true});await expect(confirmation).toBeVisible();await confirmation.getByRole('button',{name:'取消',exact:true}).click();expect(calls.filter(c=>c.method==='DELETE')).toEqual([]);await trigger.click();confirmation=page.getByRole('dialog',{name:'删除草稿',exact:true});await confirmation.getByRole('button',{name:'删除草稿',exact:true}).click();await expect(dialog).toContainText('暂无草稿');const writes=calls.filter(c=>c.method==='DELETE');expect(writes).toHaveLength(1);expect(writes[0].path).toBe(draftPath+'/'+draftId);expect(writes[0].body).toBeNull();const q=new URLSearchParams(writes[0].query);expect(q.get('expectedDraftVersion')).toBe('7');expect(q.get('operationId')).toMatch(/^[0-9a-f-]{36}$/);expect([...q.keys()].sort()).toEqual(['expectedDraftVersion','operationId']);
+});
+test('Root unknown draft deletion retains its original operation and version on retry',async({page})=>{
+ const calls=await setup(page,'delete-unknown');const dialog=await list(page);await dialog.getByRole('button',{name:'删除草稿：'+draftId,exact:true}).click();await page.getByRole('dialog',{name:'删除草稿',exact:true}).getByRole('button',{name:'删除草稿',exact:true}).click();await expect(page.getByText('草稿删除结果待确认',{exact:true})).toBeVisible();await page.getByRole('button',{name:'重试原草稿操作',exact:true}).click();await expect(dialog).toContainText('暂无草稿');const writes=calls.filter(c=>c.method==='DELETE');expect(writes).toHaveLength(2);expect(writes[1]).toEqual(writes[0]);
+});
+
+test('Root draft conflict refresh is explicit and preserves local input on continue',async({page})=>{
+ const calls=await setup(page,'conflict');const editor=await create(page);await editor.getByRole('textbox',{name:/^金额/}).fill('-');await editor.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();await page.getByRole('textbox',{name:/^金额/}).fill('12.');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByRole('alert')).toContainText('刷新');const refresh=page.getByRole('button',{name:'刷新草稿',exact:true});await expect(refresh).toBeVisible();await refresh.click();let guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await guard.getByRole('button',{name:'继续编辑',exact:true}).click();await expect(page.getByRole('textbox',{name:/^金额/})).toHaveValue('12.');expect(calls.filter(c=>c.path===draftPath+'/'+draftId&&c.method==='GET')).toHaveLength(1);await refresh.click();guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('textbox',{name:/^金额/})).toHaveValue('-');expect(calls.filter(c=>c.path===draftPath+'/'+draftId&&c.method==='GET')).toHaveLength(2);expect(draftWrites(calls)).toHaveLength(2);
+});
+
+test('Root unknown saved-draft PATCH restores pending edits after actual Shell unmount',async({page})=>{
+ const calls=await setup(page,'patch-unknown');let dialog=await create(page);await dialog.getByRole('textbox',{name:/^金额/}).fill('-');await dialog.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();await page.getByRole('textbox',{name:/^金额/}).fill('12.');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿保存结果待确认',{exact:true})).toBeVisible();dialog=page.getByRole('dialog',{name:'新建记录',exact:true});await dialog.getByRole('button',{name:'关闭',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await page.getByRole('button',{name:'返回主页',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();
+ await expect(page.getByRole('button',{name:'重试原草稿操作',exact:true})).toBeVisible();await expect(page.getByRole('textbox',{name:/^金额/})).toHaveValue('12.');expect(calls.filter(c=>c.method==='PATCH')).toHaveLength(1);await page.getByRole('button',{name:'重试原草稿操作',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();const writes=calls.filter(c=>c.method==='PATCH');expect(writes).toHaveLength(2);expect(writes[1]).toEqual(writes[0]);
+});
+test('Root unknown edit-draft creation retains original target and base after actual Shell unmount',async({page})=>{
+ const calls=await setup(page,'edit-unknown');await page.goto('/app/'+form);await page.getByRole('button',{name:'打开记录：金额 10.00',exact:true}).click();await page.getByRole('button',{name:'编辑记录',exact:true}).click();await page.getByRole('textbox',{name:/^金额/}).fill('12.');await page.getByRole('button',{name:'保存草稿',exact:true}).click();await expect(page.getByText('草稿保存结果待确认',{exact:true})).toBeVisible();await page.getByRole('button',{name:'返回主页',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();await page.goBack();
+ await expect(page.getByRole('button',{name:'重试原草稿操作',exact:true})).toBeVisible();await page.getByRole('button',{name:'重试原草稿操作',exact:true}).click();await expect(page.getByText('草稿已保存',{exact:true})).toBeVisible();const writes=draftWrites(calls);expect(writes).toHaveLength(2);expect(writes[1]).toEqual(writes[0]);expect(writes[0].body).toMatchObject({targetRecordId:recordId,baseRecordVersion:9,values:{[fieldId]:'12.'}});expect(calls.filter(c=>c.path===recordPath+'/'+recordId&&c.method==='PATCH')).toEqual([]);
+});
+
+test('Root draft save uses the approved monochrome primary action geometry',async({page})=>{
+ await setup(page);const dialog=await create(page);const save=dialog.getByRole('button',{name:'保存草稿',exact:true});await expect(save).toBeVisible();const style=await save.evaluate(node=>{const c=getComputedStyle(node),r=node.getBoundingClientRect();return {width:r.width,height:r.height,background:c.backgroundColor,color:c.color};});expect(style).toEqual({width:120,height:40,background:'rgb(37, 37, 37)',color:'rgb(255, 255, 255)'});
+});

@@ -1,0 +1,261 @@
+{
+  "path": {
+    "post": {
+      "operationId": "searchWorkflowApprovers",
+      "summary": "分页读取当前有资格的流程配置审批人",
+      "description": "仅当前应用owner或Bootstrap。候选须active且当前表单menu.enter及至少一个现存字段data.read，own仅配置候选资格；实际处理仍复核记录行权限。当前schema/policy或候选变化返回COMMON_QUERY_CHANGED，显式刷新第一页。只读，不写业务操作。",
+      "security": [
+        {
+          "WebSession": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "appId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          }
+        },
+        {
+          "name": "viewId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          }
+        },
+        {
+          "$ref": "#/components/parameters/ExpectedActor"
+        },
+        {
+          "$ref": "#/components/parameters/CsrfToken"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Current authorized result",
+          "headers": {
+            "X-Request-Id": {
+              "$ref": "#/components/headers/RequestId"
+            },
+            "Cache-Control": {
+              "schema": {
+                "type": "string",
+                "const": "no-store"
+              },
+              "description": "Never cache private workflow summaries"
+            }
+          },
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowApproverResultEnvelope"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+          "headers": {
+            "X-Request-Id": {
+              "$ref": "#/components/headers/RequestId"
+            },
+            "Cache-Control": {
+              "schema": {
+                "type": "string",
+                "const": "no-store"
+              },
+              "description": "Never cache private workflow summaries"
+            }
+          },
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Envelope"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+          "headers": {
+            "X-Request-Id": {
+              "$ref": "#/components/headers/RequestId"
+            },
+            "WWW-Authenticate": {
+              "$ref": "#/components/headers/SessionChallenge"
+            },
+            "Cache-Control": {
+              "schema": {
+                "type": "string",
+                "const": "no-store"
+              },
+              "description": "Never cache private workflow summaries"
+            }
+          },
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Envelope"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+          "headers": {
+            "X-Request-Id": {
+              "$ref": "#/components/headers/RequestId"
+            },
+            "Cache-Control": {
+              "schema": {
+                "type": "string",
+                "const": "no-store"
+              },
+              "description": "Never cache private workflow summaries"
+            }
+          },
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Envelope"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+          "headers": {
+            "X-Request-Id": {
+              "$ref": "#/components/headers/RequestId"
+            },
+            "Cache-Control": {
+              "schema": {
+                "type": "string",
+                "const": "no-store"
+              },
+              "description": "Never cache private workflow summaries"
+            }
+          },
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Envelope"
+              }
+            }
+          }
+        },
+        "409": {
+          "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+          "headers": {
+            "X-Request-Id": {
+              "$ref": "#/components/headers/RequestId"
+            },
+            "Cache-Control": {
+              "schema": {
+                "type": "string",
+                "const": "no-store"
+              },
+              "description": "Never cache private workflow summaries"
+            }
+          },
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Envelope"
+              }
+            }
+          }
+        },
+        "503": {
+          "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+          "headers": {
+            "X-Request-Id": {
+              "$ref": "#/components/headers/RequestId"
+            },
+            "Cache-Control": {
+              "schema": {
+                "type": "string",
+                "const": "no-store"
+              },
+              "description": "Never cache private workflow summaries"
+            }
+          },
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Envelope"
+              }
+            }
+          }
+        },
+        "415": {
+          "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+          "headers": {
+            "X-Request-Id": {
+              "$ref": "#/components/headers/RequestId"
+            },
+            "Cache-Control": {
+              "schema": {
+                "type": "string",
+                "const": "no-store"
+              },
+              "description": "Never cache private workflow summaries"
+            }
+          },
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Envelope"
+              }
+            }
+          }
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "x-max-body-bytes": 4096,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/WorkflowManagerSearch"
+            }
+          }
+        }
+      },
+      "x-max-body-bytes": 1048576
+    }
+  },
+  "manager": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "page",
+      "pageSize"
+    ],
+    "properties": {
+      "page": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991
+      },
+      "pageSize": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100
+      },
+      "queryVersion": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    }
+  },
+  "approver": null
+}

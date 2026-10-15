@@ -1,0 +1,66 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ V069 rework intersects editable mask without changing read grants, values or baseline (4.488473ms)
+✔ V069 rework rejects wrong app (0.941104ms)
+✔ V069 rework rejects wrong view (0.071468ms)
+✔ V069 rework rejects wrong table (0.061132ms)
+✔ V069 rework rejects schema mismatch (0.088573ms)
+✔ V069 rework rejects record mismatch (0.117256ms)
+✔ V069 rework rejects old round (0.110315ms)
+✔ V069 rework rejects no eligibility (0.055713ms)
+✔ V069 rework rejects record unreadable (0.0729ms)
+✔ V069 rework rejects own other actor (0.155854ms)
+✔ V069 rework rejects record edit revoked (0.069794ms)
+✔ V069 rework rejects field edit revoked (0.0668ms)
+✔ V069 rework rejects unknown mask (0.044086ms)
+✖ V069 stale mask cannot restore denied field permission while another field remains editable (0.622565ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 12
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 138.69726
+
+✖ failing tests:
+
+test at tests/foundation/workflow-rework-view.test.mjs:8:1
+✖ V069 rework intersects editable mask without changing read grants, values or baseline (4.488473ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(result)
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-rework-view.test.mjs:8:207)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/foundation/workflow-rework-view.test.mjs:12:1
+✖ V069 stale mask cannot restore denied field permission while another field remains editable (0.622565ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(result)
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/workflow-rework-view.test.mjs:12:197)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

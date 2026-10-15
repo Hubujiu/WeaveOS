@@ -1,0 +1,45 @@
+(node:15) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ template candidates consume only current user or department minimal pages with opaque continuation (2.388978ms)
+✔ template candidates reject malformed data, extra identity information and cross-kind projections (0.401713ms)
+✔ template candidate pagination must be present, closed, bounded and internally consistent (0.187632ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 249.97201
+
+✖ failing tests:
+
+test at tests/foundation/template-candidates.test.mjs:11:1
+✖ template candidates consume only current user or department minimal pages with opaque continuation (2.388978ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + null
+  - {
+  -   items: [
+  -     {
+  -       id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+  -       label: '当前用户',
+  -       status: 'active'
+  -     }
+  -   ],
+  -   nextPageToken: null
+  - }
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/75c2273f6a80/WeaveOS-worktrees/V030-075/tests/foundation/template-candidates.test.mjs:12:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: { items: [ [Object] ], nextPageToken: null },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

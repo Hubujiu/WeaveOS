@@ -88,3 +88,85 @@
 /* Override the legacy workspace checkbox chrome only inside these controls. */
 .workspace :is(.forms-designer,.forms-dialog,.forms-rendered-field) input[type=checkbox] { width:16px;height:16px;min-height:0;padding:0;border-color:var(--forms-line);border-radius:4px; }
 .workspace :is(.forms-designer,.forms-dialog,.forms-rendered-field) input[type=checkbox]:checked { background-color:var(--forms-ink);border-color:var(--forms-ink); }
+
+/* V075 P25, Figma487:5862: business composition of the existing dialog. */
+.forms-dialog:has(.workflow-reject-dialog){width:560px;max-width:calc(100vw - 32px);height:370px;max-height:calc(100dvh - 32px);padding:0;box-sizing:border-box;box-shadow:0 16px 24px #0000001f;}
+.forms-dialog:has(.workflow-reject-dialog) .forms-dialog-heading{height:80px;box-sizing:border-box;padding:24px 24px 16px;gap:12px;}
+.forms-dialog:has(.workflow-reject-dialog) .forms-dialog-heading h2{font-size:16px;line-height:24px;}
+.forms-dialog:has(.workflow-reject-dialog) .forms-dialog-body{padding:0 24px 24px;height:calc(100% - 80px);box-sizing:border-box;}
+.workflow-reject-dialog{height:100%;display:flex;flex-direction:column;gap:16px;}
+.forms-dialog .workflow-reject-dialog label{margin:0;gap:8px;color:var(--forms-muted);font-size:12px;line-height:18px;}
+.forms-dialog .workflow-reject-dialog input{height:42px;min-height:42px;box-sizing:border-box;}
+.forms-dialog .workflow-reject-dialog .forms-dialog-actions{margin-top:auto;display:flex;justify-content:flex-end;gap:12px;flex-wrap:nowrap;}
+.forms-dialog .workflow-reject-dialog .forms-dialog-actions button{width:100px;height:40px;min-height:40px;}
+.forms-dialog .workflow-reject-dialog .forms-dialog-actions .forms-primary{width:120px;}
+
+.forms-dialog:has(.workflow-reject-dialog) .forms-dialog-heading{border-bottom:0;}
+.forms-dialog:has(.workflow-return-dialog){width:620px;max-width:calc(100vw - 32px);height:460px;max-height:calc(100dvh - 32px);padding:0;box-sizing:border-box;box-shadow:0 16px 24px #0000001f;}
+.forms-dialog:has(.workflow-return-dialog) .forms-dialog-heading{height:80px;box-sizing:border-box;padding:24px 24px 16px;gap:12px;border-bottom:0;}
+.forms-dialog:has(.workflow-return-dialog) .forms-dialog-heading h2{font-size:16px;line-height:24px;}
+.forms-dialog:has(.workflow-return-dialog) .forms-dialog-body{padding:0 24px 24px;height:calc(100% - 80px);box-sizing:border-box;overflow:auto;}
+.workflow-return-dialog{min-height:100%;display:flex;flex-direction:column;gap:16px;}
+.forms-dialog .workflow-return-dialog label{margin:0;gap:8px;color:var(--forms-muted);font-size:12px;line-height:18px;}
+.forms-dialog .workflow-return-dialog input,.forms-dialog .workflow-return-dialog select{height:42px;min-height:42px;box-sizing:border-box;}
+.workflow-return-dialog>p{margin:0;font-size:12px;}
+.forms-dialog .workflow-return-dialog .forms-dialog-actions{margin-top:auto;display:flex;justify-content:flex-end;gap:12px;flex-wrap:nowrap;}
+.forms-dialog .workflow-return-dialog .forms-dialog-actions button{width:100px;height:40px;min-height:40px;}
+.forms-dialog .workflow-return-dialog .forms-dialog-actions .forms-primary{width:120px;}
+
+/* V075 record lifecycle confirmation composition, Figma528:9962/10165. */
+.forms-dialog:has(.record-lifecycle-dialog){width:560px;max-width:calc(100vw - 32px);height:370px;max-height:calc(100dvh - 32px);padding:0;box-sizing:border-box;}
+.forms-dialog:has(.record-lifecycle-dialog) .forms-dialog-heading{height:80px;box-sizing:border-box;padding:24px 24px 16px;border-bottom:0;}
+.forms-dialog:has(.record-lifecycle-dialog) .forms-dialog-heading h2{font-size:16px;line-height:24px;}
+.forms-dialog:has(.record-lifecycle-dialog) .forms-dialog-body{padding:0 24px 24px;height:calc(100% - 80px);box-sizing:border-box;overflow:auto;}
+.record-lifecycle-dialog{min-height:100%;display:flex;flex-direction:column;gap:8px;}
+.record-lifecycle-dialog>p{margin:0;color:var(--forms-muted);font-size:14px;line-height:24px;}
+.forms-dialog .record-lifecycle-dialog .forms-dialog-actions{margin-top:auto;display:flex;justify-content:flex-end;gap:12px;flex-wrap:nowrap;}
+.forms-dialog .record-lifecycle-dialog .forms-dialog-actions button{width:100px;height:40px;min-height:40px;}
+.forms-dialog .record-lifecycle-dialog .forms-dialog-actions .forms-primary{width:120px;}
+.deleted-records-card{padding:24px;min-height:550px;}.deleted-records-card>.workflow-manager-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;}.deleted-records-card>.workflow-manager-actions p{font-size:12px;color:var(--forms-muted);}
+
+/* V075 deleted-list typography: preserve approved Table implementation. */
+.deleted-records .personnel-data-table thead tr,.deleted-records .personnel-data-table thead th,.deleted-records .personnel-data-table thead th>div{height:44px!important;}
+.deleted-records .personnel-data-table th{font-size:12px;font-weight:400;color:var(--mono-secondary);background:var(--mono-well);}
+.deleted-records .personnel-data-table th,.deleted-records .personnel-data-table td,.deleted-records .personnel-data-table tbody tr{border:0;}
+.deleted-records .arca-source .personnel-source-table{border:0;}
+
+.deleted-records{display:flex;flex-direction:column;gap:20px;min-width:0;}
+.deleted-records>.app-page-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.deleted-records-card{display:flex;flex-direction:column;height:clamp(550px,calc(100dvh - 300px),680px);box-sizing:border-box;}
+.deleted-records-card>.workflow-manager-actions{flex:none;}
+.deleted-records .arca-pagination{border-top:0;}
+@media(max-width:600px){.deleted-records>.app-page-heading{flex-wrap:wrap;}.deleted-records-card{padding:16px;}}
+
+.forms-dialog:has(.structure-deletion-dialog)::backdrop{background:rgba(0,0,0,.12);}
+.forms-dialog:has(.record-lifecycle-dialog,.workflow-reject-dialog,.workflow-return-dialog)::backdrop{background:rgba(0,0,0,.12);}
+/* V075 P22: business composition over the existing modal/input/table components. */
+.forms-dialog:has(.structure-copy-panel){--forms-ink:var(--mono-ink,#252525);--forms-muted:var(--mono-secondary,#696969);--forms-line:var(--mono-line,#eaeaea);--forms-blue:var(--mono-ink,#252525);width:660px;max-width:calc(100vw - 32px);height:519px;max-height:calc(100dvh - 32px);padding:0;box-sizing:border-box;box-shadow:0 16px 24px #0000001f;}
+.forms-dialog:has(.structure-copy-application){height:427px;}
+.forms-dialog:has(.structure-copy-mapping){width:740px;height:540px;}
+.forms-dialog:has(.structure-copy-preview){width:820px;height:730px;}
+.forms-dialog:has(.structure-copy-panel)::backdrop{background:rgba(0,0,0,.12);}
+.forms-dialog:has(.structure-copy-panel) .forms-dialog-heading{height:80px;box-sizing:border-box;padding:24px 24px 16px;border-bottom:0;}
+.forms-dialog:has(.structure-copy-panel) .forms-dialog-heading h2{font-size:16px;line-height:24px;}
+.forms-dialog:has(.structure-copy-panel) .forms-dialog-body{padding:0 24px 24px;height:calc(100% - 80px);box-sizing:border-box;overflow:auto;}
+.structure-copy-panel{min-height:100%;display:flex;flex-direction:column;gap:16px;min-width:0;}
+.structure-copy-panel>p{margin:0;overflow-wrap:anywhere;}
+.structure-copy-panel>label{margin:0;display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--forms-muted);}
+.structure-copy-panel>label>input,.structure-copy-panel>label>select{box-sizing:border-box;min-width:0;width:100%;height:42px;border:1px solid var(--forms-line);border-radius:8px;background:#fff;padding:0 12px;font:inherit;font-size:14px;color:var(--forms-ink);}
+.structure-copy-panel .forms-dialog-actions{margin-top:auto;display:flex;justify-content:flex-end;gap:12px;}
+.structure-copy-panel .forms-dialog-actions button{width:100px;min-height:40px;}
+.structure-copy-panel .forms-dialog-actions .forms-primary{width:120px;}
+.structure-copy-preview{overflow:auto;min-height:0;flex:1;overflow-wrap:anywhere;font-size:14px;line-height:22px;}
+.structure-copy-preview dl{margin:0;}.structure-copy-preview dl>div{margin:6px 0;}.structure-copy-preview dt{font-weight:500;}.structure-copy-preview dd{margin:0 0 0 16px;white-space:pre-wrap;}.structure-copy-preview ol{margin:0;padding-left:20px;}
+
+.structure-copy-panel.structure-copy-preview-stage{height:100%;min-height:0;overflow:hidden;}
+
+.structure-copy-preview h3{font-size:16px;line-height:24px;font-weight:500;margin:16px 0 8px;}
+.structure-copy-panel .template-copy-target-input{box-sizing:border-box;display:block;min-width:0;width:100%;height:40px;min-height:40px;margin:0;padding:0 12px;border:1px solid var(--forms-line);border-radius:8px;background:#fff;color:var(--forms-ink);font:inherit;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Complete server configuration, presented compactly rather than one metadata value per line. */
+.structure-copy-preview dl,.structure-copy-preview dl>div,.structure-copy-preview dt,.structure-copy-preview dd{display:inline;margin:0;}
+.structure-copy-preview dt::after{content:'：';}
+.structure-copy-preview dd::after{content:'； ';}
+.structure-copy-preview ol{margin:4px 0;padding-left:20px;}
+.structure-copy-preview li{margin:4px 0;}
