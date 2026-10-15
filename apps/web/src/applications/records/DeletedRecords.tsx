@@ -7,8 +7,8 @@ import {RecordLifecycleDialog,type RecordLifecycleSelection} from './RecordLifec
 import type {RegisterLeaveGuard} from '../forms/leaveGuard';
 import '../../vendor/arca/arca.css';
 import '../../personnel-table.css';
-type Props={actorId:string;appId:string;viewId:string;onBack:()=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onDirtyChange:(value:boolean)=>void;registerLeaveGuard:RegisterLeaveGuard};
-export function DeletedRecords({actorId,appId,viewId,onBack,onUnauthorized,onIdentityMismatch,onDirtyChange,registerLeaveGuard}:Props){
+type Props={actorId:string;appId:string;viewId:string;onBack:()=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onDirtyChange:(value:boolean)=>void;registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void};
+export function DeletedRecords({actorId,appId,viewId,onBack,onUnauthorized,onIdentityMismatch,onDirtyChange,registerLeaveGuard,requestSectionLeave}:Props){
  const [parameters,setParameters]=useState({page:1,pageSize:20}),[selected,setSelected]=useState<RecordLifecycleSelection|null>(null);
  const transport=useCallback(async(body:{page:number;pageSize:number;queryVersion?:string},signal:AbortSignal)=>{
   const result=await applicationReadPost<unknown>(actorId,`applications/${appId}/forms/${viewId}/records/deleted/search`,body,signal);
@@ -28,6 +28,6 @@ export function DeletedRecords({actorId,appId,viewId,onBack,onUnauthorized,onIde
   <section className="app-surface deleted-records-card"><div className="workflow-manager-actions"><p>仅显示记录编号、删除时间和版本；恢复不会重新发起审批</p><button type="button" className="admin-button" disabled={query.loading||!!selected} onClick={refresh}>刷新列表</button></div>
    {query.loading?<p role="status">正在读取已删除记录…</p>:query.error?<p role="alert">{query.error.message}</p>:<div className="arca-source personnel-source-scope"><Table className="personnel-source-table" ariaLabel="已删除记录" columns={columns} data={query.data.items} getRowId={row=>row.id} rowHeight={56} minWidth={720} fillViewport paginated manualPagination manualSorting recordCount={query.data.total} page={query.data.page} pageSize={query.data.pageSize} pageSizes={[5,10,20,25,50,100]} onPageChange={page=>setParameters(p=>({...p,page}))} onPageSizeChange={pageSize=>setParameters({page:1,pageSize})} emptyState="暂无已删除记录"/></div>}
   </section>
-  {selected&&<RecordLifecycleDialog key={selected.id} actorId={actorId} appId={appId} viewId={viewId} selection={selected} onClose={()=>setSelected(null)} onConfirmed={()=>{setSelected(null);refresh();}} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={onDirtyChange} registerLeaveGuard={registerLeaveGuard}/>}
+  {selected&&<RecordLifecycleDialog requestSectionLeave={requestSectionLeave} key={selected.id} actorId={actorId} appId={appId} viewId={viewId} selection={selected} onClose={()=>setSelected(null)} onConfirmed={()=>{setSelected(null);refresh();}} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={onDirtyChange} registerLeaveGuard={registerLeaveGuard}/>}
  </section>;
 }

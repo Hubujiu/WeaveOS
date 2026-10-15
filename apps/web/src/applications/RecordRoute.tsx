@@ -206,6 +206,11 @@ export function RecordRoute({actorId,appId,viewId,canManage=false,onUnauthorized
  const openFlowAction=(action:()=>void)=>{const current=editor;if(!current)return;requestSectionLeave(()=>{setEditor({...current,mode:'read',reworkInstanceId:undefined});setRecordDirty(false);action();});};
  const openRework=(instanceId:string)=>{if(editor?.record)readRework(instanceId,editor.identity,editor.record.id);};
  const hasPendingFlow=workflowDirty||scopedUnconfirmed(actorId).some(packet=>(packet.resource?.kind==='instance-action'||packet.resource?.kind==='record-lifecycle')&&packet.resource.appId===appId&&packet.resource.viewId===viewId&&packet.resource.id===editor?.record?.id);
+ const lifecycleRecovery=scopedUnconfirmed(actorId).flatMap(packet=>{
+  const resource=packet.resource,body=packet.body;
+  if(resource?.kind!=='record-lifecycle'||resource.appId!==appId||resource.viewId!==viewId||!Number.isSafeInteger(body?.expectedRecordVersion)||!Number.isSafeInteger(body?.expectedSchemaVersion))return [];
+  return [{id:resource.id,action:resource.action,recordVersion:body!.expectedRecordVersion as number,schemaVersion:body!.expectedSchemaVersion as number}];
+ });
  const canRetryRead=!!pendingRead&&!!readError;
  const showingDetail=!!pendingDraftRead||!!pendingRead||!!editor;
  const historyAllowed=!!editor?.record&&!editor.draft&&scopeAllows(editor.view.capabilities.read,actorId,editor.record.createdBy)&&scopeAllows(editor.view.capabilities.history,actorId,editor.record.createdBy);
@@ -221,10 +226,11 @@ export function RecordRoute({actorId,appId,viewId,canManage=false,onUnauthorized
    {editor?.mode==='create'&&<section className="app-surface record-workflow-card" aria-label="关联流程"><h2>关联流程</h2><p>记录保存后可查看关联流程</p></section>}
    {editor?.record&&!editor.draft&&<RecordWorkflows historyAction={historyAllowed?<section className="record-history-entry" aria-label="最近变更"><h2>最近变更</h2><button type="button" className="admin-button" onClick={event=>{historyTrigger.current=event.currentTarget;setHistoryRecord(editor.record!.id);}}>查看历史</button></section>:undefined} onRework={openRework} actorId={actorId} appId={appId} viewId={viewId} recordId={editor.record.id} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onOpenAction={openFlowAction} onDirtyChange={setWorkflowDirty}/>} </div>
  </>;
- if(deletedOpen&&canManage)return <DeletedRecords actorId={actorId} appId={appId} viewId={viewId} onBack={()=>requestSectionLeave(()=>{setDeletedOpen(false);setWorkspaceRefresh(v=>v+1);})} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={setLifecycleDirty} registerLeaveGuard={registerLeaveGuard}/>;
+ if(deletedOpen&&canManage)return <DeletedRecords requestSectionLeave={requestSectionLeave} actorId={actorId} appId={appId} viewId={viewId} onBack={()=>requestSectionLeave(()=>{setDeletedOpen(false);setWorkspaceRefresh(v=>v+1);})} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={setLifecycleDirty} registerLeaveGuard={registerLeaveGuard}/>;
  return <section className="record-route" aria-label="记录路由">
   {canManage&&!showingDetail&&<button type="button" className="admin-button" onClick={()=>requestSectionLeave(()=>setDeletedOpen(true))}>已删除记录</button>}
-  {lifecycle&&canManage&&<RecordLifecycleDialog actorId={actorId} appId={appId} viewId={viewId} selection={lifecycle} onClose={()=>setLifecycle(null)} onConfirmed={()=>{setLifecycle(null);closeEditor();setWorkspaceRefresh(v=>v+1);}} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={setLifecycleDirty} registerLeaveGuard={registerLeaveGuard}/>}
+  {canManage&&!lifecycle&&lifecycleRecovery.map(selection=><button key={selection.id} type="button" className="admin-button" onClick={()=>requestSectionLeave(()=>setLifecycle(selection))}>核查记录操作</button>)}
+  {lifecycle&&canManage&&<RecordLifecycleDialog requestSectionLeave={requestSectionLeave} actorId={actorId} appId={appId} viewId={viewId} selection={lifecycle} onClose={()=>setLifecycle(null)} onConfirmed={()=>{setLifecycle(null);closeEditor();setWorkspaceRefresh(v=>v+1);}} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={setLifecycleDirty} registerLeaveGuard={registerLeaveGuard}/>}
   {draftSaved&&<p className="record-saved" role="status">草稿已保存</p>}
   {saved&&<p className="record-saved" role="status">{reworkSaved?"返工修改已保存":"记录已保存"}</p>}
   <div hidden={showingDetail} className="record-list-host"><RecordWorkspace requestSectionLeave={requestSectionLeave} registerLeaveGuard={registerLeaveGuard} onDirtyChange={setPresetDirty} key={`${actorId}:${appId}:${viewId}:${workspaceRefresh}`} actorId={actorId} appId={appId} viewId={viewId}
