@@ -8,7 +8,7 @@ import {FormsDialog} from './FormsDialog';
 import {createLeaveController,type LeaveController,type LeaveGuardProps,type LeaveStatus} from './leaveGuard';
 import './forms.css';
 
-export type ApplicationStructureProps=LeaveGuardProps&{applicationPolicyRevision?:number;onApplicationDeleted?:()=>void;requestSectionLeave?:(action:()=>void)=>void;appId:string;actorId:string;onOpenForm?:(viewId:string)=>void;
+export type ApplicationStructureProps=LeaveGuardProps&{refreshKey?:number;applicationPolicyRevision?:number;onApplicationDeleted?:()=>void;requestSectionLeave?:(action:()=>void)=>void;appId:string;actorId:string;onOpenForm?:(viewId:string)=>void;
   onConfigureForm?:(viewId:string)=>void;
   onDirtyChange?:(dirty:boolean)=>void;onUnauthorized?:()=>void;onIdentityMismatch?:()=>void};
 type Selected={kind:'directory'|'form';id:UUID}|null;
@@ -26,9 +26,11 @@ export function ApplicationStructurePanel(props:ApplicationStructureProps){
   const scopeKey=JSON.stringify([props.actorId,props.appId]);
   return <ApplicationStructureScope key={scopeKey} {...props} scopeKey={scopeKey}/>;
 }
-function ApplicationStructureScope({applicationPolicyRevision,onApplicationDeleted,requestSectionLeave,appId,actorId,onOpenForm,onConfigureForm,onDirtyChange,onUnauthorized,onIdentityMismatch,registerLeaveGuard,
+function ApplicationStructureScope({refreshKey=0,applicationPolicyRevision,onApplicationDeleted,requestSectionLeave,appId,actorId,onOpenForm,onConfigureForm,onDirtyChange,onUnauthorized,onIdentityMismatch,registerLeaveGuard,
   scopeKey}:ApplicationStructureProps&{scopeKey:string}){
   const restored=structureMemory.get(scopeKey);
+  const deletionOrigin=useRef<HTMLButtonElement|null>(null);
+  const closeDeletion=()=>{const origin=deletionOrigin.current;setDeletion(null);requestAnimationFrame(()=>{if(origin?.isConnected&&!origin.disabled)origin.focus();});};
   const [deletion,setDeletion]=useState<StructureDeletionSelection|null>(null),[deletionDirty,setDeletionDirty]=useState(false);
   const deletionRecovery=scopedUnconfirmed(actorId).flatMap(packet=>{
     const resource=packet.resource,body=packet.body;
@@ -117,7 +119,7 @@ function ApplicationStructureScope({applicationPolicyRevision,onApplicationDelet
     })
       .catch(problem=>{if(alive.current&&!controller.signal.aborted&&current===request.current){
         reportAuth(problem);setVerificationError(formErrorText(problem));}});
-    return()=>{controller.abort();request.current++;};},[appId,actorId,reload,scopeKey]);
+    return()=>{controller.abort();request.current++;};},[appId,actorId,reload,scopeKey,refreshKey]);
   useEffect(()=>onDirtyChange?.(!!pending||!!dialog&&!!name.trim()||deletionDirty||deletionRecovery.length>0),[dialog,name,pending,deletionDirty,deletionRecovery.length,onDirtyChange]);
   const folder=structure?.directories.find(item=>selected?.kind==='directory'&&item.id===selected.id);
   const form=structure?.forms.find(item=>selected?.kind==='form'&&item.id===selected.id);
@@ -188,8 +190,9 @@ function ApplicationStructureScope({applicationPolicyRevision,onApplicationDelet
       '暂未查到原操作；这不能证明操作已回滚，可按原请求重试':formErrorText(problem));}
     finally{if(alive.current&&scope.current===current)setBusy(false);}
   };
-  const remove=(kind:StructureDeletionSelection['kind'],id:string,resourceVersion:number)=>{
+  const remove=(kind:StructureDeletionSelection['kind'],id:string,resourceVersion:number,origin:HTMLButtonElement)=>{
     if(!canEdit||!structure||pending||dialog||deletionBlocked)return;
+    deletionOrigin.current=origin;
     const begin=()=>setDeletion({kind,id,resourceVersion,structureVersion:structure.structureVersion});
     if(requestSectionLeave)requestSectionLeave(begin);else begin();
   };
@@ -205,17 +208,17 @@ function ApplicationStructureScope({applicationPolicyRevision,onApplicationDelet
         <div className={`forms-tree-row${selected?.id===item.id?' active':''}`}>
           <button type="button" onClick={()=>setSelected({kind:'directory',id:item.id})}><span className="forms-tree-prefix">目录</span><span className="forms-tree-name" title={item.name}>{item.name}</span></button>
           {canEdit&&<button type="button" aria-label={`移动目录 ${item.name}`} onClick={()=>{setSelected({kind:'directory',id:item.id});open('moveDirectory',item);}}>移动</button>}
-          {canEdit&&<button type="button" disabled={deletionBlocked} aria-label={`删除目录 ${item.name}`} onClick={()=>remove('directory',item.id,0)}>删除</button>}
+          {canEdit&&<button type="button" disabled={deletionBlocked} aria-label={`删除目录 ${item.name}`} onClick={event=>remove('directory',item.id,0,event.currentTarget)}>删除</button>}
         </div>{tree(item.id,new Set([...seen,item.id]))}</li>)}
       {structure.forms.filter(item=>item.directoryId===parent).sort((a,b)=>a.position-b.position).map(item=><li role="treeitem" aria-label={item.name} className="forms-tree-item" key={item.id}>
         <div className={`forms-tree-row${selected?.id===item.id?' active':''}`}>
           <button type="button" onClick={()=>setSelected({kind:'form',id:item.id})}><span className="forms-tree-prefix">表单</span><span className="forms-tree-name" title={item.name}>{item.name}</span></button>
           <button type="button" aria-label={`打开表单 ${item.name}`} onClick={()=>onOpenForm?.(item.id)}>打开</button>
           {canEdit&&onConfigureForm&&<button type="button" aria-label={`配置表单 ${item.name}`} onClick={()=>onConfigureForm(item.id)}>配置</button>}
-          {canEdit&&<button type="button" disabled={deletionBlocked} aria-label={`删除表单 ${item.name}`} onClick={()=>remove('form',item.id,item.viewVersion)}>删除</button>}
+          {canEdit&&<button type="button" disabled={deletionBlocked} aria-label={`删除表单 ${item.name}`} onClick={event=>remove('form',item.id,item.viewVersion,event.currentTarget)}>删除</button>}
         </div></li>)}
       {structure.tables.filter(item=>item.directoryId===parent&&!structure.forms.some(view=>view.tableId===item.id)).map(item=>
-        <li role="treeitem" aria-label={item.name} key={item.id}><div className="forms-tree-row"><span className="forms-tree-prefix">逻辑表</span><span className="forms-tree-name" title={item.name}>{item.name}</span>{canEdit&&<button type="button" disabled={deletionBlocked} aria-label={`删除数据表 ${item.name}`} onClick={()=>remove('table',item.id,item.schemaVersion)}>删除</button>}</div></li>)}
+        <li role="treeitem" aria-label={item.name} key={item.id}><div className="forms-tree-row"><span className="forms-tree-prefix">逻辑表</span><span className="forms-tree-name" title={item.name}>{item.name}</span>{canEdit&&<button type="button" disabled={deletionBlocked} aria-label={`删除数据表 ${item.name}`} onClick={event=>remove('table',item.id,item.schemaVersion,event.currentTarget)}>删除</button>}</div></li>)}
     </ul>;
   };
   if(!verified)return <section className="forms-module forms-loading" role="status">
@@ -225,7 +228,7 @@ function ApplicationStructureScope({applicationPolicyRevision,onApplicationDelet
   if(!structure)return <section className="forms-module forms-loading" role="status">{error?<><p role="alert">{error}</p><button type="button" onClick={()=>setReload(value=>value+1)}>重试</button></>:'正在加载应用目录…'}</section>;
   return <section className="forms-module" aria-label="目录与视图管理">
     <div className="forms-structure-head"><div><strong>应用目录与视图</strong><p className="forms-muted">管理目录、逻辑表和表单视图</p></div>
-      <div className="forms-structure-actions">{canEdit&&Number.isSafeInteger(applicationPolicyRevision)&&applicationPolicyRevision! > 0&&<button type="button" disabled={deletionBlocked} onClick={()=>remove('application',appId,applicationPolicyRevision!)}>删除应用</button>}<button type="button" disabled={!canEdit||deletionBlocked} onClick={()=>open('directory',folder)}>新建目录</button>
+      <div className="forms-structure-actions">{canEdit&&Number.isSafeInteger(applicationPolicyRevision)&&applicationPolicyRevision! > 0&&<button type="button" disabled={deletionBlocked} onClick={event=>remove('application',appId,applicationPolicyRevision!,event.currentTarget)}>删除应用</button>}<button type="button" disabled={!canEdit||deletionBlocked} onClick={()=>open('directory',folder)}>新建目录</button>
       <button type="button" className="forms-primary" disabled={!canEdit||deletionBlocked} onClick={()=>open('form',form?{...form,parentId:form.directoryId}:
         folder?{...folder,parentId:folder.id}:undefined)}>新建表单</button></div></div>
     {error&&!dialog&&<p className="forms-alert" role="alert">{error}</p>}{notice&&<p className="forms-success" role="status">{notice}</p>}
@@ -242,8 +245,7 @@ function ApplicationStructureScope({applicationPolicyRevision,onApplicationDelet
         {canEdit&&onConfigureForm&&<button type="button" onClick={()=>onConfigureForm(form.id)}>配置表单 {form.name}</button>}
         {canEdit&&<button type="button" onClick={()=>open('editForm',{...form,parentId:form.directoryId})}>编辑表单名称与位置</button>}</>:
       <><h2>选择目录或视图</h2><p className="forms-muted">从左侧选择项目，查看详情并管理位置。</p></>}</section></div>
-    {!deletion&&deletionRecovery.map(({operationId,...selection})=><button key={operationId} type="button" onClick={()=>setDeletion(selection)}>核查结构删除</button>)}
-    {deletion&&<StructureDeletionDialog actorId={actorId} appId={appId} selection={deletion} onClose={()=>setDeletion(null)} onConfirmed={()=>deleted(deletion.kind)} onUnauthorized={onUnauthorized??(()=>{})} onIdentityMismatch={onIdentityMismatch??(()=>{})} onForbidden={()=>{setDeletion(null);setPermissionRevoked(true);setVerified(false);setVerificationError('没有应用访问或管理权限');}} onDirtyChange={setDeletionDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave}/>}
+    {deletion&&<StructureDeletionDialog actorId={actorId} appId={appId} selection={deletion} onClose={closeDeletion} onConfirmed={()=>deleted(deletion.kind)} onUnauthorized={onUnauthorized??(()=>{})} onIdentityMismatch={onIdentityMismatch??(()=>{})} onForbidden={()=>{setDeletion(null);setPermissionRevoked(true);setVerified(false);setVerificationError('没有应用访问或管理权限');}} onDirtyChange={setDeletionDirty} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave}/>}
     {dialog&&<FormsDialog title={dialog==='directory'?'新建目录':dialog==='renameDirectory'?'重命名目录':dialog==='moveDirectory'?'移动目录':dialog==='form'?'新建表单':'编辑表单'}
       onClose={()=>{if(!busy&&!unconfirmed)setDialog(null);}} busy={busy||unconfirmed}>
       {dialog!=='moveDirectory'&&<label>{dialog==='directory'||dialog==='renameDirectory'?'目录名称':'表单名称'}
