@@ -258,6 +258,10 @@ func lifecycleRequest(t *testing.T, f recordFixture, version int64, deleted bool
 }
 func TestRootRecordLifecycleDeleteRestorePreservesValues(t *testing.T) {
 	f := newRecordFixture(t)
+	// Real enabled automatic flows must not mistake restoration for create/edit.
+	rootConfiguredTrigger(t, f, "record.created", nil)
+	rootConfiguredTrigger(t, f, "record.updated", nil)
+	rootTriggeredCount(t, f, f.ownRecord, 0)
 	p := lifecycleManager(f)
 	before, e := f.service.GetRecord(f.ctx, p, f.app, f.view, f.ownRecord)
 	if e != nil {
@@ -286,6 +290,7 @@ func TestRootRecordLifecycleDeleteRestorePreservesValues(t *testing.T) {
 	if after.ID != before.ID || after.CreatedBy != before.CreatedBy || after.CreatedAt != before.CreatedAt || after.Values[f.public] != before.Values[f.public] || after.Values[f.secret] != before.Values[f.secret] || after.RecordVersion != 3 {
 		t.Fatalf("restore changed original identity/values: before%+v after%+v", before, after)
 	}
+	rootTriggeredCount(t, f, f.ownRecord, 0)
 	var n int
 	if e = f.owner.QueryRow(f.ctx, "SELECT count(*) FROM applications.record_lifecycle_events WHERE app_id=$1 AND table_id=$2 AND record_id=$3", f.app, f.table, f.ownRecord).Scan(&n); e != nil || n != 2 {
 		t.Fatalf("two permanent lifecycle events required: %d %v", n, e)
