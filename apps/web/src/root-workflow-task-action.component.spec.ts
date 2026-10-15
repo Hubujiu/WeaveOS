@@ -87,3 +87,28 @@ test('Root Agree definite access revocation hides the old record instead of leav
  const f=await setup(page,{reply:()=>({status:403,code:'APPLICATION_FORBIDDEN'})});await open(page);await page.getByRole('button',{name:'同意',exact:true}).click();
  await expect(page.getByRole('alert')).toContainText('权限');await expect(page.getByLabel('报销金额')).toHaveCount(0);await expect(page.getByRole('button',{name:'同意',exact:true})).toHaveCount(0);expect(f.actions).toHaveLength(1);expect(f.reads).toBe(1);
 });
+
+// P25/FLOW required original reason; Figma487:5862 inspected 2026-10-15.
+test('Root Reject requires nonblank at most 500 Unicode scalars and sends original text',async({page},testInfo)=>{
+ const f=await setup(page);await open(page);await page.getByRole('button',{name:'驳回',exact:true}).click();
+ const dialog=page.getByRole('dialog',{name:'驳回申请',exact:true}),input=dialog.getByLabel('驳回原因',{exact:false}),confirm=dialog.getByRole('button',{name:'确认驳回',exact:true});
+ await expect(dialog).toBeVisible();await expect(confirm).toBeDisabled();await input.fill('　 ');await expect(confirm).toBeDisabled();
+ await input.fill('🦊'.repeat(501));await expect(confirm).toBeDisabled();await input.fill('🦊'.repeat(500));await expect(confirm).toBeEnabled();
+ const reason='  请补充票据🦊  ';await input.fill(reason);await testInfo.attach('reject-required-original-reason',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});await confirm.click();
+ await expect(page.getByText('审批处理中',{exact:true})).toBeVisible();expect(f.actions).toHaveLength(1);expect(f.actions[0].body).toEqual({operationId:expect.stringMatching(/^[0-9a-f-]{36}$/),action:'reject',basisToken:'b'.repeat(43),reason});
+});
+test('Root Reject cancel and Escape send nothing and restore initiating focus',async({page})=>{
+ const f=await setup(page);await open(page);const trigger=page.getByRole('button',{name:'驳回',exact:true});await trigger.click();let dialog=page.getByRole('dialog',{name:'驳回申请',exact:true});await dialog.getByLabel('驳回原因',{exact:false}).fill('不提交');await dialog.getByRole('button',{name:'取消',exact:true}).click();await expect(dialog).toHaveCount(0);await expect(trigger).toBeFocused();expect(f.actions).toHaveLength(0);
+ await trigger.click();dialog=page.getByRole('dialog',{name:'驳回申请',exact:true});await expect(dialog).toBeVisible();await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);await expect(trigger).toBeFocused();expect(f.actions).toHaveLength(0);
+});
+test('Root Reject unknown retry keeps original reason and operation key',async({page})=>{
+ let f:Awaited<ReturnType<typeof setup>>;f=await setup(page,{lookupFails:true,reply:(body,n)=>n===1?{status:503,code:'APPLICATION_OPERATION_UNCONFIRMED'}:{status:202,code:'OK',data:f.result(body.operationId),location:'/api/v1/application-workflow-operations/'+body.operationId}});
+ await open(page);await page.getByRole('button',{name:'驳回',exact:true}).click();const dialog=page.getByRole('dialog',{name:'驳回申请',exact:true});await dialog.getByLabel('驳回原因',{exact:false}).fill('  原始原因🦊  ');await dialog.getByRole('button',{name:'确认驳回',exact:true}).click();await expect(page.getByRole('alert')).toContainText('未确认');expect(f.actions).toHaveLength(1);
+ await page.getByRole('button',{name:'重试原审批',exact:true}).click();await expect(page.getByText('审批处理中',{exact:true})).toBeVisible();expect(f.actions).toHaveLength(2);expect(f.actions[1].body).toEqual(f.actions[0].body);
+});
+test('Root Reject never silently saves a dirty task form',async({page})=>{
+ const f=await setup(page);await open(page);await page.getByLabel('报销金额').fill('200.00');await page.getByRole('button',{name:'驳回',exact:true}).click();await expect(page.getByRole('alert')).toContainText('未保存');await expect(page.getByRole('dialog',{name:'驳回申请',exact:true})).toHaveCount(0);expect(f.actions).toHaveLength(0);expect(f.paths.filter(p=>p===api+'/record')).toHaveLength(0);await expect(page.getByLabel('报销金额')).toHaveValue('200.00');
+});
+test('Root Reject revoked write clears task values and does not report success',async({page})=>{
+ const f=await setup(page,{reply:()=>({status:403,code:'AUTH_FORBIDDEN'})});await open(page);await page.getByRole('button',{name:'驳回',exact:true}).click();const dialog=page.getByRole('dialog',{name:'驳回申请',exact:true});await dialog.getByLabel('驳回原因',{exact:false}).fill('原始原因');await dialog.getByRole('button',{name:'确认驳回',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await expect(page.getByLabel('报销金额')).toHaveCount(0);await expect(page.getByText('审批已驳回',{exact:true})).toHaveCount(0);expect(f.actions).toHaveLength(1);
+});

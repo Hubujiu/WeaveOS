@@ -52,7 +52,7 @@ func TestRootPersonalApprovedUsesOnlyOwnSuccessfulActionsAndMinimalMetadata(t *t
 	}
 	var event map[string]json.RawMessage
 	json.Unmarshal(m["event"], &event)
-	if len(event) != 14 {
+	if len(event) != 15 || string(event["actionReason"]) != `"fixture rejection reason"` {
 		t.Fatal("event is not original minimal journal DTO", event)
 	}
 	other := f.principal
