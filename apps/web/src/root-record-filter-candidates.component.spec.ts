@@ -29,3 +29,9 @@ test('Root read-only filter uses opaque paging and clears candidates when next p
 test('Root filter candidate responses refuse extra private properties instead of displaying partial data',async({page})=>{
  await setup(page,{malformed:true});const editor=await open(page);await editor.getByRole('button',{name:'选择成员',exact:true}).click();await expect(editor.getByRole('alert')).toBeVisible();await expect(page.getByText('不应显示的越界资料',{exact:true})).toHaveCount(0);await expect(editor.getByRole('button',{name:'加载更多',exact:true})).toHaveCount(0);
 });
+
+test('Root record-filter reference uses the source single 42px value control without shifting the condition row',async({page},info)=>{
+ await page.setViewportSize({width:1440,height:1000});await setup(page);const editor=await open(page),choose=editor.getByRole('button',{name:'选择成员',exact:true}),field=editor.getByLabel('条件 1.1 字段');
+ await expect(choose).toHaveCSS('height','42px');await expect(choose).toHaveCSS('border-color','rgb(234, 234, 234)');await expect(choose).toHaveCSS('color','rgb(37, 37, 37)');
+ const before=await field.boundingBox();await choose.click();await expect(editor.getByRole('button',{name:'历史成员',exact:true})).toBeVisible();const after=await field.boundingBox();expect(Math.abs(after!.y-before!.y)).toBeLessThanOrEqual(1);await editor.getByRole('button',{name:'历史成员',exact:true}).click();await expect(choose).toContainText('历史成员');await expect(choose).toContainText('已删除');await info.attach('record-filter-source-control',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+});
