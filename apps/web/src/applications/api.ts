@@ -72,8 +72,11 @@ export function validWorkflowTransportRequest(path:string,method:string,body?:ob
  const instancePath=new RegExp(`^applications/(${id})/forms/(${id})/records/(${id})/workflow-instances/(${id})/actions$`).exec(path);
  const operationPath=new RegExp(`^application-workflow-operations/(${id})$`).exec(path);
  const data=body as Record<string,unknown>|undefined;
- const validPost=method==='POST'&&actionPath&&actionPath.slice(1).every(canonical)&&data&&!Array.isArray(data)&&Object.keys(data).length===3&&['operationId','action','basisToken'].every(k=>Object.hasOwn(data,k))&&canonical(data.operationId)&&(data.action==='agree'||data.action==='reject')&&typeof data.basisToken==='string'&&/^[A-Za-z0-9_-]{43}$/.test(data.basisToken);
- const validWithdraw=method==='POST'&&instancePath&&instancePath.slice(1).every(canonical)&&data&&!Array.isArray(data)&&Object.keys(data).length===3&&['operationId','action','basisToken'].every(k=>Object.hasOwn(data,k))&&canonical(data.operationId)&&data.action==='withdraw'&&typeof data.basisToken==='string'&&data.basisToken.length>0&&data.basisToken.length<=256;
+ const reason=(v:unknown)=>typeof v==='string'&&Array.from(v).length>=1&&Array.from(v).length<=500&&!/^[\p{White_Space}]*$/u.test(v)&&!/[\u0000\uD800-\uDFFF]/u.test(v);
+ const taskKeys=data&&Object.hasOwn(data,'reason')?['operationId','action','basisToken','reason']:['operationId','action','basisToken'];
+ const validPost=method==='POST'&&actionPath&&actionPath.slice(1).every(canonical)&&data&&!Array.isArray(data)&&Object.keys(data).length===taskKeys.length&&taskKeys.every(k=>Object.hasOwn(data,k))&&canonical(data.operationId)&&(data.action==='agree'||data.action==='reject')&&typeof data.basisToken==='string'&&/^[A-Za-z0-9_-]{43}$/.test(data.basisToken)&&(!Object.hasOwn(data,'reason')||data.action==='reject'&&reason(data.reason));
+ const instanceKeys=data?.action==='return'?['operationId','action','basisToken','targetNodeId','reason']:['operationId','action','basisToken'];
+ const validWithdraw=method==='POST'&&instancePath&&instancePath.slice(1).every(canonical)&&data&&!Array.isArray(data)&&Object.keys(data).length===instanceKeys.length&&instanceKeys.every(k=>Object.hasOwn(data,k))&&canonical(data.operationId)&&(data.action==='withdraw'||data.action==='return'&&canonical(data.targetNodeId)&&reason(data.reason))&&typeof data.basisToken==='string'&&data.basisToken.length>0&&data.basisToken.length<=256;
  const validGet=method==='GET'&&operationPath&&canonical(operationPath[1])&&body===undefined;
  return Boolean(validPost||validWithdraw||validGet);
 }
