@@ -7,7 +7,7 @@ const form=`applications/${appId}/forms/${viewId}`,record=form+'/records/'+recor
 const runtime={appId,viewId,tableId:id(6),schemaVersion:1,viewVersion:1,policyRevision:1,fields:[{id:fieldId,name:'金额',kind:'money',required:false,presentation:{helpText:null,displayTimeZone:null},input:{decimal:{precision:20,scale:2,roundingPlaces:2,roundingMode:'HALF_UP'}},access:{read:'all',create:true,edit:'all',history:'none'},query:{operators:['eq','neq','gt','gte','lt','lte'],sortable:true,quickSearchable:false}}],layout:[{id:id(7),kind:'field',fieldId}],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}};
 const item={id:recordId,appId,viewId,tableId:id(6),createdBy:actor.id,createdAt:'2026-10-11T09:00:00Z',updatedAt:'2026-10-11T10:00:00Z',recordVersion:1,schemaVersion:1,values:{[fieldId]:'10.00'},referenceDisplays:{}};
 // V072/V075 P19; actual525:9714,528:9835,528:10108 designs read before declarations.
-async function setup(page:Page,options:{member?:boolean;deleted?:boolean;unknown?:boolean;malformed?:boolean;blocked?:boolean}={}){
+async function setup(page:Page,options:{member?:boolean;deleted?:boolean;unknown?:boolean;malformed?:boolean;blocked?:boolean;stale?:boolean}={}){
  const calls:{path:string;method:string;body:any}[]=[];let deleted=!!options.deleted,version=deleted?3:1,denied=false,posts=0;let original:any=null;
  const receipt=(body:any,action:string)=>({operationId:body.operationId,id:recordId,recordVersion:body.expectedRecordVersion+1,schemaVersion:1,deleted:action==='deletion'});
  await page.route('**/api/v1/**',async r=>{
@@ -27,7 +27,7 @@ async function setup(page:Page,options:{member?:boolean;deleted?:boolean;unknown
    if(denied)return r.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
    data={items:deleted?[{id:recordId,recordVersion:version,deletedAt:'2026-10-14T01:10:00Z',...(options.malformed?{values:{secret:'must-not-display'}}:{})}]:[],total:deleted?1:0,page:body.page,pageSize:body.pageSize,queryVersion:'deleted-'+version,schemaVersion:1};
   }else if(path===record+'/deletion'||path===record+'/restoration'){
-   posts++;if(options.blocked)return r.fulfill({status:409,json:{code:'APPLICATION_RECORD_FENCED',data:null}});
+   posts++;if(options.stale)return r.fulfill({status:409,json:{code:'APPLICATION_RECORD_CONFLICT',data:{currentRecordVersion:2}}});if(options.blocked)return r.fulfill({status:409,json:{code:'APPLICATION_RECORD_FENCED',data:null}});
    original??=structuredClone(body);if(options.unknown&&posts===1)return r.fulfill({status:503,json:{code:'APPLICATION_OPERATION_UNCONFIRMED',data:{operationId:body.operationId}}});
    data=receipt(body,path.endsWith('/deletion')?'deletion':'restoration');deleted=path.endsWith('/deletion');version=body.expectedRecordVersion+1;
   }else if(path.startsWith('application-operations/')&&original)data={operationId:original.operationId,status:'unknown'};
@@ -61,4 +61,8 @@ test('Root unknown record deletion retries the same original operation and CAS',
 });
 test('Root in-flight fenced record deletion does not hide its data or claim success',async({page})=>{
  const f=await setup(page,{blocked:true});await open(page);await page.getByRole('button',{name:'删除记录',exact:true}).click();await page.getByRole('dialog',{name:'删除这条记录？',exact:true}).getByRole('button',{name:'确认删除',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await expect(page.getByLabel('金额',{exact:true})).toHaveValue('10.00');expect(writes(f.calls)).toHaveLength(1);
+});
+
+test('Root stale record version keeps visible data and never rebases deletion automatically',async({page})=>{
+ const f=await setup(page,{stale:true});await open(page);await page.getByRole('button',{name:'删除记录',exact:true}).click();await page.getByRole('dialog',{name:'删除这条记录？',exact:true}).getByRole('button',{name:'确认删除',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await expect(page.getByLabel('金额',{exact:true})).toHaveValue('10.00');expect(writes(f.calls)).toHaveLength(1);expect(writes(f.calls)[0].body.expectedRecordVersion).toBe(1);expect(f.calls.filter(c=>c.path===record&&c.method==='GET')).toHaveLength(1);
 });
