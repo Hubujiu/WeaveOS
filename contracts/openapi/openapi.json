@@ -21449,6 +21449,233 @@
         },
         "x-max-body-bytes": 4096
       }
+    },
+    "/api/v1/applications/{appId}/forms/{viewId}/filter-candidates": {
+      "get": {
+        "operationId": "recordFilterCandidates",
+        "summary": "List reference values from currently readable records",
+        "description": "V075 P26: same RR live identity/menu and full visible-row field read coverage. Only distinct non-null member/department IDs actually in readable non-deleted records; minimal current registry/tombstone labels, never the organisation directory. Literal prefix search. Session-bound opaque cursor binds actor/app/table/view/field/kind/query and full revision vector; a changed vector requires explicit restart without changing record-list queryVersion. No business write. Missing registry fails closed before search.",
+        "security": [
+          {
+            "WebSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "viewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ExpectedActor"
+          },
+          {
+            "name": "fieldId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 43,
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current distinct readable reference values; no operation created",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordFilterCandidatesEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/SessionChallenge"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Frozen safe application/session error, no raw SQL or unauthorized business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Registered definition/session error; no raw SQL or business values",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinitionErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -37491,6 +37718,55 @@
           }
         ],
         "description": "Optional non-executable display metadata. Empty means default node type; other names preserve their original Unicode scalars, reject whitespace-only text and never enter BPMN."
+      },
+      "RecordFilterCandidates": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "$ref": "#/components/schemas/RecordReferenceDisplay"
+            }
+          }
+        }
+      },
+      "RecordFilterCandidatesEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "OK"
+              },
+              "data": {
+                "$ref": "#/components/schemas/RecordFilterCandidates"
+              },
+              "meta": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requestId",
+                  "pagination"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "$ref": "#/components/schemas/CursorPagination"
+                  }
+                }
+              }
+            }
+          }
+        ]
       }
     },
     "responses": {
