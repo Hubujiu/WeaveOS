@@ -11,18 +11,18 @@ export type TemplateReference={id:string;kind:'user'|'department';sourceId:strin
 export function referenceRows(references:TemplateReferences):TemplateReference[]{
  return [...references.userIds.map(sourceId=>({id:'user:'+sourceId,kind:'user' as const,sourceId})),...references.departmentIds.map(sourceId=>({id:'department:'+sourceId,kind:'department' as const,sourceId}))];
 }
-export function TemplateMapping({actorId,references,selection,disabled,onSelect,onUnauthorized,onIdentityMismatch}:{actorId:string;references:TemplateReferences;selection:TemplateSelection;disabled:boolean;onSelect:(reference:TemplateReference,candidate:ReferenceCandidate)=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void}){
+export function TemplateMapping({actorId,sourceAppId,onForbidden,references,selection,disabled,onSelect,onUnauthorized,onIdentityMismatch}:{actorId:string;sourceAppId?:string;onForbidden?:()=>void;references:TemplateReferences;selection:TemplateSelection;disabled:boolean;onSelect:(reference:TemplateReference,candidate:ReferenceCandidate)=>void;onUnauthorized:()=>void;onIdentityMismatch:()=>void}){
  const [active,setActive]=useState<TemplateReference|null>(null);
  const kind=active?.kind;
  const load=useCallback(async(request:{q:string;pageSize:number;pageToken:string|null},signal:AbortSignal)=>{
   const query=new URLSearchParams({q:request.q,pageSize:String(request.pageSize)});if(request.pageToken!==null)query.set('pageToken',request.pageToken);
   try{
-   const raw=await applicationApiEnvelope<unknown>(actorId,`application-templates/${kind==='department'?'department':'member'}-candidates?${query}`,'GET',undefined,signal,200);
+   const raw=await applicationApiEnvelope<unknown>(actorId,`${sourceAppId?'applications/'+sourceAppId:'application-templates'}/${kind==='department'?'department':'member'}-candidates?${query}`,'GET',undefined,signal,200);
    const page=templateCandidatePage(raw,kind??'user');if(!page)throw Error('候选响应无效');return page;
-  }catch(cause){if(!signal.aborted){if(cause instanceof ApplicationError&&cause.status===401)onUnauthorized();else if(cause instanceof ApplicationError&&cause.code==='AUTH_SESSION_CHANGED')onIdentityMismatch();}throw cause;}
- },[actorId,kind,onUnauthorized,onIdentityMismatch]);
+  }catch(cause){if(!signal.aborted){if(cause instanceof ApplicationError&&cause.status===401)onUnauthorized();else if(cause instanceof ApplicationError&&cause.code==='AUTH_SESSION_CHANGED')onIdentityMismatch();else if(sourceAppId&&cause instanceof ApplicationError&&[403,404].includes(cause.status))onForbidden?.();}throw cause;}
+ },[actorId,sourceAppId,kind,onUnauthorized,onIdentityMismatch,onForbidden]);
  const rows=referenceRows(references),columns:TableColumn<TemplateReference>[]=[
-  {key:'source',header:'模板依赖',sortable:false,dataType:'text',cell:row=><span className="template-reference-source" title={row.sourceId}>{row.kind==='user'?'用户':'部门'}：{row.sourceId}</span>},
+  {key:'source',header:sourceAppId?'来源引用':'模板依赖',sortable:false,dataType:'text',cell:row=><span className="template-reference-source" title={row.sourceId}>{row.kind==='user'?'用户':'部门'}：{row.sourceId}</span>},
   {key:'target',header:'当前对象',sortable:false,dataType:'text',cell:row=><div className="template-reference-target"><span title={selection[row.id]?.label}>{selection[row.id]?.label??'未选择'}</span>{!disabled&&<button type="button" className="admin-button" onClick={()=>setActive(row)}>选择{row.kind==='user'?'成员':'部门'}</button>}</div>},
   {key:'state',header:'状态',sortable:false,dataType:'text',cell:row=>selection[row.id]?'已选择':'待选择'},
  ];

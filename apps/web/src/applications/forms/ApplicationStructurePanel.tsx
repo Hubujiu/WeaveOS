@@ -1,3 +1,4 @@
+import type {StructureCopySelection} from '../templates/StructureCopyDialog';
 import {StructureDeletionDialog,type StructureDeletionSelection} from './StructureDeletionDialog';
 import {scopedUnconfirmed} from '../recovery';
 import {useEffect,useLayoutEffect,useRef,useState} from 'react';
@@ -8,7 +9,7 @@ import {FormsDialog} from './FormsDialog';
 import {createLeaveController,type LeaveController,type LeaveGuardProps,type LeaveStatus} from './leaveGuard';
 import './forms.css';
 
-export type ApplicationStructureProps=LeaveGuardProps&{refreshKey?:number;applicationPolicyRevision?:number;onApplicationDeleted?:()=>void;requestSectionLeave?:(action:()=>void)=>void;appId:string;actorId:string;onOpenForm?:(viewId:string)=>void;
+export type ApplicationStructureProps=LeaveGuardProps&{applicationName?:string;canCopyApplication?:boolean;onCopy?:(selection:StructureCopySelection,origin:HTMLButtonElement)=>void;refreshKey?:number;applicationPolicyRevision?:number;onApplicationDeleted?:()=>void;requestSectionLeave?:(action:()=>void)=>void;appId:string;actorId:string;onOpenForm?:(viewId:string)=>void;
   onConfigureForm?:(viewId:string)=>void;
   onDirtyChange?:(dirty:boolean)=>void;onUnauthorized?:()=>void;onIdentityMismatch?:()=>void};
 type Selected={kind:'directory'|'form';id:UUID}|null;
@@ -26,7 +27,7 @@ export function ApplicationStructurePanel(props:ApplicationStructureProps){
   const scopeKey=JSON.stringify([props.actorId,props.appId]);
   return <ApplicationStructureScope key={scopeKey} {...props} scopeKey={scopeKey}/>;
 }
-function ApplicationStructureScope({refreshKey=0,applicationPolicyRevision,onApplicationDeleted,requestSectionLeave,appId,actorId,onOpenForm,onConfigureForm,onDirtyChange,onUnauthorized,onIdentityMismatch,registerLeaveGuard,
+function ApplicationStructureScope({applicationName,canCopyApplication=false,onCopy,refreshKey=0,applicationPolicyRevision,onApplicationDeleted,requestSectionLeave,appId,actorId,onOpenForm,onConfigureForm,onDirtyChange,onUnauthorized,onIdentityMismatch,registerLeaveGuard,
   scopeKey}:ApplicationStructureProps&{scopeKey:string}){
   const restored=structureMemory.get(scopeKey);
   const deletionOrigin=useRef<HTMLButtonElement|null>(null);
@@ -37,7 +38,7 @@ function ApplicationStructureScope({refreshKey=0,applicationPolicyRevision,onApp
     if(resource?.kind!=='structure-deletion'||resource.appId!==appId||!Number.isSafeInteger(body?.expectedStructureVersion)||!Number.isSafeInteger(body?.expectedResourceVersion))return [];
     return [{operationId:packet.operationId,kind:resource.resourceKind,id:resource.id,structureVersion:body!.expectedStructureVersion as number,resourceVersion:body!.expectedResourceVersion as number}];
   });
-  const deletionBlocked=!!deletion||deletionDirty||deletionRecovery.length>0;
+  const deletionBlocked=!!deletion||deletionDirty||deletionRecovery.length>0||scopedUnconfirmed(actorId).some(packet=>packet.resource?.kind==='structure-copy'&&packet.resource.sourceAppId===appId);
   const [structure,reactSetStructure]=useState<Structure|null>(restored?.structure??null),
     [selected,reactSetSelected]=useState<Selected>(restored?.selected??null);
   const [dialog,reactSetDialog]=useState<Dialog>(restored?.dialog??null),[name,reactSetName]=useState(restored?.name??''),
@@ -201,6 +202,7 @@ function ApplicationStructureScope({refreshKey=0,applicationPolicyRevision,onApp
     if(kind==='application'){structureMemory.delete(scopeKey);onApplicationDeleted?.();return;}
     void refresh().catch(problem=>{if(alive.current)setError('删除已确认，目录刷新失败：'+formErrorText(problem));});
   };
+  const copy=(kind:StructureCopySelection['kind'],id:string,name:string,origin:HTMLButtonElement)=>{if(!canEdit||pending||dialog||deletionBlocked)return;onCopy?.({appId,kind,id,name},origin);};
   const tree=(parent:UUID|null,seen=new Set<UUID>()):React.ReactNode=>{
     if(!structure)return null;
     return <ul className="forms-tree-list" role={parent===null?'tree':'group'} aria-label={parent===null?'应用目录':undefined}>
@@ -208,6 +210,7 @@ function ApplicationStructureScope({refreshKey=0,applicationPolicyRevision,onApp
         <div className={`forms-tree-row${selected?.id===item.id?' active':''}`}>
           <button type="button" onClick={()=>setSelected({kind:'directory',id:item.id})}><span className="forms-tree-prefix">目录</span><span className="forms-tree-name" title={item.name}>{item.name}</span></button>
           {canEdit&&<button type="button" aria-label={`移动目录 ${item.name}`} onClick={()=>{setSelected({kind:'directory',id:item.id});open('moveDirectory',item);}}>移动</button>}
+          {canEdit&&onCopy&&<button type="button" disabled={deletionBlocked} aria-label={`复制目录 ${item.name}`} onClick={event=>copy('directory',item.id,item.name,event.currentTarget)}>复制</button>}
           {canEdit&&<button type="button" disabled={deletionBlocked} aria-label={`删除目录 ${item.name}`} onClick={event=>remove('directory',item.id,0,event.currentTarget)}>删除</button>}
         </div>{tree(item.id,new Set([...seen,item.id]))}</li>)}
       {structure.forms.filter(item=>item.directoryId===parent).sort((a,b)=>a.position-b.position).map(item=><li role="treeitem" aria-label={item.name} className="forms-tree-item" key={item.id}>
@@ -215,10 +218,11 @@ function ApplicationStructureScope({refreshKey=0,applicationPolicyRevision,onApp
           <button type="button" onClick={()=>setSelected({kind:'form',id:item.id})}><span className="forms-tree-prefix">表单</span><span className="forms-tree-name" title={item.name}>{item.name}</span></button>
           <button type="button" aria-label={`打开表单 ${item.name}`} onClick={()=>onOpenForm?.(item.id)}>打开</button>
           {canEdit&&onConfigureForm&&<button type="button" aria-label={`配置表单 ${item.name}`} onClick={()=>onConfigureForm(item.id)}>配置</button>}
+          {canEdit&&onCopy&&<button type="button" disabled={deletionBlocked} aria-label={`复制表单 ${item.name}`} onClick={event=>copy('form',item.id,item.name,event.currentTarget)}>复制</button>}
           {canEdit&&<button type="button" disabled={deletionBlocked} aria-label={`删除表单 ${item.name}`} onClick={event=>remove('form',item.id,item.viewVersion,event.currentTarget)}>删除</button>}
         </div></li>)}
       {structure.tables.filter(item=>item.directoryId===parent&&!structure.forms.some(view=>view.tableId===item.id)).map(item=>
-        <li role="treeitem" aria-label={item.name} key={item.id}><div className="forms-tree-row"><span className="forms-tree-prefix">逻辑表</span><span className="forms-tree-name" title={item.name}>{item.name}</span>{canEdit&&<button type="button" disabled={deletionBlocked} aria-label={`删除数据表 ${item.name}`} onClick={event=>remove('table',item.id,item.schemaVersion,event.currentTarget)}>删除</button>}</div></li>)}
+        <li role="treeitem" aria-label={item.name} key={item.id}><div className="forms-tree-row"><span className="forms-tree-prefix">逻辑表</span><span className="forms-tree-name" title={item.name}>{item.name}</span>{canEdit&&onCopy&&<button type="button" disabled={deletionBlocked} aria-label={`复制数据表 ${item.name}`} onClick={event=>copy('table',item.id,item.name,event.currentTarget)}>复制</button>}{canEdit&&<button type="button" disabled={deletionBlocked} aria-label={`删除数据表 ${item.name}`} onClick={event=>remove('table',item.id,item.schemaVersion,event.currentTarget)}>删除</button>}</div></li>)}
     </ul>;
   };
   if(!verified)return <section className="forms-module forms-loading" role="status">
@@ -228,7 +232,7 @@ function ApplicationStructureScope({refreshKey=0,applicationPolicyRevision,onApp
   if(!structure)return <section className="forms-module forms-loading" role="status">{error?<><p role="alert">{error}</p><button type="button" onClick={()=>setReload(value=>value+1)}>重试</button></>:'正在加载应用目录…'}</section>;
   return <section className="forms-module" aria-label="目录与视图管理">
     <div className="forms-structure-head"><div><strong>应用目录与视图</strong><p className="forms-muted">管理目录、逻辑表和表单视图</p></div>
-      <div className="forms-structure-actions">{canEdit&&Number.isSafeInteger(applicationPolicyRevision)&&applicationPolicyRevision! > 0&&<button type="button" disabled={deletionBlocked} onClick={event=>remove('application',appId,applicationPolicyRevision!,event.currentTarget)}>删除应用</button>}<button type="button" disabled={!canEdit||deletionBlocked} onClick={()=>open('directory',folder)}>新建目录</button>
+      <div className="forms-structure-actions">{canEdit&&canCopyApplication&&onCopy&&<button type="button" disabled={deletionBlocked} onClick={event=>copy('application',appId,applicationName??appId,event.currentTarget)}>复制应用</button>}{canEdit&&Number.isSafeInteger(applicationPolicyRevision)&&applicationPolicyRevision! > 0&&<button type="button" disabled={deletionBlocked} onClick={event=>remove('application',appId,applicationPolicyRevision!,event.currentTarget)}>删除应用</button>}<button type="button" disabled={!canEdit||deletionBlocked} onClick={()=>open('directory',folder)}>新建目录</button>
       <button type="button" className="forms-primary" disabled={!canEdit||deletionBlocked} onClick={()=>open('form',form?{...form,parentId:form.directoryId}:
         folder?{...folder,parentId:folder.id}:undefined)}>新建表单</button></div></div>
     {error&&!dialog&&<p className="forms-alert" role="alert">{error}</p>}{notice&&<p className="forms-success" role="status">{notice}</p>}
@@ -241,7 +245,7 @@ function ApplicationStructureScope({refreshKey=0,applicationPolicyRevision,onApp
         <button type="button" onClick={()=>open('moveDirectory',folder)}>移动目录</button>
         <button type="button" onClick={()=>open('directory',folder)}>创建子目录</button></>}</>:
       form?<><h2>表单 · {form.name}</h2><p>逻辑表：{structure.tables.find(item=>item.id===form.tableId)?.name??form.tableId}</p>
-        <p>视图版本：{form.viewVersion}</p><button type="button" className="forms-primary" onClick={()=>onOpenForm?.(form.id)}>打开表单 {form.name}</button>
+        <p>视图版本：{form.viewVersion}</p>{canEdit&&onCopy&&structure.tables.filter(item=>item.id===form.tableId).map(item=><button key={item.id} type="button" disabled={deletionBlocked} aria-label={`复制数据表 ${item.name}`} onClick={event=>copy('table',item.id,item.name,event.currentTarget)}>复制数据表 {item.name}</button>)}<button type="button" className="forms-primary" onClick={()=>onOpenForm?.(form.id)}>打开表单 {form.name}</button>
         {canEdit&&onConfigureForm&&<button type="button" onClick={()=>onConfigureForm(form.id)}>配置表单 {form.name}</button>}
         {canEdit&&<button type="button" onClick={()=>open('editForm',{...form,parentId:form.directoryId})}>编辑表单名称与位置</button>}</>:
       <><h2>选择目录或视图</h2><p className="forms-muted">从左侧选择项目，查看详情并管理位置。</p></>}</section></div>
