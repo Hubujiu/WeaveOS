@@ -120,7 +120,7 @@ function ApplicationStructureScope({refreshKey=0,applicationPolicyRevision,onApp
       .catch(problem=>{if(alive.current&&!controller.signal.aborted&&current===request.current){
         reportAuth(problem);setVerificationError(formErrorText(problem));}});
     return()=>{controller.abort();request.current++;};},[appId,actorId,reload,scopeKey,refreshKey]);
-  useEffect(()=>onDirtyChange?.(!!pending||!!dialog&&!!name.trim()||deletionDirty||deletionRecovery.length>0),[dialog,name,pending,deletionDirty,deletionRecovery.length,onDirtyChange]);
+  useEffect(()=>onDirtyChange?.(!!pending||!!dialog&&!!name.trim()||deletionDirty),[dialog,name,pending,deletionDirty,onDirtyChange]);
   const folder=structure?.directories.find(item=>selected?.kind==='directory'&&item.id===selected.id);
   const form=structure?.forms.find(item=>selected?.kind==='form'&&item.id===selected.id);
   const canEdit=verified&&!!structure?.capabilities.canManageDefinition&&!permissionRevoked;
