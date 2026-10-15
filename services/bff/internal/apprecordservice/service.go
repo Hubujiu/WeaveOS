@@ -23,6 +23,7 @@ type Service struct {
 	RuntimeReady           func(context.Context) error
 	Pool                   *pgxpool.Pool
 	Queries                *querycontext.Store
+	FilterValues           *querycontext.Store
 	DeletedRecords         *querycontext.Store
 	WorkflowBases          *querycontext.Store
 	WorkflowLifecycleBases *querycontext.Store
@@ -64,7 +65,7 @@ func New(pool *pgxpool.Pool, client redis.UniversalClient, generation string) *S
 				b.Data >= a.Data && b.Dependency >= a.Dependency && b.Schema >= a.Schema && b.View >= a.View && b.Policy >= a.Policy && b.Source >= a.Source
 		},
 	}
-	return &Service{Pool: pool, DeletedRecords: newDeletedRecordStore(client, generation), WorkflowCandidates: &appstructure.Application{CandidateRedis: client, CandidateNamespace: generation + ":workflow-task-candidates"}, Queries: querycontext.NewStore(client, "applications", generation, policy), WorkflowBases: newWorkflowBasisStore(client, generation), WorkflowLifecycleBases: newWorkflowLifecycleStore(client, generation), WorkflowReads: newWorkflowReadStore(client, generation), WorkflowEventHistory: newWorkflowEventHistoryStore(client, generation), WorkflowInbox: newWorkflowInboxStore(client, generation), WorkflowApprovals: newWorkflowApprovalsStore(client, generation), WorkflowStarted: newWorkflowStartedStore(client, generation), WorkflowManualOptions: newManualOptionsStore(client, generation)}
+	return &Service{FilterValues: newFilterCandidateStore(client, generation), Pool: pool, DeletedRecords: newDeletedRecordStore(client, generation), WorkflowCandidates: &appstructure.Application{CandidateRedis: client, CandidateNamespace: generation + ":workflow-task-candidates"}, Queries: querycontext.NewStore(client, "applications", generation, policy), WorkflowBases: newWorkflowBasisStore(client, generation), WorkflowLifecycleBases: newWorkflowLifecycleStore(client, generation), WorkflowReads: newWorkflowReadStore(client, generation), WorkflowEventHistory: newWorkflowEventHistoryStore(client, generation), WorkflowInbox: newWorkflowInboxStore(client, generation), WorkflowApprovals: newWorkflowApprovalsStore(client, generation), WorkflowStarted: newWorkflowStartedStore(client, generation), WorkflowManualOptions: newManualOptionsStore(client, generation)}
 }
 
 func closedJSON(raw json.RawMessage, out any) bool {

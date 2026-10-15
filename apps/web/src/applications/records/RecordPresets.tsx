@@ -1,3 +1,4 @@
+import {RecordFilterReference} from './RecordFilterReference';
 import {useCallback,useEffect,useLayoutEffect,useRef,useState,type MutableRefObject} from 'react';
 import {TablePresetManager,type ResourcePreset,type ResourcePresetRepository,type PresetEditorState} from '../../TablePresetManager';
 import {findPresetRecovery} from './presetRecovery';
@@ -103,7 +104,7 @@ export function RecordPresets({registerLeaveGuard,onDirtyChange,actorId,view,lay
   finally{setReadingConfirmed(false);}
  }
  return <TablePresetManager view="resource" active={active} hiddenColumnIds={layout.hiddenColumnIds} onDirty={setDirty} onUnauthorized={onUnauthorized}
-  resource={{scopeKey:scope,listRevision,writeBlocked:!!job||!!confirmedRead,onEditorState:editorState,...descriptors(view),repository,onApply:apply,
+  resource={{renderReference:({field,value,label,onChange})=>{const current=view.fields.find(item=>item.id===field.id);return current?<RecordFilterReference key={scope+':'+field.id+':'+label} actorId={actorId} appId={appId} viewId={viewId} field={current} value={value} label={label} onChange={onChange} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>:null;},scopeKey:scope,listRevision,writeBlocked:!!job||!!confirmedRead,onEditorState:editorState,...descriptors(view),repository,onApply:apply,
    refreshDescriptors:async()=>descriptors(await refreshRuntime(life.current!.signal)),
    operationStatus:confirmedRead?<div><p role="alert">{confirmedRead.message}</p><button type="button" disabled={readingConfirmed} onClick={()=>void retryConfirmedRead()}>重试读取已保存方案</button></div>:job?<PresetMutation key={job.key} actorId={actorId} scope={scope} job={job} operationRef={operationRef} onActivity={setOperating} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} settle={settle}/>:null}}/>;
 }

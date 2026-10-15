@@ -110,7 +110,7 @@ func TestRootProductDefinitionJourney(t *testing.T) {
 	for _, node := range graph.Nodes {
 		if node.Kind == "approval" {
 			approvalNodes++
-			if node.Approval == nil || node.Approval.Mode != "all" || !reflect.DeepEqual(node.Approval.AssigneeIDs, []string{f.actor}) || !reflect.DeepEqual(node.Approval.EditableFieldIDs, []string{f.field}) {
+			if node.Name != "浏览器财务复核😀" || node.Approval == nil || node.Approval.Mode != "all" || !reflect.DeepEqual(node.Approval.AssigneeIDs, []string{f.actor}) || !reflect.DeepEqual(node.Approval.EditableFieldIDs, []string{f.field}) {
 				t.Fatal("browser approval node lost explicit choices")
 			}
 		}

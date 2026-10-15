@@ -71,6 +71,8 @@ func TestRootFilterCandidatesReadOnlyDeduplicatesActualValuesWithoutBusinessWrit
 func TestRootFilterCandidatesOwnScopeExcludesOtherRowsAndRequiresWholeVisibleFieldCoverage(t *testing.T) {
 	f := newRecordFixture(t)
 	filterReference(t, f, f.ownRecord, f.actor)
+	filterExec(t, f, "DELETE FROM applications.grant_fields WHERE app_id=$1 AND grant_id IN (SELECT id FROM applications.grants WHERE app_id=$1 AND action='data.read' AND row_scope='own')", f.app)
+	filterExec(t, f, "DELETE FROM applications.grants WHERE app_id=$1 AND action='data.read' AND row_scope='own'", f.app)
 	filterExec(t, f, "UPDATE applications.grants SET row_scope='own' WHERE app_id=$1 AND action='data.read'", f.app)
 	got, e := f.service.FilterCandidates(f.ctx, f.principal, filterCandidateRequest(f))
 	if e != nil || len(got.Items) != 1 || got.Items[0].ID != f.actor {

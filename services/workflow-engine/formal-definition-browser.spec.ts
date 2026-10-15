@@ -16,7 +16,7 @@ test('real definition creation, publication, manual start and approval',async({b
   await page.goto(form+'/workflows');await page.getByRole('button',{name:'新建流程',exact:true}).click();
   const canvas=page.getByRole('region',{name:'流程图',exact:true});await canvas.getByRole('button',{name:'开始',exact:true}).click();await page.getByRole('button',{name:'在此节点后添加审批节点',exact:true}).click();
   const picker=page.getByRole('dialog',{name:'选择审批人',exact:true});await picker.getByRole('checkbox',{name:'root-http-task-'+f.actorId,exact:true}).check();await picker.getByRole('button',{name:'确认',exact:true}).click();
-  await canvas.getByRole('button',{name:'审批节点',exact:true}).click();await page.getByLabel('通过规则',{exact:true}).selectOption('all');await page.getByRole('checkbox',{name:'Reason',exact:true}).check();
+  await canvas.getByRole('button',{name:'审批节点',exact:true}).click();await page.getByLabel('节点名称（最多100字）',{exact:true}).fill('浏览器财务复核😀');await expect(canvas.getByRole('button',{name:'浏览器财务复核😀',exact:true})).toBeVisible();await page.getByLabel('通过规则',{exact:true}).selectOption('all');await page.getByRole('checkbox',{name:'Reason',exact:true}).check();
   await page.getByRole('tab',{name:'触发与设置',exact:true}).click();await page.getByRole('textbox',{name:'流程名称',exact:true}).fill(name);await page.getByRole('checkbox',{name:'手动发起',exact:true}).check();
   await page.getByRole('button',{name:'保存',exact:true}).click();await expect(page.getByRole('heading',{name,exact:true})).toBeVisible();await expect(page.getByText('尚未发布',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'发布',exact:true}).click();await page.getByRole('dialog',{name:'发布流程',exact:true}).getByRole('button',{name:'确认发布',exact:true}).click();
