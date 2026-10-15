@@ -4,8 +4,8 @@ const id=(n:number)=>'67676767-6767-4676-8676-'+String(n).padStart(12,'0');
 const actor={id:id(1),account:'owner'},appId=id(2),directoryId=id(3),tableId=id(4),viewId=id(5);
 type Kind='application'|'directory'|'table'|'form';
 const specs={application:{id:appId,label:'删除应用',title:'删除应用？',version:7,path:`applications/${appId}/deletion`},directory:{id:directoryId,label:'删除目录 资料',title:'删除目录？',version:0,path:`applications/${appId}/directories/${directoryId}/deletion`},table:{id:tableId,label:'删除数据表 业务表',title:'删除数据表？',version:3,path:`applications/${appId}/tables/${tableId}/deletion`},form:{id:viewId,label:'删除表单 申请',title:'删除表单视图？',version:2,path:`applications/${appId}/forms/${viewId}/deletion`}};
-async function setup(page:Page,kind:Kind,options:{member?:boolean;blocked?:boolean;unknown?:boolean}={}){
- const calls:{path:string;method:string;body:any}[]=[];let removed=false,posts=0;
+async function setup(page:Page,kind:Kind,options:{member?:boolean;blocked?:boolean;unknown?:boolean;committedUnknown?:boolean}={}){
+ const calls:{path:string;method:string;body:any}[]=[];let removed=false,posts=0,original:any=null;
  const app={id:appId,name:'业务应用',ownerUserId:options.member?id(99):actor.id,policyRevision:7};
  await page.route('**/api/v1/**',async r=>{
   const req=r.request(),path=new URL(req.url()).pathname.slice('/api/v1/'.length),method=req.method(),body=req.postData()?req.postDataJSON():null;calls.push({path,method,body});let data:unknown;
@@ -16,8 +16,9 @@ async function setup(page:Page,kind:Kind,options:{member?:boolean;blocked?:boole
   else if(path==='applications/'+appId+'/access')data={appId,canEnter:true,policyRevision:7,menus:[{resourceKind:'application',resourceId:appId}]};
   else if(path==='applications/'+appId+'/structure')data={appId,structureVersion:removed?5:4,directories:kind==='directory'&&!removed?[{id:directoryId,appId,name:'资料',parentId:null,position:0}]:[],tables:(kind==='table'&&!removed||kind==='form')?[{id:tableId,appId,name:'业务表',directoryId:null,position:0,schemaVersion:3,schemaReady:true}]:[],forms:kind==='form'&&!removed?[{id:viewId,appId,tableId,name:'申请',directoryId:null,position:0,viewVersion:2}]:[],capabilities:{canManageDefinition:!options.member}};
   else if(path===specs[kind].path){
-   posts++;if(options.blocked)return r.fulfill({status:409,json:{code:'APPLICATION_STRUCTURE_NOT_EMPTY',data:{dependencies:['records']}}});if(options.unknown&&posts===1)return r.fulfill({status:503,json:{code:'APPLICATION_OPERATION_UNCONFIRMED',data:{operationId:body.operationId}}});removed=true;data={operationId:body.operationId,appId,resourceKind:kind,id:specs[kind].id,structureVersion:5,deleted:true};
-  }else return r.fulfill({status:404,json:{code:'API_NOT_FOUND',data:null}});
+   posts++;original??=structuredClone(body);if(options.blocked)return r.fulfill({status:409,json:{code:'APPLICATION_STRUCTURE_NOT_EMPTY',data:{dependencies:['records']}}});if(options.unknown&&posts===1){if(options.committedUnknown)removed=true;return r.fulfill({status:503,json:{code:'APPLICATION_OPERATION_UNCONFIRMED',data:{operationId:body.operationId}}});}removed=true;data={operationId:body.operationId,appId,resourceKind:kind,id:specs[kind].id,structureVersion:5,deleted:true};
+  }else if(original&&path==='application-operations/'+original.operationId)data={operationId:original.operationId,status:'confirmed',httpStatus:200,result:{operationId:original.operationId,appId,resourceKind:kind,id:specs[kind].id,structureVersion:5,deleted:true},location:null};
+  else return r.fulfill({status:404,json:{code:'API_NOT_FOUND',data:null}});
   return r.fulfill({json:{code:'OK',data,meta:null}});
  });return calls;
 }
@@ -33,4 +34,8 @@ test('Root nonempty table deletion shows bounded dependency without cascade or f
 });
 test('Root unknown form deletion retries exactly its original request without touching shared table',async({page})=>{
  const calls=await setup(page,'form',{unknown:true});await open(page);await page.getByRole('button',{name:specs.form.label,exact:true}).click();const dialog=page.getByRole('dialog',{name:specs.form.title,exact:true});await expect(dialog).toContainText('共享表');await dialog.getByRole('button',{name:'确认删除',exact:true}).click();await expect(dialog.getByRole('alert')).toContainText('未确认');await dialog.getByRole('button',{name:'重试原操作',exact:true}).click();await expect.poll(()=>calls.filter(c=>c.method!=='GET').length).toBe(2);const writes=calls.filter(c=>c.method!=='GET');expect(writes[1]).toEqual(writes[0]);expect(writes.every(c=>c.path===specs.form.path)).toBe(true);
+});
+
+test('Root lost-response application deletion recovers from home without reading deleted application scope',async({page})=>{
+ const calls=await setup(page,'application',{unknown:true,committedUnknown:true});await open(page);await page.getByRole('button',{name:'删除应用',exact:true}).click();const dialog=page.getByRole('dialog',{name:'删除应用？',exact:true});await dialog.getByRole('button',{name:'确认删除',exact:true}).click();await expect(dialog.getByRole('alert')).toContainText('未确认');const original=structuredClone(calls.find(c=>c.path===specs.application.path)!.body);await dialog.getByRole('button',{name:'关闭弹窗',exact:true}).click();await page.getByRole('dialog',{name:'有未保存的修改',exact:true}).getByRole('button',{name:'放弃修改',exact:true}).click();await page.getByRole('button',{name:'首页',exact:true}).first().click();await expect(page.getByRole('main',{name:'主页',exact:true})).toBeVisible();const before=calls.length;await page.getByRole('button',{name:'核查结构删除',exact:true}).click();await page.getByRole('button',{name:'核查原操作',exact:true}).click();await expect(page.getByRole('dialog',{name:'删除应用？',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'核查结构删除',exact:true})).toHaveCount(0);expect(calls.filter(c=>c.method!=='GET')).toHaveLength(1);expect(calls.slice(before).filter(c=>c.path==='application-operations/'+original.operationId)).toHaveLength(1);expect(calls.slice(before).filter(c=>c.path==='applications/'+appId||c.path==='applications/'+appId+'/access')).toHaveLength(0);
 });
