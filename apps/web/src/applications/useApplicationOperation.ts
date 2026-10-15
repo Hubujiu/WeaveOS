@@ -188,7 +188,7 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
     const reply = await applicationWorkflowApi<T>(packet.actorId, query ? 'application-workflow-operations/' + packet.operationId : packet.path, query ? 'GET' : 'POST', query ? undefined : packet.body);
     result = reply.data; location = reply.location;
     const context = packet.context as {commandId?:string} | undefined;
-    if (!validWorkflowOperation(result, {operationId:packet.operationId??'', instanceId:packet.resource&&(packet.resource.kind==='task-action'||packet.resource.kind==='instance-action')?packet.resource.instanceId:'', commandId:context?.commandId,...(packet.resource?.kind==='instance-action'?{action:'withdraw' as const}:{})}, reply.httpStatus, query?'GET':'POST')) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
+    if (!validWorkflowOperation(result, {operationId:packet.operationId??'', instanceId:packet.resource&&(packet.resource.kind==='task-action'||packet.resource.kind==='instance-action')?packet.resource.instanceId:'', commandId:context?.commandId,...(packet.resource?.kind==='instance-action'?{action:(packet.body as {action:'withdraw'|'return'}).action}:{})}, reply.httpStatus, query?'GET':'POST')) throw new ApplicationError(503, 'APPLICATION_OPERATION_UNCONFIRMED', true);
     if (!query && result.status === 'pending') {
      let target:URL|null=null;
      try { if(typeof location==='string')target=new URL(location,window.location.origin); } catch { /* Invalid receipt Location remains unknown. */ }
