@@ -1,11 +1,12 @@
 export class ApplicationError extends Error {
- constructor(readonly status: number, readonly code: string, readonly unconfirmed = false) {
+ constructor(readonly status: number, readonly code: string, readonly unconfirmed = false, readonly details?: {dependencies:string[]}) {
   super(unconfirmed ? '操作结果尚未确认，请核查原操作或使用同一操作重试'
    : status === 401 ? '登录已失效，请重新登录'
    : code === 'AUTH_SESSION_CHANGED' ? '登录身份已变化，请重新核对身份'
    : code === 'COMMON_CSRF_REJECTED' ? '安全校验失败，请重新登录后再试'
    : status === 403 ? '没有应用访问或管理权限'
    : code === 'APPLICATION_POLICY_CONFLICT' ? '权限配置已变化，请重新加载后再编辑'
+   : code === 'APPLICATION_STRUCTURE_NOT_EMPTY' ? '对象仍有依赖，不能删除'
    : code === 'APPLICATION_OPERATION_CONFLICT' ? '操作标识冲突，请核查原操作'
    : status === 404 ? '应用或配置不存在'
    : status === 400 ? '输入信息不合法，请检查后重试'
@@ -36,7 +37,18 @@ async function request<T>(actorId: string, path: string, method: string, body: o
  catch { throw new ApplicationError(response.status, 'COMMON_SERVICE_UNAVAILABLE', mutation); }
  const envelope = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as { code?: unknown; data?: T; meta?: ApplicationEnvelope<T>['meta'] } : null;
  const code = typeof envelope?.code === 'string' ? envelope.code : 'COMMON_SERVICE_UNAVAILABLE';
- if (!response.ok || code !== 'OK') throw new ApplicationError(response.status, code, mutation && (response.ok || code === 'APPLICATION_OPERATION_UNCONFIRMED'));
+ if (!response.ok || code !== 'OK') {
+  let details:{dependencies:string[]}|undefined;
+  const id='[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}';
+  const deletion=method==='POST'&&new RegExp(`^applications/${id}(?:/(?:directories|tables|forms)/${id})?/deletion$`).test(path);
+  const candidate=envelope?.data as unknown;
+  if(deletion&&response.status===409&&code==='APPLICATION_STRUCTURE_NOT_EMPTY'&&candidate&&typeof candidate==='object'&&!Array.isArray(candidate)&&Object.keys(candidate).length===1&&Object.hasOwn(candidate,'dependencies')){
+   const dependencies=(candidate as {dependencies:unknown}).dependencies;
+   const allowed=['directories','tables','forms','permission_groups','workflows','drafts','pending_commands','grants','records'];
+   if(Array.isArray(dependencies)&&dependencies.length>0&&dependencies.length<=8&&dependencies.every(value=>typeof value==='string'&&allowed.includes(value))&&new Set(dependencies).size===dependencies.length)details={dependencies:[...dependencies]};
+  }
+  throw new ApplicationError(response.status, code, mutation && (response.ok || code === 'APPLICATION_OPERATION_UNCONFIRMED'),details);
+ }
  if (expectedStatus !== undefined && response.status !== expectedStatus) throw new ApplicationError(response.status, 'APPLICATION_OPERATION_UNCONFIRMED', mutation);
  if (!envelope || !Object.hasOwn(envelope, 'data')) throw new ApplicationError(response.status, 'APPLICATION_OPERATION_UNCONFIRMED', mutation);
  return { data: envelope.data as T, meta: envelope.meta ?? null, location: response.headers.get('Location'), ...(withStatus?{httpStatus:response.status}:{}) };

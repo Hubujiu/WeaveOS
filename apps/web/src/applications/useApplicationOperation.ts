@@ -1,4 +1,4 @@
-import {validStructureDeletionRequest,validStructureDeletionReceipt} from './forms/structureDeletion';
+import {validStructureDeletionRequest,validStructureDeletionReceipt,validStructureDeletionDependencies} from './forms/structureDeletion';
 import {validStructureCopyRequest,type StructureCopyPreflightRequest} from './templates/copyRequest';
 import {validStructureCopyReceipt,type StructureCopyReceipt} from './templates/copyReceipt';
 import {validTemplateImportRequest} from './templates/importRequest';
@@ -22,7 +22,7 @@ import {validRoundStartRequest,validRoundStartReceipt,validRoundReworkRequest} f
 import {validManualStartRequest,validManualStartReceipt} from './workflows/manualStartContract';
 import { validInstanceActionRequest } from './workflows/lifecycleContract';
 
-type State = { phase: 'idle' | 'preflight' | 'pending' | 'accepted' | 'error' | 'unconfirmed'; message: string; packet: ApplicationPacket | null; errorCode?: string };
+type State = { phase: 'idle' | 'preflight' | 'pending' | 'accepted' | 'error' | 'unconfirmed'; message: string; packet: ApplicationPacket | null; errorCode?: string; errorDetails?: {dependencies:string[]} };
 
 export type ApplicationMutationRequest = {
  path: string;
@@ -245,7 +245,7 @@ function useOperation<T>(actorId: string, confirmed: (result: T | undefined) => 
    const reason = cause instanceof Error ? cause.message : '服务暂时不可用，请稍后重试';
    const message = unknown && !(cause instanceof ApplicationError && cause.unconfirmed)
     ? reason + '。操作结果仍未确认，请稍后核查或使用同一操作重试。' : reason;
-   setState({ phase: unknown ? 'unconfirmed' : 'error', packet, message, ...(unknown || !(cause instanceof ApplicationError) ? {} : { errorCode: cause.code }) });
+   setState({ phase: unknown ? 'unconfirmed' : 'error', packet, message, ...(unknown || !(cause instanceof ApplicationError) ? {} : { errorCode: cause.code }), ...(!unknown&&cause instanceof ApplicationError&&packet.resource?.kind==='structure-deletion'&&validStructureDeletionDependencies(cause.details,packet.resource.resourceKind)?{errorDetails:cause.details}:{}) });
    if (!unknown && cause instanceof ApplicationError && cause.status === 409 && cause.code === 'APPLICATION_POLICY_CONFLICT') onDefinitePolicyConflict?.();
   } finally { unregister(); if (token === lifecycle.current) inFlight.current = false; }
  };
