@@ -19,10 +19,15 @@ function setup(t,reply,action='return'){
  t.mock.method(globalThis,'fetch',async(url,init)=>{if(url==='/api/v1/sessions/current')return response({id:actor});calls.push({url,init,body:init.body?JSON.parse(init.body):undefined});return reply(calls.at(-1),calls);});
  const hook=useApplicationOperation({actorId:actor,scope:'reason-operation',resource,confirmed:v=>confirmed.push(v),unauthorized:()=>{},identityMismatch:()=>{}});
  const request={resource,path:`applications/${id(1)}/forms/${id(2)}/records/${id(3)}/workflow-instances/${id(4)}/actions`,method:'POST',expectedStatus:202,body:{action,basisToken:'original-basis',...(action==='return'?{targetNodeId:id(5),reason:'  原因\n🦊  '}:{})}};
- return {hook,request,calls,confirmed};
+ return {hook,request,calls,confirmed,actor};
 }
 const receipt=(c,instanceState='active')=>({operationId:c.body.operationId,commandId:id(10),instanceId:id(4),status:'success',instanceState,sequence:4});
 test('P25 shared return confirms actual active execution receipt',async t=>{const x=setup(t,c=>response(receipt(c)));x.hook.start(x.request);await flush();assert.equal(x.calls.length,1);assert.equal(x.confirmed.length,1);assert.equal(x.confirmed[0].instanceState,'active');});
 test('P25 shared return cannot confirm a withdrawal receipt',async t=>{const x=setup(t,c=>response(receipt(c,'withdrawn')));x.hook.start(x.request);await flush();assert.equal(x.confirmed.length,0);assert.equal(x.hook.getPendingStatus(),'unknown');});
 test('P25 unknown return retries immutable target reason basis and operation key',async t=>{const x=setup(t,(c,calls)=>calls.length===1?response(null,503):response(receipt(c)));x.hook.start(x.request);await flush();const original=structuredClone(x.calls[0].body);x.request.body.reason='changed';x.request.body.targetNodeId=id(99);x.request.body.basisToken='changed';x.hook.retry();await flush();assert.equal(x.calls.length,2);assert.deepEqual(x.calls[1].body,original);assert.equal(x.confirmed.length,1);});
 test('P25 shared withdrawal still requires withdrawn execution receipt',async t=>{const x=setup(t,c=>response(receipt(c,'withdrawn')),'withdraw');x.hook.start(x.request);await flush();assert.equal(x.confirmed.length,1);});
+
+test('P25 remount restores unconfirmed original return and queries it without another write',async t=>{
+ let original;const x=setup(t,c=>{if(c.init.method==='POST'){original=c;return new Response(JSON.stringify({code:'OK',data:{operationId:c.body.operationId,commandId:id(10),instanceId:id(4),status:'pending'},meta:null}),{status:202,headers:{Location:'/api/v1/application-workflow-operations/'+c.body.operationId}});}return response(receipt(original));});x.hook.start(x.request);await flush();assert.equal(getState().phase,'accepted');
+ const restored=useApplicationOperation({actorId:x.actor,scope:'reason-operation',resource:x.request.resource,confirmed:v=>x.confirmed.push(v),unauthorized:()=>{},identityMismatch:()=>{}});assert.equal(restored.phase,'unconfirmed');assert.deepEqual(restored.packet.body,original.body);restored.query();await flush();assert.equal(x.calls.filter(c=>c.init.method==='POST').length,1);assert.equal(x.confirmed.length,1);
+});
