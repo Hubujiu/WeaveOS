@@ -161,7 +161,7 @@ func NormalizeManifest(in Manifest) (Manifest, error) {
 		}
 		g := flowgraph.Graph{Version: w.Graph.Version, Nodes: []flowgraph.Node{}, Edges: []flowgraph.Edge{}}
 		for _, n := range w.Graph.Nodes {
-			node := flowgraph.Node{ID: n.ID, Kind: n.Kind, Condition: n.Condition}
+			node := flowgraph.Node{Name: n.Name, ID: n.ID, Kind: n.Kind, Condition: n.Condition}
 			if n.Approval != nil {
 				node.Approval = &flowgraph.Approval{Mode: n.Approval.Mode, AssigneeIDs: n.Approval.AssigneeIDs, EditableFieldIDs: n.Approval.EditableFieldIDs}
 			}

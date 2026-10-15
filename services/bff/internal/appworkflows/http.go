@@ -58,6 +58,7 @@ type workflowGraph struct {
 }
 
 type workflowNode struct {
+	Name      string            `json:"name,omitempty"`
 	ID        string            `json:"id"`
 	Kind      string            `json:"kind"`
 	Approval  *workflowApproval `json:"approval,omitempty"`
@@ -290,13 +291,20 @@ func decodeGraph(raw []byte) (flowgraph.Graph, error) {
 		if !ok {
 			return flowgraph.Graph{}, errInvalid
 		}
-		nodeObject, e := exactObject(rawNodes[i], fields, nil)
+		nodeObject, e := exactObject(rawNodes[i], fields, []string{"name"})
 		if e != nil {
 			return flowgraph.Graph{}, e
 		}
+		name := ""
+		if rawName, exists := nodeObject["name"]; exists {
+			name, e = flowgraph.DecodeNodeNameJSON(rawName)
+			if e != nil {
+				return flowgraph.Graph{}, errInvalid
+			}
+		}
 		switch node.Kind {
 		case "start", "end":
-			nodes[i] = flowgraph.Node{ID: node.ID, Kind: node.Kind}
+			nodes[i] = flowgraph.Node{Name: name, ID: node.ID, Kind: node.Kind}
 		case "approval":
 			_, e := exactObject(nodeObject["approval"], []string{"mode", "assigneeIds", "editableFieldIds"}, nil)
 			if e != nil {
@@ -311,12 +319,12 @@ func decodeGraph(raw []byte) (flowgraph.Graph, error) {
 					return flowgraph.Graph{}, errInvalid
 				}
 			}
-			nodes[i] = flowgraph.Node{ID: node.ID, Kind: node.Kind, Approval: &flowgraph.Approval{Mode: a.Mode, AssigneeIDs: a.AssigneeIDs, EditableFieldIDs: a.EditableFieldIDs}}
+			nodes[i] = flowgraph.Node{Name: name, ID: node.ID, Kind: node.Kind, Approval: &flowgraph.Approval{Mode: a.Mode, AssigneeIDs: a.AssigneeIDs, EditableFieldIDs: a.EditableFieldIDs}}
 		case "condition":
 			if len(bytes.TrimSpace(nodeObject["condition"])) == 0 {
 				return flowgraph.Graph{}, errInvalid
 			}
-			nodes[i] = flowgraph.Node{ID: node.ID, Kind: node.Kind, Condition: nodeObject["condition"]}
+			nodes[i] = flowgraph.Node{Name: name, ID: node.ID, Kind: node.Kind, Condition: nodeObject["condition"]}
 		}
 	}
 	edges := make([]flowgraph.Edge, len(graph.Edges))
@@ -389,7 +397,7 @@ func decodeLifecycle(w http.ResponseWriter, r *http.Request) (lifecycleRequest, 
 func toGraphDTO(graph flowgraph.Graph) workflowGraph {
 	out := workflowGraph{Version: graph.Version, Nodes: make([]workflowNode, len(graph.Nodes)), Edges: make([]workflowEdge, len(graph.Edges))}
 	for i, node := range graph.Nodes {
-		out.Nodes[i] = workflowNode{ID: node.ID, Kind: node.Kind}
+		out.Nodes[i] = workflowNode{Name: node.Name, ID: node.ID, Kind: node.Kind}
 		if node.Approval != nil {
 			out.Nodes[i].Approval = &workflowApproval{Mode: node.Approval.Mode, AssigneeIDs: node.Approval.AssigneeIDs, EditableFieldIDs: node.Approval.EditableFieldIDs}
 		}

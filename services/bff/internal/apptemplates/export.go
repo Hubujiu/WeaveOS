@@ -20,7 +20,7 @@ type Service struct{ Pool *pgxpool.Pool }
 func fromGraph(g flowgraph.Graph) Graph {
 	out := Graph{Version: g.Version, Nodes: []Node{}, Edges: []Edge{}}
 	for _, node := range g.Nodes {
-		n := Node{ID: node.ID, Kind: node.Kind, Condition: node.Condition}
+		n := Node{Name: node.Name, ID: node.ID, Kind: node.Kind, Condition: node.Condition}
 		// The persisted internal graph encodes absent RawMessage as JSON null.
 		// Public graph configuration represents absence by an omitted condition.
 		if bytes.Equal(bytes.TrimSpace(n.Condition), []byte("null")) {
