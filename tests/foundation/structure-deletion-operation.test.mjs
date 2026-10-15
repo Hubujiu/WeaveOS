@@ -39,3 +39,9 @@ for(const mode of ['wrong-version','wrong-resource','extra-values','location','2
 test('P24 identity change before deletion sends zero writes',async t=>{
  const x=setup(t,()=>{throw Error('must not send')});x.setActor(id(99));start(x);await flush();assert.equal(x.calls.length,0);assert.equal(x.identity.length,1);
 });
+test('P24 definite dependency refusal exposes only the bounded current resource kinds',async t=>{
+ const x=setup(t,()=>new Response(JSON.stringify({code:'APPLICATION_STRUCTURE_NOT_EMPTY',data:{dependencies:['workflows','drafts']}}),{status:409}));start(x);await flush();assert.equal(getState().phase,'error');assert.deepEqual(getState().errorDetails,{dependencies:['workflows','drafts']});assert.equal(x.confirmed.length,0);assert.equal(x.hook.getPendingStatus(),null);
+});
+for(const [name,status,details]of [['extra',409,{dependencies:['workflows'],private:'secret-value'}],['wrong-kind',409,{dependencies:['records']}],['unknown',503,{dependencies:['workflows']}]])test('P24 dependency error suppresses '+name+' details',async t=>{
+ const x=setup(t,()=>new Response(JSON.stringify({code:'APPLICATION_STRUCTURE_NOT_EMPTY',data:details}),{status}));start(x);await flush();assert.equal(getState().errorDetails,undefined);assert.equal(getState().message.includes('secret-value'),false);assert.equal(x.confirmed.length,0);
+});
