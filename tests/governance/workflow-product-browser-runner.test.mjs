@@ -13,7 +13,7 @@ test('P23 browser uses only owned network, locked image, read-only inputs and pr
  assert.ok(args.includes('/repo:/repo:ro'));
  assert.ok(args.includes('/private:/private:ro'));
  assert.ok(args.includes('/output:/output:rw'));
- assert.ok(args.includes('mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27'));
+ assert.ok(args.includes('mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf'));
  assert.ok(args.includes('WEAVEOS_PRODUCT_BROWSER_FIXTURE=/private/chromium.request.json'));
  assert.ok(args.includes('WEAVEOS_PRODUCT_BROWSER_REPORT=/output/chromium.json'));
  assert.ok(args.includes('WEAVEOS_PRODUCT_HEAD='+head));

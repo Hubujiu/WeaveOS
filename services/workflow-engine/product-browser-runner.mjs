@@ -9,7 +9,7 @@ export function browserCommand({root,output,exchange,runner,uid,gid,head,browser
   '-v',`${root}:${root}:ro`,'-v',`${exchange}:${exchange}:ro`,'-v',`${output}:${output}:rw`,'-w',root,
   '-e',`WEAVEOS_PRODUCT_BROWSER_FIXTURE=${exchange}/${browser}.request.json`,'-e',`WEAVEOS_PRODUCT_BROWSER_REPORT=${output}/${browser}.json`,
   '-e',`WEAVEOS_PRODUCT_BROWSER_OUTPUT=${output}/${browser}-results`,'-e',`WEAVEOS_PRODUCT_HEAD=${head}`,'-e','HOME=/tmp',
-  '--entrypoint','node','mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27',
+  '--entrypoint','node','mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf',
   'node_modules/@playwright/test/cli.js','test','--config',journey==='definition'?'services/workflow-engine/playwright.definition.config.ts':'services/workflow-engine/playwright.product.config.ts',`--project=${browser}`];
 }
 export async function runBrowserJourneys({start,ready,browser,signal,finish}){

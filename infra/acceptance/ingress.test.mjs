@@ -61,7 +61,7 @@ test('real upstream TCP reset produces identifiable non-cacheable 502',async()=>
  assert.ok(tls,'owned test TLS mount required');
  const containers=[];docker('network','create',group);
  try{
-  docker('run','-d','--name',group+'-upstream','--network',group,'--network-alias','bff','mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27','node','-e',"require('net').createServer(socket=>{console.log('reset');socket.destroy()}).listen(8080,'0.0.0.0',()=>console.log('ready'))");containers.push(group+'-upstream');
+  docker('run','-d','--name',group+'-upstream','--network',group,'--network-alias','bff','mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf','node','-e',"require('net').createServer(socket=>{console.log('reset');socket.destroy()}).listen(8080,'0.0.0.0',()=>console.log('ready'))");containers.push(group+'-upstream');
   for(let i=0;i<30&&!docker('logs',group+'-upstream').includes('ready');i++)await new Promise(r=>setTimeout(r,100));
   assert.ok(docker('logs',group+'-upstream').includes('ready'));
   docker('run','-d','--name',group+'-nginx','--network',group,'--mount',`type=bind,src=${tls},dst=/etc/nginx/tls,readonly`,'--mount',`type=bind,src=${resolve('infra/acceptance/nginx.conf')},dst=/etc/nginx/nginx.conf,readonly`,'nginx:1.30.5@sha256:b972f831f200b19ef0767938224f9711e74cd783718738cd7405d5cabf75c442');containers.push(group+'-nginx');
