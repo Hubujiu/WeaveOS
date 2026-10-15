@@ -1,0 +1,36 @@
+import {test,expect,type Page} from '@playwright/test';
+// V073 exact non-cascading contract; Figma530:10090/10361/10632/10903 actual read.
+const id=(n:number)=>'67676767-6767-4676-8676-'+String(n).padStart(12,'0');
+const actor={id:id(1),account:'owner'},appId=id(2),directoryId=id(3),tableId=id(4),viewId=id(5);
+type Kind='application'|'directory'|'table'|'form';
+const specs={application:{id:appId,label:'删除应用',title:'删除应用？',version:7,path:`applications/${appId}/deletion`},directory:{id:directoryId,label:'删除目录 资料',title:'删除目录？',version:0,path:`applications/${appId}/directories/${directoryId}/deletion`},table:{id:tableId,label:'删除数据表 业务表',title:'删除数据表？',version:3,path:`applications/${appId}/tables/${tableId}/deletion`},form:{id:viewId,label:'删除表单 申请',title:'删除表单视图？',version:2,path:`applications/${appId}/forms/${viewId}/deletion`}};
+async function setup(page:Page,kind:Kind,options:{member?:boolean;blocked?:boolean;unknown?:boolean}={}){
+ const calls:{path:string;method:string;body:any}[]=[];let removed=false,posts=0;
+ const app={id:appId,name:'业务应用',ownerUserId:options.member?id(99):actor.id,policyRevision:7};
+ await page.route('**/api/v1/**',async r=>{
+  const req=r.request(),path=new URL(req.url()).pathname.slice('/api/v1/'.length),method=req.method(),body=req.postData()?req.postDataJSON():null;calls.push({path,method,body});let data:unknown;
+  if(path==='sessions/current')data=actor;
+  else if(path==='me/access')data={user:actor,bootstrapAdmin:false,personnelManage:false,identities:[],permissions:[],applications:[]};
+  else if(path==='applications')data={items:removed&&kind==='application'?[]:[app]};
+  else if(path==='applications/'+appId){if(removed&&kind==='application')return r.fulfill({status:404,json:{code:'APPLICATION_NOT_FOUND',data:null}});data=app;}
+  else if(path==='applications/'+appId+'/access')data={appId,canEnter:true,policyRevision:7,menus:[{resourceKind:'application',resourceId:appId}]};
+  else if(path==='applications/'+appId+'/structure')data={appId,structureVersion:removed?5:4,directories:kind==='directory'&&!removed?[{id:directoryId,appId,name:'资料',parentId:null,position:0}]:[],tables:(kind==='table'&&!removed||kind==='form')?[{id:tableId,appId,name:'业务表',directoryId:null,position:0,schemaVersion:3,schemaReady:true}]:[],forms:kind==='form'&&!removed?[{id:viewId,appId,tableId,name:'申请',directoryId:null,position:0,viewVersion:2}]:[],capabilities:{canManageDefinition:!options.member}};
+  else if(path===specs[kind].path){
+   posts++;if(options.blocked)return r.fulfill({status:409,json:{code:'APPLICATION_STRUCTURE_NOT_EMPTY',data:{dependencies:['records']}}});if(options.unknown&&posts===1)return r.fulfill({status:503,json:{code:'APPLICATION_OPERATION_UNCONFIRMED',data:{operationId:body.operationId}}});removed=true;data={operationId:body.operationId,appId,resourceKind:kind,id:specs[kind].id,structureVersion:5,deleted:true};
+  }else return r.fulfill({status:404,json:{code:'API_NOT_FOUND',data:null}});
+  return r.fulfill({json:{code:'OK',data,meta:null}});
+ });return calls;
+}
+async function open(page:Page){await page.goto('/app/applications/'+appId);await expect(page.getByRole('region',{name:'目录与视图管理',exact:true})).toBeVisible();}
+for(const kind of ['application','directory','table','form'] as const)test('Root '+kind+' deletion cancels without writes then sends original scoped versions only',async({page})=>{
+ const calls=await setup(page,kind);await open(page);const trigger=page.getByRole('button',{name:specs[kind].label,exact:true});await trigger.click();const dialog=page.getByRole('dialog',{name:specs[kind].title,exact:true});await expect(dialog).toBeVisible();await dialog.getByRole('button',{name:'取消',exact:true}).click();expect(calls.filter(c=>c.method!=='GET')).toEqual([]);await expect(trigger).toBeFocused();await trigger.click();await dialog.getByRole('button',{name:'确认删除',exact:true}).click();await expect.poll(()=>calls.filter(c=>c.method!=='GET').length).toBe(1);expect(calls.filter(c=>c.method!=='GET')[0]).toEqual({path:specs[kind].path,method:'POST',body:{operationId:expect.any(String),expectedStructureVersion:4,expectedResourceVersion:specs[kind].version}});await expect(dialog).toHaveCount(0);
+});
+test('Root ordinary member receives no structure deletion controls',async({page})=>{
+ const calls=await setup(page,'form',{member:true});await open(page);await expect(page.getByRole('button',{name:/^删除(应用|目录|数据表|表单)/})).toHaveCount(0);expect(calls.filter(c=>c.method!=='GET')).toEqual([]);
+});
+test('Root nonempty table deletion shows bounded dependency without cascade or forced retry',async({page})=>{
+ const calls=await setup(page,'table',{blocked:true});await open(page);await page.getByRole('button',{name:specs.table.label,exact:true}).click();const dialog=page.getByRole('dialog',{name:specs.table.title,exact:true});await dialog.getByRole('button',{name:'确认删除',exact:true}).click();await expect(dialog.getByRole('alert')).toContainText('记录');await expect(page.getByRole('treeitem',{name:'业务表',exact:true})).toBeVisible();await expect(dialog.getByRole('button',{name:/强制|级联/})).toHaveCount(0);expect(calls.filter(c=>c.method!=='GET')).toHaveLength(1);
+});
+test('Root unknown form deletion retries exactly its original request without touching shared table',async({page})=>{
+ const calls=await setup(page,'form',{unknown:true});await open(page);await page.getByRole('button',{name:specs.form.label,exact:true}).click();const dialog=page.getByRole('dialog',{name:specs.form.title,exact:true});await expect(dialog).toContainText('共享表');await dialog.getByRole('button',{name:'确认删除',exact:true}).click();await expect(dialog.getByRole('alert')).toContainText('未确认');await dialog.getByRole('button',{name:'重试原操作',exact:true}).click();await expect.poll(()=>calls.filter(c=>c.method!=='GET').length).toBe(2);const writes=calls.filter(c=>c.method!=='GET');expect(writes[1]).toEqual(writes[0]);expect(writes.every(c=>c.path===specs.form.path)).toBe(true);
+});
