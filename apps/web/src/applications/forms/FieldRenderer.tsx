@@ -111,10 +111,11 @@ export function ReferenceSelector({field,value,onChange,readOnly,referenceOption
       {referenceOptions?.map(option=><option key={option.id} value={option.id}>{option.label}</option>)}
     </select>;
   }
-  return <div className="forms-reference-selector">
-    {currentDisplay}
+  return <div className={'forms-reference-selector'+(purpose==='record-filter'?' record-filter-reference':'')}>
+    {(purpose!=='record-filter'||disabled||!loadReferenceCandidates)&&currentDisplay}
     {!disabled&&loadReferenceCandidates&&<button type="button" aria-expanded={open}
-      aria-controls={`${inputId}-candidates`} onClick={()=>setOpen(previous=>!previous)}>选择{referenceName}</button>}
+      aria-label={purpose==='record-filter'?'选择'+referenceName:undefined}
+      aria-controls={`${inputId}-candidates`} onClick={()=>setOpen(previous=>!previous)}>{purpose==='record-filter'?(selectedId?currentDisplay:<span className="record-filter-reference-placeholder">请选择{referenceName}</span>):'选择'+referenceName}</button>}
     {open&&!disabled&&loadReferenceCandidates&&<div id={`${inputId}-candidates`} className="forms-reference-candidates">
       <label htmlFor={`${inputId}-search`}>搜索{referenceName}</label>
       <input id={`${inputId}-search`} type="search" value={query}
