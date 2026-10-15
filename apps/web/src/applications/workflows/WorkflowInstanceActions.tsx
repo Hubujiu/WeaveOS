@@ -17,6 +17,12 @@ export function WorkflowInstanceActions({actorId,location,name,onClose,onUnautho
  const [returning,setReturning]=useState(false),[target,setTarget]=useState(''),[reason,setReason]=useState('');
  const handlers=useRef({onUnauthorized,onIdentityMismatch});handlers.current={onUnauthorized,onIdentityMismatch};
  const operation=useApplicationOperation<WorkflowOperation>({actorId,scope,resource,confirmed:value=>{if(value)setResult(value);},unauthorized:onUnauthorized,identityMismatch:onIdentityMismatch});
+ useEffect(()=>{
+  const body=operation.packet?.body as {action?:string;targetNodeId?:string;reason?:string}|undefined;
+  if(body?.action==='return'){
+   setReturning(true);setTarget(body.targetNodeId??'');setReason(body.reason??'');
+  }
+ },[operation.packet]);
  const busy=operation.phase==='preflight'||operation.phase==='pending',unknown=operation.phase==='unconfirmed',accepted=operation.phase==='accepted';
  const blocked=busy||unknown||accepted||!!result;
  const stale=['WORKFLOW_BASIS_EXPIRED','WORKFLOW_BASIS_CHANGED','WORKFLOW_TASK_CHANGED','APPLICATION_POLICY_CONFLICT','APPLICATION_SCHEMA_NOT_READY'].includes(operation.errorCode??'');

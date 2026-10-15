@@ -1,3 +1,5 @@
+import {DeletedRecords} from './records/DeletedRecords';
+import {RecordLifecycleDialog,type RecordLifecycleSelection} from './records/RecordLifecycleDialog';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {applicationApi,applicationApiEnvelope,ApplicationError,type ApplicationEnvelope} from './api';
 import type {RegisterLeaveGuard} from './forms';
@@ -22,17 +24,18 @@ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type Editor={identity:RecordEditorIdentity;view:RuntimeView;record?:RecordItem;draft?:Draft;draftContext?:DraftEditorContext;recoveredDraft?:ApplicationPacket;mode:'create'|'edit'|'read';queryVersion?:string;reworkInstanceId?:string};
 type PendingRead={identity:RecordEditorIdentity;view:RuntimeView|null;recordId:UUID;queryVersion?:string;mode:'read'|'edit';confirmedWrite:boolean;recoveredDraft?:ApplicationPacket};
 
-export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMismatch,onDirtyChange,registerLeaveGuard,requestSectionLeave}:{
- actorId:string;appId:string;viewId:string;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onDirtyChange:(dirty:boolean)=>void;
+export function RecordRoute({actorId,appId,viewId,canManage=false,onUnauthorized,onIdentityMismatch,onDirtyChange,registerLeaveGuard,requestSectionLeave}:{
+ actorId:string;appId:string;viewId:string;canManage?:boolean;onUnauthorized:()=>void;onIdentityMismatch:()=>void;onDirtyChange:(dirty:boolean)=>void;
  registerLeaveGuard:RegisterLeaveGuard;requestSectionLeave:(action:()=>void)=>void;
 }){
+ const [deletedOpen,setDeletedOpen]=useState(false),[lifecycle,setLifecycle]=useState<RecordLifecycleSelection|null>(null),[lifecycleDirty,setLifecycleDirty]=useState(false);
  const [createActionHost,setCreateActionHost]=useState<HTMLDivElement|null>(null),[historyRecord,setHistoryRecord]=useState<string|null>(null);
  const historyTrigger=useRef<HTMLButtonElement|null>(null);
  const closeHistory=()=>{const target=historyTrigger.current;setHistoryRecord(null);if(target)requestAnimationFrame(()=>{if(target.isConnected)target.focus();});};
  const [editor,setEditor]=useState<Editor|null>(null),[pendingRead,setPendingRead]=useState<PendingRead|null>(null);
  const [draftsView,setDraftsView]=useState<RuntimeView|null>(null),[draftListDirty,setDraftListDirty]=useState(false);
  const [recordDirty,setRecordDirty]=useState(false),[workflowDirty,setWorkflowDirty]=useState(false),[presetDirty,setPresetDirty]=useState(false);
- useEffect(()=>{onDirtyChange(recordDirty||workflowDirty||presetDirty||draftListDirty);return()=>onDirtyChange(false);},[recordDirty,workflowDirty,presetDirty,draftListDirty,onDirtyChange]);
+ useEffect(()=>{onDirtyChange(recordDirty||workflowDirty||presetDirty||draftListDirty||lifecycleDirty);return()=>onDirtyChange(false);},[recordDirty,workflowDirty,presetDirty,draftListDirty,lifecycleDirty,onDirtyChange]);
  const [reworkSaved,setReworkSaved]=useState(false);
  const [draftSaved,setDraftSaved]=useState(false),[pendingDraftRead,setPendingDraftRead]=useState<{id:string;confirmed:boolean;recoveredDraft?:ApplicationPacket}|null>(null);
  const [readError,setReadError]=useState(''),[saved,setSaved]=useState(false),[workspaceRefresh,setWorkspaceRefresh]=useState(0);
@@ -202,7 +205,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
  };
  const openFlowAction=(action:()=>void)=>{const current=editor;if(!current)return;requestSectionLeave(()=>{setEditor({...current,mode:'read',reworkInstanceId:undefined});setRecordDirty(false);action();});};
  const openRework=(instanceId:string)=>{if(editor?.record)readRework(instanceId,editor.identity,editor.record.id);};
- const hasPendingFlow=workflowDirty||scopedUnconfirmed(actorId).some(packet=>packet.resource?.kind==='instance-action'&&packet.resource.appId===appId&&packet.resource.viewId===viewId&&packet.resource.id===editor?.record?.id);
+ const hasPendingFlow=workflowDirty||scopedUnconfirmed(actorId).some(packet=>(packet.resource?.kind==='instance-action'||packet.resource?.kind==='record-lifecycle')&&packet.resource.appId===appId&&packet.resource.viewId===viewId&&packet.resource.id===editor?.record?.id);
  const canRetryRead=!!pendingRead&&!!readError;
  const showingDetail=!!pendingDraftRead||!!pendingRead||!!editor;
  const historyAllowed=!!editor?.record&&!editor.draft&&scopeAllows(editor.view.capabilities.read,actorId,editor.record.createdBy)&&scopeAllows(editor.view.capabilities.history,actorId,editor.record.createdBy);
@@ -218,7 +221,10 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
    {editor?.mode==='create'&&<section className="app-surface record-workflow-card" aria-label="关联流程"><h2>关联流程</h2><p>记录保存后可查看关联流程</p></section>}
    {editor?.record&&!editor.draft&&<RecordWorkflows historyAction={historyAllowed?<section className="record-history-entry" aria-label="最近变更"><h2>最近变更</h2><button type="button" className="admin-button" onClick={event=>{historyTrigger.current=event.currentTarget;setHistoryRecord(editor.record!.id);}}>查看历史</button></section>:undefined} onRework={openRework} actorId={actorId} appId={appId} viewId={viewId} recordId={editor.record.id} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onOpenAction={openFlowAction} onDirtyChange={setWorkflowDirty}/>} </div>
  </>;
+ if(deletedOpen&&canManage)return <DeletedRecords actorId={actorId} appId={appId} viewId={viewId} onBack={()=>requestSectionLeave(()=>{setDeletedOpen(false);setWorkspaceRefresh(v=>v+1);})} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={setLifecycleDirty} registerLeaveGuard={registerLeaveGuard}/>;
  return <section className="record-route" aria-label="记录路由">
+  {canManage&&!showingDetail&&<button type="button" className="admin-button" onClick={()=>requestSectionLeave(()=>setDeletedOpen(true))}>已删除记录</button>}
+  {lifecycle&&canManage&&<RecordLifecycleDialog actorId={actorId} appId={appId} viewId={viewId} selection={lifecycle} onClose={()=>setLifecycle(null)} onConfirmed={()=>{setLifecycle(null);closeEditor();setWorkspaceRefresh(v=>v+1);}} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onDirtyChange={setLifecycleDirty} registerLeaveGuard={registerLeaveGuard}/>}
   {draftSaved&&<p className="record-saved" role="status">草稿已保存</p>}
   {saved&&<p className="record-saved" role="status">{reworkSaved?"返工修改已保存":"记录已保存"}</p>}
   <div hidden={showingDetail} className="record-list-host"><RecordWorkspace requestSectionLeave={requestSectionLeave} registerLeaveGuard={registerLeaveGuard} onDirtyChange={setPresetDirty} key={`${actorId}:${appId}:${viewId}:${workspaceRefresh}`} actorId={actorId} appId={appId} viewId={viewId}
@@ -226,7 +232,7 @@ export function RecordRoute({actorId,appId,viewId,onUnauthorized,onIdentityMisma
   {historyAllowed&&historyRecord===editor?.record?.id&&<RecordHistoryPanel actorId={actorId} appId={appId} viewId={viewId} recordId={historyRecord!} onClose={closeHistory} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch}/>}
   {draftsView&&<DraftsPanel actorId={actorId} view={draftsView} onOpen={id=>{setDraftsView(null);setDraftSaved(false);setSaved(false);void readDraft(id,false);}} onClose={()=>setDraftsView(null)} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} registerLeaveGuard={registerLeaveGuard} requestSectionLeave={requestSectionLeave} onDirtyChange={setDraftListDirty}/>}
   {showingDetail?<section className="record-detail-page" aria-label={editor?.mode==='create'?"新建记录":"记录详情"}>
-   <div className="app-page-heading"><h1>{editor?.mode==='create'?"新建记录":"记录详情"}</h1><div className="record-detail-actions">{editor?.mode==='create'&&<div ref={setCreateActionHost}/>}<button type="button" className="admin-button" aria-label="关闭" onClick={guardedClose}>返回</button>{editor?.mode==='read'&&editAllowed(editor)&&<button type="button" className="admin-button primary" disabled={hasPendingFlow} onClick={()=>{setSaved(false);setReworkSaved(false);setEditor({...editor,mode:'edit',queryVersion:editor.queryVersion});}}>编辑记录</button>}</div></div>
+   <div className="app-page-heading"><h1>{editor?.mode==='create'?"新建记录":"记录详情"}</h1><div className="record-detail-actions">{editor?.mode==='create'&&<div ref={setCreateActionHost}/>}<button type="button" className="admin-button" aria-label="关闭" onClick={guardedClose}>返回</button>{canManage&&editor?.mode==='read'&&editor.record&&!editor.draft&&<button type="button" className="admin-button" disabled={hasPendingFlow||lifecycleDirty} onClick={()=>requestSectionLeave(()=>setLifecycle({id:editor.record!.id,recordVersion:editor.record!.recordVersion,schemaVersion:editor.record!.schemaVersion,action:'deletion'}))}>删除记录</button>}{editor?.mode==='read'&&editAllowed(editor)&&<button type="button" className="admin-button primary" disabled={hasPendingFlow} onClick={()=>{setSaved(false);setReworkSaved(false);setEditor({...editor,mode:'edit',queryVersion:editor.queryVersion});}}>编辑记录</button>}</div></div>
    {editorContent}
   </section>:null}
  </section>;

@@ -10,6 +10,7 @@ export type LeaveScope=
   | (AppScope&{kind:'workflow-definition';viewId:string;flowId:string})
   | (AppScope&{kind:'preset';viewId:string})
   | (AppScope&{kind:'manual-start';viewId:string;recordId:string})
+  | (AppScope&{kind:'record-lifecycle';viewId:string;recordId:string})
   | (AppScope&{kind:'workflow-round';viewId:string;recordId:string;instanceId:string})
   | (AppScope&{kind:'workflow-instance';viewId:string;recordId:string;instanceId:string})
   | RecordScope
