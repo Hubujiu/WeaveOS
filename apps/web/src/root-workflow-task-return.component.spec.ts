@@ -25,12 +25,12 @@ async function setup(page:Page,denied=false){
   return r.fulfill({json:{code:'OK',data,meta:null}});
  });return calls;
 }
-async function open(page:Page){await page.goto(route);await expect(page.getByLabel('金额',{exact:true})).toHaveValue('100.00');}
+async function open(page:Page){await page.goto(route);await expect(page.getByLabel('金额',{exact:false})).toHaveValue('100.00');}
 test('Root task return reads current dedicated qualification on demand and submits original target and reason',async({page})=>{
  const calls=await setup(page);await open(page);expect(calls.filter(c=>c.path===instance+'/lifecycle')).toHaveLength(0);await page.getByRole('button',{name:'退回节点',exact:true}).click();const dialog=page.getByRole('dialog',{name:'退回到节点',exact:true});await expect(dialog).toBeVisible();await dialog.getByLabel('目标节点',{exact:true}).selectOption(id(11));const reason='  退回核对 🦊  ';await dialog.getByLabel('退回原因',{exact:false}).fill(reason);await dialog.getByRole('button',{name:'确认退回',exact:true}).click();await expect(dialog).toContainText('退回处理中');const writes=calls.filter(c=>c.method!=='GET');expect(writes).toHaveLength(1);expect(writes[0]).toEqual({path:instance+'/actions',method:'POST',body:{operationId:expect.any(String),action:'return',basisToken:'separate-lifecycle-basis',targetNodeId:id(11),reason}});await dialog.getByRole('button',{name:'核查退回结果',exact:true}).click();await expect(dialog.getByText('已退回',{exact:true})).toBeVisible();expect(calls.filter(c=>c.method!=='GET')).toHaveLength(1);
 });
 test('Root task return never auto-saves or discards local unsaved field changes',async({page})=>{
- const calls=await setup(page);await open(page);await page.getByLabel('金额',{exact:true}).fill('200.00');await page.getByRole('button',{name:'退回节点',exact:true}).click();await expect(page.getByRole('alert')).toContainText('未保存');await expect(page.getByLabel('金额',{exact:true})).toHaveValue('200.00');expect(calls.filter(c=>c.path===instance+'/lifecycle'||c.method!=='GET')).toEqual([]);await expect(page.getByRole('dialog',{name:'退回到节点',exact:true})).toHaveCount(0);
+ const calls=await setup(page);await open(page);await page.getByLabel('金额',{exact:false}).fill('200.00');await page.getByRole('button',{name:'退回节点',exact:true}).click();await expect(page.getByRole('alert')).toContainText('未保存');await expect(page.getByLabel('金额',{exact:false})).toHaveValue('200.00');expect(calls.filter(c=>c.path===instance+'/lifecycle'||c.method!=='GET')).toEqual([]);await expect(page.getByRole('dialog',{name:'退回到节点',exact:true})).toHaveCount(0);
 });
 test('Root task return denied current qualification cannot expose targets or submit',async({page})=>{
  const calls=await setup(page,true);await open(page);await page.getByRole('button',{name:'退回节点',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await expect(page.getByRole('option',{name:'节点 '+id(11),exact:true})).toHaveCount(0);expect(calls.filter(c=>c.method!=='GET')).toEqual([]);
