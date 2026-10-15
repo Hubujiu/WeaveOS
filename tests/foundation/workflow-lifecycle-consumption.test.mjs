@@ -59,3 +59,33 @@ const success={operationId:id(50),commandId:id(51),instanceId:loc.instanceId,sta
 test('withdraw result accepts only actual withdrawn terminal receipt',()=>assert.equal(validWorkflowOperation(success,expected,200,'GET'),true));
 for(const state of ['active','completed','rejected'])test('withdraw result refuses unrelated success '+state,()=>assert.equal(validWorkflowOperation({...success,instanceState:state},expected,200,'GET'),false));
 test('task action result cannot borrow withdrawn success from instance action',()=>assert.equal(validWorkflowOperation(success,{operationId:id(50),instanceId:loc.instanceId},200,'GET'),false));
+// P25 approved original Unicode reason; client admission is not server authorization.
+const originalReason='  凭证\n🦊  ';
+const returnBody={operationId:id(50),action:'return',basisToken:'life-basis',targetNodeId:id(8),reason:originalReason};
+test('P25 return request retains explicit target and original reason in both admission layers',()=>{
+ assert.equal(validWorkflowTransportRequest(actionPath,'POST',returnBody),true);
+ const {operationId,...body}=returnBody;assert.equal(validInstanceActionRequest(resource,{...request,body}),true);
+ for(const reason of ['',null,'\u0085\u3000','a\0b','\ud800','🦊'.repeat(501)]){
+  assert.equal(validWorkflowTransportRequest(actionPath,'POST',{...returnBody,reason}),false);
+  assert.equal(validInstanceActionRequest(resource,{...request,body:{...body,reason}}),false);
+ }
+ assert.equal(returnBody.reason,originalReason);
+});
+test('P25 reject transport preserves optional legacy omission but bounds new reason and forbids agree reason',()=>{
+ const path=actionPath.replace('/actions','/tasks/'+id(9)+'/actions');
+ const b={operationId:id(50),action:'reject',basisToken:'a'.repeat(43),reason:originalReason};
+ assert.equal(validWorkflowTransportRequest(path,'POST',b),true);
+ assert.equal(validWorkflowTransportRequest(path,'POST',{...b,action:'agree'}),false);
+ for(const reason of ['',null,'\u0085','a\0b','\udfff','🦊'.repeat(501)])assert.equal(validWorkflowTransportRequest(path,'POST',{...b,reason}),false);
+ for(const reason of ['🦊'.repeat(500),'\ufeff'])assert.equal(validWorkflowTransportRequest(path,'POST',{...b,reason}),true);
+ const {reason,...legacy}=b;assert.equal(validWorkflowTransportRequest(path,'POST',legacy),true);
+});
+test('P25 return success requires active rather than completed rejected or withdrawn state',()=>{
+ const e={...expected,action:'return'};
+ assert.equal(validWorkflowOperation({...success,instanceState:'active'},e,200,'GET'),true);
+ for(const instanceState of ['withdrawn','completed','rejected'])assert.equal(validWorkflowOperation({...success,instanceState},e,200,'GET'),false);
+});
+test('P25 scoped return admits approved target and reason before assigning operation identity',()=>{
+ const {operationId,...body}=returnBody;
+ assert.equal(validInstanceActionRequest(resource,{...request,body}),true);
+});
