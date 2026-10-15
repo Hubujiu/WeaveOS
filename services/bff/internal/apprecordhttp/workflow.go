@@ -128,7 +128,7 @@ func (s *Service) workflowHTTP(w http.ResponseWriter, r *http.Request, p session
 		s.finish(w, r, p, 200, result, "", true, nil)
 		return true
 	}
-	result, err := s.Records.AcceptWorkflowTask(r.Context(), p, apprecordservice.WorkflowTaskActionRequest{WorkflowTaskRequest: req, OperationID: operation, Action: value[string](body, "action"), BasisToken: value[string](body, "basisToken")}, applications.Metadata{RequestID: m.RequestID, ClientIP: m.ClientIP, UserAgent: r.UserAgent()})
+	result, err := s.Records.AcceptWorkflowTask(r.Context(), p, apprecordservice.WorkflowTaskActionRequest{WorkflowTaskRequest: req, OperationID: operation, Action: value[string](body, "action"), Reason: value[string](body, "reason"), BasisToken: value[string](body, "basisToken")}, applications.Metadata{RequestID: m.RequestID, ClientIP: m.ClientIP, UserAgent: r.UserAgent()})
 	if err != nil {
 		failure(w, r, err, operation)
 		return true

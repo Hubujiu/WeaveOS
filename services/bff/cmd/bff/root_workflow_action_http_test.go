@@ -127,7 +127,11 @@ func (f *rootTaskHTTPFixture) taskPath() string {
 	return f.root() + "/workflow-instances/" + f.instance + "/tasks/" + f.task
 }
 func rootHTTPActionBody(op, action, token string) string {
-	b, _ := json.Marshal(map[string]string{"operationId": op, "action": action, "basisToken": token})
+	body := map[string]string{"operationId": op, "action": action, "basisToken": token}
+	if action == "reject" {
+		body["reason"] = "  合成审批原因\n🦊  "
+	}
+	b, _ := json.Marshal(body)
 	return string(b)
 }
 func rootHTTPResultBytes(result fc.ExecutionResult) []byte {

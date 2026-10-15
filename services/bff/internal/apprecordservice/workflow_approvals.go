@@ -250,6 +250,12 @@ func (s *approvalsStrategy) authorized(ctx context.Context, tx pgx.Tx, candidate
 		r.Outcome != e.Outcome || r.Sequence != e.Sequence || r.ProofID != row.proof || row.at.IsZero() {
 		return false, ErrUnavailable
 	}
+	// Reason is read only after current record/history authorization and ledger validation.
+	if err = tx.QueryRow(ctx, `SELECT ar.reason FROM applications.workflow_execution_events e
+ LEFT JOIN applications.workflow_action_reasons ar ON ar.command_id=e.command_id
+ WHERE e.command_id=$1::uuid`, e.ID).Scan(&item.Event.ActionReason); err != nil {
+		return false, ErrUnavailable
+	}
 	return true, nil
 }
 func (s *approvalsStrategy) Page(_ context.Context, _ pgx.Tx, raw json.RawMessage, page querycontext.Page) ([]WorkflowApprovalsItem, error) {

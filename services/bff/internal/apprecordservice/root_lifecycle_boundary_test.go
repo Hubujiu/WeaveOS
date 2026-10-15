@@ -93,6 +93,7 @@ func TestRootLifecycleDistinctConcurrentActionsRespectRecordFence(t *testing.T) 
 	b := a
 	b.OperationID = recordOperationID(t, f.recordFixture)
 	b.Action = "return"
+	b.Reason = "synthetic return reason"
 	b.TargetNodeID = f.task.NodeID
 	start := make(chan struct{})
 	results := make(chan error, 2)

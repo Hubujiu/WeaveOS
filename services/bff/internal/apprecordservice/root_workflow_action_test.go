@@ -347,6 +347,7 @@ func TestRootWorkflowActionDistinctConcurrentKeysCannotBypassRecordFence(t *test
 	b := a
 	b.OperationID = recordOperationID(t, f.recordFixture)
 	b.Action = "reject"
+	b.Reason = "synthetic rejection reason"
 	start := make(chan struct{})
 	errorsC := make(chan error, 2)
 	for _, req := range []WorkflowTaskActionRequest{a, b} {

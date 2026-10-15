@@ -146,8 +146,9 @@ type historyEventRow struct {
 
 func eventHistoryPage(ctx context.Context, tx pgx.Tx, q WorkflowEventHistoryRequest, table string, afterTime *time.Time, afterID *string) ([]WorkflowEventSummary, error) {
 	rows, err := tx.Query(ctx, `SELECT e.command_id::text,e.instance_id::text,e.flow_id::text,e.view_id::text,e.definition_version,
- e.actor_id::text,e.action,e.outcome,e.sequence,e.schema_version,e.record_version,e.created_at,e.proof_id::text,e.version_id::text,e.task_id::text,e.task_epoch,e.node_id::text,e.target_node_id::text,e.flow_name,e.flow_name_source
+ e.actor_id::text,e.action,e.outcome,e.sequence,e.schema_version,e.record_version,e.created_at,e.proof_id::text,e.version_id::text,e.task_id::text,e.task_epoch,e.node_id::text,e.target_node_id::text,e.flow_name,e.flow_name_source,ar.reason
  FROM applications.workflow_execution_events e
+ LEFT JOIN applications.workflow_action_reasons ar ON ar.command_id=e.command_id
  WHERE e.app_id=$1::uuid AND e.table_id=$2::uuid AND e.record_id=$3::uuid
  AND ($4::timestamptz IS NULL OR (e.created_at,e.command_id)<($4,$5::uuid))
  ORDER BY e.created_at DESC,e.command_id DESC LIMIT $6`, q.AppID, table, q.RecordID, afterTime, afterID, q.PageSize+1)
@@ -159,7 +160,7 @@ func eventHistoryPage(ctx context.Context, tx pgx.Tx, q WorkflowEventHistoryRequ
 	for rows.Next() {
 		var row historyEventRow
 		e := &row.event
-		if err = rows.Scan(&e.ID, &e.InstanceID, &e.FlowID, &row.sourceView, &row.definition, &e.ActorID, &e.Action, &e.Outcome, &e.Sequence, &e.SchemaVersion, &e.RecordVersion, &row.at, &row.proof, &row.version, &row.task, &row.epoch, &e.NodeID, &e.TargetNodeID, &e.FlowName, &e.FlowNameSource); err != nil {
+		if err = rows.Scan(&e.ID, &e.InstanceID, &e.FlowID, &row.sourceView, &row.definition, &e.ActorID, &e.Action, &e.Outcome, &e.Sequence, &e.SchemaVersion, &e.RecordVersion, &row.at, &row.proof, &row.version, &row.task, &row.epoch, &e.NodeID, &e.TargetNodeID, &e.FlowName, &e.FlowNameSource, &e.ActionReason); err != nil {
 			rows.Close()
 			return nil, ErrUnavailable
 		}

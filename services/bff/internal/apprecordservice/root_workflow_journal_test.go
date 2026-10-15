@@ -46,8 +46,8 @@ func TestRootWorkflowJournalNameIsConfirmationSnapshot(t *testing.T) {
 	if err = json.Unmarshal(raw, &fields); err != nil {
 		t.Fatal(err)
 	}
-	if len(fields) != 14 || string(fields["flowName"]) != `"Captured before rename"` || string(fields["flowNameSource"]) != `"captured"` {
-		t.Fatalf("journal must expose exact 14-field original-name DTO: %s", raw)
+	if len(fields) != 15 || string(fields["actionReason"]) != `"fixture rejection reason"` || string(fields["flowName"]) != `"Captured before rename"` || string(fields["flowNameSource"]) != `"captured"` {
+		t.Fatalf("journal must expose exact original-name DTO plus original reason: %s", raw)
 	}
 }
 
