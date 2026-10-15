@@ -30877,8 +30877,31 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 256
+          },
+          "reason": {
+            "$ref": "#/components/schemas/WorkflowActionReason"
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "reason"
+              ],
+              "properties": {
+                "reason": {}
+              }
+            },
+            "then": {
+              "properties": {
+                "action": {
+                  "const": "reject"
+                }
+              }
+            }
+          }
+        ],
+        "description": "New reject commands require reason; omission is retained only for exact legacy replay. Agree forbids reason."
       },
       "WorkflowTaskPending": {
         "type": "object",
@@ -31324,8 +31347,12 @@
                 "not": {
                   "const": "00000000-0000-0000-0000-000000000000"
                 }
+              },
+              "reason": {
+                "$ref": "#/components/schemas/WorkflowActionReason"
               }
-            }
+            },
+            "description": "New return commands require reason; omission is retained only for exact legacy replay."
           }
         ]
       },
@@ -32355,8 +32382,33 @@
               "captured",
               "legacy_last_known"
             ]
+          },
+          "actionReason": {
+            "$ref": "#/components/schemas/WorkflowActionReason"
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "actionReason"
+              ],
+              "properties": {
+                "actionReason": {}
+              }
+            },
+            "then": {
+              "properties": {
+                "action": {
+                  "enum": [
+                    "reject",
+                    "return"
+                  ]
+                }
+              }
+            }
+          }
+        ]
       },
       "WorkflowHistoricalLabel": {
         "type": "object",
@@ -37412,6 +37464,13 @@
           }
         },
         "description": "Retained initiated round after runtime projection removal; current read/history authorization still required."
+      },
+      "WorkflowActionReason": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500,
+        "pattern": "^(?![\\p{White_Space}]*$)[^\\u0000\\uD800-\\uDFFF]+$",
+        "description": "Original audit text, 1–500 Unicode scalar values, no NUL and not entirely Unicode White_Space. Never trimmed or normalized."
       }
     },
     "responses": {

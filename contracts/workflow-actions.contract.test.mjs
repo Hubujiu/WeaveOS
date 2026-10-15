@@ -32,7 +32,7 @@ test('Root V037: exact closed action body and separate pending/final result shap
   assertUnordered(Object.keys(s[name].properties),fields,`${name} exact public fields`);
   assertUnordered(s[name].required,fields,`${name} all public fields required`);
  }
- assertUnordered(Object.keys(s.WorkflowTaskAction.properties),['operationId','action','basisToken']);
+ assertUnordered(Object.keys(s.WorkflowTaskAction.properties),['operationId','action','basisToken','reason']);
 });
 test('Root V037: stale task/basis and oversized real evidence have public safe conflicts',()=>{
  for(const code of ['WORKFLOW_TASK_CHANGED','WORKFLOW_BASIS_CHANGED','WORKFLOW_BASIS_EXPIRED','WORKFLOW_EVIDENCE_TOO_LARGE']){

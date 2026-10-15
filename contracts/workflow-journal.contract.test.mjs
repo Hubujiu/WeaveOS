@@ -6,7 +6,7 @@ const api=JSON.parse(readFileSync(new URL('./openapi/openapi.json',import.meta.u
 test('V064 independent journal exposes original name and honest legacy provenance',()=>{
  const s=api.components.schemas.WorkflowEventSummary;
  assert.equal(s.additionalProperties,false);
- assert.equal(Object.keys(s.properties).length,14);
+ assert.equal(Object.keys(s.properties).length,15);
  assert.equal(s.required.length,14);
  assert.deepEqual(s.properties.flowName,{type:'string',minLength:1,maxLength:100});
  assert.deepEqual(s.properties.flowNameSource,{type:'string',enum:['captured','legacy_last_known']});
