@@ -112,3 +112,6 @@ test('Root Reject never silently saves a dirty task form',async({page})=>{
 test('Root Reject revoked write clears task values and does not report success',async({page})=>{
  const f=await setup(page,{reply:()=>({status:403,code:'APPLICATION_FORBIDDEN'})});await open(page);await page.getByRole('button',{name:'驳回',exact:true}).click();const dialog=page.getByRole('dialog',{name:'驳回申请',exact:true});await dialog.getByLabel('驳回原因',{exact:false}).fill('原始原因');await dialog.getByRole('button',{name:'确认驳回',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await expect(page.getByLabel('报销金额')).toHaveCount(0);await expect(page.getByText('审批已驳回',{exact:true})).toHaveCount(0);expect(f.actions).toHaveLength(1);
 });
+test('Root approval decisions keep Figma agree before reject order',async({page})=>{
+ await setup(page);await open(page);const agree=await page.getByRole('button',{name:'同意',exact:true}).boundingBox(),reject=await page.getByRole('button',{name:'驳回',exact:true}).boundingBox();expect(agree).not.toBeNull();expect(reject).not.toBeNull();expect(agree!.x+agree!.width).toBeLessThanOrEqual(reject!.x);
+});

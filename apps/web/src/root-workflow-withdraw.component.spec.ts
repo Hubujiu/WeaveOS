@@ -7,7 +7,7 @@ const app={id:appId,name:'报销管理',ownerUserId:id(99),policyRevision:1};
 const field={id:fieldId,name:'金额',kind:'money',required:false,default:null,config:{precision:20,scale:2,roundingPlaces:2,roundingMode:'HALF_UP'},presentation:{helpText:null,displayTimeZone:null}};
 const runtime={appId,viewId,tableId:id(6),schemaVersion:1,viewVersion:1,policyRevision:1,fields:[{id:fieldId,name:'金额',kind:'money',required:false,presentation:field.presentation,input:{decimal:field.config},access:{read:'all',create:true,edit:'all',history:'none'},query:{operators:['eq','neq','gt','gte','lt','lte'],sortable:true,quickSearchable:false}}],layout:[{id:id(7),kind:'field',fieldId}],capabilities:{create:true,read:'all',edit:'all',history:'none',search:true,draftCreate:true,draftEdit:true}};
 const item={id:recordId,appId,viewId,tableId:id(6),createdBy:actor.id,createdAt:'2026-10-11T09:00:00Z',updatedAt:'2026-10-11T10:00:00Z',recordVersion:2,schemaVersion:1,values:{[fieldId]:'10.00'},referenceDisplays:{}};
-async function setup(page:Page,options:{denied?:boolean;notEligible?:boolean;unknown?:boolean;noEffect?:boolean;stale?:boolean;wrongResult?:boolean}={}){
+async function setup(page:Page,options:{denied?:boolean;notEligible?:boolean;unknown?:boolean;noEffect?:boolean;stale?:boolean;wrongResult?:boolean;returnSuccess?:boolean}={}){
  const calls:{path:string;method:string;body:any}[]=[];let operationId='',posts=0;
  await page.route('**/api/v1/**',async r=>{
   const req=r.request(),path=new URL(req.url()).pathname.slice('/api/v1/'.length),body=req.postData()?req.postDataJSON():null;calls.push({path,method:req.method(),body});let data:unknown;let status=200;
@@ -29,7 +29,7 @@ async function setup(page:Page,options:{denied?:boolean;notEligible?:boolean;unk
    if(options.unknown&&posts===1)return r.abort('failed');
    status=202;data={operationId,instanceId,commandId:id(12),status:'pending'};
    return r.fulfill({status,headers:{Location:'/api/v1/application-workflow-operations/'+operationId},json:{code:'OK',data,meta:null}});
-  }else if(path==='application-workflow-operations/'+operationId)data={operationId,instanceId:options.wrongResult?id(99):instanceId,commandId:id(12),status:options.noEffect?'no_effect':'success',instanceState:options.noEffect?'unchanged':'withdrawn',sequence:options.noEffect?2:3,...(options.noEffect?{reason:'terminal_instance'}:{})};
+  }else if(path==='application-workflow-operations/'+operationId)data={operationId,instanceId:options.wrongResult?id(99):instanceId,commandId:id(12),status:options.noEffect?'no_effect':'success',instanceState:options.noEffect?'unchanged':options.returnSuccess?'active':'withdrawn',sequence:options.noEffect?2:3,...(options.noEffect?{reason:'terminal_instance'}:{})};
   else return r.fulfill({status:404,json:{code:'API_NOT_FOUND',data:null}});
   return r.fulfill({status,json:{code:'OK',data,meta:null}});
  });return calls;
@@ -72,4 +72,22 @@ test('Root closing an accepted withdrawal preserves its record and disables a ne
 });
 test('Root withdrawal definite authorization revocation clears the earlier capability',async({page})=>{
  const calls=await setup(page);await open(page);await preview(page);await page.getByRole('button',{name:'撤回审批',exact:true}).click();await page.route('**/api/v1/'+instance+'/actions',r=>r.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null,meta:null}}));await page.getByRole('button',{name:'确认撤回',exact:true}).click();await expect(page.getByRole('alert').filter({hasText:/权限/})).toBeVisible();await expect(page.getByRole('button',{name:'确认撤回',exact:true})).toBeDisabled();expect(calls.filter(c=>c.path===instance+'/lifecycle')).toHaveLength(1);
+});
+
+// P25 / V045: choose only actual server returnTargets; never invent node labels or authority.
+async function returnDialog(page:Page){await preview(page);await page.getByRole('button',{name:'退回节点',exact:true}).click();return page.getByRole('dialog',{name:'退回到节点',exact:true});}
+test('Root return requires explicit server target and original reason then confirms active execution',async({page},testInfo)=>{
+ const calls=await setup(page,{notEligible:true,returnSuccess:true});await open(page);const dialog=await returnDialog(page),submit=dialog.getByRole('button',{name:'确认退回',exact:true});await expect(submit).toBeDisabled();
+ await dialog.getByLabel('目标节点',{exact:true}).selectOption(id(10));await expect(submit).toBeDisabled();await dialog.getByLabel('退回原因',{exact:false}).fill('  原始退回原因🦊  ');await expect(submit).toBeEnabled();
+ await testInfo.attach('return-explicit-target-original-reason',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});await submit.click();await expect(page.getByText('退回处理中',{exact:true})).toBeVisible();await expect(page.getByText('已退回',{exact:true})).toHaveCount(0);
+ await page.getByRole('button',{name:'核查退回结果',exact:true}).click();await expect(page.getByText('已退回',{exact:true})).toBeVisible();const writes=calls.filter(c=>c.path===instance+'/actions');expect(writes).toHaveLength(1);expect(writes[0].body).toEqual({operationId:expect.any(String),action:'return',basisToken:'life-basis',targetNodeId:id(10),reason:'  原始退回原因🦊  '});
+});
+test('Root return cancel sends no action and restores target capability entry',async({page})=>{
+ const calls=await setup(page,{notEligible:true,returnSuccess:true});await open(page);const dialog=await returnDialog(page);await dialog.getByLabel('目标节点',{exact:true}).selectOption(id(10));await dialog.getByLabel('退回原因',{exact:false}).fill('不提交');await dialog.getByRole('button',{name:'取消',exact:true}).click();await expect(page.getByRole('button',{name:'退回节点',exact:true})).toBeVisible();expect(calls.filter(c=>c.path===instance+'/actions')).toEqual([]);
+});
+test('Root return network uncertainty retries exact original target reason and operation',async({page})=>{
+ const calls=await setup(page,{notEligible:true,returnSuccess:true,unknown:true});await open(page);const dialog=await returnDialog(page);await dialog.getByLabel('目标节点',{exact:true}).selectOption(id(10));await dialog.getByLabel('退回原因',{exact:false}).fill('  保留原因🦊  ');await dialog.getByRole('button',{name:'确认退回',exact:true}).click();await expect(page.getByText(/退回结果.*未确认/)).toBeVisible();await page.getByRole('button',{name:'重试原退回',exact:true}).click();await expect(page.getByText('退回处理中',{exact:true})).toBeVisible();const writes=calls.filter(c=>c.path===instance+'/actions');expect(writes).toHaveLength(2);expect(writes[1].body).toEqual(writes[0].body);
+});
+test('Root return absent server targets do not create a selectable capability',async({page})=>{
+ const calls=await setup(page);await open(page);await preview(page);await expect(page.getByText('当前记录版本 v2',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'退回节点',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'确认退回',exact:true})).toHaveCount(0);expect(calls.filter(c=>c.path===instance+'/actions')).toEqual([]);
 });
