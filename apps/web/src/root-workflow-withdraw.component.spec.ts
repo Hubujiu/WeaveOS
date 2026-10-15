@@ -91,3 +91,11 @@ test('Root return network uncertainty retries exact original target reason and o
 test('Root return absent server targets do not create a selectable capability',async({page})=>{
  const calls=await setup(page);await open(page);await preview(page);await expect(page.getByText('当前记录版本 v2',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'退回节点',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'确认退回',exact:true})).toHaveCount(0);expect(calls.filter(c=>c.path===instance+'/actions')).toEqual([]);
 });
+test('Root return reopening pending operation restores return identity rather than withdrawal',async({page})=>{
+ const calls=await setup(page,{notEligible:true,returnSuccess:true});await open(page);const dialog=await returnDialog(page);await dialog.getByLabel('目标节点',{exact:true}).selectOption(id(10));await dialog.getByLabel('退回原因',{exact:false}).fill('原操作原因');await dialog.getByRole('button',{name:'确认退回',exact:true}).click();await expect(page.getByText('退回处理中',{exact:true})).toBeVisible();
+ await dialog.getByRole('button',{name:'关闭弹窗',exact:true}).click();const guard=page.getByRole('dialog',{name:'有未保存的修改',exact:true});await expect(guard).toBeVisible();await guard.getByRole('button',{name:'放弃修改',exact:true}).click();await expect(page.getByRole('region',{name:'记录详情',exact:true})).toBeVisible();await preview(page);await expect(page.getByText('退回处理中',{exact:true})).toBeVisible();await page.getByRole('button',{name:'核查退回结果',exact:true}).click();await expect(page.getByText('已退回',{exact:true})).toBeVisible();expect(calls.filter(c=>c.path===instance+'/actions')).toHaveLength(1);
+});
+test('Root return final dialog uses original 620 by 460 layout without a heading divider',async({page},testInfo)=>{
+ await setup(page,{notEligible:true,returnSuccess:true});await open(page);const dialog=await returnDialog(page);await expect.poll(async()=>{const r=await dialog.boundingBox();return r?{w:Math.round(r.width),h:Math.round(r.height)}:null;}).toEqual({w:620,h:460});
+ await expect(dialog.locator('.forms-dialog-heading')).toHaveCSS('border-bottom-width','0px');await testInfo.attach('return-final-geometry',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+});
