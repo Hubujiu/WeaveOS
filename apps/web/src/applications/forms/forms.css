@@ -88,3 +88,15 @@
 /* Override the legacy workspace checkbox chrome only inside these controls. */
 .workspace :is(.forms-designer,.forms-dialog,.forms-rendered-field) input[type=checkbox] { width:16px;height:16px;min-height:0;padding:0;border-color:var(--forms-line);border-radius:4px; }
 .workspace :is(.forms-designer,.forms-dialog,.forms-rendered-field) input[type=checkbox]:checked { background-color:var(--forms-ink);border-color:var(--forms-ink); }
+
+/* V075 P25, Figma487:5862: business composition of the existing dialog. */
+.forms-dialog:has(.workflow-reject-dialog){width:560px;max-width:calc(100vw - 32px);height:370px;max-height:calc(100dvh - 32px);padding:0;box-sizing:border-box;box-shadow:0 16px 24px #0000001f;}
+.forms-dialog:has(.workflow-reject-dialog) .forms-dialog-heading{height:80px;box-sizing:border-box;padding:24px 24px 16px;gap:12px;}
+.forms-dialog:has(.workflow-reject-dialog) .forms-dialog-heading h2{font-size:16px;line-height:24px;}
+.forms-dialog:has(.workflow-reject-dialog) .forms-dialog-body{padding:0 24px 24px;height:calc(100% - 80px);box-sizing:border-box;}
+.workflow-reject-dialog{height:100%;display:flex;flex-direction:column;gap:16px;}
+.forms-dialog .workflow-reject-dialog label{margin:0;gap:8px;color:var(--forms-muted);font-size:12px;line-height:18px;}
+.forms-dialog .workflow-reject-dialog input{height:42px;min-height:42px;box-sizing:border-box;}
+.forms-dialog .workflow-reject-dialog .forms-dialog-actions{margin-top:auto;display:flex;justify-content:flex-end;gap:12px;flex-wrap:nowrap;}
+.forms-dialog .workflow-reject-dialog .forms-dialog-actions button{width:100px;height:40px;min-height:40px;}
+.forms-dialog .workflow-reject-dialog .forms-dialog-actions .forms-primary{width:120px;}

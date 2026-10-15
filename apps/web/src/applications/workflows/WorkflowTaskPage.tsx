@@ -1,3 +1,4 @@
+import {FormsDialog} from '../forms/FormsDialog';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {applicationApi,applicationApiEnvelope,ApplicationError} from '../api';
 import {FieldRenderer,type FieldValue,type LoadReferenceCandidates,type ReferenceDisplay} from '../forms/FieldRenderer';
@@ -69,6 +70,7 @@ export function WorkflowTaskPage({actorId,location,onBack,onUnauthorized,onIdent
  const [saved,setSaved]=useState(false);
  const [actionResult,setActionResult]=useState<WorkflowOperation|null>(null);
  const [actionWarning,setActionWarning]=useState('');
+ const [rejection,setRejection]=useState<{scope:string;reason:string}|null>(null);
  const [state,setState]=useState<ReadState>({scope,loading:true,data:null,error:''});
  const path=`applications/${location.appId}/forms/${location.viewId}/records/${location.recordId}/workflow-instances/${location.instanceId}/tasks/${location.taskId}`;
  const resource={kind:'task-record' as const,appId:location.appId,viewId:location.viewId,id:location.recordId,instanceId:location.instanceId,taskId:location.taskId};
@@ -130,6 +132,17 @@ export function WorkflowTaskPage({actorId,location,onBack,onUnauthorized,onIdent
   setActionWarning('');
   actionOperation.start({resource:actionResource,path:path+'/actions',method:'POST',expectedStatus:202,body:{action:'agree',basisToken:preview.basisToken}});
  };
+ const validReason=(value:string)=>Array.from(value).length>=1&&Array.from(value).length<=500&&!/^[\p{White_Space}]*$/u.test(value)&&!/[\u0000\uD800-\uDFFF]/u.test(value);
+ const openReject=()=>{
+  if(!preview||blocked||needsRefresh||operation.getPendingStatus()||actionOperation.getPendingStatus())return;
+  if(dirty){setActionWarning('有未保存的修改，请先保存或明确放弃后再审批。');return;}
+  setActionWarning('');setRejection({scope,reason:''});
+ };
+ const reject=()=>{
+  if(!preview||!rejection||rejection.scope!==scope||!validReason(rejection.reason)||blocked||needsRefresh||dirty||operation.getPendingStatus()||actionOperation.getPendingStatus())return;
+  actionOperation.start({resource:actionResource,path:path+'/actions',method:'POST',expectedStatus:202,body:{action:'reject',basisToken:preview.basisToken,reason:rejection.reason}});
+  setRejection(null);
+ };
  const message=actionWarning||(errorCode==='WORKFLOW_BASIS_EXPIRED'?'审批依据已过期，请刷新预览后重新核对。':errorCode==='WORKFLOW_BASIS_CHANGED'?'审批数据已变化，请刷新预览后重新核对。':errorCode==='WORKFLOW_TASK_CHANGED'?'任务已变化或已结束，请返回待办重新核对。':operation.message||(accepted?'':actionOperation.message));
  const showComparison=!!preview&&comparison?.scope===scope;
  return <section className="workflow-task-page" aria-label="审批任务详情">
@@ -139,12 +152,17 @@ export function WorkflowTaskPage({actorId,location,onBack,onUnauthorized,onIdent
   {saved&&<p role="status">修改已保存</p>}
   {message&&<p role="alert">{message}</p>}
   {(saveUnknown||saveBusy&&operation.packet)&&<div className="workflow-task-toolbar"><span role="status">{saveBusy?'正在核对保存结果…':'原保存结果待核对'}</span><button type="button" className="admin-button" disabled={saveBusy} onClick={operation.query}>核查保存结果</button><button type="button" className="admin-button" disabled={saveBusy} onClick={operation.retry}>重试原保存</button></div>}
-  {actionResult&&<p role="status">{actionResult.status==='success'?'审批已同意':'操作未执行'}</p>}
+  {actionResult&&<p role="status">{actionResult.status==='success'?(actionResult.instanceState==='rejected'?'审批已驳回':'审批已同意'):'操作未执行'}</p>}
   {(accepted||actionUnknown||actionBusy&&actionOperation.packet)&&<div className="workflow-task-toolbar"><span role="status">{accepted?'审批处理中':actionBusy?'正在核对审批结果…':'原审批结果待核对'}</span><button type="button" className="admin-button" disabled={actionBusy} onClick={actionOperation.query}>核查审批结果</button><button type="button" className="admin-button" disabled={actionBusy} onClick={actionOperation.retry}>重试原审批</button></div>}
   {!current||current.loading?<div className="app-surface app-state" role="status">正在读取审批预览…</div>
    :current.error?<div className="app-surface app-state"><p role="alert">{current.error}</p><button type="button" className="admin-button" onClick={()=>setEpoch(v=>v+1)}>重试读取</button></div>
-   :preview?<div className="workflow-task-workspace"><section className="app-surface workflow-task-card" aria-label="当前审批数据"><div className="workflow-task-section-heading"><h2>当前记录</h2><span>最新 v{preview.record.recordVersion}</span></div><div className="workflow-task-fields">{preview.fields.map(field=>editable.has(field.id)?<TaskEditableField key={field.id} field={field} value={Object.hasOwn(changes,field.id)?changes[field.id]:preview.record.values[field.id]} preview={preview} actorId={actorId} path={path} scope={scope} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} readOnly={blocked||needsRefresh} onChange={value=>{setActionWarning('');setSaved(false);setChanges(previous=>{const next={...previous};if(JSON.stringify(value)===JSON.stringify(preview.record.values[field.id]))delete next[field.id];else next[field.id]=value;return next;});}}/>:<ReadonlyField key={field.id} field={field} preview={preview}/>)}</div>{!preview.fields.length&&<p>没有可展示的字段</p>}{editable.size>0&&<div><button type="button" className="admin-button" disabled={!dirty||blocked||needsRefresh} onClick={save}>保存修改</button></div>}<div className="workflow-task-decisions"><button type="button" className="admin-button primary" disabled={blocked||needsRefresh} onClick={agree}>同意</button></div></section><WorkflowHistory actorId={actorId} location={location} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onCompare={detail=>{comparisonOrigin.current=document.activeElement as HTMLElement|null;setComparison({scope,detail});}}/></div>:null}
+   :preview?<div className="workflow-task-workspace"><section className="app-surface workflow-task-card" aria-label="当前审批数据"><div className="workflow-task-section-heading"><h2>当前记录</h2><span>最新 v{preview.record.recordVersion}</span></div><div className="workflow-task-fields">{preview.fields.map(field=>editable.has(field.id)?<TaskEditableField key={field.id} field={field} value={Object.hasOwn(changes,field.id)?changes[field.id]:preview.record.values[field.id]} preview={preview} actorId={actorId} path={path} scope={scope} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} readOnly={blocked||needsRefresh} onChange={value=>{setActionWarning('');setSaved(false);setChanges(previous=>{const next={...previous};if(JSON.stringify(value)===JSON.stringify(preview.record.values[field.id]))delete next[field.id];else next[field.id]=value;return next;});}}/>:<ReadonlyField key={field.id} field={field} preview={preview}/>)}</div>{!preview.fields.length&&<p>没有可展示的字段</p>}{editable.size>0&&<div><button type="button" className="admin-button" disabled={!dirty||blocked||needsRefresh} onClick={save}>保存修改</button></div>}<div className="workflow-task-decisions"><button type="button" className="admin-button" disabled={blocked||needsRefresh} onClick={openReject}>驳回</button><button type="button" className="admin-button primary" disabled={blocked||needsRefresh} onClick={agree}>同意</button></div></section><WorkflowHistory actorId={actorId} location={location} onUnauthorized={onUnauthorized} onIdentityMismatch={onIdentityMismatch} onCompare={detail=>{comparisonOrigin.current=document.activeElement as HTMLElement|null;setComparison({scope,detail});}}/></div>:null}
   </div>
+  {preview&&rejection?.scope===scope&&<FormsDialog title="驳回申请" onClose={()=>setRejection(null)}>
+   <div className="workflow-reject-dialog"><label>驳回原因（必填，最多500字）<input required value={rejection.reason} onChange={event=>setRejection({scope,reason:event.target.value})}/></label>
+    <div className="forms-dialog-actions"><button type="button" data-forms-close>取消</button><button type="button" className="forms-primary" disabled={!validReason(rejection.reason)||blocked||dirty||needsRefresh} onClick={reject}>确认驳回</button></div>
+   </div>
+  </FormsDialog>}
   {showComparison&&comparison&&preview&&<WorkflowComparison detail={comparison.detail} preview={preview} onBack={()=>{setComparison(null);requestAnimationFrame(()=>comparisonOrigin.current?.isConnected&&comparisonOrigin.current.focus());}}/>}
  </section>;
 }
