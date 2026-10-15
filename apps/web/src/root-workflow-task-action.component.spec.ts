@@ -115,3 +115,9 @@ test('Root Reject revoked write clears task values and does not report success',
 test('Root approval decisions keep Figma agree before reject order',async({page})=>{
  await setup(page);await open(page);const agree=await page.getByRole('button',{name:'同意',exact:true}).boundingBox(),reject=await page.getByRole('button',{name:'驳回',exact:true}).boundingBox();expect(agree).not.toBeNull();expect(reject).not.toBeNull();expect(agree!.x+agree!.width).toBeLessThanOrEqual(reject!.x);
 });
+test('Root Reject final dialog geometry matches inspected Monochrome target',async({page},testInfo)=>{
+ await setup(page);await open(page);await page.getByRole('button',{name:'驳回',exact:true}).click();const dialog=page.getByRole('dialog',{name:'驳回申请',exact:true});
+ await expect.poll(async()=>{const r=await dialog.boundingBox();return r?{w:Math.round(r.width),h:Math.round(r.height)}:null;}).toEqual({w:560,h:370});
+ const styles=await dialog.evaluate(el=>{const h=el.querySelector('.forms-dialog-heading')!,input=el.querySelector('input')!,cancel=[...el.querySelectorAll('button')].find(b=>b.textContent==='取消')!,confirm=[...el.querySelectorAll('button')].find(b=>b.textContent==='确认驳回')!;return {headingBorder:getComputedStyle(h).borderBottomWidth,inputHeight:Math.round(input.getBoundingClientRect().height),cancelWidth:Math.round(cancel.getBoundingClientRect().width),confirmWidth:Math.round(confirm.getBoundingClientRect().width)};});
+ expect(styles).toEqual({headingBorder:'0px',inputHeight:42,cancelWidth:100,confirmWidth:120});await testInfo.attach('reject-final-geometry',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
+});
