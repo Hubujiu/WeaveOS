@@ -5,8 +5,9 @@ const actor={id:id(1),account:'reviewer'},loc={appId:id(2),viewId:id(3),recordId
 const route='/app/approvals/'+Object.values(loc).join('/'),record=`/api/v1/applications/${loc.appId}/forms/${loc.viewId}/records/${loc.recordId}`,task=`${record}/workflow-instances/${loc.instanceId}/tasks/${loc.taskId}`,history=record+'/workflow-events';
 const field={id:id(8),name:'当前金额',kind:'money',required:true,default:null,config:{precision:38,scale:2,roundingPlaces:2,roundingMode:'HALF_UP'},presentation:{helpText:null,displayTimeZone:null}};
 const event=(n=20)=>({id:id(n),instanceId:loc.instanceId,flowId:id(7),flowName:'差旅审批',flowNameSource:'captured',nodeId:id(9),targetNodeId:null,actorId:actor.id,action:'agree',outcome:'success',sequence:1,schemaVersion:1,recordVersion:1,occurredAt:'2026-10-10T09:00:00Z'});
-async function setup(page:Page,options:{noEffect?:boolean;legacy?:boolean;unavailable?:boolean;wrongDetail?:boolean;nextDenied?:boolean}={}){
+async function setup(page:Page,options:{noEffect?:boolean;legacy?:boolean;unavailable?:boolean;wrongDetail?:boolean;nextDenied?:boolean;reason?:string;reasonAction?:'reject'|'return'}={}){
  const requests:URL[]=[],writes:string[]=[];let listCalls=0;
+ const withReason=(value:ReturnType<typeof event>)=>options.reason===undefined?value:{...value,action:options.reasonAction??'reject',targetNodeId:options.reasonAction==='return'?id(30):null,actionReason:options.reason};
  await page.route('**/api/v1/**',async r=>{
   const req=r.request(),url=new URL(req.url()),path=url.pathname;requests.push(url);if(req.method()!=='GET'&&path!== '/api/v1/workflow-tasks/search')writes.push(path);
   let data:unknown,meta:unknown=null;
@@ -17,8 +18,8 @@ async function setup(page:Page,options:{noEffect?:boolean;legacy?:boolean;unavai
   else if(path===history){
    listCalls++;const later=url.searchParams.has('pageToken');
    if(later&&options.nextDenied)return r.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null,meta:null}});
-   data={items:[{...event(later?21:20),...(options.noEffect?{action:'reject',outcome:'no_effect',sequence:0}:{}),...(options.legacy?{flowNameSource:'legacy_last_known'}:{})}]};meta={pagination:{hasMore:!later,nextPageToken:later?null:'c'.repeat(43)}};
-  }else if(path.startsWith(history+'/'))data={event:options.wrongDetail?event(99):event(Number(path.split('-').at(-1))),basis:{status:options.unavailable?'unavailable':'available',fields:options.unavailable?[]:[{fieldId:field.id,fieldName:'历史金额',fieldKind:'money',value:'123456789012345678901234567890.12',valueLabels:{}}]}};
+   data={items:[{...withReason(event(later?21:20)),...(options.noEffect?{action:'reject',outcome:'no_effect',sequence:0}:{}),...(options.legacy?{flowNameSource:'legacy_last_known'}:{})}]};meta={pagination:{hasMore:!later,nextPageToken:later?null:'c'.repeat(43)}};
+  }else if(path.startsWith(history+'/'))data={event:withReason(options.wrongDetail?event(99):event(Number(path.split('-').at(-1)))),basis:{status:options.unavailable?'unavailable':'available',fields:options.unavailable?[]:[{fieldId:field.id,fieldName:'历史金额',fieldKind:'money',value:'123456789012345678901234567890.12',valueLabels:{}}]}};
   else if(path==='/api/v1/workflow-tasks/search')data={items:[],total:0,page:1,pageSize:20,queryVersion:'d'.repeat(43)};
   else return r.fulfill({status:404,json:{code:'API_NOT_FOUND',data:null,meta:null}});
   return r.fulfill({json:{code:'OK',data,meta,message:''}});
@@ -73,4 +74,11 @@ test('Root history leaving the task cancels an outstanding detail without a late
 test('Root opening version comparison brings its heading into view and return restores the origin control',async({page})=>{
  await setup(page);await page.setViewportSize({width:1280,height:720});await open(page);await page.getByLabel('当前金额').fill('300.00');await page.getByRole('region',{name:'审批轨迹',exact:true}).getByRole('button',{name:'查看审批依据',exact:true}).first().click();await page.getByRole('button',{name:'查看版本差异',exact:true}).click();
  await expect(page.getByRole('heading',{name:'版本差异',exact:true})).toBeInViewport();await page.getByRole('button',{name:'返回审批处理',exact:true}).click();await expect(page.getByRole('button',{name:'查看版本差异',exact:true})).toBeFocused();await expect(page.getByLabel('当前金额')).toHaveValue('300.00');
+});
+
+// P25: original audit text, never HTML; current history permission remains authoritative.
+for(const action of ['reject','return'] as const)test('Root history renders original '+action+' reason as text and clears it after revoked history',async({page})=>{
+ const reason='  原因\n<img src=x onerror="window.__reasonExecuted=true"> 🦊  ';
+ await setup(page,{reason,reasonAction:action,nextDenied:true});await open(page);const panel=page.getByRole('region',{name:'审批轨迹',exact:true});const text=panel.getByText(reason,{exact:true});await expect(text).toBeVisible();expect(await text.textContent()).toBe(reason);await expect(panel.locator('img')).toHaveCount(0);expect(await page.evaluate(()=>Object.hasOwn(window,'__reasonExecuted'))).toBe(false);
+ await panel.getByRole('button',{name:'查看审批依据',exact:true}).first().click();await expect(page.getByRole('region',{name:'历史审批依据',exact:true})).toContainText('历史金额');await panel.getByRole('button',{name:'加载更多历史',exact:true}).click();await expect(panel).toContainText('历史权限');await expect(panel.getByText(reason,{exact:true})).toHaveCount(0);
 });

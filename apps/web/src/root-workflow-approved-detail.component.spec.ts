@@ -87,3 +87,9 @@ for(const width of [1280,390])test('Root approved comparison full exact digits r
  }
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
+
+// P25: optional legacy-compatible audit reason, independent of active tasks.
+test('Root approved detail preserves original rejection reason as plain text and clears it on revoked refresh',async({page})=>{
+ const reason='  原因\n<strong>保留原文</strong> 🦊  ';let calls=0;
+ await setup(page,()=>++calls===1?{data:{...detail(),event:{...event,action:'reject',actionReason:reason}}}:{status:403,code:'APPLICATION_FORBIDDEN'});await page.goto(path);const text=page.getByText(reason,{exact:true});await expect(text).toBeVisible();expect(await text.textContent()).toBe(reason);await expect(page.locator('strong').filter({hasText:'保留原文'})).toHaveCount(0);await page.getByRole('button',{name:'刷新依据',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await expect(text).toHaveCount(0);
+});
