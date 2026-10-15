@@ -13,7 +13,7 @@ async function setup(page:Page,denied=false){
   if(path==='/api/v1/sessions/current')data=actor;
   else if(path==='/api/v1/me/access')data={user:actor,bootstrapAdmin:false,personnelManage:false,identities:[],permissions:[],applications:[]};
   else if(path==='/api/v1/applications')data={items:[]};
-  else if(path===task)data={basisToken:'task-basis',task:{id:loc.taskId,instanceId:loc.instanceId,nodeId:id(7),activationEpoch:2,sequence:2},record,fields:[field],editableFieldIds:[field.id]};
+  else if(path===task)data={basisToken:'b'.repeat(43),task:{id:loc.taskId,instanceId:loc.instanceId,nodeId:id(7),activationEpoch:2,sequence:2},record,fields:[field],editableFieldIds:[field.id]};
   else if(path===base+'/workflow-events')return r.fulfill({json:{code:'OK',data:{items:[]},meta:{pagination:{hasMore:false,nextPageToken:null}}}});
   else if(path===instance+'/lifecycle'){
    if(denied)return r.fulfill({status:403,json:{code:'APPLICATION_FORBIDDEN',data:null}});
